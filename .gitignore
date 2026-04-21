@@ -1,3 +1,4 @@
+# ---- Athanor framework (pre-existing) ----
 .DS_Store
 .tmp/
 node_modules/
@@ -12,3 +13,43 @@ GEMINI.local.md
 *.pyc
 .venv/
 pulse.log
+
+# ---- Next.js ----
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# ---- Local env (never commit) ----
+# .env is already ignored above; also ignore any *.local variants
+.env*.local
+!.env.local.example
+
+# ---- Firebase ----
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+# Emulator data exports
+firebase-export-*/
+
+# ---- Secrets / keys ----
+*.pem
+
+# ---- Logs ----
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- IDE / editor ----
+.idea/
+.vscode/*
+!.vscode/settings.json
+
+# ---- OS ----
+Thumbs.db
+
+# ---- Claude Code worktrees (agent artifacts) ----
+.claude/worktrees/

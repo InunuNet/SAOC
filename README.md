@@ -1,98 +1,50 @@
-# Athanor
+# SAOC Website
 
-> Provider-agnostic agentic workspace template. Native-first, custom-last.
+The **South African Orchid Council (SAOC)** is a non-profit national body that has coordinated orchid societies across South Africa since 1968. This repository contains the Phase 1 MVP rebuild of saoc.co.za — replacing a broken Joomla site with a modern Next.js application backed by Firebase.
 
-**v3.3.4** — Claude Code (P1) · Gemini CLI (P2) · OpenCode (P3)
+## What This Repo Is
+
+Next.js 15 (App Router, TypeScript) + Firebase (Firestore, Auth, App Hosting), scaffolded as Phase 1 MVP. Visual design is handled separately in Claude Design; this repo ships structure, data access, and server logic.
 
 ## Quick Start
 
 ```bash
-# Clone and enter
-git clone https://github.com/InunuNet/Athanor.git myproject
-cd myproject
-
-# Sync agents to your platform
-make sync-agents
-
-# Verify
-make audit
+pnpm install
+cp .env.local.example .env.local   # fill in Firebase credentials
+pnpm dev
 ```
 
-## What Is This?
+Open http://localhost:3000.
 
-Athanor is a convention layer for AI coding agents. It provides:
+See [CLAUDE.md](./CLAUDE.md) for the full developer guide (Firebase setup, Firestore collection shapes, coding conventions, design handoff workflow, deployment).
 
-- **8 agents** — lead, dev, designer, analyst, architect, qa, docs, maintainer
-- **Native hooks** — SessionStart (brain recall), SessionEnd (wrap-up reminder)
-- **Semantic memory** — brain.py (Chroma vector DB) persists across sessions
-- **Self-improvement** — maintainer agent updates goals + lessons automatically
-- **Cross-platform** — one definition, Claude + Gemini configs generated
+## Tech Stack
 
-## Architecture
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| Framework | Next.js 15 (App Router, TypeScript) | RSC-first, Firebase App Hosting native SSR support |
+| Styling | Tailwind CSS v4 | CSS-first config, no `tailwind.config.ts` needed |
+| Hosting | Firebase App Hosting | Native Next.js SSR, same ecosystem as Firestore |
+| Database | Firestore | Flexible schema for societies, events, shows |
+| Auth | Firebase Auth | Scaffolded, not wired to UI until Phase 2 |
+| Forms | API route → Firestore | Contact submissions; email via SendGrid/Resend (future) |
+| Package manager | pnpm | Faster, stricter hoisting |
 
-```
-AGENTS.md           ← Universal entrypoint (CLAUDE.md + GEMINI.md symlink here)
-.agent/agents/      ← Canonical agent definitions (single source of truth)
-.agent/rules/       ← Shared rules (core + security)
-.agent/memory/      ← brain/ (vector DB) + project/ (goals, lessons) + scratch/
-.agent/workflows/   ← /boot, /wrap-up, /audit, /test
-.claude/            ← Native Claude hooks, permissions, generated agents
-.gemini/            ← Native Gemini hooks, generated agents
-execution/          ← brain.py, sync_agents.sh (the only custom code)
-```
+## Scripts
 
-## Commands
+| Script | Purpose |
+|--------|---------|
+| `pnpm dev` | Dev server with Turbopack |
+| `pnpm build` | Production build |
+| `pnpm start` | Run production build |
+| `pnpm lint` | ESLint |
+| `pnpm format` | Prettier — write |
+| `pnpm format:check` | Prettier — check only |
 
-```bash
-make sync-agents      # Generate platform agent configs
-make brain-stats      # Show memory stats
-make brain-export     # Export memories to JSON
-make audit            # Workspace health check
-make commit           # Semantic commit (TYPE=feat MSG='...')
-```
+## Design
 
-## Memory
-
-| Tier | Path | Purpose |
-|------|------|---------|
-| Scratch | `.agent/memory/scratch/` | Session temp |
-| Project | `.agent/memory/project/` | Goals, lessons, backlog |
-| Brain | `.agent/memory/brain/` | Semantic vector DB |
-
-```bash
-python3 execution/brain.py remember -s "decision" -t "tags"
-python3 execution/brain.py recall "topic"
-python3 execution/brain.py last-session
-python3 execution/brain.py wrap-up -s "summary" -t "tags"
-```
-
-## Agents
-
-| Agent | Tier | Role |
-|-------|------|------|
-| lead | pro | Orchestrates, never writes code |
-| dev | flash | Implements code |
-| designer | flash | UI/UX design, component specs, accessibility. Never implements. |
-| analyst | pro | Research, read-only |
-| architect | pro | Design decisions |
-| qa | flash | Testing + review |
-| docs | flash | Documentation |
-| maintainer | pro | Self-improvement |
-
-## Self-Improvement Loop
-
-```
-Session starts → brain recall → read goals + lessons → work → session ends
-  → run /wrap-up → maintainer updates lessons/goals/backlog → stores in brain
-  → next session starts smarter
-```
-
-## Documentation
-
-- [AGENTS.md](AGENTS.md) — How the autonomous agent team works.
-- [PULSE.md](PULSE.md) — How the automated monitoring and maintenance system works.
-- [MIGRATION.md](MIGRATION.md) — Upgrading from older templates.
+Visual design is produced in **Claude Design** as a separate workstream and approved there before implementation. Handoff bundles land in this repo as design specs with component structure and tokens — see CLAUDE.md for the workflow. Do not invent colours, fonts, logos, or visual decisions in this repo.
 
 ## License
 
-MIT
+Proprietary — South African Orchid Council.
