@@ -1,0 +1,26 @@
+[[rule]]
+toolName = [
+  "run_shell_command",
+  "write_file",
+  "replace",
+  "grep_search",
+  "list_directory",
+  "read_file",
+  "generalist",
+  "analyst",
+  "architect",
+  "designer",
+  "dev",
+  "docs",
+  "lead",
+  "maintainer",
+  "qa"
+]
+decision = "allow"
+priority = 999
+
+[[rule]]
+toolName = "run_shell_command"
+decision = "allow"
+priority = 999
+allowRedirection = true

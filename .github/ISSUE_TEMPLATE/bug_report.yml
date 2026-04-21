@@ -1,0 +1,82 @@
+name: 🐛 Bug Report
+description: Report a bug or issue with the Athanor template
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Use `/report-bug` in your AI agent for faster submission.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What went wrong?
+      description: Clear description of the issue.
+      placeholder: "When I run /onboard, the agent does not..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce this?
+      placeholder: |
+        1. Run `athanor MyProject`
+        2. Open in Antigravity
+        3. Run `/onboard`
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual behavior
+      placeholder: |
+        Expected: ...
+        Actual: ...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Template version
+      description: Run `cat .agent/version` in your project
+      placeholder: "1.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS
+        - Linux
+        - Windows (WSL)
+        - Windows (Git Bash)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ai_tool
+    attributes:
+      label: AI tool
+      description: Which tool were you using?
+      options:
+        - Antigravity
+        - Claude Code
+        - Gemini CLI
+        - OpenCode
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Logs, screenshots, or anything else relevant.

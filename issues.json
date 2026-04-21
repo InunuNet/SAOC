@@ -1,0 +1,326 @@
+[
+  {
+    "labels": ["bug"],
+    "number": 58,
+    "state": "CLOSED",
+    "title": "[REGRESSION] v3.3.4 Update Process Failures (Placeholders, Missing Dirs, Invalid Hooks)"
+  },
+  {
+    "labels": [],
+    "number": 49,
+    "state": "CLOSED",
+    "title": "[TEMPLATE BUG] Pulse/Inbox integration is broken and undocumented"
+  },
+  {
+    "labels": [],
+    "number": 48,
+    "state": "OPEN",
+    "title": "[TEMPLATE BUG] Boot sequence lacks Upstream Service Mapping (e.g., Alembic)"
+  },
+  {
+    "labels": [],
+    "number": 47,
+    "state": "CLOSED",
+    "title": "[TEMPLATE BUG] Boot sequence lacks Discovery & Capabilities summary"
+  },
+  {
+    "labels": [],
+    "number": 46,
+    "state": "OPEN",
+    "title": "[TEMPLATE BUG] Triple Version Mismatch: Makefile (v2.2.2) vs README vs Hooks"
+  },
+  {
+    "labels": [],
+    "number": 45,
+    "state": "OPEN",
+    "title": "[TEMPLATE BUG] Alembic proxy and mandate missing from boot context"
+  },
+  {
+    "labels": [],
+    "number": 44,
+    "state": "OPEN",
+    "title": "[TEMPLATE BUG] Brittle GitHub Auth Check in full_boot.sh"
+  },
+  {
+    "labels": [],
+    "number": 43,
+    "state": "OPEN",
+    "title": "[TEMPLATE BUG] Version Inconsistency: README (v2.0.0) vs Hooks (v3.1.2)"
+  },
+  {
+    "labels": [],
+    "number": 42,
+    "state": "OPEN",
+    "title": "[TEMPLATE BUG] Misnamed hooks in .gemini/settings.json"
+  },
+  {
+    "labels": [],
+    "number": 41,
+    "state": "OPEN",
+    "title": "Infrastructure & Interaction Gaps: Alembic Knowledge and Makefile Desync"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDOSCHMr88AAAACfRB6jw",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      }
+    ],
+    "number": 40,
+    "state": "OPEN",
+    "title": "Missing Pulse/Inbox infrastructure and legacy Dark Fact naming in v2.2.2"
+  },
+  {
+    "labels": [],
+    "number": 39,
+    "state": "CLOSED",
+    "title": "Structural inconsistencies and rsync failures in v2.2.2 update-template"
+  },
+  {
+    "labels": [],
+    "number": 38,
+    "state": "OPEN",
+    "title": "Boot: auto-onboarding not triggered; WORKSPACE drift hard-locks Bash"
+  },
+  {
+    "labels": [],
+    "number": 37,
+    "state": "OPEN",
+    "title": "Bug: Automatic boot hook missing in .gemini/settings.json"
+  },
+  {
+    "labels": [],
+    "number": 36,
+    "state": "OPEN",
+    "title": "Feature: Global Pulse Service (Fleet-wide monitor)"
+  },
+  {
+    "labels": [],
+    "number": 35,
+    "state": "OPEN",
+    "title": "Bug: Harden Gemini Policy Schema to address unauthorized tool call bug"
+  },
+  {
+    "labels": [],
+    "number": 34,
+    "state": "OPEN",
+    "title": "Bootstrap instructions drift from what origin/main actually ships"
+  },
+  {
+    "labels": [],
+    "number": 33,
+    "state": "OPEN",
+    "title": "Template repo lacks a clean self-update path for Athanor itself"
+  },
+  {
+    "labels": [],
+    "number": 29,
+    "state": "OPEN",
+    "title": "Subagent hook pipeline truncates context and never completes maintainer handoff"
+  },
+  {
+    "labels": [],
+    "number": 30,
+    "state": "OPEN",
+    "title": "Boot blocker scan branch is inverted in full_boot.sh"
+  },
+  {
+    "labels": [],
+    "number": 32,
+    "state": "OPEN",
+    "title": "Feature: add an automated template self-test suite that catches autonomy regressions"
+  },
+  {
+    "labels": [],
+    "number": 28,
+    "state": "OPEN",
+    "title": "init scaffold can poison learned.md and test-init breaks on paths with spaces"
+  },
+  {
+    "labels": [],
+    "number": 31,
+    "state": "OPEN",
+    "title": "Claude PreToolUse write/edit guards do not parse hook JSON and silently fail open"
+  },
+  {
+    "labels": [],
+    "number": 27,
+    "state": "OPEN",
+    "title": "verify_workspace.sh blocks valid repos when folder name differs from project identity"
+  },
+  {
+    "labels": [],
+    "number": 26,
+    "state": "OPEN",
+    "title": "Boot contract gap for providers without native SessionStart hooks"
+  },
+  {
+    "labels": [],
+    "number": 25,
+    "state": "OPEN",
+    "title": "Rename incomplete: live template still emits DarkFact identity"
+  },
+  {
+    "labels": [],
+    "number": 24,
+    "state": "OPEN",
+    "title": "Infrastructure repo naming mismatch (Athanor vs DarkFact)"
+  },
+  {
+    "labels": [],
+    "number": 23,
+    "state": "OPEN",
+    "title": "bug: sync_skills.sh exits 1 when .claude/skills and .gemini/skills are symlinks to .agent/skills"
+  },
+  {
+    "labels": [],
+    "number": 22,
+    "state": "OPEN",
+    "title": "bug: `make update-template` rsync with --delete silently no-ops; reports success but transfers nothing"
+  },
+  {
+    "labels": [],
+    "number": 21,
+    "state": "OPEN",
+    "title": "Automatic boot hook not wired to .gemini/settings.json in v2.2.1"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDOSCHMr88AAAACfRB6jw",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      }
+    ],
+    "number": 20,
+    "state": "OPEN",
+    "title": "bug: /wrap-up silently skips backlog tick when backlog uses tables/bullets instead of [ ]/[x] checkboxes"
+  },
+  {
+    "labels": [],
+    "number": 19,
+    "state": "OPEN",
+    "title": "docs: template update procedure not surfaced in AGENTS.md or as a boot-loaded workflow"
+  },
+  {
+    "labels": [],
+    "number": 18,
+    "state": "OPEN",
+    "title": "Autonomy Friction: Sub-agent delegation triggers excessive permission prompts"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDOSCHMr88AAAACfRB6jw",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      }
+    ],
+    "number": 17,
+    "state": "OPEN",
+    "title": "Bug: New project creation skips onboarding when using existing profile"
+  },
+  {
+    "labels": [],
+    "number": 15,
+    "state": "CLOSED",
+    "title": "bug: project settings.json ask rule triggers on project-owned files + missing settings tier docs"
+  },
+  {
+    "labels": [],
+    "number": 14,
+    "state": "CLOSED",
+    "title": "bug: overlay_template.sh leaves orphan files \u2014 cp -r does not delete removed-upstream paths"
+  },
+  {
+    "labels": [],
+    "number": 13,
+    "state": "CLOSED",
+    "title": "bug: verify_workspace.sh strips internal spaces \u2014 breaks project names with spaces"
+  },
+  {
+    "labels": [],
+    "number": 11,
+    "state": "OPEN",
+    "title": "feat: Pain Point Monitor \u2014 recurring analyst loop for proactive pivot recommendations"
+  },
+  {
+    "labels": [],
+    "number": 10,
+    "state": "CLOSED",
+    "title": "Enforce memory path redirection \u2014 block PAI writes to ~/.claude/MEMORY/"
+  },
+  {
+    "labels": [],
+    "number": 8,
+    "state": "CLOSED",
+    "title": "Stop hook fires on every Claude Code response \u2014 should use SessionEnd"
+  },
+  {
+    "labels": [],
+    "number": 7,
+    "state": "CLOSED",
+    "title": "Ship complete Claude Code adapter: settings.json hooks, slash commands, agents, skills (model-agnostic template requires per-platform wiring)"
+  },
+  {
+    "labels": [],
+    "number": 6,
+    "state": "CLOSED",
+    "title": "Template docs promise Claude Code integration that is never generated (no hooks, no slash commands, no agents)"
+  },
+  {
+    "labels": [],
+    "number": 5,
+    "state": "CLOSED",
+    "title": "Bug: PAI Algorithm writes MEMORY/ paths that conflict with DarkFact memory system"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDOSCHMr88AAAACfRB6jw",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      }
+    ],
+    "number": 4,
+    "state": "CLOSED",
+    "title": "Bug: brain.py wrap-up crashes when scratch/ contains a subdirectory"
+  },
+  {
+    "labels": [],
+    "number": 3,
+    "state": "CLOSED",
+    "title": "Template audit: 3 gaps found in v1.1.0"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDOSCHMr88AAAACfRB6jw",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      }
+    ],
+    "number": 2,
+    "state": "CLOSED",
+    "title": "Bug: /onboard overwrites profile.json entirely \u2014 template infrastructure fields lost"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDOSCHMr88AAAACfRB6jw",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      }
+    ],
+    "number": 1,
+    "state": "CLOSED",
+    "title": "Bug: darkfact() scaffold sets wrong git remote name \u2014 origin points at template repo"
+  }
+]

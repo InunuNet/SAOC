@@ -1,0 +1,26 @@
+🔄 Initialising update checkpoint...
+<string>:1: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+🔄 Downloading Athanor template from GitHub...
+github.com
+  ✓ Logged in to github.com account BDauth (keyring)
+  - Active account: true
+  - Git operations protocol: https
+  - Token: gho_************************************
+  - Token scopes: 'gist', 'read:org', 'repo'
+
+📋 Infrastructure files that will change:
+  • Only in /Users/vetus/ai/Athanor/.agent/pulse/registry: processing
+
+⚡ Applying infrastructure updates...
+🔄 Syncing agents + skills...
+✅ Synced 8 agents → .claude/agents/ + .gemini/agents/
+✅ Synced 2 skills → .claude/skills/ + .gemini/skills/
+✅ Rule sync complete.
+<string>:1: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+✅ Updated to Athanor v3.3.4
+   Review changes: git diff
+   Commit when ready: git add -A && git commit -m 'chore: update to Athanor v3.3.4'
+
+   Note: Makefile was not auto-updated (self-overwrite risk).
+   Check latest: gh api repos/InunuNet/Athanor/contents/Makefile --jq '.content' | base64 -d

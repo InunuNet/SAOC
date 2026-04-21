@@ -1,0 +1,5 @@
+GitHub Issue Found:
+ID: 60
+Title: P1: make update-template misses new execution/ scripts (onboard_fill.py, get_pulse_status.sh, sync_rules.sh, etc.)
+URL: https://github.com/InunuNet/Athanor/issues/60
+Timestamp: 2026-04-21 12:11:33

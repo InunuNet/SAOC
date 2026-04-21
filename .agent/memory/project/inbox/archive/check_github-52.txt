@@ -1,0 +1,4 @@
+GitHub Issue Found:
+ID: #52 | TITLE: Bug: 'make update-template' fails due to missing directories in upstream tarball
+URL: https://github.com/InunuNet/Athanor/issues/52
+Timestamp: 2026-04-20 19:40:26

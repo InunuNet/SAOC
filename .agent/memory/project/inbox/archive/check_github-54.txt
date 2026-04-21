@@ -1,0 +1,5 @@
+GitHub Issue Found:
+ID: 54
+Title: [TEMPLATE BUG — P0] full_boot.sh:99 has hardcoded absolute path '/Users/vetus/ai/Athanor/.agent/memory/project/inbox' instead of $PWD
+URL: https://github.com/InunuNet/Athanor/issues/54
+Timestamp: 2026-04-20 19:58:50

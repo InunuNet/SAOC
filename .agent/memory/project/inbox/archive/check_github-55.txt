@@ -1,0 +1,5 @@
+GitHub Issue Found:
+ID: 55
+Title: [TEMPLATE BUG — P1] /onboard skill never fills {{AGENT_NAME}} / {{PROJECT_ROLE}} placeholders in AGENTS.md (companion to #53)
+URL: https://github.com/InunuNet/Athanor/issues/55
+Timestamp: 2026-04-20 19:58:50

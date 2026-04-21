@@ -1,0 +1,10 @@
+{
+    "editor.wordWrap": "on",
+    "editor.formatOnSave": true,
+    "files.autoSave": "afterDelay",
+    "editor.minimap.enabled": false,
+    "workbench.startupEditor": "none",
+    "terminal.integrated.scrollback": 10000,
+    "antigravity.agent.autoOpenPanel": true,
+    "antigravity.agent.defaultPersona": "architect"
+}

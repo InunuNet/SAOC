@@ -1,0 +1,5 @@
+New GitHub Issue (ID: 58): [REGRESSION] v3.3.4 Update Process Failures (Placeholders, Missing Dirs, Invalid Hooks) - https://github.com/InunuNet/Athanor/issues/58
+New GitHub Issue (ID: 57): Infrastructure Stability Issues in v3.3.4 (Makefile + structural mismatch) - https://github.com/InunuNet/Athanor/issues/57
+New GitHub Issue (ID: 56): [TEMPLATE BUG — P2] /onboard skill instructions reference 'replace' and 'write_file' tools that don't exist in Claude Code (provider coupling) - https://github.com/InunuNet/Athanor/issues/56
+New GitHub Issue (ID: 55): [TEMPLATE BUG — P1] /onboard skill never fills {{AGENT_NAME}} / {{PROJECT_ROLE}} placeholders in AGENTS.md (companion to #53) - https://github.com/InunuNet/Athanor/issues/55
+New GitHub Issue (ID: 54): [TEMPLATE BUG — P0] full_boot.sh:99 has hardcoded absolute path '/Users/vetus/ai/Athanor/.agent/memory/project/inbox' instead of $PWD - https://github.com/InunuNet/Athanor/issues/54

@@ -1,0 +1,25 @@
+{
+  "project_name": "Athanor",
+  "project_type": "",
+  "soul_type": "",
+  "status": "active",
+  "onboarding_complete": false,
+  "primary_platform": "",
+  "tech_stack": [],
+  "features": {
+    "brain": true,
+    "hooks": true,
+    "agent_teams": true,
+    "skills": true,
+    "telos_lite": false,
+    "security_rules": false,
+    "style_guide": false,
+    "llm_apis": false
+  },
+  "agents": ["lead", "dev", "designer", "analyst", "architect", "qa", "docs", "maintainer"],
+  "memory": {
+    "brain_backend": "chromadb",
+    "brain_path": ".agent/memory/brain",
+    "tiers": ["scratch", "project", "brain", "global"]
+  }
+}

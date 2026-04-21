@@ -1,0 +1,4 @@
+GitHub Issue Found:
+ID: #51 | TITLE: Bug: Gemini CLI settings.json used 'onSessionStart' instead of 'SessionStart'
+URL: https://github.com/InunuNet/Athanor/issues/51
+Timestamp: 2026-04-20 19:40:26

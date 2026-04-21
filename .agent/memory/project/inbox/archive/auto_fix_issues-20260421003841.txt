@@ -1,0 +1,9 @@
+Starting auto_fix_issues.sh script...
+Fetching up to 50 open issues from InunuNet/Athanor...
+Issue #58 (Title: '[REGRESSION] v3.3.4 Update Process Failures (Placeholders, Missing Dirs, Invalid Hooks)') is already being processed (lock file exists). Skipping.
+Queueing autonomous fix for Issue #55 (Title: '[TEMPLATE BUG — P1] /onboard skill never fills {{AGENT_NAME}} / {{PROJECT_ROLE}} placeholders in AGENTS.md (companion to #53)')
+Initiated autonomous fix for #55. Cooling down for 60 seconds to prevent quota exhaustion.
+All issues queued.
+All autonomous fixes initiated and their immediate processes completed.
+Cleaning up local processing lock files in /Users/vetus/ai/Athanor/.agent/pulse/registry/processing.
+auto_fix_issues.sh script finished.

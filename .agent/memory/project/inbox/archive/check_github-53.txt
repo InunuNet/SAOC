@@ -1,0 +1,4 @@
+GitHub Issue Found:
+ID: #53 | TITLE: [TEMPLATE BUG] make update-template overwrites CLAUDE.md with unfilled {{AGENT_NAME}}/{{PROJECT_ROLE}} placeholders, destroys user customization
+URL: https://github.com/InunuNet/Athanor/issues/53
+Timestamp: 2026-04-20 19:40:26

@@ -1,0 +1,262 @@
+Starting auto_fix_issues.sh script...
+Fetching up to 50 open issues from InunuNet/Athanor...
+Queueing autonomous fix for Issue #58 (Title: '[REGRESSION] v3.3.4 Update Process Failures (Placeholders, Missing Dirs, Invalid Hooks)')
+Started autonomous fix for #58 with PID 3176. Current parallel jobs: 1
+Simulating gemini fix for Issue #58
+Queueing autonomous fix for Issue #57 (Title: 'Infrastructure Stability Issues in v3.3.4 (Makefile + structural mismatch)')
+Started autonomous fix for #57 with PID 3178. Current parallel jobs: 2
+Simulating gemini fix for Issue #57
+Queueing autonomous fix for Issue #56 (Title: '[TEMPLATE BUG — P2] /onboard skill instructions reference 'replace' and 'write_file' tools that don't exist in Claude Code (provider coupling)')
+Started autonomous fix for #56 with PID 3180. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Simulating gemini fix for Issue #56
+Background process 3176 completed.
+Background process 3178 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #55 (Title: '[TEMPLATE BUG — P1] /onboard skill never fills {{AGENT_NAME}} / {{PROJECT_ROLE}} placeholders in AGENTS.md (companion to #53)')
+Started autonomous fix for #55 with PID 3182. Current parallel jobs: 2
+Simulating gemini fix for Issue #55
+Queueing autonomous fix for Issue #54 (Title: '[TEMPLATE BUG — P0] full_boot.sh:99 has hardcoded absolute path '/Users/vetus/ai/Athanor/.agent/memory/project/inbox' instead of $PWD')
+Started autonomous fix for #54 with PID 3184. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Simulating gemini fix for Issue #54
+Background process 3180 completed.
+Background process 3182 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #53 (Title: '[TEMPLATE BUG] make update-template overwrites CLAUDE.md with unfilled {{AGENT_NAME}}/{{PROJECT_ROLE}} placeholders, destroys user customization')
+Started autonomous fix for #53 with PID 3186. Current parallel jobs: 2
+Simulating gemini fix for Issue #53
+Queueing autonomous fix for Issue #52 (Title: 'Bug: 'make update-template' fails due to missing directories in upstream tarball')
+Started autonomous fix for #52 with PID 3188. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Simulating gemini fix for Issue #52
+Background process 3184 completed.
+Background process 3186 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #51 (Title: 'Bug: Gemini CLI settings.json used 'onSessionStart' instead of 'SessionStart'')
+Started autonomous fix for #51 with PID 3190. Current parallel jobs: 2
+Simulating gemini fix for Issue #51
+Queueing autonomous fix for Issue #50 (Title: '[TEMPLATE BUG] make update-template fails during rsync (Missing source directories)')
+Started autonomous fix for #50 with PID 3192. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Background process 3188 completed.
+Background process 3190 completed.
+Remaining parallel jobs after check: 1
+Simulating gemini fix for Issue #50
+Queueing autonomous fix for Issue #49 (Title: '[TEMPLATE BUG] Pulse/Inbox integration is broken and undocumented')
+Started autonomous fix for #49 with PID 3194. Current parallel jobs: 2
+Queueing autonomous fix for Issue #48 (Title: '[TEMPLATE BUG] Boot sequence lacks Upstream Service Mapping (e.g., Alembic)')
+Simulating gemini fix for Issue #49
+Started autonomous fix for #48 with PID 3196. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Simulating gemini fix for Issue #48
+Background process 3192 completed.
+Background process 3194 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #47 (Title: '[TEMPLATE BUG] Boot sequence lacks Discovery & Capabilities summary')
+Simulating gemini fix for Issue #47
+Started autonomous fix for #47 with PID 3198. Current parallel jobs: 2
+Queueing autonomous fix for Issue #46 (Title: '[TEMPLATE BUG] Triple Version Mismatch: Makefile (v2.2.2) vs README vs Hooks')
+Started autonomous fix for #46 with PID 3200. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Simulating gemini fix for Issue #46
+Background process 3196 completed.
+Background process 3198 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #45 (Title: '[TEMPLATE BUG] Alembic proxy and mandate missing from boot context')
+Started autonomous fix for #45 with PID 3202. Current parallel jobs: 2
+Simulating gemini fix for Issue #45
+Queueing autonomous fix for Issue #44 (Title: '[TEMPLATE BUG] Brittle GitHub Auth Check in full_boot.sh')
+Started autonomous fix for #44 with PID 3204. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Simulating gemini fix for Issue #44
+Background process 3200 completed.
+Background process 3202 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #43 (Title: '[TEMPLATE BUG] Version Inconsistency: README (v2.0.0) vs Hooks (v3.1.2)')
+Started autonomous fix for #43 with PID 3206. Current parallel jobs: 2
+Simulating gemini fix for Issue #43
+Queueing autonomous fix for Issue #42 (Title: '[TEMPLATE BUG] Misnamed hooks in .gemini/settings.json')
+Started autonomous fix for #42 with PID 3208. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Simulating gemini fix for Issue #42
+Background process 3204 completed.
+Background process 3206 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #41 (Title: 'Infrastructure & Interaction Gaps: Alembic Knowledge and Makefile Desync')
+Started autonomous fix for #41 with PID 3210. Current parallel jobs: 2
+Simulating gemini fix for Issue #41
+Queueing autonomous fix for Issue #40 (Title: 'Missing Pulse/Inbox infrastructure and legacy Dark Fact naming in v2.2.2')
+Started autonomous fix for #40 with PID 3212. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Background process 3208 completed.
+Simulating gemini fix for Issue #40
+Background process 3210 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #39 (Title: 'Structural inconsistencies and rsync failures in v2.2.2 update-template')
+Started autonomous fix for #39 with PID 3214. Current parallel jobs: 2
+Queueing autonomous fix for Issue #38 (Title: 'Boot: auto-onboarding not triggered; WORKSPACE drift hard-locks Bash')
+Simulating gemini fix for Issue #39
+Started autonomous fix for #38 with PID 3216. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Simulating gemini fix for Issue #38
+Background process 3212 completed.
+Background process 3214 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #37 (Title: 'Bug: Automatic boot hook missing in .gemini/settings.json')
+Started autonomous fix for #37 with PID 3218. Current parallel jobs: 2
+Queueing autonomous fix for Issue #36 (Title: 'Feature: Global Pulse Service (Fleet-wide monitor)')
+Simulating gemini fix for Issue #37
+Simulating gemini fix for Issue #36
+Started autonomous fix for #36 with PID 3220. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Background process 3216 completed.
+Background process 3218 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #35 (Title: 'Bug: Harden Gemini Policy Schema to address unauthorized tool call bug')
+Started autonomous fix for #35 with PID 3222. Current parallel jobs: 2
+Simulating gemini fix for Issue #35
+Queueing autonomous fix for Issue #34 (Title: 'Bootstrap instructions drift from what origin/main actually ships')
+Started autonomous fix for #34 with PID 3224. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Background process 3220 completed.
+Simulating gemini fix for Issue #34
+Background process 3222 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #33 (Title: 'Template repo lacks a clean self-update path for Athanor itself')
+Started autonomous fix for #33 with PID 3226. Current parallel jobs: 2
+Simulating gemini fix for Issue #33
+Queueing autonomous fix for Issue #32 (Title: 'Feature: add an automated template self-test suite that catches autonomy regressions')
+Started autonomous fix for #32 with PID 3228. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Background process 3224 completed.
+Simulating gemini fix for Issue #32
+Background process 3226 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #31 (Title: 'Claude PreToolUse write/edit guards do not parse hook JSON and silently fail open')
+Started autonomous fix for #31 with PID 3230. Current parallel jobs: 2
+Simulating gemini fix for Issue #31
+Queueing autonomous fix for Issue #30 (Title: 'Boot blocker scan branch is inverted in full_boot.sh')
+Started autonomous fix for #30 with PID 3232. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Simulating gemini fix for Issue #30
+Background process 3228 completed.
+Background process 3230 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #29 (Title: 'Subagent hook pipeline truncates context and never completes maintainer handoff')
+Started autonomous fix for #29 with PID 3234. Current parallel jobs: 2
+Simulating gemini fix for Issue #29
+Queueing autonomous fix for Issue #28 (Title: 'init scaffold can poison learned.md and test-init breaks on paths with spaces')
+Started autonomous fix for #28 with PID 3236. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Background process 3232 completed.
+Simulating gemini fix for Issue #28
+Background process 3234 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #27 (Title: 'verify_workspace.sh blocks valid repos when folder name differs from project identity')
+Started autonomous fix for #27 with PID 3238. Current parallel jobs: 2
+Simulating gemini fix for Issue #27
+Queueing autonomous fix for Issue #26 (Title: 'Boot contract gap for providers without native SessionStart hooks')
+Started autonomous fix for #26 with PID 3240. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Simulating gemini fix for Issue #26
+Background process 3236 completed.
+Background process 3238 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #25 (Title: 'Rename incomplete: live template still emits DarkFact identity')
+Started autonomous fix for #25 with PID 3242. Current parallel jobs: 2
+Simulating gemini fix for Issue #25
+Queueing autonomous fix for Issue #24 (Title: 'Infrastructure repo naming mismatch (Athanor vs DarkFact)')
+Started autonomous fix for #24 with PID 3244. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Simulating gemini fix for Issue #24
+Background process 3240 completed.
+Background process 3242 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #23 (Title: 'bug: sync_skills.sh exits 1 when .claude/skills and .gemini/skills are symlinks to .agent/skills')
+Started autonomous fix for #23 with PID 3246. Current parallel jobs: 2
+Simulating gemini fix for Issue #23
+Queueing autonomous fix for Issue #22 (Title: 'bug: `make update-template` rsync with --delete silently no-ops; reports success but transfers nothing')
+Started autonomous fix for #22 with PID 3248. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Background process 3244 completed.
+Simulating gemini fix for Issue #22
+Background process 3246 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #21 (Title: 'Automatic boot hook not wired to .gemini/settings.json in v2.2.1')
+Started autonomous fix for #21 with PID 3250. Current parallel jobs: 2
+Simulating gemini fix for Issue #21
+Queueing autonomous fix for Issue #20 (Title: 'bug: /wrap-up silently skips backlog tick when backlog uses tables/bullets instead of [ ]/[x] checkboxes')
+Started autonomous fix for #20 with PID 3252. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Background process 3248 completed.
+Simulating gemini fix for Issue #20
+Background process 3250 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #19 (Title: 'docs: template update procedure not surfaced in AGENTS.md or as a boot-loaded workflow')
+Started autonomous fix for #19 with PID 3254. Current parallel jobs: 2
+Simulating gemini fix for Issue #19
+Queueing autonomous fix for Issue #18 (Title: 'Autonomy Friction: Sub-agent delegation triggers excessive permission prompts')
+Started autonomous fix for #18 with PID 3256. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Background process 3252 completed.
+Simulating gemini fix for Issue #18
+Background process 3254 completed.
+Remaining parallel jobs after check: 1
+Queueing autonomous fix for Issue #17 (Title: 'Bug: New project creation skips onboarding when using existing profile')
+Started autonomous fix for #17 with PID 3258. Current parallel jobs: 2
+Simulating gemini fix for Issue #17
+Queueing autonomous fix for Issue #11 (Title: 'feat: Pain Point Monitor — recurring analyst loop for proactive pivot recommendations')
+Started autonomous fix for #11 with PID 3260. Current parallel jobs: 3
+Maximum parallel fixes (3) reached. Checking for a completed background job...
+Simulating gemini fix for Issue #11
+Background process 3256 completed.
+Background process 3258 completed.
+Remaining parallel jobs after check: 1
+All issues queued. Waiting for all initiated autonomous fixes to complete...
+Finished waiting for process 3176.
+Finished waiting for process 3178.
+Finished waiting for process 3180.
+Finished waiting for process 3182.
+Finished waiting for process 3184.
+Finished waiting for process 3186.
+Finished waiting for process 3188.
+Finished waiting for process 3190.
+Finished waiting for process 3192.
+Finished waiting for process 3194.
+Finished waiting for process 3196.
+Finished waiting for process 3198.
+Finished waiting for process 3200.
+Finished waiting for process 3202.
+Finished waiting for process 3204.
+Finished waiting for process 3206.
+Finished waiting for process 3208.
+Finished waiting for process 3210.
+Finished waiting for process 3212.
+Finished waiting for process 3214.
+Finished waiting for process 3216.
+Finished waiting for process 3218.
+Finished waiting for process 3220.
+Finished waiting for process 3222.
+Finished waiting for process 3224.
+Finished waiting for process 3226.
+Finished waiting for process 3228.
+Finished waiting for process 3230.
+Finished waiting for process 3232.
+Finished waiting for process 3234.
+Finished waiting for process 3236.
+Finished waiting for process 3238.
+Finished waiting for process 3240.
+Finished waiting for process 3242.
+Finished waiting for process 3244.
+Finished waiting for process 3246.
+Finished waiting for process 3248.
+Finished waiting for process 3250.
+Finished waiting for process 3252.
+Finished waiting for process 3254.
+Finished waiting for process 3256.
+Finished waiting for process 3258.
+Finished waiting for process 3260.
+All autonomous fixes initiated and their immediate processes completed.
+Cleaning up local processing lock files in /Users/vetus/ai/Athanor/.agent/pulse/registry/processing.
+auto_fix_issues.sh script finished.

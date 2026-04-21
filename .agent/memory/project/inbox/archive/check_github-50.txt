@@ -1,0 +1,4 @@
+GitHub Issue Found:
+ID: #50 | TITLE: [TEMPLATE BUG] make update-template fails during rsync (Missing source directories)
+URL: https://github.com/InunuNet/Athanor/issues/50
+Timestamp: 2026-04-20 19:40:26

@@ -1,0 +1,4 @@
+❌ ABORT: You are inside the Athanor template repo.
+   This command is for downstream projects only.
+make[1]: *** [update-template] Error 1
+make: *** [self-update] Error 2

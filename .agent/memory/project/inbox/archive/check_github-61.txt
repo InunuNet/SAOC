@@ -1,0 +1,5 @@
+GitHub Issue Found:
+ID: 61
+Title: P1: SessionStart hook hardcodes 'Identity: Vex' — leaks template default into downstream projects
+URL: https://github.com/InunuNet/Athanor/issues/61
+Timestamp: 2026-04-21 12:11:33

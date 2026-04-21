@@ -1,0 +1,5 @@
+GitHub Issue Found:
+ID: 56
+Title: [TEMPLATE BUG — P2] /onboard skill instructions reference 'replace' and 'write_file' tools that don't exist in Claude Code (provider coupling)
+URL: https://github.com/InunuNet/Athanor/issues/56
+Timestamp: 2026-04-20 19:58:50

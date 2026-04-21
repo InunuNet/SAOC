@@ -1,0 +1,8 @@
+Starting auto_fix_issues.sh script...
+Fetching up to 50 open issues from InunuNet/Athanor...
+Queueing autonomous fix for Issue #59 (Title: '[SysMon] Successful Migration to v3.2.2')
+Initiated autonomous fix for #59. Cooling down for 60 seconds to prevent quota exhaustion.
+/Users/vetus/ai/Athanor/.agent/pulse/registry/auto_fix_issues.sh: line 53: T_ROOT/pulse.log
+        gemini -p AUTONOMOUS: No such file or directory
+/Users/vetus/ai/Athanor/.agent/pulse/registry/auto_fix_issues.sh: line 56: syntax error near unexpected token `)'
+/Users/vetus/ai/Athanor/.agent/pulse/registry/auto_fix_issues.sh: line 56: `    ) &'

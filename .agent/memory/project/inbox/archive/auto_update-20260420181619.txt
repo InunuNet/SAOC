@@ -1,0 +1,35 @@
+🔄 Initialising update checkpoint...
+<string>:1: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+🔄 Downloading Athanor template from GitHub...
+github.com
+  ✓ Logged in to github.com account BDauth (keyring)
+  - Active account: true
+  - Git operations protocol: https
+  - Token: gho_************************************
+  - Token scopes: 'gist', 'read:org', 'repo'
+
+📋 Infrastructure files that will change:
+  • Files /var/folders/84/4mwztn6x52j3fll0yvdvkhd00000gn/T/tmp.aJd1ipnvnx/src/.agent/agents/analyst.md and /Users/vetus/ai/Athanor/.agent/agents/analyst.md differ
+  • Files /var/folders/84/4mwztn6x52j3fll0yvdvkhd00000gn/T/tmp.aJd1ipnvnx/src/.agent/agents/architect.md and /Users/vetus/ai/Athanor/.agent/agents/architect.md differ
+  • Files /var/folders/84/4mwztn6x52j3fll0yvdvkhd00000gn/T/tmp.aJd1ipnvnx/src/.agent/agents/designer.md and /Users/vetus/ai/Athanor/.agent/agents/designer.md differ
+  • Files /var/folders/84/4mwztn6x52j3fll0yvdvkhd00000gn/T/tmp.aJd1ipnvnx/src/.agent/agents/dev.md and /Users/vetus/ai/Athanor/.agent/agents/dev.md differ
+  • Files /var/folders/84/4mwztn6x52j3fll0yvdvkhd00000gn/T/tmp.aJd1ipnvnx/src/.agent/agents/docs.md and /Users/vetus/ai/Athanor/.agent/agents/docs.md differ
+  • Files /var/folders/84/4mwztn6x52j3fll0yvdvkhd00000gn/T/tmp.aJd1ipnvnx/src/.agent/agents/lead.md and /Users/vetus/ai/Athanor/.agent/agents/lead.md differ
+  • Files /var/folders/84/4mwztn6x52j3fll0yvdvkhd00000gn/T/tmp.aJd1ipnvnx/src/.agent/agents/maintainer.md and /Users/vetus/ai/Athanor/.agent/agents/maintainer.md differ
+  • Files /var/folders/84/4mwztn6x52j3fll0yvdvkhd00000gn/T/tmp.aJd1ipnvnx/src/.agent/agents/qa.md and /Users/vetus/ai/Athanor/.agent/agents/qa.md differ
+  • Only in /Users/vetus/ai/Athanor/.agent/pulse/registry: processing
+  • Files /var/folders/84/4mwztn6x52j3fll0yvdvkhd00000gn/T/tmp.aJd1ipnvnx/src/execution/hooks/full_boot.sh and /Users/vetus/ai/Athanor/execution/hooks/full_boot.sh differ
+
+⚡ Applying infrastructure updates...
+🔄 Syncing agents + skills...
+✅ Synced 8 agents → .claude/agents/ + .gemini/agents/
+✅ Synced 2 skills → .claude/skills/ + .gemini/skills/
+✅ Rule sync complete.
+<string>:1: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+✅ Updated to Athanor v3.2.2
+   Review changes: git diff
+   Commit when ready: git add -A && git commit -m 'chore: update to Athanor v3.2.2'
+
+   Note: Makefile was not auto-updated (self-overwrite risk).
+   Check latest: gh api repos/InunuNet/Athanor/contents/Makefile --jq '.content' | base64 -d

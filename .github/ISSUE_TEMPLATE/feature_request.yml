@@ -1,0 +1,28 @@
+name: 💡 Feature Request
+description: Suggest an improvement to the Athanor template
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      placeholder: "Currently, when I..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      placeholder: "It would be better if..."
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Template version
+      placeholder: "1.1.0"
+    validations:
+      required: true

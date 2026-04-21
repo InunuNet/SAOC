@@ -1,0 +1,4 @@
+GitHub Issue Found:
+ID: #45 | TITLE: [TEMPLATE BUG] Alembic proxy and mandate missing from boot context
+URL: https://github.com/InunuNet/Athanor/issues/45
+Timestamp: 2026-04-20 19:40:26

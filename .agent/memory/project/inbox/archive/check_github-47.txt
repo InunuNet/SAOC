@@ -1,0 +1,4 @@
+GitHub Issue Found:
+ID: #47 | TITLE: [TEMPLATE BUG] Boot sequence lacks Discovery & Capabilities summary
+URL: https://github.com/InunuNet/Athanor/issues/47
+Timestamp: 2026-04-20 19:40:26

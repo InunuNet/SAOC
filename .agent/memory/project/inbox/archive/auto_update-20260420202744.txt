@@ -1,0 +1,28 @@
+🔄 Initialising update checkpoint...
+python3 -c "import json, datetime; s={'workflow':'update-template','status':'started','started':datetime.datetime.now(datetime.UTC).isoformat()}; open('.agent/memory/scratch/checkpoint_update_start.json','w').write(json.dumps(s))"
+🔄 Downloading Athanor template from GitHub...
+github.com
+  ✓ Logged in to github.com account BDauth (keyring)
+  - Active account: true
+  - Git operations protocol: https
+  - Token: gho_************************************
+  - Token scopes: 'gist', 'read:org', 'repo'
+
+📋 Infrastructure changes:
+  • [DELETED] .agent/workflows
+  • [DELETED] .agent/rules
+  • [DELETED] .agent/reference
+  • Only in /Users/vetus/ai/Athanor/.agent/pulse/registry: processing
+
+⚡ Applying infrastructure updates...
+🔄 Syncing agents + skills...
+✅ Synced 8 agents → .claude/agents/ + .gemini/agents/
+✅ Synced 2 skills → .claude/skills/ + .gemini/skills/
+✅ Rule sync complete.
+
+✅ Updated to Athanor v3.3.4
+   Review changes: git diff
+   Commit when ready: git add -A && git commit -m 'chore: update to Athanor v3.3.4'
+
+   Note: Makefile was not auto-updated (self-overwrite risk).
+   Check latest: gh api repos/InunuNet/Athanor/contents/Makefile --jq '.content' | base64 -d

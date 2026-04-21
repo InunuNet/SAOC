@@ -1,0 +1,6 @@
+Starting auto_fix_issues.sh script...
+Fetching up to 50 open issues from InunuNet/Athanor...
+Queueing autonomous fix for Issue #58 (Title: '[REGRESSION] v3.3.4 Update Process Failures (Placeholders, Missing Dirs, Invalid Hooks)')
+Initiated autonomous fix for #58. Cooling down for 60 seconds to prevent quota exhaustion.
+/Users/vetus/ai/Athanor/.agent/pulse/registry/auto_fix_issues.sh: line 58: unexpected EOF while looking for matching `"'
+/Users/vetus/ai/Athanor/.agent/pulse/registry/auto_fix_issues.sh: line 59: syntax error: unexpected end of file

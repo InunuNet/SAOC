@@ -1,0 +1,128 @@
+{
+  "permissions": {
+    "allow": ["Bash", "Read", "Write", "Edit", "Glob", "Grep", "WebFetch", "WebSearch", "Task", "Skill"],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force *)",
+      "Bash(dd if=/dev/zero*)",
+      "Bash(curl * | sh)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | sh)",
+      "Bash(wget * | bash)",
+      "Read(~/.ssh/*)",
+      "Read(~/.aws/*)",
+      "Read(~/.gnupg/*)"
+    ],
+    "ask": [
+      "Bash(chmod 777 *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/full_boot.sh"
+          },
+          {
+            "type": "command",
+            "command": "echo \"You are now operating within the $(grep -o '\"project_name\": \"[^\"]*\"' .agent/profile.json | sed 's/.*: \"//;s/\"//' || echo 'Athanor') Agentic Workspace (v$(cat .agent/version)). Identity: $(grep -o '\"agent_name\": \"[^\"]*\"' .agent/profile.json | sed 's/.*: \"//;s/\"//' || echo 'Athanor Agent') | Identity Status: Active. A full boot context was just injected above — framework identity (AGENTS.md), workspace, last session, project rules, goals, learned, backlog, brain recall, blockers, and git remotes. Read the injected BOOT CONTEXT carefully. You have 8 specialized agents at your disposal (@lead, @dev, @designer, etc.). Your primary goal is autonomous self-improvement for this project. Report boot status using this exact format: ✅ ATHANOR: [name] | 🤖 Agents: 8 roles active | Last session: [1-line summary] | Goals: [count] active | Backlog: [count] open items | Rules loaded: yes | ➡️ Ready.\""
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes — run /wrap-up at start of next session.'; fi"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); trigger=$(printf '%s' \"$input\" | python3 -c \"import sys,json; print(json.load(sys.stdin).get('compaction_trigger','unknown'))\" 2>/dev/null || echo 'unknown'); recent=$(git log --oneline -5 2>/dev/null | tr '\\n' '; ' || echo 'no git'); python3 execution/brain.py remember --summary \"Pre-compaction checkpoint ($trigger). Recent commits: $recent\" --tags \"compaction,checkpoint\" 2>/dev/null || true",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Context was just compacted. Re-read .agent/memory/project/goals.md and .agent/memory/project/learned.md now to restore critical context before continuing."
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "analyst|architect|designer|dev|docs|lead|maintainer|qa",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/subagent_start.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "analyst|architect|designer|dev|docs|lead|maintainer|qa",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/subagent_stop.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "fp=$(cat | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.claude/MEMORY/*|*/MEMORY/LEARNING/*|*/.claude/PAI/*) exit 2 ;; esac"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "fp=$(cat | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.claude/MEMORY/*|*/MEMORY/LEARNING/*|*/.claude/PAI/*) exit 2 ;; esac"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/verify_workspace.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "BASH_DEFAULT_TIMEOUT_MS": "300000"
+  }
+}

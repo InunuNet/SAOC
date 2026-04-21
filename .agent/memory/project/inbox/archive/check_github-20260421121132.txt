@@ -1,0 +1,3 @@
+New GitHub Issue (ID: 62): Bug: References to InunuNet/DarkFact not updated after repo rename to Athanor - https://github.com/InunuNet/Athanor/issues/62
+New GitHub Issue (ID: 61): P1: SessionStart hook hardcodes 'Identity: Vex' — leaks template default into downstream projects - https://github.com/InunuNet/Athanor/issues/61
+New GitHub Issue (ID: 60): P1: make update-template misses new execution/ scripts (onboard_fill.py, get_pulse_status.sh, sync_rules.sh, etc.) - https://github.com/InunuNet/Athanor/issues/60

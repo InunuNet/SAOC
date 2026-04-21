@@ -1,0 +1,77 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/full_boot.sh && echo \"\\n🤖 ATHANOR FRAMEWORK (Athanor v$(cat .agent/version))\\nIdentity: $(grep -o '\"agent_name\": \"[^\"]*\"' .agent/profile.json | sed 's/.*: \"//;s/\"//' || echo 'Athanor Agent') | Identity Status: Active\\nRead the injected BOOT CONTEXT above.\""
+          },
+          {
+            "type": "prompt",
+            "prompt": "Read the context provided by the boot hook, acknowledge the Athanor/Athanor mission. Run /boot if you need to refresh your understanding."
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '\\n💾 Wrap up: python3 execution/brain.py wrap-up -s \"summary\" -t \"tags\"'"
+          }
+        ]
+      }
+    ],
+    "BeforeTool": [
+      {
+        "matcher": "analyst|architect|designer|dev|docs|lead|maintainer|qa",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/subagent_start.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [{
+          "type": "command",
+          "command": "fp=$(python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.gemini/MEMORY/*|*/.gemini/PAI/*|*/MEMORY/LEARNING/*|*/MEMORY/WORK/*) exit 2 ;; esac"
+        }]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [{
+          "type": "command",
+          "command": "fp=$(python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.gemini/MEMORY/*|*/.gemini/PAI/*|*/MEMORY/LEARNING/*|*/MEMORY/WORK/*) exit 2 ;; esac"
+        }]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [{
+          "type": "command",
+          "command": "bash execution/hooks/verify_workspace.sh"
+        }]
+      }
+    ],
+    "AfterTool": [
+      {
+        "matcher": "analyst|architect|designer|dev|docs|lead|maintainer|qa",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/subagent_stop.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "general": {
+    "defaultApprovalMode": "auto_edit"
+  },
+  "policyPaths": ["./.gemini/policies/autonomy.toml"]
+}
