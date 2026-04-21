@@ -1,9 +1,9 @@
 {
-  "project_name": "Athanor",
+  "project_name": "SAOC",
   "project_type": "",
   "soul_type": "",
   "status": "active",
-  "onboarding_complete": false,
+  "onboarding_complete": true,
   "primary_platform": "macos",
   "tech_stack": [],
   "features": {
@@ -36,10 +36,10 @@
       "global"
     ]
   },
-  "created_at": "2026-04-20T16:03:39Z",
-  "template_version": "unknown",
+  "created_at": "2026-04-21T12:12:52Z",
+  "template_version": "3.3.4",
   "identity": {
-    "agent_name": "Gemini CLI",
-    "project_role": "senior project maintainer"
+    "agent_name": "Athanor",
+    "project_role": "primary maintainer"
   }
 }

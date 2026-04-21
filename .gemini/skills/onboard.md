@@ -2,6 +2,14 @@
 
 This workflow onboards a new project by configuring the agent's identity, user preferences, and project goals.
 
+## Guard — check before doing anything
+
+Read `.agent/profile.json`. If `onboarding_complete` is `true`, **stop immediately** and tell the user:
+
+> Onboarding is already complete. Running it again would overwrite the configured identity. If you genuinely need to re-onboard, set `onboarding_complete: false` in `.agent/profile.json` first.
+
+Do not proceed past this point if onboarding is complete.
+
 ## Instructions
 
 1.  **Ask the user for the following information:**

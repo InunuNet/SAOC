@@ -2,11 +2,10 @@
 
 ## Mission
 
-Maintain the Athanor project by fixing issues and ensuring consistency.
+Build and maintain the South African Orchid Council's digital presence and tooling. SAOC is the workspace for this project, running on the Athanor agentic framework.
 
-## Completed Goals
+## Active Goals
 
-- ~~Update `full_boot.sh` (Issue #44)~~ ✅
-- ~~Verify `make ingest-pulse` exists and uses absolute paths (Issue #49)~~ ✅
-- ~~Ingest Issues #42-#50 into the backlog and mark them as 'FIXED' once confirmed~~ ✅
-- ~~Resolve legacy DarkFact references after repo rename to Athanor (Issue #62)~~ ✅
+1. Establish what the SAOC project needs to build (website, membership system, events, etc.)
+2. Keep the Athanor workspace healthy and in sync
+3. Deliver working software for the South African Orchid Council

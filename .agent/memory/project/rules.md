@@ -17,7 +17,3 @@ _These override core rules when they conflict. Populated during /onboard._
 ## Tech Stack Rules
 - TypeScript strict mode, no `any`
 -->
-
-## Alembic Mandate
-- Use Alembic (URL distilling service) for all external URL retrieval and research.
-- Verify proxy status (localhost:7077) during boot; if down, notify the user.
