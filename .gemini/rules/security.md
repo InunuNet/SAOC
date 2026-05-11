@@ -1,3 +1,7 @@
+---
+description: Security and safety rules for command execution and file access.
+---
+
 # Security Rules
 
 ## Command Denylists

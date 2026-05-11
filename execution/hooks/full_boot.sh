@@ -6,9 +6,46 @@
 WORKSPACE_FILE="WORKSPACE"
 PROFILE_FILE=".agent/profile.json"
 
-echo "✅ ATHANOR: $(cat WORKSPACE 2>/dev/null || basename "$PWD") | Framework v$(cat .agent/version 2>/dev/null || echo '3.2.2')"
+echo "✅ ATHANOR: $(cat WORKSPACE 2>/dev/null || basename "$PWD") | Framework v$(cat .agent/version 2>/dev/null || echo '3.3.5')"
 echo "════ BOOT CONTEXT (Athanor Framework) ════"
 echo "Core Mandates: Specialized agents, Tiered memory, Autonomous self-improvement, Alembic (URL distilling)."
+echo ""
+
+# Step X: Platform Capabilities
+echo "--- PLATFORM CAPABILITIES ---"
+echo "Skills Available:"
+echo "  - alembic (Access external web content via @search)"
+echo "  - onboard (Athanor onboarding workflow)"
+echo ""
+echo "Makefile Targets (Athanor Framework):"
+echo "  - help: Display this help message"
+echo "  - sync: Sync agents, skills, and rules to provider configs"
+echo "  - sync-agents: Sync canonical agents"
+echo "  - sync-skills: Sync canonical skills"
+echo "  - sync-rules: Sync canonical rules"
+echo "  - repo-slug: Get current GitHub repo (owner/name)"
+echo "  - migrate-rules: Migrate rules to canonical .agent/rules/structure"
+echo "  - brain-export: Export brain memories to JSON"
+echo "  - brain-import: Import brain memories (FILE=path.json)"
+echo "  - brain-stats: Show brain statistics"
+echo "  - commit: Semantic commit (TYPE=feat MSG='...')"
+echo "  - audit: Run workspace health check"
+echo "  - test: Run validation suite"
+echo "  - test-init: Run init.sh smoke test"
+echo "  - update-template: Pull latest Athanor template updates"
+echo "  - self-update: Force update Athanor template (for Athanor repo itself)"
+echo "  - onboard: Start AI-guided project onboarding"
+echo "  - check-feedback: Check GitHub for new issues + PRs"
+echo "  - ingest-pulse: Process and archive inbox items to backlog.md"
+echo "  - install-pulse: Install and load the Athanor Pulse launchd agent"
+echo "  - pulse-status: Check Athanor Pulse service status"
+echo ""
+
+# Step Y: Service Mapping
+echo "--- SERVICE MAPPING ---"
+echo "Alembic: https://github.com/AthanorProject/Alembic"
+echo ""
+echo "🛡️ Alembic Active: Use @search for web queries."
 echo ""
 
 # Step 0: System Identity
@@ -111,7 +148,7 @@ echo ""
 # Step 4.5: Inbox Processing
 INBOX_DIR=".agent/memory/project/inbox"
 # Check if there are any non-directory files in INBOX_DIR
-if find "$INBOX_DIR" -maxdepth 1 -type f -not -name "archive" | grep -q .; then
+if [ -d "$INBOX_DIR" ] && find "$INBOX_DIR" -maxdepth 1 -type f -not -name "archive" | grep -q .; then
     echo "--- INBOX PROCESSING ---"
     echo "Inbox contains unread items. Running make ingest-pulse..."
     make ingest-pulse
@@ -154,13 +191,13 @@ echo ""
 
 # Step 8: GitHub Auth
 echo "--- GITHUB AUTH ---"
-if command -v gh &>/dev/null && gh auth status &>/dev/null; then
-    GH_USER=$(gh api user -q .login 2>/dev/null || echo "authenticated")
-    echo "✅ GitHub Auth: Active (gh logged in as $GH_USER)"
+if [ -f ./.env ] && grep -q "GITHUB_TOKEN" ./.env; then
+    echo "✅ GitHub Auth: Active (Token found in .env)"
 elif [ -n "$GITHUB_TOKEN" ]; then
     echo "✅ GitHub Auth: Active (Token found in environment)"
-elif [ -f ./.env ] && (set -a; source ./.env; [ -n "${GITHUB_TOKEN:-}" ]) 2>/dev/null; then
-    echo "✅ GitHub Auth: Active (Token found in .env)"
+elif command -v gh &>/dev/null && gh auth status &>/dev/null; then
+    GH_USER=$(gh api user -q .login 2>/dev/null || echo "authenticated")
+    echo "✅ GitHub Auth: Active (gh logged in as $GH_USER via System CLI)"
 else
     echo "❌ GitHub Auth: Inactive"
 fi

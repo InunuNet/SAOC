@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/full_boot.sh && echo \"\\n🤖 ATHANOR FRAMEWORK (Athanor v$(cat .agent/version))\\nIdentity: $(grep -o '\"agent_name\": \"[^\"]*\"' .agent/profile.json | sed 's/.*: \"//;s/\"//' || echo 'Athanor Agent') | Identity Status: Active\\nRead the injected BOOT CONTEXT above.\""
+            "command": "bash execution/hooks/full_boot.sh && echo \"\\n🤖 ATHANOR FRAMEWORK (Athanor v$(cat .agent/version))\\nIdentity: $(jq -r '.identity.agent_name // \"Athanor Agent\"' .agent/profile.json) | Identity Status: Active\\nRead the injected BOOT CONTEXT above.\""
           },
           {
             "type": "prompt",

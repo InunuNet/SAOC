@@ -1,7 +1,5 @@
 > Single source of truth. CLAUDE.md and GEMINI.md are symlinks to this file.
 
-[README.md](README.md) | [PULSE.md](PULSE.md) | [MIGRATION.md](MIGRATION.md)
-
 # Agent Instructions
 
 ## 0. Boot (Mandatory)
@@ -49,6 +47,7 @@ Memory lives here — in this project's `.agent/memory/` and brain — not in an
 5. **Read Before Write** — check goals.md and learned.md first
 6. **Self-Anneal** — error → fix → update learned.md
 7. **Wrap Up** — store summary in brain at session end
+8. **⛔ Alembic for ALL URL fetching** — `curl -s http://localhost:7077/<url>`. Never use WebFetch or raw curl on external URLs. If Alembic is down, restart it. Never bypass it. See `.agent/rules/_core/alembic.md`.
 
 Project-specific rules in `.agent/memory/project/rules.md` take precedence over these.
 
@@ -77,6 +76,41 @@ Project-specific rules in `.agent/memory/project/rules.md` take precedence over 
 | `/audit` | Health check |
 | `/test` | Run validation |
 | `/report-bug` | Found a bug? Report it. |
+
+## X. Platform Capabilities
+
+### Skills Available:
+- `alembic` (Access external web content via `@search`)
+- `onboard` (Athanor onboarding workflow)
+
+### Makefile Targets (Athanor Framework):
+- `help`: Display this help message
+- `sync`: Sync agents, skills, and rules to provider configs
+- `sync-agents`: Sync canonical agents
+- `sync-skills`: Sync canonical skills
+- `sync-rules`: Sync canonical rules
+- `repo-slug`: Get current GitHub repo (owner/name)
+- `migrate-rules`: Migrate rules to canonical .agent/rules/structure
+- `brain-export`: Export brain memories to JSON
+- `brain-import`: Import brain memories (FILE=path.json)
+- `brain-stats`: Show brain statistics
+- `commit`: Semantic commit (TYPE=feat MSG='...')
+- `audit`: Run workspace health check
+- `test`: Run validation suite
+- `test-init`: Run init.sh smoke test
+- `update-template`: Pull latest Athanor template updates
+- `self-update`: Force update Athanor template (for Athanor repo itself)
+- `onboard`: Start AI-guided project onboarding
+- `check-feedback`: Check GitHub for new issues + PRs
+- `ingest-pulse`: Process and archive inbox items to backlog.md
+- `install-pulse`: Install and load the Athanor Pulse launchd agent
+- `pulse-status`: Check Athanor Pulse service status
+
+## Y. Service Mapping
+
+Alembic: [https://github.com/InunuNet/Alembic](https://github.com/InunuNet/Alembic)
+
+🛡️ **Alembic Active:** Use `@search` for web queries.
 
 ## 6. Provider Notes
 

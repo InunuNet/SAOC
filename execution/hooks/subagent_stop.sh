@@ -9,4 +9,5 @@ if [ -n "$last_msg" ] && [ "$agent_type" != "unknown" ]; then
     --summary "Agent ${agent_type} completed: ${last_msg}" \
     --tags "agent,${agent_type},subagent" \
     2>/dev/null || true
+  echo "💾 @${agent_type} finished — update backlog and learned.md if work was completed."
 fi

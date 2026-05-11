@@ -24,21 +24,21 @@ parts = []
 
 if os.path.exists(agent_file):
     with open(agent_file) as f:
-        agent_lines = f.readlines()[:30]
-    parts.append(''.join(agent_lines).strip())
+        agent_spec = f.read()
+    parts.append(agent_spec.strip())
 
 rules = read_file(".agent/memory/project/rules.md")
 if rules:
-    parts.append(f"PROJECT RULES: {rules}")
+    parts.append(f"## PROJECT RULES\n{rules}")
 
 learned = read_file(".agent/memory/project/learned.md", max_lines=40)
 if learned:
-    parts.append(f"RECENT LEARNINGS: {learned}")
+    parts.append(f"## RECENT LEARNINGS\n{learned}")
 
 output = {
     "hookSpecificOutput": {
         "hookEventName": "SubagentStart",
-        "additionalContext": " ".join(parts)
+        "additionalContext": "\n\n---\n\n".join(parts)
     }
 }
 print(json.dumps(output))

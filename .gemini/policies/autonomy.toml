@@ -1,26 +1,82 @@
-[[rule]]
-toolName = [
-  "run_shell_command",
-  "write_file",
-  "replace",
-  "grep_search",
-  "list_directory",
-  "read_file",
-  "generalist",
-  "analyst",
-  "architect",
-  "designer",
-  "dev",
-  "docs",
-  "lead",
-  "maintainer",
-  "qa"
-]
-decision = "allow"
-priority = 999
+# Gemini CLI Autonomy Policy
+# This policy governs the agent's ability to execute tools without user confirmation.
+# It follows a "default deny" principle, where actions are denied unless explicitly allowed.
+# Rules are evaluated in order of priority (higher numbers are checked first).
+
+# Priority 999: Override all other tiers
+# Workspace policies for Athanor must take precedence over user or global settings.
 
 [[rule]]
-toolName = "run_shell_command"
-decision = "allow"
-priority = 999
-allowRedirection = true
+  toolName = ["write_file", "replace", "run_shell_command", "move_file", "copy_file", "create_directory", "delete_file", "web_fetch", "google_web_search"]
+  decision = "deny"
+  priority = 900
+  description = "Default deny for write and execution tools — explicit allows below override this."
+
+[[rule]]
+  toolName = "read_file"
+  decision = "allow"
+  priority = 999
+  description = "Allow reading files."
+
+[[rule]]
+  toolName = "grep_search"
+  decision = "allow"
+  priority = 999
+  description = "Allow searching within files."
+
+[[rule]]
+  toolName = "list_directory"
+  decision = "allow"
+  priority = 999
+  description = "Allow listing directories."
+
+[[rule]]
+  toolName = [
+    "generalist",
+    "analyst",
+    "architect",
+    "designer",
+    "dev",
+    "docs",
+    "lead",
+    "maintainer",
+    "qa"
+  ]
+  decision = "allow"
+  priority = 999
+  description = "Allow invoking specialized sub-agents."
+
+[[rule]]
+  toolName = "run_shell_command"
+  commandRegex = "(ls|cat|grep|make|python3|bash|echo|pwd|--help|git status|git diff|git log|gh issue|gh api|gh repo)"
+  decision = "allow"
+  priority = 999
+  description = "Allow common, safe shell commands."
+
+[[rule]]
+  toolName = ["write_file", "replace"]
+  argsPattern = "(\\.git/|\\.env|\\.sops\\.yaml|\\.pem$|\\.key$|/secrets/|init\\.sh|full_boot\\.sh)"
+  decision = "deny"
+  priority = 999
+  description = "Deny writing to sensitive files and directories."
+
+[[rule]]
+  toolName = "run_shell_command"
+  commandPrefix = ["rm -rf", "git push", "git commit", "git reset", "git rebase", "sudo", "chmod", "chown"]
+  decision = "deny"
+  priority = 999
+  description = "Deny execution of highly dangerous shell commands."
+
+[[rule]]
+  toolName = "run_shell_command"
+  commandRegex = "(\\.gemini/policies/|gemini config)"
+  decision = "deny"
+  priority = 999
+  description = "Deny shell commands that touch the autonomy policy."
+
+[[rule]]
+  toolName = ["write_file", "replace"]
+  argsPattern = "(\\.gemini/policies/)"
+  decision = "deny"
+  priority = 999
+  description = "Deny writing to the autonomy policy file."

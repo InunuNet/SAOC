@@ -1,3 +1,7 @@
+---
+description: Workspace scope and boundary rules for Athanor agents.
+---
+
 # Workspace Scope Rules
 
 ## HARD BOUNDARY — Do Not Cross

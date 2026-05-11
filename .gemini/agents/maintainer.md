@@ -28,6 +28,8 @@ If you discover a template/workflow bug during a session:
 3. **Update goals.md** — mark completed goals (`~~goal~~ ✅`), add new ones if discovered
 4. **Update backlog.md** — do ALL three:
    - ✅ Tick off completed items: `- [ ]` → `- [x]`
+     - **Non-checkbox format?** If backlog uses tables, prose bullets, or `~~struck~~` instead of `- [ ]`, identify what was completed from `git log --oneline -10` and the session summary, then prepend a dated note at the top of the file: `> ⚠️ YYYY-MM-DD: [item] completed — backlog not in checkbox format, manual review needed`
+     - **Verify**: after editing, confirm `git diff .agent/memory/project/backlog.md` is non-empty. If unchanged despite commits this session, that is a bug — leave a visible warning at the top of backlog.md.
    - 🔄 Move in-progress items to `## In Progress` if partially done
    - ➕ Add new TODOs for gaps discovered
 5. **Store in brain** — `python3 execution/brain.py wrap-up --summary "SUMMARY" --tags "TAGS"`
