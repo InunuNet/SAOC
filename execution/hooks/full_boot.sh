@@ -6,8 +6,8 @@
 WORKSPACE_FILE="WORKSPACE"
 PROFILE_FILE=".agent/profile.json"
 
-echo "✅ ATHANOR: $(cat WORKSPACE 2>/dev/null || basename "$PWD") | Framework v$(cat .agent/version 2>/dev/null || echo '3.3.5')"
-echo "════ BOOT CONTEXT (Athanor Framework) ════"
+echo "✅ ATHANOR: $(cat WORKSPACE 2>/dev/null || basename "$PWD") | Athanor Harness v$(cat .agent/version 2>/dev/null || echo 'unknown')"
+echo "════ BOOT CONTEXT (Athanor Harness) ════"
 echo "Core Mandates: Specialized agents, Tiered memory, Autonomous self-improvement, Alembic (URL distilling)."
 echo ""
 
@@ -17,7 +17,7 @@ echo "Skills Available:"
 echo "  - alembic (Access external web content via @search)"
 echo "  - onboard (Athanor onboarding workflow)"
 echo ""
-echo "Makefile Targets (Athanor Framework):"
+echo "Makefile Targets (Athanor Harness):"
 echo "  - help: Display this help message"
 echo "  - sync: Sync agents, skills, and rules to provider configs"
 echo "  - sync-agents: Sync canonical agents"
@@ -46,6 +46,28 @@ echo "--- SERVICE MAPPING ---"
 echo "Alembic: https://github.com/AthanorProject/Alembic"
 echo ""
 echo "🛡️ Alembic Active: Use @search for web queries."
+echo ""
+
+
+echo "--- ACTIVE MISSION ---"
+if [ -f .agent/memory/project/missions/active.json ]; then
+  python3 execution/mission.py status "$(python3 -c 'import json; print(json.load(open(".agent/memory/project/missions/active.json"))["mission"])' 2>/dev/null)" 2>/dev/null || echo "(stale mission pointer — run: python3 execution/mission.py list)"
+  echo "→ Run /mission resume to continue."
+else
+  echo "No active mission. Pick a top item from the mission queue (.agent/memory/project/backlog.md) and run /mission new <slug> before starting substantive work. Trivial items may be handled directly per the workflow reminder below."
+fi
+echo ""
+
+# Workflow Reminder — injected between mission state and identity so the
+# chain is fresh in the agent's working memory at the start of every turn.
+echo "--- WORKFLOW REMINDER (mandatory chain) ---"
+echo "1. Active mission? → python3 execution/mission.py resume → follow it"
+echo "2. New multi-session goal? → /mission new (locks autonomy=off)"
+echo "3. 3+ files OR design decision? → /spec (locks autonomy=off)"
+echo "4. Smaller substantive task? → @architect writes contract.yaml + golden files FIRST"
+echo "5. Chain: contract → @dev → @qa (adversarial) → @docs → contract.py gate → @maintainer"
+echo "6. DONE = contract gated green + docs verified + brain wrapped. Nothing less."
+echo "NEVER skip to implementation. NEVER let @dev author the contract or the QA inputs."
 echo ""
 
 # Step 0: System Identity
@@ -132,8 +154,8 @@ else
 fi
 echo ""
 
-# Step 4: Project context — backlog (capped at 60 lines)
-echo "--- BACKLOG ---"
+# Step 4: Project context — mission queue (secondary to active mission, capped at 60 lines)
+echo "--- MISSION QUEUE ---"
 if [ -f ".agent/memory/project/backlog.md" ]; then
   BACKLOG_LINES=$(wc -l < ".agent/memory/project/backlog.md")
   head -60 .agent/memory/project/backlog.md

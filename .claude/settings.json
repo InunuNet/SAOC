@@ -40,6 +40,10 @@
           {
             "type": "command",
             "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes — run /wrap-up at start of next session.'; fi"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_maintainer.sh"
           }
         ]
       }
@@ -97,6 +101,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bash execution/hooks/check_autonomy.sh"
+          },
+          {
+            "type": "command",
             "command": "fp=$(cat | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.claude/MEMORY/*|*/MEMORY/LEARNING/*|*/.claude/PAI/*) exit 2 ;; esac"
           }
         ]
@@ -104,6 +112,10 @@
       {
         "matcher": "Edit",
         "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/check_autonomy.sh"
+          },
           {
             "type": "command",
             "command": "fp=$(cat | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.claude/MEMORY/*|*/MEMORY/LEARNING/*|*/.claude/PAI/*) exit 2 ;; esac"
@@ -115,7 +127,40 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bash execution/hooks/check_autonomy.sh"
+          },
+          {
+            "type": "command",
             "command": "bash execution/hooks/verify_workspace.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_docs.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_maintainer.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_research.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_contract.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_dev_result.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_qa_report.sh"
           }
         ]
       }

@@ -37,6 +37,69 @@
         ]
       },
       {
+        "matcher": "analyst|architect",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_research.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "dev",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_contract.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "qa",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_dev_result.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "docs",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_qa_report.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "maintainer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_docs.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_maintainer.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/check_autonomy.sh"
+          }
+        ]
+      },
+      {
         "matcher": "Write",
         "hooks": [{
           "type": "command",

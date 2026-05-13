@@ -15,7 +15,8 @@ Then:
 1. Run `python3 execution/brain.py last-session --quiet`
 2. Read `.agent/memory/project/goals.md`
 3. Read `.agent/memory/project/learned.md`
-4. If backlog exists, read `.agent/memory/project/backlog.md`
+4. Check for active mission: `python3 execution/mission.py resume` — if a mission is active, follow its current checkpoint
+5. If no active mission AND `.agent/memory/project/backlog.md` exists, scan the mission queue (the backlog is the mission queue — pull from it only when no mission is active)
 
 ## 1. Identity
 
@@ -47,7 +48,7 @@ Memory lives here — in this project's `.agent/memory/` and brain — not in an
 5. **Read Before Write** — check goals.md and learned.md first
 6. **Self-Anneal** — error → fix → update learned.md
 7. **Wrap Up** — store summary in brain at session end
-8. **⛔ Alembic for ALL URL fetching** — `curl -s http://localhost:7077/<url>`. Never use WebFetch or raw curl on external URLs. If Alembic is down, restart it. Never bypass it. See `.agent/rules/_core/alembic.md`.
+8. **⛔ Alembic for ALL URL fetching AND web search** — `curl -s http://localhost:7077/<url>` for pages, `curl "http://localhost:7077/?q=query"` for search, `curl "http://localhost:7077/?q=query&fetch=true"` to synthesize. Never use WebFetch or raw curl on external URLs. See `.agent/rules/_core/alembic.md`.
 
 Project-specific rules in `.agent/memory/project/rules.md` take precedence over these.
 
@@ -68,14 +69,61 @@ Project-specific rules in `.agent/memory/project/rules.md` take precedence over 
 
 ## 5. Workflows
 
-| Workflow | Use when |
-|----------|----------|
-| `/boot` | Start of every session |
-| `/onboard` | New project setup (first time only) |
-| `/wrap-up` | End of session |
-| `/audit` | Health check |
-| `/test` | Run validation |
-| `/report-bug` | Found a bug? Report it. |
+### Mandatory Decision Tree — Run Before Any Substantive Work
+
+```
+BEFORE ANY WORK — classify the request:
+
+1. Active mission exists?        → python3 execution/mission.py resume → follow it
+2. New multi-session goal (3+ sessions, milestones)?  → /mission new FIRST
+3. Touches 3+ files OR design decision required?      → /spec FIRST (locks autonomy=off)
+4. Well-specified, <3 files, single domain?           → write contract.yaml FIRST
+5. Trivial (read, status, single-command)?            → handle directly, no chain
+
+Once classified, the chain is FIXED:
+  spec/mission → @architect (golden files + traps) → contract.yaml --strict
+  → @dev (implement against golden files, NOT own tests)
+  → @qa (adversarial, inputs designed by Codi/@architect, NOT @dev)
+  → @docs (README + docs/<feature>.md updated)
+  → contract.py gate (all Phase 4 assertions green)
+  → @maintainer (learned.md + brain wrap-up) → commit
+
+NEVER skip to implementation. NEVER let @dev write the contract or the QA inputs.
+DONE = contract gated green + docs verified + brain wrapped. Nothing less.
+```
+
+### Workflow Reference Table
+
+| Workflow | Required for | Blocks | Output |
+|----------|--------------|--------|--------|
+| `/boot` | Every session start | Nothing | Memory + rules loaded |
+| `/onboard` | First-time project setup | All work until done | Populated profile.json |
+| `/mission new` | Multi-session goals (3+ sessions) | Direct @dev dispatch | Mission file + autonomy=off |
+| `/mission resume` | Active mission present | New mission creation | Last-checkpoint state |
+| `/spec` | Features touching 3+ files OR design choice | @dev dispatch | SPEC.md + golden files (read-only mode) |
+| Contract write (@architect) | Every substantive task | @qa dispatch | contract.yaml passing `validate --strict` |
+| `@dev` dispatch | Contract exists + golden files exist | @qa dispatch | Implementation matching golden files |
+| `@qa` dispatch | Implementation complete | @docs dispatch | Adversarial test results |
+| `@docs` dispatch | Before contract gate Phase 4 | `contract.py gate` | README + docs/<feature>.md |
+| `contract.py gate` | Before commit | Commit | All assertions green or BLOCKED |
+| `@maintainer` / `/wrap-up` | End of session | Next session boot | learned.md + brain entry |
+| `/audit` | Health check (any time) | Nothing | Workspace status |
+| `/test` | Pre-commit, pre-gate | Commit if red | `make test` result |
+| `/report-bug` | Bug discovery | Nothing | Issue filed |
+| `/factory-loop` | Autonomous improvement runs | Nothing | Continuous research→build→test cycles |
+
+### Required vs Optional by Task Size
+
+| Task class | mission | spec | contract | @architect | @dev | @qa | @docs | gate |
+|------------|---------|------|----------|-----------|------|-----|-------|------|
+| Trivial (read/status) | — | — | — | — | — | — | — | — |
+| Small (<3 files, no design) | — | — | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** |
+| Medium (3+ files OR design) | — | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** |
+| Large (multi-session) | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** |
+
+**REQ = required; — = not needed.** Implementing without a column marked REQ is a process violation.
+
+Gates between agent handoffs are enforced by `execution/handoff_check.py` against the manifest in `.agent/handoffs.yaml`. Full reference: [docs/workflow-gates.md](docs/workflow-gates.md).
 
 ## X. Platform Capabilities
 
@@ -83,7 +131,7 @@ Project-specific rules in `.agent/memory/project/rules.md` take precedence over 
 - `alembic` (Access external web content via `@search`)
 - `onboard` (Athanor onboarding workflow)
 
-### Makefile Targets (Athanor Framework):
+### Makefile Targets (Athanor Harness):
 - `help`: Display this help message
 - `sync`: Sync agents, skills, and rules to provider configs
 - `sync-agents`: Sync canonical agents

@@ -9,5 +9,5 @@ if [ -n "$last_msg" ] && [ "$agent_type" != "unknown" ]; then
     --summary "Agent ${agent_type} completed: ${last_msg}" \
     --tags "agent,${agent_type},subagent" \
     2>/dev/null || true
-  echo "💾 @${agent_type} finished — update backlog and learned.md if work was completed."
+  echo "💾 @${agent_type} finished — update learned.md and the mission queue (backlog) if work was completed; check python3 execution/mission.py resume for active mission state."
 fi
