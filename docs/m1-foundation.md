@@ -119,6 +119,70 @@ pnpm format:check
 
 Ignored by Prettier (`.prettierignore`): `.next/`, `node_modules/`, `public/`, `pnpm-lock.yaml`, `next-env.d.ts`, `*.md`, `*.mdx`.
 
+## Sanity CMS (A3)
+
+### Packages
+
+| Package | Purpose |
+| --- | --- |
+| `sanity` | Core CMS runtime, Studio UI, schema builder |
+| `next-sanity` | Next.js adapter: `createClient`, Live API, image helpers |
+| `@sanity/image-url` | Builds CDN image URLs from Sanity image references |
+| `@sanity/vision` (dev) | In-Studio GROQ query explorer |
+
+### Environment variables
+
+Defined in `.env.local.example`. Copy and fill in before running the Studio locally:
+
+```bash
+cp .env.local.example .env.local
+```
+
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SANITY_PROJECT_ID` | Yes | Sanity project ID (public) |
+| `NEXT_PUBLIC_SANITY_DATASET` | No | Defaults to `production` |
+| `SANITY_API_READ_TOKEN` | Server only | For draft/preview content |
+| `SANITY_WEBHOOK_SECRET` | Server only | For on-demand revalidation |
+
+### Studio
+
+Embedded at `/studio` via Next.js catch-all `app/studio/[[...tool]]/`.
+
+- Dev: `http://localhost:3000/studio`
+- Prod: `https://saoc.co.za/studio`
+
+Access requires a Sanity account with Editor or Admin role on the project.
+
+### urlFor() helper
+
+Import from `sanity/lib/image.ts` to convert a Sanity image reference to a CDN URL:
+
+```ts
+import { urlFor } from '@/sanity/lib/image';
+
+// Inside a component:
+<Image src={urlFor(page.heroImage).width(1200).url()} alt="..." />
+```
+
+### Content types (11 schemas in `sanity.config.ts`)
+
+| Schema | Purpose |
+| --- | --- |
+| `homePage` | Singleton — Home page hero + sections |
+| `aboutPage` | Singleton — About page content |
+| `nationalShow` | Annual national show records |
+| `contactPage` | Singleton — Contact page copy + form config |
+| `society` | Member society directory entry |
+| `boardMember` | Council board member profile |
+| `event` | Calendar event |
+| `showClass` | Orchid show class/category |
+| `award` | Award definition |
+| `sponsor` | Sponsor entry with logo |
+| `judge` | Judge profile |
+
+`portableText` is a shared object type (not a document) used for rich text fields across schemas.
+
 ## Known issues / next steps
 
 - `heroImages.ts`: `alt` text should be backfilled with credit lines from the source `data.js`.

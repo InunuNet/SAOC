@@ -68,3 +68,9 @@ This file documents key learnings, decisions, and pitfalls encountered during th
 
 ## Session (2026-06-08)
 - (2026-06-08) **require_maintainer gate:** learned.md mtime must be under 86400s or commits are blocked. Always dispatch @maintainer same-day or touch this file at session start.
+
+## Phase A3 — Sanity CMS (2026-06-08)
+
+- (2026-06-08) **sanity@5.x + React 19.2 `useEffectEvent` breaks webpack build.** `sanity@5.30.0` (v5.0.1+) imports `useEffectEvent` directly from `react` instead of using the `use-effect-event` polyfill. React 19.2.7 exports it at runtime, but `react/index.js` uses a conditional require gated on `process.env.NODE_ENV`, so webpack's static CJS→ESM export analysis can't see it and fails the build with "exportsPresence" errors. **Fix:** in `next.config.ts`, add `config.module.parser.javascript.exportsPresence = false` inside the `webpack` callback. Safe because the runtime export exists — only the static analysis is a false negative. Do NOT try to work around this with dynamic imports of the Studio page; that masks the issue and re-surfaces on other sanity submodules.
+- (2026-06-08) **Sanity Studio route pattern:** `app/studio/[[...tool]]/page.tsx` should be a tiny re-export (`export { default } from './StudioClient'`); put the `'use client'` + `<NextStudio config={config} />` in `StudioClient.tsx`. Keeps the route file server-eligible and lets Next.js generate the catch-all metadata correctly.
+- (2026-06-08) **Sanity env split:** keep `sanity/env.ts` as the single source of truth for `apiVersion`, `dataset`, `projectId`, `studioUrl` — read by both `sanity.config.ts` and `sanity.cli.ts`. Don't duplicate `process.env` reads at call sites; the typed accessors throw on missing values which is what you want at boot time.

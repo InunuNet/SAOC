@@ -4,7 +4,7 @@
 
 - [x] ~~Write full 5-phase mission plan~~ — `.agent/memory/project/missions/2026-06-06-saoc-full-platform.md` written by @lead (2026-06-06).
 - [x] ~~Register mission + dispatch @architect for Phase A bedrock~~ — done 2026-06-06; mission `saoc-full-platform` active, contract gate 16/16 PASS (ESLint 9 flat config + Prettier 3).
-- [ ] **Phase A next: A3 Sanity install + Studio route** — `pnpm add next-sanity @sanity/vision sanity@latest`, scaffold `sanity.config.ts`, mount `/studio/[[...index]]` route, env wiring (`NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`).
+- [x] ~~**Phase A next: A3 Sanity install + Studio route**~~ — done 2026-06-08; sanity@5 + @sanity/vision + next-sanity installed, `sanity.config.ts` + `sanity.cli.ts` + `/studio/[[...tool]]` route + `sanity/env.ts` + `sanity/lib/image.ts` all wired, env vars in `.env.local.example`, 16/16 gate PASS (+ build green via webpack `exportsPresence=false` workaround for React 19.2 `useEffectEvent`).
 - [ ] **Audit M1–M4 work against new full brief** — scaffold/chrome/home/about exist but were built for the narrow 7-page mission; re-verify each against Phase A+B requirements before counting as done.
 - [ ] **Phase A: Foundation** — Next.js latest + TS strict + Tailwind v4 + Sanity CMS + Firebase App Hosting (InunuNet account) + lint/format pipeline + staging deploy.
 - [ ] **Phase B: 8 static content pages** (per proposal) — Home, About, Societies, Judging, Judges Training, Events, Sponsors, Contact — CMS-driven from Sanity.
