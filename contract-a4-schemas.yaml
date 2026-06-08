@@ -1,0 +1,53 @@
+schema: athanor.contract/v1
+slug: saoc-full-platform
+spec: A4 — 4 missing Sanity schema types (judgingPage, membersPage, show, province)
+created_at: '2026-06-08T12:00:00.000000+00:00'
+phases:
+  - id: 4
+    name: sanity-schemas-a4
+    assertions:
+      [
+        A4a,
+        A4b,
+        A4c,
+        A4d,
+        A4e,
+        A4f,
+        A4g,
+      ]
+assertions:
+  - id: A4a
+    description: judgingPage schema file exists
+    verify:
+      kind: shell
+      cmd: 'test -f sanity/schemas/documents/judgingPage.ts'
+  - id: A4b
+    description: membersPage schema file exists
+    verify:
+      kind: shell
+      cmd: 'test -f sanity/schemas/documents/membersPage.ts'
+  - id: A4c
+    description: show schema file exists
+    verify:
+      kind: shell
+      cmd: 'test -f sanity/schemas/documents/show.ts'
+  - id: A4d
+    description: province schema file exists
+    verify:
+      kind: shell
+      cmd: 'test -f sanity/schemas/documents/province.ts'
+  - id: A4e
+    description: index.ts imports and exports all 4 new schema types
+    verify:
+      kind: shell
+      cmd: "grep -q 'judgingPage' sanity/schemas/index.ts && grep -q 'membersPage' sanity/schemas/index.ts && grep -q \"from './documents/show'\" sanity/schemas/index.ts && grep -q 'province' sanity/schemas/index.ts"
+  - id: A4f
+    description: pnpm type-check passes with all 4 new schemas
+    verify:
+      kind: shell
+      cmd: 'pnpm type-check'
+  - id: A4g
+    description: pnpm build completes with all 4 new schemas registered
+    verify:
+      kind: shell
+      cmd: 'pnpm build'

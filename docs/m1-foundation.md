@@ -183,6 +183,31 @@ import { urlFor } from '@/sanity/lib/image';
 
 `portableText` is a shared object type (not a document) used for rich text fields across schemas.
 
+## A4 — Sanity Schemas
+
+Added 4 document types (2 singletons, 2 collections), bringing the total registered in `sanity.config.ts` to 16.
+
+### All registered types (16)
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `homePage` | Singleton | Home page hero + sections |
+| `aboutPage` | Singleton | About page content |
+| `nationalShow` | Singleton | Flagship annual national show record |
+| `contactPage` | Singleton | Contact page copy + `formRecipients` config |
+| `judgingPage` | Singleton | Judging system page content; references judge directory |
+| `membersPage` | Singleton | Members portal page content + downloadable resources |
+| `society` | Collection | Member society directory entry |
+| `boardMember` | Collection | Council board member profile |
+| `event` | Collection | Calendar event |
+| `showClass` | Collection | Orchid show class/category |
+| `award` | Collection | Award definition |
+| `sponsor` | Collection | Sponsor entry with logo |
+| `judge` | Collection | Judge profile |
+| `show` | Collection | Past/upcoming/future show editions (non-flagship) |
+| `province` | Collection | Province reference used by the society filter UI |
+| `portableText` | Object | Shared rich text field; not a document |
+
 ## Known issues / next steps
 
 - `heroImages.ts`: `alt` text should be backfilled with credit lines from the source `data.js`.
