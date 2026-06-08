@@ -12,8 +12,8 @@ cost_estimate:
   total_calls: 11
 last_checkpoint:
   milestone: MA
-  feature: A5
-  ts: '2026-06-08T13:00:00.000000+00:00'
+  feature: A6
+  ts: '2026-06-08T14:00:00.000000+00:00'
 features:
   - id: A1
     title: 'Lockfile + Next.js sanity check'
@@ -37,7 +37,9 @@ features:
     completed_at: '2026-06-08T13:00:00.000000+00:00'
   - id: A5
     title: 'Seed Sanity from lib/data/'
-    status: pending
+    status: done
+    started_at: '2026-06-08T13:00:00.000000+00:00'
+    completed_at: '2026-06-08T14:00:00.000000+00:00'
   - id: A6
     title: 'next-sanity wiring with draft mode'
     status: pending

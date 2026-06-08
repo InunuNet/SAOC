@@ -9,10 +9,13 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "seed": "tsx scripts/seed-sanity.ts"
   },
   "dependencies": {
+    "@sanity/client": "^7.22.1",
     "@sanity/image-url": "^2.1.1",
+    "dotenv": "^17.4.2",
     "firebase": "^11.0.0",
     "lucide-react": "^0.511.0",
     "next": "^15.3.3",

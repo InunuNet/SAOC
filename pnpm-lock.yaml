@@ -8,9 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@sanity/client':
+        specifier: ^7.22.1
+        version: 7.22.1
       '@sanity/image-url':
         specifier: ^2.1.1
         version: 2.1.1
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       firebase:
         specifier: ^11.0.0
         version: 11.10.0

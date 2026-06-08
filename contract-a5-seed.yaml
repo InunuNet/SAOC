@@ -1,0 +1,41 @@
+schema: athanor.contract/v1
+slug: saoc-full-platform
+spec: A5 — Sanity seed script importing typed data from lib/data and upserting via @sanity/client
+created_at: '2026-06-08T13:00:00.000000+00:00'
+phases:
+  - id: 5
+    name: sanity-seed-a5
+    assertions:
+      [
+        A5a,
+        A5b,
+        A5c,
+        A5d,
+        A5e,
+      ]
+assertions:
+  - id: A5a
+    description: scripts/seed-sanity.ts exists
+    verify:
+      kind: shell
+      cmd: 'test -f scripts/seed-sanity.ts'
+  - id: A5b
+    description: seed script uses createOrReplace for idempotent upserts
+    verify:
+      kind: shell
+      cmd: "grep -q 'createOrReplace' scripts/seed-sanity.ts"
+  - id: A5c
+    description: seed script imports typed data arrays from ../lib/data
+    verify:
+      kind: shell
+      cmd: "grep -q \"from '../lib/data'\" scripts/seed-sanity.ts"
+  - id: A5d
+    description: pnpm type-check passes with seed script present
+    verify:
+      kind: shell
+      cmd: 'pnpm type-check'
+  - id: A5e
+    description: package.json declares a "seed" script entry
+    verify:
+      kind: shell
+      cmd: "grep -q '\"seed\"' package.json"
