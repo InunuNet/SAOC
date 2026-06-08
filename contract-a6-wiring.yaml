@@ -1,0 +1,92 @@
+schema: athanor.contract/v1
+slug: a6-next-sanity-wiring
+goal: Wire next-sanity client + draft mode + ISR revalidation, with graceful null fallback when Sanity is not provisioned.
+created_at: '2026-06-08'
+autonomy: high
+
+features:
+  - id: A6
+    name: next-sanity wiring with draft mode + revalidation webhook
+    status: pending
+
+goldens:
+  - contracts/golden/a6/sanity/lib/client.ts
+  - contracts/golden/a6/sanity/lib/fetch.ts
+  - contracts/golden/a6/sanity/queries.ts
+  - contracts/golden/a6/app/api/draft/route.ts
+  - contracts/golden/a6/app/api/disable-draft/route.ts
+  - contracts/golden/a6/app/api/revalidate/route.ts
+  - contracts/golden/a6/app/(marketing)/page.tsx
+
+assertions:
+  phase: 4
+  checks:
+    - id: A6a
+      description: sanity/lib/client.ts exists and exports a client built via createClient
+      kind: shell
+      command: test -f sanity/lib/client.ts && grep -q "createClient" sanity/lib/client.ts && grep -q "export const client" sanity/lib/client.ts
+
+    - id: A6b
+      description: sanity/lib/fetch.ts exists and exports sanityFetch with draftMode integration
+      kind: shell
+      command: test -f sanity/lib/fetch.ts && grep -q "export async function sanityFetch" sanity/lib/fetch.ts && grep -q "draftMode" sanity/lib/fetch.ts
+
+    - id: A6c1
+      description: sanity/queries.ts exports homePageQuery
+      kind: shell
+      command: test -f sanity/queries.ts && grep -q "export const homePageQuery" sanity/queries.ts
+
+    - id: A6c2
+      description: sanity/queries.ts exports societyListQuery
+      kind: shell
+      command: grep -q "export const societyListQuery" sanity/queries.ts
+
+    - id: A6c3
+      description: sanity/queries.ts exports nationalShowQuery
+      kind: shell
+      command: grep -q "export const nationalShowQuery" sanity/queries.ts
+
+    - id: A6c4
+      description: sanity/queries.ts exports upcomingEventsQuery
+      kind: shell
+      command: grep -q "export const upcomingEventsQuery" sanity/queries.ts
+
+    - id: A6c5
+      description: sanity/queries.ts exports partnersQuery and uses defineQuery
+      kind: shell
+      command: grep -q "export const partnersQuery" sanity/queries.ts && grep -q "defineQuery" sanity/queries.ts
+
+    - id: A6d
+      description: app/api/draft/route.ts exists, exports GET, enables draftMode
+      kind: shell
+      command: test -f app/api/draft/route.ts && grep -q "export async function GET" app/api/draft/route.ts && grep -q "draftMode" app/api/draft/route.ts
+
+    - id: A6e
+      description: app/api/disable-draft/route.ts exists and disables draftMode
+      kind: shell
+      command: test -f app/api/disable-draft/route.ts && grep -q "draft.disable" app/api/disable-draft/route.ts
+
+    - id: A6f
+      description: app/api/revalidate/route.ts exists, exports POST, calls revalidateTag
+      kind: shell
+      command: test -f app/api/revalidate/route.ts && grep -q "export async function POST" app/api/revalidate/route.ts && grep -q "revalidateTag" app/api/revalidate/route.ts
+
+    - id: A6g
+      description: app/(marketing)/page.tsx is async and calls sanityFetch with homePageQuery
+      kind: shell
+      command: grep -q "export default async function" "app/(marketing)/page.tsx" && grep -q "sanityFetch" "app/(marketing)/page.tsx" && grep -q "homePageQuery" "app/(marketing)/page.tsx"
+
+    - id: A6h
+      description: .env.local.example includes SANITY_REVALIDATE_SECRET and SANITY_API_TOKEN
+      kind: shell
+      command: grep -q "^SANITY_REVALIDATE_SECRET=" .env.local.example && grep -q "^SANITY_API_TOKEN=" .env.local.example
+
+    - id: A6i
+      description: pnpm type-check passes
+      kind: shell
+      command: pnpm type-check
+
+    - id: A6j
+      description: pnpm build passes
+      kind: shell
+      command: pnpm build
