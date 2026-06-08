@@ -19,29 +19,25 @@ This feature has both a scaffolded code component (handled by @dev) and a manual
 
 ## 2. Console Steps (Brad — manual)
 
-1. Open https://console.firebase.google.com and click **Add project**.
-2. Project name: `SAOC Website`. Project ID: `saoc-website` (must match `.firebaserc`).
-3. When prompted, select the **InunuNet GCP billing account**. The **Blaze (pay-as-you-go) plan is required** for App Hosting.
-4. In the Firebase console sidebar, choose **Build → App Hosting → Get started**.
-5. Connect GitHub: select repo `InunuNet/SAOC`, branch `main`. Allow the GitHub App to access the repo.
-6. Note the **staging URL** displayed after backend creation (e.g. `https://saoc-website--<hash>.web.app`). Save it to `docs/a7-firebase-checklist.md` under "Staging URL".
-7. Go to **Project Settings → Service Accounts → Firebase Admin SDK → Generate new private key**. Download the JSON file and store it securely (do NOT commit). You will paste fields from this JSON into `.env.local`.
+> **Steps 1–4 are DONE** (completed via CLI 2026-06-08). Remaining: steps 5 and 7.
+
+1. ~~Open https://console.firebase.google.com and click **Add project**.~~ ✅ Done — project `saoc-website` created on Blaze plan.
+2. ~~Project name: `SAOC Website`. Project ID: `saoc-website`.~~ ✅ Done.
+3. ~~Select the **InunuNet GCP billing account** (Blaze plan).~~ ✅ Done.
+4. ~~Create App Hosting backend `saoc-main` in `us-central1`.~~ ✅ Done — URL: `https://saoc-main--saoc-website.us-central1.hosted.app`
+5. **TODO — console only:** In Firebase console → App Hosting → backend `saoc-main` → **Connect repository**. Select `InunuNet/SAOC`, branch `main`. (Requires GitHub OAuth — cannot be done via CLI.)
+6. ~~Note staging URL.~~ ✅ Done — see "Staging URL" section below.
+7. **TODO — console only:** Go to **Project Settings → Service Accounts → Firebase Admin SDK → Generate new private key**. Download JSON. Extract `client_email` and `private_key` fields into `.env.local` (`FIREBASE_ADMIN_CLIENT_EMAIL` and `FIREBASE_ADMIN_PRIVATE_KEY`).
 
 ## 3. Local Setup
 
-```bash
-cp .env.local.example .env.local
-# Fill in values from Firebase console (Project Settings → General → Your apps)
-# and from the service-account JSON downloaded in step 2.7.
-# Sanity values come from sanity.io/manage.
+> **`.env.local` already created** with all public Firebase values populated (2026-06-08).
+> Still needed: `FIREBASE_ADMIN_CLIENT_EMAIL` + `FIREBASE_ADMIN_PRIVATE_KEY` from service account JSON (step 2.7).
+> Still needed: `NEXT_PUBLIC_SANITY_PROJECT_ID` + Sanity tokens from sanity.io/manage.
 
-firebase login
-firebase use saoc-website
-```
-
-Verify the project link:
 ```bash
-firebase projects:list
+# Firebase CLI already authenticated and project set to saoc-website
+firebase projects:list  # verify saoc-website shows (current)
 ```
 
 ## 4. Secrets (run from project root)
@@ -74,4 +70,4 @@ Paste each secret when prompted. Grant access to the App Hosting service account
 
 ## Staging URL
 
-`<fill in after step 2.6>`
+`https://saoc-main--saoc-website.us-central1.hosted.app`
