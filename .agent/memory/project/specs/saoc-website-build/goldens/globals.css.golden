@@ -1,0 +1,266 @@
+/* ============================================================
+   SAOC — app/globals.css
+   Tailwind v4 CSS-first entry point + design tokens.
+   Source of truth: design/design_handoff_saoc/colors_and_type.css
+   ============================================================ */
+
+/* ---------- Web fonts ---------- */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ---------- Tailwind v4 ---------- */
+@import "tailwindcss";
+
+:root {
+  /* ---------- Palette — Sage & Paper ---------- */
+  --primary:        #384138;   /* deep sage — headlines, primary buttons, dark sections */
+  --primary-800:    #22281f;   /* near-ink sage — hovers, very-light-tint text */
+  --primary-700:    #4a554a;   /* mid sage — secondary use on dark */
+  --primary-100:    #e8e6dc;   /* tint — pairs with primary-800 text */
+
+  --accent:         #9e8c6b;   /* brass — secondary buttons, underline accents */
+  --accent-soft:    #c2b393;   /* pale brass — muted accents, italic on dark */
+
+  --parchment:      #f4f3ec;   /* paper — default page background */
+  --ivory:          #f4f3ec;   /* alias */
+  --bone:           #e8e6dc;   /* eyebrow pills, section tint, soft panels */
+
+  --ink:            #171917;   /* body copy on paper */
+  --muted:          #636660;   /* captions, meta, taglines */
+
+  --rule:           #d9d7c9;   /* hairlines, dividers */
+  --rule-soft:      #e4e1d0;   /* fainter hairlines */
+
+  /* ---------- Semantic ---------- */
+  --bg:             var(--parchment);
+  --bg-tint:        var(--bone);
+  --bg-dark:        var(--primary);
+  --fg:             var(--ink);
+  --fg-muted:       var(--muted);
+  --fg-on-dark:     var(--ivory);
+  --fg-on-dark-muted: rgba(244, 243, 236, 0.65);
+  --link:           var(--primary);
+  --link-underline: var(--accent);
+
+  /* ---------- Type families ---------- */
+  --serif:          "Crimson Pro", Georgia, "Times New Roman", serif;
+  --sans:           "Manrope", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --mono:           "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --serif-weight:   500;
+
+  /* ---------- Type scale — display ---------- */
+  --display-xl:     clamp(54px, 7vw,  96px);   /* hero */
+  --display-lg:     clamp(42px, 5.4vw, 72px);  /* page hero */
+  --display-md:     clamp(34px, 4.4vw, 54px);  /* h2 */
+  --display-sm:     clamp(26px, 3vw,   36px);  /* h3 */
+
+  /* ---------- Type scale — body ---------- */
+  --body-xl:        20px;  /* lede / intro */
+  --body-lg:        18px;  /* long-form running */
+  --body-md:        16px;  /* default */
+  --body-sm:        14px;  /* captions-adjacent */
+  --body-xs:        13px;  /* tiny meta */
+
+  /* ---------- Type scale — mono ---------- */
+  --mono-md:        12px;  /* eyebrow, nav links */
+  --mono-sm:        11px;  /* meta, tags */
+  --mono-xs:        10.5px;/* captions */
+  --mono-tracking:  0.18em; /* default letter-spacing for mono eyebrows */
+
+  /* ---------- Spacing (8-pt base) ---------- */
+  --space-0:   0;
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  24px;
+  --space-6:  32px;
+  --space-7:  48px;
+  --space-8:  64px;
+  --space-9:  96px;
+  --space-10:128px;
+
+  --section-y:      96px;
+  --container-pad:  32px;
+  --container-max: 1280px;
+
+  /* ---------- Radii ---------- */
+  --radius-0:   0;         /* cards, image wells */
+  --radius-1:   2px;       /* buttons, inputs */
+  --radius-pill: 999px;    /* eyebrow pills only */
+
+  /* ---------- Elevation ---------- */
+  --shadow-float: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+  /* used ONLY for floating menus / nav-on-scroll. Cards use borders, not shadow. */
+
+  /* ---------- Motion ---------- */
+  --ease:           cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast:       150ms;
+  --dur-med:        250ms;
+  --dur-slow:       400ms;
+}
+
+/* ============================================================
+   Tailwind v4 @theme — map CSS custom properties to Tailwind utilities.
+   This is what makes `bg-primary`, `text-ink`, `font-serif`, etc work.
+   ============================================================ */
+@theme {
+  /* ---------- Colors ---------- */
+  --color-primary: var(--primary);
+  --color-primary-800: var(--primary-800);
+  --color-primary-700: var(--primary-700);
+  --color-primary-100: var(--primary-100);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-parchment: var(--parchment);
+  --color-ivory: var(--ivory);
+  --color-bone: var(--bone);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-rule: var(--rule);
+  --color-rule-soft: var(--rule-soft);
+
+  /* Semantic colour aliases */
+  --color-bg: var(--bg);
+  --color-bg-tint: var(--bg-tint);
+  --color-bg-dark: var(--bg-dark);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-on-dark: var(--fg-on-dark);
+  --color-link: var(--link);
+  --color-link-underline: var(--link-underline);
+
+  /* ---------- Fonts ---------- */
+  --font-serif: var(--serif);
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+
+  /* ---------- Spacing (mirror 8-pt scale) ---------- */
+  --spacing-section-y: var(--section-y);
+  --spacing-container-pad: var(--container-pad);
+
+  /* ---------- Radii ---------- */
+  --radius-none: var(--radius-0);
+  --radius-sm: var(--radius-1);
+  --radius-pill: var(--radius-pill);
+
+  /* ---------- Shadows ---------- */
+  --shadow-float: var(--shadow-float);
+
+  /* ---------- Motion ---------- */
+  --ease-standard: var(--ease);
+}
+
+/* ============================================================
+   Base element + semantic class layer.
+   Verbatim from design/design_handoff_saoc/colors_and_type.css.
+   ============================================================ */
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: var(--body-md);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------- Display / headings ---------- */
+.h1 {
+  font-family: var(--serif);
+  font-size: var(--display-xl);
+  font-weight: var(--serif-weight);
+  line-height: 1.02;
+  letter-spacing: -0.012em;
+  color: var(--fg);
+  margin: 0;
+  text-wrap: pretty;
+}
+.h2 {
+  font-family: var(--serif);
+  font-size: var(--display-md);
+  font-weight: var(--serif-weight);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  margin: 0;
+  text-wrap: pretty;
+}
+.h3 {
+  font-family: var(--serif);
+  font-size: var(--display-sm);
+  font-weight: var(--serif-weight);
+  line-height: 1.15;
+  letter-spacing: -0.005em;
+  color: var(--fg);
+  margin: 0;
+}
+/* italic-inside-roman headline accent */
+.h1 em, .h2 em, .h3 em {
+  font-style: italic;
+  color: var(--primary);
+  font-weight: var(--serif-weight);
+}
+.on-dark .h1 em, .on-dark .h2 em, .on-dark .h3 em { color: var(--accent-soft); }
+
+/* ---------- Body / prose ---------- */
+.lede {
+  font-family: var(--sans);
+  font-size: var(--body-xl);
+  line-height: 1.5;
+  color: var(--fg-muted);
+  max-width: 58ch;
+}
+.p-lg { font-size: var(--body-lg); line-height: 1.65; }
+.p    { font-size: var(--body-md); line-height: 1.6; }
+.p-sm { font-size: var(--body-sm); line-height: 1.55; color: var(--fg-muted); }
+.caption {
+  font-size: var(--body-xs);
+  line-height: 1.4;
+  color: var(--fg-muted);
+  font-style: italic;
+}
+
+/* ---------- Mono (eyebrows, meta, tags) ---------- */
+.mono      { font-family: var(--mono); }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px;
+  background: var(--bone);
+  color: var(--primary);
+  border-radius: var(--radius-pill);
+  font-family: var(--mono);
+  font-size: var(--mono-sm);
+  letter-spacing: var(--mono-tracking);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.eyebrow--light {
+  background: rgba(255,255,255,0.12);
+  color: var(--ivory);
+  border: 1px solid rgba(255,255,255,0.22);
+}
+.mono-label {
+  font-family: var(--mono);
+  font-size: var(--mono-xs);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+/* ---------- Links ---------- */
+a { color: inherit; }
+.inline-link {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--link-underline);
+  text-decoration-thickness: 1px;
+}
+
+/* ---------- On-dark overrides ---------- */
+.on-dark                { color: var(--fg-on-dark); }
+.on-dark .lede,
+.on-dark .p-sm,
+.on-dark .caption,
+.on-dark .mono-label    { color: var(--fg-on-dark-muted); }

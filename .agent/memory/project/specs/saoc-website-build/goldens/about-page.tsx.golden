@@ -1,0 +1,26 @@
+import type { Metadata } from 'next';
+import {
+  PageHero,
+  OriginStory,
+  Pillars,
+  BoardGrid,
+  Timeline,
+} from '@/components/about';
+
+export const metadata: Metadata = {
+  title: 'About — South African Orchid Council',
+  description:
+    'A federated body of growers since 1968: the heritage, mission, board and milestones of the South African Orchid Council.',
+};
+
+export default function AboutPage() {
+  return (
+    <>
+      <PageHero />
+      <OriginStory />
+      <Pillars />
+      <BoardGrid />
+      <Timeline />
+    </>
+  );
+}

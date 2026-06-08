@@ -1,0 +1,210 @@
+schema: athanor.contract/v1
+spec: saoc-website-build-m3
+created_at: '2026-06-01T00:00:00Z'
+mission: saoc-website-build
+milestone: M3
+features: [F4]
+
+goldens:
+  - path: '.agent/memory/project/specs/saoc-website-build/goldens/useCountdown.ts.golden'
+    description: 'Reference implementation for lib/hooks/useCountdown.ts — setInterval-based countdown returning zero-padded 2-digit day/hour/minute/second strings, with proper cleanup on unmount and dependency on targetDate.'
+
+phases:
+  - id: 1
+    assertions:
+      [
+        A1,
+        A2,
+        A3,
+        A4,
+        A5,
+        A6,
+        A7,
+        A8,
+        A9,
+        A10,
+        A11,
+        A12,
+        A13,
+        A14,
+        A15,
+        A16,
+        A17,
+        A18,
+        A19,
+        A20,
+        A21,
+        A22,
+        A23,
+        A24,
+        A25,
+        A26,
+      ]
+
+assertions:
+  # ---------------- F4 file existence ----------------
+  - id: A1
+    feature: F4
+    description: 'app/(marketing)/page.tsx imports from @/components/home'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -Eq \"from ['\\\"]@/components/home['\\\"]?\" 'app/(marketing)/page.tsx'",
+      }
+
+  - id: A2
+    feature: F4
+    description: 'components/home/Hero.tsx exists'
+    verify: { kind: shell, cmd: 'test -f components/home/Hero.tsx' }
+
+  - id: A3
+    feature: F4
+    description: 'components/home/MissionBlock.tsx exists'
+    verify: { kind: shell, cmd: 'test -f components/home/MissionBlock.tsx' }
+
+  - id: A4
+    feature: F4
+    description: 'components/home/NavCards.tsx exists'
+    verify: { kind: shell, cmd: 'test -f components/home/NavCards.tsx' }
+
+  - id: A5
+    feature: F4
+    description: 'components/home/ShowBand.tsx exists'
+    verify: { kind: shell, cmd: 'test -f components/home/ShowBand.tsx' }
+
+  - id: A6
+    feature: F4
+    description: 'components/home/EventsStrip.tsx exists'
+    verify: { kind: shell, cmd: 'test -f components/home/EventsStrip.tsx' }
+
+  - id: A7
+    feature: F4
+    description: 'components/home/YearbookStrip.tsx exists'
+    verify: { kind: shell, cmd: 'test -f components/home/YearbookStrip.tsx' }
+
+  - id: A8
+    feature: F4
+    description: 'components/home/PartnersSection.tsx exists'
+    verify: { kind: shell, cmd: 'test -f components/home/PartnersSection.tsx' }
+
+  - id: A9
+    feature: F4
+    description: 'components/ui/EventRow.tsx exists'
+    verify: { kind: shell, cmd: 'test -f components/ui/EventRow.tsx' }
+
+  - id: A10
+    feature: F4
+    description: 'lib/hooks/useCountdown.ts exists'
+    verify: { kind: shell, cmd: 'test -f lib/hooks/useCountdown.ts' }
+
+  # ---------------- Design compliance ----------------
+  - id: A11
+    feature: F4
+    description: 'Hero.tsx declares a min-height of at least 700px (full-bleed hero)'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -Eq 'min-h-\\[7[0-9]{2}px\\]|min-h-screen|min-height:[[:space:]]*7[0-9]{2}px' components/home/Hero.tsx",
+      }
+
+  - id: A12
+    feature: F4
+    description: 'Hero.tsx uses useEffect + setInterval (crossfade carousel timer)'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -q 'useEffect' components/home/Hero.tsx && grep -q 'setInterval' components/home/Hero.tsx",
+      }
+
+  - id: A13
+    feature: F4
+    description: 'Hero.tsx contains an <em> tag (one italic phrase per headline)'
+    verify: { kind: shell, cmd: "grep -q '<em>' components/home/Hero.tsx" }
+
+  - id: A14
+    feature: F4
+    description: 'ShowBand.tsx imports useCountdown'
+    verify: { kind: shell, cmd: "grep -q 'useCountdown' components/home/ShowBand.tsx" }
+
+  - id: A15
+    feature: F4
+    description: 'ShowBand.tsx contains the 2027-09-18 countdown target date'
+    verify: { kind: shell, cmd: "grep -q '2027-09-18' components/home/ShowBand.tsx" }
+
+  - id: A16
+    feature: F4
+    description: 'useCountdown hook uses setInterval'
+    verify: { kind: shell, cmd: "grep -q 'setInterval' lib/hooks/useCountdown.ts" }
+
+  - id: A17
+    feature: F4
+    description: 'useCountdown hook uses padStart (zero-pad to 2 chars)'
+    verify: { kind: shell, cmd: "grep -q 'padStart' lib/hooks/useCountdown.ts" }
+
+  - id: A18
+    feature: F4
+    description: 'EventRow.tsx references the --accent token (left border)'
+    verify: { kind: shell, cmd: "grep -Eq 'accent' components/ui/EventRow.tsx" }
+
+  - id: A19
+    feature: F4
+    description: 'EventRow.tsx has a transition (hover affordance)'
+    verify: { kind: shell, cmd: "grep -Eq 'transition|<em>' components/ui/EventRow.tsx" }
+
+  - id: A20
+    feature: F4
+    description: 'PartnersSection.tsx imports from @/lib/data'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -Eq \"from ['\\\"]@/lib/data['\\\"]\" components/home/PartnersSection.tsx",
+      }
+
+  # ---------------- Data wiring ----------------
+  - id: A21
+    feature: F4
+    description: 'EventsStrip.tsx imports events from @/lib/data'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -Eq \"from ['\\\"]@/lib/data['\\\"]\" components/home/EventsStrip.tsx && grep -q 'events' components/home/EventsStrip.tsx",
+      }
+
+  - id: A22
+    feature: F4
+    description: 'Hero.tsx references orchid image filenames (heroImages wired)'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -Eq 'orchid-(yellow|violet|pink|dark)|heroImages' components/home/Hero.tsx",
+      }
+
+  - id: A23
+    feature: F4
+    description: 'MissionBlock.tsx contains the 21 societies and 1968 founding-year stats'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -q '21' components/home/MissionBlock.tsx && grep -q '1968' components/home/MissionBlock.tsx",
+      }
+
+  # ---------------- Structural ----------------
+  - id: A24
+    feature: F4
+    description: 'components/home/ directory has at least 7 .tsx files'
+    verify: { kind: shell, cmd: 'test $(ls components/home/*.tsx 2>/dev/null | wc -l) -ge 7' }
+
+  - id: A25
+    feature: F4
+    description: 'EventRow.tsx declares typed props referencing kind and date'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -q 'kind' components/ui/EventRow.tsx && grep -q 'date' components/ui/EventRow.tsx",
+      }
+
+  # ---------------- Final gate ----------------
+  - id: A26
+    feature: F4
+    description: 'TypeScript compilation passes with no errors (strict mode)'
+    verify: { kind: shell, cmd: 'pnpm exec tsc --noEmit' }

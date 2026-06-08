@@ -1,50 +1,88 @@
-# SAOC Website
+# SAOC — South African Orchid Council Website
 
-The **South African Orchid Council (SAOC)** is a non-profit national body that has coordinated orchid societies across South Africa since 1968. This repository contains the Phase 1 MVP rebuild of saoc.co.za — replacing a broken Joomla site with a modern Next.js application backed by Firebase.
+Public website for the South African Orchid Council. Built with Next.js 15 and deployed via Firebase App Hosting.
 
-## What This Repo Is
+## Development
 
-Next.js 15 (App Router, TypeScript) + Firebase (Firestore, Auth, App Hosting), scaffolded as Phase 1 MVP. Visual design is handled separately in Claude Design; this repo ships structure, data access, and server logic.
+**Prerequisites**
 
-## Quick Start
+- Node.js 22+
+- pnpm 9+
+
+**Install**
 
 ```bash
 pnpm install
-cp .env.local.example .env.local   # fill in Firebase credentials
+```
+
+**Dev server**
+
+```bash
 pnpm dev
 ```
 
-Open http://localhost:3000.
+Open [http://localhost:3000](http://localhost:3000).
 
-See [CLAUDE.md](./CLAUDE.md) for the full developer guide (Firebase setup, Firestore collection shapes, coding conventions, design handoff workflow, deployment).
+**Lint**
+
+```bash
+pnpm lint
+```
+
+**Format**
+
+```bash
+pnpm format          # write in-place
+pnpm format:check    # check only (CI-safe)
+```
+
+**Type check**
+
+```bash
+pnpm run type-check
+```
+
+**Environment**
+
+Copy the example file and fill in the Firebase values:
+
+```bash
+cp .env.local.example .env.local
+```
+
+The required variables are listed in `.env.local.example`. Firebase credentials are not yet active (see [docs/m1-foundation.md](docs/m1-foundation.md#known-issues--next-steps)).
+
+## Project Structure
+
+```
+app/              — Next.js App Router root (layout, globals.css)
+app/(marketing)/  — Public marketing pages
+components/       — React components (chrome/, ui/)
+components/chrome/— Global chrome: UtilityBar, Header, MobileMenu, SearchOverlay, Footer, Breadcrumb
+lib/data/         — Static typed data modules
+public/images/    — Orchid photos and logo PNGs
+types/            — TypeScript interfaces
+```
 
 ## Tech Stack
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| Framework | Next.js 15 (App Router, TypeScript) | RSC-first, Firebase App Hosting native SSR support |
-| Styling | Tailwind CSS v4 | CSS-first config, no `tailwind.config.ts` needed |
-| Hosting | Firebase App Hosting | Native Next.js SSR, same ecosystem as Firestore |
-| Database | Firestore | Flexible schema for societies, events, shows |
-| Auth | Firebase Auth | Scaffolded, not wired to UI until Phase 2 |
-| Forms | API route → Firestore | Contact submissions; email via SendGrid/Resend (future) |
-| Package manager | pnpm | Faster, stricter hoisting |
+| Layer           | Choice                                                   |
+| --------------- | -------------------------------------------------------- |
+| Framework       | Next.js 15 (App Router)                                  |
+| Styles          | Tailwind CSS v4 (CSS-first; tokens in `app/globals.css`) |
+| Language        | TypeScript 5 (strict)                                    |
+| Package manager | pnpm                                                     |
+| Hosting         | Firebase App Hosting                                     |
 
-## Scripts
+## Milestones
 
-| Script | Purpose |
-|--------|---------|
-| `pnpm dev` | Dev server with Turbopack |
-| `pnpm build` | Production build |
-| `pnpm start` | Run production build |
-| `pnpm lint` | ESLint |
-| `pnpm format` | Prettier — write |
-| `pnpm format:check` | Prettier — check only |
+| Milestone       | Status | Notes                                             |
+| --------------- | ------ | ------------------------------------------------- |
+| M1 — Foundation | Done   | Scaffold + static data layer                      |
+| M2 — Chrome     | Done   | Global chrome: header, footer, search, mobile nav |
 
-## Design
+Full milestone docs are in [`docs/`](docs/).
 
-Visual design is produced in **Claude Design** as a separate workstream and approved there before implementation. Handoff bundles land in this repo as design specs with component structure and tokens — see CLAUDE.md for the workflow. Do not invent colours, fonts, logos, or visual decisions in this repo.
+## Licence
 
-## License
-
-Proprietary — South African Orchid Council.
+Proprietary — South African Orchid Council. All rights reserved.

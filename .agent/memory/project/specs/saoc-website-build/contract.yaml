@@ -1,0 +1,282 @@
+schema: athanor.contract/v1
+mission: saoc-website-build
+milestone: M1
+features: [F1, F2]
+goldens:
+  - path: '.agent/memory/project/specs/saoc-website-build/goldens/globals.css.golden'
+    description: 'Expected content of app/globals.css — Tailwind v4 CSS-first entry, Google Fonts import, full :root tokens, and @theme block.'
+  - path: '.agent/memory/project/specs/saoc-website-build/goldens/types-index.ts.golden'
+    description: 'Expected TypeScript interface shapes for all SAOC entities.'
+assertions:
+  # ---------------- F1 — project scaffold ----------------
+  - id: A1
+    kind: shell
+    feature: F1
+    description: 'package.json exists at repo root'
+    command: 'test -f package.json'
+
+  - id: A2
+    kind: shell
+    feature: F1
+    description: 'Next.js is declared in dependencies'
+    command: 'node -e "const p=require(''./package.json''); process.exit(p.dependencies && p.dependencies.next ? 0 : 1)"'
+
+  - id: A3
+    kind: shell
+    feature: F1
+    description: 'Tailwind v4 (tailwindcss or @tailwindcss/postcss) declared in dependencies/devDependencies'
+    command: 'grep -q ''"tailwindcss"'' package.json || grep -q ''"@tailwindcss/postcss"'' package.json'
+
+  - id: A4
+    kind: shell
+    feature: F1
+    description: 'Firebase SDK declared in dependencies'
+    command: 'grep -q ''"firebase"'' package.json'
+
+  - id: A5
+    kind: shell
+    feature: F1
+    description: 'tsconfig.json exists with TypeScript strict mode enabled'
+    command: 'test -f tsconfig.json && grep -q ''"strict": true'' tsconfig.json'
+
+  - id: A6
+    kind: shell
+    feature: F1
+    description: 'Next.js config file exists (TypeScript-based)'
+    command: 'test -f next.config.ts'
+
+  - id: A7
+    kind: shell
+    feature: F1
+    description: 'app/globals.css exists'
+    command: 'test -f app/globals.css'
+
+  - id: A8
+    kind: shell
+    feature: F1
+    description: 'globals.css includes Tailwind v4 @import'
+    command: 'grep -q ''@import "tailwindcss"'' app/globals.css'
+
+  - id: A9
+    kind: shell
+    feature: F1
+    description: 'globals.css declares the --primary color token'
+    command: "grep -q '\\-\\-primary' app/globals.css"
+
+  - id: A10
+    kind: shell
+    feature: F1
+    description: 'globals.css declares the --serif font token'
+    command: "grep -q '\\-\\-serif' app/globals.css"
+
+  - id: A11
+    kind: shell
+    feature: F1
+    description: 'globals.css contains a @theme block (Tailwind v4 token mapping)'
+    command: "grep -q '@theme' app/globals.css"
+
+  - id: A12
+    kind: shell
+    feature: F1
+    description: '.env.local.example exists and reserves the Firebase API key'
+    command: "test -f .env.local.example && grep -q 'NEXT_PUBLIC_FIREBASE_API_KEY' .env.local.example"
+
+  - id: A13
+    kind: shell
+    feature: F1
+    description: 'apphosting.yaml exists at repo root for Firebase App Hosting'
+    command: 'test -f apphosting.yaml'
+
+  - id: A14
+    kind: shell
+    feature: F1
+    description: 'pnpm lockfile exists (pnpm install was run)'
+    command: 'test -f pnpm-lock.yaml'
+
+  - id: A15
+    kind: shell
+    feature: F1
+    description: 'public/images directory exists'
+    command: 'test -d public/images'
+
+  - id: A16
+    kind: shell
+    feature: F1
+    description: 'Root layout exists at app/layout.tsx'
+    command: 'test -f app/layout.tsx'
+
+  - id: A17
+    kind: shell
+    feature: F1
+    description: 'Marketing home route exists at app/(marketing)/page.tsx'
+    command: "test -f 'app/(marketing)/page.tsx'"
+
+  - id: A18a
+    kind: shell
+    feature: F1
+    description: 'Google Fonts @import URL present and references Crimson Pro + Manrope + JetBrains Mono'
+    command: "grep -q 'fonts.googleapis.com' app/globals.css && grep -q 'Crimson+Pro' app/globals.css && grep -q 'Manrope' app/globals.css && grep -q 'JetBrains+Mono' app/globals.css"
+
+  - id: A18b
+    kind: shell
+    feature: F1
+    description: 'Forbidden legacy logo saoc-logo-original.png is NOT shipped under public/'
+    command: "! find public -type f -name 'saoc-logo-original.png' | grep -q ."
+
+  - id: A18c
+    kind: shell
+    feature: F1
+    description: 'globals.css declares the --accent (brass) color token'
+    command: "grep -q '\\-\\-accent' app/globals.css"
+
+  - id: A18d
+    kind: shell
+    feature: F1
+    description: 'globals.css declares the --parchment background token'
+    command: "grep -q '\\-\\-parchment' app/globals.css"
+
+  - id: A18e
+    kind: shell
+    feature: F1
+    description: '@theme block maps --color-primary to var(--primary)'
+    command: "grep -q '\\-\\-color-primary: var(\\-\\-primary)' app/globals.css"
+
+  - id: A18f
+    kind: shell
+    feature: F1
+    description: '@theme block exposes --font-serif to Tailwind'
+    command: "grep -q '\\-\\-font-serif' app/globals.css"
+
+  # ---------------- F2 — data layer ----------------
+  - id: A19
+    kind: shell
+    feature: F2
+    description: 'types/index.ts exists and defines Society'
+    command: "test -f types/index.ts && grep -q 'Society' types/index.ts"
+
+  - id: A20
+    kind: shell
+    feature: F2
+    description: 'types/index.ts defines SocietyEvent'
+    command: "grep -q 'SocietyEvent' types/index.ts"
+
+  - id: A20a
+    kind: shell
+    feature: F2
+    description: 'types/index.ts defines NationalShow'
+    command: "grep -q 'NationalShow' types/index.ts"
+
+  - id: A20b
+    kind: shell
+    feature: F2
+    description: 'types/index.ts defines BoardMember'
+    command: "grep -q 'BoardMember' types/index.ts"
+
+  - id: A20c
+    kind: shell
+    feature: F2
+    description: 'types/index.ts defines Award'
+    command: "grep -q 'interface Award' types/index.ts"
+
+  - id: A20d
+    kind: shell
+    feature: F2
+    description: 'types/index.ts defines ShowClass'
+    command: "grep -q 'ShowClass' types/index.ts"
+
+  - id: A20e
+    kind: shell
+    feature: F2
+    description: 'types/index.ts defines Partner'
+    command: "grep -q 'Partner' types/index.ts"
+
+  - id: A20f
+    kind: shell
+    feature: F2
+    description: 'types/index.ts defines HeroImage'
+    command: "grep -q 'HeroImage' types/index.ts"
+
+  - id: A20g
+    kind: shell
+    feature: F2
+    description: 'types/index.ts defines ProvinceCode union with all 9 SA provinces'
+    command: 'grep -q ''ProvinceCode'' types/index.ts && grep -q "''WC''" types/index.ts && grep -q "''KZN''" types/index.ts && grep -q "''GP''" types/index.ts'
+
+  - id: A20h
+    kind: shell
+    feature: F2
+    description: 'types/index.ts defines EventKind union with Show/Workshop/Council/Launch'
+    command: 'grep -q ''EventKind'' types/index.ts && grep -q "''Show''" types/index.ts && grep -q "''Workshop''" types/index.ts && grep -q "''Council''" types/index.ts && grep -q "''Launch''" types/index.ts'
+
+  - id: A20i
+    kind: shell
+    feature: F2
+    description: 'types/index.ts contains no `any` types'
+    command: "! grep -E ':\\s*any(\\s|;|,|\\)|\\[|$)' types/index.ts"
+
+  - id: A21
+    kind: shell
+    feature: F2
+    description: 'lib/data/societies.ts exports `societies`'
+    command: "test -f lib/data/societies.ts && grep -q 'export const societies' lib/data/societies.ts"
+
+  - id: A22
+    kind: shell
+    feature: F2
+    description: 'lib/data/events.ts exports `events`'
+    command: "test -f lib/data/events.ts && grep -q 'export const events' lib/data/events.ts"
+
+  - id: A23
+    kind: shell
+    feature: F2
+    description: 'lib/data/shows.ts exports `shows`'
+    command: "test -f lib/data/shows.ts && grep -q 'export const shows' lib/data/shows.ts"
+
+  - id: A24
+    kind: shell
+    feature: F2
+    description: 'lib/data/board.ts exports `boardMembers`'
+    command: "test -f lib/data/board.ts && grep -q 'export const boardMembers' lib/data/board.ts"
+
+  - id: A25
+    kind: shell
+    feature: F2
+    description: 'lib/data/awards.ts exports `awards`'
+    command: "test -f lib/data/awards.ts && grep -q 'export const awards' lib/data/awards.ts"
+
+  - id: A26
+    kind: shell
+    feature: F2
+    description: 'lib/data/showClasses.ts exports `showClasses`'
+    command: "test -f lib/data/showClasses.ts && grep -q 'export const showClasses' lib/data/showClasses.ts"
+
+  - id: A26a
+    kind: shell
+    feature: F2
+    description: 'lib/data/partners.ts exports `partners`'
+    command: "test -f lib/data/partners.ts && grep -q 'export const partners' lib/data/partners.ts"
+
+  - id: A26b
+    kind: shell
+    feature: F2
+    description: 'lib/data/heroImages.ts exports `heroImages`'
+    command: "test -f lib/data/heroImages.ts && grep -q 'export const heroImages' lib/data/heroImages.ts"
+
+  - id: A26c
+    kind: shell
+    feature: F2
+    description: 'lib/data/provinces.ts exports `provinces`'
+    command: "test -f lib/data/provinces.ts && grep -q 'export const provinces' lib/data/provinces.ts"
+
+  - id: A27
+    kind: shell
+    feature: F2
+    description: 'Barrel lib/data/index.ts re-exports societies'
+    command: "test -f lib/data/index.ts && grep -q 'societies' lib/data/index.ts"
+
+  # ---------------- final gate: typecheck ----------------
+  - id: A28
+    kind: shell
+    feature: F2
+    description: 'TypeScript compiles cleanly across the whole project (pnpm exec tsc --noEmit)'
+    command: 'pnpm exec tsc --noEmit'

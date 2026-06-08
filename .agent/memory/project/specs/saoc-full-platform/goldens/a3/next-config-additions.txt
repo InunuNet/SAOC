@@ -1,0 +1,37 @@
+TARGET FILE: next.config.ts
+
+Apply these edits to the existing next.config.ts. Do NOT remove the existing
+firebasestorage.googleapis.com remotePattern.
+
+1. Add a remotePattern for the Sanity image CDN inside images.remotePatterns:
+
+      {
+        protocol: 'https',
+        hostname: 'cdn.sanity.io',
+      },
+
+2. Add a top-level transpilePackages key (required for next-sanity RSC compat):
+
+  transpilePackages: ['next-sanity'],
+
+RESULTING next.config.ts (full target content):
+
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.sanity.io',
+      },
+    ],
+  },
+  transpilePackages: ['next-sanity'],
+};
+
+export default nextConfig;

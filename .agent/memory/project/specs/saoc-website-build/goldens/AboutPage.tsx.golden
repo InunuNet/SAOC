@@ -1,0 +1,203 @@
+// =============================================================
+// SAOC — app/(marketing)/about/page.tsx
+// Server Component — About / Our Heritage page.
+// =============================================================
+
+import type { Metadata } from 'next';
+import Image from 'next/image';
+
+import { Breadcrumb } from '@/components/chrome';
+import { PageHero } from '@/components/ui/PageHero';
+import { boardMembers } from '@/lib/data';
+
+export const metadata: Metadata = {
+  title: 'About SAOC — Our Heritage',
+  description:
+    'A federated body of growers since 1968. The South African Orchid Council coordinates twenty-one societies from the Cape to the Limpopo.',
+};
+
+const PILLARS = [
+  {
+    name: 'Mission',
+    body: 'To promote the culture, hybridisation and appreciation of orchids in South Africa — through education, a nationally standardised judging system, a network of affiliated societies, and a respected publication record.',
+  },
+  {
+    name: 'Vision',
+    body: 'A vibrant, skilled community of South African growers whose work sits alongside the best in the world — on show benches, in print, and at international conferences.',
+  },
+  {
+    name: 'Our remit',
+    body: 'Orchids in cultivation: growing, showing, hybridising, judging, community. For indigenous species in the wild, Wild Orchids of Southern Africa leads the work.',
+  },
+];
+
+const TIMELINE = [
+  { year: '1968', text: 'Council founded in Bloemfontein by four societies.' },
+  { year: '1974', text: 'First combined National Orchid Show hosted under SAOC.' },
+  { year: '1990', text: 'Judging system overhauled onto a regional model.' },
+  { year: '2014', text: 'Sandton hosts the 21st World Orchid Conference.' },
+  { year: '2024', text: '18th National Orchid Show, Durban — 1,240 entries.' },
+  { year: '2027', text: '19th National Orchid Show, Cape Town.' },
+];
+
+function initials(name: string): string {
+  return name
+    .replace(/^(Dr\.|Prof\.)\s+/i, '')
+    .split(' ')
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('');
+}
+
+export default function AboutPage() {
+  return (
+    <>
+      <PageHero
+        image="/images/orchid-purple.jpg"
+        eyebrow="Our Heritage"
+        heading={
+          <>
+            A federated body of <em>growers</em>, since 1968.
+          </>
+        }
+        lede="Four societies met in Bloemfontein on the 28th of July 1968 to form a national council. Fifty-eight years later, that council coordinates twenty-one societies from the Cape to the Limpopo."
+      />
+
+      <Breadcrumb items={[{ label: 'About SAOC' }]} />
+
+      <section className="bg-parchment py-20">
+        <div className="mx-auto grid max-w-[1280px] gap-12 px-8 md:grid-cols-2 md:items-start">
+          <div>
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted">
+              The origin story
+            </span>
+            <h2 className="mt-3 font-serif text-[2rem] font-medium leading-tight text-primary [&_em]:not-italic [&_em]:italic [&_em]:text-accent">
+              Bloemfontein, 28 July 1968.
+            </h2>
+            <div className="mt-6 space-y-5 font-serif text-[18px] leading-relaxed text-ink">
+              <p>
+                On a winter&rsquo;s morning in the Free State, delegates from the Cape, Natal,
+                Transvaal and Northern Transvaal Orchid Societies met in Bloemfontein and founded
+                the South African Orchid Council. The intent was straightforward: a national body
+                to coordinate shows, standardise judging, and give the country&rsquo;s growers a
+                shared voice.
+              </p>
+              <p>
+                In the decades since we have hosted eighteen National Orchid Shows, welcomed the
+                21st World Orchid Conference to Sandton in 2014, published the annual yearbook{' '}
+                <em className="not-italic italic text-accent">Orchids South Africa</em> without a
+                break, and overhauled our judging system onto a regional model in 1990.
+              </p>
+            </div>
+          </div>
+          <figure className="m-0">
+            <div className="relative aspect-[4/3] w-full overflow-hidden border border-rule">
+              <Image
+                src="/images/orchid-violet.jpg"
+                alt="Members' glasshouse — Cape Orchid Society, 2024."
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
+              />
+            </div>
+            <figcaption className="mt-3 font-mono text-[11px] italic uppercase tracking-[0.14em] text-muted">
+              Members&rsquo; glasshouse — Cape Orchid Society, 2024.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section className="bg-bone py-20">
+        <div className="mx-auto max-w-[1280px] px-8">
+          <p className="text-center font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted">
+            What we stand for
+          </p>
+          <h2 className="mx-auto mt-2 max-w-[820px] text-center font-serif text-[2rem] font-medium leading-tight text-primary [&_em]:not-italic [&_em]:italic [&_em]:text-accent">
+            Mission, vision and the line <em>between us and WOSA</em>.
+          </h2>
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {PILLARS.map((pillar) => (
+              <article
+                key={pillar.name}
+                className="border border-rule border-l-2 border-l-accent bg-parchment p-7"
+              >
+                <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
+                  {pillar.name}
+                </h3>
+                <p className="mt-4 font-serif text-[16px] leading-relaxed text-ink">{pillar.body}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-parchment py-20">
+        <div className="mx-auto max-w-[1280px] px-8">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted">
+                Board &amp; Council 2025
+              </p>
+              <h2 className="mt-2 font-serif text-[2rem] font-medium leading-tight text-primary [&_em]:not-italic [&_em]:italic [&_em]:text-accent">
+                The people who <em>run SAOC</em>.
+              </h2>
+            </div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+              Elected biennially · AGM held in July
+            </p>
+          </div>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {boardMembers.map((member) => (
+              <article key={member.name} className="border border-rule bg-bone p-7">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary">
+                  <span className="font-serif text-[20px] text-ivory">{initials(member.name)}</span>
+                </div>
+                <p className="mt-5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted">
+                  {member.role}
+                </p>
+                <p className="mt-1 font-serif text-[20px] font-medium leading-snug text-primary">
+                  {member.name}
+                </p>
+                <p className="mt-1 font-serif text-[15px] text-ink">{member.society}</p>
+                <p className="mt-4 border-t border-rule pt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+                  {member.tenure}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[var(--primary-800)] py-20 text-ivory">
+        <div className="mx-auto max-w-[1280px] px-8">
+          <p className="text-center font-mono text-[10.5px] uppercase tracking-[0.18em] text-accent-soft">
+            Selected milestones
+          </p>
+          <h2 className="mt-2 text-center font-serif text-[2rem] font-medium leading-tight text-ivory [&_em]:not-italic [&_em]:italic [&_em]:text-accent-soft">
+            A working <em>chronology</em>.
+          </h2>
+          <ol className="mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-6">
+            {TIMELINE.map((step) => (
+              <li key={step.year} className="relative pt-6">
+                <span
+                  className="absolute left-0 top-0 h-px w-full bg-accent/40"
+                  aria-hidden="true"
+                />
+                <span
+                  className="absolute -top-1 left-0 h-2 w-2 rounded-full bg-accent"
+                  aria-hidden="true"
+                />
+                <p className="font-serif text-[28px] font-medium leading-none text-ivory">
+                  {step.year}
+                </p>
+                <p className="mt-3 font-mono text-[11px] leading-relaxed tracking-[0.04em] text-ivory/70">
+                  {step.text}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+    </>
+  );
+}

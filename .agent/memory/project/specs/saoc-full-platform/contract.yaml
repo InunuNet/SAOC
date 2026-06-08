@@ -1,0 +1,89 @@
+schema: athanor.contract/v1
+slug: phase-a-bedrock
+spec: Phase A foundation — ESLint flat config + Prettier + build verify
+created_at: '2026-06-06T07:00:00.000000+00:00'
+phases:
+  - id: 1
+    name: bedrock
+    assertions: [A1a, A1b, A1c, A1d, A1e, A1f, A1g, A1h, A1i, A1j, A1k, A1l, A1m, A1n, A1o, A1p]
+assertions:
+  - id: A1a
+    description: pnpm install completes successfully
+    verify:
+      kind: shell
+      cmd: 'pnpm install'
+  - id: A1b
+    description: eslint.config.mjs exists at repo root
+    verify:
+      kind: shell
+      cmd: 'test -f eslint.config.mjs'
+  - id: A1c
+    description: eslint.config.mjs is syntactically valid JS
+    verify:
+      kind: shell
+      cmd: 'node --check eslint.config.mjs'
+  - id: A1d
+    description: .prettierrc.json exists at repo root
+    verify:
+      kind: shell
+      cmd: 'test -f .prettierrc.json'
+  - id: A1e
+    description: .prettierrc.json is valid JSON
+    verify:
+      kind: shell
+      cmd: 'python3 -c "import json,sys; json.load(open(\".prettierrc.json\"))"'
+  - id: A1f
+    description: .prettierignore exists at repo root
+    verify:
+      kind: shell
+      cmd: 'test -f .prettierignore'
+  - id: A1g
+    description: package.json declares format script
+    verify:
+      kind: shell
+      cmd: 'grep -q "format" package.json'
+  - id: A1h
+    description: package.json declares format:check script
+    verify:
+      kind: shell
+      cmd: 'python3 -c "import json,sys; s=json.load(open(\"package.json\")).get(\"scripts\",{}); sys.exit(0 if \"format:check\" in s else 1)"'
+  - id: A1i
+    description: eslint dev dependency is installed
+    verify:
+      kind: shell
+      cmd: 'test -d node_modules/eslint'
+  - id: A1j
+    description: eslint-config-next dev dependency is installed
+    verify:
+      kind: shell
+      cmd: 'test -d node_modules/eslint-config-next'
+  - id: A1k
+    description: prettier dev dependency is installed
+    verify:
+      kind: shell
+      cmd: 'test -d node_modules/prettier'
+  - id: A1l
+    description: eslint-config-prettier dev dependency is installed
+    verify:
+      kind: shell
+      cmd: 'test -d node_modules/eslint-config-prettier'
+  - id: A1m
+    description: pnpm lint passes with zero errors
+    verify:
+      kind: shell
+      cmd: 'pnpm lint'
+  - id: A1n
+    description: pnpm format:check passes
+    verify:
+      kind: shell
+      cmd: 'pnpm format:check'
+  - id: A1o
+    description: pnpm type-check passes
+    verify:
+      kind: shell
+      cmd: 'pnpm type-check'
+  - id: A1p
+    description: pnpm build completes successfully
+    verify:
+      kind: shell
+      cmd: 'pnpm build'

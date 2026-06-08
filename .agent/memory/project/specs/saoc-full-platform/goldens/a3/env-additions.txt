@@ -1,0 +1,7 @@
+# Sanity CMS (project ID + dataset are public — safe to expose)
+NEXT_PUBLIC_SANITY_PROJECT_ID=
+NEXT_PUBLIC_SANITY_DATASET=production
+
+# Sanity server-only secrets (keep out of client bundle)
+SANITY_API_READ_TOKEN=
+SANITY_WEBHOOK_SECRET=

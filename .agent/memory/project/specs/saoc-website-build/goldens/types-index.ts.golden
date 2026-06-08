@@ -1,0 +1,124 @@
+// =============================================================
+// SAOC — types/index.ts
+// Domain types for all entities consumed by the SAOC website.
+// Source of truth: design/design_handoff_saoc/src/data.js
+// =============================================================
+
+// -------------------------------------------------------------
+// Province
+// -------------------------------------------------------------
+// Codes used throughout Society and Event entities. Includes 'ALL'
+// as a sentinel used by filter UIs (not by data records themselves).
+export type ProvinceCode =
+  | 'WC'
+  | 'EC'
+  | 'NC'
+  | 'FS'
+  | 'KZN'
+  | 'GP'
+  | 'MP'
+  | 'LP'
+  | 'NW';
+
+export type ProvinceFilterCode = ProvinceCode | 'ALL';
+
+export interface Province {
+  code: ProvinceFilterCode;
+  name: string;
+}
+
+// -------------------------------------------------------------
+// Society
+// -------------------------------------------------------------
+export interface Society {
+  name: string;
+  region: string;
+  province: ProvinceCode;
+  founded: number;
+  meet: string;
+  venue: string;
+  members: number;
+}
+
+// -------------------------------------------------------------
+// Event
+// -------------------------------------------------------------
+export type EventKind = 'Show' | 'Workshop' | 'Council' | 'Launch';
+
+export interface SocietyEvent {
+  id: number;
+  date: string;        // ISO YYYY-MM-DD
+  endDate?: string;    // ISO YYYY-MM-DD (omit for single-day events)
+  title: string;
+  host: string;
+  venue: string;
+  kind: EventKind;
+  province: ProvinceCode;
+}
+
+// -------------------------------------------------------------
+// National Show
+// -------------------------------------------------------------
+export type ShowStatus = 'upcoming' | 'past';
+
+export interface NationalShow {
+  edition: number;
+  year: number;
+  month: string;
+  host: string;        // Province name (e.g. "Western Cape")
+  venue: string;
+  status: ShowStatus;
+  days: number;
+  entries?: number;    // past shows only
+  visitors?: number;   // past shows only
+  trophies?: number;   // past shows only
+  note?: string;
+  theme?: string;
+}
+
+// -------------------------------------------------------------
+// Board
+// -------------------------------------------------------------
+export interface BoardMember {
+  name: string;
+  role: string;
+  society: string;
+  tenure: string;
+}
+
+// -------------------------------------------------------------
+// Awards
+// -------------------------------------------------------------
+export interface Award {
+  code: string;        // e.g. "AM/SAOC"
+  name: string;
+  threshold: string;   // may be "—"
+  description: string; // sourced from data.js `desc` field; mapped at the data layer
+}
+
+// -------------------------------------------------------------
+// Show Classes (judging groups)
+// -------------------------------------------------------------
+export interface ShowClass {
+  id: string;          // stable slug, e.g. "group-1"
+  code: string;        // short code (icon string), e.g. "C", "Cy", "Ph"
+  name: string;
+  group: string;       // e.g. "Group 1"
+  description: string; // sourced from data.js `desc` field; mapped at the data layer
+}
+
+// -------------------------------------------------------------
+// Partner
+// -------------------------------------------------------------
+export interface Partner {
+  name: string;
+}
+
+// -------------------------------------------------------------
+// Imagery
+// -------------------------------------------------------------
+export interface HeroImage {
+  name: string;        // stable key, e.g. "yellow"
+  path: string;        // path under /assets, e.g. "/assets/orchid-yellow.jpg"
+  alt: string;         // descriptive credit line
+}

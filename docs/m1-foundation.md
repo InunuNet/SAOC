@@ -1,0 +1,126 @@
+# M1 — Foundation
+
+Status: Done. QA: PASS (45/45 assertions, `tsc --noEmit` exits 0).
+
+## What was built
+
+**F1 — Project Scaffold**
+
+Next.js 15 App Router project with TypeScript strict mode, pnpm, and Tailwind CSS v4 (CSS-first config). Includes:
+
+- `app/globals.css` — Google Fonts import, design token `:root` block, and `@theme` Tailwind utility mappings
+- `apphosting.yaml` — Firebase App Hosting config with client and admin env var placeholders
+- `next.config.ts`, `postcss.config.mjs` (uses `@tailwindcss/postcss`), `tsconfig.json`
+- `public/images/` — 5 orchid photos, 7 logo PNGs
+- Route group `app/(marketing)/` for all public pages
+
+**F2 — Static Data Layer**
+
+Typed data modules covering all entities the site needs at launch. Data was ported verbatim from `design/design_handoff_saoc/src/data.js` with two field renames: `desc` to `description`, `icon` to `code`.
+
+## Design tokens
+
+Tokens are declared as CSS custom properties in the `:root` block of `app/globals.css`. Tailwind v4 maps them via an `@theme` block so they are available as utility classes.
+
+Token naming convention:
+
+| Token         | Purpose                   |
+| ------------- | ------------------------- |
+| `--primary`   | Brand green               |
+| `--accent`    | Gold accent               |
+| `--parchment` | Warm off-white background |
+| `--bone`      | Secondary surface         |
+| `--ink`       | Default text              |
+| `--rule`      | Divider / border          |
+| `--muted`     | Subdued text              |
+
+Usage example — a utility class derived from a token:
+
+```html
+<p class="text-ink bg-parchment">Body copy</p>
+```
+
+Typefaces: Crimson Pro (headings), Manrope (body), JetBrains Mono (code). Loaded via Google Fonts in `globals.css`.
+
+## Data layer
+
+All entities are exported from a single barrel:
+
+```ts
+import {
+  societies,
+  events,
+  shows,
+  board,
+  awards,
+  showClasses,
+  partners,
+  heroImages,
+  provinces,
+} from '@/lib/data';
+```
+
+Individual modules are in `lib/data/`. TypeScript interfaces are in `types/index.ts` and imported as:
+
+```ts
+import type { Society, SocietyEvent, NationalShow } from '@/types';
+```
+
+**Entities and record counts:** societies (21), events (16), shows (6), board (6), awards (6), showClasses (10), partners (6), heroImages (4), provinces (10 incl. ALL).
+
+## Adding a new data entity
+
+1. Add the TypeScript interface to `types/index.ts`.
+2. Create `lib/data/<entity>.ts` — export a typed `const` array using the new interface.
+3. Re-export from `lib/data/index.ts`.
+
+```ts
+// lib/data/index.ts
+export { sponsors } from './sponsors';
+```
+
+## Linting and formatting
+
+**ESLint** — flat config (`eslint.config.mjs`, ESLint 9). Active rule sets:
+
+- `next/core-web-vitals` — Next.js recommended rules including React and import hygiene
+- `next/typescript` — TypeScript-specific Next.js rules
+- `prettier` (via `eslint-config-prettier`) — disables ESLint rules that conflict with Prettier formatting
+
+Run the linter:
+
+```bash
+pnpm lint
+```
+
+Note: `next lint` emits a deprecation warning about the ESLint API. This is harmless. Migration to `eslint .` is deferred until Next.js 16 guidance stabilises.
+
+**Prettier** — config in `.prettierrc.json`:
+
+| Option          | Value      |
+| --------------- | ---------- |
+| `printWidth`    | 100        |
+| `singleQuote`   | true       |
+| `trailingComma` | es5        |
+| `semi`          | true       |
+| `tabWidth`      | 2          |
+
+Format all source files:
+
+```bash
+pnpm format
+```
+
+Check formatting without writing (CI-safe):
+
+```bash
+pnpm format:check
+```
+
+Ignored by Prettier (`.prettierignore`): `.next/`, `node_modules/`, `public/`, `pnpm-lock.yaml`, `next-env.d.ts`, `*.md`, `*.mdx`.
+
+## Known issues / next steps
+
+- `heroImages.ts`: `alt` text should be backfilled with credit lines from the source `data.js`.
+- Firebase: no project created yet; F10 wires the live integration. Do not add real credentials to `.env.local` until F10 is scoped.
+- Chrome components (header/footer/nav) are scoped to F3 in M2.

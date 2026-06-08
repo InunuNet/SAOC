@@ -1,0 +1,125 @@
+schema: athanor.contract/v1
+feature: A1-A2
+spec: phase-a-bedrock
+name: Phase A foundation — ESLint flat config + Prettier + build verify
+created_at: '2026-06-06T07:00:00.000000+00:00'
+
+assertions:
+  - id: A1-01
+    description: pnpm install completes successfully
+    verify:
+      kind: shell
+      cmd: pnpm install 2>&1 | grep -q "Done" && echo pass || echo fail
+      expect_exit: 0
+
+  - id: A1-02
+    description: eslint.config.mjs exists at repo root
+    verify:
+      kind: file_exists
+      path: eslint.config.mjs
+
+  - id: A1-03
+    description: eslint.config.mjs is syntactically valid JS
+    verify:
+      kind: shell
+      cmd: node --check eslint.config.mjs
+
+  - id: A1-04
+    description: .prettierrc.json exists at repo root
+    verify:
+      kind: file_exists
+      path: .prettierrc.json
+
+  - id: A1-05
+    description: .prettierrc.json is valid JSON
+    verify:
+      kind: shell
+      cmd: 'node -e "JSON.parse(require(''fs'').readFileSync(''.prettierrc.json'',''utf8''))"'
+
+  - id: A1-06
+    description: .prettierignore exists at repo root
+    verify:
+      kind: file_exists
+      path: .prettierignore
+
+  - id: A1-07
+    description: package.json declares format script
+    verify:
+      kind: file_contains
+      path: package.json
+      pattern: '"format"'
+
+  - id: A1-08
+    description: package.json declares format:check script
+    verify:
+      kind: file_contains
+      path: package.json
+      pattern: '"format:check"'
+
+  - id: A1-09
+    description: ESLint dev dependency is installed
+    verify:
+      kind: file_exists
+      path: node_modules/eslint
+
+  - id: A1-10
+    description: eslint-config-next dev dependency is installed
+    verify:
+      kind: file_exists
+      path: node_modules/eslint-config-next
+
+  - id: A1-11
+    description: prettier dev dependency is installed
+    verify:
+      kind: file_exists
+      path: node_modules/prettier
+
+  - id: A1-12
+    description: eslint-config-prettier dev dependency is installed
+    verify:
+      kind: file_exists
+      path: node_modules/eslint-config-prettier
+
+  - id: A1-13
+    description: pnpm lint passes with zero errors
+    verify:
+      kind: shell
+      cmd: pnpm lint
+
+  - id: A1-14
+    description: pnpm format:check passes — all files formatted
+    verify:
+      kind: shell
+      cmd: pnpm format:check
+
+  - id: A1-15
+    description: pnpm type-check passes — strict TS no errors
+    verify:
+      kind: shell
+      cmd: pnpm type-check
+
+  - id: A1-16
+    description: pnpm build completes successfully
+    verify:
+      kind: shell
+      cmd: pnpm build
+
+phases:
+  - id: 1
+    assertions:
+      - A1-01
+      - A1-02
+      - A1-03
+      - A1-04
+      - A1-05
+      - A1-06
+      - A1-07
+      - A1-08
+      - A1-09
+      - A1-10
+      - A1-11
+      - A1-12
+      - A1-13
+      - A1-14
+      - A1-15
+      - A1-16

@@ -1,0 +1,65 @@
+schema: athanor.contract/v1
+feature: F4
+name: Home page — hero carousel + mission block + nav cards + show band + events strip + yearbook + partners
+milestone: M3
+
+assertions:
+  - id: F4-01
+    desc: Home page component file exists
+    kind: shell
+    cmd: test -f app/(marketing)/page.tsx && echo "pass" || echo "fail"
+    expect: pass
+
+  - id: F4-02
+    desc: Hero component exists and has min-height/crossfade logic
+    kind: shell
+    cmd: test -f components/home/Hero.tsx && grep -q "crossfade\|carousel\|interval\|setActive" components/home/Hero.tsx && echo "pass" || echo "fail"
+    expect: pass
+
+  - id: F4-03
+    desc: MissionBlock component exists
+    kind: shell
+    cmd: test -f components/home/MissionBlock.tsx && echo "pass" || echo "fail"
+    expect: pass
+
+  - id: F4-04
+    desc: NavCards component exists and has hover lift logic
+    kind: shell
+    cmd: test -f components/home/NavCards.tsx && echo "pass" || echo "fail"
+    expect: pass
+
+  - id: F4-05
+    desc: ShowBand component exists with countdown
+    kind: shell
+    cmd: test -f components/home/ShowBand.tsx && grep -q "countdown\|Countdown\|2027\|setInterval\|useEffect" components/home/ShowBand.tsx && echo "pass" || echo "fail"
+    expect: pass
+
+  - id: F4-06
+    desc: EventsStrip component exists
+    kind: shell
+    cmd: test -f components/home/EventsStrip.tsx && echo "pass" || echo "fail"
+    expect: pass
+
+  - id: F4-07
+    desc: YearbookStrip component exists
+    kind: shell
+    cmd: test -f components/home/YearbookStrip.tsx && echo "pass" || echo "fail"
+    expect: pass
+
+  - id: F4-08
+    desc: PartnersSection component exists
+    kind: shell
+    cmd: test -f components/home/PartnersSection.tsx && echo "pass" || echo "fail"
+    expect: pass
+
+  - id: F4-09
+    desc: Home page imports all sections
+    kind: shell
+    cmd: grep -q "Hero\|MissionBlock\|NavCards\|ShowBand\|EventsStrip\|YearbookStrip\|PartnersSection" app/(marketing)/page.tsx && echo "pass" || echo "fail"
+    expect: pass
+
+  - id: F4-10
+    desc: Build produces clean output with home route
+    kind: shell
+    cmd: pnpm build 2>&1 | grep -q "Generating static pages" && echo "pass" || echo "fail"
+    expect: pass

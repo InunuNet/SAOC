@@ -1,0 +1,101 @@
+schema: athanor.contract/v1
+spec: saoc-website-build-f5
+slug: saoc-website-build
+created_at: '2026-06-04T00:00:00Z'
+mission: saoc-website-build
+milestone: M4
+goal: 'Build the SAOC About page (/about) with PageHero, OriginStory, Pillars, BoardGrid, and Timeline sections wired to board data and design tokens.'
+autonomy: high
+features:
+  - id: F5
+    name: 'About page (app/(marketing)/about/page.tsx) + components/about/* section library'
+    status: pending
+
+goldens:
+  - path: '.agent/memory/project/specs/saoc-website-build/goldens/about-page.tsx.golden'
+    description: 'Reference implementation for app/(marketing)/about/page.tsx — imports the 5 section components from @/components/about and renders them in brief order (PageHero, OriginStory, Pillars, BoardGrid, Timeline).'
+
+phases:
+  - id: 4
+    assertions:
+      [
+        A_F5_01,
+        A_F5_02,
+        A_F5_03,
+        A_F5_04,
+        A_F5_05,
+        A_F5_06,
+        A_F5_07,
+        A_F5_08,
+        A_F5_09,
+        A_F5_10,
+        A_F5_11,
+      ]
+
+assertions:
+  - id: A_F5_01
+    feature: F5
+    description: 'app/(marketing)/about/page.tsx exists'
+    verify: { kind: shell, cmd: "test -f 'app/(marketing)/about/page.tsx'" }
+
+  - id: A_F5_02
+    feature: F5
+    description: 'components/about/PageHero.tsx exists'
+    verify: { kind: shell, cmd: 'test -f components/about/PageHero.tsx' }
+
+  - id: A_F5_03
+    feature: F5
+    description: 'components/about/OriginStory.tsx exists'
+    verify: { kind: shell, cmd: 'test -f components/about/OriginStory.tsx' }
+
+  - id: A_F5_04
+    feature: F5
+    description: 'components/about/Pillars.tsx exists'
+    verify: { kind: shell, cmd: 'test -f components/about/Pillars.tsx' }
+
+  - id: A_F5_05
+    feature: F5
+    description: 'components/about/BoardGrid.tsx exists'
+    verify: { kind: shell, cmd: 'test -f components/about/BoardGrid.tsx' }
+
+  - id: A_F5_06
+    feature: F5
+    description: 'components/about/Timeline.tsx exists'
+    verify: { kind: shell, cmd: 'test -f components/about/Timeline.tsx' }
+
+  - id: A_F5_07
+    feature: F5
+    description: 'components/about/index.ts barrel exists'
+    verify: { kind: shell, cmd: 'test -f components/about/index.ts' }
+
+  - id: A_F5_08
+    feature: F5
+    description: 'about/page.tsx imports from @/components/about'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -Eq \"from ['\\\"]@/components/about['\\\"]\" 'app/(marketing)/about/page.tsx'",
+      }
+
+  - id: A_F5_09
+    feature: F5
+    description: 'BoardGrid imports boardMembers from @/lib/data'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -Eq \"from ['\\\"]@/lib/data['\\\"]\" components/about/BoardGrid.tsx && grep -q 'boardMembers' components/about/BoardGrid.tsx",
+      }
+
+  - id: A_F5_10
+    feature: F5
+    description: 'PageHero references the orchid-purple.jpg yearbook image'
+    verify: { kind: shell, cmd: "grep -q 'orchid-purple' components/about/PageHero.tsx" }
+
+  - id: A_F5_11
+    feature: F5
+    description: 'pnpm build compiles the About page with no errors (EXIT:0)'
+    verify:
+      {
+        kind: shell,
+        cmd: 'OUT=$(pnpm build 2>&1); RC=$?; echo "$OUT"; echo "EXIT:$RC"; test $RC -eq 0',
+      }

@@ -1,0 +1,107 @@
+schema: athanor.contract/v1
+slug: saoc-full-platform
+spec: A3+A4 — Sanity CMS install + 11 document schemas + 1 object schema, Studio at /studio
+created_at: '2026-06-06T14:00:00.000000+00:00'
+phases:
+  - id: 3
+    name: sanity-install
+    assertions:
+      [
+        A3a,
+        A3b,
+        A3c,
+        A3d,
+        A3e,
+        A3f,
+        A3g,
+        A3h,
+        A3i,
+        A3j,
+        A3k,
+        A3l,
+        A3m,
+        A3n,
+        A3o,
+        A3p,
+      ]
+assertions:
+  - id: A3a
+    description: sanity package is installed in node_modules
+    verify:
+      kind: shell
+      cmd: 'test -d node_modules/sanity'
+  - id: A3b
+    description: next-sanity package is installed in node_modules
+    verify:
+      kind: shell
+      cmd: 'test -d node_modules/next-sanity'
+  - id: A3c
+    description: '@sanity/image-url package is installed in node_modules'
+    verify:
+      kind: shell
+      cmd: 'test -d node_modules/@sanity/image-url'
+  - id: A3d
+    description: sanity.config.ts exists at repo root
+    verify:
+      kind: shell
+      cmd: 'test -f sanity.config.ts'
+  - id: A3e
+    description: sanity schemas barrel index exists
+    verify:
+      kind: shell
+      cmd: 'test -f sanity/schemas/index.ts'
+  - id: A3f
+    description: society document schema exists (spot-check of 11 documents)
+    verify:
+      kind: shell
+      cmd: 'test -f sanity/schemas/documents/society.ts'
+  - id: A3g
+    description: portableText object schema exists
+    verify:
+      kind: shell
+      cmd: 'test -f sanity/schemas/objects/portableText.ts'
+  - id: A3h
+    description: Studio catch-all route page exists
+    verify:
+      kind: shell
+      cmd: 'test -f "app/studio/[[...tool]]/page.tsx"'
+  - id: A3i
+    description: Studio route is force-dynamic (excluded from static export)
+    verify:
+      kind: shell
+      cmd: 'grep -q "force-dynamic" "app/studio/[[...tool]]/page.tsx"'
+  - id: A3j
+    description: Sanity client module exists
+    verify:
+      kind: shell
+      cmd: 'test -f lib/sanity/client.ts'
+  - id: A3k
+    description: .env.local.example declares NEXT_PUBLIC_SANITY_PROJECT_ID
+    verify:
+      kind: shell
+      cmd: 'grep -q "NEXT_PUBLIC_SANITY_PROJECT_ID" .env.local.example'
+  - id: A3l
+    description: next.config.ts allows images from cdn.sanity.io
+    verify:
+      kind: shell
+      cmd: 'grep -q "cdn.sanity.io" next.config.ts'
+  - id: A3m
+    description: all 11 document schema files exist
+    verify:
+      kind: shell
+      cmd: 'for s in homePage aboutPage nationalShow contactPage society boardMember event showClass award sponsor judge; do test -f "sanity/schemas/documents/$s.ts" || exit 1; done'
+  - id: A3n
+    description: sanity.config.ts sets basePath to /studio
+    verify:
+      kind: shell
+      cmd: 'grep -q "basePath" sanity.config.ts'
+  - id: A3o
+    description: pnpm type-check passes with Sanity deps and schemas
+    verify:
+      kind: shell
+      cmd: 'pnpm type-check'
+  - id: A3p
+    description: pnpm build completes (Studio route excluded from prerender)
+    verify:
+      kind: shell
+      cmd: 'pnpm build'

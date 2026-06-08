@@ -1,0 +1,163 @@
+schema: athanor.contract/v1
+spec: saoc-website-build-m4
+created_at: '2026-06-04T00:00:00Z'
+mission: saoc-website-build
+milestone: M4
+features: [F5, F6, F7]
+
+goldens:
+  - path: '.agent/memory/project/specs/saoc-website-build/goldens/AboutPage.tsx.golden'
+    description: 'Reference implementation for app/(marketing)/about/page.tsx — Server Component About page with five sections (PageHero, origin story two-col, pillars on --bone, board grid with initials avatars, dark --primary-800 timeline). Maps over boardMembers from @/lib/data; timeline years 1968/1974/1990/2014/2024/2027 hardcoded. Defines shared PageHero usage.'
+  - path: '.agent/memory/project/specs/saoc-website-build/goldens/PageHero.tsx.golden'
+    description: 'Reference implementation for components/ui/PageHero.tsx — shared interior-page hero. Props { image, eyebrow, heading, lede?, minHeight? }. Server Component; full-bleed background Image with dark overlay gradient scrim, eyebrow pill (JetBrains Mono uppercase tracking 0.18em), h1 heading, optional lede. 480px default min-height.'
+
+phases:
+  - id: 1
+    assertions:
+      [A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20]
+
+assertions:
+  # ---------------- F5 file existence ----------------
+  - id: A1
+    feature: F5
+    description: 'app/(marketing)/about/page.tsx exists'
+    verify: { kind: shell, cmd: "test -f 'app/(marketing)/about/page.tsx'" }
+
+  - id: A2
+    feature: F5
+    description: 'components/ui/PageHero.tsx exists (shared interior hero)'
+    verify: { kind: shell, cmd: 'test -f components/ui/PageHero.tsx' }
+
+  # ---------------- Server Component discipline ----------------
+  - id: A3
+    feature: F5
+    description: "About page is a Server Component (no 'use client' directive)"
+    verify: { kind: shell, cmd: '! grep -q "use client" ''app/(marketing)/about/page.tsx''' }
+
+  - id: A4
+    feature: F5
+    description: "PageHero is a Server Component (no 'use client' directive)"
+    verify: { kind: shell, cmd: '! grep -q "use client" components/ui/PageHero.tsx' }
+
+  # ---------------- Hero + data wiring ----------------
+  - id: A5
+    feature: F5
+    description: 'About page imports and uses the PageHero component'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -Eq \"from ['\\\"]@/components/ui/PageHero['\\\"]\" 'app/(marketing)/about/page.tsx' && grep -q 'PageHero' 'app/(marketing)/about/page.tsx'",
+      }
+
+  - id: A6
+    feature: F5
+    description: 'About page imports board data from @/lib/data'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -Eq \"from ['\\\"]@/lib/data['\\\"]\" 'app/(marketing)/about/page.tsx' && grep -q 'boardMembers' 'app/(marketing)/about/page.tsx'",
+      }
+
+  - id: A7
+    feature: F5
+    description: 'Hero uses the orchid-purple.jpg background image'
+    verify: { kind: shell, cmd: "grep -q 'orchid-purple' 'app/(marketing)/about/page.tsx'" }
+
+  - id: A8
+    feature: F5
+    description: 'Hero eyebrow text OUR HERITAGE is present'
+    verify: { kind: shell, cmd: "grep -Eqi 'OUR HERITAGE' 'app/(marketing)/about/page.tsx'" }
+
+  # ---------------- Design compliance: one <em> per heading ----------------
+  - id: A9
+    feature: F5
+    description: 'About page contains at least one <em> italic phrase (h1 emphasis)'
+    verify: { kind: shell, cmd: "grep -q '<em' 'app/(marketing)/about/page.tsx'" }
+
+  - id: A10
+    feature: F5
+    description: "h1 heading references 'growers' (hero headline copy)"
+    verify: { kind: shell, cmd: "grep -q 'growers' 'app/(marketing)/about/page.tsx'" }
+
+  # ---------------- Origin story ----------------
+  - id: A11
+    feature: F5
+    description: "Origin story opens with 'Bloemfontein, 28 July 1968.'"
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -q 'Bloemfontein' 'app/(marketing)/about/page.tsx' && grep -q '28 July 1968' 'app/(marketing)/about/page.tsx'",
+      }
+
+  # ---------------- Pillars on --bone ----------------
+  - id: A12
+    feature: F5
+    description: 'Pillars section uses the --bone background token'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -Eq 'bg-bone|var\\(--bone\\)|bg-\\[var\\(--bone\\)\\]' 'app/(marketing)/about/page.tsx'",
+      }
+
+  - id: A13
+    feature: F5
+    description: 'Pillars include Mission, Vision and Our remit headings'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -q 'Mission' 'app/(marketing)/about/page.tsx' && grep -q 'Vision' 'app/(marketing)/about/page.tsx' && grep -qi 'remit' 'app/(marketing)/about/page.tsx'",
+      }
+
+  - id: A14
+    feature: F5
+    description: 'Pillar cards reference the --accent token (2px left border)'
+    verify: { kind: shell, cmd: "grep -Eq 'accent' 'app/(marketing)/about/page.tsx'" }
+
+  # ---------------- Board grid ----------------
+  - id: A15
+    feature: F5
+    description: 'Board section maps over the boardMembers array'
+    verify: { kind: shell, cmd: "grep -Eq 'boardMembers\\.map' 'app/(marketing)/about/page.tsx'" }
+
+  - id: A16
+    feature: F5
+    description: 'Board avatar derives initials via split + slice (1-2 initials)'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -q 'split' 'app/(marketing)/about/page.tsx' && grep -q 'slice' 'app/(marketing)/about/page.tsx'",
+      }
+
+  - id: A17
+    feature: F5
+    description: 'Board card tenure separator uses var(--rule) hairline'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -Eq 'border-rule|var\\(--rule\\)|rule' 'app/(marketing)/about/page.tsx'",
+      }
+
+  # ---------------- Timeline (the single dark band) ----------------
+  - id: A18
+    feature: F5
+    description: 'Timeline section uses the --primary-800 dark band token'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -Eq 'primary-800|var\\(--primary-800\\)' 'app/(marketing)/about/page.tsx'",
+      }
+
+  - id: A19
+    feature: F5
+    description: 'Timeline contains the 1968 founding and 2027 future milestone years'
+    verify:
+      {
+        kind: shell,
+        cmd: "grep -q '1968' 'app/(marketing)/about/page.tsx' && grep -q '2027' 'app/(marketing)/about/page.tsx' && grep -q '1990' 'app/(marketing)/about/page.tsx' && grep -q '2014' 'app/(marketing)/about/page.tsx'",
+      }
+
+  # ---------------- Final gate ----------------
+  - id: A20
+    feature: F5
+    description: 'TypeScript compilation passes with no errors (strict mode)'
+    verify: { kind: shell, cmd: 'pnpm exec tsc --noEmit' }
