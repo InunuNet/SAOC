@@ -1,0 +1,60 @@
+schema: athanor.contract/v1
+slug: a7-firebase-provisioning
+goal: Scaffold Firebase App Hosting config files and document manual provisioning steps for InunuNet GCP account.
+created_at: '2026-06-08'
+autonomy: high
+
+features:
+  - id: A7
+    name: Firebase project provisioning (InunuNet account)
+    status: pending
+
+goldens:
+  - contracts/golden/a7/firebase.json
+  - contracts/golden/a7/.firebaserc
+  - contracts/golden/a7/apphosting.yaml
+  - contracts/golden/a7/docs/a7-firebase-checklist.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A7a
+      description: apphosting.yaml exists and has runConfig
+      kind: shell
+      command: test -f apphosting.yaml && grep -q "runConfig" apphosting.yaml
+    - id: A7b
+      description: apphosting.yaml has maxInstances
+      kind: shell
+      command: grep -q "maxInstances" apphosting.yaml
+    - id: A7c
+      description: firebase.json exists with hosting config
+      kind: shell
+      command: test -f firebase.json && grep -q "hosting" firebase.json
+    - id: A7d
+      description: .firebaserc exists
+      kind: shell
+      command: test -f .firebaserc
+    - id: A7e
+      description: .env.local.example has NEXT_PUBLIC_FIREBASE_API_KEY stub
+      kind: shell
+      command: grep -q "^NEXT_PUBLIC_FIREBASE_API_KEY=" .env.local.example
+    - id: A7f
+      description: .env.local.example has FIREBASE_ADMIN_PROJECT_ID stub
+      kind: shell
+      command: grep -q "^FIREBASE_ADMIN_PROJECT_ID=" .env.local.example
+    - id: A7g
+      description: .env.local.example has FIREBASE_ADMIN_PRIVATE_KEY stub
+      kind: shell
+      command: grep -q "^FIREBASE_ADMIN_PRIVATE_KEY=" .env.local.example
+    - id: A7h
+      description: docs/a7-firebase-checklist.md exists
+      kind: shell
+      command: test -f docs/a7-firebase-checklist.md
+    - id: A7i
+      description: pnpm type-check passes
+      kind: shell
+      command: pnpm type-check
+    - id: A7j
+      description: pnpm build passes
+      kind: shell
+      command: pnpm build

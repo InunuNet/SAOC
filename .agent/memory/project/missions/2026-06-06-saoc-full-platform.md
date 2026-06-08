@@ -12,8 +12,8 @@ cost_estimate:
   total_calls: 11
 last_checkpoint:
   milestone: MA
-  feature: A7
-  ts: '2026-06-08T15:30:00.000000+00:00'
+  feature: A8
+  ts: '2026-06-08T16:30:00.000000+00:00'
 features:
   - id: A1
     title: 'Lockfile + Next.js sanity check'
@@ -47,7 +47,9 @@ features:
     completed_at: '2026-06-08T15:30:00.000000+00:00'
   - id: A7
     title: 'Firebase project provisioning (InunuNet account)'
-    status: pending
+    status: done
+    started_at: '2026-06-08T15:30:00.000000+00:00'
+    completed_at: '2026-06-08T16:30:00.000000+00:00'
   - id: A8
     title: 'CI on PRs'
     status: pending

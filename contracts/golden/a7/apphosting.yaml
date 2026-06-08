@@ -1,0 +1,23 @@
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 2
+outputFiles:
+  - '.next/**'
+  - 'public/**'
+  - 'package.json'
+  - 'next.config.ts'
+env:
+  - variable: NEXT_PUBLIC_SANITY_PROJECT_ID
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_SANITY_DATASET
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: SANITY_API_TOKEN
+    secret: true
+  - variable: SANITY_REVALIDATE_SECRET
+    secret: true

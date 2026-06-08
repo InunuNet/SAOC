@@ -302,6 +302,42 @@ Disable via `GET /api/disable-draft`. When draft mode is active, `sanityFetch` s
 
 Home page components (`Hero`, `MissionBlock`, etc.) need to accept `homeData` props — the data is fetched in `app/(marketing)/page.tsx` but not yet passed down to child components. Wiring this is the first task for B1.
 
+## A7 — Firebase App Hosting scaffolding
+
+Adds the Firebase configuration files needed to deploy the Next.js 15 App Router app via Firebase App Hosting, and documents the remaining manual provisioning steps.
+
+### Files added / modified
+
+| File | Change |
+| --- | --- |
+| `firebase.json` | Added — App Hosting config; sets hosting source to project root and region to `us-central1` |
+| `.firebaserc` | Added — project alias stub mapping `default` to `saoc-website` |
+| `apphosting.yaml` | Updated — added `next.config.ts` to `outputFiles`; added `env` block for Sanity vars and secrets |
+| `docs/a7-firebase-checklist.md` | Added — manual provisioning checklist for Brad (GCP/Firebase console steps) |
+| `.gitignore` | Updated — added `*-firebase-adminsdk-*.json` to the Secrets section |
+
+### Key decisions
+
+- **Firebase App Hosting** was chosen over standard Firebase Hosting for native Next.js 15 App Router support (Server Components, Route Handlers, ISR).
+- **Sanity secrets** (`SANITY_API_TOKEN`, `SANITY_REVALIDATE_SECRET`) are declared `secret: true` in `apphosting.yaml`, which routes them through Google Secret Manager rather than plain environment variables.
+- **Scale-to-zero** (`minInstances: 0`) is set on staging to minimise cost while the project is in development.
+- **Project ID** `saoc-website` — requires the Firebase Blaze (pay-as-you-go) plan; the Spark plan does not support App Hosting.
+
+### Human actions required
+
+The CLI scaffolding is complete. Brad must complete the following in the GCP/Firebase console before a live deployment is possible:
+
+1. Create the Firebase project (`saoc-website`) and upgrade to Blaze plan.
+2. Enable Firebase App Hosting and connect the GitHub repository.
+3. Store `SANITY_API_TOKEN` and `SANITY_REVALIDATE_SECRET` in Google Secret Manager and grant the App Hosting service account access.
+4. Trigger the first deploy.
+
+See `docs/a7-firebase-checklist.md` for the full step-by-step checklist.
+
+### Contract gate
+
+10/10 assertions PASS (`contract-a7-firebase.yaml`).
+
 ## Known issues / next steps
 
 - `heroImages.ts`: `alt` text should be backfilled with credit lines from the source `data.js`.

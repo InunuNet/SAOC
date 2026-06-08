@@ -36,6 +36,7 @@ firebase-export-*/
 
 # ---- Secrets / keys ----
 *.pem
+*-firebase-adminsdk-*.json
 
 # ---- Logs ----
 npm-debug.log*
@@ -53,3 +54,16 @@ Thumbs.db
 
 # ---- Claude Code worktrees (agent artifacts) ----
 .claude/worktrees/
+!.agent/memory/scratch/improvement_loop/.gitkeep
+.agent/memory/scratch/improvement_loop/*
+!.agent/memory/scratch/improvement_loop/.gitkeep
+.agent/memory/project/failures/*
+!.agent/memory/project/failures/.gitkeep
+.agent/memory/project/inbox/archive/
+.agent/memory/project/inbox/*.txt
+.claude/scheduled_tasks.lock
+execution/tests/ghost-project/*/tests/fixtures/*.jsonl.tmp
+*.log
+fleet_update_report_*.md
+*_debug.*
+execution/tests/stress_test_log.txt
