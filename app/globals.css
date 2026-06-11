@@ -1,1 +1,16 @@
 @import "tailwindcss";
+
+:root {
+  /* Design-layer font stacks — reference the next/font injection variables
+     declared in app/layout.tsx (--font-serif / --font-sans / --font-mono). */
+  --serif: var(--font-serif), Georgia, 'Times New Roman', serif;
+  --sans: var(--font-sans), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --mono: var(--font-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}
+
+@theme {
+  /* Tailwind v4 utility aliases: font-heading / font-body / font-code */
+  --font-heading: var(--font-serif), Georgia, 'Times New Roman', serif;
+  --font-body: var(--font-sans), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-code: var(--font-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}

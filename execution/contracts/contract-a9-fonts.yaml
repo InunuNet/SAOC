@@ -1,0 +1,41 @@
+schema: athanor.contract/v1
+slug: saoc-a9-fonts
+spec: saoc-full-platform
+goal: 'A9: next/font Google Fonts migration — self-host Crimson Pro, Manrope, JetBrains Mono via next/font/google as CSS variables on <html>; expose design-layer --serif/--sans/--mono aliases and Tailwind @theme stubs in globals.css; eliminate the render-blocking fonts.googleapis.com @import.'
+created_at: '2026-06-11'
+autonomy: high
+status: pending
+phase: 1
+
+features:
+  - id: A9
+    name: 'next/font Google Fonts migration (Crimson Pro, Manrope, JetBrains Mono)'
+    status: pending
+
+goldens:
+  - .agent/memory/scratch/golden-a9-fonts.md
+
+assertions:
+  phase: 1
+  checks:
+    - id: A9a
+      description: 'app/layout.tsx imports from next/font/google'
+      command: 'grep -q "next/font/google" /Users/vetus/ai/SAOC/app/layout.tsx'
+    - id: A9b
+      description: 'app/layout.tsx imports the Crimson_Pro font'
+      command: 'grep -q "Crimson_Pro" /Users/vetus/ai/SAOC/app/layout.tsx'
+    - id: A9c
+      description: 'app/layout.tsx imports the Manrope font'
+      command: 'grep -q "Manrope" /Users/vetus/ai/SAOC/app/layout.tsx'
+    - id: A9d
+      description: 'app/layout.tsx imports the JetBrains_Mono font'
+      command: 'grep -q "JetBrains_Mono" /Users/vetus/ai/SAOC/app/layout.tsx'
+    - id: A9e
+      description: 'app/globals.css does NOT reference fonts.googleapis.com (no render-blocking @import)'
+      command: '! grep -q "fonts.googleapis.com" /Users/vetus/ai/SAOC/app/globals.css'
+    - id: A9f
+      description: 'app/layout.tsx applies the --font-serif next/font variable (on <html>)'
+      command: 'grep -q -- "--font-serif" /Users/vetus/ai/SAOC/app/layout.tsx'
+    - id: A9g
+      description: 'app/globals.css references the --font-serif theme variable'
+      command: 'grep -q -- "--font-serif" /Users/vetus/ai/SAOC/app/globals.css'

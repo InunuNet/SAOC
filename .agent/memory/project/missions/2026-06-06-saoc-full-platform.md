@@ -14,7 +14,7 @@ last_checkpoint:
   milestone: MA
   feature: A9
   ts: '2026-06-11T00:00:00.000000+00:00'
-  note: 'A8 (CI on PRs) done — gate 8/8 PASS. A9 (next/font migration) is next.'
+  note: 'A9 (next/font migration) done — gate 7/7 PASS. Milestone MA (Phase A, A1–A9) COMPLETE. Next: Phase B.'
 features:
   - id: A1
     title: 'Lockfile + Next.js sanity check'
@@ -58,11 +58,13 @@ features:
     completed_at: '2026-06-11T00:00:00.000000+00:00'
   - id: A9
     title: 'next/font migration'
-    status: pending
+    status: done
+    started_at: '2026-06-11T00:00:00.000000+00:00'
+    completed_at: '2026-06-11T00:00:00.000000+00:00'
 milestones:
   - id: MA
     name: 'Phase A — Foundation'
-    status: in_progress
+    status: done
     features:
       - A1
       - A2

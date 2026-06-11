@@ -1,31 +1,46 @@
-import type { Timestamp } from 'firebase-admin/firestore';
-
 export type Society = {
-  id: string;
   name: string;
-  slug: string;
+  region: string;
   province: string;
-  city: string;
+  founded: number;
+  meet: string;
   venue: string;
-  meetingDay: string;
-  meetingTime: string;
-  email: string;
+  members?: number;
+  city?: string;
+  slug?: string;
+  email?: string;
   chairName?: string;
   websiteUrl?: string;
-  foundedYear?: number;
 };
 
 export type SocietyEvent = {
-  id: string;
-  societyId: string;
+  id: number;
+  date: string;
+  endDate?: string;
   title: string;
-  startDate: Timestamp;
-  endDate: Timestamp;
+  host: string;
   venue: string;
-  contactName?: string;
-  contactEmail?: string;
-  contactPhone?: string;
+  kind: string;
+  province: string;
   description?: string;
+};
+
+export type NationalShow = {
+  edition: number;
+  year: number;
+  month: string;
+  host: string;
+  venue: string;
+  status: 'upcoming' | 'past';
+  days?: number;
+  entries?: number;
+  visitors?: number;
+  trophies?: number;
+  heroImage?: string;
+  grandChampion?: ShowWinner;
+  reserveChampion?: ShowWinner;
+  categoryWinners?: ShowWinner[];
+  note?: string;
 };
 
 export type ShowWinner = {
@@ -35,20 +50,43 @@ export type ShowWinner = {
   imageUrl?: string;
 };
 
-export type NationalShow = {
+export type Award = {
+  code: string;
+  name: string;
+  threshold: string;
+  description: string;
+};
+
+export type BoardMember = {
+  name: string;
+  role: string;
+  society: string;
+  tenure: string;
+};
+
+export type HeroImage = {
+  name: string;
+  path: string;
+  alt: string;
+};
+
+export type Partner = {
+  name: string;
+  url?: string;
+  logoUrl?: string;
+};
+
+export type Province = {
+  code: string;
+  name: string;
+};
+
+export type ShowClass = {
   id: string;
-  edition: number;
-  year: number;
-  hostSociety: string;
-  venue: string;
-  startDate: Timestamp;
-  endDate: Timestamp;
-  heroImage?: string;
-  description?: string;
-  grandChampion?: ShowWinner;
-  reserveChampion?: ShowWinner;
-  categoryWinners?: ShowWinner[];
-  galleryImages?: string[];
+  code: string;
+  name: string;
+  group: string;
+  description: string;
 };
 
 export type ContactSubmission = {
@@ -57,6 +95,6 @@ export type ContactSubmission = {
   email: string;
   subject: string;
   message: string;
-  submittedAt: Timestamp;
+  submittedAt: string;
   status: 'new' | 'read' | 'replied';
 };
