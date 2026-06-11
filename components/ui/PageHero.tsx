@@ -1,0 +1,48 @@
+// =============================================================
+// SAOC — components/ui/PageHero.tsx
+// Server Component — shared full-bleed hero for interior pages.
+// =============================================================
+
+import Image from 'next/image';
+import type { ReactNode } from 'react';
+
+interface PageHeroProps {
+  image: string;
+  eyebrow: string;
+  heading: ReactNode;
+  lede?: string;
+  minHeight?: string;
+}
+
+export function PageHero({ image, eyebrow, heading, lede, minHeight = '480px' }: PageHeroProps) {
+  return (
+    <section className="relative isolate flex items-end overflow-hidden" style={{ minHeight }}>
+      <Image
+        src={image}
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute inset-0 bg-gradient-to-t from-[var(--primary-800)]/85 via-[var(--primary-800)]/55 to-[var(--primary-800)]/25"
+        aria-hidden="true"
+      />
+      <div className="relative z-10 mx-auto w-full max-w-[1280px] px-8 pb-16 pt-28">
+        <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory">
+          {eyebrow}
+        </span>
+        <h1 className="mt-5 max-w-3xl font-serif text-[clamp(2.25rem,5vw,3.5rem)] font-medium leading-[1.05] text-ivory">
+          {heading}
+        </h1>
+        {lede ? (
+          <p className="mt-5 max-w-2xl font-sans text-[17px] leading-relaxed text-ivory/85">
+            {lede}
+          </p>
+        ) : null}
+      </div>
+    </section>
+  );
+}
