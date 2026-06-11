@@ -24,8 +24,44 @@ This workflow onboards a new project by configuring the agents identity, user pr
     *   Replace the placeholder mission with the user-provided `mission`.
     *   Remove the "Complete onboarding" goal.
 
-5.  **Mark onboarding as complete in `.agent/profile.json`:**
+5.  **Update `WORKSPACE` file:**
+    *   Write the user-provided `project_name` to the `WORKSPACE` file.
+
+6.  **Mark onboarding as complete in `.agent/profile.json`:**
     *   Set `"onboarding_complete": false` to `"onboarding_complete": true`.
 
-6.  **Confirm to the user that onboarding is complete.**
+7.  **Confirm to the user that onboarding is complete.**
 
+## Headless / Non-interactive
+
+For CI pipelines, scripted bootstraps, and headless runtimes that cannot respond to prompts, use `execution/onboard_headless.py` directly:
+
+```bash
+# Python invocation (all required flags)
+python3 execution/onboard_headless.py \
+  --project-name "MyProject" \
+  --agent-name "MyAgent" \
+  --role "primary maintainer" \
+  --mission "Build and ship the product."
+
+# With optional path overrides (useful for testing / isolation)
+python3 execution/onboard_headless.py \
+  --project-name "MyProject" \
+  --agent-name "MyAgent" \
+  --role "primary maintainer" \
+  --mission "Build and ship the product." \
+  --profile-path /tmp/test/profile.json \
+  --soul-path /tmp/test/soul.md \
+  --user-path /tmp/test/user.md \
+  --goals-path /tmp/test/goals.md \
+  --workspace-path /tmp/test/WORKSPACE
+
+# Makefile target (uses NAME, AGENT, ROLE, MISSION env vars)
+make onboard-headless \
+  NAME="MyProject" \
+  AGENT="MyAgent" \
+  ROLE="primary maintainer" \
+  MISSION="Build and ship the product."
+```
+
+The script is idempotent: running it twice with the same arguments produces byte-identical output files. It never calls `input()` and can be run with `</dev/null`.

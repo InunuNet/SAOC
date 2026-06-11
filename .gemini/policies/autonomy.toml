@@ -48,24 +48,30 @@
 
 [[rule]]
   toolName = "run_shell_command"
-  commandRegex = "(ls|cat|grep|make|python3|bash|echo|pwd|--help|git status|git diff|git log|gh issue|gh api|gh repo)"
+  commandRegex = "(ls|cat|grep|make|python3|bash|echo|pwd|--help|git status|git diff|git log|git add|git commit|git push|git pull|git fetch|git branch|git checkout|git stash|git show|gh issue list|gh issue comment|gh issue close|gh issue view|gh pr|gh pr create|gh pr list|gh pr view|gh pr merge|gh api|gh repo|jq|wc|head|tail|sort|uniq|sed|awk|find|curl|test|mkdir|rm|cp|mv|touch|printf|date|basename|dirname)" # allow
   decision = "allow"
   priority = 999
-  description = "Allow common, safe shell commands."
+  description = "Allow common shell commands including git operations and gh CLI subcommands. Note: gh issue create is only allowed via the narrow InunuNet/Athanor rule below."
 
 [[rule]]
   toolName = ["write_file", "replace"]
-  argsPattern = "(\\.git/|\\.env|\\.sops\\.yaml|\\.pem$|\\.key$|/secrets/|init\\.sh|full_boot\\.sh)"
+  argsPattern = "(\\.git/|\\.env|\\.sops\\.yaml|\\.pem$|\\.key$|/secrets/|init\\.sh|full_boot\\.sh|\\.ssh/|\\.aws/|\\.gnupg/)"
   decision = "deny"
   priority = 999
   description = "Deny writing to sensitive files and directories."
 
 [[rule]]
+  toolName = ["write_file", "replace"]
+  decision = "allow"
+  priority = 950
+  description = "Allow writing to project files. Sensitive-path denials above (priority 999) override this."
+
+[[rule]]
   toolName = "run_shell_command"
-  commandPrefix = ["rm -rf", "git push", "git commit", "git reset", "git rebase", "sudo", "chmod", "chown"]
+  commandPrefix = ["rm -rf", "git push --force", "git reset --hard", "git rebase -i", "sudo", "chmod 777", "chown root"]
   decision = "deny"
   priority = 999
-  description = "Deny execution of highly dangerous shell commands."
+  description = "Deny execution of destructive commands. git commit/push/pull are allowed by the allow regex above."
 
 [[rule]]
   toolName = "run_shell_command"
@@ -80,3 +86,10 @@
   decision = "deny"
   priority = 999
   description = "Deny writing to the autonomy policy file."
+
+[[rule]]
+  toolName = "run_shell_command"
+  commandRegex = "gh issue create.*InunuNet/Athanor"
+  decision = "allow"
+  priority = 999
+  description = "Allow report-harness-bug skill to file issues against InunuNet/Athanor — the sole sanctioned cross-repo exception."

@@ -55,3 +55,18 @@ _These v4.0 features are blocked pending the stabilization of the v3.x series. D
 ## Completed
 
 > Truncated 13 items at trim time (2026-06-01). Restore from git history if needed.
+
+## BLOCKING — Hosting Research (added 2026-06-11)
+
+**Priority: CRITICAL — blocks all deployment work**
+
+Research all Node.js/Next.js hosting platforms against SAOC constraints:
+- Private GitHub org repo (InunuNet/SAOC) — must work on free/low tier
+- South African audience — Johannesburg or Cape Town PoP preferred
+- Non-profit budget — free tier or minimal cost
+- Next.js 15 App Router + SSR (not static only)
+- Auto-deploy on push to main
+
+Platforms to cover: Cloudflare Pages, Railway, Render, Fly.io, Netlify, DigitalOcean App Platform, AWS Amplify, Azure Static Web Apps, Coolify (self-host), and any others relevant.
+
+Deliverable: comparison table with verdict + recommended platform. Brad picks, THEN implementation begins.

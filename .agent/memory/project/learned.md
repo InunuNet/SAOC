@@ -105,3 +105,32 @@ This file documents key learnings, decisions, and pitfalls encountered during th
 - (2026-06-08) **`require_qa_report` hook needs a `## Adversarial` section.** The hook greps for `## Adversarial` literally in the QA report before allowing @docs dispatch. A QA report with findings but no `## Adversarial` heading silently blocks the chain. Make this a template line in the QA skill.
 - (2026-06-08) **Firebase project ID `saoc-website` must be globally unique.** Project IDs share a global namespace across all of GCP — `saoc-website` may already be taken when Brad runs `firebase projects:create`. Fallback naming: `saoc-website-staging`, `saoc-website-inunu`, `inunu-saoc`. The `.firebaserc` alias stub must be updated to match whatever ID is actually provisioned.
 - (2026-06-08) **A7 is a "human-action" feature.** Scaffolding (firebase.json, .firebaserc, apphosting.yaml env block, docs checklist) is all that can be automated — actual project creation, App Hosting backend wiring, service account key generation, and Secret Manager population are GCP console actions Brad must perform. Future similar features: deliver scaffolding + a `docs/<feature>-checklist.md` and treat the contract gate as "scaffold ready" not "deployed".
+
+## A7 Firebase → Vercel Migration (2026-06-11)
+
+- (2026-06-11) **Hosting changed: Firebase App Hosting → Vercel.** Firebase App Hosting does not support `africa-south1` (Johannesburg). Supported regions are only: `us-central1`, `us-east4`, `us-east5`, `asia-east1`, `asia-southeast1`, `europe-west4`. For SAOC's South African audience, Vercel is the correct choice — they have a Johannesburg edge node (<20ms latency vs ~220ms from us-central1).
+- (2026-06-11) **GitHub repo is InunuNet/SAOC (private).** Corrected from earlier entry (BDauth/SAOC no longer valid). Repo was created fresh on 2026-06-11; shallow history was rewritten with `git filter-repo` to remove missing parent object before first push.
+- (2026-06-11) **apphosting.yaml is now obsolete** for hosting but kept in repo as reference. Firebase services (Auth, Firestore) are still on `saoc-website` GCP project — only App Hosting is being replaced.
+- (2026-06-11) **Sanity project:** `26yfbug4` under InunuNet org, dataset `production`, free tier. Fits SAOC usage (<<10k docs, <<250k API req/month). Growth Trial runs 30 days then drops to free automatically — no action needed.
+- (2026-06-11) **apphosting.yaml `secret: true` is invalid syntax.** Firebase requires `secret: secretName` (string) or `value: "literal"`. `secret: true` causes preparer step to fail with `either 'value' or 'secret' field is required`.
+
+## CRITICAL MISS — Hosting Research (2026-06-11)
+
+- (2026-06-11) **NEVER commit to a hosting platform without researching ALL constraints first.** Constraints for SAOC: (1) private GitHub org repo, (2) South African audience — Johannesburg latency matters, (3) non-profit budget — free tier required, (4) Next.js App Router with SSR. Firebase App Hosting was chosen without checking region support (no africa-south1) or budget fit. Vercel was recommended without checking private org repo paywall ($20/user/month on Hobby = blocked). Both wasted a full session. **Before ANY hosting decision, run a full research pass covering: supported regions, private org repo policy, free tier limits, Next.js SSR support, and pricing.**
+- (2026-06-11) **Repo MUST stay in InunuNet org and MUST stay private.** Brad cannot transfer it to a personal account (company IP, multiple owners). Any hosting solution must support private repos under GitHub organisations on a free or near-free tier.
+
+## Hosting Research Findings (2026-06-11)
+
+- (2026-06-11) **Hosting decision: Cloudflare Workers recommended.** Full research at `.agent/memory/scratch/research-hosting-2026-06-11.md`. Summary of findings:
+  - **Netlify:** private org repo = Pro only ($20/member/mo). BLOCKED.
+  - **Vercel:** private org repo = Pro only ($20/user/mo). BLOCKED.
+  - **Firebase App Hosting:** no africa-south1. BLOCKED (already confirmed).
+  - **AWS Amplify:** af-south-1 NOT supported for Amplify Hosting. BLOCKED.
+  - **Render:** no South African PoP. Closest = Frankfurt (~150ms to JHB). Eliminated.
+  - **DigitalOcean App Platform:** no SA region. Static only free. Eliminated.
+  - **Railway:** no SA region, platform reliability issues. Eliminated.
+  - **Fly.io (`jnb` region):** JNB available, CLI-based (no org repo restriction), $5/mo minimum. Viable backup.
+  - **Cloudflare Workers:** ✅ JHB+CPT+DUR PoPs, ✅ private org repos FREE, ✅ Next.js 15 App Router + SSR via `@opennextjs/cloudflare`, ✅ auto-deploy, 100K req/day free. **WINNER.**
+- (2026-06-11) **Cloudflare Workers free plan CPU limit:** 10ms per HTTP request. Next.js SSR typically uses 10-20ms. SAOC is content-heavy (Sanity CDN); may fit. Start free, upgrade to Workers Paid ($5/mo) if CPU errors appear. Paid gives 30s CPU time per request.
+- (2026-06-11) **Cloudflare Workers adapter:** Use `@opennextjs/cloudflare` (NOT the old `@cloudflare/next-on-pages`). Supports Next.js 14, 15, 16; App Router; SSR; ISR; Route Handlers; Image optimization. Worker size: 3 MiB compressed on free, 10 MiB on paid.
+- (2026-06-11) **Fly.io free tier deprecated:** New Fly.io orgs get a $5/mo Hobby plan (no free tier). JNB region available. Docker-based — CLI deploys, no GitHub OAuth restriction. Viable if Cloudflare Workers is ruled out.

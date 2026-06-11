@@ -1,5 +1,8 @@
----
-description: Claude Code hook configuration and usage rules.
+# Claude Code Hooks Reference
+
+This skill documents valid hook types, patterns, and common mistakes for Claude Code hooks.
+Invoke when writing or debugging hooks in `.claude/settings.json`.
+
 ---
 
 # Claude Code Hooks — Rules

@@ -41,5 +41,8 @@
   "identity": {
     "agent_name": "Athanor",
     "project_role": "primary maintainer"
+  },
+  "autonomy": {
+    "level": "loop"
   }
 }

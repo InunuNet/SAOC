@@ -6,11 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/full_boot.sh && echo \"\\n🤖 ATHANOR FRAMEWORK (Athanor v$(cat .agent/version))\\nIdentity: $(jq -r '.identity.agent_name // \"Athanor Agent\"' .agent/profile.json) | Identity Status: Active\\nRead the injected BOOT CONTEXT above.\""
-          },
-          {
-            "type": "prompt",
-            "prompt": "Read the context provided by the boot hook, acknowledge the Athanor/Athanor mission. Run /boot if you need to refresh your understanding."
+            "command": "bash execution/hooks/full_boot.sh && echo \"\\n🤖 ATHANOR FRAMEWORK (Athanor v$(cat .agent/version 2>/dev/null || echo '?'))\\nIdentity: $(python3 -c \\\"import json; p=json.load(open('.agent/profile.json')); print(p.get('identity',{}).get('agent_name', p.get('project_name','Agent')))\\\" 2>/dev/null || echo 'Agent') | Boot: OK\\nRead the boot context above before starting.\""
           }
         ]
       }

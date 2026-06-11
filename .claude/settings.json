@@ -1,6 +1,18 @@
 {
   "permissions": {
-    "allow": ["Bash", "Read", "Write", "Edit", "Glob", "Grep", "WebFetch", "WebSearch", "Task", "Skill"],
+    "allow": [
+      "Bash",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "Task",
+      "Skill",
+      "ToolSearch"
+    ],
     "deny": [
       "Bash(rm -rf *)",
       "Bash(git push --force *)",
@@ -28,7 +40,7 @@
           },
           {
             "type": "command",
-            "command": "echo \"You are now operating within the $(jq -r '.project_name // \"Athanor\"' .agent/profile.json) Agentic Workspace (v$(cat .agent/version)). Identity: $(jq -r '.identity.agent_name // \"Athanor Agent\"' .agent/profile.json) | Identity Status: Active. A full boot context was just injected above — framework identity (AGENTS.md), workspace, last session, project rules, goals, learned, backlog, brain recall, blockers, and git remotes. Read the injected BOOT CONTEXT carefully. You have 8 specialized agents at your disposal (@lead, @dev, @designer, etc.). Your primary goal is autonomous self-improvement for this project. Report boot status using this exact format: ✅ ATHANOR: [name] | 🤖 Agents: 8 roles active | Last session: [1-line summary] | Goals: [count] active | Backlog: [count] open items | Rules loaded: yes | ➡️ Ready.\""
+            "command": "echo \"You are now operating within the $(jq -r '.project_name // \"Athanor\"' .agent/profile.json) Agentic Workspace (v$(cat .agent/version)). Identity: $(jq -r '.identity.agent_name // \"Athanor Agent\"' .agent/profile.json) | Identity Status: Active. A full boot context was just injected above \u2014 framework identity (AGENTS.md), workspace, last session, project rules, goals, learned, backlog, brain recall, blockers, and git remotes. Read the injected BOOT CONTEXT carefully. You have 8 specialized agents at your disposal (@lead, @dev, @designer, etc.). Your primary goal is autonomous self-improvement for this project. Report boot status using this exact format: \u2705 ATHANOR: [name] | \ud83e\udd16 Agents: 8 roles active | Last session: [1-line summary] | Goals: [count] active | Backlog: [count] open items | Rules loaded: yes | \u27a1\ufe0f Ready.\""
           }
         ]
       }
@@ -39,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes — run /wrap-up at start of next session.'; fi"
+            "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes \u2014 run /wrap-up at start of next session.'; fi"
           },
           {
             "type": "command",
@@ -56,6 +68,11 @@
             "type": "command",
             "command": "input=$(cat); trigger=$(printf '%s' \"$input\" | python3 -c \"import sys,json; print(json.load(sys.stdin).get('compaction_trigger','unknown'))\" 2>/dev/null || echo 'unknown'); recent=$(git log --oneline -5 2>/dev/null | tr '\\n' '; ' || echo 'no git'); python3 execution/brain.py remember --summary \"Pre-compaction checkpoint ($trigger). Recent commits: $recent\" --tags \"compaction,checkpoint\" 2>/dev/null || true",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "printf '{\"systemMessage\": \"COMPACT FORMAT MANDATE — Target <=1500 tokens total. INCLUDE: file paths changed (1 line each), key decisions (1 line each), active mission + current feature checkpoint, blockers. EXCLUDE: inline code blocks, file contents, error transcripts, verbatim tool output, large diffs. Use 1-line bullets only. Never quote content verbatim. Ruthlessly concise — summary is context, not a record.\"}'",
+            "timeout": 5
           }
         ]
       }
@@ -65,8 +82,31 @@
         "matcher": "*",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Context was just compacted. Re-read .agent/memory/project/goals.md and .agent/memory/project/learned.md now to restore critical context before continuing."
+            "type": "command",
+            "command": "bash execution/hooks/post_compact_restore.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/post_compact_inject.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/harness_heartbeat.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/inject_pressure.sh",
+            "timeout": 5
           }
         ]
       }
@@ -97,11 +137,24 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/block_asq_in_loop.sh"
+          }
+        ]
+      },
+      {
         "matcher": "Write",
         "hooks": [
           {
             "type": "command",
             "command": "bash execution/hooks/check_autonomy.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_contract_for_write.sh"
           },
           {
             "type": "command",
@@ -115,6 +168,10 @@
           {
             "type": "command",
             "command": "bash execution/hooks/check_autonomy.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_contract_for_write.sh"
           },
           {
             "type": "command",
@@ -161,6 +218,18 @@
           {
             "type": "command",
             "command": "bash execution/hooks/require_qa_report.sh"
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/quota_death_checkpoint.sh",
+            "timeout": 5
           }
         ]
       }
