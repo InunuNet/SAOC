@@ -64,3 +64,23 @@ export const partnersQuery = defineQuery(`
     description
   }
 `);
+
+export const aboutPageQuery = defineQuery(`
+  *[_type == "aboutPage"][0]{
+    title,
+    pillars,
+    timelineNodes,
+    boardIntroText
+  }
+`);
+
+export const boardMembersQuery = defineQuery(`
+  *[_type == "boardMember"] | order(order asc){
+    _id,
+    name,
+    role,
+    email,
+    photo,
+    order
+  }
+`);

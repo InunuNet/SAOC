@@ -1,0 +1,47 @@
+schema: athanor.contract/v1
+slug: saoc-b2-about
+spec: saoc-full-platform
+goal: 'B2: About page Sanity build — add aboutPageQuery + boardMembersQuery to sanity/queries.ts; build app/(marketing)/about/page.tsx as an async Server Component fetching both in Promise.all; create components/about/BoardGrid.tsx (responsive grid of board member cards: name serif bold, role mono uppercase, email small) plus components/about/index.ts barrel; render PageHero -> pillars (PortableText) -> timeline (PortableText) -> board grid -> static WOSA note; install @portabletext/react; all Sanity data optional with static fallbacks (pillars/timeline -> static copy, empty board -> lib/data/board.ts). Revalidation tags [aboutPage, boardMember, sanity].'
+created_at: '2026-06-11'
+autonomy: high
+status: pending
+phase: 1
+
+features:
+  - id: B2
+    name: 'About page Sanity build (queries, page, BoardGrid, PortableText, fallbacks)'
+    status: pending
+
+goldens:
+  - .agent/memory/scratch/golden-b2-about.md
+
+qa_inputs:
+  - .agent/memory/scratch/qa-input-b2-about.md
+
+assertions:
+  phase: 1
+  checks:
+    - id: B2a
+      description: 'sanity/queries.ts defines aboutPageQuery'
+      command: "grep -q 'aboutPageQuery' /Users/vetus/ai/SAOC/sanity/queries.ts"
+    - id: B2b
+      description: 'sanity/queries.ts defines boardMembersQuery'
+      command: "grep -q 'boardMembersQuery' /Users/vetus/ai/SAOC/sanity/queries.ts"
+    - id: B2c
+      description: 'about page fetches in parallel with Promise.all'
+      command: "grep -q 'Promise.all' '/Users/vetus/ai/SAOC/app/(marketing)/about/page.tsx'"
+    - id: B2d
+      description: 'about page uses aboutPageQuery'
+      command: "grep -q 'aboutPageQuery' '/Users/vetus/ai/SAOC/app/(marketing)/about/page.tsx'"
+    - id: B2e
+      description: 'about page uses boardMembersQuery'
+      command: "grep -q 'boardMembersQuery' '/Users/vetus/ai/SAOC/app/(marketing)/about/page.tsx'"
+    - id: B2f
+      description: 'components/about/BoardGrid.tsx exists'
+      command: "test -f /Users/vetus/ai/SAOC/components/about/BoardGrid.tsx"
+    - id: B2g
+      description: '@portabletext/react referenced in about page, BoardGrid, or package.json'
+      command: "grep -rq '@portabletext/react' '/Users/vetus/ai/SAOC/app/(marketing)/about/page.tsx' /Users/vetus/ai/SAOC/components/about/BoardGrid.tsx /Users/vetus/ai/SAOC/package.json"
+    - id: B2h
+      description: 'about page no longer contains the placeholder string'
+      command: "! grep -q '\\[Placeholder' '/Users/vetus/ai/SAOC/app/(marketing)/about/page.tsx'"

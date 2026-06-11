@@ -12,9 +12,9 @@ cost_estimate:
   total_calls: 11
 last_checkpoint:
   milestone: MB
-  feature: B1
+  feature: B2
   ts: '2026-06-11T00:00:00.000000+00:00'
-  note: 'B1 home Sanity wiring 8/8 PASS. Next: B2 About retrofit.'
+  note: 'B2 About page 8/8 PASS. Next: B3 Societies.'
 features:
   - id: A1
     title: 'Lockfile + Next.js sanity check'
@@ -68,7 +68,9 @@ features:
     completed_at: '2026-06-11T00:00:00.000000+00:00'
   - id: B2
     title: 'About page — retrofit to Sanity'
-    status: pending
+    status: done
+    started_at: '2026-06-11T00:00:00.000000+00:00'
+    completed_at: '2026-06-11T00:00:00.000000+00:00'
   - id: B3
     title: 'Societies page — greenfield with province filter'
     status: pending
