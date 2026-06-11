@@ -10,14 +10,12 @@ outputFiles:
   - 'next.config.ts'
 env:
   - variable: NEXT_PUBLIC_SANITY_PROJECT_ID
+    value: "26yfbug4"
     availability:
       - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_SANITY_DATASET
+    value: "production"
     availability:
       - BUILD
       - RUNTIME
-  - variable: SANITY_API_TOKEN
-    secret: true
-  - variable: SANITY_REVALIDATE_SECRET
-    secret: true
