@@ -1,0 +1,44 @@
+schema: athanor.contract/v1
+slug: saoc-b1-home
+spec: saoc-full-platform
+goal: 'B1: Home page Sanity wiring — pass server-fetched Sanity data (homePageQuery heroImages/missionText, upcomingEventsQuery, partnersQuery, nationalShowQuery countdownDate) as props into Hero/MissionBlock/EventsStrip/PartnersSection/ShowBand. Remove static lib/data imports from EventsStrip and PartnersSection. All props optional with graceful fallback to static data when Sanity returns null. NavCards and YearbookStrip unchanged.'
+created_at: '2026-06-11'
+autonomy: high
+status: pending
+phase: 1
+
+features:
+  - id: B1
+    name: 'Home page Sanity wiring (Hero, MissionBlock, EventsStrip, PartnersSection, ShowBand)'
+    status: pending
+
+goldens:
+  - .agent/memory/scratch/golden-b1-home.md
+
+assertions:
+  phase: 1
+  checks:
+    - id: B1a
+      description: 'app/(marketing)/page.tsx passes a prop to <Hero (images or similar)'
+      command: "grep -Eq '<Hero[[:space:]]+[a-zA-Z]' '/Users/vetus/ai/SAOC/app/(marketing)/page.tsx'"
+    - id: B1b
+      description: 'components/home/Hero.tsx accepts an images prop'
+      command: "grep -q 'images' /Users/vetus/ai/SAOC/components/home/Hero.tsx"
+    - id: B1c
+      description: 'app/(marketing)/page.tsx passes a prop to <EventsStrip'
+      command: "grep -Eq '<EventsStrip[[:space:]]+[a-zA-Z]' '/Users/vetus/ai/SAOC/app/(marketing)/page.tsx'"
+    - id: B1d
+      description: 'components/home/EventsStrip.tsx does NOT import from lib/data'
+      command: "! grep -q \"from '@/lib/data'\" /Users/vetus/ai/SAOC/components/home/EventsStrip.tsx"
+    - id: B1e
+      description: 'app/(marketing)/page.tsx passes a prop to <PartnersSection'
+      command: "grep -Eq '<PartnersSection[[:space:]]+[a-zA-Z]' '/Users/vetus/ai/SAOC/app/(marketing)/page.tsx'"
+    - id: B1f
+      description: 'components/home/PartnersSection.tsx does NOT import from lib/data'
+      command: "! grep -q \"from '@/lib/data'\" /Users/vetus/ai/SAOC/components/home/PartnersSection.tsx"
+    - id: B1g
+      description: 'app/(marketing)/page.tsx imports/uses upcomingEventsQuery'
+      command: "grep -q 'upcomingEventsQuery' '/Users/vetus/ai/SAOC/app/(marketing)/page.tsx'"
+    - id: B1h
+      description: 'app/(marketing)/page.tsx imports/uses partnersQuery'
+      command: "grep -q 'partnersQuery' '/Users/vetus/ai/SAOC/app/(marketing)/page.tsx'"

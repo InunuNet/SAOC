@@ -11,10 +11,10 @@ cost_estimate:
   milestones: 1
   total_calls: 11
 last_checkpoint:
-  milestone: MA
-  feature: A9
+  milestone: MB
+  feature: B1
   ts: '2026-06-11T00:00:00.000000+00:00'
-  note: 'A9 (next/font migration) done — gate 7/7 PASS. Milestone MA (Phase A, A1–A9) COMPLETE. Next: Phase B.'
+  note: 'B1 home Sanity wiring 8/8 PASS. Next: B2 About retrofit.'
 features:
   - id: A1
     title: 'Lockfile + Next.js sanity check'
@@ -61,6 +61,29 @@ features:
     status: done
     started_at: '2026-06-11T00:00:00.000000+00:00'
     completed_at: '2026-06-11T00:00:00.000000+00:00'
+  - id: B1
+    title: 'Home page — wire sections to Sanity'
+    status: done
+    started_at: '2026-06-11T00:00:00.000000+00:00'
+    completed_at: '2026-06-11T00:00:00.000000+00:00'
+  - id: B2
+    title: 'About page — retrofit to Sanity'
+    status: pending
+  - id: B3
+    title: 'Societies page — greenfield with province filter'
+    status: pending
+  - id: B4
+    title: 'National Show page — greenfield'
+    status: pending
+  - id: B5
+    title: 'Judging pages — overview + training'
+    status: pending
+  - id: B6
+    title: 'Contact page — greenfield with form'
+    status: pending
+  - id: B7
+    title: 'Sponsors page — greenfield'
+    status: pending
 milestones:
   - id: MA
     name: 'Phase A — Foundation'
@@ -75,6 +98,17 @@ milestones:
       - A7
       - A8
       - A9
+  - id: MB
+    name: 'Phase B — CMS Content Pages'
+    status: in_progress
+    features:
+      - B1
+      - B2
+      - B3
+      - B4
+      - B5
+      - B6
+      - B7
 notes: 'Full 5-phase brief. Supersedes abandoned narrow-scope mission 2026-06-01-saoc-website-build. M1–M4 legacy work unverified against this brief — re-audit required.'
 ---
 

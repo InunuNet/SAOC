@@ -1,3 +1,5 @@
+import type { SanityImageSource } from '@sanity/image-url';
+
 import {
   Hero,
   MissionBlock,
@@ -8,27 +10,43 @@ import {
   PartnersSection,
 } from '@/components/home';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { homePageQuery } from '@/sanity/queries';
+import {
+  homePageQuery,
+  upcomingEventsQuery,
+  partnersQuery,
+  nationalShowQuery,
+} from '@/sanity/queries';
+import type { SanityEvent } from '@/components/home/EventsStrip';
+import type { SanityPartner } from '@/components/home/PartnersSection';
+
+interface HomePageData {
+  title?: string;
+  heroImages?: SanityImageSource[] | null;
+  missionText?: string | null;
+  countdownDate?: string | null;
+}
+
+interface NationalShowData {
+  countdownDate?: string | null;
+}
 
 export default async function HomePage() {
-  // A6: wire async data fetch + graceful null fallback.
-  // Component prop wiring (passing homeData into Hero/MissionBlock) deferred to a later
-  // feature where the components are refactored to accept CMS data. For now we ensure
-  // the page shell is async + Sanity-aware so revalidateTag('sanity') / draftMode work.
-  await sanityFetch({
-    query: homePageQuery,
-    tags: ['homePage', 'sanity'],
-  });
+  const [home, eventsData, partnersData, show] = await Promise.all([
+    sanityFetch<HomePageData>({ query: homePageQuery, tags: ['homePage', 'sanity'] }),
+    sanityFetch<SanityEvent[]>({ query: upcomingEventsQuery, tags: ['societyEvent', 'sanity'] }),
+    sanityFetch<SanityPartner[]>({ query: partnersQuery, tags: ['sponsor', 'sanity'] }),
+    sanityFetch<NationalShowData>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
+  ]);
 
   return (
     <>
-      <Hero />
-      <MissionBlock />
+      <Hero images={home?.heroImages} />
+      <MissionBlock missionText={home?.missionText} />
       <NavCards />
-      <ShowBand />
-      <EventsStrip />
+      <ShowBand countdownDate={show?.countdownDate} />
+      <EventsStrip events={eventsData} />
       <YearbookStrip />
-      <PartnersSection />
+      <PartnersSection partners={partnersData} />
     </>
   );
 }
