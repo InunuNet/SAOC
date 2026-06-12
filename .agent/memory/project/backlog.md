@@ -23,6 +23,22 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ]  (Misc): [pain-point-monitor] Skipped (last run 15618s ago, cadence 21600s).
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612165105.txt)
+- [ ]  (Misc): New Event: fleet_loop-20260612165107.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612165121.txt
+- [ ]  (Misc): New Event: comms_poll-20260612165106.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612165106.txt
+- [ ]  (Misc): New Event: comms_poll-20260612165121.txt
+- [ ]  (Misc): New Event: fleet_loop-20260612165122.txt
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612165120.txt)
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612165120.txt)
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612165016.txt)
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612165001.txt)
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612164516.txt
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612164501.txt
+- [ ]  (Misc): [pain-point-monitor] Skipped (last run 15193s ago, cadence 21600s).
+- [ ]  (Misc): [watch-comms] New upstream issue found: architect-generated multiline python3 -c shell assertions ar
 - [ ]  (Misc): [pain-point-monitor] Skipped (last run 14938s ago, cadence 21600s).
 - [ ]  (Misc): New Event: fleet_loop-20260612162441.txt
 - [ ]  (Misc): New Event: comms_poll-20260612162441.txt
