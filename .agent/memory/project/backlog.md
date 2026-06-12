@@ -14,6 +14,8 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **Configure SPF/DKIM/DMARC on saoc.co.za** before Phase D launch — required for cPanel SMTP ticket confirmations to reach Gmail/Outlook.
 
 ## Priority (v3.x Stability)
+- [ ] SAOC (Misc): New Event: check_own_comms-20260613010359.txt
+- [ ] SAOC (Misc): New Event: check_own_comms-20260613010402.txt
 - [ ] SAOC (Alert): [P3] ghost-grove DEGRADED — 5/6 tests passed <!-- fp:sha1:1896e6bf223d -->
 - [ ] SAOC (Alert): ghost-grove DEGRADED — 5/6 tests passed
 - [ ] SAOC (Misc): New Event: check_own_comms-20260612232315.txt
