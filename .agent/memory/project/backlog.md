@@ -23,6 +23,12 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ] SAOC (Misc): [pain-point-monitor] Skipped (last run 20648s ago, cadence 21600s).
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612181542.txt
+- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
+- [ ]  (Misc): New Event: quota_monitor-20260612181514.txt
+- [ ]  (Misc): [pain-point-monitor] Skipped (last run 20613s ago, cadence 21600s).
+- [ ]  (Misc): [pain-point-monitor] Skipped (last run 20613s ago, cadence 21600s).
 - [ ]  (Misc): New Event: fleet_loop-20260612181444.txt
 - [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612181442.txt)
 - [ ]  (Misc): New Event: comms_poll-20260612181443.txt
