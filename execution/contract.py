@@ -9,6 +9,7 @@ Usage:
   contract.py clear <contract.yaml>             — delete result files for this contract
 """
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -43,7 +44,29 @@ def load_contract(path: str) -> dict:
 def normalize_contract(contract: dict) -> dict:
     """
     Convert @architect-generated contract format to the internal format contract.py uses.
-    Handles legacy single-phase 'assertions' dict and new multi-phase 'phases' list.
+
+    @architect format:
+      assertions:
+        phase: 4
+        checks:
+          - id: A1
+            description: ...
+            command: grep -q "..." path
+
+    Internal format:
+      assertions:
+        - id: A1
+          description: ...
+          verify:
+            kind: shell
+            cmd: grep -q "..." path
+      phases:
+        - id: 4
+          assertions: [A1, A2, ...]
+
+    Also normalizes:
+      - slug -> spec (if spec missing)
+      - goal -> description (if description missing at top level)
     """
     c = dict(contract)
 
@@ -51,12 +74,9 @@ def normalize_contract(contract: dict) -> dict:
     if "spec" not in c and "slug" in c:
         c["spec"] = c["slug"]
 
-    # Initialize assertions and phases for processing
-    unified_assertions = []
-    unified_phases = c.get("phases", []) # Prefer explicit top-level phases
+    assertions_raw = c.get("assertions", [])
 
-    # Handle legacy @architect format (single phase in assertions dict)
-    assertions_raw = c.get("assertions")
+    # Detect @architect dict format: {phase: N, checks: [...]}
     if isinstance(assertions_raw, dict) and "checks" in assertions_raw:
         phase_id = assertions_raw.get("phase", 1)
         try:
@@ -65,52 +85,28 @@ def normalize_contract(contract: dict) -> dict:
             pass
         checks = assertions_raw.get("checks", [])
 
-        current_phase_assertion_ids = []
+        # Convert checks to internal assertion list
+        assertion_list = []
+        assertion_ids = []
         for check in checks:
             cid = check.get("id", "")
             desc = check.get("description", "")
             cmd = check.get("command", "")
-            unified_assertions.append({
+            assertion_list.append({
                 "id": cid,
                 "description": desc,
                 "verify": {
-                    "kind": "shell", # Default to shell for legacy commands
+                    "kind": "shell",
                     "cmd": cmd,
                 }
             })
-            current_phase_assertion_ids.append(cid)
+            assertion_ids.append(cid)
 
-        # Add this single phase to unified_phases if not already covered
-        if not any(p.get("id") == phase_id for p in unified_phases):
-            unified_phases.append({"id": phase_id, "assertions": current_phase_assertion_ids})
+        c["assertions"] = assertion_list
 
-        # Remove the legacy assertions dict to prevent re-processing
-        del c["assertions"]
-
-    # If 'assertions' is a list, append them to unified_assertions
-    elif isinstance(assertions_raw, list):
-        unified_assertions.extend(assertions_raw)
-        del c["assertions"] # Remove to use the unified list
-
-    c["assertions"] = unified_assertions
-    c["phases"] = unified_phases
-
-    # After processing all explicit and legacy phases, ensure all intermediate phases
-    # from 1 up to the maximum defined phase are present.
-    final_phases = []
-    existing_phase_ids = {p["id"] for p in c["phases"]}
-    max_phase_id = max(existing_phase_ids, default=0)
-
-    for i in range(1, max_phase_id + 1):
-        if i not in existing_phase_ids:
-            final_phases.append({"id": i, "assertions": []})
-        else:
-            # Find the original phase definition and add it
-            original_phase = next(p for p in c["phases"] if p["id"] == i)
-            final_phases.append(original_phase)
-
-    # Sort final_phases by ID to maintain order
-    c["phases"] = sorted(final_phases, key=lambda p: p["id"])
+        # Synthesize phases if not present
+        if "phases" not in c:
+            c["phases"] = [{"id": phase_id, "assertions": assertion_ids}]
 
     return c
 
@@ -118,6 +114,13 @@ def normalize_contract(contract: dict) -> dict:
 def slug_from_spec(contract: dict) -> str:
     spec = contract.get("spec", "unknown")
     return Path(spec).stem.replace(" ", "-")
+
+
+def _verify_hash(assertion: dict) -> str:
+    """16-char hash of an assertion's verify block — detects stale cached results."""
+    return hashlib.sha256(
+        json.dumps(assertion.get("verify", {}), sort_keys=True).encode()
+    ).hexdigest()[:16]
 
 
 def results_dir(contract: dict) -> Path:
@@ -128,7 +131,7 @@ def result_file(contract: dict, assertion_id: str) -> Path:
     return results_dir(contract) / f"{assertion_id}.json"
 
 
-def write_result(contract: dict, assertion_id: str, verdict: str, evidence: str):
+def write_result(contract: dict, assertion_id: str, verdict: str, evidence: str, verify_hash: str = ""):
     d = results_dir(contract)
     d.mkdir(parents=True, exist_ok=True)
     r = result_file(contract, assertion_id)
@@ -136,7 +139,8 @@ def write_result(contract: dict, assertion_id: str, verdict: str, evidence: str)
         "id": assertion_id,
         "verdict": verdict,
         "evidence": evidence,
-        "ts": datetime.now(timezone.utc).isoformat()
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "verify_hash": verify_hash,
     }, indent=2))
 
 
@@ -172,12 +176,14 @@ def validate_cmd(args):
         elif a["verify"].get("kind") in binary_kinds:
             binary_count += 1
 
-        # Warn on multiline python3 -c — check_cmd executes these safely via temp file,
-        # but single-line or script-file forms are preferred for readability.
+        # Detect prohibited multiline python3 -c pattern
         verify = a.get("verify", {})
         cmd = verify.get("cmd", "")
         if "python3" in cmd and "-c" in cmd and ("\n" in cmd or "\\n" in cmd):
-            print(f"  WARN {aid}: multiline python3 -c — prefer single-line or a script file")
+            errors.append(
+                f"Assertion {aid}: multiline python3 -c is prohibited — "
+                "use single-line grep/test instead"
+            )
 
     strict = getattr(args, "strict", False)
     if strict and binary_count == 0 and len(assertions) > 0:
@@ -332,7 +338,7 @@ def check_cmd(args):
         verdict = "fail"
         evidence = f"Unknown verify kind: {kind}"
 
-    write_result(contract, assertion_id, verdict, evidence)
+    write_result(contract, assertion_id, verdict, evidence, verify_hash=_verify_hash(assertion))
     icon = "PASS" if verdict == "pass" else ("SKIP" if verdict == "skip" else "FAIL")
     print(f"{icon} {assertion_id} ({kind}): {verdict.upper()}")
     if evidence:
@@ -363,12 +369,23 @@ def _gate_single_phase(contract: dict, args) -> bool:
 
     phase_assertions = phase.get("assertions", [])
 
-    # Auto-run checks for assertions that don't have a result file yet
+    # Auto-run checks for assertions that don't have a result file yet OR whose
+    # verify block changed since the last run (stale cache detection).
     if run_checks:
+        assertions_by_id = {a["id"]: a for a in contract.get("assertions", [])}
         for aid in phase_assertions:
             rf = result_file(contract, aid)
+            stale = False
+            if rf.exists() and aid in assertions_by_id:
+                stored = json.loads(rf.read_text())
+                stored_hash = stored.get("verify_hash", "")
+                current_hash = _verify_hash(assertions_by_id[aid])
+                if stored_hash and stored_hash != current_hash:
+                    stale = True
+                    print(f"  AUTO-CHECK {aid}: verify block changed — re-running (was {stored_hash}, now {current_hash})")
             if not rf.exists():
                 print(f"  AUTO-CHECK {aid}: no result file — running check now")
+            if not rf.exists() or stale:
                 check_args = argparse.Namespace(
                     contract=args.contract,
                     assertion=aid,
@@ -407,6 +424,14 @@ def _gate_single_phase(contract: dict, args) -> bool:
 
 def gate_cmd(args):
     contract = load_contract(args.contract)
+
+    # Pre-flight: reject prohibited multiline python3 -c assertions before running
+    for _a in contract.get("assertions", []):
+        _cmd = _a.get("verify", {}).get("cmd", "")
+        if "python3" in _cmd and "-c" in _cmd and ("\n" in _cmd or "\\n" in _cmd):
+            print(f"ERROR: Assertion {_a['id']}: multiline python3 -c is prohibited — "
+                  f"rewrite as a single-line command or a script file.", file=sys.stderr)
+            sys.exit(1)
 
     if args.phase == "all":
         phases_data = sorted(contract.get("phases", []), key=lambda p: p.get("id", 0))
