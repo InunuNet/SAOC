@@ -8,12 +8,15 @@ printf "%-20s | %-20s | %-10s | %-10s | %s\n" "TIMESTAMP" "JOB NAME" "STATUS" "E
 echo "----------------------------------------------------------------------------------------------------"
 
 if [ -f "$LOG_FILE" ]; then
-  cat "$LOG_FILE" | awk -F ' | ' '{
-    timestamp = $1
+  cat "$LOG_FILE" | awk -F ' [|] ' 'NF >= 4 {
+    raw = $1
+    # Strip "[project-name] " prefix — handles spaces in project names
+    sub(/^\[[^]]*\] /, "", raw)
+    timestamp = raw
     job_name = $2
     status = $3
     exit_code = $4
-    snippet = $5
+    snippet = NF >= 5 ? $5 : "(none)"
 
     # Format timestamp for better readability (e.g., 2023-10-27 10:30:00)
     formatted_timestamp = substr(timestamp, 1, 4) "-" substr(timestamp, 5, 2) "-" substr(timestamp, 7, 2) " " substr(timestamp, 9, 2) ":" substr(timestamp, 11, 2) ":" substr(timestamp, 13, 2)
