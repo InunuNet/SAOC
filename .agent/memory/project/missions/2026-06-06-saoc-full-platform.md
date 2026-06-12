@@ -14,7 +14,7 @@ last_checkpoint:
   milestone: MB
   feature: B3
   ts: '2026-06-12T00:00:00.000000+00:00'
-  note: 'B3 Societies 8/8 PASS (listing+filter+detail+SSG). Next: B4 National Show.'
+  note: 'B4 National Show 8/8 PASS (countdown hero, past shows grid, show class grid). Next: B5 Judging pages.'
 features:
   - id: A1
     title: 'Lockfile + Next.js sanity check'
@@ -78,7 +78,9 @@ features:
     completed_at: '2026-06-12T00:00:00.000000+00:00'
   - id: B4
     title: 'National Show page — greenfield'
-    status: pending
+    status: done
+    started_at: '2026-06-12T00:00:00.000000+00:00'
+    completed_at: '2026-06-12T00:00:00.000000+00:00'
   - id: B5
     title: 'Judging pages — overview + training'
     status: pending

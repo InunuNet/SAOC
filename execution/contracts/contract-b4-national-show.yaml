@@ -1,0 +1,48 @@
+schema: athanor.contract/v1
+slug: saoc-b4-national-show
+spec: saoc-full-platform
+goal: 'B4: National Show page with upcoming show hero, countdown, past shows grid, and show class grid. Rebuild app/(marketing)/national-show/page.tsx as an async Server Component fetching showClassesQuery and pastShowsQuery (or nationalShowQuery) with static fallbacks from lib/data/shows.ts and lib/data/showClasses.ts. ShowCountdown client island with live countdown. Past shows grid (edition tag, year, venue, stats). Show class grid (10 classes). Revalidation tags [show, sanity] or [showClass, sanity].'
+created_at: '2026-06-12'
+autonomy: high
+status: pending
+phase: 1
+
+features:
+  - id: B4
+    name: 'National Show page — upcoming hero, countdown, past shows, show class grid'
+    status: pending
+
+assertions:
+  phase: 1
+  checks:
+    - id: B4a
+      description: 'national-show page fetches Sanity data (showClassesQuery or nationalShowQuery)'
+      command: "grep -qE 'showClassesQuery|nationalShowQuery|pastShowsQuery' '/Users/vetus/ai/SAOC/app/(marketing)/national-show/page.tsx'"
+
+    - id: B4b
+      description: 'ShowCountdown component exists'
+      command: "test -f '/Users/vetus/ai/SAOC/components/show/ShowCountdown.tsx'"
+
+    - id: B4c
+      description: 'ShowCountdown is a client component'
+      command: "grep -q \"'use client'\" '/Users/vetus/ai/SAOC/components/show/ShowCountdown.tsx'"
+
+    - id: B4d
+      description: 'components/show/index.ts barrel exists'
+      command: "test -f '/Users/vetus/ai/SAOC/components/show/index.ts'"
+
+    - id: B4e
+      description: 'page.tsx uses static fallback from lib/data/showClasses'
+      command: "grep -qE 'staticClasses|showClasses' '/Users/vetus/ai/SAOC/app/(marketing)/national-show/page.tsx'"
+
+    - id: B4f
+      description: 'page.tsx uses static fallback from lib/data/shows'
+      command: "grep -qE 'staticShows|shows' '/Users/vetus/ai/SAOC/app/(marketing)/national-show/page.tsx'"
+
+    - id: B4g
+      description: 'page.tsx does NOT contain placeholder text'
+      command: "! grep -q '\\[Placeholder' '/Users/vetus/ai/SAOC/app/(marketing)/national-show/page.tsx'"
+
+    - id: B4h
+      description: 'revalidation tags include show or sanity'
+      command: "grep -qE \"'show'|'showClass'|'sanity'\" '/Users/vetus/ai/SAOC/app/(marketing)/national-show/page.tsx'"
