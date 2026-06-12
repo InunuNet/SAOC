@@ -23,6 +23,23 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ]  (Misc): New Event: comms_poll-20260612180658.txt
+- [ ]  (Misc): New Event: comms_poll-20260612180658.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612180651.txt
+- [ ]  (Misc): New Event: fleet_loop-20260612180659.txt
+- [ ]  (Misc): New Event: fleet_loop-20260612180652.txt
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612180650.txt)
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612180656.txt)
+- [ ]  (Misc): New Event: comms_poll-20260612180652.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612180658.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612180658.txt
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612180546.txt)
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612180551.txt)
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612180051.txt
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612180046.txt
+- [ ]  (Misc): [pain-point-monitor] Skipped (last run 19714s ago, cadence 21600s).
+- [ ]  (Misc): [pain-point-monitor] Skipped (last run 19713s ago, cadence 21600s).
+- [ ]  (Misc): [quota-monitor] Athanor: active=2026-06-12-stop-runaway-autofix.md
 - [ ]  (Misc): New Event: check_own_comms-20260612175153.txt
 - [ ]  (Misc): New Event: fleet_loop-20260612175154.txt
 - [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612175151.txt)
