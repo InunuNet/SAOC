@@ -46,7 +46,7 @@ for i in "${!PROJECT_PATHS[@]}"; do
     STANDARDS_ISSUES=""
 
     # Check for hardcoded secrets (basic)
-    if git diff --cached --unified=0 2>/dev/null | grep -iE "(api_key|secret|password|token)\s*=\s*['\"][^'\"]{8}" 2>/dev/null | grep -v "^---\|^+++"; then
+    if git diff --cached --unified=0 -- . ':!contracts/' 2>/dev/null | grep -iE "(api_key|secret|password|token)\s*=\s*['\\\"][^'\\\"]{8}" 2>/dev/null | grep -v "^---\|^+++"; then
       STANDARDS_ISSUES="Possible hardcoded secret detected in staged changes."
     fi
 

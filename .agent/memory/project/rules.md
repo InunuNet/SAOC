@@ -13,6 +13,9 @@ _These override core rules when they conflict. Populated during /onboard._
 
 ## Add project overrides below
 
+### QA Guard Hardcoded Secrets Exclusion
+The `qa_guard.sh` script (located in `.agent/pulse/registry/qa_guard.sh`) has been modified to exclude the `contracts/` directory from its hardcoded secret detection. This prevents false positives that would otherwise occur due to contract assertion commands legitimately containing `api_key`, `secret`, `password`, or `token` keywords when checking for environment variables.
+
 <!-- Example:
 ## Tech Stack Rules
 - TypeScript strict mode, no `any`

@@ -1,0 +1,16 @@
+schema: athanor.contract/v1
+slug: fix-qa-guard-false-positive
+goal: Prevent false positive 'hardcoded secret' warnings from qa_guard.sh due to contract files.
+created_at: '2026-06-12'
+autonomy: high
+features:
+  - id: F1
+    name: Exclude 'contracts/' from qa_guard.sh secret detection
+    status: completed
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: qa_guard.sh should exclude 'contracts/' from secret detection
+      command: grep -q "git diff --cached --unified=0 -- . ':!contracts/'" .agent/pulse/registry/qa_guard.sh
