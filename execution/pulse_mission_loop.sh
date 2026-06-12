@@ -42,6 +42,15 @@ if [[ ! -f ".agent/profile.json" ]]; then
   exit 0
 fi
 
+# Honor needs_resume.flag written by post_compact_restore.sh after a context compaction.
+# Prevents a false-idle exit when active.json is transiently null during compaction recovery.
+NEEDS_RESUME=false
+if [[ -f ".agent/pulse/registry/needs_resume.flag" ]]; then
+  NEEDS_RESUME=true
+  rm -f ".agent/pulse/registry/needs_resume.flag" 2>/dev/null || true
+  echo "[pulse-loop] needs_resume.flag detected — forcing mission recovery scan."
+fi
+
 # Auto-update check: if template_version is stale, update silently
 CURRENT_VER=$(python3 -c "import json; print(json.load(open('.agent/profile.json')).get('template_version','0'))" 2>/dev/null || echo "0")
 LATEST_VER=$(gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' 2>/dev/null | base64 -d 2>/dev/null | tr -d '\n' || echo "")
@@ -188,7 +197,11 @@ PYEOF)
       echo "[pulse-loop] Repaired stale active.json → $FOUND"
       ACTIVE="$FOUND"
     else
-      echo "[pulse-loop] No active mission and queue empty — idle."
+      if [[ "$NEEDS_RESUME" == "true" ]]; then
+        echo "[pulse-loop] WARN: needs_resume.flag was set but no in_progress mission found — stale flag cleared." >&2
+      else
+        echo "[pulse-loop] No active mission and queue empty — idle."
+      fi
       exit 0
     fi
   fi

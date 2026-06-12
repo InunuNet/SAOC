@@ -176,7 +176,7 @@ def validate_cmd(args):
         # but single-line or script-file forms are preferred for readability.
         verify = a.get("verify", {})
         cmd = verify.get("cmd", "")
-        if "python3" in cmd and "-c" in cmd and "\n" in cmd:
+        if "python3" in cmd and "-c" in cmd and ("\n" in cmd or "\\n" in cmd):
             print(f"  WARN {aid}: multiline python3 -c — prefer single-line or a script file")
 
     strict = getattr(args, "strict", False)
@@ -220,9 +220,10 @@ def check_cmd(args):
             use_shell = True
             # Any multiline command → write to a temp bash script to avoid shell parsing issues
             # (covers multiline python3 -c, heredocs emitted by @architect, and bare multiline cmds)
-            if "\n" in cmd:
+            if "\n" in cmd or "\\n" in cmd:
+                cleaned = cmd.replace("\\n", "\n")
                 with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as tf:
-                    tf.write("#!/usr/bin/env bash\n" + cmd)
+                    tf.write("#!/usr/bin/env bash\n" + cleaned)
                     tf_name = tf.name
                 os.chmod(tf_name, 0o755)
                 actual_cmd = tf_name
@@ -244,10 +245,6 @@ def check_cmd(args):
 
     elif kind == "file_exists":
         path = verify.get("path", "")
-        # --- DEBUG LINE ---
-        print(f"DEBUG: Checking file_exists for relative path: {path} (CWD: {os.getcwd()})", file=sys.stderr)
-        print(f"DEBUG: Resolved absolute path: {Path(path).resolve()}", file=sys.stderr)
-        # ------------------
         exists = Path(path).exists()
         verdict = "pass" if exists else "fail"
         evidence = f"Path {'exists' if exists else 'does not exist'}: {path}"

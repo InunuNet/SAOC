@@ -10,8 +10,11 @@ echo "--------------------------------------------------------------------------
 if [ -f "$LOG_FILE" ]; then
   cat "$LOG_FILE" | awk -F ' [|] ' 'NF >= 4 {
     raw = $1
-    # Strip "[project-name] " prefix — handles spaces in project names
-    sub(/^\[[^]]*\] /, "", raw)
+    # Strip "[project-name] " prefix — use index() for portability across awk versions
+    if (substr(raw, 1, 1) == "[") {
+      cbracket = index(raw, "]")
+      if (cbracket > 0) { raw = substr(raw, cbracket + 2) }
+    }
     timestamp = raw
     job_name = $2
     status = $3
