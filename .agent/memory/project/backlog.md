@@ -14,6 +14,8 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **Configure SPF/DKIM/DMARC on saoc.co.za** before Phase D launch — required for cPanel SMTP ticket confirmations to reach Gmail/Outlook.
 
 ## Priority (v3.x Stability)
+- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
+- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
 - [ ] SAOC (Misc): New Event: check_own_comms-20260612213121.txt
 - [ ] SAOC (Misc): New Event: check_own_comms-20260612213058.txt
 - [ ]  (Misc): [pain-point-monitor] Skipped (last run 8230s ago, cadence 21600s).
@@ -54,3 +56,6 @@ Platforms to cover: Cloudflare Pages, Railway, Render, Fly.io, Netlify, DigitalO
 
 Deliverable: comparison table with verdict + recommended platform. Brad picks, THEN implementation begins.
 > Truncated 635 items at trim time (2026-06-12). Restore from git history if needed.
+
+## Deferred (auto-tracked)
+- [ ] [dev 2026-06-12] Factory loop script needs error handling — Out of scope for this task _(priority: low, handoff: 20260612T194347-dev.json)_
