@@ -3,12 +3,12 @@ schema: athanor.mission/v1
 slug: fix-ghost-unknown
 goal: 'Fix failing ghost project unknown: ERROR — first failure: unknown'
 created_at: '2026-06-12T00:00:00Z'
-status: active
+status: done
 autonomy: high
 features:
   - id: F1
     name: Fix failing tests in ghost-unknown
-    status: todo
+    status: done
 milestones:
   - id: M1
     title: All ghost-unknown tests pass GREEN

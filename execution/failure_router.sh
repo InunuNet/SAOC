@@ -191,13 +191,26 @@ process_inbox() {
 
     # Extract fields
     local slug severity passed total exit_code first_failing fp_in_json
-    slug=$(get_json_field "$json_file" "suite_slug" "unknown")
+    slug=$(get_json_field "$json_file" "suite_slug" "")
     severity=$(get_json_field "$json_file" "severity" "ERROR")
     passed=$(get_json_int "$json_file" "passed" 0)
     total=$(get_json_int "$json_file" "total" 0)
     exit_code=$(get_json_int "$json_file" "exit_code" 1)
     first_failing=$(get_json_field "$json_file" "first_failing_test" "unknown")
     fp_in_json=$(get_json_field "$json_file" "fingerprint" "")
+
+    # Guard: skip malformed sidecars with missing suite_slug or no matching ghost project dir
+    if [[ -z "$slug" ]]; then
+      echo "[router] WARN: skipping $fname — missing suite_slug field (malformed JSON)"
+      mv "$json_file" "$ARCHIVE_DIR/" 2>/dev/null || rm -f "$json_file"
+      continue
+    fi
+    local ghost_dir="$PROJECT_ROOT/execution/tests/ghost-project/$slug"
+    if [[ ! -d "$ghost_dir" ]]; then
+      echo "[router] WARN: skipping $fname — ghost project directory does not exist: $ghost_dir"
+      mv "$json_file" "$ARCHIVE_DIR/" 2>/dev/null || rm -f "$json_file"
+      continue
+    fi
 
     # Compute/verify fingerprint
     local fp

@@ -1,8 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-06-12-fix-ghost-unknown.md",
+  "mission": null,
   "checkpoint": {
     "milestone": null,
     "feature": null
   },
-  "note": "repaired by pulse-loop scan"
+  "note": "closed 2026-06-13: phantom mission resolved — failure_router.sh bug fixed"
 }
