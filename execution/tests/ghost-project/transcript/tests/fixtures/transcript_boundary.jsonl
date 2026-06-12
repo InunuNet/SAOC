@@ -1,0 +1,9 @@
+{"event": "action", "id": "a1", "tool": "bash", "group": "g1"}
+{"event": "action", "id": "a2", "tool": "bash", "group": "g1"}
+{"event": "action", "id": "a3", "tool": "bash", "group": "g1"}
+{"event": "observation", "tool_call_id": "a2", "status": "ok"}
+{"event": "observation", "tool_call_id": "a1", "status": "ok"}
+{"event": "observation", "tool_call_id": "a3", "status": "ok"}
+{"event": "observation", "tool_call_id": "a3", "status": "error"}
+{"event": "action", "id": "a4", "tool": "read", "group": "g2"}
+{"event": "observation", "tool_call_id": "a4", "status": "ok"}

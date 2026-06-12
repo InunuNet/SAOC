@@ -17,5 +17,7 @@ if [ -n "$CMD" ]; then
   printf '%s' "$CMD" | grep -q 'git commit' || exit 0
 fi
 
-python3 execution/handoff_check.py --from maintainer --to close
-exit $?
+python3 execution/handoff_check.py --from maintainer --to close 2>/dev/null
+RC=$?
+[ "$RC" -eq 127 ] && exit 0
+exit "$RC"

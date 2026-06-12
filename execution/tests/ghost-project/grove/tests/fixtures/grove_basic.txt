@@ -1,0 +1,10 @@
+PUSH	5	apple
+PUSH	3	banana
+PUSH	5	cherry
+PUSH	1	date
+POP
+POP
+PUSH	3	elderberry
+POP
+POP
+POP

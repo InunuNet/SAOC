@@ -1,15 +1,59 @@
 @import "tailwindcss";
 
+/* ---------- CSS custom properties (direct var() usage + cascade) ---------- */
 :root {
-  /* Design-layer font stacks — reference the next/font injection variables
-     declared in app/layout.tsx (--font-serif / --font-sans / --font-mono). */
+  /* Palette — Sage & Paper */
+  --primary: #384138;
+  --primary-800: #22281f;
+  --primary-700: #4a554a;
+  --primary-100: #e8e6dc;
+
+  --accent: #9e8c6b;
+  --accent-soft: #c2b393;
+
+  --parchment: #f4f3ec;
+  --ivory: #f4f3ec;
+  --bone: #e8e6dc;
+
+  --ink: #171917;
+  --muted: #636660;
+
+  --rule: #d9d7c9;
+  --rule-soft: #e4e1d0;
+
+  /* Font stacks — reference next/font injection variables */
   --serif: var(--font-serif), Georgia, 'Times New Roman', serif;
   --sans: var(--font-sans), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --mono: var(--font-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
 }
 
+/* ---------- Tailwind v4 theme — generates bg-*, text-*, border-* utilities ---------- */
 @theme {
-  /* Tailwind v4 utility aliases: font-heading / font-body / font-code */
+  /* Colors */
+  --color-primary: #384138;
+  --color-primary-800: #22281f;
+  --color-primary-700: #4a554a;
+  --color-primary-100: #e8e6dc;
+
+  --color-accent: #9e8c6b;
+  --color-accent-soft: #c2b393;
+
+  --color-parchment: #f4f3ec;
+  --color-ivory: #f4f3ec;
+  --color-bone: #e8e6dc;
+
+  --color-ink: #171917;
+  --color-muted: #636660;
+
+  --color-rule: #d9d7c9;
+  --color-rule-soft: #e4e1d0;
+
+  /* Font family utilities: font-serif, font-sans, font-mono */
+  --font-serif: var(--font-serif), Georgia, 'Times New Roman', serif;
+  --font-sans: var(--font-sans), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  /* Named aliases used by some components */
   --font-heading: var(--font-serif), Georgia, 'Times New Roman', serif;
   --font-body: var(--font-sans), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-code: var(--font-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;

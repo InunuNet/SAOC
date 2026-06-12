@@ -1,0 +1,2 @@
+{% if zero_int %}INT_ZERO_TRUTHY{% endif %}
+{% if zero_str %}STR_ZERO_TRUTHY{% endif %}

@@ -1,0 +1,8 @@
+EFFECT pre_one
+EFFECT pre_two
+INTERRUPTED: only_question
+EFFECT pre_one
+EFFECT pre_two
+ANSWERED: only_question=gamma
+EFFECT post_one
+COMPLETED: gamma

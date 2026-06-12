@@ -1,0 +1,62 @@
+schema: athanor.contract/v1
+slug: improvement-loop-real-work
+goal: "Replace ghost-test cadence slot with mission advancement in improvement_loop.sh — handle pending status, queue scan, ghost-test guard, template parity"
+created_at: "2026-06-06"
+autonomy: high
+mission: improvement-loop-real-work
+phase_count: 1
+
+features:
+  - id: F1
+    name: "Handle pending mission status in mission-first block"
+    status: done
+  - id: F2
+    name: "Queue scan — read mission_queue.txt when no active mission"
+    status: done
+  - id: F3
+    name: "Ghost-test section guarded behind _MISSION_ADVANCED check"
+    status: done
+  - id: F4
+    name: "Template parity — template/execution/improvement_loop.sh identical to execution copy"
+    status: done
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "improvement_loop.sh handles pending mission status"
+      command: grep -q '"pending"' execution/improvement_loop.sh
+
+    - id: A2
+      description: "improvement_loop.sh reads mission_queue.txt when no active mission"
+      command: grep -q 'mission_queue.txt' execution/improvement_loop.sh
+
+    - id: A3
+      description: "Ghost-test section is guarded behind _MISSION_ADVANCED check"
+      command: grep -q '_MISSION_ADVANCED' execution/improvement_loop.sh
+
+    - id: A4
+      description: "template copy also has pending status handling"
+      command: grep -q '"pending"' template/execution/improvement_loop.sh
+
+    - id: A5
+      description: "template copy also reads mission_queue.txt"
+      command: grep -q 'mission_queue.txt' template/execution/improvement_loop.sh
+
+    - id: A6
+      description: "improvement_loop.sh still calls claude-loop.sh for mission advancement"
+      command: grep -q 'claude-loop.sh' execution/improvement_loop.sh
+
+    - id: A7
+      description: "improvement_loop.sh --max-iters and --once flags still present"
+      command: |
+        grep -q '\-\-max-iters' execution/improvement_loop.sh && grep -q '\-\-once' execution/improvement_loop.sh
+
+    - id: A8
+      description: "Queue scan reads mission_queue.txt line-by-line (while/IFS/read pattern)"
+      command: |
+        grep -A5 'mission_queue.txt' execution/improvement_loop.sh | grep -q 'while\|IFS\|read'
+
+    - id: A9
+      description: "execution and template improvement_loop.sh are byte-identical"
+      command: diff execution/improvement_loop.sh template/execution/improvement_loop.sh

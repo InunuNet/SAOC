@@ -1,0 +1,3 @@
+{% for group in groups %}{{ group.name }}:
+{% for member in group.members %}  {{ member }}
+{% endfor %}{% endfor %}

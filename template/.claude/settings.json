@@ -1,0 +1,232 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "BASH_DEFAULT_TIMEOUT_MS": "300000"
+  },
+  "cleanupPeriodDays": 30,
+  "skipDangerousModePermissionPrompt": true,
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Agent",
+      "Bash",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "Task",
+      "Skill",
+      "ToolSearch"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force *)",
+      "Bash(dd if=/dev/zero*)",
+      "Bash(curl * | sh)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | sh)",
+      "Bash(wget * | bash)",
+      "Read(~/.ssh/*)",
+      "Read(~/.aws/*)",
+      "Read(~/.gnupg/*)"
+    ],
+    "ask": [
+      "Bash(chmod 777 *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/full_boot.sh"
+          },
+          {
+            "type": "command",
+            "command": "echo \"You are now operating within the $(jq -r '.project_name // \"Athanor\"' .agent/profile.json) Agentic Workspace (v$(cat .agent/version)). Identity: $(jq -r '.identity.agent_name // \"Athanor Agent\"' .agent/profile.json) | Identity Status: Active. A full boot context was just injected above — framework identity (AGENTS.md), workspace, last session, project rules, goals, learned, backlog, brain recall, blockers, and git remotes. Read the injected BOOT CONTEXT carefully. You have 8 specialized agents at your disposal (@lead, @dev, @designer, etc.). Your primary goal is autonomous self-improvement for this project. Report boot status using this exact format: ✅ ATHANOR: [name] | 🤖 Agents: 8 roles active | Last session: [1-line summary] | Goals: [count] active | Backlog: [count] open items | Rules loaded: yes | ➡️ Ready.\""
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes — run /wrap-up at start of next session.'; fi"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_maintainer.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); trigger=$(printf '%s' \"$input\" | python3 -c \"import sys,json; print(json.load(sys.stdin).get('compaction_trigger','unknown'))\" 2>/dev/null || echo 'unknown'); recent=$(git log --oneline -5 2>/dev/null | tr '\\n' '; ' || echo 'no git'); python3 execution/brain.py remember --summary \"Pre-compaction checkpoint ($trigger). Recent commits: $recent\" --tags \"compaction,checkpoint\" 2>/dev/null || true",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "printf '{\"systemMessage\": \"COMPACT FORMAT MANDATE — Target <=1500 tokens total. INCLUDE: file paths changed (1 line each), key decisions (1 line each), active mission + current feature checkpoint, blockers. EXCLUDE: inline code blocks, file contents, error transcripts, verbatim tool output, large diffs. Use 1-line bullets only. Never quote content verbatim. Ruthlessly concise — summary is context, not a record.\"}'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/post_compact_restore.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/post_compact_inject.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/harness_heartbeat.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "analyst|architect|designer|dev|docs|lead|maintainer|qa",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/subagent_start.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "analyst|architect|designer|dev|docs|lead|maintainer|qa",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/subagent_stop.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/check_autonomy.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_contract_for_write.sh"
+          },
+          {
+            "type": "command",
+            "command": "fp=$(cat | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.claude/MEMORY/*|*/MEMORY/LEARNING/*|*/.claude/PAI/*) exit 2 ;; esac"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/check_autonomy.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_contract_for_write.sh"
+          },
+          {
+            "type": "command",
+            "command": "fp=$(cat | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.claude/MEMORY/*|*/MEMORY/LEARNING/*|*/.claude/PAI/*) exit 2 ;; esac"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/check_autonomy.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/verify_workspace.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_docs.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_maintainer.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_research.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_contract.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_dev_result.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_qa_report.sh"
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/quota_death_checkpoint.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

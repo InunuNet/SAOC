@@ -1,0 +1,8 @@
+CROSSED name=alice
+DROPPED tags
+ISOLATED scratch
+INNER name: alice
+OUTER name: alice
+INNER tags: red
+OUTER tags: <unset>
+INNER scratch: tmp1

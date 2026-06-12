@@ -1,0 +1,11 @@
+1
+2
+3
+ORIGIN:system
+ORIGIN:agent
+[prompt] [Init] Session boot
+[prompt] What's the weather
+[response] let me check
+[response] [Audit log] action completed
+[prompt] [Self-reflection] I should be careful
+1

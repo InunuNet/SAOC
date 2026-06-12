@@ -1,0 +1,1 @@
+column mismatch: a has [id, name, score]; b has [id, name, grade]

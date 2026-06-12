@@ -1,0 +1,4 @@
+VIOLATION 4 ORDER_VIOLATION: observation for a2 arrived at group g1 position 0 but action a2 has position 1
+VIOLATION 5 ORDER_VIOLATION: observation for a1 arrived at group g1 position 1 but action a1 has position 0
+VIOLATION 7 DUPLICATE_OBSERVATION: tool_call_id a3 already observed
+INVALID: 3 violations

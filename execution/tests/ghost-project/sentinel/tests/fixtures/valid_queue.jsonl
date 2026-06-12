@@ -1,0 +1,3 @@
+{"id": "task-001", "type": "write_file", "payload": {"path": "/tmp/sentinel-test-output-001.txt", "content": "Hello from Sentinel task 001"}, "attempts": 0, "max_attempts": 3, "state": "pending"}
+{"id": "task-002", "type": "sleep", "payload": {"ms": 10}, "attempts": 0, "max_attempts": 2, "state": "pending"}
+{"id": "task-003", "type": "compute_hash", "payload": {"input_path": "/tmp/sentinel-test-output-001.txt", "output_path": "/tmp/sentinel-test-hash-003.txt"}, "attempts": 0, "max_attempts": 3, "state": "pending"}

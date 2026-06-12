@@ -67,3 +67,4 @@ execution/tests/ghost-project/*/tests/fixtures/*.jsonl.tmp
 fleet_update_report_*.md
 *_debug.*
 execution/tests/stress_test_log.txt
+.vercel

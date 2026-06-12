@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# Athanor Autonomous Factory Mission Loop
+# Runs continuously: research → gaps → build → adversarial QA → docs → test → repeat
+# Stops at 03:30 Africa/Johannesburg OR when quota is exhausted
+# Usage: bash execution/factory_mission_loop.sh [max_iterations]
+set -uo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+MAX_ITER="${1:-20}"
+ITER=0
+LOG="execution/tests/factory_mission_loop.log"
+CUTOFF_HOUR=3
+CUTOFF_MIN=30
+
+log() { echo "[$(date '+%H:%M:%S')] $*" | tee -a "$LOG"; }
+
+is_past_cutoff() {
+  local h m
+  h=$(date +%-H); m=$(date +%-M)
+  # Africa/Johannesburg is UTC+2; if running on UTC machine, adjust
+  [ "$h" -gt "$CUTOFF_HOUR" ] && return 0
+  [ "$h" -eq "$CUTOFF_HOUR" ] && [ "$m" -ge "$CUTOFF_MIN" ] && return 0
+  return 1
+}
+
+log "🏭 Factory Mission Loop started. Max iterations: $MAX_ITER"
+
+while [ "$ITER" -lt "$MAX_ITER" ]; do
+  ((ITER++))
+  log "━━━━ Iteration $ITER / $MAX_ITER ━━━━"
+
+  if is_past_cutoff; then
+    log "⏰ Past 03:30 cutoff — stopping loop gracefully."
+    python3 execution/brain.py wrap-up \
+      --summary "Factory loop stopped at cutoff after $ITER iterations" \
+      --tags "factory-loop,cutoff" 2>/dev/null || true
+    exit 0
+  fi
+
+  # Phase 1: Baseline green check
+  log "Phase 1: Verifying green baseline..."
+  if ! bash execution/tests/run_all.sh > /tmp/factory_loop_test.log 2>&1; then
+    log "❌ Baseline FAILED. Spawning repair..."
+    cat > .agent/memory/scratch/repair_mission.md << REPAIR
+# Factory Loop Repair — Iteration $ITER
+Test output:
+$(cat /tmp/factory_loop_test.log | tail -40)
+Fix all failing tests. Commit. Run bash execution/tests/run_all.sh. No questions.
+REPAIR
+    claude --no-permissions-prompt -p "$(cat .agent/memory/scratch/repair_mission.md)" 2>&1 | tail -10
+    sleep 5
+    continue
+  fi
+  log "✅ Baseline green."
+
+  # Phase 2: Research (fetch latest agentic AI patterns)
+  log "Phase 2: Research cycle — finding new patterns..."
+  RESEARCH_TARGETS=(
+    "https://docs.anthropic.com/en/docs/claude-code/agents"
+    "https://microsoft.github.io/autogen/docs/user-guide/core-user-guide/framework/agents"
+    "https://docs.crewai.com/concepts/agents"
+    "https://docs.factory.ai/cli/features/missions"
+    "https://langchain-ai.github.io/langgraph/concepts/agentic_concepts"
+  )
+  TARGET_IDX=$(( (ITER - 1) % ${#RESEARCH_TARGETS[@]} ))
+  TARGET="${RESEARCH_TARGETS[$TARGET_IDX]}"
+  log "  Fetching: $TARGET"
+  RESEARCH=$(curl -s "http://localhost:7077/$TARGET" 2>/dev/null | head -200 || echo "Alembic unavailable")
+
+  # Write research brief for architect
+  cat > .agent/memory/scratch/loop_research_brief.md << BRIEF
+# Factory Loop Research Brief — Iteration $ITER
+Source: $TARGET
+
+## Content
+$RESEARCH
+
+## Task for Architect
+Based on this research, identify 1-2 specific improvements to the Athanor harness OR design 2 new ghost projects with pre-computed golden files. Focus on trap classes not yet covered by existing 13 projects.
+
+Current trap classes covered: atomic writes, streaming I/O, exit code semantics, symlink safety, timezone normalization, bit-field extraction, parallel output ordering, schema-first validation, graph determinism, lexer/parser correctness, stdout discipline on error, precedence merge semantics, canonical serialization, no-ambient-state, integer-vs-float, bounded-loop safety, banker's rounding, partial failure exit codes, half-open interval semantics, run-to-run idempotence, deterministic PRNG sequencing.
+
+Output: either a gap-and-fix brief OR 2 new ghost project specs with golden files.
+BRIEF
+
+  # Phase 3: Architect → new ghost projects or harness improvements
+  log "Phase 3: Dispatching architect..."
+  ARCH_RESULT=$(claude --no-permissions-prompt -p "$(cat .agent/memory/scratch/loop_research_brief.md)" 2>&1)
+  echo "$ARCH_RESULT" > .agent/memory/scratch/arch_output_iter${ITER}.md
+  log "  Architect output saved to scratch/arch_output_iter${ITER}.md"
+
+  # Phase 4: Dev — implement whatever architect designed
+  log "Phase 4: Dispatching dev..."
+  DEV_PROMPT="$(cat .agent/memory/scratch/arch_output_iter${ITER}.md)
+
+INSTRUCTIONS: Implement everything in the above architect output. Use the project at /Users/vetus/ai/Athanor. Branch feat/factory-architecture. Write tests that diff against pre-computed golden files. Write README.md. Commit when done. Run bash execution/tests/run_all.sh after. No questions."
+
+  claude --no-permissions-prompt -p "$DEV_PROMPT" 2>&1 | tail -20
+  log "  Dev complete."
+
+  # Phase 5: Run full test suite
+  log "Phase 5: Running full test suite..."
+  if bash execution/tests/run_all.sh > /tmp/factory_loop_test.log 2>&1; then
+    PASS_COUNT=$(grep "passed" /tmp/factory_loop_test.log | grep -oE '[0-9]+' | head -1)
+    log "  ✅ Tests green ($PASS_COUNT passed)"
+  else
+    log "  ❌ Tests failed — repair in next iteration"
+    cat /tmp/factory_loop_test.log | tail -20 >> "$LOG"
+  fi
+
+  # Phase 6: Store in brain
+  log "Phase 6: Brain wrap-up..."
+  GHOST_COUNT=$(ls -d execution/tests/ghost-project/*/ 2>/dev/null | wc -l | tr -d ' ')
+  python3 execution/brain.py remember \
+    --summary "Factory loop iteration $ITER complete. Research: $TARGET. Ghost projects: $GHOST_COUNT. Tests: $(grep 'passed' /tmp/factory_loop_test.log | tail -1)" \
+    --tags "factory-loop,iteration-$ITER" 2>/dev/null || true
+
+  # Phase 7: Commit
+  git add -A 2>/dev/null && \
+  git commit -m "feat(factory-loop): iteration $ITER — $(date '+%Y-%m-%d %H:%M')" 2>/dev/null || \
+  log "  (Nothing new to commit)"
+
+  log "Iteration $ITER complete. Sleeping 30s before next..."
+  sleep 30
+done
+
+log "✅ Factory loop complete after $MAX_ITER iterations."
+python3 execution/brain.py wrap-up \
+  --summary "Factory loop completed $MAX_ITER iterations" \
+  --tags "factory-loop,complete" 2>/dev/null || true

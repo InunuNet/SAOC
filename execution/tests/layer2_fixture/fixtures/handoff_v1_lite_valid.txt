@@ -1,0 +1,5 @@
+QA agent output.
+
+```handoff
+{"schema":"athanor.handoff/v1-lite","agent":"qa","task":"Reviewed adversarial test cases","completed":["Verified hook exit codes","Checked fixture coverage"],"observations":"Three tests are weak — need to check exit codes not just output","quality_score":7}
+```

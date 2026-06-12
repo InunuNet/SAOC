@@ -1,0 +1,12 @@
+user	prompt	hello agent
+agent	response	hi, how can I help
+user	prompt	read file foo.txt
+agent	tool_result	contents of foo.txt
+system	prompt	[Reminder] You have 3 tasks pending
+agent	response	ok, I see the reminder
+
+COUNT_REAL_USER
+COUNT_MODEL_INPUT
+COUNT_BILLABLE
+AUDIT_AUTHOR 5
+REBUILD_CONVERSATION

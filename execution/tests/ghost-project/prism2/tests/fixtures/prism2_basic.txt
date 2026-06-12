@@ -1,0 +1,31 @@
+SET_RAW hello world
+EMIT
+RESET
+SET_JSON {"a":1}
+EMIT
+RESET
+SET_JSON {"a":1}
+SET_RAW hello world
+EMIT
+RESET
+SET_PYDANTIC {"p":2}
+EMIT
+RESET
+SET_PYDANTIC {"p":2}
+SET_RAW hello world
+EMIT
+RESET
+SET_PYDANTIC {"p":2}
+SET_JSON {"a":1}
+EMIT
+RESET
+SET_PYDANTIC {"p":2}
+SET_JSON {"a":1}
+SET_RAW hello world
+EMIT
+RESET
+SET_RAW initial
+SET_JSON {"j":9}
+SET_PYDANTIC {"p":7}
+PIPE
+EMIT

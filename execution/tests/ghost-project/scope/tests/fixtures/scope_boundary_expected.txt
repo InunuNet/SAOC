@@ -1,0 +1,6 @@
+CROSSED log=a
+CROSSED log=b
+CROSSED log=c
+INNER log: a,b,c
+OUTER log: a,b,c
+OUTER owner: root

@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SentinelTask",
+  "description": "A single task in the Sentinel dead-letter queue",
+  "type": "object",
+  "required": ["id", "type", "payload", "attempts", "max_attempts", "state"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "enum": ["write_file", "compute_hash", "sleep"]
+    },
+    "payload": {
+      "type": "object"
+    },
+    "attempts": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "max_attempts": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "state": {
+      "type": "string",
+      "enum": ["pending", "in_progress", "done", "failed", "dead"]
+    }
+  },
+  "if": {
+    "properties": { "type": { "const": "write_file" } }
+  },
+  "then": {
+    "properties": {
+      "payload": {
+        "type": "object",
+        "required": ["path", "content"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "content": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "else": {
+    "if": {
+      "properties": { "type": { "const": "compute_hash" } }
+    },
+    "then": {
+      "properties": {
+        "payload": {
+          "type": "object",
+          "required": ["input_path", "output_path"],
+          "properties": {
+            "input_path": { "type": "string", "minLength": 1 },
+            "output_path": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "else": {
+      "properties": {
+        "payload": {
+          "type": "object",
+          "required": ["ms"],
+          "properties": {
+            "ms": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}

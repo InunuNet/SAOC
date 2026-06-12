@@ -1,0 +1,12 @@
+REGISTER log append
+UPDATE log hello world
+UPDATE ghost something
+UPDATE log second entry
+APPLY
+GET log
+GET ghost
+STEP
+UPDATE log third
+UPDATE log fourth
+APPLY
+GET log

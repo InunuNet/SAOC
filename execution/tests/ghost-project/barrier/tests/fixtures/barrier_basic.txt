@@ -1,0 +1,6 @@
+WORKER	w1	g1	alpha
+WORKER	w2	g1	beta
+BARRIER	g1
+WORKER	w3	g2	gamma
+BARRIER	g2
+BARRIER	g3

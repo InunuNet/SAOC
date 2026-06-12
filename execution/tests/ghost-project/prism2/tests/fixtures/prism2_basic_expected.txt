@@ -1,0 +1,8 @@
+RAW:hello world
+JSON:{"a":1}
+JSON:{"a":1}
+PYDANTIC:{"p":2}
+PYDANTIC:{"p":2}
+PYDANTIC:{"p":2}
+PYDANTIC:{"p":2}
+RAW:PYDANTIC:{"p":7}

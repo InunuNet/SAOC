@@ -1,0 +1,95 @@
+# Gemini CLI Autonomy Policy
+# This policy governs the agent's ability to execute tools without user confirmation.
+# It follows a "default deny" principle, where actions are denied unless explicitly allowed.
+# Rules are evaluated in order of priority (higher numbers are checked first).
+
+# Priority 999: Override all other tiers
+# Workspace policies for Athanor must take precedence over user or global settings.
+
+[[rule]]
+  toolName = ["write_file", "replace", "run_shell_command", "move_file", "copy_file", "create_directory", "delete_file", "web_fetch", "google_web_search"]
+  decision = "deny"
+  priority = 900
+  description = "Default deny for write and execution tools — explicit allows below override this."
+
+[[rule]]
+  toolName = "read_file"
+  decision = "allow"
+  priority = 999
+  description = "Allow reading files."
+
+[[rule]]
+  toolName = "grep_search"
+  decision = "allow"
+  priority = 999
+  description = "Allow searching within files."
+
+[[rule]]
+  toolName = "list_directory"
+  decision = "allow"
+  priority = 999
+  description = "Allow listing directories."
+
+[[rule]]
+  toolName = [
+    "generalist",
+    "analyst",
+    "architect",
+    "designer",
+    "dev",
+    "docs",
+    "lead",
+    "maintainer",
+    "qa"
+  ]
+  decision = "allow"
+  priority = 999
+  description = "Allow invoking specialized sub-agents."
+
+[[rule]]
+  toolName = "run_shell_command"
+  commandRegex = "(ls|cat|grep|make|python3|bash|echo|pwd|--help|git status|git diff|git log|git add|git commit|git push|git pull|git fetch|git branch|git checkout|git stash|git show|gh issue list|gh issue comment|gh issue close|gh issue view|gh pr|gh pr create|gh pr list|gh pr view|gh pr merge|gh api|gh repo|jq|wc|head|tail|sort|uniq|sed|awk|find|curl|test|mkdir|rm|cp|mv|touch|printf|date|basename|dirname)"
+  decision = "allow"
+  priority = 999
+  description = "Allow common shell commands including git operations and gh CLI subcommands. Note: gh issue create is only allowed via the narrow InunuNet/Athanor rule below."
+
+[[rule]]
+  toolName = ["write_file", "replace"]
+  argsPattern = "(\\.git/|\\.env|\\.sops\\.yaml|\\.pem$|\\.key$|/secrets/|init\\.sh|full_boot\\.sh|\\.ssh/|\\.aws/|\\.gnupg/)"
+  decision = "deny"
+  priority = 999
+  description = "Deny writing to sensitive files and directories."
+
+[[rule]]
+  toolName = ["write_file", "replace"]
+  decision = "allow"
+  priority = 950
+  description = "Allow writing to project files. Sensitive-path denials above (priority 999) override this."
+
+[[rule]]
+  toolName = "run_shell_command"
+  commandPrefix = ["rm -rf", "git push --force", "git reset --hard", "git rebase -i", "sudo", "chmod 777", "chown root"]
+  decision = "deny"
+  priority = 999
+  description = "Deny execution of destructive commands. git commit/push/pull are allowed by the allow regex above."
+
+[[rule]]
+  toolName = "run_shell_command"
+  commandRegex = "(\\.gemini/policies/|gemini config)"
+  decision = "deny"
+  priority = 999
+  description = "Deny shell commands that touch the autonomy policy via shell (use Write/Edit tools instead)."
+
+[[rule]]
+  toolName = ["write_file", "replace"]
+  argsPattern = "(\\.gemini/policies/)"
+  decision = "deny"
+  priority = 999
+  description = "Deny writing to the autonomy policy file (use Claude Code at level=high to update this)."
+
+[[rule]]
+  toolName = "run_shell_command"
+  commandRegex = "gh issue create.*InunuNet/Athanor"
+  decision = "allow"
+  priority = 999
+  description = "Allow report-harness-bug skill to file issues against InunuNet/Athanor — the sole sanctioned cross-repo exception."

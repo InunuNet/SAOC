@@ -1,0 +1,4 @@
+EFFECT	pre_one
+EFFECT	pre_two
+INTERRUPT	only_question
+EFFECT	post_one

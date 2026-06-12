@@ -1,0 +1,7 @@
+{"event": "message", "role": "user", "text": "run two commands"}
+{"event": "action", "id": "tc1", "tool": "bash", "group": "resp1"}
+{"event": "action", "id": "tc2", "tool": "bash", "group": "resp1"}
+{"event": "observation", "tool_call_id": "tc1", "status": "ok"}
+{"event": "action", "id": "tc3", "tool": "read", "group": "resp2"}
+{"event": "observation", "tool_call_id": "tcX", "status": "ok"}
+{"event": "observation", "tool_call_id": "tc3", "status": "ok"}

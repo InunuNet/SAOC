@@ -1,0 +1,7 @@
+reviewer	req-1	INIT
+reviewer	req-2	INIT
+reviewer	req-1	INCREMENT
+reviewer	req-1	INCREMENT
+reviewer	req-2	INCREMENT
+reviewer	req-1	GET
+reviewer	req-2	GET

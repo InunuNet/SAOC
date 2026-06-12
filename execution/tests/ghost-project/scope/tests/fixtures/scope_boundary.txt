@@ -1,0 +1,11 @@
+REGISTER	log	inner	append
+REGISTER	log	outer	append
+REGISTER	owner	outer	overwrite
+INNER_UPDATE	log	a
+INNER_UPDATE	log	b
+INNER_UPDATE	log	c
+OUTER_UPDATE	owner	root
+CROSS
+GET_INNER	log
+GET_OUTER	log
+GET_OUTER	owner

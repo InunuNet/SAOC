@@ -1,0 +1,236 @@
+#!/usr/bin/env bash
+# validate_manifest.sh — verifies that every top-level workspace path (plus
+# direct children of .agent/, .claude/, .gemini/) is classified in
+# .agent/update-manifest.yaml, either explicitly or covered by an ancestor entry.
+#
+# Exit codes:
+#   0 — all enumerated paths covered, no unknown categories, all MERGE entries
+#       have a strategy.
+#   1 — at least one path is uncovered, or schema problem detected.
+#
+# Why this exists:
+#   update_template.py does EXACT-path matching (path.rstrip("/")) and lets
+#   shutil.copytree handle recursion. So a manifest entry for ".agent/agents/"
+#   transitively covers everything beneath it via copytree, but ONLY if that
+#   directory entry exists. Drift happens when a new top-level path is added
+#   to the workspace and nobody updates the manifest — this script catches
+#   exactly that case.
+
+set -euo pipefail
+
+# --- Argument parsing ---
+TARGET_DIR=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --target)
+      shift
+      TARGET_DIR="${1:-}"
+      shift
+      ;;
+    --target=*)
+      TARGET_DIR="${1#--target=}"
+      shift
+      ;;
+    -h|--help)
+      echo "Usage: $0 [--target DIR]"
+      echo "  --target DIR   also verify that required harness files exist in DIR"
+      exit 0
+      ;;
+    *)
+      echo "ERROR: unknown argument: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [ -n "$TARGET_DIR" ] && [ ! -d "$TARGET_DIR" ]; then
+  echo "ERROR: --target '$TARGET_DIR' is not a directory" >&2
+  exit 1
+fi
+
+# Required harness files that must exist in any onboarded workspace.
+REQUIRED_FILES=(
+  "execution/handoff_check.py"
+  "execution/mission.py"
+  "execution/contract.py"
+  ".agent/handoffs.yaml"
+)
+
+MANIFEST=".agent/update-manifest.yaml"
+VALID_CATEGORIES=(HARNESS WORKSPACE DERIVED MERGE)
+VALID_STRATEGIES=(line_union json_deep_merge)
+
+# Paths that should NEVER appear in the manifest (gitignored or VCS noise).
+EXCLUSIONS=(.git .DS_Store .tmp .env .env.enc pulse.log)
+
+# Container directories — themselves not classified; instead, every direct
+# child is walked and checked individually.
+CONTAINERS=(.agent .claude .gemini)
+
+if [ ! -f "$MANIFEST" ]; then
+  echo "ERROR: $MANIFEST not found" >&2
+  exit 1
+fi
+
+# --- 1. Parse manifest paths + categories with python3 (PyYAML available).
+PARSED="$(python3 - <<'PY'
+import sys, yaml
+with open(".agent/update-manifest.yaml") as f:
+    m = yaml.safe_load(f) or {}
+paths = m.get("paths") or []
+for e in paths:
+    if not isinstance(e, dict):
+        continue
+    p = (e.get("path") or "").rstrip("/")
+    if not p:
+        continue
+    cat = e.get("category", "")
+    strat = e.get("strategy", "") or ""
+    print(f"{p}\t{cat}\t{strat}")
+PY
+)"
+
+if [ -z "$PARSED" ]; then
+  echo "ERROR: no paths parsed from $MANIFEST" >&2
+  exit 1
+fi
+
+# --- 2. Schema checks.
+SCHEMA_ERRORS=0
+while IFS=$'\t' read -r mpath mcat mstrat; do
+  ok_cat=0
+  for c in "${VALID_CATEGORIES[@]}"; do
+    [ "$c" = "$mcat" ] && ok_cat=1 && break
+  done
+  if [ "$ok_cat" -eq 0 ]; then
+    echo "ERROR: $mpath has unknown or missing category: '$mcat'" >&2
+    SCHEMA_ERRORS=$((SCHEMA_ERRORS + 1))
+  fi
+  if [ "$mcat" = "MERGE" ]; then
+    ok_strat=0
+    for s in "${VALID_STRATEGIES[@]}"; do
+      [ "$s" = "$mstrat" ] && ok_strat=1 && break
+    done
+    if [ "$ok_strat" -eq 0 ]; then
+      echo "ERROR: $mpath is MERGE but strategy '$mstrat' is not recognized" >&2
+      SCHEMA_ERRORS=$((SCHEMA_ERRORS + 1))
+    fi
+  fi
+done <<< "$PARSED"
+
+MANIFEST_PATHS="$(awk -F'\t' '{print $1}' <<< "$PARSED" | sort -u)"
+
+# --- 3. Enumerate paths that MUST be classified:
+#       root level (excluding containers) + direct children of containers.
+is_container() {
+  local base="$1"
+  for c in "${CONTAINERS[@]}"; do
+    [ "$base" = "$c" ] && return 0
+  done
+  return 1
+}
+
+collect_root() {
+  find . -maxdepth 1 -mindepth 1 2>/dev/null | sed 's|^\./||' | while read -r p; do
+    if ! is_container "$p"; then
+      echo "$p"
+    fi
+  done
+}
+
+collect_children() {
+  local root="$1"
+  if [ -d "$root" ]; then
+    find "$root" -maxdepth 1 -mindepth 1 2>/dev/null | sed 's|^\./||'
+  fi
+}
+
+EXPECTED="$(
+  {
+    collect_root
+    for c in "${CONTAINERS[@]}"; do
+      collect_children "$c"
+    done
+  } | sort -u
+)"
+
+# --- 4. Filter out exclusions.
+is_excluded() {
+  local candidate="$1"
+  local base
+  base="$(basename "$candidate")"
+  for ex in "${EXCLUSIONS[@]}"; do
+    if [ "$base" = "$ex" ] || [ "$candidate" = "$ex" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# --- 5. Coverage check.
+is_covered() {
+  local p="${1%/}"
+  if grep -Fxq "$p" <<< "$MANIFEST_PATHS"; then
+    return 0
+  fi
+  local parent="$p"
+  while [ "$parent" != "." ] && [ "$parent" != "/" ] && [[ "$parent" == */* ]]; do
+    parent="${parent%/*}"
+    if grep -Fxq "$parent" <<< "$MANIFEST_PATHS"; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+UNCOVERED=()
+while IFS= read -r path; do
+  [ -z "$path" ] && continue
+  if is_excluded "$path"; then
+    continue
+  fi
+  if ! is_covered "$path"; then
+    UNCOVERED+=("$path")
+  fi
+done <<< "$EXPECTED"
+
+# --- 6. Report.
+if [ "${#UNCOVERED[@]}" -gt 0 ]; then
+  echo "ERROR: $MANIFEST is missing classifications for the following paths:" >&2
+  for p in "${UNCOVERED[@]}"; do
+    echo "  - $p" >&2
+  done
+  echo "" >&2
+  echo "Add an entry under 'paths:' in $MANIFEST with one of:" >&2
+  echo "  category: HARNESS | WORKSPACE | DERIVED | MERGE" >&2
+  echo "(MERGE entries also need: strategy: line_union | json_deep_merge)" >&2
+  exit 1
+fi
+
+if [ "$SCHEMA_ERRORS" -gt 0 ]; then
+  echo "ERROR: $SCHEMA_ERRORS schema issue(s) in $MANIFEST" >&2
+  exit 1
+fi
+
+# --- 7. --target presence check (opt-in mode only).
+if [ -n "$TARGET_DIR" ]; then
+  MISSING_REQUIRED=()
+  for f in "${REQUIRED_FILES[@]}"; do
+    if [ ! -e "${TARGET_DIR}/${f}" ]; then
+      MISSING_REQUIRED+=("$f")
+    fi
+  done
+  if [ "${#MISSING_REQUIRED[@]}" -gt 0 ]; then
+    echo "ERROR: $TARGET_DIR is missing required harness files:" >&2
+    for f in "${MISSING_REQUIRED[@]}"; do
+      echo "  - $f" >&2
+    done
+    echo "" >&2
+    echo "Fix: run 'python3 execution/update_template.py --apply' inside the target workspace." >&2
+    exit 1
+  fi
+  echo "OK: --target $TARGET_DIR has all ${#REQUIRED_FILES[@]} required harness files"
+fi
+
+echo "OK: all enumerated paths classified ($(wc -l <<< "$MANIFEST_PATHS" | tr -d ' ') manifest entries)"
+exit 0

@@ -1,0 +1,5 @@
+Agent output text before the handoff block.
+
+```handoff
+{"schema":"athanor.handoff/v1","agent":"dev","task":"Built the test infrastructure","completed":["Created layer1 tests","Created layer2 fixture tests","Created layer3 behavioral tests"],"left_undone":[{"item":"Factory loop script needs error handling","reason":"Out of scope for this task","priority":"low"}],"procedures_followed":{"followed":true,"notes":"Read goals.md before starting. Ran make test after changes."},"observations":"All layer 1 tests pass. Layer 2 needs more fixtures.","quality_score":8}
+```

@@ -1,0 +1,10 @@
+PUSH	7	zulu
+PUSH	7	yankee
+PUSH	7	xray
+PUSH	2	mike
+POP
+POP
+PUSH	7	alpha
+POP
+POP
+POP

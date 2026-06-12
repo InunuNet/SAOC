@@ -1,0 +1,3 @@
+BARRIER g1: alpha,beta
+BARRIER g2: gamma
+BARRIER g3: EMPTY

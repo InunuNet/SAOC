@@ -1,0 +1,29 @@
+schema: athanor.contract/v1
+spec: execution/tests/contracts/layer3-spec.md
+created_at: 2026-05-11T00:00:00Z
+assertions:
+  - id: A1
+    description: "full_boot.sh fails gracefully without WORKSPACE"
+    severity: major
+    verify:
+      kind: shell
+      cmd: "bash execution/tests/layer3_behavioral/test_boot_missing_workspace.sh"
+      expect_exit: 0
+  - id: A2
+    description: "brain.py remember/recall roundtrip works"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "bash execution/tests/layer3_behavioral/test_brain_remember_recall.sh"
+      expect_exit: 0
+  - id: A3
+    description: "Makefile excludes check_autonomy.sh from rsync delete"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "bash execution/tests/layer3_behavioral/test_makefile_excludes.sh"
+      expect_exit: 0
+phases:
+  - id: 1
+    name: "Behavioral end-to-end"
+    assertions: [A1, A2, A3]

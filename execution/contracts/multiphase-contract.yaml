@@ -1,0 +1,36 @@
+schema: athanor.contract/v1
+slug: multiphase-test
+goal: "Test multi-phase contract enforcement"
+created_at: "2026-06-04"
+autonomy: medium
+mission: test-multiphase
+phase_count: 2
+
+assertions:
+  - id: P1A1
+    description: "Always true for Phase 1"
+    verify:
+      kind: shell
+      cmd: "true"
+  - id: P1A2
+    description: "Also true for Phase 1"
+    verify:
+      kind: shell
+      cmd: "true"
+  - id: P2A1
+    description: "Always true for Phase 2"
+    verify:
+      kind: shell
+      cmd: "true"
+  - id: P2A2
+    description: "Always false for Phase 2 (for testing failure)"
+    verify:
+      kind: shell
+      cmd: "false"
+
+phases:
+  - id: 1
+    assertions: [P1A1, P1A2]
+  - id: 2
+    assertions: [P1A1, P1A2, P2A1, P2A2]
+

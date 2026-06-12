@@ -1,0 +1,7 @@
+services:
+  - name: "api"
+    type: always_up
+  - name: "legacy"
+    type: always_down
+  - name: "cache"
+    type: always_up

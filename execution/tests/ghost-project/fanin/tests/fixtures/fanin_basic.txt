@@ -1,0 +1,3 @@
+A	3	alpha
+B	2	bravo
+C	1	charlie

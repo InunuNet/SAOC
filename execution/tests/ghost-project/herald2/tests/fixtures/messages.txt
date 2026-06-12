@@ -1,0 +1,6 @@
+Database error detected on shard 3
+Latency spike on api-gateway
+Nightly backup completed
+All systems nominal
+Backup error during restore
+ERROR: latency exceeded SLA

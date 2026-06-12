@@ -1,0 +1,3 @@
+{"id": "task-001", "type": "write_file", "payload": {"path": "/tmp/test.txt", "content": "ok"}, "attempts": 0, "max_attempts": 3, "state": "pending"}
+{this is not valid json at all !!!
+{"id": "task-003", "type": "sleep", "payload": {"ms": 5}, "attempts": 0, "max_attempts": 2, "state": "pending"}

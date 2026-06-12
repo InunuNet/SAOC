@@ -1,0 +1,5 @@
+{
+  "packages": {
+    "a": {"deps": ["a"], "version": "1.0.0"}
+  }
+}

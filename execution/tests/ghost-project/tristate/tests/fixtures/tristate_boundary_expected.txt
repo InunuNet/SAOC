@@ -1,0 +1,8 @@
+S1 OK seed_one
+S2 EMPTY
+S3 FAILED
+M1 FAILED
+M2 FAILED
+M3 OK middle_three
+T OK terminal_val
+OUTPUT: terminal_val

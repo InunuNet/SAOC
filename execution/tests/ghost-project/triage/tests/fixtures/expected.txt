@@ -1,0 +1,8 @@
+alpha	OK	10
+?	FAIL	parse_error
+BadCaps	FAIL	bad_id
+ok2	OK	2000
+ok3	FAIL	bad_value
+?	FAIL	missing_id
+ok4	FAIL	missing_value
+ok5	OK	0

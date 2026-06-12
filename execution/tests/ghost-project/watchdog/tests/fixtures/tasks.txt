@@ -1,0 +1,5 @@
+root A B C
+A a1 a2
+B b1
+C c1 c2 c3
+c2 c2a c2b

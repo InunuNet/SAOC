@@ -1,0 +1,3 @@
+VIOLATION 3 MISSING_OBSERVATION: action tc2 in group resp1 has no matching observation
+VIOLATION 6 ID_MISMATCH: observation tool_call_id tcX matches no prior action
+INVALID: 2 violations

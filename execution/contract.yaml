@@ -1,0 +1,220 @@
+schema: athanor.contract/v1
+mission: pulse-redelivery-dedup
+feature: F1
+title: "Pulse re-delivery dedup — durable committed completed/ ledger + 5 guards"
+spec: .agent/memory/project/specs/pulse-redelivery-dedup/SPEC.md
+created_at: 2026-06-11
+architect: "@architect"
+
+description: |
+  Eliminate Pulse re-delivery of completed work. Introduces a durable, committed
+  ledger at .agent/pulse/registry/completed/ with friction/ and missions/
+  subdirs. Friction IDs are normalized md5(TITLE|DETAIL) computed identically in
+  watch_comms.sh and orchestrate.sh (orchestrate's divergent [:8] raw-line hash
+  is removed). Five guard points consult the ledger before dispatch and write
+  markers on completion. The fleet-loop.lock concurrency mutex is unchanged.
+  Implement against goldens: friction_guard.sh, mission_done_write.sh,
+  mission_guard.sh. All assertions use grep -qF (fixed strings).
+
+goldens:
+  - path: .agent/memory/project/specs/pulse-redelivery-dedup/goldens/friction_guard.sh
+  - path: .agent/memory/project/specs/pulse-redelivery-dedup/goldens/mission_done_write.sh
+  - path: .agent/memory/project/specs/pulse-redelivery-dedup/goldens/mission_guard.sh
+
+assertions:
+  # ── Phase 1 — pre-conditions (baseline before implementation) ───────────────
+  - id: P1-1
+    description: "PRE: completed/ ledger dir does not yet exist"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "test ! -d .agent/pulse/registry/completed"
+      expect_exit: 0
+  - id: P1-2
+    description: "PRE: no completed/ guard pattern present in any pulse script yet"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "test \"$(grep -lF 'completed/' .agent/pulse/registry/watch_comms.sh .agent/pulse/registry/orchestrate.sh .agent/pulse/registry/shepherd.sh execution/pulse_mission_loop.sh 2>/dev/null | wc -l | tr -d ' ')\" -eq 0"
+      expect_exit: 0
+  - id: P1-3
+    description: "PRE: orchestrate.sh still carries the divergent [:8] hash (pre-unification)"
+    severity: warn
+    verify:
+      kind: shell
+      cmd: "grep -qF 'hexdigest()[:8]' .agent/pulse/registry/orchestrate.sh"
+      expect_exit: 0
+
+  # ── Phase 2 — implementation ────────────────────────────────────────────────
+  - id: P2-1
+    description: "completed/ ledger dir exists"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "test -d .agent/pulse/registry/completed"
+      expect_exit: 0
+  - id: P2-2
+    description: "completed/friction subdir exists"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "test -d .agent/pulse/registry/completed/friction"
+      expect_exit: 0
+  - id: P2-3
+    description: "completed/missions subdir exists"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "test -d .agent/pulse/registry/completed/missions"
+      expect_exit: 0
+  - id: P2-4
+    description: "ledger subdirs are committed (each has a tracked .gitkeep)"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "test -f .agent/pulse/registry/completed/friction/.gitkeep && test -f .agent/pulse/registry/completed/missions/.gitkeep"
+      expect_exit: 0
+  - id: P2-5
+    description: "GUARD 1 — watch_comms.sh checks friction ledger before dispatch"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "grep -qF 'completed/friction/' .agent/pulse/registry/watch_comms.sh"
+      expect_exit: 0
+  - id: P2-6
+    description: "GUARD 2 — orchestrate.sh checks friction ledger before dispatch"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "grep -qF 'completed/friction/' .agent/pulse/registry/orchestrate.sh"
+      expect_exit: 0
+  - id: P2-7
+    description: "HASH UNIFY — orchestrate.sh no longer uses the [:8] truncated hash"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "test \"$(grep -cF 'hexdigest()[:8]' .agent/pulse/registry/orchestrate.sh)\" -eq 0"
+      expect_exit: 0
+  - id: P2-8
+    description: "HASH CONSISTENT — both scripts compute id via tr lowercase + tr -s squeeze"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "grep -qF \"tr '[:upper:]' '[:lower:]' | tr -s ' '\" .agent/pulse/registry/watch_comms.sh && grep -qF \"tr '[:upper:]' '[:lower:]' | tr -s ' '\" .agent/pulse/registry/orchestrate.sh"
+      expect_exit: 0
+  - id: P2-9
+    description: "GUARD 3 — orchestrate.sh filters regenerated ghost slugs vs completed/missions"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "grep -qF 'completed/missions/' .agent/pulse/registry/orchestrate.sh"
+      expect_exit: 0
+  - id: P2-10
+    description: "GUARD 4 — shepherd.sh skips queue activation for completed slugs"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "grep -qF 'completed/missions/' .agent/pulse/registry/shepherd.sh"
+      expect_exit: 0
+  - id: P2-11
+    description: "GUARD 5a — pulse_mission_loop.sh writes the mission .done marker"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "grep -qF 'completed/missions/' execution/pulse_mission_loop.sh"
+      expect_exit: 0
+  - id: P2-12
+    description: "GUARD 5b — pulse_mission_loop writes marker inside the completed|done case arm"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "awk '/completed\\|done/{f=1} f&&/completed\\/missions\\//{print; exit}' execution/pulse_mission_loop.sh | grep -qF 'completed/missions/'"
+      expect_exit: 0
+
+  # ── Phase 3 — regression ────────────────────────────────────────────────────
+  - id: P3-1
+    description: "REGRESSION — watch_comms.sh parses with bash -n"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "bash -n .agent/pulse/registry/watch_comms.sh"
+      expect_exit: 0
+  - id: P3-2
+    description: "REGRESSION — orchestrate.sh parses with bash -n"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "bash -n .agent/pulse/registry/orchestrate.sh"
+      expect_exit: 0
+  - id: P3-3
+    description: "REGRESSION — shepherd.sh parses with bash -n"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "bash -n .agent/pulse/registry/shepherd.sh"
+      expect_exit: 0
+  - id: P3-4
+    description: "REGRESSION — pulse_mission_loop.sh parses with bash -n"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "bash -n execution/pulse_mission_loop.sh"
+      expect_exit: 0
+  - id: P3-5
+    description: "REGRESSION — ephemeral processing lock mechanism still present in watch_comms.sh"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "grep -qF 'processing' .agent/pulse/registry/watch_comms.sh && grep -qF '.lock' .agent/pulse/registry/watch_comms.sh"
+      expect_exit: 0
+  - id: P3-6
+    description: "REGRESSION — fleet-loop.lock concurrency mutex untouched"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "grep -qF 'fleet-loop.lock' .agent/pulse/registry/fleet_loop.sh"
+      expect_exit: 0
+  - id: P3-7
+    description: "REGRESSION — watch_comms.sh still scans for UPSTREAM ISSUE lines"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "grep -qF 'UPSTREAM ISSUE:' .agent/pulse/registry/watch_comms.sh"
+      expect_exit: 0
+
+  # ── Phase 4 — integration gate (subset of phase 2 key assertions) ───────────
+  - id: P4-1
+    description: "GATE — committed ledger with both subdirs exists"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "test -f .agent/pulse/registry/completed/friction/.gitkeep && test -f .agent/pulse/registry/completed/missions/.gitkeep"
+      expect_exit: 0
+  - id: P4-2
+    description: "GATE — friction guard present in both scanning scripts"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "grep -qF 'completed/friction/' .agent/pulse/registry/watch_comms.sh && grep -qF 'completed/friction/' .agent/pulse/registry/orchestrate.sh"
+      expect_exit: 0
+  - id: P4-3
+    description: "GATE — mission guard present in shepherd + orchestrate + pulse loop"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "grep -qF 'completed/missions/' .agent/pulse/registry/shepherd.sh && grep -qF 'completed/missions/' .agent/pulse/registry/orchestrate.sh && grep -qF 'completed/missions/' execution/pulse_mission_loop.sh"
+      expect_exit: 0
+  - id: P4-4
+    description: "GATE — divergent [:8] hash fully removed from orchestrate.sh"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "test \"$(grep -cF 'hexdigest()[:8]' .agent/pulse/registry/orchestrate.sh)\" -eq 0"
+      expect_exit: 0
+  - id: P4-5
+    description: "GATE — all four scripts pass bash -n"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "bash -n .agent/pulse/registry/watch_comms.sh && bash -n .agent/pulse/registry/orchestrate.sh && bash -n .agent/pulse/registry/shepherd.sh && bash -n execution/pulse_mission_loop.sh"
+      expect_exit: 0

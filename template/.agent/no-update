@@ -1,0 +1,5 @@
+# .agent/no-update — Protected files
+# List paths (one per line) that update-template should never overwrite.
+# Supports exact paths and globs (fnmatch). Example:
+#   .claude/settings.json
+#   execution/hooks/my_custom_hook.sh

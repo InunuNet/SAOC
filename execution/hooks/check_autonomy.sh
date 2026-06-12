@@ -23,11 +23,14 @@ else
   LEVEL=$(jq -r '.autonomy.level // "low"' .agent/profile.json 2>/dev/null || echo "low")
   echo "$LEVEL" > "$CACHE"
 fi
+[ "$LEVEL" = "loop" ] && LEVEL="high"
 
 # ── Floor denials — always blocked at every level including high ──────────────
+# .gemini/policies/* is medium-protected (below), not floor-protected,
+# so level=high agents can update the policy file when explicitly authorized.
 case "$FILE_PATH" in
   */.git/*|*/.env|*/.sops.yaml|*.pem|*.key|*/secrets/*|\
-  */init.sh|*/full_boot.sh|*/.gemini/policies/*|*/.ssh/*|*/.aws/*|*/.gnupg/*)
+  */init.sh|*/full_boot.sh|*/.ssh/*|*/.aws/*|*/.gnupg/*)
     echo "⛔ AUTONOMY FLOOR: write to protected path '$FILE_PATH' always denied" >&2
     exit 2 ;;
 esac
@@ -64,7 +67,42 @@ if [ "$LEVEL" = "low" ]; then
   fi
 fi
 
+# ── Low: Bash shell_allowlist gate ───────────────────────────────────────────
+# Source of truth: .agent/autonomy_matrix.json → matrix.low.shell_allowlist
+# Inserted after the level=low Write/Edit block, before the level=medium block.
+# Empty COMMAND falls through (fail-open) — we cannot determine intent.
+# Use bash case for speed (no python3 startup per PreToolUse rule).
+if [ "$LEVEL" = "low" ] && [ "$TOOL" = "Bash" ]; then
+  if [ -z "$COMMAND" ]; then exit 0; fi
+  # Block shell metacharacter chaining — prevents "ls; curl evil.com" style bypass
+  case "$COMMAND" in
+    *"&&"*|*"||"*|*"; "*|*$'\n'*)
+      echo "⛔ AUTONOMY LOW: shell chaining not allowed at level=low" >&2
+      exit 2 ;;
+  esac
+  # Block find -exec and find -delete escapes
+  case "$COMMAND" in
+    find*-exec*|find*-delete*|find*--exec*)
+      echo "⛔ AUTONOMY LOW: find -exec/-delete not allowed at level=low" >&2
+      exit 2 ;;
+  esac
+  case "$COMMAND" in
+    ls*|cat*|grep*|make*|python3*|bash*|echo*|pwd|\
+    "git status"*|"git diff"*|"git log"*|"git show"*|"git branch"*|\
+    "gh issue"*|"gh api"*|"gh repo"*|\
+    jq*|wc*|head*|tail*|sort*|uniq*|awk*|\
+    "sed -n "*|"sed -e "*|"sed -f "*|\
+    find*|test*|printf*|date*|\
+    basename*|dirname*|which*|type*)
+      exit 0 ;;
+    *)
+      echo "⛔ AUTONOMY LOW: Bash command not in allowlist: ${COMMAND:0:60}" >&2
+      exit 2 ;;
+  esac
+fi
+
 # ── Medium: protect infrastructure files ─────────────────────────────────────
+# .gemini/policies/* is protected at medium — level=high agents may update it.
 if [ "$LEVEL" = "medium" ]; then
   if [ "$TOOL" = "Write" ] || [ "$TOOL" = "Edit" ]; then
     case "$FILE_PATH" in

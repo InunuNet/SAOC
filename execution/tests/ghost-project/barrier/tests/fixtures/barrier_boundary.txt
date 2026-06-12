@@ -1,0 +1,5 @@
+WORKER	w1	g1	first
+BARRIER	g1
+WORKER	w2	g1	second
+WORKER	w3	g1	third
+BARRIER	g1

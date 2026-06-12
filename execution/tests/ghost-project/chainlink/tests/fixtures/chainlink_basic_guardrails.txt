@@ -1,0 +1,3 @@
+G1	transform	PFX
+G2	counter_validate	3
+G3	validate	PFX|hello

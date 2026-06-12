@@ -1,0 +1,21 @@
+REGISTER a append
+REGISTER b overwrite
+REGISTER c none
+UPDATE a x
+UPDATE a y
+UPDATE b 1
+UPDATE b 2
+UPDATE c first
+UPDATE c second
+APPLY
+GET a
+GET b
+GET c
+STEP
+UPDATE a z
+UPDATE b 9
+UPDATE c only
+APPLY
+GET a
+GET b
+GET c

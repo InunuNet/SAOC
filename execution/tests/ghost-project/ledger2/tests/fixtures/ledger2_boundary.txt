@@ -1,0 +1,15 @@
+system	prompt	[Init] Session boot
+user	prompt	What's the weather
+agent	response	let me check
+agent	tool_result	72F sunny
+user	tool_result	(user paste of raw data)	with	extra	tabs
+system	response	[Audit log] action completed
+agent	prompt	[Self-reflection] I should be careful
+
+COUNT_BILLABLE
+COUNT_REAL_USER
+COUNT_MODEL_INPUT
+AUDIT_AUTHOR 1
+AUDIT_AUTHOR 7
+REBUILD_CONVERSATION
+COUNT_BILLABLE

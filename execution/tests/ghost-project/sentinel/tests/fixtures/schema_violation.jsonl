@@ -1,0 +1,1 @@
+{"id": "task-bad-type", "type": "unknown_type", "payload": {"key": "value"}, "attempts": 0, "max_attempts": 3, "state": "pending"}

@@ -1,0 +1,120 @@
+schema: athanor.contract/v1
+slug: backlog-noise-filter
+goal: "Extend the ingest_pulse.sh silent-archive elif (canon + template) to cover all 9 routine pulse-signal prefixes, and prune 3 already-ingested noise lines from backlog.md so the mission queue holds only actionable items."
+created_at: "2026-06-04"
+autonomy: high
+mission: backlog-noise-filter
+phase_count: 4
+
+features:
+  - id: F1
+    name: "ingest_pulse.sh silent-archive elif extended with 9 routine prefixes — canon"
+    status: pending
+  - id: F2
+    name: "template/execution/ingest_pulse.sh kept in sync — same 9 prefixes"
+    status: pending
+  - id: F3
+    name: "backlog.md routine-noise cleanup (3 specific lines removed)"
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/backlog-noise-filter/goldens/ingest_pulse_routing.txt
+  - .agent/memory/project/specs/backlog-noise-filter/goldens/check_no_backlog.sh
+
+assertions:
+  phase: 4
+  checks:
+    # ── Phase 1: Syntax — the 9 new prefixes are present in the elif of BOTH .sh files ──
+    - id: P1A1
+      description: "canon ingest_pulse.sh matches fleet_loop-* in the silent-archive elif"
+      command: grep -qE 'filename" == fleet_loop-\*' execution/ingest_pulse.sh
+    - id: P1A2
+      description: "canon ingest_pulse.sh matches fleet_improve-*"
+      command: grep -qE 'filename" == fleet_improve-\*' execution/ingest_pulse.sh
+    - id: P1A3
+      description: "canon ingest_pulse.sh matches shepherd-*"
+      command: grep -qE 'filename" == shepherd-\*' execution/ingest_pulse.sh
+    - id: P1A4
+      description: "canon ingest_pulse.sh matches pain_point_monitor-*"
+      command: grep -qE 'filename" == pain_point_monitor-\*' execution/ingest_pulse.sh
+    - id: P1A5
+      description: "canon ingest_pulse.sh matches watch_eve_comms-*"
+      command: grep -qE 'filename" == watch_eve_comms-\*' execution/ingest_pulse.sh
+    - id: P1A6
+      description: "canon ingest_pulse.sh matches orchestrate-*"
+      command: grep -qE 'filename" == orchestrate-\*' execution/ingest_pulse.sh
+    - id: P1A7
+      description: "canon ingest_pulse.sh matches mission_loop-*"
+      command: grep -qE 'filename" == mission_loop-\*' execution/ingest_pulse.sh
+    - id: P1A8
+      description: "canon ingest_pulse.sh matches comms_poll-*"
+      command: grep -qE 'filename" == comms_poll-\*' execution/ingest_pulse.sh
+    - id: P1A9
+      description: "canon ingest_pulse.sh matches watch_comms-*"
+      command: grep -qE 'filename" == watch_comms-\*' execution/ingest_pulse.sh
+    - id: P1A10
+      description: "canon ingest_pulse.sh retains the 3 pre-existing routine prefixes (codi-directive / auto_update / comms-issue)"
+      command: |
+        for p in codi-directive auto_update comms-issue; do grep -qE "filename\" == ${p}-\*" execution/ingest_pulse.sh || { echo "MISSING in canon: $p"; exit 1; }; done
+    - id: P1A11
+      description: "canon ingest_pulse.sh is syntactically valid bash"
+      command: bash -n execution/ingest_pulse.sh
+    - id: P1A12
+      description: "template ingest_pulse.sh has all 9 new routine prefixes (downstream parity — prevents update-template drift)"
+      command: |
+        for p in fleet_loop fleet_improve shepherd pain_point_monitor watch_eve_comms orchestrate mission_loop comms_poll watch_comms; do grep -qE "filename\" == ${p}-\*" template/execution/ingest_pulse.sh || { echo "MISSING in template: $p"; exit 1; }; done
+    - id: P1A13
+      description: "template ingest_pulse.sh retains the 3 pre-existing routine prefixes"
+      command: |
+        for p in codi-directive auto_update comms-issue; do grep -qE "filename\" == ${p}-\*" template/execution/ingest_pulse.sh || { echo "MISSING in template: $p"; exit 1; }; done
+    - id: P1A14
+      description: "template ingest_pulse.sh is syntactically valid bash"
+      command: bash -n template/execution/ingest_pulse.sh
+
+    # ── Phase 2: Functional — a routine signal in the inbox is archived, not back-logged ──
+    - id: P2A1
+      description: "Behavioural golden: a fleet_loop signal is silently archived and produces NO backlog item (canon)"
+      command: bash .agent/memory/project/specs/backlog-noise-filter/goldens/check_no_backlog.sh
+    - id: P2A2
+      description: "The silent-archive elif moves the file to ARCHIVE_DIR (mv present in/after the routine branch)"
+      command: |
+        awk '/Routine informational signals/{f=1} f&&/mv "\$inbox_file" "\$ARCHIVE_DIR\/"/{print; exit}' execution/ingest_pulse.sh | grep -q 'ARCHIVE_DIR'
+    - id: P2A3
+      description: "The silent-archive elif is terminated by continue (no fall-through to the Misc else)"
+      command: |
+        awk '/Routine informational signals/{f=1} f&&/continue/{print; exit}' execution/ingest_pulse.sh | grep -q continue
+
+    # ── Phase 3: Backlog — the 3 specified noise lines are absent from backlog.md ──
+    - id: P3A1
+      description: "backlog.md no longer contains the fleet_loop-20260603235110 New Event noise line"
+      command: |
+        ! grep -qF 'New Event: fleet_loop-20260603235110.txt' .agent/memory/project/backlog.md
+    - id: P3A2
+      description: "backlog.md no longer contains the watch_eve_comms-20260603234407 New Event noise line"
+      command: |
+        ! grep -qF 'New Event: watch_eve_comms-20260603234407.txt' .agent/memory/project/backlog.md
+    - id: P3A3
+      description: "backlog.md no longer contains the [pulse-loop] Template stale noise line"
+      command: |
+        ! grep -qF '[pulse-loop] Template stale (3.7.47' .agent/memory/project/backlog.md
+    - id: P3A4
+      description: "backlog.md still has its ## Priority header (cleanup did not corrupt the file)"
+      command: grep -q '^## Priority' .agent/memory/project/backlog.md
+
+    # ── Phase 4: Integration — single combined elif branch, not duplicated ──
+    - id: P4A1
+      description: "Exactly ONE silent-archive routine elif branch exists in canon ingest_pulse.sh (not duplicated)"
+      command: |
+        test "$(grep -c 'Routine informational signals' execution/ingest_pulse.sh)" -eq 1
+    - id: P4A2
+      description: "Exactly ONE silent-archive routine elif branch exists in template ingest_pulse.sh (not duplicated)"
+      command: |
+        test "$(grep -c 'Routine informational signals' template/execution/ingest_pulse.sh)" -eq 1
+    - id: P4A3
+      description: "All 12 prefixes (3 pre-existing + 9 new) live on the ONE combined elif test line in canon — single branch, OR-chained, order-independent"
+      command: |
+        line=$(grep -nE 'filename" == codi-directive-\*' execution/ingest_pulse.sh | head -1 | cut -d: -f1); for p in codi-directive auto_update comms-issue fleet_loop fleet_improve shepherd pain_point_monitor watch_eve_comms orchestrate mission_loop comms_poll watch_comms; do sed -n "${line}p" execution/ingest_pulse.sh | grep -qE "${p}-\*" || { echo "prefix $p not on the codi-directive elif line"; exit 1; }; done
+    - id: P4A4
+      description: "The pre-existing keep-in-backlog routes are untouched (check_github / mock_failure still route to backlog, not archive)"
+      command: |
+        grep -qE 'filename" == check_github-\*' execution/ingest_pulse.sh && grep -qE 'filename" == mock_failure-\*' execution/ingest_pulse.sh

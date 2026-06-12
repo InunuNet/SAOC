@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Injects Athanor context into spawned subagents
 
-input=$(cat)
-agent_type=$(echo "$input" | python3 -c "import sys,json; print(json.load(sys.stdin).get('agent_type','unknown'))" 2>/dev/null || echo "unknown")
+INPUT=$(cat)
+agent_type=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('agent_type','unknown'))" 2>/dev/null || echo "unknown")
 
 AGENT_TYPE="$agent_type" python3 - <<'PYEOF'
 import json, os

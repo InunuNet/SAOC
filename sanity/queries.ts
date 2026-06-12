@@ -84,3 +84,47 @@ export const boardMembersQuery = defineQuery(`
     order
   }
 `);
+
+export const societyBySlugQuery = defineQuery(`
+  *[_type == "society" && slug.current == $slug][0]{
+    _id,
+    name,
+    "slug": slug.current,
+    province,
+    region,
+    founded,
+    meets,
+    venue,
+    memberCount,
+    description,
+    logo,
+    website,
+    markBadge
+  }
+`);
+
+export const societySlugsQuery = defineQuery(`
+  *[_type == "society" && defined(slug.current)]{ "slug": slug.current }
+`);
+
+export const showClassesQuery = defineQuery(`
+  *[_type == "showClass"] | order(order asc){
+    _id,
+    code,
+    name,
+    description
+  }
+`);
+
+export const pastShowsQuery = defineQuery(`
+  *[_type == "show" && status == "past"] | order(year desc){
+    _id,
+    title,
+    "slug": slug.current,
+    year,
+    location,
+    entries,
+    exhibitors,
+    awards
+  }
+`);

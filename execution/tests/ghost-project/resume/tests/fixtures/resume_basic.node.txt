@@ -1,0 +1,4 @@
+EFFECT	counter_inc_A
+INTERRUPT	first_question
+EFFECT	counter_inc_B
+INTERRUPT	second_question

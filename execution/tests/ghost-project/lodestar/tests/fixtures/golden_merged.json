@@ -1,0 +1,12 @@
+{
+  "host": "staging.example.com",
+  "items": [
+    1,
+    2
+  ],
+  "nested": {
+    "a": 99,
+    "b": 2
+  },
+  "port": 8080
+}

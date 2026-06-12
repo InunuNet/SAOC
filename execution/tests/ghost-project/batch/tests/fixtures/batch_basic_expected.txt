@@ -1,0 +1,11 @@
+COMMITTED b1: 2 events
+CRASHED b2
+evt1
+evt2
+ROLLED_BACK b2
+evt1
+evt2
+COMMITTED b3: 1 events
+evt1
+evt2
+evt4

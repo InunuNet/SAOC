@@ -1,0 +1,20 @@
+[
+  {
+    "id": "a",
+    "interval_seconds": 3600,
+    "last_run": "2026-05-11T10:53:20Z",
+    "max_skew_seconds": 60
+  },
+  {
+    "id": "b",
+    "interval_seconds": 3600,
+    "last_run": "2026-05-11T11:30:00Z",
+    "max_skew_seconds": 60
+  },
+  {
+    "id": "c",
+    "interval_seconds": 3600,
+    "last_run": null,
+    "max_skew_seconds": 60
+  }
+]

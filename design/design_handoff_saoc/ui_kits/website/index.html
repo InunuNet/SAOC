@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SAOC Website UI Kit</title>
+    <link rel="stylesheet" href="../../colors_and_type.css" />
+    <style>
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--sans);
+      }
+      .container {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 32px;
+      }
+      .section {
+        padding: 64px 0;
+        border-bottom: 1px solid var(--rule);
+      }
+      .section--dark {
+        background: var(--primary);
+        color: var(--ivory);
+        border-bottom: none;
+      }
+      .section--bone {
+        background: var(--bone);
+      }
+      .sec-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 36px;
+      }
+      .sec-head h2 {
+        font-family: var(--serif);
+        font-size: 36px;
+        font-weight: 500;
+        margin: 0;
+        letter-spacing: -0.012em;
+      }
+      .sec-head .meta {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .section--dark .sec-head .meta {
+        color: rgba(244, 243, 236, 0.6);
+      }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+      }
+      .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+      .label {
+        font-family: var(--mono);
+        font-size: 10.5px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 12px;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+      }
+
+      /* Hero band */
+      .hero {
+        padding: 96px 0 80px;
+        position: relative;
+      }
+      .hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: url('../../assets/orchid-violet.jpg');
+        background-size: cover;
+        background-position: center;
+        opacity: 0.18;
+      }
+      .hero__inner {
+        position: relative;
+        max-width: 780px;
+      }
+      .hero h1 {
+        font-family: var(--serif);
+        font-size: 72px;
+        line-height: 1.02;
+        letter-spacing: -0.018em;
+        margin: 18px 0 24px;
+        font-weight: 500;
+      }
+      .hero h1 em {
+        font-style: italic;
+        color: var(--primary);
+      }
+      .hero__lede {
+        font-size: 19px;
+        line-height: 1.6;
+        color: var(--muted);
+        max-width: 60ch;
+        margin: 0 0 36px;
+      }
+
+      /* Next show band */
+      .nextshow {
+        background: var(--primary-800);
+        color: var(--ivory);
+        padding: 40px 0;
+      }
+      .nextshow__inner {
+        display: grid;
+        grid-template-columns: auto 1fr auto auto;
+        align-items: center;
+        gap: 40px;
+      }
+      .nextshow__date {
+        font-family: var(--serif);
+        font-size: 48px;
+        font-weight: 500;
+        line-height: 1;
+      }
+      .nextshow__date small {
+        display: block;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.22em;
+        opacity: 0.65;
+        margin-top: 6px;
+      }
+      .nextshow__title {
+        font-family: var(--serif);
+        font-size: 24px;
+        font-weight: 600;
+      }
+      .nextshow__sub {
+        font-size: 13.5px;
+        color: rgba(244, 243, 236, 0.7);
+        margin-top: 4px;
+      }
+      .countdown {
+        display: flex;
+        gap: 18px;
+      }
+      .countdown__cell {
+        text-align: center;
+      }
+      .countdown__n {
+        font-family: var(--serif);
+        font-size: 32px;
+        font-weight: 500;
+        line-height: 1;
+      }
+      .countdown__l {
+        font-family: var(--mono);
+        font-size: 9.5px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        opacity: 0.6;
+        margin-top: 4px;
+      }
+
+      /* Society card hover */
+      .soc-grid > div {
+        transition: all 200ms;
+      }
+      .soc-grid > div:hover {
+        border-color: var(--primary);
+      }
+
+      @media (max-width: 900px) {
+        .hero {
+          padding: 64px 0 48px;
+        }
+        .hero h1 {
+          font-size: 44px;
+        }
+        .grid-3 {
+          grid-template-columns: 1fr;
+        }
+        .grid-4 {
+          grid-template-columns: 1fr 1fr;
+        }
+        .nextshow__inner {
+          grid-template-columns: 1fr;
+          gap: 24px;
+        }
+        .sec-head {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
+        }
+        .sec-head h2 {
+          font-size: 30px;
+        }
+        .section,
+        .section--dark,
+        .section--bone {
+          padding: 48px 0;
+        }
+      }
+
+      /* Footer covered by Footer component */
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script
+      src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"
+    ></script>
+    <script type="text/babel" src="components.jsx"></script>
+
+    <script type="text/babel">
+      function Kit() {
+        return (
+          <>
+            <Header />
+
+            {/* HERO */}
+            <section className="hero">
+              <div className="container hero__inner">
+                <Eyebrow>Established 1968 · Bloemfontein</Eyebrow>
+                <h1>
+                  Twenty-one societies, <em>one</em> council, since 1968.
+                </h1>
+                <p className="hero__lede">
+                  A federated body coordinating affiliated orchid societies across nine provinces —
+                  running the National Show, the national judging programme, and a single calendar
+                  of regional events.
+                </p>
+                <div className="row">
+                  <Button variant="primary">Become a member</Button>
+                  <Button variant="outline">Find a society near you</Button>
+                </div>
+              </div>
+            </section>
+
+            {/* NEXT SHOW */}
+            <div className="nextshow">
+              <div className="container nextshow__inner">
+                <div className="nextshow__date">
+                  12–15<small>Sep 2027</small>
+                </div>
+                <div>
+                  <div className="nextshow__title">17th SA National Orchid Show</div>
+                  <div className="nextshow__sub">
+                    CTICC · Cape Town · Hosted by Cape Orchid Society
+                  </div>
+                </div>
+                <div className="countdown">
+                  <div className="countdown__cell">
+                    <div className="countdown__n">498</div>
+                    <div className="countdown__l">Days</div>
+                  </div>
+                  <div className="countdown__cell">
+                    <div className="countdown__n">21</div>
+                    <div className="countdown__l">Societies</div>
+                  </div>
+                  <div className="countdown__cell">
+                    <div className="countdown__n">09</div>
+                    <div className="countdown__l">Provinces</div>
+                  </div>
+                </div>
+                <Button variant="accent">Get tickets</Button>
+              </div>
+            </div>
+
+            {/* NAV BLOCKS — primary navigation as image cards */}
+            <section className="section section--bone">
+              <div className="container">
+                <div className="sec-head">
+                  <h2>Three things the council does.</h2>
+                  <span className="meta">Pillars · 01–03</span>
+                </div>
+                <div className="grid-3">
+                  <NavBlock
+                    label="Pillar 01"
+                    title="Coordinates twenty-one societies"
+                    body="Affiliated chapters from the Cape to the Limpopo, governed by a national constitution and an elected board."
+                    count="21 societies"
+                    img="../../assets/orchid-yellow.jpg"
+                  />
+                  <NavBlock
+                    label="Pillar 02"
+                    title="Hosts the National Show"
+                    body="Every three years a flagship exhibition rotates between regions. Next: Cape Town, September 2027."
+                    count="Triennial"
+                    img="../../assets/orchid-pink.jpg"
+                  />
+                  <NavBlock
+                    label="Pillar 03"
+                    title="Runs the national judging programme"
+                    body="A 100-point system, three certified levels, and the only path to a SAOC award."
+                    count="100-pt scale"
+                    img="../../assets/orchid-purple.jpg"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* SOCIETIES */}
+            <section className="section">
+              <div className="container">
+                <div className="sec-head">
+                  <h2>Society chapters.</h2>
+                  <span className="meta">21 affiliated · 9 provinces</span>
+                </div>
+                <div className="grid-3 soc-grid">
+                  <SocietyCard
+                    name="Cape Orchid Society"
+                    region="Cape Town"
+                    province="Western Cape"
+                    members="280"
+                    founded="1948"
+                  />
+                  <SocietyCard
+                    name="Northern Orchid Society"
+                    region="Pretoria"
+                    province="Gauteng"
+                    members="190"
+                    founded="1962"
+                  />
+                  <SocietyCard
+                    name="Natal Orchid Society"
+                    region="Durban"
+                    province="KwaZulu-Natal"
+                    members="155"
+                    founded="1956"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* EVENTS LIST */}
+            <section className="section section--bone">
+              <div className="container">
+                <div className="sec-head">
+                  <h2>Upcoming events.</h2>
+                  <span className="meta">National calendar</span>
+                </div>
+                <div>
+                  <EventRow
+                    d="14"
+                    m="MAR"
+                    y="2026"
+                    kind="Regional Show"
+                    title="Cape Autumn Show"
+                    venue="Kirstenbosch · Cape Town"
+                    host="Cape Orchid Soc."
+                  />
+                  <EventRow
+                    d="02"
+                    m="MAY"
+                    y="2026"
+                    kind="Judging School"
+                    title="Module 4 — Cattleya alliance"
+                    venue="Pretoria National Botanical Garden"
+                    host="Northern Orchid Soc."
+                  />
+                  <EventRow
+                    d="18"
+                    m="JUL"
+                    y="2026"
+                    kind="Workshop"
+                    title="Mounting & culture for Pleurothallid orchids"
+                    venue="Durban Botanic Gardens"
+                    host="Natal Orchid Soc."
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* COMPONENT REFERENCE */}
+            <section className="section section--dark">
+              <div className="container">
+                <div className="sec-head">
+                  <h2 style={{ color: 'var(--ivory)' }}>Component reference.</h2>
+                  <span className="meta">Atoms in isolation</span>
+                </div>
+
+                <div className="stack">
+                  <div>
+                    <div className="label" style={{ color: 'rgba(244,243,236,0.6)' }}>
+                      Buttons — on dark
+                    </div>
+                    <div className="row">
+                      <Button variant="primary">Primary</Button>
+                      <Button variant="accent">Accent</Button>
+                      <Button variant="outline" onDark>
+                        Outline
+                      </Button>
+                      <Button variant="ghost" onDark>
+                        Ghost
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="label" style={{ color: 'rgba(244,243,236,0.6)' }}>
+                      Eyebrows — on dark
+                    </div>
+                    <div className="row">
+                      <Eyebrow tone="light">Flagship event</Eyebrow>
+                      <Eyebrow tone="light">Awards</Eyebrow>
+                      <Eyebrow tone="light">Triennial · 2027</Eyebrow>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="label" style={{ color: 'rgba(244,243,236,0.6)' }}>
+                      Logo
+                    </div>
+                    <Logo size={56} tone="paper" />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <Footer />
+          </>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<Kit />);
+    </script>
+  </body>
+</html>

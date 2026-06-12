@@ -1,0 +1,5 @@
+services:
+  - name: "database"
+    type: nonexistent
+    path: /tmp/db.pid
+    timeout_ms: 100

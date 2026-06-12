@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# Athanor Autonomous Factory Loop
+# Runs: make test → on failure → writes repair mission → runs headless Claude to fix → loops
+# Usage: bash execution/tests/factory_loop.sh [max_iterations]
+set -uo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+MAX_ITER="${1:-10}"
+ITER=0
+LOG="execution/tests/factory_loop.log"
+
+log() { echo "[$(date +%H:%M:%S)] $*" | tee -a "$LOG"; }
+
+log "Athanor Factory Loop started. Max iterations: $MAX_ITER"
+
+while [ "$ITER" -lt "$MAX_ITER" ]; do
+  ((ITER++))
+  log "---- Iteration $ITER / $MAX_ITER ----"
+
+  # Run the full test suite
+  TEST_OUTPUT=$(bash execution/tests/run_all.sh 2>&1)
+  TEST_EXIT=$?
+  echo "$TEST_OUTPUT" >> "$LOG"
+
+  if [ "$TEST_EXIT" -eq 0 ]; then
+    log "ALL TESTS PASS — factory is green!"
+    git add -A
+    git commit -m "fix: factory green — all tests pass (iteration $ITER)" 2>/dev/null || true
+    log "Committed. Loop complete."
+    exit 0
+  fi
+
+  log "Tests failed (iteration $ITER). Writing repair mission..."
+
+  # Extract failures from output
+  FAILURES=$(echo "$TEST_OUTPUT" | grep "FAIL" | head -20)
+
+  mkdir -p .agent/memory/scratch
+  cat > .agent/memory/scratch/repair_mission.md << MISSION
+# Athanor Factory Repair Mission — Iteration $ITER
+
+## Failing Tests
+$(echo "$FAILURES")
+
+## Full Test Output (last 100 lines)
+\`\`\`
+$(echo "$TEST_OUTPUT" | tail -100)
+\`\`\`
+
+## Instructions
+You are a Claude Code agent fixing test failures in the Athanor project.
+Working directory: $(pwd)
+Branch: $(git branch --show-current)
+
+1. Read each failing test script to understand what it expects
+2. Read the source files being tested (check_autonomy.sh, handoffs.py, contract.py, etc.)
+3. Fix the ROOT CAUSE — don't modify tests to pass, fix the implementation
+4. If a test is genuinely wrong (tests the wrong thing), fix the test but explain why
+5. Run \`bash execution/tests/run_all.sh\` to verify your fix
+6. Stage and commit all changes with: git add -A && git commit -m "fix: repair factory test failures (iteration $ITER)"
+7. Do NOT ask questions. Execute autonomously.
+
+MISSION
+
+  log "Dispatching headless Claude to repair..."
+  claude --no-permissions-prompt -p "$(cat .agent/memory/scratch/repair_mission.md)" 2>&1 | tee -a "$LOG" || {
+    log "WARNING: Headless Claude exited with error. Checking if fixes were applied..."
+  }
+
+  # Brief pause before next iteration
+  sleep 5
+  log "Repair attempt complete. Re-running tests..."
+done
+
+log "WARNING: Max iterations ($MAX_ITER) reached without full green. Check $LOG for details."
+exit 1

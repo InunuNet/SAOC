@@ -1,0 +1,6 @@
+DIRECT healthy OK
+DIRECT broken ERROR: handler failed
+BROADCAST healthy OK
+BROADCAST broken LOGGED
+DIRECT healthy OK
+BROADCAST broken LOGGED

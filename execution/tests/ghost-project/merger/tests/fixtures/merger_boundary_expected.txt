@@ -1,0 +1,4 @@
+UNREGISTERED ghost
+log: hello world|second entry
+ghost: <unset>
+log: hello world|second entry|third|fourth

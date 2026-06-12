@@ -1,0 +1,6 @@
+1	ASCII	11	hello world
+2	LATIN	4	café
+3	UNICODE	3	日本語
+4	EMOJI	1	😀
+5	EMOJI	4	hi 😀
+6	LATIN	4	café

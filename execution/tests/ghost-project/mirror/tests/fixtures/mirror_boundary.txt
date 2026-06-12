@@ -1,0 +1,10 @@
+SUBSCRIBE	alice	news
+SUBSCRIBE	bob	news
+SUBSCRIBE	carol	news
+PUBLISH	alice	news	m1
+PUBLISH	bob	news	m2
+PUBLISH	carol	news	m3
+INBOX	alice
+INBOX	bob
+INBOX	carol
+INBOX	dave

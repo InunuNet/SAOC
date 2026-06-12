@@ -13,5 +13,16 @@ case "$TYPE" in
   *) exit 0 ;;
 esac
 
-python3 execution/handoff_check.py --from qa --to docs
-exit $?
+RESULT=$(python3 execution/handoff_check.py --from qa --to docs 2>/dev/null)
+PASS=$(printf '%s' "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('pass','false'))" 2>/dev/null || echo "false")
+
+if [[ "$PASS" != "True" && "$PASS" != "true" ]]; then
+  echo "BLOCKED: No qa-report-*.md found in .agent/memory/scratch/" >&2
+  echo "FIX: Dispatch @qa to run adversarial tests against the implementation." >&2
+  echo "     Output file: .agent/memory/scratch/qa-report-<slug>.md" >&2
+  echo "     Required section: ## Adversarial (min 128 bytes)" >&2
+  echo "THEN: re-dispatch @docs once qa-report artifact exists" >&2
+  exit 2
+fi
+
+exit 0

@@ -1,0 +1,1 @@
+This is not a handoff. Just some text. No fenced blocks. Should be handled gracefully.

@@ -1,0 +1,6 @@
+1	alpha_alerter	PAGE_ONCALL
+2	mike_metrics	EMIT_METRIC
+3	beta_backup	SNAPSHOT
+4	UNHANDLED
+5	alpha_alerter	PAGE_ONCALL
+6	alpha_alerter	PAGE_ONCALL

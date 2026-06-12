@@ -1,0 +1,7 @@
+services:
+  - name: "cache"
+    type: always_up
+  - name: "worker"
+    type: always_up
+  - name: "metrics"
+    type: always_up

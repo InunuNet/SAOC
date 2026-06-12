@@ -1,0 +1,8 @@
+[
+  {
+    "id": "bad_interval",
+    "interval_seconds": 0,
+    "last_run": "2026-05-11T11:00:00Z",
+    "max_skew_seconds": 0
+  }
+]

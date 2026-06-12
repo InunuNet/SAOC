@@ -1,0 +1,14 @@
+schema: athanor.contract/v1
+spec: execution/tests/contracts/test-spec.md
+created_at: 2026-05-11T00:00:00Z
+assertions:
+  - id: A1
+    description: "This file does not exist — adversarial failure"
+    severity: blocker
+    verify:
+      kind: file_exists
+      path: execution/tests/THIS_FILE_DOES_NOT_EXIST.txt
+phases:
+  - id: 1
+    name: "Should fail"
+    assertions: [A1]

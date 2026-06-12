@@ -1,0 +1,2 @@
+{"id": "task-exhausted", "type": "write_file", "payload": {"path": "/proc/impossible-path-that-cannot-be-written/test.txt", "content": "this will always fail"}, "attempts": 2, "max_attempts": 3, "state": "failed"}
+{"id": "task-inprogress-crash", "type": "sleep", "payload": {"ms": 5}, "attempts": 0, "max_attempts": 3, "state": "in_progress"}

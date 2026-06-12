@@ -1,0 +1,6 @@
+ROUTE	a	b
+ROUTE	a	b
+SEND	a	b	p1
+SEND	a	b	p1
+SEND	a	b	p2
+RESOLVE	a

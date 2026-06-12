@@ -1,0 +1,5 @@
+A OK alpha_val
+B EMPTY
+C OK carlos_val
+D OK delta_val
+OUTPUT: delta_val

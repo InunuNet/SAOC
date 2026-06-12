@@ -1,0 +1,9 @@
+2
+3
+2
+ORIGIN:system
+[prompt] hello agent
+[response] hi, how can I help
+[prompt] read file foo.txt
+[prompt] [Reminder] You have 3 tasks pending
+[response] ok, I see the reminder

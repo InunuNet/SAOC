@@ -1,0 +1,7 @@
+ROUTE	x	a
+SEND	x	a	hello
+ROUTE	x	a
+SEND	x	c	world
+ROUTE	x	b
+RESOLVE	x
+RESOLVE	y

@@ -1,0 +1,4 @@
+zeta_logger	error	LOG_TO_FILE
+alpha_alerter	error	PAGE_ONCALL
+mike_metrics	latency	EMIT_METRIC
+beta_backup	backup	SNAPSHOT

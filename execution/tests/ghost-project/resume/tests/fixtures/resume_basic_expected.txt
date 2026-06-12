@@ -1,0 +1,7 @@
+EFFECT counter_inc_A
+INTERRUPTED: first_question
+EFFECT counter_inc_A
+ANSWERED: first_question=alpha
+EFFECT counter_inc_B
+ANSWERED: second_question=beta
+COMPLETED: alpha,beta

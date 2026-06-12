@@ -1,0 +1,5 @@
+T1	0	x
+T2	-5	yy
+T3	2	zzz
+T4	2	ww
+T5	-5	vv

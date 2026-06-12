@@ -1,0 +1,7 @@
+CONFLICT c
+a: x|y
+b: 2
+c: <unset>
+a: x|y|z
+b: 9
+c: only

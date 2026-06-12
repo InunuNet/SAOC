@@ -1,0 +1,14 @@
+REGISTER	name	inner	overwrite
+REGISTER	name	outer	overwrite
+REGISTER	tags	inner	append
+REGISTER	tags	outer	unregistered
+REGISTER	scratch	inner	overwrite
+INNER_UPDATE	name	alice
+INNER_UPDATE	tags	red
+INNER_UPDATE	scratch	tmp1
+CROSS
+GET_INNER	name
+GET_OUTER	name
+GET_INNER	tags
+GET_OUTER	tags
+GET_INNER	scratch

@@ -1,0 +1,6 @@
+1	ASCII	14	ASCII boundary
+2	ASCII	0	
+3	LATIN	1	ñ
+4	LATIN	5	voilà
+5	LATIN	5	voilà
+6	EMOJI	1	🀀

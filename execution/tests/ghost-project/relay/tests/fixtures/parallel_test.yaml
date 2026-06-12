@@ -1,0 +1,11 @@
+services:
+  - name: "zebra"
+    type: always_up
+  - name: "alpha"
+    type: always_up
+  - name: "mango"
+    type: always_down
+  - name: "bravo"
+    type: always_up
+  - name: "kilo"
+    type: always_up

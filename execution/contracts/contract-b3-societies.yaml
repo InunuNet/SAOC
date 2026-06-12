@@ -1,0 +1,47 @@
+schema: athanor.contract/v1
+slug: saoc-b3-societies
+spec: saoc-full-platform
+goal: 'B3: Societies listing + detail pages. Add societyBySlugQuery to sanity/queries.ts. Rebuild app/(marketing)/societies/page.tsx as an async Server Component fetching societyListQuery and rendering a SocietiesClient island. Create app/(marketing)/societies/SocietiesClient.tsx (use client) with useSearchParams/useRouter URL-state province-chip filter (?province=) + free-text search (?q=) filtering name+region client-side. Rebuild app/(marketing)/societies/[slug]/page.tsx as an SSG detail page with generateStaticParams + generateMetadata, notFound() on missing slug. Create components/societies/SocietyCard.tsx (mark badge, province tag, meets/venue/members rows, arrow link) + components/societies/index.ts barrel. Province chips from lib/data/provinces.ts (ALL clears filter). Static fallback to lib/data/societies.ts when Sanity returns null/empty. Revalidation tags [society, sanity] (listing) and [society, slug, sanity] (detail).'
+created_at: '2026-06-11'
+autonomy: high
+status: pending
+phase: 1
+
+features:
+  - id: B3
+    name: 'Societies listing + detail pages (queries, Server Component, client filter island, SSG detail, SocietyCard, fallbacks)'
+    status: pending
+
+goldens:
+  - .agent/memory/scratch/golden-b3-societies.md
+
+qa_inputs:
+  - .agent/memory/scratch/qa-input-b3-societies.md
+
+assertions:
+  phase: 1
+  checks:
+    - id: B3a
+      description: 'sanity/queries.ts defines societyBySlugQuery'
+      command: "grep -q 'societyBySlugQuery' /Users/vetus/ai/SAOC/sanity/queries.ts"
+    - id: B3b
+      description: 'societies listing page uses societyListQuery'
+      command: "grep -q 'societyListQuery' '/Users/vetus/ai/SAOC/app/(marketing)/societies/page.tsx'"
+    - id: B3c
+      description: 'SocietiesClient.tsx exists'
+      command: "test -f '/Users/vetus/ai/SAOC/app/(marketing)/societies/SocietiesClient.tsx'"
+    - id: B3d
+      description: 'SocietiesClient.tsx uses useSearchParams for URL state'
+      command: "grep -q 'useSearchParams' '/Users/vetus/ai/SAOC/app/(marketing)/societies/SocietiesClient.tsx'"
+    - id: B3e
+      description: 'society detail page defines generateStaticParams'
+      command: "grep -q 'generateStaticParams' '/Users/vetus/ai/SAOC/app/(marketing)/societies/[slug]/page.tsx'"
+    - id: B3f
+      description: 'society detail page defines generateMetadata'
+      command: "grep -q 'generateMetadata' '/Users/vetus/ai/SAOC/app/(marketing)/societies/[slug]/page.tsx'"
+    - id: B3g
+      description: 'components/societies/SocietyCard.tsx exists'
+      command: "test -f /Users/vetus/ai/SAOC/components/societies/SocietyCard.tsx"
+    - id: B3h
+      description: 'societies listing page no longer contains the placeholder string'
+      command: "! grep -q '\\[Placeholder' '/Users/vetus/ai/SAOC/app/(marketing)/societies/page.tsx'"

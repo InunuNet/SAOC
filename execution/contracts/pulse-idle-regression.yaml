@@ -1,0 +1,71 @@
+schema: athanor.contract/v1
+slug: pulse-idle-regression
+goal: >
+  Restore the FOUND_AFTER in-progress scan that was accidentally removed in
+  commit b95a3dc from the `completed|done|unknown` STATUS case in
+  pulse_mission_loop.sh. Without it, a transient `mission.py status` failure
+  returns "unknown", clears active.json, and the loop exits idle — falsely
+  abandoning a running mission (the ghost-fibonacci regression).
+autonomy: "off"
+phases:
+  - id: 1
+    name: Implementation
+    description: Restore FOUND_AFTER scan in both execution/ and template/ copies.
+  - id: 2
+    name: Gate
+    description: Contract assertions green.
+
+assertions:
+  - id: A1
+    phase: 1
+    description: >
+      execution/pulse_mission_loop.sh contains FOUND_AFTER variable assignment
+      after the active.json clear block.
+    check: |
+      grep -c "FOUND_AFTER=" execution/pulse_mission_loop.sh
+    expect: "1"
+
+  - id: A2
+    phase: 1
+    description: >
+      template/execution/pulse_mission_loop.sh contains FOUND_AFTER variable
+      assignment after the active.json clear block.
+    check: |
+      grep -c "FOUND_AFTER=" template/execution/pulse_mission_loop.sh
+    expect: "1"
+
+  - id: A3
+    phase: 1
+    description: >
+      execution/pulse_mission_loop.sh emits "[pulse-loop] No active mission — idle."
+      only from within the FOUND_AFTER null-result branch (not bare exit 0 after clear).
+    check: |
+      grep -n "No active mission" execution/pulse_mission_loop.sh | grep -c "idle"
+    expect: "2"
+
+  - id: A4
+    phase: 1
+    description: >
+      template/execution/pulse_mission_loop.sh emits "[pulse-loop] No active mission — idle."
+      only from within the FOUND_AFTER null-result branch.
+    check: |
+      grep -n "No active mission" template/execution/pulse_mission_loop.sh | grep -c "idle"
+    expect: "2"
+
+  - id: A5
+    phase: 1
+    description: >
+      execution/pulse_mission_loop.sh does NOT have a bare `exit 0` immediately
+      after the active.json clear write (the old regression line 181).
+    check: |
+      python3 -c "import re; t=open('execution/pulse_mission_loop.sh').read(); m=re.search(r'write_text.*?mission complete.*?2>/dev/null.*?\|\| true\n    exit 0', t, re.DOTALL); print('0' if m is None else '1')"
+    expect: "0"
+
+  - id: A6
+    phase: 1
+    description: >
+      template/execution/pulse_mission_loop.sh does NOT have a bare `exit 0`
+      immediately after the active.json clear write.
+    check: |
+      python3 -c "import re; t=open('template/execution/pulse_mission_loop.sh').read(); m=re.search(r'write_text.*?mission complete.*?2>/dev/null.*?\|\| true\n    exit 0', t, re.DOTALL); print('0' if m is None else '1')"
+    expect: "0"

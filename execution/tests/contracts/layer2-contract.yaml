@@ -1,0 +1,64 @@
+schema: athanor.contract/v1
+spec: execution/tests/contracts/layer2-spec.md
+created_at: 2026-05-11T00:00:00Z
+assertions:
+  - id: A1
+    description: "check_autonomy.sh blocks Write at autonomy=off"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "bash execution/tests/layer2_fixture/test_check_autonomy_write_off.sh"
+      expect_exit: 0
+  - id: A2
+    description: "check_autonomy.sh blocks rm -rf / at ALL levels"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "bash execution/tests/layer2_fixture/test_check_autonomy_bash_rm_rf.sh"
+      expect_exit: 0
+  - id: A3
+    description: "check_autonomy.sh allows safe Bash at medium"
+    severity: major
+    verify:
+      kind: shell
+      cmd: "bash execution/tests/layer2_fixture/test_check_autonomy_bash_safe.sh"
+      expect_exit: 0
+  - id: A4
+    description: "handoffs.py accepts valid v1 handoff"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "bash execution/tests/layer2_fixture/test_handoff_v1_valid.sh"
+      expect_exit: 0
+  - id: A5
+    description: "handoffs.py accepts v1-lite without left_undone"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "bash execution/tests/layer2_fixture/test_handoff_v1_lite_accept.sh"
+      expect_exit: 0
+  - id: A6
+    description: "handoffs.py handles malformed input gracefully"
+    severity: major
+    verify:
+      kind: shell
+      cmd: "bash execution/tests/layer2_fixture/test_handoff_malformed_graceful.sh"
+      expect_exit: 0
+  - id: A7
+    description: "contract.py gate exits 0 for passing contract"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "bash execution/tests/layer2_fixture/test_contract_gate_pass.sh"
+      expect_exit: 0
+  - id: A8
+    description: "contract.py gate exits 2 for failing contract"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "bash execution/tests/layer2_fixture/test_contract_gate_fail.sh"
+      expect_exit: 0
+phases:
+  - id: 1
+    name: "Hook and pipeline fixtures"
+    assertions: [A1, A2, A3, A4, A5, A6, A7, A8]

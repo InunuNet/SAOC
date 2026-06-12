@@ -1,0 +1,20 @@
+NODES
+S1 ok seed_one
+S2 empty
+S3 failed
+M1 ok middle_one
+M2 ok middle_two
+M3 ok middle_three
+T ok terminal_val
+
+DEPS
+M1 S1 strict
+M1 S2 strict
+M2 S1 lenient
+M2 S3 lenient
+M3 S2 any
+M3 S3 any
+T M3 lenient
+
+OUTPUT
+OUTPUT T

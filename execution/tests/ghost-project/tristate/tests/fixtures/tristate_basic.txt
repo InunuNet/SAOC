@@ -1,0 +1,12 @@
+NODES
+A ok alpha_val
+B empty
+C ok carlos_val
+D ok delta_val
+
+DEPS
+C A strict
+D B lenient
+
+OUTPUT
+OUTPUT D

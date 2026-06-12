@@ -1,0 +1,2 @@
+{"id": "task-001", "type": "write_file", "payload": {"path": "/tmp/sentinel-idem-test.txt", "content": "first write"}, "attempts": 1, "max_attempts": 3, "state": "done"}
+{"id": "task-001", "type": "write_file", "payload": {"path": "/tmp/sentinel-idem-test.txt", "content": "second write should NOT happen"}, "attempts": 0, "max_attempts": 3, "state": "pending"}

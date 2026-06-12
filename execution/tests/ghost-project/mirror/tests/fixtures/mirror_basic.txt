@@ -1,0 +1,5 @@
+SUBSCRIBE	alice	news
+SUBSCRIBE	bob	news
+PUBLISH	alice	news	hello-world
+INBOX	alice
+INBOX	bob

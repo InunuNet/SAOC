@@ -1,0 +1,6 @@
+DIRECT	healthy
+DIRECT	broken
+BROADCAST	healthy
+BROADCAST	broken
+DIRECT	healthy
+BROADCAST	broken

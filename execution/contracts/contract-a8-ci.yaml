@@ -1,0 +1,43 @@
+schema: athanor.contract/v1
+slug: saoc-a8-ci
+spec: saoc-full-platform
+goal: 'A8: CI on PRs — GitHub Actions workflow running lint, type-check, and build on every PR targeting main.'
+created_at: '2026-06-11'
+autonomy: high
+status: pending
+
+features:
+  - id: A8
+    name: 'CI on PRs (GitHub Actions workflow)'
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/saoc-full-platform/goldens/ci.yml
+
+assertions:
+  phase: 1
+  checks:
+    - id: A8a
+      description: '.github/workflows/ci.yml exists'
+      command: 'test -f /Users/vetus/ai/SAOC/.github/workflows/ci.yml'
+    - id: A8b
+      description: 'workflow triggers on pull_request'
+      command: 'grep -q "pull_request" /Users/vetus/ai/SAOC/.github/workflows/ci.yml'
+    - id: A8c
+      description: 'workflow runs pnpm install'
+      command: 'grep -q "pnpm install" /Users/vetus/ai/SAOC/.github/workflows/ci.yml'
+    - id: A8d
+      description: 'workflow runs pnpm lint'
+      command: 'grep -q "pnpm lint" /Users/vetus/ai/SAOC/.github/workflows/ci.yml'
+    - id: A8e
+      description: 'workflow runs pnpm type-check'
+      command: 'grep -q "pnpm type-check" /Users/vetus/ai/SAOC/.github/workflows/ci.yml'
+    - id: A8f
+      description: 'workflow runs pnpm build'
+      command: 'grep -q "pnpm build" /Users/vetus/ai/SAOC/.github/workflows/ci.yml'
+    - id: A8g
+      description: 'ci.yml is valid YAML'
+      command: 'python3 -c "import yaml; yaml.safe_load(open(\"/Users/vetus/ai/SAOC/.github/workflows/ci.yml\"))"'
+    - id: A8h
+      description: 'NEXT_TELEMETRY_DISABLED env var is set in workflow'
+      command: 'grep -q "NEXT_TELEMETRY_DISABLED" /Users/vetus/ai/SAOC/.github/workflows/ci.yml'

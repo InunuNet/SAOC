@@ -1,0 +1,55 @@
+# Athanor v3.5 Handoff Manifest — canonical chain definition
+# Six handoffs, six artefacts, six gates. Loaded by execution/handoff_check.py.
+# This is the GOLDEN file — implementation must produce .agent/handoffs.yaml byte-equivalent
+# to this content (modulo trailing whitespace).
+schema: athanor.handoffs/v1
+created_at: 2026-05-12T00:00:00Z
+
+handoffs:
+  - from: analyst
+    to: architect
+    artefact_pattern: '.agent/memory/scratch/research-*.md'
+    min_sections: ['## Findings']
+    min_size_bytes: 512
+    max_age_seconds: 86400
+    author_marker: '## Findings'
+
+  - from: architect
+    to: dev
+    artefact_pattern: '.agent/memory/project/specs/*/contract*.yaml'
+    min_sections: ['goldens']
+    min_size_bytes: 256
+    max_age_seconds: 86400
+    author_marker: 'goldens:'
+
+  - from: dev
+    to: qa
+    artefact_pattern: '.agent/memory/scratch/dev-result-*.md'
+    min_sections: ['## Golden Assertions']
+    min_size_bytes: 128
+    max_age_seconds: 86400
+    author_marker: '## Golden Assertions'
+
+  - from: qa
+    to: docs
+    artefact_pattern: '.agent/memory/scratch/qa-report-*.md'
+    min_sections: ['## Adversarial']
+    min_size_bytes: 128
+    max_age_seconds: 86400
+    author_marker: '## Adversarial'
+
+  - from: docs
+    to: gate
+    artefact_pattern: 'docs/*.md'
+    min_sections: []
+    min_size_bytes: 64
+    max_age_seconds: 86400
+    author_marker: ''
+
+  - from: maintainer
+    to: close
+    artefact_pattern: '.agent/memory/project/learned.md'
+    min_sections: ['##']
+    min_size_bytes: 64
+    max_age_seconds: 86400
+    author_marker: ''

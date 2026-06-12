@@ -1,0 +1,21 @@
+schema: athanor.contract/v1
+spec: execution/tests/contracts/test-spec.md
+created_at: 2026-05-11T00:00:00Z
+assertions:
+  - id: A1
+    description: "WORKSPACE file exists"
+    severity: blocker
+    verify:
+      kind: file_exists
+      path: WORKSPACE
+  - id: A2
+    description: "profile.json is valid JSON"
+    severity: blocker
+    verify:
+      kind: shell
+      cmd: "jq . .agent/profile.json"
+      expect_exit: 0
+phases:
+  - id: 1
+    name: "Static checks"
+    assertions: [A1, A2]
