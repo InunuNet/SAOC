@@ -23,6 +23,7 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ]  (Misc): New Event: quota_monitor-20260612183745.txt
 - [ ]  (Misc): New Event: fleet_loop-20260612183655.txt
 - [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612183653.txt)
 - [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612183646.txt)
