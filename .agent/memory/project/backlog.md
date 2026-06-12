@@ -23,6 +23,17 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ]  (Misc): New Event: fleet_loop-20260612182217.txt
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612182216.txt)
+- [ ]  (Misc): New Event: comms_poll-20260612182217.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612182217.txt
+- [ ]  (Misc): New Event: fleet_loop-20260612182149.txt
+- [ ]  (Misc): New Event: comms_poll-20260612182148.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612182148.txt
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612182146.txt)
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612182111.txt)
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612182042.txt)
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612181611.txt
 - [ ] SAOC (Misc): [pain-point-monitor] Skipped (last run 20648s ago, cadence 21600s).
 - [ ] SAOC (Misc): New Event: watch_eve_comms-20260612181542.txt
 - [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
