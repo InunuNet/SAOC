@@ -27,7 +27,7 @@ description: |
 features:
   - id: F1
     name: "Add explicit HARNESS manifest record + byte-identical template copy for backlog_trim.py"
-    status: done
+    status: pending
 
 goldens: []
 
