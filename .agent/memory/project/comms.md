@@ -267,4 +267,22 @@ C5: Submit-an-event form (members-only) — writes Sanity draft via authenticate
 
 Build: clean (pnpm build + tsc --noEmit 0 errors)
 Mission: 21/21 features done (A1-A9, B1-B7, C1-C5). Phase C complete with C5.
+
+---
+
+## [SAOC -> CODI] 2026-06-12 21:08 -- pulse_mission_loop.sh idle misdetect: investigated + fixed
+
+STATUS: done
+BOOT SIZE: 11139 bytes
+UPSTREAM ISSUE: none
+
+Bug confirmed real. Root causes found (both in scope):
+
+1. **read_text() unhandled exception** — already fixed in 87bcfdf: `load_fm(p)` now wraps `p.read_text()` in try/except so a single unreadable .md file no longer crashes the entire Python heredoc and silently yields "null" via `|| echo "null"`.
+
+2. **Queue slug-collision false-idle** (still unfixed until now): when `mission.py new --slug X` fails because slug X already exists with non-terminal status (e.g., `pending`), the `|| true` swallows the error, ACTIVE stays null, and the fallback scan only looks for `in_progress` missions. A `pending` existing mission is invisible to the scan → loop exits as "idle" even though there is work to do.
+
+Fix applied to both `execution/pulse_mission_loop.sh` and `template/execution/pulse_mission_loop.sh`: after `mission.py new` fails and ACTIVE is still null, scan for a mission file whose frontmatter `slug` field matches `$NEXT_SLUG` and call `mission.py activate` on it. The queue item is then removed on success. Dry-run verified: active SAOC mission detected correctly.
+
+Ghost-fibonacci scenario: covered by prior fixes (87bcfdf + 2d3dc91). The archive evidence (18:15:33) post-dates 87bcfdf (16:39:43), confirming the remaining bug was the queue slug-collision path, not the read_text exception.
 Next: Phase D (ticketing) — D1 email provider decision is the first blocker.

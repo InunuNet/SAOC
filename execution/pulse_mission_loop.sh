@@ -42,15 +42,6 @@ if [[ ! -f ".agent/profile.json" ]]; then
   exit 0
 fi
 
-# Honor needs_resume.flag written by post_compact_restore.sh after a context compaction.
-# Prevents a false-idle exit when active.json is transiently null during compaction recovery.
-NEEDS_RESUME=false
-if [[ -f ".agent/pulse/registry/needs_resume.flag" ]]; then
-  NEEDS_RESUME=true
-  rm -f ".agent/pulse/registry/needs_resume.flag" 2>/dev/null || true
-  echo "[pulse-loop] needs_resume.flag detected — forcing mission recovery scan."
-fi
-
 # Auto-update check: if template_version is stale, update silently
 CURRENT_VER=$(python3 -c "import json; print(json.load(open('.agent/profile.json')).get('template_version','0'))" 2>/dev/null || echo "0")
 LATEST_VER=$(gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' 2>/dev/null | base64 -d 2>/dev/null | tr -d '\n' || echo "")
@@ -84,6 +75,17 @@ if not active_json.exists():
 data = json.loads(active_json.read_text())
 active_path = data.get("mission")
 if not active_path:
+    # Legacy format: active_mission holds a slug (not a path) — resolve to file
+    slug_hint = data.get("active_mission")
+    if slug_hint:
+        candidates = sorted(missions_dir.glob("*.md"), reverse=True)
+        for c in candidates:
+            if slug_hint in c.name:
+                active_path = str(c)
+                data["mission"] = active_path
+                active_json.write_text(json.dumps(data, indent=2))
+                break
+if not active_path:
     print("null"); raise SystemExit(0)
 active_file = Path(active_path)
 if not active_file.exists():
@@ -91,8 +93,7 @@ if not active_file.exists():
     active_json.write_text(json.dumps(data, indent=2))
     print("null"); raise SystemExit(0)
 def load_fm(p):
-    try: t = p.read_text()
-    except Exception: return {}
+    t = p.read_text()
     if not t.startswith("---\n"): return {}
     try: return _load_fm_text(t.split("---", 2)[1])
     except: return {}
@@ -150,6 +151,42 @@ if p.exists():
 else:
     print('null')
 " 2>/dev/null || echo "null")
+      # If mission.py new failed (slug already exists with non-terminal status), activate it
+      if [[ "$ACTIVE" == "null" || -z "$ACTIVE" ]]; then
+        SLUG_FILE=$(python3 -c "
+from pathlib import Path
+try:
+    import yaml as _y; _fm = lambda t: (_y.safe_load(t) or {})
+except ImportError:
+    import re as _r
+    def _fm(t):
+        r = {}
+        for line in t.splitlines():
+            m = _r.match(r'^(\w+):\s*(.+)$', line)
+            if m: r[m.group(1)] = m.group(2).strip()
+        return r
+for mf in sorted(Path('.agent/memory/project/missions').glob('*.md'), reverse=True):
+    try:
+        t = mf.read_text()
+        if not t.startswith('---\n'): continue
+        if _fm(t.split('---', 2)[1]).get('slug') == '${NEXT_SLUG}':
+            print(str(mf)); break
+    except Exception: continue
+" 2>/dev/null || echo "")
+        if [[ -n "$SLUG_FILE" ]]; then
+          echo "[pulse-loop] Slug '$NEXT_SLUG' exists — activating: $SLUG_FILE"
+          python3 execution/mission.py activate "$SLUG_FILE" 2>/dev/null || true
+          ACTIVE=$(python3 -c "
+import json, pathlib
+p = pathlib.Path('.agent/memory/project/missions/active.json')
+if p.exists():
+    d = json.loads(p.read_text())
+    print(d.get('mission') or 'null')
+else:
+    print('null')
+" 2>/dev/null || echo "null")
+        fi
+      fi
       # Remove activated mission from queue
       [[ "$ACTIVE" != "null" ]] && python3 -c "
 import pathlib
@@ -180,8 +217,7 @@ except ImportError:
 missions_dir = Path(".agent/memory/project/missions")
 active_json = missions_dir / "active.json"
 def load_fm(p):
-    try: t = p.read_text()
-    except Exception: return {}
+    t = p.read_text()
     if not t.startswith("---\n"): return {}
     try: return _load_fm_text(t.split("---", 2)[1])
     except: return {}
@@ -197,11 +233,7 @@ PYEOF)
       echo "[pulse-loop] Repaired stale active.json → $FOUND"
       ACTIVE="$FOUND"
     else
-      if [[ "$NEEDS_RESUME" == "true" ]]; then
-        echo "[pulse-loop] WARN: needs_resume.flag was set but no in_progress mission found — stale flag cleared." >&2
-      else
-        echo "[pulse-loop] No active mission and queue empty — idle."
-      fi
+      echo "[pulse-loop] No active mission and queue empty — idle."
       exit 0
     fi
   fi
@@ -244,6 +276,14 @@ if not p.exists():
     raise SystemExit(0)
 data = json.loads(p.read_text())
 mission_path = data.get("mission")
+if not mission_path:
+    slug_hint = data.get("active_mission")
+    if slug_hint:
+        missions_dir2 = Path(".agent/memory/project/missions")
+        for c in sorted(missions_dir2.glob("*.md"), reverse=True):
+            if slug_hint in c.name:
+                mission_path = str(c)
+                break
 if not mission_path:
     raise SystemExit(0)
 mf = Path(mission_path)
