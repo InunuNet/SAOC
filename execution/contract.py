@@ -222,10 +222,9 @@ def check_cmd(args):
             use_shell = True
             # Any multiline command → write to a temp bash script to avoid shell parsing issues
             # (covers multiline python3 -c, heredocs emitted by @architect, and bare multiline cmds)
-            if "\n" in cmd or "\n" in cmd:
-                cleaned = cmd.replace("\n", "\n")
+            if "\n" in cmd:
                 with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as tf:
-                    tf.write("#!/usr/bin/env bash\\n" + cleaned)
+                    tf.write("#!/usr/bin/env bash\n" + cmd)
                     tf_name = tf.name
                 os.chmod(tf_name, 0o755)
                 actual_cmd = tf_name
@@ -417,7 +416,7 @@ def gate_cmd(args):
     # Pre-flight: reject prohibited multiline python3 -c assertions before running
     for _a in contract.get("assertions", []):
         _cmd = _a.get("verify", {}).get("cmd", "")
-        if "python3" in _cmd and "-c" in _cmd and ("\\n" in _cmd or "\\r" in _cmd):
+        if "python3" in _cmd and "-c" in _cmd and "\n" in _cmd:
             print(f"ERROR: Assertion {_a['id']}: multiline python3 -c is prohibited — "
                   f"rewrite as a single-line command or a script file.", file=sys.stderr)
             sys.exit(1)
