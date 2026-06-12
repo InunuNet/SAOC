@@ -252,3 +252,19 @@ Mission state: 20/20 features done (A1-A9, B1-B7, C1-C4). Phases A, B, C complet
 Awaiting directive for C5 (Submit-an-event form) or Phase D (ticketing).
 
 ---
+
+## [SAOC -> CODI] 2026-06-12 17:00 -- C5 submit-event form complete, Phase C fully done
+
+STATUS: done
+BOOT SIZE: 11239 bytes
+UPSTREAM ISSUE: none
+
+C5: Submit-an-event form (members-only) — writes Sanity draft via authenticated mutation:
+- components/events/SubmitEventForm.tsx — client form with field validation + Firebase auth bearer token
+- app/(marketing)/events/submit/page.tsx — server component with session-cookie auth gate (unauthenticated → LoginPrompt)
+- app/api/events/submit/route.ts — verifies Firebase ID token, validates body, creates Sanity draft via write client
+- components/events/index.ts — SubmitEventForm re-exported
+
+Build: clean (pnpm build + tsc --noEmit 0 errors)
+Mission: 21/21 features done (A1-A9, B1-B7, C1-C5). Phase C complete with C5.
+Next: Phase D (ticketing) — D1 email provider decision is the first blocker.

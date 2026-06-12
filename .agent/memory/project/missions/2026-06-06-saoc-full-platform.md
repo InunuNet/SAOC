@@ -6,16 +6,16 @@ goal: 'Deliver SAOC full digital platform: Phase A foundation (Next.js 15+TS+Tai
   ticketing+admin, Phase E polish+launch'
 created_at: '2026-06-06T06:30:00.000000+00:00'
 started_at: null
-last_active_at: '2026-06-12T14:34:29.704818+00:00'
+last_active_at: '2026-06-12T17:00:00.000000+00:00'
 status: in_progress
 cost_estimate:
-  features: 13
+  features: 14
   milestones: 3
-  total_calls: 15
+  total_calls: 16
 last_checkpoint:
   milestone: MC
-  feature: C4
-  ts: '2026-06-12T14:34:29.704818+00:00'
+  feature: C5
+  ts: '2026-06-12T17:00:00.000000+00:00'
 features:
 - id: A1
   title: Lockfile + Next.js sanity check
@@ -117,6 +117,11 @@ features:
   status: done
   started_at: '2026-06-12T14:30:00.000000+00:00'
   completed_at: '2026-06-12T16:00:00.000000+00:00'
+- id: C5
+  title: Submit-an-event form — members-only, writes Sanity draft
+  status: done
+  started_at: '2026-06-12T16:30:00.000000+00:00'
+  completed_at: '2026-06-12T17:00:00.000000+00:00'
 milestones:
 - id: MA
   name: Phase A — Foundation
@@ -150,6 +155,7 @@ milestones:
   - C2
   - C3
   - C4
+  - C5
 notes: Full 5-phase brief. Supersedes abandoned narrow-scope mission 2026-06-01-saoc-website-build.
   M1–M4 legacy work unverified against this brief — re-audit required.
 ---
