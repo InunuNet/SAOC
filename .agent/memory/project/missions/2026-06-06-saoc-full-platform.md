@@ -1,11 +1,13 @@
 ---
 schema: athanor.mission/v1
 slug: saoc-full-platform
-goal: 'Deliver SAOC full digital platform: Phase A foundation (Next.js 15+TS+Tailwind v4+Sanity+Firebase), Phase B 8 CMS pages, Phase C events calendar, Phase D Stripe ticketing+admin, Phase E polish+launch'
+goal: 'Deliver SAOC full digital platform: Phase A foundation (Next.js 15+TS+Tailwind
+  v4+Sanity+Firebase), Phase B 8 CMS pages, Phase C events calendar, Phase D Stripe
+  ticketing+admin, Phase E polish+launch'
 created_at: '2026-06-06T06:30:00.000000+00:00'
 started_at: null
-last_active_at: null
-status: active
+last_active_at: '2026-06-12T10:24:12.953528+00:00'
+status: done
 cost_estimate:
   features: 9
   milestones: 1
@@ -14,115 +16,120 @@ last_checkpoint:
   milestone: MB
   feature: B7
   ts: '2026-06-12T12:00:00.000000+00:00'
-  note: 'Phase B complete. B5 Judging 12/12 PASS, B6 Contact 10/10 PASS, B7 Sponsors 11/11 PASS. Build clean. MB milestone done.'
+  note: Phase B complete. B5 Judging 12/12 PASS, B6 Contact 10/10 PASS, B7 Sponsors
+    11/11 PASS. Build clean. MB milestone done.
 features:
-  - id: A1
-    title: 'Lockfile + Next.js sanity check'
-    status: done
-    started_at: '2026-06-06T12:00:00.000000+00:00'
-    completed_at: '2026-06-06T12:00:00.000000+00:00'
-  - id: A2
-    title: 'ESLint flat config + Prettier'
-    status: done
-    started_at: '2026-06-06T12:00:00.000000+00:00'
-    completed_at: '2026-06-06T12:00:00.000000+00:00'
-  - id: A3
-    title: 'Sanity install + Studio route'
-    status: done
-    started_at: '2026-06-08T00:00:00.000000+00:00'
-    completed_at: '2026-06-08T12:00:00.000000+00:00'
-  - id: A4
-    title: 'Sanity schemas (7 content types)'
-    status: done
-    started_at: '2026-06-08T12:00:00.000000+00:00'
-    completed_at: '2026-06-08T13:00:00.000000+00:00'
-  - id: A5
-    title: 'Seed Sanity from lib/data/'
-    status: done
-    started_at: '2026-06-08T13:00:00.000000+00:00'
-    completed_at: '2026-06-08T14:00:00.000000+00:00'
-  - id: A6
-    title: 'next-sanity wiring with draft mode'
-    status: done
-    started_at: '2026-06-08T14:00:00.000000+00:00'
-    completed_at: '2026-06-08T15:30:00.000000+00:00'
-  - id: A7
-    title: 'Firebase project provisioning (InunuNet account)'
-    status: done
-    started_at: '2026-06-08T15:30:00.000000+00:00'
-    completed_at: '2026-06-08T16:30:00.000000+00:00'
-  - id: A8
-    title: 'CI on PRs'
-    status: done
-    started_at: '2026-06-08T16:30:00.000000+00:00'
-    completed_at: '2026-06-11T00:00:00.000000+00:00'
-  - id: A9
-    title: 'next/font migration'
-    status: done
-    started_at: '2026-06-11T00:00:00.000000+00:00'
-    completed_at: '2026-06-11T00:00:00.000000+00:00'
-  - id: B1
-    title: 'Home page — wire sections to Sanity'
-    status: done
-    started_at: '2026-06-11T00:00:00.000000+00:00'
-    completed_at: '2026-06-11T00:00:00.000000+00:00'
-  - id: B2
-    title: 'About page — retrofit to Sanity'
-    status: done
-    started_at: '2026-06-11T00:00:00.000000+00:00'
-    completed_at: '2026-06-11T00:00:00.000000+00:00'
-  - id: B3
-    title: 'Societies page — greenfield with province filter'
-    status: done
-    started_at: '2026-06-11T00:00:00.000000+00:00'
-    completed_at: '2026-06-12T00:00:00.000000+00:00'
-  - id: B4
-    title: 'National Show page — greenfield'
-    status: done
-    started_at: '2026-06-12T00:00:00.000000+00:00'
-    completed_at: '2026-06-12T00:00:00.000000+00:00'
-  - id: B5
-    title: 'Judging pages — overview + training'
-    status: done
-    started_at: '2026-06-12T10:00:00.000000+00:00'
-    completed_at: '2026-06-12T11:00:00.000000+00:00'
-  - id: B6
-    title: 'Contact page — greenfield with form'
-    status: done
-    started_at: '2026-06-12T11:00:00.000000+00:00'
-    completed_at: '2026-06-12T11:30:00.000000+00:00'
-  - id: B7
-    title: 'Sponsors page — greenfield'
-    status: done
-    started_at: '2026-06-12T11:30:00.000000+00:00'
-    completed_at: '2026-06-12T12:00:00.000000+00:00'
+- id: A1
+  title: Lockfile + Next.js sanity check
+  status: done
+  started_at: '2026-06-06T12:00:00.000000+00:00'
+  completed_at: '2026-06-06T12:00:00.000000+00:00'
+- id: A2
+  title: ESLint flat config + Prettier
+  status: done
+  started_at: '2026-06-06T12:00:00.000000+00:00'
+  completed_at: '2026-06-06T12:00:00.000000+00:00'
+- id: A3
+  title: Sanity install + Studio route
+  status: done
+  started_at: '2026-06-08T00:00:00.000000+00:00'
+  completed_at: '2026-06-08T12:00:00.000000+00:00'
+- id: A4
+  title: Sanity schemas (7 content types)
+  status: done
+  started_at: '2026-06-08T12:00:00.000000+00:00'
+  completed_at: '2026-06-08T13:00:00.000000+00:00'
+- id: A5
+  title: Seed Sanity from lib/data/
+  status: done
+  started_at: '2026-06-08T13:00:00.000000+00:00'
+  completed_at: '2026-06-08T14:00:00.000000+00:00'
+- id: A6
+  title: next-sanity wiring with draft mode
+  status: done
+  started_at: '2026-06-08T14:00:00.000000+00:00'
+  completed_at: '2026-06-08T15:30:00.000000+00:00'
+- id: A7
+  title: Firebase project provisioning (InunuNet account)
+  status: done
+  started_at: '2026-06-08T15:30:00.000000+00:00'
+  completed_at: '2026-06-08T16:30:00.000000+00:00'
+- id: A8
+  title: CI on PRs
+  status: done
+  started_at: '2026-06-08T16:30:00.000000+00:00'
+  completed_at: '2026-06-11T00:00:00.000000+00:00'
+- id: A9
+  title: next/font migration
+  status: done
+  started_at: '2026-06-11T00:00:00.000000+00:00'
+  completed_at: '2026-06-11T00:00:00.000000+00:00'
+- id: B1
+  title: Home page — wire sections to Sanity
+  status: done
+  started_at: '2026-06-11T00:00:00.000000+00:00'
+  completed_at: '2026-06-11T00:00:00.000000+00:00'
+- id: B2
+  title: About page — retrofit to Sanity
+  status: done
+  started_at: '2026-06-11T00:00:00.000000+00:00'
+  completed_at: '2026-06-11T00:00:00.000000+00:00'
+- id: B3
+  title: Societies page — greenfield with province filter
+  status: done
+  started_at: '2026-06-11T00:00:00.000000+00:00'
+  completed_at: '2026-06-12T00:00:00.000000+00:00'
+- id: B4
+  title: National Show page — greenfield
+  status: done
+  started_at: '2026-06-12T00:00:00.000000+00:00'
+  completed_at: '2026-06-12T00:00:00.000000+00:00'
+- id: B5
+  title: Judging pages — overview + training
+  status: done
+  started_at: '2026-06-12T10:00:00.000000+00:00'
+  completed_at: '2026-06-12T11:00:00.000000+00:00'
+- id: B6
+  title: Contact page — greenfield with form
+  status: done
+  started_at: '2026-06-12T11:00:00.000000+00:00'
+  completed_at: '2026-06-12T11:30:00.000000+00:00'
+- id: B7
+  title: Sponsors page — greenfield
+  status: done
+  started_at: '2026-06-12T11:30:00.000000+00:00'
+  completed_at: '2026-06-12T12:00:00.000000+00:00'
 milestones:
-  - id: MA
-    name: 'Phase A — Foundation'
-    status: done
-    features:
-      - A1
-      - A2
-      - A3
-      - A4
-      - A5
-      - A6
-      - A7
-      - A8
-      - A9
-  - id: MB
-    name: 'Phase B — CMS Content Pages'
-    status: done
-    features:
-      - B1
-      - B2
-      - B3
-      - B4
-      - B5
-      - B6
-      - B7
-notes: 'Full 5-phase brief. Supersedes abandoned narrow-scope mission 2026-06-01-saoc-website-build. M1–M4 legacy work unverified against this brief — re-audit required.'
+- id: MA
+  name: Phase A — Foundation
+  status: done
+  features:
+  - A1
+  - A2
+  - A3
+  - A4
+  - A5
+  - A6
+  - A7
+  - A8
+  - A9
+- id: MB
+  name: Phase B — CMS Content Pages
+  status: done
+  features:
+  - B1
+  - B2
+  - B3
+  - B4
+  - B5
+  - B6
+  - B7
+notes: Full 5-phase brief. Supersedes abandoned narrow-scope mission 2026-06-01-saoc-website-build.
+  M1–M4 legacy work unverified against this brief — re-audit required.
+completed_at: '2026-06-12T10:24:12.953263+00:00'
 ---
+
+
 
 # SAOC Full Platform Mission Plan
 

@@ -556,7 +556,7 @@ def cmd_gate(args):
             continue
 
         result = subprocess.run(
-            [sys.executable, "execution/contract.py", "gate", contract_path, "--phase", "all", "--run-checks"],
+            [sys.executable, "execution/contract.py", "gate", contract_path, "--phase", "max", "--run-checks"],
             capture_output=True, text=True
         )
         print(f"  {'PASS' if result.returncode == 0 else 'FAIL'} {fid} (contract gate exit={result.returncode}):")

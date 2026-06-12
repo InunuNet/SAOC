@@ -158,9 +158,7 @@ def validate_cmd(args):
         # Detect prohibited multiline python3 -c pattern
         verify = a.get("verify", {})
         cmd = verify.get("cmd", "")
-        if "python3" in cmd and "-c" in cmd and ("
-" in cmd or "
-" in cmd):
+        if "python3" in cmd and "-c" in cmd and ("\n" in cmd or "\n" in cmd):
             errors.append(
                 f"Assertion {aid}: multiline python3 -c is prohibited — "
                 "use single-line grep/test instead"
@@ -207,15 +205,10 @@ def check_cmd(args):
             use_shell = True
             # Any multiline command → write to a temp bash script to avoid shell parsing issues
             # (covers multiline python3 -c, heredocs emitted by @architect, and bare multiline cmds)
-            if "
-" in cmd or "
-" in cmd:
-                cleaned = cmd.replace("
-", "
-")
+            if "\n" in cmd or "\n" in cmd:
+                cleaned = cmd.replace("\n", "\n")
                 with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as tf:
-                    tf.write("#!/usr/bin/env bash
-" + cleaned)
+                    tf.write("#!/usr/bin/env bash\\n" + cleaned)
                     tf_name = tf.name
                 os.chmod(tf_name, 0o755)
                 actual_cmd = tf_name
