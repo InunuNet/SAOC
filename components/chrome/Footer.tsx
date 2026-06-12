@@ -2,15 +2,14 @@
 // SAOC — components/chrome/Footer.tsx
 // Server Component — dark sage footer with four columns.
 // Col 1: logo + mission + reg numbers
-// Col 2: Explore nav links (no Learn)
+// Col 2: Explore nav links
 // Col 3: Partners list
-// Col 4: Newsletter form (client subcomponent)
+// Col 4: Contact info
 // =============================================================
 
 import Image from 'next/image';
 import Link from 'next/link';
 import { partners } from '@/lib/data';
-import { NewsletterForm } from './NewsletterForm';
 
 const FOOTER_NAV = [
   { id: 'about', label: 'About', href: '/about' },
@@ -75,15 +74,20 @@ export function Footer() {
           </ul>
         </div>
 
-        {/* Col 4 — Stay in touch */}
+        {/* Col 4 — Contact */}
         <div className="flex flex-col gap-3">
           <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory/55 mb-1">
-            Stay in touch
+            Contact
           </div>
           <p className="font-sans text-[13.5px] leading-relaxed text-ivory/65">
-            Quarterly bulletin — show dates, judging results and yearbook news.
+            Questions about membership, shows, or judging? We&apos;d love to hear from you.
           </p>
-          <NewsletterForm />
+          <Link
+            href="/contact"
+            className="inline-block font-sans text-[14px] font-medium text-accent hover:text-accent-soft transition-colors duration-150"
+          >
+            Get in touch →
+          </Link>
         </div>
       </div>
 
