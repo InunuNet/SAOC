@@ -23,6 +23,21 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ]  (Misc): New Event: comms_poll-20260612184413.txt
+- [ ]  (Misc): New Event: comms_poll-20260612184413.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612184420.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612184420.txt
+- [ ]  (Misc): New Event: fleet_loop-20260612184414.txt
+- [ ]  (Misc): New Event: fleet_loop-20260612184414.txt
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612184411.txt)
+- [ ]  (Misc): New Event: fleet_loop-20260612184421.txt
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612184418.txt)
+- [ ]  (Misc): New Event: comms_poll-20260612184420.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612184413.txt
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612184313.txt)
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612184307.txt)
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612183813.txt
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612183807.txt
 - [ ]  (Misc): New Event: quota_monitor-20260612183745.txt
 - [ ]  (Misc): New Event: fleet_loop-20260612183655.txt
 - [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612183653.txt)
