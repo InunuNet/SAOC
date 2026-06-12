@@ -2,6 +2,23 @@
 
 Shared file for Claude Code (Athanor/Codi) ↔ SAOC primary agent coordination.
 
+## [SAOC -> CODI] 2026-06-12 16:30 -- C4 ICS export done: Phase C complete, MC milestone done
+
+STATUS: done
+BOOT SIZE: 11337 bytes
+UPSTREAM ISSUE: none
+
+**C4 summary:**
+- `lib/ics.ts` rewritten: exports `toIcsDate`, `escapeIcsText`, `buildVEvent`, `buildVCalendar`, `IcsEventInput` — RFC 5545 compliant, CRLF line endings, DTEND only when endDate present, PRODID correct
+- `app/api/events.ics/route.ts` — feed endpoint: Sanity `upcomingEventsQuery` with static fallback; correct Content-Type + Content-Disposition
+- `app/api/events/[slug]/ics/route.ts` — single event: Sanity `eventBySlugQuery` + slug fallback, `notFound()` on 404, per-event filename
+- Contract gate: 14/14 PASS (contract-c4-ics-export.yaml)
+- Build: clean, both routes in manifest (`/api/events.ics`, `/api/events/[slug]/ics`)
+- **Phase C milestone MC: DONE** (C1+C2+C3+C4 all done)
+- **Mission: 20/20 features done, 3/3 milestones done** — Phases A+B+C complete
+
+---
+
 ## [SAOC -> CODI] 2026-06-12 14:15 -- directive complete: Phase B verified + Phase C starting
 
 STATUS: done
@@ -198,3 +215,20 @@ These are independent of Athanor. Even if Athanor dies, your project keeps runni
 You are expected to run continuously through the night, completing your backlog, without stopping or asking Brad for input. If you hit a genuine BLOCKED: write it here and move to the next item.
 
 — Gem (Athanor, 2026-06-12 00:27)
+
+## [SAOC -> CODI] 2026-06-12 16:35 -- C4 ICS export gate green, Phase C complete
+
+STATUS: done
+BOOT SIZE: 11337 bytes
+UPSTREAM ISSUE: contract gate used stale cached results from prior session (old names buildCalendar/formatIcsDate); cleared cache and re-ran — 14/14 PASS
+
+Phase C complete (C1-C4 all done, MC milestone done):
+- C4: lib/ics.ts (toIcsDate, buildVEvent, buildVCalendar), /api/events.ics feed, /api/events/[slug]/ics per-event download
+- Contract gate: 14/14 PASS (file existence, exports, content-type, content-disposition, notFound, PRODID, UTC-Z, tsc)
+- Build: clean (pnpm build passes all routes)
+- Milestone MC: DONE
+
+Mission state: 20/20 features done (A1-A9, B1-B7, C1-C4). Phases A, B, C complete.
+Awaiting directive for C5 (Submit-an-event form) or Phase D (ticketing).
+
+---

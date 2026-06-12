@@ -1,0 +1,63 @@
+schema: athanor.contract/v1
+slug: saoc-c4-ics-export
+spec: saoc-full-platform
+goal: 'C4: ICS calendar export — GET /api/events.ics returns all upcoming events as
+  a VCALENDAR feed (RFC 5545), GET /api/events/[slug]/ics returns a single-event
+  ICS download. Helper lib/ics.ts formats VEVENTs. DTSTART/DTEND use UTC format
+  (YYYYMMDDTHHMMSSZ). Content-type: text/calendar. Content-Disposition: attachment.
+  Unknown slug → 404. No external deps — pure string formatting.'
+created_at: '2026-06-12'
+autonomy: high
+status: pending
+phase: 1
+
+features:
+  - id: C4
+    name: 'ICS export: /api/events.ics feed + /api/events/[slug]/ics single-event download'
+    status: pending
+
+assertions:
+  phase: 1
+  checks:
+    - id: C4a
+      description: 'lib/ics.ts exists'
+      command: "test -f /Users/vetus/ai/SAOC/lib/ics.ts"
+    - id: C4b
+      description: 'lib/ics.ts exports toIcsDate function'
+      command: "grep -q 'toIcsDate' /Users/vetus/ai/SAOC/lib/ics.ts"
+    - id: C4c
+      description: 'lib/ics.ts exports buildVEvent function'
+      command: "grep -q 'buildVEvent' /Users/vetus/ai/SAOC/lib/ics.ts"
+    - id: C4d
+      description: 'lib/ics.ts exports buildVCalendar function'
+      command: "grep -q 'buildVCalendar' /Users/vetus/ai/SAOC/lib/ics.ts"
+    - id: C4e
+      description: 'app/api/events.ics/route.ts exists'
+      command: "test -f '/Users/vetus/ai/SAOC/app/api/events.ics/route.ts'"
+    - id: C4f
+      description: 'app/api/events/[slug]/ics/route.ts exists'
+      command: "test -f '/Users/vetus/ai/SAOC/app/api/events/[slug]/ics/route.ts'"
+    - id: C4g
+      description: 'feed route exports GET function'
+      command: "grep -q 'export.*GET' '/Users/vetus/ai/SAOC/app/api/events.ics/route.ts'"
+    - id: C4h
+      description: 'feed route returns text/calendar content-type'
+      command: "grep -q 'text/calendar' '/Users/vetus/ai/SAOC/app/api/events.ics/route.ts'"
+    - id: C4i
+      description: 'feed route sets Content-Disposition attachment header'
+      command: "grep -q 'Content-Disposition' '/Users/vetus/ai/SAOC/app/api/events.ics/route.ts'"
+    - id: C4j
+      description: 'single-event route exports GET function'
+      command: "grep -q 'export.*GET' '/Users/vetus/ai/SAOC/app/api/events/[slug]/ics/route.ts'"
+    - id: C4k
+      description: 'single-event route calls notFound() on missing event'
+      command: "grep -q 'notFound' '/Users/vetus/ai/SAOC/app/api/events/[slug]/ics/route.ts'"
+    - id: C4l
+      description: 'ICS output contains PRODID with SAOC identifier'
+      command: "grep -q 'SAOC' '/Users/vetus/ai/SAOC/lib/ics.ts'"
+    - id: C4m
+      description: 'lib/ics.ts uses UTC Z suffix in date formatting'
+      command: "grep -q '\\\\\\\\Z\\|[Zz]\\b' '/Users/vetus/ai/SAOC/lib/ics.ts'"
+    - id: C4n
+      description: 'TypeScript type check passes'
+      command: "cd /Users/vetus/ai/SAOC && pnpm tsc --noEmit 2>&1 | grep -c '^' | xargs -I{} test {} -eq 0"

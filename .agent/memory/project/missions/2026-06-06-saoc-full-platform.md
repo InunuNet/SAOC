@@ -6,18 +6,16 @@ goal: 'Deliver SAOC full digital platform: Phase A foundation (Next.js 15+TS+Tai
   ticketing+admin, Phase E polish+launch'
 created_at: '2026-06-06T06:30:00.000000+00:00'
 started_at: null
-last_active_at: '2026-06-12T10:24:12.953528+00:00'
+last_active_at: '2026-06-12T14:34:29.704818+00:00'
 status: in_progress
 cost_estimate:
   features: 13
   milestones: 3
   total_calls: 15
 last_checkpoint:
-  milestone: MB
-  feature: B7
-  ts: '2026-06-12T12:00:00.000000+00:00'
-  note: Phase B complete. B5 Judging 12/12 PASS, B6 Contact 10/10 PASS, B7 Sponsors
-    11/11 PASS. Build clean. MB milestone done. Phase C starting.
+  milestone: MC
+  feature: C4
+  ts: '2026-06-12T14:34:29.704818+00:00'
 features:
 - id: A1
   title: Lockfile + Next.js sanity check
@@ -101,16 +99,24 @@ features:
   completed_at: '2026-06-12T12:00:00.000000+00:00'
 - id: C1
   title: Events Sanity schema + GROQ queries
-  status: pending
+  status: done
+  started_at: '2026-06-12T12:00:00.000000+00:00'
+  completed_at: '2026-06-12T14:00:00.000000+00:00'
 - id: C2
   title: Events index page /events — month-grouped list + filter
-  status: pending
+  status: done
+  started_at: '2026-06-12T12:00:00.000000+00:00'
+  completed_at: '2026-06-12T14:00:00.000000+00:00'
 - id: C3
   title: Event detail page /events/[slug]
-  status: pending
+  status: done
+  started_at: '2026-06-12T12:00:00.000000+00:00'
+  completed_at: '2026-06-12T14:00:00.000000+00:00'
 - id: C4
   title: ICS export per-event + /events.ics feed
-  status: pending
+  status: done
+  started_at: '2026-06-12T14:30:00.000000+00:00'
+  completed_at: '2026-06-12T16:00:00.000000+00:00'
 milestones:
 - id: MA
   name: Phase A — Foundation
@@ -138,7 +144,7 @@ milestones:
   - B7
 - id: MC
   name: Phase C — Events Calendar
-  status: pending
+  status: done
   features:
   - C1
   - C2
@@ -147,6 +153,7 @@ milestones:
 notes: Full 5-phase brief. Supersedes abandoned narrow-scope mission 2026-06-01-saoc-website-build.
   M1–M4 legacy work unverified against this brief — re-audit required.
 ---
+
 
 
 

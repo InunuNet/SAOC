@@ -17,9 +17,15 @@ export async function sanityFetch<T>({
     return null;
   }
 
+  let isEnabled = false;
   try {
-    const { isEnabled } = await draftMode();
+    const draft = await draftMode();
+    isEnabled = draft.isEnabled;
+  } catch {
+    // Outside a request context (e.g. generateStaticParams) — default to published
+  }
 
+  try {
     return await client.fetch<T>(query, params ?? {}, {
       next: { tags: tags ?? ['sanity'] },
       perspective: isEnabled ? 'previewDrafts' : 'published',
