@@ -386,13 +386,11 @@ def _gate_single_phase(contract: dict, args) -> bool:
             failing.append(aid)
 
     if failing:
-        print(f"
-FAIL Phase {phase_n} gate FAILED. Failing: {', '.join(failing)}")
+        print(f"\nFAIL Phase {phase_n} gate FAILED. Failing: {', '.join(failing)}")
         print("   Resolve before proceeding to the next phase.")
         return False
     else:
-        print(f"
-PASS Phase {phase_n} gate PASSED. Proceed to next phase.")
+        print(f"\nPASS Phase {phase_n} gate PASSED. Proceed to next phase.")
         return True
 
 
@@ -402,9 +400,7 @@ def gate_cmd(args):
     # Pre-flight: reject prohibited multiline python3 -c assertions before running
     for _a in contract.get("assertions", []):
         _cmd = _a.get("verify", {}).get("cmd", "")
-        if "python3" in _cmd and "-c" in _cmd and ("
-" in _cmd or "
-" in _cmd):
+        if "python3" in _cmd and "-c" in _cmd and ("\\n" in _cmd or "\\r" in _cmd):
             print(f"ERROR: Assertion {_a['id']}: multiline python3 -c is prohibited — "
                   f"rewrite as a single-line command or a script file.", file=sys.stderr)
             sys.exit(1)
@@ -417,8 +413,7 @@ def gate_cmd(args):
 
         for phase_def in phases_data:
             phase_id = phase_def['id']
-            print(f"
---- Gating Phase {phase_id} ---")
+            print(f"\n--- Gating Phase {phase_id} ---")
             # Create a temporary args object for _gate_single_phase
             single_phase_args = argparse.Namespace(
                 contract=args.contract,
@@ -427,11 +422,9 @@ def gate_cmd(args):
                 handoff=getattr(args, "handoff", None)
             )
             if not _gate_single_phase(contract, single_phase_args):
-                print(f"
-FAIL: Phase {phase_id} failed. Stopping all-phase gate.")
+                print(f"\nFAIL: Phase {phase_id} failed. Stopping all-phase gate.")
                 sys.exit(2) # Exit on first failure
-        print("
-PASS All phases gated successfully.")
+        print("\nPASS All phases gated successfully.")
         sys.exit(0)
     elif args.phase == "max":
         phases = contract.get("phases", [])
@@ -459,8 +452,7 @@ def report_cmd(args):
         for aid in p.get("assertions", []):
             phase_map[aid] = p["id"]
 
-    print(f"
-Validation Contract Report")
+    print(f"\nValidation Contract Report")
     print(f"Spec: {contract.get('spec')}")
     print(f"{'ID':<6} {'Phase':<6} {'Kind':<16} {'Verdict':<8} Description")
     print("-" * 80)
