@@ -95,6 +95,23 @@ def normalize_contract(contract: dict) -> dict:
     c["assertions"] = unified_assertions
     c["phases"] = unified_phases
 
+    # After processing all explicit and legacy phases, ensure all intermediate phases
+    # from 1 up to the maximum defined phase are present.
+    final_phases = []
+    existing_phase_ids = {p["id"] for p in c["phases"]}
+    max_phase_id = max(existing_phase_ids, default=0)
+
+    for i in range(1, max_phase_id + 1):
+        if i not in existing_phase_ids:
+            final_phases.append({"id": i, "assertions": []})
+        else:
+            # Find the original phase definition and add it
+            original_phase = next(p for p in c["phases"] if p["id"] == i)
+            final_phases.append(original_phase)
+
+    # Sort final_phases by ID to maintain order
+    c["phases"] = sorted(final_phases, key=lambda p: p["id"])
+
     return c
 
 
