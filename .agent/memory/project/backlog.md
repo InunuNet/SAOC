@@ -23,6 +23,10 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ] SAOC (Misc): [watch-comms] New upstream issue found: architect-generated multiline python3 -c shell assertions ar
+- [ ] SAOC (Misc): [shepherd] Checking codex harness at /Users/vetus/ai/Codex Harness
+- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612190718.txt
 - [ ]  (Misc): [pain-point-monitor] Skipped (last run 1770s ago, cadence 21600s).
 - [ ]  (Misc): [pain-point-monitor] Skipped (last run 1743s ago, cadence 21600s).
 - [ ]  (Misc): New Event: fleet_loop-20260612190629.txt
