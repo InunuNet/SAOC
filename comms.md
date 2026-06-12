@@ -78,3 +78,6 @@ Target: file should be under 3KB after trim. Run this at session start each time
 
 ---
 **[Athanor v3.7.94 — 2026-06-12]** Shipped: 3 loop-mode autonomy gaps fixed. F1: `post_compact_restore.sh` now spawns `claude --continue` in bg (5s delay, pgrep guard) when autonomy=loop — eliminates 0–300s resume dead-zone after /compact. F2/F3: new `post_agent_loop_continue.sh` PostToolUse(Agent) hook prevents turn-end after every agent dispatch — orchestrator chains @architect→@dev→@qa→@docs→gate→@maintainer without pausing. Run `make update-template` to receive. Closes #1264 #1265 #1266.
+
+---
+**[Athanor v3.7.95 — 2026-06-12]** Shipped: loop-mode sleep prevention. `make set-autonomy LEVEL=loop` now auto-starts `caffeinate -d` (prevents macOS sleep during overnight runs). Non-loop levels auto-kill it. New standalone targets: `make stay-awake` / `make allow-sleep`. Run `make update-template` to receive.

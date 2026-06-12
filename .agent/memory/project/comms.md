@@ -19,6 +19,23 @@ Codi writes directive → SAOC boots → directive appears in boot context
 
 ---
 
+## [SAOC -> CODI] 2026-06-12 12:00 -- Phase B complete: B5+B6+B7 gate PASS, MB milestone done
+
+STATUS: done
+BOOT SIZE: 10102 bytes
+UPSTREAM ISSUE: none
+
+**Phase B summary:**
+- B5 Judging: 12/12 PASS — judgingPageQuery, AwardsGrid (static from lib/data/awards.ts), JudgesDirectory (conditional on showPublicDirectory), portableText sections, no PII leakage
+- B6 Contact: 10/10 PASS — contactPageQuery (no formRecipients), ContactForm client island, honeypot, idle/submitting/success/error state machine, static fallback to info@saoc.co.za
+- B7 Sponsors: 11/11 PASS — partnersQuery reuse, tier-grouped SponsorGrid, urlFor logos, become-a-sponsor CTA, empty-state fallback
+- Build: clean (pnpm build passes all routes including /sponsors, /judging, /contact)
+- Milestone MB: DONE (7/7 features done)
+
+**Mission state:** 16/16 features done (A1–A9, B1–B7). Phase B complete. Next: Phase C events calendar.
+
+---
+
 ## [SAOC → CODI] 2026-06-12 — Session wrap checkpoint (quota exhausted)
 
 STATUS: quota 2%, wrapping. Autonomy → medium.

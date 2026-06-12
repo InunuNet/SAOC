@@ -1,0 +1,53 @@
+schema: athanor.contract/v1
+slug: saoc-b6-contact
+spec: saoc-full-platform
+goal: 'B6: Contact page. Add contactPageQuery to sanity/queries.ts fetching title + directContacts[]{name, role, email} ONLY (must NOT project formRecipients — that would leak admin recipient emails to the client bundle). Rebuild app/(marketing)/contact/page.tsx as an async Server Component fetching contactPageQuery and rendering a two-column layout: a Sanity-driven directContacts sidebar (left) and the ContactForm island (right). Create components/contact/ContactForm.tsx (use client) — controlled form with name/email/subject/message fields + hidden honeypot _hp, posting JSON to /api/contact, with an idle → submitting → success | error state machine, inline API error display, and a Thank-you success state replacing the form. Create components/contact/index.ts barrel. Static fallback to a "info@saoc.co.za" SAOC Secretariat contact when Sanity returns null. Revalidation tags [contact, sanity]. No changes to app/api/contact/route.ts.'
+created_at: '2026-06-12'
+autonomy: high
+status: done
+phase: 1
+
+features:
+  - id: B6
+    name: 'Contact page (contactPageQuery, async Server Component, ContactForm client island, honeypot, state machine, static fallback)'
+    status: pending
+
+goldens:
+  - .agent/memory/scratch/golden-b6-contact.md
+
+qa_inputs:
+  - .agent/memory/scratch/qa-input-b6-contact.md
+
+assertions:
+  phase: 1
+  checks:
+    - id: B6a
+      description: 'sanity/queries.ts defines contactPageQuery'
+      command: "grep -q 'contactPageQuery' /Users/vetus/ai/SAOC/sanity/queries.ts"
+    - id: B6b
+      description: 'contactPageQuery does NOT expose formRecipients (admin emails stay server-only)'
+      command: "! grep -q 'formRecipients' /Users/vetus/ai/SAOC/sanity/queries.ts"
+    - id: B6c
+      description: 'components/contact/ContactForm.tsx exists'
+      command: "test -f /Users/vetus/ai/SAOC/components/contact/ContactForm.tsx"
+    - id: B6d
+      description: "ContactForm.tsx is a client component ('use client')"
+      command: "grep -q \"'use client'\" /Users/vetus/ai/SAOC/components/contact/ContactForm.tsx"
+    - id: B6e
+      description: 'components/contact/index.ts barrel exists'
+      command: "test -f /Users/vetus/ai/SAOC/components/contact/index.ts"
+    - id: B6f
+      description: 'contact page imports contactPageQuery'
+      command: "grep -q 'contactPageQuery' '/Users/vetus/ai/SAOC/app/(marketing)/contact/page.tsx'"
+    - id: B6g
+      description: 'contact page no longer contains the placeholder string'
+      command: "! grep -q '\\[Placeholder' '/Users/vetus/ai/SAOC/app/(marketing)/contact/page.tsx'"
+    - id: B6h
+      description: 'ContactForm.tsx posts to /api/contact'
+      command: "grep -q '/api/contact' /Users/vetus/ai/SAOC/components/contact/ContactForm.tsx"
+    - id: B6i
+      description: 'ContactForm.tsx includes the honeypot field _hp'
+      command: "grep -q '_hp' /Users/vetus/ai/SAOC/components/contact/ContactForm.tsx"
+    - id: B6j
+      description: 'contact page uses the [contact, sanity] revalidation tags'
+      command: "grep -q \"'contact'\" '/Users/vetus/ai/SAOC/app/(marketing)/contact/page.tsx'"

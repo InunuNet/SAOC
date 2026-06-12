@@ -43,29 +43,7 @@ def load_contract(path: str) -> dict:
 def normalize_contract(contract: dict) -> dict:
     """
     Convert @architect-generated contract format to the internal format contract.py uses.
-
-    @architect format:
-      assertions:
-        phase: 4
-        checks:
-          - id: A1
-            description: ...
-            command: grep -q "..." path
-
-    Internal format:
-      assertions:
-        - id: A1
-          description: ...
-          verify:
-            kind: shell
-            cmd: grep -q "..." path
-      phases:
-        - id: 4
-          assertions: [A1, A2, ...]
-
-    Also normalizes:
-      - slug -> spec (if spec missing)
-      - goal -> description (if description missing at top level)
+    Handles legacy single-phase 'assertions' dict and new multi-phase 'phases' list.
     """
     c = dict(contract)
 
@@ -73,9 +51,12 @@ def normalize_contract(contract: dict) -> dict:
     if "spec" not in c and "slug" in c:
         c["spec"] = c["slug"]
 
-    assertions_raw = c.get("assertions", [])
+    # Initialize assertions and phases for processing
+    unified_assertions = []
+    unified_phases = c.get("phases", []) # Prefer explicit top-level phases
 
-    # Detect @architect dict format: {phase: N, checks: [...]}
+    # Handle legacy @architect format (single phase in assertions dict)
+    assertions_raw = c.get("assertions")
     if isinstance(assertions_raw, dict) and "checks" in assertions_raw:
         phase_id = assertions_raw.get("phase", 1)
         try:
@@ -84,28 +65,35 @@ def normalize_contract(contract: dict) -> dict:
             pass
         checks = assertions_raw.get("checks", [])
 
-        # Convert checks to internal assertion list
-        assertion_list = []
-        assertion_ids = []
+        current_phase_assertion_ids = []
         for check in checks:
             cid = check.get("id", "")
             desc = check.get("description", "")
             cmd = check.get("command", "")
-            assertion_list.append({
+            unified_assertions.append({
                 "id": cid,
                 "description": desc,
                 "verify": {
-                    "kind": "shell",
+                    "kind": "shell", # Default to shell for legacy commands
                     "cmd": cmd,
                 }
             })
-            assertion_ids.append(cid)
+            current_phase_assertion_ids.append(cid)
 
-        c["assertions"] = assertion_list
+        # Add this single phase to unified_phases if not already covered
+        if not any(p.get("id") == phase_id for p in unified_phases):
+            unified_phases.append({"id": phase_id, "assertions": current_phase_assertion_ids})
 
-        # Synthesize phases if not present
-        if "phases" not in c:
-            c["phases"] = [{"id": phase_id, "assertions": assertion_ids}]
+        # Remove the legacy assertions dict to prevent re-processing
+        del c["assertions"]
+
+    # If 'assertions' is a list, append them to unified_assertions
+    elif isinstance(assertions_raw, list):
+        unified_assertions.extend(assertions_raw)
+        del c["assertions"] # Remove to use the unified list
+
+    c["assertions"] = unified_assertions
+    c["phases"] = unified_phases
 
     return c
 

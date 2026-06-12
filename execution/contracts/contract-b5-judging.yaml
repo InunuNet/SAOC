@@ -1,0 +1,59 @@
+schema: athanor.contract/v1
+slug: saoc-b5-judging
+spec: saoc-full-platform
+goal: 'B5: Judging overview page. Add judgingPageQuery to sanity/queries.ts (title, intro, howItWorks, stats, becomingAJudge, showPublicDirectory, expanded judges refs — NO email/contact projection). Rebuild app/(marketing)/judging/page.tsx as an async Server Component (no use client) fetching judgingPageQuery with revalidation tags [judging, sanity], rendering hero (title + intro portableText), howItWorks portableText, a stats strip, the AwardsGrid, becomingAJudge portableText, and the JudgesDirectory. Static fallback prose when the query returns null. Create components/judging/AwardsGrid.tsx (6-card grid sourced EXCLUSIVELY from lib/data/awards.ts — code/name/threshold/description), components/judging/JudgesDirectory.tsx (renders the judge grid only when showPublicDirectory === true, else a members-only placeholder), and components/judging/index.ts barrel. PortableText fields rendered with @portabletext/react. No new dependencies, no invented brand tokens.'
+created_at: '2026-06-12'
+autonomy: high
+status: done
+phase: 1
+
+features:
+  - id: B5
+    name: 'Judging overview page (judgingPageQuery, async Server Component, AwardsGrid static, conditional JudgesDirectory, portableText sections, fallbacks)'
+    status: pending
+
+goldens:
+  - .agent/memory/scratch/golden-b5-judging.md
+
+qa_inputs:
+  - .agent/memory/scratch/qa-input-b5-judging.md
+
+assertions:
+  phase: 1
+  checks:
+    - id: B5a
+      description: 'sanity/queries.ts defines judgingPageQuery'
+      command: "grep -q 'judgingPageQuery' /Users/vetus/ai/SAOC/sanity/queries.ts"
+    - id: B5b
+      description: 'judging page imports judgingPageQuery'
+      command: "grep -q 'judgingPageQuery' '/Users/vetus/ai/SAOC/app/(marketing)/judging/page.tsx'"
+    - id: B5c
+      description: 'components/judging/AwardsGrid.tsx exists'
+      command: "test -f /Users/vetus/ai/SAOC/components/judging/AwardsGrid.tsx"
+    - id: B5d
+      description: 'components/judging/JudgesDirectory.tsx exists'
+      command: "test -f /Users/vetus/ai/SAOC/components/judging/JudgesDirectory.tsx"
+    - id: B5e
+      description: 'components/judging/index.ts barrel exists'
+      command: "test -f /Users/vetus/ai/SAOC/components/judging/index.ts"
+    - id: B5f
+      description: 'judging page uses static awards fallback (imports from lib/data/awards)'
+      command: "grep -Eq \"lib/data/awards|@/lib/data/awards\" '/Users/vetus/ai/SAOC/app/(marketing)/judging/page.tsx' /Users/vetus/ai/SAOC/components/judging/AwardsGrid.tsx"
+    - id: B5g
+      description: 'judging page no longer contains the placeholder string'
+      command: "! grep -q '\\[Placeholder' '/Users/vetus/ai/SAOC/app/(marketing)/judging/page.tsx'"
+    - id: B5h
+      description: 'judging page uses revalidation tags (judging + sanity)'
+      command: "grep -q \"'judging'\" '/Users/vetus/ai/SAOC/app/(marketing)/judging/page.tsx' && grep -q \"'sanity'\" '/Users/vetus/ai/SAOC/app/(marketing)/judging/page.tsx'"
+    - id: B5i
+      description: 'judging page renders portableText via @portabletext/react'
+      command: "grep -q '@portabletext/react' '/Users/vetus/ai/SAOC/app/(marketing)/judging/page.tsx'"
+    - id: B5j
+      description: 'JudgesDirectory gates rendering on showPublicDirectory'
+      command: "grep -q 'showPublicDirectory' /Users/vetus/ai/SAOC/components/judging/JudgesDirectory.tsx"
+    - id: B5k
+      description: 'judging page is a Server Component (no use client directive)'
+      command: "! grep -q \"use client\" '/Users/vetus/ai/SAOC/app/(marketing)/judging/page.tsx'"
+    - id: B5l
+      description: 'judgingPageQuery block does not project judge email/phone/contact fields'
+      command: "python3 /Users/vetus/ai/SAOC/execution/checks/judging_query_no_pii.py"

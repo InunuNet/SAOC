@@ -1,0 +1,56 @@
+schema: athanor.contract/v1
+slug: saoc-b7-sponsors
+spec: saoc-full-platform
+goal: 'B7: Sponsors page. Create app/(marketing)/sponsors/page.tsx as an async Server Component (no use client) fetching the existing partnersQuery from sanity/queries.ts with revalidation tags [sponsor, sanity]. Group sponsors server-side by tier using a TIER_ORDER constant [Title, Gold, Silver, Supporting] (the query orders alphabetically by tier, which is the WRONG display order — must re-sort at render). Create components/sponsors/SponsorGrid.tsx (Server Component; defines + exports the inline SanitySponsor interface; groups via reduce into Record<string, SanitySponsor[]> and iterates TIER_ORDER; renders per-tier heading + sponsor cards with logo via urlFor(sponsor.logo).width(200).url() guarded by {sponsor.logo && ...}, name, description, and external website link with target=_blank rel=noopener noreferrer) and components/sponsors/index.ts barrel. Static fallback: when partnersQuery returns null or empty, render a Become our first sponsor CTA section instead of the grid. Page ends with a Become a sponsor CTA linking to /contact. urlFor is imported from @/sanity/lib/image. No new queries, no new dependencies, no invented brand tokens, no [Placeholder string.'
+created_at: '2026-06-12'
+autonomy: high
+status: done
+phase: 1
+
+features:
+  - id: B7
+    name: 'Sponsors page (partnersQuery reuse, async Server Component, tier-grouped SponsorGrid, urlFor logos, become-a-sponsor CTA, empty-state fallback)'
+    status: pending
+
+goldens:
+  - .agent/memory/scratch/golden-b7-sponsors.md
+
+qa_inputs:
+  - .agent/memory/scratch/qa-input-b7-sponsors.md
+
+assertions:
+  phase: 1
+  checks:
+    - id: B7a
+      description: 'sponsors page exists'
+      command: "test -f '/Users/vetus/ai/SAOC/app/(marketing)/sponsors/page.tsx'"
+    - id: B7b
+      description: 'sponsors page imports partnersQuery'
+      command: "grep -q 'partnersQuery' '/Users/vetus/ai/SAOC/app/(marketing)/sponsors/page.tsx'"
+    - id: B7c
+      description: 'components/sponsors/SponsorGrid.tsx exists'
+      command: "test -f /Users/vetus/ai/SAOC/components/sponsors/SponsorGrid.tsx"
+    - id: B7d
+      description: 'components/sponsors/index.ts barrel exists'
+      command: "test -f /Users/vetus/ai/SAOC/components/sponsors/index.ts"
+    - id: B7e
+      description: 'sponsors feature renders logos via urlFor'
+      command: "grep -q 'urlFor' '/Users/vetus/ai/SAOC/app/(marketing)/sponsors/page.tsx' /Users/vetus/ai/SAOC/components/sponsors/SponsorGrid.tsx"
+    - id: B7f
+      description: 'sponsors page uses revalidation tags (sponsor + sanity)'
+      command: "grep -q \"'sponsor'\" '/Users/vetus/ai/SAOC/app/(marketing)/sponsors/page.tsx' && grep -q \"'sanity'\" '/Users/vetus/ai/SAOC/app/(marketing)/sponsors/page.tsx'"
+    - id: B7g
+      description: 'sponsors page no longer contains the placeholder string'
+      command: "! grep -q '\\[Placeholder' '/Users/vetus/ai/SAOC/app/(marketing)/sponsors/page.tsx'"
+    - id: B7h
+      description: 'SponsorGrid defines TIER_ORDER with the four tiers in display order'
+      command: "grep -Eq \"TIER_ORDER\" /Users/vetus/ai/SAOC/components/sponsors/SponsorGrid.tsx && grep -q 'Title' /Users/vetus/ai/SAOC/components/sponsors/SponsorGrid.tsx && grep -q 'Supporting' /Users/vetus/ai/SAOC/components/sponsors/SponsorGrid.tsx"
+    - id: B7i
+      description: 'sponsors page is a Server Component (no use client directive)'
+      command: "! grep -q 'use client' '/Users/vetus/ai/SAOC/app/(marketing)/sponsors/page.tsx'"
+    - id: B7j
+      description: 'sponsors feature links to /contact (become a sponsor CTA)'
+      command: "grep -q '/contact' '/Users/vetus/ai/SAOC/app/(marketing)/sponsors/page.tsx' /Users/vetus/ai/SAOC/components/sponsors/SponsorGrid.tsx"
+    - id: B7k
+      description: 'external sponsor website links use rel=noopener noreferrer'
+      command: "grep -q 'noopener noreferrer' /Users/vetus/ai/SAOC/components/sponsors/SponsorGrid.tsx"

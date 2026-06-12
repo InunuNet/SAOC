@@ -12,9 +12,9 @@ cost_estimate:
   total_calls: 11
 last_checkpoint:
   milestone: MB
-  feature: B3
-  ts: '2026-06-12T00:00:00.000000+00:00'
-  note: 'B4 National Show 8/8 PASS (countdown hero, past shows grid, show class grid). Next: B5 Judging pages.'
+  feature: B7
+  ts: '2026-06-12T12:00:00.000000+00:00'
+  note: 'Phase B complete. B5 Judging 12/12 PASS, B6 Contact 10/10 PASS, B7 Sponsors 11/11 PASS. Build clean. MB milestone done.'
 features:
   - id: A1
     title: 'Lockfile + Next.js sanity check'
@@ -83,13 +83,19 @@ features:
     completed_at: '2026-06-12T00:00:00.000000+00:00'
   - id: B5
     title: 'Judging pages — overview + training'
-    status: pending
+    status: done
+    started_at: '2026-06-12T10:00:00.000000+00:00'
+    completed_at: '2026-06-12T11:00:00.000000+00:00'
   - id: B6
     title: 'Contact page — greenfield with form'
-    status: pending
+    status: done
+    started_at: '2026-06-12T11:00:00.000000+00:00'
+    completed_at: '2026-06-12T11:30:00.000000+00:00'
   - id: B7
     title: 'Sponsors page — greenfield'
-    status: pending
+    status: done
+    started_at: '2026-06-12T11:30:00.000000+00:00'
+    completed_at: '2026-06-12T12:00:00.000000+00:00'
 milestones:
   - id: MA
     name: 'Phase A — Foundation'
@@ -106,7 +112,7 @@ milestones:
       - A9
   - id: MB
     name: 'Phase B — CMS Content Pages'
-    status: in_progress
+    status: done
     features:
       - B1
       - B2

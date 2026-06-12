@@ -62,11 +62,19 @@ features:
 goldens:
   - .agent/memory/project/specs/<slug>/goldens/<file>
 assertions:
-  phase: 4
-  checks:
-    - id: A1
-      description: <verify what>
-      command: grep -q "pattern" path/to/file
+  - id: A1
+    description: <verify what>
+    command: grep -q "pattern" path/to/file
+  - id: A2
+    description: <another verification>
+    command: test -f another/file
+phases:
+  - id: 1
+    name: "Initial Setup"
+    assertions: [A1]
+  - id: 2
+    name: "Feature Implementation"
+    assertions: [A2]
 ```
 
 Also write golden files at `.agent/memory/project/specs/<slug>/goldens/`.

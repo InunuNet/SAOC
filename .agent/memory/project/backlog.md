@@ -23,6 +23,17 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612112952.txt)
+- [ ]  (Misc): New Event: fleet_loop-20260612112957.txt
+- [ ]  (Misc): New Event: comms_poll-20260612112955.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612112954.txt
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612112845.txt)
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612112344.txt
+- [ ]  (Misc): [pain-point-monitor] No recurring blockers detected — healthy. Silent exit.
+- [ ]  (Misc): [shepherd] Checking codex harness at /Users/vetus/ai/Codex Harness
+- [ ]  (Misc): [quota-monitor] Athanor: active=none
+- [ ]  (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
+- [ ]  (Misc): [watch-comms] New upstream issue found: pulse_mission_loop.sh misdetects active mission as idle
 - [ ]  (Misc): [orchestrate] Checking DEX (codex)
 - [ ]  (Misc): [pulse-loop] Template stale (3.7.92 → 3.7.93) — updating...
 - [ ]  (Misc): New Event: check_own_comms-20260612002718.txt

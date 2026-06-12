@@ -128,3 +128,31 @@ export const pastShowsQuery = defineQuery(`
     awards
   }
 `);
+
+export const judgingPageQuery = defineQuery(`
+  *[_type == "judgingPage"][0]{
+    title,
+    intro,
+    howItWorks,
+    stats,
+    becomingAJudge,
+    showPublicDirectory,
+    "judges": judges[]->{
+      name,
+      region,
+      accreditedSince,
+      photo
+    }
+  }
+`);
+
+export const contactPageQuery = defineQuery(`
+  *[_type == "contactPage"][0]{
+    title,
+    directContacts[]{
+      name,
+      role,
+      email
+    }
+  }
+`);

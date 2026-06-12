@@ -222,6 +222,17 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/post_agent_loop_continue.sh"
+          }
+        ]
+      }
+    ],
     "StopFailure": [
       {
         "matcher": "*",
