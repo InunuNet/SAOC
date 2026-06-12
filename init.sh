@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Athanor init.sh — Project Scaffolding (v3.3.4)
+# Athanor init.sh — Project Scaffolding (v3.3.5)
 #
 # Pure infrastructure. Interactive onboarding is handled by /onboard workflow.
 #
@@ -31,6 +31,23 @@ detect_platform() {
 
 PLATFORM=$(detect_platform)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# ── template/ — Harness seed overlay ────────────────────────────────────────
+# template/ is the canonical seed directory used when initialising new workspaces.
+# It contains the minimal harness structure copied to a fresh project:
+#   - template/.agent/        — profile.json seed (filled during /onboard)
+#   - template/AGENTS.md      — generic agent instructions (project-specific ones differ)
+#   - template/execution/     — core harness scripts (brain.py, hooks/, etc.)
+#   - template/GITHUB.md      — GitHub integration reference
+#
+# What reads from template/:
+#   - This script (init.sh) — copies template files to the target workspace
+#   - make update-template / execution/update_template.py — propagates harness updates
+#
+# When to update template/:
+#   - When adding a new core harness script that all workspaces should get
+#   - When updating the generic AGENTS.md template
+#   - NOT for project-specific customisations (those live in .agent/identity/)
+# ────────────────────────────────────────────────────────────────────────────
 TEMPLATE_DIR="$SCRIPT_DIR/template"
 
 # ── Parse flags ───────────────────────────────────────────────────────────────
@@ -87,6 +104,26 @@ write_profile() {
     printf "${CYAN}📋 Writing project profile...${NC}\n"
     local template_profile="$TEMPLATE_DIR/.agent/profile.json"
     local target="$PROJECT_PATH/.agent/profile.json"
+
+    # Idempotency guard: skip the full template-seed write when the target
+    # profile already exists and onboarding_complete == true. Re-running
+    # init.sh against an onboarded workspace must not clobber project_name
+    # or reset onboarding_complete to false.
+    if [ -f "$target" ]; then
+        local already_onboarded
+        already_onboarded=$(python3 -c "
+import json, sys
+try:
+    p = json.load(open('$target'))
+    print('true' if p.get('onboarding_complete') is True else 'false')
+except Exception:
+    print('false')
+" 2>/dev/null)
+        if [ "$already_onboarded" = "true" ]; then
+            printf "${DIM}   Profile already onboarded — skipping overwrite.${NC}\n"
+            return 0
+        fi
+    fi
 
     cp "$template_profile" "$target"
 
@@ -162,14 +199,14 @@ scaffold_core() {
 EOF
 
     cp "$TEMPLATE_DIR/.agent/memory/project/learned.md"     "$PROJECT_PATH/.agent/memory/project/learned.md"     2>/dev/null || cat > "$PROJECT_PATH/.agent/memory/project/learned.md" << 'EOF'
-    # Learned
+# Learned
 
-    ## L1: GitHub-first Template Updates
+## L1: GitHub-first Template Updates
 
-    Athanor projects update via 'make update-template'. This uses the 'gh' CLI to download the latest infrastructure from GitHub directly. No 'athanor-upstream' git remote is required.
+Athanor projects update via 'make update-template'. This uses the 'gh' CLI to download the latest infrastructure from GitHub directly. No 'athanor-upstream' git remote is required.
 
-    Run 'gh auth status' to ensure you are logged in.
-    EOF
+Run 'gh auth status' to ensure you are logged in.
+EOF
 
 
     cp "$TEMPLATE_DIR/.agent/memory/project/backlog.md"     "$PROJECT_PATH/.agent/memory/project/backlog.md"     2>/dev/null || cat > "$PROJECT_PATH/.agent/memory/project/backlog.md" << 'EOF'
@@ -237,9 +274,14 @@ EOF
     fi
 
     # Copy execution scripts
-    for f in brain.py sync_agents.sh sync_skills.sh sync_rules.sh merge_profile.py discovery.sh pulse_runner.sh ingest_pulse.sh get_pulse_status.sh manage_pulse.sh commit_helper.py ki_recall.py overlay_all.sh overlay_template.sh onboard_fill.py com.athanor.pulse.plist; do
+    for f in brain.py sync_agents.sh sync_skills.sh sync_rules.sh discovery.sh pulse_runner.sh ingest_pulse.sh get_pulse_status.sh manage_pulse.sh commit_helper.py ki_recall.py overlay_all.sh overlay_template.sh onboard_fill.py com.athanor.pulse.plist doc2md.py mission.py contract.py handoff_check.py handoffs.py; do
         [ -f "$SCRIPT_DIR/execution/$f" ] && cp "$SCRIPT_DIR/execution/$f" "$PROJECT_PATH/execution/$f" 2>/dev/null || true
     done
+
+    # Copy .agent config files (handoff manifest, update manifest, protected-files list)
+    [ -f "$SCRIPT_DIR/.agent/handoffs.yaml" ]        && cp "$SCRIPT_DIR/.agent/handoffs.yaml"        "$PROJECT_PATH/.agent/handoffs.yaml"        2>/dev/null || true
+    [ -f "$SCRIPT_DIR/.agent/update-manifest.yaml" ] && cp "$SCRIPT_DIR/.agent/update-manifest.yaml" "$PROJECT_PATH/.agent/update-manifest.yaml" 2>/dev/null || true
+    [ -f "$TEMPLATE_DIR/.agent/no-update" ]          && cp "$TEMPLATE_DIR/.agent/no-update"          "$PROJECT_PATH/.agent/no-update"          2>/dev/null || true
 
     # ── Copy canonical agents, skills, workflows from Athanor ───────────────
     for f in "$SCRIPT_DIR/.agent/agents/"*.md; do

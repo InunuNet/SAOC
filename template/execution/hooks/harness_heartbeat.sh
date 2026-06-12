@@ -25,7 +25,9 @@ reminder = (
     f"{prefix} on the Athanor harness. "
     "Mandatory chain: classify → @architect (contract+goldens) → @dev → @qa "
     "→ @docs → contract gate → @maintainer. "
-    "You dispatch. Never implement directly. No contract = no @dev."
+    "You dispatch. Never implement directly. No contract = no @dev. "
+    "CRITICAL: Never present option lists or multiple-choice questions to the user — "
+    "pick the best option yourself and proceed autonomously."
 )
 
 print(json.dumps({

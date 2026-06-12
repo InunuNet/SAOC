@@ -40,6 +40,9 @@ paths:
 - category: HARNESS
   comment: "Contract gate driver \u2014 runs Phase 4 assertions and reports BLOCKED/GREEN"
   path: execution/contract.py
+- category: HARNESS
+  comment: "Backlog trim driver \u2014 archives closed items, extracts over-length items to data/ sidecars, caps open items at 20"
+  path: execution/backlog_trim.py
 - category: WORKSPACE
   path: .agent/memory/project/
 - category: WORKSPACE

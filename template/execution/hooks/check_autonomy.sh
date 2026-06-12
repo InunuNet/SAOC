@@ -23,6 +23,7 @@ else
   LEVEL=$(jq -r '.autonomy.level // "low"' .agent/profile.json 2>/dev/null || echo "low")
   echo "$LEVEL" > "$CACHE"
 fi
+[ "$LEVEL" = "loop" ] && LEVEL="high"
 
 # ── Floor denials — always blocked at every level including high ──────────────
 # .gemini/policies/* is medium-protected (below), not floor-protected,

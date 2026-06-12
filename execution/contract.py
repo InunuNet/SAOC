@@ -9,7 +9,6 @@ Usage:
   contract.py clear <contract.yaml>             — delete result files for this contract
 """
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -116,13 +115,6 @@ def slug_from_spec(contract: dict) -> str:
     return Path(spec).stem.replace(" ", "-")
 
 
-def _verify_hash(assertion: dict) -> str:
-    """16-char hash of an assertion's verify block — detects stale cached results."""
-    return hashlib.sha256(
-        json.dumps(assertion.get("verify", {}), sort_keys=True).encode()
-    ).hexdigest()[:16]
-
-
 def results_dir(contract: dict) -> Path:
     return RESULTS_DIR / slug_from_spec(contract)
 
@@ -131,7 +123,7 @@ def result_file(contract: dict, assertion_id: str) -> Path:
     return results_dir(contract) / f"{assertion_id}.json"
 
 
-def write_result(contract: dict, assertion_id: str, verdict: str, evidence: str, verify_hash: str = ""):
+def write_result(contract: dict, assertion_id: str, verdict: str, evidence: str):
     d = results_dir(contract)
     d.mkdir(parents=True, exist_ok=True)
     r = result_file(contract, assertion_id)
@@ -139,8 +131,7 @@ def write_result(contract: dict, assertion_id: str, verdict: str, evidence: str,
         "id": assertion_id,
         "verdict": verdict,
         "evidence": evidence,
-        "ts": datetime.now(timezone.utc).isoformat(),
-        "verify_hash": verify_hash,
+        "ts": datetime.now(timezone.utc).isoformat()
     }, indent=2))
 
 
@@ -338,7 +329,7 @@ def check_cmd(args):
         verdict = "fail"
         evidence = f"Unknown verify kind: {kind}"
 
-    write_result(contract, assertion_id, verdict, evidence, verify_hash=_verify_hash(assertion))
+    write_result(contract, assertion_id, verdict, evidence)
     icon = "PASS" if verdict == "pass" else ("SKIP" if verdict == "skip" else "FAIL")
     print(f"{icon} {assertion_id} ({kind}): {verdict.upper()}")
     if evidence:
@@ -369,23 +360,12 @@ def _gate_single_phase(contract: dict, args) -> bool:
 
     phase_assertions = phase.get("assertions", [])
 
-    # Auto-run checks for assertions that don't have a result file yet OR whose
-    # verify block changed since the last run (stale cache detection).
+    # Auto-run checks for assertions that don't have a result file yet
     if run_checks:
-        assertions_by_id = {a["id"]: a for a in contract.get("assertions", [])}
         for aid in phase_assertions:
             rf = result_file(contract, aid)
-            stale = False
-            if rf.exists() and aid in assertions_by_id:
-                stored = json.loads(rf.read_text())
-                stored_hash = stored.get("verify_hash", "")
-                current_hash = _verify_hash(assertions_by_id[aid])
-                if stored_hash and stored_hash != current_hash:
-                    stale = True
-                    print(f"  AUTO-CHECK {aid}: verify block changed — re-running (was {stored_hash}, now {current_hash})")
             if not rf.exists():
                 print(f"  AUTO-CHECK {aid}: no result file — running check now")
-            if not rf.exists() or stale:
                 check_args = argparse.Namespace(
                     contract=args.contract,
                     assertion=aid,

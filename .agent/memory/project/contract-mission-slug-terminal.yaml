@@ -1,0 +1,99 @@
+schema: athanor.contract/v1
+feature: harness-fix-mission-slug-terminal
+title: mission.py slug collision — expand terminal-status continue branch + backport to template
+phase: 1
+
+context: |
+  mission.py cmd_new has a cross-date slug collision scan. For terminal-status missions
+  (done/abandoned/close_out) it should print a note and continue, allowing a new mission
+  to be created under today's date prefix. Currently only "done" triggers continue;
+  "abandoned" and "close_out" fall through to sys.exit(1), blocking new mission creation.
+  The template copy (template/execution/mission.py) is missing the slug collision scan
+  entirely, so it silently allows duplicate slugs across date prefixes without any guard.
+
+checks:
+  - id: A1
+    desc: execution/mission.py — terminal statuses all use continue, not sys.exit
+    cmd: |
+      python3 - <<'EOF'
+      import ast, sys
+      src = open("execution/mission.py").read()
+      tree = ast.parse(src)
+      # Find the slug collision scan for loop in cmd_new
+      # Verify that "abandoned" appears in the continue branch (not sys.exit)
+      if '"abandoned"' not in src or "'abandoned'" not in src:
+          print("FAIL: 'abandoned' not referenced in slug collision scan"); sys.exit(1)
+      if 'in {"done", "abandoned", "close_out"}' not in src and "in {'done', 'abandoned', 'close_out'}" not in src:
+          print("FAIL: terminal status set not updated"); sys.exit(1)
+      print("PASS: terminal status set includes done, abandoned, close_out")
+      EOF
+    expect_exit: 0
+
+  - id: A2
+    desc: execution/mission.py — abandoned slug does not block new mission creation
+    cmd: |
+      python3 - <<'EOF'
+      import subprocess, sys, tempfile, os, shutil
+      # Simulate: create a temp dir as missions dir, write an abandoned mission,
+      # then verify cmd_new logic allows creation (by testing the status branch).
+      # We parse the source and look for the condition directly.
+      src = open("execution/mission.py").read()
+      # The if-condition must include abandoned
+      if '"abandoned"' not in src and "'abandoned'" not in src:
+          print("FAIL: abandoned not handled"); sys.exit(1)
+      # The continue block must come before sys.exit(1)
+      terminal_idx = src.find('"abandoned"')
+      continue_idx = src.find('continue', terminal_idx)
+      exit1_idx = src.find('sys.exit(1)', terminal_idx)
+      if continue_idx == -1 or (exit1_idx != -1 and exit1_idx < continue_idx):
+          print("FAIL: continue not before sys.exit(1) after abandoned check"); sys.exit(1)
+      print("PASS: abandoned handled with continue")
+      EOF
+    expect_exit: 0
+
+  - id: A3
+    desc: template/execution/mission.py — has cross-date slug collision scan
+    cmd: |
+      python3 - <<'EOF'
+      import sys
+      src = open("template/execution/mission.py").read()
+      if "Cross-date slug collision scan" not in src and "slug collision" not in src.lower():
+          print("FAIL: template mission.py missing slug collision scan"); sys.exit(1)
+      print("PASS: template mission.py has slug collision scan")
+      EOF
+    expect_exit: 0
+
+  - id: A4
+    desc: template/execution/mission.py — terminal statuses use continue in slug scan
+    cmd: |
+      python3 - <<'EOF'
+      import sys
+      src = open("template/execution/mission.py").read()
+      if 'in {"done", "abandoned", "close_out"}' not in src and "in {'done', 'abandoned', 'close_out'}" not in src:
+          print("FAIL: template terminal status set missing or wrong"); sys.exit(1)
+      print("PASS: template terminal status set correct")
+      EOF
+    expect_exit: 0
+
+  - id: A5
+    desc: in_progress slug still blocks new mission creation in execution/mission.py
+    cmd: |
+      python3 - <<'EOF'
+      import sys
+      src = open("execution/mission.py").read()
+      # The else branch after the terminal check must still call sys.exit(1)
+      terminal_idx = src.find('"abandoned"')
+      if terminal_idx == -1:
+          print("FAIL: terminal check not found"); sys.exit(1)
+      # Find the else block after the terminal if
+      else_idx = src.find('sys.exit(1)', terminal_idx)
+      if else_idx == -1:
+          print("FAIL: sys.exit(1) not found after terminal check"); sys.exit(1)
+      print("PASS: non-terminal slugs still blocked with sys.exit(1)")
+      EOF
+    expect_exit: 0
+
+  - id: A6
+    desc: both files pass python syntax check
+    cmd: python3 -m py_compile execution/mission.py && python3 -m py_compile template/execution/mission.py
+    expect_exit: 0

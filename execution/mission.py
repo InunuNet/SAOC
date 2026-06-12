@@ -195,8 +195,8 @@ def cmd_new(args):
         if fm.get("slug") != slug:
             continue
         existing_status = fm.get("status", "")
-        if existing_status in {"done", "abandoned", "close_out"}:
-            print(f"NOTE: mission slug '{slug}' previously {existing_status}: {existing}", file=sys.stderr)
+        if existing_status == "done":
+            print(f"NOTE: mission slug '{slug}' previously completed: {existing}", file=sys.stderr)
             print(f"Creating new mission with same slug under today's date prefix.", file=sys.stderr)
             continue
         else:

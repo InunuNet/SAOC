@@ -1,4 +1,3 @@
-import yaml
 import argparse
 import json
 import os
@@ -93,8 +92,8 @@ def create_temp_mission(mission_path: Path, contract_path: Path):
         ],
     }
     
-    fm_str = yaml.dump(mission_content, default_flow_style=False, sort_keys=False, allow_unicode=True)
-    body = """
+    fm_str = json.dumps(mission_content, indent=2)
+    body = "
 # Mission: Test Multi-Phase Contract Gate
 
 ## Context
@@ -103,11 +102,52 @@ This mission is for testing purposes only.
 
 ## Notes
 
-"""
+"
     
-    final_content = "---
-" + fm_str + "---
-" + body
+    # Use a basic YAML-like dump for the frontmatter since mission.py expects YAML
+    # and we want to avoid extra dependencies for simple test creation.
+    # This is a simplification; a full YAML library should be used for complex cases.
+    fm_lines = ["---"]
+    for k, v in mission_content.items():
+        if isinstance(v, dict) or isinstance(v, list):
+            fm_lines.append(json.dumps({k:v}, indent=2).strip('{}')) # Simplified
+        else:
+            fm_lines.append(f"{k}: {json.dumps(v)}")
+
+    # Special handling for lists and nested dicts to make it look more YAML-ish
+    fm_lines = []
+    fm_lines.append("---")
+    fm_lines.append(f"schema: {mission_content['schema']}")
+    fm_lines.append(f"slug: {mission_content['slug']}")
+    fm_lines.append(f"goal: {mission_content['goal']}")
+    fm_lines.append(f"created_at: {mission_content['created_at']}")
+    fm_lines.append(f"started_at: {mission_content['started_at']}")
+    fm_lines.append(f"last_active_at: {mission_content['last_active_at']}")
+    fm_lines.append(f"status: {mission_content['status']}")
+    fm_lines.append(f"cost_estimate:")
+    for ck, cv in mission_content['cost_estimate'].items():
+        fm_lines.append(f"  {ck}: {cv}")
+    fm_lines.append(f"last_checkpoint:")
+    for ck, cv in mission_content['last_checkpoint'].items():
+        fm_lines.append(f"  {ck}: {json.dumps(cv) if isinstance(cv, str) else str(cv)}") # Handle null properly
+    fm_lines.append(f"features:")
+    for feat in mission_content['features']:
+        fm_lines.append(f"  - id: {feat['id']}")
+        fm_lines.append(f"    title: {feat['title']}")
+        fm_lines.append(f"    status: {feat['status']}")
+        fm_lines.append(f"    contract: {feat['contract']}")
+    fm_lines.append(f"milestones:")
+    for mile in mission_content['milestones']:
+        fm_lines.append(f"  - id: {mile['id']}")
+        fm_lines.append(f"    name: {mile['name']}")
+        fm_lines.append(f"    status: {mile['status']}")
+        fm_lines.append(f"    features:")
+        for f_id in mile['features']:
+            fm_lines.append(f"      - {f_id}")
+    
+    fm_lines.append("---")
+    final_content = "
+".join(fm_lines) + body
 
     with open(mission_path, "w") as f:
         f.write(final_content)

@@ -5,7 +5,7 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PAT
 
 # Dynamic path resolution
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="${PROJECT_ROOT:-$(dirname "$SCRIPT_DIR")}"
 
 # Get PROJECT_NAME from argument
 PROJECT_NAME="$1"
@@ -42,15 +42,26 @@ find "$INBOX_DIR" -maxdepth 1 -type f -name "*.txt" | while read -r inbox_file; 
             elif [ -n "$TITLE" ]; then
                 SUMMARY="GitHub Issue: $TITLE" # Fallback if only title is available
             else
-                SUMMARY="New GitHub Issue (filename: $filename)" # Default fallback with filename for context
+                # No parseable issue — routine check output, archive silently
+                mv "$inbox_file" "$ARCHIVE_DIR/"
+                echo "${PROJECT_PREFIX}Archived (routine check, no issue): $filename"
+                continue
             fi
             ITEM="- [ ] ${PROJECT_NAME} (GitHub): $SUMMARY"
-        elif [[ "$filename" == auto_fix_issues-* ]]; then
-            SUMMARY="Auto-fix Job Run"
-            ITEM="- [ ] ${PROJECT_NAME} (AutoFix): $SUMMARY ($filename)"
         elif [[ "$filename" == mock_failure-* ]]; then
             SUMMARY=$(head -n 1 "$inbox_file")
             ITEM="- [ ] ${PROJECT_NAME} (Alert): $SUMMARY"
+        elif [[ "$filename" == loop_failure-* ]]; then
+            SUMMARY=$(head -n 1 "$inbox_file")
+            ITEM="- [ ] ${PROJECT_NAME} (Alert): $SUMMARY"
+        elif [[ "$filename" == loop_converged-* ]]; then
+            SUMMARY=$(head -n 1 "$inbox_file")
+            ITEM="- [ ] ${PROJECT_NAME} (Milestone): $SUMMARY"
+        elif [[ "$filename" == codi-directive-* || "$filename" == auto_update-* || "$filename" == comms-issue-* || "$filename" == fleet_loop-* || "$filename" == fleet_improve-* || "$filename" == shepherd-* || "$filename" == pain_point_monitor-* || "$filename" == watch_eve_comms-* || "$filename" == orchestrate-* || "$filename" == mission_loop-* || "$filename" == comms_poll-* || "$filename" == watch_comms-* || "$filename" == auto_fix_issues-* ]]; then
+            # Routine informational signals — archive silently, no backlog item
+            mv "$inbox_file" "$ARCHIVE_DIR/"
+            echo "${PROJECT_PREFIX}Archived (routine): $filename"
+            continue
         else
             SUMMARY=$(head -n 1 "$inbox_file" | cut -c 1-100)
             [ -z "$SUMMARY" ] && SUMMARY="New Event: $filename"

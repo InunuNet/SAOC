@@ -2,19 +2,21 @@ VERSION := $(shell cat .agent/version 2>/dev/null || echo "UNKNOWN")
 
 # Athanor v$(VERSION) Makefile
 
-.PHONY: help sync sync-agents sync-skills sync-rules migrate-rules brain-export brain-import brain-stats commit audit test test-init update-template onboard check-feedback self-update install-pulse ingest-pulse
+.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy set-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse fleet-install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit backlog-trim bump-version stay-awake allow-sleep
 
 help:
 	@echo "🏭 Athanor v$(VERSION)"
 	@echo ""
 	@echo "  Project Setup"
 	@echo "  make onboard           Start AI-guided project onboarding"
+	@echo "  make onboard-headless  Headless onboarding (NAME= AGENT= ROLE= MISSION=)"
 	@echo ""
 	@echo "  Agents + Skills"
 	@echo "  make sync              Sync agents, skills, and rules → Claude + Gemini"
 	@echo "  make sync-agents       Sync canonical agents → Claude + Gemini"
 	@echo "  make sync-skills       Sync canonical skills → Claude + Gemini"
 	@echo "  make sync-rules        Sync canonical rules → Claude + Gemini"
+	@echo "  make verify-agents     Verify all 8 Claude Code agents are dispatchable"
 	@echo ""
 	@echo "  make repo-slug           Get current GitHub repo (owner/name)"
 	@echo ""
@@ -22,25 +24,78 @@ help:
 	@echo "  make brain-export      Export brain memories to JSON"
 	@echo "  make brain-import      Import brain memories (FILE=path.json)"
 	@echo "  make brain-stats       Show brain statistics"
+	@echo "  make retro             Retro scan — surface pain points (DAYS=60)"
+	@echo "  make capture-pain      Log a pain point (WHAT='...' FIX='...')"
 	@echo ""
 	@echo "  Workflow"
 	@echo "  make commit            Semantic commit (TYPE=feat MSG='...')"
 	@echo "  make audit             Run workspace health check"
-	@echo "  make test              Run validation suite"
+	@echo "  make backlog-audit     Check for stale open backlog items"
+	@echo "  make test              Run validation suite (currently a basic stress test)"
+	@echo "  make test-stress       Run the basic file read stress test"
+	@echo "  make improve           Run one autonomous improvement cycle (ghost tests → triage → gate → push)"
+	@echo "  make improve-loop      Run continuous improvement loop (max 10 iterations or until converged)"
+	@echo "  make factory-loop      Alias for improve-loop (continuous, max 10 iterations)"
 	@echo ""
 	@echo "  Template"
-	@echo "  make update-template   Pull latest Athanor template updates"
+	@echo "  make update-template   Pull latest Athanor harness updates (command name retained for back-compat)"
 	@echo "  make check-feedback    Check GitHub for new issues + PRs"
 	@echo "  make ingest-pulse      Process and archive inbox items to backlog.md"
-	@echo "  make install-pulse     Install and load the Athanor Pulse launchd agent
+	@echo "  make pulse-register    Install and load the Athanor Pulse launchd agent"
+	@echo "  make pulse-status      Check Athanor Pulse service status"
+	@echo "  make fleet-install-pulse Install independent Pulse+heartbeat for all 4 fleet projects"
+	@echo "  make pulse-start       Manually start the Pulse service"
+	@echo "  make pulse-stop        Manually stop the Pulse service"
+	@echo "  make pulse-logs        Tail the Pulse service logs"
 
-sync:
-	@bash execution/sync_agents.sh
+
+sync: sync-autonomy sync-agents
 	@bash execution/sync_skills.sh
 	@bash execution/sync_rules.sh
 
 sync-agents:
 	@bash execution/sync_agents.sh
+
+sync-autonomy:
+	@# v1: reads and displays current level. Gemini generated-block sync deferred to v2.
+	@LEVEL=$$(jq -r '.autonomy.level // "medium"' .agent/profile.json 2>/dev/null || echo "medium"); \
+	echo "🔓 Autonomy level: $$LEVEL"; \
+	echo "   Claude: check_autonomy.sh active (PreToolUse hook)"; \
+	echo "   Gemini: manual autonomy.toml — generated block sync coming in v2"; \
+	echo "✅ sync-autonomy complete"
+
+set-autonomy:
+	@[ -n "$(LEVEL)" ] || (echo "Usage: make set-autonomy LEVEL=loop|high|medium|low|off" && exit 1)
+	@printf '%s' "$(LEVEL)" | grep -qE '^(off|low|medium|high|loop)$$' || (echo "❌ Invalid level '$(LEVEL)'. Valid: off low medium high loop" && exit 1)
+	@python3 -c "import json,pathlib,datetime; p=pathlib.Path('.agent/profile.json'); d=json.loads(p.read_text()); d['autonomy']=dict(level='$(LEVEL)',updated_at=datetime.datetime.utcnow().isoformat()+'Z'); p.write_text(json.dumps(d,indent=2)+'\n')"
+	@rm -f /tmp/athanor_autonomy_* 2>/dev/null || true
+	@if [ "$(LEVEL)" = "loop" ]; then \
+		if [ -f .agent/pulse/registry/caffeinate.pid ]; then kill $$(cat .agent/pulse/registry/caffeinate.pid) 2>/dev/null || true; rm -f .agent/pulse/registry/caffeinate.pid; fi; \
+		caffeinate -d & echo $$! > .agent/pulse/registry/caffeinate.pid; \
+		echo "☕ caffeinate started (sleep prevented) — PID $$(cat .agent/pulse/registry/caffeinate.pid)"; \
+	else \
+		if [ -f .agent/pulse/registry/caffeinate.pid ]; then \
+			kill $$(cat .agent/pulse/registry/caffeinate.pid) 2>/dev/null || true; \
+			rm -f .agent/pulse/registry/caffeinate.pid; \
+			echo "💤 caffeinate stopped (sleep allowed)"; \
+		fi; \
+	fi
+	@echo "✅ Autonomy level set to: $(LEVEL)"
+
+stay-awake:
+	@mkdir -p .agent/pulse/registry
+	@if [ -f .agent/pulse/registry/caffeinate.pid ]; then kill $$(cat .agent/pulse/registry/caffeinate.pid) 2>/dev/null || true; rm -f .agent/pulse/registry/caffeinate.pid; fi; \
+	caffeinate -d & echo $$! > .agent/pulse/registry/caffeinate.pid
+	@echo "☕ caffeinate started (sleep prevented) — PID $$(cat .agent/pulse/registry/caffeinate.pid)"
+
+allow-sleep:
+	@if [ -f .agent/pulse/registry/caffeinate.pid ]; then \
+		kill $$(cat .agent/pulse/registry/caffeinate.pid) 2>/dev/null || true; \
+		rm -f .agent/pulse/registry/caffeinate.pid; \
+		echo "💤 caffeinate stopped (sleep allowed)"; \
+	else \
+		echo "💤 no caffeinate PID file — nothing to stop"; \
+	fi
 
 sync-skills:
 	@bash execution/sync_skills.sh
@@ -63,29 +118,30 @@ migrate-rules:
 test-init:
 	@echo "🧪 Running init.sh smoke test..."
 	@TMPDIR=$$(mktemp -d); \
-	cd "$$TMPDIR" && bash $(CURDIR)/init.sh --name=smoketest 2>&1; \
+	FAIL=0; \
+	cd "$$TMPDIR" && bash "$(CURDIR)/init.sh" --name=smoketest 2>&1; \
 	echo ""; \
 	echo "Checking artifacts:"; \
-	[ -f WORKSPACE ]                  && echo "  ✅ WORKSPACE"           || echo "  ❌ WORKSPACE missing"; \
-	[ -f .agent/profile.json ]        && echo "  ✅ profile.json"        || echo "  ❌ profile.json missing"; \
-	[ -f .claude/settings.json ]      && echo "  ✅ .claude/settings.json" || echo "  ❌ hooks missing"; \
-	[ -f AGENTS.md ]                  && echo "  ✅ AGENTS.md"           || echo "  ❌ AGENTS.md missing"; \
-	[ -f execution/onboard_fill.py ]  && echo "  ✅ onboard_fill.py"      || echo "  ❌ onboard_fill.py missing"; \
-	[ -f CLAUDE.md ]                  && echo "  ✅ CLAUDE.md symlink"   || echo "  ❌ CLAUDE.md missing"; \
-	ls .claude/skills/*.md >/dev/null 2>&1 && echo "  ✅ skills present"  || echo "  ❌ .claude/skills empty"; \
-	ls .claude/agents/*.md >/dev/null 2>&1 && echo "  ✅ agents present"  || echo "  ❌ .claude/agents empty"; \
+	[ -f WORKSPACE ]                  && echo "  ✅ WORKSPACE"             || { echo "  ❌ WORKSPACE missing";          FAIL=1; }; \
+	[ -f .agent/profile.json ]        && echo "  ✅ profile.json"          || { echo "  ❌ profile.json missing";        FAIL=1; }; \
+	[ -f .claude/settings.json ]      && echo "  ✅ .claude/settings.json" || { echo "  ❌ hooks missing";               FAIL=1; }; \
+	[ -f AGENTS.md ]                  && echo "  ✅ AGENTS.md"             || { echo "  ❌ AGENTS.md missing";           FAIL=1; }; \
+	[ -f execution/onboard_fill.py ]  && echo "  ✅ onboard_fill.py"       || { echo "  ❌ onboard_fill.py missing";     FAIL=1; }; \
+	[ -f CLAUDE.md ]                  && echo "  ✅ CLAUDE.md symlink"     || { echo "  ❌ CLAUDE.md missing";           FAIL=1; }; \
+	ls .claude/skills/*.md >/dev/null 2>&1 && echo "  ✅ skills present"   || { echo "  ❌ .claude/skills empty";        FAIL=1; }; \
+	ls .claude/agents/*.md >/dev/null 2>&1 && echo "  ✅ agents present"   || { echo "  ❌ .claude/agents empty";        FAIL=1; }; \
 	python3 -c "import json; p=json.load(open('.agent/profile.json')); \
 		assert 'features' in p, 'features key missing'; \
 		assert p.get('onboarding_complete')==False, 'onboarding_complete should be False'; \
 		assert p.get('project_name')=='smoketest', 'project_name wrong'; \
-		print('  ✅ profile.json schema correct')" 2>&1 || echo "  ❌ profile.json schema wrong"; \
-	grep -q "Vex\|Athanor coordinator" AGENTS.md 2>/dev/null && echo "  ❌ AGENTS.md poisoned with Athanor identity" || echo "  ✅ AGENTS.md clean"; \
+		print('  ✅ profile.json schema correct')" 2>&1 || { echo "  ❌ profile.json schema wrong"; FAIL=1; }; \
+	grep -q "Vex\|Athanor coordinator" AGENTS.md 2>/dev/null && { echo "  ❌ AGENTS.md poisoned with Athanor identity"; FAIL=1; } || echo "  ✅ AGENTS.md clean"; \
 	rm -rf "$$TMPDIR"; \
 	echo ""; \
-	echo "✅ Smoke test complete."
+	if [ "$$FAIL" -eq 0 ]; then echo "✅ Smoke test passed."; else echo "❌ Smoke test FAILED."; exit 1; fi
 
 ingest-pulse:
-	@bash execution/ingest_pulse.sh
+	@bash execution/ingest_pulse.sh "$$(jq -r '.project_name' .agent/profile.json)"
 
 pulse-status:
 	@bash execution/get_pulse_status.sh
@@ -99,8 +155,17 @@ brain-import:
 brain-stats:
 	@python3 execution/brain.py stats
 
+retro:
+	@python3 execution/retro.py --days $(or $(DAYS),60) --top $(or $(TOP),8) $(if $(BRAIN),--brain,)
+
+capture-pain:
+	@python3 execution/capture_pain.py --what "$(WHAT)" --fix "$(FIX)" $(if $(MISSION),--mission $(MISSION),) $(if $(AGENT),--agent $(AGENT),)
+
 commit:
 	@python3 execution/commit_helper.py $(TYPE) "$(MSG)"
+
+verify-agents:
+	@bash execution/verify_agents.sh
 
 audit:
 	@echo "Running audit..."
@@ -109,101 +174,82 @@ audit:
 	@test -L CLAUDE.md && echo "✅ CLAUDE.md symlink" || echo "❌ CLAUDE.md"
 	@test -L GEMINI.md && echo "✅ GEMINI.md symlink" || echo "❌ GEMINI.md"
 	@python3 execution/brain.py stats
+	@bash execution/verify_agents.sh
+	@echo "  [manifest] checking path coverage..."
+	@bash execution/validate_manifest.sh || (echo "  FAIL: manifest coverage gaps found" && exit 1)
+	@echo "  OK: manifest coverage complete"
+	@python3 execution/audit_gates.py
 
-test:
-	@bash execution/sync_agents.sh
-	@python3 execution/brain.py last-session --quiet
-	@echo "✅ All tests passed"
+backlog-audit:
+	@bash execution/backlog_audit.sh
+
+backlog-trim:
+	@python3 execution/backlog_trim.py
+
+bump-version:
+	@bash execution/bump_version.sh && make sync
+
+test: test-stress
+	@echo ""
+	@echo "Running factory test suite (3 layers)..."
+	@bash execution/tests/run_all.sh || exit 1
+
+test-stress:
+	@echo "🧪 Running file read stress test..."
+	@bash execution/tests/stress_test.sh
+
+test-handoff:
+	@echo "🧪 Testing structured handoff parsing..."
+	@python3 execution/tests/test_handoff.py
+	@echo "✅ Handoff tests passed."
+
+## Test Suite (Factory Architecture)
+test-static: ## Run Layer 1 static invariant tests
+	bash execution/tests/run_all.sh layer1
+
+test-fixture: ## Run Layer 2 fixture replay tests
+	bash execution/tests/run_all.sh layer2
+
+test-behavioral: ## Run Layer 3 behavioral end-to-end tests
+	bash execution/tests/run_all.sh layer3
+
+factory-loop: ## Run continuous improvement loop (max 10 iterations) — redirects to improve-loop
+	bash execution/improvement_loop.sh --max-iters 10
+
+improve: ## Run one autonomous improvement cycle (ghost tests → triage → gate → push)
+	bash execution/improvement_loop.sh --once
+
+improve-loop: ## Run continuous improvement loop (max 10 iterations or until converged)
+	bash execution/improvement_loop.sh --max-iters 10
+
+mission-status: ## Show active mission status
+	python3 execution/mission.py resume
+
+mission-list: ## List all missions
+	python3 execution/mission.py list
+
+mission-new: ## Create a new mission (GOAL="your goal")
+	python3 execution/mission.py new "$(GOAL)"
+
+contract-check:
+	@if [ -z "$(SPEC)" ]; then echo "Usage: make contract-check SPEC=path/to/spec.md"; exit 1; fi
+	@CONTRACT=$$(echo "$(SPEC)" | sed 's/\.md$$/-contract.yaml/'); \
+	python3 execution/contract.py validate "$$CONTRACT" && \
+	python3 execution/contract.py report "$$CONTRACT"
 
 update-template:
-	@# GUARD: downstream projects only — never run inside the Athanor template repo itself
-	@if [ "$$FORCE_UPDATE" != "true" ] && ([ -f ".agent/profile.json" ] && python3 -c "import json,sys; p=json.load(open('.agent/profile.json')); sys.exit(0 if p.get('project_name')=='Athanor' else 1)" 2>/dev/null); then \
-		echo "❌ ABORT: You are inside the Athanor template repo."; \
-		echo "   This command is for downstream projects only."; \
-		exit 1; \
-	fi
-	@$(eval TARGET_DIR := $(or $(TARGET),.))
-	@echo "🔄 Initialising update checkpoint..."
-	python3 -c "import json, datetime; s={'workflow':'update-template','status':'started','started':datetime.datetime.now(datetime.UTC).isoformat()}; open('.agent/memory/scratch/checkpoint_update_start.json','w').write(json.dumps(s))"
-
-	@echo "🔄 Downloading Athanor template from GitHub..."
-	@TMPDIR=$$(mktemp -d); \
-	if [ -z "$$GITHUB_TOKEN" ]; then \
-		gh auth status 2>/dev/null || { echo "❌ GitHub authentication required. Run 'gh auth login' or set GITHUB_TOKEN environment variable."; rm -rf "$$TMPDIR"; exit 1; }; \
-	fi; \
-	gh api repos/InunuNet/Athanor/tarball/main > "$$TMPDIR/athanor.tar.gz" 2>/dev/null || \
-		{ echo "❌ Download failed. Check GITHUB_TOKEN, gh auth, and network."; rm -rf "$$TMPDIR"; exit 1; }; \
-	mkdir -p "$$TMPDIR/src"; \
-	tar -xz --strip-components=1 -C "$$TMPDIR/src" -f "$$TMPDIR/athanor.tar.gz"; \
-	echo ""; \
-	echo "📋 Infrastructure changes:"; \
-	for f in .agent/workflows .agent/agents .agent/rules .agent/skills .agent/reference .agent/pulse/registry execution/hooks .claude/settings.json .claude/skills .gemini/skills .gemini/policies AGENTS.md; do \
-		if [ -e "$$TMPDIR/src/$$f" ]; then \
-			if [ ! -e "$(TARGET_DIR)/$$f" ]; then \
-				echo "  • [NEW] $$f"; \
-			else \
-				diff -rq "$$TMPDIR/src/$$f" "$(TARGET_DIR)/$$f" 2>/dev/null | sed 's/^/  • /' || true; \
-			fi; \
-		elif [ -e "$(TARGET_DIR)/$$f" ]; then \
-			echo "  • [DELETED] $$f"; \
-		fi; \
-	done; \
-	echo ""; \
-	echo "⚡ Applying infrastructure updates..."; \
-	mkdir -p "$(TARGET_DIR)/.agent" "$(TARGET_DIR)/.agent/workflows" "$(TARGET_DIR)/.agent/agents" "$(TARGET_DIR)/.agent/rules" "$(TARGET_DIR)/.agent/skills" "$(TARGET_DIR)/.agent/reference" "$(TARGET_DIR)/.agent/pulse/registry" "$(TARGET_DIR)/execution" "$(TARGET_DIR)/execution/hooks" "$(TARGET_DIR)/.claude" "$(TARGET_DIR)/.claude/skills" "$(TARGET_DIR)/.gemini" "$(TARGET_DIR)/.gemini/skills" "$(TARGET_DIR)/.gemini/policies"; \
-	if [ -d "$$TMPDIR/src/.agent/workflows/" ]; then rsync -a --delete "$$TMPDIR/src/.agent/workflows/"  "$(TARGET_DIR)/.agent/workflows/"; fi; \
-	if [ -d "$$TMPDIR/src/.agent/agents/" ]; then rsync -a --delete "$$TMPDIR/src/.agent/agents/"     "$(TARGET_DIR)/.agent/agents/"; fi; \
-	if [ -d "$$TMPDIR/src/.agent/rules/" ]; then rsync -a --delete "$$TMPDIR/src/.agent/rules/"      "$(TARGET_DIR)/.agent/rules/"; fi; \
-	if [ -d "$$TMPDIR/src/.agent/skills/" ]; then rsync -a --delete "$$TMPDIR/src/.agent/skills/"     "$(TARGET_DIR)/.agent/skills/"; fi; \
-	if [ -d "$$TMPDIR/src/.agent/reference/" ]; then rsync -a --delete "$$TMPDIR/src/.agent/reference/"  "$(TARGET_DIR)/.agent/reference/"; fi; \
-	if [ -d "$$TMPDIR/src/.agent/pulse/registry/" ]; then rsync -a --delete "$$TMPDIR/src/.agent/pulse/registry/" "$(TARGET_DIR)/.agent/pulse/registry/"; fi; \
-	if [ -d "$$TMPDIR/src/execution/hooks/" ]; then rsync -a --delete "$$TMPDIR/src/execution/hooks/"   "$(TARGET_DIR)/execution/hooks/"; fi; \
-	if [ -d "$$TMPDIR/src/.claude/skills/" ]; then rsync -a --delete "$$TMPDIR/src/.claude/skills/"    "$(TARGET_DIR)/.claude/skills/"; fi; \
-	if [ -d "$$TMPDIR/src/.gemini/skills/" ]; then rsync -a --delete "$$TMPDIR/src/.gemini/skills/"    "$(TARGET_DIR)/.gemini/skills/"; fi; \
-	if [ -d "$$TMPDIR/src/.gemini/policies/" ]; then rsync -a --delete "$$TMPDIR/src/.gemini/policies/"  "$(TARGET_DIR)/.gemini/policies/"; fi; \
-	if [ -f "$$TMPDIR/src/.claude/settings.json" ]; then cp "$$TMPDIR/src/.claude/settings.json" "$(TARGET_DIR)/.claude/settings.json"; fi; \
-	if [ -f "$$TMPDIR/src/.gemini/settings.json" ]; then cp "$$TMPDIR/src/.gemini/settings.json" "$(TARGET_DIR)/.gemini/settings.json"; fi; \
-	if [ -f "$(TARGET_DIR)/AGENTS.md" ]; then \
-		ID_LINE=$$(grep "^\*\*You are " "$(TARGET_DIR)/AGENTS.md" | head -n 1); \
-		if [ -f "$$TMPDIR/src/AGENTS.md" ]; then \
-			cp "$$TMPDIR/src/AGENTS.md" "$(TARGET_DIR)/AGENTS.md"; \
-			if [ -n "$$ID_LINE" ]; then \
-				sed -i.bak "s|^\*\*You are .*$$|$$ID_LINE|" "$(TARGET_DIR)/AGENTS.md" && rm "$(TARGET_DIR)/AGENTS.md.bak" || \
-				sed -i "" "s|^\*\*You are .*$$|$$ID_LINE|" "$(TARGET_DIR)/AGENTS.md" 2>/dev/null || true; \
-			fi; \
-		fi; \
-	elif [ -f "$$TMPDIR/src/AGENTS.md" ]; then \
-		cp "$$TMPDIR/src/AGENTS.md" "$(TARGET_DIR)/AGENTS.md"; \
-	fi; \
-	if [ -f "$$TMPDIR/src/execution/brain.py" ]; then cp "$$TMPDIR/src/execution/brain.py" "$(TARGET_DIR)/execution/brain.py"; fi; \
-	if [ -f "$$TMPDIR/src/execution/sync_agents.sh" ]; then cp "$$TMPDIR/src/execution/sync_agents.sh" "$(TARGET_DIR)/execution/sync_agents.sh"; fi; \
-	if [ -f "$$TMPDIR/src/execution/sync_skills.sh" ]; then cp "$$TMPDIR/src/execution/sync_skills.sh" "$(TARGET_DIR)/execution/sync_skills.sh"; fi; \
-	if [ -f "$$TMPDIR/src/execution/sync_rules.sh" ]; then cp "$$TMPDIR/src/execution/sync_rules.sh" "$(TARGET_DIR)/execution/sync_rules.sh"; fi; \
-	if [ -f "$$TMPDIR/src/execution/onboard_fill.py" ]; then cp "$$TMPDIR/src/execution/onboard_fill.py" "$(TARGET_DIR)/execution/onboard_fill.py"; fi; \
-	if [ -f "$$TMPDIR/src/execution/overlay_template.sh" ]; then cp "$$TMPDIR/src/execution/overlay_template.sh" "$(TARGET_DIR)/execution/overlay_template.sh"; fi; \
-	if [ -f "$$TMPDIR/src/execution/merge_profile.py" ]; then cp "$$TMPDIR/src/execution/merge_profile.py" "$(TARGET_DIR)/execution/merge_profile.py"; fi; \
-	if [ -f "$$TMPDIR/src/.agent/version" ]; then cp "$$TMPDIR/src/.agent/version" "$(TARGET_DIR)/.agent/version"; fi; \
-	if [ -f "$$TMPDIR/src/.agent/CHANGELOG.md" ]; then cp "$$TMPDIR/src/.agent/CHANGELOG.md" "$(TARGET_DIR)/.agent/CHANGELOG.md"; fi; \
-	rm -rf "$$TMPDIR"
-	@echo "🔄 Syncing agents + skills..."
-	@bash "$(TARGET_DIR)/execution/sync_agents.sh"
-	@bash "$(TARGET_DIR)/execution/sync_skills.sh"
-	@bash "$(TARGET_DIR)/execution/sync_rules.sh"
-	@NEW_VER=$$(cat "$(TARGET_DIR)/.agent/version" 2>/dev/null || echo "?"); \
-	python3 -c "import json, datetime; s={'workflow':'update-template','status':'complete','version':'$$NEW_VER','finished':datetime.datetime.now(datetime.UTC).isoformat()}; open('$(TARGET_DIR)/.agent/memory/scratch/checkpoint_update_complete.json','w').write(json.dumps(s))"; \
-	echo ""; \
-	echo "✅ Updated to Athanor v$$NEW_VER"; \
-	if grep -q '{{[A-Z_]\+}}' "$(TARGET_DIR)/AGENTS.md"; then \
-		echo "   ⚠️  AGENTS.md has placeholders. Run /onboard to fill them."; \
-	fi; \
-	echo "   Review changes: git diff"; \
-	echo "   Commit when ready: git add -A && git commit -m 'chore: update to Athanor v$$NEW_VER'"; \
-	echo ""; \
-	echo "   Note: Makefile was not auto-updated (self-overwrite risk)."; \
-	echo "   Check latest: gh api repos/InunuNet/Athanor/contents/Makefile --jq '.content' | base64 -d"
+	@# Manifest-driven update — delegates to update_template.py for safe HARNESS/WORKSPACE/DERIVED/MERGE boundary enforcement
+	@python3 execution/update_template.py --apply
+	@echo "🔄 Regenerating DERIVED files from updated HARNESS sources..."
+	@$(MAKE) sync || echo "⚠️  make sync failed — DERIVED files may be stale. Run 'make sync' manually."
 
 self-update:
-	@FORCE_UPDATE=true $(MAKE) update-template TARGET=$(CURDIR)
+	@echo "⬇️  Fetching latest update_template.py from Athanor..."
+	@bash -o pipefail -c 'gh api repos/InunuNet/Athanor/contents/execution/update_template.py --jq ".content" | base64 -d > execution/update_template.py'
+	@echo "✅ Updater refreshed. Running full update..."
+	@FORCE_UPDATE=true python3 execution/update_template.py --apply
+	@cp .agent/version template/.agent/version
+	@$(MAKE) sync || echo "⚠️  make sync failed — run 'make sync' manually."
 
 
 
@@ -211,6 +257,13 @@ onboard:
 	@echo "🏭 Starting onboarding..."
 	@echo "Open your AI agent and run: /onboard"
 	@echo "Or use the workflow at: .agent/workflows/onboard.md"
+
+onboard-headless:
+	@python3 execution/onboard_headless.py \
+	  --project-name "$(NAME)" \
+	  --agent-name "$(AGENT)" \
+	  --role "$(ROLE)" \
+	  --mission "$(MISSION)"
 
 check-feedback:
 	@echo "📬 Athanor GitHub Feedback"
@@ -222,12 +275,48 @@ check-feedback:
 	@echo "   https://github.com/InunuNet/Athanor/discussions"
 
 # Pulse
+pulse-register: install-pulse
+
 install-pulse:
 	@echo "Installing Athanor Pulse launchd agent..."
 	@mkdir -p ~/Library/LaunchAgents
 	@sed "s|{{PROJECT_ROOT}}|$(CURDIR)|g" "$(CURDIR)/execution/com.athanor.pulse.plist" > ~/Library/LaunchAgents/com.athanor.pulse.plist
 	@launchctl unload -F ~/Library/LaunchAgents/com.athanor.pulse.plist 2>/dev/null || true
 	@launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.plist
+	@sed "s|{{PROJECT_ROOT}}|$(CURDIR)|g" "$(CURDIR)/.agent/pulse/registry/com.athanor.pulse.heartbeat.plist" > ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.plist
+	@launchctl unload -F ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.plist 2>/dev/null || true
+	@launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.plist
 	@echo "✅ Athanor Pulse launchd agent installed and loaded. It will run every 5 minutes."
 	@echo "To unload: launchctl unload ~/Library/LaunchAgents/com.athanor.pulse.plist"
 	@echo "To remove: rm ~/Library/LaunchAgents/com.athanor.pulse.plist"
+
+fleet-install-pulse:
+	@echo "Installing independent Pulse + heartbeat for all fleet projects..."
+	@mkdir -p ~/Library/LaunchAgents
+	@for entry in "saoc:/Users/vetus/ai/SAOC" "mumbl-ai:/Users/vetus/ai/Mumbl AI" "mlilo-savant:/Users/vetus/ai/Mlilo Savant" "codex-harness:/Users/vetus/ai/Codex Harness"; do \
+	  SLUG=$$(echo "$$entry" | cut -d: -f1); \
+	  PROJ=$$(echo "$$entry" | cut -d: -f2-); \
+	  PULSE_PLIST="$$PROJ/execution/com.athanor.pulse.plist"; \
+	  HEARTBEAT_PLIST="$(CURDIR)/.agent/pulse/registry/com.athanor.pulse.heartbeat.plist"; \
+	  if [ -f "$$PULSE_PLIST" ]; then \
+	    sed "s|{{PROJECT_ROOT}}|$$PROJ|g; s|<string>com\.athanor\.pulse</string>|<string>com.athanor.pulse.$$SLUG</string>|g" "$$PULSE_PLIST" > ~/Library/LaunchAgents/com.athanor.pulse.$$SLUG.plist; \
+	    launchctl unload -F ~/Library/LaunchAgents/com.athanor.pulse.$$SLUG.plist 2>/dev/null || true; \
+	    launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.$$SLUG.plist; \
+	  fi; \
+	  sed "s|{{PROJECT_ROOT}}|$$PROJ|g; s|<string>com\.athanor\.pulse\.heartbeat</string>|<string>com.athanor.pulse.heartbeat.$$SLUG</string>|g" "$$HEARTBEAT_PLIST" > ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.$$SLUG.plist; \
+	  launchctl unload -F ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.$$SLUG.plist 2>/dev/null || true; \
+	  launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.$$SLUG.plist; \
+	  echo "✅ $$SLUG: pulse + heartbeat installed"; \
+	done
+	@echo "✅ Fleet pulse installed for all 4 projects."
+
+pulse-start:
+	@launchctl start com.athanor.pulse
+	@echo "✅ Pulse service started."
+
+pulse-stop:
+	@launchctl stop com.athanor.pulse
+	@echo "✅ Pulse service stopped."
+
+pulse-logs:
+	@tail -n 50 -f ~/Library/Logs/Athanor/pulse.log

@@ -151,42 +151,6 @@ if p.exists():
 else:
     print('null')
 " 2>/dev/null || echo "null")
-      # If mission.py new failed (slug already exists with non-terminal status), activate it
-      if [[ "$ACTIVE" == "null" || -z "$ACTIVE" ]]; then
-        SLUG_FILE=$(python3 -c "
-from pathlib import Path
-try:
-    import yaml as _y; _fm = lambda t: (_y.safe_load(t) or {})
-except ImportError:
-    import re as _r
-    def _fm(t):
-        r = {}
-        for line in t.splitlines():
-            m = _r.match(r'^(\w+):\s*(.+)$', line)
-            if m: r[m.group(1)] = m.group(2).strip()
-        return r
-for mf in sorted(Path('.agent/memory/project/missions').glob('*.md'), reverse=True):
-    try:
-        t = mf.read_text()
-        if not t.startswith('---\n'): continue
-        if _fm(t.split('---', 2)[1]).get('slug') == '${NEXT_SLUG}':
-            print(str(mf)); break
-    except Exception: continue
-" 2>/dev/null || echo "")
-        if [[ -n "$SLUG_FILE" ]]; then
-          echo "[pulse-loop] Slug '$NEXT_SLUG' exists — activating: $SLUG_FILE"
-          python3 execution/mission.py activate "$SLUG_FILE" 2>/dev/null || true
-          ACTIVE=$(python3 -c "
-import json, pathlib
-p = pathlib.Path('.agent/memory/project/missions/active.json')
-if p.exists():
-    d = json.loads(p.read_text())
-    print(d.get('mission') or 'null')
-else:
-    print('null')
-" 2>/dev/null || echo "null")
-        fi
-      fi
       # Remove activated mission from queue
       [[ "$ACTIVE" != "null" ]] && python3 -c "
 import pathlib

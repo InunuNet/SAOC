@@ -11,6 +11,9 @@ paths:
   # HARNESS — harness-owned, safe to overwrite
   - path: 'execution/'
     category: HARNESS
+  - category: HARNESS
+    comment: 'Backlog trimming utility — prunes stale entries from .agent/memory/project/backlog.md'
+    path: execution/backlog_trim.py
   - path: '.agent/agents/'
     category: HARNESS
   - path: '.agent/rules/'

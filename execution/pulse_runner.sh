@@ -9,7 +9,10 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Extract PROJECT_NAME from .agent/profile.json
 PROJECT_NAME=$(jq -r '.project_name' "$PROJECT_ROOT/.agent/profile.json")
-PROJECT_PREFIX="[${PROJECT_NAME}] "
+# Space-safe variant for log prefixes and stdout — keeps awk field-splitting in
+# pulse_status.sh intact when the project name contains whitespace.
+PROJECT_NAME_SAFE=$(echo "$PROJECT_NAME" | tr ' ' '_')
+PROJECT_PREFIX="[${PROJECT_NAME_SAFE}] "
 
 # Source the .env file if it exists
 if [ -f "$PROJECT_ROOT/.env" ]; then
@@ -64,5 +67,33 @@ done
 
 echo "${PROJECT_PREFIX}Running ingest_pulse.sh..."
 "$SCRIPT_DIR/ingest_pulse.sh" "$PROJECT_NAME" # Pass PROJECT_NAME to ingest_pulse.sh
+
+# Run autonomous improvement loop on a ~30-minute cadence (timestamp-file guard).
+# The guard file records the last time improvement_loop.sh ran; if it's older than
+# 25 minutes (1500 seconds) or absent, we trigger one cycle now.
+IMPROVE_STAMP="$PROJECT_ROOT/.agent/memory/scratch/improvement_loop/.last_improve_ts"
+IMPROVE_INTERVAL=1500  # 25 minutes in seconds
+mkdir -p "$(dirname "$IMPROVE_STAMP")"
+
+run_improve=false
+if [ ! -f "$IMPROVE_STAMP" ]; then
+  run_improve=true
+else
+  last_improve=$(cat "$IMPROVE_STAMP" 2>/dev/null || echo "0")
+  now=$(date +%s)
+  elapsed=$(( now - last_improve ))
+  if [ "$elapsed" -ge "$IMPROVE_INTERVAL" ]; then
+    run_improve=true
+  fi
+fi
+
+if [ "$run_improve" = "true" ]; then
+  echo "${PROJECT_PREFIX}Running improvement loop (cadence guard passed)..."
+  date +%s > "$IMPROVE_STAMP"
+  bash "$SCRIPT_DIR/improvement_loop.sh" --once >> "$LOG_FILE" 2>&1 || true
+  echo "${PROJECT_PREFIX}Improvement loop complete."
+else
+  echo "${PROJECT_PREFIX}Improvement loop skipped (cadence guard: last run $(( $(date +%s) - $(cat "$IMPROVE_STAMP" 2>/dev/null || echo 0) ))s ago, threshold=${IMPROVE_INTERVAL}s)."
+fi
 
 echo "${PROJECT_PREFIX}Pulse runner finished."

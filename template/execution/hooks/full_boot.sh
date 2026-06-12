@@ -84,6 +84,18 @@ else
 fi
 echo ""
 
+# Inject AUTONOMOUS MODE directive when level=loop
+_BOOT_LEVEL=$(jq -r '.autonomy.level // "medium"' .agent/profile.json 2>/dev/null || echo "medium")
+if [ "$_BOOT_LEVEL" = "loop" ]; then
+  echo "--- AUTONOMOUS MODE ---"
+  echo "AUTONOMOUS MODE ACTIVE — complete active mission, then pick next backlog item"
+  echo "and start immediately. Do not stop or wait for user input between missions."
+  echo "Loop continues until interrupted (make set-autonomy LEVEL=medium) or backlog empty."
+  echo "---"
+  echo ""
+fi
+unset _BOOT_LEVEL
+
 COMMS_FILE=".agent/memory/project/comms.md"
 if [ -f "$COMMS_FILE" ]; then
   LATEST_DIRECTIVE=$(awk '/^## \[CODI →/||/^## \[CODI ->/{if(found){exit} found=1; count=0; next} /^## \[/{if(found){exit}} found{print; count++; if(count>=40){print "[truncated — read full comms.md]"; exit}}' "$COMMS_FILE" 2>/dev/null)

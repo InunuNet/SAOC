@@ -48,7 +48,7 @@
           },
           {
             "type": "command",
-            "command": "echo \"You are now operating within the $(jq -r '.project_name // \"Athanor\"' .agent/profile.json) Agentic Workspace (v$(cat .agent/version)). Identity: $(jq -r '.identity.agent_name // \"Athanor Agent\"' .agent/profile.json) | Identity Status: Active. A full boot context was just injected above — framework identity (AGENTS.md), workspace, last session, project rules, goals, learned, backlog, brain recall, blockers, and git remotes. Read the injected BOOT CONTEXT carefully. You have 8 specialized agents at your disposal (@lead, @dev, @designer, etc.). Your primary goal is autonomous self-improvement for this project. Report boot status using this exact format: ✅ ATHANOR: [name] | 🤖 Agents: 8 roles active | Last session: [1-line summary] | Goals: [count] active | Backlog: [count] open items | Rules loaded: yes | ➡️ Ready.\""
+            "command": "echo \"You are now operating within the $(jq -r '.project_name // \"Athanor\"' .agent/profile.json) Agentic Workspace (v$(cat .agent/version)). Identity: $(jq -r '.identity.agent_name // \"Athanor Agent\"' .agent/profile.json) | Identity Status: Active. A full boot context was just injected above \u2014 framework identity (AGENTS.md), workspace, last session, project rules, goals, learned, backlog, brain recall, blockers, and git remotes. Read the injected BOOT CONTEXT carefully. You have 8 specialized agents at your disposal (@lead, @dev, @designer, etc.). Your primary goal is autonomous self-improvement for this project. Report boot status using this exact format: \u2705 ATHANOR: [name] | \ud83e\udd16 Agents: 8 roles active | Last session: [1-line summary] | Goals: [count] active | Backlog: [count] open items | Rules loaded: yes | \u27a1\ufe0f Ready.\""
           }
         ]
       }
@@ -59,7 +59,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes — run /wrap-up at start of next session.'; fi"
+            "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes \u2014 run /wrap-up at start of next session.'; fi"
           },
           {
             "type": "command",
@@ -79,7 +79,7 @@
           },
           {
             "type": "command",
-            "command": "printf '{\"systemMessage\": \"COMPACT FORMAT MANDATE — Target <=1500 tokens total. INCLUDE: file paths changed (1 line each), key decisions (1 line each), active mission + current feature checkpoint, blockers. EXCLUDE: inline code blocks, file contents, error transcripts, verbatim tool output, large diffs. Use 1-line bullets only. Never quote content verbatim. Ruthlessly concise — summary is context, not a record.\"}'",
+            "command": "printf '{\"systemMessage\": \"COMPACT FORMAT MANDATE \u2014 Target <=1500 tokens total. INCLUDE: file paths changed (1 line each), key decisions (1 line each), active mission + current feature checkpoint, blockers. EXCLUDE: inline code blocks, file contents, error transcripts, verbatim tool output, large diffs. Use 1-line bullets only. Never quote content verbatim. Ruthlessly concise \u2014 summary is context, not a record.\"}'",
             "timeout": 5
           }
         ]
@@ -144,15 +144,6 @@
       }
     ],
     "PreToolUse": [
-      {
-        "matcher": "AskUserQuestion",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash execution/hooks/block_asq_in_loop.sh"
-          }
-        ]
-      },
       {
         "matcher": "Write",
         "hooks": [

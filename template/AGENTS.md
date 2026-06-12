@@ -15,7 +15,8 @@ Then:
 1. Run `python3 execution/brain.py last-session --quiet`
 2. Read `.agent/memory/project/goals.md`
 3. Read `.agent/memory/project/learned.md`
-4. If backlog exists, read `.agent/memory/project/backlog.md`
+4. Check for active mission: `python3 execution/mission.py resume` — if a mission is active, follow its current checkpoint
+5. If no active mission AND `.agent/memory/project/backlog.md` exists, scan the mission queue (the backlog is the mission queue — pull from it only when no mission is active)
 
 ## 1. Identity
 
@@ -40,13 +41,14 @@ Memory lives here — in this project's `.agent/memory/` and brain — not in an
 
 ## 3. Rules
 
-1. **Parallel by Default** — decompose into independent workstreams, spin up agents simultaneously
+1. **Writers Serial, Readers Parallel** — run analyst/architect/grep/recall concurrently; run only one writer (dev, designer, docs, maintainer) at a time per feature to avoid conflicts and duplicated work
 2. **Native First** — use platform features before custom code
 3. **Least Tokens** — BLUF. Bullets over prose.
 4. **No Placeholders** — write real implementations
 5. **Read Before Write** — check goals.md and learned.md first
 6. **Self-Anneal** — error → fix → update learned.md
 7. **Wrap Up** — store summary in brain at session end
+8. **Chain Continuous** — Never pause between chain steps waiting for user confirmation. Once a mission is active, proceed @architect→@dev→@qa→@docs→gate→@maintainer without stopping. Only pause at mission boundaries or on BLOCKED verdict.
 
 Project-specific rules in `.agent/memory/project/rules.md` take precedence over these.
 
@@ -67,14 +69,61 @@ Project-specific rules in `.agent/memory/project/rules.md` take precedence over 
 
 ## 5. Workflows
 
-| Workflow | Use when |
-|----------|----------|
-| `/boot` | Start of every session |
-| `/onboard` | New project setup (first time only) |
-| `/wrap-up` | End of session |
-| `/audit` | Health check |
-| `/test` | Run validation |
-| `/report-bug` | Found a bug? Report it. |
+### Mandatory Decision Tree — Run Before Any Substantive Work
+
+```
+BEFORE ANY WORK — classify the request:
+
+1. Active mission exists?        → python3 execution/mission.py resume → follow it
+2. New multi-session goal (3+ sessions, milestones)?  → /mission new FIRST
+3. Touches 3+ files OR design decision required?      → /spec FIRST (locks autonomy=off)
+4. Well-specified, <3 files, single domain?           → write contract.yaml FIRST
+5. Trivial (read, status, single-command)?            → handle directly, no chain
+
+Once classified, the chain is FIXED:
+  spec/mission → @architect (golden files + traps) → contract.yaml --strict
+  → @dev (implement against golden files, NOT own tests)
+  → @qa (adversarial, inputs designed by orchestrator/@architect, NOT @dev)
+  → @docs (README + docs/<feature>.md updated)
+  → contract.py gate (all Phase 4 assertions green)
+  → @maintainer (learned.md + brain wrap-up) → commit
+
+NEVER skip to implementation. NEVER let @dev write the contract or the QA inputs.
+DONE = contract gated green + docs verified + brain wrapped. Nothing less.
+```
+
+### Workflow Reference Table
+
+| Workflow | Required for | Blocks | Output |
+|----------|--------------|--------|--------|
+| `/boot` | Every session start | Nothing | Memory + rules loaded |
+| `/onboard` | First-time project setup | All work until done | Populated profile.json |
+| `/mission new` | Multi-session goals (3+ sessions) | Direct @dev dispatch | Mission file + autonomy=off |
+| `/mission resume` | Active mission present | New mission creation | Last-checkpoint state |
+| `/spec` | Features touching 3+ files OR design choice | @dev dispatch | SPEC.md + golden files (read-only mode) |
+| Contract write (@architect) | Every substantive task | @qa dispatch | contract.yaml passing `validate --strict` |
+| `@dev` dispatch | Contract exists + golden files exist | @qa dispatch | Implementation matching golden files |
+| `@qa` dispatch | Implementation complete | @docs dispatch | Adversarial test results |
+| `@docs` dispatch | Before contract gate Phase 4 | `contract.py gate` | README + docs/<feature>.md |
+| `contract.py gate` | Before commit | Commit | All assertions green or BLOCKED |
+| `@maintainer` / `/wrap-up` | End of session | Next session boot | learned.md + brain entry |
+| `/audit` | Health check (any time) | Nothing | Workspace status |
+| `/test` | Pre-commit, pre-gate | Commit if red | `make test` result |
+| `/report-bug` | Bug discovery | Nothing | Issue filed |
+| `/factory-loop` | Autonomous improvement runs | Nothing | Continuous research→build→test cycles |
+
+### Required vs Optional by Task Size
+
+| Task class | mission | spec | contract | @architect | @dev | @qa | @docs | gate |
+|------------|---------|------|----------|-----------|------|-----|-------|------|
+| Trivial (read/status) | — | — | — | — | — | — | — | — |
+| Small (<3 files, no design) | — | — | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** |
+| Medium (3+ files OR design) | — | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** |
+| Large (multi-session) | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** | **REQ** |
+
+**REQ = required; — = not needed.** Implementing without a column marked REQ is a process violation.
+
+Gates between agent handoffs are enforced by `execution/handoff_check.py` against the manifest in `.agent/handoffs.yaml`. Full reference: [docs/workflow-gates.md](docs/workflow-gates.md).
 
 ## X. Platform Capabilities
 
@@ -82,7 +131,7 @@ Project-specific rules in `.agent/memory/project/rules.md` take precedence over 
 - `alembic` (Access external web content via `@search`)
 - `onboard` (Athanor onboarding workflow)
 
-### Makefile Targets (Athanor Framework):
+### Makefile Targets (Athanor Harness):
 - `help`: Display this help message
 - `sync`: Sync agents, skills, and rules to provider configs
 - `sync-agents`: Sync canonical agents
@@ -102,8 +151,11 @@ Project-specific rules in `.agent/memory/project/rules.md` take precedence over 
 - `onboard`: Start AI-guided project onboarding
 - `check-feedback`: Check GitHub for new issues + PRs
 - `ingest-pulse`: Process and archive inbox items to backlog.md
-- `install-pulse`: Install and load the Athanor Pulse launchd agent
+- `pulse-register`: Install and load the Athanor Pulse launchd agent
 - `pulse-status`: Check Athanor Pulse service status
+- `pulse-start`: Manually start the Pulse service
+- `pulse-stop`: Manually stop the Pulse service
+- `pulse-logs`: Tail the Pulse service logs
 
 ## Y. Service Mapping
 
@@ -130,6 +182,17 @@ Alembic: [https://github.com/InunuNet/Alembic](https://github.com/InunuNet/Alemb
 - No hook system — run `/boot` and `/wrap-up` manually
 - Provider constants: `.agent/providers/opencode.json`
 - Headless: `opencode run "prompt"`
+
+### Antigravity
+- Reads this file natively as AGENTS.md
+- Subagents are NOT auto-discovered; register them at session start using the manifest:
+  1. Read `.anti/agents.json` (auto-generated by `make sync-agents`)
+  2. For each entry, call the `define_subagent` **LLM tool** with `name`, `description`, `system_prompt`
+  - NOTE: `define_subagent` is an LLM tool call, NOT a bash CLI subcommand — there is no `agy define_subagent` command
+- Regenerate the manifest after editing `.agent/agents/*.md`:
+  `make sync-agents`
+- Provider constants: `.agent/providers/antigravity.json` (if present)
+- Dispatch via `invoke_subagent(TypeName, Prompt)` once agents are registered
 
 ## 7. Memory Paths
 

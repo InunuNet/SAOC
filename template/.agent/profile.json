@@ -1,5 +1,5 @@
 {
-  "project_name": "Athanor",
+  "project_name": "",
   "project_type": "",
   "soul_type": "",
   "status": "active",
@@ -16,10 +16,27 @@
     "style_guide": false,
     "llm_apis": false
   },
-  "agents": ["lead", "dev", "designer", "analyst", "architect", "qa", "docs", "maintainer"],
+  "agents": [
+    "lead",
+    "dev",
+    "designer",
+    "analyst",
+    "architect",
+    "qa",
+    "docs",
+    "maintainer"
+  ],
   "memory": {
     "brain_backend": "chromadb",
     "brain_path": ".agent/memory/brain",
-    "tiers": ["scratch", "project", "brain", "global"]
+    "tiers": [
+      "scratch",
+      "project",
+      "brain",
+      "global"
+    ]
+  },
+  "autonomy": {
+    "level": "medium"
   }
 }

@@ -11,11 +11,8 @@ if [ -f "$LOG_FILE" ]; then
   cat "$LOG_FILE" | awk -F ' [|] ' 'NF >= 4 {
     # Only process data lines (4+ fields); skip info/status lines with no " | " separators
     raw = $1
-    # Strip "[project-name] " prefix — use index() for portability across awk versions
-    if (substr(raw, 1, 1) == "[") {
-      cbracket = index(raw, "]")
-      if (cbracket > 0) { raw = substr(raw, cbracket + 2) }
-    }
+    # Strip "[project-name] " or "[project_name] " prefix from field 1
+    sub(/^\[[^]]*\] /, "", raw)
     timestamp = raw
     job_name = $2
     status = $3

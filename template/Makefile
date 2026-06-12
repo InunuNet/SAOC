@@ -2,7 +2,7 @@ VERSION := $(shell cat .agent/version 2>/dev/null || echo "UNKNOWN")
 
 # Athanor v$(VERSION) Makefile
 
-.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit
+.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit stay-awake allow-sleep
 
 help:
 	@echo "🏭 Athanor v$(VERSION)"
@@ -61,6 +61,39 @@ sync-autonomy:
 	echo "   Claude: check_autonomy.sh active (PreToolUse hook)"; \
 	echo "   Gemini: manual autonomy.toml — generated block sync coming in v2"; \
 	echo "✅ sync-autonomy complete"
+
+set-autonomy:
+	@[ -n "$(LEVEL)" ] || (echo "Usage: make set-autonomy LEVEL=loop|high|medium|low|off" && exit 1)
+	@printf '%s' "$(LEVEL)" | grep -qE '^(off|low|medium|high|loop)$$' || (echo "❌ Invalid level '$(LEVEL)'. Valid: off low medium high loop" && exit 1)
+	@python3 -c "import json,pathlib,datetime; p=pathlib.Path('.agent/profile.json'); d=json.loads(p.read_text()); d['autonomy']=dict(level='$(LEVEL)',updated_at=datetime.datetime.utcnow().isoformat()+'Z'); p.write_text(json.dumps(d,indent=2)+'\n')"
+	@rm -f /tmp/athanor_autonomy_* 2>/dev/null || true
+	@if [ "$(LEVEL)" = "loop" ]; then \
+		if [ -f .agent/pulse/registry/caffeinate.pid ]; then kill $$(cat .agent/pulse/registry/caffeinate.pid) 2>/dev/null || true; rm -f .agent/pulse/registry/caffeinate.pid; fi; \
+		caffeinate -d & echo $$! > .agent/pulse/registry/caffeinate.pid; \
+		echo "☕ caffeinate started (sleep prevented) — PID $$(cat .agent/pulse/registry/caffeinate.pid)"; \
+	else \
+		if [ -f .agent/pulse/registry/caffeinate.pid ]; then \
+			kill $$(cat .agent/pulse/registry/caffeinate.pid) 2>/dev/null || true; \
+			rm -f .agent/pulse/registry/caffeinate.pid; \
+			echo "💤 caffeinate stopped (sleep allowed)"; \
+		fi; \
+	fi
+	@echo "✅ Autonomy level set to: $(LEVEL)"
+
+stay-awake:
+	@mkdir -p .agent/pulse/registry
+	@if [ -f .agent/pulse/registry/caffeinate.pid ]; then kill $$(cat .agent/pulse/registry/caffeinate.pid) 2>/dev/null || true; rm -f .agent/pulse/registry/caffeinate.pid; fi; \
+	caffeinate -d & echo $$! > .agent/pulse/registry/caffeinate.pid
+	@echo "☕ caffeinate started (sleep prevented) — PID $$(cat .agent/pulse/registry/caffeinate.pid)"
+
+allow-sleep:
+	@if [ -f .agent/pulse/registry/caffeinate.pid ]; then \
+		kill $$(cat .agent/pulse/registry/caffeinate.pid) 2>/dev/null || true; \
+		rm -f .agent/pulse/registry/caffeinate.pid; \
+		echo "💤 caffeinate stopped (sleep allowed)"; \
+	else \
+		echo "💤 no caffeinate PID file — nothing to stop"; \
+	fi
 
 sync-skills:
 	@bash execution/sync_skills.sh
