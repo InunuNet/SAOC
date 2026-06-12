@@ -2,11 +2,11 @@
 
 ## SAOC Project — Active (2026-06-05 reset)
 
-- [ ] **Audit M1–M4 work against new full brief** — scaffold/chrome/home/about exist but were built for the narrow 7-page mission; re-verify each against Phase A+B requirements before counting as done.
+- [x] **Audit M1–M4 work against new full brief** — completed as part of saoc-full-platform mission (Phase A/B retrofits).
 _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this file._
-- [ ] **Phase A: Foundation** — Next.js latest + TS strict + Tailwind v4 + Sanity CMS + Firebase App Hosting (InunuNet account) + lint/format pipeline + staging deploy.
-- [ ] **Phase B: 8 static content pages** (per proposal) — Home, About, Societies, Judging, Judges Training, Events, Sponsors, Contact — CMS-driven from Sanity.
-- [ ] **Phase C: Events calendar page** (Sanity-sourced, not Firebase RTDB).
+- [x] **Phase A: Foundation** — Next.js + TS strict + Tailwind v4 + Sanity CMS + Firebase App Hosting (InunuNet) + lint/format + CI. (saoc-full-platform MA, A1–A9, done 2026-06-12)
+- [x] **Phase B: 8 static content pages** — Home, About, Societies, National Show, Judging, Judges Training, Contact, Sponsors — CMS-driven from Sanity. (saoc-full-platform MB, B1–B7, done 2026-06-12)
+- [x] **Phase C: Events calendar page** — Sanity-sourced, month-grouped, ICS export + member-only submit form. (saoc-full-platform MC, C1–C5, done 2026-06-12)
 - [ ] **Phase D: 2027 Show ticketing** — Stripe SA (Yoco signup broken) + cPanel SMTP confirmations + admin dashboard + door check-in tool.
 - [ ] **Phase E: Polish, testing, Secretary training, DNS cutover, launch.**
 - [ ] **Remove footer newsletter stub** — newsletter out of scope per 2026-06-06 decision.
