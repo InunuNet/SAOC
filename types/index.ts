@@ -89,6 +89,24 @@ export type ShowClass = {
   description: string;
 };
 
+export type SanityEvent = {
+  _id: string;
+  title: string;
+  slug: string;
+  date: string;
+  endDate?: string | null;
+  kind?: string | null;
+  description?: string | null;
+  venue?: string | null;
+  location?: string | null;
+  isFeatured?: boolean | null;
+  hostSociety?: {
+    _id: string;
+    name: string;
+    slug: string;
+  } | null;
+};
+
 export type ContactSubmission = {
   id: string;
   name: string;

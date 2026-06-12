@@ -1,0 +1,129 @@
+schema: athanor.contract/v1
+feature: C1-C4
+spec: phase-c-events
+name: Phase C Events Calendar — GROQ queries + index + detail + ICS export
+created_at: '2026-06-12T00:00:00.000000+00:00'
+
+assertions:
+  # ---- C1: GROQ queries ----
+  - id: C1-01
+    description: allEventsQuery is defined in sanity/queries.ts
+    verify:
+      kind: file_contains
+      path: sanity/queries.ts
+      pattern: 'allEventsQuery'
+
+  - id: C1-02
+    description: eventBySlugQuery is defined in sanity/queries.ts
+    verify:
+      kind: file_contains
+      path: sanity/queries.ts
+      pattern: 'eventBySlugQuery'
+
+  - id: C1-03
+    description: eventSlugsQuery is defined in sanity/queries.ts
+    verify:
+      kind: file_contains
+      path: sanity/queries.ts
+      pattern: 'eventSlugsQuery'
+
+  # ---- C2: Events index page ----
+  - id: C2-01
+    description: events index page is no longer a stub — fetches from Sanity
+    verify:
+      kind: file_contains
+      path: app/(marketing)/events/page.tsx
+      pattern: 'sanityFetch'
+
+  - id: C2-02
+    description: events index page is an async Server Component (default export)
+    verify:
+      kind: shell
+      cmd: grep -Eq 'export default async function' 'app/(marketing)/events/page.tsx'
+
+  - id: C2-03
+    description: EventCard component exists
+    verify:
+      kind: file_exists
+      path: components/events/EventCard.tsx
+
+  # ---- C3: Event detail page ----
+  - id: C3-01
+    description: event detail dynamic page exists
+    verify:
+      kind: file_exists
+      path: app/(marketing)/events/[slug]/page.tsx
+
+  - id: C3-02
+    description: detail page exports generateStaticParams for SSG
+    verify:
+      kind: file_contains
+      path: app/(marketing)/events/[slug]/page.tsx
+      pattern: 'generateStaticParams'
+
+  # ---- C4: ICS export ----
+  - id: C4-01
+    description: per-event ICS route exists
+    verify:
+      kind: file_exists
+      path: app/api/events/[slug]/route.ts
+
+  - id: C4-02
+    description: full ICS feed route exists
+    verify:
+      kind: file_exists
+      path: app/api/events.ics/route.ts
+
+  - id: C4-03
+    description: per-event ICS route returns text/calendar content-type
+    verify:
+      kind: file_contains
+      path: app/api/events/[slug]/route.ts
+      pattern: 'text/calendar'
+
+  - id: C4-04
+    description: ICS helper exists and emits a SAOC VCALENDAR
+    verify:
+      kind: shell
+      cmd: test -f lib/ics.ts && grep -q 'PRODID:-//SAOC//Events//EN' lib/ics.ts
+
+  # ---- Gates ----
+  - id: C-GATE-01
+    description: pnpm type-check passes — strict TS no errors
+    verify:
+      kind: shell
+      cmd: pnpm type-check
+      expect_exit: 0
+
+  - id: C-GATE-02
+    description: pnpm lint passes with zero errors
+    verify:
+      kind: shell
+      cmd: pnpm lint
+      expect_exit: 0
+
+  - id: C-GATE-03
+    description: pnpm build completes successfully
+    verify:
+      kind: shell
+      cmd: pnpm build
+      expect_exit: 0
+
+phases:
+  - id: 1
+    assertions:
+      - C1-01
+      - C1-02
+      - C1-03
+      - C2-01
+      - C2-02
+      - C2-03
+      - C3-01
+      - C3-02
+      - C4-01
+      - C4-02
+      - C4-03
+      - C4-04
+      - C-GATE-01
+      - C-GATE-02
+      - C-GATE-03

@@ -1,0 +1,102 @@
+// =============================================================
+// SAOC — lib/ics.ts
+// Pure helpers for building RFC 5545 VCALENDAR / VEVENT output.
+// GOLDEN REFERENCE for Phase C4. No framework imports — keep this
+// dependency-free so it runs in any route handler runtime.
+// =============================================================
+
+// Shape consumed by the ICS builders. Maps directly onto the
+// fields returned by allEventsQuery / eventBySlugQuery.
+export interface IcsEvent {
+  _id: string;
+  title: string;
+  slug: string;
+  date: string; // ISO datetime
+  endDate?: string | null; // ISO datetime, optional
+  description?: string | null;
+  venue?: string | null;
+  location?: string | null;
+  hostSociety?: { name: string; slug: string } | null;
+}
+
+const PRODID = '-//SAOC//Events//EN';
+const SITE_DOMAIN = 'saoc.co.za';
+
+// RFC 5545 §3.3.5 — UTC date-time: YYYYMMDDTHHMMSSZ
+export function toIcsUtc(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return (
+    `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}` +
+    `T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`
+  );
+}
+
+// RFC 5545 §3.3.11 — escape TEXT values: backslash, comma, semicolon, newline.
+export function escapeIcsText(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n');
+}
+
+// Fold lines longer than 75 octets per RFC 5545 §3.1 (defensive; most lines are short).
+function foldLine(line: string): string {
+  if (line.length <= 75) return line;
+  const chunks: string[] = [];
+  let rest = line;
+  chunks.push(rest.slice(0, 75));
+  rest = rest.slice(75);
+  while (rest.length > 74) {
+    chunks.push(' ' + rest.slice(0, 74));
+    rest = rest.slice(74);
+  }
+  if (rest.length) chunks.push(' ' + rest);
+  return chunks.join('\r\n');
+}
+
+function buildVevent(event: IcsEvent): string[] {
+  const uid = `${event.slug || event._id}@${SITE_DOMAIN}`;
+  const dtstamp = toIcsUtc(new Date().toISOString());
+  const locationParts = [event.venue, event.location].filter(Boolean).join(', ');
+
+  const lines = [
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${dtstamp}`,
+    `DTSTART:${toIcsUtc(event.date)}`,
+    `DTEND:${toIcsUtc(event.endDate ?? event.date)}`,
+    `SUMMARY:${escapeIcsText(event.title)}`,
+  ];
+
+  if (event.description) {
+    lines.push(`DESCRIPTION:${escapeIcsText(event.description)}`);
+  }
+  if (locationParts) {
+    lines.push(`LOCATION:${escapeIcsText(locationParts)}`);
+  }
+  lines.push(`URL:https://${SITE_DOMAIN}/events/${event.slug}`);
+  lines.push('END:VEVENT');
+  return lines;
+}
+
+// Build a complete VCALENDAR string for one or more events.
+export function buildIcs(events: IcsEvent[]): string {
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    `PRODID:${PRODID}`,
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    ...events.flatMap(buildVevent),
+    'END:VCALENDAR',
+  ];
+  // RFC 5545 §3.1 — lines are CRLF-delimited.
+  return lines.map(foldLine).join('\r\n') + '\r\n';
+}
+
+// Convenience for the single-event route handler.
+export function buildSingleEventIcs(event: IcsEvent): string {
+  return buildIcs([event]);
+}

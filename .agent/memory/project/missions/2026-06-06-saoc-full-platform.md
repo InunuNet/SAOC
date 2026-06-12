@@ -7,17 +7,17 @@ goal: 'Deliver SAOC full digital platform: Phase A foundation (Next.js 15+TS+Tai
 created_at: '2026-06-06T06:30:00.000000+00:00'
 started_at: null
 last_active_at: '2026-06-12T10:24:12.953528+00:00'
-status: done
+status: in_progress
 cost_estimate:
-  features: 9
-  milestones: 1
-  total_calls: 11
+  features: 13
+  milestones: 3
+  total_calls: 15
 last_checkpoint:
   milestone: MB
   feature: B7
   ts: '2026-06-12T12:00:00.000000+00:00'
   note: Phase B complete. B5 Judging 12/12 PASS, B6 Contact 10/10 PASS, B7 Sponsors
-    11/11 PASS. Build clean. MB milestone done.
+    11/11 PASS. Build clean. MB milestone done. Phase C starting.
 features:
 - id: A1
   title: Lockfile + Next.js sanity check
@@ -99,6 +99,18 @@ features:
   status: done
   started_at: '2026-06-12T11:30:00.000000+00:00'
   completed_at: '2026-06-12T12:00:00.000000+00:00'
+- id: C1
+  title: Events Sanity schema + GROQ queries
+  status: pending
+- id: C2
+  title: Events index page /events — month-grouped list + filter
+  status: pending
+- id: C3
+  title: Event detail page /events/[slug]
+  status: pending
+- id: C4
+  title: ICS export per-event + /events.ics feed
+  status: pending
 milestones:
 - id: MA
   name: Phase A — Foundation
@@ -124,9 +136,16 @@ milestones:
   - B5
   - B6
   - B7
+- id: MC
+  name: Phase C — Events Calendar
+  status: pending
+  features:
+  - C1
+  - C2
+  - C3
+  - C4
 notes: Full 5-phase brief. Supersedes abandoned narrow-scope mission 2026-06-01-saoc-website-build.
   M1–M4 legacy work unverified against this brief — re-audit required.
-completed_at: '2026-06-12T10:24:12.953263+00:00'
 ---
 
 

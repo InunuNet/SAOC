@@ -156,3 +156,23 @@ export const contactPageQuery = defineQuery(`
     }
   }
 `);
+
+export const eventBySlugQuery = defineQuery(`
+  *[_type == "societyEvent" && slug.current == $slug][0]{
+    _id,
+    title,
+    "slug": slug.current,
+    date,
+    endDate,
+    kind,
+    description,
+    venue,
+    location,
+    isFeatured,
+    "hostSociety": hostSociety->{ _id, name, "slug": slug.current }
+  }
+`);
+
+export const eventSlugsQuery = defineQuery(`
+  *[_type == "societyEvent" && defined(slug.current)]{ "slug": slug.current }
+`);

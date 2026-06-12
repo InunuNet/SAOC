@@ -1,0 +1,106 @@
+// =============================================================
+// SAOC — components/events/EventCard.tsx
+// Server Component — single event row/card for the /events index.
+// GOLDEN REFERENCE for Phase C2. Adapt class names to the live
+// design system; the prop contract + rendered fields are load-bearing.
+// =============================================================
+
+import Link from 'next/link';
+
+// Display labels for the fixed kind vocabulary.
+// Keep this map in sync with the Sanity `kind` field values.
+const KIND_LABELS: Record<string, string> = {
+  show: 'Show',
+  meeting: 'Meeting',
+  auction: 'Auction',
+  workshop: 'Workshop',
+  social: 'Social',
+};
+
+export interface EventCardHostSociety {
+  name: string;
+  slug: string;
+}
+
+export interface EventCardProps {
+  title: string;
+  slug: string;
+  date: string; // ISO string from Sanity datetime
+  endDate?: string | null; // ISO string, optional
+  kind: string;
+  venue?: string | null;
+  hostSociety?: EventCardHostSociety | null;
+}
+
+const DATE_FMT = new Intl.DateTimeFormat('en-ZA', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
+const TIME_FMT = new Intl.DateTimeFormat('en-ZA', {
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+// Renders "Sat, 18 Jul 2026" or "18–20 Jul 2026" for multi-day spans.
+function formatDateRange(date: string, endDate?: string | null): string {
+  const start = new Date(date);
+  if (!endDate) {
+    return `${DATE_FMT.format(start)} · ${TIME_FMT.format(start)}`;
+  }
+  const end = new Date(endDate);
+  const sameDay = start.toDateString() === end.toDateString();
+  if (sameDay) {
+    return `${DATE_FMT.format(start)} · ${TIME_FMT.format(start)}–${TIME_FMT.format(end)}`;
+  }
+  return `${DATE_FMT.format(start)} – ${DATE_FMT.format(end)}`;
+}
+
+export function EventCard({
+  title,
+  slug,
+  date,
+  endDate,
+  kind,
+  venue,
+  hostSociety,
+}: EventCardProps) {
+  const kindLabel = KIND_LABELS[kind] ?? kind;
+
+  return (
+    <article className="group border-b border-[var(--color-rule)] py-6">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+        <span className="inline-flex items-center rounded-full border border-[var(--color-accent)] px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.18em] text-[var(--color-accent)]">
+          {kindLabel}
+        </span>
+        <time
+          dateTime={date}
+          className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--color-muted)]"
+        >
+          {formatDateRange(date, endDate)}
+        </time>
+      </div>
+
+      <h3 className="mt-3 font-serif text-2xl font-medium leading-tight text-[var(--color-ink)]">
+        <Link href={`/events/${slug}`} className="hover:text-[var(--color-accent)]">
+          {title}
+        </Link>
+      </h3>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 text-sm text-[var(--color-muted)]">
+        {venue ? <span>{venue}</span> : null}
+        {venue && hostSociety ? <span aria-hidden="true">·</span> : null}
+        {hostSociety ? (
+          <Link
+            href={`/societies/${hostSociety.slug}`}
+            className="underline-offset-2 hover:text-[var(--color-accent)] hover:underline"
+          >
+            {hostSociety.name}
+          </Link>
+        ) : null}
+      </div>
+    </article>
+  );
+}

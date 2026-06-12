@@ -1,0 +1,69 @@
+schema: athanor.contract/v1
+slug: saoc-c1-events
+spec: saoc-full-platform
+goal: 'C1: Events calendar/list page + individual event detail pages. Add eventBySlugQuery
+  and eventSlugsQuery to sanity/queries.ts. Rebuild app/(marketing)/events/page.tsx
+  as an async Server Component (no use client) fetching upcomingEventsQuery with revalidation
+  tags [events, sanity]. Page renders: (1) a featured strip for events where isFeatured
+  === true, (2) remaining events grouped by calendar month via a MonthGroup component.
+  Static fallback to lib/data/events.ts when Sanity returns null/empty. Create app/(marketing)/events/[slug]/page.tsx
+  with generateStaticParams (eventSlugsQuery), generateMetadata, and notFound() on
+  missing slug. Create components/events/EventCard.tsx (date badge, title, kind badge,
+  host society name, venue/location row), components/events/MonthGroup.tsx (month
+  label + EventCard list), components/events/index.ts barrel. No use client in any
+  new file. No invented brand tokens — use design system vars from globals.css.'
+created_at: '2026-06-12'
+autonomy: high
+status: pending
+phase: 1
+
+features:
+  - id: C1
+    name: 'Events calendar page + event detail pages (queries, Server Component, featured strip, month groups, EventCard, static fallback)'
+    status: pending
+
+assertions:
+  phase: 1
+  checks:
+    - id: C1a
+      description: 'sanity/queries.ts defines eventBySlugQuery'
+      command: "grep -q 'eventBySlugQuery' /Users/vetus/ai/SAOC/sanity/queries.ts"
+    - id: C1b
+      description: 'sanity/queries.ts defines eventSlugsQuery'
+      command: "grep -q 'eventSlugsQuery' /Users/vetus/ai/SAOC/sanity/queries.ts"
+    - id: C1c
+      description: 'events page imports upcomingEventsQuery'
+      command: "grep -q 'upcomingEventsQuery' '/Users/vetus/ai/SAOC/app/(marketing)/events/page.tsx'"
+    - id: C1d
+      description: 'events page uses revalidation tags (events + sanity)'
+      command: "grep -q \"'events'\" '/Users/vetus/ai/SAOC/app/(marketing)/events/page.tsx' && grep -q \"'sanity'\" '/Users/vetus/ai/SAOC/app/(marketing)/events/page.tsx'"
+    - id: C1e
+      description: 'events page is a Server Component (no use client)'
+      command: "! grep -q \"'use client'\" '/Users/vetus/ai/SAOC/app/(marketing)/events/page.tsx'"
+    - id: C1f
+      description: 'events page has static fallback to lib/data/events'
+      command: "grep -Eq \"lib/data/events|@/lib/data/events\" '/Users/vetus/ai/SAOC/app/(marketing)/events/page.tsx'"
+    - id: C1g
+      description: 'events page no longer contains placeholder string'
+      command: "! grep -q '\\[Placeholder' '/Users/vetus/ai/SAOC/app/(marketing)/events/page.tsx'"
+    - id: C1h
+      description: 'components/events/EventCard.tsx exists'
+      command: "test -f /Users/vetus/ai/SAOC/components/events/EventCard.tsx"
+    - id: C1i
+      description: 'components/events/MonthGroup.tsx exists'
+      command: "test -f /Users/vetus/ai/SAOC/components/events/MonthGroup.tsx"
+    - id: C1j
+      description: 'components/events/index.ts barrel exists'
+      command: "test -f /Users/vetus/ai/SAOC/components/events/index.ts"
+    - id: C1k
+      description: 'event detail page defines generateStaticParams'
+      command: "grep -q 'generateStaticParams' '/Users/vetus/ai/SAOC/app/(marketing)/events/[slug]/page.tsx'"
+    - id: C1l
+      description: 'event detail page defines generateMetadata'
+      command: "grep -q 'generateMetadata' '/Users/vetus/ai/SAOC/app/(marketing)/events/[slug]/page.tsx'"
+    - id: C1m
+      description: 'event detail page calls notFound() on missing slug'
+      command: "grep -q 'notFound' '/Users/vetus/ai/SAOC/app/(marketing)/events/[slug]/page.tsx'"
+    - id: C1n
+      description: 'build produces clean output (no TS errors, all event routes present)'
+      command: "cd /Users/vetus/ai/SAOC && pnpm build 2>&1 | tail -5 | grep -qE 'Route|Generating' && echo pass || echo fail"
