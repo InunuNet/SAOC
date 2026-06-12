@@ -23,6 +23,7 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612123154.txt
 - [ ]  (Misc): New Event: fleet_loop-20260612122458.txt
 - [ ]  (Misc): New Event: check_own_comms-20260612122457.txt
 - [ ]  (Misc): New Event: comms_poll-20260612122457.txt
