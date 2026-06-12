@@ -23,6 +23,7 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ]  (Misc): [pulse-loop] Template stale (3.7.92 → 3.7.95) — updating...
 - [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612112952.txt)
 - [ ]  (Misc): New Event: fleet_loop-20260612112957.txt
 - [ ]  (Misc): New Event: comms_poll-20260612112955.txt
