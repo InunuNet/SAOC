@@ -23,6 +23,7 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ]  (Misc): [pain-point-monitor] Skipped (last run 21085s ago, cadence 21600s).
 - [ ]  (Misc): New Event: mission_loop-20260612182248.txt
 - [ ]  (Misc): [pain-point-monitor] Skipped (last run 21056s ago, cadence 21600s).
 - [ ]  (Misc): New Event: fleet_loop-20260612182217.txt
