@@ -23,6 +23,23 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612193532.txt)
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612193532.txt)
+- [ ]  (Misc): New Event: fleet_loop-20260612193535.txt
+- [ ]  (Misc): New Event: fleet_loop-20260612193535.txt
+- [ ]  (Misc): New Event: comms_poll-20260612193540.txt
+- [ ]  (Misc): New Event: comms_poll-20260612193540.txt
+- [ ]  (Misc): New Event: comms_poll-20260612193534.txt
+- [ ]  (Misc): New Event: comms_poll-20260612193534.txt
+- [ ]  (Misc): New Event: fleet_loop-20260612193541.txt
+- [ ]  (Misc): New Event: fleet_loop-20260612193541.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612193534.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612193534.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612193540.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612193540.txt
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612193539.txt)
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612193425.txt)
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612193433.txt)
 - [ ] SAOC (Misc): New Event: watch_eve_comms-20260612192933.txt
 - [ ] SAOC (Misc): New Event: watch_eve_comms-20260612192925.txt
 - [ ]  (Misc): [pain-point-monitor] Skipped (last run 3088s ago, cadence 21600s).
