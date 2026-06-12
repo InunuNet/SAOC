@@ -23,6 +23,18 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ]  (Misc): [pain-point-monitor] Skipped (last run 2195s ago, cadence 21600s).
+- [ ]  (Misc): New Event: fleet_loop-20260612191326.txt
+- [ ]  (Misc): New Event: comms_poll-20260612191341.txt
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612191323.txt)
+- [ ]  (Misc): New Event: comms_poll-20260612191325.txt
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612191340.txt)
+- [ ]  (Misc): New Event: fleet_loop-20260612191342.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612191325.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612191341.txt
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612191236.txt)
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612191219.txt)
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612190736.txt
 - [ ] SAOC (Misc): [watch-comms] New upstream issue found: architect-generated multiline python3 -c shell assertions ar
 - [ ] SAOC (Misc): [shepherd] Checking codex harness at /Users/vetus/ai/Codex Harness
 - [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
