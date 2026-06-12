@@ -1,8 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-06-12-saoc-phase-d-ticketing.md",
+  "mission": ".agent/memory/project/missions/2026-05-19-test-dup-loop.md",
   "checkpoint": {
     "milestone": null,
     "feature": null
   },
-  "activated_at": "2026-06-12T19:42:29.299548+00:00"
+  "note": "test duplicate slug reconcile"
 }
