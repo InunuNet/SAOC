@@ -12,9 +12,9 @@ cost_estimate:
   total_calls: 11
 last_checkpoint:
   milestone: MB
-  feature: B2
-  ts: '2026-06-11T00:00:00.000000+00:00'
-  note: 'B2 About page 8/8 PASS. Next: B3 Societies.'
+  feature: B3
+  ts: '2026-06-12T00:00:00.000000+00:00'
+  note: 'B3 Societies 8/8 PASS (listing+filter+detail+SSG). Next: B4 National Show.'
 features:
   - id: A1
     title: 'Lockfile + Next.js sanity check'
@@ -73,7 +73,9 @@ features:
     completed_at: '2026-06-11T00:00:00.000000+00:00'
   - id: B3
     title: 'Societies page — greenfield with province filter'
-    status: pending
+    status: done
+    started_at: '2026-06-11T00:00:00.000000+00:00'
+    completed_at: '2026-06-12T00:00:00.000000+00:00'
   - id: B4
     title: 'National Show page — greenfield'
     status: pending
