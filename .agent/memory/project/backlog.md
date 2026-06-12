@@ -14,6 +14,13 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **Configure SPF/DKIM/DMARC on saoc.co.za** before Phase D launch — required for cPanel SMTP ticket confirmations to reach Gmail/Outlook.
 
 ## Priority (v3.x Stability)
+- [ ] SAOC (Misc): New Event: check_own_comms-20260612224151.txt
+- [ ] SAOC (Misc): New Event: check_own_comms-20260612224153.txt
+- [ ] SAOC (Alert): [P3] ghost-cipher GREEN — 5/5 tests passed <!-- fp:sha1:7b30570ebff3 -->
+- [x] SAOC (Alert): [P3] ghost-resume GREEN — 6/0 tests passed <!-- fp:sha1:ddeb8efdf406 --> _(resolved 2026-06-12 by loop)_
+- [x] SAOC (Alert): [P3] ghost-silo GREEN — 6/0 tests passed <!-- fp:sha1:4905322e9c60 --> _(resolved 2026-06-12 by loop)_
+- [x] SAOC (Alert): [P3] ghost-transcript GREEN — 6/6 tests passed <!-- fp:sha1:cb2c900b73f4 --> _(resolved 2026-06-12 by loop)_
+- [ ] SAOC (Alert): [P0] ghost-unknown ERROR — 0/0 tests passed <!-- fp:sha1:48fb8a6359a2 -->
 - [ ] SAOC (Misc): New Event: check_own_comms-20260612214957.txt
 - [ ] SAOC (Misc): New Event: check_own_comms-20260612215002.txt
 - [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
