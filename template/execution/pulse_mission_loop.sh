@@ -82,7 +82,8 @@ if not active_file.exists():
     active_json.write_text(json.dumps(data, indent=2))
     print("null"); raise SystemExit(0)
 def load_fm(p):
-    t = p.read_text()
+    try: t = p.read_text()
+    except Exception: return {}
     if not t.startswith("---\n"): return {}
     try: return _load_fm_text(t.split("---", 2)[1])
     except: return {}
@@ -160,7 +161,8 @@ except ImportError:
 missions_dir = Path(".agent/memory/project/missions")
 active_json = missions_dir / "active.json"
 def load_fm(p):
-    t = p.read_text()
+    try: t = p.read_text()
+    except Exception: return {}
     if not t.startswith("---\n"): return {}
     try: return _load_fm_text(t.split("---", 2)[1])
     except: return {}

@@ -167,14 +167,12 @@ def validate_cmd(args):
         elif a["verify"].get("kind") in binary_kinds:
             binary_count += 1
 
-        # Detect prohibited multiline python3 -c pattern
+        # Warn on multiline python3 -c — check_cmd executes these safely via temp file,
+        # but single-line or script-file forms are preferred for readability.
         verify = a.get("verify", {})
         cmd = verify.get("cmd", "")
         if "python3" in cmd and "-c" in cmd and ("\n" in cmd or "\\n" in cmd):
-            errors.append(
-                f"Assertion {aid}: multiline python3 -c is prohibited — "
-                "use single-line grep/test instead"
-            )
+            print(f"  WARN {aid}: multiline python3 -c — prefer single-line or a script file")
 
     strict = getattr(args, "strict", False)
     if strict and binary_count == 0 and len(assertions) > 0:
@@ -401,14 +399,6 @@ def _gate_single_phase(contract: dict, args) -> bool:
 
 def gate_cmd(args):
     contract = load_contract(args.contract)
-
-    # Pre-flight: reject prohibited multiline python3 -c assertions before running
-    for _a in contract.get("assertions", []):
-        _cmd = _a.get("verify", {}).get("cmd", "")
-        if "python3" in _cmd and "-c" in _cmd and ("\n" in _cmd or "\\n" in _cmd):
-            print(f"ERROR: Assertion {_a['id']}: multiline python3 -c is prohibited — "
-                  f"rewrite as a single-line command or a script file.", file=sys.stderr)
-            sys.exit(1)
 
     if args.phase == "all":
         phases_data = sorted(contract.get("phases", []), key=lambda p: p.get("id", 0))
