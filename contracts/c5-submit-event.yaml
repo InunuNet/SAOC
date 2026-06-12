@@ -1,0 +1,124 @@
+schema: athanor.contract/v1
+feature: C5
+spec: c5-submit-event
+name: C5 Submit-an-event form — auth-guarded page + client form + Sanity draft API
+created_at: '2026-06-12T00:00:00.000000+00:00'
+
+assertions:
+  # ---- File existence (3 files) ----
+  - id: C5-01
+    description: auth-guarded submit page exists
+    verify:
+      kind: file_exists
+      path: app/(marketing)/events/submit/page.tsx
+
+  - id: C5-02
+    description: SubmitEventForm client component exists
+    verify:
+      kind: file_exists
+      path: components/events/SubmitEventForm.tsx
+
+  - id: C5-03
+    description: submit API route exists
+    verify:
+      kind: file_exists
+      path: app/api/events/submit/route.ts
+
+  # ---- Component contract ----
+  - id: C5-04
+    description: SubmitEventForm declares 'use client'
+    verify:
+      kind: shell
+      cmd: head -3 components/events/SubmitEventForm.tsx | grep -q "use client"
+
+  - id: C5-05
+    description: SubmitEventForm posts to the submit API endpoint
+    verify:
+      kind: file_contains
+      path: components/events/SubmitEventForm.tsx
+      pattern: '/api/events/submit'
+
+  - id: C5-06
+    description: form sends a Bearer Authorization header
+    verify:
+      kind: shell
+      cmd: grep -q "Bearer" components/events/SubmitEventForm.tsx
+
+  # ---- Page guard contract ----
+  - id: C5-07
+    description: submit page reads firebase admin to verify the session
+    verify:
+      kind: shell
+      cmd: grep -Eq "firebase-admin|initAdmin|getAuth" 'app/(marketing)/events/submit/page.tsx'
+
+  # ---- API route contract ----
+  - id: C5-08
+    description: API route exports a POST handler
+    verify:
+      kind: shell
+      cmd: grep -Eq "export (async )?function POST" app/api/events/submit/route.ts
+
+  - id: C5-09
+    description: API route imports firebase-admin auth for token verification
+    verify:
+      kind: shell
+      cmd: grep -Eq "firebase-admin/auth|getAuth|verifyIdToken" app/api/events/submit/route.ts
+
+  - id: C5-10
+    description: API route imports a Sanity client for the draft mutation
+    verify:
+      kind: shell
+      cmd: grep -Eq "@sanity/client|next-sanity|createClient" app/api/events/submit/route.ts
+
+  - id: C5-11
+    description: API route returns 401 Unauthorized and 201 Created responses
+    verify:
+      kind: shell
+      cmd: grep -q "401" app/api/events/submit/route.ts && grep -q "201" app/api/events/submit/route.ts
+
+  - id: C5-12
+    description: API route creates a societyEvent draft (drafts. id prefix)
+    verify:
+      kind: shell
+      cmd: grep -q "drafts.societyEvent-" app/api/events/submit/route.ts
+
+  # ---- Gates ----
+  - id: C5-GATE-01
+    description: pnpm type-check passes — strict TS, zero errors
+    verify:
+      kind: shell
+      cmd: pnpm type-check 2>&1 | grep -c "error TS"
+      expect_stdout: '0'
+
+  - id: C5-GATE-02
+    description: pnpm lint passes with zero errors
+    verify:
+      kind: shell
+      cmd: pnpm lint
+      expect_exit: 0
+
+  - id: C5-GATE-03
+    description: pnpm build completes successfully
+    verify:
+      kind: shell
+      cmd: pnpm build
+      expect_exit: 0
+
+phases:
+  - id: 1
+    assertions:
+      - C5-01
+      - C5-02
+      - C5-03
+      - C5-04
+      - C5-05
+      - C5-06
+      - C5-07
+      - C5-08
+      - C5-09
+      - C5-10
+      - C5-11
+      - C5-12
+      - C5-GATE-01
+      - C5-GATE-02
+      - C5-GATE-03

@@ -23,6 +23,21 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ]  (Misc): New Event: check_own_comms-20260612205031.txt
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612205029.txt)
+- [ ]  (Misc): New Event: fleet_loop-20260612205032.txt
+- [ ]  (Misc): New Event: comms_poll-20260612205031.txt
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612204915.txt)
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612204353.txt)
+- [ ]  (Misc): New Event: fleet_loop-20260612204352.txt
+- [ ]  (Misc): New Event: fleet_loop-20260612204355.txt
+- [ ]  (Misc): New Event: comms_poll-20260612204351.txt
+- [ ]  (Misc): New Event: comms_poll-20260612204354.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612204354.txt
+- [ ]  (Misc): New Event: check_own_comms-20260612204351.txt
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612204349.txt)
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612204249.txt)
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612204244.txt)
 - [ ] SAOC (Misc): New Event: watch_eve_comms-20260612203748.txt
 - [ ] SAOC (Misc): New Event: watch_eve_comms-20260612203743.txt
 - [ ]  (Misc): New Event: shepherd-20260612203721.txt
