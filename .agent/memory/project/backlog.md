@@ -23,6 +23,11 @@
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612192222.txt
+- [ ] SAOC (Misc): New Event: watch_eve_comms-20260612192200.txt
+- [ ]  (Misc): [pain-point-monitor] Skipped (last run 2659s ago, cadence 21600s).
+- [ ]  (Misc): New Event: mission_loop-20260612192146.txt
+- [ ]  (Misc): [pain-point-monitor] Skipped (last run 2622s ago, cadence 21600s).
 - [ ]  (Misc): New Event: comms_poll-20260612192105.txt
 - [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612192103.txt)
 - [ ]  (Misc): New Event: fleet_loop-20260612192106.txt
