@@ -16,12 +16,21 @@
 - [ ] **Phase D: 2027 Show ticketing** — Stripe SA (Yoco signup broken) + cPanel SMTP confirmations + admin dashboard + door check-in tool.
 - [ ] **Phase E: Polish, testing, Secretary training, DNS cutover, launch.**
 - [ ] **Remove footer newsletter stub** — newsletter out of scope per 2026-06-06 decision.
+- [ ] **Fix `draftMode()` build-time console.error** — `sanityFetch` calls `draftMode()` unconditionally; throws (and is caught) outside request scope during `generateStaticParams`, emitting alarming CI log noise. Guard `draftMode()` behind a request-context check. Pre-existing A6 issue, flagged in B3.
 - [ ] **Configure SPF/DKIM/DMARC on saoc.co.za** before Phase D launch — required for cPanel SMTP ticket confirmations to reach Gmail/Outlook.
 - [x] ~~Old mission `2026-06-01-saoc-website-build` (7 static marketing pages)~~ — abandoned 2026-06-05, scope too narrow vs full brief.
 - [x] ~~Fix GitHub remote~~ — corrected from `BDauth/SAOC` to `InunuNet/SAOC` (2026-06-05).
 - [x] ~~Update Athanor harness~~ — bumped to v3.7.73 via `make update-template` (2026-06-05).
 
 ## Priority (v3.x Stability)
+- [ ]  (Misc): New Event: check_own_comms-20260612002718.txt
+- [ ]  (Misc): [fleet-improve] Checking InunuNet/Athanor for open issues...
+- [ ]  (Misc): [SAOC] Starting auto_update.sh script...
+- [ ]  (GitHub): New GitHub Issue (filename: check_github-20260612002716.txt)
+- [ ]  (Misc): New Event: fleet_loop-20260612002720.txt
+- [ ]  (Misc): New Event: comms_poll-20260612002718.txt
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612002301.txt)
+- [ ]  (AutoFix): Auto-fix Job Run (auto_fix_issues-20260612002611.txt)
 
 - [ ] Inbox (AutoFix): Auto-fix Job Run (auto*fix_issues-20260421121634.txt)
       \_Last compacted: 2026-06-01 by backlog_trim.py. Full history: git log on this file.*
