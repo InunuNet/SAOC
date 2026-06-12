@@ -110,6 +110,11 @@
             "type": "command",
             "command": "bash execution/hooks/harness_heartbeat.sh",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/inject_pressure.sh",
+            "timeout": 5
           }
         ]
       }
@@ -139,6 +144,15 @@
       }
     ],
     "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/block_asq_in_loop.sh"
+          }
+        ]
+      },
       {
         "matcher": "Write",
         "hooks": [
@@ -212,6 +226,17 @@
           {
             "type": "command",
             "command": "bash execution/hooks/require_qa_report.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/post_agent_loop_continue.sh"
           }
         ]
       }
