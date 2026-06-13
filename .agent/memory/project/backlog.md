@@ -36,3 +36,7 @@ _Last compacted: 2026-06-15 by session. Dismissed: 250+ check_own_comms pulse it
 - [ ] SAOC (Misc): New Event: check_own_comms-20260614013914.txt
 
 - [ ] SAOC (Alert): [P0] ghost-unknown ERROR — 0/0 tests passed <!-- fp:sha1:48fb8a6359a2 -->
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260614015001.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260614015058.txt
