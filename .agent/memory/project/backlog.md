@@ -17,6 +17,7 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
+- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
 - [x] SAOC (Misc): New Event: check_own_comms-20260613043651.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613043537.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Alert): [P0] ghost-unknown ERROR — 0/0 tests passed _(resolved 2026-06-13 — ghost tests 40/40 PASS; stale alert)_ <!-- fp:sha1:48fb8a6359a2 -->
