@@ -1,0 +1,20 @@
+{
+  "schema": "athanor.loop.failure/v1",
+  "run_id": "2026-06-13T21:36:54Z",
+  "suite_slug": "sentinel",
+  "suite_path": "execution/tests/ghost-project/sentinel/tests/run_tests.sh",
+  "severity": "ERROR",
+  "passed": ,
+  "total": ,
+  "exit_code": ,
+  "log_excerpt_path": ".agent/memory/scratch/improvement_loop/sentinel.log",
+  "first_failing_test": "unknown",
+  "fingerprint": "sha1:0cda740002f7",
+  "first_seen": "2026-06-13T21:36:54Z",
+  "last_seen": "2026-06-13T21:36:54Z",
+  "occurrences": 1,
+  "linked_backlog_line": null,
+  "linked_mission_slug": null,
+  "linked_github_issue": null,
+  "status": "open"
+}
