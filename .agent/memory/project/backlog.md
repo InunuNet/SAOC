@@ -17,6 +17,8 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
+- [ ] SAOC (Misc): New Event: check_own_comms-20260613221415.txt
+- [ ] SAOC (Misc): New Event: check_own_comms-20260613221501.txt
 - [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
 - [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
 - [ ] SAOC (Misc): New Event: check_own_comms-20260613220412.txt
