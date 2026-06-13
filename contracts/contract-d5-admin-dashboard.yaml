@@ -1,0 +1,215 @@
+schema: athanor.contract/v1
+feature: D5
+spec: d5-admin-dashboard
+name: D5 Admin dashboard — Firebase Auth + custom-claim gating, ticket list table, attendee CSV export (read-only skeleton)
+created_at: '2026-06-13T00:00:00.000000+00:00'
+
+# NOTE ON SCHEMA: this project's gate runner consumes the `verify.kind` form
+# (file_exists | file_contains | shell). cmd values containing ':' or '|'
+# are single-quoted to keep the YAML valid.
+#
+# SCOPE: read-only admin skeleton. No refund endpoint, no ticket-creation UI.
+# Auth gate uses Firebase Auth session cookie verified server-side via the
+# Admin SDK, requiring a `role: admin` (admin) custom claim.
+
+assertions:
+  # ---- 1: admin page (app/admin/page.tsx) ----
+  - id: D5-01
+    description: app/admin/page.tsx exists
+    verify:
+      kind: file_exists
+      path: app/admin/page.tsx
+
+  - id: D5-02
+    description: admin page uses the Firebase Admin SDK (server-side) — imports initAdmin
+    verify:
+      kind: shell
+      cmd: "grep -Eq \"from '(@/)?lib/firebase-admin'\" app/admin/page.tsx"
+
+  - id: D5-03
+    description: admin page enforces auth — redirects unauthenticated/non-admin users to /admin/login
+    verify:
+      kind: shell
+      cmd: 'grep -q "/admin/login" app/admin/page.tsx && grep -q "redirect" app/admin/page.tsx'
+
+  - id: D5-04
+    description: admin page verifies the admin custom claim
+    verify:
+      kind: shell
+      cmd: "grep -Eqi \"admin\" app/admin/page.tsx && grep -Eqi \"claim|role|verifySessionCookie|verifyIdToken\" app/admin/page.tsx"
+
+  - id: D5-05
+    description: admin page reads the tickets Firestore collection
+    verify:
+      kind: shell
+      cmd: "grep -q \"collection('tickets')\" app/admin/page.tsx || grep -q 'collection(\"tickets\")' app/admin/page.tsx"
+
+  - id: D5-06
+    description: admin page renders all six ticket columns in the table
+    verify:
+      kind: shell
+      cmd: 'grep -q "bookingRef" app/admin/page.tsx && grep -q "attendeeName" app/admin/page.tsx && grep -q "attendeeEmail" app/admin/page.tsx && grep -q "ticketType" app/admin/page.tsx && grep -q "status" app/admin/page.tsx && grep -q "purchasedAt" app/admin/page.tsx'
+
+  - id: D5-07
+    description: admin page renders an HTML table
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "<table|<thead|<tbody" app/admin/page.tsx'
+
+  # ---- 2: login page (app/admin/login/page.tsx) ----
+  - id: D5-08
+    description: app/admin/login/page.tsx exists
+    verify:
+      kind: file_exists
+      path: app/admin/login/page.tsx
+
+  - id: D5-09
+    description: login page is a client component
+    verify:
+      kind: shell
+      cmd: "grep -Eq \"^['\\\"]use client['\\\"]\" app/admin/login/page.tsx"
+
+  - id: D5-10
+    description: login page uses Firebase Auth email/password sign-in
+    verify:
+      kind: shell
+      cmd: 'grep -q "signInWithEmailAndPassword" app/admin/login/page.tsx'
+
+  - id: D5-11
+    description: login page imports the client Firebase app/auth
+    verify:
+      kind: shell
+      cmd: "grep -Eq \"from '(@/)?lib/firebase'\" app/admin/login/page.tsx || grep -q \"from 'firebase/auth'\" app/admin/login/page.tsx"
+
+  # ---- 3: tickets API route (app/api/admin/tickets/route.ts) ----
+  - id: D5-12
+    description: app/api/admin/tickets/route.ts exists
+    verify:
+      kind: file_exists
+      path: app/api/admin/tickets/route.ts
+
+  - id: D5-13
+    description: tickets route exports a GET handler
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "export (async )?function GET" app/api/admin/tickets/route.ts'
+
+  - id: D5-14
+    description: tickets route uses the Admin SDK (initAdmin)
+    verify:
+      kind: shell
+      cmd: "grep -Eq \"from '(@/)?lib/firebase-admin'\" app/api/admin/tickets/route.ts"
+
+  - id: D5-15
+    description: tickets route reads the tickets Firestore collection
+    verify:
+      kind: shell
+      cmd: "grep -q \"collection('tickets')\" app/api/admin/tickets/route.ts || grep -q 'collection(\"tickets\")' app/api/admin/tickets/route.ts"
+
+  - id: D5-16
+    description: tickets route enforces the admin role from the session cookie
+    verify:
+      kind: shell
+      cmd: "grep -Eqi \"admin\" app/api/admin/tickets/route.ts && grep -Eqi \"claim|role|verifySessionCookie|verifyIdToken|cookie\" app/api/admin/tickets/route.ts"
+
+  - id: D5-17
+    description: tickets route returns 401/403 for unauthorized requests
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "401|403" app/api/admin/tickets/route.ts'
+
+  # ---- 4: CSV export route (app/api/admin/export-csv/route.ts) ----
+  - id: D5-18
+    description: app/api/admin/export-csv/route.ts exists
+    verify:
+      kind: file_exists
+      path: app/api/admin/export-csv/route.ts
+
+  - id: D5-19
+    description: export-csv route exports a GET handler
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "export (async )?function GET" app/api/admin/export-csv/route.ts'
+
+  - id: D5-20
+    description: export-csv route uses the Admin SDK (initAdmin)
+    verify:
+      kind: shell
+      cmd: "grep -Eq \"from '(@/)?lib/firebase-admin'\" app/api/admin/export-csv/route.ts"
+
+  - id: D5-21
+    description: export-csv route reads the tickets Firestore collection
+    verify:
+      kind: shell
+      cmd: "grep -q \"collection('tickets')\" app/api/admin/export-csv/route.ts || grep -q 'collection(\"tickets\")' app/api/admin/export-csv/route.ts"
+
+  - id: D5-22
+    description: export-csv route sets the text/csv Content-Type header
+    verify:
+      kind: shell
+      cmd: "grep -q 'text/csv' app/api/admin/export-csv/route.ts"
+
+  - id: D5-23
+    description: export-csv route enforces the admin role
+    verify:
+      kind: shell
+      cmd: "grep -Eqi \"admin\" app/api/admin/export-csv/route.ts && grep -Eqi \"claim|role|verifySessionCookie|verifyIdToken|cookie\" app/api/admin/export-csv/route.ts"
+
+  - id: D5-24
+    description: export-csv route emits a Content-Disposition attachment header
+    verify:
+      kind: shell
+      cmd: "grep -qi 'Content-Disposition' app/api/admin/export-csv/route.ts"
+
+  # ---- 5: scope boundary — no refund endpoint shipped in D5 ----
+  - id: D5-25
+    description: no refund endpoint exists under app/api/admin (out of D5 scope until Stripe/D2)
+    verify:
+      kind: shell
+      cmd: 'test ! -e app/api/admin/refund'
+
+  # ---- 6: Gates ----
+  - id: D5-GATE-01
+    description: pnpm type-check passes — strict TS, zero errors
+    verify:
+      kind: shell
+      cmd: pnpm type-check
+      expect_exit: 0
+
+  - id: D5-GATE-02
+    description: pnpm lint passes with zero errors
+    verify:
+      kind: shell
+      cmd: pnpm lint
+      expect_exit: 0
+
+phases:
+  - id: 1
+    assertions:
+      - D5-01
+      - D5-02
+      - D5-03
+      - D5-04
+      - D5-05
+      - D5-06
+      - D5-07
+      - D5-08
+      - D5-09
+      - D5-10
+      - D5-11
+      - D5-12
+      - D5-13
+      - D5-14
+      - D5-15
+      - D5-16
+      - D5-17
+      - D5-18
+      - D5-19
+      - D5-20
+      - D5-21
+      - D5-22
+      - D5-23
+      - D5-24
+      - D5-25
+      - D5-GATE-01
+      - D5-GATE-02
