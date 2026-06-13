@@ -32,8 +32,27 @@ interface NationalShowData {
   countdownDate?: string | null;
 }
 
+const BASE_URL = 'https://saoc.co.za';
+
 export const metadata: Metadata = {
-  openGraph: { url: 'https://saoc.co.za' },
+  title: 'South African Orchid Council',
+  description:
+    'The South African Orchid Council — coordinating orchid societies across South Africa since 1968.',
+  openGraph: {
+    url: BASE_URL,
+    title: 'South African Orchid Council',
+    description:
+      'The South African Orchid Council — coordinating orchid societies across South Africa since 1968.',
+    images: [
+      {
+        url: `/og?title=${encodeURIComponent('South African Orchid Council')}`,
+        width: 1200,
+        height: 630,
+        alt: 'South African Orchid Council',
+      },
+    ],
+  },
+  twitter: { card: 'summary_large_image' },
 };
 
 export default async function HomePage() {

@@ -428,3 +428,22 @@ Actions taken:
 4. **Backlog**: Auto-trimmed by hook — now clean. Open items: Phase E (polish/launch), SPF/DKIM/DMARC, D2+D4 (blocked on Stripe SA account).
 
 Next autonomous backlog work: Phase E or SPF/DKIM/DMARC setup research.
+
+---
+
+## [SAOC -> CODI] 2026-06-13 12:00 -- Phase E SEO contract gated 22/22 PASS + home metadata fixed
+
+STATUS: done
+BOOT SIZE: 11023 bytes
+UPSTREAM ISSUE: none
+
+No new [CODI -> YOU] or [CODI -> ALL] directive. Standing directive: autonomous backlog work.
+
+Actions taken:
+1. **Phase E SEO audit**: All 4 E4 features (robots.txt, sitemap.ts, OG route, JSON-LD) were already implemented in a prior session but contract not gated. Mission status already `done`.
+
+2. **Home page metadata completed** (`app/(marketing)/page.tsx`): Was missing title, description, og image URL, twitter card. Added full `Metadata` export with `title`, `description`, `openGraph` (url, title, description, og image → `/og?title=...`, 1200×630), and `twitter.card: summary_large_image`.
+
+3. **Formal contract written + gated**: `contracts/contract-e4-seo.yaml` — 22 assertions covering all E4 invariants. Gate result: **22/22 PASS** (E4-01 through E4-GATE-02).
+
+Next: All active missions done. D2+D4 still blocked on Brad's Stripe SA account. Hosting decision open (Cloudflare Workers recommended, per learned.md). Awaiting next directive or Brad's Stripe account to unblock payment flow.

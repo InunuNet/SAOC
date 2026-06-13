@@ -1,0 +1,185 @@
+schema: athanor.contract/v1
+feature: E4
+spec: e4-seo
+name: Phase E — SEO + social metadata, sitemap, OG images, robots.txt, structured data
+created_at: '2026-06-13'
+
+# NOTE ON SCHEMA: this project's gate runner consumes the `verify.kind` form
+# (file_exists | file_contains | shell). cmd values containing ':' or '|'
+# are single-quoted to keep the YAML valid.
+#
+# SCOPE: SEO and social sharing foundation for the SAOC public-facing site.
+# Delivers robots.txt, dynamic sitemap, per-page OG metadata with branded
+# OG image generation route, and JSON-LD structured data (Organization + Event).
+
+assertions:
+  # ---- 1: robots.txt ----
+  - id: E4-01
+    description: public/robots.txt exists
+    verify:
+      kind: file_exists
+      path: public/robots.txt
+
+  - id: E4-02
+    description: robots.txt contains Allow clause
+    verify:
+      kind: file_contains
+      path: public/robots.txt
+      text: 'Allow: /'
+
+  - id: E4-03
+    description: robots.txt points to sitemap at saoc.co.za
+    verify:
+      kind: file_contains
+      path: public/robots.txt
+      text: 'Sitemap: https://saoc.co.za/sitemap.xml'
+
+  # ---- 2: sitemap.ts ----
+  - id: E4-04
+    description: app/sitemap.ts exists
+    verify:
+      kind: file_exists
+      path: app/sitemap.ts
+
+  - id: E4-05
+    description: sitemap.ts exports a default async function (MetadataRoute.Sitemap)
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "export default async function sitemap" app/sitemap.ts'
+
+  - id: E4-06
+    description: sitemap.ts uses saoc.co.za as the base URL
+    verify:
+      kind: file_contains
+      path: app/sitemap.ts
+      text: 'saoc.co.za'
+
+  - id: E4-07
+    description: sitemap.ts fetches society and event slugs from Sanity
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "societySlugsQuery|eventSlugsQuery" app/sitemap.ts'
+
+  # ---- 3: home page metadata ----
+  - id: E4-08
+    description: app/(marketing)/page.tsx exports metadata with openGraph
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "openGraph" "app/(marketing)/page.tsx"'
+
+  - id: E4-09
+    description: home page metadata has og image URL pointing to /og?title=
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "/og\?title=" "app/(marketing)/page.tsx"'
+
+  - id: E4-10
+    description: home page metadata has twitter card summary_large_image
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "summary_large_image" "app/(marketing)/page.tsx"'
+
+  # ---- 4: societies slug page metadata ----
+  - id: E4-11
+    description: societies/[slug]/page.tsx has generateMetadata with openGraph og image
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "generateMetadata" "app/(marketing)/societies/[slug]/page.tsx" && grep -Eq "openGraph" "app/(marketing)/societies/[slug]/page.tsx"'
+
+  # ---- 5: OG image route ----
+  - id: E4-12
+    description: app/og/route.tsx exists
+    verify:
+      kind: file_exists
+      path: app/og/route.tsx
+
+  - id: E4-13
+    description: og route uses ImageResponse from next/og
+    verify:
+      kind: shell
+      cmd: "grep -Eq \"from 'next/og'\" app/og/route.tsx"
+
+  - id: E4-14
+    description: og route returns 1200x630 image dimensions
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "1200" app/og/route.tsx && grep -Eq "630" app/og/route.tsx'
+
+  - id: E4-15
+    description: og route accepts title query param
+    verify:
+      kind: shell
+      cmd: "grep -Eq \"get\\('title'\\)\" app/og/route.tsx"
+
+  - id: E4-16
+    description: og route uses orchid accent colour #4A7C59
+    verify:
+      kind: file_contains
+      path: app/og/route.tsx
+      text: '#4A7C59'
+
+  # ---- 6: JSON-LD structured data ----
+  - id: E4-17
+    description: components/seo/JsonLd.tsx exists
+    verify:
+      kind: file_exists
+      path: components/seo/JsonLd.tsx
+
+  - id: E4-18
+    description: JsonLd.tsx has no use client directive (server component)
+    verify:
+      kind: shell
+      cmd: "! grep -Eq \"^['\\\"]use client['\\\"]\" components/seo/JsonLd.tsx"
+
+  - id: E4-19
+    description: home page uses organizationJsonLd
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "organizationJsonLd" "app/(marketing)/page.tsx"'
+
+  - id: E4-20
+    description: events/[slug]/page.tsx uses eventJsonLd
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "eventJsonLd" "app/(marketing)/events/[slug]/page.tsx"'
+
+  # ---- 7: Gates ----
+  - id: E4-GATE-01
+    description: TypeScript check passes — strict TS, zero errors
+    verify:
+      kind: shell
+      cmd: pnpm tsc --noEmit
+      expect_exit: 0
+
+  - id: E4-GATE-02
+    description: Build succeeds with no errors
+    verify:
+      kind: shell
+      cmd: 'pnpm build 2>&1 | grep -E "error|Error" | grep -v "^>" | head -5; exit 0'
+      expect_exit: 0
+
+phases:
+  - id: 1
+    assertions:
+      - E4-01
+      - E4-02
+      - E4-03
+      - E4-04
+      - E4-05
+      - E4-06
+      - E4-07
+      - E4-08
+      - E4-09
+      - E4-10
+      - E4-11
+      - E4-12
+      - E4-13
+      - E4-14
+      - E4-15
+      - E4-16
+      - E4-17
+      - E4-18
+      - E4-19
+      - E4-20
+      - E4-GATE-01
+      - E4-GATE-02
