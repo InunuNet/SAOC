@@ -11,14 +11,14 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [x] **Remove footer newsletter stub** — no newsletter references found in codebase (2026-06-13 verified).
 - [x] **Fix `draftMode()` build-time console.error** — `sanityFetch` already guards `draftMode()` in try/catch; build clean (2026-06-13 verified).
 - [x] **Fix `outputFileTracingRoot` build warning** — added `outputFileTracingRoot: process.cwd()` to next.config.ts (2026-06-13).
-- [ ] **Phase E: Polish, testing, Secretary training, DNS cutover, launch.**
-- [ ] **Configure SPF/DKIM/DMARC on saoc.co.za** — required before Phase D launch for cPanel SMTP ticket confirmations to reach Gmail/Outlook.
+- [ ] **Phase E: Polish, testing, Secretary training, DNS cutover, launch.** _(Secretary training guide: docs/secretary-cms-guide.md — E5 contract 19/19 PASS 2026-06-13)_
+- [ ] **Configure SPF/DKIM/DMARC on saoc.co.za** — required before Phase D launch. Setup guide written: docs/email-dns-setup.md. Brad to add DNS records once Resend domain is verified.
 - [ ] **D2: Stripe SA payment gateway** — BLOCKED pending Brad's Stripe SA account setup. Yoco signup broken 2026-06-06; fallback is Stripe (ZAR).
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613034904.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613034507.txt
+- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
+- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
 - [x] SAOC (Alert): [P3] ghost-grove DEGRADED — 5/6 tests passed _(resolved 2026-06-12 by loop — stale mktemp files; fixed grove/tests/run_tests.sh)_
 - [x] SAOC (Alert): [P0] ghost-unknown ERROR — 0/0 tests passed _(resolved 2026-06-12 — false positive from prior failure_router.sh bug; root cause fixed)_
 - [ ] [dev 2026-06-12] Factory loop script needs error handling — Out of scope, low priority _(handoff: 20260612T194347-dev.json)_
