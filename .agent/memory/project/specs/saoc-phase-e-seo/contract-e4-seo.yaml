@@ -1,0 +1,73 @@
+schema: athanor.contract/v1
+mission: saoc-phase-e-seo
+created_at: '2026-06-13'
+architect: Athanor (primary)
+
+summary: >
+  Phase E — SEO + social foundation for the SAOC Next.js 15 site.
+  Delivers robots.txt, dynamic sitemap, per-page OG metadata, branded OG image
+  generation, and JSON-LD structured data.
+
+features:
+  - id: E4-1
+    title: robots.txt + sitemap.ts
+    files_produced:
+      - public/robots.txt
+      - app/sitemap.ts
+    invariants:
+      - robots.txt allows all agents and points to https://saoc.co.za/sitemap.xml
+      - sitemap.ts is a Next.js MetadataRoute.Sitemap export
+      - sitemap includes all static routes plus dynamic society and event slugs from Sanity
+      - no `any` types; TypeScript strict
+
+  - id: E4-2
+    title: Per-page generateMetadata
+    files_modified:
+      - app/(marketing)/page.tsx
+      - app/(marketing)/societies/[slug]/page.tsx
+    invariants:
+      - Every public page exports `metadata` or `generateMetadata`
+      - metadata includes openGraph with url, title, description, and og image URL
+      - og image URL points to /og?title=<encoded>
+      - twitter card set to summary_large_image
+      - Pages that fetch from Sanity use dynamic title/description where available
+
+  - id: E4-3
+    title: OG image generation route
+    files_produced:
+      - app/og/route.tsx
+    invariants:
+      - Uses next/og ImageResponse (1200×630)
+      - Accepts `title` query param, falls back to "South African Orchid Council"
+      - Branded card: dark background, SAOC name, title text, orchid accent colour (#4A7C59)
+      - No external font fetch in route — uses system fonts
+      - Returns correct Content-Type (image/png)
+
+  - id: E4-4
+    title: Structured data (JSON-LD)
+    files_produced:
+      - components/seo/JsonLd.tsx
+    files_modified:
+      - app/(marketing)/page.tsx
+      - app/(marketing)/events/[slug]/page.tsx
+    invariants:
+      - JsonLd is a zero-dependency server component (no 'use client')
+      - Organization JSON-LD on home page (name, url, description, foundingDate)
+      - Event JSON-LD on event detail pages (name, startDate, endDate, location, organizer)
+      - BreadcrumbList added via JsonLd on all pages that accept a breadcrumb prop
+      - Validates as valid JSON — no syntax errors
+
+goldens:
+  - label: sitemap type-checks
+    cmd: pnpm tsc --noEmit
+    expect: exit 0
+  - label: og route responds
+    cmd: |
+      # Checked at dev server startup — route must not 500 on cold load
+      pnpm build 2>&1 | grep -v "^>" | tail -5
+    expect: exit 0
+
+standards:
+  - No `any` types (TypeScript strict)
+  - Server Components only — no 'use client' in SEO files
+  - Admin SDK never imported in client-facing files

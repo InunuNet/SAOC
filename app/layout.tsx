@@ -25,13 +25,34 @@ const jetBrainsMono = JetBrains_Mono({
   weight: ['400', '500'],
 });
 
+const BASE_URL = 'https://saoc.co.za';
+const DEFAULT_DESCRIPTION =
+  'The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968.';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(BASE_URL),
   title: {
     template: '%s | South African Orchid Council',
     default: 'South African Orchid Council',
   },
-  description:
-    'The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968.',
+  description: DEFAULT_DESCRIPTION,
+  openGraph: {
+    siteName: 'South African Orchid Council',
+    locale: 'en_ZA',
+    type: 'website',
+    url: BASE_URL,
+    images: [
+      {
+        url: '/og?title=South+African+Orchid+Council',
+        width: 1200,
+        height: 630,
+        alt: 'South African Orchid Council',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
 };
 
 export default function RootLayout({

@@ -63,11 +63,18 @@ export async function generateMetadata({
   const { slug } = await params;
   const society = await getSociety(slug);
   if (!society) return { title: 'Society not found' };
+  const description = society.description
+    ?? (society.region
+      ? `${society.name} — affiliated SAOC society in ${society.region}.`
+      : `${society.name} — an affiliated SAOC society.`);
+  const ogTitle = encodeURIComponent(society.name);
   return {
     title: society.name,
-    description: society.region
-      ? `${society.name} — affiliated SAOC society in ${society.region}.`
-      : `${society.name} — an affiliated SAOC society.`,
+    description,
+    openGraph: {
+      url: `https://saoc.co.za/societies/${slug}`,
+      images: [{ url: `/og?title=${ogTitle}`, width: 1200, height: 630, alt: society.name }],
+    },
   };
 }
 

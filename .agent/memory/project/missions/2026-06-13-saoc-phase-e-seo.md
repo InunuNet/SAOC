@@ -1,38 +1,54 @@
 ---
 schema: athanor.mission/v1
 slug: saoc-phase-e-seo
-goal: Phase E — SEO + social metadata, sitemap, OG images, robots.txt, structured data
+goal: Phase E — SEO + social metadata, sitemap, OG images, robots.txt, structured
+  data
 created_at: '2026-06-13T01:03:30.421458+00:00'
 started_at: '2026-06-13T11:15:00.000000+00:00'
-last_active_at: null
-status: in_progress
+last_active_at: '2026-06-13T01:37:21.318567+00:00'
+status: done
 cost_estimate:
   features: 4
   milestones: 1
   total_calls: 8
 last_checkpoint:
   milestone: ME-SEO
-  feature: E4-1
-  ts: null
+  feature: E4-4
+  ts: '2026-06-13T01:37:21.318567+00:00'
 features:
-  - id: E4-1
-    title: robots.txt + sitemap.ts
-    status: pending
-  - id: E4-2
-    title: Per-page Sanity metadata (generateMetadata)
-    status: pending
-  - id: E4-3
-    title: OG image generation route (app/og/route.tsx)
-    status: pending
-  - id: E4-4
-    title: Structured data (Organization + Event JSON-LD)
-    status: pending
+- id: E4-1
+  title: robots.txt + sitemap.ts
+  status: done
+  completed_at: '2026-06-13T01:37:16.873633+00:00'
+- id: E4-2
+  title: Per-page Sanity metadata (generateMetadata)
+  status: done
+  completed_at: '2026-06-13T01:37:21.190136+00:00'
+- id: E4-3
+  title: OG image generation route (app/og/route.tsx)
+  status: done
+  completed_at: '2026-06-13T01:37:21.253149+00:00'
+- id: E4-4
+  title: Structured data (Organization + Event JSON-LD)
+  status: done
+  completed_at: '2026-06-13T01:37:21.318367+00:00'
 milestones:
-  - id: ME-SEO
-    title: SEO + social foundation complete (contract gate)
-    features: [E4-1, E4-2, E4-3, E4-4]
-    status: pending
+- id: ME-SEO
+  title: SEO + social foundation complete (contract gate)
+  features:
+  - E4-1
+  - E4-2
+  - E4-3
+  - E4-4
+  status: done
+  gate_ran_at: '2026-06-13T01:37:26.650018+00:00'
+  gate_result: pass
 ---
+
+
+
+
+
 
 # Mission: saoc-phase-e-seo
 

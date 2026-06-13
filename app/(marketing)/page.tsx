@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import type { SanityImageSource } from '@sanity/image-url';
 
 import {
@@ -9,6 +10,7 @@ import {
   YearbookStrip,
   PartnersSection,
 } from '@/components/home';
+import { JsonLd, organizationJsonLd } from '@/components/seo/JsonLd';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
   homePageQuery,
@@ -30,6 +32,10 @@ interface NationalShowData {
   countdownDate?: string | null;
 }
 
+export const metadata: Metadata = {
+  openGraph: { url: 'https://saoc.co.za' },
+};
+
 export default async function HomePage() {
   const [home, eventsData, partnersData, show] = await Promise.all([
     sanityFetch<HomePageData>({ query: homePageQuery, tags: ['homePage', 'sanity'] }),
@@ -40,6 +46,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd data={organizationJsonLd()} />
       <Hero images={home?.heroImages} />
       <MissionBlock missionText={home?.missionText} />
       <NavCards />

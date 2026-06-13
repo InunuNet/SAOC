@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
+import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { eventBySlugQuery, eventSlugsQuery } from '@/sanity/queries';
 import type { SanityEvent } from '@/types';
@@ -29,7 +30,17 @@ export async function generateMetadata({
     params: { slug },
     tags: ['events'],
   });
-  return { title: event?.title ?? 'Event' };
+  const title = event?.title ?? 'Event';
+  const description = event?.description ?? undefined;
+  const ogTitle = encodeURIComponent(title);
+  return {
+    title,
+    description,
+    openGraph: {
+      url: `https://saoc.co.za/events/${slug}`,
+      images: [{ url: `/og?title=${ogTitle}`, width: 1200, height: 630, alt: title }],
+    },
+  };
 }
 
 function formatDate(dateStr: string): string {
@@ -59,6 +70,19 @@ export default async function EventDetailPage({
 
   return (
     <div className="mx-auto max-w-[860px] px-8 py-16">
+      <JsonLd
+        data={eventJsonLd({
+          name: event.title,
+          startDate: event.date,
+          endDate: event.endDate,
+          location: event.location,
+          venue: event.venue,
+          description: event.description,
+          organizer: event.hostSociety?.name,
+          url: `https://saoc.co.za/events/${event.slug}`,
+        })}
+      />
+
       {/* Back link */}
       <Link
         href="/events"
