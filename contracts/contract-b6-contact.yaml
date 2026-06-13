@@ -79,7 +79,7 @@ assertions:
     description: ESLint passes on contact page and components
     verify:
       kind: shell
-      cmd: "pnpm eslint 'app/(marketing)/contact/page.tsx' 'components/contact/' --max-warnings=0 2>&1 | tail -1 | grep -Ev '[1-9][0-9]* error'"
+      cmd: "pnpm eslint 'app/(marketing)/contact/page.tsx' 'components/contact/' --max-warnings=0"
 
 phases:
   - id: 1
