@@ -1,9 +1,5 @@
 {
-  "mission": ".agent/memory/project/missions/2026-06-12-saoc-phase-d-ticketing.md",
-  "checkpoint": {
-    "milestone": "MD",
-    "feature": "D1",
-    "ts": "2026-06-13T00:24:33.656882+00:00"
-  },
-  "activated_at": "2026-06-13T00:24:33.657335+00:00"
+  "mission": null,
+  "checkpoint": null,
+  "note": "mission complete"
 }
