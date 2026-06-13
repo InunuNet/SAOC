@@ -44,9 +44,9 @@ features:
   completed_at: '2026-06-13T00:00:00.000000+00:00'
 - id: D6
   title: Door check-in — /admin/door mobile-first QR scanner
-  status: pending
-  started_at: null
-  completed_at: null
+  status: done
+  started_at: '2026-06-13T00:00:00.000000+00:00'
+  completed_at: '2026-06-13T00:00:00.000000+00:00'
 milestones:
 - id: MD
   title: Phase D complete (all unblocked features done)

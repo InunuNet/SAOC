@@ -96,7 +96,7 @@ assertions:
     description: checkin route reads the tickets Firestore collection by bookingRef
     verify:
       kind: shell
-      cmd: "(grep -q \"collection('tickets')\" app/api/admin/checkin/route.ts || grep -q 'collection(\"tickets\")' app/api/admin/checkin/route.ts) && grep -q \"where('bookingRef'\" app/api/admin/checkin/route.ts || grep -q 'where(\"bookingRef\"' app/api/admin/checkin/route.ts"
+      cmd: "grep -Eq \"collection.['\\\"]tickets['\\\"]\" app/api/admin/checkin/route.ts && grep -Eq \"where.['\\\"]bookingRef['\\\"]\" app/api/admin/checkin/route.ts"
 
   - id: D6-14
     description: checkin route sets the checkedInAt field on the ticket
