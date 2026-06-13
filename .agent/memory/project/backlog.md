@@ -26,3 +26,7 @@ Research complete. Deliverable: `documents/hosting-research-2026-06-13.md`
 
 ## Deferred (auto-tracked)
 _Last compacted: 2026-06-15 by session. Dismissed: 250+ check_own_comms pulse items, qa-guard pings, quota-monitor alerts (all informational, no action). Full history: git log on this file._
+
+- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
