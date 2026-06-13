@@ -105,19 +105,19 @@ assertions:
     description: Ticket declares a nullable purchasedAt Timestamp field
     verify:
       kind: shell
-      cmd: grep -Eq "purchasedAt: Timestamp \| null" types/index.ts
+      cmd: 'grep -Eq "purchasedAt: Timestamp \| null" types/index.ts'
 
   - id: D3-15
     description: Ticket declares a nullable checkedInAt Timestamp field
     verify:
       kind: shell
-      cmd: grep -Eq "checkedInAt: Timestamp \| null" types/index.ts
+      cmd: 'grep -Eq "checkedInAt: Timestamp \| null" types/index.ts'
 
   - id: D3-16
     description: Ticket declares a nullable stripePaymentIntentId field
     verify:
       kind: shell
-      cmd: grep -Eq "stripePaymentIntentId: string \| null" types/index.ts
+      cmd: 'grep -Eq "stripePaymentIntentId: string \| null" types/index.ts'
 
   # ---- 14-16: Firestore schema documentation ----
   - id: D3-17

@@ -29,9 +29,9 @@ features:
   completed_at: null
 - id: D3
   title: Firestore ticket model (TypeScript types + collection schema)
-  status: pending
-  started_at: null
-  completed_at: null
+  status: done
+  started_at: '2026-06-13T00:00:00.000000+00:00'
+  completed_at: '2026-06-13T00:00:00.000000+00:00'
 - id: D4
   title: Buy flow — /shows/2027-national/tickets page + Stripe redirect
   status: blocked

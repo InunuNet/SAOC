@@ -1,3 +1,5 @@
+import type { Timestamp } from 'firebase-admin/firestore';
+
 export type Society = {
   name: string;
   region: string;
@@ -116,3 +118,20 @@ export type ContactSubmission = {
   submittedAt: string;
   status: 'new' | 'read' | 'replied';
 };
+
+export type TicketStatus = 'reserved' | 'paid' | 'cancelled' | 'checked-in';
+
+export type TicketType = 'general' | 'member' | 'vip';
+
+export interface Ticket {
+  id: string;
+  bookingRef: string;
+  showId: string;
+  attendeeName: string;
+  attendeeEmail: string;
+  ticketType: TicketType;
+  status: TicketStatus;
+  purchasedAt: Timestamp | null;
+  checkedInAt: Timestamp | null;
+  stripePaymentIntentId: string | null;
+}
