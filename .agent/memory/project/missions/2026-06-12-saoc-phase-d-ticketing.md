@@ -19,9 +19,9 @@ last_checkpoint:
 features:
 - id: D1
   title: Resend email provider install + React Email templates
-  status: pending
-  started_at: null
-  completed_at: null
+  status: done
+  started_at: '2026-06-13T00:00:00.000000+00:00'
+  completed_at: '2026-06-13T00:00:00.000000+00:00'
 - id: D2
   title: Stripe SA payment gateway integration
   status: blocked

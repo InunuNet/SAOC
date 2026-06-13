@@ -1,0 +1,191 @@
+schema: athanor.contract/v1
+feature: D1
+spec: d1-resend-email
+name: D1 Resend email provider — install + lib/email.ts + React Email templates + non-blocking /api/contact wiring
+created_at: '2026-06-13T00:00:00.000000+00:00'
+
+# NOTE ON SCHEMA: this project's gate runner consumes the `verify.kind` form
+# (file_exists | file_contains | shell). The D1 task brief referenced
+# json_key_exists / command_exit_0 / file_contains type names; those map to:
+#   - file_exists      -> file_exists
+#   - file_contains    -> file_contains
+#   - json_key_exists  -> file_contains against package.json on the "<pkg>": key
+#   - command_exit_0   -> shell + expect_exit: 0
+# Mapping keeps every assertion machine-verifiable by the existing runner.
+
+assertions:
+  # ---- 1-2: package install (json_key_exists -> file_contains on package.json) ----
+  - id: D1-01
+    description: resend is declared as a dependency in package.json
+    verify:
+      kind: file_contains
+      path: package.json
+      pattern: '"resend"'
+
+  - id: D1-02
+    description: '@react-email/components is declared as a dependency in package.json'
+    verify:
+      kind: file_contains
+      path: package.json
+      pattern: '"@react-email/components"'
+
+  # ---- 3-6: lib/email.ts utility ----
+  - id: D1-03
+    description: lib/email.ts exists
+    verify:
+      kind: file_exists
+      path: lib/email.ts
+
+  - id: D1-04
+    description: lib/email.ts exports a sendEmail function
+    verify:
+      kind: shell
+      cmd: grep -Eq "export (async )?function sendEmail|export const sendEmail" lib/email.ts
+
+  - id: D1-05
+    description: lib/email.ts reads the RESEND_API_KEY env var
+    verify:
+      kind: file_contains
+      path: lib/email.ts
+      pattern: 'RESEND_API_KEY'
+
+  - id: D1-06
+    description: lib/email.ts reads the RESEND_FROM_ADDRESS env var
+    verify:
+      kind: file_contains
+      path: lib/email.ts
+      pattern: 'RESEND_FROM_ADDRESS'
+
+  - id: D1-07
+    description: lib/email.ts instantiates the Resend client from the resend package
+    verify:
+      kind: shell
+      cmd: grep -q "from 'resend'" lib/email.ts && grep -q "new Resend" lib/email.ts
+
+  # ---- 7-9: TicketConfirmation.tsx template ----
+  - id: D1-08
+    description: emails/TicketConfirmation.tsx exists
+    verify:
+      kind: file_exists
+      path: emails/TicketConfirmation.tsx
+
+  - id: D1-09
+    description: TicketConfirmation declares all six required props
+    verify:
+      kind: shell
+      cmd: grep -q "bookingRef" emails/TicketConfirmation.tsx && grep -q "ticketType" emails/TicketConfirmation.tsx && grep -q "attendeeName" emails/TicketConfirmation.tsx && grep -q "showName" emails/TicketConfirmation.tsx && grep -q "showDate" emails/TicketConfirmation.tsx && grep -q "showVenue" emails/TicketConfirmation.tsx
+
+  - id: D1-10
+    description: TicketConfirmation imports React Email components
+    verify:
+      kind: file_contains
+      path: emails/TicketConfirmation.tsx
+      pattern: '@react-email/components'
+
+  - id: D1-11
+    description: TicketConfirmation includes the QR placeholder "present this email at the door"
+    verify:
+      kind: shell
+      cmd: grep -qi "present this email at the door" emails/TicketConfirmation.tsx
+
+  # ---- 10-11: ContactConfirmation.tsx template ----
+  - id: D1-12
+    description: emails/ContactConfirmation.tsx exists
+    verify:
+      kind: file_exists
+      path: emails/ContactConfirmation.tsx
+
+  - id: D1-13
+    description: ContactConfirmation declares its name and subject props
+    verify:
+      kind: shell
+      cmd: grep -q "name" emails/ContactConfirmation.tsx && grep -q "subject" emails/ContactConfirmation.tsx
+
+  - id: D1-14
+    description: ContactConfirmation text includes the "2 business days" reply window
+    verify:
+      kind: file_contains
+      path: emails/ContactConfirmation.tsx
+      pattern: '2 business days'
+
+  - id: D1-15
+    description: ContactConfirmation imports React Email components
+    verify:
+      kind: file_contains
+      path: emails/ContactConfirmation.tsx
+      pattern: '@react-email/components'
+
+  # ---- 12-13: /api/contact wiring (non-blocking) ----
+  - id: D1-16
+    description: contact route imports sendEmail from the email lib
+    verify:
+      kind: shell
+      cmd: grep -Eq "from '(@/)?lib/email'" app/api/contact/route.ts
+
+  - id: D1-17
+    description: contact route calls sendEmail
+    verify:
+      kind: file_contains
+      path: app/api/contact/route.ts
+      pattern: 'sendEmail'
+
+  - id: D1-18
+    description: contact route wraps the email send in try/catch (non-blocking)
+    verify:
+      kind: shell
+      cmd: grep -q "try" app/api/contact/route.ts && grep -q "catch" app/api/contact/route.ts
+
+  - id: D1-19
+    description: contact route still returns 201 on Firestore success
+    verify:
+      kind: file_contains
+      path: app/api/contact/route.ts
+      pattern: '201'
+
+  # ---- 14-15: Gates ----
+  - id: D1-GATE-01
+    description: pnpm type-check passes — strict TS, zero errors
+    verify:
+      kind: shell
+      cmd: pnpm type-check
+      expect_exit: 0
+
+  - id: D1-GATE-02
+    description: pnpm lint passes with zero errors
+    verify:
+      kind: shell
+      cmd: pnpm lint
+      expect_exit: 0
+
+  - id: D1-GATE-03
+    description: pnpm build completes successfully
+    verify:
+      kind: shell
+      cmd: pnpm build
+      expect_exit: 0
+
+phases:
+  - id: 1
+    assertions:
+      - D1-01
+      - D1-02
+      - D1-03
+      - D1-04
+      - D1-05
+      - D1-06
+      - D1-07
+      - D1-08
+      - D1-09
+      - D1-10
+      - D1-11
+      - D1-12
+      - D1-13
+      - D1-14
+      - D1-15
+      - D1-16
+      - D1-17
+      - D1-18
+      - D1-19
+      - D1-GATE-01
+      - D1-GATE-02
+      - D1-GATE-03

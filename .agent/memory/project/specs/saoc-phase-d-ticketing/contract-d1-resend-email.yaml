@@ -1,0 +1,117 @@
+schema: athanor.contract/v1
+feature: D1
+spec: d1-resend-email
+name: D1 Resend email provider + React Email templates
+created_at: '2026-06-13T00:00:00.000000+00:00'
+
+assertions:
+  # ---- Packages ----
+  - id: D1-01
+    description: resend package present in package.json dependencies
+    verify:
+      kind: shell
+      cmd: node -e "const p=require('./package.json'); if(!p.dependencies?.resend && !p.devDependencies?.resend) process.exit(1)"
+
+  - id: D1-02
+    description: "@react-email/components package present in package.json dependencies"
+    verify:
+      kind: shell
+      cmd: node -e "const p=require('./package.json'); if(!p.dependencies?.['@react-email/components'] && !p.devDependencies?.['@react-email/components']) process.exit(1)"
+
+  # ---- lib/email.ts ----
+  - id: D1-03
+    description: lib/email.ts exists
+    verify:
+      kind: file_exists
+      path: lib/email.ts
+
+  - id: D1-04
+    description: lib/email.ts exports sendEmail function
+    verify:
+      kind: file_contains
+      path: lib/email.ts
+      pattern: 'sendEmail'
+
+  - id: D1-05
+    description: lib/email.ts references RESEND_API_KEY env var
+    verify:
+      kind: file_contains
+      path: lib/email.ts
+      pattern: 'RESEND_API_KEY'
+
+  - id: D1-06
+    description: lib/email.ts references RESEND_FROM_ADDRESS env var
+    verify:
+      kind: file_contains
+      path: lib/email.ts
+      pattern: 'RESEND_FROM_ADDRESS'
+
+  # ---- emails/TicketConfirmation.tsx ----
+  - id: D1-07
+    description: emails/TicketConfirmation.tsx exists
+    verify:
+      kind: file_exists
+      path: emails/TicketConfirmation.tsx
+
+  - id: D1-08
+    description: TicketConfirmation has bookingRef prop
+    verify:
+      kind: file_contains
+      path: emails/TicketConfirmation.tsx
+      pattern: 'bookingRef'
+
+  - id: D1-09
+    description: TicketConfirmation has ticketType prop
+    verify:
+      kind: file_contains
+      path: emails/TicketConfirmation.tsx
+      pattern: 'ticketType'
+
+  - id: D1-10
+    description: TicketConfirmation has attendeeName prop
+    verify:
+      kind: file_contains
+      path: emails/TicketConfirmation.tsx
+      pattern: 'attendeeName'
+
+  # ---- emails/ContactConfirmation.tsx ----
+  - id: D1-11
+    description: emails/ContactConfirmation.tsx exists
+    verify:
+      kind: file_exists
+      path: emails/ContactConfirmation.tsx
+
+  - id: D1-12
+    description: ContactConfirmation mentions response time (2 business days)
+    verify:
+      kind: shell
+      cmd: grep -q "business days" emails/ContactConfirmation.tsx
+
+  # ---- /api/contact wiring ----
+  - id: D1-13
+    description: /api/contact/route.ts imports from lib/email
+    verify:
+      kind: shell
+      cmd: grep -qE "from '@/lib/email'|from \"@/lib/email\"" app/api/contact/route.ts
+
+  - id: D1-14
+    description: /api/contact/route.ts calls sendEmail
+    verify:
+      kind: file_contains
+      path: app/api/contact/route.ts
+      pattern: 'sendEmail'
+
+  # ---- Gates ----
+  - id: D1-GATE-01
+    description: TypeScript strict check passes with 0 errors
+    verify:
+      kind: shell
+      cmd: pnpm exec tsc --noEmit
+      timeout: 60
+
+  - id: D1-GATE-02
+    description: pnpm build exits 0
+    verify:
+      kind: shell
+      cmd: pnpm build
+      timeout: 120

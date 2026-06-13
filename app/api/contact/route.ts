@@ -1,6 +1,9 @@
+import React from 'react';
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initAdmin } from '@/lib/firebase-admin';
+import { sendEmail } from '@/lib/email';
+import ContactConfirmation from '@/emails/ContactConfirmation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,7 +44,18 @@ export async function POST(request: NextRequest) {
       status: 'new',
     });
 
-    // TODO: Send email notification via SendGrid or Resend (Phase 1.x)
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'We received your message — SAOC',
+        react: React.createElement(ContactConfirmation, {
+          name: String(name).trim(),
+          subject: String(subject).trim(),
+        }),
+      });
+    } catch (emailErr) {
+      console.error('[contact/route] Email send failed (non-fatal):', emailErr);
+    }
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {

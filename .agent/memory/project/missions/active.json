@@ -1,8 +1,8 @@
 {
-  "mission": null,
+  "mission": ".agent/memory/project/missions/2026-06-12-saoc-phase-d-ticketing.md",
   "checkpoint": {
     "milestone": null,
     "feature": null
   },
-  "note": "closed 2026-06-13: phantom mission resolved — failure_router.sh bug fixed"
+  "activated_at": "2026-06-13T00:11:39.798784+00:00"
 }
