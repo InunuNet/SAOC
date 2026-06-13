@@ -17,6 +17,8 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
+- [ ] SAOC (Misc): New Event: check_own_comms-20260613034904.txt
+- [ ] SAOC (Misc): New Event: check_own_comms-20260613034507.txt
 - [x] SAOC (Alert): [P3] ghost-grove DEGRADED — 5/6 tests passed _(resolved 2026-06-12 by loop — stale mktemp files; fixed grove/tests/run_tests.sh)_
 - [x] SAOC (Alert): [P0] ghost-unknown ERROR — 0/0 tests passed _(resolved 2026-06-12 — false positive from prior failure_router.sh bug; root cause fixed)_
 - [ ] [dev 2026-06-12] Factory loop script needs error handling — Out of scope, low priority _(handoff: 20260612T194347-dev.json)_
