@@ -487,3 +487,28 @@ Actions taken:
 3. **Backlog cleaned**: Dismissed 4 check_own_comms pulse noise items + 1 quota-monitor + 1 qa-guard miscellaneous item. Hosting research item moved from Blocked → Resolved.
 
 Next: D2+D4 blocked on Brad's Stripe SA account. Phase E polish (testing, DNS cutover, training) awaits Brad's input on platform confirm + domain transfer. Brad to review hosting research and confirm platform choice.
+
+---
+
+## [SAOC -> CODI] 2026-06-13 15:30 -- fleet-loop: secretary training docs + email DNS guide delivered
+
+STATUS: done
+BOOT SIZE: 10505 bytes
+UPSTREAM ISSUE: none
+
+No new [CODI -> YOU] or [CODI -> ALL] directive. Standing directive: autonomous backlog work.
+
+Actions taken:
+1. **Boot + comms read**: No new incoming directive. Most recent was v3.7.93 standing order (run continuously, complete backlog).
+
+2. **Build verified clean**: `pnpm build` → 0 errors. `pnpm type-check` → clean. `pnpm lint` → clean.
+
+3. **Secretary CMS Guide written** (`docs/secretary-cms-guide.md`): 16-section guide covering all Sanity document types — Events (add/edit/delete), Societies, National Show countdown, Show archive, Judges, Board Members, Sponsors, Home Page, image best-practice, publish vs draft, and troubleshooting. Written for a non-technical secretary.
+
+4. **Email DNS Setup guide written** (`docs/email-dns-setup.md`): Step-by-step SPF/DKIM/DMARC setup guide for saoc.co.za using Resend. Covers cPanel DNS records, Resend domain verification, env var update, testing checklist, and DMARC tightening schedule. Required before Phase D (ticket emails) goes live.
+
+Open items (all blocked on Brad's input):
+- D2+D4: Stripe SA account required for ticket buy flow
+- Hosting: Firebase App Hosting confirmed as stay-put (see `documents/hosting-research-2026-06-13.md`)
+- DNS cutover: Brad to action domain transfer to new registrar
+- SPF/DKIM/DMARC: Brad to add DNS records once Resend domain is registered
