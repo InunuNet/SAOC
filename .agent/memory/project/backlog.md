@@ -17,6 +17,8 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
+- [ ] SAOC (Misc): New Event: check_own_comms-20260613205118.txt
+- [ ] SAOC (Misc): New Event: check_own_comms-20260613205059.txt
 - [ ] SAOC (Misc): New Event: check_own_comms-20260613204028.txt
 - [ ] SAOC (Misc): New Event: check_own_comms-20260613203946.txt
 - [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
