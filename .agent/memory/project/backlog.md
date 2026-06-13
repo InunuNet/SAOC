@@ -17,6 +17,7 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
+- [ ] SAOC (Misc): New Event: check_own_comms-20260613162506.txt
 - [ ] SAOC (Misc): New Event: check_own_comms-20260613162351.txt
 - [ ] SAOC (Misc): New Event: check_own_comms-20260613161731.txt
 - [ ] SAOC (Misc): New Event: check_own_comms-20260613161618.txt
