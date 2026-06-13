@@ -1,0 +1,128 @@
+schema: athanor.contract/v1
+feature: E6
+spec: e6-launch-checklist
+name: Phase E — Launch Checklist
+created_at: '2026-06-13'
+
+# SCOPE: A single actionable docs/launch-checklist.md covering all steps
+# Brad needs to take from code-complete to saoc.co.za live:
+# prerequisites, env vars, Secret Manager, seed script, Sanity webhook,
+# Firebase App Hosting connect, DNS cutover, email DNS, post-launch
+# verification checklist, secretary handover, and Phase D blocked items.
+
+assertions:
+  # ---- 1: File exists ----
+  - id: E6-01
+    description: docs/launch-checklist.md exists
+    verify:
+      kind: file_exists
+      path: docs/launch-checklist.md
+
+  # ---- 2: Required sections ----
+  - id: E6-02
+    description: checklist covers prerequisites
+    verify:
+      kind: file_contains
+      path: docs/launch-checklist.md
+      text: 'Prerequisites'
+
+  - id: E6-03
+    description: checklist covers environment variables
+    verify:
+      kind: file_contains
+      path: docs/launch-checklist.md
+      text: 'Environment Variables'
+
+  - id: E6-04
+    description: checklist covers Secret Manager (production secrets)
+    verify:
+      kind: file_contains
+      path: docs/launch-checklist.md
+      text: 'Secret Manager'
+
+  - id: E6-05
+    description: checklist references pnpm seed command
+    verify:
+      kind: file_contains
+      path: docs/launch-checklist.md
+      text: 'pnpm seed'
+
+  - id: E6-06
+    description: checklist covers Sanity webhook for ISR revalidation
+    verify:
+      kind: file_contains
+      path: docs/launch-checklist.md
+      text: 'Webhook'
+
+  - id: E6-07
+    description: checklist covers Firebase App Hosting connection
+    verify:
+      kind: file_contains
+      path: docs/launch-checklist.md
+      text: 'Firebase App Hosting'
+
+  - id: E6-08
+    description: checklist covers DNS cutover section
+    verify:
+      kind: file_contains
+      path: docs/launch-checklist.md
+      text: 'DNS Cutover'
+
+  - id: E6-09
+    description: checklist references email-dns-setup guide
+    verify:
+      kind: file_contains
+      path: docs/launch-checklist.md
+      text: 'email-dns-setup'
+
+  - id: E6-10
+    description: checklist has post-launch verification section
+    verify:
+      kind: file_contains
+      path: docs/launch-checklist.md
+      text: 'Post-Launch Verification'
+
+  - id: E6-11
+    description: checklist covers secretary handover
+    verify:
+      kind: file_contains
+      path: docs/launch-checklist.md
+      text: 'Secretary Handover'
+
+  - id: E6-12
+    description: checklist acknowledges Stripe SA blocked items
+    verify:
+      kind: file_contains
+      path: docs/launch-checklist.md
+      text: 'Stripe SA'
+
+  # ---- 3: Build gates ----
+  - id: E6-GATE-01
+    description: TypeScript type-check passes
+    verify:
+      kind: shell
+      cmd: 'pnpm --prefix . type-check 2>&1 | tail -3'
+
+  - id: E6-GATE-02
+    description: ESLint passes
+    verify:
+      kind: shell
+      cmd: 'pnpm --prefix . lint 2>&1 | tail -3'
+
+phases:
+  - id: 1
+    assertions:
+      - E6-01
+      - E6-02
+      - E6-03
+      - E6-04
+      - E6-05
+      - E6-06
+      - E6-07
+      - E6-08
+      - E6-09
+      - E6-10
+      - E6-11
+      - E6-12
+      - E6-GATE-01
+      - E6-GATE-02
