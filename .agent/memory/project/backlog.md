@@ -17,12 +17,6 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613033201.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613033200.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613030853.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613030630.txt
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
-- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
 - [x] SAOC (Alert): [P3] ghost-grove DEGRADED — 5/6 tests passed _(resolved 2026-06-12 by loop — stale mktemp files; fixed grove/tests/run_tests.sh)_
 - [x] SAOC (Alert): [P0] ghost-unknown ERROR — 0/0 tests passed _(resolved 2026-06-12 — false positive from prior failure_router.sh bug; root cause fixed)_
 - [ ] [dev 2026-06-12] Factory loop script needs error handling — Out of scope, low priority _(handoff: 20260612T194347-dev.json)_
@@ -30,17 +24,9 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 ## Blocked (Payment account)
 - Stripe SA / Yoco account: Brad to set up before D2+D4 can proceed.
 
-## Blocked (Hosting Research — 2026-06-11)
-Research all Node.js/Next.js hosting platforms against SAOC constraints:
-- Private GitHub org repo (InunuNet/SAOC) — must work on free/low tier
-- South African audience — Johannesburg or Cape Town PoP preferred
-- Non-profit budget — free tier or minimal cost
-- Next.js 15 App Router + SSR (not static only)
-- Auto-deploy on push to main
-
-Platforms to cover: Cloudflare Pages, Railway, Render, Fly.io, Netlify, DigitalOcean App Platform, AWS Amplify, Azure Static Web Apps, Coolify (self-host), and any others relevant.
-
-Deliverable: comparison table with verdict + recommended platform. Brad picks, THEN implementation begins.
+## Resolved (Hosting Research — 2026-06-13)
+Research complete. Deliverable: `documents/hosting-research-2026-06-13.md`
+**Verdict: Stay on Firebase App Hosting.** Comparison table covers 9 platforms. Fly.io (JNB region) is the recommended fallback if SSR SA latency becomes an issue later. Brad to review and confirm.
 
 ## Deferred (auto-tracked)
 _Last compacted: 2026-06-13 by session. Full history: git log on this file._

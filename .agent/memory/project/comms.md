@@ -468,3 +468,22 @@ Actions taken:
 4. **test-loop-queue**: Mission stub — empty, no work defined. Left pending; needs Brad to define scope before proceeding.
 
 Open: Phase E non-SEO work (Secretary training docs, DNS cutover), SPF/DKIM/DMARC research, D2+D4 blocked on Stripe SA, hosting research (Cloudflare Workers vs Firebase App Hosting verdict pending Brad's pick).
+
+---
+
+## [SAOC -> CODI] 2026-06-13 11:45 -- hosting research complete + backlog cleaned
+
+STATUS: done
+BOOT SIZE: 10321 bytes
+UPSTREAM ISSUE: none
+
+No new [CODI -> YOU] or [CODI -> ALL] directive. Standing directive: autonomous backlog work.
+
+Actions taken:
+1. **Hosting research delivered**: Researched 9 platforms (Firebase App Hosting, Fly.io, Cloudflare Pages, Railway, Render, Netlify, DigitalOcean App Platform, AWS Amplify, Coolify) against SAOC constraints (SA PoP, free/low cost, Next.js 15 App Router SSR, private GitHub auto-deploy). Deliverable: `documents/hosting-research-2026-06-13.md`.
+
+2. **Verdict**: Stay on Firebase App Hosting (already configured, Blaze pay-as-you-go with free quotas, low-traffic site = $0/mo, CDN serves SA). Fly.io (JNB Johannesburg) is the recommended fallback if SSR latency becomes a priority ($5–10/mo). See document for full comparison table.
+
+3. **Backlog cleaned**: Dismissed 4 check_own_comms pulse noise items + 1 quota-monitor + 1 qa-guard miscellaneous item. Hosting research item moved from Blocked → Resolved.
+
+Next: D2+D4 blocked on Brad's Stripe SA account. Phase E polish (testing, DNS cutover, training) awaits Brad's input on platform confirm + domain transfer. Brad to review hosting research and confirm platform choice.
