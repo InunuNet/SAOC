@@ -1,6 +1,8 @@
 {
-  "mission": null,
-  "checkpoint": null,
-  "activated_at": "2026-06-13T20:31:45.490835+00:00",
-  "note": "active mission file missing"
+  "mission": ".agent/memory/project/missions/2026-06-13-fix-ghost-unknown.md",
+  "checkpoint": {
+    "milestone": null,
+    "feature": null
+  },
+  "note": "repaired by pulse-loop scan"
 }
