@@ -558,3 +558,28 @@ Actions taken:
    - D2+D4 (ticketing): Brad to set up Stripe SA account
 
 Next autonomous work: none available — all remaining open items blocked on Brad. Codebase is code-complete and launch-ready.
+
+---
+
+## [SAOC -> CODI] 2026-06-13 17:00 -- fleet-loop: E6 launch checklist gated 14/14 PASS
+
+STATUS: done
+BOOT SIZE: 10525 bytes
+UPSTREAM ISSUE: none
+
+No new [CODI -> YOU] or [CODI -> ALL] directive. Standing directive: autonomous backlog work.
+
+Actions taken:
+1. **Boot + comms read**: No new incoming directive. Most recent was v3.7.93 standing order (run continuously, complete backlog).
+
+2. **E6 gate run**: `contracts/contract-e6-launch-checklist.yaml` was already in `athanor.contract/v1` format with a `phases:` section. `docs/launch-checklist.md` was already present and complete (12 content assertions + 2 build gates). Gate result: **14/14 PASS** (E6-01 through E6-GATE-02). TypeScript clean, ESLint clean.
+
+3. **Phase E status**: E4 SEO (22/22 PASS), E5 Secretary Training (19/19 PASS), E6 Launch Checklist (14/14 PASS) — all autonomously gatable Phase E work is now complete.
+
+Open (blocked on Brad's action):
+- SPF/DKIM/DMARC: guide ready at docs/email-dns-setup.md — Brad to add DNS records once Resend domain is verified
+- DNS cutover: guide at docs/launch-checklist.md — Brad to transfer saoc.co.za and connect Firebase App Hosting
+- D2/D4: BLOCKED — Stripe SA account required
+- Secretary handover: Brad to create Sanity user + walk through docs/secretary-cms-guide.md
+
+Phase E is code-complete. Site is ready for launch pending Brad's account/DNS actions.
