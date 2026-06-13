@@ -1,5 +1,8 @@
 {
-  "mission": null,
-  "checkpoint": null,
-  "note": "mission complete"
+  "mission": ".agent/memory/project/missions/2026-06-13-test-loop-queue.md",
+  "checkpoint": {
+    "milestone": null,
+    "feature": null
+  },
+  "activated_at": "2026-06-13T09:44:31.887221+00:00"
 }
