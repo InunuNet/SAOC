@@ -346,21 +346,19 @@ def _phase_matches(phase_id, target_str: str) -> bool:
         return False
 
 
-def _gate_single_phase(contract: dict, args, assertion_ids_override=None) -> bool:
+def _gate_single_phase(contract: dict, args) -> bool:
     """Helper function to gate a single phase."""
     phase_n = args.phase
     run_checks = getattr(args, "run_checks", False)
 
-    if assertion_ids_override is not None:
-        phase_assertions = assertion_ids_override
-    else:
-        # Find assertions for this phase
-        phases = contract.get("phases", [])
-        phase = next((p for p in phases if _phase_matches(p["id"], phase_n)), None)
-        if not phase:
-            print(f"ERROR: phase {phase_n} not found in contract", file=sys.stderr)
-            return False
-        phase_assertions = phase.get("assertions", [])
+    # Find assertions for this phase
+    phases = contract.get("phases", [])
+    phase = next((p for p in phases if _phase_matches(p["id"], phase_n)), None)
+    if not phase:
+        print(f"ERROR: phase {phase_n} not found in contract", file=sys.stderr)
+        return False
+
+    phase_assertions = phase.get("assertions", [])
 
     # Auto-run checks for assertions that don't have a result file yet
     if run_checks:
@@ -417,18 +415,9 @@ def gate_cmd(args):
 
     if args.phase == "all":
         phases_data = sorted(contract.get("phases", []), key=lambda p: p.get("id", 0))
-
-        # If phases are not explicitly defined or only a single phase is present
-        # (which happens when normalized from @architect single-phase format),
-        # ensure all assertions are gated as a single "all" phase.
-        if not phases_data or (len(phases_data) == 1 and phases_data[0]['id'] in (1, '1') and
-                               len(phases_data[0].get('assertions', [])) == len(contract.get('assertions', []))):
-            print("INFO: No explicit multi-phase definition found. Gating all assertions as a single phase.")
-            all_assertion_ids = [a["id"] for a in contract.get("assertions", [])]
-            if not all_assertion_ids:
-                print("No assertions found in contract to gate.")
-                sys.exit(0)
-            phases_data = [{"id": "all_assertions", "assertions": all_assertion_ids}]
+        if not phases_data:
+            print("No phases found in contract to gate.")
+            sys.exit(0)
 
         for phase_def in phases_data:
             phase_id = phase_def['id']
@@ -440,8 +429,7 @@ def gate_cmd(args):
                 run_checks=getattr(args, "run_checks", False),
                 handoff=getattr(args, "handoff", None)
             )
-            # Pass assertion_ids directly so synthesized phases don't require a contract lookup
-            if not _gate_single_phase(contract, single_phase_args, assertion_ids_override=phase_def.get("assertions")):
+            if not _gate_single_phase(contract, single_phase_args):
                 print(f"\nFAIL: Phase {phase_id} failed. Stopping all-phase gate.")
                 sys.exit(2) # Exit on first failure
         print("\nPASS All phases gated successfully.")
