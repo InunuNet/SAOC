@@ -1,0 +1,90 @@
+schema: athanor.contract/v1
+feature: B7
+spec: b7-sponsors
+name: B7 Sponsors page — /sponsors with Sanity-sourced sponsors, tier grouping, and SponsorGrid component
+created_at: '2026-06-13T00:00:00.000000+00:00'
+
+assertions:
+  # ---- 1: page ----
+  - id: B7-01
+    description: app/(marketing)/sponsors/page.tsx exists
+    verify:
+      kind: file_exists
+      path: app/(marketing)/sponsors/page.tsx
+
+  - id: B7-02
+    description: sponsors page is an async Server Component (no 'use client')
+    verify:
+      kind: shell
+      cmd: "! grep -Eq \"^['\\\"]use client['\\\"]\" 'app/(marketing)/sponsors/page.tsx'"
+
+  - id: B7-03
+    description: sponsors page fetches partnersQuery from Sanity
+    verify:
+      kind: shell
+      cmd: "grep -q 'partnersQuery' 'app/(marketing)/sponsors/page.tsx'"
+
+  - id: B7-04
+    description: sponsors page renders SponsorGrid component
+    verify:
+      kind: shell
+      cmd: "grep -q 'SponsorGrid' 'app/(marketing)/sponsors/page.tsx'"
+
+  - id: B7-05
+    description: sponsors page has a become-a-sponsor CTA
+    verify:
+      kind: shell
+      cmd: "grep -qi 'sponsor' 'app/(marketing)/sponsors/page.tsx'"
+
+  - id: B7-06
+    description: sponsors page does not contain placeholder text
+    verify:
+      kind: shell
+      cmd: "! grep -qi '\\[Placeholder' 'app/(marketing)/sponsors/page.tsx'"
+
+  # ---- 2: SponsorGrid component ----
+  - id: B7-07
+    description: components/sponsors/SponsorGrid.tsx exists
+    verify:
+      kind: file_exists
+      path: components/sponsors/SponsorGrid.tsx
+
+  - id: B7-08
+    description: SponsorGrid groups sponsors by tier (Title/Gold/Silver/Supporting)
+    verify:
+      kind: shell
+      cmd: "grep -q 'TIER_ORDER' components/sponsors/SponsorGrid.tsx || grep -qi 'tier' components/sponsors/SponsorGrid.tsx"
+
+  - id: B7-09
+    description: components/sponsors/index.ts barrel-exports SponsorGrid
+    verify:
+      kind: shell
+      cmd: "grep -q 'SponsorGrid' components/sponsors/index.ts"
+
+  # ---- 3: gate ----
+  - id: B7-GATE-01
+    description: TypeScript strict-mode build passes (pnpm tsc --noEmit)
+    verify:
+      kind: shell
+      cmd: 'pnpm tsc --noEmit 2>&1 | grep -c "error TS" | grep -q "^0$"'
+
+  - id: B7-GATE-02
+    description: ESLint passes on sponsors page and components
+    verify:
+      kind: shell
+      cmd: "pnpm eslint 'app/(marketing)/sponsors/page.tsx' 'components/sponsors/' --max-warnings=0 2>&1 | tail -1 | grep -Ev '[1-9][0-9]* error'"
+
+phases:
+  - id: 1
+    assertions:
+      - B7-01
+      - B7-02
+      - B7-03
+      - B7-04
+      - B7-05
+      - B7-06
+      - B7-07
+      - B7-08
+      - B7-09
+      - B7-GATE-01
+      - B7-GATE-02

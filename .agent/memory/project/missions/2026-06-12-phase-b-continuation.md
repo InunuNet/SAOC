@@ -1,11 +1,15 @@
 ---
 schema: athanor.plan/v1
 slug: phase-b-continuation
-title: "Phase B continuation: B4–B7 remaining pages"
+title: 'Phase B continuation: B4–B7 remaining pages'
 created_at: '2026-06-12T00:00:00.000000+00:00'
-status: ready
+status: abandoned
 parent_mission: saoc-full-platform
+last_active_at: '2026-06-13T00:56:40.168825+00:00'
+notes: 'Abandoned: B4-B7 work completed in saoc-full-platform mission; this plan was
+  superseded'
 ---
+
 
 # Phase B Continuation Plan — B4 through B7
 

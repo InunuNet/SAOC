@@ -1,0 +1,98 @@
+schema: athanor.contract/v1
+feature: B4
+spec: b4-national-show
+name: B4 National Show page — /national-show with Sanity-sourced show classes, past shows, and ShowCountdown client island
+created_at: '2026-06-13T00:00:00.000000+00:00'
+
+assertions:
+  # ---- 1: page ----
+  - id: B4-01
+    description: app/(marketing)/national-show/page.tsx exists
+    verify:
+      kind: file_exists
+      path: app/(marketing)/national-show/page.tsx
+
+  - id: B4-02
+    description: national-show page is an async Server Component (no 'use client')
+    verify:
+      kind: shell
+      cmd: "! grep -Eq \"^['\\\"]use client['\\\"]\" 'app/(marketing)/national-show/page.tsx'"
+
+  - id: B4-03
+    description: page fetches showClassesQuery from Sanity
+    verify:
+      kind: shell
+      cmd: "grep -q 'showClassesQuery' 'app/(marketing)/national-show/page.tsx'"
+
+  - id: B4-04
+    description: page fetches pastShowsQuery from Sanity
+    verify:
+      kind: shell
+      cmd: "grep -q 'pastShowsQuery' 'app/(marketing)/national-show/page.tsx'"
+
+  - id: B4-05
+    description: page uses static showClasses fallback when Sanity returns empty
+    verify:
+      kind: shell
+      cmd: "grep -q 'staticClasses' 'app/(marketing)/national-show/page.tsx'"
+
+  - id: B4-06
+    description: ShowCountdown client island is rendered inside Suspense
+    verify:
+      kind: shell
+      cmd: "grep -q 'ShowCountdown' 'app/(marketing)/national-show/page.tsx'"
+
+  - id: B4-07
+    description: page does not contain placeholder text
+    verify:
+      kind: shell
+      cmd: "! grep -qi '\\[Placeholder' 'app/(marketing)/national-show/page.tsx'"
+
+  # ---- 2: ShowCountdown component ----
+  - id: B4-08
+    description: components/show/ShowCountdown.tsx exists
+    verify:
+      kind: file_exists
+      path: components/show/ShowCountdown.tsx
+
+  - id: B4-09
+    description: ShowCountdown is a client component
+    verify:
+      kind: shell
+      cmd: "grep -Eq \"^['\\\"]use client['\\\"]\" components/show/ShowCountdown.tsx"
+
+  # ---- 3: lib/data/showClasses.ts static fallback ----
+  - id: B4-10
+    description: lib/data/showClasses.ts exists (static fallback data)
+    verify:
+      kind: file_exists
+      path: lib/data/showClasses.ts
+
+  # ---- 4: gate ----
+  - id: B4-GATE-01
+    description: TypeScript strict-mode build passes (pnpm tsc --noEmit)
+    verify:
+      kind: shell
+      cmd: 'pnpm tsc --noEmit 2>&1 | grep -c "error TS" | grep -q "^0$"'
+
+  - id: B4-GATE-02
+    description: ESLint passes on national-show page
+    verify:
+      kind: shell
+      cmd: "pnpm eslint 'app/(marketing)/national-show/page.tsx' --max-warnings=0 2>&1 | tail -1 | grep -Ev '[1-9][0-9]* error'"
+
+phases:
+  - id: 1
+    assertions:
+      - B4-01
+      - B4-02
+      - B4-03
+      - B4-04
+      - B4-05
+      - B4-06
+      - B4-07
+      - B4-08
+      - B4-09
+      - B4-10
+      - B4-GATE-01
+      - B4-GATE-02

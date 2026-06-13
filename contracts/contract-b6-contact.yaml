@@ -1,0 +1,98 @@
+schema: athanor.contract/v1
+feature: B6
+spec: b6-contact
+name: B6 Contact page — /contact with Sanity-sourced contacts, ContactForm client component, and /api/contact POST handler
+created_at: '2026-06-13T00:00:00.000000+00:00'
+
+assertions:
+  # ---- 1: page ----
+  - id: B6-01
+    description: app/(marketing)/contact/page.tsx exists
+    verify:
+      kind: file_exists
+      path: app/(marketing)/contact/page.tsx
+
+  - id: B6-02
+    description: contact page is an async Server Component (no 'use client')
+    verify:
+      kind: shell
+      cmd: "! grep -Eq \"^['\\\"]use client['\\\"]\" 'app/(marketing)/contact/page.tsx'"
+
+  - id: B6-03
+    description: contact page fetches contactPageQuery from Sanity
+    verify:
+      kind: shell
+      cmd: "grep -q 'contactPageQuery' 'app/(marketing)/contact/page.tsx'"
+
+  - id: B6-04
+    description: contact page renders ContactForm component
+    verify:
+      kind: shell
+      cmd: "grep -q 'ContactForm' 'app/(marketing)/contact/page.tsx'"
+
+  - id: B6-05
+    description: contact page does not contain placeholder text
+    verify:
+      kind: shell
+      cmd: "! grep -qi '\\[Placeholder' 'app/(marketing)/contact/page.tsx'"
+
+  # ---- 2: ContactForm component ----
+  - id: B6-06
+    description: components/contact/ContactForm.tsx exists
+    verify:
+      kind: file_exists
+      path: components/contact/ContactForm.tsx
+
+  - id: B6-07
+    description: ContactForm is a client component
+    verify:
+      kind: shell
+      cmd: "grep -Eq \"^['\\\"]use client['\\\"]\" components/contact/ContactForm.tsx"
+
+  - id: B6-08
+    description: ContactForm POSTs to /api/contact
+    verify:
+      kind: shell
+      cmd: "grep -q '/api/contact' components/contact/ContactForm.tsx"
+
+  # ---- 3: API route ----
+  - id: B6-09
+    description: app/api/contact/route.ts exists
+    verify:
+      kind: file_exists
+      path: app/api/contact/route.ts
+
+  - id: B6-10
+    description: contact API route exports a POST handler
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "export (async )?function POST" app/api/contact/route.ts'
+
+  # ---- 4: gate ----
+  - id: B6-GATE-01
+    description: TypeScript strict-mode build passes (pnpm tsc --noEmit)
+    verify:
+      kind: shell
+      cmd: 'pnpm tsc --noEmit 2>&1 | grep -c "error TS" | grep -q "^0$"'
+
+  - id: B6-GATE-02
+    description: ESLint passes on contact page and components
+    verify:
+      kind: shell
+      cmd: "pnpm eslint 'app/(marketing)/contact/page.tsx' 'components/contact/' --max-warnings=0 2>&1 | tail -1 | grep -Ev '[1-9][0-9]* error'"
+
+phases:
+  - id: 1
+    assertions:
+      - B6-01
+      - B6-02
+      - B6-03
+      - B6-04
+      - B6-05
+      - B6-06
+      - B6-07
+      - B6-08
+      - B6-09
+      - B6-10
+      - B6-GATE-01
+      - B6-GATE-02

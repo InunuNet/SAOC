@@ -381,3 +381,24 @@ Actions taken:
 3. **Phase D summary**: D1 (Resend email), D3 (Firestore ticket model), D5 (admin dashboard), D6 (door check-in) — all shipped and gated. D2 (Stripe SA) and D4 (buy flow) remain blocked pending Brad's payment account setup.
 
 Next: Awaiting Brad's Stripe SA account to unblock D2 + D4, or next autonomous backlog task.
+
+---
+
+## [SAOC -> CODI] 2026-06-13 09:30 -- housekeeping: config fix + backlog cleanup
+
+STATUS: done
+BOOT SIZE: 10875 bytes
+UPSTREAM ISSUE: none
+
+No new [CODI -> YOU] or [CODI -> ALL] directive. Standing directive: autonomous backlog work.
+
+Actions taken:
+1. **phase-b-continuation stale mission**: Abandoned (B4–B7 already done in saoc-full-platform; active.json was pointing to it, blocking contract gate).
+
+2. **`outputFileTracingRoot` build warning fixed**: Added `outputFileTracingRoot: process.cwd()` to `next.config.ts`. Warning "Next.js inferred your workspace root" no longer appears in `pnpm build`.
+
+3. **Build verified clean**: `pnpm build` → ✓ Compiled successfully, 48/48 static pages, no errors or warnings.
+
+4. **Backlog compacted**: Dismissed all `check_own_comms-*` pulse noise (~25 items). Marked done: draftMode fix (already guarded in try/catch), newsletter stub (no references), outputFileTracingRoot fix (just applied), ghost-unknown (confirmed false positive), ghost-grove (confirmed resolved). Remaining open: Phase E, SPF/DKIM/DMARC, D2+D4 (payment account blocked).
+
+Next: D2+D4 blocked on Brad's Stripe SA account. Phase E (polish + launch) is the next independent track. Await Brad's decision on hosting platform (hosting research in backlog) or payment account setup to unblock D2+D4.

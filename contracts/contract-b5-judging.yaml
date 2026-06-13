@@ -1,0 +1,90 @@
+schema: athanor.contract/v1
+feature: B5
+spec: b5-judging
+name: B5 Judging page — /judging with Sanity-sourced content, AwardsGrid, and JudgesDirectory
+created_at: '2026-06-13T00:00:00.000000+00:00'
+
+assertions:
+  # ---- 1: page ----
+  - id: B5-01
+    description: app/(marketing)/judging/page.tsx exists
+    verify:
+      kind: file_exists
+      path: app/(marketing)/judging/page.tsx
+
+  - id: B5-02
+    description: judging page is an async Server Component (no 'use client')
+    verify:
+      kind: shell
+      cmd: "! grep -Eq \"^['\\\"]use client['\\\"]\" 'app/(marketing)/judging/page.tsx'"
+
+  - id: B5-03
+    description: page fetches judgingPageQuery from Sanity
+    verify:
+      kind: shell
+      cmd: "grep -q 'judgingPageQuery' 'app/(marketing)/judging/page.tsx'"
+
+  - id: B5-04
+    description: page renders AwardsGrid component
+    verify:
+      kind: shell
+      cmd: "grep -q 'AwardsGrid' 'app/(marketing)/judging/page.tsx'"
+
+  - id: B5-05
+    description: page renders JudgesDirectory component
+    verify:
+      kind: shell
+      cmd: "grep -q 'JudgesDirectory' 'app/(marketing)/judging/page.tsx'"
+
+  - id: B5-06
+    description: page does not contain placeholder text
+    verify:
+      kind: shell
+      cmd: "! grep -qi '\\[Placeholder' 'app/(marketing)/judging/page.tsx'"
+
+  # ---- 2: components ----
+  - id: B5-07
+    description: components/judging/AwardsGrid.tsx exists
+    verify:
+      kind: file_exists
+      path: components/judging/AwardsGrid.tsx
+
+  - id: B5-08
+    description: components/judging/JudgesDirectory.tsx exists
+    verify:
+      kind: file_exists
+      path: components/judging/JudgesDirectory.tsx
+
+  - id: B5-09
+    description: components/judging/index.ts barrel-exports AwardsGrid and JudgesDirectory
+    verify:
+      kind: shell
+      cmd: "grep -q 'AwardsGrid' components/judging/index.ts && grep -q 'JudgesDirectory' components/judging/index.ts"
+
+  # ---- 3: gate ----
+  - id: B5-GATE-01
+    description: TypeScript strict-mode build passes (pnpm tsc --noEmit)
+    verify:
+      kind: shell
+      cmd: 'pnpm tsc --noEmit 2>&1 | grep -c "error TS" | grep -q "^0$"'
+
+  - id: B5-GATE-02
+    description: ESLint passes on judging page and components
+    verify:
+      kind: shell
+      cmd: "pnpm eslint 'app/(marketing)/judging/page.tsx' 'components/judging/' --max-warnings=0 2>&1 | tail -1 | grep -Ev '[1-9][0-9]* error'"
+
+phases:
+  - id: 1
+    assertions:
+      - B5-01
+      - B5-02
+      - B5-03
+      - B5-04
+      - B5-05
+      - B5-06
+      - B5-07
+      - B5-08
+      - B5-09
+      - B5-GATE-01
+      - B5-GATE-02
