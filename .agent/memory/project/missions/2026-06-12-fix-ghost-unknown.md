@@ -28,3 +28,8 @@ Ghost suite **unknown** is failing with severity **ERROR**.
 ## Gate
 
 The next improvement loop run showing GREEN for unknown closes this mission automatically.
+
+## Recurrence noted at 2026-06-13T02:29:00Z
+- Severity: ERROR
+- First failing: unknown
+- Fingerprint: fp:sha1:48fb8a6359a2
