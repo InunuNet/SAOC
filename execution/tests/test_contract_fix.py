@@ -125,7 +125,9 @@ def main():
         "assertions": []
     }
     contract_path_empty = create_contract_file(empty_contract, "empty_contract.json")
-    r_gate_empty_all = run(CONTRACT_CLI + ["gate", str(contract_path_empty), "--phase", "all", "--run-checks"])
+    ok("empty_contract.json exists", contract_path_empty.exists(), f"Path: {contract_path_empty}")
+    print(f"Attempting to gate contract: {contract_path_empty.resolve()}")
+    r_gate_empty_all = run(CONTRACT_CLI + ["gate", str(contract_path_empty.resolve()), "--phase", "all", "--run-checks"])
     assert_exit("gate --phase all for empty contract exits 0 (no assertions)", r_gate_empty_all, 0)
     ok("gate --phase all output mentions no assertions", "No assertions found in contract to gate." in r_gate_empty_all.stdout)
 

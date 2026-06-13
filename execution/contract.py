@@ -404,6 +404,8 @@ def _gate_single_phase(contract: dict, args) -> bool:
 
 def gate_cmd(args):
     contract = load_contract(args.contract)
+    # DEBUG: print the contract after normalization to verify its structure
+    print(f"DEBUG: Contract after load_contract and normalization: {json.dumps(contract, indent=2)}", file=sys.stderr)
 
     # Pre-flight: reject prohibited multiline python3 -c assertions before running
     for _a in contract.get("assertions", []):
