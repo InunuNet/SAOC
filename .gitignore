@@ -62,6 +62,7 @@ Thumbs.db
 .agent/memory/project/inbox/archive/
 .agent/memory/project/inbox/*.txt
 .claude/scheduled_tasks.lock
+.agent/pulse/registry/processing/*.lock
 execution/tests/ghost-project/*/tests/fixtures/*.jsonl.tmp
 *.log
 fleet_update_report_*.md
