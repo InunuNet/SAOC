@@ -25,36 +25,4 @@ Research complete. Deliverable: `documents/hosting-research-2026-06-13.md`
 **Verdict: Stay on Firebase App Hosting.** Comparison table covers 9 platforms. Fly.io (JNB region) is the recommended fallback if SSR SA latency becomes an issue later. Brad to review and confirm.
 
 ## Deferred (auto-tracked)
-_Last compacted: 2026-06-13 by session. Dismissed: 200+ check_own_comms pulse items, qa-guard pings, quota-monitor alerts (all informational, no action). Full history: git log on this file._
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
-
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614000824.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614000733.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614001858.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614001945.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614003036.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614003017.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614004159.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614004200.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614004907.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614005332.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614010057.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614010507.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614011358.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614011632.txt
+_Last compacted: 2026-06-15 by session. Dismissed: 250+ check_own_comms pulse items, qa-guard pings, quota-monitor alerts (all informational, no action). Full history: git log on this file._
