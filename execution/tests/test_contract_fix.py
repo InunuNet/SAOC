@@ -153,7 +153,7 @@ def main():
 
     r_validate_invalid_phase = run(CONTRACT_CLI + ["validate", "--strict", str(contract_path_invalid_phase)])
     assert_exit("validate --strict for invalid phase contract exits 1 (fail)", r_validate_invalid_phase, 1)
-    ok("validate --strict output shows invalid phase ID error", "Invalid phase ID: 'not_an_int'. Phase IDs must be integers." in r_validate_invalid_phase.stderr)
+    ok("validate --strict output shows invalid phase ID error", "Invalid phase ID: 'not_an_int'. Phase IDs must be integers." in r_validate_invalid_phase.stdout)
 
     print()
     print("========================================")
