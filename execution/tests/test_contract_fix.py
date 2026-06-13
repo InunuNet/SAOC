@@ -12,8 +12,9 @@ import shutil
 from pathlib import Path
 
 CONTRACT_CLI = ["python3", "execution/contract.py"]
-MISSIONS_DIR = Path(".agent/memory/project/missions")
 TEMP_CONTRACTS_DIR = Path(".agent/memory/scratch/test_contracts")
+CONTRACT_RESULTS_DIR = Path(".agent/memory/scratch/contract-results")
+TEST_SLUGS = ["multi-phase-test", "architect-single-phase-test", "empty-test"]
 
 PASS = 0
 FAIL = 0
@@ -30,6 +31,9 @@ def ok(label: str, passed: bool, detail: str = ""):
 def assert_exit(label: str, result, expected: int):
     ok(label, result.returncode == expected,
        f"exit={result.returncode} expected={expected}\\nstdout: {result.stdout[:500]}\\nstderr: {result.stderr[:500]}")
+    if result.returncode != expected and result.stderr:
+        print(f"  Captured stderr for failure:\n{result.stderr}", file=sys.stderr)
+
 
 def run(cmd):
     return subprocess.run(cmd, capture_output=True, text=True, cwd=Path(__file__).parent.parent.parent)
@@ -46,12 +50,13 @@ def main():
     print("=== test_contract_fix.py ===")
     print()
 
-    # Clean up any previous test artifacts
+    # Clean up previous test artifacts (contracts + stale result files only)
     if TEMP_CONTRACTS_DIR.exists():
         shutil.rmtree(TEMP_CONTRACTS_DIR)
-    if MISSIONS_DIR.exists():
-        shutil.rmtree(MISSIONS_DIR)
-    MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
+    for slug in TEST_SLUGS:
+        slug_results = CONTRACT_RESULTS_DIR / slug
+        if slug_results.exists():
+            shutil.rmtree(slug_results)
 
 
     # Test 1: Contract with explicit phases - ensure all are gated
@@ -98,7 +103,7 @@ def main():
         "assertions": {
             "phase": 1,
             "checks": [
-                {"id": "AR1", "description": "Check README exists", "command": "grep -q 'README' README.md"},
+                {"id": "AR1", "description": "Check README exists", "command": "test -f README.md"},
                 {"id": "AR2", "description": "Check non-existent file", "command": "test -f NON_EXISTENT_FILE_2.md"},
             ]
         }
@@ -125,9 +130,7 @@ def main():
         "assertions": []
     }
     contract_path_empty = create_contract_file(empty_contract, "empty_contract.json")
-    ok("empty_contract.json exists", contract_path_empty.exists(), f"Path: {contract_path_empty}")
-    print(f"Attempting to gate contract: {contract_path_empty.resolve()}")
-    r_gate_empty_all = run(CONTRACT_CLI + ["gate", str(contract_path_empty.resolve()), "--phase", "all", "--run-checks"])
+    r_gate_empty_all = run(CONTRACT_CLI + ["gate", str(contract_path_empty), "--phase", "all", "--run-checks"])
     assert_exit("gate --phase all for empty contract exits 0 (no assertions)", r_gate_empty_all, 0)
     ok("gate --phase all output mentions no assertions", "No assertions found in contract to gate." in r_gate_empty_all.stdout)
 

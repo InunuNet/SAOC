@@ -346,19 +346,21 @@ def _phase_matches(phase_id, target_str: str) -> bool:
         return False
 
 
-def _gate_single_phase(contract: dict, args) -> bool:
+def _gate_single_phase(contract: dict, args, assertion_ids_override=None) -> bool:
     """Helper function to gate a single phase."""
     phase_n = args.phase
     run_checks = getattr(args, "run_checks", False)
 
-    # Find assertions for this phase
-    phases = contract.get("phases", [])
-    phase = next((p for p in phases if _phase_matches(p["id"], phase_n)), None)
-    if not phase:
-        print(f"ERROR: phase {phase_n} not found in contract", file=sys.stderr)
-        return False
-
-    phase_assertions = phase.get("assertions", [])
+    if assertion_ids_override is not None:
+        phase_assertions = assertion_ids_override
+    else:
+        # Find assertions for this phase
+        phases = contract.get("phases", [])
+        phase = next((p for p in phases if _phase_matches(p["id"], phase_n)), None)
+        if not phase:
+            print(f"ERROR: phase {phase_n} not found in contract", file=sys.stderr)
+            return False
+        phase_assertions = phase.get("assertions", [])
 
     # Auto-run checks for assertions that don't have a result file yet
     if run_checks:
@@ -404,8 +406,6 @@ def _gate_single_phase(contract: dict, args) -> bool:
 
 def gate_cmd(args):
     contract = load_contract(args.contract)
-    # DEBUG: print the contract after normalization to verify its structure
-    print(f"DEBUG: Contract after load_contract and normalization: {json.dumps(contract, indent=2)}", file=sys.stderr)
 
     # Pre-flight: reject prohibited multiline python3 -c assertions before running
     for _a in contract.get("assertions", []):
@@ -440,7 +440,8 @@ def gate_cmd(args):
                 run_checks=getattr(args, "run_checks", False),
                 handoff=getattr(args, "handoff", None)
             )
-            if not _gate_single_phase(contract, single_phase_args):
+            # Pass assertion_ids directly so synthesized phases don't require a contract lookup
+            if not _gate_single_phase(contract, single_phase_args, assertion_ids_override=phase_def.get("assertions")):
                 print(f"\nFAIL: Phase {phase_id} failed. Stopping all-phase gate.")
                 sys.exit(2) # Exit on first failure
         print("\nPASS All phases gated successfully.")
