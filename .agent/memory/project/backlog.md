@@ -17,26 +17,49 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613121805.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613121804.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613120954.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613120936.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613120119.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613120133.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613115134.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613115039.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613114300.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613114158.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613113430.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613113112.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613112540.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613112248.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613111650.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613111433.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613110835.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613110306.txt
-- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
+- [x] SAOC (Misc): New Event: check_own_comms-20260613133538.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613133450.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613132812.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613132804.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613132132.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613132120.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613131453.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613131434.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613130814.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613130754.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Milestone): Athanor (Milestone): Loop converged — 3-clean streak _(acknowledged, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613130108.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613130034.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613125430.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613125354.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613124751.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613124708.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613124114.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613124025.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613123253.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613123236.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613122553.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613122507.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613121805.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613121804.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613120954.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613120936.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613120119.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613120133.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613115134.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613115039.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613114300.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613114158.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613113430.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613113112.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613112540.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613112248.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613111650.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613111433.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613110835.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613110306.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): [quota-monitor] Athanor: no active mission _(dismissed — no active mission intended, 2026-06-13)_
+- [x] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613105031.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613104840.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613103903.txt _(dismissed — pulse noise, 2026-06-13)_
