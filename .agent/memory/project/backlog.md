@@ -17,37 +17,39 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613182540.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613182524.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613181811.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613181753.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613181010.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613181025.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613180256.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613180239.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613175528.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613175505.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613174758.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613174802.txt
-- [ ] SAOC (Milestone): Athanor (Milestone): Loop converged — 3-clean streak
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613174031.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613174001.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613173303.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613173231.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613172535.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613172454.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613171806.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613171721.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613171035.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613170922.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613162506.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613162351.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613161731.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613161618.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613160958.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613160823.txt
-- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
+- [x] SAOC (Misc): New Event: check_own_comms-20260613183302.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613183311.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613182540.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613182524.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613181811.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613181753.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613181010.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613181025.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613180256.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613180239.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613175528.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613175505.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613174758.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613174802.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Milestone): Athanor (Milestone): Loop converged — 3-clean streak _(acknowledged, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613174031.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613174001.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613173303.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613173231.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613172535.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613172454.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613171806.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613171721.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613171035.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613170922.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613162506.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613162351.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613161731.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613161618.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613160958.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613160823.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): [quota-monitor] Athanor: no active mission _(dismissed — no active mission by design, all phases complete, 2026-06-13)_
+- [x] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor _(dismissed — informational ping, no action required, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613155803.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613155531.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613154648.txt _(dismissed — pulse noise, 2026-06-13)_
