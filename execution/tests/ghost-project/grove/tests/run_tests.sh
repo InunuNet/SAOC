@@ -5,6 +5,10 @@
 
 set -uo pipefail
 
+# Cleanup any leftover temp files from aborted runs
+_grove_cleanup() { rm -f /tmp/grove_test_* 2>/dev/null || true; }
+trap _grove_cleanup EXIT
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GROVE_DIR="$(dirname "$SCRIPT_DIR")"
 GROVE="$GROVE_DIR/grove.py"
@@ -73,7 +77,7 @@ if heap:
 print('\n'.join(out))
 " 2>&1)
 # Use grove.py via temp file
-tmpfile=$(mktemp /tmp/grove_test_remaining_XXXX.txt)
+tmpfile=$(mktemp /tmp/grove_test_remainingXXXXXX)
 printf 'PUSH\t4\tone\nPUSH\t2\ttwo\nPUSH\t9\tthree\nPOP\n' > "$tmpfile"
 actual=$(python3 "$GROVE" "$tmpfile" 2>&1)
 rm -f "$tmpfile"
@@ -85,7 +89,7 @@ else
 fi
 
 # ── Test 4: POP from empty queue → exit 2 ────────────────────────────────────
-tmpfile=$(mktemp /tmp/grove_test_empty_XXXX.txt)
+tmpfile=$(mktemp /tmp/grove_test_emptyXXXXXX)
 printf 'POP\n' > "$tmpfile"
 set +e
 python3 "$GROVE" "$tmpfile" > /dev/null 2>&1
@@ -99,7 +103,7 @@ else
 fi
 
 # ── Test 5: Non-integer priority → exit 2 ────────────────────────────────────
-tmpfile=$(mktemp /tmp/grove_test_badprio_XXXX.txt)
+tmpfile=$(mktemp /tmp/grove_test_badprioXXXXXX)
 printf 'PUSH\tfive\tapple\n' > "$tmpfile"
 set +e
 python3 "$GROVE" "$tmpfile" > /dev/null 2>&1
@@ -113,7 +117,7 @@ else
 fi
 
 # ── Test 6: Negative priorities ─────────────────────────────────────────────
-tmpfile=$(mktemp /tmp/grove_test_negprio_XXXX.txt)
+tmpfile=$(mktemp /tmp/grove_test_negprioXXXXXX)
 printf 'PUSH\t5\tpositive\nPUSH\t-100\tnegative\nPOP\n' > "$tmpfile"
 actual=$(python3 "$GROVE" "$tmpfile" 2>&1)
 rm -f "$tmpfile"

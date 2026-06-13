@@ -19,7 +19,7 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] SAOC (Misc): New Event: check_own_comms-20260613012145.txt
 - [ ] SAOC (Misc): New Event: check_own_comms-20260613010359.txt
 - [ ] SAOC (Misc): New Event: check_own_comms-20260613010402.txt
-- [ ] SAOC (Alert): [P3] ghost-grove DEGRADED — 5/6 tests passed <!-- fp:sha1:1896e6bf223d -->
+- [x] SAOC (Alert): [P3] ghost-grove DEGRADED — 5/6 tests passed <!-- fp:sha1:1896e6bf223d --> _(resolved 2026-06-12 by loop)_
 - [ ] SAOC (Alert): ghost-grove DEGRADED — 5/6 tests passed
 - [ ] SAOC (Misc): New Event: check_own_comms-20260612232315.txt
 - [ ] SAOC (Misc): New Event: check_own_comms-20260612230725.txt
@@ -28,7 +28,7 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] SAOC (Misc): New Event: check_own_comms-20260612225018.txt
 - [ ] SAOC (Misc): New Event: check_own_comms-20260612224151.txt
 - [ ] SAOC (Misc): New Event: check_own_comms-20260612224153.txt
-- [ ] SAOC (Alert): [P3] ghost-cipher GREEN — 5/5 tests passed <!-- fp:sha1:7b30570ebff3 -->
+- [x] SAOC (Alert): [P3] ghost-cipher GREEN — 5/5 tests passed <!-- fp:sha1:7b30570ebff3 --> _(resolved 2026-06-12 by loop)_
 - [x] SAOC (Alert): [P3] ghost-resume GREEN — 6/0 tests passed <!-- fp:sha1:ddeb8efdf406 --> _(resolved 2026-06-12 by loop)_
 - [x] SAOC (Alert): [P3] ghost-silo GREEN — 6/0 tests passed <!-- fp:sha1:4905322e9c60 --> _(resolved 2026-06-12 by loop)_
 - [x] SAOC (Alert): [P3] ghost-transcript GREEN — 6/6 tests passed <!-- fp:sha1:cb2c900b73f4 --> _(resolved 2026-06-12 by loop)_

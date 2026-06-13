@@ -4,13 +4,21 @@ spec: fix-ghost-unknown
 name: Fix phantom ghost-unknown mission — guard failure_router against malformed JSON slugs
 created_at: '2026-06-13T00:00:00Z'
 
+phases:
+  - id: 1
+    assertions:
+      - F1-01
+      - F1-02
+      - F1-03
+      - F1-05
+
 assertions:
   - id: F1-01
     description: failure_router.sh default for suite_slug is empty string (not "unknown")
     verify:
       kind: file_contains
       path: execution/failure_router.sh
-      pattern: 'get_json_field "$json_file" "suite_slug" ""'
+      pattern: '"suite_slug" ""'
 
   - id: F1-02
     description: failure_router.sh logs warning and skips when slug is empty

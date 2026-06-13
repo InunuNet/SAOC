@@ -15,11 +15,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 INBOX_DIR="$PROJECT_ROOT/.agent/memory/project/inbox"
+ARCHIVE_DIR="$INBOX_DIR/archive"
 BACKLOG_FILE="$PROJECT_ROOT/.agent/memory/project/backlog.md"
 FAILURES_DIR="$PROJECT_ROOT/.agent/memory/project/failures"
 MISSIONS_DIR="$PROJECT_ROOT/.agent/memory/project/missions"
 
-mkdir -p "$FAILURES_DIR" "$MISSIONS_DIR"
+mkdir -p "$FAILURES_DIR" "$MISSIONS_DIR" "$ARCHIVE_DIR"
 
 # ─── helpers ─────────────────────────────────────────────────────────────────
 
