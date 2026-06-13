@@ -149,6 +149,13 @@ def validate_cmd(args):
     if contract.get("schema") != "athanor.contract/v1":
         errors.append(f"Unknown schema: {contract.get('schema')}")
 
+    # Validate phase IDs are integers
+    for p in contract.get("phases", []):
+        try:
+            int(p["id"])
+        except (ValueError, TypeError):
+            errors.append(f"Invalid phase ID: '{p['id']}'. Phase IDs must be integers.")
+
     assertions = contract.get("assertions", [])
     ids = set()
     binary_kinds = {"shell", "file_exists", "file_contains", "json_path", "handoff_field"}

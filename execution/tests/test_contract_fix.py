@@ -134,6 +134,27 @@ def main():
     assert_exit("gate --phase all for empty contract exits 0 (no assertions)", r_gate_empty_all, 0)
     ok("gate --phase all output mentions no assertions", "No assertions found in contract to gate." in r_gate_empty_all.stdout)
 
+
+    # Test 4: Contract with non-integer phase ID - ensure validation fails
+    print("\nTest 4: Contract with non-integer phase ID")
+    invalid_phase_contract = {
+        "schema": "athanor.contract/v1",
+        "slug": "invalid-phase-test",
+        "goal": "Test non-integer phase ID",
+        "created_at": "2023-01-01T00:00:00Z",
+        "assertions": [
+            {"id": "A1", "description": "Check file exists", "verify": {"kind": "file_exists", "path": "README.md"}},
+        ],
+        "phases": [
+            {"id": "not_an_int", "assertions": ["A1"]},
+        ]
+    }
+    contract_path_invalid_phase = create_contract_file(invalid_phase_contract, "invalid_phase_contract.json")
+
+    r_validate_invalid_phase = run(CONTRACT_CLI + ["validate", "--strict", str(contract_path_invalid_phase)])
+    assert_exit("validate --strict for invalid phase contract exits 1 (fail)", r_validate_invalid_phase, 1)
+    ok("validate --strict output shows invalid phase ID error", "Invalid phase ID: 'not_an_int'. Phase IDs must be integers." in r_validate_invalid_phase.stderr)
+
     print()
     print("========================================")
     print(f"Results: {PASS}/{PASS+FAIL} passed")
