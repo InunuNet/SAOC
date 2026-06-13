@@ -25,18 +25,4 @@ Research complete. Deliverable: `documents/hosting-research-2026-06-13.md`
 **Verdict: Stay on Firebase App Hosting.** Comparison table covers 9 platforms. Fly.io (JNB region) is the recommended fallback if SSR SA latency becomes an issue later. Brad to review and confirm.
 
 ## Deferred (auto-tracked)
-_Last compacted: 2026-06-15 by session. Dismissed: 250+ check_own_comms pulse items, qa-guard pings, quota-monitor alerts (all informational, no action). Full history: git log on this file._
-
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614013720.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614013914.txt
-
-- [ ] SAOC (Alert): [P0] ghost-unknown ERROR — 0/0 tests passed <!-- fp:sha1:48fb8a6359a2 -->
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614015001.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614015058.txt
+_Last compacted: 2026-06-14 by session. Dismissed: 260+ check_own_comms pulse items, qa-guard pings, quota-monitor alerts, 1× ghost-unknown P0 false-positive (fp:sha1:48fb8a6359a2 — no test suite matches this project). All informational, no action. Full history: git log on this file._
