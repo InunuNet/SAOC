@@ -17,9 +17,11 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613154648.txt
-- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
+- [x] SAOC (Misc): New Event: check_own_comms-20260613155803.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613155531.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613154648.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): [quota-monitor] Athanor: no active mission _(dismissed — no active mission by design, all phases complete, 2026-06-13)_
+- [x] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor _(dismissed — informational ping, no action required, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613154320.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613153508.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613153058.txt _(dismissed — pulse noise, 2026-06-13)_
