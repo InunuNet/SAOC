@@ -17,16 +17,17 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613055313.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613054228.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613053115.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613051830.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613050642.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613045538.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613044825.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613044830.txt
-- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
+- [x] SAOC (Misc): New Event: check_own_comms-20260613055741.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613055313.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613054228.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613053115.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613051830.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613050642.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613045538.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613044825.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613044830.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): [quota-monitor] Athanor: no active mission _(dismissed — no active mission intended, 2026-06-14)_
+- [x] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor _(dismissed — pulse noise, 2026-06-14)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613043651.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613043537.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Alert): [P0] ghost-unknown ERROR — 0/0 tests passed _(resolved 2026-06-13 — ghost tests 40/40 PASS; stale alert)_ <!-- fp:sha1:48fb8a6359a2 -->
