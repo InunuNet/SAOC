@@ -28,28 +28,6 @@ MUST use `slug:` field (NOT `spec:`). Assertions use `command:` (NOT `verify.cmd
 - Use single-line grep/test commands. For complex Python logic, write a helper script and call it.
 
 ```yaml
-# PROHIBITED — multiline python3 -c breaks gate execution:
-command: "python3 -c '\nimport sys\nraise ValueError()'"
-command: |
-  python3 -c '
-    import sys
-    sys.exit(1)
-  '
-
-# ALLOWED — single-line and helper-script forms:
-command: grep -q "pattern" path/to/file
-command: test -f path/to/file
-command: python3 -c "import mod; mod.fn()"
-command: python3 execution/checks/verify_raises.py path/to/file ValueError
-```
-
-# BAD — multiline python3 -c is prohibited:
-command: "python3 -c '\nimport sys\nprint(\"result\")\n'"
-
-# GOOD — use single-line grep or test:
-command: grep -q "result" path/to/file
-
-```yaml
 schema: athanor.contract/v1
 slug: <mission-slug>
 goal: <one sentence>
@@ -62,11 +40,14 @@ features:
 goldens:
   - .agent/memory/project/specs/<slug>/goldens/<file>
 assertions:
-  phase: 4
-  checks:
-    - id: A1
-      description: <verify what>
-      command: grep -q "pattern" path/to/file
+  - id: A1
+    description: <verify what>
+    verify:
+      kind: shell
+      cmd: grep -q "pattern" path/to/file
+phases:
+  - id: 4
+    assertions: [A1]
 ```
 
 Also write golden files at `.agent/memory/project/specs/<slug>/goldens/`.
