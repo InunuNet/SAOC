@@ -3,12 +3,12 @@ schema: athanor.mission/v1
 slug: fix-ghost-unknown
 goal: 'Fix failing ghost project unknown: ERROR — first failure: unknown'
 created_at: '2026-06-13T00:00:00Z'
-status: active
+status: completed
 autonomy: high
 features:
   - id: F1
     name: Fix failing tests in ghost-unknown
-    status: todo
+    status: done
 milestones:
   - id: M1
     title: All ghost-unknown tests pass GREEN
@@ -28,3 +28,15 @@ Ghost suite **unknown** is failing with severity **ERROR**.
 ## Gate
 
 The next improvement loop run showing GREEN for unknown closes this mission automatically.
+
+## Resolved by loop at 2026-06-13T23:59:15Z
+
+## Resolved by loop at 2026-06-13T23:59:15Z
+
+## Resolved by loop at 2026-06-13T23:59:15Z
+
+## Resolved by loop at 2026-06-13T23:59:15Z
+
+## Resolved by loop at 2026-06-13T23:59:15Z
+
+## Resolved by loop at 2026-06-13T23:59:15Z

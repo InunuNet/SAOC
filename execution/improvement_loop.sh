@@ -129,6 +129,10 @@ triage() {
 
 emit_failure_inbox() {
   local ts="$1" slug="$2" severity="$3" passed="$4" total="$5" exit_code="$6" log="$7"
+  # Guard: numeric fields must not be empty or JSON will be malformed
+  passed="${passed:-0}"
+  total="${total:-0}"
+  exit_code="${exit_code:-1}"
   local run_id
   run_id=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
