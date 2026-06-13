@@ -1,0 +1,169 @@
+schema: athanor.contract/v1
+feature: D6
+spec: d6-door-checkin
+name: D6 Door check-in — mobile-first QR scanner page (/admin/door) + checkin API route marking tickets checked-in in Firestore
+created_at: '2026-06-13T00:00:00.000000+00:00'
+
+# NOTE ON SCHEMA: this project's gate runner consumes the `verify.kind` form
+# (file_exists | file_contains | shell). cmd values containing ':' or '|'
+# are single-quoted to keep the YAML valid.
+#
+# SCOPE: door check-in for the SAOC 2027 National Show. A mobile-first client
+# page scans a QR code (html5-qrcode), reads a bookingRef, and POSTs it to
+# /api/admin/checkin. The route looks up the ticket by bookingRef, marks it
+# checked in (checkedInAt + status: 'checked-in'), and returns success/error.
+#
+# AUTH: NO new mechanism. The checkin route reuses the D5 session-cookie +
+# admin-claim pattern (cookies().get('session') → verifySessionCookie →
+# decodedToken.admin / role === 'admin'), returning 401/403 when not admin.
+
+assertions:
+  # ---- 1: door page (app/admin/door/page.tsx) ----
+  - id: D6-01
+    description: app/admin/door/page.tsx exists
+    verify:
+      kind: file_exists
+      path: app/admin/door/page.tsx
+
+  - id: D6-02
+    description: door page is a client component (needs browser camera access)
+    verify:
+      kind: shell
+      cmd: "grep -Eq \"^['\\\"]use client['\\\"]\" app/admin/door/page.tsx"
+
+  - id: D6-03
+    description: door page imports or references html5-qrcode for QR scanning
+    verify:
+      kind: shell
+      cmd: 'grep -q "html5-qrcode" app/admin/door/page.tsx'
+
+  - id: D6-04
+    description: door page POSTs the scanned value to /api/admin/checkin
+    verify:
+      kind: shell
+      cmd: "grep -q '/api/admin/checkin' app/admin/door/page.tsx"
+
+  - id: D6-05
+    description: door page sends a bookingRef in the check-in request
+    verify:
+      kind: shell
+      cmd: 'grep -q "bookingRef" app/admin/door/page.tsx'
+
+  - id: D6-06
+    description: door page has a manual text input fallback (type bookingRef)
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "<input|<form" app/admin/door/page.tsx'
+
+  - id: D6-07
+    description: door page shows success/failure feedback (success + error/failure text or colour)
+    verify:
+      kind: shell
+      cmd: "grep -Eqi \"success\" app/admin/door/page.tsx && grep -Eqi \"error|fail|red\" app/admin/door/page.tsx"
+
+  # ---- 2: checkin API route (app/api/admin/checkin/route.ts) ----
+  - id: D6-08
+    description: app/api/admin/checkin/route.ts exists
+    verify:
+      kind: file_exists
+      path: app/api/admin/checkin/route.ts
+
+  - id: D6-09
+    description: checkin route exports a POST handler
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "export (async )?function POST" app/api/admin/checkin/route.ts'
+
+  - id: D6-10
+    description: checkin route uses the Admin SDK (initAdmin)
+    verify:
+      kind: shell
+      cmd: "grep -Eq \"from '(@/)?lib/firebase-admin'\" app/api/admin/checkin/route.ts"
+
+  - id: D6-11
+    description: checkin route enforces admin auth — session cookie + verifySessionCookie + admin/role claim
+    verify:
+      kind: shell
+      cmd: "grep -q \"get('session')\" app/api/admin/checkin/route.ts && grep -q \"verifySessionCookie\" app/api/admin/checkin/route.ts && grep -Eqi \"admin|role\" app/api/admin/checkin/route.ts"
+
+  - id: D6-12
+    description: checkin route returns 401/403 for unauthorized requests
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "401|403" app/api/admin/checkin/route.ts'
+
+  - id: D6-13
+    description: checkin route reads the tickets Firestore collection by bookingRef
+    verify:
+      kind: shell
+      cmd: "(grep -q \"collection('tickets')\" app/api/admin/checkin/route.ts || grep -q 'collection(\"tickets\")' app/api/admin/checkin/route.ts) && grep -q \"where('bookingRef'\" app/api/admin/checkin/route.ts || grep -q 'where(\"bookingRef\"' app/api/admin/checkin/route.ts"
+
+  - id: D6-14
+    description: checkin route sets the checkedInAt field on the ticket
+    verify:
+      kind: shell
+      cmd: 'grep -q "checkedInAt" app/api/admin/checkin/route.ts'
+
+  - id: D6-15
+    description: checkin route writes a server Timestamp for checkedInAt
+    verify:
+      kind: shell
+      cmd: "grep -Eq \"Timestamp\\.now\\(\\)|FieldValue\\.serverTimestamp\\(\\)\" app/api/admin/checkin/route.ts"
+
+  - id: D6-16
+    description: checkin route sets status to 'checked-in'
+    verify:
+      kind: shell
+      cmd: "grep -Eq \"checked-in\" app/api/admin/checkin/route.ts && grep -q \"status\" app/api/admin/checkin/route.ts"
+
+  - id: D6-17
+    description: checkin route returns a structured success response (success + ticket)
+    verify:
+      kind: shell
+      cmd: 'grep -q "success" app/api/admin/checkin/route.ts'
+
+  # ---- 3: dependency — html5-qrcode in package.json ----
+  - id: D6-18
+    description: html5-qrcode is declared in package.json dependencies
+    verify:
+      kind: shell
+      cmd: 'grep -q "html5-qrcode" package.json'
+
+  # ---- 4: Gates ----
+  - id: D6-GATE-01
+    description: pnpm type-check passes — strict TS, zero errors
+    verify:
+      kind: shell
+      cmd: pnpm type-check
+      expect_exit: 0
+
+  - id: D6-GATE-02
+    description: pnpm lint passes with zero errors
+    verify:
+      kind: shell
+      cmd: pnpm lint
+      expect_exit: 0
+
+phases:
+  - id: 1
+    assertions:
+      - D6-01
+      - D6-02
+      - D6-03
+      - D6-04
+      - D6-05
+      - D6-06
+      - D6-07
+      - D6-08
+      - D6-09
+      - D6-10
+      - D6-11
+      - D6-12
+      - D6-13
+      - D6-14
+      - D6-15
+      - D6-16
+      - D6-17
+      - D6-18
+      - D6-GATE-01
+      - D6-GATE-02
