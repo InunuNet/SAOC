@@ -17,12 +17,14 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613200559.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613200429.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613195422.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613195301.txt
-- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
+- [x] SAOC (Misc): New Event: check_own_comms-20260613201718.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613201559.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613200559.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613200429.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613195422.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613195301.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): [quota-monitor] Athanor: no active mission _(dismissed — no active mission by design, all phases complete, 2026-06-14)_
+- [x] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor _(dismissed — informational ping, no action required, 2026-06-14)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613194307.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613194126.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): [quota-monitor] Athanor: no active mission _(dismissed — no active mission by design, all phases complete, 2026-06-13)_
