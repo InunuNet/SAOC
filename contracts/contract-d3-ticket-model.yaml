@@ -1,0 +1,180 @@
+schema: athanor.contract/v1
+feature: D3
+spec: d3-ticket-model
+name: D3 Ticket data model — TicketStatus / TicketType / Ticket types in types/index.ts + Firestore schema doc
+created_at: '2026-06-13T00:00:00.000000+00:00'
+
+# NOTE ON SCHEMA: this project's gate runner consumes the `verify.kind` form
+# (file_exists | file_contains | shell). Assertions below cover three areas:
+#   1. Type definitions added to types/index.ts (TicketStatus, TicketType, Ticket)
+#   2. All required Ticket fields present
+#   3. docs/firestore-ticket-schema.md exists and documents the `tickets` collection
+# Plus type-check and lint gates. No buy flow, no Stripe integration — types + doc only.
+
+assertions:
+  # ---- 1-3: union + interface declarations exist and are exported ----
+  - id: D3-01
+    description: types/index.ts exports a TicketStatus type
+    verify:
+      kind: shell
+      cmd: grep -Eq "export (type|interface) TicketStatus" types/index.ts
+
+  - id: D3-02
+    description: TicketStatus enumerates all four states (reserved, paid, cancelled, checked-in)
+    verify:
+      kind: shell
+      cmd: grep -q "'reserved'" types/index.ts && grep -q "'paid'" types/index.ts && grep -q "'cancelled'" types/index.ts && grep -q "'checked-in'" types/index.ts
+
+  - id: D3-03
+    description: types/index.ts exports a TicketType type
+    verify:
+      kind: shell
+      cmd: grep -Eq "export (type|interface) TicketType" types/index.ts
+
+  - id: D3-04
+    description: TicketType enumerates all three tiers (general, member, vip)
+    verify:
+      kind: shell
+      cmd: grep -q "'general'" types/index.ts && grep -q "'member'" types/index.ts && grep -q "'vip'" types/index.ts
+
+  - id: D3-05
+    description: types/index.ts exports a Ticket type/interface
+    verify:
+      kind: shell
+      cmd: grep -Eq "export (type|interface) Ticket\b" types/index.ts
+
+  # ---- 4: Ticket carries the Timestamp type import ----
+  - id: D3-06
+    description: types/index.ts imports the Firestore Timestamp type used by Ticket fields
+    verify:
+      kind: file_contains
+      path: types/index.ts
+      pattern: 'Timestamp'
+
+  # ---- 5-13: Ticket field coverage ----
+  - id: D3-07
+    description: Ticket declares an id field
+    verify:
+      kind: file_contains
+      path: types/index.ts
+      pattern: 'id: string'
+
+  - id: D3-08
+    description: Ticket declares a bookingRef field
+    verify:
+      kind: file_contains
+      path: types/index.ts
+      pattern: 'bookingRef: string'
+
+  - id: D3-09
+    description: Ticket declares a showId field
+    verify:
+      kind: file_contains
+      path: types/index.ts
+      pattern: 'showId: string'
+
+  - id: D3-10
+    description: Ticket declares an attendeeName field
+    verify:
+      kind: file_contains
+      path: types/index.ts
+      pattern: 'attendeeName: string'
+
+  - id: D3-11
+    description: Ticket declares an attendeeEmail field
+    verify:
+      kind: file_contains
+      path: types/index.ts
+      pattern: 'attendeeEmail: string'
+
+  - id: D3-12
+    description: Ticket declares a ticketType field of type TicketType
+    verify:
+      kind: file_contains
+      path: types/index.ts
+      pattern: 'ticketType: TicketType'
+
+  - id: D3-13
+    description: Ticket declares a status field of type TicketStatus
+    verify:
+      kind: file_contains
+      path: types/index.ts
+      pattern: 'status: TicketStatus'
+
+  - id: D3-14
+    description: Ticket declares a nullable purchasedAt Timestamp field
+    verify:
+      kind: shell
+      cmd: grep -Eq "purchasedAt: Timestamp \| null" types/index.ts
+
+  - id: D3-15
+    description: Ticket declares a nullable checkedInAt Timestamp field
+    verify:
+      kind: shell
+      cmd: grep -Eq "checkedInAt: Timestamp \| null" types/index.ts
+
+  - id: D3-16
+    description: Ticket declares a nullable stripePaymentIntentId field
+    verify:
+      kind: shell
+      cmd: grep -Eq "stripePaymentIntentId: string \| null" types/index.ts
+
+  # ---- 14-16: Firestore schema documentation ----
+  - id: D3-17
+    description: docs/firestore-ticket-schema.md exists
+    verify:
+      kind: file_exists
+      path: docs/firestore-ticket-schema.md
+
+  - id: D3-18
+    description: schema doc names the tickets collection
+    verify:
+      kind: file_contains
+      path: docs/firestore-ticket-schema.md
+      pattern: 'tickets'
+
+  - id: D3-19
+    description: schema doc documents every Ticket field name
+    verify:
+      kind: shell
+      cmd: grep -q "bookingRef" docs/firestore-ticket-schema.md && grep -q "showId" docs/firestore-ticket-schema.md && grep -q "attendeeName" docs/firestore-ticket-schema.md && grep -q "attendeeEmail" docs/firestore-ticket-schema.md && grep -q "ticketType" docs/firestore-ticket-schema.md && grep -q "status" docs/firestore-ticket-schema.md && grep -q "purchasedAt" docs/firestore-ticket-schema.md && grep -q "checkedInAt" docs/firestore-ticket-schema.md && grep -q "stripePaymentIntentId" docs/firestore-ticket-schema.md
+
+  # ---- 17-18: Gates ----
+  - id: D3-GATE-01
+    description: pnpm type-check passes — strict TS, zero errors
+    verify:
+      kind: shell
+      cmd: pnpm type-check
+      expect_exit: 0
+
+  - id: D3-GATE-02
+    description: pnpm lint passes with zero errors
+    verify:
+      kind: shell
+      cmd: pnpm lint
+      expect_exit: 0
+
+phases:
+  - id: 1
+    assertions:
+      - D3-01
+      - D3-02
+      - D3-03
+      - D3-04
+      - D3-05
+      - D3-06
+      - D3-07
+      - D3-08
+      - D3-09
+      - D3-10
+      - D3-11
+      - D3-12
+      - D3-13
+      - D3-14
+      - D3-15
+      - D3-16
+      - D3-17
+      - D3-18
+      - D3-19
+      - D3-GATE-01
+      - D3-GATE-02

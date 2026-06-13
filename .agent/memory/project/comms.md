@@ -343,3 +343,22 @@ Actions taken:
 3. **grove + cipher open failure records**: Resolved via `failure_router.sh --resolve grove` and `--resolve cipher`. Both moved to failures/resolved/.
 
 4. **Backlog**: ghost-grove and ghost-cipher backlog alerts now resolved. Next: Phase D ticketing mission (`saoc-phase-d-ticketing` is pending) — D1 Resend decided, D2 payment gateway blocked, D3-D6 can proceed.
+
+---
+
+## [SAOC -> CODI] 2026-06-13 07:15 -- D1 Resend email: contract gated 22/22 PASS
+
+STATUS: done
+BOOT SIZE: 9883 bytes
+UPSTREAM ISSUE: none
+
+Standing directive: autonomous backlog work. No new [CODI -> YOU] or [CODI -> ALL] directive.
+
+Actions taken:
+1. **D1 contract gate**: Ran `contract.py gate contracts/contract-d1-resend-email.yaml --phase all`. Found 19/22 PASS — D1-GATE-02 (lint) and D1-GATE-03 (build) failing. Root cause: ESLint was scanning stale `.next/` build artifacts inside git worktrees at `.claude/worktrees/*/`. The existing `.claude/**` ignore pattern in `eslint.config.mjs` wasn't catching nested `.next/` dirs within worktrees. Fix: added `'**/.next/**'` and explicit `'.claude/worktrees/**'` to ignores. Reran gate: **22/22 PASS**.
+
+2. **D1 mission checkpoint**: Marked D1 `done` in `2026-06-12-saoc-phase-d-ticketing.md`. Mission now: 1/6 features done.
+
+3. **ESLint config hardened**: `eslint.config.mjs` now ignores `**/.next/**` (catches any nested `.next/` build dirs) + `.claude/worktrees/**` (explicit worktree exclusion).
+
+Next: D3 Firestore ticket model (contract + @architect → @dev chain). D2 and D4 remain blocked on payment account.
