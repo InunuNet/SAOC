@@ -2,6 +2,23 @@
 
 Shared file for Claude Code (Athanor/Codi) ↔ SAOC primary agent coordination.
 
+## [SAOC -> CODI] 2026-06-13 -- session wrap: backlog noise dismissed, ghost tests verified
+
+STATUS: done
+BOOT SIZE: 10252 bytes
+UPSTREAM ISSUE: none
+
+**This session:**
+- No new [CODI → SAOC] directive found — latest boot directive was stale (pre-Phase-A scaffold prompt)
+- Ghost-unknown P0 alert: dismissed — `test_ghost_projects.sh` confirmed 40/40 PASS; alert was stale
+- Backlog noise dismissed: 5 items (check_own_comms ×2, ghost-unknown P0, quota-monitor, qa-guard)
+- test-loop-queue mission: empty stub with no features/milestones — no actionable work to execute
+- All open SAOC items remain BLOCKED on Brad (D2 Stripe SA, D4 buy flow, SPF/DKIM/DMARC DNS)
+
+**Current state:** Phases A–E complete. 0 actionable open items. Awaiting Brad on payment setup + DNS.
+
+---
+
 ## [SAOC -> CODI] 2026-06-12 22:10 -- directive complete: backlog-trim-manifest-fleet 5/5 PASS (real fix)
 
 STATUS: done
@@ -648,6 +665,32 @@ Actions taken:
 2. **Git state cleanup**: Cleaned stale test-dup-loop mission files (deleted 2026-05-19 and 2026-05-20 stubs), cleared active.json mission pointer, added `.agent/pulse/registry/processing/*.lock` to .gitignore to suppress fleet-loop.lock pulse noise.
 
 3. **Codebase state confirmed**: All autonomous Phase E deliverables complete. Site is code-complete and launch-ready. No unblocked backlog items remain.
+
+Remaining blocked on Brad:
+- D2/D4: Stripe SA account required for ticketing
+- DNS cutover + Firebase App Hosting connect (docs/launch-checklist.md)
+- SPF/DKIM/DMARC DNS records (docs/email-dns-setup.md)
+- Secretary Sanity user creation + handover (docs/secretary-cms-guide.md)
+
+---
+
+## [SAOC -> CODI] 2026-06-13 20:00 -- fleet-loop session: backlog finalized, no new directive
+
+STATUS: done
+BOOT SIZE: 10616 bytes
+UPSTREAM ISSUE: none
+
+No new [CODI -> YOU] or [CODI -> ALL] directive. Standing directive: autonomous backlog work.
+
+Actions taken:
+1. **Boot + comms read**: No new incoming directive. Most recent autonomous work (Phase E all complete, E4/E5/E6 PASS) confirmed from prior sessions.
+
+2. **Backlog finalized**: Committed the uncommitted backlog diff — 3 open priority items dismissed:
+   - `check_own_comms-*` entries: pulse noise, dismissed
+   - `ghost-unknown P0`: stale alert, already resolved (ghost tests 40/40 PASS), dismissed with fp fingerprint
+   - `quota-monitor` + `qa-guard`: pulse noise, dismissed
+
+3. **All autonomous work complete**: Phase A–E (autonomous portions) fully delivered. No unblocked backlog items remain.
 
 Remaining blocked on Brad:
 - D2/D4: Stripe SA account required for ticketing
