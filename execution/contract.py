@@ -415,9 +415,18 @@ def gate_cmd(args):
 
     if args.phase == "all":
         phases_data = sorted(contract.get("phases", []), key=lambda p: p.get("id", 0))
-        if not phases_data:
-            print("No phases found in contract to gate.")
-            sys.exit(0)
+
+        # If phases are not explicitly defined or only a single phase is present
+        # (which happens when normalized from @architect single-phase format),
+        # ensure all assertions are gated as a single "all" phase.
+        if not phases_data or (len(phases_data) == 1 and phases_data[0]['id'] in (1, '1') and
+                               len(phases_data[0].get('assertions', [])) == len(contract.get('assertions', []))):
+            print("INFO: No explicit multi-phase definition found. Gating all assertions as a single phase.")
+            all_assertion_ids = [a["id"] for a in contract.get("assertions", [])]
+            if not all_assertion_ids:
+                print("No assertions found in contract to gate.")
+                sys.exit(0)
+            phases_data = [{"id": "all_assertions", "assertions": all_assertion_ids}]
 
         for phase_def in phases_data:
             phase_id = phase_def['id']
