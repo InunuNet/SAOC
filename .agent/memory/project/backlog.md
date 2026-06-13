@@ -17,15 +17,17 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613092121.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613091615.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613091059.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613090510.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613085941.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613085406.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260613084813.txt
-- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
+- [x] SAOC (Misc): New Event: check_own_comms-20260613093154.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613092713.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613092121.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613091615.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613091059.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613090510.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613085941.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613085406.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613084813.txt _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): [quota-monitor] Athanor: no active mission _(dismissed — pulse noise, 2026-06-14)_
+- [x] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor _(dismissed — pulse noise, 2026-06-14)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613084238.txt _(dismissed — pulse noise, 2026-06-14)_
 - [x] SAOC (Misc): [quota-monitor] Athanor: no active mission _(dismissed — no active mission intended, 2026-06-14)_
 - [x] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor _(dismissed — pulse noise, 2026-06-14)_
