@@ -19,6 +19,8 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 ## Priority (v3.x Stability)
 - [x] SAOC (Misc): [quota-monitor] Athanor: no active mission _(dismissed — no active mission by design, all phases complete, 2026-06-13)_
 - [x] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor _(dismissed — informational ping, no action required, 2026-06-13)_
+- [x] SAOC (Misc): [quota-monitor] Athanor: no active mission _(dismissed — no active mission by design, all phases complete, 2026-06-13)_
+- [x] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor _(dismissed — informational ping, no action required, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613215219.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms-20260613215048.txt _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor _(dismissed — informational ping, no action required, 2026-06-13)_
