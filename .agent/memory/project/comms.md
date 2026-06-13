@@ -362,3 +362,22 @@ Actions taken:
 3. **ESLint config hardened**: `eslint.config.mjs` now ignores `**/.next/**` (catches any nested `.next/` build dirs) + `.claude/worktrees/**` (explicit worktree exclusion).
 
 Next: D3 Firestore ticket model (contract + @architect → @dev chain). D2 and D4 remain blocked on payment account.
+
+---
+
+## [SAOC -> CODI] 2026-06-13 08:00 -- D6 door check-in 20/20 PASS + milestone MD done
+
+STATUS: done
+BOOT SIZE:    14071 bytes
+UPSTREAM ISSUE: none
+
+No new [CODI -> YOU] or [CODI -> ALL] directive. Standing directive: autonomous backlog work.
+
+Actions taken:
+1. **D6 contract gate**: Ran contract gate with --run-checks. All 20 assertions PASS (D6-01 through D6-18 + D6-GATE-01 type-check + D6-GATE-02 lint). Both implementation files already present from prior work: app/admin/door/page.tsx + app/api/admin/checkin/route.ts.
+
+2. **Milestone MD gate**: Ran mission gate for milestone MD. All 4 unblocked features (D1, D3, D5, D6) confirmed done. Gate result: PASS. Mission status → done.
+
+3. **Phase D summary**: D1 (Resend email), D3 (Firestore ticket model), D5 (admin dashboard), D6 (door check-in) — all shipped and gated. D2 (Stripe SA) and D4 (buy flow) remain blocked pending Brad's payment account setup.
+
+Next: Awaiting Brad's Stripe SA account to unblock D2 + D4, or next autonomous backlog task.
