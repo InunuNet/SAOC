@@ -11,12 +11,16 @@ _Last compacted: 2026-06-12 by backlog_trim.py. Full history: git log on this fi
 - [x] **Remove footer newsletter stub** — no newsletter references found in codebase (2026-06-13 verified).
 - [x] **Fix `draftMode()` build-time console.error** — `sanityFetch` already guards `draftMode()` in try/catch; build clean (2026-06-13 verified).
 - [x] **Fix `outputFileTracingRoot` build warning** — added `outputFileTracingRoot: process.cwd()` to next.config.ts (2026-06-13).
-- [ ] **Phase E: Polish, testing, Secretary training, DNS cutover, launch.** _(Secretary training guide: docs/secretary-cms-guide.md — E5 contract 19/19 PASS 2026-06-13; Launch checklist: docs/launch-checklist.md — E6 contract 14/14 PASS 2026-06-13)_
+- [x] **Phase E (autonomous): SEO E4 22/22, Secretary training E5 19/19, Launch checklist E6 14/14 — all PASS 2026-06-13. DNS cutover + D2/D4 blocked on Brad.**
 - [ ] **Configure SPF/DKIM/DMARC on saoc.co.za** — required before Phase D launch. Setup guide written: docs/email-dns-setup.md. Brad to add DNS records once Resend domain is verified.
 - [ ] **D2: Stripe SA payment gateway** — BLOCKED pending Brad's Stripe SA account setup. Yoco signup broken 2026-06-06; fallback is Stripe (ZAR).
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
 
 ## Priority (v3.x Stability)
+- [x] SAOC (Misc): New Event: check_own_comms-20260613042324.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): New Event: check_own_comms-20260613042418.txt _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor _(dismissed — pulse noise, 2026-06-13)_
+- [x] SAOC (Misc): [quota-monitor] Athanor: no active mission _(dismissed — no active mission intended, 2026-06-13)_
 - [x] SAOC (Misc): New Event: check_own_comms noise _(dismissed — pulse noise, 2026-06-13)_
 - [x] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor _(dismissed — no action needed, 2026-06-13)_
 - [x] SAOC (Misc): [quota-monitor] Athanor: no active mission _(dismissed — no active mission intended, 2026-06-13)_
