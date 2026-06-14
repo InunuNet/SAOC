@@ -31,33 +31,4 @@ _Last compacted: 2026-06-14 by session. Dismissed: 400+ check_own_comms pulse it
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614102447.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614102616.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614103729.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614103840.txt
-[SAOC] --- Running ingest_pulse.sh ---
-[SAOC] Processing: fleet_improve-20260614105021.txt
-[SAOC] Archived (routine): fleet_improve-20260614105021.txt
-[SAOC] Processing: auto_update-20260614105017.txt
-[SAOC] Archived (routine): auto_update-20260614105017.txt
-[SAOC] Processing: check_own_comms-20260614105021.txt
-
-- [ ] SAOC (Misc): [SAOC] --- Running ingest_pulse.sh ---
-[SAOC] Processing: fleet_improve-20260614105021.txt
-[SAOC] Archived (routine): fleet_improve-20260614105021.txt
-[SAOC] Processing: auto_update-20260614105017.txt
-[SAOC] Archived (routine): auto_update-20260614105017.txt
-[SAOC] Processing: check_own_comms-20260614105021.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614105021.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614105744.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614105701.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614110538.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614110643.txt
+_Dismissed: check_own_comms pulses through 20260614110643 — all routine, no action._
