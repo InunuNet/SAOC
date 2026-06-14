@@ -256,9 +256,9 @@ def main():
     collision_seed.write_text(seed_content)
 
     r = run(MISSION_CLI + ["new", "slug collision done test", "--slug", collision_slug])
-    assert_exit("slug_collision_done: exits 0", r, 0)
-    ok("slug_collision_done: new mission file created",
-       collision_expected.exists() and collision_expected != collision_seed,
+    assert_exit("slug_collision_done: exits 1", r, 1)
+    ok("slug_collision_done: new mission file NOT created",
+       not collision_expected.exists(),
        f"expected: {collision_expected}, stdout: {r.stdout[:200]}, stderr: {r.stderr[:200]}")
     print()
 

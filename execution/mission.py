@@ -181,22 +181,14 @@ def cmd_new(args):
     out_path = MISSIONS_DIR / filename
 
     # Cross-date slug collision scan: find any *-{slug}.md regardless of date prefix.
-    # Skip the current out_path (same-day exact match is handled by the next block).
+    # If any mission with the same slug exists (and it's not the exact `out_path`
+    # for a same-day re-run), prevent creation.
     for existing in MISSIONS_DIR.glob(f"*-{slug}.md"):
         if existing == out_path:
+            # This is the same file we'd create today; exact same-day check is next.
             continue
-        try:
-            fm, _ = parse_mission_file(str(existing))
-        except SystemExit:
-            # Malformed mission frontmatter — skip silently rather than crashing.
-            continue
-        except Exception:
-            continue
-        if fm.get("slug") != slug:
-            continue
-        existing_status = fm.get("status", "")
-        print(f"ERROR: mission slug '{slug}' already exists with status={existing_status!r}: {existing}", file=sys.stderr)
-        print("Resume that mission instead, or rename the slug.", file=sys.stderr)
+        print(f"ERROR: mission with slug '{slug}' already exists: {existing}", file=sys.stderr)
+        print("Resume that mission instead, or choose a different slug.", file=sys.stderr)
         sys.exit(1)
 
     if out_path.exists():
