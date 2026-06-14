@@ -228,16 +228,15 @@ def main():
        f"stdout: {r.stdout[:300]}")
     print()
 
-    # ── Test 9: done-slug collision continues (regression for sys.exit(0) fix) ──
-    print("Test 9: mission.py new with done-slug collision exits 0 and creates file")
+    # ── Test 9: slug collision exits 1 and does not create file ──────────────────
+    print("Test 9: mission.py new with slug collision (done) exits 1 and does not create file")
     import datetime
 
     collision_slug = "slug-collision-done-test"
     today_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
     collision_seed = MISSIONS_DIR / f"2026-01-01-{collision_slug}.md"
-    collision_expected = MISSIONS_DIR / f"{today_str}-{collision_slug}.md"
+    collision_expected = MISSIONS_DIR / f"{today_str}-{collision_slug}.md" # This should NOT be created
     created_files.append(str(collision_seed))
-    created_files.append(str(collision_expected))
 
     seed_fm = {
         "schema": "athanor.mission/v1",
@@ -256,10 +255,10 @@ def main():
     collision_seed.write_text(seed_content)
 
     r = run(MISSION_CLI + ["new", "slug collision done test", "--slug", collision_slug])
-    assert_exit("slug_collision_done: exits 0", r, 0)
-    ok("slug_collision_done: new mission file created",
-       collision_expected.exists() and collision_expected != collision_seed,
-       f"expected: {collision_expected}, stdout: {r.stdout[:200]}, stderr: {r.stderr[:200]}")
+    assert_exit("slug_collision_done: exits 1", r, 1) # Changed from 0 to 1
+    ok("slug_collision_done: new mission file NOT created",
+       not collision_expected.exists(), # Changed assertion
+       f"expected: {collision_expected} NOT to exist, stdout: {r.stdout[:200]}, stderr: {r.stderr[:200]}")
     print()
 
     # ── Cleanup ───────────────────────────────────────────────────────────────
