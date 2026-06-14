@@ -501,7 +501,7 @@ def main():
     c.add_argument("--assertion", required=True)
     c.add_argument("--handoff")
     c.add_argument("--timeout-seconds", type=int, default=60,
-                   help="Shell assertion timeout in seconds (default: 300)")
+                   help="Shell assertion timeout in seconds (default: 60)")
 
     g = sub.add_parser("gate", help="Exit 0 iff all phase-N assertions pass. Use --run-checks to auto-run any missing checks before evaluating.")
     g.add_argument("contract")
@@ -510,7 +510,7 @@ def main():
     g.add_argument("--run-checks", action="store_true", default=False,
                    help="Auto-run check for each assertion that lacks a result file before evaluating the gate")
     g.add_argument("--timeout-seconds", type=int, default=60,
-                   help="Shell assertion timeout in seconds (default: 300)")
+                   help="Shell assertion timeout in seconds (default: 60)")
 
     r = sub.add_parser("report")
     r.add_argument("contract")
