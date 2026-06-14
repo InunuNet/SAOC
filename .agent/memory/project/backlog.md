@@ -38,3 +38,18 @@ _Last compacted: 2026-06-14 by session. Dismissed: 400+ check_own_comms pulse it
 - [ ] SAOC (Misc): New Event: check_own_comms-20260614103729.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260614103840.txt
+[SAOC] --- Running ingest_pulse.sh ---
+[SAOC] Processing: fleet_improve-20260614105021.txt
+[SAOC] Archived (routine): fleet_improve-20260614105021.txt
+[SAOC] Processing: auto_update-20260614105017.txt
+[SAOC] Archived (routine): auto_update-20260614105017.txt
+[SAOC] Processing: check_own_comms-20260614105021.txt
+
+- [ ] SAOC (Misc): [SAOC] --- Running ingest_pulse.sh ---
+[SAOC] Processing: fleet_improve-20260614105021.txt
+[SAOC] Archived (routine): fleet_improve-20260614105021.txt
+[SAOC] Processing: auto_update-20260614105017.txt
+[SAOC] Archived (routine): auto_update-20260614105017.txt
+[SAOC] Processing: check_own_comms-20260614105021.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260614105021.txt

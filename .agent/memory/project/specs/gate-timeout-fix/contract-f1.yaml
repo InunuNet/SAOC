@@ -1,0 +1,20 @@
+schema: athanor.contract/v1
+slug: gate-timeout-fix
+goal: Increase the default timeout for gate assertions in contract.py to 300 seconds to accommodate full test suites.
+created_at: '2026-06-14'
+autonomy: high
+features:
+  - id: F1
+    name: Increase gate assertion timeout
+    status: pending
+goldens:
+  - .agent/memory/project/specs/gate-timeout-fix/goldens/contract.py.golden
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Verify that --timeout-seconds default value is 300
+      command: grep -q "default=300" execution/contract.py
+    - id: A2
+      description: Verify that the help message for --timeout-seconds is updated
+      command: grep -q "default: 300" execution/contract.py
