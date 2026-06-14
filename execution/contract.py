@@ -209,7 +209,7 @@ def check_cmd(args):
     if kind == "shell":
         cmd = verify.get("cmd", "")
         expected_exit = verify.get("expect_exit", 0)
-        timeout = getattr(args, "timeout_seconds", 60)
+        timeout = verify.get("timeout_seconds") or getattr(args, "timeout_seconds", 60)
         tf_name = None
         try:
             import tempfile
@@ -360,23 +360,19 @@ def _gate_single_phase(contract: dict, args) -> bool:
 
     phase_assertions = phase.get("assertions", [])
 
-    # Auto-run checks for assertions that don't have a result file yet
+    # --run-checks always re-executes every assertion, never reads stale cache
     if run_checks:
         for aid in phase_assertions:
-            rf = result_file(contract, aid)
-            if not rf.exists():
-                print(f"  AUTO-CHECK {aid}: no result file — running check now")
-                check_args = argparse.Namespace(
-                    contract=args.contract,
-                    assertion=aid,
-                    handoff=getattr(args, "handoff", None),
-                    timeout_seconds=getattr(args, "timeout_seconds", 60),
-                )
-                # check_cmd calls sys.exit; capture it and continue
-                try:
-                    check_cmd(check_args)
-                except SystemExit:
-                    pass
+            check_args = argparse.Namespace(
+                contract=args.contract,
+                assertion=aid,
+                handoff=getattr(args, "handoff", None),
+                timeout_seconds=getattr(args, "timeout_seconds", 60),
+            )
+            try:
+                check_cmd(check_args)
+            except SystemExit:
+                pass
 
     failing = []
 
