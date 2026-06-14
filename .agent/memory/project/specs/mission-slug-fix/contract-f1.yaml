@@ -1,0 +1,24 @@
+schema: athanor.contract/v1
+slug: mission-slug-fix
+goal: Ensure mission.py new correctly handles existing slugs by exiting with an error.
+created_at: '2026-06-14'
+autonomy: high
+features:
+  - id: F1
+    name: Prevent new mission creation on any slug collision
+    status: pending
+goldens:
+  - .agent/memory/project/specs/mission-slug-fix/goldens/2026-06-14-duplicate-slug-check.md
+  - .agent/memory/project/specs/mission-slug-fix/goldens/2026-06-14-another-duplicate.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Attempting to create a new mission with a slug that matches an existing 'done' mission should result in an exit code of 1 and print an error, and no new file should be created.
+      command: python3 execution/checks/verify_mission_new_fails_on_duplicate_slug.py duplicate-slug-check "Test Goal for Done"
+    - id: A2
+      description: Attempting to create a new mission with a slug that matches an existing 'pending' mission should result in an exit code of 1 and print an error, and no new file should be created.
+      command: python3 execution/checks/verify_mission_new_fails_on_duplicate_slug.py another-duplicate "Test Goal for Pending"
+    - id: A3
+      description: Verify that active.json is cleaned after a failed mission new attempt.
+      command: test ! -f .agent/memory/project/missions/active.json
