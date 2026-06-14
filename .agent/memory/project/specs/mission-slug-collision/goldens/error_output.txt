@@ -1,0 +1,2 @@
+ERROR: mission slug 'test-collision-slug' already exists with status='done': .agent/memory/project/missions/2026-01-01-test-collision-slug.md
+Cannot create a new mission with an existing slug.

@@ -1,0 +1,33 @@
+schema: athanor.contract/v1
+slug: mission-slug-collision
+goal: mission.py new exits 1 on any slug collision
+created_at: '2026-06-14'
+autonomy: high
+features:
+  - id: F1
+    name: Prevent new mission creation on slug collision
+    status: pending
+goldens:
+  - .agent/memory/project/specs/mission-slug-collision/goldens/error_output.txt
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: 'mission.py new exits 1 and prints error on existing "done" slug'
+      command: >
+        MISSION_CLI="python3 execution/mission.py"; 
+        MISSIONS_DIR=".agent/memory/project/missions"; 
+        COLLISION_SLUG="test-collision-slug"; 
+        TODAY_STR=$(date -u +"%Y-%m-%d"); 
+        COLLISION_SEED="${MISSIONS_DIR}/2026-01-01-${COLLISION_SLUG}.md"; 
+        COLLISION_EXPECTED="${MISSIONS_DIR}/${TODAY_STR}-${COLLISION_SLUG}.md"; 
+        mkdir -p ${MISSIONS_DIR}; 
+        echo "---" > ${COLLISION_SEED}; 
+        echo "schema: athanor.mission/v1" >> ${COLLISION_SEED}; 
+        echo "slug: ${COLLISION_SLUG}" >> ${COLLISION_SEED}; 
+        echo "goal: A previously completed collision test mission" >> ${COLLISION_SEED}; 
+        echo "status: done" >> ${COLLISION_SEED}; 
+        echo "---" >> ${COLLISION_SEED}; 
+        echo "# Seed" >> ${COLLISION_SEED}; 
+        ! python3 execution/mission.py new "slug collision done test" --slug ${COLLISION_SLUG} 2>&1 | grep -q "ERROR: mission slug '${COLLISION_SLUG}' already exists"; 
+        [ $? -ne 0 ] && rm ${COLLISION_SEED}
