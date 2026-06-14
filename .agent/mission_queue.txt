@@ -1,1 +1,2 @@
 # slug|goal — one per line
+test-loop-queue|Implement test-loop-queue mission for pulse loop regression coverage.
