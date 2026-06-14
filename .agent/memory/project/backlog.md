@@ -30,3 +30,7 @@ _Last compacted: 2026-06-14 by session. Dismissed: 260+ check_own_comms pulse it
 - [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260614020855.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260614020804.txt
