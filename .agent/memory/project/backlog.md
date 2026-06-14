@@ -60,3 +60,5 @@ _Last compacted: 2026-06-14 17:00 by session. Dismissed: 500+ check_own_comms pu
 - [ ] SAOC (Misc): New Event: check_own_comms-20260614173350.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260614173411.txt
+
+- [ ] SAOC (Alert): [P0] ghost-resume ERROR — 0/0 tests passed <!-- fp:sha1:e4624eeca513 -->
