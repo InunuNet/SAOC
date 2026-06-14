@@ -1,5 +1,8 @@
 {
-  "mission": null,
-  "checkpoint": null,
-  "note": "test queue activation"
+  "mission": ".agent/memory/project/missions/2026-05-19-test-dup-loop.md",
+  "checkpoint": {
+    "milestone": null,
+    "feature": null
+  },
+  "note": "test duplicate slug reconcile"
 }
