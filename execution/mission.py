@@ -195,14 +195,10 @@ def cmd_new(args):
         if fm.get("slug") != slug:
             continue
         existing_status = fm.get("status", "")
-        if existing_status == "done":
-            print(f"NOTE: mission slug '{slug}' previously completed: {existing}", file=sys.stderr)
-            print(f"Creating new mission with same slug under today's date prefix.", file=sys.stderr)
-            continue
-        else:
-            print(f"ERROR: mission slug '{slug}' already exists with status={existing_status!r}: {existing}", file=sys.stderr)
-            print("Resume that mission instead, or rename the slug.", file=sys.stderr)
-            sys.exit(1)
+        # Mission slug already exists, regardless of status.
+        print(f"ERROR: mission slug '{slug}' already exists with status={existing_status!r}: {existing}", file=sys.stderr)
+        print("Resume that mission instead, or rename the slug.", file=sys.stderr)
+        sys.exit(1)
 
     if out_path.exists():
         print(f"ERROR: mission file already exists: {out_path}", file=sys.stderr)
