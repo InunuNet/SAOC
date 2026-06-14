@@ -98,8 +98,8 @@ assertions:
       command: |
         ! grep -qF '[pulse-loop] Template stale (3.7.47' .agent/memory/project/backlog.md
     - id: P3A4
-      description: "backlog.md still has its section headers (cleanup did not corrupt the file)"
-      command: grep -q '^## ' .agent/memory/project/backlog.md
+      description: "backlog.md still has its ## Priority header (cleanup did not corrupt the file)"
+      command: grep -q '^## Priority' .agent/memory/project/backlog.md
 
     # ── Phase 4: Integration — single combined elif branch, not duplicated ──
     - id: P4A1
