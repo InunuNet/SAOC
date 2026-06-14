@@ -1,0 +1,98 @@
+schema: athanor.contract/v1
+slug: mission-slug-collision-fix
+goal: mission.py new exits 1 on any slug collision and does not create new file
+created_at: '2026-06-14'
+autonomy: high
+features:
+  - id: F1
+    name: Prevent mission.py new from creating new missions or exiting successfully on any slug collision.
+    status: pending
+goldens:
+  - .agent/memory/project/specs/mission-slug-collision-fix/goldens/execution/mission.py
+  - .agent/memory/project/specs/mission-slug-collision-fix/goldens/execution/tests/test_mission.py
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: 'mission.py new exits 1 and prints error on existing "done" slug'
+      command: |
+        TEMP_MISSIONS_DIR=$(mktemp -d)
+        export MISSIONS_DIR=$TEMP_MISSIONS_DIR
+        SLUG="test-collision"
+        TODAY=$(date +"%Y-%m-%d")
+        PAST_DATE="2025-01-01"
+        PAST_MISSION_FILE="${TEMP_MISSIONS_DIR}/${PAST_DATE}-${SLUG}.md"
+        
+        # Create a "done" mission file in the past
+        cat <<EOF > "$PAST_MISSION_FILE"
+---
+schema: athanor.mission/v1
+slug: $SLUG
+goal: "Previously done mission"
+created_at: "${PAST_DATE}T00:00:00+00:00"
+started_at: "${PAST_DATE}T00:00:00+00:00"
+last_active_at: "${PAST_DATE}T00:00:00+00:00"
+status: done
+cost_estimate:
+  features: 0
+  milestones: 0
+  total_calls: 0
+last_checkpoint:
+  milestone: null
+  feature: null
+  ts: null
+features: []
+milestones: []
+---
+
+# Mission: Previously done mission
+EOF
+        
+        python3 execution/mission.py new "new mission goal" --slug "$SLUG" 2>&1 | grep -q "ERROR: mission slug '${SLUG}' already exists"
+        EXIT_CODE=$?
+        rm -rf $TEMP_MISSIONS_DIR
+        test $EXIT_CODE -eq 0
+    - id: A2
+      description: 'mission.py new does not create new file on existing "done" slug'
+      command: |
+        TEMP_MISSIONS_DIR=$(mktemp -d)
+        export MISSIONS_DIR=$TEMP_MISSIONS_DIR
+        SLUG="test-collision"
+        TODAY=$(date +"%Y-%m-%d")
+        PAST_DATE="2025-01-01"
+        PAST_MISSION_FILE="${TEMP_MISSIONS_DIR}/${PAST_DATE}-${SLUG}.md"
+        NEW_MISSION_FILE="${TEMP_MISSIONS_DIR}/${TODAY}-${SLUG}.md"
+
+        # Create a "done" mission file in the past
+        cat <<EOF > "$PAST_MISSION_FILE"
+---
+schema: athanor.mission/v1
+slug: $SLUG
+goal: "Previously done mission"
+created_at: "${PAST_DATE}T00:00:00+00:00"
+started_at: "${PAST_DATE}T00:00:00+00:00"
+last_active_at: "${PAST_DATE}T00:00:00+00:00"
+status: done
+cost_estimate:
+  features: 0
+  milestones: 0
+  total_calls: 0
+last_checkpoint:
+  milestone: null
+  feature: null
+  ts: null
+features: []
+milestones: []
+---
+
+# Mission: Previously done mission
+EOF
+
+        python3 execution/mission.py new "new mission goal" --slug "$SLUG" > /dev/null 2>&1
+        test ! -f "$NEW_MISSION_FILE"
+        EXIT_CODE=$?
+        rm -rf $TEMP_MISSIONS_DIR
+        test $EXIT_CODE -eq 0
+    - id: A3
+      description: 'execution/tests/test_mission.py passes after fix'
+      command: python3 execution/tests/test_mission.py
