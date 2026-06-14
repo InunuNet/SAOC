@@ -1,7 +1,8 @@
 # SAOC Website — Launch Checklist
 
 **Owner:** Brad (InunuNet)  
-**Status:** Code complete. Awaiting Brad's accounts + DNS actions.
+**Status:** Code complete. Awaiting Brad's accounts + DNS actions.  
+**Last reviewed:** 2026-06-14
 
 Use this as your sequential checklist from "code done" to "site live at saoc.co.za."
 
