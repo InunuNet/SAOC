@@ -1,8 +1,5 @@
 {
-  "mission": ".agent/memory/project/missions/2026-06-14-fix-ghost-resume.md",
-  "checkpoint": {
-    "milestone": null,
-    "feature": null
-  },
-  "note": "repaired by pulse-loop scan"
+  "mission": null,
+  "checkpoint": null,
+  "note": "test queue activation"
 }
