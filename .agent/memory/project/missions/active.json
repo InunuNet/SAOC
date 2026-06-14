@@ -1,8 +1,5 @@
 {
-  "mission": ".agent/memory/project/missions/2026-06-13-fix-ghost-unknown.md",
-  "checkpoint": {
-    "milestone": null,
-    "feature": null
-  },
-  "note": "repaired by pulse-loop scan"
+  "mission": null,
+  "checkpoint": null,
+  "note": "mission complete"
 }
