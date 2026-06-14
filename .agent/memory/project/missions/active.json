@@ -1,8 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-06-14-fix-ghost-resume.md",
+  "mission": ".agent/memory/project/missions/2026-05-19-test-dup-loop.md",
   "checkpoint": {
     "milestone": null,
     "feature": null
   },
-  "note": "repaired by pulse-loop scan"
+  "note": "test duplicate slug reconcile"
 }
