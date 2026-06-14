@@ -1,0 +1,9 @@
+schema: athanor.contract/v1
+slug: test-array-command
+created_at: '2026-06-14'
+assertions:
+  phase: 1
+  checks:
+    - id: A1
+      description: Test command with array syntax
+      command: ['echo', 'hello world']
