@@ -26,31 +26,3 @@ Research complete. Deliverable: `documents/hosting-research-2026-06-13.md`
 
 ## Deferred (auto-tracked)
 _Last compacted: 2026-06-14 by session. Dismissed: 300+ check_own_comms pulse items, qa-guard pings, quota-monitor alerts, 1× ghost-unknown P0 false-positive (fp:sha1:48fb8a6359a2 — no test suite matches this project), 1× loop-converged milestone. All informational, no action. Full history: git log on this file._
-
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614045015.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614045030.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614050125.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614050136.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614051326.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614051417.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614052604.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614052514.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614053636.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614053811.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614054809.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260614054946.txt
