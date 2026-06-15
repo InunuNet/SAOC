@@ -68,32 +68,13 @@ done
 echo "${PROJECT_PREFIX}Running ingest_pulse.sh..."
 "$SCRIPT_DIR/ingest_pulse.sh" "$PROJECT_NAME" # Pass PROJECT_NAME to ingest_pulse.sh
 
-# Run autonomous improvement loop on a ~30-minute cadence (timestamp-file guard).
-# The guard file records the last time improvement_loop.sh ran; if it's older than
-# 25 minutes (1500 seconds) or absent, we trigger one cycle now.
-IMPROVE_STAMP="$PROJECT_ROOT/.agent/memory/scratch/improvement_loop/.last_improve_ts"
-IMPROVE_INTERVAL=1500  # 25 minutes in seconds
-mkdir -p "$(dirname "$IMPROVE_STAMP")"
-
-run_improve=false
-if [ ! -f "$IMPROVE_STAMP" ]; then
-  run_improve=true
+DISPATCH_MAX_LAUNCHES="${ATHANOR_PULSE_DISPATCH_MAX_LAUNCHES:-1}"
+if [ -x "$SCRIPT_DIR/pulse_dispatcher.py" ]; then
+  echo "${PROJECT_PREFIX}Running pulse dispatcher once (max launches: $DISPATCH_MAX_LAUNCHES)..."
+  python3 "$SCRIPT_DIR"/pulse_dispatcher.py --once --max-launches "$DISPATCH_MAX_LAUNCHES" >> "$LOG_FILE" 2>&1 || \
+    echo "${PROJECT_PREFIX}WARN: pulse dispatcher failed; queued tickets preserved." >> "$LOG_FILE"
 else
-  last_improve=$(cat "$IMPROVE_STAMP" 2>/dev/null || echo "0")
-  now=$(date +%s)
-  elapsed=$(( now - last_improve ))
-  if [ "$elapsed" -ge "$IMPROVE_INTERVAL" ]; then
-    run_improve=true
-  fi
-fi
-
-if [ "$run_improve" = "true" ]; then
-  echo "${PROJECT_PREFIX}Running improvement loop (cadence guard passed)..."
-  date +%s > "$IMPROVE_STAMP"
-  bash "$SCRIPT_DIR/improvement_loop.sh" --once >> "$LOG_FILE" 2>&1 || true
-  echo "${PROJECT_PREFIX}Improvement loop complete."
-else
-  echo "${PROJECT_PREFIX}Improvement loop skipped (cadence guard: last run $(( $(date +%s) - $(cat "$IMPROVE_STAMP" 2>/dev/null || echo 0) ))s ago, threshold=${IMPROVE_INTERVAL}s)."
+  echo "${PROJECT_PREFIX}Pulse dispatcher unavailable — queued tickets preserved." >> "$LOG_FILE"
 fi
 
 echo "${PROJECT_PREFIX}Pulse runner finished."

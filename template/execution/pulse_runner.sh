@@ -9,7 +9,8 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Extract PROJECT_NAME from .agent/profile.json
 PROJECT_NAME=$(jq -r '.project_name' "$PROJECT_ROOT/.agent/profile.json")
-# Space-safe variant — keeps awk field-splitting in pulse_status.sh intact for names with whitespace
+# Space-safe variant for log prefixes and stdout — keeps awk field-splitting in
+# pulse_status.sh intact when the project name contains whitespace.
 PROJECT_NAME_SAFE=$(echo "$PROJECT_NAME" | tr ' ' '_')
 PROJECT_PREFIX="[${PROJECT_NAME_SAFE}] "
 
@@ -66,5 +67,14 @@ done
 
 echo "${PROJECT_PREFIX}Running ingest_pulse.sh..."
 "$SCRIPT_DIR/ingest_pulse.sh" "$PROJECT_NAME" # Pass PROJECT_NAME to ingest_pulse.sh
+
+DISPATCH_MAX_LAUNCHES="${ATHANOR_PULSE_DISPATCH_MAX_LAUNCHES:-1}"
+if [ -x "$SCRIPT_DIR/pulse_dispatcher.py" ]; then
+  echo "${PROJECT_PREFIX}Running pulse dispatcher once (max launches: $DISPATCH_MAX_LAUNCHES)..."
+  python3 "$SCRIPT_DIR"/pulse_dispatcher.py --once --max-launches "$DISPATCH_MAX_LAUNCHES" >> "$LOG_FILE" 2>&1 || \
+    echo "${PROJECT_PREFIX}WARN: pulse dispatcher failed; queued tickets preserved." >> "$LOG_FILE"
+else
+  echo "${PROJECT_PREFIX}Pulse dispatcher unavailable — queued tickets preserved." >> "$LOG_FILE"
+fi
 
 echo "${PROJECT_PREFIX}Pulse runner finished."

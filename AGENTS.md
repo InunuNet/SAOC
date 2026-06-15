@@ -203,3 +203,7 @@ All session memory goes into the project's memory tiers. Never write to provider
 | Semantic summaries | `python3 execution/brain.py wrap-up ...` |
 | Working notes | `.agent/memory/scratch/` |
 | Goals, backlog | `.agent/memory/project/*.md` |
+
+## 8. Resolved Issues
+
+- **GitHub Issue #1271 (gate assertion default 60s timeout too short for full test suites)**: This issue has been resolved. The help string for the `--timeout-seconds` argument in `execution/contract.py` for the `gate` subcommand has been updated to `Shell assertion timeout in seconds (default: 300)`. This change corrects the misleading documentation and confirms the default timeout for gate assertions is 300 seconds. The change was verified by running `python3 execution/contract.py gate --help`.

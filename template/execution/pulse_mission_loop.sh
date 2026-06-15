@@ -2,28 +2,21 @@
 # pulse_mission_loop.sh — Pulse-driven autonomous mission loop for Athanor.
 #
 # Runs every 60s via Pulse. Fully autonomous:
-#   - Auto-detects platform (gemini/codex/claude)
+#   - Auto-detects provider ID
 #   - Reads active mission from active.json
 #   - If mission done: auto-activates next from .agent/mission_queue.txt
 #   - Injects latest comms.md directive into resume prompt
-#   - Uses --approval-mode yolo for Gemini (no confirmation dialogs)
 #   - Auto-checks for template updates and applies if behind
+#   - Enqueues provider-neutral resume tickets; dispatcher owns model launch
 #
 # Usage:
 #   bash execution/pulse_mission_loop.sh                  # auto-detect
-#   bash execution/pulse_mission_loop.sh --platform gemini
-#   bash execution/pulse_mission_loop.sh --platform claude
+#   bash execution/pulse_mission_loop.sh --platform gemini-cli
+#   bash execution/pulse_mission_loop.sh --platform claude-code
 #   bash execution/pulse_mission_loop.sh --platform codex
 #   bash execution/pulse_mission_loop.sh --dry-run
 
 set -euo pipefail
-
-# Classify Gemini stdout+stderr as a quota error.
-# Returns 0 (true) if the output matches known quota exhaustion patterns.
-is_quota_error() {
-  local out="$1"
-  printf '%s' "$out" | grep -qiE 'RESOURCE_EXHAUSTED|rateLimitExceeded|quota exceeded|exceeded your current quota|daily limit|per-minute quota|GoogleGenerativeAI Error|429 Too Many Requests'
-}
 
 PLATFORM="${ATHANOR_PLATFORM:-}"
 DRY_RUN=false
@@ -129,6 +122,16 @@ if [[ "$ACTIVE" == "null" || -z "$ACTIVE" ]]; then
       NEXT_SLUG="${NEXT_LINE%%|*}"
       NEXT_GOAL="${NEXT_LINE#*|}"
       [[ "$NEXT_GOAL" == "$NEXT_SLUG" ]] && NEXT_GOAL="Implement $NEXT_SLUG per harness coding standards. Ghost mission: write, test, document."
+      if [ -f ".agent/pulse/registry/completed/missions/$NEXT_SLUG.done" ]; then
+        echo "[pulse-loop] Skipping completed mission slug: $NEXT_SLUG"
+        python3 -c "
+import pathlib
+p = pathlib.Path('$QUEUE')
+lines = [l for l in p.read_text().splitlines() if not l.strip().startswith('$NEXT_SLUG')]
+p.write_text('\n'.join(lines) + '\n')
+" 2>/dev/null || true
+        exit 0
+      fi
       NEXT="$NEXT_SLUG"
       echo "[pulse-loop] No active mission — activating next from queue: $NEXT_SLUG"
       python3 execution/mission.py new --slug "$NEXT_SLUG" "$NEXT_GOAL" 2>/dev/null || true
@@ -209,6 +212,53 @@ else:
 case "$STATUS" in
   completed|done|"mission complete")
     echo "[pulse-loop] Mission complete ($STATUS) — clearing and checking queue."
+    SLUG=$(python3 - <<'PYEOF' 2>/dev/null || echo ""
+import json
+from pathlib import Path
+try:
+    import yaml as _yaml
+    def _load_fm_text(text):
+        return _yaml.safe_load(text) or {}
+except ImportError:
+    import re as _re
+    def _load_fm_text(text):
+        result = {}
+        for line in text.splitlines():
+            m = _re.match(r"^(\w[\w-]*):\s*(.+)$", line)
+            if m:
+                result[m.group(1)] = m.group(2).strip()
+        return result
+p = Path(".agent/memory/project/missions/active.json")
+if not p.exists():
+    raise SystemExit(0)
+data = json.loads(p.read_text())
+mission_path = data.get("mission")
+if not mission_path:
+    slug_hint = data.get("active_mission")
+    if slug_hint:
+        missions_dir2 = Path(".agent/memory/project/missions")
+        for c in sorted(missions_dir2.glob("*.md"), reverse=True):
+            if slug_hint in c.name:
+                mission_path = str(c)
+                break
+if not mission_path:
+    raise SystemExit(0)
+mf = Path(mission_path)
+if not mf.exists():
+    raise SystemExit(0)
+t = mf.read_text()
+if not t.startswith("---\n"):
+    raise SystemExit(0)
+fm = _load_fm_text(t.split("---", 2)[1])
+slug = fm.get("slug", "")
+if slug:
+    print(slug)
+PYEOF)
+    if [[ -n "$SLUG" ]]; then
+      mkdir -p ".agent/pulse/registry/completed/missions"
+      touch ".agent/pulse/registry/completed/missions/$SLUG.done"
+      echo "[pulse-loop] Ledger entry written: completed/missions/$SLUG.done"
+    fi
     python3 -c "
 import json, pathlib
 p = pathlib.Path('.agent/memory/project/missions/active.json')
@@ -237,31 +287,26 @@ for cf in "${COMMS_FILES[@]}"; do
   fi
 done
 
-# Platform detection — check Codex env vars first, then Gemini, then Claude
+# Provider detection — check Codex env vars first, then local project hints.
 if [[ -z "$PLATFORM" ]]; then
   if [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_SESSION_ID:-}" ]]; then
     PLATFORM="codex"
-  elif command -v gemini &>/dev/null && [[ -f ".gemini/settings.json" ]]; then
-    PLATFORM="gemini"
-  elif command -v codex &>/dev/null; then
-    # Pre-check: skip codex if session dir is inaccessible or cannot be created
-    _codex_sess="${CODEX_SESSIONS_DIR:-$HOME/.codex/sessions}"
-    _codex_parent="$(dirname "$_codex_sess")"
-    if [[ -e "$_codex_sess" && ( ! -r "$_codex_sess" || ! -w "$_codex_sess" ) ]]; then
-      echo "[pulse-loop] WARN: codex session dir not accessible (permission denied) — falling back to claude"
-      PLATFORM="claude"
-    elif [[ ! -e "$_codex_sess" && -e "$_codex_parent" && ! -w "$_codex_parent" ]]; then
-      echo "[pulse-loop] WARN: codex session dir cannot be created (parent not writable) — falling back to claude"
-      PLATFORM="claude"
-    else
-      PLATFORM="codex"
-    fi
+  elif [[ -f ".gemini/settings.json" ]]; then
+    PLATFORM="gemini-cli"
+  elif [[ -d ".codex" ]]; then
+    PLATFORM="codex"
   else
-    PLATFORM="claude"
+    PLATFORM="claude-code"
   fi
 fi
 
-echo "[pulse-loop] Platform: $PLATFORM"
+case "$PLATFORM" in
+  claude) PLATFORM="claude-code" ;;
+  gemini) PLATFORM="gemini-cli" ;;
+esac
+
+echo "[pulse-loop] Provider: $PLATFORM"
+echo "[pulse-loop] Platform: ${PLATFORM%-code}"
 
 # Resume prompt — includes checkpoint and comms context
 CHECKPOINT=$(python3 -c "
@@ -300,7 +345,7 @@ When DONE: bash execution/skills/wrap_mission.sh 'mission complete' 'mission,com
 Only stop if BLOCKED and human action is genuinely required.${COMMS_CONTEXT:+ Maintainer context: $COMMS_CONTEXT}"
 
 if [[ "$DRY_RUN" == "true" ]]; then
-  echo "[pulse-loop] DRY-RUN platform=$PLATFORM active=$ACTIVE checkpoint=$CHECKPOINT"
+  echo "[pulse-loop] DRY-RUN provider=$PLATFORM active=$ACTIVE checkpoint=$CHECKPOINT"
   echo "[pulse-loop] resume_cmd: $RESUME_CMD"
   echo "[pulse-loop] status_cmd: $STATUS_CMD"
   exit 0
@@ -321,60 +366,21 @@ if [[ -f "$QUOTA_STAMP" ]]; then
   fi
 fi
 
-# Invoke the correct CLI
-invoke_result=0
-GEMINI_OUT=""
-case "$PLATFORM" in
-  gemini)
-    GEMINI_OUT=$(gemini -p "$RESUME_PROMPT" --approval-mode yolo 2>&1) || invoke_result=$?
-    printf '%s\n' "$GEMINI_OUT"
-    ;;
-  codex)
-    CODEX_OUT=$(codex exec "$RESUME_PROMPT" 2>&1) || invoke_result=$?
-    echo "$CODEX_OUT"
-    # Codex session permission denied — fall back to claude
-    if echo "$CODEX_OUT" | grep -qi "permission denied\|cannot access session\|session files"; then
-      echo "[pulse-loop] Codex session error detected — falling back to claude"
-      invoke_result=0
-      if [[ -x "execution/claude-loop.sh" ]]; then
-        CLAUDE_LOOP_PROMPT="$RESUME_PROMPT" bash execution/claude-loop.sh 2>&1 || invoke_result=$?
-      else
-        claude -p "$RESUME_PROMPT" --dangerously-skip-permissions 2>&1 || invoke_result=$?
-      fi
-    fi
-    ;;
-  claude)
-    if [[ -x "execution/claude-loop.sh" ]]; then
-      CLAUDE_LOOP_PROMPT="$RESUME_PROMPT" bash execution/claude-loop.sh 2>&1 || invoke_result=$?
-    else
-      claude -p "$RESUME_PROMPT" --dangerously-skip-permissions 2>&1 || invoke_result=$?
-    fi
-    ;;
-  *)
-    echo "[pulse-loop] ERROR: unknown platform '$PLATFORM'" >&2
-    exit 1
-    ;;
-esac
-
-# Detect quota exhaustion and back off
-if [[ $invoke_result -ne 0 ]]; then
-  if [[ "$PLATFORM" == "gemini" ]] && is_quota_error "${GEMINI_OUT:-}"; then
-    echo "[pulse-loop] Gemini quota exhausted — backing off 5 hours." >&2
-    BACKOFF_UNTIL=$(python3 -c "import time; print(int(time.time()) + 18000)")
-    echo "$BACKOFF_UNTIL" > "$QUOTA_STAMP"
-    echo "[pulse-loop] Quota backoff set — will retry in 5 hours (quota reset window)."
-    # at-timer: belt-and-suspenders removal of backoff stamp at T+5hr
-    if launchctl list 2>/dev/null | grep -q com.apple.atrun; then
-      echo "rm -f \"$(pwd)/$QUOTA_STAMP\"" | at now + 5 hours 2>/dev/null \
-        && echo "[pulse-loop] at-timer scheduled for QUOTA_STAMP cleanup at T+5h" \
-        || echo "[pulse-loop] at-timer scheduling failed — relying on Pulse poll"
-    else
-      echo "[pulse-loop] at-timer unavailable (atrun disabled) — relying on Pulse poll"
-    fi
-  else
-    echo "[pulse-loop] WARN: $PLATFORM exited $invoke_result (non-quota failure)" >&2
-    echo "[pulse-loop] Short retry — Pulse will resume in next tick (~5min)."
-  fi
+if [[ ! -x "execution/pulse_ticket.py" ]]; then
+  echo "[pulse-loop] pulse_ticket.py unavailable — safe no-op; no provider launched." >&2
+  exit 0
 fi
 
-echo "[pulse-loop] Turn complete."
+DEDUPE_KEY="mission-resume:$(pwd):$ACTIVE:$CHECKPOINT"
+python3 execution/pulse_ticket.py enqueue \
+  --source pulse_mission_loop \
+  --kind mission_resume \
+  --project-path "$(pwd)" \
+  --provider "$PLATFORM" \
+  --requires-model true \
+  --prompt "$RESUME_PROMPT" \
+  --dedupe-key "$DEDUPE_KEY" \
+  --max-turns "${ATHANOR_PULSE_RESUME_MAX_TURNS:-1}" \
+  --max-tokens "${ATHANOR_PULSE_RESUME_MAX_TOKENS:-20000}"
+
+echo "[pulse-loop] Resume ticket enqueued for dispatcher."

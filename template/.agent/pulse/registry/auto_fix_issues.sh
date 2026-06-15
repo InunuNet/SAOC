@@ -4,7 +4,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="${ATHANOR_PROJECT_ROOT:-$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")}"
 GH_CMD="${ATHANOR_GH_CMD:-gh}"
-GEMINI_CMD="${ATHANOR_GEMINI_CMD:-gemini}"
+TICKET_HELPER="$PROJECT_ROOT/execution/pulse_ticket.py"
 MAX_GITHUB_AUTOFIX_PER_RUN=1
 
 # Extract PROJECT_NAME from .agent/profile.json
@@ -46,13 +46,26 @@ while IFS=$'\n' read -r ISSUE_ID && read -r ISSUE_TITLE; do
         continue
     fi
 
-    echo "${PROJECT_PREFIX}Running autonomous fix for Issue #$ISSUE_ID (Title: '$ISSUE_TITLE')"
+    echo "${PROJECT_PREFIX}Enqueueing autonomous fix ticket for Issue #$ISSUE_ID (Title: '$ISSUE_TITLE')"
 
     # Create a lock file to mark the issue as in-progress
     touch "$PROCESSING_DIR/$ISSUE_ID.lock" || { echo "${PROJECT_PREFIX}Failed to create lock file for #$ISSUE_ID. Skipping."; continue; }
 
-    "$GEMINI_CMD" -p "AUTONOMOUS FIX: Resolve GitHub Issue #$ISSUE_ID in the InunuNet/Athanor repository. Research, implement the fix, verify, and push to GitHub." --approval-mode yolo
-    echo "${PROJECT_PREFIX}Autonomous fix command completed for #$ISSUE_ID."
+    if [ ! -x "$TICKET_HELPER" ]; then
+        echo "${PROJECT_PREFIX}pulse_ticket.py unavailable — no provider launched for #$ISSUE_ID"
+        continue
+    fi
+    python3 "$TICKET_HELPER" enqueue \
+        --source auto_fix_issues \
+        --kind github_issue_fix \
+        --project-path "$PROJECT_ROOT" \
+        --provider gemini-cli \
+        --requires-model true \
+        --prompt "AUTONOMOUS FIX: Resolve GitHub Issue #$ISSUE_ID in the InunuNet/Athanor repository. Research, implement the fix, verify, and push to GitHub." \
+        --dedupe-key "auto-fix-issue:InunuNet/Athanor:$ISSUE_ID" \
+        --max-turns "${ATHANOR_PULSE_ISSUE_MAX_TURNS:-1}" \
+        --max-tokens "${ATHANOR_PULSE_ISSUE_MAX_TOKENS:-30000}"
+    echo "${PROJECT_PREFIX}Autonomous fix ticket enqueued for #$ISSUE_ID."
     break
 done < <(echo "$ISSUES_JSON" | jq -r '.[] | "\(.number)\n\(.title)"') # Process substitution
 

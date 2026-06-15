@@ -66,8 +66,8 @@ echo ""
 
 # ── Test 3: RESUME before RUN → exit 2 ───────────────────────────────────────
 {
-    node_tmp=$(mktemp /tmp/resume_test_XXXXXX.node.txt)
-    run_tmp=$(mktemp /tmp/resume_test_XXXXXX.run.txt)
+    node_tmp=$(mktemp "${TMPDIR:-/tmp}/resume_test_node.XXXXXX")
+    run_tmp=$(mktemp "${TMPDIR:-/tmp}/resume_test_run.XXXXXX")
     printf 'INTERRUPT\tsome_question\n' > "$node_tmp"
     printf 'RESUME\tx\n' > "$run_tmp"
     set +e
@@ -80,8 +80,8 @@ echo ""
 
 # ── Test 4: Value count mismatch — too few ────────────────────────────────────
 {
-    node_tmp=$(mktemp /tmp/resume_test_XXXXXX.node.txt)
-    run_tmp=$(mktemp /tmp/resume_test_XXXXXX.run.txt)
+    node_tmp=$(mktemp "${TMPDIR:-/tmp}/resume_test_node.XXXXXX")
+    run_tmp=$(mktemp "${TMPDIR:-/tmp}/resume_test_run.XXXXXX")
     printf 'INTERRUPT\tq1\nINTERRUPT\tq2\n' > "$node_tmp"
     printf 'RUN\nRESUME\tone\n' > "$run_tmp"
     set +e
@@ -94,8 +94,8 @@ echo ""
 
 # ── Test 5: Extra values — too many ───────────────────────────────────────────
 {
-    node_tmp=$(mktemp /tmp/resume_test_XXXXXX.node.txt)
-    run_tmp=$(mktemp /tmp/resume_test_XXXXXX.run.txt)
+    node_tmp=$(mktemp "${TMPDIR:-/tmp}/resume_test_node.XXXXXX")
+    run_tmp=$(mktemp "${TMPDIR:-/tmp}/resume_test_run.XXXXXX")
     printf 'INTERRUPT\tonly_q\n' > "$node_tmp"
     printf 'RUN\nRESUME\ta,b,c\n' > "$run_tmp"
     set +e
@@ -108,7 +108,7 @@ echo ""
 
 # ── Test 6: Positional swap — order matters ───────────────────────────────────
 {
-    swap_run_tmp=$(mktemp /tmp/resume_test_XXXXXX.run.txt)
+    swap_run_tmp=$(mktemp "${TMPDIR:-/tmp}/resume_test_run.XXXXXX")
     printf 'RUN\nRESUME\tbeta,alpha\n' > "$swap_run_tmp"
     expected_swap="EFFECT counter_inc_A
 INTERRUPTED: first_question

@@ -147,3 +147,4 @@ This file documents key learnings, decisions, and pitfalls encountered during th
 ## Fleet-loop maintenance (2026-06-14)
 
 - (2026-06-14) **learned.md staleness gate fires on consecutive no-op sessions.** Fleet-loop sessions that find no directive still require at least one `learned.md` touch to prevent the `require_maintainer` gate from blocking the wrap commit. Pattern: append a housekeeping entry like this one at session close.
+- (2026-06-15) **Backlog deferred section noise accumulates rapidly.** check_own_comms pulse events and ghost-resume false-positive alerts pile up without a mechanism to auto-dismiss. Fleet-loop sessions should compact the Deferred section each pass to prevent the backlog growing unbounded. Dismissed fingerprints should be added to the compaction note for traceability.
