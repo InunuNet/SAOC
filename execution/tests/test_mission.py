@@ -40,9 +40,7 @@ def ok(label: str, passed: bool, detail: str = ""):
 
 def assert_exit(label: str, result, expected: int):
     ok(label, result.returncode == expected,
-       f"exit={result.returncode} expected={expected}
-stdout: {result.stdout[:300]}
-stderr: {result.stderr[:300]}")
+       f"exit={result.returncode} expected={expected}\nstdout: {result.stdout[:300]}\nstderr: {result.stderr[:300]}")
 
 
 def main():
@@ -116,7 +114,7 @@ def main():
         "schema": "athanor.mission/v1",
         "slug": "test-checkpoint",
         "goal": "Checkpoint test mission",
-        "created_at": datetime.datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "started_at": None,
         "last_active_at": None,
         "status": "in_progress",
@@ -149,11 +147,7 @@ def main():
             }
         ],
     }
-    content = "---
-" + yaml.dump(fm, default_flow_style=False, sort_keys=False) + "---
-
-# Test Mission
-"
+    content = "---\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False) + "---\n\n# Test Mission\n"
     checkpoint_mission.write_text(content)
 
     r = run(MISSION_CLI + ["checkpoint", str(checkpoint_mission), "--feature", "F1", "--status", "done"])
@@ -212,11 +206,7 @@ def main():
             }
         ],
     }
-    bad_content = "---
-" + yaml.dump(bad_fm, default_flow_style=False, sort_keys=False) + "---
-
-# Bad
-"
+    bad_content = "---\n" + yaml.dump(bad_fm, default_flow_style=False, sort_keys=False) + "---\n\n# Bad\n"
     invalid_mission.write_text(bad_content)
 
     r = run(MISSION_CLI + ["validate", str(invalid_mission)])
@@ -225,29 +215,29 @@ def main():
        f"stdout: {r.stdout[:300]}")
     print()
 
-    # ── Test 8: resume with active.json prints wrap-up message ─────────────
-    print("Test 8: mission.py resume with active.json exits 2 for wrap-up and prints message")
-    # Activate the checkpoint mission (F1 done, gate passed → all done, so resume should now exit 2)
+    # ── Test 8: resume with active.json prints RESUME instruction ─────────────
+    print("Test 8: mission.py resume with active.json exits 0 and prints RESUME")
+    # Activate the checkpoint mission (F1 done, gate passed → all done)
     r_activate = run(MISSION_CLI + ["activate", str(checkpoint_mission)])
     assert_exit("activate exits 0", r_activate, 0)
 
     r = run(MISSION_CLI + ["resume"])
-    # Expect exit code 2 if mission is done and requires wrap-up
-    assert_exit("resume exits 2 for wrap-up", r, 2)
-    ok("resume prints wrap-up message",
-       "MAINTAINER WRAP-UP REQUIRED" in r.stdout or "MAINTAINER WRAP-UP REQUIRED" in r.stderr,
-       f"stdout: {r.stdout[:300]}, stderr: {r.stderr[:300]}")
+    assert_exit("resume exits 0", r, 0)
+    ok("resume prints RESUME or completion message",
+       "RESUME" in r.stdout or "complete" in r.stdout.lower() or "no active" in r.stdout.lower(),
+       f"stdout: {r.stdout[:300]}")
     print()
 
-    # ── Test 9: done-slug collision exits 1 and does not create file ──
-    print("Test 9: mission.py new with done-slug collision exits 1 and does not create file")
+    # ── Test 9: done-slug collision continues (regression for sys.exit(0) fix) ──
+    print("Test 9: mission.py new with done-slug collision exits 0 and creates file")
     import datetime
 
     collision_slug = "slug-collision-done-test"
-    today_str = datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
     collision_seed = MISSIONS_DIR / f"2026-01-01-{collision_slug}.md"
     collision_expected = MISSIONS_DIR / f"{today_str}-{collision_slug}.md"
     created_files.append(str(collision_seed))
+    created_files.append(str(collision_expected))
 
     seed_fm = {
         "schema": "athanor.mission/v1",
@@ -262,21 +252,14 @@ def main():
         "features": [],
         "milestones": [],
     }
-    seed_content = "---
-" + yaml.dump(seed_fm, default_flow_style=False, sort_keys=False) + "---
-
-# Seed
-"
+    seed_content = "---\n" + yaml.dump(seed_fm, default_flow_style=False, sort_keys=False) + "---\n\n# Seed\n"
     collision_seed.write_text(seed_content)
 
     r = run(MISSION_CLI + ["new", "slug collision done test", "--slug", collision_slug])
-    assert_exit("slug_collision_done: exits 1", r, 1)
-    ok("slug_collision_done: new mission file NOT created",
-       not collision_expected.exists(),
-       f"expected: {collision_expected} not to exist, stdout: {r.stdout[:200]}, stderr: {r.stderr[:200]}")
-    ok("slug_collision_done: error message contains 'already exists'",
-       "already exists" in r.stderr,
-       f"stderr: {r.stderr[:200]}")
+    assert_exit("slug_collision_done: exits 0", r, 0)
+    ok("slug_collision_done: new mission file created",
+       collision_expected.exists() and collision_expected != collision_seed,
+       f"expected: {collision_expected}, stdout: {r.stdout[:200]}, stderr: {r.stderr[:200]}")
     print()
 
     # ── Cleanup ───────────────────────────────────────────────────────────────

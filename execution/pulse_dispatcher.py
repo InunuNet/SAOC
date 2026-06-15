@@ -11,14 +11,18 @@ import shutil
 import subprocess
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 
 TICKET_SCHEMA = "athanor.pulse.ticket/v1"
-VALID_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity")
+VALID_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity", "opencode")
 DEFAULT_MAX_LAUNCHES = 1
+
+# Fix 2: consecutive-failure provider backoff constants.
+CONSECUTIVE_FAILURE_THRESHOLD = 3
+BACKOFF_SECONDS = 14400  # 4 hours
 
 
 def utc_now() -> str:
@@ -206,7 +210,14 @@ def load_budget(paths: Paths) -> dict[str, Any]:
     state = read_json(budget_state_path(paths), {})
     day = today_key()
     if state.get("date") != day:
-        state = {"date": day, "launches": 0, "tokens": 0, "last_launch_at": None}
+        # Preserve backoff/failure state across day boundary — backoff is not day-scoped.
+        preserved = {
+            "provider_failures": state.get("provider_failures", {}),
+            "provider_backoff": state.get("provider_backoff", {}),
+        }
+        state = {"date": day, "launches": 0, "tokens": 0, "last_launch_at": None,
+                 "project_launches": {}}
+        state.update(preserved)
     return state
 
 
@@ -214,11 +225,61 @@ def save_budget(paths: Paths, state: dict[str, Any]) -> None:
     write_json_atomic(budget_state_path(paths), state)
 
 
+# --- Fix 2: consecutive-failure provider backoff ----------------------------
+
+def _backoff_key(provider: str, project_path: str) -> str:
+    return f"{provider}:{project_path}"
+
+
+def check_provider_backoff(paths: Paths, provider: str, project_path: str) -> str | None:
+    """Return a block reason if provider+project is in backoff, else None."""
+    state = load_budget(paths)
+    key = _backoff_key(provider, project_path)
+    backoff_until = state.get("provider_backoff", {}).get(key)
+    if not backoff_until:
+        return None
+    try:
+        until = datetime.fromisoformat(str(backoff_until).replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        until = 0
+    if time.time() < until:
+        remaining = int(until - time.time())
+        return f"provider {provider} backing off for {remaining}s after repeated failures"
+    # Backoff expired — clear both backoff and failure counter, persist.
+    state.get("provider_backoff", {}).pop(key, None)
+    state.get("provider_failures", {}).pop(key, None)
+    save_budget(paths, state)
+    return None
+
+
+def record_failure(paths: Paths, provider: str, project_path: str) -> None:
+    state = load_budget(paths)
+    key = _backoff_key(provider, project_path)
+    failures = state.setdefault("provider_failures", {})
+    failures[key] = int(failures.get(key, 0)) + 1
+    if failures[key] >= CONSECUTIVE_FAILURE_THRESHOLD:
+        until = (datetime.now(timezone.utc) + timedelta(seconds=BACKOFF_SECONDS)).isoformat()
+        state.setdefault("provider_backoff", {})[key] = until
+    save_budget(paths, state)
+
+
+def record_success(paths: Paths, provider: str, project_path: str) -> None:
+    state = load_budget(paths)
+    key = _backoff_key(provider, project_path)
+    if state.get("provider_failures", {}).pop(key, None) is not None:
+        state.get("provider_backoff", {}).pop(key, None)
+        save_budget(paths, state)
+
+# --- end Fix 2 ---------------------------------------------------------------
+
+
 def budget_block_reason(paths: Paths, ticket: dict[str, Any]) -> str | None:
     state = load_budget(paths)
     cooldown = env_int("ATHANOR_PULSE_COOLDOWN_SECONDS", 300)
-    max_launches = env_int("ATHANOR_PULSE_DAILY_MAX_LAUNCHES", 20)
+    # Fix 4: DAILY_MAX_LAUNCHES constant referenced for daily launch budget.
+    DAILY_MAX_LAUNCHES = env_int("ATHANOR_PULSE_DAILY_MAX_LAUNCHES", 20)
     max_tokens = env_int("ATHANOR_PULSE_DAILY_MAX_TOKENS", 200000)
+    per_project_max = env_int("ATHANOR_PULSE_PER_PROJECT_DAILY_MAX", 5)
 
     if cooldown > 0 and state.get("last_launch_at"):
         try:
@@ -230,10 +291,24 @@ def budget_block_reason(paths: Paths, ticket: dict[str, Any]) -> str | None:
             return f"cooldown active for {remaining}s"
 
     requested_tokens = int(ticket.get("max_tokens") or 0)
-    if int(state.get("launches") or 0) >= max_launches:
+    if int(state.get("launches") or 0) >= DAILY_MAX_LAUNCHES:
         return "daily launch budget exhausted"
     if int(state.get("tokens") or 0) + requested_tokens > max_tokens:
         return "daily token budget exhausted"
+
+    # Fix 4: per-project daily launch cap.
+    project_path = str(ticket.get("project_path") or "")
+    project_launches = state.get("project_launches", {})
+    if project_path and int(project_launches.get(project_path, 0)) >= per_project_max:
+        return f"per-project daily launch cap reached ({per_project_max}) for {project_path}"
+
+    # Fix 2: provider backoff check.
+    provider = str(ticket.get("provider") or "")
+    if provider and project_path:
+        backoff_reason = check_provider_backoff(paths, provider, project_path)
+        if backoff_reason:
+            return backoff_reason
+
     return None
 
 
@@ -242,19 +317,27 @@ def record_launch(paths: Paths, ticket: dict[str, Any]) -> None:
     state["launches"] = int(state.get("launches") or 0) + 1
     state["tokens"] = int(state.get("tokens") or 0) + int(ticket.get("max_tokens") or 0)
     state["last_launch_at"] = utc_now()
+    # Fix 4: track per-project daily launches.
+    project_path = str(ticket.get("project_path") or "")
+    if project_path:
+        project_launches = state.setdefault("project_launches", {})
+        project_launches[project_path] = int(project_launches.get(project_path, 0)) + 1
     save_budget(paths, state)
 
 
 def provider_command(ticket: dict[str, Any]) -> tuple[list[str] | None, str | None]:
     provider = str(ticket["provider"])
     prompt = str(ticket.get("prompt") or "")
+    # Fix 4: resolve max_turns for turn-limit flag injection.
+    max_turns = int(ticket.get("max_turns") or 1)
     overrides = {
         "claude-code": "ATHANOR_PULSE_PROVIDER_CLAUDE_CODE",
         "codex": "ATHANOR_PULSE_PROVIDER_CODEX",
         "gemini-cli": "ATHANOR_PULSE_PROVIDER_GEMINI_CLI",
         "antigravity": "ATHANOR_PULSE_PROVIDER_ANTIGRAVITY",
+        "opencode": "ATHANOR_PULSE_PROVIDER_OPENCODE",
     }
-    raw_override = os.environ.get(overrides[provider])
+    raw_override = os.environ.get(overrides.get(provider, ""))
     if raw_override:
         parts = shlex.split(raw_override)
         if "{prompt}" in parts:
@@ -262,11 +345,16 @@ def provider_command(ticket: dict[str, Any]) -> tuple[list[str] | None, str | No
         return parts + [prompt], None
 
     if provider == "claude-code":
-        return ["claude", "-p", prompt], None
+        # Fix 4: pass --max-turns to claude CLI.
+        return ["claude", "-p", prompt, "--max-turns", str(max_turns)], None
     if provider == "codex":
         return ["codex", "exec", prompt], None
     if provider == "gemini-cli":
-        return ["gemini", "-p", prompt], None
+        # Fix 4: pass --max-turns to gemini CLI.
+        return ["gemini", "-p", prompt, "--max-turns", str(max_turns)], None
+    if provider == "opencode":
+        # Fix 4: opencode has no --max-turns flag; use `opencode run` headlessly.
+        return ["opencode", "run", prompt], None
     if provider == "antigravity":
         return None, "antigravity has no configured non-interactive adapter"
     return None, f"unsupported provider {provider}"
@@ -374,9 +462,13 @@ def dispatch_ticket(paths: Paths, ticket_path: Path, max_launches: int, launches
         assert cmd is not None
         ok, reason = launch_provider(ticket, cmd)
         if not ok:
+            # Fix 2: record failure for consecutive-failure backoff tracking.
+            record_failure(paths, str(ticket["provider"]), str(ticket["project_path"]))
             print(f"blocked {ticket['id']}: {reason}")
             return launches, False
 
+        # Fix 2: clear failure counter on successful launch.
+        record_success(paths, str(ticket["provider"]), str(ticket["project_path"]))
         record_launch(paths, ticket)
         archive_ticket(paths, ticket_path, ticket, "launched", reason)
         print(f"launched {ticket['id']}: {ticket['provider']}")

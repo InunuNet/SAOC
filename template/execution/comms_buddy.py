@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,7 +34,7 @@ def read_state() -> dict:
 
 def write_state(state: dict) -> None:
     STATE.parent.mkdir(parents=True, exist_ok=True)
-    tmp = STATE.with_name(f".{STATE.name}.{int(time.time())}.tmp")
+    tmp = STATE.with_name(f".{STATE.name}.{os.getpid()}.{time.time_ns()}.tmp")
     tmp.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     tmp.replace(STATE)
 
@@ -87,14 +88,18 @@ def trim(max_bytes: int, keep_head: int, keep_tail: int) -> int:
     live, history = split_live_and_history(text)
     if len(live.encode("utf-8")) > max_bytes:
         raw = live.encode("utf-8")
+        notice = (
+            "\n\n## Trim Notice\n\n"
+            f"Older middle content archived to `{archive.relative_to(ROOT)}` by `execution/comms_buddy.py`.\n\n"
+        )
+        notice_bytes = len(notice.encode("utf-8"))
+        available = max(1000, max_bytes - notice_bytes - 200)
+        if keep_head + keep_tail > available:
+            keep_head = max(500, int(available * 0.65))
+            keep_tail = max(300, available - keep_head)
         head = raw[:keep_head].decode("utf-8", errors="ignore").rstrip()
         tail = raw[-keep_tail:].decode("utf-8", errors="ignore").lstrip()
-        live = (
-            f"{head}\n\n"
-            "## Trim Notice\n\n"
-            f"Older middle content archived to `{archive.relative_to(ROOT)}` by `execution/comms_buddy.py`.\n\n"
-            f"{tail}\n"
-        )
+        live = f"{head}{notice}{tail}\n"
     else:
         live = live.rstrip() + "\n\n"
 
@@ -105,6 +110,20 @@ def trim(max_bytes: int, keep_head: int, keep_tail: int) -> int:
         )
 
     COMMS.write_text(live, encoding="utf-8")
+    while len(COMMS.read_bytes()) > max_bytes:
+        raw = COMMS.read_bytes()
+        head_len = max(500, int(max_bytes * 0.55))
+        tail_len = max(300, int(max_bytes * 0.25))
+        notice = (
+            "\n\n## Trim Notice\n\n"
+            f"Further trimmed to enforce `{max_bytes}` byte live cap. Full content archived to `{archive.relative_to(ROOT)}`.\n\n"
+        )
+        live = (
+            raw[:head_len].decode("utf-8", errors="ignore").rstrip()
+            + notice
+            + raw[-tail_len:].decode("utf-8", errors="ignore").lstrip()
+        )
+        COMMS.write_text(live, encoding="utf-8")
     snap = snapshot()
     write_state(snap)
     print(f"trimmed comms.md {len(data)} -> {snap['size']} bytes; archive={archive.relative_to(ROOT)}")

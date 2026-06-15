@@ -1,6 +1,8 @@
 {
   "created_at": "2026-06-15T22:06:51Z",
   "dedupe_key": "mission-resume:/Users/vetus/ai/SAOC:.agent/memory/project/missions/2026-06-15-slug-collision-done-test.md:Milestone None, Feature None",
+  "dispatch_reason": "launched",
+  "dispatch_status": "launched",
   "id": "pt-9f1d27d3394c4084872cac4a1d7fd8f0",
   "kind": "mission_resume",
   "max_tokens": 20000,
@@ -13,5 +15,5 @@
   "requires_model": true,
   "schema": "athanor.pulse.ticket/v1",
   "source": "pulse_mission_loop",
-  "updated_at": "2026-06-15T22:06:51Z"
+  "updated_at": "2026-06-15T22:15:36Z"
 }

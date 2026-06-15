@@ -1,0 +1,22 @@
+schema: athanor.contract/v1
+slug: fix-require-docs-gate-hook
+goal: Ensure require_docs.sh hook accurately matches 'contract.py gate' commands, preventing false positives.
+created_at: '2026-06-16'
+autonomy: high
+features:
+  - id: F1
+    name: Refine command matching in require_docs.sh
+    status: pending
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "require_docs.sh should NOT trigger for 'echo contract.py gate'"
+      command: 'echo ''{"tool_code":"Bash","tool_name":"Bash","tool_input":{"command":"echo contract.py gate"}}'' | python3 execution/hooks/require_docs.sh && exit 0 || exit 1' # Hook should exit 0 (no trigger)
+    - id: A2
+      description: "require_docs.sh should trigger for 'python3 execution/contract.py gate'"
+      command: 'echo ''{"tool_code":"Bash","tool_name":"Bash","tool_input":{"command":"python3 execution/contract.py gate"}}'' | python3 execution/hooks/require_docs.sh && exit 1 || exit 0' # Hook should exit non-zero (trigger)
+    - id: A3
+      description: "require_docs.sh should trigger for 'python3 execution/contract.py gate --phase all'"
+      command: 'echo ''{"tool_code":"Bash","tool_name":"Bash","tool_input":{"command":"python3 execution/contract.py gate --phase all"}}'' | python3 execution/hooks/require_docs.sh && exit 1 || exit 0' # Hook should exit non-zero (trigger)
