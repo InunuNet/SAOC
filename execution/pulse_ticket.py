@@ -15,7 +15,7 @@ from typing import Any
 
 
 SCHEMA = "athanor.pulse.ticket/v1"
-VALID_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity")
+VALID_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity", "opencode")
 
 
 def parse_bool(value: str | None) -> bool:

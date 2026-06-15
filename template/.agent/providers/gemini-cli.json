@@ -1,0 +1,18 @@
+{
+  "provider": "gemini-cli",
+  "display_name": "Gemini CLI",
+  "headless_command": ["gemini", "-p", "{prompt}"],
+  "supports_headless": true,
+  "supports_continue": false,
+  "supports_hooks": true,
+  "supports_subagents": false,
+  "supports_max_turns": true,
+  "supports_max_tokens": false,
+  "token_accounting": "provider-reported-only",
+  "hooks_dir": ".gemini/hooks",
+  "agents_dir": ".gemini/agents",
+  "skills_dir": ".gemini/skills",
+  "rules_dir": ".gemini/rules",
+  "settings_file": ".gemini/settings.json",
+  "notes": "Provider adapter only; scheduled/background work must enqueue tickets instead of launching this command directly."
+}

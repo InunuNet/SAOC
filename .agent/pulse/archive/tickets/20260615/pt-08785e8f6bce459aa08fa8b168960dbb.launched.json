@@ -1,6 +1,8 @@
 {
   "created_at": "2026-06-15T21:42:15Z",
   "dedupe_key": "mission-resume:/Users/vetus/ai/SAOC:.agent/memory/project/missions/2026-06-14-fix-ghost-resume.md:Milestone None, Feature None",
+  "dispatch_reason": "launched",
+  "dispatch_status": "launched",
   "id": "pt-08785e8f6bce459aa08fa8b168960dbb",
   "kind": "mission_resume",
   "max_tokens": 20000,
@@ -13,5 +15,5 @@
   "requires_model": true,
   "schema": "athanor.pulse.ticket/v1",
   "source": "pulse_mission_loop",
-  "updated_at": "2026-06-15T21:42:15Z"
+  "updated_at": "2026-06-15T21:48:37Z"
 }

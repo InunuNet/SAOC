@@ -30,10 +30,26 @@ reminder = (
     "pick the best option yourself and proceed autonomously."
 )
 
+refire = ""
+try:
+    comms = pathlib.Path("comms.md")
+    if comms.exists():
+        text = comms.read_text(encoding="utf-8")
+        m = re.search(r"^## Refire Input\n(?P<body>.*?)(?=\n## |\Z)", text, re.S | re.M)
+        if m:
+            body = re.sub(r"\n{3,}", "\n\n", m.group("body").strip())
+            refire = body[:2500]
+except Exception:
+    refire = ""
+
+additional = reminder
+if refire:
+    additional += "\n\nROOT COMMS REFIRE INPUT:\n" + refire
+
 print(json.dumps({
     "hookSpecificOutput": {
         "hookEventName": "UserPromptSubmit",
-        "additionalContext": reminder
+        "additionalContext": additional
     }
 }))
 EOF

@@ -2,7 +2,7 @@ VERSION := $(shell cat .agent/version 2>/dev/null || echo "UNKNOWN")
 
 # Athanor v$(VERSION) Makefile
 
-.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit stay-awake allow-sleep
+.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit stay-awake allow-sleep comms-status comms-trim comms-watch provider-validate job dispatch-once
 
 help:
 	@echo "🏭 Athanor v$(VERSION)"
@@ -26,6 +26,11 @@ help:
 	@echo "  make brain-stats       Show brain statistics"
 	@echo "  make retro             Retro scan — surface pain points (DAYS=60)"
 	@echo "  make capture-pain      Log a pain point (WHAT='...' FIX='...')"
+	@echo "  make comms-status      Show root comms.md size/hash and whether it changed"
+	@echo "  make comms-trim        Trim/archive root comms.md if it exceeds MAX_BYTES"
+	@echo "  make comms-watch       Watch root comms.md for size/hash changes"
+	@echo "  make provider-validate Validate provider capability manifests"
+	@echo "  make job               Queue a bounded CEO-intake ticket (GOAL= PROVIDER=)"
 	@echo ""
 	@echo "  Workflow"
 	@echo "  make commit            Semantic commit (TYPE=feat MSG='...')"
@@ -94,6 +99,33 @@ allow-sleep:
 	else \
 		echo "💤 no caffeinate PID file — nothing to stop"; \
 	fi
+
+comms-status:
+	@python3 execution/comms_buddy.py status --update
+
+comms-trim:
+	@python3 execution/comms_buddy.py trim --max-bytes $(or $(MAX_BYTES),12000)
+
+comms-watch:
+	@python3 execution/comms_buddy.py watch --interval $(or $(INTERVAL),10) --max-bytes $(or $(MAX_BYTES),12000)
+
+provider-validate:
+	@python3 execution/provider_manifest.py validate
+
+job:
+	@if [ -z "$(GOAL)" ]; then echo "Usage: make job GOAL='desired outcome' [PROVIDER=claude-code|codex|gemini-cli|antigravity|opencode]"; exit 2; fi
+	@python3 execution/pulse_ticket.py enqueue \
+	  --source ceo-intake \
+	  --kind user-goal \
+	  --provider "$(or $(PROVIDER),claude-code)" \
+	  --requires-model true \
+	  --max-turns "$(or $(MAX_TURNS),1)" \
+	  --max-tokens "$(or $(MAX_TOKENS),20000)" \
+	  --metadata intent=ceo \
+	  --prompt "$(GOAL)"
+
+dispatch-once:
+	@python3 execution/pulse_dispatcher.py --once --max-launches "$(or $(MAX_LAUNCHES),1)"
 
 sync-skills:
 	@bash execution/sync_skills.sh

@@ -1,0 +1,20 @@
+{
+  "provider": "claude-code",
+  "version": "3.5.0",
+  "display_name": "Claude Code",
+  "headless_command": ["claude", "-p", "{prompt}"],
+  "continue_command": ["claude", "-c"],
+  "supports_headless": true,
+  "supports_continue": true,
+  "supports_hooks": true,
+  "supports_subagents": true,
+  "supports_max_turns": true,
+  "supports_max_tokens": false,
+  "token_accounting": "provider-reported-only",
+  "hooks_dir": ".claude/hooks",
+  "agents_dir": ".claude/agents",
+  "skills_dir": ".claude/skills",
+  "rules_dir": ".claude/rules",
+  "settings_file": ".claude/settings.json",
+  "notes": "Provider adapter only; scheduled/background work must enqueue tickets instead of launching this command directly."
+}

@@ -3,16 +3,17 @@ schema: athanor.mission/v1
 slug: fix-ghost-resume
 goal: 'Fix failing ghost project resume: ERROR — first failure: mktemp: mkstemp failed on /tmp/resume_test_XXXXXX.node.txt: File exists'
 created_at: '2026-06-14T00:00:00Z'
-status: active
+status: complete
 autonomy: high
 features:
   - id: F1
     name: Fix failing tests in ghost-resume
-    status: todo
+    status: done
 milestones:
   - id: M1
     title: All ghost-resume tests pass GREEN
     features: [F1]
+    status: done
 ---
 
 # Mission: Fix ghost-resume

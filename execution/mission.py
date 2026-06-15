@@ -50,12 +50,16 @@ def _load_yaml():
 def _dump_frontmatter(data: dict) -> str:
     yaml = _load_yaml()
     if yaml:
-        return "---\n" + yaml.dump(data, default_flow_style=False, sort_keys=False, allow_unicode=True) + "---\n"
+        return "---
+" + yaml.dump(data, default_flow_style=False, sort_keys=False, allow_unicode=True) + "---
+"
     # Fallback: manual YAML-ish serialisation (good enough for our schema)
     lines = ["---"]
     lines.extend(_manual_yaml_dump(data, indent=0))
     lines.append("---")
-    return "\n".join(lines) + "\n"
+    return "
+".join(lines) + "
+"
 
 
 def _manual_yaml_dump(obj, indent=0):
@@ -71,8 +75,9 @@ def _manual_yaml_dump(obj, indent=0):
                 lines.append(f"{pad}{k}: {v}")
             elif isinstance(v, str):
                 # Quote if needed
-                if any(c in v for c in ":#{}[]|>&*?,-") or "\n" in v:
-                    escaped = v.replace('"', '\\"')
+                if any(c in v for c in ":#{}[]|>&*?,-") or "
+" in v:
+                    escaped = v.replace('"', '"')
                     lines.append(f'{pad}{k}: "{escaped}"')
                 else:
                     lines.append(f"{pad}{k}: {v}")
@@ -195,14 +200,9 @@ def cmd_new(args):
         if fm.get("slug") != slug:
             continue
         existing_status = fm.get("status", "")
-        if existing_status in {"done", "abandoned", "close_out"}:
-            print(f"NOTE: mission slug '{slug}' previously {existing_status}: {existing}", file=sys.stderr)
-            print(f"Creating new mission with same slug under today's date prefix.", file=sys.stderr)
-            continue
-        else:
-            print(f"ERROR: mission slug '{slug}' already exists with status={existing_status!r}: {existing}", file=sys.stderr)
-            print("Resume that mission instead, or rename the slug.", file=sys.stderr)
-            sys.exit(1)
+        print(f"ERROR: mission slug '{slug}' already exists with status={existing_status!r}: {existing}", file=sys.stderr)
+        print("Resume that mission instead, or rename the slug.", file=sys.stderr)
+        sys.exit(1)
 
     if out_path.exists():
         print(f"ERROR: mission file already exists: {out_path}", file=sys.stderr)
@@ -229,7 +229,16 @@ def cmd_new(args):
         "features": [],
         "milestones": [],
     }
-    body = f"\n# Mission: {goal}\n\n## Context\n\n(Add context here)\n\n## Notes\n\n"
+    body = f"
+# Mission: {goal}
+
+## Context
+
+(Add context here)
+
+## Notes
+
+"
     write_mission_file(str(out_path), fm, body)
     write_active(str(out_path))
 
@@ -572,7 +581,8 @@ def cmd_gate(args):
     if any_fail:
         milestone["gate_result"] = "fail"
         write_mission_file(args.mission, fm, body)
-        print(f"\nFAIL Milestone {mid} gate FAILED — resolve failing features before advancing.")
+        print(f"
+FAIL Milestone {mid} gate FAILED — resolve failing features before advancing.")
         sys.exit(2)
     else:
         milestone["gate_result"] = "pass"
@@ -582,7 +592,8 @@ def cmd_gate(args):
         if all_done:
             fm["status"] = "done"
         write_mission_file(args.mission, fm, body)
-        print(f"\nPASS Milestone {mid} gate passed ({ran} ran, {skipped} skipped).")
+        print(f"
+PASS Milestone {mid} gate passed ({ran} ran, {skipped} skipped).")
         if all_done:
             print("All milestones complete. Mission status → done.")
 
@@ -668,7 +679,8 @@ def cmd_close_out(args):
         text=True,
     )
     if result.returncode != 0:
-        print(f"ERROR: brain wrap-up failed:\n{result.stderr}", file=sys.stderr)
+        print(f"ERROR: brain wrap-up failed:
+{result.stderr}", file=sys.stderr)
         sys.exit(1)
     fm["status"] = "done"
     fm["completed_at"] = now_iso()
@@ -700,7 +712,8 @@ def cmd_abandon(args):
     fm["last_active_at"] = now_iso()
     if not fm.get("notes"):
         fm["notes"] = ""
-    fm["notes"] = (fm.get("notes", "") + f"\nAbandoned: {args.reason}").strip()
+    fm["notes"] = (fm.get("notes", "") + f"
+Abandoned: {args.reason}").strip()
     write_mission_file(args.mission, fm, body)
 
     active = read_active()
@@ -721,7 +734,8 @@ def cmd_skip(args):
 
     old_status = feature["status"]
     feature["status"] = "skipped"
-    feature["notes"] = (feature.get("notes", "") + f"\nSkipped: {args.reason}").strip()
+    feature["notes"] = (feature.get("notes", "") + f"
+Skipped: {args.reason}").strip()
 
     write_mission_file(args.mission, fm, body)
     print(f"Skipped: {fid} ({old_status} → skipped)")

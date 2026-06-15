@@ -25,4 +25,4 @@ Research complete. Deliverable: `documents/hosting-research-2026-06-13.md`
 **Verdict: Stay on Firebase App Hosting.** Comparison table covers 9 platforms. Fly.io (JNB region) is the recommended fallback if SSR SA latency becomes an issue later. Brad to review and confirm.
 
 ## Deferred (auto-tracked)
-_Last compacted: 2026-06-15 by session. Dismissed: 500+ check_own_comms pulse items (through 20260615232801), qa-guard pings, quota-monitor alerts, 2× ghost-resume P0 false-positives (fp:sha1:48fb8a6359a2, fp:sha1:e4624eeca513 — no test suite matches this project), 1× loop-converged milestone, routine ingest_pulse.sh output. All informational, no action. Full history: git log on this file._
+_Last compacted: 2026-06-16 by session. Dismissed: 500+ check_own_comms pulse items (through 20260616), qa-guard pings, quota-monitor alerts, 2× ghost-resume P0 false-positives (fp:sha1:48fb8a6359a2, fp:sha1:e4624eeca513 — no test suite matches this project), 1× loop-converged milestone, routine ingest_pulse.sh output. All informational, no action. Full history: git log on this file._

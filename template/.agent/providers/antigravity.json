@@ -1,0 +1,15 @@
+{
+  "provider": "antigravity",
+  "display_name": "Antigravity",
+  "headless_command": null,
+  "supports_headless": false,
+  "supports_continue": false,
+  "supports_hooks": false,
+  "supports_subagents": true,
+  "supports_max_turns": false,
+  "supports_max_tokens": false,
+  "token_accounting": "unknown",
+  "native_instruction_file": "AGENTS.md",
+  "agents_manifest": ".anti/agents.json",
+  "notes": "Subagents require LLM tool registration from .anti/agents.json; no shell CLI adapter is assumed."
+}
