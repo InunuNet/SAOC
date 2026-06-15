@@ -1,0 +1,47 @@
+slug: slug-collision-done-test
+title: "Upstream slug collision fix to template + add codex provider manifest"
+description: >
+  Fix two template bugs: (1) template/execution/mission.py missing cross-date slug
+  collision scan that exists in live execution/mission.py; (2) template/.agent/providers/codex.json
+  missing while Makefile documents PROVIDER=codex as valid.
+
+features:
+  - id: F1
+    title: "Add slug collision scan to template/execution/mission.py"
+    description: "Cross-date glob scan prevents phantom missions from blocking future same-slug creation"
+  - id: F2
+    title: "Create template/.agent/providers/codex.json"
+    description: "Add missing Codex provider manifest so PROVIDER=codex is usable"
+
+goldens:
+  dir: .agent/memory/project/specs/slug-collision-done-test/goldens/
+  scripts:
+    - check_slug_scan.sh
+    - check_codex_json.sh
+
+assertions:
+  - id: A1
+    description: "template mission.py contains cross-date slug scan"
+    verify:
+      kind: shell
+      cmd: "bash .agent/memory/project/specs/slug-collision-done-test/goldens/check_slug_scan.sh"
+  - id: A2
+    description: "template codex.json exists and has required provider key"
+    verify:
+      kind: shell
+      cmd: "bash .agent/memory/project/specs/slug-collision-done-test/goldens/check_codex_json.sh"
+  - id: A3
+    description: "template provider-validate passes (includes codex)"
+    verify:
+      kind: shell
+      cmd: "python3 execution/provider_manifest.py --project-root template validate | grep -q codex"
+  - id: A4
+    description: "template mission.py slug scan allows done-status re-use"
+    verify:
+      kind: shell
+      cmd: "grep -q 'done.*abandoned.*close_out' template/execution/mission.py"
+  - id: A5
+    description: "template mission.py slug scan blocks active-status collision"
+    verify:
+      kind: shell
+      cmd: "grep -q 'Resume that mission instead' template/execution/mission.py"

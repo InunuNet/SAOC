@@ -24,11 +24,14 @@ _Last compacted: 2026-06-13 by session. Full history: git log on this file._
 Research complete. Deliverable: `documents/hosting-research-2026-06-13.md`
 **Verdict: Stay on Firebase App Hosting.** Comparison table covers 9 platforms. Fly.io (JNB region) is the recommended fallback if SSR SA latency becomes an issue later. Brad to review and confirm.
 
+## Harness Upstream (Athanor → InunuNet/Athanor)
+- [ ] **[athanor-upstream] sync-autonomy v2: bridge high autonomy to provider-native approval policy** — `make sync-autonomy` is status-only; does NOT update `.claude/settings.json` permissionMode or other provider configs when `level=high`. Downstream effect: provider-level approval gates still block even at autonomy=high. Fix: `set-autonomy LEVEL=high` should also propagate to provider settings. Filed 2026-06-16 from downstream fleet report.
+- [ ] **[athanor-upstream] template/execution/mission.py slug fix** — Fixed locally in this session; needs upstreaming to InunuNet/Athanor so all downstream projects inherit it via `make update-template`. Fix is in template/execution/mission.py::cmd_new (cross-date slug scan). Flagged 2026-06-16.
+
 ## Deferred (auto-tracked)
 _Last compacted: 2026-06-16 by session. Dismissed: 500+ check_own_comms pulse items (through 20260616), qa-guard pings, quota-monitor alerts, 2× ghost-resume P0 false-positives (fp:sha1:48fb8a6359a2, fp:sha1:e4624eeca513 — no test suite matches this project), 1× loop-converged milestone, routine ingest_pulse.sh output. All informational, no action. Full history: git log on this file._
 
 - [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
-
 - [ ] SAOC (Misc): New Event: check_own_comms-20260616002140.txt
-
 - [ ] SAOC (Misc): New Event: check_own_comms-20260616003701.txt
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=none
