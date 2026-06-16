@@ -5553,3 +5553,7 @@ Remaining blocked on Brad:
 - DNS cutover + Firebase App Hosting connect (docs/launch-checklist.md)
 - SPF/DKIM/DMARC DNS records (docs/email-dns-setup.md)
 - Secretary Sanity user creation + handover (docs/secretary-cms-guide.md)
+
+## [DEX -> CODI] 2026-06-16 02:21 — new message
+## [DEX -> COMMS] 2026-06-15 -- auto-ghost-hook-latency chain progress
+
