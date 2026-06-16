@@ -1,0 +1,26 @@
+schema: athanor.contract/v1
+slug: fix-require-docs-hook
+goal: Ensure `require_docs.sh` hook only triggers for commands explicitly starting with `contract.py gate`.
+created_at: '2026-06-16'
+autonomy: high
+features:
+  - id: F1
+    name: Restrict require_docs.sh hook to exact 'contract.py gate' command prefix
+    status: pending
+goldens:
+  - .agent/memory/project/specs/fix-require-docs-hook/goldens/require_docs.sh
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The 'require_docs.sh' script should exist and be executable.
+      command: test -f execution/hooks/require_docs.sh && test -x execution/hooks/require_docs.sh
+    - id: A2
+      description: The 'case' statement in require_docs.sh must not use leading wildcards for 'contract.py gate'.
+      command: 'grep -qv "\*\"contract.py gate \"" execution/hooks/require_docs.sh'
+    - id: A3
+      description: A command that contains "gate" but does not start with "contract.py gate" should NOT trigger the hook (exit code 0).
+      command: "python3 -c \"import json; print(json.dumps({\\\"tool_input\\\": {\\\"command\\\": \\\"my_command --some-gate-arg\\\"}}))\" | execution/hooks/require_docs.sh; test $? -eq 0"
+    - id: A4
+      description: A command that starts exactly with "contract.py gate" should trigger the hook (exit code 1 or more, indicating a check was run).
+      command: "chmod +x .agent/memory/scratch/test_require_docs_a4.sh && .agent/memory/scratch/test_require_docs_a4.sh; test $? -ne 0"
