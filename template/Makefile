@@ -113,12 +113,18 @@ provider-validate:
 	@python3 execution/provider_manifest.py validate
 
 job:
-	@if [ -z "$(GOAL)" ]; then echo "Usage: make job GOAL='desired outcome' [PROVIDER=claude-code|codex|gemini-cli|antigravity|opencode]"; exit 2; fi
+	@if [ -z "$(GOAL)" ]; then echo "Usage: make job GOAL='desired outcome' [PROVIDER=claude-code|codex|gemini-cli|antigravity|opencode] [COMPLEXITY=trivial|standard|complex]"; exit 2; fi
 	@python3 execution/pulse_ticket.py enqueue \
 	  --source ceo-intake \
 	  --kind user-goal \
 	  --provider "$(or $(PROVIDER),claude-code)" \
 	  --requires-model true \
+	  --goal "$(GOAL)" \
+	  --complexity "$(or $(COMPLEXITY),standard)" \
+	  --acceptance "$(or $(ACCEPTANCE),observable completion evidence recorded)" \
+	  --routing-policy "$(or $(ROUTING_POLICY),manual)" \
+	  --evidence-gate "$(or $(EVIDENCE_GATE),contract)" \
+	  --human-blocker-policy "$(or $(HUMAN_BLOCKER_POLICY),external-only)" \
 	  --max-turns "$(or $(MAX_TURNS),1)" \
 	  --max-tokens "$(or $(MAX_TOKENS),20000)" \
 	  --metadata intent=ceo \

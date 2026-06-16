@@ -9,6 +9,14 @@
   "supports_max_turns": false,
   "supports_max_tokens": false,
   "token_accounting": "unknown",
+  "routing_policy": {
+    "auto_route": true,
+    "cost_tier": "standard",
+    "complexity": ["trivial", "standard"],
+    "domains": ["code", "docs", "maintenance"],
+    "priority": 20,
+    "escalation_order": ["gemini-cli", "claude-code"]
+  },
   "native_instruction_file": "AGENTS.md",
   "notes": "Thin provider adapter. Do not assume max-turn or token flags unless this manifest is updated after CLI verification."
 }

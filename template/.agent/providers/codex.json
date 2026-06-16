@@ -1,14 +1,22 @@
 {
   "provider": "codex",
-  "display_name": "OpenAI Codex CLI",
-  "headless_command": ["codex", "{prompt}"],
+  "display_name": "Codex CLI",
+  "headless_command": ["codex", "exec", "{prompt}"],
   "supports_headless": true,
   "supports_continue": false,
   "supports_hooks": false,
-  "supports_subagents": false,
+  "supports_subagents": true,
   "supports_max_turns": false,
   "supports_max_tokens": false,
   "token_accounting": "unknown",
+  "routing_policy": {
+    "auto_route": true,
+    "cost_tier": "standard",
+    "complexity": ["trivial", "standard", "complex"],
+    "domains": ["architecture", "code", "docs", "qa"],
+    "priority": 22,
+    "escalation_order": ["opencode", "claude-code"]
+  },
   "native_instruction_file": "AGENTS.md",
-  "notes": "Thin provider adapter for OpenAI Codex CLI. Verify headless_command flags before production use."
+  "notes": "Thin provider adapter for Codex. Dispatcher manifest execution is a later slice; current hardcoded dispatcher behavior remains authoritative until then."
 }

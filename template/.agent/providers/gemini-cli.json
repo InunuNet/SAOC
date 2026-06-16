@@ -9,6 +9,14 @@
   "supports_max_turns": true,
   "supports_max_tokens": false,
   "token_accounting": "provider-reported-only",
+  "routing_policy": {
+    "auto_route": true,
+    "cost_tier": "standard",
+    "complexity": ["trivial", "standard"],
+    "domains": ["analysis", "docs", "research"],
+    "priority": 25,
+    "escalation_order": ["opencode", "claude-code"]
+  },
   "hooks_dir": ".gemini/hooks",
   "agents_dir": ".gemini/agents",
   "skills_dir": ".gemini/skills",

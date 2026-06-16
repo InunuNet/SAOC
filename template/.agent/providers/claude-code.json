@@ -11,6 +11,14 @@
   "supports_max_turns": true,
   "supports_max_tokens": false,
   "token_accounting": "provider-reported-only",
+  "routing_policy": {
+    "auto_route": true,
+    "cost_tier": "frontier",
+    "complexity": ["standard", "complex"],
+    "domains": ["architecture", "code", "docs", "qa", "research"],
+    "priority": 30,
+    "escalation_order": ["opencode", "gemini-cli"]
+  },
   "hooks_dir": ".claude/hooks",
   "agents_dir": ".claude/agents",
   "skills_dir": ".claude/skills",

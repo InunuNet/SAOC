@@ -16,7 +16,7 @@ _check_json ".agent/profile.json"                 ".agent/profile.json"
 _check_json ".agent/autonomy_matrix.json"         ".agent/autonomy_matrix.json"
 _check_json ".agent/schemas/validation_contract"  ".agent/schemas/validation_contract.v1.json"
 _check_json ".claude/settings.json"              ".claude/settings.json"
-for provider in claude-code gemini-cli opencode antigravity; do
+for provider in claude-code codex gemini-cli opencode antigravity; do
   _check_json ".agent/providers/${provider}.json" ".agent/providers/${provider}.json"
 done
 

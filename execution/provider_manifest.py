@@ -12,6 +12,7 @@ from typing import Any
 
 
 PROVIDERS_DIR = Path(".agent") / "providers"
+KNOWN_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity", "opencode")
 REQUIRED_KEYS = {
     "provider",
     "display_name",
@@ -21,6 +22,17 @@ REQUIRED_KEYS = {
     "supports_max_turns",
     "supports_max_tokens",
     "token_accounting",
+    "routing_policy",
+}
+
+VALID_COMPLEXITY = {"trivial", "standard", "complex"}
+REQUIRED_ROUTING_KEYS = {
+    "auto_route",
+    "cost_tier",
+    "complexity",
+    "domains",
+    "priority",
+    "escalation_order",
 }
 
 
@@ -47,15 +59,38 @@ def load_manifest(root: Path, provider: str) -> dict[str, Any]:
         raise SystemExit(f"provider manifest missing keys for {provider}: {', '.join(missing)}")
     if data.get("provider") != provider:
         raise SystemExit(f"provider manifest name mismatch: expected {provider}, got {data.get('provider')}")
+    validate_routing_policy(provider, data.get("routing_policy"))
     return data
 
 
+def validate_routing_policy(provider: str, policy: Any) -> None:
+    if not isinstance(policy, dict):
+        raise SystemExit(f"provider routing_policy must be an object for {provider}")
+    missing = sorted(REQUIRED_ROUTING_KEYS - set(policy))
+    if missing:
+        raise SystemExit(f"provider routing_policy missing keys for {provider}: {', '.join(missing)}")
+    if not isinstance(policy["auto_route"], bool):
+        raise SystemExit(f"provider routing_policy.auto_route must be boolean for {provider}")
+    if not isinstance(policy["cost_tier"], str) or not policy["cost_tier"]:
+        raise SystemExit(f"provider routing_policy.cost_tier must be non-empty string for {provider}")
+    if not isinstance(policy["priority"], int):
+        raise SystemExit(f"provider routing_policy.priority must be integer for {provider}")
+    complexities = policy["complexity"]
+    if not isinstance(complexities, list) or not complexities:
+        raise SystemExit(f"provider routing_policy.complexity must be a non-empty list for {provider}")
+    invalid_complexity = sorted(set(complexities) - VALID_COMPLEXITY)
+    if invalid_complexity:
+        raise SystemExit(
+            f"provider routing_policy.complexity invalid for {provider}: {', '.join(invalid_complexity)}"
+        )
+    for key in ("domains", "escalation_order"):
+        values = policy[key]
+        if not isinstance(values, list) or any(not isinstance(item, str) or not item for item in values):
+            raise SystemExit(f"provider routing_policy.{key} must be a list of strings for {provider}")
+
+
 def list_manifests(root: Path) -> list[dict[str, Any]]:
-    providers_dir = root / PROVIDERS_DIR
-    manifests = []
-    for path in sorted(providers_dir.glob("*.json")):
-        manifests.append(load_manifest(root, path.stem))
-    return manifests
+    return [load_manifest(root, provider) for provider in KNOWN_PROVIDERS]
 
 
 def build_parser() -> argparse.ArgumentParser:

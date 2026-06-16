@@ -16,6 +16,7 @@ from typing import Any
 
 SCHEMA = "athanor.pulse.ticket/v1"
 VALID_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity", "opencode")
+VALID_COMPLEXITY = ("trivial", "standard", "complex")
 
 
 def parse_bool(value: str | None) -> bool:
@@ -59,8 +60,10 @@ def make_dedupe_key(source: str, kind: str, project_path: str, prompt: str) -> s
 def make_ticket(args: argparse.Namespace) -> dict[str, Any]:
     root = project_root(args.project_path)
     prompt = read_prompt(args)
+    goal = args.goal or prompt
     now = utc_now()
-    dedupe_key = args.dedupe_key or make_dedupe_key(args.source, args.kind, str(root), prompt)
+    dedupe_basis = goal or prompt
+    dedupe_key = args.dedupe_key or make_dedupe_key(args.source, args.kind, str(root), dedupe_basis)
     ticket_id = args.id or f"pt-{uuid.uuid4().hex}"
     return {
         "schema": SCHEMA,
@@ -70,6 +73,12 @@ def make_ticket(args: argparse.Namespace) -> dict[str, Any]:
         "project_path": str(root),
         "provider": args.provider,
         "requires_model": bool(args.requires_model),
+        "goal": goal,
+        "acceptance": list(args.acceptance or []),
+        "complexity": args.complexity,
+        "routing_policy": args.routing_policy,
+        "evidence_gate": args.evidence_gate,
+        "human_blocker_policy": args.human_blocker_policy,
         "prompt": prompt,
         "dedupe_key": dedupe_key,
         "max_turns": int(args.max_turns),
@@ -125,6 +134,12 @@ def build_parser() -> argparse.ArgumentParser:
     enqueue.add_argument("--provider", default="claude-code", choices=VALID_PROVIDERS)
     enqueue.add_argument("--requires-model", dest="requires_model", nargs="?", const=True, default=False, type=parse_bool)
     enqueue.add_argument("--no-requires-model", dest="requires_model", action="store_false")
+    enqueue.add_argument("--goal", help="user-facing desired outcome; defaults to prompt text")
+    enqueue.add_argument("--acceptance", action="append", default=[], help="repeatable observable completion criterion")
+    enqueue.add_argument("--complexity", default="standard", choices=VALID_COMPLEXITY)
+    enqueue.add_argument("--routing-policy", default="manual", help="routing hint; dispatcher auto-routing is a later slice")
+    enqueue.add_argument("--evidence-gate", default="contract", help="required evidence gate, for example contract or tests")
+    enqueue.add_argument("--human-blocker-policy", default="external-only", help="when to stop for a human")
     enqueue.add_argument("--prompt", help="prompt text; if omitted, stdin is used when piped")
     enqueue.add_argument("--prompt-file", help="read prompt text from a file")
     enqueue.add_argument("--dedupe-key", help="idempotency key; defaults to a hash of source/kind/project/prompt")

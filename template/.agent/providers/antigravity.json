@@ -9,6 +9,14 @@
   "supports_max_turns": false,
   "supports_max_tokens": false,
   "token_accounting": "unknown",
+  "routing_policy": {
+    "auto_route": false,
+    "cost_tier": "specialist",
+    "complexity": ["standard", "complex"],
+    "domains": ["analysis", "subagent-orchestration"],
+    "priority": 40,
+    "escalation_order": ["claude-code"]
+  },
   "native_instruction_file": "AGENTS.md",
   "agents_manifest": ".anti/agents.json",
   "notes": "Subagents require LLM tool registration from .anti/agents.json; no shell CLI adapter is assumed."
