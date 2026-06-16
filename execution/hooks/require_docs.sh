@@ -4,12 +4,12 @@
 
 INPUT=$(cat)
 
-CMD=$(printf '%s' "$INPUT" | python3 -c 
-  "import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('command',''))" 
+CMD=$(printf '%s' "$INPUT" | python3 -c \
+  "import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('command',''))" \
   2>/dev/null)
 
 case "$CMD" in
-  "contract.py gate "*|"contract.py gate") ;;
+  *"contract.py gate "*|*"contract.py gate") ;;
   *) exit 0 ;;
 esac
 
