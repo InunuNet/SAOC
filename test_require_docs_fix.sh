@@ -22,6 +22,7 @@ run_test() {
   else
     echo "FAILURE: Command '$TEST_COMMAND' (Expected: $EXPECTED_EXIT_CODE, Actual: $ACTUAL_EXIT_CODE)"
     exit 1
+  fi
   }
 
 # Test cases for the fixed hook
