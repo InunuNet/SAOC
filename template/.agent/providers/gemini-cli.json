@@ -17,6 +17,20 @@
     "priority": 25,
     "escalation_order": ["opencode", "claude-code"]
   },
+  "role_capabilities": {
+    "schema": "athanor.role-capabilities/v1",
+    "mode": "mixed",
+    "roles": {
+      "lead": {"supported": false, "dispatch": "unsupported", "reason": "Gemini CLI has no verified lead subagent dispatch path in this harness."},
+      "analyst": {"supported": true, "dispatch": "primary-only", "reason": "Gemini CLI can run analyst/research prompts in the primary session using synced instructions."},
+      "architect": {"supported": false, "dispatch": "unsupported", "reason": "Gemini CLI has no verified architect subagent dispatch path for chain-critical spec gates."},
+      "dev": {"supported": false, "dispatch": "unsupported", "reason": "Gemini CLI tool denial history makes dev dispatch unsafe without a provider-specific proof gate."},
+      "qa": {"supported": true, "dispatch": "primary-only", "reason": "Gemini CLI can run bounded QA review prompts in the primary session."},
+      "docs": {"supported": true, "dispatch": "primary-only", "reason": "Gemini CLI can perform documentation updates when tools are available in the primary session."},
+      "maintainer": {"supported": false, "dispatch": "unsupported", "reason": "Gemini CLI has no verified maintainer closeout dispatch path with reliable artifact writes."},
+      "designer": {"supported": false, "dispatch": "unsupported", "reason": "Gemini CLI has no verified designer role dispatch path in this harness."}
+    }
+  },
   "hooks_dir": ".gemini/hooks",
   "agents_dir": ".gemini/agents",
   "skills_dir": ".gemini/skills",

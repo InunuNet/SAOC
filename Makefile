@@ -127,6 +127,7 @@ job:
 	  --routing-policy "$(or $(ROUTING_POLICY),manual)" \
 	  --evidence-gate "$(or $(EVIDENCE_GATE),contract)" \
 	  --human-blocker-policy "$(or $(HUMAN_BLOCKER_POLICY),external-only)" \
+	  $(foreach role,$(REQUIRED_ROLES),--required-role "$(role)") \
 	  --max-turns "$(or $(MAX_TURNS),1)" \
 	  --max-tokens "$(or $(MAX_TOKENS),20000)" \
 	  --metadata intent=ceo \

@@ -17,6 +17,20 @@
     "priority": 40,
     "escalation_order": ["claude-code"]
   },
+  "role_capabilities": {
+    "schema": "athanor.role-capabilities/v1",
+    "mode": "llm-tool",
+    "roles": {
+      "lead": {"supported": true, "dispatch": "llm-tool", "reason": "Antigravity can register and invoke the lead subagent through LLM tools after reading .anti/agents.json."},
+      "analyst": {"supported": true, "dispatch": "llm-tool", "reason": "Antigravity can register and invoke the analyst subagent through LLM tools after reading .anti/agents.json."},
+      "architect": {"supported": true, "dispatch": "llm-tool", "reason": "Antigravity can register and invoke the architect subagent through LLM tools after reading .anti/agents.json."},
+      "dev": {"supported": true, "dispatch": "llm-tool", "reason": "Antigravity can register and invoke the dev subagent through LLM tools after reading .anti/agents.json."},
+      "qa": {"supported": true, "dispatch": "llm-tool", "reason": "Antigravity can register and invoke the qa subagent through LLM tools after reading .anti/agents.json."},
+      "docs": {"supported": true, "dispatch": "llm-tool", "reason": "Antigravity can register and invoke the docs subagent through LLM tools after reading .anti/agents.json."},
+      "maintainer": {"supported": true, "dispatch": "llm-tool", "reason": "Antigravity can register and invoke the maintainer subagent through LLM tools after reading .anti/agents.json."},
+      "designer": {"supported": true, "dispatch": "llm-tool", "reason": "Antigravity can register and invoke the designer subagent through LLM tools after reading .anti/agents.json."}
+    }
+  },
   "native_instruction_file": "AGENTS.md",
   "agents_manifest": ".anti/agents.json",
   "notes": "Subagents require LLM tool registration from .anti/agents.json; no shell CLI adapter is assumed."

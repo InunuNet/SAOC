@@ -15,6 +15,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+try:
+    from execution.provider_manifest import CANONICAL_ROLES
+except ModuleNotFoundError:
+    from provider_manifest import CANONICAL_ROLES
+
 
 TICKET_SCHEMA = "athanor.pulse.ticket/v1"
 VALID_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity", "opencode", "auto")
@@ -152,6 +157,17 @@ def validate_ticket(ticket: dict[str, Any]) -> str | None:
         return f"unsupported schema {ticket['schema']!r}"
     if ticket["provider"] not in VALID_PROVIDERS:
         return f"unsupported provider {ticket['provider']!r}"
+    required_roles = ticket.get("required_roles", [])
+    if required_roles is None:
+        return None
+    if not isinstance(required_roles, list):
+        return "required_roles must be a list"
+    invalid_roles = [
+        role for role in required_roles
+        if not isinstance(role, str) or role not in CANONICAL_ROLES
+    ]
+    if invalid_roles:
+        return f"unsupported required role(s): {', '.join(map(str, invalid_roles))}"
     return None
 
 
@@ -343,11 +359,49 @@ def build_provider_cmd(provider: str, prompt: str, max_turns: int, root: Path) -
     return [provider, prompt]
 
 
-def cascade_provider(original_provider: str, paths: Paths, project_path: str) -> str | None:
+def required_roles(ticket: dict[str, Any]) -> list[str]:
+    roles = ticket.get("required_roles") or []
+    if not isinstance(roles, list):
+        return []
+    return [role for role in roles if isinstance(role, str)]
+
+
+def provider_role_block_reason(provider: str, roles: list[str], root: Path) -> str | None:
+    if not roles:
+        return None
+    manifest = load_manifest(provider, root)
+    capabilities = manifest.get("role_capabilities")
+    if not isinstance(capabilities, dict):
+        return f"provider {provider} missing role_capabilities"
+    role_map = capabilities.get("roles")
+    if not isinstance(role_map, dict):
+        return f"provider {provider} missing role_capabilities.roles"
+    unsupported = []
+    for role in roles:
+        entry = role_map.get(role)
+        if not isinstance(entry, dict):
+            unsupported.append(f"{role} (missing)")
+        elif entry.get("supported") is not True:
+            reason = str(entry.get("reason") or "unsupported")
+            unsupported.append(f"{role} ({reason})")
+    if unsupported:
+        return f"provider {provider} lacks required role support: {', '.join(unsupported)}"
+    return None
+
+
+def cascade_provider(
+    original_provider: str,
+    paths: Paths,
+    project_path: str,
+    roles: list[str] | None = None,
+) -> str | None:
     """Return first eligible escalation provider from original's manifest escalation_order, or None."""
     manifest = load_manifest(original_provider, paths.root)
     escalation_order = manifest.get("routing_policy", {}).get("escalation_order", [])
+    required = roles or []
     for provider_id in escalation_order:
+        if provider_role_block_reason(provider_id, required, paths.root):
+            continue
         if check_provider_backoff(paths, provider_id, project_path) is None:
             return provider_id
     return None
@@ -358,6 +412,7 @@ def select_provider(ticket: dict[str, Any], paths: Paths) -> tuple[str | None, b
     (None, True) if eligible providers exist but all are in backoff."""
     complexity = str(ticket.get("complexity") or "standard")
     project_path = str(ticket.get("project_path") or "")
+    roles = required_roles(ticket)
     candidates = []
     for pid in VALID_PROVIDERS:
         if pid == "auto":
@@ -367,6 +422,8 @@ def select_provider(ticket: dict[str, Any], paths: Paths) -> tuple[str | None, b
         if not policy.get("auto_route"):
             continue
         if complexity not in (policy.get("complexity") or []):
+            continue
+        if provider_role_block_reason(pid, roles, paths.root):
             continue
         priority = int(policy.get("priority") or 99)
         candidates.append((priority, pid))
@@ -475,6 +532,12 @@ def dispatch_ticket(paths: Paths, ticket_path: Path, max_launches: int, launches
         ticket["_was_auto_routed"] = True
         print(f"auto-routed {ticket['id']}: {resolved} (complexity={ticket.get('complexity', 'standard')})")
 
+    role_reason = provider_role_block_reason(str(ticket["provider"]), required_roles(ticket), paths.root)
+    if role_reason:
+        archive_ticket(paths, ticket_path, ticket, "unsupported-role", role_reason)
+        print(f"unsupported-role {ticket['id']}: {role_reason}")
+        return launches, True
+
     if os.environ.get("ATHANOR_PULSE_MODEL_DISABLE") == "1":
         print(f"blocked {ticket['id']}: ATHANOR_PULSE_MODEL_DISABLE=1")
         return launches, False
@@ -522,7 +585,7 @@ def dispatch_ticket(paths: Paths, ticket_path: Path, max_launches: int, launches
             original = str(ticket["provider"])
             record_failure(paths, original, str(ticket["project_path"]))
             escalated = (
-                cascade_provider(original, paths, str(ticket["project_path"]))
+                cascade_provider(original, paths, str(ticket["project_path"]), required_roles(ticket))
                 if ticket.get("_was_auto_routed")
                 else None
             )

@@ -23,9 +23,13 @@ REQUIRED_KEYS = {
     "supports_max_tokens",
     "token_accounting",
     "routing_policy",
+    "role_capabilities",
 }
 
 VALID_COMPLEXITY = {"trivial", "standard", "complex"}
+CANONICAL_ROLES = ("lead", "analyst", "architect", "dev", "qa", "docs", "maintainer", "designer")
+VALID_ROLE_MODES = {"native", "prompt-file", "llm-tool", "unsupported", "mixed"}
+VALID_ROLE_DISPATCH = {"native", "prompt-file", "llm-tool", "primary-only", "unsupported"}
 REQUIRED_ROUTING_KEYS = {
     "auto_route",
     "cost_tier",
@@ -60,6 +64,7 @@ def load_manifest(root: Path, provider: str) -> dict[str, Any]:
     if data.get("provider") != provider:
         raise SystemExit(f"provider manifest name mismatch: expected {provider}, got {data.get('provider')}")
     validate_routing_policy(provider, data.get("routing_policy"))
+    validate_role_capabilities(provider, data.get("role_capabilities"))
     return data
 
 
@@ -87,6 +92,44 @@ def validate_routing_policy(provider: str, policy: Any) -> None:
         values = policy[key]
         if not isinstance(values, list) or any(not isinstance(item, str) or not item for item in values):
             raise SystemExit(f"provider routing_policy.{key} must be a list of strings for {provider}")
+
+
+def validate_role_capabilities(provider: str, capabilities: Any) -> None:
+    if not isinstance(capabilities, dict):
+        raise SystemExit(f"provider role_capabilities must be an object for {provider}")
+    mode = capabilities.get("mode")
+    if mode not in VALID_ROLE_MODES:
+        raise SystemExit(
+            f"provider role_capabilities.mode invalid for {provider}: expected {', '.join(sorted(VALID_ROLE_MODES))}"
+        )
+    roles = capabilities.get("roles")
+    if not isinstance(roles, dict):
+        raise SystemExit(f"provider role_capabilities.roles must be an object for {provider}")
+    missing = [role for role in CANONICAL_ROLES if role not in roles]
+    if missing:
+        raise SystemExit(f"provider role_capabilities missing roles for {provider}: {', '.join(missing)}")
+    unknown = sorted(set(roles) - set(CANONICAL_ROLES))
+    if unknown:
+        raise SystemExit(f"provider role_capabilities unknown roles for {provider}: {', '.join(unknown)}")
+    for role in CANONICAL_ROLES:
+        item = roles[role]
+        if not isinstance(item, dict):
+            raise SystemExit(f"provider role_capabilities.{role} must be an object for {provider}")
+        if not isinstance(item.get("supported"), bool):
+            raise SystemExit(f"provider role_capabilities.{role}.supported must be boolean for {provider}")
+        dispatch = item.get("dispatch")
+        if dispatch not in VALID_ROLE_DISPATCH:
+            raise SystemExit(
+                f"provider role_capabilities.{role}.dispatch invalid for {provider}: "
+                f"expected {', '.join(sorted(VALID_ROLE_DISPATCH))}"
+            )
+        reason = item.get("reason")
+        if not isinstance(reason, str) or not reason.strip():
+            raise SystemExit(f"provider role_capabilities.{role}.reason must be non-empty string for {provider}")
+        if item["supported"] and dispatch == "unsupported":
+            raise SystemExit(f"provider role_capabilities.{role} supported=true cannot use unsupported dispatch")
+        if not item["supported"] and dispatch != "unsupported":
+            raise SystemExit(f"provider role_capabilities.{role} supported=false must use unsupported dispatch")
 
 
 def list_manifests(root: Path) -> list[dict[str, Any]]:

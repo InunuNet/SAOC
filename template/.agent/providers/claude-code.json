@@ -19,6 +19,20 @@
     "priority": 30,
     "escalation_order": ["opencode", "gemini-cli"]
   },
+  "role_capabilities": {
+    "schema": "athanor.role-capabilities/v1",
+    "mode": "native",
+    "roles": {
+      "lead": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced lead agent through its native agent system."},
+      "analyst": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced analyst agent through its native agent system."},
+      "architect": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced architect agent through its native agent system."},
+      "dev": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced dev agent through its native agent system."},
+      "qa": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced qa agent through its native agent system."},
+      "docs": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced docs agent through its native agent system."},
+      "maintainer": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced maintainer agent through its native agent system."},
+      "designer": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced designer agent through its native agent system."}
+    }
+  },
   "hooks_dir": ".claude/hooks",
   "agents_dir": ".claude/agents",
   "skills_dir": ".claude/skills",

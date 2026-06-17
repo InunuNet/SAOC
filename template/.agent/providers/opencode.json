@@ -17,6 +17,20 @@
     "priority": 20,
     "escalation_order": ["gemini-cli", "claude-code"]
   },
+  "role_capabilities": {
+    "schema": "athanor.role-capabilities/v1",
+    "mode": "mixed",
+    "roles": {
+      "lead": {"supported": true, "dispatch": "primary-only", "reason": "OpenCode reads AGENTS.md and can act as lead in the primary session."},
+      "analyst": {"supported": true, "dispatch": "primary-only", "reason": "OpenCode can run analyst prompts from AGENTS.md context in the primary session."},
+      "architect": {"supported": false, "dispatch": "unsupported", "reason": "OpenCode has no verified architect subagent dispatch path for chain-critical spec gates."},
+      "dev": {"supported": true, "dispatch": "primary-only", "reason": "OpenCode can implement code directly in the primary session."},
+      "qa": {"supported": false, "dispatch": "unsupported", "reason": "OpenCode has no verified independent QA subagent dispatch path in this harness."},
+      "docs": {"supported": true, "dispatch": "primary-only", "reason": "OpenCode can update documentation directly in the primary session."},
+      "maintainer": {"supported": false, "dispatch": "unsupported", "reason": "OpenCode has no verified maintainer closeout dispatch path with memory updates."},
+      "designer": {"supported": false, "dispatch": "unsupported", "reason": "OpenCode has no verified designer role dispatch path in this harness."}
+    }
+  },
   "native_instruction_file": "AGENTS.md",
   "notes": "Thin provider adapter. Do not assume max-turn or token flags unless this manifest is updated after CLI verification."
 }

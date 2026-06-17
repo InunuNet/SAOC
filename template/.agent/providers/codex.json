@@ -17,6 +17,20 @@
     "priority": 22,
     "escalation_order": ["opencode", "claude-code"]
   },
+  "role_capabilities": {
+    "schema": "athanor.role-capabilities/v1",
+    "mode": "mixed",
+    "roles": {
+      "lead": {"supported": true, "dispatch": "primary-only", "reason": "Codex reads AGENTS.md and can act as lead in the primary session; no generated file inference is required."},
+      "analyst": {"supported": true, "dispatch": "primary-only", "reason": "Codex can execute analyst work from canonical role instructions in the primary session."},
+      "architect": {"supported": true, "dispatch": "primary-only", "reason": "Codex can execute architect/spec work from canonical role instructions in the primary session."},
+      "dev": {"supported": true, "dispatch": "primary-only", "reason": "Codex can implement code directly under AGENTS.md rules in the primary session."},
+      "qa": {"supported": true, "dispatch": "primary-only", "reason": "Codex can run tests and perform QA review directly in the primary session."},
+      "docs": {"supported": true, "dispatch": "primary-only", "reason": "Codex can update documentation directly in the primary session."},
+      "maintainer": {"supported": true, "dispatch": "primary-only", "reason": "Codex can update memory and perform maintainer closeout in the primary session."},
+      "designer": {"supported": false, "dispatch": "unsupported", "reason": "Codex has no verified provider-native designer subagent dispatch path in this harness."}
+    }
+  },
   "native_instruction_file": "AGENTS.md",
   "notes": "Thin provider adapter for Codex. Dispatcher manifest execution is a later slice; current hardcoded dispatcher behavior remains authoritative until then."
 }

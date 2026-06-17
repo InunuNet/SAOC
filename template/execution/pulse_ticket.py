@@ -17,6 +17,7 @@ from typing import Any
 SCHEMA = "athanor.pulse.ticket/v1"
 VALID_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity", "opencode")
 VALID_COMPLEXITY = ("trivial", "standard", "complex")
+CANONICAL_ROLES = ("lead", "analyst", "architect", "dev", "qa", "docs", "maintainer", "designer")
 
 
 def parse_bool(value: str | None) -> bool:
@@ -79,6 +80,7 @@ def make_ticket(args: argparse.Namespace) -> dict[str, Any]:
         "routing_policy": args.routing_policy,
         "evidence_gate": args.evidence_gate,
         "human_blocker_policy": args.human_blocker_policy,
+        "required_roles": list(args.required_roles or []),
         "prompt": prompt,
         "dedupe_key": dedupe_key,
         "max_turns": int(args.max_turns),
@@ -113,6 +115,9 @@ def parse_metadata(items: list[str]) -> dict[str, str]:
 def cmd_enqueue(args: argparse.Namespace) -> int:
     if args.provider not in VALID_PROVIDERS:
         raise SystemExit(f"unsupported provider {args.provider!r}; expected one of {', '.join(VALID_PROVIDERS)}")
+    invalid_roles = [role for role in args.required_roles if role not in CANONICAL_ROLES]
+    if invalid_roles:
+        raise SystemExit(f"unsupported required role(s): {', '.join(invalid_roles)}")
     args.metadata = parse_metadata(args.metadata)
     ticket = make_ticket(args)
     root = project_root(args.project_path)
@@ -140,6 +145,8 @@ def build_parser() -> argparse.ArgumentParser:
     enqueue.add_argument("--routing-policy", default="manual", help="routing hint; dispatcher auto-routing is a later slice")
     enqueue.add_argument("--evidence-gate", default="contract", help="required evidence gate, for example contract or tests")
     enqueue.add_argument("--human-blocker-policy", default="external-only", help="when to stop for a human")
+    enqueue.add_argument("--required-role", dest="required_roles", action="append", default=[], choices=CANONICAL_ROLES,
+                         help="repeatable canonical role the selected provider must be able to run")
     enqueue.add_argument("--prompt", help="prompt text; if omitted, stdin is used when piped")
     enqueue.add_argument("--prompt-file", help="read prompt text from a file")
     enqueue.add_argument("--dedupe-key", help="idempotency key; defaults to a hash of source/kind/project/prompt")
