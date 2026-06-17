@@ -1,16 +1,20 @@
 schema: athanor.contract/v1
 slug: require-docs-hook-fix
-goal: Fix require_docs.sh hook to use strict prefix matching for "contract.py gate" commands.
-created_at: '2026-06-16'
+goal: Fix the require_docs.sh hook to use strict prefix matching for contract.py gate commands.
+created_at: '2026-06-17'
 autonomy: high
 features:
   - id: F1
-    name: Update require_docs.sh for strict prefix matching
-    status: pending
-goldens: []
+    name: require_docs.sh hook uses strict prefix matching
+    status: completed
+goldens:
+  - .agent/memory/project/specs/require-docs-hook-fix/goldens/require_docs.sh
 assertions:
   phase: 4
   checks:
     - id: A1
-      description: Verify require_docs.sh uses strict prefix matching for "contract.py gate"
-      command: grep -q '"contract.py gate "*| "contract.py gate")' execution/hooks/require_docs.sh
+      description: require_docs.sh uses strict prefix matching for contract.py gate commands
+      command: grep -q '"contract.py gate "*|"contract.py gate")' execution/hooks/require_docs.sh
+    - id: A2
+      description: The verification script for the fix passes
+      command: bash test_require_docs_fix.sh
