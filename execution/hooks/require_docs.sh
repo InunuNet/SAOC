@@ -9,7 +9,7 @@ CMD=$(printf '%s' "$INPUT" | python3 -c \
   2>/dev/null)
 
 case "$CMD" in
-  "python3 "*"contract.py"*"gate"*) ;;
+  "contract.py gate "*|"contract.py gate") ;;
   *) exit 0 ;;
 esac
 
