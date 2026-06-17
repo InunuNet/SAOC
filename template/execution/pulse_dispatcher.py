@@ -17,7 +17,7 @@ from typing import Any
 
 
 TICKET_SCHEMA = "athanor.pulse.ticket/v1"
-VALID_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity", "opencode")
+VALID_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity", "opencode", "auto")
 DEFAULT_MAX_LAUNCHES = 1
 
 # Fix 2: consecutive-failure provider backoff constants.
@@ -325,7 +325,61 @@ def record_launch(paths: Paths, ticket: dict[str, Any]) -> None:
     save_budget(paths, state)
 
 
-def provider_command(ticket: dict[str, Any]) -> tuple[list[str] | None, str | None]:
+def load_manifest(provider_id: str, root: Path) -> dict:
+    manifest_path = root / ".agent" / "providers" / f"{provider_id}.json"
+    try:
+        return json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
+    except Exception:
+        return {}
+
+
+def build_provider_cmd(provider: str, prompt: str, max_turns: int, root: Path) -> list[str]:
+    manifest = load_manifest(provider, root)
+    if manifest.get("headless_command") and isinstance(manifest["headless_command"], list):
+        cmd = [part.format(prompt=prompt) for part in manifest["headless_command"]]
+        if manifest.get("supports_max_turns") and max_turns:
+            cmd += ["--max-turns", str(max_turns)]
+        return cmd
+    return [provider, prompt]
+
+
+def cascade_provider(original_provider: str, paths: Paths, project_path: str) -> str | None:
+    """Return first eligible escalation provider from original's manifest escalation_order, or None."""
+    manifest = load_manifest(original_provider, paths.root)
+    escalation_order = manifest.get("routing_policy", {}).get("escalation_order", [])
+    for provider_id in escalation_order:
+        if check_provider_backoff(paths, provider_id, project_path) is None:
+            return provider_id
+    return None
+
+
+def select_provider(ticket: dict[str, Any], paths: Paths) -> tuple[str | None, bool]:
+    """Return (provider_id, False) on success, (None, False) if no eligible provider,
+    (None, True) if eligible providers exist but all are in backoff."""
+    complexity = str(ticket.get("complexity") or "standard")
+    project_path = str(ticket.get("project_path") or "")
+    candidates = []
+    for pid in VALID_PROVIDERS:
+        if pid == "auto":
+            continue
+        manifest = load_manifest(pid, paths.root)
+        policy = manifest.get("routing_policy", {})
+        if not policy.get("auto_route"):
+            continue
+        if complexity not in (policy.get("complexity") or []):
+            continue
+        priority = int(policy.get("priority") or 99)
+        candidates.append((priority, pid))
+    candidates.sort(key=lambda x: x[0])
+    any_backoff_blocked = False
+    for _, pid in candidates:
+        if check_provider_backoff(paths, pid, project_path) is None:
+            return pid, False
+        any_backoff_blocked = True
+    return None, any_backoff_blocked
+
+
+def provider_command(ticket: dict[str, Any], paths: Paths) -> tuple[list[str] | None, str | None]:
     provider = str(ticket["provider"])
     prompt = str(ticket.get("prompt") or "")
     # Fix 4: resolve max_turns for turn-limit flag injection.
@@ -344,24 +398,12 @@ def provider_command(ticket: dict[str, Any]) -> tuple[list[str] | None, str | No
             return [prompt if part == "{prompt}" else part for part in parts], None
         return parts + [prompt], None
 
-    if provider == "claude-code":
-        # Fix 4: pass --max-turns to claude CLI.
-        return ["claude", "-p", prompt, "--max-turns", str(max_turns)], None
-    if provider == "codex":
-        return ["codex", "exec", prompt], None
-    if provider == "gemini-cli":
-        # Fix 4: pass --max-turns to gemini CLI.
-        return ["gemini", "-p", prompt, "--max-turns", str(max_turns)], None
-    if provider == "opencode":
-        # Fix 4: opencode has no --max-turns flag; use `opencode run` headlessly.
-        return ["opencode", "run", prompt], None
-    if provider == "antigravity":
-        return None, "antigravity has no configured non-interactive adapter"
-    return None, f"unsupported provider {provider}"
+    cmd = build_provider_cmd(provider, prompt, max_turns, paths.root)
+    return cmd, None
 
 
-def provider_ready(ticket: dict[str, Any]) -> tuple[list[str] | None, str | None]:
-    cmd, reason = provider_command(ticket)
+def provider_ready(ticket: dict[str, Any], paths: Paths) -> tuple[list[str] | None, str | None]:
+    cmd, reason = provider_command(ticket, paths)
     if reason:
         return None, reason
     assert cmd is not None
@@ -418,6 +460,21 @@ def dispatch_ticket(paths: Paths, ticket_path: Path, max_launches: int, launches
         print(f"recorded {ticket['id']}: requires_model false")
         return launches, True
 
+    if str(ticket.get("provider")) == "auto":
+        resolved, backoff_blocked = select_provider(ticket, paths)
+        if resolved is None:
+            if backoff_blocked:
+                print(f"blocked {ticket['id']}: auto-route deferred — all eligible providers in backoff")
+                return launches, False  # keep ticket in queue
+            complexity = str(ticket.get("complexity") or "standard")
+            archive_ticket(paths, ticket_path, ticket, "no-route",
+                           f"no eligible provider for complexity={complexity}")
+            print(f"no-route {ticket['id']}: no eligible provider for complexity={complexity}")
+            return launches, True
+        ticket["provider"] = resolved
+        ticket["_was_auto_routed"] = True
+        print(f"auto-routed {ticket['id']}: {resolved} (complexity={ticket.get('complexity', 'standard')})")
+
     if os.environ.get("ATHANOR_PULSE_MODEL_DISABLE") == "1":
         print(f"blocked {ticket['id']}: ATHANOR_PULSE_MODEL_DISABLE=1")
         return launches, False
@@ -449,7 +506,7 @@ def dispatch_ticket(paths: Paths, ticket_path: Path, max_launches: int, launches
         return launches, False
 
     try:
-        cmd, ready_reason = provider_ready(ticket)
+        cmd, ready_reason = provider_ready(ticket, paths)
         if ready_reason:
             print(f"blocked {ticket['id']}: {ready_reason}")
             return launches, False
@@ -462,9 +519,31 @@ def dispatch_ticket(paths: Paths, ticket_path: Path, max_launches: int, launches
         assert cmd is not None
         ok, reason = launch_provider(ticket, cmd)
         if not ok:
-            # Fix 2: record failure for consecutive-failure backoff tracking.
-            record_failure(paths, str(ticket["provider"]), str(ticket["project_path"]))
-            print(f"blocked {ticket['id']}: {reason}")
+            original = str(ticket["provider"])
+            record_failure(paths, original, str(ticket["project_path"]))
+            escalated = (
+                cascade_provider(original, paths, str(ticket["project_path"]))
+                if ticket.get("_was_auto_routed")
+                else None
+            )
+            if escalated:
+                ticket["provider"] = escalated
+                print(f"cascade {ticket['id']}: {original} -> {escalated} ({reason})")
+                cmd2, ready2 = provider_ready(ticket, paths)
+                if cmd2:
+                    ok, reason = launch_provider(ticket, cmd2)
+                    if ok:
+                        record_success(paths, escalated, str(ticket["project_path"]))
+                        record_launch(paths, ticket)
+                        archive_ticket(paths, ticket_path, ticket, "launched", reason)
+                        print(f"launched {ticket['id']}: {escalated} (cascade)")
+                        return launches + 1, True
+                    record_failure(paths, escalated, str(ticket["project_path"]))
+                    print(f"blocked {ticket['id']}: cascade failed: {reason}")
+                else:
+                    print(f"blocked {ticket['id']}: cascade provider not ready: {ready2}")
+            else:
+                print(f"blocked {ticket['id']}: {reason}")
             return launches, False
 
         # Fix 2: clear failure counter on successful launch.
@@ -487,7 +566,7 @@ def run_once(paths: Paths, max_launches: int) -> int:
         made_progress = made_progress or progressed or launches != before
         if launches >= max_launches:
             break
-    return 0 if launches or made_progress else 0
+    return 1 if (launches or made_progress) else 0
 
 
 def build_parser() -> argparse.ArgumentParser:

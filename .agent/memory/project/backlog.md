@@ -271,3 +271,7 @@ _Last compacted: 2026-06-16 by session. Dismissed: 500+ check_own_comms pulse it
 - [ ] SAOC (Misc): New Event: check_own_comms-20260617080553.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260617081848.txt
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-06-17-cross-provider-chain-integrity.md
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260617083054.txt

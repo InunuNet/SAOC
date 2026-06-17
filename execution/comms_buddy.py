@@ -19,6 +19,7 @@ ARCHIVE_DIR = ROOT / ".agent" / "memory" / "project" / "comms-archive"
 DEFAULT_MAX_BYTES = 12000
 DEFAULT_KEEP_HEAD = 9000
 DEFAULT_KEEP_TAIL = 6000
+WATCH_PREFIX = "[comms-watch]"  # log prefix; watch CHANGED output: <path>: hash <old> -> <new>
 
 
 def now() -> str:
@@ -130,17 +131,45 @@ def trim(max_bytes: int, keep_head: int, keep_tail: int) -> int:
     return 0
 
 
-def watch(interval: float, max_bytes: int) -> int:
-    print(f"watching {COMMS} every {interval:g}s; max_bytes={max_bytes}")
-    while True:
-        snap = snapshot()
-        prev = read_state()
-        if prev.get("sha256") != snap["sha256"]:
-            print(f"{snap['checked_at']} changed size={snap['size']} sha256={snap['sha256'][:12]}")
-            write_state(snap)
-        if snap["size"] > max_bytes:
-            trim(max_bytes=max_bytes, keep_head=DEFAULT_KEEP_HEAD, keep_tail=DEFAULT_KEEP_TAIL)
+def watch(interval: float, once: bool = False, extra_files: list | None = None) -> int:
+    """Watch comms.md and extra_files for hash/size changes. Pure observation — no trim.
+
+    Output format: [comms-watch] CHANGED <path>: hash <old> -> <new>, size=<N>B
+    """
+    import hashlib
+
+    watch_paths = [COMMS] + [Path(f) for f in (extra_files or [])]
+
+    def file_hash(path: Path) -> tuple[str, int]:
+        try:
+            data = path.read_bytes()
+            return hashlib.sha256(data).hexdigest(), len(data)
+        except (FileNotFoundError, OSError):
+            return "missing", 0
+
+    state = {p: file_hash(p) for p in watch_paths}
+
+    if once:
         time.sleep(interval)
+        changed = False
+        for path in watch_paths:
+            new_hash, new_size = file_hash(path)
+            old_hash, _ = state[path]
+            if new_hash != old_hash:
+                print(f"[comms-watch] CHANGED {path}: hash {old_hash[:12]} -> {new_hash[:12]}, size={new_size}B")
+                changed = True
+        return 0 if changed else 1
+
+    print(f"[comms-watch] watching {', '.join(str(p) for p in watch_paths)} every {interval:g}s")
+    while True:
+        time.sleep(interval)
+        for path in watch_paths:
+            new_hash, new_size = file_hash(path)
+            old_hash, _ = state[path]
+            if new_hash != old_hash:
+                print(f"[comms-watch] CHANGED {path}: hash {old_hash[:12]} -> {new_hash[:12]}, size={new_size}B")
+                state[path] = (new_hash, new_size)
+    return 0  # defensive; loop normally exits via KeyboardInterrupt
 
 
 def main() -> int:
@@ -157,8 +186,11 @@ def main() -> int:
     p_trim.add_argument("--keep-tail", type=int, default=DEFAULT_KEEP_TAIL)
 
     p_watch = sub.add_parser("watch")
-    p_watch.add_argument("--interval", type=float, default=10.0)
-    p_watch.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES)
+    p_watch.add_argument("--interval", type=float, default=30.0)
+    p_watch.add_argument("--once", action="store_true",
+                         help="poll once and exit (0=changed, 1=no change)")
+    p_watch.add_argument("--file", dest="files", action="append", default=[],
+                         metavar="PATH", help="additional file to watch (repeatable)")
 
     args = parser.parse_args()
     if args.cmd == "status":
@@ -166,7 +198,7 @@ def main() -> int:
     if args.cmd == "trim":
         return trim(max_bytes=args.max_bytes, keep_head=args.keep_head, keep_tail=args.keep_tail)
     if args.cmd == "watch":
-        return watch(interval=args.interval, max_bytes=args.max_bytes)
+        return watch(interval=args.interval, once=args.once, extra_files=args.files)
     return 2
 
 
