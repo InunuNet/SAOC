@@ -1,0 +1,20 @@
+schema: athanor.contract/v1
+slug: require_docs_fix_1274
+goal: Ensure the require_docs.sh hook only triggers for explicit contract.py gate commands.
+created_at: '2026-06-17'
+autonomy: high
+features:
+  - id: F1
+    name: Fix require_docs.sh hook for strict prefix matching
+    status: completed
+goldens:
+  - .agent/memory/project/specs/require_docs_fix_1274/goldens/require_docs.sh.golden
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Verify that the case statement in require_docs.sh uses strict prefix matching for "contract.py gate".
+      command: grep -q '"contract.py gate "*|"contract.py gate")' execution/hooks/require_docs.sh
+    - id: A2
+      description: Verify that the case statement in require_docs.sh does NOT use a leading wildcard for "contract.py gate".
+      command: grep -qv '"*contract.py gate "*|"*contract.py gate")' execution/hooks/require_docs.sh
