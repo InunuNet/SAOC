@@ -9,7 +9,7 @@ CMD=$(printf '%s' "$INPUT" | python3 -c \
   2>/dev/null)
 
 case "$CMD" in
-  "python3 execution/contract.py gate"*) ;;
+  "python3 "*"contract.py"*"gate"*) ;;
   *) exit 0 ;;
 esac
 
@@ -17,5 +17,3 @@ python3 execution/handoff_check.py --from docs --to gate 2>/dev/null
 RC=$?
 [ "$RC" -eq 127 ] && exit 0
 exit "$RC"
-
-
