@@ -1,341 +1,39 @@
 # Athanor Issue Backlog
 
-## SAOC Project — Active (2026-06-05 reset)
+## SAOC Project — Active (Phase 1 scope only)
 
-- [x] **Audit M1–M4 work against new full brief** — completed as part of saoc-full-platform mission (Phase A/B retrofits).
-_Last compacted: 2026-06-13 by session. Full history: git log on this file._
+_Last compacted: 2026-06-18 by session. Full history: git log on this file._
+
 - [x] **Phase A: Foundation** — Next.js + TS strict + Tailwind v4 + Sanity CMS + Firebase App Hosting (InunuNet) + lint/format + CI. (saoc-full-platform MA, A1–A9, done 2026-06-12)
 - [x] **Phase B: 8 static content pages** — Home, About, Societies, National Show, Judging, Judges Training, Contact, Sponsors — CMS-driven from Sanity. (saoc-full-platform MB, B1–B7, done 2026-06-12)
-- [x] **Phase C: Events calendar page** — Sanity-sourced, month-grouped, ICS export + member-only submit form. (saoc-full-platform MC, C1–C5, done 2026-06-12)
-- [x] **Phase D (partial): 2027 Show ticketing** — D1 (Resend email), D3 (Firestore ticket model), D5 (admin dashboard), D6 (door check-in) done 2026-06-13. D2 (Stripe SA) and D4 (buy flow) BLOCKED — pending Brad's payment account setup.
-- [x] **Remove footer newsletter stub** — no newsletter references found in codebase (2026-06-13 verified).
-- [x] **Fix `draftMode()` build-time console.error** — `sanityFetch` already guards `draftMode()` in try/catch; build clean (2026-06-13 verified).
-- [x] **Fix `outputFileTracingRoot` build warning** — added `outputFileTracingRoot: process.cwd()` to next.config.ts (2026-06-13).
-- [x] **Phase E (autonomous): SEO E4 22/22, Secretary training E5 19/19, Launch checklist E6 14/14 — all PASS 2026-06-13. DNS cutover + D2/D4 blocked on Brad.**
-- [ ] **Configure SPF/DKIM/DMARC on saoc.co.za** — required before Phase D launch. Setup guide written: docs/email-dns-setup.md. Brad to add DNS records once Resend domain is verified.
-- [ ] **D2: Stripe SA payment gateway** — BLOCKED pending Brad's Stripe SA account setup. Yoco signup broken 2026-06-06; fallback is Stripe (ZAR).
-- [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway).
-- [ ] [dev 2026-06-12] Factory loop script needs error handling — Out of scope, low priority _(handoff: 20260612T194347-dev.json)_
+- [x] **Phase C: Events calendar page** — Sanity-sourced, month-grouped, ICS export. (saoc-full-platform MC, done 2026-06-12) ⚠️ Note: member-only event submission form built as C5 is Phase 2 scope — shipped but not linked in Phase 1 UI.
+- [x] **Phase D (partial): 2027 Show ticketing** — D1 (Resend email), D3 (Firestore ticket model), D5 (admin dashboard), D6 (door check-in) done 2026-06-13. D2 (payment gateway) and D4 (buy flow) BLOCKED — pending payment account setup.
+- [x] **Phase E: SEO, Secretary training, launch checklist** — E4 22/22, E5 19/19, E6 14/14 — all PASS 2026-06-13.
+- [ ] **D2: Payment gateway** — BLOCKED. Proposal specifies Yoco; Yoco SA signup was broken 2026-06-06. Re-check Yoco availability before committing to Stripe fallback. Brad to attempt Yoco signup again or confirm Stripe SA account ready.
+- [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway). Scope: checkout UI, purchase confirmation, Firestore ticket write, email confirmation via Resend.
+- [ ] **Configure SPF/DKIM/DMARC on saoc.co.za** — required before launch. Setup guide: docs/email-dns-setup.md. Brad to add DNS records once Resend domain verified.
+- [ ] **Domain transfer** — saoc.co.za to Inunu Net registrar. Brad to initiate. R172.50 once-off.
+- [ ] **DNS cutover** — point saoc.co.za to Firebase App Hosting. Requires domain transfer complete + SPF/DKIM/DMARC in place.
+- [ ] **Live Yoco test transactions + cross-browser dry-run** — Phase 1 launch gate. Run after D2/D4 complete.
 
-## Blocked (Payment account)
-- Stripe SA / Yoco account: Brad to set up before D2+D4 can proceed.
+## Blocked (awaiting Brad)
+- **Payment account**: Attempt Yoco SA signup again (was broken 2026-06-06, may be resolved). Fallback: Stripe SA. Either must be in place before D2/D4 can proceed.
+- **DNS records**: SPF/DKIM/DMARC + Firebase hosting A-record. Brad to add after Resend domain verified.
+- **Domain transfer**: saoc.co.za from current registrar to Inunu Net.
 
-## Resolved (Hosting Research — 2026-06-13)
-Research complete. Deliverable: `documents/hosting-research-2026-06-13.md`
-**Verdict: Stay on Firebase App Hosting.** Comparison table covers 9 platforms. Fly.io (JNB region) is the recommended fallback if SSR SA latency becomes an issue later. Brad to review and confirm.
+## Phase 2 — Out of scope (do not work on until Phase 1 ships)
+- Society individual pages + admin logins + federated ticketing
+- Paid SAOC membership (Yoco recurring billing) + members-only area
+- Digital archive of Orchids South Africa yearbooks
+- Donation system, sponsorship management, Google Ad Grant
+- Learning library, judges training portal, articles/video
+
+## Resolved
+- Hosting research (2026-06-13): Stay on Firebase App Hosting. Deliverable: `documents/hosting-research-2026-06-13.md`.
 
 ## Harness Upstream (Athanor → InunuNet/Athanor)
-- [ ] **[athanor-upstream] sync-autonomy v2: bridge high autonomy to provider-native approval policy** — `make sync-autonomy` is status-only; does NOT update `.claude/settings.json` permissionMode or other provider configs when `level=high`. Downstream effect: provider-level approval gates still block even at autonomy=high. Fix: `set-autonomy LEVEL=high` should also propagate to provider settings. Filed 2026-06-16 from downstream fleet report.
-- [ ] **[athanor-upstream] template/execution/mission.py slug fix** — Fixed locally in this session; needs upstreaming to InunuNet/Athanor so all downstream projects inherit it via `make update-template`. Fix is in template/execution/mission.py::cmd_new (cross-date slug scan). Flagged 2026-06-16.
+- [ ] **[athanor-upstream] sync-autonomy v2** — `set-autonomy LEVEL=high` should propagate to `.claude/settings.json` permissionMode. Filed 2026-06-16.
+- [ ] **[athanor-upstream] mission.py slug fix** — cross-date slug scan fix needs upstreaming via `make update-template`. Filed 2026-06-16.
 
 ## Deferred (auto-tracked)
-_Last compacted: 2026-06-16 by session. Dismissed: 500+ check_own_comms pulse items (through 20260616), qa-guard pings, quota-monitor alerts, 2× ghost-resume P0 false-positives (fp:sha1:48fb8a6359a2, fp:sha1:e4624eeca513 — no test suite matches this project), 1× loop-converged milestone, routine ingest_pulse.sh output. All informational, no action. Full history: git log on this file._
-
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616002140.txt
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616003701.txt
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=none
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616022805.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616024520.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616030544.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616032924.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616033731.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616035954.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616040708.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616042759.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616045051.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616050615.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616052308.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616053044.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616065338.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616070618.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616083751.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616084600.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616090231.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616091752.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616093706.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616095310.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616100717.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616102052.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616103643.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616105013.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616110254.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616111700.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616113121.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616114601.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616120504.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616122159.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616124041.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616125324.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616130534.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616131959.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616133337.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616134706.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616140025.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616141604.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616142947.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616144507.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616145900.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616151437.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616153132.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616155255.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616160831.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616162524.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616164324.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616170051.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616171640.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616172946.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616174245.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616175527.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616180711.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616182015.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616183302.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616184536.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616185807.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616190935.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616192220.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616193443.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616195459.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616200931.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616202212.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616203452.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616204729.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616210009.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616211156.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616212405.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616213535.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616214920.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616220138.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616221318.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616222703.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616223745.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616225021.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616230507.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616231916.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616233339.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616234549.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260616235733.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617001122.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617002633.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617004026.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617005322.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617010548.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617012004.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617013431.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617014651.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617015932.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617021215.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617022433.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617023707.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617025510.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617031026.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617032236.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617033518.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617034837.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617040026.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617041408.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617042654.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617044026.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617045334.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617050542.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617051840.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617053247.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617054720.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617055942.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617061206.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617062434.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617063704.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617065028.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617070318.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617071557.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617072945.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617074216.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617075406.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617080553.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617081848.txt
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-06-17-cross-provider-chain-integrity.md
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617083054.txt
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617084442.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617085718.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617091204.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617093344.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617094541.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617100004.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617101238.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617102455.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617103817.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617105212.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617110358.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617111627.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617124939.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617134004.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617135502.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617140653.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617141922.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617143102.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617144347.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617145527.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617150817.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617152134.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617153305.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617154728.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617155954.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617161225.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617162530.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617163703.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260617165319.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260618092116.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260618093518.txt
+_Last compacted: 2026-06-18 by session. Dismissed: all check_own_comms pulse items through 2026-06-18, qa-guard pings, quota-monitor alerts, ghost-resume false-positives, routine ingest_pulse.sh output. All informational, no action required. Full history: git log on this file._
