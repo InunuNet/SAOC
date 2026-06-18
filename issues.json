@@ -1,6 +1,8 @@
 [
   {
-    "labels": ["bug"],
+    "labels": [
+      "bug"
+    ],
     "number": 58,
     "state": "CLOSED",
     "title": "[REGRESSION] v3.3.4 Update Process Failures (Placeholders, Missing Dirs, Invalid Hooks)"
@@ -322,5 +324,13 @@
     "number": 1,
     "state": "CLOSED",
     "title": "Bug: darkfact() scaffold sets wrong git remote name \u2014 origin points at template repo"
+  },
+  {
+    "labels": [
+      "bug"
+    ],
+    "number": 1274,
+    "state": "CLOSED",
+    "title": "bug: require_docs.sh hook substring-matches any command containing gate keyword"
   }
 ]

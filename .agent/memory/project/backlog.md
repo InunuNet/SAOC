@@ -39,3 +39,9 @@ _Last compacted: 2026-06-18 by session. Full history: git log on this file._
 - [ ] [dev 2026-06-18] Factory loop script needs error handling — Out of scope for this task _(priority: low, handoff: 20260618T075409-dev.json)_
 
 _Last compacted: 2026-06-19 by session. Dismissed: all check_own_comms pulse items, qa-guard pings, quota-monitor alerts through 2026-06-19. All informational, no action required. Full history: git log on this file._
+
+- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260618131736.txt
