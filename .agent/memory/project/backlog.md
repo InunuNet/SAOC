@@ -38,4 +38,4 @@ _Last compacted: 2026-06-18 by session. Full history: git log on this file._
 ## Deferred (auto-tracked)
 - [ ] [dev 2026-06-18] Factory loop script needs error handling — Out of scope for this task _(priority: low, handoff: 20260618T075409-dev.json)_
 
-_Last compacted: 2026-06-19 by session. Dismissed: all check_own_comms pulse items through 20260618125154, qa-guard pings, quota-monitor alerts. All informational, no action required. Full history: git log on this file._
+_Last compacted: 2026-06-19 by session. Dismissed: all check_own_comms pulse items, qa-guard pings, quota-monitor alerts through 2026-06-19. All informational, no action required. Full history: git log on this file._
