@@ -1,0 +1,13 @@
+--- Testing require_docs.sh fix ---
+Test 1: 'echo contract.py gate' (should NOT trigger)
+PASS: Hook did NOT trigger for 'echo contract.py gate'
+
+Test 2: 'python3 execution/contract.py gate' (should trigger)
+{"pass": false, "attempts": 8, "trend": "static", "escalate_to": "docs", "reason": "artefact stale: /Users/vetus/ai/SAOC/docs/launch-checklist.md mtime age 334302s exceeds max_age_seconds=86400"}
+PASS: Hook DID trigger for 'python3 execution/contract.py gate' (exit code 2)
+
+Test 3: 'python3 execution/contract.py gate --phase all' (should trigger)
+{"pass": false, "attempts": 9, "trend": "static", "escalate_to": "docs", "reason": "artefact stale: /Users/vetus/ai/SAOC/docs/launch-checklist.md mtime age 334302s exceeds max_age_seconds=86400"}
+PASS: Hook DID trigger for 'python3 execution/contract.py gate --phase all' (exit code 2)
+
+All tests passed for require_docs.sh fix.

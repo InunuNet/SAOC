@@ -1,0 +1,20 @@
+schema: athanor.contract/v1
+slug: fix-require-docs-hook
+goal: Fix bug where require_docs.sh hook substring-matches any command containing gate keyword.
+created_at: '2026-06-18'
+autonomy: high
+features:
+  - id: F1
+    name: require_docs.sh hook now uses strict prefix matching
+    status: completed
+goldens:
+  - .agent/memory/project/specs/fix-require-docs-hook/goldens/test_require_docs_fix_output.txt
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: require_docs.sh uses strict prefix matching
+      command: grep -q "case "\$CMD" in" execution/hooks/require_docs.sh && grep -q '"python3 execution/contract.py gate"\*) ;;' execution/hooks/require_docs.sh
+    - id: A2
+      description: test_require_docs_fix.sh passes
+      command: bash test_require_docs_fix.sh
