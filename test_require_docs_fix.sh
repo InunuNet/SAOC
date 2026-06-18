@@ -48,4 +48,18 @@ fi
 
 echo ""
 
+# New Test case 4: Command that contains "gate" but should NOT trigger the hook
+echo "Test 4: 'python3 my_script_that_handles_gates.py' (should NOT trigger)"
+INPUT_JSON='{"tool_code":"Bash","tool_name":"Bash","tool_input":{"command":"python3 my_script_that_handles_gates.py"}}'
+echo "$INPUT_JSON" | "$HOOK_SCRIPT"
+RESULT=$?
+if [ "$RESULT" -eq 0 ]; then
+  echo "PASS: Hook did NOT trigger for 'python3 my_script_that_handles_gates.py'"
+else
+  echo "FAIL: Hook triggered for 'python3 my_script_that_handles_gates.py' (exit code $RESULT)"
+  exit 1
+fi
+
+echo ""
+
 echo "All tests passed for require_docs.sh fix."
