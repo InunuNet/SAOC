@@ -9,7 +9,7 @@ _Last compacted: 2026-06-18 by session. Full history: git log on this file._
 - [x] **Phase C: Events calendar page** — Sanity-sourced, month-grouped, ICS export. (saoc-full-platform MC, done 2026-06-12) ⚠️ Note: member-only event submission form built as C5 is Phase 2 scope — shipped but not linked in Phase 1 UI.
 - [x] **Phase D (partial): 2027 Show ticketing** — D1 (Resend email), D3 (Firestore ticket model), D5 (admin dashboard), D6 (door check-in) done 2026-06-13. D2 (payment gateway) and D4 (buy flow) BLOCKED — pending payment account setup.
 - [x] **Phase E: SEO, Secretary training, launch checklist** — E4 22/22, E5 19/19, E6 14/14 — all PASS 2026-06-13.
-- [ ] **D2: Payment gateway** — BLOCKED. Proposal specifies Yoco; Yoco SA signup was broken 2026-06-06. Re-check Yoco availability before committing to Stripe fallback. Brad to attempt Yoco signup again or confirm Stripe SA account ready.
+- [ ] **D2: Stripe SA payment gateway** — BLOCKED pending Brad's Stripe SA account setup. Yoco online payments confirmed still on waitlist 2026-06-18 ("temporarily limiting new online payment activations") — Stripe is the confirmed gateway. Brad to create Stripe SA account and supply publishable + secret keys.
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway). Scope: checkout UI, purchase confirmation, Firestore ticket write, email confirmation via Resend.
 - [ ] **Configure SPF/DKIM/DMARC on saoc.co.za** — required before launch. Setup guide: docs/email-dns-setup.md. Brad to add DNS records once Resend domain verified.
 - [ ] **Domain transfer** — saoc.co.za to Inunu Net registrar. Brad to initiate. R172.50 once-off.
@@ -17,7 +17,7 @@ _Last compacted: 2026-06-18 by session. Full history: git log on this file._
 - [ ] **Live Yoco test transactions + cross-browser dry-run** — Phase 1 launch gate. Run after D2/D4 complete.
 
 ## Blocked (awaiting Brad)
-- **Payment account**: Attempt Yoco SA signup again (was broken 2026-06-06, may be resolved). Fallback: Stripe SA. Either must be in place before D2/D4 can proceed.
+- **Stripe SA account**: Brad to create at stripe.com — Yoco online payments confirmed on waitlist with no ETA (verified 2026-06-18). Stripe is the confirmed gateway. Supply `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` + `STRIPE_SECRET_KEY` to unblock D2/D4.
 - **DNS records**: SPF/DKIM/DMARC + Firebase hosting A-record. Brad to add after Resend domain verified.
 - **Domain transfer**: saoc.co.za from current registrar to Inunu Net.
 
@@ -38,4 +38,4 @@ _Last compacted: 2026-06-18 by session. Full history: git log on this file._
 ## Deferred (auto-tracked)
 - [ ] [dev 2026-06-18] Factory loop script needs error handling — Out of scope for this task _(priority: low, handoff: 20260618T075409-dev.json)_
 
-_Last compacted: 2026-06-19 by session. Dismissed: all check_own_comms pulse items through 20260618123944, qa-guard pings, quota-monitor alerts. All informational, no action required. Full history: git log on this file._
+_Last compacted: 2026-06-19 by session. Dismissed: all check_own_comms pulse items through 20260618125154, qa-guard pings, quota-monitor alerts. All informational, no action required. Full history: git log on this file._
