@@ -1,6 +1,6 @@
 ---
 name: analyst
-model: gemini-2.5-pro
+model: gemini-3.1-pro-preview
 description: Research and analysis agent
 tools: ["read_file", "run_shell_command", "grep_search", "google_web_search", "web_fetch"]
 ---

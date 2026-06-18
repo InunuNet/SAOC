@@ -1,6 +1,6 @@
 ---
 name: docs
-model: gemini-2.5-flash
+model: gemini-3-flash-preview
 description: Documentation writer and maintainer
 tools: ["read_file", "write_file", "replace", "run_shell_command", "grep_search"]
 ---

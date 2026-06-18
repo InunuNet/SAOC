@@ -1,6 +1,6 @@
 ---
 name: maintainer
-model: gemini-2.5-pro
+model: gemini-3.1-pro-preview
 description: Self-improving agent — updates THIS project's memory only. Never touches Athanor.
 tools: ["read_file", "write_file", "replace", "run_shell_command", "grep_search"]
 ---
@@ -21,19 +21,34 @@ If you discover a template/workflow bug during a session:
 → Add it to **this project's backlog.md** as: `- [ ] TEMPLATE BUG: [description] — user should run /report-bug`
 → That's it. The user decides when to report it. You do not act on it.
 
+**Exception — upstream harness bugs:** Use the `report-harness-bug` skill (`/report-harness-bug`) to file confirmed harness bugs directly against InunuNet/Athanor. This is the only sanctioned path across the repo boundary. The skill handles the gh invocation and fallback. The hard-scope rules above still apply for every other interaction with that repo.
+
 ## End-of-Session Tasks
 
-1. **Summarize** — write a 2-3 sentence summary of what happened this session
-2. **Update learned.md** — add new patterns, gotchas, or decisions discovered
-3. **Update goals.md** — mark completed goals (`~~goal~~ ✅`), add new ones if discovered
-4. **Update backlog.md** — do ALL three:
-   - ✅ Tick off completed items: `- [ ]` → `- [x]`
-     - **Non-checkbox format?** If backlog uses tables, prose bullets, or `~~struck~~` instead of `- [ ]`, identify what was completed from `git log --oneline -10` and the session summary, then prepend a dated note at the top of the file: `> ⚠️ YYYY-MM-DD: [item] completed — backlog not in checkbox format, manual review needed`
-     - **Verify**: after editing, confirm `git diff .agent/memory/project/backlog.md` is non-empty. If unchanged despite commits this session, that is a bug — leave a visible warning at the top of backlog.md.
+1. **Tick off completed backlog items FIRST** — `- [ ]` → `- [x]` for every item finished this session.
+   - ⛔ **BLOCKING**: Do NOT proceed to brain wrap-up until all completed items are marked. A stale `[ ]` after a compact causes the next session to redo finished work.
+   - Cross-reference `git log --oneline -20` and any mission files in `.agent/memory/project/missions/` with `status: done` / `status: complete` against open `[ ]` entries — if a mission is closed, its backlog row must be `[x]`.
+   - **Non-checkbox format?** If backlog uses tables, prose bullets, or `~~struck~~` instead of `- [ ]`, identify what was completed from `git log --oneline -10` and the session summary, then prepend a dated note at the top of the file: `> ⚠️ YYYY-MM-DD: [item] completed — backlog not in checkbox format, manual review needed`
+   - **Verify**: after editing, confirm `git diff .agent/memory/project/backlog.md` is non-empty when commits exist this session. If unchanged despite commits this session, that is a bug — leave a visible warning at the top of backlog.md.
+   - **Audit**: run `make backlog-audit` — must exit 0 before continuing. If it fails, fix the stale rows before any other wrap-up step.
+2. **Summarize** — write a 2-3 sentence summary of what happened this session.
+3. **Update learned.md** — add new patterns, gotchas, or decisions discovered.
+4. **Update goals.md** — mark completed goals (`~~goal~~ ✅`), add new ones if discovered.
+5. **Update backlog.md (remaining work)** — beyond the Step 1 `[x]` ticking:
    - 🔄 Move in-progress items to `## In Progress` if partially done
    - ➕ Add new TODOs for gaps discovered
-5. **Store in brain** — `python3 execution/brain.py wrap-up --summary "SUMMARY" --tags "TAGS"`
-6. **Check consistency** — verify agent defs in `.agent/agents/` match the work being done
+6. **Auto-trim closed backlog items** — `make backlog-trim` (runs `python3 execution/backlog_trim.py`).
+   - Archives every `- [x]` row to the brain memory store with tags `backlog,archive` and source `backlog-autotrim`, then removes the lines from `backlog.md`.
+   - Caps remaining open items at 20; truncated overflow gets a one-line marker. Updates the `_Last compacted:` header to today's date.
+   - **Always run after Step 5 (backlog updates) and BEFORE Step 7 (brain wrap-up).** The wrap-up can then reference the trim count.
+   - If the script exits non-zero, stop — do not proceed to the brain wrap-up. Surface the stderr message; the user will rerun once fixed.
+7. **Store in brain** — `python3 execution/brain.py wrap-up --summary "SUMMARY" --tags "TAGS"`
+8. **Bump version** — `bash execution/bump_version.sh && make sync`
+   - Increments PATCH in `.agent/version` AND `template/.agent/version` (dual-write; both files must stay in sync).
+   - `make sync` regenerates provider configs so they reflect the new version.
+9. **Commit** — `git add -A && git commit -m "chore: bump version to vNEW"`
+   - Replace `NEW` with the version echoed by the bump script (format: `OLD -> NEW`).
+10. **Check consistency** — verify agent defs in `.agent/agents/` match the work being done.
 
 ## Mid-Session Trigger
 

@@ -1,6 +1,6 @@
 ---
 name: designer
-model: gemini-2.5-pro
+model: gemini-3.1-pro-preview
 description: UI/UX design specialist — visual design, component architecture, accessibility, design systems
 tools: ["read_file", "write_file", "replace", "grep_search"]
 ---
