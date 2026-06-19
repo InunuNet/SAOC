@@ -48,7 +48,7 @@
 
 [[rule]]
   toolName = "run_shell_command"
-  commandRegex = "(ls|cat|grep|make|python3|bash|echo|pwd|--help|git status|git diff|git log|git add|git commit|git push|git pull|git fetch|git branch|git checkout|git stash|git show|gh issue list|gh issue comment|gh issue close|gh issue view|gh pr|gh pr create|gh pr list|gh pr view|gh pr merge|gh api|gh repo|jq|wc|head|tail|sort|uniq|sed|awk|find|curl|test|mkdir|rm|cp|mv|touch|printf|date|basename|dirname)"
+  commandRegex = "(ls|cat|grep|make|python3|bash|echo|pwd|--help|git status|git diff|git log|git add|git commit|git push|git pull|git fetch|git branch|git checkout|git stash|git show|gh issue list|gh issue comment|gh issue close|gh issue view|gh pr|gh pr create|gh pr list|gh pr view|gh pr merge|gh api|gh repo|jq|wc|head|tail|sort|uniq|sed|awk|find|curl|test|mkdir|rm|cp|mv|touch|printf|date|basename|dirname)" # allow
   decision = "allow"
   priority = 999
   description = "Allow common shell commands including git operations and gh CLI subcommands. Note: gh issue create is only allowed via the narrow InunuNet/Athanor rule below."
@@ -78,14 +78,14 @@
   commandRegex = "(\\.gemini/policies/|gemini config)"
   decision = "deny"
   priority = 999
-  description = "Deny shell commands that touch the autonomy policy via shell (use Write/Edit tools instead)."
+  description = "Deny shell commands that touch the autonomy policy."
 
 [[rule]]
   toolName = ["write_file", "replace"]
   argsPattern = "(\\.gemini/policies/)"
   decision = "deny"
   priority = 999
-  description = "Deny writing to the autonomy policy file (use Claude Code at level=high to update this)."
+  description = "Deny writing to the autonomy policy file."
 
 [[rule]]
   toolName = "run_shell_command"

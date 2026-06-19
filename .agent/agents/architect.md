@@ -27,7 +27,7 @@ MUST use `slug:` field (NOT `spec:`). Assertions use `command:` (NOT `verify.cmd
 - NEVER emit multiline python3 -c commands — they FAIL at contract.py gate execution time even when the implementation is correct (subprocess shell parsing breaks on embedded newlines).
 - Use single-line grep/test commands. For complex Python logic, write a helper script and call it.
 
-```
+```yaml
 # PROHIBITED — multiline python3 -c breaks gate execution:
 command: "python3 -c '\nimport sys\nraise ValueError()'"
 command: |
@@ -42,6 +42,12 @@ command: test -f path/to/file
 command: python3 -c "import mod; mod.fn()"
 command: python3 execution/checks/verify_raises.py path/to/file ValueError
 ```
+
+# BAD — multiline python3 -c is prohibited:
+command: "python3 -c '\nimport sys\nprint(\"result\")\n'"
+
+# GOOD — use single-line grep or test:
+command: grep -q "result" path/to/file
 
 ```yaml
 schema: athanor.contract/v1

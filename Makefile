@@ -2,7 +2,7 @@ VERSION := $(shell cat .agent/version 2>/dev/null || echo "UNKNOWN")
 
 # Athanor v$(VERSION) Makefile
 
-.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit stay-awake allow-sleep comms-status comms-trim comms-watch provider-validate job dispatch-once
+.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy set-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse fleet-install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit backlog-trim bump-version stay-awake allow-sleep comms-status comms-trim comms-watch provider-validate job dispatch-once
 
 help:
 	@echo "🏭 Athanor v$(VERSION)"
@@ -48,6 +48,7 @@ help:
 	@echo "  make ingest-pulse      Process and archive inbox items to backlog.md"
 	@echo "  make pulse-register    Install and load the Athanor Pulse launchd agent"
 	@echo "  make pulse-status      Check Athanor Pulse service status"
+	@echo "  make fleet-install-pulse Install independent Pulse+heartbeat for all 4 fleet projects"
 	@echo "  make pulse-start       Manually start the Pulse service"
 	@echo "  make pulse-stop        Manually stop the Pulse service"
 	@echo "  make pulse-logs        Tail the Pulse service logs"
@@ -61,6 +62,7 @@ sync-agents:
 	@bash execution/sync_agents.sh
 
 sync-autonomy:
+	@# v1: reads and displays current level. Gemini generated-block sync deferred to v2.
 	@LEVEL=$$(jq -r '.autonomy.level // "medium"' .agent/profile.json 2>/dev/null || echo "medium"); \
 	echo "🔓 Autonomy level: $$LEVEL"; \
 	echo "   Claude: check_autonomy.sh active (PreToolUse hook)"; \
@@ -212,10 +214,19 @@ audit:
 	@test -L GEMINI.md && echo "✅ GEMINI.md symlink" || echo "❌ GEMINI.md"
 	@python3 execution/brain.py stats
 	@bash execution/verify_agents.sh
+	@echo "  [manifest] checking path coverage..."
+	@bash execution/validate_manifest.sh || (echo "  FAIL: manifest coverage gaps found" && exit 1)
+	@echo "  OK: manifest coverage complete"
 	@python3 execution/audit_gates.py
 
 backlog-audit:
 	@bash execution/backlog_audit.sh
+
+backlog-trim:
+	@python3 execution/backlog_trim.py
+
+bump-version:
+	@bash execution/bump_version.sh && make sync
 
 test: test-stress
 	@echo ""
@@ -266,6 +277,7 @@ contract-check:
 	python3 execution/contract.py report "$$CONTRACT"
 
 update-template:
+	@# Manifest-driven update — delegates to update_template.py for safe HARNESS/WORKSPACE/DERIVED/MERGE boundary enforcement
 	@python3 execution/update_template.py --apply
 	@echo "🔄 Regenerating DERIVED files from updated HARNESS sources..."
 	@$(MAKE) sync || echo "⚠️  make sync failed — DERIVED files may be stale. Run 'make sync' manually."
@@ -275,6 +287,7 @@ self-update:
 	@bash -o pipefail -c 'gh api repos/InunuNet/Athanor/contents/execution/update_template.py --jq ".content" | base64 -d > execution/update_template.py'
 	@echo "✅ Updater refreshed. Running full update..."
 	@FORCE_UPDATE=true python3 execution/update_template.py --apply
+	@cp .agent/version template/.agent/version
 	@$(MAKE) sync || echo "⚠️  make sync failed — run 'make sync' manually."
 
 
@@ -309,9 +322,32 @@ install-pulse:
 	@sed "s|{{PROJECT_ROOT}}|$(CURDIR)|g" "$(CURDIR)/execution/com.athanor.pulse.plist" > ~/Library/LaunchAgents/com.athanor.pulse.plist
 	@launchctl unload -F ~/Library/LaunchAgents/com.athanor.pulse.plist 2>/dev/null || true
 	@launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.plist
+	@sed "s|{{PROJECT_ROOT}}|$(CURDIR)|g" "$(CURDIR)/.agent/pulse/registry/com.athanor.pulse.heartbeat.plist" > ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.plist
+	@launchctl unload -F ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.plist 2>/dev/null || true
+	@launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.plist
 	@echo "✅ Athanor Pulse launchd agent installed and loaded. It will run every 5 minutes."
 	@echo "To unload: launchctl unload ~/Library/LaunchAgents/com.athanor.pulse.plist"
 	@echo "To remove: rm ~/Library/LaunchAgents/com.athanor.pulse.plist"
+
+fleet-install-pulse:
+	@echo "Installing independent Pulse + heartbeat for all fleet projects..."
+	@mkdir -p ~/Library/LaunchAgents
+	@for entry in "saoc:/Users/vetus/ai/SAOC" "mumbl-ai:/Users/vetus/ai/Mumbl AI" "mlilo-savant:/Users/vetus/ai/Mlilo Savant" "codex-harness:/Users/vetus/ai/Codex Harness"; do \
+	  SLUG=$$(echo "$$entry" | cut -d: -f1); \
+	  PROJ=$$(echo "$$entry" | cut -d: -f2-); \
+	  PULSE_PLIST="$$PROJ/execution/com.athanor.pulse.plist"; \
+	  HEARTBEAT_PLIST="$(CURDIR)/.agent/pulse/registry/com.athanor.pulse.heartbeat.plist"; \
+	  if [ -f "$$PULSE_PLIST" ]; then \
+	    sed "s|{{PROJECT_ROOT}}|$$PROJ|g; s|<string>com\.athanor\.pulse</string>|<string>com.athanor.pulse.$$SLUG</string>|g" "$$PULSE_PLIST" > ~/Library/LaunchAgents/com.athanor.pulse.$$SLUG.plist; \
+	    launchctl unload -F ~/Library/LaunchAgents/com.athanor.pulse.$$SLUG.plist 2>/dev/null || true; \
+	    launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.$$SLUG.plist; \
+	  fi; \
+	  sed "s|{{PROJECT_ROOT}}|$$PROJ|g; s|<string>com\.athanor\.pulse\.heartbeat</string>|<string>com.athanor.pulse.heartbeat.$$SLUG</string>|g" "$$HEARTBEAT_PLIST" > ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.$$SLUG.plist; \
+	  launchctl unload -F ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.$$SLUG.plist 2>/dev/null || true; \
+	  launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.$$SLUG.plist; \
+	  echo "✅ $$SLUG: pulse + heartbeat installed"; \
+	done
+	@echo "✅ Fleet pulse installed for all 4 projects."
 
 pulse-start:
 	@launchctl start com.athanor.pulse

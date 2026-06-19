@@ -35,7 +35,7 @@ FEATURE_RE = re.compile(r"^F[0-9]+$")
 MILESTONE_RE = re.compile(r"^M[0-9]+$")
 VALID_STATUS = {"pending", "in_progress", "done", "blocked", "skipped", "paused", "abandoned"}
 VALID_FEATURE_STATUS = {"pending", "in_progress", "done", "blocked", "skipped"}
-VALID_MISSION_STATUS = {"pending", "in_progress", "done", "paused", "abandoned"}
+VALID_MISSION_STATUS = {"pending", "in_progress", "done", "paused", "abandoned", "close_out"}
 
 # ── YAML/JSON helpers ──────────────────────────────────────────────────────────
 
@@ -180,6 +180,30 @@ def cmd_new(args):
     filename = f"{date_prefix}-{slug}.md"
     out_path = MISSIONS_DIR / filename
 
+    # Cross-date slug collision scan: find any *-{slug}.md regardless of date prefix.
+    # Skip the current out_path (same-day exact match is handled by the next block).
+    for existing in MISSIONS_DIR.glob(f"*-{slug}.md"):
+        if existing == out_path:
+            continue
+        try:
+            fm, _ = parse_mission_file(str(existing))
+        except SystemExit:
+            # Malformed mission frontmatter — skip silently rather than crashing.
+            continue
+        except Exception:
+            continue
+        if fm.get("slug") != slug:
+            continue
+        existing_status = fm.get("status", "")
+        if existing_status in {"done", "abandoned", "close_out"}:
+            print(f"NOTE: mission slug '{slug}' previously {existing_status}: {existing}", file=sys.stderr)
+            print(f"Creating new mission with same slug under today's date prefix.", file=sys.stderr)
+            continue
+        else:
+            print(f"ERROR: mission slug '{slug}' already exists with status={existing_status!r}: {existing}", file=sys.stderr)
+            print("Resume that mission instead, or rename the slug.", file=sys.stderr)
+            sys.exit(1)
+
     if out_path.exists():
         print(f"ERROR: mission file already exists: {out_path}", file=sys.stderr)
         sys.exit(1)
@@ -213,6 +237,7 @@ def cmd_new(args):
     print(f"Active:  {ACTIVE_JSON}")
     print(f"Next:    Edit {out_path} to add features and milestones, then run:")
     print(f"           python3 execution/mission.py validate {out_path}")
+    print("ACTION_REQUIRED: /compact")
 
 
 def cmd_validate(args):
@@ -580,7 +605,7 @@ def cmd_resume(args):
         print(f"(active mission pointer is stale — run: python3 execution/mission.py list)")
         sys.exit(0)
 
-    fm, _ = parse_mission_file(mission_path)
+    fm, body = parse_mission_file(mission_path)
 
     # Find next action
     # 1. Find first incomplete feature
@@ -612,13 +637,45 @@ def cmd_resume(args):
     # All milestones done
     all_ms_done = all(m.get("status") == "done" for m in milestones)
     if all_ms_done and milestones:
-        print('RESUME: all features done — mission is complete. Run: python3 execution/brain.py wrap-up -s "mission complete" -t "mission,complete" then commit.')
+        fm["status"] = "close_out"
+        fm["last_active_at"] = now_iso()
+        write_mission_file(mission_path, fm, body)
+        slug = fm.get("slug", Path(mission_path).stem)
+        print(f"MAINTAINER WRAP-UP REQUIRED — dispatch @maintainer. Run: python3 execution/mission.py close-out {mission_path}")
+        sys.exit(2)
     elif not milestones:
         print("RESUME: no milestones defined — edit mission file to add features and milestones")
     else:
         remaining = [m for m in milestones if m.get("status") != "done"]
         if remaining:
             print(f"RESUME: run mission.py gate --milestone {remaining[0]['id']} for remaining milestones")
+
+
+def cmd_close_out(args):
+    fm, body = parse_mission_file(args.mission)
+    if fm.get("status") != "close_out":
+        print(
+            f"ERROR: mission status is '{fm.get('status')}', expected 'close_out'. "
+            "Run mission.py resume first.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    slug = fm.get("slug", Path(args.mission).stem)
+    goal = fm.get("goal", "")
+    result = subprocess.run(
+        ["python3", "execution/brain.py", "wrap-up", "-s", f"{slug}: {goal}", "-t", f"mission,{slug},complete"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        print(f"ERROR: brain wrap-up failed:\n{result.stderr}", file=sys.stderr)
+        sys.exit(1)
+    fm["status"] = "done"
+    fm["completed_at"] = now_iso()
+    fm["last_active_at"] = now_iso()
+    write_mission_file(args.mission, fm, body)
+    clear_active()
+    print("DONE: mission closed. Commit now.")
 
 
 def cmd_activate(args):
@@ -741,6 +798,10 @@ def main():
     p_skip.add_argument("--feature", required=True)
     p_skip.add_argument("--reason", required=True)
 
+    # close-out
+    p_co = sub.add_parser("close-out", help="Complete @maintainer wrap-up and mark mission done")
+    p_co.add_argument("mission", help="Path to mission .md file")
+
     args = parser.parse_args()
     if not args.cmd:
         parser.print_help()
@@ -756,6 +817,7 @@ def main():
         "attach-spec": cmd_attach_spec,
         "gate": cmd_gate,
         "resume": cmd_resume,
+        "close-out": cmd_close_out,
         "activate": cmd_activate,
         "pause": cmd_pause,
         "abandon": cmd_abandon,

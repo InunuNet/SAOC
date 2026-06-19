@@ -1,7 +1,6 @@
 {
   "permissions": {
     "allow": [
-      "Agent",
       "Bash",
       "Read",
       "Write",
@@ -138,6 +137,15 @@
       }
     ],
     "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/block_asq_in_loop.sh"
+          }
+        ]
+      },
       {
         "matcher": "Write",
         "hooks": [

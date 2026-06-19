@@ -75,6 +75,9 @@ if [ -f .agent/memory/project/missions/active.json ]; then
     blocked)
       echo "⛔ MISSION BLOCKED: resolve the blocker before proceeding."
       ;;
+    close_out)
+      echo "⚠️  CLOSE-OUT REQUIRED: dispatch @maintainer — mission awaiting wrap-up. Run: python3 execution/mission.py close-out <mission-file>"
+      ;;
     *)
       echo "→ Run /mission resume to continue."
       ;;

@@ -209,7 +209,7 @@ def check_cmd(args):
     if kind == "shell":
         cmd = verify.get("cmd", "")
         expected_exit = verify.get("expect_exit", 0)
-        timeout = getattr(args, "timeout_seconds", 60)
+        timeout = verify.get("timeout_seconds") or getattr(args, "timeout_seconds", 60)
         tf_name = None
         try:
             import tempfile
@@ -347,10 +347,11 @@ def _phase_matches(phase_id, target_str: str) -> bool:
 
 
 def _gate_single_phase(contract: dict, args) -> bool:
-    """Gate a single phase; returns True on pass, False on fail."""
+    """Helper function to gate a single phase."""
     phase_n = args.phase
     run_checks = getattr(args, "run_checks", False)
 
+    # Find assertions for this phase
     phases = contract.get("phases", [])
     phase = next((p for p in phases if _phase_matches(p["id"], phase_n)), None)
     if not phase:
@@ -359,21 +360,19 @@ def _gate_single_phase(contract: dict, args) -> bool:
 
     phase_assertions = phase.get("assertions", [])
 
+    # --run-checks always re-executes every assertion, never reads stale cache
     if run_checks:
         for aid in phase_assertions:
-            rf = result_file(contract, aid)
-            if not rf.exists():
-                print(f"  AUTO-CHECK {aid}: no result file — running check now")
-                check_args = argparse.Namespace(
-                    contract=args.contract,
-                    assertion=aid,
-                    handoff=getattr(args, "handoff", None),
-                    timeout_seconds=getattr(args, "timeout_seconds", 60),
-                )
-                try:
-                    check_cmd(check_args)
-                except SystemExit:
-                    pass
+            check_args = argparse.Namespace(
+                contract=args.contract,
+                assertion=aid,
+                handoff=getattr(args, "handoff", None),
+                timeout_seconds=getattr(args, "timeout_seconds", 60),
+            )
+            try:
+                check_cmd(check_args)
+            except SystemExit:
+                pass
 
     failing = []
 
@@ -415,32 +414,35 @@ def gate_cmd(args):
         if not phases_data:
             print("No phases found in contract to gate.")
             sys.exit(0)
+
         for phase_def in phases_data:
-            phase_id = phase_def["id"]
+            phase_id = phase_def['id']
             print(f"\n--- Gating Phase {phase_id} ---")
+            # Create a temporary args object for _gate_single_phase
             single_phase_args = argparse.Namespace(
                 contract=args.contract,
                 phase=str(phase_id),
                 run_checks=getattr(args, "run_checks", False),
-                handoff=getattr(args, "handoff", None),
-                timeout_seconds=getattr(args, "timeout_seconds", 60),
+                handoff=getattr(args, "handoff", None)
             )
             if not _gate_single_phase(contract, single_phase_args):
                 print(f"\nFAIL: Phase {phase_id} failed. Stopping all-phase gate.")
-                sys.exit(2)
+                sys.exit(2) # Exit on first failure
         print("\nPASS All phases gated successfully.")
         sys.exit(0)
     elif args.phase == "max":
         phases = contract.get("phases", [])
         phase_n = max((p["id"] for p in phases), default=1)
-        args.phase = str(phase_n)
+        args.phase = str(phase_n) # Update args for _gate_single_phase
         if not _gate_single_phase(contract, args):
             sys.exit(2)
         sys.exit(0)
-    else:
+    else: # Specific phase number
         if not _gate_single_phase(contract, args):
             sys.exit(2)
         sys.exit(0)
+
+
 
 
 def report_cmd(args):
@@ -499,13 +501,10 @@ def main():
 
     g = sub.add_parser("gate", help="Exit 0 iff all phase-N assertions pass. Use --run-checks to auto-run any missing checks before evaluating.")
     g.add_argument("contract")
-    g.add_argument("--phase", type=str, required=True,
-                   choices=["all", "max"] + [str(i) for i in range(1, 10)],
+    g.add_argument("--phase", type=str, required=True, choices=['all', 'max'] + [str(i) for i in range(1, 10)],
                    help="Phase id (integer), 'max' for highest phase, or 'all' for all phases in contract")
     g.add_argument("--run-checks", action="store_true", default=False,
                    help="Auto-run check for each assertion that lacks a result file before evaluating the gate")
-    g.add_argument("--timeout-seconds", type=int, default=60,
-                   help="Shell assertion timeout in seconds (default: 60)")
     g.add_argument("--timeout-seconds", type=int, default=60,
                    help="Shell assertion timeout in seconds (default: 60)")
 
