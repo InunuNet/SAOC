@@ -3,11 +3,6 @@ runConfig:
   memoryMiB: 512
   minInstances: 0
   maxInstances: 2
-outputFiles:
-  - '.next/**'
-  - 'public/**'
-  - 'package.json'
-  - 'next.config.ts'
 env:
   - variable: NEXT_PUBLIC_SANITY_PROJECT_ID
     value: "26yfbug4"
