@@ -202,32 +202,10 @@ def stats():
     print(f"   Path: {brain_path.resolve()}")
 
 
-def wrap_up(summary: str, tags: str = "", blockers: str = "", force: bool = False):
+def wrap_up(summary: str, tags: str = "", blockers: str = ""):
     """End-of-session wrap-up: store summary + clear scratch."""
     # Store the session summary
     mem_id = remember(summary, tags=tags or "session,wrap-up", source="wrap-up", blockers=blockers)
-
-    # Guard: skip scratch purge if an active in-progress mission exists
-    if not force:
-        import re as _re
-        import json as _json
-        active_path = Path(".agent/memory/project/missions/active.json")
-        if active_path.exists():
-            try:
-                active_data = _json.loads(active_path.read_text())
-                mission_path = active_data.get("mission", "")
-                if mission_path and Path(mission_path).exists():
-                    mission_text = Path(mission_path).read_text()
-                    # Extract status from YAML frontmatter
-                    m = _re.search(r'^status:\s*(\S+)', mission_text, _re.MULTILINE)
-                    if m and m.group(1) in ("in_progress", "pending"):
-                        print(
-                            "Warning:  Active mission detected — skipping scratch purge. "
-                            "Run brain.py wrap-up after mission close-out."
-                        )
-                        return mem_id
-            except Exception:
-                pass  # if we can't read active.json, proceed normally
 
     # Clear scratch files
     scratch_dir = Path(".agent/memory/scratch")
@@ -487,8 +465,6 @@ def main():
     p_wrap.add_argument("--summary", "-s", required=True, help="Session summary")
     p_wrap.add_argument("--tags", "-t", default="", help="Comma-separated tags")
     p_wrap.add_argument("--blockers", "-b", default="", help="Comma-separated blocker tags")
-    p_wrap.add_argument("--force", action="store_true",
-                        help="Bypass active-mission guard and purge scratch unconditionally")
 
     # last-session
     p_last = sub.add_parser("last-session", help="Show the most recent wrap-up memory")
@@ -529,7 +505,7 @@ def main():
     elif args.action == "stats":
         stats()
     elif args.action == "wrap-up":
-        wrap_up(args.summary, args.tags, args.blockers, force=args.force)
+        wrap_up(args.summary, args.tags, args.blockers)
     elif args.action == "last-session":
         last_session(args.quiet)
     elif args.action == "export":

@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # sync_agents.sh — Generate platform-specific agent configs from canonical definitions
 # Reads .agent/agents/*.md → generates .claude/agents/*.md + .gemini/agents/*.md
-#
-# NON-DESTRUCTIVE: creates missing provider agent files from .agent/agents/ canonical reference.
-# Never overwrites existing .claude/agents/*.md or .gemini/agents/*.md — those are authoritative.
 
 set -euo pipefail
 
@@ -23,10 +20,10 @@ map_claude_model() {
 
 map_gemini_model() {
   case "$1" in
-    pro) echo "gemini-2.5-pro" ;;
-    flash) echo "gemini-2.5-flash" ;;
-    local) echo "gemini-2.5-flash-lite" ;;
-    *) echo "gemini-2.5-flash" ;;
+    pro) echo "gemini-3.1-pro-preview" ;;
+    flash) echo "gemini-3-flash-preview" ;;
+    local) echo "gemini-3-flash-preview" ;;
+    *) echo "gemini-3-flash-preview" ;;
   esac
 }
 
@@ -83,14 +80,17 @@ map_tools() {
 
 mkdir -p "$CLAUDE_DIR" "$GEMINI_DIR"
 
-created=0
-skipped=0
+# Delete existing agents to ensure a clean sync
+find "$CLAUDE_DIR/" -type f -delete
+find "$GEMINI_DIR/" -type f -delete
+
+synced=0
 for canonical in "$CANONICAL_DIR"/*.md; do
   [ ! -f "$canonical" ] && continue
   filename=$(basename "$canonical")
-
+  
   # Parse YAML frontmatter
-  model_tier=$(sed -n '/^---$/,/^---$/p' "$canonical" | grep '^model_tier:' | awk '{print $2}' || true)
+  model_tier=$(sed -n '/^---$/,/^---$/p' "$canonical" | grep '^model_tier:' | awk '{print $2}')
   description=$(sed -n '/^---$/,/^---$/p' "$canonical" | grep '^description:' | sed 's/^description: //')
   tools_line=$(sed -n '/^---$/,/^---$/p' "$canonical" | grep '^tools:' | sed 's/^tools: \[//;s/\]//' || true)
   tools_denied_line=$(sed -n '/^---$/,/^---$/p' "$canonical" | grep '^tools_denied:' | sed 's/^tools_denied: \[//;s/\]//' || true)
@@ -107,88 +107,30 @@ for canonical in "$CANONICAL_DIR"/*.md; do
   # Get body (everything after second ---)
   body=$(awk 'BEGIN{n=0} /^---$/{n++; if(n==2) next} n>=2{print}' "$canonical")
 
-  # --- Claude agent (non-destructive) ---
-  CLAUDE_TARGET="$CLAUDE_DIR/$filename"
-  if [ -f "$CLAUDE_TARGET" ]; then
-    echo "SKIP (exists): $CLAUDE_TARGET"
-    skipped=$((skipped + 1))
-  else
-    {
-      echo "---"
-      echo "name: ${filename%.md}"
-      echo "model: $claude_model"
-      echo "description: $description"
-      [ -n "$claude_tools" ] && echo "allowedTools: [$claude_tools]"
-      [ -n "$claude_denied" ] && echo "disallowedTools: [$claude_denied]"
-      echo "---"
-      echo "$body"
-    } > "$CLAUDE_TARGET"
-    echo "create: $CLAUDE_TARGET"
-    created=$((created + 1))
-  fi
+  # Generate Claude agent
+  {
+    echo "---"
+    echo "name: ${filename%.md}"
+    echo "model: $claude_model"
+    echo "description: $description"
+    [ -n "$claude_tools" ] && echo "allowedTools: [$claude_tools]"
+    [ -n "$claude_denied" ] && echo "disallowedTools: [$claude_denied]"
+    echo "---"
+    echo "$body"
+  } > "$CLAUDE_DIR/$filename"
 
-  # --- Gemini agent (non-destructive) ---
-  GEMINI_TARGET="$GEMINI_DIR/$filename"
-  if [ -f "$GEMINI_TARGET" ]; then
-    echo "SKIP (exists): $GEMINI_TARGET"
-    skipped=$((skipped + 1))
-  else
-    {
-      echo "---"
-      echo "name: ${filename%.md}"
-      echo "model: $gemini_model"
-      echo "description: $description"
-      [ -n "$gemini_tools" ] && echo "tools: [$gemini_tools]"
-      echo "---"
-      echo "$body"
-    } > "$GEMINI_TARGET"
-    echo "create: $GEMINI_TARGET"
-    created=$((created + 1))
-  fi
+  # Generate Gemini agent
+  {
+    echo "---"
+    echo "name: ${filename%.md}"
+    echo "model: $gemini_model"
+    echo "description: $description"
+    [ -n "$gemini_tools" ] && echo "tools: [$gemini_tools]"
+    echo "---"
+    echo "$body"
+  } > "$GEMINI_DIR/$filename"
 
+  synced=$((synced + 1))
 done
 
-echo "✅ sync_agents: created=$created skipped=$skipped (canonical advisory; provider files authoritative)"
-
-# --- Antigravity ---
-# Generate .anti/agents.json — a JSON manifest read by Eve at boot.
-# Eve calls the define_subagent LLM tool for each entry; there is no 'agy define_subagent' CLI.
-mkdir -p .anti
-python3 - <<'PYEOF'
-import json, pathlib, re, sys
-
-agents_dir = pathlib.Path('.agent/agents')
-result = []
-for md_file in sorted(agents_dir.glob('*.md')):
-    name = md_file.stem
-    content = md_file.read_text()
-    # Strip YAML frontmatter (between first and second --- delimiters)
-    if content.startswith('---'):
-        parts = content.split('---', 2)
-        body = parts[2].lstrip('\n') if len(parts) >= 3 else content
-    else:
-        body = content
-    # Extract description from YAML frontmatter
-    m = re.search(r'^description:\s*(.+)$', content, re.MULTILINE)
-    description = m.group(1).strip().strip('"\'') if m else name
-    result.append({'name': name, 'description': description, 'system_prompt': body})
-
-# Minimum length assertion — check BEFORE writing to disk
-SHORT_THRESHOLD = 200
-short = [(a['name'], len(a['system_prompt'])) for a in result if len(a['system_prompt']) < SHORT_THRESHOLD]
-if short:
-    print(f'⚠️  ERROR: system_prompt too short (threshold={SHORT_THRESHOLD}): {short}', file=sys.stderr)
-    sys.exit(1)
-
-# Atomic write — tempfile + rename so a failed run never leaves stale JSON
-pathlib.Path('.anti').mkdir(exist_ok=True)
-target = pathlib.Path('.anti/agents.json')
-tmp = target.with_suffix('.json.tmp')
-tmp.write_text(json.dumps(result, indent=2))
-tmp.rename(target)
-
-print(f'✅ sync-agents: .anti/agents.json ({len(result)} agents)')
-PYEOF
-
-# Remove the old bash-script approach if it lingers
-rm -f .anti/register_agents.sh
+echo "✅ Synced $synced agents → $CLAUDE_DIR/ + $GEMINI_DIR/"

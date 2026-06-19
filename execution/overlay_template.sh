@@ -42,6 +42,17 @@ cp "$TEMPLATE/execution/sync_skills.sh"   "$TARGET/execution/sync_skills.sh"   2
 cp "$TEMPLATE/execution/sync_rules.sh"    "$TARGET/execution/sync_rules.sh"    2>/dev/null || true
 cp "$TEMPLATE/execution/overlay_template.sh" "$TARGET/execution/overlay_template.sh" 2>/dev/null || true
 cp "$TEMPLATE/execution/merge_profile.py" "$TARGET/execution/merge_profile.py" 2>/dev/null || true
+cp "$TEMPLATE/execution/onboard_fill.py" "$TARGET/execution/onboard_fill.py" 2>/dev/null || true
+cp "$TEMPLATE/execution/ki_recall.py"     "$TARGET/execution/ki_recall.py"     2>/dev/null || true
+cp "$TEMPLATE/execution/doc2md.py"       "$TARGET/execution/doc2md.py"       2>/dev/null || true
+cp "$TEMPLATE/execution/commit_helper.py" "$TARGET/execution/commit_helper.py" 2>/dev/null || true
+cp "$TEMPLATE/execution/get_repo_info.sh" "$TARGET/execution/get_repo_info.sh" 2>/dev/null || true
+cp "$TEMPLATE/execution/discovery.sh"     "$TARGET/execution/discovery.sh"     2>/dev/null || true
+cp "$TEMPLATE/execution/manage_pulse.sh" "$TARGET/execution/manage_pulse.sh" 2>/dev/null || true
+cp "$TEMPLATE/execution/ingest_pulse.sh" "$TARGET/execution/ingest_pulse.sh" 2>/dev/null || true
+cp "$TEMPLATE/execution/get_pulse_status.sh" "$TARGET/execution/get_pulse_status.sh" 2>/dev/null || true
+cp "$TEMPLATE/execution/pulse_runner.sh" "$TARGET/execution/pulse_runner.sh" 2>/dev/null || true
+cp "$TEMPLATE/execution/com.athanor.pulse.plist" "$TARGET/execution/com.athanor.pulse.plist" 2>/dev/null || true
 
 # Claude Code adapter — hooks, permissions, env
 cp "$TEMPLATE/.claude/settings.json" "$TARGET/.claude/settings.json" 2>/dev/null || true

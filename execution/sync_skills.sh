@@ -10,9 +10,9 @@ GEMINI_DIR=".gemini/skills"
 
 mkdir -p "$CLAUDE_DIR" "$GEMINI_DIR"
 
-# Delete existing skills (except .keep) to ensure a clean sync
-find "$CLAUDE_DIR/" -type f -name "*.md" -delete
-find "$GEMINI_DIR/" -type f -name "*.md" -delete
+# Delete existing skills to ensure a clean sync (avoids orphan/hidden files being parsed as tools)
+find "$CLAUDE_DIR/" -type f -delete
+find "$GEMINI_DIR/" -type f -delete
 
 synced=0
 for skill in "$CANONICAL_DIR"/*.md; do
