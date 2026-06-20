@@ -38,25 +38,7 @@ Research complete: `documents/hosting-research-2026-06-20.md`. Key findings: (1)
 ## Deferred (auto-tracked)
 - [ ] [dev 2026-06-18] Factory loop script needs error handling — Out of scope for this task _(priority: low, handoff: 20260618T075409-dev.json)_
 
-_Last compacted: 2026-06-19 by session. Dismissed: all check_own_comms pulse items, qa-guard pings, quota-monitor alerts through 2026-06-19. All informational, no action required. Full history: git log on this file._
-
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260618131736.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260618132838.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260618134033.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260618135133.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260618140314.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260618141559.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260618142749.txt
+_Last compacted: 2026-06-20 by session. Dismissed: all check_own_comms pulse items, qa-guard pings, quota-monitor alerts through 2026-06-20. All informational, no action required. Full history: git log on this file._
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260618154722.txt
 
@@ -155,3 +137,5 @@ _Last compacted: 2026-06-19 by session. Dismissed: all check_own_comms pulse ite
 - [ ] SAOC (Misc): New Event: check_own_comms-20260620160414.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260620161622.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260620163213.txt
