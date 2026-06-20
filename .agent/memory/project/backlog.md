@@ -28,8 +28,8 @@ _Last compacted: 2026-06-18 by session. Full history: git log on this file._
 - Donation system, sponsorship management, Google Ad Grant
 - Learning library, judges training portal, articles/video
 
-## Hosting — Under Review (2026-06-19)
-Previous verdict (2026-06-13): stay on Firebase. Brad now wants a Node.js host with a **South African data centre** — Firebase only has europe-west4 (Netherlands). New research needed before DNS cutover decision. Known SA-viable options: Fly.io (Johannesburg `jnb` ✅ verified), Coolify on Hetzner JNB VPS. Vercel not yet evaluated. Goal: SSR Next.js 15 App Router in SA, auto-deploy on push, minimal cost. Prior research at `documents/hosting-research-2026-06-13.md`.
+## Hosting — Decision Pending Brad (researched 2026-06-20)
+Research complete: `documents/hosting-research-2026-06-20.md`. Key findings: (1) Vercel has Cape Town `cpt1` compute but SA SSR requires Pro plan ($20/month); free plan only caches in SA. (2) Fly.io `jnb` Johannesburg is best-value SA SSR at $8–15/month, requires Dockerfile migration. (3) "Coolify on Hetzner JNB" was a misconception — Hetzner Cloud has no SA DC; Hetzner SA is now Xneelo (separate company, suitable but maintenance-heavy). **Recommendation: stay on Firebase until latency is a measured problem; if SA compute is a hard requirement, Fly.io `jnb` is best value.** Brad to confirm: (a) hard requirement vs. preference, (b) budget ceiling, (c) no migration before DNS cutover.
 
 ## Harness Upstream (Athanor → InunuNet/Athanor)
 - [ ] **[athanor-upstream] sync-autonomy v2** — `set-autonomy LEVEL=high` should propagate to `.claude/settings.json` permissionMode. Filed 2026-06-16.
@@ -153,3 +153,5 @@ _Last compacted: 2026-06-19 by session. Dismissed: all check_own_comms pulse ite
 - [ ] SAOC (Misc): New Event: check_own_comms-20260620155217.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260620160414.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260620161622.txt

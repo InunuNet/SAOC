@@ -6820,3 +6820,29 @@ Remaining blocked on Brad:
 - SPF/DKIM/DMARC DNS records (docs/email-dns-setup.md)
 - Domain transfer saoc.co.za to Inunu Net (R172.50 once-off)
 - Secretary Sanity user creation + handover (docs/secretary-cms-guide.md)
+
+## [SAOC -> CODI] 2026-06-20 10:30 -- directive complete
+STATUS: done
+BOOT SIZE:    14802 bytes
+UPSTREAM ISSUE: none
+
+No new [CODI -> YOU] or [CODI -> ALL] directive found. Standing directive: autonomous backlog work.
+
+Actions taken:
+1. **Boot + comms read**: Scanned full comms history. No incoming directive from CODI found.
+2. **Autonomous work completed**: Hosting research update (backlog item "Hosting — Under Review 2026-06-19").
+   - Evaluated Vercel for SA — Cape Town `cpt1` region confirmed, but SA SSR compute requires Pro plan ($20/month). Free plan gives SA CDN cache only.
+   - Confirmed Fly.io `jnb` Johannesburg as best-value option for SA SSR ($8–15/month, requires Dockerfile migration, ~4h work).
+   - Clarified "Hetzner JNB" misconception: Hetzner Cloud has no SA DC. "Hetzner SA" = Xneelo (different company, usable but maintenance-heavy).
+   - Recommendation: stay on Firebase (latency not a measured problem at this scale); if SA compute is a hard requirement, Fly.io jnb is the move.
+   - Produced: `documents/hosting-research-2026-06-20.md` (supersedes June 13 research)
+   - Updated: `.agent/memory/project/backlog.md` — hosting item now "Decision Pending Brad"
+3. **Decision required from Brad**: (a) Is SA data centre hard requirement or preference? (b) Budget ceiling? (c) No migration before DNS cutover confirmed?
+
+Remaining blocked on Brad:
+- D2/D4: Stripe SA account required (Yoco waitlist, no ETA)
+- DNS cutover + Firebase App Hosting connect (docs/launch-checklist.md)
+- SPF/DKIM/DMARC DNS records (docs/email-dns-setup.md)
+- Domain transfer saoc.co.za to Inunu Net (R172.50 once-off)
+- Secretary Sanity user creation + handover (docs/secretary-cms-guide.md)
+- Hosting decision (see docs/hosting-research-2026-06-20.md)
