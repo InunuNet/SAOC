@@ -129,13 +129,29 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
     except Exception as e:
         return f"  WARN  template_version update failed (bad profile.json): {e}"
 
+    changes = []
     old_version = profile.get("template_version", "unknown")
-    if old_version == new_version:
+    if old_version != new_version:
+        profile["template_version"] = new_version
+        changes.append(f"template_version: {old_version} → {new_version}")
+
+    # Seed autonomy.level if absent — runs regardless of version match
+    # (check_autonomy.sh falls back to "low" when missing)
+    if not profile.get("autonomy", {}).get("level"):
+        matrix_path = profile_path.parent.parent / ".agent" / "autonomy_matrix.json"
+        try:
+            matrix = json.loads(matrix_path.read_text())
+            seed_level = matrix.get("onboarding_default", "low")
+        except Exception:
+            seed_level = "low"
+        profile.setdefault("autonomy", {})["level"] = seed_level
+        changes.append(f"autonomy.level: seeded as {seed_level}")
+
+    if not changes:
         return f"  unchanged template_version ({new_version})"
 
-    profile["template_version"] = new_version
     profile_path.write_text(json.dumps(profile, indent=2) + "\n")
-    return f"  updated template_version: {old_version} → {new_version}"
+    return f"  updated: {'; '.join(changes)}"
 
 
 def apply_missing_file_backstop(

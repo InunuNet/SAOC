@@ -2,7 +2,7 @@ VERSION := $(shell cat .agent/version 2>/dev/null || echo "UNKNOWN")
 
 # Athanor v$(VERSION) Makefile
 
-.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit stay-awake allow-sleep comms-status comms-trim comms-watch provider-validate job dispatch-once
+.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit backlog-trim stay-awake allow-sleep comms-status comms-trim comms-watch provider-validate job dispatch-once
 
 help:
 	@echo "🏭 Athanor v$(VERSION)"
@@ -36,6 +36,7 @@ help:
 	@echo "  make commit            Semantic commit (TYPE=feat MSG='...')"
 	@echo "  make audit             Run workspace health check"
 	@echo "  make backlog-audit     Check for stale open backlog items"
+	@echo "  make backlog-trim      Archive completed backlog items to brain and remove from file"
 	@echo "  make test              Run validation suite (currently a basic stress test)"
 	@echo "  make test-stress       Run the basic file read stress test"
 	@echo "  make improve           Run one autonomous improvement cycle (ghost tests → triage → gate → push)"
@@ -216,6 +217,9 @@ audit:
 
 backlog-audit:
 	@bash execution/backlog_audit.sh
+
+backlog-trim:
+	@python3 execution/backlog_trim.py
 
 test: test-stress
 	@echo ""
