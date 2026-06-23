@@ -40,4 +40,4 @@ Research complete: `documents/hosting-research-2026-06-20.md`. Key findings: (1)
 ## Deferred (auto-tracked)
 - [ ] [dev 2026-06-18] Factory loop script needs error handling — Out of scope for this task _(priority: low, handoff: 20260618T075409-dev.json)_
 
-_Last compacted: 2026-06-24 by session. Dismissed: 4× quota-monitor, 3× qa-guard, 9× check_own_comms pulse — all informational, no action required. Full history: git log on this file._
+_Last compacted: 2026-06-24 by session. Dismissed: 5× quota-monitor, 4× qa-guard, 10× check_own_comms pulse — all informational, no action required. Full history: git log on this file._
