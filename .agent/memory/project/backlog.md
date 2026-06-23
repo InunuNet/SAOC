@@ -47,3 +47,7 @@ _Last compacted: 2026-06-23 by session. Dismissed: quota-monitor, qa-guard, and 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260623183916.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260623185519.txt
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-06-23-autonomy-propagation.md
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260623192243.txt
