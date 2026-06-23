@@ -1,0 +1,72 @@
+schema: athanor.contract/v1
+feature: design-verify
+mission: design-verify
+created: '2026-06-23'
+
+golden_files:
+  - app/globals.css
+  - components/chrome/Header.tsx
+  - app/(marketing)/about/page.tsx
+
+goldens:
+  description: |
+    Three files updated to match Claude Design reference.
+    globals.css: full design token set + semantic CSS classes.
+    Header.tsx: abbreviated logo, updated tagline, primary Contact button.
+    about/page.tsx: updated hero eyebrow and heading to match reference.
+
+assertions:
+  - id: A1
+    kind: shell
+    label: globals.css has body background parchment
+    command: "grep -q 'background: var(--bg)' app/globals.css"
+
+  - id: A2
+    kind: shell
+    label: globals.css has semantic aliases (--bg, --fg, --fg-on-dark)
+    command: "grep -q -- '--bg:' app/globals.css && grep -q -- '--fg:' app/globals.css && grep -q -- '--fg-on-dark:' app/globals.css"
+
+  - id: A3
+    kind: shell
+    label: globals.css has type scale variables
+    command: "grep -q -- '--display-xl' app/globals.css && grep -q -- '--section-y' app/globals.css"
+
+  - id: A4
+    kind: shell
+    label: globals.css has semantic CSS classes
+    command: "grep -q '^\\.on-dark' app/globals.css && grep -q '^\\.eyebrow' app/globals.css && grep -q '^\\.inline-link' app/globals.css"
+
+  - id: A5
+    kind: shell
+    label: globals.css @theme has non-circular font entries
+    command: "grep -q -- '--font-family-serif' app/globals.css"
+
+  - id: A6
+    kind: shell
+    label: Header shows SA Orchid Council abbreviated in visible span
+    command: "grep -q 'SA Orchid Council' components/chrome/Header.tsx && ! grep -v 'aria-label' components/chrome/Header.tsx | grep -q 'South African Orchid Council'"
+
+  - id: A7
+    kind: shell
+    label: Header tagline is "Making a difference since 1968"
+    command: "grep -qi 'making a difference since 1968' components/chrome/Header.tsx"
+
+  - id: A8
+    kind: shell
+    label: Header Contact button uses primary-800 background
+    command: "grep -q 'bg-primary-800' components/chrome/Header.tsx"
+
+  - id: A9
+    kind: shell
+    label: About hero eyebrow is "Our heritage"
+    command: "grep -qi 'our heritage' 'app/(marketing)/about/page.tsx'"
+
+  - id: A10
+    kind: shell
+    label: About hero heading matches reference
+    command: "grep -q 'federated body of growers' 'app/(marketing)/about/page.tsx'"
+
+  - id: A11
+    kind: shell
+    label: pnpm build exits 0
+    command: "pnpm build 2>&1 | tail -3 | grep -qE 'compiled|✓|Route'"

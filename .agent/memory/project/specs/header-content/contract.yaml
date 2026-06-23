@@ -1,0 +1,28 @@
+schema: athanor.contract/v1
+feature: header-content
+mission: design-verify
+created: '2026-06-23'
+
+golden_files:
+  - components/chrome/Header.tsx
+
+assertions:
+  - id: A1
+    kind: shell
+    label: Logo shows "SA Orchid Council" abbreviated
+    command: "grep -q 'SA Orchid Council' components/chrome/Header.tsx"
+
+  - id: A2
+    kind: shell
+    label: Tagline reads "Making a difference since 1968"
+    command: "grep -qi 'making a difference since 1968' components/chrome/Header.tsx"
+
+  - id: A3
+    kind: shell
+    label: Contact button uses primary not accent background
+    command: "grep 'href=\"/contact\"' components/chrome/Header.tsx | grep -q 'bg-primary'"
+
+  - id: A4
+    kind: shell
+    label: Logo font size is larger (22px or 24px)
+    command: "grep -q 'text-\\[2[24]px\\]' components/chrome/Header.tsx"

@@ -1,0 +1,18 @@
+schema: athanor.contract/v1
+feature: about-hero
+mission: design-verify
+created: '2026-06-23'
+
+golden_files:
+  - app/(marketing)/about/page.tsx
+
+assertions:
+  - id: A1
+    kind: shell
+    label: About hero eyebrow uses "Our heritage"
+    command: "grep -qi 'our heritage' 'app/(marketing)/about/page.tsx'"
+
+  - id: A2
+    kind: shell
+    label: About hero heading matches reference
+    command: "grep -q 'federated body of growers' 'app/(marketing)/about/page.tsx'"

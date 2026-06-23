@@ -1,0 +1,43 @@
+schema: athanor.contract/v1
+feature: globals-tokens
+mission: design-verify
+created: '2026-06-23'
+
+golden_files:
+  - app/globals.css
+
+assertions:
+  - id: A1
+    kind: shell
+    label: body has parchment background via --bg custom property
+    command: "grep -q 'background: var(--bg)' app/globals.css"
+
+  - id: A2
+    kind: shell
+    label: semantic aliases defined (--bg, --fg, --fg-on-dark)
+    command: "grep -q -- '--bg:' app/globals.css && grep -q -- '--fg:' app/globals.css && grep -q -- '--fg-on-dark:' app/globals.css"
+
+  - id: A3
+    kind: shell
+    label: type scale variables present (--display-xl, --body-xl, --section-y)
+    command: "grep -q -- '--display-xl' app/globals.css && grep -q -- '--body-xl' app/globals.css && grep -q -- '--section-y' app/globals.css"
+
+  - id: A4
+    kind: shell
+    label: semantic CSS classes defined (.h1, .h2, .on-dark, .eyebrow, .inline-link)
+    command: "grep -q '^\\.h1' app/globals.css && grep -q '^\\.on-dark' app/globals.css && grep -q '^\\.eyebrow' app/globals.css && grep -q '^\\.inline-link' app/globals.css"
+
+  - id: A5
+    kind: shell
+    label: no circular --font-serif self-reference in @theme
+    command: "! grep -A2 '@theme' app/globals.css | grep -q 'var(--font-serif)'"
+
+  - id: A6
+    kind: shell
+    label: pnpm build exits 0
+    command: "pnpm build 2>&1 | tail -5 | grep -qE 'compiled|✓ Compiled|Route'"
+
+  - id: A7
+    kind: shell
+    label: spacing tokens present (--space-1 through --section-y)
+    command: "grep -q -- '--space-1:' app/globals.css && grep -q -- '--radius-pill:' app/globals.css"

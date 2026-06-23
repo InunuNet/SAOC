@@ -1,0 +1,47 @@
+schema: athanor.contract/v1
+feature: design-verify-2
+mission: design-verify
+created: '2026-06-23'
+
+golden_files:
+  - components/home/Hero.tsx
+  - components/ui/PageHero.tsx
+  - components/societies/SocietyCard.tsx
+  - components/events/EventCard.tsx
+
+goldens:
+  description: |
+    Hero font sizes updated to match design spec display scale.
+    Cards radius removed (border-radius 0 per spec).
+    EventCard date day changed to serif for editorial feel.
+
+assertions:
+  - id: B1
+    kind: shell
+    label: Hero h1 uses display-xl clamp (54px,7vw,96px)
+    command: "grep -q 'clamp(54px,7vw,96px)' components/home/Hero.tsx"
+
+  - id: B2
+    kind: shell
+    label: PageHero h1 uses display-lg clamp (42px,5.4vw,72px)
+    command: "grep -q 'clamp(42px,5.4vw,72px)' components/ui/PageHero.tsx"
+
+  - id: B3
+    kind: shell
+    label: SocietyCard has no rounded-lg
+    command: "! grep -q 'rounded-lg' components/societies/SocietyCard.tsx"
+
+  - id: B4
+    kind: shell
+    label: EventCard has no rounded-lg
+    command: "! grep -q 'rounded-lg' components/events/EventCard.tsx"
+
+  - id: B5
+    kind: shell
+    label: EventCard date uses font-serif for editorial look
+    command: "grep -q 'font-serif' components/events/EventCard.tsx"
+
+  - id: B6
+    kind: shell
+    label: pnpm build exits 0
+    command: "pnpm build 2>&1 | tail -3 | grep -qE 'compiled|✓|Route'"

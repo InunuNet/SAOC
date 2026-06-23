@@ -10,6 +10,7 @@ _Last compacted: 2026-06-18 by session. Full history: git log on this file._
 - [x] **Phase D (partial): 2027 Show ticketing** — D1 (Resend email), D3 (Firestore ticket model), D5 (admin dashboard), D6 (door check-in) done 2026-06-13. D2 (payment gateway) and D4 (buy flow) BLOCKED — pending payment account setup.
 - [x] **Phase E: SEO, Secretary training, launch checklist** — E4 22/22, E5 19/19, E6 14/14 — all PASS 2026-06-13.
 - [x] **Chrome wiring** — Mounted real UtilityBar/Header/Footer in `app/layout.tsx` (was a TODO placeholder). UtilityBar pills + mono tagline, MobileMenu logo lockup fixed. QA 7/7 PASS, build clean. (commits 01ceb4a + b49ff7b, done 2026-06-23)
+- [x] **Design-verify pass** — Post-chrome visual audit + fix. globals.css full token set (semantic colours, type scale, spacing, semantic classes), header abbreviated to "SA Orchid Council", hero display-xl/lg clamp scale, `radius-0` enforced across 8 card components. Site reads professional + editorial. (commit 35c9cbb, mission 2026-06-23-design-verify, done 2026-06-23)
 - [ ] **D2: Stripe SA payment gateway** — BLOCKED pending Brad's Stripe SA account setup. Yoco online payments confirmed still on waitlist 2026-06-18 ("temporarily limiting new online payment activations") — Stripe is the confirmed gateway. Brad to create Stripe SA account and supply publishable + secret keys.
 - [ ] **D4: Ticket buy flow** — BLOCKED pending D2 (payment gateway). Scope: checkout UI, purchase confirmation, Firestore ticket write, email confirmation via Resend.
 - [ ] **Configure SPF/DKIM/DMARC on saoc.co.za** — required before launch. Setup guide: docs/email-dns-setup.md. Brad to add DNS records once Resend domain verified.
@@ -50,3 +51,5 @@ _Last compacted: 2026-06-24 00:00 by session. Dismissed: 1× quota-monitor, 1× 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260623213844.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260623215310.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260623220813.txt

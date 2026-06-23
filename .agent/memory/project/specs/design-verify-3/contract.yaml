@@ -1,0 +1,41 @@
+schema: athanor.contract/v1
+feature: design-verify-3
+mission: design-verify
+created: '2026-06-23'
+
+golden_files:
+  - components/judging/AwardsGrid.tsx
+  - components/judging/JudgesDirectory.tsx
+  - components/about/BoardGrid.tsx
+  - components/sponsors/SponsorGrid.tsx
+  - components/contact/ContactForm.tsx
+  - app/(marketing)/sponsors/page.tsx
+
+goldens:
+  description: Remove rounded-lg from all card/panel elements per design spec radius-0 rule.
+
+assertions:
+  - id: C1
+    kind: shell
+    label: AwardsGrid has no rounded-lg
+    command: "! grep -q 'rounded-lg' components/judging/AwardsGrid.tsx"
+  - id: C2
+    kind: shell
+    label: JudgesDirectory has no rounded-lg
+    command: "! grep -q 'rounded-lg' components/judging/JudgesDirectory.tsx"
+  - id: C3
+    kind: shell
+    label: BoardGrid has no rounded-lg
+    command: "! grep -q 'rounded-lg' components/about/BoardGrid.tsx"
+  - id: C4
+    kind: shell
+    label: SponsorGrid has no rounded-lg
+    command: "! grep -q 'rounded-lg' components/sponsors/SponsorGrid.tsx"
+  - id: C5
+    kind: shell
+    label: ContactForm success box has no rounded-lg
+    command: "! grep -q 'rounded-lg' components/contact/ContactForm.tsx"
+  - id: C6
+    kind: shell
+    label: Sponsors page section has no rounded-lg
+    command: "! grep -q 'rounded-lg' 'app/(marketing)/sponsors/page.tsx'"
