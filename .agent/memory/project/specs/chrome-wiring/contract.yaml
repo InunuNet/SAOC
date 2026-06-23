@@ -1,0 +1,37 @@
+schema: athanor.contract/v1
+slug: chrome-wiring
+goal: Wire UtilityBar/Header/Footer chrome into the layout and finish UtilityBar pills and MobileMenu logo lockup.
+created_at: '2026-06-23'
+autonomy: high
+features:
+  - id: F1
+    name: Mount chrome components in layout; finish UtilityBar copy/routing and MobileMenu logo lockup
+    status: pending
+goldens:
+  - .agent/golden/app/layout.tsx
+  - .agent/golden/components/chrome/UtilityBar.tsx
+  - .agent/golden/components/chrome/MobileMenu.tsx
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: layout.tsx contains no TODO placeholder markers
+      command: '! grep -q "TODO:" /Users/vetus/ai/SAOC/app/layout.tsx'
+    - id: A2
+      description: layout.tsx no longer renders the placeholder SAOC text logo
+      command: '! grep -qF "<span className=\"font-semibold text-lg\">SAOC</span>" /Users/vetus/ai/SAOC/app/layout.tsx'
+    - id: A3
+      description: layout.tsx imports the chrome barrel
+      command: "grep -q \"from '@/components/chrome'\" /Users/vetus/ai/SAOC/app/layout.tsx"
+    - id: A4
+      description: UtilityBar surfaces the National Show pill copy
+      command: 'grep -q "National Show" /Users/vetus/ai/SAOC/components/chrome/UtilityBar.tsx'
+    - id: A5
+      description: UtilityBar surfaces the Join a society pill copy
+      command: 'grep -q "Join a society" /Users/vetus/ai/SAOC/components/chrome/UtilityBar.tsx'
+    - id: A6
+      description: MobileMenu references the ink-paper logo asset
+      command: 'grep -q "saoc-logo-ink-paper" /Users/vetus/ai/SAOC/components/chrome/MobileMenu.tsx'
+    - id: A7
+      description: Production build succeeds
+      command: pnpm --dir /Users/vetus/ai/SAOC build

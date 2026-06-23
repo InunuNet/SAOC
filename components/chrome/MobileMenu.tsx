@@ -7,6 +7,7 @@
 // =============================================================
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { X } from 'lucide-react';
 
 interface MobileMenuProps {
@@ -35,7 +36,12 @@ export function MobileMenu({ open, onClose, nav }: MobileMenuProps) {
       >
         {/* Top row: wordmark + close */}
         <div className="flex items-center justify-between mb-8">
-          <span className="font-serif text-[18px] font-medium text-ink">SAOC</span>
+          <span className="flex items-center gap-2">
+            <Image src="/images/saoc-logo-ink-paper.png" alt="" width={36} height={36} />
+            <span className="font-serif text-[16px] font-medium text-ink leading-tight">
+              SA Orchid Council
+            </span>
+          </span>
           <button
             type="button"
             aria-label="Close menu"
