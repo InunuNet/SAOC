@@ -42,5 +42,14 @@
     "prettier": "^3.8.3",
     "tailwindcss": "^4.1.8",
     "typescript": "^5.7.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@firebase/util",
+      "esbuild",
+      "protobufjs",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }
