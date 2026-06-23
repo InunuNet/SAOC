@@ -41,7 +41,7 @@ export function SponsorGrid({ sponsors }: SponsorGridProps) {
             {grouped[tier].map((sponsor) => (
               <div
                 key={sponsor._id}
-                className="rounded-lg border border-rule bg-parchment p-6 flex flex-col"
+                className="border border-rule bg-parchment p-6 flex flex-col"
               >
                 {sponsor.logo ? (
                   <Image

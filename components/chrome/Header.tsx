@@ -80,11 +80,11 @@ export function Header() {
           >
             <Image src="/images/saoc-logo-ink-paper.png" alt="" width={48} height={48} priority />
             <span className="hidden sm:flex flex-col leading-tight">
-              <span className="font-serif text-[18px] font-medium text-ink">
-                South African Orchid Council
+              <span className="font-serif text-[22px] font-medium text-ink">
+                SA Orchid Council
               </span>
               <span className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted">
-                Est. 1968 · Bloemfontein
+                Making a difference since 1968
               </span>
             </span>
           </Link>
@@ -148,7 +148,7 @@ export function Header() {
 
             <Link
               href="/contact"
-              className="hidden sm:inline-block rounded-sm bg-accent px-4 py-2 font-sans text-[14px] font-medium text-ivory hover:bg-primary transition-colors duration-150"
+              className="hidden sm:inline-block rounded-sm bg-primary-800 px-4 py-2 font-sans text-[14px] font-medium text-ivory hover:bg-primary transition-colors duration-150"
             >
               Contact
             </Link>

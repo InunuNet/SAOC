@@ -57,7 +57,7 @@ export function ContactForm() {
 
   if (status === 'success') {
     return (
-      <div className="rounded-lg border border-rule bg-parchment p-8">
+      <div className="border border-rule bg-parchment p-8">
         <h3 className="font-serif text-[22px] font-semibold text-ink">Thank you</h3>
         <p className="mt-3 font-sans text-[15px] leading-relaxed text-ink/80">
           Your message has reached the SAOC secretariat. We&apos;ll be in touch soon.

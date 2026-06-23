@@ -60,8 +60,8 @@ export default async function AboutPage() {
     <>
       <PageHero
         image="/images/orchid-dark.jpg"
-        eyebrow="Since 1968"
-        heading="About the South African Orchid Council"
+        eyebrow="Our heritage"
+        heading="A federated body of growers, since 1968."
         lede="Coordinating orchid societies across South Africa — growing, showing, hybridising, judging, and community."
       />
 

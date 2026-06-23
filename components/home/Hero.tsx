@@ -76,7 +76,7 @@ export function Hero({ images }: HeroProps) {
         </span>
 
         {/* Headline */}
-        <h1 className="h1 on-dark font-serif text-[clamp(42px,6vw,80px)] font-medium leading-[1.04] tracking-[-0.012em] text-ivory max-w-[18ch] mb-6">
+        <h1 className="h1 on-dark font-serif text-[clamp(54px,7vw,96px)] font-medium leading-[1.04] tracking-[-0.012em] text-ivory max-w-[18ch] mb-6">
           The national home of <em>orchid culture</em> in South Africa.
         </h1>
 

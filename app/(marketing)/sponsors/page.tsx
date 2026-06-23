@@ -31,7 +31,7 @@ export default async function SponsorsPage() {
         {hasSponsors ? (
           <SponsorGrid sponsors={list} />
         ) : (
-          <section className="rounded-lg border border-rule bg-bone p-10 text-center">
+          <section className="border border-rule bg-bone p-10 text-center">
             <h2 className="font-serif text-[26px] font-medium text-ink">
               Become our first sponsor
             </h2>

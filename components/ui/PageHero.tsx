@@ -34,7 +34,7 @@ export function PageHero({ image, eyebrow, heading, lede, minHeight = '480px' }:
         <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory">
           {eyebrow}
         </span>
-        <h1 className="mt-5 max-w-3xl font-serif text-[clamp(2.25rem,5vw,3.5rem)] font-medium leading-[1.05] text-ivory">
+        <h1 className="mt-5 max-w-3xl font-serif text-[clamp(42px,5.4vw,72px)] font-medium leading-[1.05] text-ivory">
           {heading}
         </h1>
         {lede ? (

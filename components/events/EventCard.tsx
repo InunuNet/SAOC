@@ -18,13 +18,13 @@ export function EventCard({ event }: EventCardProps) {
   const { day, month } = formatDateLabel(event.date);
 
   return (
-    <article className="flex gap-5 rounded-lg border border-rule bg-parchment px-5 py-4 transition hover:bg-bone">
+    <article className="flex gap-5 border border-rule bg-parchment px-5 py-4 transition hover:bg-bone">
       {/* Date column */}
       <div
         className="flex w-12 shrink-0 flex-col items-center justify-start pt-0.5"
         aria-hidden="true"
       >
-        <span className="font-mono text-[22px] font-semibold leading-none text-ink">{day}</span>
+        <span className="font-serif text-[28px] font-medium leading-none text-primary">{day}</span>
         <span className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
           {month}
         </span>

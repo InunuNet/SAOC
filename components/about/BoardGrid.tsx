@@ -18,7 +18,7 @@ export function BoardGrid({ members }: BoardGridProps) {
       {members.map((m) => (
         <div
           key={m._id}
-          className="rounded-lg border border-rule bg-parchment p-6"
+          className="border border-rule bg-parchment p-6"
         >
           <h3 className="font-serif text-[20px] font-semibold text-ink leading-snug">
             {m.name}

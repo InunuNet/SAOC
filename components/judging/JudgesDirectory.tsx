@@ -26,7 +26,7 @@ export function JudgesDirectory({ judges, showPublicDirectory }: JudgesDirectory
       {judges.map((judge, i) => (
         <div
           key={`${judge.name}-${i}`}
-          className="flex items-center gap-4 rounded-lg border border-rule bg-parchment p-5"
+          className="flex items-center gap-4 border border-rule bg-parchment p-5"
         >
           <div>
             <p className="font-serif text-[17px] font-semibold text-ink">{judge.name}</p>

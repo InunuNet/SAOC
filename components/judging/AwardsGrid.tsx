@@ -6,7 +6,7 @@ export function AwardsGrid() {
       {awards.map((award) => (
         <div
           key={award.code}
-          className="flex flex-col rounded-lg border border-rule bg-parchment p-6"
+          className="flex flex-col border border-rule bg-parchment p-6"
         >
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
             {award.code}
