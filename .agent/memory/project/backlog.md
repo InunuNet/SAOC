@@ -40,24 +40,4 @@ Research complete: `documents/hosting-research-2026-06-20.md`. Key findings: (1)
 ## Deferred (auto-tracked)
 - [ ] [dev 2026-06-18] Factory loop script needs error handling — Out of scope for this task _(priority: low, handoff: 20260618T075409-dev.json)_
 
-_Last compacted: 2026-06-24 by session. Dismissed: 7× quota-monitor, 6× qa-guard, 13× check_own_comms pulse — all informational, no action required. Full history: git log on this file._
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=none
-
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260624011147.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260624012518.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260624013813.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260624015215.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260624020552.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260624022007.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260624023331.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260624024658.txt
+_Last compacted: 2026-06-24 by session. Dismissed: 8× quota-monitor, 7× qa-guard, 22× check_own_comms pulse — all informational, no action required. Full history: git log on this file._
