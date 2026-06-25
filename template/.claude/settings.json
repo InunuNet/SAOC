@@ -1,14 +1,6 @@
 {
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "BASH_DEFAULT_TIMEOUT_MS": "300000"
-  },
-  "cleanupPeriodDays": 30,
-  "skipDangerousModePermissionPrompt": true,
   "permissions": {
-    "defaultMode": "bypassPermissions",
     "allow": [
-      "Agent",
       "Bash",
       "Read",
       "Write",
@@ -44,11 +36,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/full_boot.sh"
+            "command": "[ -f execution/hooks/full_boot.sh ] && bash execution/hooks/full_boot.sh || exit 0"
           },
           {
             "type": "command",
-            "command": "echo \"You are now operating within the $(jq -r '.project_name // \"Athanor\"' .agent/profile.json) Agentic Workspace (v$(cat .agent/version)). Identity: $(jq -r '.identity.agent_name // \"Athanor Agent\"' .agent/profile.json) | Identity Status: Active. A full boot context was just injected above \u2014 framework identity (AGENTS.md), workspace, last session, project rules, goals, learned, backlog, brain recall, blockers, and git remotes. Read the injected BOOT CONTEXT carefully. You have 8 specialized agents at your disposal (@lead, @dev, @designer, etc.). Your primary goal is autonomous self-improvement for this project. Report boot status using this exact format: \u2705 ATHANOR: [name] | \ud83e\udd16 Agents: 8 roles active | Last session: [1-line summary] | Goals: [count] active | Backlog: [count] open items | Rules loaded: yes | \u27a1\ufe0f Ready.\""
+            "command": "echo \"You are now operating within the $(jq -r '.project_name // \"Athanor\"' .agent/profile.json) Agentic Workspace (v$(cat .agent/version)). Identity: $(jq -r '.identity.agent_name // \"Athanor Agent\"' .agent/profile.json) | Identity Status: Active. A full boot context was just injected above — framework identity (AGENTS.md), workspace, last session, project rules, goals, learned, backlog, brain recall, blockers, and git remotes. Read the injected BOOT CONTEXT carefully. You have 8 specialized agents at your disposal (@lead, @dev, @designer, etc.). Your primary goal is autonomous self-improvement for this project. Report boot status using this exact format: ✅ ATHANOR: [name] | 🤖 Agents: 8 roles active | Last session: [1-line summary] | Goals: [count] active | Backlog: [count] open items | Rules loaded: yes | ➡️ Ready.\""
           }
         ]
       }
@@ -59,11 +51,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes \u2014 run /wrap-up at start of next session.'; fi"
+            "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes — run /wrap-up at start of next session.'; fi"
           },
           {
             "type": "command",
-            "command": "bash execution/hooks/require_maintainer.sh"
+            "command": "[ -f execution/hooks/require_maintainer.sh ] && bash execution/hooks/require_maintainer.sh || exit 0"
           }
         ]
       }
@@ -79,7 +71,7 @@
           },
           {
             "type": "command",
-            "command": "printf '{\"systemMessage\": \"COMPACT FORMAT MANDATE \u2014 Target <=1500 tokens total. INCLUDE: file paths changed (1 line each), key decisions (1 line each), active mission + current feature checkpoint, blockers. EXCLUDE: inline code blocks, file contents, error transcripts, verbatim tool output, large diffs. Use 1-line bullets only. Never quote content verbatim. Ruthlessly concise \u2014 summary is context, not a record.\"}'",
+            "command": "printf '{\"systemMessage\": \"COMPACT FORMAT MANDATE — Target <=1500 tokens total. INCLUDE: file paths changed (1 line each), key decisions (1 line each), active mission + current feature checkpoint, blockers. EXCLUDE: inline code blocks, file contents, error transcripts, verbatim tool output, large diffs. Use 1-line bullets only. Never quote content verbatim. Ruthlessly concise — summary is context, not a record.\"}'",
             "timeout": 5
           }
         ]
@@ -91,7 +83,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/post_compact_restore.sh",
+            "command": "[ -f execution/hooks/post_compact_restore.sh ] && bash execution/hooks/post_compact_restore.sh || exit 0",
             "timeout": 15
           }
         ]
@@ -103,17 +95,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/post_compact_inject.sh",
+            "command": "[ -f execution/hooks/post_compact_inject.sh ] && bash execution/hooks/post_compact_inject.sh || exit 0",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "bash execution/hooks/harness_heartbeat.sh",
+            "command": "[ -f execution/hooks/harness_heartbeat.sh ] && bash execution/hooks/harness_heartbeat.sh || exit 0",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "bash execution/hooks/inject_pressure.sh",
+            "command": "[ -f execution/hooks/inject_pressure.sh ] && bash execution/hooks/inject_pressure.sh || exit 0",
             "timeout": 5
           }
         ]
@@ -125,7 +117,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/subagent_start.sh",
+            "command": "[ -f execution/hooks/subagent_start.sh ] && bash execution/hooks/subagent_start.sh || exit 0",
             "timeout": 10
           }
         ]
@@ -137,7 +129,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/subagent_stop.sh",
+            "command": "[ -f execution/hooks/subagent_stop.sh ] && bash execution/hooks/subagent_stop.sh || exit 0",
             "timeout": 15
           }
         ]
@@ -145,15 +137,24 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/block_asq_in_loop.sh ] && bash execution/hooks/block_asq_in_loop.sh || exit 0"
+          }
+        ]
+      },
+      {
         "matcher": "Write",
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/check_autonomy.sh"
+            "command": "[ -f execution/hooks/check_autonomy.sh ] && bash execution/hooks/check_autonomy.sh || exit 0"
           },
           {
             "type": "command",
-            "command": "bash execution/hooks/require_contract_for_write.sh"
+            "command": "[ -f execution/hooks/require_contract_for_write.sh ] && bash execution/hooks/require_contract_for_write.sh || exit 0"
           },
           {
             "type": "command",
@@ -166,11 +167,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/check_autonomy.sh"
+            "command": "[ -f execution/hooks/check_autonomy.sh ] && bash execution/hooks/check_autonomy.sh || exit 0"
           },
           {
             "type": "command",
-            "command": "bash execution/hooks/require_contract_for_write.sh"
+            "command": "[ -f execution/hooks/require_contract_for_write.sh ] && bash execution/hooks/require_contract_for_write.sh || exit 0"
           },
           {
             "type": "command",
@@ -183,19 +184,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/check_autonomy.sh"
+            "command": "[ -f execution/hooks/check_autonomy.sh ] && bash execution/hooks/check_autonomy.sh || exit 0"
           },
           {
             "type": "command",
-            "command": "bash execution/hooks/verify_workspace.sh"
+            "command": "[ -f execution/hooks/verify_workspace.sh ] && bash execution/hooks/verify_workspace.sh || exit 0"
           },
           {
             "type": "command",
-            "command": "bash execution/hooks/require_docs.sh"
+            "command": "[ -f execution/hooks/require_docs.sh ] && bash execution/hooks/require_docs.sh || exit 0"
           },
           {
             "type": "command",
-            "command": "bash execution/hooks/require_maintainer.sh"
+            "command": "[ -f execution/hooks/require_maintainer.sh ] && bash execution/hooks/require_maintainer.sh || exit 0"
           }
         ]
       },
@@ -204,19 +205,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/require_research.sh"
+            "command": "[ -f execution/hooks/require_research.sh ] && bash execution/hooks/require_research.sh || exit 0"
           },
           {
             "type": "command",
-            "command": "bash execution/hooks/require_contract.sh"
+            "command": "[ -f execution/hooks/require_contract.sh ] && bash execution/hooks/require_contract.sh || exit 0"
           },
           {
             "type": "command",
-            "command": "bash execution/hooks/require_dev_result.sh"
+            "command": "[ -f execution/hooks/require_dev_result.sh ] && bash execution/hooks/require_dev_result.sh || exit 0"
           },
           {
             "type": "command",
-            "command": "bash execution/hooks/require_qa_report.sh"
+            "command": "[ -f execution/hooks/require_qa_report.sh ] && bash execution/hooks/require_qa_report.sh || exit 0"
           }
         ]
       }
@@ -227,7 +228,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/post_agent_loop_continue.sh"
+            "command": "[ -f execution/hooks/post_agent_loop_continue.sh ] && bash execution/hooks/post_agent_loop_continue.sh || exit 0"
           }
         ]
       }
@@ -238,11 +239,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/quota_death_checkpoint.sh",
+            "command": "[ -f execution/hooks/quota_death_checkpoint.sh ] && bash execution/hooks/quota_death_checkpoint.sh || exit 0",
             "timeout": 5
           }
         ]
       }
     ]
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "BASH_DEFAULT_TIMEOUT_MS": "300000"
   }
 }

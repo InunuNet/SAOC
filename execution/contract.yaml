@@ -1,63 +1,55 @@
 schema: athanor.contract/v1
-slug: fleet-loop-mission-driven
-goal: "Fix fleet_loop.sh: replace comms-directive prompt with mission-driven prompt; extend idle hash to include open backlog count"
+slug: hook-graceful-degradation
+goal: "Wrap every execution/hooks/*.sh hook command with [ -f ] guard so missing scripts degrade silently instead of erroring"
 created_at: '2026-06-25'
 autonomy: high
 architect: "@architect"
 
 description: |
-  fleet_loop.sh enqueues work tickets for fleet projects, but its current
-  embedded prompt tells agents to "find a Codi directive in comms.md" —
-  directives Athanor can never write (scope.md blocks cross-project writes).
-  Fleet agents find nothing and exit.
+  .claude/settings.json and template/.claude/settings.json reference 19 execution/hooks/*.sh
+  scripts across 23 hook command entries. When any script is absent (e.g. after execution/
+  is deleted), bash exits 127 and emits "No such file or directory" on every tool call.
 
-  Fix 1 (F1): replace the PROMPT heredoc with a self-sufficient mission-loop
-  prompt that tells fleet agents to check their own active mission or open
-  backlog and run the full chain autonomously.
+  Fix: wrap every "bash execution/hooks/<name>.sh" command with:
+    [ -f execution/hooks/<name>.sh ] && bash execution/hooks/<name>.sh || exit 0
 
-  Fix 2 (F2): extend the idle-detection hash (which currently skips projects
-  when comms + active_json haven't changed) to also include the count of open
-  backlog items (grep '^- \[ \]') so projects with work but no directive still
-  get triggered.
+  Fail-open (exit 0 when missing) is correct: if harness is removed, blocking tools
+  makes workspace unusable. || exit 0 is required because [ -f ] returns exit 1
+  when file missing, which PreToolUse hooks interpret as "block."
 
 features:
   - id: F1
-    name: "Replace comms-directive PROMPT heredoc with mission-driven prompt"
-    status: pending
-  - id: F2
-    name: "Add open-backlog-item count to idle-detection hash"
+    name: "Wrap all bare 'bash execution/hooks/*.sh' commands with [ -f ] && ... || exit 0"
     status: pending
 
 goldens:
-  - .agent/memory/project/specs/fleet-loop-mission-driven/goldens/fleet_loop_fixed.sh
+  - .agent/memory/project/specs/hook-graceful-degradation/goldens/settings_fixed.json
+  - .agent/memory/project/specs/hook-graceful-degradation/goldens/template_settings_fixed.json
 
 assertions:
   phase: 4
   checks:
     - id: A1
-      description: "Prompt no longer references 'CODI -> YOU' directive lookup"
-      command: "python3 -c \"src=open('.agent/pulse/registry/fleet_loop.sh').read(); assert 'CODI -> YOU' not in src and 'CODI -> ALL' not in src, 'old directive pattern still present'; print('ok')\""
+      description: "No bare 'bash execution/hooks/' commands remain (all wrapped with [ -f ] guard)"
+      command: "python3 -c \"import json,re; s=json.dumps(json.load(open('.claude/settings.json'))); bare=re.findall(r'\\\"bash execution/hooks/', s); assert len(bare)==0, f'{len(bare)} bare bash execution/hooks/ commands remain'; print('ok')\""
     - id: A2
-      description: "Prompt includes mission resume step"
-      command: "grep -q 'mission.py resume' .agent/pulse/registry/fleet_loop.sh && echo ok"
+      description: "At least 19 [ -f execution/hooks/ ] guards present in settings.json"
+      command: "python3 -c \"import json,re; s=json.dumps(json.load(open('.claude/settings.json'))); guards=re.findall(r'\\[ -f execution/hooks/', s); assert len(guards)>=19, f'Only {len(guards)} guards found, expected >=19'; print(f'ok: {len(guards)} guards')\""
     - id: A3
-      description: "Prompt includes backlog fallback when no active mission"
-      command: "grep -q 'backlog' .agent/pulse/registry/fleet_loop.sh && echo ok"
+      description: "settings.json is valid JSON"
+      command: "python3 -c \"import json; json.load(open('.claude/settings.json')); print('valid json')\""
     - id: A4
-      description: "Prompt tells fleet agent to run full chain autonomously"
-      command: "grep -qE 'architect.*dev.*qa|mandatory chain|full chain' .agent/pulse/registry/fleet_loop.sh && echo ok"
+      description: "template/.claude/settings.json is byte-identical to .claude/settings.json"
+      command: "diff .claude/settings.json template/.claude/settings.json && echo identical"
     - id: A5
-      description: "Idle hash includes open backlog count variable"
-      command: "grep -q 'open_count' .agent/pulse/registry/fleet_loop.sh && echo ok"
+      description: "All || exit 0 fallbacks present (same count as guards)"
+      command: "python3 -c \"import json,re; s=json.dumps(json.load(open('.claude/settings.json'))); guards=len(re.findall(r'\\[ -f execution/hooks/', s)); exits=len(re.findall(r'\\|\\| exit 0', s)); assert guards==exits, f'guards={guards} exits={exits} mismatch'; print(f'ok: {guards} guards = {exits} exits')\""
     - id: A6
-      description: "Idle hash printf includes open_count (3 variables, not 2)"
-      command: "python3 -c \"src=open('.agent/pulse/registry/fleet_loop.sh').read(); import re; m=re.search(r'printf.*shasum', src, re.S); assert m and 'open_count' in m.group(0), 'open_count not in hash printf'; print('ok')\""
+      description: "PreCompact inline hooks unchanged (still contain input=$(cat))"
+      command: "python3 -c \"import json; s=json.dumps(json.load(open('.claude/settings.json'))); assert 'input=$(cat)' in s, 'PreCompact inline hook lost'; print('ok')\""
     - id: A7
-      description: "Cadence guard (6h MIN_INTERVAL) still present and unchanged"
-      command: "grep -q 'MIN_INTERVAL' .agent/pulse/registry/fleet_loop.sh && grep -q '21600' .agent/pulse/registry/fleet_loop.sh && echo ok"
+      description: "Guard exits 0 when script path does not exist"
+      command: "bash -c '[ -f execution/hooks/__nonexistent__.sh ] && bash execution/hooks/__nonexistent__.sh || exit 0' && echo ok"
     - id: A8
-      description: "PROJECTS array unchanged (same 4 entries: DEX, EVE, SAOC, GEMINI)"
-      command: "grep -q 'DEX' .agent/pulse/registry/fleet_loop.sh && grep -q 'EVE' .agent/pulse/registry/fleet_loop.sh && grep -q 'SAOC' .agent/pulse/registry/fleet_loop.sh && grep -q 'GEMINI' .agent/pulse/registry/fleet_loop.sh && echo ok"
-    - id: A9
-      description: "fleet_loop.sh passes bash syntax check"
-      command: "bash -n .agent/pulse/registry/fleet_loop.sh && echo syntax-ok"
+      description: "Hook count unchanged (no hooks added or removed, only commands wrapped)"
+      command: "python3 -c \"import json; s=json.load(open('.claude/settings.json')); total=sum(len(h.get('hooks',[])) for hlist in s.get('hooks',{}).values() for h in hlist); assert total>=23, f'Hook count dropped to {total}'; print(f'ok: {total} hooks')\""
