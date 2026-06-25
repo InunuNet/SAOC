@@ -36,5 +36,10 @@
   "skills_dir": ".gemini/skills",
   "rules_dir": ".gemini/rules",
   "settings_file": ".gemini/settings.json",
-  "notes": "Provider adapter only; scheduled/background work must enqueue tickets instead of launching this command directly."
+  "notes": "Provider adapter only; scheduled/background work must enqueue tickets instead of launching this command directly.",
+  "autonomy": {
+    "supports_policy_sync": false,
+    "max_honerable_level": "medium",
+    "sync_mechanism": "manual autonomy.toml"
+  }
 }

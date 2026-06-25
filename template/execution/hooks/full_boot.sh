@@ -75,6 +75,9 @@ if [ -f .agent/memory/project/missions/active.json ]; then
     blocked)
       echo "⛔ MISSION BLOCKED: resolve the blocker before proceeding."
       ;;
+    close_out)
+      echo "⚠️  CLOSE-OUT REQUIRED: dispatch @maintainer — mission awaiting wrap-up. Run: python3 execution/mission.py close-out <mission-file>"
+      ;;
     *)
       echo "→ Run /mission resume to continue."
       ;;
@@ -95,6 +98,40 @@ if [ "$_BOOT_LEVEL" = "loop" ]; then
   echo ""
 fi
 unset _BOOT_LEVEL
+
+# Autonomy mismatch check -- warn if any provider cannot honor current level
+AUTONOMY_LEVEL=$(python3 -c "import json,pathlib; p=pathlib.Path('.agent/profile.json'); d=json.loads(p.read_text()) if p.exists() else {}; print(d.get('autonomy',{}).get('level','medium'))" 2>/dev/null || echo "medium")
+case "$AUTONOMY_LEVEL" in
+  off|low|medium)
+    : ;;  # no warning needed for low autonomy levels
+  high|loop)
+    python3 - <<"MISMATCH_PYEOF" 2>/dev/null || true
+import json, pathlib
+LEVEL_ORDER = ['off', 'low', 'medium', 'high', 'loop']
+def level_rank(l):
+    try: return LEVEL_ORDER.index(l)
+    except: return 2
+profile = json.loads(pathlib.Path('.agent/profile.json').read_text())
+current_level = profile.get('autonomy', {}).get('level', 'medium')
+current_rank = level_rank(current_level)
+mismatches = []
+for mf in sorted(pathlib.Path('.agent/providers').glob('*.json')):
+    try:
+        data = json.loads(mf.read_text())
+        max_level = data.get('autonomy', {}).get('max_honerable_level', 'medium')
+        if current_rank > level_rank(max_level):
+            mismatches.append((data.get('provider', mf.stem), max_level))
+    except:
+        pass
+if mismatches:
+    print('--- AUTONOMY MISMATCH ---')
+    for provider, max_level in mismatches:
+        print(f'⚠️  AUTONOMY MISMATCH: {provider} max_honerable_level={max_level}, current={current_level}')
+    print('   These providers may still prompt for approval despite autonomy setting.')
+    print('')
+MISMATCH_PYEOF
+    ;;
+esac
 
 COMMS_FILE=".agent/memory/project/comms.md"
 if [ -f "$COMMS_FILE" ]; then

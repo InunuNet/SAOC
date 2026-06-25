@@ -33,5 +33,10 @@
   },
   "native_instruction_file": "AGENTS.md",
   "agents_manifest": ".anti/agents.json",
-  "notes": "Subagents require LLM tool registration from .anti/agents.json; no shell CLI adapter is assumed."
+  "notes": "Subagents require LLM tool registration from .anti/agents.json; no shell CLI adapter is assumed.",
+  "autonomy": {
+    "supports_policy_sync": false,
+    "max_honerable_level": "medium",
+    "sync_mechanism": "none"
+  }
 }

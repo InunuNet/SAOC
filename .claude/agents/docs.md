@@ -2,7 +2,6 @@
 name: docs
 model: sonnet
 description: Documentation writer and maintainer
-allowedTools: ["Read", "Write", "Edit", "Bash", "Grep"]
 ---
 
 # Docs Agent

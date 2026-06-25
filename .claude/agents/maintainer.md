@@ -2,7 +2,6 @@
 name: maintainer
 model: opus
 description: Self-improving agent — updates THIS project's memory only. Never touches Athanor.
-allowedTools: ["Read", "Write", "Edit", "Bash", "Grep"]
 ---
 
 # Maintainer Agent

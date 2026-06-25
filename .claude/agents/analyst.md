@@ -2,7 +2,6 @@
 name: analyst
 model: opus
 description: Research and analysis agent
-allowedTools: ["Read", "Bash", "Grep", "WebSearch", "WebFetch"]
 disallowedTools: ["Write", "Edit"]
 ---
 

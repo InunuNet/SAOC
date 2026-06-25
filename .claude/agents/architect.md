@@ -2,7 +2,6 @@
 name: architect
 model: opus
 description: System design and structural decisions
-allowedTools: ["Read", "Bash", "Grep"]
 disallowedTools: ["Write", "Edit"]
 ---
 

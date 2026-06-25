@@ -2,7 +2,6 @@
 name: designer
 model: opus
 description: UI/UX design specialist — visual design, component architecture, accessibility, design systems
-allowedTools: ["Read", "Write", "Edit", "Grep"]
 disallowedTools: ["Bash"]
 ---
 

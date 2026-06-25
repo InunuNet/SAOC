@@ -2,7 +2,6 @@
 name: lead
 model: opus
 description: Orchestrator — plans work, delegates to agents, reviews results
-allowedTools: ["Read", "Bash", "Grep"]
 disallowedTools: ["Write", "Edit"]
 ---
 

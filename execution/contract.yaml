@@ -1,51 +1,56 @@
 schema: athanor.contract/v1
-slug: backlog-trim-manifest-fleet
-goal: Ship execution/backlog_trim.py to downstream workspaces via the fleet update manifest and template.
-created_at: '2026-06-11'
+slug: autonomy-propagation
+goal: "Add autonomy capability fields to provider manifests; upgrade sync-autonomy; add AUTONOMY MISMATCH boot warning"
+created_at: '2026-06-23'
 autonomy: high
 architect: "@architect"
 
 description: |
-  backlog_trim.py exists in execution/ but is NOT covered by an explicit HARNESS
-  record in .agent/update-manifest.yaml, so the missing-file backstop in
-  update_template.py never ships it to same-version downstream workspaces. There
-  is also no template/execution/backlog_trim.py for it to ship FROM. This task
-  adds the explicit manifest record and the byte-identical template copy so
-  `make update-template` delivers backlog_trim.py to the fleet.
-
-  @dev touches EXACTLY two files:
-    1. .agent/update-manifest.yaml  — add an explicit HARNESS record for
-       execution/backlog_trim.py under the `paths:` list, following the existing
-       category/comment/path ordering used by execution/mission.py.
-       Record MUST have category: HARNESS, a non-empty comment:, and
-       path: execution/backlog_trim.py.
-    2. template/execution/backlog_trim.py — create as a byte-for-byte copy of
-       execution/backlog_trim.py (cp, no edits).
-
-  No version bump. No edits to backlog_trim.py logic. No other files.
+  Fix #1274: provider manifests have no machine-readable autonomy capability fields.
+  sync-autonomy is a v1 stub that only reads/displays level.
+  Boot does not warn when provider cannot honor the current autonomy level.
 
 features:
   - id: F1
-    name: "Add explicit HARNESS manifest record + byte-identical template copy for backlog_trim.py"
+    name: "Add autonomy capability fields to all provider manifests (root + template)"
+    status: pending
+  - id: F2
+    name: "Upgrade sync-autonomy Makefile target to report per-provider mismatch"
+    status: pending
+  - id: F3
+    name: "Add AUTONOMY MISMATCH warning to full_boot.sh (root + template)"
     status: pending
 
-goldens: []
+goldens:
+  - .agent/memory/project/specs/autonomy-propagation/goldens.md
 
 assertions:
   phase: 4
   checks:
     - id: A1
-      description: "Manifest references execution/backlog_trim.py"
-      command: 'grep -q "execution/backlog_trim.py" .agent/update-manifest.yaml'
+      description: "All 5 root provider manifests have autonomy.supports_policy_sync field"
+      command: "python3 -c \"import json,pathlib,sys; ps=list(pathlib.Path('.agent/providers').glob('*.json')); bad=[p.name for p in ps if 'autonomy' not in json.loads(p.read_text()) or 'supports_policy_sync' not in json.loads(p.read_text())['autonomy']]; sys.exit(1) if bad else print('ok')\""
     - id: A2
-      description: "A HARNESS-categorized record sits adjacent to the backlog_trim.py path (category then path within a 3-line window)"
-      command: 'grep -A2 "category: HARNESS" .agent/update-manifest.yaml | grep -q "path: execution/backlog_trim.py"'
+      description: "All 5 template provider manifests have autonomy.supports_policy_sync field"
+      command: "python3 -c \"import json,pathlib,sys; ps=list(pathlib.Path('template/.agent/providers').glob('*.json')); bad=[p.name for p in ps if 'autonomy' not in json.loads(p.read_text()) or 'supports_policy_sync' not in json.loads(p.read_text())['autonomy']]; sys.exit(1) if bad else print('ok')\""
     - id: A3
-      description: "Template copy exists at template/execution/backlog_trim.py"
-      command: 'test -f template/execution/backlog_trim.py'
+      description: "Root and template provider manifests are byte-identical per provider"
+      command: "bash -c 'for f in .agent/providers/*.json; do diff \"$f\" \"template/$f\" || { echo MISMATCH:$f; exit 1; }; done; echo all-identical'"
     - id: A4
-      description: "Template copy is byte-identical to the source"
-      command: 'diff execution/backlog_trim.py template/execution/backlog_trim.py'
+      description: "claude-code.json supports_policy_sync=true, max_honerable_level=loop"
+      command: "python3 -c \"import json,pathlib; a=json.loads(pathlib.Path('.agent/providers/claude-code.json').read_text())['autonomy']; assert a['supports_policy_sync']==True and a['max_honerable_level']=='loop'; print('ok')\""
     - id: A5
-      description: "The backlog_trim.py record carries a non-empty comment: field adjacent to its path"
-      command: 'grep -B2 "path: execution/backlog_trim.py" .agent/update-manifest.yaml | grep -Eq "comment: *.?[^ ].*"'
+      description: "sync-autonomy Makefile target contains MISMATCH detection logic"
+      command: "grep -q 'AUTONOMY MISMATCH' Makefile"
+    - id: A6
+      description: "sync-autonomy reads max_honerable_level from provider manifests"
+      command: "grep -q 'max_honerable_level' Makefile"
+    - id: A7
+      description: "full_boot.sh contains AUTONOMY MISMATCH warning block"
+      command: "grep -q 'AUTONOMY MISMATCH' execution/hooks/full_boot.sh"
+    - id: A8
+      description: "template/execution/hooks/full_boot.sh byte-identical to execution/hooks/full_boot.sh"
+      command: "diff execution/hooks/full_boot.sh template/execution/hooks/full_boot.sh"
+    - id: A9
+      description: "autonomy warning suppressed when level is medium or below (grep for suppression guard)"
+      command: "grep -qE 'off\\|low\\|medium' execution/hooks/full_boot.sh"

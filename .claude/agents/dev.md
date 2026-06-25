@@ -2,7 +2,6 @@
 name: dev
 model: sonnet
 description: Code implementation agent
-allowedTools: ["Read", "Write", "Edit", "Bash", "Grep"]
 ---
 
 # Dev Agent

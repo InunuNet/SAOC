@@ -100,7 +100,6 @@ for canonical in "$CANONICAL_DIR"/*.md; do
   gemini_model=$(map_gemini_model "$model_tier")
 
   # Map tools
-  claude_tools=$(map_tools "claude" "$tools_line")
   claude_denied=$(map_tools "claude" "$tools_denied_line")
   gemini_tools=$(map_tools "gemini" "$tools_line")
 
@@ -118,7 +117,6 @@ for canonical in "$CANONICAL_DIR"/*.md; do
       echo "name: ${filename%.md}"
       echo "model: $claude_model"
       echo "description: $description"
-      [ -n "$claude_tools" ] && echo "allowedTools: [$claude_tools]"
       [ -n "$claude_denied" ] && echo "disallowedTools: [$claude_denied]"
       echo "---"
       echo "$body"

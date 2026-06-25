@@ -32,5 +32,10 @@
     }
   },
   "native_instruction_file": "AGENTS.md",
-  "notes": "Thin provider adapter for Codex. Dispatcher manifest execution is a later slice; current hardcoded dispatcher behavior remains authoritative until then."
+  "notes": "Thin provider adapter for Codex. Dispatcher manifest execution is a later slice; current hardcoded dispatcher behavior remains authoritative until then.",
+  "autonomy": {
+    "supports_policy_sync": false,
+    "max_honerable_level": "medium",
+    "sync_mechanism": "none"
+  }
 }

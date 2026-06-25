@@ -10,6 +10,7 @@
 - (2026-06-20) Fleet-loop session: no CODI directive found. State unchanged — all Phase A–E complete, all remaining items Brad-blocked. learned.md touch required to satisfy maintainer close gate (max_age_seconds=86400). Routine comms reply appended.
 - (2026-06-22) Fleet-loop session: no CODI directive found. State unchanged — all Phase A–E complete, all remaining items Brad-blocked. learned.md touch required to satisfy maintainer close gate each session. Boot size now 12954 bytes.
 - (2026-06-23) Fleet-loop session: no CODI directive found. State unchanged — all Phase A–E complete, all remaining items Brad-blocked. Boot size 11850 bytes. Routine comms reply appended.
+- (2026-06-25) Fleet-loop session: comms.md updated with session reply. State unchanged — all Phase A–E complete, all remaining items Brad-blocked. learned.md touched to satisfy maintainer close gate (mtime was 2026-06-23, >24h old → require_maintainer.sh blocked the commit until refreshed).
 - (2026-06-23) Chrome wiring: `UtilityBar`, `Header`, and `Footer` were fully built in `components/chrome/` but never mounted in `app/layout.tsx` — a class of error where TODO placeholder comments hide incomplete wiring from code review. Always verify that built components are actually imported and rendered in layout, not just present on disk.
 
 ## Design & Visual Verification
