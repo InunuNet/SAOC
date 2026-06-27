@@ -40,28 +40,4 @@ Research complete: `documents/hosting-research-2026-06-20.md`. Key findings: (1)
 ## Deferred (auto-tracked)
 - [ ] [dev 2026-06-18] Factory loop script needs error handling — Out of scope for this task _(priority: low, handoff: 20260618T075409-dev.json)_
 
-_Last compacted: 2026-06-26 by session. Dismissed: 55+ check_own_comms pulse + quota-monitor + qa-guard informational noise — all informational, no action required. Full history: git log on this file._
-
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=none
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260626130118.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260626131544.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260626132824.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260626134131.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260626135538.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260626141217.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260626142842.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260626144655.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260626150240.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260626151951.txt
+_Last compacted: 2026-06-27 by session. Dismissed: 65+ check_own_comms pulse + quota-monitor + qa-guard informational noise — all informational, no action required. Full history: git log on this file._
