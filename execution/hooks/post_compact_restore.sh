@@ -121,22 +121,19 @@ EOF
 # Signal Pulse heartbeat to auto-resume this session on next tick
 touch ".agent/pulse/registry/needs_resume.flag" 2>/dev/null || true
 
-# --- loop-mode resume ticket (provider-neutral) ---
+# --- loop-mode immediate resume (F1 / #1264) ---
 _AUTONOMY_LEVEL=$(python3 -c "import json; p=json.load(open('.agent/profile.json')); print(p.get('autonomy',{}).get('level','off'))" 2>/dev/null || echo 'off')
 
 if [ "$_AUTONOMY_LEVEL" = "loop" ]; then
-  if [ -x "execution/pulse_ticket.py" ]; then
+  # Double-fire guard: skip if a `claude --continue` is already running.
+  if pgrep -f "claude --continue" >/dev/null 2>&1; then
+    : # already resuming — do nothing
+  else
     _RESUME_MSG="POST_COMPACT_RESUME: $(python3 execution/mission.py resume 2>/dev/null || echo 'resume active mission')"
-    python3 execution/pulse_ticket.py enqueue \
-      --source post_compact_restore \
-      --kind post_compact_resume \
-      --project-path "$(pwd)" \
-      --provider "claude-code" \
-      --requires-model true \
-      --prompt "$_RESUME_MSG" \
-      --dedupe-key "post-compact:$(pwd)" \
-      --max-turns "${ATHANOR_PULSE_POST_COMPACT_MAX_TURNS:-1}" \
-      --max-tokens "${ATHANOR_PULSE_POST_COMPACT_MAX_TOKENS:-12000}" >/dev/null 2>&1 || true
+    # Background spawn with a settle delay so compaction fully completes
+    # before the new turn re-engages. Detached so the PostCompact hook returns immediately.
+    ( sleep 5 && claude --continue -p "$_RESUME_MSG" >/dev/null 2>&1 ) &
+    disown 2>/dev/null || true
   fi
 fi
-# --- end loop-mode resume ticket ---
+# --- end loop-mode immediate resume ---
