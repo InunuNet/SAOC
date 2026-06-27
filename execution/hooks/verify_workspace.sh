@@ -13,6 +13,30 @@ esac
 WORKSPACE_FILE="WORKSPACE"
 PROFILE_FILE=".agent/profile.json"
 
+# Worktree detection: if CWD is a git worktree of the main project, resolve
+# WORKSPACE and PROFILE from the main project root and check from there.
+if command -v git >/dev/null 2>&1; then
+  GIT_COMMON=$(git rev-parse --git-common-dir 2>/dev/null)
+  GIT_DIR=$(git rev-parse --git-dir 2>/dev/null)
+  # Non-empty, different → we're in a linked worktree
+  if [ -n "$GIT_COMMON" ] && [ -n "$GIT_DIR" ] && [ "$GIT_COMMON" != "$GIT_DIR" ]; then
+    MAIN_ROOT=$(cd "$(dirname "$GIT_COMMON")" && pwd)
+    if [ -f "$MAIN_ROOT/WORKSPACE" ]; then
+      MAIN_NAME=$(sed 's/[[:space:]]*$//' < "$MAIN_ROOT/WORKSPACE" | head -1)
+      # Validate profile from main project root too
+      if [ -f "$MAIN_ROOT/.agent/profile.json" ] && command -v python3 >/dev/null 2>&1; then
+        PNAME=$(python3 -c "import json,sys; p=json.load(open('$MAIN_ROOT/.agent/profile.json')); print(p.get('project_name',''))" 2>/dev/null)
+        if [ -n "$PNAME" ] && [ "$PNAME" != "$MAIN_NAME" ]; then
+          echo "⛔ Worktree profile mismatch: profile.json says '$PNAME' but WORKSPACE says '$MAIN_NAME'" >&2
+          exit 2
+        fi
+      fi
+      # Valid worktree of the correct project — allow
+      exit 0
+    fi
+  fi
+fi
+
 # Layer 1: WORKSPACE file must exist
 if [ ! -f "$WORKSPACE_FILE" ]; then
   echo "⛔ WORKSPACE file missing — run 'bash init.sh' first. If this is a new project, run '/onboard'." >&2
@@ -20,13 +44,10 @@ if [ ! -f "$WORKSPACE_FILE" ]; then
 fi
 
 WORKSPACE_NAME=$(sed 's/[[:space:]]*$//' < "$WORKSPACE_FILE" | head -1)
-DIR_NAME=$(basename "$PWD")
 
-# Layer 2: WORKSPACE content must match current directory name
-if [ "$WORKSPACE_NAME" != "$DIR_NAME" ]; then
-  echo "⛔ Workspace mismatch: WORKSPACE says '$WORKSPACE_NAME' but dir is '$DIR_NAME'" >&2
-  exit 2
-fi
+# Layer 2 (removed): directory-name check was too strict — workspace name and folder
+# name are allowed to differ (e.g. workspace="Anti Harness" in folder "Athanor").
+# Layer 3 (profile.json) is the meaningful consistency check.
 
 # Layer 3: profile.json project_name must match (if file exists and has a name set)
 if [ -f "$PROFILE_FILE" ]; then

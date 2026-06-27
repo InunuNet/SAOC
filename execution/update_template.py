@@ -143,7 +143,7 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
             matrix = json.loads(matrix_path.read_text())
             seed_level = matrix.get("onboarding_default", "low")
         except Exception:
-            seed_level = "low"
+            seed_level = "medium"
         profile.setdefault("autonomy", {})["level"] = seed_level
         changes.append(f"autonomy.level: seeded as {seed_level}")
 
