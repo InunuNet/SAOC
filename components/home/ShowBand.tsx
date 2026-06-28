@@ -49,21 +49,19 @@ export function ShowBand({ countdownDate }: ShowBandProps) {
         {/* Content right */}
         <div className="flex flex-col justify-center px-10 py-16 on-dark">
           {/* Eyebrow */}
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-accent-soft mb-6">
-            FLAGSHIP EVENT
-          </p>
+          <div className="mb-6"><span className="eyebrow eyebrow--light">Flagship Event</span></div>
 
           {/* Headline */}
           <h2 className="font-serif text-[clamp(32px,3.8vw,48px)] font-medium leading-[1.1] tracking-[-0.01em] text-ivory mb-8">
-            The nineteenth South African{' '}
-            <em className="italic text-accent-soft">National Orchid Show</em>
+            The 19th South African{' '}
+            <em className="text-accent-soft">National Orchid Show</em>
           </h2>
 
           {/* Meta grid */}
           <dl className="grid grid-cols-2 gap-x-8 gap-y-4 mb-10">
             {SHOW_META.map((item) => (
               <div key={item.label}>
-                <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-ivory/60 mb-1">
+                <dt className="font-mono text-[10px] uppercase tracking-[0.22em] text-ivory/50 mb-1">
                   {item.label}
                 </dt>
                 <dd className="font-sans text-[15px] text-ivory">{item.value}</dd>
@@ -72,7 +70,7 @@ export function ShowBand({ countdownDate }: ShowBandProps) {
           </dl>
 
           {/* Countdown */}
-          <div className="flex gap-8 mb-10">
+          <div className="flex gap-8 mb-10 py-6 border-t border-b border-ivory/15">
             {(
               [
                 { value: days, label: 'Days' },
@@ -95,16 +93,16 @@ export function ShowBand({ countdownDate }: ShowBandProps) {
           {/* CTAs */}
           <div className="flex flex-wrap gap-4">
             <Link
-              href="/show"
-              className="font-mono text-[11px] uppercase tracking-[0.18em] bg-accent text-ivory px-6 py-3 hover:bg-accent-soft transition-colors duration-150"
+              href="/national-show"
+              className="font-sans text-[14px] font-medium bg-accent text-ivory px-6 py-3 hover:bg-accent-soft transition-colors duration-150"
             >
-              Show details
+              Show Details
             </Link>
             <Link
-              href="/show/exhibitors"
-              className="font-mono text-[11px] uppercase tracking-[0.18em] border border-ivory/30 text-ivory px-6 py-3 hover:bg-ivory/10 transition-colors duration-150"
+              href="/national-show/exhibitors"
+              className="font-sans text-[14px] font-medium border border-ivory/30 text-ivory px-6 py-3 hover:bg-ivory/10 transition-colors duration-150"
             >
-              Exhibitor info
+              Exhibitor Info
             </Link>
           </div>
         </div>

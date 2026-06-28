@@ -19,7 +19,7 @@ import { SearchOverlay } from './SearchOverlay';
 const NAV: ReadonlyArray<{ id: string; label: string; href: string; disabled?: boolean }> = [
   { id: 'about', label: 'About', href: '/about' },
   { id: 'societies', label: 'Societies', href: '/societies' },
-  { id: 'judging', label: 'Judging', href: '/judging' },
+  { id: 'judging', label: 'Judging & Awards', href: '/judging' },
   { id: 'show', label: 'National Show', href: '/national-show' },
   { id: 'events', label: 'Events', href: '/events' },
   { id: 'learn', label: 'Learn', href: '#', disabled: true },
@@ -83,7 +83,7 @@ export function Header() {
               <span className="font-serif text-[22px] font-medium text-ink">
                 SA Orchid Council
               </span>
-              <span className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted">
+              <span className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-muted">
                 Making a difference since 1968
               </span>
             </span>

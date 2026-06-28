@@ -40,7 +40,7 @@ export function Hero({ images }: HeroProps) {
   }, [slides.length]);
 
   return (
-    <section className="relative min-h-[720px] flex items-center overflow-hidden bg-primary">
+    <section className="relative min-h-[720px] flex items-center overflow-hidden bg-primary on-dark">
       {/* Crossfade image stack */}
       {slides.map((slide, i) => (
         <div
@@ -69,40 +69,40 @@ export function Hero({ images }: HeroProps) {
       />
 
       {/* Content */}
-      <div className="relative z-10 w-full px-8 md:px-16 py-24 flex flex-col items-center text-center max-w-[1280px] mx-auto">
+      <div className="relative z-10 w-full px-8 md:px-16 py-24 flex flex-col items-start text-left max-w-[1280px] mx-auto">
         {/* Eyebrow pill */}
         <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-ivory rounded-full border border-ivory/30 bg-white/10 px-4 py-1.5 mb-8">
           SINCE 1968 · BLOEMFONTEIN
         </span>
 
         {/* Headline */}
-        <h1 className="h1 on-dark font-serif text-[clamp(54px,7vw,96px)] font-medium leading-[1.04] tracking-[-0.012em] text-ivory max-w-[18ch] mb-6">
+        <h1 className="h1 font-serif text-[clamp(54px,7vw,96px)] font-medium leading-[1.04] tracking-[-0.012em] text-ivory max-w-[18ch] mb-6">
           The national home of <em>orchid culture</em> in South Africa.
         </h1>
 
         {/* Lede */}
         <p className="font-sans text-[20px] leading-[1.5] text-ivory/75 max-w-[52ch] mb-10">
-          Connecting twenty-one affiliated societies and their members across South Africa.
+          Uniting twenty-one affiliated societies in the cultivation, exhibition, and appreciation of orchids across South Africa since 1968.
         </p>
 
         {/* CTAs */}
-        <div className="flex flex-wrap gap-4 justify-center mb-10">
+        <div className="flex flex-wrap gap-4 justify-start mb-10">
           <Link
             href="/societies"
-            className="font-mono text-[11px] uppercase tracking-[0.18em] bg-accent text-ivory px-6 py-3 hover:bg-accent-soft transition-colors duration-150"
+            className="font-sans text-[14px] font-medium bg-accent text-ivory px-6 py-3 hover:bg-accent-soft transition-colors duration-150"
           >
-            Find your society →
+            Find Your Society →
           </Link>
           <Link
-            href="/show"
-            className="font-mono text-[11px] uppercase tracking-[0.18em] border border-ivory/50 text-ivory px-6 py-3 hover:bg-ivory/10 transition-colors duration-150"
+            href="/national-show"
+            className="font-sans text-[14px] font-medium border border-ivory/50 text-ivory px-6 py-3 hover:bg-ivory/10 transition-colors duration-150"
           >
             19th National Show, 2027
           </Link>
         </div>
 
         {/* Dot indicators */}
-        <div className="flex gap-3" role="tablist" aria-label="Carousel navigation">
+        <div className="flex gap-3 justify-start" role="tablist" aria-label="Carousel navigation">
           {slides.map((slide, i) => (
             <button
               key={slide.key}

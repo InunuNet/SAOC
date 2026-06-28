@@ -48,7 +48,7 @@ export function UtilityBar() {
           </Link>
           <Link
             href="/societies"
-            className="bg-accent text-ivory rounded-full px-3 py-1 text-[13px] font-sans hover:bg-accent-soft transition-colors duration-150"
+            className="bg-accent text-primary rounded-full px-3 py-1 text-[13px] font-sans font-medium hover:bg-accent-soft transition-colors duration-150"
           >
             Join a society
           </Link>
