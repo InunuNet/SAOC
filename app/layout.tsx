@@ -29,6 +29,17 @@ const BASE_URL = 'https://saoc.co.za';
 const DEFAULT_DESCRIPTION =
   'The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968.';
 
+const ORGANIZATION_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'NGO',
+  name: 'South African Orchid Council',
+  alternateName: 'SAOC',
+  url: BASE_URL,
+  foundingDate: '1968',
+  description: DEFAULT_DESCRIPTION,
+  email: 'secretary@saoc.co.za',
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
@@ -62,6 +73,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${crimsonPro.variable} ${manrope.variable} ${jetBrainsMono.variable}`}>
+      <head>
+        <script
+          type="application/ld+json"
+          // Developer-controlled static JSON (no user input) — safe to inline.
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD) }}
+        />
+      </head>
       <body>
         <UtilityBar />
         <Header />

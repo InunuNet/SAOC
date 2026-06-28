@@ -252,5 +252,6 @@
     "BASH_DEFAULT_TIMEOUT_MS": "300000"
   },
   "cleanupPeriodDays": 30,
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "autoCompactEnabled": true
 }

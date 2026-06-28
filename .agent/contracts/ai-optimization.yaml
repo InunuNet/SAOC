@@ -1,0 +1,94 @@
+schema: athanor.contract/v1
+slug: ai-optimization
+goal: Add AI/LLM discoverability (llms.txt, dynamic robots, NGO JSON-LD) to the SAOC site.
+created_at: '2026-06-28'
+autonomy: high
+features:
+  - id: F1
+    name: llms.txt static index for LLM crawlers
+    status: pending
+  - id: F2
+    name: llms-full.txt full-content Markdown dump
+    status: pending
+  - id: F3
+    name: app/robots.ts dynamic robots (AI bot allowlist + Bytespider deny) replacing static robots.txt
+    status: pending
+  - id: F4
+    name: NGO JSON-LD structured data in app/layout.tsx head
+    status: pending
+goldens:
+  - .agent/goldens/ai-optimization/llms.txt.md
+  - .agent/goldens/ai-optimization/llms-full.txt.md
+  - .agent/goldens/ai-optimization/robots-ts.ts
+  - .agent/goldens/ai-optimization/layout-jsonld-patch.md
+assertions:
+  phase: 4
+  checks:
+    # ---- F1: public/llms.txt ----
+    - id: A1
+      description: public/llms.txt exists
+      command: test -f public/llms.txt
+    - id: A2
+      description: llms.txt has H1 org name
+      command: grep -q "^# South African Orchid Council" public/llms.txt
+    - id: A3
+      description: llms.txt has a blockquote summary line
+      command: grep -q "^> " public/llms.txt
+    - id: A4
+      description: llms.txt has at least 3 H2 sections
+      command: test "$(grep -c '^## ' public/llms.txt)" -ge 3
+    - id: A5
+      description: llms.txt links to canonical https://saoc.co.za URLs
+      command: grep -q "https://saoc.co.za" public/llms.txt
+    - id: A6
+      description: llms.txt scopes out wild-orchid conservation (WOSA boundary)
+      command: grep -qi "WOSA" public/llms.txt
+    # ---- F2: public/llms-full.txt ----
+    - id: A7
+      description: public/llms-full.txt exists
+      command: test -f public/llms-full.txt
+    - id: A8
+      description: llms-full.txt has substantial content (>500 chars)
+      command: test "$(wc -c < public/llms-full.txt)" -gt 500
+    - id: A9
+      description: llms-full.txt names the organisation
+      command: grep -q "South African Orchid Council" public/llms-full.txt
+    # ---- F3: app/robots.ts ----
+    - id: A10
+      description: app/robots.ts exists
+      command: test -f app/robots.ts
+    - id: A11
+      description: robots.ts exports a MetadataRoute.Robots default function
+      command: grep -q "MetadataRoute.Robots" app/robots.ts
+    - id: A12
+      description: robots.ts explicitly allows ClaudeBot
+      command: grep -q "ClaudeBot" app/robots.ts
+    - id: A13
+      description: robots.ts explicitly allows GPTBot
+      command: grep -q "GPTBot" app/robots.ts
+    - id: A14
+      description: robots.ts denies Bytespider
+      command: grep -q "Bytespider" app/robots.ts
+    - id: A15
+      description: robots.ts points to the sitemap
+      command: grep -q "sitemap.xml" app/robots.ts
+    - id: A16
+      description: static public/robots.txt is removed (dynamic robots.ts wins)
+      command: test ! -f public/robots.txt
+    # ---- F4: JSON-LD in layout ----
+    - id: A17
+      description: layout.tsx emits an application/ld+json script
+      command: grep -q "application/ld+json" app/layout.tsx
+    - id: A18
+      description: JSON-LD declares the NGO schema type
+      command: grep -q "NGO" app/layout.tsx
+    - id: A19
+      description: JSON-LD carries the organisation name
+      command: grep -q "South African Orchid Council" app/layout.tsx
+    - id: A20
+      description: JSON-LD carries the 1968 founding date
+      command: grep -q "1968" app/layout.tsx
+    # ---- Build gate ----
+    - id: A21
+      description: project type-checks / builds clean after changes
+      command: pnpm exec tsc --noEmit
