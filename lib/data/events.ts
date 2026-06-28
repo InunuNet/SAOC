@@ -2,6 +2,35 @@ import type { SocietyEvent } from '@/types';
 
 export const events: SocietyEvent[] = [
   {
+    id: 0,
+    date: '2026-03-15',
+    endDate: '2026-03-15',
+    title: 'Cape Orchid Society Autumn Show',
+    host: 'Cape Orchid Society',
+    venue: 'Kirstenbosch Hall, Cape Town',
+    kind: 'Show',
+    province: 'WC',
+  },
+  {
+    id: -1,
+    date: '2026-04-05',
+    endDate: '2026-04-05',
+    title: 'Transvaal Autumn Orchid Show',
+    host: 'Transvaal Orchid Society',
+    venue: 'Walter Sisulu NBG, Roodepoort',
+    kind: 'Show',
+    province: 'GP',
+  },
+  {
+    id: -2,
+    date: '2026-05-10',
+    title: 'Judging Workshop — Paphiopedilum',
+    host: 'SAOC Judging',
+    venue: 'Pretoria NBG',
+    kind: 'Workshop',
+    province: 'GP',
+  },
+  {
     id: 1,
     date: '2026-07-11',
     endDate: '2026-07-12',

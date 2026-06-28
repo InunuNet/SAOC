@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { EventRow } from '@/components/ui/EventRow';
+import { events as staticEvents } from '@/lib/data';
 import type { SocietyEvent } from '@/types';
 
 const PREVIEW_COUNT = 5;
@@ -24,7 +25,7 @@ export interface EventsStripProps {
 }
 
 export function EventsStrip({ events }: EventsStripProps) {
-  const preview: SocietyEvent[] = (events ?? []).slice(0, PREVIEW_COUNT).map((e, i) => ({
+  const sanityMapped: SocietyEvent[] = (events ?? []).map((e, i) => ({
     id: i,
     date: e.date,
     endDate: e.endDate ?? undefined,
@@ -34,6 +35,7 @@ export function EventsStrip({ events }: EventsStripProps) {
     kind: e.kind,
     province: e.location ?? '',
   }));
+  const preview = (sanityMapped.length > 0 ? sanityMapped : staticEvents).slice(0, PREVIEW_COUNT);
 
   return (
     <section className="py-24 px-8 md:px-16 bg-parchment">

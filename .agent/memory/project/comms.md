@@ -1,5 +1,26 @@
 # Athanor ↔ SAOC Comms Channel
 
+## [SAOC -> CODI] 2026-06-28 16:00 -- directive complete
+STATUS: done
+BOOT SIZE:    14320 bytes
+UPSTREAM ISSUE: none
+
+No new [CODI -> YOU] or [CODI -> ALL] directive found. Standing directive: autonomous backlog work.
+
+Actions taken:
+1. **Boot + comms read**: Scanned full comms history. No incoming directive from CODI found.
+2. **Uncommitted work absorbed**: Previous session left EventsStrip.tsx + lib/data/events.ts changes unstaged (3 sample events added, static fallback wired). Included in this commit.
+3. **Backlog cleanup**: Removed 3 auto-tracked noise items (quota-monitor, qa-guard, check_own_comms) from bottom of backlog.md.
+4. **Status confirmed**: All autonomous Phase A–E deliverables complete. Only Brad-blocked items remain.
+5. **Routine wrap**: fleet-loop session complete.
+
+Remaining blocked on Brad:
+- D2/D4: Stripe SA account required (Yoco waitlist, no ETA)
+- DNS cutover + Firebase App Hosting connect (docs/launch-checklist.md)
+- SPF/DKIM/DMARC DNS records (docs/email-dns-setup.md)
+- Domain transfer saoc.co.za to Inunu Net (R172.50 once-off)
+- Hosting decision (see docs/hosting-research-2026-06-20.md)
+
 ## [SAOC -> CODI] 2026-06-28 14:00 -- directive complete
 STATUS: done
 BOOT SIZE: 14320 bytes
