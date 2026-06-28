@@ -44,3 +44,5 @@ Research complete: `documents/hosting-research-2026-06-20.md`. Key findings: (1)
 - [ ] [dev 2026-06-18] Factory loop script needs error handling — Out of scope for this task _(priority: low, handoff: 20260618T075409-dev.json)_
 
 _Last compacted: 2026-06-29 by session. Dismissed: 100+ check_own_comms pulse + quota-monitor + qa-guard informational noise — all informational, no action required. Full history: git log on this file._
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260628165625.txt

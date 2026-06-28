@@ -1,0 +1,46 @@
+schema: athanor.contract/v1
+slug: llms-groq-cron
+goal: Replace Alembic screen-scraping with Sanity GROQ queries in refresh-llms script; add GitHub Actions nightly cron.
+created_at: '2026-06-28'
+autonomy: high
+
+assertions:
+  - id: A1
+    kind: shell
+    label: refresh-llms.ts exists
+    run: test -f scripts/refresh-llms.ts
+
+  - id: A2
+    kind: shell
+    label: Script contains GROQ query (_type ==)
+    run: grep -q "_type ==" scripts/refresh-llms.ts
+
+  - id: A3
+    kind: shell
+    label: Script does NOT contain Alembic localhost:7077
+    run: "! grep -q 'localhost:7077' scripts/refresh-llms.ts"
+
+  - id: A4
+    kind: shell
+    label: Script does NOT use REFRESH_BASE_URL
+    run: "! grep -q 'REFRESH_BASE_URL' scripts/refresh-llms.ts"
+
+  - id: A5
+    kind: shell
+    label: GitHub Actions workflow exists
+    run: test -f .github/workflows/refresh-llms.yml
+
+  - id: A6
+    kind: shell
+    label: Workflow has nightly cron schedule
+    run: grep -q "0 2 \* \* \*" .github/workflows/refresh-llms.yml
+
+  - id: A7
+    kind: shell
+    label: Workflow references SANITY_API_TOKEN
+    run: grep -q "SANITY_API_TOKEN" .github/workflows/refresh-llms.yml
+
+  - id: A8
+    kind: shell
+    label: TypeScript typecheck passes
+    run: pnpm exec tsc --noEmit

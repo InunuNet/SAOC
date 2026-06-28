@@ -8,26 +8,35 @@
 
 Both files follow the emerging `llms.txt` convention for making site content accessible to language models.
 
-## Running the refresh
+## Running the refresh locally
 
-> **Note:** Alembic blocks `localhost` hostnames by design. Run against the live production URL only.
-
-Requires:
-- Alembic proxy running on port 7077
-- Site live at `https://saoc.co.za` (post-DNS-cutover)
+Requires `NEXT_PUBLIC_SANITY_PROJECT_ID` set in `.env.local`. No running server needed — the script queries Sanity directly via GROQ.
 
 ```bash
-REFRESH_BASE_URL=https://saoc.co.za pnpm refresh-llms
+pnpm refresh-llms
 ```
 
-The script (`scripts/refresh-llms.ts`) crawls 7 routes through Alembic, extracts clean Markdown, and writes `public/llms-full.txt`. Progress and warnings go to stderr.
+The script (`scripts/refresh-llms.ts`) queries Sanity via GROQ, assembles clean Markdown from each content type, and writes `public/llms-full.txt`. Progress and warnings go to stderr.
 
-Until DNS cutover, `llms-full.txt` stays as the hand-authored version — do not run the script against localhost.
+## How CI works
 
-## Adding or removing pages
+A GitHub Actions workflow (`.github/workflows/refresh-llms.yml`) runs nightly at 2am UTC (4am SAST). It:
 
-Edit the `PAGES` array in `scripts/refresh-llms.ts`. Each entry is `{ path: string, title: string }`. Paths are relative to `BASE_URL`.
+1. Installs dependencies
+2. Runs `pnpm refresh-llms` with `NEXT_PUBLIC_SANITY_PROJECT_ID` and `SANITY_API_TOKEN` from repository secrets
+3. Commits any changes to `public/llms-full.txt` with the message `chore: refresh llms-full.txt [skip ci]`
+
+The `[skip ci]` suffix in the commit message prevents an infinite workflow loop.
+
+### Required GitHub secrets
+
+Add these in **Settings → Secrets and variables → Actions**:
+
+- `NEXT_PUBLIC_SANITY_PROJECT_ID` — your Sanity project ID
+- `SANITY_API_TOKEN` — a Sanity read token (optional for public datasets, required for private ones)
+
+The workflow can also be triggered manually via **Actions → Refresh llms-full.txt → Run workflow**.
 
 ## Future automation
 
-Nightly refresh via GitHub Actions cron, triggered on schedule or via Sanity webhook on content publish — not yet implemented.
+Sanity webhook on content publish can trigger the `workflow_dispatch` endpoint to refresh immediately after edits — not yet wired up.

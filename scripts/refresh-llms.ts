@@ -1,62 +1,82 @@
-/**
- * SAOC LLM Content Refresh Script
- *
- * Crawls each public page through the Alembic distilling proxy and assembles
- * the clean Markdown output into public/llms-full.txt.
- *
- * Run with: pnpm refresh-llms
- *
- * Optional env:
- *   REFRESH_BASE_URL — base URL of the running Next dev server (default: http://localhost:3001)
- *
- * Requires both the Next dev server and the Alembic proxy (http://localhost:7077) to be up.
- */
-
-import { execSync } from 'node:child_process';
+import { createClient } from '@sanity/client';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
+const client = createClient({
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET ?? 'production',
+  apiVersion: '2024-10-01',
+  useCdn: false,
+  token: process.env.SANITY_API_TOKEN,
+});
 
-interface Page {
-  path: string;
-  title: string;
-}
+const UNAVAILABLE = '_Content unavailable — Sanity not configured._';
 
-const PAGES: Page[] = [
-  { path: '/', title: 'Home' },
-  { path: '/about', title: 'About' },
-  { path: '/societies', title: 'Societies' },
-  { path: '/judging', title: 'Judging' },
-  { path: '/events', title: 'Events' },
-  { path: '/national-show', title: 'National Show' },
-  { path: '/contact', title: 'Contact' },
-];
-
-const BASE_URL = process.env.REFRESH_BASE_URL ?? 'http://localhost:3001';
-const ALEMBIC = 'http://localhost:7077';
-const OUTPUT_PATH = join(process.cwd(), 'public', 'llms-full.txt');
-
-// ---------------------------------------------------------------------------
-// Crawl helpers
-// ---------------------------------------------------------------------------
-
-function fetchPage(path: string): string {
-  const url = `${ALEMBIC}/${BASE_URL}${path}`;
+async function fetchSection<T>(label: string, query: string): Promise<T | null> {
+  process.stderr.write(`→ querying ${label}\n`);
   try {
-    return execSync(`curl -s "${url}"`, { encoding: 'utf8', timeout: 10000 });
-  } catch {
-    return '';
+    const result = await client.fetch<T>(query);
+    if (result === null || result === undefined) {
+      process.stderr.write(`  ⚠ warning: null result for ${label}\n`);
+      return null;
+    }
+    return result;
+  } catch (err) {
+    process.stderr.write(`  ⚠ error fetching ${label}: ${err}\n`);
+    return null;
   }
 }
 
-// ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
+interface AboutPage {
+  title: string | null;
+  pillars: string[] | null;
+  boardIntroText: string | null;
+}
 
-function main(): void {
+interface HomePage {
+  missionText: string | null;
+}
+
+interface Society {
+  name: string;
+  province: string | null;
+  region: string | null;
+  meets: string | null;
+  description: string | null;
+}
+
+interface JudgingPage {
+  intro: string | null;
+  howItWorks: Array<{ step?: string; title?: string; description?: string }> | null;
+  stats: unknown;
+}
+
+interface SocietyEvent {
+  title: string;
+  date: string;
+  kind: string | null;
+  description: string | null;
+  venue: string | null;
+}
+
+interface NationalShow {
+  title: string | null;
+  showDate: string | null;
+  location: string | null;
+}
+
+interface PastShow {
+  title: string | null;
+  year: number | null;
+  location: string | null;
+  awards: unknown;
+}
+
+interface ContactPage {
+  directContacts: Array<{ name: string; role: string | null; email: string | null }> | null;
+}
+
+async function main(): Promise<void> {
   const timestamp = new Date().toISOString();
 
   const header = [
@@ -66,15 +86,162 @@ function main(): void {
     `Last updated: ${timestamp}`,
   ].join('\n');
 
-  const sections: string[] = [];
+  const parts: string[] = [header];
 
-  for (const { path, title } of PAGES) {
-    process.stderr.write(`→ fetching ${path}\n`);
-    const body = fetchPage(path).trim();
-    if (!body) {
-      process.stderr.write(`  ⚠ warning: empty response for ${path}\n`);
+  // -- About SAOC --
+  const [aboutPage, homePage] = await Promise.all([
+    fetchSection<AboutPage>(
+      'aboutPage',
+      `*[_type == "aboutPage"][0]{ title, pillars, boardIntroText }`
+    ),
+    fetchSection<HomePage>(
+      'homePage',
+      `*[_type == "homePage"][0]{ missionText }`
+    ),
+  ]);
+
+  {
+    const lines: string[] = ['## About SAOC', ''];
+    if (!aboutPage && !homePage) {
+      lines.push(UNAVAILABLE);
+    } else {
+      if (homePage?.missionText) lines.push(homePage.missionText, '');
+      if (aboutPage?.pillars?.length) {
+        for (const pillar of aboutPage.pillars) {
+          lines.push(`- ${pillar}`);
+        }
+        lines.push('');
+      }
+      if (!homePage?.missionText && !aboutPage?.pillars?.length) {
+        lines.push(UNAVAILABLE);
+      }
     }
-    sections.push(`## ${title}\n\n${body}`);
+    parts.push(lines.join('\n'));
+  }
+
+  // -- Affiliated Societies --
+  const societies = await fetchSection<Society[]>(
+    'societies',
+    `*[_type == "society"] | order(name asc){ name, province, region, meets, description }`
+  );
+
+  {
+    const lines: string[] = ['## Affiliated Societies', ''];
+    if (!societies || societies.length === 0) {
+      lines.push(UNAVAILABLE);
+    } else {
+      for (const s of societies) {
+        const parts2: string[] = [];
+        if (s.province) parts2.push(`(${s.province})`);
+        if (s.meets) parts2.push(`meets: ${s.meets}`);
+        if (s.description) parts2.push(s.description);
+        lines.push(`- **${s.name}** ${parts2.join(' — ')}`);
+      }
+    }
+    parts.push(lines.join('\n'));
+  }
+
+  // -- Judging --
+  const judgingPage = await fetchSection<JudgingPage>(
+    'judgingPage',
+    `*[_type == "judgingPage"][0]{ intro, howItWorks, stats }`
+  );
+
+  {
+    const lines: string[] = ['## Judging', ''];
+    if (!judgingPage) {
+      lines.push(UNAVAILABLE);
+    } else {
+      if (judgingPage.intro) lines.push(judgingPage.intro, '');
+      if (judgingPage.howItWorks?.length) {
+        for (const step of judgingPage.howItWorks) {
+          const label = step.title ?? step.step ?? '';
+          const desc = step.description ?? '';
+          if (label && desc) lines.push(`${label}: ${desc}`);
+          else if (label) lines.push(label);
+          else if (desc) lines.push(desc);
+        }
+        lines.push('');
+      }
+      if (!judgingPage.intro && !judgingPage.howItWorks?.length) {
+        lines.push(UNAVAILABLE);
+      }
+    }
+    parts.push(lines.join('\n'));
+  }
+
+  // -- Events --
+  const events = await fetchSection<SocietyEvent[]>(
+    'events',
+    `*[_type == "societyEvent" && date >= now()] | order(date asc)[0..9]{ title, date, kind, description, venue }`
+  );
+
+  {
+    const lines: string[] = ['## Events', ''];
+    if (!events || events.length === 0) {
+      lines.push('No upcoming events scheduled.');
+    } else {
+      for (const e of events) {
+        const dateStr = e.date ? new Date(e.date).toISOString().slice(0, 10) : 'TBD';
+        const venue = e.venue ? ` — ${e.venue}` : '';
+        lines.push(`- ${dateStr}: ${e.title}${venue}`);
+      }
+    }
+    parts.push(lines.join('\n'));
+  }
+
+  // -- National Show --
+  const [upcomingShow, pastShows] = await Promise.all([
+    fetchSection<NationalShow>(
+      'nationalShow',
+      `*[_type == "nationalShow"][0]{ title, showDate, location }`
+    ),
+    fetchSection<PastShow[]>(
+      'pastShows',
+      `*[_type == "show" && status == "past"] | order(year desc)[0..4]{ title, year, location, awards }`
+    ),
+  ]);
+
+  {
+    const lines: string[] = ['## National Show', ''];
+    if (!upcomingShow && (!pastShows || pastShows.length === 0)) {
+      lines.push(UNAVAILABLE);
+    } else {
+      if (upcomingShow) {
+        const dateStr = upcomingShow.showDate
+          ? new Date(upcomingShow.showDate).toISOString().slice(0, 10)
+          : 'TBD';
+        lines.push(`**Upcoming:** ${upcomingShow.title ?? 'National Show'} — ${dateStr}${upcomingShow.location ? `, ${upcomingShow.location}` : ''}`, '');
+      }
+      if (pastShows?.length) {
+        lines.push('**Past Shows:**', '');
+        for (const s of pastShows) {
+          const loc = s.location ? ` — ${s.location}` : '';
+          lines.push(`- ${s.year ?? 'N/A'}: ${s.title ?? 'National Show'}${loc}`);
+        }
+      }
+    }
+    parts.push(lines.join('\n'));
+  }
+
+  // -- Contact --
+  const contactPage = await fetchSection<ContactPage>(
+    'contactPage',
+    `*[_type == "contactPage"][0]{ directContacts[]{ name, role, email } }`
+  );
+
+  {
+    const lines: string[] = ['## Contact', ''];
+    if (!contactPage?.directContacts?.length) {
+      lines.push(UNAVAILABLE);
+    } else {
+      for (const c of contactPage.directContacts) {
+        const role = c.role ? ` (${c.role})` : '';
+        const email = c.email ? `: ${c.email}` : '';
+        lines.push(`- **${c.name}**${role}${email}`);
+      }
+    }
+    parts.push(lines.join('\n'));
   }
 
   const footer = [
@@ -84,9 +251,15 @@ function main(): void {
     'Wild orchid conservation and identification → WOSA (Wild Orchids of Southern Africa): wosa.org.za',
   ].join('\n');
 
-  const content = [header, ...sections, footer].join('\n\n');
-  writeFileSync(OUTPUT_PATH, content, 'utf8');
-  process.stderr.write(`✓ written ${OUTPUT_PATH}\n`);
+  parts.push(footer);
+
+  const content = parts.join('\n\n');
+  const outputPath = join(process.cwd(), 'public', 'llms-full.txt');
+  writeFileSync(outputPath, content, 'utf8');
+  process.stderr.write(`✓ written ${outputPath}\n`);
 }
 
-main();
+main().catch((err) => {
+  process.stderr.write(`fatal: ${err}\n`);
+  process.exit(1);
+});
