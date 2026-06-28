@@ -40,15 +40,15 @@ export function YearbookStrip() {
           <div className="flex flex-wrap gap-4">
             <Link
               href="/yearbook/subscribe"
-              className="font-mono text-[11px] uppercase tracking-[0.18em] bg-accent text-ivory px-6 py-3 hover:bg-accent-soft transition-colors duration-150"
+              className="font-sans text-[14px] font-medium bg-accent text-ivory px-6 py-3 hover:bg-accent-soft transition-colors duration-150"
             >
               Subscribe
             </Link>
             <Link
               href="/yearbook"
-              className="font-mono text-[11px] uppercase tracking-[0.18em] border border-primary/30 text-primary px-6 py-3 hover:bg-primary/5 transition-colors duration-150"
+              className="font-sans text-[14px] font-medium border border-primary/30 text-primary px-6 py-3 hover:bg-primary/5 transition-colors duration-150"
             >
-              Past editions
+              Past Editions
             </Link>
           </div>
         </div>

@@ -31,15 +31,15 @@ export default function NotFound() {
         <div className="flex flex-wrap gap-4 justify-center">
           <Link
             href="/"
-            className="font-mono text-[11px] uppercase tracking-[0.18em] bg-accent px-6 py-3 text-ivory transition-colors duration-150 hover:bg-accent-soft"
+            className="font-sans text-[14px] font-medium bg-accent px-6 py-3 text-ivory transition-colors duration-150 hover:bg-accent-soft"
           >
-            Go home
+            Go Home
           </Link>
           <Link
             href="/societies"
-            className="font-mono text-[11px] uppercase tracking-[0.18em] border border-ivory/40 px-6 py-3 text-ivory transition-colors duration-150 hover:bg-ivory/10"
+            className="font-sans text-[14px] font-medium border border-ivory/40 px-6 py-3 text-ivory transition-colors duration-150 hover:bg-ivory/10"
           >
-            Find a society
+            Find a Society
           </Link>
         </div>
       </div>

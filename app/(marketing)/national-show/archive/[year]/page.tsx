@@ -188,15 +188,15 @@ export default async function ShowYearPage({
           <div className="mt-6 flex flex-wrap justify-center gap-4">
             <Link
               href="/national-show"
-              className="font-mono text-[11px] uppercase tracking-[0.18em] bg-primary px-6 py-3 text-ivory transition-colors duration-150 hover:bg-primary-800"
+              className="font-sans text-[14px] font-medium bg-primary px-6 py-3 text-ivory transition-colors duration-150 hover:bg-primary-800"
             >
               View 19th Show
             </Link>
             <Link
               href="/national-show/archive"
-              className="font-mono text-[11px] uppercase tracking-[0.18em] border border-ink/30 px-6 py-3 text-ink transition-colors duration-150 hover:bg-ink/5"
+              className="font-sans text-[14px] font-medium border border-ink/30 px-6 py-3 text-ink transition-colors duration-150 hover:bg-ink/5"
             >
-              Full archive
+              Full Archive
             </Link>
           </div>
         </div>
