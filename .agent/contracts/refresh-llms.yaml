@@ -1,0 +1,41 @@
+schema: athanor.contract/v1
+slug: refresh-llms
+goal: Auto-regenerate public/llms-full.txt by crawling each site page through the Alembic proxy and concatenating the Markdown output.
+created_at: '2026-06-28'
+autonomy: high
+features:
+  - id: F1
+    name: scripts/refresh-llms.ts crawls each page via Alembic and rebuilds public/llms-full.txt
+    status: pending
+goldens:
+  - .agent/goldens/refresh-llms/script-structure.md
+  - .agent/goldens/refresh-llms/package-json-patch.md
+assertions:
+  phase: 4
+  checks:
+    # ---- Static checks (no services required) ----
+    - id: A1
+      description: scripts/refresh-llms.ts exists
+      command: test -f scripts/refresh-llms.ts
+    - id: A2
+      description: package.json has a refresh-llms script entry
+      command: grep -q '"refresh-llms"' package.json
+    # ---- Runtime checks (requires_services: true) ----
+    # A3-A6 require the Next dev server on :3001 AND the Alembic proxy on :7077.
+    # Run manually with both services up; skip in the offline gate.
+    - id: A3
+      # requires_services: true (dev server :3001 + Alembic :7077)
+      description: script exits 0 when run with services available
+      command: REFRESH_BASE_URL=http://localhost:3001 pnpm tsx scripts/refresh-llms.ts
+    - id: A4
+      # requires_services: true (run A3 first to regenerate the file)
+      description: public/llms-full.txt has substantial content (>2000 chars)
+      command: test "$(wc -c < public/llms-full.txt)" -gt 2000
+    - id: A5
+      # requires_services: true (run A3 first to regenerate the file)
+      description: llms-full.txt names the organisation
+      command: grep -q "South African Orchid Council" public/llms-full.txt
+    - id: A6
+      # requires_services: true (run A3 first to regenerate the file)
+      description: llms-full.txt carries the WOSA scope boundary
+      command: grep -q "WOSA" public/llms-full.txt

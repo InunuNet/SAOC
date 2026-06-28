@@ -10,7 +10,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "type-check": "tsc --noEmit",
-    "seed": "tsx scripts/seed-sanity.ts"
+    "seed": "tsx scripts/seed-sanity.ts",
+    "refresh-llms": "tsx scripts/refresh-llms.ts"
   },
   "dependencies": {
     "@portabletext/react": "^6.2.0",
@@ -41,6 +42,7 @@
     "eslint-config-prettier": "^9.1.2",
     "prettier": "^3.8.3",
     "tailwindcss": "^4.1.8",
+    "tsx": "^4.22.4",
     "typescript": "^5.7.0"
   }
 }

@@ -19,3 +19,7 @@
 - (2026-06-23) `pnpm build` must run BEFORE taking dev-server screenshots — a stale `.next` from a prior production build breaks the dev server. When `rm -rf` is blocked, clear it with `mv .next /tmp/...`.
 - (2026-06-23) Tailwind v4 `@theme`: use `--font-family-serif: var(--font-serif)` NOT `--font-serif: var(--font-serif)` — the latter creates a circular CSS custom-property reference that silently fails.
 - (2026-06-23) Design-verify pass (commit 35c9cbb): globals.css got the full design-token set (semantic color aliases, type scale, spacing tokens, semantic classes), header abbreviated to "SA Orchid Council" / "Making a difference since 1968", hero display-xl/lg clamp scale applied, and `radius-0` (no rounded-lg) enforced across 8 card components per spec.
+
+## Alembic & Automation
+
+- (2026-06-28) Alembic blocks `localhost`/loopback hostnames by design — `scripts/refresh-llms.ts` (crawls routes → `public/llms-full.txt`) only works against the live external URL (`https://saoc.co.za`), so it can't be tested against the dev server NOR run in GitHub Actions CI. Production llms-full automation must bypass Alembic: nightly GH Actions cron querying the Sanity GROQ API directly. `tsx` added to devDeps; run via `pnpm refresh-llms`. Docs: `docs/llm-optimization.md`.
