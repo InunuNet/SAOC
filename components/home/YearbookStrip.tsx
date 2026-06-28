@@ -37,13 +37,13 @@ export function YearbookStrip() {
           {/* CTAs */}
           <div className="flex flex-wrap gap-4">
             <Link
-              href="/yearbook/subscribe"
+              href="/contact"
               className="font-sans text-[14px] font-medium bg-accent text-ivory px-6 py-3 hover:bg-accent-soft transition-colors duration-150"
             >
               Subscribe
             </Link>
             <Link
-              href="/yearbook"
+              href="/contact"
               className="font-sans text-[14px] font-medium border border-primary/30 text-primary px-6 py-3 hover:bg-primary/5 transition-colors duration-150"
             >
               Past Editions
