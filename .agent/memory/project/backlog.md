@@ -18,6 +18,7 @@ _Last compacted: 2026-06-18 by session. Full history: git log on this file._
 - [ ] **Domain transfer** — saoc.co.za to Inunu Net registrar. Brad to initiate. R172.50 once-off.
 - [ ] **DNS cutover** — point saoc.co.za to Firebase App Hosting. Requires domain transfer complete + SPF/DKIM/DMARC in place.
 - [ ] **Live Yoco test transactions + cross-browser dry-run** — Phase 1 launch gate. Run after D2/D4 complete.
+- [ ] **Auto-refresh llms.txt + llms-full.txt via Alembic** — After DNS cutover: SessionEnd hook (or cron) curls each public page through Alembic (`http://localhost:7077/https://saoc.co.za/<page>`), concatenates Markdown output → regenerates `public/llms-full.txt`, commits. `public/llms.txt` (index + descriptions) stays hand-authored. Scope: script at `scripts/refresh-llms.ts` + hook/cron entry. Depends on live domain.
 
 ## Blocked (awaiting Brad)
 - **Stripe SA account**: Brad to create at stripe.com — Yoco online payments confirmed on waitlist with no ETA (verified 2026-06-18). Stripe is the confirmed gateway. Supply `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` + `STRIPE_SECRET_KEY` to unblock D2/D4.
@@ -42,9 +43,3 @@ Research complete: `documents/hosting-research-2026-06-20.md`. Key findings: (1)
 - [ ] [dev 2026-06-18] Factory loop script needs error handling — Out of scope for this task _(priority: low, handoff: 20260618T075409-dev.json)_
 
 _Last compacted: 2026-06-29 by session. Dismissed: 100+ check_own_comms pulse + quota-monitor + qa-guard informational noise — all informational, no action required. Full history: git log on this file._
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-06-28-openrouter-routing-rules.md
-
-- [ ] SAOC (Misc): [qa-guard] Checking: Gemini Harness → InunuNet/Athanor
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260628151429.txt
