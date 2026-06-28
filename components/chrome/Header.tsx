@@ -148,7 +148,7 @@ export function Header() {
 
             <Link
               href="/contact"
-              className="hidden sm:inline-block rounded-sm bg-primary-800 px-4 py-2 font-sans text-[14px] font-medium text-ivory hover:bg-primary transition-colors duration-150"
+              className="hidden sm:inline-block rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory hover:bg-primary-800 transition-colors duration-150"
             >
               Contact
             </Link>

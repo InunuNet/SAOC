@@ -62,7 +62,7 @@ export default async function AboutPage() {
         image="/images/orchid-dark.jpg"
         eyebrow="Our heritage"
         heading="A federated body of growers, since 1968."
-        lede="Coordinating orchid societies across South Africa — growing, showing, hybridising, judging, and community."
+        lede="Four societies met in Bloemfontein on the 29th of July, 1968 to form a national council. Fifty-eight years later, that council coordinates twenty-one societies from the Cape to the Limpopo."
       />
 
       <div className="mx-auto max-w-[1280px] px-8 py-16 space-y-16">
