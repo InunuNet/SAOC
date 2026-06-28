@@ -48,7 +48,7 @@ const NAV_CARDS: NavCardData[] = [
     alt: 'Dark orchid',
   },
   {
-    href: '/show',
+    href: '/national-show',
     badge: 'National Show',
     titleBefore: 'The 19th ',
     titleEm: 'National Orchid Show',
@@ -65,9 +65,7 @@ export function NavCards() {
     <section className="py-24 px-8 md:px-16 bg-bone">
       <div className="max-w-[1280px] mx-auto">
         <div className="mb-12">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-3">
-            Find your way in
-          </p>
+          <div className="mb-3"><span className="eyebrow">Find your way in</span></div>
           <h2 className="font-serif text-[clamp(34px,4.4vw,54px)] font-medium leading-[1.08] tracking-[-0.01em] text-primary">
             Four ways into <em>SAOC</em>
           </h2>

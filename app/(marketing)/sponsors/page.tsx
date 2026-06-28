@@ -41,9 +41,9 @@ export default async function SponsorsPage() {
             </p>
             <Link
               href="/contact"
-              className="mt-6 inline-block rounded-full border border-ink bg-ink px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory"
+              className="mt-6 inline-block bg-ink px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-ink/85"
             >
-              Get in touch
+              Get in Touch
             </Link>
           </section>
         )}

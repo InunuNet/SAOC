@@ -13,9 +13,7 @@ export function YearbookStrip() {
       <div className="max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
         {/* Left: content */}
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-5">
-            In print
-          </p>
+          <div className="mb-5"><span className="eyebrow">In print</span></div>
           <h2 className="font-serif text-[clamp(34px,4.4vw,54px)] font-medium leading-[1.08] tracking-[-0.01em] text-primary mb-6">
             <em className="italic">Orchids South Africa</em> · 2025 yearbook
           </h2>
