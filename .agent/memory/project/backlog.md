@@ -67,3 +67,7 @@ _Last compacted: 2026-06-27 by session. Dismissed: 80+ check_own_comms pulse + q
 - [ ] SAOC (Misc): New Event: check_own_comms-20260627171527.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260627172829.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260627223800.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260628103839.txt
