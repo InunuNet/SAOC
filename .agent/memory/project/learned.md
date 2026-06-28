@@ -23,3 +23,4 @@
 ## Alembic & Automation
 
 - (2026-06-28) Alembic blocks `localhost`/loopback hostnames by design — `scripts/refresh-llms.ts` (crawls routes → `public/llms-full.txt`) only works against the live external URL (`https://saoc.co.za`), so it can't be tested against the dev server NOR run in GitHub Actions CI. Production llms-full automation must bypass Alembic: nightly GH Actions cron querying the Sanity GROQ API directly. `tsx` added to devDeps; run via `pnpm refresh-llms`. Docs: `docs/llm-optimization.md`.
+- (2026-06-28) GROQ scripts must use standalone `@sanity/client` (not `next-sanity`, which requires Next.js context). `createClient()` from `@sanity/client` works in Node scripts, CI, and any non-Next environment — this is what `scripts/refresh-llms.ts` now uses for the nightly GitHub Actions cron.
