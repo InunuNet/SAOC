@@ -27,9 +27,9 @@ function LoginPrompt() {
   return (
     <div className="py-16 text-center">
       <h1 className="text-2xl font-semibold mb-3">Members only</h1>
-      <p className="text-gray-600 mb-6">Sign in to submit an event for council review.</p>
-      <a href="/login" className="underline text-gray-900 text-sm">
-        Sign in
+      <p className="text-gray-600 mb-6">Event submission is available to SAOC members.</p>
+      <a href="/contact" className="underline text-gray-900 text-sm">
+        Contact us about membership
       </a>
     </div>
   );
