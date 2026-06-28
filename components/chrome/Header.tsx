@@ -140,13 +140,6 @@ export function Header() {
             </button>
 
             <Link
-              href="/signin"
-              className="hidden min-[1180px]:inline-block font-sans text-[14px] text-ink hover:text-primary transition-colors duration-150"
-            >
-              Sign in
-            </Link>
-
-            <Link
               href="/contact"
               className="hidden sm:inline-block rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory hover:bg-primary-800 transition-colors duration-150"
             >
