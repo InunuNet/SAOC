@@ -1,0 +1,136 @@
+schema: athanor.contract/v1
+slug: dex-fanout-guardrails-F2-F5
+goal: "Add four dispatch guardrails (idempotency TTL, per-job token/turn cap, cross-workspace concurrency limit, startup dep stop) that prevent the 30M-token DEX fan-out runaway."
+created_at: "2026-06-28"
+autonomy: high
+mission: dex-fanout-guardrails
+phase_count: 4
+
+assertions:
+  # ---------- Phase 1: inputs / preconditions ----------
+  - id: P1A1
+    description: "F1 audit findings exist (source of truth)"
+    verify:
+      kind: shell
+      cmd: 'test -f .agent/memory/project/data/dex-fanout-audit-F1.md'
+  - id: P1A2
+    description: "Target source files all exist"
+    verify:
+      kind: shell
+      cmd: 'test -f execution/pulse_dispatcher.py && test -f execution/pulse_ticket.py && test -f execution/pulse_mission_loop.sh && test -f execution/pulse_runner.sh'
+  - id: P1A3
+    description: "All four golden spec files exist"
+    verify:
+      kind: shell
+      cmd: 'test -f .agent/memory/project/data/golden-F2-idempotency.md && test -f .agent/memory/project/data/golden-F3-token-cap.md && test -f .agent/memory/project/data/golden-F4-concurrency.md && test -f .agent/memory/project/data/golden-F5-dep-check.md'
+  - id: P1A4
+    description: "Dispatcher module imports cleanly"
+    verify:
+      kind: shell
+      cmd: 'python3 -c "import sys; sys.path.insert(0,''execution''); import pulse_dispatcher"'
+
+  # ---------- Phase 2: static / process (code changes present) ----------
+  - id: P2A1
+    description: "F2 — mission_loop dedupe key drops the unstable CHECKPOINT"
+    verify:
+      kind: shell
+      cmd: 'grep -q "mission-resume:" execution/pulse_mission_loop.sh && ! grep -q "DEDUPE_KEY=.*CHECKPOINT" execution/pulse_mission_loop.sh'
+  - id: P2A2
+    description: "F2 — dispatcher reads dedupe TTL env var"
+    verify:
+      kind: shell
+      cmd: 'grep -q "ATHANOR_PULSE_DEDUPE_TTL_SECONDS" execution/pulse_dispatcher.py'
+  - id: P2A3
+    description: "F2 — dispatcher implements age/staleness-based dedupe"
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "dedupe_active|st_mtime" execution/pulse_dispatcher.py'
+  - id: P2A4
+    description: "F2 — ticket key derivation is canonical sha256"
+    verify:
+      kind: shell
+      cmd: 'grep -q "sha256" execution/pulse_ticket.py'
+  - id: P2A5
+    description: "F3 — MAX_TOKENS_PER_JOB ceiling present in dispatcher"
+    verify:
+      kind: shell
+      cmd: 'grep -q "MAX_TOKENS_PER_JOB" execution/pulse_dispatcher.py'
+  - id: P2A6
+    description: "F3 — MAX_TURNS_PER_JOB ceiling present in dispatcher"
+    verify:
+      kind: shell
+      cmd: 'grep -q "MAX_TURNS_PER_JOB" execution/pulse_dispatcher.py'
+  - id: P2A7
+    description: "F3 — provider command injects --max-tokens flag"
+    verify:
+      kind: shell
+      cmd: 'grep -q -- "--max-tokens" execution/pulse_dispatcher.py'
+  - id: P2A8
+    description: "F3 — abort path + ABORTED status (no requeue)"
+    verify:
+      kind: shell
+      cmd: 'grep -Eq "token_cap_abort_reason|aborted" execution/pulse_dispatcher.py'
+  - id: P2A9
+    description: "F4 — global lock dir under ~/.athanor/locks"
+    verify:
+      kind: shell
+      cmd: 'grep -q ".athanor" execution/pulse_dispatcher.py && grep -q "locks" execution/pulse_dispatcher.py'
+  - id: P2A10
+    description: "F4 — MAX_CONCURRENT_JOBS slot cap"
+    verify:
+      kind: shell
+      cmd: 'grep -q "MAX_CONCURRENT_JOBS" execution/pulse_dispatcher.py'
+  - id: P2A11
+    description: "F4 — flock used for cross-process slot pool"
+    verify:
+      kind: shell
+      cmd: 'grep -q "flock" execution/pulse_dispatcher.py'
+  - id: P2A12
+    description: "F5 — runner checks deps and the no-TTY guard"
+    verify:
+      kind: shell
+      cmd: 'grep -q "! -t 0" execution/pulse_runner.sh && grep -qi "missing required dep" execution/pulse_runner.sh'
+
+  # ---------- Phase 3: behavioral (golden checks) ----------
+  - id: P3A1
+    description: "F2 — dedupe blocks re-dispatch within 24h, allows after staleness"
+    verify:
+      kind: shell
+      cmd: 'python3 execution/checks/verify_f2_dedupe_ttl.py'
+  - id: P3A2
+    description: "F3 — MAX_TOKENS_PER_JOB=1 aborts; default allows"
+    verify:
+      kind: shell
+      cmd: 'python3 execution/checks/verify_f3_token_cap.py'
+  - id: P3A3
+    description: "F4 — concurrency cap blocks the (N+1)th job, frees on release"
+    verify:
+      kind: shell
+      cmd: 'python3 execution/checks/verify_f4_concurrency.py'
+  - id: P3A4
+    description: "F5 — missing dep + no TTY exits 1 and names the dep"
+    verify:
+      kind: shell
+      cmd: 'bash execution/checks/verify_f5_dep_check.sh'
+
+  # ---------- Phase 4: acceptance ----------
+  - id: P4A1
+    description: "Feature docs written"
+    verify:
+      kind: shell
+      cmd: 'test -f docs/dex-fanout-guardrails.md'
+  - id: P4A2
+    description: "learned.md records the guardrail work"
+    verify:
+      kind: shell
+      cmd: 'grep -qi "dex-fanout" .agent/memory/project/learned.md'
+
+phases:
+  - id: 1
+    assertions: [P1A1, P1A2, P1A3, P1A4]
+  - id: 2
+    assertions: [P2A1, P2A2, P2A3, P2A4, P2A5, P2A6, P2A7, P2A8, P2A9, P2A10, P2A11, P2A12]
+  - id: 3
+    assertions: [P3A1, P3A2, P3A3, P3A4]
+  - id: 4
+    assertions: [P3A1, P3A2, P3A3, P3A4, P4A1, P4A2]

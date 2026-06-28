@@ -1,0 +1,57 @@
+schema: athanor.contract/v1
+slug: openrouter-routing-rules
+goal: Add @dev-fast and @qa-fast template agents routed to OpenRouter free-tier models, mirroring standard @dev/@qa capabilities for ghost/test/non-critical work.
+created_at: '2026-06-28'
+autonomy: high
+features:
+  - id: F3
+    name: Template agents — create .agent/agents/dev-fast.md and qa-fast.md with OpenRouter routing
+    status: pending
+goldens:
+  - .agent/memory/project/data/golden-dev-fast.md
+  - .agent/memory/project/data/golden-qa-fast.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: dev-fast agent file exists
+      command: test -f .agent/agents/dev-fast.md
+    - id: A2
+      description: qa-fast agent file exists
+      command: test -f .agent/agents/qa-fast.md
+    - id: A3
+      description: dev-fast default model is qwen/qwen3-coder:free
+      command: grep -q "qwen/qwen3-coder:free" .agent/agents/dev-fast.md
+    - id: A4
+      description: qa-fast default model is openai/gpt-oss-120b:free
+      command: grep -q "openai/gpt-oss-120b:free" .agent/agents/qa-fast.md
+    - id: A5
+      description: dev-fast documents subprocess routing via ANTHROPIC_BASE_URL
+      command: grep -q "ANTHROPIC_BASE_URL" .agent/agents/dev-fast.md
+    - id: A6
+      description: qa-fast documents subprocess routing via ANTHROPIC_BASE_URL
+      command: grep -q "ANTHROPIC_BASE_URL" .agent/agents/qa-fast.md
+    - id: A7
+      description: dev-fast self-identifies as the @dev-fast variant
+      command: grep -q "@dev-fast" .agent/agents/dev-fast.md
+    - id: A8
+      description: qa-fast self-identifies as the @qa-fast variant
+      command: grep -q "@qa-fast" .agent/agents/qa-fast.md
+    - id: A9
+      description: dev-fast documents in-session Agent tool model override
+      command: grep -q "model='qwen/qwen3-coder:free'" .agent/agents/dev-fast.md
+    - id: A10
+      description: qa-fast documents in-session Agent tool model override
+      command: grep -q "model='openai/gpt-oss-120b:free'" .agent/agents/qa-fast.md
+    - id: A11
+      description: dev-fast injects OPENROUTER_API_KEY for subprocess use
+      command: grep -q "OPENROUTER_API_KEY" .agent/agents/dev-fast.md
+    - id: A12
+      description: qa-fast injects OPENROUTER_API_KEY for subprocess use
+      command: grep -q "OPENROUTER_API_KEY" .agent/agents/qa-fast.md
+    - id: A13
+      description: qa-fast notes its distinct vendor for cross-model QA
+      command: grep -qi "cross-model" .agent/agents/qa-fast.md
+    - id: A14
+      description: dev-fast retains code-implementation responsibility
+      command: grep -qi "code implementation" .agent/agents/dev-fast.md

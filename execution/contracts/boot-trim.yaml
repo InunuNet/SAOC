@@ -1,0 +1,35 @@
+schema: athanor.contract/v1
+slug: boot-trim
+goal: Trim full_boot.sh boot output to cut session-start context from ~31% to under 15% of the 200K window.
+created_at: '2026-06-28'
+autonomy: high
+features:
+  - id: F1
+    name: Remove redundant boot sections and cap unbounded file dumps in execution/hooks/full_boot.sh
+    status: pending
+goldens:
+  - .agent/memory/project/data/golden-boot-trim-spec.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Workflow Reminder section removed (duplicated every turn by harness_heartbeat.sh)
+      command: '! grep -q "WORKFLOW REMINDER" execution/hooks/full_boot.sh'
+    - id: A2
+      description: GitHub Auth section removed (not boot-critical)
+      command: '! grep -q -- "--- GITHUB AUTH ---" execution/hooks/full_boot.sh'
+    - id: A3
+      description: Git Remotes section removed (remotes do not change session-to-session)
+      command: '! grep -q -- "--- GIT REMOTES ---" execution/hooks/full_boot.sh'
+    - id: A4
+      description: Pulse Heartbeat section removed (not boot-critical, fails silently)
+      command: '! grep -q -- "--- PULSE HEARTBEAT ---" execution/hooks/full_boot.sh'
+    - id: A5
+      description: rules.md capped with head -50
+      command: grep -q "head -50 .agent/memory/project/rules.md" execution/hooks/full_boot.sh
+    - id: A6
+      description: goals.md capped with head -25
+      command: grep -q "head -25 .agent/memory/project/goals.md" execution/hooks/full_boot.sh
+    - id: A7
+      description: learned reduced to tail -10 and no tail -20 remains
+      command: grep -q "tail -10 .agent/memory/project/learned.md" execution/hooks/full_boot.sh && ! grep -q "tail -20" execution/hooks/full_boot.sh

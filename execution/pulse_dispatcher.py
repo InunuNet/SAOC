@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
 import shlex
@@ -134,6 +135,48 @@ def acquire_lease(path: Path, ttl_seconds: int) -> Lease | None:
     return Lease(path=path, held=True)
 
 
+# --- F4: Cross-workspace concurrency limiter ---
+
+def locks_dir() -> Path:
+    override = os.environ.get("ATHANOR_LOCKS_DIR")
+    base = Path(override).expanduser() if override else (Path.home() / ".athanor" / "locks")
+    base.mkdir(parents=True, exist_ok=True)
+    return base
+
+
+@dataclass
+class ConcurrencySlot:
+    fd: int
+    path: Path
+
+    def release(self) -> None:
+        try:
+            fcntl.flock(self.fd, fcntl.LOCK_UN)
+            os.close(self.fd)
+        except OSError:
+            pass
+
+
+def max_concurrent_jobs() -> int:
+    return env_int("ATHANOR_MAX_CONCURRENT_JOBS", 3)
+
+
+def acquire_concurrency_slot(max_slots: int, base: "Path | None" = None) -> "ConcurrencySlot | None":
+    base = base or locks_dir()
+    for i in range(max(1, max_slots)):
+        slot = base / f"slot-{i}.lock"
+        fd = os.open(str(slot), os.O_WRONLY | os.O_CREAT, 0o644)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            os.close(fd)
+            continue
+        return ConcurrencySlot(fd=fd, path=slot)
+    return None
+
+# --- end F4 ------------------------------------------------------------------
+
+
 def validate_ticket(ticket: dict[str, Any]) -> str | None:
     required = (
         "schema",
@@ -200,22 +243,53 @@ def dedupe_marker(paths: Paths, dedupe_key: str) -> Path:
     return paths.dedupe / f"{stable_name(dedupe_key)}.json"
 
 
+# --- F2: TTL-aware dedupe ---
+
+def dedupe_ttl_seconds() -> int:
+    return env_int("ATHANOR_PULSE_DEDUPE_TTL_SECONDS", 86400)  # 24h default
+
+
+def dedupe_active(paths: Paths, dedupe_key: str, ttl_seconds: int) -> bool:
+    """True iff a dedupe marker exists AND its age < ttl_seconds."""
+    marker = dedupe_marker(paths, dedupe_key)
+    try:
+        age = time.time() - marker.stat().st_mtime
+    except OSError:
+        return False
+    return age < ttl_seconds
+
+
 def reserve_dedupe(paths: Paths, ticket: dict[str, Any]) -> bool:
-    marker = dedupe_marker(paths, str(ticket["dedupe_key"]))
+    key = str(ticket["dedupe_key"])
+    marker = dedupe_marker(paths, key)
     marker.parent.mkdir(parents=True, exist_ok=True)
+    ttl = dedupe_ttl_seconds()
     payload = {
-        "dedupe_key": ticket["dedupe_key"],
+        "dedupe_key": key,
         "ticket_id": ticket["id"],
         "reserved_at": utc_now(),
     }
     try:
         fd = os.open(str(marker), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
     except FileExistsError:
-        return False
+        try:
+            age = time.time() - marker.stat().st_mtime
+        except OSError:
+            age = 0
+        if age < ttl:
+            return False  # active marker — skip
+        # stale → refresh and allow re-dispatch
+        with open(marker, "w", encoding="utf-8") as fh:
+            json.dump(payload, fh, indent=2, sort_keys=True)
+            fh.write("\n")
+        os.utime(marker, None)
+        return True
     with os.fdopen(fd, "w", encoding="utf-8") as fh:
         json.dump(payload, fh, indent=2, sort_keys=True)
         fh.write("\n")
     return True
+
+# --- end F2 ------------------------------------------------------------------
 
 
 def budget_state_path(paths: Paths) -> Path:
@@ -349,12 +423,40 @@ def load_manifest(provider_id: str, root: Path) -> dict:
         return {}
 
 
-def build_provider_cmd(provider: str, prompt: str, max_turns: int, root: Path) -> list[str]:
+# --- F3: Per-job token budget + max-turn cap ---
+
+def max_tokens_per_job() -> int:
+    return env_int("MAX_TOKENS_PER_JOB", 500000)
+
+
+def max_turns_per_job() -> int:
+    return env_int("MAX_TURNS_PER_JOB", 20)
+
+
+def min_job_tokens() -> int:
+    return env_int("ATHANOR_PULSE_MIN_JOB_TOKENS", 1000)
+
+
+def token_cap_abort_reason(ticket: dict[str, Any]) -> "str | None":
+    """Return an abort reason if the per-job token ceiling makes the job non-viable, else None."""
+    cap = max_tokens_per_job()
+    if cap < min_job_tokens():
+        return f"per-job token ceiling {cap} below minimum viable {min_job_tokens()}"
+    return None
+
+# --- end F3 ------------------------------------------------------------------
+
+
+def build_provider_cmd(provider: str, prompt: str, max_turns: int, max_tokens: int, root: Path) -> list[str]:
     manifest = load_manifest(provider, root)
+    eff_turns = min(int(max_turns or 1), max_turns_per_job())
+    eff_tokens = min(int(max_tokens or max_tokens_per_job()), max_tokens_per_job())
     if manifest.get("headless_command") and isinstance(manifest["headless_command"], list):
         cmd = [part.format(prompt=prompt) for part in manifest["headless_command"]]
-        if manifest.get("supports_max_turns") and max_turns:
-            cmd += ["--max-turns", str(max_turns)]
+        if manifest.get("supports_max_turns") and eff_turns:
+            cmd += ["--max-turns", str(eff_turns)]
+        if manifest.get("supports_max_tokens") and eff_tokens:
+            cmd += ["--max-tokens", str(eff_tokens)]
         return cmd
     return [provider, prompt]
 
@@ -455,7 +557,7 @@ def provider_command(ticket: dict[str, Any], paths: Paths) -> tuple[list[str] | 
             return [prompt if part == "{prompt}" else part for part in parts], None
         return parts + [prompt], None
 
-    cmd = build_provider_cmd(provider, prompt, max_turns, paths.root)
+    cmd = build_provider_cmd(provider, prompt, max_turns, int(ticket.get("max_tokens") or 0), paths.root)
     return cmd, None
 
 
@@ -474,6 +576,8 @@ def launch_provider(ticket: dict[str, Any], cmd: list[str]) -> tuple[bool, str]:
     env = os.environ.copy()
     env["ATHANOR_PULSE_TICKET_ID"] = str(ticket["id"])
     env["ATHANOR_PULSE_DEDUPE_KEY"] = str(ticket["dedupe_key"])
+    env["ATHANOR_MAX_TOKENS_PER_JOB"] = str(max_tokens_per_job())
+    env["ATHANOR_MAX_TURNS_PER_JOB"] = str(max_turns_per_job())
     try:
         result = subprocess.run(cmd, cwd=str(ticket["project_path"]), env=env, timeout=timeout, check=False)
     except subprocess.TimeoutExpired:
@@ -545,9 +649,9 @@ def dispatch_ticket(paths: Paths, ticket_path: Path, max_launches: int, launches
     if launches >= max_launches:
         return launches, False
 
-    if dedupe_marker(paths, str(ticket["dedupe_key"])).exists():
-        archive_ticket(paths, ticket_path, ticket, "duplicate", "dedupe_key already dispatched")
-        print(f"duplicate {ticket['id']}: dedupe_key already dispatched")
+    if dedupe_active(paths, str(ticket["dedupe_key"]), dedupe_ttl_seconds()):
+        archive_ticket(paths, ticket_path, ticket, "duplicate", "dedupe_key active within TTL")
+        print(f"duplicate {ticket['id']}: dedupe_key active within TTL")
         return launches, True
 
     budget_reason = budget_block_reason(paths, ticket)
@@ -568,11 +672,25 @@ def dispatch_ticket(paths: Paths, ticket_path: Path, max_launches: int, launches
         print(f"blocked {ticket['id']}: project single-flight lease held")
         return launches, False
 
+    slot = None
     try:
+        # F4: acquire cross-workspace concurrency slot
+        slot = acquire_concurrency_slot(max_concurrent_jobs())
+        if slot is None:
+            print(f"blocked {ticket['id']}: concurrency cap reached ({max_concurrent_jobs()})")
+            return launches, False
+
         cmd, ready_reason = provider_ready(ticket, paths)
         if ready_reason:
             print(f"blocked {ticket['id']}: {ready_reason}")
             return launches, False
+
+        # F3: abort if per-job token ceiling makes job non-viable
+        abort_reason = token_cap_abort_reason(ticket)
+        if abort_reason:
+            archive_ticket(paths, ticket_path, ticket, "aborted", abort_reason)
+            print(f"aborted {ticket['id']}: {abort_reason}")
+            return launches, True
 
         if not reserve_dedupe(paths, ticket):
             archive_ticket(paths, ticket_path, ticket, "duplicate", "dedupe_key already dispatched")
@@ -616,6 +734,8 @@ def dispatch_ticket(paths: Paths, ticket_path: Path, max_launches: int, launches
         print(f"launched {ticket['id']}: {ticket['provider']}")
         return launches + 1, True
     finally:
+        if slot is not None:
+            slot.release()
         project_lease.release()
         fleet_lease.release()
 

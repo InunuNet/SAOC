@@ -1,17 +1,10 @@
 #!/usr/bin/env bash
-# post_compact_inject.sh — UserPromptSubmit command hook.
-# Companion to post_compact_restore.sh. If a queued post-compact context flag exists,
-# inject it as additionalContext on the next user turn and delete the flag.
-# If the flag is absent, emit an empty JSON object and exit 0 (no-op).
+# post_compact_inject.sh — RETIRED no-op.
+# Post-compaction context restore now fires through the SessionStart(compact) hook,
+# which calls post_compact_restore.sh and injects orchestrator context into the
+# model's next request — deterministically and keypress-free.
+# This UserPromptSubmit relay is no longer needed. Kept as a harmless no-op so the
+# settings.json reference never errors; remove once the SessionStart path is proven.
 set -uo pipefail
-FLAG=".agent/memory/scratch/.post_compact_context.txt"
-if [ -f "$FLAG" ]; then
-  python3 - "$FLAG" <<'PYEOF'
-import json, sys, pathlib
-content = pathlib.Path(sys.argv[1]).read_text()
-pathlib.Path(sys.argv[1]).unlink()
-print(json.dumps({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": content}}))
-PYEOF
-else
-  echo "{}"
-fi
+echo "{}"
+exit 0

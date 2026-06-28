@@ -51,13 +51,14 @@ if not last_usage:
     sys.exit(0)
 inp = int(last_usage.get("input_tokens", 0) or 0)
 cc  = int(last_usage.get("cache_creation_input_tokens", 0) or 0)
-total = inp + cc
+cr  = int(last_usage.get("cache_read_input_tokens", 0) or 0)
+total = inp + cc + cr
 model = (last_model or "").lower()
 window = 1_000_000 if ("opus-4-7" in model or "4.7" in model) else 200_000
 pct = round(100 * total / window) if window else 0
 print(f"{total}|{pct}")
 PYEOF
-  _PY_OUT=$(tail -n 200 "$TRANSCRIPT" | timeout 4 python3 "$_PY")
+  _PY_OUT=$(tail -n 2000 "$TRANSCRIPT" | timeout 4 python3 "$_PY")
   rm -f "$_PY"
   [ -z "$_PY_OUT" ] && _PY_OUT="?|?"
   CTX_TOKENS="${_PY_OUT%%|*}"

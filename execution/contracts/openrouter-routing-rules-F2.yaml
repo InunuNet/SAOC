@@ -1,0 +1,59 @@
+schema: athanor.contract/v1
+slug: openrouter-routing-rules
+goal: Document model routing rules (Claude-direct vs OpenRouter free-tier) in rules.md, distinguishing in-session vs subprocess routing mechanisms.
+created_at: '2026-06-28'
+autonomy: high
+features:
+  - id: F2
+    name: Define Model Routing Rules — append "## Model Routing" section to rules.md
+    status: pending
+goldens:
+  - .agent/memory/project/data/golden-routing-rules.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: rules.md contains the Model Routing section header
+      command: grep -q "^## Model Routing" .agent/memory/project/rules.md
+    - id: A2
+      description: qwen3-coder:free is documented as the @dev-fast default model
+      command: grep -q "qwen/qwen3-coder:free" .agent/memory/project/rules.md
+    - id: A3
+      description: gpt-oss-120b:free is documented as the @qa-fast default model
+      command: grep -q "openai/gpt-oss-120b:free" .agent/memory/project/rules.md
+    - id: A4
+      description: dev-fast agent is named in the routing table
+      command: grep -q "@dev-fast" .agent/memory/project/rules.md
+    - id: A5
+      description: qa-fast agent is named in the routing table
+      command: grep -q "@qa-fast" .agent/memory/project/rules.md
+    - id: A6
+      description: Per-minute rate limit (20 req/min) is documented
+      command: grep -q "20 req/min" .agent/memory/project/rules.md
+    - id: A7
+      description: Concurrency cap (max 15) is documented to stay under the limit
+      command: grep -qi "15 concurrent" .agent/memory/project/rules.md
+    - id: A8
+      description: Daily cap and the $10 credit requirement for 1000/day is documented
+      command: grep -q "1000 req/day requires" .agent/memory/project/rules.md
+    - id: A9
+      description: Subprocess routing via ANTHROPIC_BASE_URL is documented
+      command: grep -q "ANTHROPIC_BASE_URL=https://openrouter.ai/api/v1" .agent/memory/project/rules.md
+    - id: A10
+      description: Subprocess routing injects OPENROUTER_API_KEY env var
+      command: grep -q "OPENROUTER_API_KEY" .agent/memory/project/rules.md
+    - id: A11
+      description: In-session routing via the Agent tool model param is documented
+      command: grep -q 'model="qwen/qwen3-coder:free"' .agent/memory/project/rules.md
+    - id: A12
+      description: The in-session vs subprocess distinction is explicit
+      command: grep -qi "session-global" .agent/memory/project/rules.md
+    - id: A13
+      description: Catalog churn / re-verify at mission start is documented
+      command: grep -qi "re-verify" .agent/memory/project/rules.md
+    - id: A14
+      description: lead/architect/docs are pinned to Anthropic-direct (never free-tier)
+      command: grep -qi "never free-tier" .agent/memory/project/rules.md
+    - id: A15
+      description: Fallback model for dev-fast is documented
+      command: grep -q "qwen/qwen3-next-80b-a3b-instruct:free" .agent/memory/project/rules.md

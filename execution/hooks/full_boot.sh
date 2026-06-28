@@ -83,7 +83,7 @@ if [ -f .agent/memory/project/missions/active.json ]; then
       ;;
   esac
 else
-  echo "No active mission. Pick a top item from the mission queue (.agent/memory/project/backlog.md) and run /mission new <slug> before starting substantive work. Trivial items may be handled directly per the workflow reminder below."
+  echo "No active mission. Pick a top item from the mission queue (.agent/memory/project/backlog.md) and run /mission new <slug> before starting substantive work. Trivial items may be handled directly per the decision tree in AGENTS.md."
 fi
 echo ""
 
@@ -144,17 +144,6 @@ if [ -f "$COMMS_FILE" ]; then
   fi
 fi
 
-# Workflow Reminder — injected between mission state and identity so the
-# chain is fresh in the agent's working memory at the start of every turn.
-echo "--- WORKFLOW REMINDER (mandatory chain) ---"
-echo "1. Active mission? → python3 execution/mission.py resume → follow it"
-echo "2. New multi-session goal? → /mission new (locks autonomy=off)"
-echo "3. 3+ files OR design decision? → /spec (locks autonomy=off)"
-echo "4. Smaller substantive task? → @architect writes contract.yaml + golden files FIRST"
-echo "5. Chain: contract → @dev → @qa (adversarial) → @docs → contract.py gate → @maintainer"
-echo "6. DONE = contract gated green + docs verified + brain wrapped. Nothing less."
-echo "NEVER skip to implementation. NEVER let @dev author the contract or the QA inputs."
-echo ""
 
 # Step 0: System Identity
 echo "--- SYSTEM IDENTITY ---"
@@ -219,7 +208,7 @@ echo ""
 # Step 3: Project rules (override base rules — injected first so they take effect)
 echo "--- PROJECT RULES ---"
 if [ -f ".agent/memory/project/rules.md" ]; then
-  cat .agent/memory/project/rules.md
+  head -50 .agent/memory/project/rules.md && echo "[see rules.md for full content — $(wc -l < .agent/memory/project/rules.md) lines total]"
 else
   echo "(no rules.md)"
 fi
@@ -228,20 +217,20 @@ echo ""
 # Step 4: Project context — goals
 echo "--- GOALS ---"
 if [ -f ".agent/memory/project/goals.md" ]; then
-  cat .agent/memory/project/goals.md
+  head -25 .agent/memory/project/goals.md && echo "[see goals.md for full content — $(wc -l < .agent/memory/project/goals.md) lines total]"
 else
   echo "(no goals.md)"
 fi
 echo ""
 
 # Step 4: Project context — learned (capped at last 20 lines to control token cost)
-echo "--- LEARNED (last 20 lines) ---"
+echo "--- LEARNED (last 10 lines) ---"
 if [ -f ".agent/memory/project/learned.md" ]; then
   LEARNED_LINES=$(wc -l < ".agent/memory/project/learned.md")
-  if [ "$LEARNED_LINES" -gt 20 ]; then
-    echo "[Note: learned.md has $LEARNED_LINES lines — showing last 20. Run \`cat .agent/memory/project/learned.md\` for full history.]"
+  if [ "$LEARNED_LINES" -gt 10 ]; then
+    echo "[Note: learned.md has $LEARNED_LINES lines — showing last 10. Run \`cat .agent/memory/project/learned.md\` for full history.]"
   fi
-  tail -20 .agent/memory/project/learned.md
+  tail -10 .agent/memory/project/learned.md
 else
   echo "(no learned.md)"
 fi
@@ -291,15 +280,6 @@ if ! echo "$BLOCKER_OUTPUT" | grep -q "No recurring blockers detected."; then
 fi
 echo ""
 
-# Step 7: Pulse Heartbeat Service Check
-echo "--- PULSE HEARTBEAT ---"
-if launchctl list com.athanor.pulse &>/dev/null; then
-  echo "✅ Pulse Heartbeat: Active (Running)"
-else
-  echo "🔄 Pulse Heartbeat: Starting..."
-  launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.plist 2>/dev/null || echo "⚠️ Could not load Pulse Heartbeat. Ensure 'make install-pulse' has been run."
-fi
-echo ""
 
 # Step 7.5: Upstream Service Mapping
 echo "--- UPSTREAM SERVICES ---"
@@ -311,23 +291,5 @@ else
 fi
 echo ""
 
-# Step 8: GitHub Auth
-echo "--- GITHUB AUTH ---"
-if [ -f ./.env ] && grep -q "GITHUB_TOKEN" ./.env; then
-    echo "✅ GitHub Auth: Active (Token found in .env)"
-elif [ -n "$GITHUB_TOKEN" ]; then
-    echo "✅ GitHub Auth: Active (Token found in environment)"
-elif command -v gh &>/dev/null && gh auth status &>/dev/null; then
-    GH_USER=$(gh api user -q .login 2>/dev/null || echo "authenticated")
-    echo "✅ GitHub Auth: Active (gh logged in as $GH_USER via System CLI)"
-else
-    echo "❌ GitHub Auth: Inactive"
-fi
-echo ""
-
-# Step 9: Git remotes
-echo "--- GIT REMOTES ---"
-git remote -v 2>/dev/null || echo "(not a git repo)"
-echo ""
 
 echo "════ BOOT COMPLETE — all context loaded ════"

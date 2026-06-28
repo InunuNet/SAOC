@@ -359,11 +359,11 @@ setup_env_file() {
 # GITHUB_TOKEN=YOUR_PAT_HERE
 
 # ── OpenRouter (optional) ─────────────────────────────────────────────────────
-# Route fleet @dev/@qa subagents to free OpenRouter models instead of Claude quota.
+# Route specific @dev-fast/@qa-fast subagent invocations to free OpenRouter models.
+# NOTE: This key is for explicit per-invocation use only. It does NOT reroute the
+# primary Claude session — that always stays on Anthropic.
 # 1. Get an API key at https://openrouter.ai/keys (it starts with "sk-or-").
 # 2. Uncomment and set OPENROUTER_API_KEY below.
-# 3. Re-run `bash init.sh` — it writes .claude/settings.local.json (gitignored)
-#    with ANTHROPIC_BASE_URL + model overrides. Leaving it unset changes nothing.
 #
 # OPENROUTER_API_KEY=sk-or-YOUR_KEY_HERE
 EOF
@@ -416,41 +416,18 @@ sync_all() {
 }
 
 # ── OpenRouter config (opt-in) ────────────────────────────────────────────────
+# IMPORTANT: Do NOT set ANTHROPIC_BASE_URL or blank ANTHROPIC_API_KEY here.
+# That routes the entire primary session through OpenRouter, breaking the main agent.
+# The primary Codi session must stay on Anthropic. OpenRouter is for explicit
+# subagent invocations only — pass env vars per-invocation, not globally.
+# The key lives in .env and is available to scripts that need it.
 setup_openrouter_config() {
     local key="${OPENROUTER_API_KEY:-}"
-    [ -z "$key" ] && return 0
-
-    local target="$PROJECT_PATH/.claude/settings.local.json"
-    local new_keys
-    new_keys=$(printf '%s' "$key" | python3 -c "
-import json, sys
-key = sys.stdin.read().strip()
-d = {
-    'env': {
-        'ANTHROPIC_BASE_URL': 'https://openrouter.ai/api',
-        'ANTHROPIC_AUTH_TOKEN': key,
-        'ANTHROPIC_API_KEY': '',
-        'ANTHROPIC_DEFAULT_HAIKU_MODEL': 'deepseek/deepseek-chat-v3-0324:free',
-        'ANTHROPIC_DEFAULT_SONNET_MODEL': 'deepseek/deepseek-chat-v3-0324:free',
-        'ANTHROPIC_DEFAULT_OPUS_MODEL': 'qwen/qwen3-235b-a22b:free',
-    }
-}
-print(json.dumps(d, indent=2))
-")
-
-    if command -v jq >/dev/null 2>&1 && [ -f "$target" ]; then
-        local merged
-        merged=$(jq --argjson new "$(echo "$new_keys" | jq '.env')" \
-            '.env = (.env // {}) + $new' "$target") \
-            && printf '%s\n' "$merged" > "$target" \
-            && return 0
+    if [ -z "$key" ] && [ -f "$PROJECT_PATH/.env" ]; then
+        key=$(grep '^OPENROUTER_API_KEY=' "$PROJECT_PATH/.env" | cut -d= -f2-)
     fi
-
-    # Fallback: write only if absent
-    [ -f "$target" ] && return 0
-    mkdir -p "$(dirname "$target")"
-    printf '%s\n' "$new_keys" > "$target"
-    printf "   🔓 OpenRouter config written to .claude/settings.local.json\n"
+    [ -z "$key" ] && return 0
+    printf "   🔓 OpenRouter key found in .env — available for explicit subagent invocations\n"
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────

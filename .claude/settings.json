@@ -23,15 +23,27 @@
       "Bash(wget * | bash)",
       "Read(~/.ssh/*)",
       "Read(~/.aws/*)",
-      "Read(~/.gnupg/*)"
+      "Read(~/.gnupg/*)",
+      "Agent(model:claude-fable-5)"
     ],
     "ask": [
-      "Bash(chmod 777 *)"
+      "Bash(chmod 777 *)",
+      "Bash(command:sudo*)"
     ],
     "defaultMode": "bypassPermissions"
   },
   "hooks": {
     "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/post_compact_restore.sh ] && bash execution/hooks/post_compact_restore.sh || exit 0",
+            "timeout": 30
+          }
+        ]
+      },
       {
         "matcher": "*",
         "hooks": [
@@ -254,5 +266,34 @@
   },
   "cleanupPeriodDays": 30,
   "skipDangerousModePermissionPrompt": true,
-  "autoCompactEnabled": true
+  "autoCompactEnabled": true,
+  "respondToBashCommands": false,
+  "sandbox": {
+    "credentials": {
+      "files": [
+        {
+          "path": "~/.aws/credentials",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.ssh/",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.netrc",
+          "mode": "deny"
+        }
+      ],
+      "envVars": [
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "mode": "deny"
+        },
+        {
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "mode": "deny"
+        }
+      ]
+    }
+  }
 }

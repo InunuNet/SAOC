@@ -371,7 +371,7 @@ if [[ ! -x "execution/pulse_ticket.py" ]]; then
   exit 0
 fi
 
-DEDUPE_KEY="mission-resume:$(pwd):$ACTIVE:$CHECKPOINT"
+DEDUPE_KEY="mission-resume:$(pwd):$ACTIVE"
 python3 execution/pulse_ticket.py enqueue \
   --source pulse_mission_loop \
   --kind mission_resume \
