@@ -357,6 +357,15 @@ setup_env_file() {
 # Save it here. For more details, see GITHUB.md.
 #
 # GITHUB_TOKEN=YOUR_PAT_HERE
+
+# ── OpenRouter (optional) ─────────────────────────────────────────────────────
+# Route fleet @dev/@qa subagents to free OpenRouter models instead of Claude quota.
+# 1. Get an API key at https://openrouter.ai/keys (it starts with "sk-or-").
+# 2. Uncomment and set OPENROUTER_API_KEY below.
+# 3. Re-run `bash init.sh` — it writes .claude/settings.local.json (gitignored)
+#    with ANTHROPIC_BASE_URL + model overrides. Leaving it unset changes nothing.
+#
+# OPENROUTER_API_KEY=sk-or-YOUR_KEY_HERE
 EOF
 }
 
@@ -406,6 +415,44 @@ sync_all() {
     )
 }
 
+# ── OpenRouter config (opt-in) ────────────────────────────────────────────────
+setup_openrouter_config() {
+    local key="${OPENROUTER_API_KEY:-}"
+    [ -z "$key" ] && return 0
+
+    local target="$PROJECT_PATH/.claude/settings.local.json"
+    local new_keys
+    new_keys=$(printf '%s' "$key" | python3 -c "
+import json, sys
+key = sys.stdin.read().strip()
+d = {
+    'env': {
+        'ANTHROPIC_BASE_URL': 'https://openrouter.ai/api',
+        'ANTHROPIC_AUTH_TOKEN': key,
+        'ANTHROPIC_API_KEY': '',
+        'ANTHROPIC_DEFAULT_HAIKU_MODEL': 'deepseek/deepseek-chat-v3-0324:free',
+        'ANTHROPIC_DEFAULT_SONNET_MODEL': 'deepseek/deepseek-chat-v3-0324:free',
+        'ANTHROPIC_DEFAULT_OPUS_MODEL': 'qwen/qwen3-235b-a22b:free',
+    }
+}
+print(json.dumps(d, indent=2))
+")
+
+    if command -v jq >/dev/null 2>&1 && [ -f "$target" ]; then
+        local merged
+        merged=$(jq --argjson new "$(echo "$new_keys" | jq '.env')" \
+            '.env = (.env // {}) + $new' "$target") \
+            && printf '%s\n' "$merged" > "$target" \
+            && return 0
+    fi
+
+    # Fallback: write only if absent
+    [ -f "$target" ] && return 0
+    mkdir -p "$(dirname "$target")"
+    printf '%s\n' "$new_keys" > "$target"
+    printf "   🔓 OpenRouter config written to .claude/settings.local.json\n"
+}
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 main() {
     local version
@@ -421,6 +468,7 @@ main() {
     setup_instructions
     setup_gitignore
     setup_env_file
+    setup_openrouter_config
     setup_secrets
     setup_git
     sync_all
@@ -432,4 +480,6 @@ main() {
     printf "   Or:   ${CYAN}make help${NC}\n\n"
 }
 
-main "$@"
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    main "$@"
+fi
