@@ -33,11 +33,6 @@ export function UtilityBar() {
           council@saoc.co.za
         </a>
 
-        {/* Centre: tagline */}
-        <span className="hidden min-[900px]:inline-block font-mono text-[10.5px] uppercase tracking-[0.16em] opacity-55">
-          Making a difference since 1968
-        </span>
-
         {/* Right: action pills */}
         <div className="flex items-center gap-2">
           <Link
@@ -48,7 +43,7 @@ export function UtilityBar() {
           </Link>
           <Link
             href="/societies"
-            className="bg-accent text-ivory rounded-full px-3 py-1 text-[13px] font-sans hover:bg-accent-soft transition-colors duration-150"
+            className="bg-accent text-primary rounded-full px-3 py-1 text-[13px] font-sans font-medium hover:bg-accent-soft transition-colors duration-150"
           >
             Join a society
           </Link>

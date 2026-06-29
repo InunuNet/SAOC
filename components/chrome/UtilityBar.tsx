@@ -33,11 +33,6 @@ export function UtilityBar() {
           council@saoc.co.za
         </a>
 
-        {/* Centre: tagline */}
-        <span className="hidden min-[900px]:inline-block font-mono text-[10.5px] uppercase tracking-[0.16em] opacity-55">
-          Making a difference since 1968
-        </span>
-
         {/* Right: action pills */}
         <div className="flex items-center gap-2">
           <Link
