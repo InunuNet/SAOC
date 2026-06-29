@@ -142,3 +142,30 @@ assertions:
     kind: shell
     command: "grep -q 'bg-primary text-ivory px-6 py-3 hover:bg-primary-800' components/home/Hero.tsx"
     expect_exit: 0
+
+  # ---------- QA fixes ----------
+  - id: A25
+    description: "QA: Footer email input has aria-label"
+    kind: shell
+    command: "grep -q 'aria-label=\"Email address\"' components/chrome/Footer.tsx"
+    expect_exit: 0
+  - id: A26
+    description: "QA: Subscribe button uses bg-primary (not bg-accent) for WCAG contrast"
+    kind: shell
+    command: "grep -q 'bg-primary text-ivory.*hover:bg-primary-800.*shrink-0' components/chrome/Footer.tsx"
+    expect_exit: 0
+  - id: A27
+    description: "QA: Hero dot indicator has distinct inactive width (16px)"
+    kind: shell
+    command: "grep -q \"'16px'\" components/home/Hero.tsx"
+    expect_exit: 0
+  - id: A28
+    description: "QA: /constitution stub page exists"
+    kind: shell
+    command: "test -f 'app/(marketing)/constitution/page.tsx'"
+    expect_exit: 0
+  - id: A29
+    description: "QA: /media-kit stub page exists"
+    kind: shell
+    command: "test -f 'app/(marketing)/media-kit/page.tsx'"
+    expect_exit: 0

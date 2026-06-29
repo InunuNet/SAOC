@@ -97,13 +97,14 @@ export function Footer() {
           <form className="flex gap-0" onSubmit={(e) => e.preventDefault()}>
             <input
               type="email"
+              aria-label="Email address"
               placeholder="your@email.co.za"
               required
               className="flex-1 bg-ivory/10 border border-ivory/20 text-ivory placeholder:text-ivory/40 font-sans text-[13px] px-3 py-2 focus:outline-none focus:border-ivory/40"
             />
             <button
               type="submit"
-              className="bg-accent text-ivory font-sans text-[13px] font-medium px-4 py-2 hover:bg-accent-soft transition-colors duration-150 shrink-0"
+              className="bg-primary text-ivory font-sans text-[13px] font-medium px-4 py-2 hover:bg-primary-800 transition-colors duration-150 shrink-0"
             >
               Subscribe
             </button>

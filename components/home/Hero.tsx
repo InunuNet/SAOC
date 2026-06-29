@@ -112,7 +112,7 @@ export function Hero({ images }: HeroProps) {
               onClick={() => setActiveIdx(i)}
               className="h-[2px] transition-all duration-300"
               style={{
-                width: activeIdx === i ? '24px' : '24px',
+                width: activeIdx === i ? '24px' : '16px',
                 backgroundColor: activeIdx === i ? 'var(--accent)' : 'rgba(244, 243, 236, 0.40)',
               }}
             />
