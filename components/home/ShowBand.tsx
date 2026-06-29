@@ -7,10 +7,10 @@ import { useMemo } from 'react';
 import { useCountdown } from '@/lib/hooks/useCountdown';
 
 const SHOW_META = [
-  { label: 'Dates', value: '12–15 September 2027' },
-  { label: 'Host', value: 'Western Cape' },
-  { label: 'Venue', value: 'Cape Town Convention Centre' },
-  { label: 'Cycle', value: 'Every three years' },
+  { label: 'Dates', value: 'September 2027' },
+  { label: 'Host Region', value: 'Western Cape' },
+  { label: 'Venue', value: 'Cape Town International Convention Centre' },
+  { label: 'Duration', value: '4 days' },
 ] as const;
 
 const DEFAULT_COUNTDOWN_DATE = '2027-09-18T09:00:00+02:00';
@@ -49,16 +49,17 @@ export function ShowBand({ countdownDate }: ShowBandProps) {
         {/* Content right */}
         <div className="flex flex-col justify-center px-10 py-16 on-dark">
           {/* Eyebrow */}
-          <div className="mb-6"><span className="eyebrow eyebrow--light">Flagship Event</span></div>
+          <div className="mb-6">
+            <span className="eyebrow eyebrow--light">Flagship Event</span>
+          </div>
 
-          {/* Headline */}
+          {/* Headline — no italic, all white */}
           <h2 className="font-serif text-[clamp(32px,3.8vw,48px)] font-medium leading-[1.1] tracking-[-0.01em] text-ivory mb-8">
-            The 19th South African{' '}
-            <em className="text-accent-soft">National Orchid Show</em>
+            The 19th South African National Orchid Show
           </h2>
 
           {/* Meta grid */}
-          <dl className="grid grid-cols-2 gap-x-8 gap-y-4 mb-10">
+          <dl className="grid grid-cols-2 gap-x-8 gap-y-4 mb-8">
             {SHOW_META.map((item) => (
               <div key={item.label}>
                 <dt className="font-mono text-[10px] uppercase tracking-[0.22em] text-ivory/50 mb-1">
@@ -69,25 +70,27 @@ export function ShowBand({ countdownDate }: ShowBandProps) {
             ))}
           </dl>
 
-          {/* Countdown */}
-          <div className="flex gap-8 mb-10 py-6 border-t border-b border-ivory/15">
-            {(
-              [
-                { value: days, label: 'Days' },
-                { value: hours, label: 'Hours' },
-                { value: minutes, label: 'Minutes' },
-                { value: seconds, label: 'Seconds' },
-              ] as const
-            ).map((cell) => (
-              <div key={cell.label} className="flex flex-col items-center">
-                <span className="font-serif text-[42px] text-accent-soft leading-none">
-                  {cell.value}
-                </span>
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/60 mt-1">
-                  {cell.label}
-                </span>
-              </div>
-            ))}
+          {/* Countdown — contained box */}
+          <div className="bg-primary/40 border border-ivory/10 px-6 py-5 mb-8">
+            <div className="flex gap-8">
+              {(
+                [
+                  { value: days, label: 'Days' },
+                  { value: hours, label: 'Hours' },
+                  { value: minutes, label: 'Minutes' },
+                  { value: seconds, label: 'Seconds' },
+                ] as const
+              ).map((cell) => (
+                <div key={cell.label} className="flex flex-col items-center">
+                  <span className="font-serif text-[42px] text-accent-soft leading-none">
+                    {cell.value}
+                  </span>
+                  <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/60 mt-1">
+                    {cell.label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* CTAs */}
@@ -96,13 +99,13 @@ export function ShowBand({ countdownDate }: ShowBandProps) {
               href="/national-show"
               className="font-sans text-[14px] font-medium bg-accent text-ivory px-6 py-3 hover:bg-accent-soft transition-colors duration-150"
             >
-              Show Details
+              Show details
             </Link>
             <Link
               href="/national-show/exhibitors"
               className="font-sans text-[14px] font-medium border border-ivory/30 text-ivory px-6 py-3 hover:bg-ivory/10 transition-colors duration-150"
             >
-              Exhibitor Info
+              Exhibitor info
             </Link>
           </div>
         </div>

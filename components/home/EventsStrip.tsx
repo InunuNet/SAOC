@@ -41,18 +41,23 @@ export function EventsStrip({ events }: EventsStripProps) {
     <section className="py-24 px-8 md:px-16 bg-parchment">
       <div className="max-w-[1280px] mx-auto">
         {/* Section header */}
-        <div className="flex items-end justify-between mb-10 border-b border-rule pb-6">
-          <h2 className="font-serif text-[32px] font-medium text-primary">What&apos;s on</h2>
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <div className="mb-4"><span className="eyebrow">What&apos;s on</span></div>
+            <h2 className="font-serif text-[clamp(32px,4vw,48px)] font-medium leading-[1.08] tracking-[-0.01em] text-primary">
+              Upcoming society shows
+            </h2>
+          </div>
           <Link
             href="/events"
-            className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent hover:text-primary transition-colors duration-150"
+            className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent hover:text-primary transition-colors duration-150 mt-1 shrink-0"
           >
             Full calendar →
           </Link>
         </div>
 
         {/* Event rows */}
-        <div>
+        <div className="border-t border-rule">
           {preview.map((e) => (
             <EventRow key={e.id} event={e} />
           ))}
