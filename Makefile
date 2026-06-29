@@ -62,7 +62,7 @@ sync-agents:
 	@bash execution/sync_agents.sh
 
 sync-autonomy:
-	@python3 -c "import json,pathlib;LEVEL_ORDER=['off','low','medium','high','loop'];level_rank=lambda l: LEVEL_ORDER.index(l) if l in LEVEL_ORDER else 2;profile=json.loads(pathlib.Path('.agent/profile.json').read_text());current_level=profile.get('autonomy',{}).get('level','medium');current_rank=level_rank(current_level);print('sync-autonomy: current level='+current_level);mismatches=[];[mismatches.append((d.get('provider',mf.stem),d.get('autonomy',{}).get('max_honerable_level','medium'))) or print('AUTONOMY MISMATCH: '+d.get('provider',mf.stem)+' max_honerable_level='+d.get('autonomy',{}).get('max_honerable_level','medium')+', current='+current_level) if current_rank>level_rank(d.get('autonomy',{}).get('max_honerable_level','medium')) else print('   OK '+d.get('provider',mf.stem)+': can honor '+current_level+' (max='+d.get('autonomy',{}).get('max_honerable_level','medium')+')') for mf in sorted(pathlib.Path('.agent/providers').glob('*.json')) for d in [json.loads(mf.read_text())]];print(str(len(mismatches))+' provider(s) cannot honor autonomy='+current_level+'.' if mismatches else 'sync-autonomy complete -- all providers honor '+current_level)"
+	@python3 execution/sync_autonomy.py
 set-autonomy:
 	@[ -n "$(LEVEL)" ] || (echo "Usage: make set-autonomy LEVEL=loop|high|medium|low|off" && exit 1)
 	@printf '%s' "$(LEVEL)" | grep -qE '^(off|low|medium|high|loop)$$' || (echo "❌ Invalid level '$(LEVEL)'. Valid: off low medium high loop" && exit 1)
@@ -80,6 +80,7 @@ set-autonomy:
 		fi; \
 	fi
 	@echo "✅ Autonomy level set to: $(LEVEL)"
+	@$(MAKE) -s sync-autonomy
 
 stay-awake:
 	@mkdir -p .agent/pulse/registry

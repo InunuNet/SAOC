@@ -426,11 +426,11 @@ def load_manifest(provider_id: str, root: Path) -> dict:
 # --- F3: Per-job token budget + max-turn cap ---
 
 def max_tokens_per_job() -> int:
-    return env_int("MAX_TOKENS_PER_JOB", 500000)
+    return env_int("ATHANOR_MAX_TOKENS_PER_JOB", None) or env_int("MAX_TOKENS_PER_JOB", 500000)
 
 
 def max_turns_per_job() -> int:
-    return env_int("MAX_TURNS_PER_JOB", 20)
+    return env_int("ATHANOR_MAX_TURNS_PER_JOB", None) or env_int("MAX_TURNS_PER_JOB", 20)
 
 
 def min_job_tokens() -> int:

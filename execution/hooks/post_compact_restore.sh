@@ -112,13 +112,9 @@ flag = pathlib.Path('.agent/memory/scratch/.post_compact_context.txt')
 flag.parent.mkdir(parents=True, exist_ok=True)
 flag.write_text(context)
 
-# Emit SessionStart/compact additionalContext payload — injects directly into the
-# model's next request via the SessionStart(compact) hook, keypress-free.
+# Emit a minimal, schema-valid PostCompact payload.
 print(json.dumps({
-    "hookSpecificOutput": {
-        "hookEventName": "SessionStart",
-        "additionalContext": context
-    }
+    "systemMessage": "PostCompact: orchestrator context restore queued."
 }))
 EOF
 

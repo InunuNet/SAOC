@@ -23,27 +23,15 @@
       "Bash(wget * | bash)",
       "Read(~/.ssh/*)",
       "Read(~/.aws/*)",
-      "Read(~/.gnupg/*)",
-      "Agent(model:claude-fable-5)"
+      "Read(~/.gnupg/*)"
     ],
     "ask": [
-      "Bash(chmod 777 *)",
-      "Bash(command:sudo*)"
+      "Bash(chmod 777 *)"
     ],
     "defaultMode": "bypassPermissions"
   },
   "hooks": {
     "SessionStart": [
-      {
-        "matcher": "compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/post_compact_restore.sh ] && bash execution/hooks/post_compact_restore.sh || exit 0",
-            "timeout": 30
-          }
-        ]
-      },
       {
         "matcher": "*",
         "hooks": [
