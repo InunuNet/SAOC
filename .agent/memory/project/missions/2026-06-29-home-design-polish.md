@@ -4,49 +4,89 @@ slug: home-design-polish
 goal: Match all home page chrome and sections to the Claude Design HTML reference
 created_at: '2026-06-29T07:10:05.419127+00:00'
 started_at: null
-last_active_at: null
-status: pending
+last_active_at: '2026-06-29T07:23:10.371989+00:00'
+status: done
 cost_estimate:
   features: 6
   milestones: 2
   total_calls: 18
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M1
+  feature: F6
+  ts: '2026-06-29T07:23:10.371989+00:00'
 features:
-  - id: F1
-    title: UtilityBar — remove duplicate tagline
-    status: pending
-    inline_brief: "Remove the centre <span> 'Making a difference since 1968' from UtilityBar.tsx (line 37-39). It duplicates the tagline in the logo lockup below."
-  - id: F2
-    title: Header — logo wordmark font-weight 500→600
-    status: pending
-    inline_brief: "Change font-medium to font-semibold on the 'SA Orchid Council' wordmark span in Header.tsx (line 83). Design spec fontWeight: 600."
-  - id: F3
-    title: Footer — 4-col rebuild
-    status: pending
-    inline_brief: "Col 1: replace flat PNG logo with stacked logo (mark + SA Orchid Council serif 600 + tagline mono). Col 4: replace Contact link with Stay in touch section (copy: 'Quarterly bulletin — show dates, judging results and yearbook news.', email input + Subscribe button, 'Looking for wild orchids?' mono label, 'Visit Wild Orchids of Southern Africa →' link). Bottom bar: Terms→Constitution, add Media kit link."
-  - id: F4
-    title: YearbookStrip — restore 2-col layout with image
-    status: pending
-    inline_brief: "Restore 2-column layout (was removed in commit 3b7d686). Left: eyebrow, h2 with <em>Orchids South Africa</em> italic, body text, meta flex row, CTAs. Right: /images/orchid-pink.jpg fill image. Keep current text styling."
-  - id: F5
-    title: PartnersSection — commit existing file
-    status: pending
-    inline_brief: "components/home/PartnersSection.tsx is already written and wired into app/(marketing)/page.tsx but is uncommitted. Stage and commit it."
-  - id: F6
-    title: Hero — centre, darken scrim, fix primary CTA
-    status: pending
-    inline_brief: "Three changes: (1) Change items-start text-left → items-center text-center on content div. (2) Darken scrim gradient from 'from-primary/80 via-primary/40 to-transparent' to something like 'from-primary via-primary/75 to-primary/40' so ivory headline is crisp against dark background. (3) Change primary CTA button from bg-accent text-ivory → bg-primary text-ivory (dark sage not brass)."
+- id: F1
+  title: UtilityBar — remove duplicate tagline
+  status: done
+  inline_brief: Remove the centre <span> 'Making a difference since 1968' from UtilityBar.tsx
+    (line 37-39). It duplicates the tagline in the logo lockup below.
+  completed_at: '2026-06-29T07:23:05.410867+00:00'
+- id: F2
+  title: Header — logo wordmark font-weight 500→600
+  status: done
+  inline_brief: 'Change font-medium to font-semibold on the ''SA Orchid Council''
+    wordmark span in Header.tsx (line 83). Design spec fontWeight: 600.'
+  completed_at: '2026-06-29T07:23:09.489467+00:00'
+- id: F3
+  title: Footer — 4-col rebuild
+  status: done
+  inline_brief: 'Col 1: replace flat PNG logo with stacked logo (mark + SA Orchid
+    Council serif 600 + tagline mono). Col 4: replace Contact link with Stay in touch
+    section (copy: ''Quarterly bulletin — show dates, judging results and yearbook
+    news.'', email input + Subscribe button, ''Looking for wild orchids?'' mono label,
+    ''Visit Wild Orchids of Southern Africa →'' link). Bottom bar: Terms→Constitution,
+    add Media kit link.'
+  completed_at: '2026-06-29T07:23:09.700411+00:00'
+- id: F4
+  title: YearbookStrip — restore 2-col layout with image
+  status: done
+  inline_brief: 'Restore 2-column layout (was removed in commit 3b7d686). Left: eyebrow,
+    h2 with <em>Orchids South Africa</em> italic, body text, meta flex row, CTAs.
+    Right: /images/orchid-pink.jpg fill image. Keep current text styling.'
+  completed_at: '2026-06-29T07:23:09.910313+00:00'
+- id: F5
+  title: PartnersSection — commit existing file
+  status: done
+  inline_brief: components/home/PartnersSection.tsx is already written and wired into
+    app/(marketing)/page.tsx but is uncommitted. Stage and commit it.
+  completed_at: '2026-06-29T07:23:10.133831+00:00'
+- id: F6
+  title: Hero — centre, darken scrim, fix primary CTA
+  status: done
+  inline_brief: 'Three changes: (1) Change items-start text-left → items-center text-center
+    on content div. (2) Darken scrim gradient from ''from-primary/80 via-primary/40
+    to-transparent'' to something like ''from-primary via-primary/75 to-primary/40''
+    so ivory headline is crisp against dark background. (3) Change primary CTA button
+    from bg-accent text-ivory → bg-primary text-ivory (dark sage not brass).'
+  completed_at: '2026-06-29T07:23:10.371803+00:00'
 milestones:
-  - id: M1
-    title: Chrome + Hero complete
-    features: [F1, F2, F3, F6]
-  - id: M2
-    title: Home sections complete
-    features: [F4, F5]
+- id: M1
+  title: Chrome + Hero complete
+  features:
+  - F1
+  - F2
+  - F3
+  - F6
+  gate_ran_at: '2026-06-29T07:23:13.859145+00:00'
+  gate_result: pass
+  status: done
+- id: M2
+  title: Home sections complete
+  features:
+  - F4
+  - F5
+  gate_ran_at: '2026-06-29T07:23:14.086314+00:00'
+  gate_result: pass
+  status: done
 ---
+
+
+
+
+
+
+
+
 
 # Mission: home-design-polish
 

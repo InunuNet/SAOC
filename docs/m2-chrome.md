@@ -4,11 +4,11 @@
 
 | Component            | Description                                                                                       |
 | -------------------- | ------------------------------------------------------------------------------------------------- |
-| `UtilityBar.tsx`     | Dark primary-800 top bar: email left, tagline center, two pill CTAs right                         |
+| `UtilityBar.tsx`     | Dark primary-800 top bar: email left, two pill CTAs right (no centre tagline)                     |
 | `Header.tsx`         | Sticky parchment header: 3-zone layout (logo / nav / actions), scroll shadow, keyboard shortcuts  |
 | `MobileMenu.tsx`     | Right-slide dialog: 6 nav items, "Soon" chip on Learn, Lucide X close                             |
 | `SearchOverlay.tsx`  | 680px centered search panel: live filter for societies and events, 5-item empty-state suggestions |
-| `Footer.tsx`         | 4-column dark footer: logo + mission, Explore nav, Partners, newsletter form                      |
+| `Footer.tsx`         | 4-col dark footer: col1 stacked logo lockup, col2 Explore nav, col3 Partners, col4 "Stay in touch" email form + WOSA link; bottom bar: Constitution + Media kit |
 | `NewsletterForm.tsx` | Client subcomponent extracted from Footer; owns the newsletter input and submit                   |
 | `Breadcrumb.tsx`     | Mono breadcrumb trail: Home-first, `aria-current` on last item                                    |
 
@@ -87,7 +87,7 @@ Tokens are defined in `app/globals.css` under `:root` / `@theme`.
 | `--ivory`       | Light text on dark backgrounds               |
 | `--muted`       | Subdued labels, "Soon" chip text             |
 
-Typography: `font-mono` for meta text (breadcrumb, utility bar tagline); `font-serif` for the logo wordmark.
+Typography: `font-mono` for meta text (breadcrumb, utility bar email); `font-serif` for the logo wordmark. `font-semibold` (600) on the Header wordmark.
 
 ## Known Limitations / Next Steps
 

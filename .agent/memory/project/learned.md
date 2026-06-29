@@ -20,6 +20,18 @@
 - (2026-06-23) Tailwind v4 `@theme`: use `--font-family-serif: var(--font-serif)` NOT `--font-serif: var(--font-serif)` — the latter creates a circular CSS custom-property reference that silently fails.
 - (2026-06-23) Design-verify pass (commit 35c9cbb): globals.css got the full design-token set (semantic color aliases, type scale, spacing tokens, semantic classes), header abbreviated to "SA Orchid Council" / "Making a difference since 1968", hero display-xl/lg clamp scale applied, and `radius-0` (no rounded-lg) enforced across 8 card components per spec.
 
+## JSX & Golden Files
+
+- (2026-06-29) In JSX golden files (and component source), use `&apos;` for apostrophes inside string content — raw `'` inside JSX attribute strings is fine, but raw apostrophes in JSX text nodes can trip ESLint `react/no-unescaped-entities`. Golden files that QA compares against component output must match exactly, so write `&apos;` in both the golden file and the component.
+- (2026-06-29) Hero component centring: setting `items-center text-center` on the flex container is insufficient if child elements have explicit `text-left` or `items-start` overrides. Audit every child element for alignment overrides when re-centring a section.
+- (2026-06-29) Footer 4-col rebuild lesson: col 1 = stacked logo lockup (mark + wordmark + tagline), col 4 = "Stay in touch" email form + WOSA link. Bottom bar carries Constitution + Media kit links. When docs say "4-column footer" verify column *content* not just count — prior docs had column 4 as "Partners" but the design reference puts partners in col 3 and newsletter + WOSA in col 4.
+
+## Accessibility & Routing
+
+- (2026-06-29) Footer/nav links must have corresponding routes or they 404 at deploy. The footer's Constitution + Media kit links pointed at `/constitution` and `/media-kit` with no pages behind them — QA caught the 404s; fixed by adding stub pages. Any link added to chrome must ship with its route in the same change.
+- (2026-06-29) `bg-accent` on a dark footer fails WCAG AA contrast for the Subscribe button — the accent orchid-pink lacks sufficient contrast against the dark footer bg. Use `bg-primary` for actionable buttons on dark surfaces. QA flagged this; verify button/text contrast against the *actual* surface colour, not against white.
+- (2026-06-29) Every form input needs an explicit label for WCAG 1.3.1 — the footer email input had a placeholder but no `aria-label`. Placeholder text is not a label. Add `aria-label="Email address"` (or a visible `<label>`) to any unlabelled input.
+
 ## Alembic & Automation
 
 - (2026-06-28) Alembic blocks `localhost`/loopback hostnames by design — `scripts/refresh-llms.ts` (crawls routes → `public/llms-full.txt`) only works against the live external URL (`https://saoc.co.za`), so it can't be tested against the dev server NOR run in GitHub Actions CI. Production llms-full automation must bypass Alembic: nightly GH Actions cron querying the Sanity GROQ API directly. `tsx` added to devDeps; run via `pnpm refresh-llms`. Docs: `docs/llm-optimization.md`.

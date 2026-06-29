@@ -8,12 +8,12 @@
 
 | Component         | File                                  | Description                                                                |
 | ----------------- | ------------------------------------- | -------------------------------------------------------------------------- |
-| `Hero`            | `components/home/Hero.tsx`            | 4-image crossfade hero: eyebrow pill, h1 with italic em, two CTAs, dot nav |
+| `Hero`            | `components/home/Hero.tsx`            | 4-image crossfade hero: centred content (items-center text-center), eyebrow pill, h1 with italic em, two CTAs (primary CTA = bg-primary), dot nav; scrim darkened (from-primary/50 via-primary/60 to-primary/85) |
 | `MissionBlock`    | `components/home/MissionBlock.tsx`    | 2-col: left copy + right 4-up stat row (societies/year/shows/judges)       |
 | `NavCards`        | `components/home/NavCards.tsx`        | 4-col grid of navigation cards; hover: lift 4px + accent border            |
 | `ShowBand`        | `components/home/ShowBand.tsx`        | Full-bleed dark band: bench image, 4-up meta, live countdown to 2027-09-18 |
 | `EventsStrip`     | `components/home/EventsStrip.tsx`     | "What's on" strip using EventRow; links to full calendar                   |
-| `YearbookStrip`   | `components/home/YearbookStrip.tsx`   | --bone bg, 2-col: yearbook copy + Subscribe/Past buttons + image           |
+| `YearbookStrip`   | `components/home/YearbookStrip.tsx`   | --bone bg, 2-col grid: left copy (`<em>Orchids South Africa</em>` title, Subscribe/Past buttons) + right orchid-pink.jpg image |
 | `PartnersSection` | `components/home/PartnersSection.tsx` | Centered 6-cell serif partner name grid on parchment                       |
 | `EventRow`        | `components/ui/EventRow.tsx`          | Shared: 110px date block + body + host + arrow; used in Home + Events      |
 
