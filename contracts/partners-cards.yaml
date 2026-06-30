@@ -1,0 +1,118 @@
+schema: athanor.contract/v1
+slug: partners-cards
+goal: Redesign PartnersSection from bordered-grid boxes into editorial cards with badge, heading, descriptive copy, and arrow separator.
+created_at: '2026-06-30'
+autonomy: high
+features:
+  - id: F1
+    name: PartnersSection editorial cards
+    status: pending
+goldens:
+  - contracts/golden/partners-cards/PartnersSection.tsx
+assertions:
+  phase: 4
+  checks:
+    # ---- file ----
+    - id: A1
+      description: PartnersSection component exists
+      command: test -f components/home/PartnersSection.tsx
+
+    # ---- layout ----
+    - id: A2
+      description: 3-column responsive grid (grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6)
+      command: grep -q "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" components/home/PartnersSection.tsx
+
+    - id: A3
+      description: Section wrapper retained (py-20 px-8 md:px-16 bg-bone border-t border-rule)
+      command: grep -q "py-20 px-8 md:px-16 bg-bone border-t border-rule" components/home/PartnersSection.tsx
+
+    # ---- old bordered-grid layout removed ----
+    - id: A4
+      description: Old bordered-grid class (border-l border-t border-rule) is GONE
+      command: "! grep -q 'border-l border-t border-rule' components/home/PartnersSection.tsx"
+
+    # ---- card structure ----
+    - id: A5
+      description: Badge uses .eyebrow class
+      command: grep -q "eyebrow" components/home/PartnersSection.tsx
+
+    - id: A6
+      description: Heading uses serif token style (font-serif text-[20px] font-medium text-primary leading-snug)
+      command: grep -q 'font-serif text-\[20px\] font-medium text-primary leading-snug' components/home/PartnersSection.tsx
+
+    - id: A7
+      description: Body copy uses sans token style (font-sans text-[14px] text-ink/70 leading-relaxed)
+      command: grep -q 'font-sans text-\[14px\] text-ink/70 leading-relaxed' components/home/PartnersSection.tsx
+
+    - id: A8
+      description: Bottom separator present (border-t border-rule pt-3 mt-auto)
+      command: grep -q "border-t border-rule pt-3 mt-auto" components/home/PartnersSection.tsx
+
+    - id: A9
+      description: Card background is parchment with hover shadow
+      command: grep -q "bg-parchment" components/home/PartnersSection.tsx
+
+    - id: A10
+      description: Cards have hover:shadow-md transition-shadow
+      command: grep -q "hover:shadow-md" components/home/PartnersSection.tsx
+
+    - id: A11
+      description: Arrow glyph present in card footer
+      command: grep -q "→" components/home/PartnersSection.tsx
+
+    # ---- no images ----
+    - id: A12
+      description: No next/image import (partners have no logos)
+      command: "! grep -q \"from 'next/image'\" components/home/PartnersSection.tsx"
+
+    # ---- badge values ----
+    - id: A13
+      description: Local Partner badge value present
+      command: grep -q "Local Partner" components/home/PartnersSection.tsx
+
+    - id: A14
+      description: Botanical Garden badge value present
+      command: grep -q "Botanical Garden" components/home/PartnersSection.tsx
+
+    - id: A15
+      description: International badge value present
+      command: grep -q "International" components/home/PartnersSection.tsx
+
+    # ---- all six partner names ----
+    - id: A16
+      description: Partner name - Wild Orchids of Southern Africa
+      command: grep -q "Wild Orchids of Southern Africa" components/home/PartnersSection.tsx
+
+    - id: A17
+      description: Partner name - South African National Biodiversity Institute
+      command: grep -q "South African National Biodiversity Institute" components/home/PartnersSection.tsx
+
+    - id: A18
+      description: Partner name - Kirstenbosch NBG
+      command: grep -q "Kirstenbosch NBG" components/home/PartnersSection.tsx
+
+    - id: A19
+      description: Partner name - American Orchid Society
+      command: grep -q "American Orchid Society" components/home/PartnersSection.tsx
+
+    - id: A20
+      description: Partner name - Royal Horticultural Society
+      command: grep -q "Royal Horticultural Society" components/home/PartnersSection.tsx
+
+    - id: A21
+      description: Partner name - World Orchid Conference
+      command: grep -q "World Orchid Conference" components/home/PartnersSection.tsx
+
+    # ---- Sanity fallback wiring ----
+    - id: A22
+      description: SanityPartner tier mapped to badge (tier referenced for fallback mapping)
+      command: grep -q "tier" components/home/PartnersSection.tsx
+
+    # ---- gates ----
+    - id: A23
+      description: TypeScript strict build passes (no TS errors)
+      command: pnpm tsc --noEmit 2>&1 | grep -c "error TS" | grep -q "^0$"
+
+    - id: A24
+      description: Production build exits 0
+      command: pnpm build

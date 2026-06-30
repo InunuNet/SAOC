@@ -36,3 +36,20 @@
 
 - (2026-06-28) Alembic blocks `localhost`/loopback hostnames by design — `scripts/refresh-llms.ts` (crawls routes → `public/llms-full.txt`) only works against the live external URL (`https://saoc.co.za`), so it can't be tested against the dev server NOR run in GitHub Actions CI. Production llms-full automation must bypass Alembic: nightly GH Actions cron querying the Sanity GROQ API directly. `tsx` added to devDeps; run via `pnpm refresh-llms`. Docs: `docs/llm-optimization.md`.
 - (2026-06-28) GROQ scripts must use standalone `@sanity/client` (not `next-sanity`, which requires Next.js context). `createClient()` from `@sanity/client` works in Node scripts, CI, and any non-Next environment — this is what `scripts/refresh-llms.ts` now uses for the nightly GitHub Actions cron.
+
+## Component Layout (inner-pages-design-polish, 2026-06-30)
+
+- (2026-06-30) F1 — PageHero centering: The PageHero inner content div requires `flex flex-col items-center text-center` to centre the eyebrow/heading/lede horizontally. The section retains `flex items-end` so text sits at the bottom over the gradient. These two concerns (vertical positioning vs horizontal alignment) live on separate elements — fixing one without the other leaves the layout half-broken.
+- (2026-06-30) F2 — About hero image: About page hero switched from `orchid-dark.jpg` to `orchid-violet.jpg` to match the Claude Design reference screenshot (02-about.png), which shows a purple orchid background. When a design reference screenshot exists, match it exactly rather than reusing a convenient existing asset.
+
+## Contract & Gate Tooling (inner-pages-design-polish, 2026-06-30)
+
+- (2026-06-30) contract.py `normalize_contract` only understands two formats: `{phase, checks:[]}` dict (the @architect format) and internal `{verify:{kind,cmd}}` format. Flat-list format (`kind/command/expect_exit` at assertion level) is NOT normalized and always fails the gate silently. Always write contracts in `{assertions: {phase: N, checks: [{id, description, command}]}}` format.
+- (2026-06-30) Negative assertions (checking absence of a pattern) must use `! grep -q` (exits 0 when pattern is absent) — NOT `grep -q` with `expect_exit: 1`, which the @architect format does not support. The contract gate checks for exit 0 only.
+- (2026-06-30) Build assertions: use bare `pnpm build`, not `pnpm build 2>&1 | tail -5` — the pipe masks the build exit code via `tail`'s exit status, causing the assertion to pass even when the build fails.
+
+## Editorial Card Pattern (partners-cards, 2026-06-30)
+
+- (2026-06-30) The editorial-card layout — `.eyebrow` category badge → serif name heading → sans body → ruled footer with `→` arrow on `bg-parchment hover:shadow-md` — is now the house style shared by NavCards and PartnersSection. Reuse this shape for any card grid rather than reinventing per-section.
+- (2026-06-30) Card render is conditional on data: emit an `<a>` wrapper when a `website` URL is present, a plain `<div>` when not. Don't render dead links — branch on the optional field.
+- (2026-06-30) Sanity-fallback mapper pattern (`toCards()`): normalise an optional `SanityPartner[]` into card props, mapping `tier → badge` and filling every optional field with `?? ` defaults; fall back to a fully-described STATIC_PARTNERS array when the CMS query returns nothing. Keeps the component renderable with zero CMS data and TS-strict (no `any`/`as`).

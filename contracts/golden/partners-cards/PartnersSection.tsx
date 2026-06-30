@@ -1,3 +1,6 @@
+// GOLDEN REFERENCE — partners-cards
+// This is the target shape for components/home/PartnersSection.tsx.
+// @dev implements against this; it is not imported anywhere.
 import type { SanityImageSource } from '@sanity/image-url';
 
 export interface SanityPartner {
