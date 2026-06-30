@@ -1,171 +1,59 @@
-mission: home-design-polish
+mission: inner-pages-design-polish
 version: "1.0"
 description: >
-  Match 6 home/chrome components to the Claude Design HTML reference.
-  @dev implements each component to byte-match its golden in .agent/golden/.
-  PartnersSection (F5) is commit-only — assert it is tracked clean.
+  Centre-align PageHero content and switch About hero to orchid-violet.jpg.
+  @dev implements each file to byte-match its golden in .agent/golden/.
 goldens:
-  - .agent/golden/components/chrome/UtilityBar.tsx
-  - .agent/golden/components/chrome/Header.tsx
-  - .agent/golden/components/chrome/Footer.tsx
-  - .agent/golden/components/home/YearbookStrip.tsx
-  - .agent/golden/components/home/Hero.tsx
+  - .agent/golden/components/ui/PageHero.tsx
+  - ".agent/golden/app/(marketing)/about/page.tsx"
 assertions:
-  # ---------- F1 — UtilityBar ----------
-  - id: A1
-    description: "F1: UtilityBar byte-matches golden"
-    kind: shell
-    command: "diff -u .agent/golden/components/chrome/UtilityBar.tsx components/chrome/UtilityBar.tsx"
-    expect_exit: 0
-  - id: A2
-    description: "F1: UtilityBar no longer contains the centre tagline span"
-    kind: shell
-    command: "grep -c 'Making a difference since 1968' components/chrome/UtilityBar.tsx"
-    expect_exit: 1
-  - id: A3
-    description: "F1: UtilityBar retains email and Join-a-society pill"
-    kind: shell
-    command: "grep -q 'council@saoc.co.za' components/chrome/UtilityBar.tsx && grep -q 'Join a society' components/chrome/UtilityBar.tsx"
-    expect_exit: 0
+  phase: 1
+  checks:
+    # ---------- F1 — PageHero centering ----------
+    - id: A1
+      description: "F1: PageHero byte-matches golden"
+      command: "diff -u '.agent/golden/components/ui/PageHero.tsx' components/ui/PageHero.tsx"
+    - id: A2
+      description: "F1: inner content div has flex flex-col items-center text-center"
+      command: "grep -q 'flex flex-col items-center text-center' components/ui/PageHero.tsx"
+    - id: A3
+      description: "F1: section retains items-end (text bottom-pinned, centred horizontally)"
+      command: "grep -q 'flex items-end overflow-hidden' components/ui/PageHero.tsx"
 
-  # ---------- F2 — Header ----------
-  - id: A4
-    description: "F2: Header byte-matches golden"
-    kind: shell
-    command: "diff -u .agent/golden/components/chrome/Header.tsx components/chrome/Header.tsx"
-    expect_exit: 0
-  - id: A5
-    description: "F2: wordmark span uses font-semibold (not font-medium)"
-    kind: shell
-    command: "grep -q 'font-serif text-\\[22px\\] font-semibold text-ink' components/chrome/Header.tsx"
-    expect_exit: 0
-  - id: A6
-    description: "F2: Header no longer uses font-medium on the 22px wordmark span"
-    kind: shell
-    command: "grep -c 'font-serif text-\\[22px\\] font-medium text-ink' components/chrome/Header.tsx"
-    expect_exit: 1
+    # ---------- F2 — About orchid-violet ----------
+    - id: A4
+      description: "F2: About page byte-matches golden"
+      command: "diff -u '.agent/golden/app/(marketing)/about/page.tsx' 'app/(marketing)/about/page.tsx'"
+    - id: A5
+      description: "F2: About page uses orchid-violet.jpg"
+      command: "grep -q 'orchid-violet.jpg' 'app/(marketing)/about/page.tsx'"
+    - id: A6
+      description: "F2: About page no longer uses orchid-dark.jpg"
+      command: "! grep -q 'orchid-dark.jpg' 'app/(marketing)/about/page.tsx'"
 
-  # ---------- F3 — Footer ----------
-  - id: A7
-    description: "F3: Footer byte-matches golden"
-    kind: shell
-    command: "diff -u .agent/golden/components/chrome/Footer.tsx components/chrome/Footer.tsx"
-    expect_exit: 0
-  - id: A8
-    description: "F3: Footer is a client component (onSubmit handler)"
-    kind: shell
-    command: "head -1 components/chrome/Footer.tsx | grep -q \"'use client'\""
-    expect_exit: 0
-  - id: A9
-    description: "F3: Col 1 uses stacked lockup with SA Orchid Council wordmark"
-    kind: shell
-    command: "grep -q 'flex flex-col items-center gap-3 mb-4' components/chrome/Footer.tsx && grep -q 'SA Orchid Council' components/chrome/Footer.tsx"
-    expect_exit: 0
-  - id: A10
-    description: "F3: Col 4 is the Stay in touch newsletter form"
-    kind: shell
-    command: "grep -q 'Stay in touch' components/chrome/Footer.tsx && grep -q 'your@email.co.za' components/chrome/Footer.tsx && grep -q 'Quarterly bulletin' components/chrome/Footer.tsx"
-    expect_exit: 0
-  - id: A11
-    description: "F3: Col 4 links out to WOSA"
-    kind: shell
-    command: "grep -q 'https://wosa.org.za' components/chrome/Footer.tsx && grep -q 'Visit Wild Orchids of Southern Africa' components/chrome/Footer.tsx"
-    expect_exit: 0
-  - id: A12
-    description: "F3: bottom bar links to Constitution and Media kit, not Terms"
-    kind: shell
-    command: "grep -q 'href=\"/constitution\"' components/chrome/Footer.tsx && grep -q 'href=\"/media-kit\"' components/chrome/Footer.tsx"
-    expect_exit: 0
-  - id: A13
-    description: "F3: Footer no longer links to /terms"
-    kind: shell
-    command: "grep -c 'href=\"/terms\"' components/chrome/Footer.tsx"
-    expect_exit: 1
+    # ---------- F3 — National Show verify-only ----------
+    - id: A7
+      description: "F3: National Show page has a scrim overlay div"
+      command: "grep -q 'absolute inset-0' 'app/(marketing)/national-show/page.tsx'"
+    - id: A8
+      description: "F3: National Show page has tracking- eyebrow element"
+      command: "grep -q 'tracking-' 'app/(marketing)/national-show/page.tsx'"
 
-  # ---------- F4 — YearbookStrip ----------
-  - id: A14
-    description: "F4: YearbookStrip byte-matches golden"
-    kind: shell
-    command: "diff -u .agent/golden/components/home/YearbookStrip.tsx components/home/YearbookStrip.tsx"
-    expect_exit: 0
-  - id: A15
-    description: "F4: YearbookStrip uses the 2-column grid layout"
-    kind: shell
-    command: "grep -q 'grid grid-cols-1 md:grid-cols-2 gap-16 items-center' components/home/YearbookStrip.tsx"
-    expect_exit: 0
-  - id: A16
-    description: "F4: YearbookStrip imports next/image and renders the right-column image"
-    kind: shell
-    command: "grep -q \"import Image from 'next/image'\" components/home/YearbookStrip.tsx && grep -q '/images/orchid-pink.jpg' components/home/YearbookStrip.tsx"
-    expect_exit: 0
+    # ---------- F4 — Other inner pages ----------
+    - id: A9
+      description: "F4: Societies page uses PageHero"
+      command: "grep -q 'PageHero' 'app/(marketing)/societies/page.tsx'"
+    - id: A10
+      description: "F4: Judging page uses PageHero"
+      command: "grep -q 'PageHero' 'app/(marketing)/judging/page.tsx'"
+    - id: A11
+      description: "F4: Events page uses PageHero"
+      command: "grep -q 'PageHero' 'app/(marketing)/events/page.tsx'"
+    - id: A12
+      description: "F4: Contact page uses PageHero"
+      command: "grep -q 'PageHero' 'app/(marketing)/contact/page.tsx'"
 
-  # ---------- F5 — PartnersSection (commit-only) ----------
-  - id: A17
-    description: "F5: PartnersSection.tsx exists on disk"
-    kind: shell
-    command: "test -f components/home/PartnersSection.tsx"
-    expect_exit: 0
-  - id: A18
-    description: "F5: PartnersSection.tsx is committed (git status shows it clean)"
-    kind: shell
-    command: "test -z \"$(git status --porcelain -- components/home/PartnersSection.tsx)\""
-    expect_exit: 0
-
-  # ---------- F6 — Hero ----------
-  - id: A19
-    description: "F6: Hero byte-matches golden"
-    kind: shell
-    command: "diff -u .agent/golden/components/home/Hero.tsx components/home/Hero.tsx"
-    expect_exit: 0
-  - id: A20
-    description: "F6: Hero content wrapper is centred (items-center text-center)"
-    kind: shell
-    command: "grep -q 'flex flex-col items-center text-center' components/home/Hero.tsx"
-    expect_exit: 0
-  - id: A21
-    description: "F6: Hero no longer uses the old left-aligned content wrapper"
-    kind: shell
-    command: "grep -c 'flex flex-col items-start text-left' components/home/Hero.tsx"
-    expect_exit: 1
-  - id: A22
-    description: "F6: scrim uses bottom gradient from-primary/50 via-primary/60 to-primary/85"
-    kind: shell
-    command: "grep -q 'bg-gradient-to-b from-primary/50 via-primary/60 to-primary/85' components/home/Hero.tsx"
-    expect_exit: 0
-  - id: A23
-    description: "F6: old top-gradient scrim is gone"
-    kind: shell
-    command: "grep -c 'bg-gradient-to-t from-primary/80 via-primary/40 to-transparent' components/home/Hero.tsx"
-    expect_exit: 1
-  - id: A24
-    description: "F6: primary CTA uses bg-primary with hover:bg-primary-800"
-    kind: shell
-    command: "grep -q 'bg-primary text-ivory px-6 py-3 hover:bg-primary-800' components/home/Hero.tsx"
-    expect_exit: 0
-
-  # ---------- QA fixes ----------
-  - id: A25
-    description: "QA: Footer email input has aria-label"
-    kind: shell
-    command: "grep -q 'aria-label=\"Email address\"' components/chrome/Footer.tsx"
-    expect_exit: 0
-  - id: A26
-    description: "QA: Subscribe button uses bg-primary (not bg-accent) for WCAG contrast"
-    kind: shell
-    command: "grep -q 'bg-primary text-ivory.*hover:bg-primary-800.*shrink-0' components/chrome/Footer.tsx"
-    expect_exit: 0
-  - id: A27
-    description: "QA: Hero dot indicator has distinct inactive width (16px)"
-    kind: shell
-    command: "grep -q \"'16px'\" components/home/Hero.tsx"
-    expect_exit: 0
-  - id: A28
-    description: "QA: /constitution stub page exists"
-    kind: shell
-    command: "test -f 'app/(marketing)/constitution/page.tsx'"
-    expect_exit: 0
-  - id: A29
-    description: "QA: /media-kit stub page exists"
-    kind: shell
-    command: "test -f 'app/(marketing)/media-kit/page.tsx'"
-    expect_exit: 0
+    # ---------- F5 — Build verification ----------
+    - id: A13
+      description: "F5: pnpm build exits 0 (no TypeScript or compilation errors)"
+      command: "pnpm build"
