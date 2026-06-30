@@ -61,44 +61,43 @@ export function NavCards() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {NAV_CARDS.map((card) => (
             <Link
               key={card.href}
               href={card.href}
               className="group flex flex-col bg-parchment hover:shadow-md transition-shadow duration-200"
             >
-              {/* Image */}
+              {/* Image with badge overlay */}
               <div className="relative aspect-[3/2] overflow-hidden">
                 <Image
                   src={card.image}
                   alt={card.alt}
                   fill
                   className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                  sizes="(min-width: 768px) 50vw, 100vw"
+                  sizes="(min-width: 1024px) 25vw, 50vw"
                 />
+                <span className="absolute top-3 left-3 font-mono text-[10px] uppercase tracking-[0.18em] text-ivory bg-primary/80 px-2.5 py-1">
+                  {card.badge}
+                </span>
               </div>
 
               {/* Text area */}
-              <div className="flex flex-col flex-1 p-6">
-                <span className="inline-block font-mono text-[10px] uppercase tracking-[0.22em] text-primary border border-primary/30 px-2 py-1 self-start mb-4">
-                  {card.badge}
-                </span>
-
-                <h3 className="font-serif text-[22px] font-medium text-primary leading-snug mb-3 flex-1">
+              <div className="flex flex-col flex-1 p-5">
+                <h3 className="font-serif text-[18px] font-medium text-primary leading-snug mb-2 flex-1">
                   {card.title}
                 </h3>
 
-                <p className="font-sans text-[14px] text-ink/70 leading-relaxed mb-4">
+                <p className="font-sans text-[13px] text-ink/70 leading-relaxed mb-4">
                   {card.body}
                 </p>
 
-                <div className="flex items-center justify-between border-t border-rule pt-4">
+                <div className="flex items-center justify-between border-t border-rule pt-3">
                   <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
                     {card.meta}
                   </span>
                   <span
-                    className="font-serif text-[16px] text-primary group-hover:translate-x-1 transition-transform duration-150"
+                    className="font-serif text-[15px] text-primary group-hover:translate-x-1 transition-transform duration-150"
                     aria-hidden="true"
                   >
                     →
