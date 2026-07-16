@@ -1,8 +1,9 @@
 {
-  "mission": ".agent/memory/project/missions/2026-06-30-inner-pages-design-polish.md",
+  "mission": ".agent/memory/project/missions/2026-07-01-payfast-ticketing.md",
   "checkpoint": {
-    "milestone": null,
-    "feature": null
+    "milestone": "M1",
+    "feature": "F3",
+    "ts": "2026-07-03T21:24:20.840322+00:00"
   },
-  "activated_at": "2026-06-30T08:07:29.862669+00:00"
+  "activated_at": "2026-07-03T21:24:20.840536+00:00"
 }
