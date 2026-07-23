@@ -1,0 +1,137 @@
+schema: athanor.contract/v1
+spec: sanity-vision-esm-fix
+feature: VF
+name: P0 — Sanity Studio /studio route crash (@sanity/vision ESM require() fix)
+created_at: '2026-07-24'
+autonomy: high
+
+# SCOPE: sanity.config.ts ONLY (the conditional `require('@sanity/vision')` on line 13).
+# Root cause (confirmed via read-only diagnostic, do not re-derive): sanity.config.ts's
+# dev-only branch does `const { visionTool } = require('@sanity/vision')` inside
+# `if (process.env.NODE_ENV === 'development')`. @sanity/vision@5.30.0's package.json
+# declares "type": "module" with no CJS entry point (see
+# contracts/golden/sanity-vision-esm-fix/vision-esm-facts.golden.json) -- it is ESM-only.
+# Next.js's webpack refuses to require() an ESM-only package, producing a hard 500 on the
+# ENTIRE /studio route under `pnpm dev` (confirmed via direct HTTP request to
+# http://localhost:3002/studio -- "Module not found: ESM packages (@sanity/vision) need to
+# be imported. Use 'import' to reference the package instead.").
+#
+# This is a SIBLING, NOT a duplicate, of contracts/contract-sanity-react-peer-fix.yaml (the
+# immediately-preceding mission on this same file/area). That contract fixed a *runtime*
+# React.useEffectEvent crash in the Structure Tool's document edit pane (root cause: react
+# peer-range too loose) and is already resolved -- package.json's react/react-dom are now
+# ^19.2.2. THIS contract fixes a completely different, unrelated crash: a *build-time
+# module-resolution* failure in the Vision (GROQ scratchpad) plugin's conditional require,
+# which 500s the /studio route before the Structure Tool ever gets a chance to render
+# anything. Do not conflate the two, and do not re-verify the react-peer fix here.
+#
+# This is also blocking a separate, still-open P0 investigation (see
+# .agent/memory/project/needs-human.md, "RF-11: Sanity Studio edit-pane manual browser
+# verification") into whether the document edit pane genuinely renders now that the react
+# peer fix landed -- that verification needs a working local dev Studio, which this
+# vision crash currently prevents entirely. Fixing THIS bug is a prerequisite for that
+# QA step, but this contract is scoped ONLY to the vision-require crash, not to performing
+# that verification itself.
+#
+# NOT in scope: the react-peer-fix (done, separate contract), Structure Tool document-pane
+# rendering QA (separate, still-open, tracked in needs-human.md), the next.config.ts
+# `exportsPresence = false` webpack workaround (unrelated root cause -- that suppresses a
+# build-time export-analysis false-negative on React's own conditional require; it does
+# NOT touch @sanity/vision and does not affect this bug either way -- do not remove or
+# alter it here), any Sanity v5->v6 major upgrade, any @sanity/vision version bump.
+
+goldens:
+  - contracts/golden/sanity-vision-esm-fix/README.md
+  - contracts/golden/sanity-vision-esm-fix/sanity.config.ts.target-shape.golden
+  - contracts/golden/sanity-vision-esm-fix/vision-esm-facts.golden.json
+
+assertions:
+  # ---------- the CJS require() is gone ----------
+  - id: VF-01
+    description: >-
+      sanity.config.ts no longer contains a CommonJS require() call for '@sanity/vision'.
+      require() is fundamentally incompatible with an ESM-only package (no "main"/CJS
+      entry point exists to require) -- this is the literal line that crashes the route.
+    verify:
+      kind: shell
+      cmd: "! grep -Eq \"require\\(['\\\"]@sanity/vision['\\\"]\\)\" sanity.config.ts"
+
+  # ---------- replaced with a genuine ESM import ----------
+  - id: VF-02
+    description: >-
+      sanity.config.ts imports visionTool from '@sanity/vision' via ESM import syntax --
+      either a static top-level `import { visionTool } from '@sanity/vision'` or a dynamic
+      `import('@sanity/vision')` -- not require(). See README.md for why the static form
+      is the recommended pattern for this file's specific structure (webpack tree-shakes
+      it cleanly out of the production bundle; @sanity/vision's package.json marks its JS
+      files side-effect-free), but either mechanically satisfies this assertion.
+    verify:
+      kind: shell
+      cmd: "grep -E '@sanity/vision' sanity.config.ts | grep -v require | grep -q import"
+
+  # ---------- dev-only intent preserved (no behavior change to when Vision is available) ----------
+  - id: VF-03
+    description: >-
+      structureTool() remains unconditional (always included), and visionTool's inclusion
+      is still gated by a `process.env.NODE_ENV === 'development'` check -- i.e. the fix
+      changes HOW the module is loaded, not WHEN the plugin is available. Vision must not
+      become always-included (production bundle bloat, the exact thing the original
+      dev-only guard was written to avoid) nor silently dropped from dev.
+    verify:
+      kind: shell
+      cmd: "awk '/export default defineConfig/{exit} {print}' sanity.config.ts > /tmp/saoc-vision-prefix.txt && grep -q \"structureTool()\" sanity.config.ts && grep -Eq \"NODE_ENV[[:space:]]*===[[:space:]]*['\\\"]development['\\\"]\" /tmp/saoc-vision-prefix.txt && grep -q \"visionTool()\" /tmp/saoc-vision-prefix.txt"
+
+  # ---------- the actual crash is gone: /studio no longer 500s under pnpm dev ----------
+  - id: VF-04
+    description: >-
+      With `pnpm dev` running, a direct HTTP request to /studio does not return a 500 and
+      the response body contains neither "Module not found" nor "ESM packages" (the exact
+      error text from the confirmed bug report). This does not require an authenticated
+      browser session -- the route must not crash before that point.
+    verify:
+      kind: shell
+      cmd: 'set -m; pnpm dev > /tmp/saoc-vision-dev.log 2>&1 & DEV_PID=$!; CODE=000; for i in $(seq 1 40); do CODE=$(curl -s -o /tmp/saoc-vision-body.html -w "%{http_code}" http://localhost:3002/studio 2>/dev/null); if [ "$CODE" != "000" ]; then break; fi; sleep 1; done; kill -- -$DEV_PID 2>/dev/null; wait $DEV_PID 2>/dev/null; if [ "$CODE" = "500" ]; then echo "studio route returned HTTP 500"; cat /tmp/saoc-vision-body.html; exit 1; fi; if grep -qi "Module not found" /tmp/saoc-vision-body.html 2>/dev/null; then echo "ESM module-not-found error present in response body"; exit 1; fi; if grep -qi "ESM packages" /tmp/saoc-vision-body.html 2>/dev/null; then echo "ESM packages error present in response body"; exit 1; fi; if [ "$CODE" = "000" ]; then echo "dev server never became reachable on :3002"; exit 1; fi; exit 0'
+
+  # ---------- production build still succeeds and still ships the studio route ----------
+  - id: VF-05
+    description: >-
+      `pnpm build` (production build, bare, exit code not masked) still succeeds AND the
+      build output still lists the /studio/[[...tool]] route -- don't break the thing that
+      already works. NOTE: authoring-time baseline confirms `pnpm build` already succeeds
+      today even WITH the unfixed require() present (webpack's NODE_ENV dead-branch pruning
+      skips the require() entirely in production -- the crash is dev-only). This assertion
+      guards against the fix accidentally breaking that, e.g. by making the import
+      unconditional in a way that fails to resolve, or by mis-structuring the plugins array.
+    verify:
+      kind: shell
+      cmd: 'out=$(pnpm build 2>&1); code=$?; if [ $code -ne 0 ]; then echo "$out"; exit 1; fi; if ! echo "$out" | grep -qF "studio/[[...tool]]"; then echo "studio route missing from production build output"; echo "$out"; exit 1; fi; exit 0'
+
+  # ---------- type-check still passes ----------
+  - id: VF-06
+    description: strict TypeScript type-check passes
+    verify:
+      kind: shell
+      cmd: 'pnpm type-check'
+
+  # ---------- contract-staleness guard ----------
+  - id: VF-07
+    description: >-
+      The root-cause fact this contract was written against -- @sanity/vision's installed
+      package.json declares "type": "module" (ESM-only, no CJS entry) -- still holds. If
+      this fails, @sanity/vision was bumped to a version that added CJS support (or was
+      removed/replaced) since this contract was written, and the fix needs re-verification
+      against the new facts, not just a patch to satisfy the old ones.
+    verify:
+      kind: shell
+      cmd: 'node -e "const p=require(\"./node_modules/@sanity/vision/package.json\"); if (p.type !== \"module\") { console.error(\"@sanity/vision no longer type:module -- root cause fact changed, re-verify whether this fix is still needed\"); process.exit(1); }"'
+
+phases:
+  - id: 1
+    assertions:
+      - VF-01
+      - VF-02
+      - VF-03
+      - VF-04
+      - VF-05
+      - VF-06
+      - VF-07

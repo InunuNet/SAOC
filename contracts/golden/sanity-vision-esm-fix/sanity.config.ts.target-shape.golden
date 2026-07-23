@@ -1,3 +1,12 @@
+// GOLDEN REFERENCE -- target shape for sanity.config.ts after the fix.
+// This is NOT a byte-for-byte diff to paste in; it demonstrates the recommended
+// implementation shape (static ESM import + conditional array-spread) that VF-01/02/03
+// verify against. See README.md "Fix pattern decision" for the full reasoning.
+// Comments, exact whitespace, and quote style may differ in the real implementation --
+// what matters is: (a) no require(), (b) a real ESM import of visionTool exists,
+// (c) structureTool() stays unconditional, (d) visionTool's inclusion stays gated on
+// NODE_ENV === 'development'.
+
 import { defineConfig } from 'sanity';
 import { structureTool } from 'sanity/structure';
 // Vision (GROQ scratchpad) is dev-only to keep the production Studio bundle small.

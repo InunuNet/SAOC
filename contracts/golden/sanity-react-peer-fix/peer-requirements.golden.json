@@ -1,0 +1,27 @@
+{
+  "_purpose": "Exact peerDependencies declared by the two Sanity packages currently in this repo's dependency tree, extracted directly from pnpm-lock.yaml (not inferred). This is the ground truth for how tight package.json's react/react-dom ranges must be. If sanity or @sanity/vision are ever bumped to a new version, re-extract this file from the new pnpm-lock.yaml before trusting it — RF-06 in the contract cross-checks the live lockfile against these exact strings and will fail loudly if they drift.",
+  "sanity": {
+    "version": "5.31.1",
+    "source": "pnpm-lock.yaml, packages: block, 'sanity@5.31.1' entry (peerDependencies sub-key)",
+    "peerDependencies": {
+      "react": "^19.2.2",
+      "react-dom": "^19.2.2",
+      "styled-components": "^6.1.15"
+    }
+  },
+  "@sanity/vision": {
+    "version": "5.30.0",
+    "source": "pnpm-lock.yaml, packages: block, '@sanity/vision@5.30.0' entry (peerDependencies sub-key)",
+    "peerDependencies": {
+      "react": "^19.2.2",
+      "sanity": "^4.0.0-0 || ^5.0.0-0",
+      "styled-components": "^6.1.15"
+    },
+    "note": "declares its own sanity peer range independently of the sanity package's own version — currently satisfied (5.31.1 falls inside ^5.0.0-0), no action needed there. The react@^19.2.2 peer is the one that matters for this fix."
+  },
+  "minimum_required_project_range": {
+    "react": "^19.2.2",
+    "react-dom": "^19.2.2",
+    "rationale": "package.json must declare a range whose MINIMUM satisfiable version is >= 19.2.2 so that a fresh/frozen install can never resolve an older React lacking React.useEffectEvent, which sanity@5.31.1's Structure Tool calls directly (confirmed via grep of node_modules/sanity/lib/_chunks-es/structureTool.js — the prior fix in commit 397de87 claimed to remove this call but did not)."
+  }
+}

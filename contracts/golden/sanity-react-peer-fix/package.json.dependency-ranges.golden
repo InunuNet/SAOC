@@ -1,0 +1,16 @@
+{
+  "_purpose": "Target dependency-field values for package.json. Not a full-file diff — only these two keys under \"dependencies\" change. Everything else in package.json is out of scope for this fix.",
+  "dependencies": {
+    "react": "^19.2.2",
+    "react-dom": "^19.2.2"
+  },
+  "acceptable_alternatives": [
+    "A higher patch/minor within major 19 is fine, e.g. \"^19.2.7\" (matches what the lockfile already resolves to) or \"^19.3.0\".",
+    "A caret range on a future major (e.g. \"^20.0.0\") is fine IF sanity@5.31.1 and @sanity/vision still declare a compatible peer range at that time — re-check pnpm-lock.yaml before assuming this.",
+    "The only hard requirement (see RF-01 in the contract): minVersion(declared range) >= 19.2.2 for BOTH react and react-dom. \"^19.0.0\" (the current value) fails this — its minVersion is 19.0.0."
+  ],
+  "current_before_fix": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

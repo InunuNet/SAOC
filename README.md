@@ -23,6 +23,11 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000). Studio: [http://localhost:3000/studio](http://localhost:3000/studio).
 
+Studio has an open P0: the document edit pane doesn't render when clicking into a document.
+Two related bugs were investigated and fixed (a loose React peer-dependency range, and a
+`/studio` dev-server crash), but the original symptom is not yet confirmed fixed — see
+[docs/sanity-studio-p0-investigation.md](docs/sanity-studio-p0-investigation.md).
+
 **Lint**
 
 ```bash
@@ -80,6 +85,7 @@ types/            — TypeScript interfaces
 | --------------- | ------ | ------------------------------------------------- |
 | M1 — Foundation | Done   | Scaffold + static data layer                      |
 | M2 — Chrome     | Done   | Global chrome: header, footer, search, mobile nav |
+| PayFast ticketing M1 | Done | Payment plumbing: ticket schema, checkout initiation, fail-closed ITN webhook. No buy-flow UI yet — see [docs/payfast-integration.md](docs/payfast-integration.md) |
 
 Full milestone docs are in [`docs/`](docs/).
 

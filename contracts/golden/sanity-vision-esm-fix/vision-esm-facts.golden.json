@@ -1,0 +1,24 @@
+{
+  "_purpose": "Ground-truth facts about @sanity/vision's package format, extracted directly from the installed package's package.json (not inferred). This is why require() crashes and why an ESM import is the only mechanically valid fix. If @sanity/vision is ever bumped, re-extract this file before trusting it -- VF-07 in the contract cross-checks the live node_modules/@sanity/vision/package.json against the 'type' field and will fail loudly if it drifts.",
+  "@sanity/vision": {
+    "version": "5.30.0",
+    "source": "node_modules/@sanity/vision/package.json (installed copy, authoring-time)",
+    "relevant_fields": {
+      "type": "module",
+      "main": "./lib/index.js",
+      "exports": {
+        ".": "./lib/index.js",
+        "./package.json": "./package.json"
+      },
+      "sideEffects": ["*.css", "*.css.ts"]
+    },
+    "why_require_crashes": "\"type\": \"module\" means every .js file in this package (including the ./lib/index.js pointed to by \"main\") is parsed as an ES module by Node and by bundlers that respect package.json's module-type field. There is no separate CJS build and no \"require\" condition in the \"exports\" map. A CommonJS require('@sanity/vision') has no valid entry point to resolve to -- this is a hard incompatibility, not a bundler misconfiguration. Next.js's webpack detects this and refuses to proceed, producing the confirmed 'Module not found: ESM packages (@sanity/vision) need to be imported' error and a 500 on the /studio route.",
+    "why_sideEffects_matters_for_the_fix_choice": "sideEffects is scoped to only [\"*.css\", \"*.css.ts\"] -- meaning every plain .js/.ts module in this package (including lib/index.js, which exports visionTool) is explicitly marked side-effect-free. This is what allows webpack's tree-shaking / unused-export elimination to safely drop an unused static import of visionTool from the production bundle when the reference to it is inside a branch that's statically known to be false at build time (see README.md's 'Fix pattern decision' section for the full reasoning chain). Without this field (or with it defaulting to true), a static top-level import would be a bundle-size regression risk; with it, it is not."
+  },
+  "authoring_time_build_baseline": {
+    "note": "Captured against the CURRENT (unfixed, buggy) sanity.config.ts to establish a pre-fix baseline for VF-05 -- confirms the crash is dev-only, not a general build failure.",
+    "pnpm_build_result": "SUCCEEDS today even with the unfixed require() present",
+    "pnpm_build_studio_route_line": "ƒ /studio/[[...tool]]                    1.65 MB        1.75 MB",
+    "why_build_does_not_crash": "Next.js's webpack replaces process.env.NODE_ENV with the literal \"production\" during a production build (DefinePlugin), and webpack's parser (ConstPlugin) recognizes `if (process.env.NODE_ENV === 'development')` as a statically-false branch and skips adding its require()/import() dependency to the module graph entirely -- before dependency resolution, not just as a post-hoc dead-code-elimination pass. The require() is never actually reached or resolved during `pnpm build`. Under `pnpm dev`, NODE_ENV genuinely is 'development', the branch IS reached, and the require() must actually resolve -- that is where and why it crashes."
+  }
+}

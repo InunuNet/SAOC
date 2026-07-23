@@ -1,0 +1,145 @@
+schema: athanor.contract/v1
+spec: sanity-react-peer-fix
+feature: RF
+name: P0 — Sanity Studio document edit pane crash (React peer-dependency fix)
+created_at: '2026-07-24'
+autonomy: high
+
+# SCOPE: package.json (react/react-dom range bump only) + pnpm-lock.yaml regeneration.
+# Root cause (confirmed via read-only diagnostic, do not re-derive): sanity@5.31.1's
+# Structure Tool calls React.useEffectEvent (React >=19.2.2-only API). package.json
+# declares "react": "^19.0.0" / "react-dom": "^19.0.0" -- too loose to guarantee the
+# runtime has that API, even though the currently-committed lockfile happens to already
+# resolve 19.2.7. This exact failure already recurred once (commit 397de87 claimed to
+# remove the useEffectEvent dependency; it did not -- see
+# node_modules/sanity/lib/_chunks-es/structureTool.js). See
+# contracts/golden/sanity-react-peer-fix/README.md for the full spec, including the
+# `next.config.ts` webpack-workaround judgment call (NOT gated by this contract) and the
+# exact pnpm-lock.yaml peerDependency lines this was verified against.
+#
+# NOT in scope: restructuring Studio schemas/routes, the Sanity v5->v6 major upgrade
+# (tracked separately in backlog.md), the Sanity Free-plan quota assessment (also
+# tracked separately), and the @sanity/vision version-skew hygiene item (optional, not
+# gated here).
+
+goldens:
+  - contracts/golden/sanity-react-peer-fix/README.md
+  - contracts/golden/sanity-react-peer-fix/peer-requirements.golden.json
+  - contracts/golden/sanity-react-peer-fix/package.json.dependency-ranges.golden
+
+assertions:
+  # ---------- package.json range tightened ----------
+  - id: RF-01
+    description: >-
+      package.json declares react AND react-dom dependency ranges whose minimum
+      satisfiable version is >= 19.2.2 (sanity@5.31.1's and @sanity/vision's actual
+      peerDependency floor -- see peer-requirements.golden.json). The prior "^19.0.0"
+      range fails this because its minVersion is 19.0.0.
+    verify:
+      kind: shell
+      cmd: 'node -e "const p=require(\"./package.json\");const chk=r=>{const m=(r||\"\").match(/^\^(\d+)\.(\d+)\.(\d+)/);if(!m)return false;const a=Number(m[1]),b=Number(m[2]),c=Number(m[3]);return a>19||(a===19&&(b>2||(b===2&&c>=2)))};if(!chk(p.dependencies.react)||!chk(p.dependencies[\"react-dom\"])){console.error(\"react/react-dom range below required ^19.2.2:\",p.dependencies.react,p.dependencies[\"react-dom\"]);process.exit(1)}"'
+
+  # ---------- lockfile dedup + version floor ----------
+  - id: RF-03
+    description: >-
+      pnpm-lock.yaml resolves exactly ONE distinct react version tree-wide (no stray
+      older duplicates), and it is >= 19.2.2.
+    verify:
+      kind: shell
+      cmd: 'v=$(grep -oE "^  react@[0-9]+\.[0-9]+\.[0-9]+" pnpm-lock.yaml | sort -u); n=$(echo "$v" | grep -c .); [ "$n" = "1" ] && node -e "const s=\"$v\".trim().replace(/^react@/,\"\");const [a,b,c]=s.split(\".\").map(Number);process.exit(a>19||(a===19&&(b>2||(b===2&&c>=2)))?0:1)"'
+  - id: RF-04
+    description: >-
+      pnpm-lock.yaml resolves exactly ONE distinct react-dom version tree-wide (no
+      stray older duplicates across peer-qualified variants), and it is >= 19.2.2.
+    verify:
+      kind: shell
+      cmd: 'v=$(grep -oE "^  react-dom@[0-9]+\.[0-9]+\.[0-9]+" pnpm-lock.yaml | sort -u); n=$(echo "$v" | grep -c .); [ "$n" = "1" ] && node -e "const s=\"$v\".trim().replace(/^react-dom@/,\"\");const [a,b,c]=s.split(\".\").map(Number);process.exit(a>19||(a===19&&(b>2||(b===2&&c>=2)))?0:1)"'
+
+  # ---------- clean install, no unmet peers ----------
+  - id: RF-05
+    description: >-
+      `pnpm install --frozen-lockfile` completes with exit 0 and produces no "Unmet
+      peer" warning mentioning react or sanity.
+    verify:
+      kind: shell
+      cmd: 'out=$(pnpm install --frozen-lockfile 2>&1); code=$?; if echo "$out" | grep -iE "unmet peer.*(react|sanity)"; then echo "$out"; exit 1; fi; exit $code'
+
+  # ---------- contract-staleness guard ----------
+  - id: RF-06
+    description: >-
+      The peer-requirement facts this contract was written against (sanity@5.31.1 and
+      @sanity/vision@5.30.0 both require react ^19.2.2) still match the live
+      pnpm-lock.yaml. If this fails, the Sanity packages moved since this contract was
+      written and the whole fix needs re-verification against the new peer ranges, not
+      just a patch to satisfy the old ones.
+    verify:
+      kind: shell
+      cmd: 'grep -A6 "^  sanity@5.31.1:" pnpm-lock.yaml | grep -q "react: \^19.2.2" && grep -A6 "^  sanity@5.31.1:" pnpm-lock.yaml | grep -q "react-dom: \^19.2.2" && grep -A6 "^  ''@sanity/vision@5.30.0'':" pnpm-lock.yaml | grep -q "react: \^19.2.2"'
+
+  # ---------- build gates ----------
+  # NOTE: `pnpm lint` is deliberately NOT a gate here. It currently fails
+  # repo-wide (2600+ pre-existing errors) because ESLint's flat config
+  # (eslint.config.mjs) does not exclude the gitignored "Old SAOC Website
+  # Backup/" directory at the repo root, so it lints thousands of legacy
+  # Joomla template files unrelated to this project. That's a pre-existing,
+  # out-of-scope problem (verified independently of this fix: `pnpm build`
+  # and `pnpm type-check` both pass cleanly with the current, unfixed
+  # package.json). Fixing eslint.config.mjs is out of scope for this P0
+  # dependency fix -- do not fold it in here.
+  - id: RF-07
+    description: strict TypeScript type-check passes
+    verify:
+      kind: shell
+      cmd: 'pnpm type-check'
+  - id: RF-09
+    description: production build succeeds (bare pnpm build, exit code not masked)
+    verify:
+      kind: shell
+      cmd: 'pnpm build'
+
+  # ---------- Firebase App Hosting build-config sanity ----------
+  - id: RF-10
+    description: >-
+      apphosting.yaml declares no buildCommand/installCommand override that would
+      bypass the committed, lockfile-respecting pnpm install; no competing
+      package-lock.json/yarn.lock exists at the repo root; package.json still pins an
+      exact packageManager version (not a range).
+    verify:
+      kind: shell
+      cmd: 'if grep -Eq "buildCommand|installCommand" apphosting.yaml; then exit 1; fi; if [ -f package-lock.json ] || [ -f yarn.lock ]; then exit 1; fi; grep -Eq "\"packageManager\": \"pnpm@[0-9]+\.[0-9]+\.[0-9]+\"" package.json'
+
+  # ---------- human/QA verification: the one thing static checks can't confirm ----------
+  - id: RF-11
+    description: >-
+      With `pnpm dev` running, opening /studio and clicking into any existing document
+      (e.g. a society or event) actually renders the edit pane with fields -- not the
+      crashed/blank state from the bug report. Requires real browser interaction
+      against an embedded Studio iframe; per this repo's coding standards
+      (.claude/rules/coding.md), human/QA verification is acceptable here since it
+      cannot be reduced to a shell/grep check. A `skip` verdict means "not
+      machine-checkable" -- QA must still actually perform this before treating the
+      gate as meaningfully green, per README.md's closing note.
+    verify:
+      kind: agent_review
+      rubric: >-
+        Run `pnpm dev`, navigate to http://localhost:3002/studio (or whatever port
+        `pnpm dev` reports), open the document list for any schema type with existing
+        seeded content, click into one document. PASS iff the edit pane renders its
+        fields (title/text inputs, etc. are visible and interactive) within a few
+        seconds -- no red error overlay, no perpetually blank/spinning pane, no
+        "structure tool crashed" message. Check the browser console for any
+        useEffectEvent-related error as corroborating evidence either way. FAIL and
+        describe the exact symptom if the pane does not render.
+
+phases:
+  - id: 1
+    assertions:
+      - RF-01
+      - RF-03
+      - RF-04
+      - RF-05
+      - RF-06
+      - RF-07
+      - RF-09
+      - RF-10
+      - RF-11
