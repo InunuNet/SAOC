@@ -1,6 +1,6 @@
 ---
 name: docs
-model: sonnet
+model: haiku
 description: Documentation writer and maintainer
 ---
 

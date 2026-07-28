@@ -1,0 +1,162 @@
+schema: athanor.contract/v1
+slug: codi-last-match-template
+goal: >
+  Fix backlog item found during the #1287 QA pass: "P3:
+  template/execution/hooks/full_boot.sh directive extraction finds FIRST CODI
+  block, not LAST (most recent)".
+
+  Investigation finding (verified by reading both files' CURRENT state, after
+  the #1287 mission's comms-dedup hash-cache logic was added to both --
+  execution/hooks/full_boot.sh lines 121-140, template/execution/hooks/full_boot.sh
+  line 136-151):
+
+  execution/hooks/full_boot.sh (the canonical, already-correct copy) locates
+  the MOST RECENT "## [CODI" directive in comms.md via
+  `grep -n "^## \[CODI" comms.md | tail -1 | cut -d: -f1` (find the LAST
+  matching header line number), then extracts everything after it with
+  `awk -v startline="$LAST_CODI_LINE" 'NR > startline { if (/^## \[/) {exit}
+  ... }'` until the next "## [" header or a 40-line cap. This correctly
+  returns the LAST (most recent) block when comms.md has accumulated multiple
+  "## [CODI ->" sections over time.
+
+  template/execution/hooks/full_boot.sh instead uses a single-pass awk state
+  machine (its own line 139):
+  `awk '/^## \[CODI →/||/^## \[CODI ->/{if(found){exit} found=1; count=0;
+  next} /^## \[/{if(found){exit}} found{print; count++; ...}'`.
+  This sets found=1 on the FIRST "## [CODI" header encountered, then EXITS as
+  soon as it hits the SECOND "## [CODI" header (which also matches the
+  `/^## \[/` trailing rule) -- i.e. it extracts the FIRST block, not the
+  last. When comms.md accumulates multiple "## [CODI ->" blocks over time
+  (the normal, expected long-running state -- confirmed via the real
+  .agent/memory/project/comms.md, which already shows this exact block
+  format), template/ injects the STALE/OLDEST directive at boot instead of
+  the most recent one -- the opposite of the intended behavior.
+
+  Required fix, template/ only (execution/ is already correct and must not
+  regress): replace template/'s single-pass "stop at first block" awk state
+  machine with the byte-for-byte equivalent of execution/'s existing
+  grep+tail+awk "find last header line, extract until next header" pattern.
+  This is a small, surgical fix -- bring template/'s extraction logic in line
+  with execution/'s already-correct pattern. Does not need the exhaustive
+  edge-case treatment #1287's dedup/cap contract received; this contract
+  proves the multi-block bug and its fix without breaking the single-block
+  or no-block cases.
+
+  Twin-file scope confirmed directly (not assumed): both files were read in
+  full at their current, post-#1287 line numbers immediately before writing
+  this contract. execution/'s comms.md section is lines 121-140 (multi-line,
+  named LAST_CODI_LINE variable + separate awk extraction step). template/'s
+  comms.md section is a single line, its own line 139 (one inline awk
+  one-liner, no named "which line is last" step at all). These are the real,
+  current, independently-verified extraction-logic bodies, not a stale or
+  pre-#1287 reading.
+
+created_at: "2026-07-09"
+autonomy: high
+
+assertions:
+  - id: P1A1
+    description: >
+      Golden-file helper script for this backlog item is syntactically valid
+      bash.
+    verify:
+      kind: shell
+      cmd: bash -n execution/checks/verify_codi_last_match_template.sh
+  - id: P1A2
+    description: >
+      Static signal: execution/hooks/full_boot.sh already extracts the LAST
+      matching "## [CODI" header line via `grep -n ... | tail -1` (existing,
+      correct behavior this contract must NOT regress). PASSES today.
+    verify:
+      kind: shell
+      cmd: grep -q 'grep -n "\^## \\\[CODI" "\$COMMS_FILE".*tail -1' execution/hooks/full_boot.sh
+  - id: P1A3
+    description: >
+      Static signal: template/execution/hooks/full_boot.sh's comms.md
+      extraction uses the same durable "find the LAST matching header line"
+      pattern as execution/'s already-correct copy -- `grep -n ... | tail -1`
+      to locate the most recent "## [CODI" header, feeding a named
+      LAST_CODI_LINE variable into the awk extraction step. This is a
+      structural property that must hold true in BOTH pre-fix and post-fix
+      states for a Phase-1 assertion to be meaningful: it correctly FAILS
+      before the fix (template/ instead used a first-match `found=1` /
+      `if(found){exit}` state machine with no such line-number lookup) and
+      correctly PASSES after the fix replaces that awk one-liner with this
+      grep+tail+awk pattern.
+    verify:
+      kind: shell
+      cmd: grep -q 'grep -n "\^## \\\[CODI" "\$COMMS_FILE".*tail -1' template/execution/hooks/full_boot.sh
+  - id: P1A4
+    description: >
+      Regression guard: full_boot.sh (both copies) must remain a single
+      top-level script with exactly one "LATEST DIRECTIVE" injection point
+      each -- the fix must be a targeted edit to the existing comms.md
+      extraction section, not a duplicated or restructured boot pipeline.
+    verify:
+      kind: shell
+      cmd: >-
+        test "$(grep -c 'LATEST DIRECTIVE' execution/hooks/full_boot.sh)" -eq 1 &&
+        test "$(grep -c 'LATEST DIRECTIVE' template/execution/hooks/full_boot.sh)" -eq 1
+
+  - id: P2A1
+    description: >
+      GOLDEN case (a) -- execution/: comms.md has THREE "## [CODI ->" blocks
+      in chronological order. The LAST (most recent) block's marker text
+      must be printed; earlier blocks' marker text must NOT appear. Existing
+      correct behavior -- PASSES today (proves execution/ is the correct
+      reference).
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_codi_last_match_template.sh multi_block
+  - id: P2A2
+    description: >
+      GOLDEN case (a), template/ twin -- identical fixture to P2A1 but driven
+      against template/execution/hooks/full_boot.sh. This is the headline
+      bug reproduction: template/'s first-match awk state machine returns
+      the OLDEST block's marker instead of the newest. Currently FAILS --
+      must PASS after the fix is applied to template/.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_codi_last_match_template.sh multi_block --template
+  - id: P2A3
+    description: >
+      GOLDEN case (b) -- execution/: comms.md has exactly ONE "## [CODI ->"
+      block (regression guard -- trivial case both extraction strategies
+      must agree on). Existing correct behavior -- PASSES today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_codi_last_match_template.sh single_block
+  - id: P2A4
+    description: >
+      GOLDEN case (b), template/ twin -- identical fixture to P2A3 but driven
+      against template/execution/hooks/full_boot.sh. Regression guard: with
+      only one CODI block, "first match" and "last match" are the same
+      block, so template/'s current (buggy) logic already agrees with
+      execution/'s here. PASSES today and must keep passing after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_codi_last_match_template.sh single_block --template
+  - id: P2A5
+    description: >
+      GOLDEN case (c) -- execution/: comms.md has NO "## [CODI ->" block at
+      all (regression guard). No LATEST DIRECTIVE block may be printed.
+      Existing correct behavior -- PASSES today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_codi_last_match_template.sh no_block
+  - id: P2A6
+    description: >
+      GOLDEN case (c), template/ twin -- identical fixture to P2A5 but driven
+      against template/execution/hooks/full_boot.sh. Regression guard: with
+      no CODI block present, template/'s current logic already correctly
+      prints nothing (the awk pattern simply never matches). PASSES today
+      and must keep passing after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_codi_last_match_template.sh no_block --template
+
+phases:
+  - id: 1
+    assertions: [P1A1, P1A2, P1A3, P1A4]
+  - id: 2
+    assertions: [P2A1, P2A2, P2A3, P2A4, P2A5, P2A6]

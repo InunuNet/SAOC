@@ -251,7 +251,8 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "BASH_DEFAULT_TIMEOUT_MS": "300000",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "$ANTHROPIC_DEFAULT_HAIKU_MODEL",
-    "PAI_CONTEXT_MODE": "coding"
+    "PAI_CONTEXT_MODE": "coding",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "45"
   },
   "cleanupPeriodDays": 30,
   "skipDangerousModePermissionPrompt": true,

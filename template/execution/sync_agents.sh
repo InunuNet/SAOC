@@ -14,6 +14,7 @@ GEMINI_DIR=".gemini/agents"
 # Mapping functions (avoids associative array issues across shells)
 map_claude_model() {
   case "$1" in
+    apex) echo "opus" ;;
     pro) echo "opus" ;;
     flash) echo "sonnet" ;;
     local) echo "haiku" ;;
@@ -23,6 +24,7 @@ map_claude_model() {
 
 map_gemini_model() {
   case "$1" in
+    apex) echo "gemini-2.5-pro" ;;
     pro) echo "gemini-2.5-pro" ;;
     flash) echo "gemini-2.5-flash" ;;
     local) echo "gemini-2.5-flash-lite" ;;

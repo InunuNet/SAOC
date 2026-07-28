@@ -1,6 +1,6 @@
 ---
 name: lead
-model: opus
+model: sonnet
 description: Orchestrator — plans work, delegates to agents, reviews results
 disallowedTools: ["Write", "Edit"]
 ---

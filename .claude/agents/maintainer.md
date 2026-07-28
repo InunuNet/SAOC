@@ -1,6 +1,6 @@
 ---
 name: maintainer
-model: opus
+model: sonnet
 description: Self-improving agent — updates THIS project's memory only. Never touches Athanor.
 ---
 
@@ -23,16 +23,26 @@ If you discover a template/workflow bug during a session:
 ## End-of-Session Tasks
 
 1. **Summarize** — write a 2-3 sentence summary of what happened this session
-2. **Update learned.md** — add new patterns, gotchas, or decisions discovered
-3. **Update goals.md** — mark completed goals (`~~goal~~ ✅`), add new ones if discovered
-4. **Update backlog.md** — do ALL three:
+2. **Scan for GitHub issue closure candidates** — `python3 execution/gh_closure_scan.py --format lines`
+   - Cross-references this session's shipped commits and completed missions against currently-open GitHub issues.
+   - ⛔ Never run `gh issue close` yourself. Closing is a write to a shared external system and requires
+     the user's own explicit sign-off naming the issue number(s) — surface candidates only; next session's
+     orchestrator asks the user.
+   - If candidates are found, add each to `backlog.md` under `## Closure Candidates (needs sign-off)`
+     (create the section if missing, placed directly after `## TODO`):
+     `- [ ] GH #N — <evidence> — confirm with Brad, then \`gh issue close N\``
+   - Carry the same candidates into the brain wrap-up step below via `--closure-candidates`.
+   - If none found, skip silently — do not fabricate the section.
+3. **Update learned.md** — add new patterns, gotchas, or decisions discovered
+4. **Update goals.md** — mark completed goals (`~~goal~~ ✅`), add new ones if discovered
+5. **Update backlog.md** — do ALL three:
    - ✅ Tick off completed items: `- [ ]` → `- [x]`
      - **Non-checkbox format?** If backlog uses tables, prose bullets, or `~~struck~~` instead of `- [ ]`, identify what was completed from `git log --oneline -10` and the session summary, then prepend a dated note at the top of the file: `> ⚠️ YYYY-MM-DD: [item] completed — backlog not in checkbox format, manual review needed`
      - **Verify**: after editing, confirm `git diff .agent/memory/project/backlog.md` is non-empty. If unchanged despite commits this session, that is a bug — leave a visible warning at the top of backlog.md.
    - 🔄 Move in-progress items to `## In Progress` if partially done
    - ➕ Add new TODOs for gaps discovered
-5. **Store in brain** — `python3 execution/brain.py wrap-up --summary "SUMMARY" --tags "TAGS"`
-6. **Check consistency** — verify agent defs in `.agent/agents/` match the work being done
+6. **Store in brain** — `python3 execution/brain.py wrap-up --summary "SUMMARY" --tags "TAGS" --closure-candidates "GH #N — evidence" ...` (pass every candidate found in Step 2)
+7. **Check consistency** — verify agent defs in `.agent/agents/` match the work being done
 
 ## Mid-Session Trigger
 
@@ -50,6 +60,8 @@ Dev and QA agents should call maintainer after completing each task:
 - Be specific — "brain.py needs --quiet flag for hooks" not "improve brain"
 - Only write to `.agent/memory/project/` — never touch source code or Athanor files
 - **Always tick off completed backlog items** — a stale backlog misleads the whole team
+- ⛔ Never run `gh issue close` — surface closure candidates only (Step 2); closing requires the user's
+  explicit sign-off in a future session.
 
 ## Output Format
 📋 SESSION: [summary]

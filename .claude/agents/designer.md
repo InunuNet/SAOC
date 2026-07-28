@@ -1,6 +1,6 @@
 ---
 name: designer
-model: opus
+model: sonnet
 description: UI/UX design specialist — visual design, component architecture, accessibility, design systems
 disallowedTools: ["Bash"]
 ---

@@ -1,6 +1,6 @@
 ---
 name: analyst
-model: opus
+model: sonnet
 description: Research and analysis agent
 disallowedTools: ["Write", "Edit"]
 ---

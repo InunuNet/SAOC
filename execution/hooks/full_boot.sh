@@ -214,46 +214,58 @@ else
 fi
 echo ""
 
-# Step 4: Project context — goals
-echo "--- GOALS ---"
-if [ -f ".agent/memory/project/goals.md" ]; then
-  cat .agent/memory/project/goals.md
+# Step 4: Project context — reboot.md (fresh session summary) if present and non-empty,
+# takes priority over the full goals/learned/backlog dump. Missing or zero-byte reboot.md
+# falls back to exactly today's existing full-dump behavior, unchanged.
+REBOOT_FILE=".agent/memory/project/reboot.md"
+if [ -s "$REBOOT_FILE" ]; then
+  echo "--- REBOOT CONTEXT ---"
+  cat "$REBOOT_FILE"
+  echo ""
+  echo "Full goals/learned/backlog available on request — see .agent/memory/project/*.md"
+  echo ""
 else
-  echo "(no goals.md)"
-fi
-echo ""
-
-# Step 4: Project context — learned (capped at last 20 lines to control token cost)
-echo "--- LEARNED (last 20 lines) ---"
-if [ -f ".agent/memory/project/learned.md" ]; then
-  LEARNED_LINES=$(wc -l < ".agent/memory/project/learned.md")
-  if [ "$LEARNED_LINES" -gt 20 ]; then
-    echo "[Note: learned.md has $LEARNED_LINES lines — showing last 20. Run \`cat .agent/memory/project/learned.md\` for full history.]"
-  fi
-  tail -20 .agent/memory/project/learned.md
-else
-  echo "(no learned.md)"
-fi
-echo ""
-
-# Step 4: Mission queue — skip if active mission (already shown above); cat clean file otherwise
-if [ -z "$ACTIVE_MISSION" ]; then
-  echo "--- MISSION QUEUE ---"
-  if [ -f ".agent/memory/project/backlog.md" ]; then
-    awk '
-      /^- \[x\]/        { next }
-      /^## Closed/      { skip=1; next }
-      /^## /            { skip=0 }
-      skip              { next }
-      /^$/ && prev_blank { next }
-      { print; prev_blank=($0=="") }
-    ' ".agent/memory/project/backlog.md"
-    echo ""
-    echo "(full backlog: .agent/memory/project/backlog.md)"
+  # Step 4: Project context — goals
+  echo "--- GOALS ---"
+  if [ -f ".agent/memory/project/goals.md" ]; then
+    cat .agent/memory/project/goals.md
   else
-    echo "(no backlog.md)"
+    echo "(no goals.md)"
   fi
   echo ""
+
+  # Step 4: Project context — learned (capped at last 20 lines to control token cost)
+  echo "--- LEARNED (last 20 lines) ---"
+  if [ -f ".agent/memory/project/learned.md" ]; then
+    LEARNED_LINES=$(wc -l < ".agent/memory/project/learned.md")
+    if [ "$LEARNED_LINES" -gt 20 ]; then
+      echo "[Note: learned.md has $LEARNED_LINES lines — showing last 20. Run \`cat .agent/memory/project/learned.md\` for full history.]"
+    fi
+    tail -20 .agent/memory/project/learned.md
+  else
+    echo "(no learned.md)"
+  fi
+  echo ""
+
+  # Step 4: Mission queue — skip if active mission (already shown above); cat clean file otherwise
+  if [ -z "$ACTIVE_MISSION" ]; then
+    echo "--- MISSION QUEUE ---"
+    if [ -f ".agent/memory/project/backlog.md" ]; then
+      awk '
+        /^- \[x\]/        { next }
+        /^## Closed/      { skip=1; next }
+        /^## /            { skip=0 }
+        skip              { next }
+        /^$/ && prev_blank { next }
+        { print; prev_blank=($0=="") }
+      ' ".agent/memory/project/backlog.md"
+      echo ""
+      echo "(full backlog: .agent/memory/project/backlog.md)"
+    else
+      echo "(no backlog.md)"
+    fi
+    echo ""
+  fi
 fi
 
 # Step 4.5: Inbox Processing

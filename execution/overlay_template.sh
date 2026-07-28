@@ -12,6 +12,34 @@ VERSION=$(cat "$TEMPLATE/.agent/version" 2>/dev/null || echo "unknown")
 proj=$(basename "$TARGET")
 echo "🔄 Overlaying Athanor v$VERSION into: $proj"
 
+# Reads $TARGET/.agent/no-update, returns --exclude= flags for patterns under the
+# given subtree prefix (e.g. ".agent/skills/") so rsync --delete overlays never
+# clobber or delete project-authored files opted out via .agent/no-update.
+no_update_excludes() {
+  local prefix="$1" no_update_file="$TARGET/.agent/no-update"
+  [ -f "$no_update_file" ] || return 0
+  while IFS= read -r pattern; do
+    pattern="${pattern%%#*}"
+    pattern="$(echo "$pattern" | xargs)"
+    [ -z "$pattern" ] && continue
+    case "$pattern" in
+      "$prefix"*) echo "--exclude=${pattern#$prefix}" ;;
+    esac
+  done < "$no_update_file"
+}
+
+# Populates the global EXC array with exclude flags for the given subtree
+# prefix. A plain while-read loop rather than `mapfile` — the macOS system
+# bash is 3.2, which lacks mapfile/readarray (bash 4+ only), and this script
+# must run under whatever `bash` resolves to in PATH.
+build_excludes() {
+  EXC=()
+  local flag
+  while IFS= read -r flag; do
+    EXC+=("$flag")
+  done < <(no_update_excludes "$1")
+}
+
 # Step 1: Backup .agent (full snapshot)
 rm -rf "$TARGET/.agent.bak"
 cp -r "$TARGET/.agent" "$TARGET/.agent.bak"
@@ -21,14 +49,38 @@ echo "  ✅ Backup: .agent.bak"
 #          removing any orphan files from previous template versions.
 #          Guarded by -d to avoid failure if template dirs are missing (Issue #50).
 mkdir -p "$TARGET/.agent/workflows" "$TARGET/.agent/agents" "$TARGET/.agent/rules" "$TARGET/.agent/skills" "$TARGET/.agent/reference" "$TARGET/execution/hooks" "$TARGET/.claude/skills" "$TARGET/.gemini/skills" "$TARGET/.gemini/policies"
-if [ -d "$TEMPLATE/.agent/workflows/" ]; then rsync -a --delete "$TEMPLATE/.agent/workflows/" "$TARGET/.agent/workflows/"; fi
-if [ -d "$TEMPLATE/.agent/skills/" ];    then rsync -a --delete "$TEMPLATE/.agent/skills/"    "$TARGET/.agent/skills/"; fi
-if [ -d "$TEMPLATE/.claude/skills/" ];   then rsync -a --delete "$TEMPLATE/.claude/skills/"   "$TARGET/.claude/skills/"  2>/dev/null || true; fi
-if [ -d "$TEMPLATE/.gemini/skills/" ];   then rsync -a --delete "$TEMPLATE/.gemini/skills/"   "$TARGET/.gemini/skills/"  2>/dev/null || true; fi
-if [ -d "$TEMPLATE/.agent/agents/" ];    then rsync -a --delete "$TEMPLATE/.agent/agents/"    "$TARGET/.agent/agents/"; fi
-if [ -d "$TEMPLATE/.agent/rules/" ];     then rsync -a --delete "$TEMPLATE/.agent/rules/"     "$TARGET/.agent/rules/"; fi
-if [ -d "$TEMPLATE/.agent/reference/" ]; then rsync -a --delete "$TEMPLATE/.agent/reference/" "$TARGET/.agent/reference/" 2>/dev/null || true; fi
-if [ -d "$TEMPLATE/execution/hooks/" ];  then rsync -a --delete "$TEMPLATE/execution/hooks/"  "$TARGET/execution/hooks/" 2>/dev/null || true; fi
+if [ -d "$TEMPLATE/.agent/workflows/" ]; then
+  build_excludes ".agent/workflows/"
+  rsync -a --delete "${EXC[@]}" "$TEMPLATE/.agent/workflows/" "$TARGET/.agent/workflows/"
+fi
+if [ -d "$TEMPLATE/.agent/skills/" ]; then
+  build_excludes ".agent/skills/"
+  rsync -a --delete "${EXC[@]}" "$TEMPLATE/.agent/skills/" "$TARGET/.agent/skills/"
+fi
+if [ -d "$TEMPLATE/.claude/skills/" ]; then
+  build_excludes ".claude/skills/"
+  rsync -a --delete "${EXC[@]}" "$TEMPLATE/.claude/skills/" "$TARGET/.claude/skills/" 2>/dev/null || true
+fi
+if [ -d "$TEMPLATE/.gemini/skills/" ]; then
+  build_excludes ".gemini/skills/"
+  rsync -a --delete "${EXC[@]}" "$TEMPLATE/.gemini/skills/" "$TARGET/.gemini/skills/" 2>/dev/null || true
+fi
+if [ -d "$TEMPLATE/.agent/agents/" ]; then
+  build_excludes ".agent/agents/"
+  rsync -a --delete "${EXC[@]}" "$TEMPLATE/.agent/agents/" "$TARGET/.agent/agents/"
+fi
+if [ -d "$TEMPLATE/.agent/rules/" ]; then
+  build_excludes ".agent/rules/"
+  rsync -a --delete "${EXC[@]}" "$TEMPLATE/.agent/rules/" "$TARGET/.agent/rules/"
+fi
+if [ -d "$TEMPLATE/.agent/reference/" ]; then
+  build_excludes ".agent/reference/"
+  rsync -a --delete "${EXC[@]}" "$TEMPLATE/.agent/reference/" "$TARGET/.agent/reference/" 2>/dev/null || true
+fi
+if [ -d "$TEMPLATE/execution/hooks/" ]; then
+  build_excludes "execution/hooks/"
+  rsync -a --delete "${EXC[@]}" "$TEMPLATE/execution/hooks/" "$TARGET/execution/hooks/" 2>/dev/null || true
+fi
 
 # Single files
 cp "$TEMPLATE/.agent/version"      "$TARGET/.agent/version"

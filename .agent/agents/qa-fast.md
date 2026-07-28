@@ -1,4 +1,5 @@
 ---
+model_tier: local
 name: qa-fast
 description: Fast/cheap adversarial QA variant of @qa. Runs on an OpenRouter free-tier model from a different vendor than @dev-fast for cross-model review of ghost tasks, test runs, and non-critical work. Never writes production code.
 model: openai/gpt-oss-120b:free

@@ -1,6 +1,6 @@
 ---
 name: dev-fast
-model: sonnet
+model: haiku
 description: Fast/cheap code implementation variant of @dev. Runs on an OpenRouter free-tier model for ghost tasks, test runs, and non-critical work. Same capabilities and responsibilities as @dev.
 ---
 

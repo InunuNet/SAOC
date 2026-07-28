@@ -30,6 +30,12 @@ from pathlib import Path
 # sync before silently clobbering it.
 TEMPLATE_BASELINES_PATH = Path(".agent/memory/scratch/template_baselines.json")
 
+# Applied-version state file (issue #1293 follow-on) — direct-write updater-owned
+# state, tracked outside .agent/update-manifest.yaml entirely (same pattern as
+# .agent/version itself). Written only on a fully successful --apply run so a
+# partial-failure run never reports a false "current" state to full_boot.sh.
+TEMPLATE_STATE_PATH = Path(".agent/.template_state")
+
 
 def _sha256_of_file(path: Path) -> str:
     """Return the sha256 hex digest of a file's current byte content."""
@@ -91,9 +97,20 @@ def _sync_file_with_guard(
     file-level entry's own guard would have run, because the check lives here,
     at the point of write, not in the manifest-loop dispatch.
 
-    Returns "copied" or "skipped".
+    Returns "copied", "unchanged", or "skipped".
     """
     if dst_file.exists() and dst_file.is_file():
+        # Idempotency short-circuit: if dst already holds byte-identical
+        # content to src, there is nothing to sync — skip the backup +
+        # rewrite entirely so a second --apply run on an already-current
+        # workspace is a true no-op (no new backup-dir entries, no touched
+        # mtimes).
+        try:
+            if _sha256_of_file(dst_file) == _sha256_of_file(src_file):
+                return "unchanged"
+        except OSError:
+            pass
+
         baselines = load_template_baselines()
         baseline_hash = baselines.get(baseline_key)
         if baseline_hash:
@@ -154,6 +171,7 @@ def copy_harness(
         dst.mkdir(parents=True, exist_ok=True)
         base_key = path_key.rstrip("/")
         copied: list[str] = []
+        unchanged_count = 0
         guarded: list[str] = []
         protected: list[str] = []
         for src_file in sorted(src.rglob("*")):
@@ -169,9 +187,11 @@ def copy_harness(
             status = _sync_file_with_guard(src_file, dst_file, backup_dir, file_key)
             if status == "copied":
                 copied.append(str(rel))
+            elif status == "unchanged":
+                unchanged_count += 1
             else:
                 guarded.append(str(rel))
-        detail = f"copied {len(copied)}"
+        detail = f"copied {len(copied)}, unchanged {unchanged_count}"
         if guarded:
             detail += f", guarded {guarded}"
         if protected:
@@ -181,6 +201,8 @@ def copy_harness(
         status = _sync_file_with_guard(src, dst, backup_dir, path_key)
         if status == "copied":
             return f"  update (file) {dst}"
+        if status == "unchanged":
+            return f"  unchanged     {dst}"
         return f"  SKIP  (guarded) {dst}"
 
 
@@ -323,6 +345,38 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
     return f"  updated: {'; '.join(changes)}"
 
 
+def write_template_state(source: Path, state_path: Path = TEMPLATE_STATE_PATH) -> str:
+    """Persist the applied template_version to .agent/.template_state.
+
+    Only called from the full-success path in main() (never from a partial-failure
+    run — see A6). Only rewrites when the version actually changed, so a no-op
+    second --apply run leaves the file byte-identical (see A8) instead of
+    refreshing applied_at every time.
+    """
+    version_file = source / ".agent" / "version"
+    if not version_file.exists():
+        return "  SKIP  .template_state update (source .agent/version not found)"
+
+    new_version = version_file.read_text().strip()
+    if not new_version:
+        return "  SKIP  .template_state update (source .agent/version is empty)"
+
+    if state_path.exists():
+        try:
+            current = json.loads(state_path.read_text())
+        except Exception:
+            current = {}
+        if current.get("template_version") == new_version:
+            return f"  unchanged .template_state ({new_version})"
+
+    applied_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(
+        json.dumps({"template_version": new_version, "applied_at": applied_at}, indent=2) + "\n"
+    )
+    return f"  updated .template_state: template_version → {new_version}"
+
+
 def apply_missing_file_backstop(
     source: Path,
     is_protected,
@@ -378,6 +432,83 @@ def apply_missing_file_backstop(
         copied.append(rel_path)
 
     return copied, warnings
+
+
+def apply_fresh_manifest_backstop(
+    manifest_path: Path,
+    source: Path,
+    is_protected,
+    dry_run: bool,
+    backup_dir: Path | None,
+) -> list[str]:
+    """Re-read .agent/update-manifest.yaml from disk and deliver any HARNESS
+    entry whose destination is still missing (issue #1293).
+
+    The main manifest loop in main() drives off an in-memory snapshot loaded
+    at the top of the run from the WORKSPACE's own (possibly stale)
+    .agent/update-manifest.yaml — a downstream copy that can predate a
+    brand-new entry the upstream source has just introduced. That entry is
+    invisible to the stale in-memory snapshot, and
+    REQUIRED_FILES/apply_missing_file_backstop() only guards a fixed list of
+    4 paths, not arbitrary new manifest entries.
+
+    This pass re-reads the manifest fresh off disk — preferring the SOURCE's
+    copy (the authoritative, current definition of what HARNESS paths should
+    exist; when .agent/update-manifest.yaml is itself a self-syncing HARNESS
+    entry, the main loop will already have overwritten the workspace's own
+    copy to match it, so the two agree) and falling back to the workspace's
+    own manifest_path if the source has none — and delivers any missing
+    HARNESS destination in the SAME run instead of requiring a second
+    invocation.
+
+    Returns the list of destination paths delivered (empty list in dry-run
+    mode, since dry-run never writes).
+    """
+    import yaml
+
+    delivered: list[str] = []
+
+    source_manifest_path = source / ".agent" / "update-manifest.yaml"
+    fresh_source = source_manifest_path if source_manifest_path.exists() else manifest_path
+
+    try:
+        fresh_manifest = yaml.safe_load(fresh_source.read_text())
+    except Exception as e:
+        print(f"  WARN  fresh-manifest backstop: failed to re-read manifest ({fresh_source}): {e}")
+        return delivered
+
+    for entry in fresh_manifest.get("paths", []):
+        if entry.get("category") != "HARNESS":
+            continue
+        path = entry["path"]
+        if path.endswith("/"):
+            src_dir = source / path.rstrip("/")
+            if not src_dir.exists():
+                continue
+            for src_file in sorted(src_dir.rglob("*")):
+                if src_file.is_dir():
+                    continue
+                rel = src_file.relative_to(src_dir)
+                dst_file = Path(path.rstrip("/")) / rel
+                dst_key = f"{path.rstrip('/')}/{rel.as_posix()}"
+                if dst_file.exists() or is_protected(dst_key):
+                    continue
+                if not dry_run:
+                    _sync_file_with_guard(src_file, dst_file, backup_dir, dst_key)
+                    delivered.append(dst_key)
+        else:
+            dst_file = Path(path)
+            src_file = source / path
+            if dst_file.exists() or is_protected(path) or not src_file.exists():
+                continue
+            if not dry_run:
+                _sync_file_with_guard(src_file, dst_file, backup_dir, path)
+                delivered.append(path)
+
+    if delivered:
+        print(f"  fresh-manifest backstop delivered: {delivered}")
+
+    return delivered
 
 
 def fetch_latest_from_github(tmpdir: Path) -> bool:
@@ -624,11 +755,27 @@ def main():
         paths_changed.extend(backstop_copied)
         # warnings flow into the printed summary; no exit code change
 
+        # --- Fresh-manifest backstop (issue #1293) ---
+        # Re-reads .agent/update-manifest.yaml from disk (it may have just been
+        # updated by its own HARNESS entry above) and delivers any HARNESS
+        # destination that is still missing — closes the stale in-memory
+        # manifest-snapshot gap that REQUIRED_FILES alone cannot cover.
+        fresh_backstop_delivered = apply_fresh_manifest_backstop(
+            manifest_path=manifest_path,
+            source=source,
+            is_protected=is_protected,
+            dry_run=dry_run,
+            backup_dir=backup_dir,
+        )
+        paths_changed.extend(fresh_backstop_delivered)
+
         # After applying all HARNESS/MERGE updates AND backstop,
         # bump template_version in profile.json
         if not dry_run:
             version_msg = update_profile_version(source, profile_file)
             print(version_msg)
+            state_msg = write_template_state(source)
+            print(state_msg)
 
         print()
         print("Summary:")

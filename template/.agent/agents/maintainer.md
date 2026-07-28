@@ -30,24 +30,34 @@ If you discover a template/workflow bug during a session:
    - **Non-checkbox format?** If backlog uses tables, prose bullets, or `~~struck~~` instead of `- [ ]`, identify what was completed from `git log --oneline -10` and the session summary, then prepend a dated note at the top of the file: `> ⚠️ YYYY-MM-DD: [item] completed — backlog not in checkbox format, manual review needed`
    - **Verify**: after editing, confirm `git diff .agent/memory/project/backlog.md` is non-empty when commits exist this session. If unchanged despite commits this session, that is a bug — leave a visible warning at the top of backlog.md.
    - **Audit**: run `make backlog-audit` — must exit 0 before continuing. If it fails, fix the stale rows before any other wrap-up step.
-2. **Summarize** — write a 2-3 sentence summary of what happened this session.
-3. **Update learned.md** — add new patterns, gotchas, or decisions discovered.
-4. **Update goals.md** — mark completed goals (`~~goal~~ ✅`), add new ones if discovered.
-5. **Update backlog.md (remaining work)** — beyond the Step 1 `[x]` ticking:
+2. **Scan for GitHub issue closure candidates** — `python3 execution/gh_closure_scan.py --format lines`
+   - Cross-references this session's shipped commits and completed missions against currently-open GitHub issues.
+   - ⛔ Never run `gh issue close` yourself. Closing is a write to a shared external system and requires
+     the user's own explicit sign-off naming the issue number(s) — surface candidates only; next session's
+     orchestrator asks the user.
+   - If candidates are found, add each to `backlog.md` under `## Closure Candidates (needs sign-off)`
+     (create the section if missing, placed directly after `## TODO`):
+     `- [ ] GH #N — <evidence> — confirm with Brad, then \`gh issue close N\``
+   - Carry the same candidates into the brain wrap-up step below via `--closure-candidates`.
+   - If none found, skip silently — do not fabricate the section.
+3. **Summarize** — write a 2-3 sentence summary of what happened this session.
+4. **Update learned.md** — add new patterns, gotchas, or decisions discovered.
+5. **Update goals.md** — mark completed goals (`~~goal~~ ✅`), add new ones if discovered.
+6. **Update backlog.md (remaining work)** — beyond the Step 1 `[x]` ticking:
    - 🔄 Move in-progress items to `## In Progress` if partially done
    - ➕ Add new TODOs for gaps discovered
-6. **Auto-trim closed backlog items** — `make backlog-trim` (runs `python3 execution/backlog_trim.py`).
+7. **Auto-trim closed backlog items** — `make backlog-trim` (runs `python3 execution/backlog_trim.py`).
    - Archives every `- [x]` row to the brain memory store with tags `backlog,archive` and source `backlog-autotrim`, then removes the lines from `backlog.md`.
    - Caps remaining open items at 20; truncated overflow gets a one-line marker. Updates the `_Last compacted:` header to today's date.
-   - **Always run after Step 5 (backlog updates) and BEFORE Step 7 (brain wrap-up).** The wrap-up can then reference the trim count.
+   - **Always run after Step 6 (backlog updates) and BEFORE Step 8 (brain wrap-up).** The wrap-up can then reference the trim count.
    - If the script exits non-zero, stop — do not proceed to the brain wrap-up. Surface the stderr message; the user will rerun once fixed.
-7. **Store in brain** — `python3 execution/brain.py wrap-up --summary "SUMMARY" --tags "TAGS"`
-8. **Bump version** — `bash execution/bump_version.sh && make sync`
+8. **Store in brain** — `python3 execution/brain.py wrap-up --summary "SUMMARY" --tags "TAGS" --closure-candidates "GH #N — evidence" ...` (pass every candidate found in Step 2)
+9. **Bump version** — `bash execution/bump_version.sh && make sync`
    - Increments PATCH in `.agent/version` AND `template/.agent/version` (dual-write; both files must stay in sync).
    - `make sync` regenerates provider configs so they reflect the new version.
-9. **Commit** — `git add -A && git commit -m "chore: bump version to vNEW"`
+10. **Commit** — `git add -A && git commit -m "chore: bump version to vNEW"`
    - Replace `NEW` with the version echoed by the bump script (format: `OLD -> NEW`).
-10. **Check consistency** — verify agent defs in `.agent/agents/` match the work being done.
+11. **Check consistency** — verify agent defs in `.agent/agents/` match the work being done.
 
 ## Mid-Session Trigger
 
@@ -65,6 +75,8 @@ Dev and QA agents should call maintainer after completing each task:
 - Be specific — "brain.py needs --quiet flag for hooks" not "improve brain"
 - Only write to `.agent/memory/project/` — never touch source code or Athanor files
 - **Always tick off completed backlog items** — a stale backlog misleads the whole team
+- ⛔ Never run `gh issue close` — surface closure candidates only (Step 2); closing requires the user's
+  explicit sign-off in a future session.
 
 ## Output Format
 📋 SESSION: [summary]

@@ -20,7 +20,7 @@ You are the system architect. You make structural decisions and define technical
 
 ## Contract Output (mandatory for every task)
 
-Write `contract-f1.yaml` at `.agent/memory/project/specs/<slug>/contract-f1.yaml`.
+Write the contract at `.agent/memory/project/specs/<slug>/contract-f<N>.yaml`, where `<N>` is the numeric feature ID you were asked to design (feature F2 -> contract-f2.yaml). If no feature ID was given -- no active mission, or the mission's features list is empty (e.g. stub missions) -- default N to 1, producing contract-f1.yaml.
 MUST use `slug:` field (NOT `spec:`). Assertions use `command:` (NOT `verify.cmd`).
 
 **ASSERTION COMMAND RULES — non-negotiable:**

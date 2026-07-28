@@ -1,5 +1,5 @@
 ---
-model_tier: pro
+model_tier: flash
 description: Orchestrator — plans work, delegates to agents, reviews results
 tools: [read, shell, grep]
 tools_denied: [write, edit]

@@ -644,7 +644,10 @@ def cmd_resume(args):
         print(f"MAINTAINER WRAP-UP REQUIRED — dispatch @maintainer. Run: python3 execution/mission.py close-out {mission_path}")
         sys.exit(2)
     elif not milestones:
-        print("RESUME: no milestones defined — edit mission file to add features and milestones")
+        print(
+            "RESUME: no milestones defined — either edit the mission file to add features and "
+            f"milestones, or if this is a stub mission run: python3 execution/mission.py close-stub {mission_path}"
+        )
     else:
         remaining = [m for m in milestones if m.get("status") != "done"]
         if remaining:
@@ -676,6 +679,29 @@ def cmd_close_out(args):
     write_mission_file(args.mission, fm, body)
     clear_active()
     print("DONE: mission closed. Commit now.")
+
+
+def cmd_close_stub(args):
+    fm, body = parse_mission_file(args.mission)
+    milestones = fm.get("milestones")
+    if milestones:
+        print(
+            f"ERROR: mission has {len(milestones)} milestone(s); close-stub only closes "
+            "0-milestone stub missions. Use mission.py gate / close-out for real missions.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    fm["status"] = "done"
+    fm["last_active_at"] = now_iso()
+    write_mission_file(args.mission, fm, body)
+
+    active = read_active()
+    if active and active.get("mission"):
+        same_mission = Path(active["mission"]).resolve() == Path(args.mission).resolve()
+        if same_mission:
+            clear_active()
+
+    print(f"DONE: stub mission closed ({args.mission}).")
 
 
 def cmd_activate(args):
@@ -802,6 +828,12 @@ def main():
     p_co = sub.add_parser("close-out", help="Complete @maintainer wrap-up and mark mission done")
     p_co.add_argument("mission", help="Path to mission .md file")
 
+    # close-stub
+    p_cs = sub.add_parser(
+        "close-stub", help="Close a 0-milestone stub mission as done (refuses real missions)"
+    )
+    p_cs.add_argument("mission", help="Path to mission .md file")
+
     args = parser.parse_args()
     if not args.cmd:
         parser.print_help()
@@ -818,6 +850,7 @@ def main():
         "gate": cmd_gate,
         "resume": cmd_resume,
         "close-out": cmd_close_out,
+        "close-stub": cmd_close_stub,
         "activate": cmd_activate,
         "pause": cmd_pause,
         "abandon": cmd_abandon,

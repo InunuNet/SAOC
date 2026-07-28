@@ -1,5 +1,5 @@
 ---
-model_tier: flash
+model_tier: local
 description: Documentation writer and maintainer
 tools: [read, write, edit, shell, grep]
 ---

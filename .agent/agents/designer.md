@@ -1,5 +1,5 @@
 ---
-model_tier: pro
+model_tier: flash
 description: UI/UX design specialist — visual design, component architecture, accessibility, design systems
 tools: [read, write, edit, grep]
 tools_denied: [shell]

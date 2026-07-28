@@ -136,7 +136,11 @@ esac
 COMMS_FILE=".agent/memory/project/comms.md"
 COMMS_HASH_FILE=".agent/memory/scratch/.comms_last_hash"
 if [ -f "$COMMS_FILE" ]; then
-  LATEST_DIRECTIVE=$(awk '/^## \[CODI →/||/^## \[CODI ->/{if(found){exit} found=1; count=0; next} /^## \[/{if(found){exit}} found{print; count++; if(count>=40){print "[truncated — read full comms.md]"; exit}}' "$COMMS_FILE" 2>/dev/null)
+  LATEST_DIRECTIVE=""
+  LAST_CODI_LINE=$(grep -n "^## \[CODI" "$COMMS_FILE" 2>/dev/null | tail -1 | cut -d: -f1)
+  if [ -n "$LAST_CODI_LINE" ]; then
+    LATEST_DIRECTIVE=$(awk -v startline="$LAST_CODI_LINE" 'NR > startline { if (/^## \[/) {exit} count++; if(count>=40){print "[truncated — read full comms.md]"; exit} print }' "$COMMS_FILE" 2>/dev/null)
+  fi
   if [ -n "$LATEST_DIRECTIVE" ]; then
     NEW_COMMS_HASH=$(printf '%s' "$LATEST_DIRECTIVE" | shasum -a 256 | awk '{print $1}')
     CACHED_COMMS_HASH=$(cat "$COMMS_HASH_FILE" 2>/dev/null || echo "")
@@ -237,46 +241,58 @@ else
 fi
 echo ""
 
-# Step 4: Project context — goals
-echo "--- GOALS ---"
-if [ -f ".agent/memory/project/goals.md" ]; then
-  cat .agent/memory/project/goals.md
+# Step 4: Project context — reboot.md (fresh session summary) if present and non-empty,
+# takes priority over the full goals/learned/backlog dump. Missing or zero-byte reboot.md
+# falls back to exactly today's existing full-dump behavior, unchanged.
+REBOOT_FILE=".agent/memory/project/reboot.md"
+if [ -s "$REBOOT_FILE" ]; then
+  echo "--- REBOOT CONTEXT ---"
+  cat "$REBOOT_FILE"
+  echo ""
+  echo "Full goals/learned/backlog available on request — see .agent/memory/project/*.md"
+  echo ""
 else
-  echo "(no goals.md)"
-fi
-echo ""
-
-# Step 4: Project context — learned (capped at last 20 lines to control token cost)
-echo "--- LEARNED (last 20 lines) ---"
-if [ -f ".agent/memory/project/learned.md" ]; then
-  LEARNED_LINES=$(wc -l < ".agent/memory/project/learned.md")
-  if [ "$LEARNED_LINES" -gt 20 ]; then
-    echo "[Note: learned.md has $LEARNED_LINES lines — showing last 20. Run \`cat .agent/memory/project/learned.md\` for full history.]"
-  fi
-  tail -20 .agent/memory/project/learned.md
-else
-  echo "(no learned.md)"
-fi
-echo ""
-
-# Step 4: Mission queue — skip if active mission (already shown above); cat clean file otherwise
-if [ -z "$ACTIVE_MISSION" ]; then
-  echo "--- MISSION QUEUE ---"
-  if [ -f ".agent/memory/project/backlog.md" ]; then
-    awk '
-      /^- \[x\]/        { next }
-      /^## Closed/      { skip=1; next }
-      /^## /            { skip=0 }
-      skip              { next }
-      /^$/ && prev_blank { next }
-      { print; prev_blank=($0=="") }
-    ' ".agent/memory/project/backlog.md"
-    echo ""
-    echo "(full backlog: .agent/memory/project/backlog.md)"
+  # Step 4: Project context — goals
+  echo "--- GOALS ---"
+  if [ -f ".agent/memory/project/goals.md" ]; then
+    cat .agent/memory/project/goals.md
   else
-    echo "(no backlog.md)"
+    echo "(no goals.md)"
   fi
   echo ""
+
+  # Step 4: Project context — learned (capped at last 20 lines to control token cost)
+  echo "--- LEARNED (last 20 lines) ---"
+  if [ -f ".agent/memory/project/learned.md" ]; then
+    LEARNED_LINES=$(wc -l < ".agent/memory/project/learned.md")
+    if [ "$LEARNED_LINES" -gt 20 ]; then
+      echo "[Note: learned.md has $LEARNED_LINES lines — showing last 20. Run \`cat .agent/memory/project/learned.md\` for full history.]"
+    fi
+    tail -20 .agent/memory/project/learned.md
+  else
+    echo "(no learned.md)"
+  fi
+  echo ""
+
+  # Step 4: Mission queue — skip if active mission (already shown above); cat clean file otherwise
+  if [ -z "$ACTIVE_MISSION" ]; then
+    echo "--- MISSION QUEUE ---"
+    if [ -f ".agent/memory/project/backlog.md" ]; then
+      awk '
+        /^- \[x\]/        { next }
+        /^## Closed/      { skip=1; next }
+        /^## /            { skip=0 }
+        skip              { next }
+        /^$/ && prev_blank { next }
+        { print; prev_blank=($0=="") }
+      ' ".agent/memory/project/backlog.md"
+      echo ""
+      echo "(full backlog: .agent/memory/project/backlog.md)"
+    else
+      echo "(no backlog.md)"
+    fi
+    echo ""
+  fi
 fi
 
 # Step 4.5: Inbox Processing

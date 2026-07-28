@@ -1,0 +1,173 @@
+schema: athanor.contract/v1
+slug: pulse-status-spacing-91
+goal: >
+  GitHub issue #91: "make pulse-status" dashboard rows misalign when the
+  project name contains spaces (e.g. "Codex Harness") -- the name is split
+  across columns, shifting subsequent columns. Reported as display-only;
+  Pulse itself works fine. Expected fix: quote/escape the project name before
+  it is embedded in columnar output so alignment holds regardless of spaces.
+
+  INVESTIGATION FINDING (verified by reading the real scripts, not assumed --
+  see execution/checks/verify_pulse_status_spacing_91.sh header for full
+  detail): `make pulse-status` (Makefile line 181) actually runs
+  execution/get_pulse_status.sh, which is a launchctl status checker that
+  prints two plain non-columnar lines and NEVER embeds the project name in
+  any column-formatted output -- there is no bug surface for #91 in this
+  script at all. The columnar dashboard the issue describes (fixed-width
+  `printf "%-20s | ..."` fed by `awk -F ' [|] '` over pulse.log) is a
+  DIFFERENT script, execution/pulse_status.sh, not wired to any Makefile
+  target.
+
+  execution/pulse_status.sh's awk program already strips a leading
+  `[bracketed-name] ` prefix from field 1 (`sub(/^\[[^]]*\] /, "", raw)`)
+  before splitting on ` | `, so it tolerates spaces inside the brackets. The
+  actual historical bug was in the log WRITER: execution/pulse_runner.sh (the
+  only script in this repo that writes rows to pulse.log -- verified no other
+  script references PROJECT_PREFIX or writes to pulse.log) used to embed the
+  RAW, space-containing PROJECT_NAME into PROJECT_PREFIX. That was already
+  fixed on 2026-06-01 in commit b244eed ("fix(fleet): slug collision guard +
+  pulse log space-safe prefix (v3.7.52)"), which introduced
+  `PROJECT_NAME_SAFE=$(echo "$PROJECT_NAME" | tr ' ' '_')` and builds
+  PROJECT_PREFIX from the safe variant. That commit's own message cites "Anti
+  Harness" as the repro case and removed the corresponding backlog.md line at
+  the time.
+
+  template/execution/pulse_runner.sh already contains the identical
+  PROJECT_NAME_SAFE / PROJECT_PREFIX fix lines as execution/pulse_runner.sh
+  (verified: both files' PROJECT_NAME_SAFE assignment and PROJECT_PREFIX
+  construction lines are byte-identical). The two files are NOT fully
+  byte-identical overall -- execution/pulse_runner.sh has one additional,
+  unrelated block (an "F5" dependency stop-condition guard, lines ~34-44)
+  that template/ lacks -- but that block is orthogonal to #91 and out of
+  scope here; it does not touch PROJECT_NAME/PROJECT_PREFIX/PROJECT_NAME_SAFE
+  at all. execution/pulse_status.sh has NO template/ twin at all -- confirmed
+  no template/execution/pulse_status.sh file exists and
+  template/execution/overlay_template.sh's copy list has no cp line whose
+  source or destination is literally pulse_status.sh (its one substring hit
+  on "pulse_status.sh" is the unrelated get_pulse_status.sh copy line); it is
+  a runtime-only script, never templated, so there is no template/ twin bug
+  to fix or check.
+
+  CONCLUSION: the full pipeline (pulse_runner.sh writes pulse.log ->
+  pulse_status.sh renders it) is ALREADY FIXED as of commit b244eed, which
+  predates this contract. GitHub issue #91 (filed 2026-05-18, i.e. before
+  that fix landed) and the still-open backlog.md line for it
+  ("P3: pulse-status dashboard formatting breaks when project name has
+  spaces (GH #91)") are stale duplicates of an already-resolved bug. This
+  contract is a VERIFICATION/regression-lock, not an implementation task: all
+  assertions and golden cases below already PASS against the current,
+  unmodified code, proving the fix is complete and correct end-to-end.
+  Recommended action: close GH #91 as already-fixed (link commit b244eed)
+  and remove the stale backlog.md line -- no code change is required or
+  should be made against this contract.
+
+created_at: "2026-07-09"
+autonomy: "off"
+
+assertions:
+  - id: P1A1
+    description: >
+      Golden-file helper script for issue #91 is syntactically valid bash.
+    verify:
+      kind: shell
+      cmd: bash -n execution/checks/verify_pulse_status_spacing_91.sh
+
+  - id: P1A2
+    description: >
+      Static signal: the Makefile's pulse-status target invokes
+      get_pulse_status.sh, not pulse_status.sh -- confirms which script
+      `make pulse-status` actually runs.
+    verify:
+      kind: shell
+      cmd: grep -A1 "^pulse-status:" Makefile | grep -q "get_pulse_status.sh"
+
+  - id: P1A3
+    description: >
+      Static signal: get_pulse_status.sh contains no columnar/printf-table
+      rendering and does not reference the project name at all -- confirms
+      it is not the script the issue describes.
+    verify:
+      kind: shell
+      cmd: >-
+        ! grep -q "printf.*%-" execution/get_pulse_status.sh &&
+        ! grep -qi "project_name\|PROJECT_NAME\|PROJECT_PREFIX" execution/get_pulse_status.sh
+
+  - id: P1A4
+    description: >
+      Static signal: execution/pulse_runner.sh (the sole pulse.log writer)
+      already derives PROJECT_NAME_SAFE via `tr ' ' '_'` before building
+      PROJECT_PREFIX -- the existing, correct fix (commit b244eed) that this
+      contract must not regress.
+    verify:
+      kind: shell
+      cmd: grep -q "PROJECT_NAME_SAFE=\$(echo \"\$PROJECT_NAME\" | tr ' ' '_')" execution/pulse_runner.sh
+
+  - id: P1A5
+    description: >
+      Static signal: template/execution/pulse_runner.sh already contains the
+      identical PROJECT_NAME_SAFE assignment line as execution/pulse_runner.sh
+      -- the #91-relevant fix is present in both copies (not lagging, unlike
+      the #1287/#1288 pattern where template/ needed a separate port). Note:
+      the two files are NOT fully byte-identical overall (execution/ has an
+      unrelated additional F5 dependency-guard block) -- this assertion
+      intentionally scopes to only the space-fix line, which is what #91
+      concerns.
+    verify:
+      kind: shell
+      cmd: grep -q "PROJECT_NAME_SAFE=\$(echo \"\$PROJECT_NAME\" | tr ' ' '_')" template/execution/pulse_runner.sh
+
+  - id: P1A6
+    description: >
+      Static signal: execution/pulse_status.sh has no template/ twin at all
+      (runtime-only script, confirmed never copied by overlay_template.sh) --
+      so there is no template/-side gap to check or fix for this issue. Uses
+      a word-boundary grep so it is not spuriously satisfied by the unrelated
+      get_pulse_status.sh copy line (which contains "pulse_status.sh" as a
+      substring).
+    verify:
+      kind: shell
+      cmd: >-
+        test ! -f template/execution/pulse_status.sh &&
+        ! grep -Eq "[^_]pulse_status\.sh|^pulse_status\.sh" template/execution/overlay_template.sh
+
+  - id: P2A1
+    description: >
+      GOLDEN case (a) -- headline bug repro: PROJECT_NAME="Codex Harness"
+      (contains a space) driven end-to-end through the REAL
+      execution/pulse_runner.sh prefix logic and the REAL
+      execution/pulse_status.sh renderer. Dashboard data row must have
+      exactly 5 columns and STATUS (field 3) must read exactly "SUCCESS",
+      not a shifted fragment. Already fixed -- PASSES today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_pulse_status_spacing_91.sh spaced_name_dashboard_aligned
+
+  - id: P2A2
+    description: >
+      GOLDEN case (a), concrete later-column check -- same "Codex Harness"
+      fixture; EXIT CODE column (field 4) must contain the literal value "0"
+      in the correct position. If spaces in the project name had shifted
+      fields left (the original bug mechanism), this column would instead
+      contain SUCCESS/FAILURE or the snippet text. Already fixed -- PASSES
+      today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_pulse_status_spacing_91.sh spaced_name_exit_code_position
+
+  - id: P2A3
+    description: >
+      GOLDEN case (b) -- regression guard: PROJECT_NAME="Athanor" (no space)
+      must render identically correctly (5 columns, STATUS="SUCCESS",
+      EXIT CODE="0" in position) -- proves the fix path is not merely a
+      no-op that happens to only "work" for spaced names. PASSES today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_pulse_status_spacing_91.sh nospace_name_dashboard_aligned
+
+phases:
+  - id: 1
+    name: Investigation signals
+    assertions: [P1A1, P1A2, P1A3, P1A4, P1A5, P1A6]
+  - id: 2
+    name: Golden-file verification
+    assertions: [P2A1, P2A2, P2A3]

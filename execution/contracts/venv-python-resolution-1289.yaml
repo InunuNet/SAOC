@@ -1,0 +1,261 @@
+schema: athanor.contract/v1
+slug: venv-python-resolution-1289
+goal: >
+  Fix GitHub issue #1289: execution/contract.py's check_cmd() (the function
+  that builds and runs `kind: shell` assertion commands, confirmed at line
+  242-267 of the real file, specifically the subprocess.run call at line 262:
+  `subprocess.run(actual_cmd, shell=True, capture_output=True, text=True,
+  timeout=timeout, executable="/bin/bash")`) passes NO `env=` argument at all,
+  so the subprocess inherits the ambient environment -- including PATH --
+  exactly as it exists on whatever shell invoked contract.py. Any bare
+  `python3`/`pip` name inside an assertion's `cmd` string therefore resolves
+  via that ambient PATH, NOT the target project's own `.venv`, even when
+  `<cwd>/.venv/bin/python3` exists. An assertion checking installed-package or
+  interpreter state (e.g. `python3 -c "import X; assert
+  version('X') >= ..."` verifying a CVE-fix version bump) silently checks the
+  WRONG Python environment whenever the invoking shell doesn't have the
+  project's `.venv` activated -- producing false negatives/positives entirely
+  unrelated to whether the actual code fix is correct. Reproduced concretely
+  downstream (Alembic): a contract assertion verifying an installed `aiohttp`
+  CVE-fix version failed under system Python (old aiohttp present) even
+  though the project's own `.venv` had the fix correctly installed and was
+  what the live service actually ran.
+
+  Fix (locked convention): inside check_cmd()'s `kind == "shell"` branch,
+  before invoking subprocess.run, check whether `Path.cwd() / ".venv" / "bin"
+  / "python3"` exists (cwd = the directory contract.py is invoked from -- the
+  only "project root" signal available anywhere in the current CLI; there is
+  no --project-root flag and none should be added by this fix). If it exists,
+  build a copy of `os.environ` with `<cwd>/.venv/bin` PREPENDED to PATH and
+  pass it as `env=` to the subprocess.run call(s) (both the shell=True branch
+  and the script-file branch used for multiline commands must receive the
+  same env, since either can invoke bare python3/pip). This affects ONLY
+  resolution of BARE `python3`/`pip` names via PATH lookup inside the
+  assertion's own shell -- it must never rewrite, substitute, or otherwise
+  touch any interpreter path an assertion's `cmd` string ALREADY hardcodes
+  explicitly as a fully-qualified path (e.g. `/usr/bin/python3` or any other
+  absolute path already present in the command string). When no
+  `.venv/bin/python3` exists under cwd, behavior must be completely
+  unchanged: no env= override at all, ambient PATH exactly as today -- this
+  must be harmless and opt-out-by-absence for every project that doesn't use
+  a `.venv`.
+
+  This is a minimal, surgical change confined to check_cmd()'s `kind ==
+  "shell"` branch (the PATH/env construction immediately before both
+  subprocess.run call sites) -- no other function, assertion kind, or CLI
+  behavior in scope.
+
+  Twin-file scope: template/execution/contract.py carries the byte-identical
+  vulnerable line (`subprocess.run(actual_cmd, shell=True, ...)` with no env=
+  override, at its own line 229, inside its own check_cmd() at line 195) and
+  is IN SCOPE for the identical fix. Verified directly (not assumed) that
+  template/ is not auto-synced from execution/ for this file: `git diff
+  execution/contract.py template/execution/contract.py` shows substantial,
+  long-standing divergence (template/ lacks the phase-dict normalization,
+  goal/description aliasing, and slug/feature aliasing added to execution/
+  contract.py, and additionally has its own leftover unrelated bug -- see
+  below) -- consistent with the established pattern this session (#1285,
+  #1287, #1288) that template/ is the canonical upstream fallback copy
+  fetched by downstream projects' own `make update-template` / `make
+  self-update`, propagated independently of execution/, and therefore
+  requires the identical fix and identical golden coverage in this same
+  contract.
+
+  INDEPENDENT PRE-EXISTING BUG FOUND DURING INVESTIGATION (out of scope for
+  this contract's fix, but material to interpreting its golden results):
+  template/execution/contract.py lines 507-510 contain a DUPLICATE
+  `g.add_argument("--timeout-seconds", ...)` call inside the `gate` subparser
+  definition in main() (the identical add_argument call is present twice in a
+  row). This raises `argparse.ArgumentError: argument --timeout-seconds:
+  conflicting option string: --timeout-seconds` unconditionally during
+  parser construction in main(), BEFORE any subcommand dispatch happens --
+  meaning template/execution/contract.py currently crashes on EVERY
+  invocation of EVERY subcommand (validate/check/gate/report/clear alike),
+  not just gate. This is pre-existing (confirmed via `git status` / `git
+  diff` showing no local modifications to the file) and unrelated to #1289.
+  Because of this, every --template golden case in phase 2 below is
+  EXPECTED TO FAIL TODAY for this reason (argparse crash), independent of
+  and prior to the #1289 PATH-resolution bug ever being reached. The
+  assertions are written to tolerate and document this: they confirm the
+  identical vulnerable subprocess.run call exists in the source (phase 1,
+  a static grep, unaffected by the argparse crash) and describe the runtime
+  goldens' current failure explicitly. Fixing the #1289 PATH-resolution
+  issue in template/execution/contract.py does NOT require fixing the
+  separate --timeout-seconds duplicate-argument bug, but the runtime
+  goldens for the --template variant will remain FAILING until that
+  separate, pre-existing bug is also fixed -- this should be filed and
+  fixed as its own follow-up issue, not folded into this contract's fix.
+
+created_at: "2026-07-09"
+autonomy: high
+
+assertions:
+  - id: P1A1
+    description: >
+      Golden-file helper script for issue #1289 is syntactically valid bash.
+    verify:
+      kind: shell
+      cmd: bash -n execution/checks/verify_venv_python_resolution_1289.sh
+  - id: P1A2
+    description: >
+      Static signal: execution/contract.py's check_cmd() shell-assertion
+      subprocess.run call (the one invoked for `kind: shell` assertions) DOES
+      include an env= argument -- proving the PATH-override plumbing exists.
+      Currently FAILS (the unfixed call has no env= at all) -- must PASS after
+      the fix. Anchors on the durable `subprocess.run(actual_cmd` call site
+      itself (not on the `shell=True` literal, which the fix legitimately
+      changes to `shell=use_shell` as part of merging the previously-separate
+      shell/script-file branches into one call) and inspects ONLY that call's
+      own opening line (where the real fix places `env=run_env` immediately
+      after `shell=use_shell,`) for an env= argument -- not a multi-line -A
+      context window, since the call's wrapped continuation lines
+      (`capture_output=True, text=True, timeout=timeout,` / `**shell_kwargs)`)
+      never mention env= regardless of fix state and would falsely fail to
+      distinguish fixed from unfixed if a wider window were used.
+    verify:
+      kind: shell
+      cmd: >-
+        awk '/^def check_cmd/,/^def _phase_matches/' execution/contract.py |
+        grep 'subprocess.run(actual_cmd' | grep -q 'env='
+  - id: P1A3
+    description: >
+      Static signal: template/execution/contract.py's check_cmd() shell-
+      assertion subprocess.run call DOES include an env= argument, identical
+      to P1A2 but for the canonical upstream fallback copy. Currently FAILS
+      (the unfixed call has no env= at all) -- must PASS after the fix. Same
+      durable single-line anchor as P1A2: matches on `subprocess.run(actual_cmd`
+      (not the `shell=True` literal) and inspects only that call's own opening
+      line for env=, avoiding a multi-line context window that would falsely
+      match on env=-free continuation lines regardless of fix state.
+    verify:
+      kind: shell
+      cmd: >-
+        awk '/^def check_cmd/,/^def _phase_matches/' template/execution/contract.py |
+        grep 'subprocess.run(actual_cmd' | grep -q 'env='
+  - id: P1A4
+    description: >
+      Regression guard: check_cmd() still exists as a single function in
+      execution/contract.py and is still the sole handler for `kind: shell`
+      assertions -- the fix must be a PATH/env construction added inside the
+      existing function body, not a restructuring of the assertion-dispatch
+      pipeline or a second shell-execution path.
+    verify:
+      kind: shell
+      cmd: test "$(grep -c 'def check_cmd' execution/contract.py)" -eq 1
+  - id: P2A1
+    description: >
+      GOLDEN case (a) -- headline bug reproduction: fixture project has
+      .venv/bin/python3 with a package importable ONLY there (not on
+      ambient/system PATH). A `kind: shell` assertion using bare `python3 -c
+      "import goldenpkg_1289"` must resolve to the .venv's interpreter and
+      find the package. Driven against the REAL execution/contract.py check
+      subcommand end-to-end in an isolated fixture directory (no real repo
+      state, real .venv, or real Python environment touched). Currently FAILS
+      (ambient PATH is used, no env= override exists, package not found,
+      ModuleNotFoundError) -- must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_venv_python_resolution_1289.sh venv_bare_python_resolved
+  - id: P2A2
+    description: >
+      GOLDEN case (b) -- regression guard: no .venv directory present under
+      the fixture project at all. A bare `python3` assertion referencing an
+      unimportable package must fail exactly as today -- ambient PATH used,
+      completely unaffected by the fix (no .venv/bin/python3 exists to
+      prefer, so no env= override should ever be constructed). PASSES both
+      before and after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_venv_python_resolution_1289.sh no_venv_ambient_unchanged
+  - id: P2A3
+    description: >
+      GOLDEN case (c) -- regression guard: .venv/bin/python3 IS present under
+      the fixture project, but the assertion's cmd is a pure grep/test shell
+      command that never invokes python3/pip at all. Must run correctly,
+      completely unaffected by the fix (a non-python assertion must not be
+      broken by the PATH/env construction). PASSES both before and after the
+      fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_venv_python_resolution_1289.sh non_python_shell_unaffected
+  - id: P2A4
+    description: >
+      GOLDEN case (d) -- TRAP: .venv/bin/python3 IS present (and would
+      satisfy the bare-name resolution case), but the assertion's cmd ALREADY
+      hardcodes a fully-qualified, different interpreter path (a fixture
+      stand-in for e.g. `/usr/bin/python3`) rather than a bare `python3`
+      name. The fix must NOT override or redirect this explicit path to
+      .venv/bin -- it must keep resolving to the explicitly-named
+      interpreter exactly as written in the assertion's own command string.
+      A correct fix only affects bare-name PATH resolution, never explicit
+      paths already present in the command. PASSES both before and after the
+      fix -- must never regress.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_venv_python_resolution_1289.sh explicit_path_not_overridden
+  - id: P2A5
+    description: >
+      GOLDEN case (a), template/ twin: identical to P2A1 but driven against
+      template/execution/contract.py (the canonical upstream fallback copy).
+      NOTE: template/execution/contract.py currently has a separate,
+      pre-existing, unrelated bug (duplicate --timeout-seconds argument in
+      the gate subparser at lines 507-510) that crashes argparse during
+      parser construction on EVERY invocation of EVERY subcommand, including
+      check. This golden therefore currently FAILS for that reason, prior to
+      and independent of the #1289 PATH-resolution bug ever being reached.
+      Must PASS once BOTH the #1289 fix is applied to template/ AND that
+      separate pre-existing argparse bug is fixed (tracked as its own
+      follow-up issue, not part of this contract's fix scope).
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_venv_python_resolution_1289.sh venv_bare_python_resolved --template
+  - id: P2A6
+    description: >
+      GOLDEN case (b), template/ twin: identical to P2A2 but driven against
+      template/execution/contract.py. CAUTION -- this golden's shell wrapper
+      currently reports PASS today, but for the WRONG reason and does NOT
+      constitute real coverage yet: template/execution/contract.py's
+      pre-existing duplicate --timeout-seconds argparse bug (lines 507-510)
+      crashes the process before check_cmd() is ever reached, so `run_check`
+      returns non-zero -- which this case's pass/fail polarity (expects the
+      underlying assertion to fail, since no package should be importable)
+      happens to read as PASS by coincidence of exit-code matching, not
+      because ambient-PATH behavior was actually exercised. True regression
+      coverage for this case requires the separate argparse bug to be fixed
+      FIRST (its own follow-up issue) so the process can actually run; only
+      then does this golden's PASS mean what it claims to mean. Do not treat
+      a green result here as proof of correct template/ behavior until the
+      argparse bug is independently confirmed fixed.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_venv_python_resolution_1289.sh no_venv_ambient_unchanged --template
+  - id: P2A7
+    description: >
+      GOLDEN case (c), template/ twin: identical to P2A3 but driven against
+      template/execution/contract.py. Same pre-existing argparse crash caveat
+      as P2A5/P2A6: currently FAILS today due to the unrelated duplicate-
+      argument bug preventing the process from starting at all, independent
+      of the #1289 fix. Must PASS once that separate bug is fixed.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_venv_python_resolution_1289.sh non_python_shell_unaffected --template
+  - id: P2A8
+    description: >
+      GOLDEN case (d), template/ twin: identical to P2A4 but driven against
+      template/execution/contract.py. Same coincidental-pass caveat as P2A6:
+      the pre-existing argparse crash (lines 507-510) makes `run_check`
+      return non-zero, which this case's polarity (expects the underlying
+      assertion to fail, since the explicit path never has the package) reads
+      as PASS by coincidence, not because the trap was actually exercised.
+      Do not treat a green result here as proof the trap holds against
+      template/ until the separate argparse bug is independently confirmed
+      fixed and this case is re-run.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_venv_python_resolution_1289.sh explicit_path_not_overridden --template
+
+phases:
+  - id: 1
+    assertions: [P1A1, P1A2, P1A3, P1A4]
+  - id: 2
+    assertions: [P2A1, P2A2, P2A3, P2A4, P2A5, P2A6, P2A7, P2A8]

@@ -24,11 +24,11 @@ SLUG=$(python3 -c "import os,sys; print(os.path.splitext(os.path.basename('$ACTI
 # Strip date prefix
 SLUG=$(echo "$SLUG" | sed 's/^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}-//')
 
-CONTRACT=$(find .agent/memory/project/specs -name "contract-f1.yaml" 2>/dev/null | grep -i "$SLUG" | head -1 || echo "")
+CONTRACT=$(find .agent/memory/project/specs -name "contract-f*.yaml" 2>/dev/null | grep -i "$SLUG" | head -1 || echo "")
 
 if [[ -z "$CONTRACT" ]]; then
   # Fallback: any recent contract
-  CONTRACT=$(find .agent/memory/project/specs -name "contract-f1.yaml" -newer "$ACTIVE" 2>/dev/null | head -1 || echo "")
+  CONTRACT=$(find .agent/memory/project/specs -name "contract-f*.yaml" -newer "$ACTIVE" 2>/dev/null | head -1 || echo "")
 fi
 
 if [[ -z "$CONTRACT" ]]; then

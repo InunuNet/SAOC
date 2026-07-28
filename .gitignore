@@ -71,3 +71,19 @@ fleet_update_report_*.md
 *_debug.*
 execution/tests/stress_test_log.txt
 .vercel
+# Secrets (defense in depth — GH #1290)
+.secrets/
+.env.*
+!.env.enc
+!.env.example
+!.env.sample
+!.env.template
+!.env.dist
+*firebase-adminsdk*
+*-adminsdk-*.json
+# Key material (SEC-P1-2)
+*.key
+*.p12
+*.pfx
+*.p8
+*.jks

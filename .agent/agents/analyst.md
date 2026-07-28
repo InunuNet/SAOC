@@ -1,5 +1,5 @@
 ---
-model_tier: pro
+model_tier: flash
 description: Research and analysis agent
 tools: [read, shell, grep, search, web]
 tools_denied: [write, edit]

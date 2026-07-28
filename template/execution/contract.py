@@ -225,11 +225,20 @@ def check_cmd(args):
                 os.chmod(tf_name, 0o755)
                 actual_cmd = tf_name
                 use_shell = False
-            if use_shell:
-                result = subprocess.run(actual_cmd, shell=True, capture_output=True, text=True,
-                                        timeout=timeout, executable="/bin/bash")
-            else:
-                result = subprocess.run(actual_cmd, capture_output=True, text=True, timeout=timeout)
+            # Prefer the project's own .venv for bare python3/pip PATH resolution, so
+            # assertions checking installed-package/interpreter state see the venv that
+            # actually runs the project, not whatever ambient PATH invoked contract.py.
+            # Only affects bare-name resolution; already-hardcoded interpreter paths in
+            # an assertion's own cmd string are untouched. No .venv -> no env= override.
+            run_env = None
+            venv_python = Path.cwd() / ".venv" / "bin" / "python3"
+            if venv_python.exists():
+                run_env = os.environ.copy()
+                run_env["PATH"] = str(venv_python.parent) + os.pathsep + run_env.get("PATH", "")
+            shell_kwargs = {"executable": "/bin/bash"} if use_shell else {}
+            result = subprocess.run(actual_cmd, shell=use_shell, env=run_env,
+                                    capture_output=True, text=True, timeout=timeout,
+                                    **shell_kwargs)
             evidence = (result.stdout + result.stderr).strip()[:500]
             verdict = "pass" if result.returncode == expected_exit else "fail"
         except subprocess.TimeoutExpired:
@@ -504,8 +513,6 @@ def main():
                    help="Phase id (integer), 'max' for highest phase, or 'all' for all phases in contract")
     g.add_argument("--run-checks", action="store_true", default=False,
                    help="Auto-run check for each assertion that lacks a result file before evaluating the gate")
-    g.add_argument("--timeout-seconds", type=int, default=60,
-                   help="Shell assertion timeout in seconds (default: 60)")
     g.add_argument("--timeout-seconds", type=int, default=60,
                    help="Shell assertion timeout in seconds (default: 60)")
 

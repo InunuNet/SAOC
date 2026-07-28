@@ -1,4 +1,5 @@
 ---
+model_tier: local
 name: dev-fast
 description: Fast/cheap code implementation variant of @dev. Runs on an OpenRouter free-tier model for ghost tasks, test runs, and non-critical work. Same capabilities and responsibilities as @dev.
 model: qwen/qwen3-coder:free

@@ -1,0 +1,220 @@
+schema: athanor.contract/v1
+slug: reboot-boot-wiring-112
+goal: >
+  Fix GitHub issue #112: execution/brain.py's wrap_up() already calls
+  write_reboot() on every session close (confirmed by reading write_reboot()
+  directly, execution/brain.py lines ~205-223), producing a lightweight
+  .agent/memory/project/reboot.md capped at <=20 lines total: a "# Reboot
+  Context" header with a "_Generated: <UTC timestamp>_" line, a mandatory
+  "## What happened last session" section (the summary string), and up to
+  three optional sections -- "## Top priorities" (next_items, capped at 5),
+  "## Critical facts" (facts, capped at 5), "## Do NOT touch" (do_not_touch,
+  capped at 5) -- each rendered as a "- " bullet list only when that argument
+  is non-empty.
+
+  Despite this existing, correct write path, execution/hooks/full_boot.sh
+  (confirmed by reading the file in full this session, current state as of
+  today -- NOT an older assumed version, and post-dating this session's
+  #1287 dedup/cap work on the same file) NEVER reads reboot.md at all. Its
+  "--- GOALS ---" step (cat's the full goals.md), "--- LEARNED (last 20
+  lines) ---" step (tail -20 of learned.md with an over-cap notice), and its
+  awk-filtered "--- MISSION QUEUE ---" step (backlog.md, only when no active
+  mission) unconditionally run on every single boot regardless of whether a
+  fresh, relevant reboot.md exists. template/execution/hooks/full_boot.sh
+  (confirmed via diff to contain the byte-identical goals/learned/backlog
+  dump logic, offset only by template/'s extra PLATFORM CAPABILITIES /
+  SERVICE MAPPING / WORKFLOW REMINDER sections earlier in the file -- per
+  the #1287/#1288 lesson that execution/ and template/ are never
+  auto-synced) has the identical gap and needs the identical hand-applied
+  fix.
+
+  Required fix (both execution/hooks/full_boot.sh and
+  template/execution/hooks/full_boot.sh, applied identically): before the
+  existing GOALS / LEARNED / MISSION QUEUE steps, check
+  .agent/memory/project/reboot.md:
+    - EXISTS and is non-empty (size > 0 bytes) -> print its content under a
+      "--- REBOOT CONTEXT ---" section as the PRIMARY boot context, then
+      print a SHORT pointer line noting the full goals/learned/backlog files
+      are available on request (e.g. mentioning
+      .agent/memory/project/*.md). The full goals.md dump, the learned.md
+      tail-20, and the backlog.md awk-filtered dump -- including their
+      section headers -- must NOT print in this case.
+    - MISSING (file does not exist) OR empty/zero-byte (the only "corrupt"
+      state recognized for a markdown file -- markdown cannot be
+      "corrupt" the way JSON can, so this is deliberately simple) -> fall
+      back to EXACTLY today's existing behavior: full goals.md dump,
+      learned.md tail-20 (with over-cap notice when >20 lines), backlog.md
+      awk-filtered dump. Safe default: never show less context than today
+      when reboot.md can't be trusted.
+
+  DESIGN DECISION -- staleness/freshness (made here, not left to the
+  implementer): presence of a non-empty reboot.md is treated as "fresh
+  enough" on its own, with NO additional mtime/timestamp-based staleness
+  check. Reasoning: write_reboot() is ONLY ever invoked from wrap_up(),
+  which itself only runs at explicit, intentional session close (brain.py
+  wrap-up). There is no code path in this repo that produces a stale
+  reboot.md and silently leaves it in place across many skipped sessions
+  without an operator noticing -- other boot sections (active mission
+  status, blockers scan, workflow reminder) already surface staleness
+  signals independently of reboot.md. Introducing a hard time threshold
+  (1 hour? 1 day? 7 days?) would require an arbitrary cutoff with no
+  principled basis in this codebase, and risks a worse failure mode than
+  the one it prevents: a reboot.md written 2 hours ago being treated as
+  "stale" and needlessly triggering the full dump, defeating the entire
+  point of #112. "Presence (non-empty) = fresh enough" is therefore the
+  chosen, final behavior. This contract's golden cases encode exactly this
+  and intentionally do NOT test any mtime-based threshold logic -- an
+  implementation that adds a time-based staleness check is out of scope
+  and not required to pass any assertion here, but must not break the
+  goldens below by doing so.
+
+  Trap (explicitly tested, not just asserted): the reboot.md wiring must
+  NOT suppress or duplicate any OTHER boot-context section unrelated to
+  goals/learned/backlog -- ACTIVE MISSION, BLOCKERS, comms.md LATEST
+  DIRECTIVE, PULSE HEARTBEAT, and GITHUB AUTH sections must print exactly
+  as they do today, exactly once each, whether reboot.md is present or
+  absent.
+
+  Twin-file scope confirmed directly (not assumed): template/'s GOALS /
+  LEARNED / MISSION QUEUE sections are byte-identical in logic to
+  execution/'s (diff shows a pure line-offset from template/'s earlier
+  extra sections, zero content divergence in this specific logic) --
+  confirming both files need the identical hand-applied fix, in identical
+  form, per the #1285/#1287/#1288 established pattern for this pair of
+  files.
+
+created_at: "2026-07-09"
+autonomy: high
+
+assertions:
+  - id: P1A1
+    description: >
+      Golden-file helper script for issue #112 is syntactically valid bash.
+    verify:
+      kind: shell
+      cmd: bash -n execution/checks/verify_reboot_boot_wiring_112.sh
+  - id: P1A2
+    description: >
+      Static signal: execution/brain.py already contains write_reboot(),
+      confirming the reboot.md producer side of #112 already exists and is
+      NOT part of this fix's scope (only the full_boot.sh consumer side is
+      in scope). PASSES today and must keep passing (no regression to the
+      writer).
+    verify:
+      kind: shell
+      cmd: grep -q "def write_reboot" execution/brain.py
+  - id: P1A5
+    description: >
+      Regression guard: full_boot.sh (both copies) must remain a single
+      top-level script with exactly one "GOALS" step and one "MISSION
+      QUEUE" step each -- the fix must be a targeted edit adding a
+      reboot.md branch ahead of the existing steps, not a duplicated or
+      restructured boot pipeline.
+    verify:
+      kind: shell
+      cmd: >-
+        test "$(grep -c -- '--- GOALS ---' execution/hooks/full_boot.sh)" -eq 1 &&
+        test "$(grep -c -- '--- GOALS ---' template/execution/hooks/full_boot.sh)" -eq 1 &&
+        test "$(grep -c -- '--- MISSION QUEUE ---' execution/hooks/full_boot.sh)" -eq 1 &&
+        test "$(grep -c -- '--- MISSION QUEUE ---' template/execution/hooks/full_boot.sh)" -eq 1
+
+  - id: P2A1
+    description: >
+      GOLDEN case (a) -- execution/: reboot.md exists with real content.
+      Its content must print as primary boot context; the full goals.md
+      dump, learned.md tail, and backlog.md dump (including their section
+      headers) must NOT print; a short pointer to the full files must be
+      present. This is the headline new behavior from #112 -- the feature
+      does not exist yet, so this MUST FAIL today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_reboot_boot_wiring_112.sh reboot_present_suppresses_dump
+  - id: P2A2
+    description: >
+      GOLDEN case (b) -- execution/: reboot.md does not exist at all.
+      Falls back to today's exact existing behavior -- full goals.md,
+      learned.md tail-20, backlog.md awk-filtered dump all present,
+      completely unaffected by this fix. Existing, correct behavior --
+      MUST PASS today (this is just today's current behavior, unrelated
+      to whether the fix has been applied).
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_reboot_boot_wiring_112.sh reboot_missing_full_fallback
+  - id: P2A3
+    description: >
+      GOLDEN case (c) -- execution/: reboot.md exists but is empty/
+      zero-byte. Treated identically to "missing" -- safe fallback to the
+      full goals/learned/backlog dump, no crash. Existing, correct
+      behavior (no reboot.md handling exists yet, so any reboot.md content
+      -- including empty -- is simply ignored and the full dump always
+      runs) -- MUST PASS today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_reboot_boot_wiring_112.sh reboot_empty_full_fallback
+  - id: P2A4
+    description: >
+      TRAP case (d) -- execution/: with reboot.md PRESENT (and an active
+      mission + a comms.md directive also present in the same fixture),
+      the unrelated ACTIVE MISSION, BLOCKERS, PULSE HEARTBEAT, GITHUB AUTH,
+      and comms.md LATEST DIRECTIVE sections must each still appear exactly
+      once. Today this FAILS for a different, expected reason -- the
+      reboot.md content itself is not printed at all yet (feature absent)
+      -- so this is expected to FAIL today for the same headline-feature
+      reason as P2A1, and must PASS (reboot.md content shown AND all
+      unrelated sections intact, exactly once each) once the fix is
+      applied.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_reboot_boot_wiring_112.sh other_sections_unaffected
+
+  - id: P2A5
+    description: >
+      GOLDEN case (a), template/ twin -- identical to P2A1 but driven
+      against template/execution/hooks/full_boot.sh. Currently FAILS
+      (feature does not exist in template/ either) -- must PASS after the
+      fix is applied to template/.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_reboot_boot_wiring_112.sh reboot_present_suppresses_dump --template
+  - id: P2A6
+    description: >
+      GOLDEN case (b), template/ twin -- identical to P2A2 but driven
+      against template/execution/hooks/full_boot.sh. Regression guard:
+      template/'s existing full goals/learned/backlog dump behavior when
+      reboot.md is absent is unaffected by this fix and must keep working.
+      MUST PASS today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_reboot_boot_wiring_112.sh reboot_missing_full_fallback --template
+  - id: P2A7
+    description: >
+      GOLDEN case (c), template/ twin -- identical to P2A3 but driven
+      against template/execution/hooks/full_boot.sh. Regression guard: an
+      empty reboot.md in template/ is likewise a no-op today (no reboot.md
+      handling exists), so the full dump still runs, no crash. MUST PASS
+      today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_reboot_boot_wiring_112.sh reboot_empty_full_fallback --template
+  - id: P2A8
+    description: >
+      TRAP case (d), template/ twin -- identical to P2A4 but driven against
+      template/execution/hooks/full_boot.sh. Currently FAILS for the same
+      expected reason (reboot.md content not printed -- feature absent in
+      template/ too) -- must PASS after the fix is applied to template/,
+      confirming the unrelated ACTIVE MISSION / BLOCKERS / PULSE HEARTBEAT
+      / GITHUB AUTH / comms.md LATEST DIRECTIVE sections remain intact,
+      exactly once each, in template/ as well.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_reboot_boot_wiring_112.sh other_sections_unaffected --template
+
+phases:
+  - id: 1
+    assertions: [P1A1, P1A2, P1A5]
+  - id: 2
+    assertions:
+      [
+        P2A1, P2A2, P2A3, P2A4,
+        P2A5, P2A6, P2A7, P2A8,
+      ]

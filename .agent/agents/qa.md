@@ -1,4 +1,5 @@
 ---
+model_tier: flash
 name: qa
 description: Adversarial testing and quality review agent. Designs failure modes, runs golden-file checks, and produces a verdict (PASS / FAIL / BLOCKED). Never writes production code.
 model: sonnet

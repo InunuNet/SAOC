@@ -7,8 +7,8 @@ goal: 'Integrate PayFast as the SAOC 2027 National Show ticketing payment gatewa
   ticket write, email confirmation)'
 created_at: '2026-07-01T22:01:54.627382+00:00'
 started_at: null
-last_active_at: '2026-07-03T21:24:20.840322+00:00'
-status: pending
+last_active_at: '2026-07-28T17:13:51.270626+00:00'
+status: paused
 cost_estimate:
   features: 0
   milestones: 0
@@ -105,6 +105,7 @@ milestones:
   - F6
   status: pending
 ---
+
 
 
 

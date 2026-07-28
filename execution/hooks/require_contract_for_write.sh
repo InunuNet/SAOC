@@ -47,7 +47,7 @@ case "$FILE_PATH" in
     exit 0 ;;
   */comms.md|comms.md)
     exit 0 ;;
-  README.md|*/README.md|AGENTS.md|*/AGENTS.md|CLAUDE.md|*/CLAUDE.md|GEMINI.md|*/GEMINI.md)
+  README.md|*/README.md)
     exit 0 ;;
 esac
 

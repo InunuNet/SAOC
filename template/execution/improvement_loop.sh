@@ -245,7 +245,17 @@ gate_and_commit() {
   done
   local ts_commit
   ts_commit=$(date -u +%Y%m%dT%H%MZ)
+  # SEC-P1-2: secret scan before autonomous push (mirror wrap_mission.sh)
   git add -A
+  local PY; PY="$PROJECT_ROOT/.venv/bin/python3"; [ -x "$PY" ] || PY="python3"
+  local SECRETS
+  SECRETS="$(git diff --cached --name-only | "$PY" "$PROJECT_ROOT/execution/skills/lib/secret_guard.py" --stdin || true)"
+  if [ -n "$SECRETS" ]; then
+    git reset -q HEAD --
+    echo "[loop] ABORT: secret-looking files staged — refusing to commit/push:" >&2
+    echo "$SECRETS" >&2
+    return 1
+  fi
   git commit -m "loop(${ts_commit}): autonomous improvement cycle"
   git push origin HEAD:main
 }

@@ -28,22 +28,61 @@ fi
 # ── Floor denials — always blocked at every level including high ──────────────
 # .gemini/policies/* is medium-protected (below), not floor-protected,
 # so level=high agents can update the policy file when explicitly authorized.
+# SEC-P0: floor-protect enforcement machinery (settings / hooks / instructions / matrix)
 case "$FILE_PATH" in
   */.git/*|*/.env|*/.sops.yaml|*.pem|*.key|*/secrets/*|\
-  */init.sh|*/full_boot.sh|*/.ssh/*|*/.aws/*|*/.gnupg/*)
+  */init.sh|*/full_boot.sh|*/.ssh/*|*/.aws/*|*/.gnupg/*|\
+  */.claude/settings.json|.claude/settings.json|\
+  */.claude/settings.local.json|.claude/settings.local.json|\
+  */.claude/hooks/*|.claude/hooks/*|\
+  */execution/hooks/*|execution/hooks/*|\
+  */CLAUDE.md|CLAUDE.md|*/AGENTS.md|AGENTS.md|*/GEMINI.md|GEMINI.md|\
+  */.agent/autonomy_matrix.json|.agent/autonomy_matrix.json)
     echo "⛔ AUTONOMY FLOOR: write to protected path '$FILE_PATH' always denied" >&2
     exit 2 ;;
 esac
 
-case "$COMMAND" in
-  *"rm -rf "*|"rm -rf"|*"git push --force"*"main"*|\
-  *"git push --force"*"master"*|"chmod 777 "*|\
-  *"curl"*"| sh"*|*"curl"*"| bash"*|\
-  *"wget"*"| sh"*|*"wget"*"| bash"*|\
-  "dd if=/dev/zero"*|"sudo "*)
-    echo "⛔ AUTONOMY FLOOR: command denied at all levels" >&2
-    exit 2 ;;
-esac
+# SEC-P1-4: tokenized floor command denial — flag order / spacing / two-step cannot bypass
+if [ -n "$COMMAND" ]; then
+  CMD_N=$(printf '%s' "$COMMAND" | tr '\n\t' '  ' | tr -d '"' | tr -d "'" | tr -s ' ')
+  _blk=0; _why=""
+  re_rm='(^|[[:space:]])rm([[:space:]]|$)'
+  re_rec='(^|[[:space:]])-[A-Za-z]*[Rr]'
+  re_frc='(^|[[:space:]])-[A-Za-z]*f'
+  re_push='(^|[[:space:]])git[[:space:]]+push([[:space:]]|$)'
+  re_force='(^|[[:space:]])(-f|--force|--force-with-lease|--force-if-includes)([[:space:]]|=|$)'
+  re_net='(^|[[:space:]])(curl|wget)([[:space:]]|$)'
+  re_pipe='\|[[:space:]]*(sh|bash|zsh|dash|python3?|perl|ruby|node)([[:space:]]|-|$)'
+  re_dlx='(&&|;)[[:space:]]*(sh|bash|zsh|dash|source|\./)'
+  re_find='(^|[[:space:]])find[[:space:]].*(-delete|-exec|--exec)'
+  re_protpath='(\.claude/settings\.json|\.claude/settings\.local\.json|\.claude/hooks/|execution/hooks/|(^|[[:space:]/])CLAUDE\.md|(^|[[:space:]/])AGENTS\.md|(^|[[:space:]/])GEMINI\.md|\.agent/autonomy_matrix\.json|(^|[[:space:]/])init\.sh|(^|[[:space:]/])full_boot\.sh|(^|[[:space:]/])\.env([[:space:]]|$)|\.sops\.yaml)'
+  re_write='(>>?|[[:space:]]tee[[:space:]]|sed[[:space:]]+-i|dd[[:space:]].*of=|(^|[[:space:]])(cp|mv)[[:space:]])'
+
+  if [[ "$CMD_N" =~ $re_write ]] && [[ "$CMD_N" =~ $re_protpath ]]; then
+    _blk=1; _why="write to protected path"
+  fi
+  if [[ "$CMD_N" =~ $re_rm ]]; then
+    _rec=0; _frc=0
+    { [[ "$CMD_N" =~ $re_rec ]] || [[ "$CMD_N" == *--recursive* ]]; } && _rec=1
+    { [[ "$CMD_N" =~ $re_frc ]] || [[ "$CMD_N" == *--force* ]]; } && _frc=1
+    [ "$_rec" = 1 ] && [ "$_frc" = 1 ] && { _blk=1; _why="rm recursive+force"; }
+  fi
+  if [[ "$CMD_N" =~ $re_push ]] && [[ "$CMD_N" =~ $re_force ]]; then
+    _blk=1; _why="forced git push"
+  fi
+  if [[ "$CMD_N" =~ $re_net ]]; then
+    [[ "$CMD_N" =~ $re_pipe ]] && { _blk=1; _why="curl/wget piped to shell"; }
+    [[ "$CMD_N" =~ $re_dlx ]]  && { _blk=1; _why="download-then-exec"; }
+  fi
+  [[ "$CMD_N" =~ $re_find ]] && { _blk=1; _why="find -delete/-exec"; }
+  case " $CMD_N " in
+    *" chmod 777 "*|*" dd if=/dev/zero"*|*" sudo "*) _blk=1; _why="privileged/destructive" ;;
+  esac
+  case "$CMD_N" in
+    "chmod 777 "*|"dd if=/dev/zero"*|"sudo "*) _blk=1; _why="privileged/destructive" ;;
+  esac
+  [ "$_blk" = 1 ] && { echo "⛔ AUTONOMY FLOOR: command denied at all levels ($_why)" >&2; exit 2; }
+fi
 
 # ── Off: block all writes and shell ──────────────────────────────────────────
 if [ "$LEVEL" = "off" ]; then
