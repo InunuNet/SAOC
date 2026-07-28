@@ -1,0 +1,15 @@
+{
+  "_purpose": "Expected shape of a Firestore 'tickets' doc immediately after F2 creates it (before payment). Stripe field is GONE; PayFast fields present. pf_payment_id and purchasedAt are null until the ITN (F3) confirms payment. amount is the server-derived ZAR price (never client-supplied).",
+  "id": "generated-by-firestore",
+  "bookingRef": "SAOC-2027-000123",
+  "showId": "national-show-2027",
+  "attendeeName": "Thandi Mokoena",
+  "attendeeEmail": "thandi@example.co.za",
+  "ticketType": "general",
+  "status": "reserved",
+  "amount": 150.00,
+  "m_payment_id": "SAOC-2027-000123",
+  "pf_payment_id": null,
+  "purchasedAt": null,
+  "checkedInAt": null
+}

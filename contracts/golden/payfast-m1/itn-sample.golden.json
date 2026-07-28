@@ -1,0 +1,12 @@
+{
+  "_purpose": "Sample ITN payload PayFast POSTs to F3 (app/api/tickets/itn) as application/x-www-form-urlencoded on payment completion. F3 parses this, EXCLUDES 'signature' from the recomputed base string, validates in this order (all fail-closed): (1) signature match, (2) source IP in PayFast host set, (3) amount_gross matches the reserved ticket.amount within 0.01, (4) server-confirm POST-back to /eng/query/validate returns body 'VALID'. Only if ALL pass AND payment_status === 'COMPLETE' does the ticket flip to 'paid'. The signature value here matches itn_with_passphrase in signature-vectors.json.",
+  "m_payment_id": "SAOC-2027-000123",
+  "pf_payment_id": "1089250",
+  "payment_status": "COMPLETE",
+  "item_name": "SAOC 2027 National Show Ticket",
+  "amount_gross": "150.00",
+  "amount_fee": "-3.68",
+  "amount_net": "146.32",
+  "merchant_id": "10000100",
+  "signature": "54f2b47a7ef5c3bfb0db843f7149e4bc"
+}

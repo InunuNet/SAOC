@@ -1,0 +1,49 @@
+{
+  "_purpose": "Real MD5 vectors computed per PayFast's documented signature algorithm. @dev MUST make lib/payfast.ts generateSignature() reproduce these exactly in a unit test. If a vector fails, the checkout will be rejected by PayFast and every ITN will fail validation. Algorithm: build 'key=urlencode(value)' for each NON-EMPTY field IN THE GIVEN ORDER joined by '&', append '&passphrase=urlencode(passphrase)' only when a passphrase is configured, then md5() lowercased hex. URL-encoding is PHP urlencode semantics: spaces -> '+', RFC1738. NOTE (verify at developers.payfast.co.za): PHP urlencode encodes '~' as %7E — Node's encodeURIComponent does NOT and also differs on ()!*'. Match PHP output, not encodeURIComponent's.",
+  "checkout_no_passphrase": {
+    "ordered_fields": {
+      "merchant_id": "10000100",
+      "merchant_key": "46f0cd694581a",
+      "return_url": "https://saoc.co.za/tickets/confirmation",
+      "cancel_url": "https://saoc.co.za/tickets/cancelled",
+      "notify_url": "https://saoc.co.za/api/tickets/itn",
+      "m_payment_id": "SAOC-2027-000123",
+      "amount": "150.00",
+      "item_name": "SAOC 2027 National Show Ticket"
+    },
+    "passphrase": null,
+    "signature_base_string": "merchant_id=10000100&merchant_key=46f0cd694581a&return_url=https%3A%2F%2Fsaoc.co.za%2Ftickets%2Fconfirmation&cancel_url=https%3A%2F%2Fsaoc.co.za%2Ftickets%2Fcancelled&notify_url=https%3A%2F%2Fsaoc.co.za%2Fapi%2Ftickets%2Fitn&m_payment_id=SAOC-2027-000123&amount=150.00&item_name=SAOC+2027+National+Show+Ticket",
+    "expected_signature": "bf2d712ef619486c3d379b38d927c3c8"
+  },
+  "checkout_with_passphrase": {
+    "ordered_fields": {
+      "merchant_id": "10000100",
+      "merchant_key": "46f0cd694581a",
+      "return_url": "https://saoc.co.za/tickets/confirmation",
+      "cancel_url": "https://saoc.co.za/tickets/cancelled",
+      "notify_url": "https://saoc.co.za/api/tickets/itn",
+      "m_payment_id": "SAOC-2027-000123",
+      "amount": "150.00",
+      "item_name": "SAOC 2027 National Show Ticket"
+    },
+    "passphrase": "jt7NOE43FZPn",
+    "signature_base_string": "merchant_id=10000100&merchant_key=46f0cd694581a&return_url=https%3A%2F%2Fsaoc.co.za%2Ftickets%2Fconfirmation&cancel_url=https%3A%2F%2Fsaoc.co.za%2Ftickets%2Fcancelled&notify_url=https%3A%2F%2Fsaoc.co.za%2Fapi%2Ftickets%2Fitn&m_payment_id=SAOC-2027-000123&amount=150.00&item_name=SAOC+2027+National+Show+Ticket&passphrase=jt7NOE43FZPn",
+    "expected_signature": "f7180235358d12e8671d4be8adffe2b5"
+  },
+  "itn_with_passphrase": {
+    "_note": "ITN signature is computed over the fields AS RECEIVED from PayFast, in the exact order received, EXCLUDING the posted 'signature' field, then '&passphrase=' appended. @dev must preserve received order — do NOT sort or reorder. This vector fixes an order for the unit test.",
+    "ordered_fields": {
+      "m_payment_id": "SAOC-2027-000123",
+      "pf_payment_id": "1089250",
+      "payment_status": "COMPLETE",
+      "item_name": "SAOC 2027 National Show Ticket",
+      "amount_gross": "150.00",
+      "amount_fee": "-3.68",
+      "amount_net": "146.32",
+      "merchant_id": "10000100"
+    },
+    "passphrase": "jt7NOE43FZPn",
+    "signature_base_string": "m_payment_id=SAOC-2027-000123&pf_payment_id=1089250&payment_status=COMPLETE&item_name=SAOC+2027+National+Show+Ticket&amount_gross=150.00&amount_fee=-3.68&amount_net=146.32&merchant_id=10000100&passphrase=jt7NOE43FZPn",
+    "expected_signature": "54f2b47a7ef5c3bfb0db843f7149e4bc"
+  }
+}

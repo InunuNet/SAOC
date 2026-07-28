@@ -42,9 +42,11 @@ export default async function AdminPage() {
       attendeeEmail: data['attendeeEmail'] as string,
       ticketType: data['ticketType'] as TicketType,
       status: data['status'] as TicketStatus,
+      amount: data['amount'] as number,
       purchasedAt: data['purchasedAt'] ?? null,
       checkedInAt: data['checkedInAt'] ?? null,
-      stripePaymentIntentId: data['stripePaymentIntentId'] ?? null,
+      m_payment_id: data['m_payment_id'] ?? null,
+      pf_payment_id: data['pf_payment_id'] ?? null,
     };
   });
 

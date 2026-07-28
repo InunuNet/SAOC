@@ -1,0 +1,15 @@
+{
+  "_purpose": "Expected shape of the same doc AFTER F3 processes a valid + COMPLETE ITN. Only these fields change vs reserved: status -> 'paid', pf_payment_id set from ITN, purchasedAt set to a server Timestamp. m_payment_id and amount are unchanged. This transition happens ONLY when signature + IP + amount-match + server-confirm ALL pass. Fail-closed: any failure leaves the doc exactly as ticket-reserved.golden.json.",
+  "id": "generated-by-firestore",
+  "bookingRef": "SAOC-2027-000123",
+  "showId": "national-show-2027",
+  "attendeeName": "Thandi Mokoena",
+  "attendeeEmail": "thandi@example.co.za",
+  "ticketType": "general",
+  "status": "paid",
+  "amount": 150.00,
+  "m_payment_id": "SAOC-2027-000123",
+  "pf_payment_id": "1089250",
+  "purchasedAt": "<Firestore Timestamp set server-side>",
+  "checkedInAt": null
+}

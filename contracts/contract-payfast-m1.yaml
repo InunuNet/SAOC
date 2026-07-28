@@ -1,0 +1,146 @@
+schema: athanor.contract/v1
+slug: payfast-ticketing
+goal: >-
+  PayFast payment plumbing (M1): rework the Firestore ticket schema off its
+  Stripe-shaped field to PayFast fields, add a server-side checkout initiation
+  route with MD5 signing against the PayFast Sandbox, and add a fail-closed ITN
+  webhook handler that only marks a ticket paid after full security validation.
+created_at: '2026-07-03'
+autonomy: high
+
+features:
+  - id: F1
+    name: Rework Firestore ticket schema off Stripe-shaped field to PayFast fields
+    status: pending
+  - id: F2
+    name: PayFast checkout initiation route + lib/payfast.ts signing
+    status: pending
+  - id: F3
+    name: PayFast ITN handler with fail-closed security validation
+    status: pending
+
+goldens:
+  - contracts/golden/payfast-m1/README.md
+  - contracts/golden/payfast-m1/signature-vectors.json
+  - contracts/golden/payfast-m1/ticket-reserved.golden.json
+  - contracts/golden/payfast-m1/ticket-paid.golden.json
+  - contracts/golden/payfast-m1/checkout-request.golden.json
+  - contracts/golden/payfast-m1/checkout-response.golden.json
+  - contracts/golden/payfast-m1/itn-sample.golden.json
+  - contracts/golden/payfast-m1/payfast-hosts.golden.json
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- F1: schema rework ----------
+    - id: A1
+      description: F1 - stripePaymentIntentId fully removed from types, app, docs, lib
+      command: 'if grep -rq "stripePaymentIntentId" types app docs lib; then exit 1; fi'
+    - id: A2
+      description: F1 - Ticket declares nullable m_payment_id field
+      command: 'grep -Eq "m_payment_id: string \| null" types/index.ts'
+    - id: A3
+      description: F1 - Ticket declares nullable pf_payment_id field
+      command: 'grep -Eq "pf_payment_id: string \| null" types/index.ts'
+    - id: A4
+      description: F1 - Ticket declares numeric amount field
+      command: 'grep -Eq "amount: number" types/index.ts'
+    - id: A5
+      description: F1 - schema doc updated to PayFast fields (no Stripe leftover)
+      command: 'grep -q "m_payment_id" docs/firestore-ticket-schema.md && grep -q "pf_payment_id" docs/firestore-ticket-schema.md'
+    - id: A6
+      description: F1 - admin ticket read routes still compile against the new field set
+      command: 'grep -q "m_payment_id" app/api/admin/tickets/route.ts && grep -q "m_payment_id" app/api/admin/checkin/route.ts'
+
+    # ---------- F2: checkout initiation + signing lib ----------
+    - id: A7
+      description: F2 - shared signing lib exists
+      command: 'test -f lib/payfast.ts'
+    - id: A8
+      description: F2 - lib exports generateSignature
+      command: 'grep -Eq "export (async )?(function )?generateSignature|export const generateSignature" lib/payfast.ts'
+    - id: A9
+      description: F2 - signing uses MD5 via crypto.createHash
+      command: 'grep -q "createHash" lib/payfast.ts'
+    - id: A10
+      description: F2 - checkout route exists
+      command: 'test -f app/api/tickets/checkout/route.ts'
+    - id: A11
+      description: F2 - credentials read from PAYFAST_SANDBOX_* env vars (not hardcoded)
+      command: 'grep -rq "PAYFAST_SANDBOX_MERCHANT_ID" app/api/tickets lib && grep -rq "PAYFAST_SANDBOX_MERCHANT_KEY" app/api/tickets lib && grep -rq "PAYFAST_SANDBOX_PASSPHRASE" app/api/tickets lib'
+    - id: A12
+      description: F2 - no hardcoded PayFast sandbox merchant key literal anywhere in source
+      command: 'if grep -rq "46f0cd694581a" app lib scripts; then exit 1; fi'
+    - id: A13
+      description: F2 - targets the PayFast sandbox host
+      command: 'grep -rq "sandbox.payfast.co.za" app/api/tickets lib'
+    - id: A14
+      description: F2 - creates the ticket in reserved status via firebase-admin
+      command: 'grep -q "reserved" app/api/tickets/checkout/route.ts && grep -q "firebase-admin/firestore" app/api/tickets/checkout/route.ts'
+    - id: A15
+      description: F2 - checkout route never trusts a client-supplied amount (no req amount read)
+      command: 'if grep -Eq "body(\.|\[.)amount|amount \} = (await )?req" app/api/tickets/checkout/route.ts; then exit 1; fi'
+
+    # ---------- F3: ITN handler, fail-closed ----------
+    - id: A16
+      description: F3 - ITN route exists
+      command: 'test -f app/api/tickets/itn/route.ts'
+    - id: A17
+      description: F3 - validates the ITN signature
+      command: 'grep -Eq "generateSignature|validateSignature|signature" app/api/tickets/itn/route.ts'
+    - id: A18
+      description: F3 - performs source-IP validation against PayFast hosts via DNS
+      command: 'grep -q "payfast.co.za" app/api/tickets/itn/route.ts && grep -Eq "dns|lookup" app/api/tickets/itn/route.ts'
+    - id: A19
+      description: F3 - performs server confirmation callback expecting VALID
+      command: 'grep -q "/eng/query/validate" app/api/tickets/itn/route.ts && grep -q "VALID" app/api/tickets/itn/route.ts'
+    - id: A20
+      description: F3 - checks the ITN amount against the reserved ticket
+      command: 'grep -q "amount_gross" app/api/tickets/itn/route.ts'
+    - id: A21
+      description: F3 - only marks paid on COMPLETE status and stores pf_payment_id
+      command: 'grep -q "COMPLETE" app/api/tickets/itn/route.ts && grep -q "paid" app/api/tickets/itn/route.ts && grep -q "pf_payment_id" app/api/tickets/itn/route.ts'
+    - id: A22
+      description: F3 - logs on failure paths (fail-closed, no silent swallow)
+      command: 'grep -Eq "console.error|logger\." app/api/tickets/itn/route.ts'
+    - id: A23
+      description: F3 - server-side only, never imports the client Firebase SDK
+      command: 'if grep -Eq "from ''@/lib/firebase''|from ''firebase/app''" app/api/tickets/itn/route.ts; then exit 1; fi'
+    - id: A28
+      description: >-
+        F3 - client IP trust takes the SECOND-TO-LAST X-Forwarded-For hop (the real client
+        IP; GCLB appends client-ip then load-balancer-ip, so the last hop is the LB itself
+        and only the second-to-last is trustworthy), not the first (spoofable) or the last
+      command: 'grep -q "hops\[hops.length - 2\]" lib/payfast.ts'
+    - id: A29
+      description: F3 - client IP extraction never trusts the first XFF hop as the source of truth
+      command: 'if grep -Eq "forwardedFor\.split\(.,.\)\[0\]" lib/payfast.ts app/api/tickets/itn/route.ts; then exit 1; fi'
+    - id: A30
+      description: F3 - final paid write is wrapped in a Firestore transaction (atomic idempotency)
+      command: 'grep -q "db.runTransaction" app/api/tickets/itn/route.ts'
+    - id: A31
+      description: F3 - transaction re-reads the ticket and re-checks paid status before writing
+      command: 'grep -q "transaction.get(docRef)" app/api/tickets/itn/route.ts && grep -q "transaction.update(docRef" app/api/tickets/itn/route.ts'
+    - id: A32
+      description: F3 - server-confirm external fetch happens before (outside) the runTransaction call
+      command: 'fetch_line=$(grep -n "await fetch(PAYFAST_SANDBOX_VALIDATE_URL" app/api/tickets/itn/route.ts | head -1 | cut -d: -f1); tx_line=$(grep -n "db.runTransaction" app/api/tickets/itn/route.ts | head -1 | cut -d: -f1); [ -n "$fetch_line" ] && [ -n "$tx_line" ] && [ "$fetch_line" -lt "$tx_line" ]'
+
+    # ---------- Correctness + build gates ----------
+    - id: A24
+      description: signature vectors reproduce exactly (real MD5 correctness gate)
+      command: 'pnpm exec tsx scripts/verify-payfast-signature.ts'
+    - id: A25
+      description: strict TypeScript type-check passes
+      command: 'pnpm type-check'
+    - id: A26
+      description: lint passes with zero errors
+      command: 'pnpm lint'
+    - id: A27
+      description: production build succeeds (bare pnpm build - no pipe, do not mask exit code)
+      command: 'pnpm build'
+    - id: A33
+      description: >-
+        F3 - getClientIp() unit test runs against a synthetic 3-hop X-Forwarded-For
+        ("spoofedIp, realClientIp, loadBalancerIp") and asserts it extracts "realClientIp"
+        specifically (real behaviour gate, not a string match)
+      command: 'pnpm exec tsx scripts/verify-payfast-itn-ip.ts'

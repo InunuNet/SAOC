@@ -1,0 +1,13 @@
+{
+  "_purpose": "PayFast's published valid source hosts for ITN IP validation. F3 must resolve these via DNS (dns.promises.lookup) at request time and confirm the request's source IP is among the resolved addresses — do NOT hardcode IPs, PayFast rotates them. INFERRED from standard PayFast integration docs — @dev MUST confirm the current list at developers.payfast.co.za (ITN security section) via Alembic before shipping.",
+  "hosts": [
+    "www.payfast.co.za",
+    "sandbox.payfast.co.za",
+    "w1w.payfast.co.za",
+    "w2w.payfast.co.za"
+  ],
+  "sandbox_endpoints": {
+    "process": "https://sandbox.payfast.co.za/eng/process",
+    "validate": "https://sandbox.payfast.co.za/eng/query/validate"
+  }
+}

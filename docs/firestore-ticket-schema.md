@@ -14,9 +14,11 @@ The `tickets` collection stores individual ticket records for national show atte
 | `attendeeEmail` | `string` | Yes | Email address of the ticket holder. Used for confirmation and check-in lookup. |
 | `ticketType` | `'general' \| 'member' \| 'vip'` | Yes | Ticket tier. `member` requires a valid SAOC membership. |
 | `status` | `'reserved' \| 'paid' \| 'cancelled' \| 'checked-in'` | Yes | Lifecycle state of the ticket. |
+| `amount` | `number` | Yes | ZAR price of the ticket, derived server-side from a fixed price map. Never client-supplied. Used to validate the ITN `amount_gross` against the reserved ticket. |
 | `purchasedAt` | `Timestamp \| null` | Yes | Firestore Timestamp recording when payment was confirmed. `null` while still in `reserved` state. |
 | `checkedInAt` | `Timestamp \| null` | Yes | Firestore Timestamp set when the attendee checks in at the door. `null` until check-in occurs. |
-| `stripePaymentIntentId` | `string \| null` | Yes | Stripe PaymentIntent ID linked to the purchase. `null` for complimentary or manually issued tickets. |
+| `m_payment_id` | `string \| null` | Yes | Our own order reference, generated at checkout initiation and sent to PayFast. Same value as `bookingRef`. Echoed back in the ITN and used to look up the ticket. |
+| `pf_payment_id` | `string \| null` | Yes | PayFast's own payment ID. `null` until the ITN confirms payment. |
 
 ## Status Lifecycle
 
@@ -26,7 +28,7 @@ reserved → paid → checked-in
 ```
 
 - `reserved` — ticket is held but payment not yet confirmed
-- `paid` — payment confirmed via Stripe; ticket is valid
+- `paid` — payment confirmed via PayFast ITN (Instant Transaction Notification); ticket is valid
 - `cancelled` — ticket was voided before or after payment
 - `checked-in` — attendee has arrived and been admitted at the show
 
@@ -64,8 +66,10 @@ export interface Ticket {
   attendeeEmail: string;
   ticketType: TicketType;
   status: TicketStatus;
+  amount: number;
   purchasedAt: Timestamp | null;
   checkedInAt: Timestamp | null;
-  stripePaymentIntentId: string | null;
+  m_payment_id: string | null;
+  pf_payment_id: string | null;
 }
 ```

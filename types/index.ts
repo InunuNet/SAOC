@@ -131,7 +131,9 @@ export interface Ticket {
   attendeeEmail: string;
   ticketType: TicketType;
   status: TicketStatus;
+  amount: number;
   purchasedAt: Timestamp | null;
   checkedInAt: Timestamp | null;
-  stripePaymentIntentId: string | null;
+  m_payment_id: string | null;
+  pf_payment_id: string | null;
 }

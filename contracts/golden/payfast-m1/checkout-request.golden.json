@@ -1,0 +1,7 @@
+{
+  "_purpose": "Expected request body a client POSTs to F2 (app/api/tickets/checkout). NOTE: amount is NOT in the request — the server derives price from ticketType via a server-side price map (placeholder prices for M1, flagged in code + needs-human.md). Never trust a client-supplied amount (payment security).",
+  "showId": "national-show-2027",
+  "ticketType": "general",
+  "attendeeName": "Thandi Mokoena",
+  "attendeeEmail": "thandi@example.co.za"
+}

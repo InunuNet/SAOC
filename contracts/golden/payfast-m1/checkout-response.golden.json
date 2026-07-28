@@ -1,0 +1,16 @@
+{
+  "_purpose": "Expected JSON F2 returns on success (HTTP 201). The client uses this to build/auto-submit a hidden form POST to processUrl. 'fields' MUST include the computed 'signature' as its last member and mirror exactly what was signed. processUrl targets the SANDBOX host for M1. amount is a string with exactly 2 decimals.",
+  "bookingRef": "SAOC-2027-000123",
+  "processUrl": "https://sandbox.payfast.co.za/eng/process",
+  "fields": {
+    "merchant_id": "10000100",
+    "merchant_key": "46f0cd694581a",
+    "return_url": "https://saoc.co.za/tickets/confirmation",
+    "cancel_url": "https://saoc.co.za/tickets/cancelled",
+    "notify_url": "https://saoc.co.za/api/tickets/itn",
+    "m_payment_id": "SAOC-2027-000123",
+    "amount": "150.00",
+    "item_name": "SAOC 2027 National Show Ticket",
+    "signature": "<md5 per signature-vectors.json algorithm>"
+  }
+}

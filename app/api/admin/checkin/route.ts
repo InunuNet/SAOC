@@ -46,9 +46,11 @@ export async function POST(request: Request) {
     attendeeEmail: data['attendeeEmail'] as string,
     ticketType: data['ticketType'] as TicketType,
     status: 'checked-in',
+    amount: data['amount'] as number,
     purchasedAt: (data['purchasedAt'] as Timestamp) ?? null,
     checkedInAt: Timestamp.now(),
-    stripePaymentIntentId: (data['stripePaymentIntentId'] as string) ?? null,
+    m_payment_id: (data['m_payment_id'] as string) ?? null,
+    pf_payment_id: (data['pf_payment_id'] as string) ?? null,
   };
 
   return NextResponse.json({ success: true, ticket });
