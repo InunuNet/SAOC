@@ -2,7 +2,6 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
-  serverExternalPackages: ['sanity', 'next-sanity', '@sanity/vision'],
   images: {
     remotePatterns: [
       {

@@ -1,0 +1,25 @@
+{
+  "captured_at": "2026-07-28",
+  "dev_port": 3002,
+  "bug_a_ssr_crash": {
+    "dev_log_signatures": [
+      "Invalid hook call",
+      "useSyncExternalStore",
+      "TypeError: Cannot read properties of null (reading 'useSyncExternalStore')"
+    ],
+    "response_body_signature": "Switched to client rendering because the server rendering errored:\n\nCannot read properties of null (reading 'useSyncExternalStore')",
+    "note": "GET /studio returns HTTP 200 even while this crash fires on every request -- Next swallows the SSR error and falls back to client rendering. HTTP 200 alone does not prove the fix; the log/body signatures above are the real crash fingerprints."
+  },
+  "bug_b_chrome_leak": {
+    "markers": {
+      "utility_bar": "mailto:council@saoc.co.za",
+      "header": "sticky top-0 z-40",
+      "footer": "bg-primary-800 text-ivory"
+    },
+    "confirmed_present_on": ["/studio", "/"],
+    "expected_after_fix": {
+      "/studio": "none of the three markers present",
+      "/": "all three markers still present (regression guard)"
+    }
+  }
+}

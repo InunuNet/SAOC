@@ -36,14 +36,21 @@ import { Header, Footer, UtilityBar, Breadcrumb } from '@/components/chrome';
 
 All seven components are re-exported from `components/chrome/index.ts`.
 
-`app/layout.tsx` wires the full shell:
+`app/(marketing)/layout.tsx` wires the full shell (scoped to marketing pages only, so it
+does not leak onto `/studio` or `/admin` — see
+[docs/sanity-studio-p0-investigation.md](sanity-studio-p0-investigation.md) 2026-07-28 for
+why this matters):
 
 ```tsx
 <UtilityBar />
 <Header />
-{children}
+<main>{children}</main>
 <Footer />
 ```
+
+`app/layout.tsx` (the root layout, applied to every route) only sets up `<html>`/`<body>`,
+fonts, `globals.css`, page metadata, and the organisation JSON-LD — it no longer renders any
+chrome itself.
 
 To add `Breadcrumb` to an interior page (will be wired in M4):
 

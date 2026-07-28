@@ -23,9 +23,11 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000). Studio: [http://localhost:3000/studio](http://localhost:3000/studio).
 
-Studio has an open P0: the document edit pane doesn't render when clicking into a document.
-Two related bugs were investigated and fixed (a loose React peer-dependency range, and a
-`/studio` dev-server crash), but the original symptom is not yet confirmed fixed — see
+Studio previously had a P0 where the local dev server hard-crashed on every `/studio`
+request. Root cause found and fixed (bad `serverExternalPackages` config bundling Sanity
+incorrectly), along with a second bug where marketing chrome leaked onto `/studio`. Studio
+now mounts locally; one setup step remains (CORS origins + project membership need
+confirming in the Sanity dashboard) before it's fully usable — see
 [docs/sanity-studio-p0-investigation.md](docs/sanity-studio-p0-investigation.md).
 
 **Lint**

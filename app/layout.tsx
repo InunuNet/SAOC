@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Crimson_Pro, Manrope, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
-import { UtilityBar, Header, Footer } from '@/components/chrome';
 
 const crimsonPro = Crimson_Pro({
   subsets: ['latin'],
@@ -80,12 +79,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD) }}
         />
       </head>
-      <body>
-        <UtilityBar />
-        <Header />
-        <main>{children}</main>
-        <Footer />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

@@ -1,15 +1,126 @@
 # Sanity Studio P0 Investigation — Document Edit Pane Not Rendering
 
-**Status:** Two real, gate-verified fixes shipped. The originally-reported bug is **not
-confirmed fixed**. One open item (RF-11) needs a human to reproduce with real credentials.
+**Status (2026-07-28):** Root cause of the local hard-crash found and fixed, along with a
+second real bug (marketing chrome leaking onto `/studio`). Adversarial QA passed 6/6. Studio
+now mounts and renders locally. One item remains, reframed from "reproduce the original bug"
+to "finish Sanity project configuration": confirm project membership and register CORS
+origins — see [What remains open (2026-07-28)](#what-remains-open-2026-07-28) below. The
+2026-07-24 entries further down are kept for history; their RF-11 human-repro step is
+**superseded** — see that section for the disposition.
 
 **Contracts:**
+[`contracts/contract-sanity-studio-p0.yaml`](../contracts/contract-sanity-studio-p0.yaml) ·
 [`contracts/contract-sanity-react-peer-fix.yaml`](../contracts/contract-sanity-react-peer-fix.yaml) ·
 [`contracts/contract-sanity-vision-esm-fix.yaml`](../contracts/contract-sanity-vision-esm-fix.yaml)
 
 **Golden specs:**
 [`contracts/golden/sanity-react-peer-fix/README.md`](../contracts/golden/sanity-react-peer-fix/README.md) ·
 [`contracts/golden/sanity-vision-esm-fix/README.md`](../contracts/golden/sanity-vision-esm-fix/README.md)
+
+---
+
+## 2026-07-28: reconciled diagnosis — two different bugs, both fixed
+
+Brad's report ("Studio never worked at all") and the earlier report investigated below
+("list loads, edit pane blank") turned out to describe **two different bugs**, not one. The
+2026-07-24 investigation (RF-11) never surfaced this because its verification stopped at
+"HTTP 200 returned" and never opened the dev console — the local Studio was actually
+returning 200 while server-side crashing into an infinite client-side spinner, which reads
+as "loads" from a bare HTTP check.
+
+**@analyst's finding, split by environment:**
+
+- **Local (`pnpm dev`) `/studio`:** hard server-side crash on *every* request —
+  `useSyncExternalStore` returning null / "invalid hook call" — masked behind an HTTP 200
+  response and an infinite loading spinner in the browser. This is what Brad was hitting:
+  Studio "never worked" because it never got past the crash to render anything.
+- **Deployed `/studio`:** loads correctly to the Sanity login screen. Not the same failure
+  as local.
+
+### Fix A — remove `serverExternalPackages` cargo-cult from `next.config.ts`
+
+`next.config.ts` declared `serverExternalPackages: ['sanity', 'next-sanity',
+'@sanity/vision']`. This was added at initial Sanity install (commit `2b8b543`) with no
+recorded justification in that commit or elsewhere. `serverExternalPackages` forces Next.js
+to load the listed packages via Node's native `require`/`import` instead of bundling them
+through webpack/Turbopack for RSC — which breaks React-context-dependent client bootstrapping
+for packages (like Sanity's Studio bundle) that rely on being bundled consistently with the
+app's own React instance. This is a documented failure class:
+[sanity-io/next-sanity#707](https://github.com/sanity-io/next-sanity/issues/707),
+[sanity-io/sanity#2819](https://github.com/sanity-io/sanity/issues/2819),
+[vercel/next.js#70487](https://github.com/vercel/next.js/issues/70487).
+
+Removing the option lets Next.js bundle Sanity/next-sanity/@sanity/vision normally, which
+resolves the `useSyncExternalStore` crash. Verified the production build is unaffected by
+the removal (`pnpm build` still succeeds, `/studio/[[...tool]]` route still present).
+
+### Fix B — marketing chrome was leaking onto `/studio` (and `/admin`)
+
+`app/layout.tsx` (the root layout, applied to *every* route including `/studio`) rendered
+`UtilityBar`, `Header`, `{children}`, and `Footer` unconditionally. `/studio` needs to own
+its own full-page shell — Sanity Studio is a self-contained SPA that does its own layout,
+routing, and theming; wrapping it in the site's marketing chrome is both visually wrong and,
+combined with Fix A's bundling issue, was contributing render noise around the crash.
+
+**Fix:** moved `UtilityBar`, `Header`, `{children}` (now wrapped in `<main>`), and `Footer`
+out of `app/layout.tsx` and into `app/(marketing)/layout.tsx` — the route-group layout that
+already scopes to marketing pages only. `app/layout.tsx` now contains only `<html>`/`<body>`,
+font variables, `globals.css`, page `metadata`, and the organisation JSON-LD script — the
+things that legitimately apply to every route including `/studio` and `/admin`.
+
+**Entailed consequence, not a defect:** `/admin` was never inside the `(marketing)` route
+group, so it never received the chrome — and still doesn't. QA flagged this explicitly and
+classified it as expected: an internal dashboard route rendering without the public site's
+header/footer/utility bar is correct, not a regression.
+
+### QA — adversarial, PASS (6/6 gate)
+
+Gate: `contracts/contract-sanity-studio-p0.yaml`, all assertions green. Probes performed:
+
+- Real Playwright render of `/studio` (not just an HTTP status check) — the Studio UI fully
+  mounts, taking roughly 10 seconds to finish loading.
+- SSR sweep across all marketing routes, `/admin`, and API routes — nothing else broke from
+  either fix.
+- Build route manifest checked intact — 40+ routes present, including
+  `studio/[[...tool]]`.
+- Gate-integrity checks confirmed non-vacuous (assertions actually exercise the change, not
+  trivially-true checks).
+- No leaked child processes from the dev-server tests.
+
+Evidence archive: `.agent/memory/scratch/sanity-p0-20260728/`.
+
+## What remains open (2026-07-28)
+
+The mounted local Studio now renders — but lands on Sanity's **"Connect this studio to your
+project"** screen. That's the standard symptom of the browser's origin not being registered
+in the Sanity project's CORS allow-list; it's a project-configuration gap, not a code bug,
+and it's unrelated to both the crash (Fix A) and the chrome leak (Fix B).
+
+Two human steps remain, both requiring `manage.sanity.io` access:
+
+1. **Confirm project membership.** Verify `brad@inunu.net` is genuinely the project's sole
+   human member (project created 2026-06-11). The local Sanity CLI is not currently logged
+   in, so this can't be checked from this environment — run `pnpm exec sanity login`, then
+   `sanity users list`.
+2. **Register CORS origins.** At `manage.sanity.io/projects/26yfbug4` → API, add both
+   `http://localhost:3002` (local dev) and
+   `https://saoc-prod--saoc-webapp.europe-west4.hosted.app` (deployed) as allowed origins.
+
+Until both are done, the "Connect this studio" screen will keep appearing regardless of
+which environment is used.
+
+### Disposition of the 2026-07-24 findings below
+
+The 2026-07-24 entries (Lead 1, Lead 2, and the vision-ESM crash) are kept as-is for
+investigation history. Their open item, **RF-11** ("a human needs to reproduce the original
+bug with real credentials and record what happens"), is **superseded**:
+
+- The machine-checkable part of what RF-11 was trying to establish — does `/studio` actually
+  render past the point RF-11 could only reach with a broken dev server — is now covered by
+  `contract-sanity-studio-p0`'s Playwright assertion (A1), which is green.
+- The remaining human-only part of RF-11 is no longer "reproduce and describe the bug" — the
+  bug that blocked reproduction (the crash) is fixed. It is now the two concrete steps above
+  (membership + CORS). Treat those as RF-11's replacement, not as new unrelated work.
 
 ---
 
@@ -149,7 +260,7 @@ never loaded far enough to reach the document edit pane in a local dev session.
 
 ---
 
-## What remains open
+## What remains open (2026-07-24 framing — superseded, see 2026-07-28 section above)
 
 The original reported bug — document list loads, edit pane doesn't render on click into a
 document — is **still unexplained**. Both investigated leads were ruled out; neither

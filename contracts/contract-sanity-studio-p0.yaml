@@ -1,0 +1,137 @@
+schema: athanor.contract/v1
+slug: sanity-studio-p0
+goal: >-
+  Fix two independent, confirmed P0 bugs on the Sanity Studio route: (A) every
+  /studio request crashes SSR with "Cannot read properties of null (reading
+  'useSyncExternalStore')" under `pnpm dev` (prime suspect: next.config.ts's
+  serverExternalPackages forcing sanity/next-sanity/@sanity/vision through
+  native require() outside Next's client-boundary handling during SSR -- see
+  contracts/golden/sanity-studio-p0/README.md for the next.config.ts history;
+  this contract gates the OUTCOME, not a specific config edit, so the fix is
+  free to remove/narrow serverExternalPackages or take another approach as
+  long as dev renders clean and prod build stays green), and (B) marketing
+  chrome (UtilityBar/Header/Footer) leaks onto /studio because app/layout.tsx
+  unconditionally renders it for every route while app/(marketing)/layout.tsx
+  is a no-op passthrough -- the fix moves the chrome into the (marketing)
+  route group layout, leaving app/layout.tsx with only html/body/fonts/globals.
+  OUT OF SCOPE (do not fold in): Sanity account/project membership, Sanity
+  Studio CORS config, the Sanity v5->v6 major upgrade, and the pre-existing
+  repo-wide `pnpm lint` failure caused by ESLint linting the gitignored
+  "Old SAOC Website Backup/" legacy directory (same precedent as
+  contract-sanity-react-peer-fix.yaml -- lint is not a gate here).
+created_at: '2026-07-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: Fix dev-mode SSR crash on /studio (useSyncExternalStore TypeError)
+    status: pending
+  - id: F2
+    name: Move marketing chrome out of root layout into the (marketing) route group
+    status: pending
+
+goldens:
+  - contracts/golden/sanity-studio-p0/README.md
+  - contracts/golden/sanity-studio-p0/facts.golden.json
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- F1: dev-mode SSR crash gone ----------
+    - id: A1
+      description: >-
+        F1 - with `pnpm dev` running on port 3002, GET /studio returns HTTP 200,
+        the dev server log contains none of the confirmed crash signatures
+        (Invalid hook call / useSyncExternalStore / TypeError with digest), and
+        the response body does not contain the RSC "Switched to client
+        rendering because the server rendering errored" fallback marker that
+        Next embeds only when the SSR pass for the route actually threw (see
+        contracts/golden/sanity-studio-p0/facts.golden.json for the exact
+        fingerprints this was captured against).
+      command: >-
+        lsof -ti:3002 | xargs -r kill -9 2>/dev/null; sleep 1; pnpm dev >
+        /tmp/saoc-studio-p0-a1.log 2>&1 & DEV_PID=$!; CODE=000; for i in $(seq
+        1 40); do CODE=$(curl -s -o /tmp/saoc-studio-p0-a1-body.html -w
+        "%{http_code}" http://localhost:3002/studio 2>/dev/null); if [ "$CODE"
+        != "000" ]; then break; fi; sleep 1; done; kill $DEV_PID 2>/dev/null;
+        pkill -f "next dev --port 3002" 2>/dev/null; sleep 1; if [ "$CODE" !=
+        "200" ]; then echo "studio route did not return 200 (got $CODE)"; cat
+        /tmp/saoc-studio-p0-a1.log; exit 1; fi; if grep -qi
+        "useSyncExternalStore" /tmp/saoc-studio-p0-a1.log
+        /tmp/saoc-studio-p0-a1-body.html; then echo "useSyncExternalStore
+        crash signature present"; exit 1; fi; if grep -qi "Invalid hook call"
+        /tmp/saoc-studio-p0-a1.log; then echo "Invalid hook call present in
+        dev server log"; exit 1; fi; if grep -qF "Switched to client
+        rendering because the server rendering errored"
+        /tmp/saoc-studio-p0-a1-body.html; then echo "SSR-error fallback
+        marker present in response body -- SSR still throwing"; exit 1; fi;
+        if grep -Eq "TypeError:.*digest:" /tmp/saoc-studio-p0-a1.log; then
+        echo "unhandled TypeError with digest present in dev server log";
+        exit 1; fi; exit 0
+
+    # ---------- F2: chrome absent from /studio, still present on marketing routes ----------
+    - id: A2
+      description: >-
+        F2 - with `pnpm dev` running on port 3002, none of the three confirmed
+        chrome markers (UtilityBar's mailto link, Header's sticky className,
+        Footer's bg-primary-800 className) appear in the /studio response
+        body, AND all three still appear on / (regression guard that the fix
+        didn't also remove chrome from marketing routes).
+      command: >-
+        lsof -ti:3002 | xargs -r kill -9 2>/dev/null; sleep 1; pnpm dev >
+        /tmp/saoc-studio-p0-a2.log 2>&1 & DEV_PID=$!; CODE=000; for i in $(seq
+        1 40); do CODE=$(curl -s -o
+        /tmp/saoc-studio-p0-a2-studio.html -w "%{http_code}"
+        http://localhost:3002/studio 2>/dev/null); if [ "$CODE" != "000" ];
+        then break; fi; sleep 1; done; curl -s -o
+        /tmp/saoc-studio-p0-a2-home.html http://localhost:3002/ 2>/dev/null;
+        kill $DEV_PID 2>/dev/null; pkill -f "next dev --port 3002"
+        2>/dev/null; sleep 1; FAIL=0; if grep -qF "mailto:council@saoc.co.za"
+        /tmp/saoc-studio-p0-a2-studio.html; then echo "UtilityBar leaked onto
+        /studio"; FAIL=1; fi; if grep -qF "sticky top-0 z-40"
+        /tmp/saoc-studio-p0-a2-studio.html; then echo "Header leaked onto
+        /studio"; FAIL=1; fi; if grep -qF "bg-primary-800 text-ivory"
+        /tmp/saoc-studio-p0-a2-studio.html; then echo "Footer/UtilityBar
+        leaked onto /studio"; FAIL=1; fi; if ! grep -qF
+        "mailto:council@saoc.co.za" /tmp/saoc-studio-p0-a2-home.html; then
+        echo "UtilityBar missing from / (regression)"; FAIL=1; fi; if ! grep
+        -qF "sticky top-0 z-40" /tmp/saoc-studio-p0-a2-home.html; then echo
+        "Header missing from / (regression)"; FAIL=1; fi; if ! grep -qF
+        "bg-primary-800 text-ivory" /tmp/saoc-studio-p0-a2-home.html; then
+        echo "Footer/UtilityBar missing from / (regression)"; FAIL=1; fi;
+        exit $FAIL
+
+    # ---------- F2: static structural checks ----------
+    - id: A3
+      description: >-
+        F2 - app/layout.tsx no longer renders the marketing chrome components
+        (UtilityBar/Header/Footer must not appear in the root layout at all).
+      command: >-
+        if grep -Eq "UtilityBar|Header|Footer" app/layout.tsx; then echo
+        "root layout still references marketing chrome components"; exit 1;
+        fi; exit 0
+
+    - id: A4
+      description: >-
+        F2 - app/(marketing)/layout.tsx now renders all three chrome
+        components (proof the chrome was moved, not deleted).
+      command: >-
+        grep -q "UtilityBar" "app/(marketing)/layout.tsx" && grep -q "Header"
+        "app/(marketing)/layout.tsx" && grep -q "Footer"
+        "app/(marketing)/layout.tsx"
+
+    # ---------- build/type gates ----------
+    - id: A5
+      description: >-
+        Production build succeeds (bare `pnpm build`, exit code not masked)
+        AND the build output still lists the /studio/[[...tool]] route --
+        the fix must not trade a dev crash for a broken or dropped prod route.
+      command: >-
+        out=$(pnpm build 2>&1); code=$?; if [ $code -ne 0 ]; then echo "$out";
+        exit 1; fi; if ! echo "$out" | grep -qF "studio/[[...tool]]"; then
+        echo "studio route missing from production build output"; echo
+        "$out"; exit 1; fi; exit 0
+
+    - id: A6
+      description: strict TypeScript type-check passes
+      command: pnpm type-check
