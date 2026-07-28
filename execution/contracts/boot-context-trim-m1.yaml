@@ -1,0 +1,54 @@
+schema: athanor.contract/v1
+slug: boot-context-trim-m1
+goal: Cut session-start context cost by deduping the comms.md directive injection (F1) and capping rules.md at 30 lines (F2) in the live boot hook.
+created_at: '2026-06-30'
+autonomy: high
+features:
+  - id: F1
+    name: comms.md last-read dedup — skip directive injection when its SHA-256 is unchanged since last boot
+    status: pending
+  - id: F2
+    name: Cap rules.md at 30 lines in the PROJECT RULES section, mirroring the learned.md cap pattern
+    status: pending
+goldens:
+  - .agent/memory/scratch/golden_boot_trim_f1.md
+  - .agent/memory/scratch/golden_boot_trim_f2.md
+assertions:
+  phase: 4
+  checks:
+    # ---- F1: comms.md dedup ----
+    - id: F1A1
+      description: Hash cache file path .agent/memory/scratch/.comms_last_hash is referenced in the hook
+      command: grep -q "\.comms_last_hash" execution/hooks/full_boot.sh
+    - id: F1A2
+      description: A SHA-256 of the directive block is computed (shasum -a 256, macOS-safe; sha256sum tolerated)
+      command: grep -qE "shasum -a 256|sha256sum" execution/hooks/full_boot.sh
+    - id: F1A3
+      description: Existing awk-extracted LATEST_DIRECTIVE is reused, not replaced (the dedup wraps the existing logic)
+      command: grep -q "LATEST_DIRECTIVE" execution/hooks/full_boot.sh
+    - id: F1A4
+      description: The cached hash is read for comparison via CACHED_COMMS_HASH
+      command: grep -q "CACHED_COMMS_HASH" execution/hooks/full_boot.sh
+    - id: F1A5
+      description: The freshly computed hash is written back to the cache file (write-back redirect into COMMS_HASH_FILE)
+      command: grep -qF '> "$COMMS_HASH_FILE"' execution/hooks/full_boot.sh
+    # ---- F2: rules.md cap ----
+    - id: F2A1
+      description: PROJECT RULES section header is retained
+      command: grep -q -- "--- PROJECT RULES ---" execution/hooks/full_boot.sh
+    - id: F2A2
+      description: rules.md is capped with tail -30 when over the threshold
+      command: grep -q "tail -30 .agent/memory/project/rules.md" execution/hooks/full_boot.sh
+    - id: F2A3
+      description: Notice line announces the cap and the displayed line count
+      command: grep -q "rules.md has" execution/hooks/full_boot.sh
+    - id: F2A4
+      description: Notice tells the reader the displayed window is the last 30 lines
+      command: grep -q "showing last 30" execution/hooks/full_boot.sh
+    - id: F2A5
+      description: Line count is measured into RULES_LINES and compared with a 30-line threshold
+      command: grep -q "RULES_LINES" execution/hooks/full_boot.sh && grep -qE "\-gt 30" execution/hooks/full_boot.sh
+    # ---- Sync guard: the two full_boot.sh copies must stay identical ----
+    - id: SYNC1
+      description: Root full_boot.sh and the live execution/hooks/full_boot.sh have identical content (both copies updated)
+      command: diff -q full_boot.sh execution/hooks/full_boot.sh

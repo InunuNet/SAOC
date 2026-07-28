@@ -41,21 +41,6 @@ if [ -f "$QUOTA_CP" ]; then
   echo ""
 fi
 
-# Step X: Platform Capabilities
-echo "--- PLATFORM CAPABILITIES ---"
-echo "Skills Available:"
-echo "  - alembic (Access external web content via @search)"
-echo "  - onboard (Athanor onboarding workflow)"
-echo ""
-
-# Step Y: Service Mapping
-echo "--- SERVICE MAPPING ---"
-echo "Alembic: https://github.com/AthanorProject/Alembic"
-echo ""
-echo "🛡️ Alembic Active: Use @search for web queries."
-echo ""
-
-
 echo "--- ACTIVE MISSION ---"
 if [ -f .agent/memory/project/missions/active.json ]; then
   python3 execution/mission.py status "$(python3 -c 'import json; print(json.load(open(".agent/memory/project/missions/active.json"))["mission"])' 2>/dev/null)" 2>/dev/null || echo "(stale mission pointer — run: python3 execution/mission.py list)"
@@ -134,27 +119,25 @@ MISMATCH_PYEOF
 esac
 
 COMMS_FILE=".agent/memory/project/comms.md"
+COMMS_HASH_FILE=".agent/memory/scratch/.comms_last_hash"
 if [ -f "$COMMS_FILE" ]; then
-  LATEST_DIRECTIVE=$(awk '/^## \[CODI →/||/^## \[CODI ->/{if(found){exit} found=1; count=0; next} /^## \[/{if(found){exit}} found{print; count++; if(count>=40){print "[truncated — read full comms.md]"; exit}}' "$COMMS_FILE" 2>/dev/null)
+  LATEST_DIRECTIVE=""
+  LAST_CODI_LINE=$(grep -n "^## \[CODI" "$COMMS_FILE" 2>/dev/null | tail -1 | cut -d: -f1)
+  if [ -n "$LAST_CODI_LINE" ]; then
+    LATEST_DIRECTIVE=$(awk -v startline="$LAST_CODI_LINE" 'NR > startline { if (/^## \[/) {exit} count++; if(count>=40){print "[truncated — read full comms.md]"; exit} print }' "$COMMS_FILE" 2>/dev/null)
+  fi
   if [ -n "$LATEST_DIRECTIVE" ]; then
-    echo "--- LATEST DIRECTIVE (comms.md) ---"
-    echo "$LATEST_DIRECTIVE"
-    echo "---"
-    echo ""
+    NEW_COMMS_HASH=$(printf '%s' "$LATEST_DIRECTIVE" | shasum -a 256 | awk '{print $1}')
+    CACHED_COMMS_HASH=$(cat "$COMMS_HASH_FILE" 2>/dev/null || echo "")
+    if [ "$NEW_COMMS_HASH" != "$CACHED_COMMS_HASH" ]; then
+      echo "--- LATEST DIRECTIVE (comms.md) ---"
+      echo "$LATEST_DIRECTIVE"
+      echo "---"
+      echo ""
+      printf '%s' "$NEW_COMMS_HASH" > "$COMMS_HASH_FILE"
+    fi
   fi
 fi
-
-# Workflow Reminder — injected between mission state and identity so the
-# chain is fresh in the agent's working memory at the start of every turn.
-echo "--- WORKFLOW REMINDER (mandatory chain) ---"
-echo "1. Active mission? → python3 execution/mission.py resume → follow it"
-echo "2. New multi-session goal? → /mission new (locks autonomy=off)"
-echo "3. 3+ files OR design decision? → /spec (locks autonomy=off)"
-echo "4. Smaller substantive task? → @architect writes contract.yaml + golden files FIRST"
-echo "5. Chain: contract → @dev → @qa (adversarial) → @docs → contract.py gate → @maintainer"
-echo "6. DONE = contract gated green + docs verified + brain wrapped. Nothing less."
-echo "NEVER skip to implementation. NEVER let @dev author the contract or the QA inputs."
-echo ""
 
 # Step 0: System Identity
 echo "--- SYSTEM IDENTITY ---"
@@ -219,7 +202,13 @@ echo ""
 # Step 3: Project rules (override base rules — injected first so they take effect)
 echo "--- PROJECT RULES ---"
 if [ -f ".agent/memory/project/rules.md" ]; then
-  cat .agent/memory/project/rules.md
+  RULES_LINES=$(wc -l < ".agent/memory/project/rules.md")
+  if [ "$RULES_LINES" -gt 30 ]; then
+    echo "[Note: rules.md has $RULES_LINES lines — showing last 30. Run \`cat .agent/memory/project/rules.md\` for full history.]"
+    tail -30 .agent/memory/project/rules.md
+  else
+    cat .agent/memory/project/rules.md
+  fi
 else
   echo "(no rules.md)"
 fi

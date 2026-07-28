@@ -134,13 +134,19 @@ MISMATCH_PYEOF
 esac
 
 COMMS_FILE=".agent/memory/project/comms.md"
+COMMS_HASH_FILE=".agent/memory/scratch/.comms_last_hash"
 if [ -f "$COMMS_FILE" ]; then
   LATEST_DIRECTIVE=$(awk '/^## \[CODI →/||/^## \[CODI ->/{if(found){exit} found=1; count=0; next} /^## \[/{if(found){exit}} found{print; count++; if(count>=40){print "[truncated — read full comms.md]"; exit}}' "$COMMS_FILE" 2>/dev/null)
   if [ -n "$LATEST_DIRECTIVE" ]; then
-    echo "--- LATEST DIRECTIVE (comms.md) ---"
-    echo "$LATEST_DIRECTIVE"
-    echo "---"
-    echo ""
+    NEW_COMMS_HASH=$(printf '%s' "$LATEST_DIRECTIVE" | shasum -a 256 | awk '{print $1}')
+    CACHED_COMMS_HASH=$(cat "$COMMS_HASH_FILE" 2>/dev/null || echo "")
+    if [ "$NEW_COMMS_HASH" != "$CACHED_COMMS_HASH" ]; then
+      echo "--- LATEST DIRECTIVE (comms.md) ---"
+      echo "$LATEST_DIRECTIVE"
+      echo "---"
+      echo ""
+      printf '%s' "$NEW_COMMS_HASH" > "$COMMS_HASH_FILE"
+    fi
   fi
 fi
 
@@ -219,7 +225,13 @@ echo ""
 # Step 3: Project rules (override base rules — injected first so they take effect)
 echo "--- PROJECT RULES ---"
 if [ -f ".agent/memory/project/rules.md" ]; then
-  cat .agent/memory/project/rules.md
+  RULES_LINES=$(wc -l < ".agent/memory/project/rules.md")
+  if [ "$RULES_LINES" -gt 30 ]; then
+    echo "[Note: rules.md has $RULES_LINES lines — showing last 30. Run \`cat .agent/memory/project/rules.md\` for full history.]"
+    tail -30 .agent/memory/project/rules.md
+  else
+    cat .agent/memory/project/rules.md
+  fi
 else
   echo "(no rules.md)"
 fi

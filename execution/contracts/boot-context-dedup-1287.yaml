@@ -1,0 +1,281 @@
+schema: athanor.contract/v1
+slug: boot-context-dedup-1287
+goal: >
+  Fix GitHub issue #1287: execution/hooks/full_boot.sh's "LATEST DIRECTIVE
+  (comms.md)" injection re-prints the ENTIRE directive block on every single
+  boot, even when it is byte-identical to the block already shown in the
+  previous session, and its "PROJECT RULES" step dumps the ENTIRE rules.md
+  regardless of length (unlike the existing learned.md pattern, which is
+  already capped to the last 20 lines with a one-line notice when it exceeds
+  that threshold). Both waste context budget every session for zero new
+  information on long-lived projects.
+
+  Investigation finding (verified by reading the actual file, not assumed):
+  execution/hooks/full_boot.sh ALREADY CONTAINS both fixes as of this
+  session -- a comms.md hash-cache dedup block (lines ~121-140: hashes the
+  extracted LATEST_DIRECTIVE text via `shasum -a 256`, macOS-safe, compares
+  against .agent/memory/scratch/.comms_last_hash, only re-prints + rewrites
+  the cache when the hash differs) and a rules.md 30-line cap mirroring the
+  existing learned.md 20-line-cap notice style (lines ~204-214: `wc -l`, and
+  if >30, one-line notice + `tail -30`, else full `cat`). All golden cases in
+  this contract's Phase 2 currently PASS against execution/hooks/full_boot.sh
+  -- confirmed by running execution/checks/verify_boot_context_dedup_1287.sh
+  against it directly before writing this contract.
+
+  template/execution/hooks/full_boot.sh (the canonical upstream fallback
+  copy -- confirmed via the #1288 lesson that these two files are NOT
+  auto-synced, and independently re-confirmed here by diff) is BEHIND:
+  it has neither the comms.md hash-cache dedup (always re-prints whenever a
+  directive is present, unconditionally) nor the rules.md cap (unconditional
+  `cat`, no line-count check at all). This contract's Phase 2 goldens
+  confirm template/'s divergent, unfixed state directly.
+
+  Required fix, template/ only (execution/ is already correct and must not
+  regress): apply the byte-for-byte equivalent of execution/hooks/full_boot.sh's
+  existing comms.md hash-cache block and rules.md 30-line-cap block to
+  template/execution/hooks/full_boot.sh, replacing its current unconditional
+  "always print / always cat" logic. Both changes are additive/backward-
+  compatible: the first boot ever (no cache file) or the first boot after a
+  comms.md change must still print the full directive; only *repeat*, truly
+  unchanged boots skip it. rules.md at or under 30 lines is completely
+  unaffected (full cat, no notice) in both files.
+
+  Safety trap (explicitly tested, not just asserted): a corrupted/unreadable
+  dedup cache file must NEVER cause the directive to stop printing forever.
+  The safe default on any doubt (missing cache, unreadable cache, garbage
+  content that fails to parse as a hash) is to SHOW the directive and
+  (re)write a fresh cache entry -- never to silently suppress it. This is
+  already correctly implemented in execution/hooks/full_boot.sh (a corrupt
+  cache value simply never string-equals the freshly computed hash, so the
+  `!=` comparison naturally falls through to "print" -- verified by the
+  cache_corrupted golden case, which already PASSES against execution/ today)
+  and must be preserved by construction (not special-cased) in the
+  template/ fix: any implementation that adds an explicit "cache read
+  failed -> skip printing" branch instead of falling through to the
+  print-by-default comparison violates this trap and must fail
+  cache_corrupted.
+
+  Twin-file scope confirmed directly (not assumed): diffing
+  execution/hooks/full_boot.sh against template/execution/hooks/full_boot.sh
+  shows the comms.md section in template/ (around its own line ~137-145) has
+  no COMMS_HASH_FILE variable, no shasum call, and no conditional at all
+  around the print -- and its rules.md section (around its own line
+  ~220-226) is a bare `cat`, no `wc -l`, no tail. These are real,
+  independently-verified gaps in the fallback copy, not a stale reading.
+
+created_at: "2026-07-09"
+autonomy: high
+
+assertions:
+  - id: P1A1
+    description: >
+      Golden-file helper script for issue #1287 is syntactically valid bash.
+    verify:
+      kind: shell
+      cmd: bash -n execution/checks/verify_boot_context_dedup_1287.sh
+  - id: P1A2
+    description: >
+      Static signal: execution/hooks/full_boot.sh already contains a
+      COMMS_HASH_FILE cache-path variable and a shasum-based comparison
+      guarding the LATEST DIRECTIVE print (existing, correct behavior this
+      contract must NOT regress). PASSES today.
+    verify:
+      kind: shell
+      cmd: grep -q "COMMS_HASH_FILE" execution/hooks/full_boot.sh
+  - id: P1A3
+    description: >
+      Static signal: template/execution/hooks/full_boot.sh does NOT yet
+      contain the same COMMS_HASH_FILE cache-path variable -- confirms the
+      fallback copy is currently missing the dedup fix. Currently FAILS
+      (the string is absent) -- must PASS after the fix is applied to
+      template/.
+    verify:
+      kind: shell
+      cmd: grep -q "COMMS_HASH_FILE" template/execution/hooks/full_boot.sh
+  - id: P1A4
+    description: >
+      Static signal: execution/hooks/full_boot.sh already contains a rules.md
+      line-count cap (RULES_LINES / "showing last 30" style notice),
+      existing correct behavior this contract must NOT regress. PASSES
+      today.
+    verify:
+      kind: shell
+      cmd: grep -qi "rules.md has \$RULES_LINES lines" execution/hooks/full_boot.sh
+  - id: P1A5
+    description: >
+      Static signal: template/execution/hooks/full_boot.sh's PROJECT RULES
+      step is currently a bare, uncapped `cat .agent/memory/project/rules.md`
+      with no preceding `wc -l` / line-count guard anywhere in the file --
+      confirms the fallback copy is currently missing the cap fix. Currently
+      FAILS (no line-count guard exists) -- must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: grep -q "RULES_LINES" template/execution/hooks/full_boot.sh
+  - id: P1A6
+    description: >
+      Regression guard: full_boot.sh (both copies) must remain a single
+      top-level script with exactly one "PROJECT RULES" step and one
+      "LATEST DIRECTIVE" injection point each -- the fix must be a targeted
+      edit to the existing sections, not a duplicated or restructured boot
+      pipeline.
+    verify:
+      kind: shell
+      cmd: >-
+        test "$(grep -c 'PROJECT RULES' execution/hooks/full_boot.sh)" -eq 1 &&
+        test "$(grep -c 'PROJECT RULES' template/execution/hooks/full_boot.sh)" -eq 1 &&
+        test "$(grep -c 'LATEST DIRECTIVE' execution/hooks/full_boot.sh)" -eq 1 &&
+        test "$(grep -c 'LATEST DIRECTIVE' template/execution/hooks/full_boot.sh)" -eq 1
+
+  - id: P2A1
+    description: >
+      GOLDEN case (a) -- execution/: first boot ever, no cache file exists,
+      comms.md has a directive present. Full directive must print; cache
+      file must be created afterward with the correct hash. Existing
+      correct behavior -- PASSES today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh first_boot_directive_present
+  - id: P2A2
+    description: >
+      GOLDEN case (b) -- execution/: second boot, directive UNCHANGED since
+      the cached hash. The directive block must NOT be re-printed; the
+      cache file's hash must remain unchanged. This is the headline bug
+      behavior from #1287 -- already fixed in execution/, PASSES today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh second_boot_unchanged
+  - id: P2A3
+    description: >
+      GOLDEN case (c) -- execution/: cache file present but STALE (hash of
+      an old, different directive text) while comms.md now holds a new
+      directive. Full NEW directive must print; cache must be overwritten
+      with the new hash. Existing correct behavior -- PASSES today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh directive_changed
+  - id: P2A4
+    description: >
+      GOLDEN case (d) -- execution/: comms.md exists but has no "## [CODI"
+      directive section at all. No LATEST DIRECTIVE block may print; no
+      cache file may be created or touched. Existing correct behavior --
+      PASSES today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh no_directive_present
+  - id: P2A5
+    description: >
+      TRAP case -- execution/: the dedup cache file exists but contains
+      garbage (not a valid hash). The directive must still be shown (safe
+      default: show on doubt, never permanently suppress). Must NOT
+      degrade to "never print it again" just because the cache is
+      unreadable/corrupt. Existing correct behavior (falls through to
+      print because the corrupt value never string-equals the freshly
+      computed hash) -- PASSES today; this is the trap regression guard.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh cache_corrupted
+  - id: P2A6
+    description: >
+      GOLDEN case (e) -- execution/: rules.md at exactly the 30-line
+      threshold (at/under cap). Full file must be cat'd; no cap notice may
+      print. Existing correct behavior -- PASSES today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh rules_under_cap
+  - id: P2A7
+    description: >
+      GOLDEN case (f) -- execution/: rules.md over the 30-line threshold
+      (45 lines). A one-line notice citing the actual line count and "last
+      30" must print, followed by only the LAST 30 lines (tail -30) --
+      earlier lines must not leak into output. Existing correct behavior --
+      PASSES today.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh rules_over_cap
+
+  - id: P2A8
+    description: >
+      GOLDEN case (a), template/ twin -- identical to P2A1 but driven
+      against template/execution/hooks/full_boot.sh. Currently FAILS: the
+      unfixed template/ extraction path does not print the directive the
+      same way execution/'s does under this fixture (no cache-guard logic
+      exists at all in template/ yet, so behavior is driven purely by its
+      own un-fixed print path). Must PASS after the fix is applied to
+      template/.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh first_boot_directive_present --template
+  - id: P2A9
+    description: >
+      GOLDEN case (b), template/ twin -- identical to P2A2 but driven
+      against template/execution/hooks/full_boot.sh. Headline bug
+      reproduction: template/ has no hash-cache dedup logic at all today, so
+      it unconditionally re-prints the directive on every boot regardless
+      of whether it changed. Currently FAILS -- must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh second_boot_unchanged --template
+  - id: P2A10
+    description: >
+      GOLDEN case (c), template/ twin -- identical to P2A3 but driven
+      against template/execution/hooks/full_boot.sh. Currently FAILS (no
+      cache-write logic exists in template/ to update after a change) --
+      must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh directive_changed --template
+  - id: P2A11
+    description: >
+      GOLDEN case (d), template/ twin -- identical to P2A4 but driven
+      against template/execution/hooks/full_boot.sh. Regression guard:
+      "no directive present -> print nothing" is already correct in
+      template/'s current unconditional-print logic (nothing to print means
+      nothing prints, independent of any cache mechanism) -- PASSES today
+      and must keep passing after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh no_directive_present --template
+  - id: P2A12
+    description: >
+      TRAP case, template/ twin -- identical to P2A5 but driven against
+      template/execution/hooks/full_boot.sh. Regression guard, PASSES today
+      only because template/ has no cache logic yet (it always prints,
+      trivially satisfying "never permanently suppress"). Must still PASS
+      after the fix is applied -- the new cache logic in template/ must
+      preserve the same fall-through-to-print safe default that
+      execution/hooks/full_boot.sh already has, not introduce a new failure
+      mode where a corrupt cache silently suppresses the directive.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh cache_corrupted --template
+  - id: P2A13
+    description: >
+      GOLDEN case (e), template/ twin -- identical to P2A6 but driven
+      against template/execution/hooks/full_boot.sh. Regression guard:
+      at/under-cap rules.md is unaffected by the missing cap logic (a bare
+      `cat` of a 30-line file is indistinguishable from a correctly-capped
+      one) -- PASSES today and must keep passing after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh rules_under_cap --template
+  - id: P2A14
+    description: >
+      GOLDEN case (f), template/ twin -- identical to P2A7 but driven
+      against template/execution/hooks/full_boot.sh. Headline bug
+      reproduction: template/'s PROJECT RULES step is an unconditional
+      `cat` with no line-count check, so a 45-line rules.md prints in full
+      with no cap notice and leaks early lines. Currently FAILS -- must
+      PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_boot_context_dedup_1287.sh rules_over_cap --template
+
+phases:
+  - id: 1
+    assertions: [P1A1, P1A2, P1A3, P1A4, P1A5, P1A6]
+  - id: 2
+    assertions:
+      [
+        P2A1, P2A2, P2A3, P2A4, P2A5, P2A6, P2A7,
+        P2A8, P2A9, P2A10, P2A11, P2A12, P2A13, P2A14,
+      ]

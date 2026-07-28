@@ -30,7 +30,7 @@ detect_platform() {
 }
 
 PLATFORM=$(detect_platform)
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 # ── template/ — Harness seed overlay ────────────────────────────────────────
 # template/ is the canonical seed directory used when initialising new workspaces.
 # It contains the minimal harness structure copied to a fresh project:
@@ -66,7 +66,7 @@ done
 
 # Resolve absolute path for PROJECT_PATH and create it if it doesn't exist
 mkdir -p "$PROJECT_PATH"
-PROJECT_PATH="$(cd "$PROJECT_PATH" && pwd)"
+PROJECT_PATH="$(cd "$PROJECT_PATH" && pwd -P)"
 
 # Determine PROJECT_NAME
 if [ -f "$PROJECT_PATH/WORKSPACE" ]; then
@@ -109,17 +109,41 @@ write_profile() {
     # profile already exists and onboarding_complete == true. Re-running
     # init.sh against an onboarded workspace must not clobber project_name
     # or reset onboarding_complete to false.
+    #
+    # Exception (GitHub #1286): a fresh clone of the Athanor repo itself
+    # carries Athanor's OWN already-onboarded profile.json along (this repo
+    # is itself an onboarded project). That inherited copy must NOT be
+    # mistaken for a genuine re-onboarded project, so we detect it via two
+    # literal markers identifying Athanor's own canonical identity and, when
+    # BOTH match, treat it as if onboarding_complete were false (proceed
+    # with the normal reset-to-fresh-defaults path below).
+    #
+    # Self-repo exception (QA round 2): the marker check above is purely
+    # value-based, so it cannot distinguish "a downstream clone that
+    # inherited Athanor's profile.json" from "this IS Athanor's own real
+    # checkout, legitimately onboarded as itself". Both SCRIPT_DIR and
+    # PROJECT_PATH are already canonicalized (cd ... && pwd -P) earlier in this
+    # script, so a plain string comparison tells us whether init.sh is being
+    # run in place inside its own repo. When it is, self-repo status forces
+    # preservation regardless of the marker match.
+    local ATHANOR_MARKER_PROJECT_NAME="Athanor"
+    local ATHANOR_MARKER_AGENT_NAME="gem"
+    local self_repo="false"
+    [ "$PROJECT_PATH" = "$SCRIPT_DIR" ] && self_repo="true"
     if [ -f "$target" ]; then
-        local already_onboarded
-        already_onboarded=$(python3 -c "
+        local already_onboarded inherited_clone
+        read -r already_onboarded inherited_clone <<< "$(python3 -c "
 import json, sys
 try:
     p = json.load(open('$target'))
-    print('true' if p.get('onboarding_complete') is True else 'false')
+    onboarded = p.get('onboarding_complete') is True
+    inherited = (p.get('project_name') == '$ATHANOR_MARKER_PROJECT_NAME'
+                 and (p.get('identity') or {}).get('agent_name') == '$ATHANOR_MARKER_AGENT_NAME')
+    print('true' if onboarded else 'false', 'true' if inherited else 'false')
 except Exception:
-    print('false')
-" 2>/dev/null)
-        if [ "$already_onboarded" = "true" ]; then
+    print('false', 'false')
+" 2>/dev/null)"
+        if [ "$already_onboarded" = "true" ] && { [ "$self_repo" = "true" ] || [ "$inherited_clone" != "true" ]; }; then
             printf "${DIM}   Profile already onboarded — skipping overwrite.${NC}\n"
             return 0
         fi
@@ -258,7 +282,11 @@ EOF
     fi
 
     # ── Copy hooks, provider configs, settings ────────────────────────────────
-    cp "$SCRIPT_DIR/.claude/settings.json"  "$PROJECT_PATH/.claude/settings.json"  2>/dev/null || true
+    # Hook scripts MUST be copied before settings.json — Claude Code fires hooks
+    # immediately when settings.json is updated, so scripts must already exist.
+    # Copying settings.json last prevents "No such file" errors on first
+    # post-update session. (Fix for upstream issue #116.)
+
     cp "$SCRIPT_DIR/.gemini/settings.json"  "$PROJECT_PATH/.gemini/settings.json"  2>/dev/null || true
     cp "$SCRIPT_DIR/.gemini/policies/autonomy.toml" "$PROJECT_PATH/.gemini/policies/autonomy.toml" 2>/dev/null || true
 
@@ -267,11 +295,14 @@ EOF
         [ -f "$f" ] && cp "$f" "$PROJECT_PATH/.claude/rules/" 2>/dev/null || true
     done
 
-    # Copy hook scripts
+    # Copy hook scripts BEFORE settings.json so hooks exist when Claude Code loads settings
     if [ -d "$SCRIPT_DIR/execution/hooks" ]; then
         cp "$SCRIPT_DIR/execution/hooks/"*.sh "$PROJECT_PATH/"         2>/dev/null || true
         cp "$SCRIPT_DIR/execution/hooks/"*.sh "$PROJECT_PATH/execution/hooks/" 2>/dev/null || true
     fi
+
+    # settings.json last — hooks must exist before Claude Code processes this file
+    cp "$SCRIPT_DIR/.claude/settings.json"  "$PROJECT_PATH/.claude/settings.json"  2>/dev/null || true
 
     # Copy execution scripts
     for f in brain.py sync_agents.sh sync_skills.sh sync_rules.sh discovery.sh pulse_runner.sh ingest_pulse.sh get_pulse_status.sh manage_pulse.sh commit_helper.py ki_recall.py overlay_all.sh overlay_template.sh onboard_fill.py com.athanor.pulse.plist doc2md.py mission.py contract.py handoff_check.py handoffs.py; do

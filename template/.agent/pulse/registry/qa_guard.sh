@@ -32,15 +32,20 @@ PROJECT_REPO_NAMES=(
 for i in "${!PROJECT_PATHS[@]}"; do
   PROJECT_PATH="${PROJECT_PATHS[$i]}"
   REPO="${PROJECT_REPO_NAMES[$i]}"
+
+  if [[ "$PROJECT_PATH" != "$ATHANOR_ROOT" ]]; then
+    echo "$LOG Skipping inaccessible project: $PROJECT_PATH"
+    continue
+  fi
+
   [[ -d "$PROJECT_PATH" ]] || continue
   [[ -d "$PROJECT_PATH/.git" ]] || continue
-
   cd "$PROJECT_PATH"
   PROJECT_NAME=$(basename "$PROJECT_PATH")
   echo "$LOG Checking: $PROJECT_NAME → $REPO"
 
   # Check for uncommitted changes
-  DIRTY=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+  DIRTY=$(git status --porcelain 2>/dev/null | grep -v "execution/tests/stress_test_log.txt" | wc -l | tr -d ' ')
   if [[ "$DIRTY" -gt 0 ]]; then
     # Run standards check before committing
     STANDARDS_ISSUES=""
@@ -51,16 +56,18 @@ for i in "${!PROJECT_PATHS[@]}"; do
     fi
 
     # Check for print debugging (Python)
-    if git diff --unified=0 -- . ':!template/' ':!execution/' 2>/dev/null | grep "^+.*print(" | grep -v "^+++\|#.*print\|test_\|logging" | head -3 | grep -q "."; then
+    if git diff --unified=0 -- . ':!template/' ':!execution/tests/stress_test_log.txt' 2>/dev/null | grep "^+.*print(" | grep -v "^+++\|#.*print\|test_\|logging" | head -3 | grep -q "."; then
       STANDARDS_ISSUES="${STANDARDS_ISSUES} Debug print() statements found."
     fi
 
     if [[ -n "$STANDARDS_ISSUES" ]]; then
       echo "$LOG STANDARDS VIOLATION in $PROJECT_NAME: $STANDARDS_ISSUES"
-      EXISTING=$(gh issue list --repo "$REPO" --state open \
-        --json title --limit 50 2>/dev/null \
-        | python3 -c "import sys,json; titles=[i['title'] for i in json.load(sys.stdin)]; print(1 if any('Coding standards violation' in t for t in titles) else 0)" 2>/dev/null || echo "0")
-      if [[ "$EXISTING" -ne 1 ]]; then
+      EXISTING_STANDARDS=$(gh issue list --repo "$REPO" \
+        --search "[STANDARDS] Coding standards violation detected" \
+        --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+      if [[ -n "$EXISTING_STANDARDS" ]]; then
+        echo "$LOG Standards issue already open (#$EXISTING_STANDARDS) — skipping duplicate"
+      else
         gh issue create --repo "$REPO" \
           --title "[STANDARDS] Coding standards violation detected" \
           --body "Automated qa_guard detected: $STANDARDS_ISSUES
@@ -69,7 +76,7 @@ Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 Action required: review and fix before next commit." 2>/dev/null || \
           echo "$LOG WARN: could not file standards issue for $PROJECT_NAME" >&2
       fi
-      continue
+      exit 1
     fi
 
     # Auto-commit clean changes
@@ -92,10 +99,12 @@ Action required: review and fix before next commit." 2>/dev/null || \
     if ! make test 2>&1 | tail -5; then
       FAIL_SUMMARY=$(make test 2>&1 | tail -10 | tr '\n' ' ')
       echo "$LOG REGRESSION in $PROJECT_NAME — filing issue"
-      EXISTING=$(gh issue list --repo "$REPO" --state open \
-        --json title --limit 50 2>/dev/null \
-        | python3 -c "import sys,json; titles=[i['title'] for i in json.load(sys.stdin)]; print(1 if any('Test suite failing' in t for t in titles) else 0)" 2>/dev/null || echo "0")
-      if [[ "$EXISTING" -ne 1 ]]; then
+      EXISTING_REGRESSION=$(gh issue list --repo "$REPO" \
+        --search "[REGRESSION] Test suite failing in $PROJECT_NAME" \
+        --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+      if [[ -n "$EXISTING_REGRESSION" ]]; then
+        echo "$LOG Regression issue already open (#$EXISTING_REGRESSION) — skipping duplicate"
+      else
         gh issue create --repo "$REPO" \
           --title "[REGRESSION] Test suite failing in $PROJECT_NAME" \
           --body "Automated qa_guard detected test failures:

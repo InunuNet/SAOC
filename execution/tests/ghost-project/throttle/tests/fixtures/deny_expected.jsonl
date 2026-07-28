@@ -1,0 +1,4 @@
+{"id": "r1", "allowed": true, "remaining": 2}
+{"id": "r2", "allowed": true, "remaining": 1}
+{"id": "r3", "allowed": true, "remaining": 0}
+{"id": "r4", "allowed": false, "remaining": 0}

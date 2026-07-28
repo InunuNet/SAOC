@@ -1,0 +1,6 @@
+{"op": "add", "value": "alpha", "result": "added"}
+{"op": "add", "value": "beta", "result": "added"}
+{"op": "add", "value": "gamma", "result": "added"}
+{"op": "query", "value": "alpha", "result": "present"}
+{"op": "query", "value": "beta", "result": "present"}
+{"op": "query", "value": "gamma", "result": "present"}

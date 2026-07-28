@@ -1,0 +1,3 @@
+{"op": "add", "value": "foo"}
+{"op": "add", "value": "foo"}
+{"op": "query", "value": "foo"}

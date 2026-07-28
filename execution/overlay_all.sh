@@ -12,11 +12,11 @@ DRY_RUN=false
 [[ "$1" == "--dry-run" ]] && DRY_RUN=true
 
 # ── Ignore list ──────────────────────────────────────────────────────────────
-# Projects excluded from batch overlay (originals, archives, non-DF systems)
+# Projects excluded from batch overlay (originals, archives, non-Athanor systems)
 IGNORE=(
   "Athanor"           # the template itself
   "Workspace Template" # original pre-Athanor workspace (legacy)
-  "Search Token Less"  # already at current version
+  "Alembic"            # source project — skip self-overlay
   "PAI"                # PAI system — separate versioning
 )
 

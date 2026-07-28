@@ -37,6 +37,8 @@ firebase-export-*/
 # ---- Secrets / keys ----
 *.pem
 *-firebase-adminsdk-*.json
+ops-secrets.local.md
+Old SAOC Website Backup/
 
 # ---- Logs ----
 npm-debug.log*

@@ -1,0 +1,6 @@
+{"op": "push", "result": "ok", "size": 1}
+{"op": "push", "result": "ok", "size": 2}
+{"op": "push", "result": "ok", "size": 3}
+{"op": "push", "result": "ok", "size": 3}
+{"op": "pop", "result": "b", "size": 2}
+{"op": "peek", "result": "c", "size": 2}

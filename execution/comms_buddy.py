@@ -150,6 +150,9 @@ def watch(interval: float, once: bool = False, extra_files: list | None = None) 
     state = {p: file_hash(p) for p in watch_paths}
 
     if once:
+        import sys as _sys
+        _sys.stderr.write("[comms-watch] ready\n")
+        _sys.stderr.flush()
         time.sleep(interval)
         changed = False
         for path in watch_paths:

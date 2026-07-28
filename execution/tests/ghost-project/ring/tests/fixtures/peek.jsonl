@@ -1,0 +1,5 @@
+{"op": "push", "value": "p"}
+{"op": "peek"}
+{"op": "peek"}
+{"op": "pop"}
+{"op": "peek"}

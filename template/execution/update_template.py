@@ -137,14 +137,17 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
 
     # Seed autonomy.level if absent — runs regardless of version match
     # (check_autonomy.sh falls back to "low" when missing)
-    if not profile.get("autonomy", {}).get("level"):
+    autonomy = profile.get("autonomy")
+    if not (isinstance(autonomy, dict) and autonomy.get("level")):
         matrix_path = profile_path.parent.parent / ".agent" / "autonomy_matrix.json"
         try:
             matrix = json.loads(matrix_path.read_text())
             seed_level = matrix.get("onboarding_default", "low")
         except Exception:
             seed_level = "low"
-        profile.setdefault("autonomy", {})["level"] = seed_level
+        if not isinstance(autonomy, dict):
+            profile["autonomy"] = {}
+        profile["autonomy"]["level"] = seed_level
         changes.append(f"autonomy.level: seeded as {seed_level}")
 
     if not changes:

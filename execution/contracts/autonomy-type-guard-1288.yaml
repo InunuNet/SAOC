@@ -1,0 +1,212 @@
+schema: athanor.contract/v1
+slug: autonomy-type-guard-1288
+goal: >
+  Fix GitHub issue #1288: execution/update_template.py's update_profile_version()
+  (around line 303) seeds autonomy.level via:
+    if not profile.get("autonomy", {}).get("level"):
+  This assumes profile["autonomy"], when the key IS present, is always a dict.
+  `.get(key, default)` only substitutes `default` when the key is ABSENT -- not
+  when the stored value is present but of some other JSON type. If profile.json's
+  "autonomy" key ever holds a non-dict value (a string, a number, or explicit JSON
+  null -- realistic from hand-editing or a bad merge), calling `.get("level")` on
+  that non-dict value raises AttributeError, crashing the entire template-update
+  run (`make update-template` / `make self-update`, both invoked as
+  `python3 execution/update_template.py --apply`) instead of degrading gracefully
+  to "no valid autonomy level set," the same outcome as the already-correct
+  absent-key case. Severity is low -- not seen from a live incident, only
+  surfaced by adversarial QA on a related fix (#1286) in a downstream project --
+  but it is a real, reproducible crash path.
+
+  Fix (locked convention, confirmed against the issue's suggested fix and the
+  real code at execution/update_template.py:303): replace the single-line
+  condition with an isinstance guard that short-circuits BEFORE calling .get on
+  the value:
+    autonomy = profile.get("autonomy")
+    if not (isinstance(autonomy, dict) and autonomy.get("level")):
+        ... existing seed logic, UNCHANGED ...
+  The two branches of the existing if/else must be preserved exactly as they are
+  today for both outcomes:
+    - condition True (autonomy missing, non-dict, None, or a dict with no truthy
+      "level") -> proceed into the existing seed block: read
+      autonomy_matrix.json's onboarding_default (or "medium" on any read error),
+      then profile.setdefault("autonomy", {})["level"] = seed_level, append the
+      "autonomy.level: seeded as ..." change line, profile_changed = True.
+      IMPORTANT: profile.setdefault("autonomy", {}) only installs a fresh {} when
+      the key is ABSENT -- if autonomy is a non-dict, non-None truthy value (e.g.
+      a string), setdefault leaves it in place and ["level"] = ... would then
+      raise on the non-dict again. The fix must ensure a non-dict/None autonomy
+      value is actually REPLACED with a fresh dict before the level is set (e.g.
+      by assigning profile["autonomy"] = {} first when isinstance check fails),
+      not merely bypass the initial isinstance check and crash one line later.
+    - condition False (autonomy is a dict AND already has a truthy "level") ->
+      skip the seed block entirely, exactly as today: no changes, no writes, no
+      log line, profile.json left byte-for-byte untouched for the autonomy
+      field.
+  This is a minimal, surgical change confined to this one guard condition (and
+  the corresponding assignment so the invalid value is actually replaced) inside
+  update_profile_version() -- no other function, branch, or file-level behavior
+  in scope.
+
+  Twin-file scope: template/execution/update_template.py carries the byte-
+  identical buggy line (`if not profile.get("autonomy", {}).get("level"):` at
+  its own line ~140) and is IN SCOPE for the identical fix. Verified against the
+  actual update mechanism, not assumed: `make self-update` fetches ONLY
+  execution/update_template.py from GitHub
+  (`gh api repos/InunuNet/Athanor/contents/execution/update_template.py`) and
+  separately copies `.agent/version` -> `template/.agent/version` -- it does NOT
+  touch template/execution/update_template.py at all. Diffing the two files
+  shows they are NOT kept in lockstep by any automated sync today (the
+  execution/ copy already contains substantial unmerged work from issues #104
+  and #1285 that template/ lacks entirely). Critically, update_template.py's own
+  --source resolution (`args.source is None` branch) defaults to fetching
+  upstream from GitHub and FALLS BACK to local `template/` only if that fetch
+  fails -- and every downstream (non-Athanor) project's own
+  execution/update_template.py is itself refreshed FROM this same upstream
+  source on its own `make update-template` / `make self-update` runs. This makes
+  template/execution/update_template.py the canonical fallback copy of the
+  harness file that propagates the bug outward to every downstream project, not
+  a cosmetic or synced-later copy -- it requires the identical fix and identical
+  golden coverage in this same contract, not a deferred/out-of-scope treatment.
+created_at: "2026-07-09"
+autonomy: high
+
+assertions:
+  - id: P1A1
+    description: >
+      Golden-file helper script for issue #1288 is syntactically valid bash.
+    verify:
+      kind: shell
+      cmd: bash -n execution/checks/verify_autonomy_type_guard_1288.sh
+  - id: P1A2
+    description: >
+      Static signal: execution/update_template.py's update_profile_version() now
+      contains an isinstance(..., dict) guard on the autonomy value before any
+      .get("level") call is reached (heuristic only -- the functional goldens in
+      phase 2 are the real proof). Currently FAILS (no isinstance guard exists
+      yet, only the bare `.get("autonomy", {}).get("level")` chain) -- must PASS
+      after the fix.
+    verify:
+      kind: shell
+      cmd: grep -q "isinstance(autonomy, dict)" execution/update_template.py
+  - id: P1A3
+    description: >
+      Static signal: template/execution/update_template.py (the canonical
+      upstream fallback copy every downstream project's update_template.py is
+      refreshed from) carries the identical isinstance(..., dict) guard.
+      Currently FAILS -- must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: grep -q "isinstance(autonomy, dict)" template/execution/update_template.py
+  - id: P1A4
+    description: >
+      Regression guard: update_profile_version() still exists as a single
+      function in execution/update_template.py and is still invoked exactly
+      once from main() -- the fix must be a guard-condition edit inside the
+      existing function body, not a restructuring of the update pipeline or a
+      second profile-writing path.
+    verify:
+      kind: shell
+      cmd: test "$(grep -c 'def update_profile_version\|update_profile_version(' execution/update_template.py)" -eq 2
+  - id: P2A1
+    description: >
+      GOLDEN case (a) -- regression guard: autonomy is a valid dict and already
+      has a truthy "level" set (e.g. "high"), plus an unrelated sibling key.
+      Must be left byte-for-byte untouched -- no reseed, no log line, no crash.
+      PASSES both before and after the fix (existing correct behavior; the trap
+      this guards is a fix that requires ALL dict keys present rather than just
+      confirming the value IS a dict before calling .get on it).
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_autonomy_type_guard_1288.sh valid_dict_level_set
+  - id: P2A2
+    description: >
+      GOLDEN case (b) -- regression guard: autonomy is a valid dict but has no
+      "level" key (falsy/absent), with an unrelated sibling key present. Must be
+      seeded with a fresh level from autonomy_matrix.json's onboarding_default,
+      exactly as today, and the sibling key must be preserved (not replaced
+      wholesale). PASSES both before and after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_autonomy_type_guard_1288.sh valid_dict_no_level
+  - id: P2A3
+    description: >
+      GOLDEN case (c) -- regression guard: the "autonomy" key is absent from
+      profile.json entirely (the existing safe/working path today). Must be
+      seeded fresh exactly as today. PASSES both before and after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_autonomy_type_guard_1288.sh key_absent
+  - id: P2A4
+    description: >
+      GOLDEN case (d) -- headline bug reproduction: autonomy is a non-dict
+      value, a bare JSON string (e.g. "high" typed directly instead of nested
+      under a level key -- a realistic hand-edit mistake). Must NOT crash; must
+      degrade gracefully, ending with autonomy replaced by a freshly-seeded
+      dict, identical outcome to the absent-key case. Currently FAILS
+      (AttributeError: 'str' object has no attribute 'get', unhandled, process
+      exits non-zero with an uncaught Traceback) -- must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_autonomy_type_guard_1288.sh non_dict_string
+  - id: P2A5
+    description: >
+      GOLDEN case (e) -- second, DISTINCT bug reproduction: the "autonomy" key
+      is present with an explicit JSON null value (key present, value None) --
+      not the same as the absent-key case, since .get(key, default) only
+      substitutes default when the key is ABSENT, not when the stored value is
+      None. Must NOT crash; must degrade gracefully identically to the
+      absent-key case. Currently FAILS (AttributeError: 'NoneType' object has no
+      attribute 'get') -- must PASS after the fix. Tested separately from
+      non_dict_string per this project's QA history (#1286 P2A8) showing
+      explicit null and a missing key are NOT interchangeable in Python .get()
+      semantics and must each get their own golden coverage.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_autonomy_type_guard_1288.sh null_explicit
+  - id: P2A6
+    description: >
+      GOLDEN case (a), template/ twin: identical to P2A1 but driven against
+      template/execution/update_template.py (the canonical upstream fallback
+      copy). Regression guard -- PASSES both before and after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_autonomy_type_guard_1288.sh valid_dict_level_set --template
+  - id: P2A7
+    description: >
+      GOLDEN case (b), template/ twin: identical to P2A2 but driven against
+      template/execution/update_template.py. Regression guard -- PASSES both
+      before and after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_autonomy_type_guard_1288.sh valid_dict_no_level --template
+  - id: P2A8
+    description: >
+      GOLDEN case (c), template/ twin: identical to P2A3 but driven against
+      template/execution/update_template.py. Regression guard -- PASSES both
+      before and after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_autonomy_type_guard_1288.sh key_absent --template
+  - id: P2A9
+    description: >
+      GOLDEN case (d), template/ twin: identical to P2A4 but driven against
+      template/execution/update_template.py -- confirms the identical bug
+      exists in the canonical upstream fallback copy and must be fixed there
+      too. Currently FAILS -- must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_autonomy_type_guard_1288.sh non_dict_string --template
+  - id: P2A10
+    description: >
+      GOLDEN case (e), template/ twin: identical to P2A5 but driven against
+      template/execution/update_template.py. Currently FAILS -- must PASS after
+      the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_autonomy_type_guard_1288.sh null_explicit --template
+
+phases:
+  - id: 1
+    assertions: [P1A1, P1A2, P1A3, P1A4]
+  - id: 2
+    assertions: [P2A1, P2A2, P2A3, P2A4, P2A5, P2A6, P2A7, P2A8, P2A9, P2A10]

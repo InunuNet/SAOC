@@ -202,8 +202,32 @@ def stats():
     print(f"   Path: {brain_path.resolve()}")
 
 
-def wrap_up(summary: str, tags: str = "", blockers: str = "", force: bool = False):
+def write_reboot(summary: str, next_items: list = None, facts: list = None, do_not_touch: list = None):
+    """Write a lightweight reboot.md so the next session has instant context (<20 lines)."""
+    path = Path(".agent/memory/project/reboot.md")
+    lines = [
+        "# Reboot Context",
+        f"_Generated: {__import__('datetime').datetime.now(__import__('datetime').timezone.utc).strftime('%Y-%m-%dT%H:%M')}Z_",
+        "",
+        "## What happened last session",
+        summary,
+        "",
+    ]
+    if next_items:
+        lines += ["## Top priorities", *[f"- {item}" for item in next_items[:5]], ""]
+    if facts:
+        lines += ["## Critical facts", *[f"- {fact}" for fact in facts[:5]], ""]
+    if do_not_touch:
+        lines += ["## Do NOT touch", *[f"- {item}" for item in do_not_touch[:5]], ""]
+    path.write_text("\n".join(lines))
+    print(f"📝 Reboot context written to {path}")
+
+
+def wrap_up(summary: str, tags: str = "", blockers: str = "", force: bool = False,
+            next_items: list = None, facts: list = None, do_not_touch: list = None):
     """End-of-session wrap-up: store summary + clear scratch."""
+    # Write lightweight reboot context for next session
+    write_reboot(summary, next_items=next_items, facts=facts, do_not_touch=do_not_touch)
     # Store the session summary
     mem_id = remember(summary, tags=tags or "session,wrap-up", source="wrap-up", blockers=blockers)
 
@@ -489,6 +513,12 @@ def main():
     p_wrap.add_argument("--blockers", "-b", default="", help="Comma-separated blocker tags")
     p_wrap.add_argument("--force", action="store_true",
                         help="Bypass active-mission guard and purge scratch unconditionally")
+    p_wrap.add_argument("--next", nargs="*", metavar="ITEM", dest="next_items",
+                        help="Top priority items for next session (written to reboot.md)")
+    p_wrap.add_argument("--facts", nargs="*", metavar="FACT",
+                        help="Critical facts to preserve across compact")
+    p_wrap.add_argument("--do-not-touch", nargs="*", metavar="PATH", dest="do_not_touch",
+                        help="Files/dirs that must not be modified next session")
 
     # last-session
     p_last = sub.add_parser("last-session", help="Show the most recent wrap-up memory")
@@ -529,7 +559,10 @@ def main():
     elif args.action == "stats":
         stats()
     elif args.action == "wrap-up":
-        wrap_up(args.summary, args.tags, args.blockers, force=args.force)
+        wrap_up(args.summary, args.tags, args.blockers, force=args.force,
+                next_items=getattr(args, "next_items", None),
+                facts=getattr(args, "facts", None),
+                do_not_touch=getattr(args, "do_not_touch", None))
     elif args.action == "last-session":
         last_session(args.quiet)
     elif args.action == "export":

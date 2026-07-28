@@ -1,0 +1,5 @@
+{"op": "add", "value": "hello", "result": "added"}
+{"op": "query", "value": "hello", "result": "present"}
+{"op": "query", "value": "world", "result": "absent"}
+{"op": "add", "value": "world", "result": "added"}
+{"op": "query", "value": "world", "result": "present"}

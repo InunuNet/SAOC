@@ -1,0 +1,6 @@
+{"op": "push", "value": "x"}
+{"op": "push", "value": "y"}
+{"op": "push", "value": "z"}
+{"op": "pop"}
+{"op": "pop"}
+{"op": "pop"}

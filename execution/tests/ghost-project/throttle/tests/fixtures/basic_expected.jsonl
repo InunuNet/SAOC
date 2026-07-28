@@ -1,0 +1,5 @@
+{"id": "a", "allowed": true, "remaining": 1}
+{"id": "b", "allowed": true, "remaining": 0}
+{"id": "c", "allowed": false, "remaining": 0}
+{"id": "d", "allowed": true, "remaining": 0}
+{"id": "e", "allowed": true, "remaining": 0}

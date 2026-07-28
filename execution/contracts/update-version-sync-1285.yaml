@@ -1,0 +1,118 @@
+schema: athanor.contract/v1
+slug: update-version-sync-1285
+goal: >
+  Fix GitHub issue #1285: execution/update_template.py's update_profile_version()
+  reads the fetched upstream .agent/version and writes it ONLY into
+  .agent/profile.json's template_version field. The standalone .agent/version
+  file at the repo root is never updated on the GitHub-fetch update path
+  (make update-template / make self-update), so it drifts from profile.json
+  and from upstream — causing full_boot.sh/init to report a stale version and
+  execution/pulse_mission_loop.sh to perpetually think a newer release is
+  available. After the fix, both .agent/version and
+  profile.json.template_version must be kept in sync with the fetched source
+  version on every --apply run, without regressing existing behavior or
+  crashing on edge cases (missing local file, missing source file, local
+  .agent/version being a directory, or an empty/whitespace-only source
+  version file).
+created_at: "2026-07-01"
+autonomy: high
+
+assertions:
+  - id: P1A1
+    description: >
+      Regression guard: the existing SKIP-on-missing-source-version message
+      is preserved (dev must not delete the existing safe-skip path while
+      adding the new local .agent/version write).
+    verify:
+      kind: shell
+      cmd: grep -q "source .agent/version not found" execution/update_template.py
+  - id: P1A2
+    description: >
+      Regression guard: profile.json's template_version key is still written
+      by update_template.py (the pre-existing behavior this issue must not break).
+    verify:
+      kind: shell
+      cmd: grep -q '"template_version"' execution/update_template.py
+  - id: P1A3
+    description: >
+      Static signal: update_template.py now references writing the local
+      .agent/version file (not just reading it as the source-of-truth check).
+      Heuristic only — the functional goldens in phase 2 are the real proof.
+    verify:
+      kind: shell
+      cmd: grep -c '\.agent.*version' execution/update_template.py | awk '{exit ($1>=2)?0:1}'
+  - id: P1A4
+    description: "Golden-file helper script is syntactically valid bash."
+    verify:
+      kind: shell
+      cmd: bash -n execution/checks/verify_version_sync_1285.sh
+  - id: P2A1
+    description: >
+      GOLDEN drift case: source/.agent/version (9.9.9-golden) differs from
+      local .agent/version (1.2.3) and profile.json.template_version (1.2.3).
+      After --apply, BOTH local files must be updated to 9.9.9-golden.
+      Currently FAILS (bug reproduced) — must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_version_sync_1285.sh drift
+  - id: P2A2
+    description: >
+      GOLDEN match case: source version already equals local .agent/version
+      and profile.json.template_version (5.5.5 == 5.5.5). Files must remain
+      correct and no spurious version-change line should be logged.
+      Must PASS both before and after the fix (no regression).
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_version_sync_1285.sh match
+  - id: P2A3
+    description: >
+      TRAP: local .agent/version does not exist yet (older/partial workspace).
+      After --apply it must be created with the fetched source version and
+      must NOT crash (no traceback, exit 0). Currently FAILS (file never
+      created) — must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_version_sync_1285.sh missing_local
+  - id: P2A4
+    description: >
+      TRAP: source/.agent/version does not exist at all (e.g. a fetch/dev
+      path that produced no version file at all, mirroring the existing
+      "source .agent/version not found" SKIP branch). Local .agent/version
+      and profile.json.template_version must be left completely untouched,
+      and the run must not crash. Must PASS both before and after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_version_sync_1285.sh missing_source
+  - id: P2A5
+    description: >
+      TRAP (QA-found defect #1): local .agent/version is a DIRECTORY, not a
+      file (e.g. `mkdir .agent/version` from a stray prior run). Reading it
+      as text raises IsADirectoryError today, crashing the whole update
+      AFTER harness files were already copied. Must instead degrade to a
+      WARN that skips the local-version sync (the directory is left
+      untouched, no crash, exit 0) while the rest of the update — including
+      profile.json.template_version — still completes normally. Currently
+      FAILS (uncaught crash) — must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_version_sync_1285.sh local_dir
+  - id: P2A6
+    description: >
+      TRAP (QA-found defect #2): source/.agent/version exists but is
+      empty/whitespace-only (zero-byte file). Today `.read_text().strip()`
+      silently becomes "" and both local .agent/version and
+      profile.json.template_version get overwritten with an empty string.
+      An empty/whitespace-only source version must be treated as
+      invalid/absent, identical in effect to the missing-source-version
+      SKIP path: no writes to either file, a WARN/SKIP logged mentioning
+      the empty version, no crash. Currently FAILS (silent corruption) —
+      must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_version_sync_1285.sh empty_source
+
+phases:
+  - id: 1
+    assertions: [P1A1, P1A2, P1A3, P1A4]
+  - id: 2
+    assertions: [P2A1, P2A2, P2A3, P2A4, P2A5, P2A6]

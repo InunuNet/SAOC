@@ -1,0 +1,305 @@
+schema: athanor.contract/v1
+slug: onboarding-flag-reset-1286
+goal: >
+  Fix GitHub issue #1286: .agent/profile.json is tracked in git in the Athanor
+  repo itself, and because Athanor is itself an onboarded project, that
+  tracked file currently has onboarding_complete: true and Athanor's OWN
+  stale identity (project_name: "Athanor", identity.agent_name: "gem"). When
+  a brand-new downstream project is scaffolded by cloning this Athanor repo
+  (e.g. via the athanor() shell wrapper or a manual git clone) BEFORE
+  init.sh ever runs, the clone brings this already-onboarding_complete:true
+  profile.json along. init.sh's write_profile() function (around line
+  103-150) has an idempotency guard that only checks
+  `onboarding_complete == true` on the target file before skipping the
+  reset-to-fresh-defaults write. That guard cannot distinguish "a genuinely
+  re-onboarded project being re-scaffolded" from "Athanor's own inherited
+  onboarded state riding along in a fresh clone" -- so for a brand-new
+  project it silently returns early and skips the reset, leaving the new
+  project stuck with onboarding_complete: true and Athanor's own stale
+  identity even though /onboard was never run for it. Live-reproduced: a new
+  project "Shri Savant" scaffolded this way loaded with onboarding_complete:
+  true already set, before onboarding ever happened.
+
+  Fix: write_profile() must add a second, narrow detection signal --
+  "inherited_clone" -- computed from two literal marker constants that
+  identify Athanor's OWN canonical onboarded identity as currently committed
+  in this repo's own .agent/profile.json:
+    ATHANOR_MARKER_PROJECT_NAME = "Athanor"
+    ATHANOR_MARKER_AGENT_NAME   = "gem"
+  inherited_clone = (target.project_name == "Athanor") AND
+                    (target.identity.agent_name == "gem")
+  The existing skip-overwrite (idempotency-preserving) branch must fire ONLY
+  when: onboarding_complete == true AND NOT inherited_clone. In every other
+  case (onboarding_complete == false, as today, OR inherited_clone == true
+  regardless of onboarding_complete) write_profile() must proceed with the
+  existing full template-copy + field-write path exactly as it does today
+  for a first-time write -- resetting onboarding_complete to false,
+  project_name to the resolved $PROJECT_NAME for this invocation, and
+  identity to the existing fresh-write defaults.
+
+  BOTH literal markers must match for a profile to be treated as an
+  inherited/unmodified copy of Athanor's own state. A profile matching only
+  ONE of the two literal values (a coincidental, unrelated match -- e.g. a
+  genuinely different, honestly-onboarded downstream project that happens to
+  share exactly one of the two literal values with Athanor's own defaults)
+  must NOT be reset. This two-marker AND requirement is what keeps a
+  genuinely-onboarded downstream project safe from a false-positive reset.
+
+  This is a minimal, surgical change confined to write_profile()'s existing
+  guard condition: no other function, no other file, and no other part of
+  main()'s pipeline (scaffold_core, setup_instructions, setup_gitignore,
+  etc.) is in scope. .agent/profile.json remaining git-tracked in the
+  Athanor repo itself is NOT part of this fix -- confirmed against the real
+  repo structure, gitignoring it would not by itself fix the bug (a clone
+  still checks out whatever is in the working tree at clone time regardless
+  of .gitignore going forward) and is out of scope for this contract.
+
+  QA adversarial pass (post phase-2-green) found TWO further real, serious
+  bugs in the shipped implementation, not covered by the original 10
+  assertions. Both are added to phase 2 below as P2A7/P2A8, and BOTH
+  currently FAIL against the shipped implementation:
+
+  Bug A -- self-repo reset risk (critical, P2A7): the inherited_clone
+  detection is purely value-based (project_name=="Athanor" AND
+  identity.agent_name=="gem"). Athanor's own repo's OWN real, legitimate
+  .agent/profile.json genuinely has both of those values AND
+  onboarding_complete: true. There is nothing in the current logic that
+  distinguishes "this IS Athanor's own checkout, already onboarded as
+  itself" from "this is a downstream clone that inherited Athanor's
+  profile.json". Running init.sh in place inside a real Athanor checkout
+  (no --path/--name override, so PROJECT_PATH resolves to the same
+  directory as SCRIPT_DIR) must never trigger the inherited_clone reset --
+  self-repo status must override the marker match entirely, unconditionally
+  preserving the profile whenever onboarding_complete is already true.
+  Detection mechanism (both SCRIPT_DIR and PROJECT_PATH are already
+  canonicalized in the current init.sh via `cd "<path>" && pwd` at lines 33
+  and 69 respectively, so no new resolution logic is needed -- only a
+  comparison):
+    self_repo = ( "$PROJECT_PATH" = "$SCRIPT_DIR" )
+  The skip-overwrite (idempotency-preserving) branch must fire whenever:
+    already_onboarded == true AND (self_repo OR NOT inherited_clone)
+  i.e. self_repo forces preservation regardless of inherited_clone; when
+  NOT self_repo, behavior is exactly as today (P1-P2A1-6 unaffected).
+
+  Bug B -- identity: null crashes the guard into a false full-overwrite
+  (P2A8, strictly worse than the original bug): the guard's inline Python
+  does `p.get('identity', {}).get('agent_name')`. `.get(key, default)` only
+  substitutes `default` when the key is ABSENT -- not when its stored value
+  is JSON null. If a real onboarded profile has `"identity": null` (key
+  present, value None) AND `project_name` also happens to equal the literal
+  "Athanor" marker (so the `and`-chain doesn't short-circuit before
+  reaching the identity check), `p.get('identity', {})` returns `None`, and
+  `None.get('agent_name')` raises AttributeError. The broad `except
+  Exception:` swallows this and prints `already_onboarded=false`
+  unconditionally, causing the profile to be FULLY, DESTRUCTIVELY
+  overwritten even though `onboarding_complete: true` was the real,
+  honest value. Fix: treat a null/non-dict identity as "cannot confirm
+  inherited_clone", never as a crash -- e.g.
+  `(p.get('identity') or {}).get('agent_name')` -- so inherited_clone
+  safely evaluates to False and the existing onboarding_complete==true
+  guard preserves the profile, exactly like the already-correct
+  missing-identity-key case.
+
+  QA round 2 (post P2A7/P2A8-green) found ONE further real, serious bug, added to
+  phase 2 below as P2A9, currently FAILING against the shipped implementation:
+
+  Bug C -- symlink canonicalization gap (critical, P2A9): both SCRIPT_DIR (line 33,
+  `cd "$(dirname "$0")" && pwd`) and PROJECT_PATH (line 69, `cd "$PROJECT_PATH" &&
+  pwd`) use bash's LOGICAL pwd (no -P flag), which does NOT resolve symlinks -- it
+  only makes relative paths absolute while preserving symlink components in the path
+  string. The self_repo detection added for Bug A (self_repo = "$PROJECT_PATH" =
+  "$SCRIPT_DIR") is a pure string comparison, so it silently assumes both variables
+  are already canonicalized to the same physical form. QA live-reproduced: invoke
+  init.sh via a symlink pointing at a real Athanor checkout (e.g. `bash
+  $SYMLINK_TO_REPO/init.sh`, common with dotfile managers or synced folders) from a
+  shell whose $PWD is the checkout's own real physical directory (not the symlink).
+  SCRIPT_DIR resolves to the symlink path string (dirname($0) is the symlink, and
+  plain `cd && pwd` does not resolve it), while PROJECT_PATH resolves to the real
+  physical path (it was already $PWD, unchanged by `cd && pwd`). Both point at the
+  exact same directory on disk, but differ as strings -- self_repo evaluates to
+  false when it must be true, causing the exact destructive self-reset the Bug A fix
+  was built to prevent. Fix (for @dev, not in scope for this contract's assertions
+  themselves): use `cd -P` (physical, symlink-resolved) instead of plain `cd` for
+  both SCRIPT_DIR and PROJECT_PATH computation, so both variables are compared as
+  fully-resolved physical paths.
+created_at: "2026-07-02"
+autonomy: high
+
+assertions:
+  - id: P1A1
+    description: >
+      Golden-file helper script for issue #1286 is syntactically valid bash.
+    verify:
+      kind: shell
+      cmd: bash -n execution/checks/verify_onboarding_flag_reset_1286.sh
+  - id: P1A2
+    description: >
+      Regression guard: the existing idempotency-guard comment/mechanism in
+      write_profile() is preserved -- the dev must EXTEND the existing guard
+      condition with the new inherited_clone check, not delete/replace the
+      guard wholesale.
+    verify:
+      kind: shell
+      cmd: grep -q "Idempotency guard" init.sh
+  - id: P1A3
+    description: >
+      Regression guard: write_profile() still exists as a single function
+      and is still invoked exactly once from main() -- the fix must be added
+      inside the existing function body, not by restructuring the
+      scaffolding pipeline or introducing a second profile-writing path.
+    verify:
+      kind: shell
+      cmd: test "$(grep -c 'write_profile' init.sh)" -eq 2
+  - id: P1A4
+    description: >
+      Static signal: init.sh now references the new inherited-clone
+      detection mechanism (heuristic only -- the functional goldens in phase
+      2 are the real proof). Currently FAILS (no such mechanism exists) --
+      must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: grep -Eqi "inherited_clone|ATHANOR_MARKER" init.sh
+  - id: P2A1
+    description: >
+      GOLDEN case (a) -- the headline bug reproduction: a fresh scaffold's
+      cloned .agent/profile.json still has Athanor's own literal identity
+      (project_name="Athanor", identity.agent_name="gem") and
+      onboarding_complete=true, exactly mirroring a raw git clone of this
+      repo before init.sh ever runs. Must be RESET: onboarding_complete
+      becomes false, project_name becomes the resolved new project name, and
+      identity is replaced with fresh-write defaults (no stale "gem" left
+      behind). Currently FAILS (today's guard only checks
+      onboarding_complete and skips the reset) -- must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_onboarding_flag_reset_1286.sh inherited_clone_reset
+  - id: P2A2
+    description: >
+      GOLDEN case (b) -- regression guard for the existing, correct
+      behavior: a genuinely-onboarded existing project (project_name is its
+      own real name, distinct from "Athanor"; identity.agent_name is its own
+      real onboarded name, distinct from "gem"; onboarding_complete=true; a
+      custom marker field present) re-running init.sh in place. Must be
+      preserved byte-for-byte -- this is the existing idempotency behavior
+      and must NOT regress. Already PASSES today -- must continue to PASS
+      after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_onboarding_flag_reset_1286.sh real_onboarded_preserved
+  - id: P2A3
+    description: >
+      GOLDEN case (c): no .agent/profile.json exists at all yet (true
+      first-time scaffold). Normal first-time write path, entirely
+      unaffected by this fix -- onboarding_complete ends up false and
+      project_name is set to the resolved name. PASSES both before and after
+      the fix (no regression risk in this path).
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_onboarding_flag_reset_1286.sh no_profile_fresh_write
+  - id: P2A4
+    description: >
+      Regression guard: an existing profile.json with
+      onboarding_complete=false (mid-onboarding, or never finished) is
+      always fully overwritten today regardless of its
+      project_name/identity values. Must remain fully overwritten after the
+      fix too -- the new inherited_clone check must only ever ADD a reset
+      path (for the true/inherited case), never subtract one from the
+      existing false-path behavior. PASSES both before and after.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_onboarding_flag_reset_1286.sh not_onboarded_yet_overwritten
+  - id: P2A5
+    description: >
+      TRAP: profile.json's identity.agent_name coincidentally equals "gem"
+      (a real downstream project's own independently-chosen onboarded agent
+      name), but project_name is genuinely NOT "Athanor" (a real, distinct,
+      honestly onboarded project name) and onboarding_complete=true. Only
+      ONE of the two Athanor markers matches. Must NOT be reset -- preserved
+      byte-for-byte. PASSES both before and after the fix: a correct fix
+      must require BOTH literal markers to match, never fire on a single
+      coincidental field match, and this must never regress.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_onboarding_flag_reset_1286.sh trap_agent_name_coincidence
+  - id: P2A6
+    description: >
+      TRAP: profile.json's project_name coincidentally equals "Athanor" (a
+      real downstream project that was genuinely, honestly onboarded while
+      keeping that literal name), but identity.agent_name is genuinely NOT
+      "gem" (its own real onboarded agent identity) and
+      onboarding_complete=true. Only ONE of the two Athanor markers matches.
+      Must NOT be reset -- preserved byte-for-byte. PASSES both before and
+      after the fix, for the same reason as P2A5 (single coincidental match
+      must never trigger a false reset).
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_onboarding_flag_reset_1286.sh trap_project_name_coincidence
+  - id: P2A7
+    description: >
+      CRITICAL / QA-found bug A: a disposable fake stand-in "self repo" (a
+      copy of init.sh + template/ + execution/ + supporting dirs, mirroring
+      the exact directory topology of a real Athanor checkout) has its OWN
+      .agent/profile.json already seeded with BOTH Athanor markers
+      (project_name="Athanor", identity.agent_name="gem") and
+      onboarding_complete=true -- its genuine, correct, already-onboarded
+      identity as itself. init.sh is invoked IN PLACE from inside this
+      directory with no --path/--name override, so PROJECT_PATH resolves to
+      the exact same absolute path as SCRIPT_DIR -- reproducing "running
+      init.sh directly inside a real Athanor checkout". Must be preserved
+      byte-for-byte: self-repo status (PROJECT_PATH == SCRIPT_DIR) must
+      override the inherited_clone marker check entirely, unconditionally,
+      whenever onboarding_complete is already true. A disposable fake repo
+      is used -- never the real checkout at $REPO_ROOT -- so this check can
+      never corrupt real repo state even while the bug is unfixed. Currently
+      FAILS (today's inherited_clone check is purely value-based with no
+      self-repo exception, so it wrongly resets Athanor's own onboarded
+      identity) -- must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_onboarding_flag_reset_1286.sh self_repo_preserved
+  - id: P2A8
+    description: >
+      CRITICAL / QA-found bug B: an existing, genuinely onboarded profile.json
+      has project_name="Athanor" (a real, honestly onboarded project that
+      happens to share this literal name), onboarding_complete=true, and an
+      explicit JSON null identity block (identity: null, not an absent key)
+      plus a custom marker field. Must NOT crash and must NOT be treated as
+      inherited_clone; must be preserved byte-for-byte (the conservative
+      default for unconfirmable/malformed identity is "don't reset", same
+      direction as the already-correct missing-identity-key case). Currently
+      FAILS: today's guard does p.get('identity', {}).get('agent_name'), and
+      .get(key, default) only substitutes the default when the KEY IS
+      ABSENT, not when its value is None -- so None.get(...) raises
+      AttributeError, which the broad except swallows, forcing
+      already_onboarded=false unconditionally and causing a FULL destructive
+      overwrite of a real onboarded project (worse than doing nothing). Must
+      PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_onboarding_flag_reset_1286.sh identity_null_preserved
+  - id: P2A9
+    description: >
+      CRITICAL / QA round-2-found bug C: same disposable fake self-repo topology and
+      seeded profile as P2A7 (project_name="Athanor", identity.agent_name="gem",
+      onboarding_complete=true), but init.sh is invoked THROUGH A SYMLINK pointing at
+      the fake repo's init.sh, from a shell whose $PWD is the fake repo's own real
+      physical path (not the symlink). SCRIPT_DIR is derived from $0's directory (the
+      symlink path) via plain `cd ... && pwd` (logical, does not resolve symlinks),
+      while PROJECT_PATH defaults to $PWD (the real physical path already). Same
+      directory on disk, different strings, so self_repo wrongly evaluates to false
+      and the profile is destructively reset -- exactly QA's live-reproduced
+      symlinked-checkout scenario (dotfile managers, synced folders). Must be
+      preserved byte-for-byte. A disposable fake repo + a disposable symlink are
+      used -- never the real $REPO_ROOT -- so this check can never corrupt real repo
+      state. Currently FAILS (today's SCRIPT_DIR/PROJECT_PATH computation uses
+      logical `cd && pwd`, not physical `cd -P && pwd`) -- must PASS after the fix
+      (cd -P for both SCRIPT_DIR and PROJECT_PATH).
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_onboarding_flag_reset_1286.sh symlink_self_repo_preserved
+
+phases:
+  - id: 1
+    assertions: [P1A1, P1A2, P1A3, P1A4]
+  - id: 2
+    assertions: [P2A1, P2A2, P2A3, P2A4, P2A5, P2A6, P2A7, P2A8, P2A9]

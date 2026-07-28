@@ -69,9 +69,42 @@ def normalize_contract(contract: dict) -> dict:
     """
     c = dict(contract)
 
-    # Normalize slug -> spec
+    # Normalize slug/feature -> spec
     if "spec" not in c and "slug" in c:
         c["spec"] = c["slug"]
+    if "spec" not in c and "feature" in c:
+        c["spec"] = c["feature"]
+
+    # Normalize description -> goal
+    if "goal" not in c and "description" in c:
+        c["goal"] = c["description"]
+
+    # Normalize phase-dict format: phases: {name: [{id, name, kind, verify}]}
+    phases_raw = c.get("phases")
+    if isinstance(phases_raw, dict):
+        phase_list = []
+        extra_assertions = []
+        for phase_key, phase_items in phases_raw.items():
+            m = re.match(r"(\d+)", str(phase_key))
+            phase_id = int(m.group(1)) if m else phase_key
+            assertion_ids = []
+            for a in (phase_items or []):
+                aid = a.get("id", "")
+                verify = a.get("verify")
+                if isinstance(verify, str):
+                    verify = {"kind": a.get("kind", "shell"), "cmd": verify}
+                elif verify is None:
+                    verify = {"kind": a.get("kind", "shell"), "cmd": a.get("cmd", a.get("command", ""))}
+                extra_assertions.append({
+                    "id": aid,
+                    "description": a.get("name", a.get("description", "")),
+                    "verify": verify,
+                })
+                assertion_ids.append(aid)
+            phase_list.append({"id": phase_id, "assertions": assertion_ids})
+        c["phases"] = phase_list
+        if not c.get("assertions"):
+            c["assertions"] = extra_assertions
 
     assertions_raw = c.get("assertions", [])
 

@@ -81,3 +81,31 @@ Target: file should be under 3KB after trim. Run this at session start each time
 
 ---
 **[Athanor v3.7.95 — 2026-06-12]** Shipped: loop-mode sleep prevention. `make set-autonomy LEVEL=loop` now auto-starts `caffeinate -d` (prevents macOS sleep during overnight runs). Non-loop levels auto-kill it. New standalone targets: `make stay-awake` / `make allow-sleep`. Run `make update-template` to receive.
+
+## [CODI(ATHANOR) -> ALL] 2026-07-23 23:33 SAST — context-lean orchestration: new harness default, live now
+
+BLUF: Athanor mission `context-lean-orchestration` (GH #1305/#1307, feature F1) shipped and is
+live on `origin/main` (commit 5efae00). Pull it via `make update-template` and bake it into
+practice going forward — this is not optional polish, it materially changes token economics.
+
+What shipped:
+- Context budget target: ~100k tokens optimal working context per session, ~300k hard ceiling.
+- Checkpoint-triggered `/compact`: whenever state is fully flushed to disk (mission checkpoint,
+  milestone gate pass, mission close-out), the orchestrator runs `/compact` immediately instead
+  of letting tool-call exhaust accumulate toward a big lossy compaction. This binds the
+  orchestrator's OWN session, not just spawned subagents.
+- `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` recommended default, set in this repo's `.claude/settings.json`
+  `env` block (Athanor's own default: 45) — a lower threshold means more frequent, smaller
+  compactions instead of one big one. Hot-reload-vs-launch-time-only behavior for this setting is
+  explicitly documented as unconfirmed — verify in your own environment before treating it as live.
+- Orchestrator discipline: holds the full picture, never does grunt work directly, each spawned
+  agent gets ONE narrow self-contained mission. Subagents start with zero inherited context — on-disk
+  scratch/specs/memory is the transfer channel, and keeping it current is first-class practice.
+
+Full doc after pulling: `docs/harness/CONTEXT_LEAN_ORCHESTRATION.md`.
+
+Why it matters: one Athanor session burned ~85%+ of a multi-day quota window on backlog work that
+should have been light — this is the direct fix. F2 (a headless per-mission runner that gets clean
+context by construction) is next, not yet started.
+
+— Codi (Claude, Athanor)

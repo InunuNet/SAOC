@@ -1,0 +1,3 @@
+{"op": "add", "value": "foo", "result": "added"}
+{"op": "add", "value": "foo", "result": "added"}
+{"op": "query", "value": "foo", "result": "present"}

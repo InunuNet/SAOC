@@ -1,0 +1,180 @@
+schema: athanor.contract/v1
+slug: harness-overwrite-guard-104
+goal: >
+  Fix GitHub issue #104: execution/update_template.py's HARNESS copy path
+  (copy_harness(), invoked per-path from the manifest loop in main() for
+  category == "HARNESS" entries in .agent/update-manifest.yaml) unconditionally
+  backs up and overwrites a HARNESS file with the fetched template/upstream
+  version, even when the LOCAL file has in-flight, uncommitted modifications
+  that diverge from the last-synced-from-template baseline (e.g. an agent
+  actively patching execution/pulse_mission_loop.sh). There is no hash-based
+  "was this modified since the last sync?" check, no WARN, and no SKIP — the
+  only recovery path is digging through the timestamped
+  .agent/memory/scratch/update-backup-<ts>/ directory after the fact.
+
+  Fix: add a per-file, HARNESS-only overwrite guard backed by a baseline hash
+  store at .agent/memory/scratch/template_baselines.json (a flat JSON object
+  mapping the manifest "path" string, exactly as it appears in
+  .agent/update-manifest.yaml, to the sha256 hex digest of the content last
+  written to that path FROM the template/upstream source). Before overwriting
+  a HARNESS file:
+    - No baseline entry recorded yet (missing key, missing file, missing
+      .agent/memory/ tree entirely, or the baseline file is corrupt/unreadable)
+      => treat as NOT locally modified. Proceed with the update normally
+      (never permanently "protect" a file just because nothing was recorded
+      yet) and record a fresh baseline hash after the copy completes.
+    - Baseline entry present and sha256(current local content) == baseline
+      hash => file is untouched since the last sync. Proceed with the update
+      normally and refresh the baseline to the new content's hash.
+    - Baseline entry present and sha256(current local content) != baseline
+      hash => local file has in-flight modifications. Print a WARN naming the
+      file and SKIP overwriting it — leave local content byte-for-byte
+      untouched and do NOT silently advance the stored baseline (that would
+      erase the divergence signal on the next run).
+  This guard applies ONLY to category: HARNESS paths. WORKSPACE and
+  DERIVED-categorized paths must remain entirely unaffected (they already
+  skip/regenerate via the existing category branches in main()) — the guard
+  must not be wired into those branches, and a missing or corrupt baseline
+  store must never crash the whole update run.
+created_at: "2026-07-01"
+autonomy: high
+
+assertions:
+  - id: P1A1
+    description: >
+      Golden-file helper script for issue #104 is syntactically valid bash.
+    verify:
+      kind: shell
+      cmd: bash -n execution/checks/verify_harness_overwrite_guard_104.sh
+  - id: P1A2
+    description: >
+      Regression guard: the existing per-file backup mechanism
+      ("Backup directory: ...") in update_template.py is preserved — the dev
+      must not delete/replace the backup path while adding the new guard.
+    verify:
+      kind: shell
+      cmd: grep -q "Backup directory:" execution/update_template.py
+  - id: P1A3
+    description: >
+      Regression guard: all four existing manifest category branches
+      (WORKSPACE / DERIVED / HARNESS / MERGE) are still present and dispatched
+      on in main() — the new guard must be added inside the existing HARNESS
+      branch, not by restructuring the category dispatch.
+    verify:
+      kind: shell
+      cmd: test "$(grep -c 'category == "' execution/update_template.py)" -ge 4
+  - id: P1A4
+    description: >
+      Static signal: update_template.py now references a baseline-hash
+      mechanism (heuristic only — the functional goldens in phase 2 are the
+      real proof). Currently FAILS (no such mechanism exists) — must PASS
+      after the fix.
+    verify:
+      kind: shell
+      cmd: grep -qi "baseline" execution/update_template.py
+  - id: P2A1
+    description: >
+      GOLDEN case (a): a HARNESS file has NO stored baseline yet (first-ever
+      run — the whole .agent/memory/ tree is absent) and its content differs
+      from the template. Must update normally to the template content, record
+      a new baseline hash, and must NOT crash despite the missing baseline
+      directory (doubles as the "missing baseline directory" trap). Currently
+      FAILS (no baseline is ever recorded) — must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_harness_overwrite_guard_104.sh no_baseline
+  - id: P2A2
+    description: >
+      GOLDEN case (b): a HARNESS file's stored baseline matches its current
+      content (untouched since the last sync) and the template changed
+      upstream. Must update to the new template content and refresh the
+      stored baseline to match. Currently FAILS (baseline is never written or
+      refreshed since the mechanism doesn't exist) — must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_harness_overwrite_guard_104.sh match_baseline
+  - id: P2A3
+    description: >
+      GOLDEN case (c) — the headline bug reproduction: a HARNESS file's
+      stored baseline does NOT match its current content (local in-flight
+      modification since the last sync) and the template also changed
+      upstream. Must WARN, SKIP the overwrite, leave the local content
+      byte-for-byte untouched (patch marker preserved), and must NOT silently
+      advance the stored baseline hash. Currently FAILS (file is silently
+      clobbered with the new template content, no WARN, this is exactly
+      GitHub issue #104) — must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_harness_overwrite_guard_104.sh mismatch_baseline
+  - id: P2A4
+    description: >
+      GOLDEN case (d) / TRAP: WORKSPACE and DERIVED-categorized files are
+      entirely unaffected by the new guard — including when a poisoned/
+      mismatched baseline entry happens to exist for their path (guards
+      against a dev wiring the new check into the wrong category branch).
+      Content stays unchanged, existing skip messages still print, no WARN
+      leaks onto these paths. Must PASS both before and after the fix (no
+      regression) — currently PASSES since the guard doesn't exist yet to
+      interfere; must continue to PASS once it does.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_harness_overwrite_guard_104.sh workspace_derived_untouched
+  - id: P2A5
+    description: >
+      TRAP: the baseline JSON file exists but is malformed/corrupt. Must
+      degrade gracefully — treat as no-baseline-recorded (proceed with the
+      update, no crash, exit 0) rather than raising or permanently blocking —
+      and self-heal by rewriting a valid baseline file with the correct hash
+      afterward. Currently FAILS (no baseline read/write/self-heal mechanism
+      exists at all yet) — must PASS after the fix.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_harness_overwrite_guard_104.sh corrupt_baseline
+  - id: P2A6
+    description: >
+      GOLDEN case (e) — real-world reproduction of the issue's own named
+      example: a locally-modified HARNESS file living INSIDE a
+      directory-category manifest entry (mirroring the real
+      `category: HARNESS, path: execution/` entry that contains
+      execution/pulse_mission_loop.sh). copy_harness()'s directory/rglob copy
+      branch must apply the SAME per-file baseline-hash guard as the
+      file-level branch: the locally-modified leaf file must WARN and be
+      preserved byte-for-byte (patch marker intact, baseline left unchanged),
+      while a second, untouched sibling file in the same directory entry
+      still updates normally to the new template content. Currently FAILS
+      (the directory/rglob copy path in copy_harness() has no guard at all —
+      QA proved execution/pulse_mission_loop.sh is silently clobbered with
+      zero WARN) — must PASS after the fix, which requires moving the
+      baseline check into copy_harness() itself so both the single-file path
+      and the rglob walk are covered.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_harness_overwrite_guard_104.sh dir_entry_mismatch
+  - id: P2A7
+    description: >
+      TRAP — order-independence / the "already-clobbered" bug: a manifest
+      lists a directory-category HARNESS entry (e.g. `execution/`) BEFORE a
+      file-level HARNESS entry for a path that lives inside that same
+      directory (e.g. `execution/bump_version.sh`), exactly matching
+      .agent/update-manifest.yaml's real ordering. The nested file has
+      in-flight local modifications (baseline mismatch). The guard must fire
+      and preserve the local content regardless of which manifest entry
+      visits the file first — i.e. the check must live at the actual
+      point of write inside copy_harness(), not in the manifest-loop
+      dispatch, so per-file protection cannot be bypassed by an
+      earlier-processed directory entry silently copying over it first.
+      Currently FAILS (QA proved the directory pass clobbers the file with
+      no guard, so by the time the later file-level entry's guard runs the
+      original local content is already gone — the file-level WARN, if any,
+      fires on already-overwritten content, a false sense of protection) —
+      must PASS after the fix: local content stays byte-for-byte intact, a
+      WARN is printed, and the stored baseline is left unchanged.
+    verify:
+      kind: shell
+      cmd: bash execution/checks/verify_harness_overwrite_guard_104.sh dir_and_file_entry_order
+
+phases:
+  - id: 1
+    assertions: [P1A1, P1A2, P1A3, P1A4]
+  - id: 2
+    assertions: [P2A1, P2A2, P2A3, P2A4, P2A5, P2A6, P2A7]

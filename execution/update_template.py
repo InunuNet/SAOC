@@ -12,6 +12,7 @@ Default mode is --dry-run (safe, read-only). Pass --apply to write changes.
 """
 import argparse
 import fnmatch
+import hashlib
 import json
 import os
 import shutil
@@ -20,6 +21,47 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+
+
+# Baseline hash store for the HARNESS overwrite guard (GitHub issue #104).
+# Flat JSON map of manifest "path" string -> sha256 hex digest of the content
+# last written to that path FROM the template/upstream source. Used to detect
+# whether a HARNESS file has in-flight local modifications since the last
+# sync before silently clobbering it.
+TEMPLATE_BASELINES_PATH = Path(".agent/memory/scratch/template_baselines.json")
+
+
+def _sha256_of_file(path: Path) -> str:
+    """Return the sha256 hex digest of a file's current byte content."""
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def load_template_baselines(store_path: Path = TEMPLATE_BASELINES_PATH) -> dict:
+    """Load the HARNESS baseline hash store.
+
+    Missing file, missing directory tree, or corrupt/malformed JSON all
+    degrade gracefully to "no baselines recorded" (empty dict) — this must
+    never raise or block the update.
+    """
+    if not store_path.exists():
+        return {}
+    try:
+        data = json.loads(store_path.read_text())
+    except Exception:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    return data
+
+
+def save_template_baselines(baselines: dict, store_path: Path = TEMPLATE_BASELINES_PATH) -> None:
+    """Write the baseline hash store, creating parent directories as needed.
+
+    Also serves as the self-heal path: a corrupt store gets overwritten with
+    a fresh, valid one the next time a baseline is recorded.
+    """
+    store_path.parent.mkdir(parents=True, exist_ok=True)
+    store_path.write_text(json.dumps(baselines, indent=2, sort_keys=True) + "\n")
 
 
 # Critical harness files that MUST exist in any onboarded workspace.
@@ -35,24 +77,111 @@ REQUIRED_FILES: list[str] = [
 ]
 
 
-def copy_harness(src: Path, dst: Path, backup_dir: Path) -> str:
-    """Copy a HARNESS path (file or directory) with backup. Returns change description."""
+def _sync_file_with_guard(
+    src_file: Path, dst_file: Path, backup_dir: Path | None, baseline_key: str
+) -> str:
+    """Single point of write for one HARNESS file (issue #104, round 2).
+
+    Checks the baseline-hash guard for dst_file, then either backs up + copies
+    src_file over it and refreshes the baseline, or WARNs and leaves dst_file
+    byte-for-byte untouched. Both copy_harness()'s single-file branch and its
+    directory/rglob branch route every individual file write through this
+    helper, so the guard applies uniformly and is independent of manifest
+    entry order — a directory entry can never clobber a file before a later
+    file-level entry's own guard would have run, because the check lives here,
+    at the point of write, not in the manifest-loop dispatch.
+
+    Returns "copied" or "skipped".
+    """
+    if dst_file.exists() and dst_file.is_file():
+        baselines = load_template_baselines()
+        baseline_hash = baselines.get(baseline_key)
+        if baseline_hash:
+            try:
+                current_hash = _sha256_of_file(dst_file)
+            except OSError:
+                current_hash = None
+            if current_hash is not None and current_hash != baseline_hash:
+                print(
+                    f"  WARN  {baseline_key} has local modifications since the "
+                    "last template sync — SKIPPING overwrite "
+                    "(baseline mismatch; see .agent/memory/scratch/"
+                    "template_baselines.json)"
+                )
+                return "skipped"
+
+    if dst_file.exists() and backup_dir is not None:
+        backup_path = backup_dir / dst_file
+        backup_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(dst_file, backup_path)
+
+    dst_file.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src_file, dst_file)
+
+    try:
+        new_hash = _sha256_of_file(dst_file)
+    except OSError:
+        new_hash = None
+    if new_hash is not None:
+        baselines = load_template_baselines()
+        baselines[baseline_key] = new_hash
+        save_template_baselines(baselines)
+
+    return "copied"
+
+
+def copy_harness(
+    src: Path, dst: Path, backup_dir: Path, is_protected=None, path_key: str | None = None
+) -> str:
+    """Copy a HARNESS path (file or directory) with backup. Returns change description.
+
+    path_key is the manifest "path" string this entry corresponds to, used to key
+    the baseline-hash overwrite guard (issue #104). For directory entries, every
+    file discovered via rglob gets its own baseline key of
+    f"{path_key.rstrip('/')}/{relative_posix_path}" so nested files (e.g.
+    execution/pulse_mission_loop.sh inside the execution/ directory entry) are
+    guarded individually. When is_protected is provided and src is a directory,
+    files listed in .agent/no-update are skipped entirely (existing behavior,
+    unrelated to the baseline guard).
+    """
+    if path_key is None:
+        path_key = str(dst)
+
     if not src.exists():
         return f"  SKIP  (source missing: {src})"
 
     if src.is_dir():
-        if dst.exists():
-            shutil.copytree(dst, backup_dir / dst, dirs_exist_ok=True)
-        shutil.copytree(src, dst, dirs_exist_ok=True)
-        return f"  update (dir)  {dst}"
+        dst.mkdir(parents=True, exist_ok=True)
+        base_key = path_key.rstrip("/")
+        copied: list[str] = []
+        guarded: list[str] = []
+        protected: list[str] = []
+        for src_file in sorted(src.rglob("*")):
+            if src_file.is_dir():
+                continue
+            rel = src_file.relative_to(src)
+            dst_file = dst / rel
+            workspace_rel = str(dst_file)
+            if is_protected is not None and is_protected(workspace_rel):
+                protected.append(str(rel))
+                continue
+            file_key = f"{base_key}/{rel.as_posix()}"
+            status = _sync_file_with_guard(src_file, dst_file, backup_dir, file_key)
+            if status == "copied":
+                copied.append(str(rel))
+            else:
+                guarded.append(str(rel))
+        detail = f"copied {len(copied)}"
+        if guarded:
+            detail += f", guarded {guarded}"
+        if protected:
+            detail += f", protected {protected}"
+        return f"  update (dir)  {dst}  [{detail}]"
     else:
-        if dst.exists():
-            backup_path = backup_dir / dst
-            backup_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(dst, backup_path)
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst)
-        return f"  update (file) {dst}"
+        status = _sync_file_with_guard(src, dst, backup_dir, path_key)
+        if status == "copied":
+            return f"  update (file) {dst}"
+        return f"  SKIP  (guarded) {dst}"
 
 
 def merge_line_union(src: Path, dst: Path, backup_dir: Path) -> str:
@@ -115,42 +244,82 @@ def merge_json_deep(src: Path, dst: Path, backup_dir: Path) -> str:
 
 
 def update_profile_version(source: Path, profile_path: Path) -> str:
-    """After a successful apply, bump template_version in profile.json from source version file."""
+    """After a successful apply, bump template_version in profile.json AND sync the
+    standalone .agent/version file, both from the fetched source's .agent/version.
+
+    The two files are kept in lockstep so full_boot.sh/init and
+    pulse_mission_loop.sh never see a stale local .agent/version while
+    profile.json.template_version has already moved on (issue #1285).
+    """
     version_file = source / ".agent" / "version"
     if not version_file.exists():
         return "  SKIP  template_version update (source .agent/version not found)"
 
     new_version = version_file.read_text().strip()
+    if not new_version:
+        return "  SKIP  template_version update (source .agent/version is empty)"
+
+    changes = []
+
+    # Sync the standalone .agent/version file (created if missing), independent
+    # of whether profile.json exists/parses — this is the file #1285 is about.
+    local_version_path = profile_path.parent / "version"
+    if local_version_path.is_dir():
+        changes.append(
+            "WARN local .agent/version is a directory, not a file — skipping local version sync"
+        )
+    else:
+        old_local_version = (
+            local_version_path.read_text().strip() if local_version_path.exists() else None
+        )
+        if old_local_version != new_version:
+            local_version_path.parent.mkdir(parents=True, exist_ok=True)
+            local_version_path.write_text(new_version + "\n")
+            changes.append(
+                f".agent/version: {old_local_version if old_local_version is not None else 'missing'} → {new_version}"
+            )
+
     if not profile_path.exists():
+        if changes:
+            return f"  updated: {'; '.join(changes)} (profile.json not found — skipped)"
         return "  SKIP  template_version update (profile.json not found)"
 
     try:
         profile = json.loads(profile_path.read_text())
     except Exception as e:
+        if changes:
+            return f"  updated: {'; '.join(changes)}; WARN template_version update failed (bad profile.json): {e}"
         return f"  WARN  template_version update failed (bad profile.json): {e}"
 
-    changes = []
+    profile_changed = False
     old_version = profile.get("template_version", "unknown")
     if old_version != new_version:
         profile["template_version"] = new_version
         changes.append(f"template_version: {old_version} → {new_version}")
+        profile_changed = True
 
     # Seed autonomy.level if absent — runs regardless of version match
     # (check_autonomy.sh falls back to "low" when missing)
-    if not profile.get("autonomy", {}).get("level"):
+    autonomy = profile.get("autonomy")
+    if not (isinstance(autonomy, dict) and autonomy.get("level")):
         matrix_path = profile_path.parent.parent / ".agent" / "autonomy_matrix.json"
         try:
             matrix = json.loads(matrix_path.read_text())
             seed_level = matrix.get("onboarding_default", "low")
         except Exception:
             seed_level = "medium"
-        profile.setdefault("autonomy", {})["level"] = seed_level
+        if not isinstance(autonomy, dict):
+            profile["autonomy"] = {}
+        profile["autonomy"]["level"] = seed_level
         changes.append(f"autonomy.level: seeded as {seed_level}")
+        profile_changed = True
+
+    if profile_changed:
+        profile_path.write_text(json.dumps(profile, indent=2) + "\n")
 
     if not changes:
         return f"  unchanged template_version ({new_version})"
 
-    profile_path.write_text(json.dumps(profile, indent=2) + "\n")
     return f"  updated: {'; '.join(changes)}"
 
 
@@ -405,9 +574,22 @@ def main():
                 else:
                     src_path = source / path.rstrip("/")
                     dst_path = Path(path.rstrip("/"))
-                    msg = copy_harness(src_path, dst_path, backup_dir)
+
+                    # The baseline-hash overwrite guard (issue #104) now lives
+                    # inside copy_harness() / _sync_file_with_guard() — the
+                    # actual point of write — so it applies uniformly whether
+                    # this entry is a single file or a directory whose rglob
+                    # walk touches many nested files, and regardless of
+                    # whether a directory entry or a file entry for the same
+                    # path is processed first.
+                    msg = copy_harness(
+                        src_path, dst_path, backup_dir, is_protected=is_protected, path_key=path
+                    )
                     print(msg)
-                    paths_changed.append(path)
+                    if msg.strip().startswith("SKIP"):
+                        paths_skipped.append(path)
+                    else:
+                        paths_changed.append(path)
 
             elif category == "MERGE":
                 strategy = entry.get("strategy", "unknown")

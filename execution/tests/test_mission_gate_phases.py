@@ -93,7 +93,7 @@ def create_temp_mission(mission_path: Path, contract_path: Path):
     }
     
     fm_str = json.dumps(mission_content, indent=2)
-    body = "
+    body = """
 # Mission: Test Multi-Phase Contract Gate
 
 ## Context
@@ -102,7 +102,7 @@ This mission is for testing purposes only.
 
 ## Notes
 
-"
+"""
     
     # Use a basic YAML-like dump for the frontmatter since mission.py expects YAML
     # and we want to avoid extra dependencies for simple test creation.
@@ -146,8 +146,7 @@ This mission is for testing purposes only.
             fm_lines.append(f"      - {f_id}")
     
     fm_lines.append("---")
-    final_content = "
-".join(fm_lines) + body
+    final_content = "\n".join(fm_lines) + body
 
     with open(mission_path, "w") as f:
         f.write(final_content)
@@ -181,8 +180,7 @@ def run_test():
         create_temp_mission(temp_mission_path, temp_contract_path)
 
         # 4. Run mission.py gate and verify
-        print(f"
-Running: python3 {MISSION_PY} gate {temp_mission_path} --milestone M1")
+        print(f"\nRunning: python3 {MISSION_PY} gate {temp_mission_path} --milestone M1")
         result = subprocess.run(
             [sys.executable, str(MISSION_PY), "gate", str(temp_mission_path), "--milestone", "M1"],
             capture_output=True, text=True
@@ -194,8 +192,7 @@ Running: python3 {MISSION_PY} gate {temp_mission_path} --milestone M1")
         print(result.stderr)
 
         if result.returncode == 0:
-            print(f"
-✅ Test passed: mission.py gate returned 0.")
+            print(f"\n✅ Test passed: mission.py gate returned 0.")
             # Additionally verify output contains PASS for all assertions
             if "PASS A1" in result.stdout and "PASS A2" in result.stdout and "PASS A3" in result.stdout:
                 print("✅ All assertions (A1, A2, A3) reported as PASSED in output.")
@@ -203,8 +200,7 @@ Running: python3 {MISSION_PY} gate {temp_mission_path} --milestone M1")
                 print("❌ ERROR: Expected 'PASS A1', 'PASS A2', 'PASS A3' not found in stdout.")
                 sys.exit(1)
         else:
-            print(f"
-❌ Test failed: mission.py gate returned non-zero exit code {result.returncode}.")
+            print(f"\n❌ Test failed: mission.py gate returned non-zero exit code {result.returncode}.")
             sys.exit(1)
 
         # Clean up results created by contract.py
