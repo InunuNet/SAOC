@@ -12,8 +12,10 @@
  *   SANITY_API_TOKEN              — write-enabled Sanity API token
  */
 
-import 'dotenv/config';
+import { config } from 'dotenv';
 import { createClient } from '@sanity/client';
+
+config({ quiet: true });
 
 import {
   awards,

@@ -1,0 +1,86 @@
+schema: athanor.contract/v1
+slug: claude-md-tech-table-f3
+goal: >-
+  Correct CLAUDE.md's Tech Stack table and Project Structure tree, which are
+  stale relative to the actual repo (verified 2026-07-28 against package.json,
+  app/, lib/, sanity.config.ts): the table omits Sanity CMS entirely (this
+  already caused a wrong "scope creep" flag in a prior session), omits the
+  PayFast payment layer, and mis-describes two existing rows as
+  not-yet-implemented when they are already live. OUT OF SCOPE: no prose
+  rewrites anywhere else in CLAUDE.md, no changes outside CLAUDE.md, no gating
+  on `pnpm lint` (known broken on this repo per contract-sanity-react-peer-fix.yaml
+  precedent).
+created_at: '2026-07-28'
+autonomy: high
+
+features:
+  - id: F3
+    name: Fix CLAUDE.md Tech Stack table + Project Structure tree to match repo reality
+    status: pending
+
+goldens:
+  - contracts/golden/claude-md-tech-table-f3/tech-table.golden.md
+  - contracts/golden/claude-md-tech-table-f3/project-structure.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- new rows present ----------
+    - id: A1
+      description: Tech Stack table now has a CMS row naming Sanity and /studio.
+      command: grep -qE '\| *CMS *\| *Sanity' /Users/vetus/ai/SAOC/CLAUDE.md
+
+    - id: A2
+      description: CMS row mentions the Studio route /studio.
+      command: grep -q '/studio' /Users/vetus/ai/SAOC/CLAUDE.md
+
+    - id: A3
+      description: Tech Stack table now has a Payments row naming PayFast.
+      command: grep -qE '\| *Payments *\| *PayFast' /Users/vetus/ai/SAOC/CLAUDE.md
+
+    # ---------- corrected existing rows ----------
+    - id: A4
+      description: >-
+        Auth row no longer claims Auth is "Scaffolded, not wired to UI" --
+        it is live (Firebase session-cookie login at /admin).
+      command: '! grep -q "Scaffolded, not wired to UI" /Users/vetus/ai/SAOC/CLAUDE.md'
+
+    - id: A5
+      description: >-
+        Forms row no longer claims Resend email is a future item -- resend
+        is already a live dependency (lib/email.ts) wired into the contact route.
+      command: '! grep -qE "SendGrid/Resend \(future\)" /Users/vetus/ai/SAOC/CLAUDE.md'
+
+    - id: A6
+      description: Forms row mentions Resend as the active email sender.
+      command: grep -qE '\| *Forms *\|.*Resend' /Users/vetus/ai/SAOC/CLAUDE.md
+
+    - id: A7
+      description: Database row still documents Firestore (not removed, just re-scoped).
+      command: grep -qE '\| *Database *\| *Firestore' /Users/vetus/ai/SAOC/CLAUDE.md
+
+    # ---------- project structure tree ----------
+    - id: A8
+      description: Project Structure tree now lists app/studio/ (Sanity Studio mount).
+      command: grep -q 'studio/' /Users/vetus/ai/SAOC/CLAUDE.md
+
+    - id: A9
+      description: Project Structure tree now lists app/admin/ (Firebase Auth admin area).
+      command: grep -q 'admin/' /Users/vetus/ai/SAOC/CLAUDE.md
+
+    - id: A10
+      description: Project Structure tree now lists lib/payfast.ts.
+      command: grep -q 'payfast.ts' /Users/vetus/ai/SAOC/CLAUDE.md
+
+    - id: A11
+      description: Project Structure tree now lists the sanity/schemas directory.
+      command: grep -q 'sanity/' /Users/vetus/ai/SAOC/CLAUDE.md
+
+    # ---------- table integrity ----------
+    - id: A12
+      description: All 9 expected Tech Stack row labels are present, in one grep pass.
+      command: >-
+        grep -qE '\| *Framework *\|' /Users/vetus/ai/SAOC/CLAUDE.md &&
+        grep -qE '\| *Styling *\|' /Users/vetus/ai/SAOC/CLAUDE.md &&
+        grep -qE '\| *Hosting *\|' /Users/vetus/ai/SAOC/CLAUDE.md &&
+        grep -qE '\| *Package manager *\|' /Users/vetus/ai/SAOC/CLAUDE.md

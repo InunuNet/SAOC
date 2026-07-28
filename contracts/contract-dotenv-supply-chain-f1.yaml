@@ -1,0 +1,118 @@
+schema: athanor.contract/v1
+slug: dotenv-supply-chain-f1
+goal: >-
+  Suppress the promotional tip banner (containing "www.vestauth.com") that
+  dotenv@17.4.2 prints on every load, after confirming the package is
+  genuine upstream dotenv and not a compromised/typosquatted dependency.
+  Findings (verified 2026-07-28, see
+  contracts/golden/dotenv-supply-chain-f1/findings.md): (1) installed
+  node_modules/dotenv integrity hash matches the npm registry's published
+  dist.integrity for dotenv@17.4.2 exactly -- not tampered, not a typosquat;
+  (2) dotenv@17.4.2 has no install/preinstall/postinstall scripts -- nothing
+  runs arbitrary code at install time; (3) `pnpm audit --prod` has zero
+  advisory hits for the dotenv package; (4) the "vestauth" string traces to
+  a real upstream CHANGELOG entry (v17.2.3) where the maintainer
+  self-promotes his own follow-on project via dotenv's built-in rotating
+  "tips" feature -- unwanted marketing noise, not a supply-chain attack.
+  VERDICT: benign, safe to keep the pin; the only work item is suppressing
+  the banner. The only call site in this repo is
+  scripts/seed-sanity.ts:15 (`import 'dotenv/config';`) -- Next.js loads
+  .env files itself via its own built-in mechanism and does not use this
+  dotenv package.
+  OUT OF SCOPE: changing the dotenv version pin (integrity check passed --
+  do not touch package.json's "dotenv" entry), any other dependency, and
+  the pre-existing repo-wide `pnpm lint` failure (not gated here).
+created_at: '2026-07-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Verify dotenv@17.4.2 supply-chain integrity and suppress the
+      vestauth promotional banner at its one call site
+    status: pending
+
+goldens:
+  - contracts/golden/dotenv-supply-chain-f1/findings.md
+  - contracts/golden/dotenv-supply-chain-f1/expected-integrity.txt
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- integrity / advisory verification (already confirmed by @architect; re-checked here so the gate re-verifies, not just trusts, the finding) ----------
+    - id: A1
+      description: >-
+        Installed dotenv@17.4.2's integrity hash (as pinned in
+        pnpm-lock.yaml) matches the hash the npm registry currently
+        publishes for dotenv@17.4.2 -- confirms the installed package is
+        the genuine upstream tarball, not a tampered or typosquatted
+        substitute. Expected value captured in
+        contracts/golden/dotenv-supply-chain-f1/expected-integrity.txt.
+      command: >-
+        LOCK_HASH=$(grep -A1 "^  dotenv@17.4.2:" pnpm-lock.yaml | grep -o
+        "sha512-[A-Za-z0-9+/=]*" | head -1); REGISTRY_HASH=$(npm view
+        dotenv@17.4.2 dist.integrity 2>/dev/null); if [ -z "$LOCK_HASH" ] ||
+        [ -z "$REGISTRY_HASH" ]; then echo "could not read one or both
+        hashes (lock=$LOCK_HASH registry=$REGISTRY_HASH)"; exit 1; fi; if [
+        "$LOCK_HASH" != "$REGISTRY_HASH" ]; then echo "INTEGRITY MISMATCH:
+        lock=$LOCK_HASH registry=$REGISTRY_HASH -- possible supply-chain
+        compromise, do not proceed with suppression fix"; exit 1; fi; exit 0
+
+    - id: A2
+      description: >-
+        dotenv@17.4.2 declares no install/preinstall/postinstall script
+        (nothing runs arbitrary code at install time).
+      command: >-
+        SCRIPTS=$(npm view dotenv@17.4.2 scripts 2>/dev/null); if echo
+        "$SCRIPTS" | grep -Eq "'?(pre|post)?install'?:"; then echo
+        "dotenv@17.4.2 declares an install-time script: $SCRIPTS"; exit 1;
+        fi; exit 0
+
+    - id: A3
+      description: >-
+        `pnpm audit --prod` reports zero advisories for the dotenv package
+        specifically (other pre-existing advisories in unrelated
+        transitive deps are out of scope and not gated here).
+      command: >-
+        pnpm audit --prod --json > /tmp/saoc-dotenv-audit.json 2>/dev/null;
+        HITS=$(python3 -c "import json,sys; d=json.load(open('/tmp/saoc-dotenv-audit.json')); print(sum(1 for a in d.get('advisories',{}).values() if a.get('module_name')=='dotenv'))" 2>/dev/null || echo 0); if [ "$HITS" != "0" ]; then echo "dotenv has $HITS advisory hit(s)"; exit 1; fi; exit 0
+
+    - id: A4
+      description: >-
+        package.json's dotenv version pin is unchanged (integrity check
+        passed -- no version bump needed or permitted by this feature).
+      command: >-
+        grep -q '"dotenv": "\^17\.4\.2"' package.json
+
+    # ---------- suppression fix ----------
+    - id: A5
+      description: >-
+        scripts/seed-sanity.ts no longer uses the bare `import
+        'dotenv/config'` side-effect import; it explicitly calls dotenv's
+        config() with quiet:true so suppression is visible in source
+        rather than relying on external env state.
+      command: >-
+        if grep -qE "^import 'dotenv/config';?$" scripts/seed-sanity.ts;
+        then echo "still using unsuppressed side-effect import"; exit 1;
+        fi; grep -q "from 'dotenv'" scripts/seed-sanity.ts && grep -q
+        "quiet:[[:space:]]*true" scripts/seed-sanity.ts
+
+    - id: A6
+      description: >-
+        Running the actual call site (scripts/seed-sanity.ts) no longer
+        prints the vestauth banner or any dotenv tip line to stdout/stderr
+        (checked dynamically, not just statically -- catches cases where
+        quiet:true was set but on the wrong call or wrong option shape).
+        The script is expected to error on missing Sanity credentials in
+        this sandboxed environment; only its dotenv-related output is
+        checked, not its exit code.
+      command: >-
+        OUT=$(timeout 15 npx tsx scripts/seed-sanity.ts 2>&1); if echo
+        "$OUT" | grep -qiE "vestauth|injected env|injecting env|dotenvx"; then
+        echo "dotenv banner/tip still present in output:"; echo "$OUT"; exit
+        1; fi; exit 0
+
+    # ---------- no-regression gate ----------
+    - id: A7
+      description: strict TypeScript type-check passes
+      command: pnpm type-check
