@@ -8,16 +8,16 @@ goal: 'Phase 1 hardening + home-page design fidelity sprint: clear the four smal
   all confirmed deviations in one contract-gated pass'
 created_at: '2026-07-28T18:11:08.912585+00:00'
 started_at: '2026-07-28T19:08:48.120579+00:00'
-last_active_at: '2026-07-28T19:18:10.388796+00:00'
+last_active_at: '2026-07-28T19:32:53.710188+00:00'
 status: in_progress
 cost_estimate:
   features: 0
   milestones: 0
   total_calls: 0
 last_checkpoint:
-  milestone: M1
-  feature: F3
-  ts: '2026-07-28T19:18:10.388796+00:00'
+  milestone: M2
+  feature: F6
+  ts: '2026-07-28T19:32:53.710188+00:00'
 features:
 - id: F1
   title: dotenv supply-chain sanity check
@@ -82,7 +82,7 @@ features:
   completed_at: '2026-07-28T19:15:42.692992+00:00'
 - id: F5
   title: Home-page UI drift audit vs Claude Design reference
-  status: pending
+  status: done
   inline_brief: 'Audit-only feature (no fixes here). Compare every home-page section
     of local dev against design/Claude Design HTML/SAOC%20Website%20(standalone).html
     per the backlog item: open both, screenshot section-by-section (headless browser),
@@ -96,6 +96,8 @@ features:
     changed layout plumbing — include a check that home chrome still matches the reference.
 
     '
+  started_at: '2026-07-28T19:19:22.462895+00:00'
+  completed_at: '2026-07-28T19:27:53.323558+00:00'
 - id: F6
   title: Implement home-page fidelity fixes from audit
   status: pending
@@ -110,6 +112,7 @@ features:
     evidence.
 
     '
+  started_at: '2026-07-28T19:27:53.516498+00:00'
 milestones:
 - id: M1
   title: Hardening — security, limits, docs accuracy, harness triage
@@ -128,6 +131,10 @@ milestones:
   - F6
   status: pending
 ---
+
+
+
+
 
 
 

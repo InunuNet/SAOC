@@ -1,9 +1,9 @@
 {
   "mission": ".agent/memory/project/missions/2026-07-28-hardening-ui-fidelity.md",
   "checkpoint": {
-    "milestone": "M1",
-    "feature": "F3",
-    "ts": "2026-07-28T19:18:10.388796+00:00"
+    "milestone": "M2",
+    "feature": "F6",
+    "ts": "2026-07-28T19:32:53.710188+00:00"
   },
-  "activated_at": "2026-07-28T19:18:10.388927+00:00"
+  "activated_at": "2026-07-28T19:32:53.710617+00:00"
 }
