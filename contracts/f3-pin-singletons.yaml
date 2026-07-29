@@ -1,0 +1,140 @@
+schema: athanor.contract/v1
+slug: f3-pin-singletons
+goal: >
+  Pin all six page singletons (homePage, aboutPage, nationalShow, contactPage,
+  judgingPage, membersPage) to one fixed document ID each in the Sanity Studio desk
+  structure, so an editor cannot create a duplicate and have the site silently render
+  an arbitrary one (app code takes [0] from an unordered GROQ result). Scope change
+  2026-07-29: Brad decided membersPage stays as an EMPTY PLACEHOLDER for now — the
+  schema is kept, and it is pinned exactly like the other five. No content is seeded
+  for any of the six (seeding is F4, separate feature, and out of scope for membersPage
+  entirely until Brad decides whether to build the page).
+created_at: '2026-07-29'
+autonomy: high
+
+# ============================================================================
+# SCOPE
+# ============================================================================
+# IN SCOPE — pin exactly these 6 types, no more, no fewer:
+#   homePage, aboutPage, nationalShow, contactPage, judgingPage, membersPage.
+#
+#   - sanity/structure.ts (new file): exports `structure(S, context)` pinning all 6
+#     types below, and `filterNewDocumentOptions(options, context)` closing the global
+#     "+ Create new document" menu loophole for the same 6 types.
+#   - sanity.config.ts: wire `structureTool({ structure })` and
+#     `document: { newDocumentOptions: filterNewDocumentOptions }` (or equivalent —
+#     the check scripts import the named exports from sanity/structure.ts, not
+#     sanity.config.ts, so @dev has latitude in exactly how sanity.config.ts calls them).
+#   - Fixed document ID convention: the document's own _id equals the schema type name
+#     (e.g. homePage -> _id "homePage"). This is Sanity's own documented singleton
+#     pattern (drafts become "drafts.homePage").
+#
+# EXPLICITLY OUT OF SCOPE:
+#   - Seeding any document content, for any of the 6 types (F4, separate feature).
+#     membersPage stays empty — pin it, do not create or populate a document for it.
+#   - Section 7 schemas / un-built National Show pages (standing scope freeze).
+#
+# NOTE ON REVISION HISTORY: an earlier draft of this contract (same day) excluded
+# membersPage per a stated scope boundary at the time and added a "membersPage
+# untouched" source-diff assertion. Brad has since decided membersPage should be
+# pinned too, as an empty placeholder. That assertion is REMOVED — membersPage now
+# gets the identical pinning assertion the other 5 get (A1, A2 below). Do not
+# resurrect the old exclusion; this version supersedes it.
+#
+# ============================================================================
+# NEGATIVE-CONTROL EVIDENCE (captured by @architect 2026-07-29, before any @dev change)
+# ============================================================================
+# Current repo state: sanity.config.ts uses stock `structureTool()` with NO `structure`
+# option and no `document.newDocumentOptions` override (read directly, sanity.config.ts:1-27
+# at commit df5ee43). No sanity/structure.ts file exists. A1 and A2 were run against this
+# exact unmodified state and genuinely failed (not skipped, not vacuously true):
+#   - A1 (check-structure-resolution.mjs): FAIL — "could not import sanity/structure.ts —
+#     Cannot find module ... imported from .../check-structure-resolution.mjs" (module
+#     genuinely does not exist yet). Exit code 1.
+#   - A2 (check-new-document-filter.mjs): FAIL — same reason, same file missing. Exit code 1.
+#   - A3 (check-document-counts.mjs) is a standing data-integrity invariant, not a
+#     code-presence check — it legitimately PASSES today because all 6 singleton types
+#     currently have 0 documents (verified live against the dataset, counts below). It is
+#     included to catch the failure mode where a pinned type already has 2+ documents
+#     (none do today).
+#
+# @architect also positive-and-negative-control-tested the check scripts' discriminator
+# logic directly against a temporary stub sanity/structure.ts (not the real
+# implementation, which does not exist yet):
+#   - A stub correctly pinning all 6 types (including membersPage) made A1 and A2 PASS.
+#   - A second stub that pinned only the original 5 and left membersPage as a stock list
+#     item (i.e. the OLD, now-superseded scope) made A1 and A2 correctly FAIL on
+#     membersPage specifically: "membersPage: expected a pinned document pane (static
+#     object child), got a list resolver function" / "membersPage: still present in
+#     filtered 'create new' options". This is the exact regression this contract exists
+#     to prevent now that membersPage is in scope.
+# The stub files were deleted before handoff both times; `git status --short sanity/` is
+# clean.
+#
+# Current per-type document counts (live query against the dataset, 2026-07-29):
+#   homePage: 0, aboutPage: 0, nationalShow: 0, contactPage: 0, judgingPage: 0,
+#   membersPage: 0. No existing duplicates to reconcile.
+#
+# ============================================================================
+# WHY THE PRIMARY CHECKS ARE NOT A BROWSER/PLAYWRIGHT TEST
+# ============================================================================
+# The Studio at :3333 requires interactive Sanity OAuth login (Google/GitHub/e-mail) —
+# there is no stored Playwright storageState and agents cannot complete OAuth
+# (see .agent/memory/project/needs-human.md, "RF-11" — same wall hit and documented by a
+# prior mission). A Playwright script driving the live Studio would either need a human to
+# authenticate first, or it silently never gets past the login screen — exactly the kind
+# of check that can't fail meaningfully and must not be trusted (Athanor#1322).
+#
+# Instead, A1-A2 import and execute the ACTUAL structure/filter functions the Studio will
+# call at runtime (via `sanity/structure`'s createStructureBuilder, empirically verified
+# against this exact Sanity version 5.31.1: a pinned S.document().documentId(id) child
+# serializes as a static object {type:'document', options:{id, type}}; a stock/list child
+# is a lazy resolver function). This is genuine behavioural verification of the code path
+# the Studio's sidebar renders from — not a source-text grep — it just stops short of
+# rendering pixels, which OAuth blocks. A screenshot-level human confirmation (same
+# pattern as RF-11's resolution) should be logged to needs-human.md by @qa/@dev once
+# Brad or an authenticated session is available, but does not gate this contract.
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        All 6 pinned types (homePage, aboutPage, nationalShow, contactPage,
+        judgingPage, membersPage) each resolve, via the real structure(S, context)
+        function, to a fixed document pane (static object child, type "document",
+        options.id === options.type === the type name) — not a list/create-new
+        resolver.
+      command: node --import tsx/esm contracts/checks/f3-pin-singletons/check-structure-resolution.mjs
+
+    - id: A2
+      description: >
+        The global "+ Create new document" menu filter (filterNewDocumentOptions),
+        called directly with synthetic input, removes exactly the 6 pinned types and
+        leaves ordinary collection types (society, event) untouched. This closes the
+        loophole where a duplicate could be created outside the desk sidebar.
+      command: node --import tsx/esm contracts/checks/f3-pin-singletons/check-new-document-filter.mjs
+
+    - id: A3
+      description: >
+        Live-dataset data-integrity guard: every one of the 6 pinned types has 0 or 1
+        documents (a fixed-ID pin over 2+ existing documents would silently orphan the
+        rest). Standing invariant, not proof of the code change by itself — pairs with
+        A1-A2. Also implicitly confirms F3 seeded nothing: membersPage (and every other
+        type) stays at its pre-change count.
+      command: node --import tsx/esm contracts/checks/f3-pin-singletons/check-document-counts.mjs
+
+    - id: A4
+      description: >
+        Type-check passes with the new sanity/structure.ts and sanity.config.ts wiring —
+        catches StructureBuilder API misuse the runtime checks above might not surface
+        as a clean failure. Safe to run alongside the port-3333 dev server (tsc --noEmit
+        does not touch .next).
+      command: pnpm type-check
+
+    - id: A5
+      description: >
+        The port-3333 dev server Brad is using is still up and serving /studio after
+        @dev's changes — non-destructive smoke check, guards against the config change
+        crashing the shared dev server (constraint: never restart/kill it).
+      command: curl -sf -o /dev/null -w "%{http_code}" http://localhost:3333/studio | grep -q 200

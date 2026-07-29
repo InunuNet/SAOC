@@ -11,12 +11,13 @@ import { structureTool } from 'sanity/structure';
 // provide.
 import { visionTool } from '@sanity/vision';
 import { schemaTypes } from './sanity/schemas';
+import { structure, filterNewDocumentOptions } from './sanity/structure';
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ?? '';
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET ?? 'production';
 
 const plugins = [
-  structureTool(),
+  structureTool({ structure }),
   ...(process.env.NODE_ENV === 'development' ? [visionTool()] : []),
 ];
 
@@ -29,5 +30,8 @@ export default defineConfig({
   plugins,
   schema: {
     types: schemaTypes,
+  },
+  document: {
+    newDocumentOptions: filterNewDocumentOptions,
   },
 });

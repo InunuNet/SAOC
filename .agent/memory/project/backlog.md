@@ -213,3 +213,34 @@ content-entry gaps, not code defects — every field below renders correctly and
 Note: "Wild Orchids of Southern Africa" exists as a `sponsor` document — worth confirming
 that matches the intended WOSA relationship (SAOC links to WOSA as a partner organisation;
 see CLAUDE.md scope boundary).
+
+## F3 — Pin singletons: follow-ups (cms-activation-deploy, 2026-07-29)
+
+Full detail: `docs/f3-pin-singletons.md`. F3 shipped and @qa passed all five assertions;
+these are the residual items, not defects in what shipped.
+
+- [ ] **[Low] Check gap:** `contracts/checks/f3-pin-singletons/check-new-document-filter.mjs:17`
+  hardcodes `MUST_SURVIVE = ['society', 'event']`, but `'event'` is not a real schema
+  type name — the actual type is `societyEvent` (`sanity/schemas/index.ts` imports a
+  binding named `event` from `documents/event.ts`, whose `defineType` declares
+  `name: 'societyEvent'`). Causes no false pass today (A2 only tests set membership,
+  and `'event'` never collides with the pinned-type list either way), but it means A2
+  never actually exercises the real `societyEvent` name — a future regression that
+  accidentally filtered `societyEvent` out of the create-new menu would go uncaught.
+  Needs an @architect follow-up to fix the constant to `'societyEvent'`.
+- [ ] **[Informational]** F3 protects the Studio UI only, not the write API — @qa
+  confirmed `client.create({ _type: 'homePage', ... })` with a write-token client
+  succeeds against the live dataset with zero resistance (test doc deleted, counts
+  verified back to 0 immediately after). No write-token integration exists in this
+  codebase today that would exploit this, so no action needed now — revisit if one is
+  ever added (a script, migration, or third-party integration holding a Sanity write
+  token could still create a duplicate of a pinned singleton type and reopen the
+  `[0]`-query fragility F3 exists to close).
+- [ ] **[Needs client answer]** Per the project spec
+  (`documents/Website Development SpecificationV1.docx` §3.5, cross-referenced to
+  §8), the real Members Portal is planned as an authenticated, member-only area with
+  a Digital Journal library — separate future build, not the `membersPage` singleton
+  F3 pinned as an empty placeholder. The spec leaves open how membership status will
+  be verified and kept in sync with SAOC's actual membership records. This needs a
+  client answer before the Members Portal itself can be built (not blocking on F3,
+  which only pins the placeholder).
