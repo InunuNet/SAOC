@@ -1,9 +1,9 @@
 {
   "mission": ".agent/memory/project/missions/2026-07-29-cms-activation-deploy.md",
   "checkpoint": {
-    "milestone": "M1",
-    "feature": "F1",
-    "ts": "2026-07-29T18:38:34.642592+00:00"
+    "milestone": "M2",
+    "feature": "F3",
+    "ts": "2026-07-29T19:05:53.433057+00:00"
   },
-  "activated_at": "2026-07-29T18:38:34.642947+00:00"
+  "activated_at": "2026-07-29T19:05:53.433299+00:00"
 }

@@ -7,16 +7,16 @@ goal: Ship the Next 16 fix to production so the Studio actually works for the cl
   coverage, and prove end-to-end that a Studio edit changes the live site
 created_at: '2026-07-29T18:30:00.000000+00:00'
 started_at: null
-last_active_at: '2026-07-29T18:38:34.642592+00:00'
+last_active_at: '2026-07-29T19:05:53.433057+00:00'
 status: pending
 cost_estimate:
   features: 6
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: M1
-  feature: F1
-  ts: '2026-07-29T18:38:34.642592+00:00'
+  milestone: M2
+  feature: F3
+  ts: '2026-07-29T19:05:53.433057+00:00'
 features:
 - id: F1
   name: Fix the home-page hydration bug (useCountdown / ShowBand) before shipping
@@ -48,7 +48,7 @@ features:
     in the mission; everything proven so far is local-only.'
 - id: F3
   name: Pin the page singletons in a custom desk structure
-  status: pending
+  status: done
   inline_brief: sanity.config.ts uses stock structureTool() with no custom desk structure,
     so none of the six page types are true singletons. An editor can create a second
     homePage document and the site would silently render an arbitrary one - the GROQ
@@ -58,6 +58,7 @@ features:
     list with a Create-new button. Also resolve the scope decisions flagged below
     before touching membersPage. Do this BEFORE anyone else edits content - it prevents
     a failure mode that is confusing to diagnose after the fact.
+  completed_at: '2026-07-29T19:05:53.432917+00:00'
 - id: F4
   name: Seed the six page singletons from existing hardcoded copy
   status: pending
@@ -113,6 +114,7 @@ milestones:
   - F6
   gate: contract
 ---
+
 
 
 # Mission: CMS activation and deploy
