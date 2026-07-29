@@ -173,3 +173,33 @@ code changed, per scope freeze.
   ships the Next 16 upgrade from this mission.
 - [ ] Pre-existing prettier drift across ~160 files (`pnpm format:check` fails) — unrelated
   to this mission, noted during the M2 regression pass.
+
+## Content gaps observed in Studio walkthrough (Brad, 2026-07-29)
+
+Direct visual evidence from a live authenticated Studio session on port 3333. These are
+content-entry gaps, not code defects — every field below renders correctly and is editable.
+
+**A 7th empty document type, not caught by the F6 assessment:**
+- `Judge` — "No documents of this type". The schema is registered and reachable in the
+  Studio sidebar, but zero documents exist. F6 enumerated the six page singletons and the
+  `hostSociety` gap; it did not flag `Judge`. Needs the same scope decision as
+  `membersPage`: is a judges directory planned, or should the schema be removed?
+
+**Empty fields on existing documents (spot-checked, likely not exhaustive):**
+- `societyEvent` — **Slug is empty** (confirmed on "Cape Orchid Society Autumn Show").
+  This is the direct cause of `/events/[slug]` being unverifiable in the M2 regression pass
+  (3 of 62 routes were compiled-and-present only, never live-rendered). Populating slugs
+  would close that gap. Note the Studio has a "Generate" button per document.
+- `society` — Description, Logo, Website all empty on "Cape Orchid Society" (Member Count
+  is populated at 220, so the docs are partially filled).
+- `boardMember` — Email and Photo empty on "David Naidoo" (Name and Role populated).
+- `sponsor` — Tier, Logo, Website, Description all empty on "Royal Horticultural Society"
+  (Name only).
+- `show` — Date empty on "National Show 14 (2012)" (Title, Slug, Year populated).
+
+**Populated and healthy:** 21 societies, 18 events, 6 board members, 6 shows
+(National Show 14–19, incl. 19 (2027)), 10 show classes, 6 awards, 6 sponsors, 9 provinces.
+
+Note: "Wild Orchids of Southern Africa" exists as a `sponsor` document — worth confirming
+that matches the intended WOSA relationship (SAOC links to WOSA as a partner organisation;
+see CLAUDE.md scope boundary).
