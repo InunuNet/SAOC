@@ -7,86 +7,96 @@ goal: Fix the Sanity Studio document-editor P0 by upgrading Next.js 15.5.19 to 1
   actually renders fields (closes RF-11)
 created_at: '2026-07-29T17:03:36.555399+00:00'
 started_at: null
-last_active_at: null
+last_active_at: '2026-07-29T17:12:30.153356+00:00'
 status: pending
 cost_estimate:
   features: 6
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M1
+  feature: F2
+  ts: '2026-07-29T17:12:30.153356+00:00'
 features:
 - id: F1
   name: Next 16 upgrade blast-radius assessment (investigation only, no dep changes)
-  status: pending
-  inline_brief: >-
-    Investigation only, zero dependency changes. Read the Next 15 to 16 upgrade guide
-    via Alembic and enumerate breaking changes against THIS codebase: App Router APIs,
-    next.config.ts, route handlers, sanity.config.ts, image optimisation, ISR and the
-    revalidate webhook, and the (marketing)/admin/studio route groups. Note that
-    serverExternalPackages was previously removed from next.config.ts as part of the
-    studio SSR fix - check whether Next 16 changes that. Output a written risk register.
+  status: done
+  inline_brief: 'Investigation only, zero dependency changes. Read the Next 15 to
+    16 upgrade guide via Alembic and enumerate breaking changes against THIS codebase:
+    App Router APIs, next.config.ts, route handlers, sanity.config.ts, image optimisation,
+    ISR and the revalidate webhook, and the (marketing)/admin/studio route groups.
+    Note that serverExternalPackages was previously removed from next.config.ts as
+    part of the studio SSR fix - check whether Next 16 changes that. Output a written
+    risk register.'
+  completed_at: '2026-07-29T17:12:29.962696+00:00'
 - id: F2
   name: Firebase App Hosting + Next 16 compatibility verification
-  status: pending
-  inline_brief: >-
-    Confirm Firebase App Hosting supports Next 16 SSR before committing to the upgrade.
-    This is the hard external constraint - if App Hosting cannot run Next 16, the
-    approach dies and the fallback (pin Sanity to a pre-useEffectEvent release) becomes
-    the plan. Check apphosting.yaml, the App Hosting runtime's supported Next versions,
-    and any Node version floor Next 16 imposes. Evidence required, not vendor optimism.
+  status: done
+  inline_brief: Confirm Firebase App Hosting supports Next 16 SSR before committing
+    to the upgrade. This is the hard external constraint - if App Hosting cannot run
+    Next 16, the approach dies and the fallback (pin Sanity to a pre-useEffectEvent
+    release) becomes the plan. Check apphosting.yaml, the App Hosting runtime's supported
+    Next versions, and any Node version floor Next 16 imposes. Evidence required,
+    not vendor optimism.
+  completed_at: '2026-07-29T17:12:30.153150+00:00'
 - id: F3
   name: Execute the Next 15.5.19 to 16.x upgrade
   status: pending
-  inline_brief: >-
-    Upgrade Next 15.5.19 to 16.x, pinned exact, preferring latest stable unless F1
-    surfaces a reason otherwise. Apply Next-provided codemods. Expect eslint-config-next
-    and @next/* packages to move in lockstep. Clear .next fully afterwards using
-    find .next -mindepth 1 -delete. Gated on an M1 go verdict.
+  inline_brief: Upgrade Next 15.5.19 to 16.x, pinned exact, preferring latest stable
+    unless F1 surfaces a reason otherwise. Apply Next-provided codemods. Expect eslint-config-next
+    and @next/* packages to move in lockstep. Clear .next fully afterwards using find
+    .next -mindepth 1 -delete. Gated on an M1 go verdict.
 - id: F4
   name: Full-surface regression pass (62 routes, PayFast, admin, API)
   status: pending
-  inline_brief: >-
-    Prove nothing broke. All 62 routes render. type-check, lint and build green. PayFast
-    checkout and ITN webhook (lib/payfast.ts, app/api/tickets/) unbroken. Admin auth
-    session cookies and door check-in still work. Contact form to Firestore and Resend.
-    ICS export routes, draft mode toggles, revalidation webhook. Rendered-output
+  inline_brief: Prove nothing broke. All 62 routes render. type-check, lint and build
+    green. PayFast checkout and ITN webhook (lib/payfast.ts, app/api/tickets/) unbroken.
+    Admin auth session cookies and door check-in still work. Contact form to Firestore
+    and Resend. ICS export routes, draft mode toggles, revalidation webhook. Rendered-output
     assertions, not source greps.
 - id: F5
   name: RF-11 closure - Studio edit pane renders fields, live document round-trip
   status: pending
-  inline_brief: >-
-    Open Studio on port 3333, click into a society and an event, confirm the edit pane
-    renders its fields rather than crashing. Then a real round-trip - edit a field,
-    publish, confirm persistence in Sanity and that the change surfaces on the front
-    end. Also verify the deployed Studio at saoc-prod--saoc-webapp.europe-west4.hosted.app.
+  inline_brief: Open Studio on port 3333, click into a society and an event, confirm
+    the edit pane renders its fields rather than crashing. Then a real round-trip
+    - edit a field, publish, confirm persistence in Sanity and that the change surfaces
+    on the front end. Also verify the deployed Studio at saoc-prod--saoc-webapp.europe-west4.hosted.app.
     Open since 2026-07-24 and cannot be machine-checked from source.
 - id: F6
   name: Page singleton documents missing - assessment and remediation plan
   status: pending
-  inline_brief: >-
-    Zero page singletons exist (no homePage, aboutPage, nationalShow, contactPage,
-    judgingPage, membersPage) so homePageQuery returns null and components fall through
-    to hardcoded defaults - the site is not actually CMS-driven. Determine what each
-    singleton schema expects, what the front end hardcodes, and what the secretary would
-    need to fill in. Produce a plan; do not bulk-create documents without content
-    sign-off. Include the hostSociety gap (0/18 events populated).
+  inline_brief: Zero page singletons exist (no homePage, aboutPage, nationalShow,
+    contactPage, judgingPage, membersPage) so homePageQuery returns null and components
+    fall through to hardcoded defaults - the site is not actually CMS-driven. Determine
+    what each singleton schema expects, what the front end hardcodes, and what the
+    secretary would need to fill in. Produce a plan; do not bulk-create documents
+    without content sign-off. Include the hostSociety gap (0/18 events populated).
 milestones:
 - id: M1
   name: Assess - know the cost before paying it
-  features: [F1, F2]
+  features:
+  - F1
+  - F2
   gate: contract
+  gate_ran_at: '2026-07-29T17:12:30.337863+00:00'
+  gate_result: pass
+  status: done
 - id: M2
   name: Upgrade and prove nothing broke
-  features: [F3, F4]
+  features:
+  - F3
+  - F4
   gate: contract
 - id: M3
   name: Close the P0 and scope what remains
-  features: [F5, F6]
+  features:
+  - F5
+  - F6
   gate: contract
 ---
+
+
+
 
 # Mission: Sanity Studio P0 — Next.js 16 upgrade
 
