@@ -1,3 +1,11 @@
+// GOLDEN REFERENCE — f6-home-fidelity, D7
+// Target shape for components/chrome/UtilityBar.tsx.
+// @dev implements against this; it is not imported anywhere.
+//
+// D7: reference (ref-top-strip.png) shows "MAKING A DIFFERENCE SINCE 1968"
+// in mono uppercase between the email link and the right-aligned pills.
+// Add it there — same tagline that already appears in the Header subtitle,
+// literal duplication per reference, low-impact by design.
 // =============================================================
 // SAOC — components/chrome/UtilityBar.tsx
 // Server Component — no interactivity needed.
@@ -34,7 +42,7 @@ export function UtilityBar() {
         </a>
 
         {/* Centre: tagline (hidden on narrow viewports, matches reference) */}
-        <span className="hidden md:flex font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/60">
+        <span className="hidden md:inline-flex font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/60">
           Making a difference since 1968
         </span>
 

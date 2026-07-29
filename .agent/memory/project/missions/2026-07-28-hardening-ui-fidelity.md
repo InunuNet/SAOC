@@ -8,8 +8,8 @@ goal: 'Phase 1 hardening + home-page design fidelity sprint: clear the four smal
   all confirmed deviations in one contract-gated pass'
 created_at: '2026-07-28T18:11:08.912585+00:00'
 started_at: '2026-07-28T19:08:48.120579+00:00'
-last_active_at: '2026-07-28T19:32:53.710188+00:00'
-status: in_progress
+last_active_at: '2026-07-29T12:21:57.230002+00:00'
+status: done
 cost_estimate:
   features: 0
   milestones: 0
@@ -17,7 +17,7 @@ cost_estimate:
 last_checkpoint:
   milestone: M2
   feature: F6
-  ts: '2026-07-28T19:32:53.710188+00:00'
+  ts: '2026-07-29T12:21:57.230002+00:00'
 features:
 - id: F1
   title: dotenv supply-chain sanity check
@@ -100,7 +100,7 @@ features:
   completed_at: '2026-07-28T19:27:53.323558+00:00'
 - id: F6
   title: Implement home-page fidelity fixes from audit
-  status: pending
+  status: done
   inline_brief: 'Implement ALL confirmed code deviations from the F5 audit in one
     contract-gated pass (per backlog: no ad-hoc section fixes). @architect writes
     the contract + goldens from the audit doc (screenshot-diff or DOM/class assertions
@@ -113,6 +113,7 @@ features:
 
     '
   started_at: '2026-07-28T19:27:53.516498+00:00'
+  completed_at: '2026-07-29T12:21:57.229817+00:00'
 milestones:
 - id: M1
   title: Hardening — security, limits, docs accuracy, harness triage
@@ -129,8 +130,12 @@ milestones:
   features:
   - F5
   - F6
-  status: pending
+  status: done
+  gate_ran_at: '2026-07-29T12:21:57.499677+00:00'
+  gate_result: pass
 ---
+
+
 
 
 

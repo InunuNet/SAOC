@@ -1,3 +1,14 @@
+// GOLDEN REFERENCE — f6-home-fidelity, D2
+// Target shape for components/home/PartnersSection.tsx.
+// @dev implements against this; it is not imported anywhere.
+//
+// Supersedes contracts/golden/partners-cards/PartnersSection.tsx, which
+// documented the OLD heavy card layout (badge + description + arrow) that
+// D2 identified as the drift itself — do not implement against that file.
+//
+// Reference (ref-section-8.png): a single-row, 6-column band of plain
+// bordered cells, name-only, no per-card badge/description/arrow. Roughly
+// 1/5 the vertical height of the old card grid.
 import type { SanityImageSource } from '@sanity/image-url';
 
 export interface SanityPartner {

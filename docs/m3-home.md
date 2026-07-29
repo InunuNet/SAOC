@@ -13,8 +13,8 @@
 | `NavCards`        | `components/home/NavCards.tsx`        | 4-col grid of navigation cards; hover: lift 4px + accent border            |
 | `ShowBand`        | `components/home/ShowBand.tsx`        | Full-bleed dark band: bench image, 4-up meta, live countdown to 2027-09-18 |
 | `EventsStrip`     | `components/home/EventsStrip.tsx`     | "What's on" strip using EventRow; links to full calendar                   |
-| `YearbookStrip`   | `components/home/YearbookStrip.tsx`   | --bone bg, 2-col grid: left copy (`<em>Orchids South Africa</em>` title, Subscribe/Past buttons) + right orchid-pink.jpg image |
-| `PartnersSection` | `components/home/PartnersSection.tsx` | Centered 6-cell serif partner name grid on parchment                       |
+| `YearbookStrip`   | `components/home/YearbookStrip.tsx`   | --bone bg, 2-col grid: left copy (`<em>Orchids South Africa</em>` title, Subscribe/Past buttons) + right orchid-purple.jpg image with "EST. 1968" badge overlay |
+| `PartnersSection` | `components/home/PartnersSection.tsx` | Single-row `lg:grid-cols-6` bordered band, name-only cells (no badge/description/arrow) |
 | `EventRow`        | `components/ui/EventRow.tsx`          | Shared: 110px date block + body + host + arrow; used in Home + Events      |
 
 ## Rendering

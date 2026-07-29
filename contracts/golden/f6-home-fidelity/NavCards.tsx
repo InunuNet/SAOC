@@ -1,3 +1,12 @@
+// GOLDEN REFERENCE — f6-home-fidelity, D9
+// Target shape for components/home/NavCards.tsx.
+// @dev implements against this; it is not imported anywhere.
+//
+// D9: local used aspect-[3/2] (landscape, ratio 1.5). Measuring the
+// reference card images directly against ref-section-4.png / local-section-4.png
+// crop dimensions gives a reference ratio of ~0.8 (portrait) — i.e.
+// aspect-[4/5], the same portrait crop already used by YearbookStrip.
+// Swap the image container to aspect-[4/5].
 import Image from 'next/image';
 import Link from 'next/link';
 

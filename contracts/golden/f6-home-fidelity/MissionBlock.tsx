@@ -1,3 +1,10 @@
+// GOLDEN REFERENCE — f6-home-fidelity, D5
+// Target shape for components/home/MissionBlock.tsx.
+// @dev implements against this; it is not imported anywhere.
+//
+// D5: reference headline (ref-section-3.png) renders fully upright, no
+// italics anywhere in the sentence. Remove the <em className="italic">
+// wrap around "blooms to the bench." — plain text, same phrase.
 const STATS = [
   { value: '21', label: 'Affiliated Societies' },
   { value: '1968', label: 'Founding Year' },

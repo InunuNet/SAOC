@@ -1,3 +1,19 @@
+// GOLDEN REFERENCE — f6-home-fidelity, D3 (+ D4 regression guard)
+// Target shape for components/home/YearbookStrip.tsx.
+// @dev implements against this; it is not imported anywhere.
+//
+// D3: swap /images/orchid-pink.jpg (wrong photo, no badge) for
+// /images/orchid-purple.jpg (closest available asset to the reference's
+// dark-purple crop, ref-section-7.png) + add the "EST. 1968" badge overlay,
+// pill-on-image pattern matching the eyebrow/pill idiom used elsewhere
+// (e.g. ShowBand.tsx's `eyebrow eyebrow--light`), positioned top-left over
+// the image per reference.
+//
+// D4 (regression guard only — no fix needed, see contract goal): the
+// heading's <em> must continue to wrap ONLY "Orchids South Africa", not
+// "· 2025 yearbook". Source already scopes it correctly; audit's "fully
+// italic" observation did not reproduce against computed source — this
+// golden pins the correct scoping so it can't regress silently.
 import Image from 'next/image';
 import Link from 'next/link';
 

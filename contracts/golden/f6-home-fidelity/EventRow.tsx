@@ -1,3 +1,13 @@
+// GOLDEN REFERENCE — f6-home-fidelity, D1 (code half only)
+// Target shape for components/ui/EventRow.tsx.
+// @dev implements against this; it is not imported anywhere.
+//
+// D1 code half: EventRow must not render a dangling blank host span when
+// event.host is falsy (currently: 0/18 Sanity societyEvent docs have
+// hostSociety populated, so this renders blank on every row today). The
+// content-side fix (populating hostSociety in Sanity) is OUT OF SCOPE for
+// this contract — tracked separately in backlog.md. Only the render
+// hardening is in scope: hide the span entirely when there's no host.
 import type { SocietyEvent } from '@/types';
 
 interface EventRowProps {

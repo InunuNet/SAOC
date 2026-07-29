@@ -1,3 +1,12 @@
+// GOLDEN REFERENCE — f6-home-fidelity, D8
+// Target shape for components/chrome/Footer.tsx.
+// @dev implements against this; it is not imported anywhere.
+//
+// D8: reference footer (ref-footer-9.png) Explore column lists
+// "Judging & Awards" (local said "Judging" only — header nav already got
+// this right, footer didn't). Reg#/NPO line renders as ONE line, mono,
+// uppercase "REG#" (not "Reg#"), tracked, joined by generous whitespace —
+// not two separate wrapped lines.
 'use client';
 
 // =============================================================

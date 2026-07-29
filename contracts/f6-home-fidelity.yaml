@@ -1,0 +1,194 @@
+schema: athanor.contract/v1
+slug: f6-home-fidelity
+goal: >-
+  Implement the code-side fixes for the 8 home-page deviations (D2, D3, D5,
+  D7, D8, D9, plus the code half of D1) identified in the F5 drift audit
+  (.agent/memory/scratch/home-audit-20260728/audit.md) against the Claude
+  Design reference (design/Claude Design HTML/SAOC Website (standalone).html).
+  D4 was inspected (heading <em> in YearbookStrip.tsx already scopes
+  correctly to "Orchids South Africa" only, not the full heading — no code
+  bug found in source) and is encoded here only as a regression guard, not
+  a fix. OUT OF SCOPE, filed to backlog.md instead: D1's content half
+  (populate hostSociety on Sanity societyEvent docs — 0/18 populated,
+  content-entry task not a code bug), D6 (hero lede copy — reference and
+  local text differ, copy authority unresolved, do not touch without a
+  content-owner decision), and the @sanity/image-url default-export
+  deprecation warning (pre-existing, already tracked in backlog.md as a P3
+  item). Do not restructure component boundaries beyond what each
+  deviation requires — surgical fixes only per .claude/rules/behavior.md.
+created_at: '2026-07-28'
+autonomy: high
+
+features:
+  - id: F6
+    name: Implement home-page fidelity fixes from F5 audit (D1 code half, D2, D3, D5, D7, D8, D9)
+    status: pending
+
+goldens:
+  - contracts/golden/f6-home-fidelity/PartnersSection.tsx
+  - contracts/golden/f6-home-fidelity/YearbookStrip.tsx
+  - contracts/golden/f6-home-fidelity/MissionBlock.tsx
+  - contracts/golden/f6-home-fidelity/UtilityBar.tsx
+  - contracts/golden/f6-home-fidelity/Footer.tsx
+  - contracts/golden/f6-home-fidelity/NavCards.tsx
+  - contracts/golden/f6-home-fidelity/EventRow.tsx
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- D2 — PartnersSection rebuild (compact name-only band) ----------
+    - id: A1
+      description: >-
+        PartnersSection renders a single-row 6-column grid (lg:grid-cols-6),
+        matching the reference's compact band layout instead of the old
+        3-column card grid.
+      command: grep -q "lg:grid-cols-6" components/home/PartnersSection.tsx
+
+    - id: A2
+      description: >-
+        PartnersSection no longer renders a per-card description paragraph
+        — the badge/description/arrow markup that had no counterpart in
+        the reference is gone.
+      command: '! grep -q "{card.description}" components/home/PartnersSection.tsx'
+
+    - id: A3
+      description: PartnersSection no longer renders a per-card tier badge.
+      command: '! grep -q "{card.badge}" components/home/PartnersSection.tsx'
+
+    - id: A4
+      description: PartnersSection no longer renders the hover arrow glyph.
+      command: '! grep -q "→" components/home/PartnersSection.tsx'
+
+    - id: A5
+      description: PartnersSection still renders the partner name (name-only cell content preserved).
+      command: grep -q "{card.name}" components/home/PartnersSection.tsx
+
+    # ---------- D3 — YearbookStrip image + EST. 1968 badge overlay ----------
+    - id: A6
+      description: >-
+        YearbookStrip uses the correct dark-purple orchid asset
+        (orchid-purple.jpg), not the mismatched orchid-pink.jpg.
+      command: grep -q "orchid-purple.jpg" components/home/YearbookStrip.tsx
+
+    - id: A7
+      description: YearbookStrip renders the missing "EST. 1968" badge text.
+      command: grep -q "EST. 1968" components/home/YearbookStrip.tsx
+
+    - id: A8
+      description: >-
+        The EST. 1968 badge is positioned as an overlay on the image (an
+        absolutely-positioned element inside the relative image wrapper),
+        not just present as loose text somewhere in the component.
+      command: >-
+        awk '/relative aspect-\[4\/5\] overflow-hidden/{f=1} f &&
+        /EST\. 1968/{print; found=1} f && /absolute/{a=1} f &&
+        /<\/div>/{exit} END{exit !(found && a)}'
+        components/home/YearbookStrip.tsx
+
+    # ---------- D4 — regression guard (no code bug found; pin correct scoping) ----------
+    - id: A9
+      description: >-
+        The <em> in the yearbook heading wraps only "Orchids South Africa"
+        (not the full heading including "· 2025 yearbook") — guards
+        against a future regression reintroducing full-heading italics.
+      command: grep -q "<em>Orchids South Africa</em> · 2025 yearbook" components/home/YearbookStrip.tsx
+
+    - id: A10
+      description: The yearbook <em> count is exactly 1 (no additional italic wrapping added).
+      command: '[ "$(grep -c "<em>" components/home/YearbookStrip.tsx)" = "1" ]'
+
+    # ---------- D5 — MissionBlock: remove italic on "blooms to the bench." ----------
+    - id: A11
+      description: >-
+        MissionBlock no longer italicizes "blooms to the bench." — the
+        <em className="italic"> wrap and the word "italic" are both gone
+        from the file, matching the reference's fully-upright headline.
+      command: '! grep -q "italic" components/home/MissionBlock.tsx'
+
+    - id: A12
+      description: The headline text itself is preserved verbatim, just no longer wrapped in emphasis markup.
+      command: grep -q "blooms to the bench." components/home/MissionBlock.tsx
+
+    - id: A13
+      description: >-
+        The "blooms to the bench." headline text is no longer wrapped in
+        an <em> tag (confirms the emphasis wrapper, not just the
+        "italic" class, was removed from the headline specifically — the
+        unrelated <em>Orchids South Africa</em> in the body paragraph is
+        untouched and out of scope for D5).
+      command: '! grep -q "<em.*blooms to the bench" components/home/MissionBlock.tsx'
+
+    # ---------- D7 — UtilityBar tagline ----------
+    - id: A14
+      description: UtilityBar renders the "Making a difference since 1968" tagline (case-insensitive match).
+      command: grep -qi "making a difference since 1968" components/chrome/UtilityBar.tsx
+
+    - id: A15
+      description: >-
+        The tagline sits between the email link and the action pills in
+        source order (matches reference layout: email — tagline — pills).
+      command: >-
+        E=$(grep -n "council@saoc.co.za" components/chrome/UtilityBar.tsx |
+        head -1 | cut -d: -f1); T=$(grep -ni "making a difference since
+        1968" components/chrome/UtilityBar.tsx | head -1 | cut -d: -f1);
+        P=$(grep -n "19th National Show" components/chrome/UtilityBar.tsx |
+        head -1 | cut -d: -f1); [ "$E" -lt "$T" ] && [ "$T" -lt "$P" ]
+
+    # ---------- D8 — Footer 'Judging' -> 'Judging & Awards' + REG#/NPO one-line styling ----------
+    - id: A16
+      description: Footer Explore nav lists "Judging & Awards", matching both the reference and the header nav.
+      command: grep -q "Judging & Awards" components/chrome/Footer.tsx
+
+    - id: A17
+      description: The old truncated "'Judging'," label entry is gone (replaced, not duplicated).
+      command: '! grep -Eq "label: .Judging.,$" components/chrome/Footer.tsx'
+
+    - id: A18
+      description: >-
+        Reg#/NPO line uses uppercase "REG#" (mono-tracked, matching
+        reference styling) instead of mixed-case "Reg#".
+      command: grep -q "REG#" components/chrome/Footer.tsx
+
+    - id: A19
+      description: >-
+        Reg# and NPO render on a single line/element (one span containing
+        both), not two separately-wrapped lines as before.
+      command: grep -Eq "REG#.*NPO" components/chrome/Footer.tsx
+
+    # ---------- D9 — NavCards aspect ratio ----------
+    - id: A20
+      description: >-
+        NavCards image wrapper uses aspect-[4/5] (portrait), matching the
+        reference's crop ratio measured from ref-section-4.png /
+        local-section-4.png (reference ~0.8, local was 1.5 at aspect-[3/2]).
+      command: grep -q "aspect-\[4/5\]" components/home/NavCards.tsx
+
+    - id: A21
+      description: The old landscape aspect-[3/2] crop is gone.
+      command: '! grep -q "aspect-\[3/2\]" components/home/NavCards.tsx'
+
+    # ---------- D1 (code half) — EventRow: no dangling blank host span ----------
+    - id: A22
+      description: >-
+        EventRow only renders the host span when event.host is truthy —
+        no dangling blank space when hostSociety is unpopulated (0/18
+        Sanity docs currently have it set; content-side fix is out of
+        scope, tracked in backlog.md).
+      command: grep -q "event.host &&" components/ui/EventRow.tsx
+
+    - id: A23
+      description: The arrow glyph still renders exactly once (unconditionally — only the host span became conditional).
+      command: '[ "$(grep -c "→" components/ui/EventRow.tsx)" = "1" ]'
+
+    # ---------- No-regression build gate ----------
+    - id: A24
+      description: strict TypeScript type-check passes, zero errors.
+      command: pnpm type-check
+
+    - id: A25
+      description: pnpm lint passes with zero errors.
+      command: pnpm lint
+
+    - id: A26
+      description: pnpm build completes successfully — the home page still compiles after all fixes.
+      command: pnpm build
