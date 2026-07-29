@@ -7,16 +7,16 @@ goal: Fix the Sanity Studio document-editor P0 by upgrading Next.js 15.5.19 to 1
   actually renders fields (closes RF-11)
 created_at: '2026-07-29T17:03:36.555399+00:00'
 started_at: null
-last_active_at: '2026-07-29T18:08:31.670705+00:00'
-status: pending
+last_active_at: '2026-07-29T18:17:12.821279+00:00'
+status: done
 cost_estimate:
   features: 6
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: M2
-  feature: F4
-  ts: '2026-07-29T18:08:31.670705+00:00'
+  milestone: M3
+  feature: F6
+  ts: '2026-07-29T18:17:12.821279+00:00'
 features:
 - id: F1
   name: Next 16 upgrade blast-radius assessment (investigation only, no dep changes)
@@ -58,21 +58,23 @@ features:
   completed_at: '2026-07-29T18:08:31.670497+00:00'
 - id: F5
   name: RF-11 closure - Studio edit pane renders fields, live document round-trip
-  status: pending
+  status: done
   inline_brief: Open Studio on port 3333, click into a society and an event, confirm
     the edit pane renders its fields rather than crashing. Then a real round-trip
     - edit a field, publish, confirm persistence in Sanity and that the change surfaces
     on the front end. Also verify the deployed Studio at saoc-prod--saoc-webapp.europe-west4.hosted.app.
     Open since 2026-07-24 and cannot be machine-checked from source.
+  completed_at: '2026-07-29T18:14:28.519363+00:00'
 - id: F6
   name: Page singleton documents missing - assessment and remediation plan
-  status: pending
+  status: done
   inline_brief: Zero page singletons exist (no homePage, aboutPage, nationalShow,
     contactPage, judgingPage, membersPage) so homePageQuery returns null and components
     fall through to hardcoded defaults - the site is not actually CMS-driven. Determine
     what each singleton schema expects, what the front end hardcodes, and what the
     secretary would need to fill in. Produce a plan; do not bulk-create documents
     without content sign-off. Include the hostSociety gap (0/18 events populated).
+  completed_at: '2026-07-29T18:17:12.821113+00:00'
 milestones:
 - id: M1
   name: Assess - know the cost before paying it
@@ -98,7 +100,13 @@ milestones:
   - F5
   - F6
   gate: contract
+  gate_ran_at: '2026-07-29T18:17:13.014999+00:00'
+  gate_result: pass
+  status: done
 ---
+
+
+
 
 
 

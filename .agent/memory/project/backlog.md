@@ -140,3 +140,36 @@ scope for M2 to keep the upgrade milestone clean.
 in M2 — `useSyncExternalStore` with a frozen `getServerSnapshot`, per-instance store owning the
 interval. See that file for the reference implementation. Affects the site's primary entry page,
 so this should be picked up promptly.
+
+## F6 — Page singletons: assessment findings (studio-next16-upgrade, 2026-07-29)
+
+Full assessment: `docs/f6-page-singletons.md`. Assessment only — no documents created, no
+code changed, per scope freeze.
+
+- [ ] `membersPage` schema is orphaned — registered in Sanity Studio but no query in
+  `sanity/queries.ts` and no `app/(marketing)/members/` route consume it. Needs a scope
+  decision from Brad: build the page (new-page work, out of scope for F6) or remove the
+  schema so it stops misleading editors.
+- [ ] Dead editable fields: `homePage.countdownDate` and `contactPage.formRecipients` are
+  editable in Studio but nothing reads them. Either wire them in or remove them.
+- [ ] No custom desk structure in `sanity.config.ts` (stock `structureTool()`) — the six
+  page singletons are not pinned to a single document. An editor can create duplicate
+  `homePage` (etc.) docs and the site will silently render an arbitrary one (`[0]` of an
+  unordered GROQ result), with no error surfaced anywhere. ~1-2 hrs to fix with a standard
+  Sanity desk-structure singleton pattern.
+- [ ] Seed one document per singleton from the existing hardcoded copy (~2-3 hrs,
+  mechanical migration) — makes `docs/secretary-cms-guide.md`'s promises true without
+  changing anything visible on the live site.
+- [ ] Populate `hostSociety` on the 18 `societyEvent` docs (~15-20 min, needs domain
+  knowledge — someone who knows which society hosts which event; code side is already
+  correct, see `docs/f6-page-singletons.md` §4).
+- [ ] `docs/secretary-cms-guide.md` §7 and §12 currently instruct the secretary to open
+  singleton documents that do not exist yet ("there is one document — click it to open").
+  Guide is wrong until either the documents are seeded or the guide gets a "first time
+  only, click New document" branch added (~15 min doc fix, can happen independent of
+  seeding).
+- [ ] Deployed Studio at `saoc-prod--saoc-webapp.europe-west4.hosted.app` still runs the
+  old Next 15 build and remains broken (the `useEffectEvent` crash) until the next deploy
+  ships the Next 16 upgrade from this mission.
+- [ ] Pre-existing prettier drift across ~160 files (`pnpm format:check` fails) — unrelated
+  to this mission, noted during the M2 regression pass.

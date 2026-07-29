@@ -1,9 +1,9 @@
 {
   "mission": ".agent/memory/project/missions/2026-07-29-studio-next16-upgrade.md",
   "checkpoint": {
-    "milestone": "M2",
-    "feature": "F4",
-    "ts": "2026-07-29T18:08:31.670705+00:00"
+    "milestone": "M3",
+    "feature": "F6",
+    "ts": "2026-07-29T18:17:12.821279+00:00"
   },
-  "activated_at": "2026-07-29T18:08:31.670829+00:00"
+  "activated_at": "2026-07-29T18:17:12.821511+00:00"
 }

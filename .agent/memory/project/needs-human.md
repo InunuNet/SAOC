@@ -76,3 +76,54 @@ Brad's proposed alternative (his hypothesis, to raise with the committee): give 
 **Separately, a real and unrelated bug was found and fixed that was previously blocking this verification entirely: `sanity.config.ts` was `require()`-ing the ESM-only `@sanity/vision` package in a dev-only conditional, hard-crashing the ENTIRE `/studio` route with a 500 under `pnpm dev`.** That's fixed and gate-verified (`contracts/contract-sanity-vision-esm-fix.yaml`, VF-01–VF-07 green). **Practical effect: local `pnpm dev` access to `/studio` was completely broken before this session and is not anymore — RF-11 can now actually be attempted**, whereas previously the Studio route couldn't even be reached locally to test the original bug.
 
 Still needed: run `pnpm dev`, open `http://localhost:3002/studio` with real Sanity credentials, click into any existing document (e.g. a society or event), and confirm whether the edit pane renders its fields — or stays blank/spins/errors, matching the original bug report. Check the browser console for any `useEffectEvent` error as corroborating evidence either way (shouldn't appear, given the React lead was ruled out, but worth capturing). Per README.md's closing note, do not treat the contract gate as meaningfully green until this is actually performed. Full investigation writeup: `docs/sanity-studio-p0-investigation.md`.
+
+## 2026-07-29 — F5 (RF-11): Sanity Studio login needed to close the P0
+
+**Blocked on:** external credentials (Sanity OAuth for project `26yfbug4`). Agents cannot
+complete an interactive OAuth flow, and there is no stored token that authenticates the
+*browser* session — `.env.local`'s `SANITY_API_TOKEN`/`SANITY_API_READ_TOKEN` authenticate
+server-side API calls only.
+
+**Verified so far (no auth required):**
+- Dev server on port 3333, Next.js 16.2.12, Turbopack. `/studio` returns HTTP 200.
+- Studio shell renders cleanly: **no `useEffectEvent` error**, no pageerror, no console
+  errors beyond a routine React DevTools notice. The CORS/port problem from 07-24/07-28
+  is resolved on 3333.
+- Studio presents Sanity's "Choose login provider" screen (Google / GitHub / E-mail).
+
+**NOT verified — this is the open assertion:** whether the document edit pane renders its
+fields. The original crash was at `DocumentPaneInner`/`useResetHistoryParams`, which is
+downstream of login, so the shell loading proves nothing about the fix.
+
+Note: an earlier mission-file claim that "Studio loads, authenticates, renders the full
+schema tree" could NOT be reproduced from an agent environment — treat it as unverified.
+
+**What unblocks it (Brad):**
+1. `! npx next dev --port 3333` (port 3333 is the only Sanity-CORS-whitelisted origin)
+2. Open http://localhost:3333/studio and log in
+3. Click into any society or event and report whether the edit pane renders fields or
+   throws — a screenshot of either outcome closes this.
+
+Alternatively, export a Playwright `storageState.json` from the authenticated session and
+an agent can drive the rest.
+
+### RESOLVED 2026-07-29 — Brad authenticated and confirmed the edit pane renders
+
+Brad logged into Studio on port 3333 and opened `province-wc` (Western Cape) at
+`/studio/structure/province;province-wc`. Screenshot evidence: the document edit pane
+renders its fields (Name = "Western Cape", Code = "WC", Slug = "WC"), with Published/Draft
+state chips and an active Publish button. **No crash, no error boundary.**
+
+This closes RF-11. The original failure was in `useResetHistoryParams` inside
+`DocumentPaneInner` — the generic document pane shared by every document type, which
+crashed before rendering any fields. A populated edit pane means that path now resolves
+`useEffectEvent`, confirming the Next 16 vendored-React fix end-to-end in the browser.
+
+Also visible and worth noting for F6: the Studio structure DOES expose all six page
+singletons in the left nav (Home Page, About Page, National Show, Contact Page, Judging
+Page, Members Page). So the singletons are *reachable* in the UI — they simply have no
+documents behind them. That distinguishes "not wired into the Studio" from "wired but
+empty"; it is the latter.
+
+Still open (minor): a live edit → publish → persist round-trip has not been performed.
+The Publish button renders; persistence is not yet demonstrated.
