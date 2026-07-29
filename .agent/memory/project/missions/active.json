@@ -1,9 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-07-28-hardening-ui-fidelity.md",
+  "mission": ".agent/memory/project/missions/2026-07-29-studio-next16-upgrade.md",
   "checkpoint": {
-    "milestone": "M2",
-    "feature": "F6",
-    "ts": "2026-07-29T12:21:57.230002+00:00"
+    "milestone": null,
+    "feature": null
   },
-  "activated_at": "2026-07-29T12:21:57.230272+00:00"
+  "activated_at": "2026-07-29T17:05:03.799539+00:00"
 }
