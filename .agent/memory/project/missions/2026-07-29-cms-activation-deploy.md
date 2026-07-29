@@ -1,113 +1,119 @@
 ---
 schema: athanor.mission/v1
 slug: cms-activation-deploy
-goal: Ship the Next 16 fix to production so the Studio actually works for the client, then
-  make the CMS genuinely usable — pin the page singletons so they cannot be duplicated, seed
-  them from the existing hardcoded copy, populate the content gaps blocking route coverage,
-  and prove end-to-end that a Studio edit changes the live site
+goal: Ship the Next 16 fix to production so the Studio actually works for the client,
+  then make the CMS genuinely usable — pin the page singletons so they cannot be duplicated,
+  seed them from the existing hardcoded copy, populate the content gaps blocking route
+  coverage, and prove end-to-end that a Studio edit changes the live site
 created_at: '2026-07-29T18:30:00.000000+00:00'
 started_at: null
-last_active_at: null
+last_active_at: '2026-07-29T18:38:34.642592+00:00'
 status: pending
 cost_estimate:
   features: 6
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M1
+  feature: F1
+  ts: '2026-07-29T18:38:34.642592+00:00'
 features:
 - id: F1
   name: Fix the home-page hydration bug (useCountdown / ShowBand) before shipping
-  status: pending
-  inline_brief: >-
-    lib/hooks/useCountdown.ts uses a Date.now()-derived lazy useState initializer, rendered by
-    components/home/ShowBand.tsx on the home page. Server and client compute different values,
-    so any load slower than ~1s throws a React hydration error and React discards the subtree.
-    Reproduced by @qa 2026-07-29 with Playwright under a 3s _next/** throttle - 2 pageerrors on
-    /, numerals 31 vs 32 and 30 vs 31. Pre-existing since 2026-06-01, NOT caused by the Next 16
-    upgrade. Fix with useSyncExternalStore + a frozen getServerSnapshot, exactly as
-    components/show/ShowCountdown.tsx was fixed in M2 - that file is the reference
-    implementation. Do NOT use suppressHydrationWarning. Reproduce the bug first and prove the
-    harness detects it before fixing; it does not reproduce on sub-second localhost loads.
-    This ships before the deploy so production does not receive a known bug.
+  status: done
+  inline_brief: lib/hooks/useCountdown.ts uses a Date.now()-derived lazy useState
+    initializer, rendered by components/home/ShowBand.tsx on the home page. Server
+    and client compute different values, so any load slower than ~1s throws a React
+    hydration error and React discards the subtree. Reproduced by @qa 2026-07-29 with
+    Playwright under a 3s _next/** throttle - 2 pageerrors on /, numerals 31 vs 32
+    and 30 vs 31. Pre-existing since 2026-06-01, NOT caused by the Next 16 upgrade.
+    Fix with useSyncExternalStore + a frozen getServerSnapshot, exactly as components/show/ShowCountdown.tsx
+    was fixed in M2 - that file is the reference implementation. Do NOT use suppressHydrationWarning.
+    Reproduce the bug first and prove the harness detects it before fixing; it does
+    not reproduce on sub-second localhost loads. This ships before the deploy so production
+    does not receive a known bug.
+  completed_at: '2026-07-29T18:38:34.642417+00:00'
 - id: F2
   name: Deploy Next 16 to Firebase App Hosting and verify production
   status: pending
-  inline_brief: >-
-    Deploy and confirm the fix reaches real users. apphosting.yaml already pins
-    runConfig.runtime nodejs22 and package.json declares engines.node >=22 (added in M2, never
-    exercised by a real deploy). F2 of the previous mission verified App Hosting supports Next
-    16 via the adapter's SAFE_NEXTJS_VERSIONS gate (>=16.1.0; we run 16.2.12) - if the build is
-    rejected it fails loudly with an explicit CVE message, not silently. After deploy verify
-    against saoc-prod--saoc-webapp.europe-west4.hosted.app (already CORS-allowed): the site
-    renders, and critically the deployed /studio opens a document without the useEffectEvent
-    crash. Watch build memory - runConfig.memoryMiB is 512 and Turbopack is now the default
-    builder. This is the highest-value feature in the mission; everything proven so far is
-    local-only.
+  inline_brief: 'Deploy and confirm the fix reaches real users. apphosting.yaml already
+    pins runConfig.runtime nodejs22 and package.json declares engines.node >=22 (added
+    in M2, never exercised by a real deploy). F2 of the previous mission verified
+    App Hosting supports Next 16 via the adapter''s SAFE_NEXTJS_VERSIONS gate (>=16.1.0;
+    we run 16.2.12) - if the build is rejected it fails loudly with an explicit CVE
+    message, not silently. After deploy verify against saoc-prod--saoc-webapp.europe-west4.hosted.app
+    (already CORS-allowed): the site renders, and critically the deployed /studio
+    opens a document without the useEffectEvent crash. Watch build memory - runConfig.memoryMiB
+    is 512 and Turbopack is now the default builder. This is the highest-value feature
+    in the mission; everything proven so far is local-only.'
 - id: F3
   name: Pin the page singletons in a custom desk structure
   status: pending
-  inline_brief: >-
-    sanity.config.ts uses stock structureTool() with no custom desk structure, so none of the
-    six page types are true singletons. An editor can create a second homePage document and the
-    site would silently render an arbitrary one - the GROQ takes [0] from an unordered result.
-    Add a desk structure pinning each of homePage, aboutPage, nationalShow, contactPage,
-    judgingPage, membersPage to one fixed document ID, so clicking the sidebar entry opens that
-    document directly instead of an empty list with a Create-new button. Also resolve the scope
-    decisions flagged below before touching membersPage. Do this BEFORE anyone else edits
-    content - it prevents a failure mode that is confusing to diagnose after the fact.
+  inline_brief: sanity.config.ts uses stock structureTool() with no custom desk structure,
+    so none of the six page types are true singletons. An editor can create a second
+    homePage document and the site would silently render an arbitrary one - the GROQ
+    takes [0] from an unordered result. Add a desk structure pinning each of homePage,
+    aboutPage, nationalShow, contactPage, judgingPage, membersPage to one fixed document
+    ID, so clicking the sidebar entry opens that document directly instead of an empty
+    list with a Create-new button. Also resolve the scope decisions flagged below
+    before touching membersPage. Do this BEFORE anyone else edits content - it prevents
+    a failure mode that is confusing to diagnose after the fact.
 - id: F4
   name: Seed the six page singletons from existing hardcoded copy
   status: pending
-  inline_brief: >-
-    Create one document per singleton, populated from the copy currently hardcoded in the
-    components, so the site becomes genuinely CMS-driven without changing anything visible.
-    Every page already has graceful per-field fallbacks (verified in F6 of the previous
-    mission), so this is a migration, not a content-writing project - do not invent copy. See
-    docs/f6-page-singletons.md for the field-by-field mapping of what each schema expects and
-    what the front end currently hardcodes. Then fix docs/secretary-cms-guide.md sections 7 and
-    12, which currently instruct the secretary to open documents that do not exist. The dataset
-    is placeholder content on a pre-production site, so creating documents is safe.
+  inline_brief: Create one document per singleton, populated from the copy currently
+    hardcoded in the components, so the site becomes genuinely CMS-driven without
+    changing anything visible. Every page already has graceful per-field fallbacks
+    (verified in F6 of the previous mission), so this is a migration, not a content-writing
+    project - do not invent copy. See docs/f6-page-singletons.md for the field-by-field
+    mapping of what each schema expects and what the front end currently hardcodes.
+    Then fix docs/secretary-cms-guide.md sections 7 and 12, which currently instruct
+    the secretary to open documents that do not exist. The dataset is placeholder
+    content on a pre-production site, so creating documents is safe.
 - id: F5
   name: Populate content gaps - event slugs and hostSociety
   status: pending
-  inline_brief: >-
-    Two content gaps with real consequences. (a) 0 of 18 societyEvent docs have a slug -
-    confirmed visually in Brad's Studio walkthrough - which is why /events/[slug] could not be
-    live-verified in the M2 regression pass (59 of 62 routes verified, not 62). The Studio has
-    a per-document Generate button. (b) 0 of 18 have hostSociety, so no host label renders on
-    any event row; the code side is already correct at components/ui/EventRow.tsx:48-52. Host
-    assignment needs domain knowledge - which society runs which event - so it may need Brad or
-    the secretary rather than an agent. Afterwards, re-run the M2 route checks and confirm the
-    three previously-skipped routes now render live.
+  inline_brief: Two content gaps with real consequences. (a) 0 of 18 societyEvent
+    docs have a slug - confirmed visually in Brad's Studio walkthrough - which is
+    why /events/[slug] could not be live-verified in the M2 regression pass (59 of
+    62 routes verified, not 62). The Studio has a per-document Generate button. (b)
+    0 of 18 have hostSociety, so no host label renders on any event row; the code
+    side is already correct at components/ui/EventRow.tsx:48-52. Host assignment needs
+    domain knowledge - which society runs which event - so it may need Brad or the
+    secretary rather than an agent. Afterwards, re-run the M2 route checks and confirm
+    the three previously-skipped routes now render live.
 - id: F6
   name: Prove the CMS end-to-end - a Studio edit changes the site
   status: pending
-  inline_brief: >-
-    The assertion that actually matters to the client, and the one thing still unproven after
-    the previous mission. Edit a field in the deployed Studio, publish, and confirm the change
-    appears on the deployed site - exercising the full path including the revalidate webhook
-    (app/api/revalidate/, whose revalidateTag(..., 'max') calls were only ever verified
-    manually with a temporary secret). Note SANITY_REVALIDATE_SECRET is EMPTY in .env.local, so
-    the automated check for this silently SKIPs and a SKIP reports as PASS - set a real secret
-    in the deployed environment or this proves nothing. Verify against the deployed site, not
-    localhost.
+  inline_brief: The assertion that actually matters to the client, and the one thing
+    still unproven after the previous mission. Edit a field in the deployed Studio,
+    publish, and confirm the change appears on the deployed site - exercising the
+    full path including the revalidate webhook (app/api/revalidate/, whose revalidateTag(...,
+    'max') calls were only ever verified manually with a temporary secret). Note SANITY_REVALIDATE_SECRET
+    is EMPTY in .env.local, so the automated check for this silently SKIPs and a SKIP
+    reports as PASS - set a real secret in the deployed environment or this proves
+    nothing. Verify against the deployed site, not localhost.
 milestones:
 - id: M1
   name: Ship it - get the fix in front of real users
-  features: [F1, F2]
+  features:
+  - F1
+  - F2
   gate: contract
 - id: M2
   name: Make the CMS safe and real
-  features: [F3, F4]
+  features:
+  - F3
+  - F4
   gate: contract
 - id: M3
   name: Close the content gaps and prove the loop
-  features: [F5, F6]
+  features:
+  - F5
+  - F6
   gate: contract
 ---
+
 
 # Mission: CMS activation and deploy
 

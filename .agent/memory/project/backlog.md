@@ -47,7 +47,7 @@ Old saoc.co.za (legacy cPanel at i-svr.net; access held by "Nico"; committee/Lee
 - [ ] **[copy, needs decision] Hero lede copy — reference vs. local differ, authority unresolved** — Reference: "Twenty-one affiliated societies. A nationally standardised judging system. A flagship show every three years. This is where cultivated orchids are grown, studied, exhibited and celebrated." Local (`components/home/Hero.tsx:84-86`): "Uniting twenty-one affiliated societies in the cultivation, exhibition, and appreciation of orchids across South Africa since 1968." Found during the 2026-07-28 F5 audit — flagged as a content/copy deviation, not a layout bug. Do NOT change without confirming which copy is authoritative (may be an intentional later revision, not drift) — client/design-owner call.
 - [ ] **[P3] Fix 375px horizontal overflow in `ShowBand.tsx:35`** — `aspect-[4/3]` causes horizontal overflow at 375px viewport width. Pre-existing, found during F6 QA (2026-07-29), NOT caused by the F6 change set.
 - [ ] **Complete or remove orphan F6 rendered-check harness** — `contracts/checks/f6-home-fidelity/` has `_shared.mjs` + `utilitybar-tagline-desktop.mjs` (Playwright-based rendered checks) but `contracts/f6-home-fidelity.yaml` has no A27+ assertions invoking them — @architect died mid-session before finishing this. Either complete the harness (checks: utilitybar hidden at 375px, "EST. 1968" badge overlay renders, PartnersSection shows 6-col single row) and wire the assertions, or remove the orphan files and the now-unused `playwright` devDependency.
-- [ ] **Fix `$ANTHROPIC_DEFAULT_HAIKU_MODEL` agent-model config** — the `docs` agent failed to spawn during the F6 session with `There's an issue with the selected model ($ANTHROPIC_DEFAULT_HAIKU_MODEL)` — the env var is unresolved. Worked around with an explicit model override; the underlying config issue is still open.
+- [ ] **Fix `$ANTHROPIC_DEFAULT_HAIKU_MODEL` agent-model config — REPRODUCED AGAIN 2026-07-29, previous fix attempt DISPROVEN.** The `docs` agent failed to spawn again with `There's an issue with the selected model ($ANTHROPIC_DEFAULT_HAIKU_MODEL)`. A prior session had removed the env entry from `.claude/settings.json` as a candidate fix — that did NOT fix it. Root cause is the `docs` agent's own frontmatter declaring `model: haiku`; that alias fails to resolve regardless of the settings.json env var. Workaround remains an explicit model override at spawn time. Underlying config issue still open; do not re-attempt the settings.json-removal fix, it's confirmed not to work.
 
 - [ ] **Sanity v6 major upgrade** — `sanity@5.31.1 → 6.3.0` (and likely `next-sanity@11 → 13`). Pre-mission research required: review v6 changelog + migration guide, check next-sanity v13 breaking changes, verify Firebase App Hosting SSR compatibility, confirm React 19 peer dep story, identify any schema or Studio API changes. Do NOT upgrade without a research pass — this is a major version with likely breaking changes across both packages.
 
@@ -120,26 +120,36 @@ _Last compacted: 2026-07-10 by session. Dismissed: check_own_comms + quota-monit
   - NOTE: per CLAUDE.md scope boundary, WOSA is wild-orchid conservation, a separate org from SAOC — this is almost certainly a new/separate project directory, not inside this SAOC repo. Confirm target repo location before starting.
   - Status: NOT STARTED. Queued for a fresh session with full context budget (this session was near its context limit when the request came in — starting fresh avoids burning tokens on session recap instead of the actual design audit).
 
-## P1 — Home page hydration mismatch in ShowBand / useCountdown (found 2026-07-29)
+## P1 — Home page hydration mismatch in ShowBand / useCountdown — FIXED 2026-07-29 (F1, `cms-activation-deploy`)
 
-`lib/hooks/useCountdown.ts` uses `useState<CountdownParts>(() => compute(targetDate))` — a
-`Date.now()`-derived lazy initializer — and is rendered by `components/home/ShowBand.tsx` on
-the home page (`app/(marketing)/page.tsx`). Because the value is computed on both the server
-and again at hydration, any page load slower than ~1s produces a React hydration mismatch and
-the subtree is discarded and re-rendered (visible flash).
+**CLOSED.** `lib/hooks/useCountdown.ts` now uses `useSyncExternalStore` with a frozen
+all-zeros `getServerSnapshot`, matching the pattern proven for `components/show/ShowCountdown.tsx`
+in M2. Gate `contracts/f1-countdown-hydration.yaml` PASS (3/3), including a behavioural Playwright
+check negative-controlled twice (pre-fix by @architect, post-fix stash-and-restore by @qa) and
+live confirmation of real ticking (415 days, seconds 01→59) and clean interval teardown on
+unmount. Full writeup: `docs/f1-countdown-hydration.md`.
 
-Reproduced by @qa 2026-07-29 with Playwright (3s `_next/**` throttle): 2 `pageerror`s on `/`,
-"server rendered text didn't match the client ... Variable input such as Date.now()",
-numerals `31` vs `32` and `30` vs `31`.
+Original finding (2026-07-29, kept for history): `useState<CountdownParts>(() => compute(targetDate))`
+— a `Date.now()`-derived lazy initializer, rendered by `components/home/ShowBand.tsx` on the
+home page — computed the countdown once on the server and again independently at hydration, so
+any page load slower than ~1s produced a hydration mismatch and a visible flash. Reproduced by
+@qa with Playwright (3s `_next/**` throttle): 2 `pageerror`s on `/`, numerals `31` vs `32` and
+`30` vs `31`. Pre-existing since 2026-06-01/06-12, not caused by the Next 16 upgrade — deliberately
+left out of scope for M2.
 
-**Pre-existing — NOT caused by the Next 16 upgrade.** File last touched 2026-06-01/06-12,
-predates the eslint-hooks rule that forced the M2 component rewrites. Deliberately left out of
-scope for M2 to keep the upgrade milestone clean.
+## Low priority — `useMemo` vs `useState` trade-off in `useCountdown.ts` (F1, 2026-07-29)
 
-**Fix is known and proven**: apply the same treatment used for `components/show/ShowCountdown.tsx`
-in M2 — `useSyncExternalStore` with a frozen `getServerSnapshot`, per-instance store owning the
-interval. See that file for the reference implementation. Affects the site's primary entry page,
-so this should be picked up promptly.
+@qa flagged a non-blocking, unproven concern during F1 review: `useCountdown.ts` builds its
+external store with `useMemo(() => createCountdownStore(targetMs), [targetMs])`, which carries a
+React spec-level allowance to be discarded and recreated (unlike `ShowCountdown.tsx`'s
+`useState(createCountdownStore)`, which never discards). @qa could not get React to actually
+discard the memo, and reasoned that even if it did, the `setInterval` is created inside
+`subscribe()` at commit time (not inside the memo callback), so a discarded memo would be inert
+rather than leaking. Counter-argument: `useState`'s lazy initializer only runs once ever, so it
+would NOT rebuild the store when `targetMs` changes on a later render — since `useCountdown` is a
+shared hook that must support a caller changing its target (unlike `ShowCountdown`'s hardcoded
+constant), `useMemo` is the form that actually supports the hook's contract. Open trade-off, not
+a defect — no action needed unless a future session observes an actual discard-related bug.
 
 ## F6 — Page singletons: assessment findings (studio-next16-upgrade, 2026-07-29)
 

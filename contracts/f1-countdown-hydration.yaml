@@ -1,0 +1,105 @@
+# NEGATIVE CONTROL (recorded 2026-07-29 by @architect, before any fix was
+# applied — proves this contract's primary check can actually fail):
+#
+#   $ node contracts/checks/f1-countdown-hydration/no-hydration-error-throttled.mjs
+#   FAIL: 1 hydration-related issue(s) loading / under throttle:
+#     [1] Hydration failed because the server rendered text didn't match the
+#         client. ... <ShowBand> ... <span className="font-serif text-[42px]
+#         text-accent-soft leading-none"> ... + 11 - 14 ...
+#   EXIT CODE: 1
+#
+# Full unminified diff frame confirms the mismatch originates in
+# components/home/ShowBand.tsx's countdown numerals, sourced from
+# lib/hooks/useCountdown.ts's Date.now()-in-lazy-initializer defect exactly
+# as described in the mission brief. Ran against the live dev server already
+# on :3333 with no code changes — this is the actual pre-fix baseline, not a
+# synthetic reproduction.
+#
+# Secondary check (no-suppress-hydration-warning.mjs) negative-controlled
+# separately: PASS on the unfixed baseline (bug present, no suppression
+# hack in use), FAIL when suppressHydrationWarning is injected into either
+# touched file. Confirms it discriminates the one failure mode it exists to
+# catch, distinct from A1's job.
+schema: athanor.contract/v1
+slug: f1-countdown-hydration
+goal: >-
+  Fix the SSR/client hydration mismatch in lib/hooks/useCountdown.ts, consumed by
+  components/home/ShowBand.tsx on the home page (/), so production does not ship a known
+  hydration bug. useCountdown's useState lazy initializer calls compute(targetDate), which
+  reads Date.now() — the server and the client's first render land in different wall-clock
+  seconds under any real network latency, so React discards and re-renders the subtree,
+  throwing a hydration error. Reproduced by @qa 2026-07-29 with Playwright under a ~3s
+  `_next/**` throttle. Pre-existing since 2026-06-01; not caused by the Next 16 upgrade. Fix
+  with useSyncExternalStore + a frozen getServerSnapshot, exactly as
+  components/show/ShowCountdown.tsx was fixed in the previous mission (M2) — that file is the
+  reference implementation for the pattern, not for the API shape. useCountdown differs from
+  ShowCountdown in two ways @dev must preserve: (1) useCountdown is a shared hook taking
+  `targetDate: Date` as a parameter — ShowCountdown hardcodes its own target constant; (2)
+  useCountdown's public return type (`CountdownParts`) is `{ days, hours, minutes, seconds }`
+  as zero-padded 2-digit STRINGS, not raw numbers — the padding must happen inside the hook
+  (or its store), not pushed onto ShowBand. suppressHydrationWarning is forbidden anywhere in
+  the touched files. The public API of useCountdown (signature and CountdownParts shape) must
+  be preserved so components/home/ShowBand.tsx needs no changes — verified below as the only
+  consumer.
+created_at: '2026-07-29'
+autonomy: high
+
+features:
+  - id: F1
+    name: Fix useCountdown hydration mismatch with useSyncExternalStore
+    status: pending
+
+# No golden files: this is a single self-contained hook file with one
+# well-specified target implementation, and the primary assertion is a
+# rendered-output behavioural check, not a source diff — a golden .ts file
+# here would just be a second, weaker copy of the same spec already written
+# above and in the assertions below. (Precedent: contract-sanity-react-peer-fix.yaml
+# also ships with no goldens for the same reason.)
+goldens: []
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- A1 — PRIMARY: behavioural, reproduces the bug, proves the fix ----------
+    - id: A1
+      description: >-
+        Loading / under a ~3s _next/** throttle produces zero page errors and zero
+        hydration-mismatch console errors. This is the check that FAILED against the
+        unfixed baseline (see header comment) and must PASS once useCountdown is fixed.
+        Never skips green on a broken environment — browser-launch or navigation failure is
+        a hard FAIL (Athanor#1322), not a skip.
+      command: node contracts/checks/f1-countdown-hydration/no-hydration-error-throttled.mjs
+
+    # ---------- A2 — secondary reinforcement only ----------
+    - id: A2
+      description: >-
+        Neither lib/hooks/useCountdown.ts nor components/home/ShowBand.tsx contains
+        suppressHydrationWarning. Source grep, deliberately secondary to A1 — negative-
+        controlled to confirm it can fail (see header comment) but it cannot by itself prove
+        the mismatch is fixed, only that it wasn't papered over.
+      command: node contracts/checks/f1-countdown-hydration/no-suppress-hydration-warning.mjs
+
+    # ---------- A3 — public API preserved, no drive-by consumer changes ----------
+    - id: A3
+      description: >-
+        useCountdown's exported signature and CountdownParts shape are unchanged, so
+        components/home/ShowBand.tsx (confirmed the ONLY consumer via
+        `grep -rl useCountdown --include='*.ts' --include='*.tsx' .` excluding node_modules
+        and .next) needs no edits. If a consumer change genuinely is required, this
+        assertion must be updated by @architect first — @dev must not silently change the
+        public API to make its own fix easier.
+      command: >-
+        grep -q "export function useCountdown(targetDate: Date): CountdownParts"
+        lib/hooks/useCountdown.ts && grep -q "days: string;" lib/hooks/useCountdown.ts &&
+        grep -q "hours: string;" lib/hooks/useCountdown.ts && grep -q "minutes: string;"
+        lib/hooks/useCountdown.ts && grep -q "seconds: string;" lib/hooks/useCountdown.ts
+
+    # ---------- A4 — implements the mandated pattern, not just "any fix" ----------
+    - id: A4
+      description: >-
+        useCountdown uses useSyncExternalStore with a frozen getServerSnapshot (the mandated
+        pattern from ShowCountdown.tsx), not a workaround like a mount-flag useEffect that
+        happens to avoid the mismatch without the prescribed mechanism.
+      command: >-
+        grep -q "useSyncExternalStore" lib/hooks/useCountdown.ts && grep -q
+        "getServerSnapshot" lib/hooks/useCountdown.ts
