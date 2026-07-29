@@ -1,7 +1,7 @@
 runConfig:
   runtime: nodejs22
   cpu: 1
-  memoryMiB: 512
+  memoryMiB: 1024
   minInstances: 0
   maxInstances: 2
 env:
@@ -55,5 +55,13 @@ env:
       - RUNTIME
   - variable: FIREBASE_ADMIN_PRIVATE_KEY
     secret: FIREBASE_ADMIN_PRIVATE_KEY
+    availability:
+      - RUNTIME
+  - variable: SANITY_REVALIDATE_SECRET
+    secret: SANITY_REVALIDATE_SECRET
+    availability:
+      - RUNTIME
+  - variable: SANITY_API_TOKEN
+    secret: SANITY_API_TOKEN
     availability:
       - RUNTIME
