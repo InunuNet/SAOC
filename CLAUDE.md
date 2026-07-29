@@ -14,7 +14,7 @@ The **South African Orchid Council (SAOC)** is a non-profit national body coordi
 
 | Layer | Technology | Why |
 |-------|-----------|-----|
-| Framework | Next.js 15 (App Router, TypeScript) | RSC-first, Firebase App Hosting native SSR support |
+| Framework | Next.js 16 (App Router, TypeScript), Node 22 runtime | RSC-first, Firebase App Hosting native SSR support |
 | Styling | Tailwind CSS v4 | CSS-first config, no tailwind.config.ts needed |
 | Hosting | Firebase App Hosting | Native Next.js SSR, same ecosystem as Firestore |
 | CMS | Sanity (Studio at `/studio`) | Structured content editing (events, national show, media kit, etc.) via `next-sanity` |

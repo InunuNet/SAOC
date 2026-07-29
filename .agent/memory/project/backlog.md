@@ -119,3 +119,24 @@ _Last compacted: 2026-07-10 by session. Dismissed: check_own_comms + quota-monit
   - Token-conscious: Brad flagged limited budget for this — plan carefully before executing, avoid wasted exploration.
   - NOTE: per CLAUDE.md scope boundary, WOSA is wild-orchid conservation, a separate org from SAOC — this is almost certainly a new/separate project directory, not inside this SAOC repo. Confirm target repo location before starting.
   - Status: NOT STARTED. Queued for a fresh session with full context budget (this session was near its context limit when the request came in — starting fresh avoids burning tokens on session recap instead of the actual design audit).
+
+## P1 — Home page hydration mismatch in ShowBand / useCountdown (found 2026-07-29)
+
+`lib/hooks/useCountdown.ts` uses `useState<CountdownParts>(() => compute(targetDate))` — a
+`Date.now()`-derived lazy initializer — and is rendered by `components/home/ShowBand.tsx` on
+the home page (`app/(marketing)/page.tsx`). Because the value is computed on both the server
+and again at hydration, any page load slower than ~1s produces a React hydration mismatch and
+the subtree is discarded and re-rendered (visible flash).
+
+Reproduced by @qa 2026-07-29 with Playwright (3s `_next/**` throttle): 2 `pageerror`s on `/`,
+"server rendered text didn't match the client ... Variable input such as Date.now()",
+numerals `31` vs `32` and `30` vs `31`.
+
+**Pre-existing — NOT caused by the Next 16 upgrade.** File last touched 2026-06-01/06-12,
+predates the eslint-hooks rule that forced the M2 component rewrites. Deliberately left out of
+scope for M2 to keep the upgrade milestone clean.
+
+**Fix is known and proven**: apply the same treatment used for `components/show/ShowCountdown.tsx`
+in M2 — `useSyncExternalStore` with a frozen `getServerSnapshot`, per-instance store owning the
+interval. See that file for the reference implementation. Affects the site's primary entry page,
+so this should be picked up promptly.

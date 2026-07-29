@@ -7,16 +7,16 @@ goal: Fix the Sanity Studio document-editor P0 by upgrading Next.js 15.5.19 to 1
   actually renders fields (closes RF-11)
 created_at: '2026-07-29T17:03:36.555399+00:00'
 started_at: null
-last_active_at: '2026-07-29T17:12:30.153356+00:00'
+last_active_at: '2026-07-29T18:08:31.670705+00:00'
 status: pending
 cost_estimate:
   features: 6
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: M1
-  feature: F2
-  ts: '2026-07-29T17:12:30.153356+00:00'
+  milestone: M2
+  feature: F4
+  ts: '2026-07-29T18:08:31.670705+00:00'
 features:
 - id: F1
   name: Next 16 upgrade blast-radius assessment (investigation only, no dep changes)
@@ -41,19 +41,21 @@ features:
   completed_at: '2026-07-29T17:12:30.153150+00:00'
 - id: F3
   name: Execute the Next 15.5.19 to 16.x upgrade
-  status: pending
+  status: done
   inline_brief: Upgrade Next 15.5.19 to 16.x, pinned exact, preferring latest stable
     unless F1 surfaces a reason otherwise. Apply Next-provided codemods. Expect eslint-config-next
     and @next/* packages to move in lockstep. Clear .next fully afterwards using find
     .next -mindepth 1 -delete. Gated on an M1 go verdict.
+  completed_at: '2026-07-29T18:08:31.486930+00:00'
 - id: F4
   name: Full-surface regression pass (62 routes, PayFast, admin, API)
-  status: pending
+  status: done
   inline_brief: Prove nothing broke. All 62 routes render. type-check, lint and build
     green. PayFast checkout and ITN webhook (lib/payfast.ts, app/api/tickets/) unbroken.
     Admin auth session cookies and door check-in still work. Contact form to Firestore
     and Resend. ICS export routes, draft mode toggles, revalidation webhook. Rendered-output
     assertions, not source greps.
+  completed_at: '2026-07-29T18:08:31.670497+00:00'
 - id: F5
   name: RF-11 closure - Studio edit pane renders fields, live document round-trip
   status: pending
@@ -87,6 +89,9 @@ milestones:
   - F3
   - F4
   gate: contract
+  gate_ran_at: '2026-07-29T18:08:31.854824+00:00'
+  gate_result: pass
+  status: done
 - id: M3
   name: Close the P0 and scope what remains
   features:
@@ -94,6 +99,9 @@ milestones:
   - F6
   gate: contract
 ---
+
+
+
 
 
 

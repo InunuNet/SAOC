@@ -1,0 +1,195 @@
+schema: athanor.contract/v1
+slug: m2-next16-upgrade
+goal: >-
+  Execute the Next.js 15.5.19 -> 16.2.12 upgrade (F3) and prove the full
+  application surface still works (F4), closing milestone M2 of mission
+  studio-next16-upgrade. This upgrade is what fixes the Sanity Studio P0
+  (Next 16 vendors React 19.3, which exports useEffectEvent; Next 15 never
+  will — see the mission file's root-cause section). M1 already returned a
+  go verdict: App Hosting supports Next >=16.1.0
+  (docs/f2-apphosting-next16-compat.md) and the only source-level blast
+  radius is the two pre-flight fixes below (docs/f1-next16-blast-radius.md).
+  Per the F6 lesson in learned.md, every material assertion here is
+  behavioural (exit codes from real commands, real HTTP responses from a
+  running server) — grep is used only as an "absent string" regression
+  guard, never as sole proof a feature works.
+created_at: '2026-07-29'
+autonomy: high
+
+features:
+  - id: F3
+    name: Execute the Next 15.5.19 -> 16.2.12 upgrade (exact pin, lockstep eslint-config-next, next.config.ts webpack block removed, revalidateTag cacheLife arg, apphosting.yaml/package.json Node 22 runtime pin)
+    status: pending
+  - id: F4
+    name: Full-surface regression pass — type-check/lint/build green, all 62 routes render, PayFast/admin/contact/ICS/draft-mode/revalidate-webhook surfaces unbroken
+    status: pending
+
+goldens:
+  - contracts/golden/m2-next16-upgrade/next.config.ts
+  - contracts/golden/m2-next16-upgrade/route.ts
+  - contracts/golden/m2-next16-upgrade/apphosting.yaml
+  - contracts/golden/m2-next16-upgrade/package.json.snippet.json
+
+assertions:
+  phase: 4
+  checks:
+    # ================= F3: the upgrade itself =================
+
+    - id: A1
+      description: >-
+        F3 - next is pinned to exactly 16.2.12 in package.json (no caret/
+        tilde range) — matches the version F1's npm-pack probe confirmed
+        vendors React 19.3.0-canary-3f0b9e61-20260317, which exports
+        useEffectEvent.
+      command: >-
+        grep -Eq '"next": *"16\.2\.12"' package.json
+
+    - id: A2
+      description: >-
+        F3 - the installed package (not just the declared range) resolves
+        to exactly 16.2.12 — proves pnpm actually installed the pin, not
+        just that package.json says so.
+      command: >-
+        node -e "const v=require('./node_modules/next/package.json').version;
+        if(v!=='16.2.12'){console.error('installed next version is',v);process.exit(1)}
+        console.log('installed next version:',v)"
+
+    - id: A3
+      description: >-
+        F3 - eslint-config-next moved in lockstep to a 16.x release (exact
+        patch not mandated — F1 found no reason to pin an exact match, only
+        that it must not be left on 15.x).
+      command: >-
+        node -e "const v=require('./package.json').devDependencies['eslint-config-next'].replace(/^[\^~]/,'');
+        if(!/^16\./.test(v)){console.error('eslint-config-next is',v,'- expected a 16.x release');process.exit(1)}
+        console.log('eslint-config-next:',v)"
+
+    - id: A4
+      description: >-
+        F3 - THE assertion that proves the mission's premise. Next's
+        VENDORED react (node_modules/next/dist/compiled/react, never
+        node_modules/react — see learned.md, this exact mistake cost three
+        prior sessions) actually exports useEffectEvent as a callable
+        function, loaded and type-checked at runtime, not grepped as a
+        string.
+      command: node contracts/checks/m2-next16-upgrade/verify-vendored-react.mjs
+
+    - id: A5
+      description: >-
+        F3 - next.config.ts contains no webpack key — the block was written
+        against a disproven theory (see F1 risk #2) and Turbopack-by-default
+        hard-fails `next build` when a custom webpack config is present. Do
+        not migrate it to a turbopack equivalent; delete outright.
+      command: '! grep -Eq "webpack ?:" next.config.ts'
+
+    - id: A6
+      description: F3 - next.config.ts matches the golden exactly (webpack block gone, outputFileTracingRoot and images.remotePatterns preserved).
+      command: diff -q next.config.ts contracts/golden/m2-next16-upgrade/next.config.ts
+
+    - id: A7
+      description: >-
+        F3 - app/api/revalidate/route.ts matches the golden exactly: both
+        revalidateTag() calls take a second 'max' cacheLife argument
+        (webhook-driven, stale-while-revalidate is acceptable). updateTag
+        must NOT be used — it is Server-Actions-only and does not apply to
+        a route handler.
+      command: diff -q app/api/revalidate/route.ts contracts/golden/m2-next16-upgrade/route.ts
+
+    - id: A8
+      description: F3 - apphosting.yaml parses as valid YAML and declares runConfig.runtime nodejs22.
+      command: >-
+        python3 -c "import yaml,sys; d=yaml.safe_load(open('apphosting.yaml'));
+        sys.exit(0 if d.get('runConfig',{}).get('runtime')=='nodejs22' else 1)"
+
+    - id: A9
+      description: F3 - apphosting.yaml matches the golden exactly (runtime pin added, nothing else disturbed).
+      command: diff -q apphosting.yaml contracts/golden/m2-next16-upgrade/apphosting.yaml
+
+    - id: A10
+      description: >-
+        F3 - package.json declares engines.node, clearing Next 16's 20.9
+        floor with margin and matching the apphosting.yaml nodejs22 pin.
+      command: >-
+        node -e "const p=require('./package.json'); const n=p.engines&&p.engines.node;
+        if(!n){console.error('no engines.node declared');process.exit(1)}
+        console.log('engines.node:',n)"
+
+    # ================= F4: static/build proof =================
+
+    - id: A11
+      description: F4 - strict TypeScript type-check passes under Next 16's types.
+      command: pnpm type-check
+
+    - id: A12
+      description: F4 - ESLint (flat config, eslint-config-next 16.x) passes clean.
+      command: pnpm lint
+
+    - id: A13
+      description: >-
+        F4 - production build succeeds under Turbopack-by-default (proves
+        the webpack/Turbopack conflict from F1 risk #2 is actually
+        resolved, not just that the config file looks right) AND every one
+        of the 62 filesystem routes appears in the build's own route
+        manifest output. Kills anything bound to 3333/3002 first — must
+        never run concurrently with a dev server (shared .next, corrupts
+        the dev manifest).
+      command: bash contracts/checks/m2-next16-upgrade/check-build-route-list.sh
+
+    # ================= F4: live server battery =================
+    # A14 starts a single dev server on port 3333 (the only port whitelisted
+    # in Sanity CORS — do not change this) that A15-A18 share; A19 tears it
+    # down. contract.py's gate runs phase assertions in file order, so this
+    # sequence must not be reordered. Do not run `pnpm build` (A13, or
+    # manually) between A14 and A19.
+
+    - id: A14
+      description: F4 - start a single Next 16 dev server on port 3333 for the live-server checks below (A15-A18) to share.
+      command: bash contracts/checks/m2-next16-upgrade/server-ctl.sh start
+
+    - id: A15
+      description: >-
+        F4 - all marketing-facing pages render HTTP 200 against the live
+        Next 16 dev server, including the three dynamic-slug routes
+        (society, event, national-show archive year) resolved live from
+        the Sanity dataset, and an unknown slug correctly 404s rather than
+        500ing.
+      command: >-
+        set -a; [ -f ./.env.local ] && . ./.env.local; set +a;
+        node contracts/checks/m2-next16-upgrade/check-routes.mjs marketing
+
+    - id: A16
+      description: >-
+        F4 - /admin, /admin/login, /admin/door and /studio all render HTTP
+        200 (the Sanity Studio document-editor P0 route itself, though full
+        edit-pane field rendering is verified live by F5 in M3 — this
+        checks the route responds and its SSR pass doesn't throw).
+      command: >-
+        set -a; [ -f ./.env.local ] && . ./.env.local; set +a;
+        node contracts/checks/m2-next16-upgrade/check-routes.mjs admin-studio
+
+    - id: A17
+      description: >-
+        F4 - the combined ICS feed, per-event ICS export, and the /og
+        edge-runtime image route all return HTTP 200 with correct
+        content-type where applicable.
+      command: >-
+        set -a; [ -f ./.env.local ] && . ./.env.local; set +a;
+        node contracts/checks/m2-next16-upgrade/check-routes.mjs api-get
+
+    - id: A18
+      description: >-
+        F4 - mutation/auth-gated API surface unbroken: contact form,
+        admin session, admin checkin/export-csv/tickets, PayFast checkout +
+        ITN webhook, draft-mode toggles all fail closed with the correct
+        4xx/redirect status (never 500) under Next 16; the Sanity revalidate
+        webhook is exercised with both a wrong secret (expect 401) and, if
+        SANITY_REVALIDATE_SECRET is set locally, the correct secret (expect
+        200 — actually invokes the revalidateTag(..., 'max') calls from A7,
+        which a fail-closed check alone can't reach).
+      command: >-
+        set -a; [ -f ./.env.local ] && . ./.env.local; set +a;
+        node contracts/checks/m2-next16-upgrade/check-routes.mjs api-mutations
+
+    - id: A19
+      description: F4 - stop the shared dev server started by A14.
+      command: bash contracts/checks/m2-next16-upgrade/server-ctl.sh stop

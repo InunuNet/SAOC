@@ -45,11 +45,20 @@ const SUGGESTIONS: ReadonlyArray<{ label: string; href: string }> = [
 export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   const [q, setQ] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  // Reset + focus when opened
+  // Reset the query when the overlay opens. Adjusted during render (rather
+  // than in an effect) per https://react.dev/learn/you-might-not-need-an-effect
+  // — avoids the extra commit a setState-in-effect would otherwise trigger.
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) setQ('');
+  }
+
+  // Focus the input when opened — a real external-system side effect (DOM
+  // focus), so it stays in an effect; it does not call setState.
   useEffect(() => {
     if (!open) return;
-    setQ('');
     const t = window.setTimeout(() => inputRef.current?.focus(), 50);
     return () => window.clearTimeout(t);
   }, [open]);

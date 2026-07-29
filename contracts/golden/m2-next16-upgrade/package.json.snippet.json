@@ -1,0 +1,12 @@
+{
+  "_comment": "Not a full package.json — the fields @dev must match exactly after the upgrade. Verified individually by contract assertions, not by a whole-file diff, because pnpm-lock.yaml churn and unrelated dependency bumps are expected and out of scope.",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "next": "16.2.12"
+  },
+  "devDependencies": {
+    "eslint-config-next": "16.x — exact patch not mandated, must be a 16.* release moving in lockstep with next"
+  }
+}

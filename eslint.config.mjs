@@ -1,26 +1,22 @@
-// ESLint 9 flat config for Next.js 15.5
-// Uses FlatCompat to consume the legacy `eslint-config-next` shareable config
-// (Next 15.5 does not yet ship a native flat-config export).
-// `eslint-config-prettier` is applied last to disable stylistic rules that
-// would otherwise conflict with Prettier formatting.
+// ESLint flat config for Next.js 16.
+// eslint-config-next 16.x ships native flat-config exports (`eslint-config-next/core-web-vitals`,
+// `eslint-config-next/typescript`) — FlatCompat is no longer needed to consume it (that shim
+// was only required for Next 15.5's legacy shareable-config format; using it against the 16.x
+// native flat config produced a circular-structure crash).
+// `eslint-config-prettier` is applied last to disable stylistic rules that would otherwise
+// conflict with Prettier formatting.
 
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { FlatCompat } from '@eslint/eslintrc';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
+import nextTypescript from 'eslint-config-next/typescript';
+import prettierConfig from 'eslint-config-prettier';
 
 const config = [
   {
-    ignores: ['.next/**', '**/.next/**', 'node_modules/**', 'public/**', 'next-env.d.ts', 'design/**', '.claude/**', '.claude/worktrees/**', '.firebase/**', 'Old SAOC Website Backup/**', '.agent/**'],
+    ignores: ['.next/**', '**/.next/**', 'node_modules/**', 'public/**', 'next-env.d.ts', 'design/**', '.claude/**', '.claude/worktrees/**', '.firebase/**', 'Old SAOC Website Backup/**', '.agent/**', '.golden/**'],
   },
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
-  ...compat.extends('prettier'),
+  ...nextCoreWebVitals,
+  ...nextTypescript,
+  prettierConfig,
   {
     files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
     rules: {},
