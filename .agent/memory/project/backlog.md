@@ -259,6 +259,29 @@ these are the residual items, not defects in what shipped.
   client answer before the Members Portal itself can be built (not blocking on F3,
   which only pins the placeholder).
 
+### Seeded-but-inert content — found 2026-07-30 by post-F4 render audit
+
+- [ ] **[P1] `/national-show` never reads the `nationalShow` singleton.** F4 seeded the document and its
+  gate passed 4/4 — but the gate asserts against the **Sanity API**, not the rendered page.
+  `app/(marketing)/national-show/page.tsx:7-8,89-90` calls `sanityFetch` for `showClassesQuery` and
+  `pastShowsQuery` only. There is no `nationalShowQuery`. Title, venue (`'CTICC, Cape Town'`, line 151),
+  hero image, exhibitor stages and the countdown target (hardcoded in `components/show/ShowCountdown.tsx`)
+  are all literal JSX/constants. So the secretary can edit the National Show page in the Studio, publish,
+  and **nothing will change on the site** — the exact failure this mission exists to prevent. Not a
+  query/field-name mismatch (that would be a one-line fix); the page needs wiring to fetch the singleton,
+  which is a code change against heavily hardcoded JSX, so it was deliberately NOT done as part of F4's
+  content migration. Note this compounds the already-recorded `homePage.countdownDate` dead-field problem:
+  `nationalShow.countdownDate` was documented to the secretary as the field that *does* drive the
+  countdown, and it does not either — the countdown is a constant in the component.
+- [ ] **[P2] `/contact` cannot be discriminated without a round-trip edit.** `contactPage`'s seeded values
+  and the component fallback are byte-identical, and `contactPageQuery` (`sanity/queries.ts:149`) projects
+  no `_key` for array items, so no structural marker reaches the rendered HTML. Unknown whether the page
+  fetches successfully or silently falls back. F6's round-trip proof should settle it.
+- [x] Confirmed genuinely fetching Sanity on the deployed site: `/` (hero images resolve to
+  `cdn.sanity.io`, not `/images/*`), `/about` and `/judging` (PortableText branch taken, Sanity `_key`
+  UUIDs present in the RSC payload). Discriminators recorded here because seeded copy was migrated FROM
+  the component fallbacks — the two are identical strings, so text matching proves nothing.
+
 ### F2 — contradiction RESOLVED 2026-07-30
 
 - [x] ~~**Which build is actually live on `saoc-prod`?**~~ **SETTLED.** Neither prior position was right about the
