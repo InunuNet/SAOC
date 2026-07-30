@@ -40,6 +40,79 @@
 #   etag: "176ebrtkypf1pnd"
 #
 # Secondary signal only — A1/A2 are the real proof the new build is live.
+#
+# ============================================================================
+# AMENDMENT — 2026-07-30, @architect. Adds A9 (positive-path secret resolution)
+# and A10 (build-identity discriminator). Original six assertions all passed
+# while the feature was half broken: every one of them only exercised the
+# NEGATIVE path (missing/wrong secret -> 401). A9 closes that hole. A10 settles
+# the open contradiction from docs/f2-secret-runtime-investigation.md and
+# .agent/memory/project/backlog.md ("F2 — open contradiction to resolve next
+# session") about which commit prod is actually serving.
+#
+# --- A9 negative control (recorded 2026-07-30, LIVE, run against prod) ---
+# Read the secret correctly per constraint (grep/cut, never `node -e
+# "require('dotenv')..."` — that prints a banner to stdout and produced a
+# 137-char malformed header + curl `000` in a prior session):
+#   $ SECRET=$(grep '^SANITY_REVALIDATE_SECRET=' .env.local | cut -d= -f2-)
+#   $ printf '%s' "$SECRET" | wc -c   ->  43           (assert this before use)
+#   $ curl -s -w "\nHTTP:%{http_code}\n" -X POST \
+#       https://saoc-prod--saoc-webapp.europe-west4.hosted.app/api/revalidate \
+#       -H "x-sanity-secret: $SECRET" -H "Content-Type: application/json" \
+#       -d '{"_type":"homePage"}'
+#     {"ok":false,"error":"Invalid secret"}  HTTP:401        <- WRONG, should be 200
+#   $ curl ... -H "x-sanity-secret: wrong-secret-value" ...  ->  HTTP:401  (correct)
+#   $ curl ... (no x-sanity-secret header) ...                ->  HTTP:401  (correct)
+#   $ curl -s -o /dev/null -w "%{http_code}\n" \
+#       "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/api/draft?secret=$SECRET&slug=/"
+#     401                                                     <- WRONG, should be 3xx
+#   (local rehearsal at http://localhost:3333 with the SAME secret returns 307 for the
+#   correct-secret /api/draft case, confirming the check script's own success path is
+#   reachable and the 401 above is a genuine prod defect, not a broken test.)
+# All three prod responses are IDENTICAL (401) for correct/wrong/absent — the defect is
+# that the secret never resolves to a comparable value at runtime, not a wrong value.
+# This is a REAL, currently-reproducible live baseline: A9 must FAIL until @dev fixes it.
+#
+# --- A10 build-identity discriminator (recorded 2026-07-30, LIVE) ---
+# ETag (A8) was ruled out per dispatch brief. Cloud Build/App Hosting metadata alone was
+# ALSO shown unreliable this session (see reasoning below) — so A10 cross-checks TWO
+# independent control-plane sources, not one:
+#   1. `GET .../backends/saoc-prod/traffic` (App Hosting REST, OAuth token reused from
+#      the Firebase CLI's own cache at ~/.config/configstore/firebase-tools.json, exactly
+#      as docs/f2-secret-runtime-investigation.md established) ->
+#      current.splits == [{ build: ".../builds/build-2026-07-30-001", percent: 100 }]
+#      — a single build at 100%, not a canary split (a split state is a hard FAIL, not
+#      partial credit — traffic could still be serving a stale revision to some slice).
+#   2. Cloud Run `GET .../services/saoc-prod` (independent control plane, same project) ->
+#      latestReadyRevision AND the sole >0%-traffic entry both name revision
+#      `saoc-prod-build-2026-07-30-001` — agreement between App Hosting and the underlying
+#      Cloud Run service that this is really what's serving, not a stale App Hosting
+#      traffic object left over from an earlier reconcile.
+#   3. `GET .../builds/build-2026-07-30-001` -> source.codebase.hash =
+#      "01dd63f10c6525f24110e6d273c06c92a26faf99" (commit "chore: refresh llms-full.txt
+#      [skip ci]", built 2026-07-30T05:13:48Z — an automated push-triggered build, not a
+#      manual rollout). `git log --oneline 84dbf58..01dd63f` shows 01dd63f is the very next
+#      commit after 84dbf58 on main; `git merge-base --is-ancestor <sha> 01dd63f` exits 0
+#      for all three of 604ba3a / ffb4225 / 84dbf58.
+# CONCLUSION: this RESOLVES the contradiction, and resolves it differently than either
+# prior guess. docs/f2-secret-runtime-investigation.md's "prod serves df5ee43" was correct
+# for 2026-07-29 but stale — an automated CI-triggered deploy at 2026-07-30T05:13Z (likely
+# the same workflow that produces the "refresh llms-full.txt [skip ci]" commits; see
+# backlog's open question about whether push-to-main auto-deploys) has SINCE shipped
+# 604ba3a/ffb4225/84dbf58 to 100% of prod traffic. The build config's effectiveEnv for
+# this exact build confirms both SANITY_REVALIDATE_SECRET and SANITY_API_TOKEN are
+# declared with secret refs (versions 1 and 2 respectively), consistent with 84dbf58 being
+# live. So A10 (build identity) is independently PASS-able right now — the remaining bug
+# is NOT "wrong build deployed", it's the runtime secret-resolution failure A9 measures
+# directly (declared != resolves-to-a-comparable-value). This is exactly why the mission
+# needed both checks and not one: A10 alone would have reported prod as fixed and been
+# wrong about the user-facing feature.
+# Direct-to-Cloud-Run verification was attempted to rule out an App Hosting edge/CDN layer
+# as the cause, but the tagged Cloud Run URL itself 403s (GFE-level, "does not have
+# permission to get URL") for any caller without the App Hosting invoker identity — so it
+# cannot be used to bypass the public hosted.app domain in this check; A9 must test through
+# the real public entrypoint, which is what production traffic actually uses anyway.
+# ============================================================================
 schema: athanor.contract/v1
 slug: f2-deploy-next16
 goal: >-
@@ -201,13 +274,57 @@ assertions:
       command: >-
         grep -qE "memoryMiB: (1[0-9]{3}|[2-9][0-9]{3})" apphosting.yaml
 
-    # ---------- A8 — secondary freshness reinforcement ----------
+    # ---------- A8 — secondary freshness reinforcement (WEAK — see A10) ----------
     - id: A8
       description: >-
-        The deployed home page's ETag differs from the pre-deploy baseline
-        ("176ebrtkypf1pnd", recorded in this contract's header). Every successful App
-        Hosting build produces new `_next/static/**` asset hashes embedded in the HTML, so
-        the etag changing is a cheap, always-true-on-real-redeploy signal, independent of
-        F1's specific content fix — reinforcement only, secondary to A1/A2 which are the
-        real proof of substance.
+        WEAK EVIDENCE, kept only as a cheap smoke signal — do not treat a passing A8 as
+        proof of anything about which commit is live. The deployed home page's ETag
+        differing from the pre-deploy baseline ("176ebrtkypf1pnd") was intended as a
+        freshness reinforcement, but the etag has since been observed to change
+        ("a8e4pxlfw41lfq" -> "1337qsztbrz1lfq") with NO confirmed rollout in between —
+        ISR prerender regeneration changes it too, independent of a real redeploy. A10 is
+        the actual, decisive build-identity check; A1/A2 remain the real proof of F1/F3
+        substance via behaviour, not metadata.
       command: node contracts/checks/f2-deploy-next16/etag-changed-deployed.mjs
+
+    # ---------- A9 — PRIMARY: positive-path secret resolution (the actual defect) ----------
+    - id: A9
+      description: >-
+        On the deployed host, POST /api/revalidate with the CORRECT x-sanity-secret must
+        return 200, while a wrong secret and an absent secret must each still return 401 —
+        all three conditions checked in one run so weakening the auth guard (e.g. removing
+        it) cannot pass this check. Also checks GET /api/draft?secret=<correct>&slug=/
+        returns a 3xx redirect (not followed), while wrong/absent secret still return 401.
+        This is the assertion the original six missed: every prior check exercised only the
+        negative path, so a green gate certified a feature where draft-mode preview and
+        Sanity webhook revalidation were completely dead in prod. FAILED against the LIVE
+        2026-07-30 baseline (see this contract's header) with 401 for the correct secret on
+        both routes — a genuine, currently-reproducible production defect, not a stale
+        baseline. Reads the secret via `grep '^SANITY_REVALIDATE_SECRET=' .env.local | cut
+        -d= -f2-` (never `node -e "require('dotenv')..."` — the dotenv banner pollutes
+        stdout and silently corrupts the header value) and asserts it is exactly 43 chars
+        before use; the value itself is never logged or printed. Unreachable host, missing
+        secret, or a browser/fetch failure is a hard FAIL, never a SKIP (Athanor#1322).
+      command: node contracts/checks/f2-deploy-next16/positive-path-secret-resolution-deployed.mjs
+
+    # ---------- A10 — build-identity discriminator (resolves the df5ee43 contradiction) ----------
+    - id: A10
+      description: >-
+        Proves which commit is ACTUALLY serving 100% of production traffic right now, using
+        the control plane as the source of truth instead of rendered-page inference. Cross-
+        checks two independent APIs: (1) App Hosting's backend traffic split names exactly
+        one build at 100% (a split/canary state is a hard FAIL — partial traffic proves
+        nothing about what a given request will see); (2) the underlying Cloud Run
+        service's latestReadyRevision and its sole >0%-traffic entry agree with that same
+        build. Then reads that build's source.codebase.hash and asserts, via `git
+        merge-base --is-ancestor <sha> <hash>`, that it descends from all three of
+        604ba3a (F1), ffb4225 (F3), and 84dbf58 (F2/apphosting.yaml). Supersedes ETag (A8,
+        demoted to weak) and supersedes trusting a single build-resource inspection in
+        isolation, which is exactly what produced the prior session's df5ee43-vs-Studio
+        contradiction recorded in .agent/memory/project/backlog.md. Authenticates by
+        reusing the Firebase CLI's own cached OAuth token from
+        ~/.config/configstore/firebase-tools.json (same mechanism
+        docs/f2-secret-runtime-investigation.md already proved works) — an expired/missing
+        token, an unreachable API, or a target SHA unknown even after `git fetch origin` is
+        a hard FAIL, never a SKIP (Athanor#1322).
+      command: node contracts/checks/f2-deploy-next16/build-identity-deployed.mjs
