@@ -266,12 +266,19 @@ imports and read what each does with the result. Method note: seeded copy was mi
 component fallbacks, so the two are byte-identical and text matching proves nothing — discriminate
 via Sanity CDN asset URLs, PortableText `_key` UUIDs in the RSC payload, or source reading.
 
-- [ ] **[P1] `/national-show/archive/[year]` 404s for any show added in the Studio.** The archive LIST
-  (`archive/page.tsx:42`) is Sanity-backed via `pastShowsQuery`, so a `show` document created in the
-  Studio appears there and links to `/national-show/archive/<year>`. The DETAIL page
-  (`archive/[year]/page.tsx:6,49`) reads only the static `lib/data/shows` array and calls `notFound()`
-  otherwise. So the editor does exactly what the CMS invites, and publishes a broken public link.
-  Ranked above the inert-page item below: this doesn't just fail to work, it actively creates a 404.
+- [ ] **[P2] `/national-show/archive/[year]` has no page for any show added in the Studio.** The archive
+  LIST (`archive/page.tsx:42`) is Sanity-backed via `pastShowsQuery`, so a `show` document created in
+  the Studio does appear there. The DETAIL page (`archive/[year]/page.tsx:6,49`) reads only the static
+  `lib/data/shows` array and calls `notFound()` otherwise — so a Studio-added show has a list entry but
+  no detail page behind it.
+  **CORRECTION (same day):** an earlier revision of this entry claimed the list "publishes a broken
+  public link" and ranked it P1. That was wrong — verified `archive/page.tsx` links only to
+  `/national-show` and `/contact`; the list cards are plain divs, not links, and the only
+  `archive/${year}` hrefs are the prev/next buttons inside the detail page, themselves generated from
+  the static array. So no dead link is created today. The real exposure is narrower: a visitor who
+  reaches that URL directly — a shared link, or once someone wires up card links — gets a 404.
+  Downgraded to P2 accordingly. Note the latent trap: whoever later makes the list cards clickable
+  turns this into the visible-broken-link problem it was mistakenly described as.
 - [ ] **[P2] Orphaned document types — editable in the Studio, read by nothing.** `award`
   (`AwardsGrid.tsx` reads the static `lib/data/awards` instead) and `province` (`society.province` is
   free-text, not a reference to it). Either wire them or remove them from the Studio; leaving them

@@ -24,7 +24,7 @@ The left sidebar lists all content types you can manage:
 |----------------|-----------------|
 | **Event** | Events calendar — shows, workshops, meetings |
 | **Society** | The 21 affiliated orchid societies |
-| **National Show** | The upcoming national show page (countdown, dates, info) |
+| **National Show** | Only one field here does anything right now — see Section 7 |
 | **Show** | Past show records (archive, results, gallery) |
 | **Judge** | Accredited judges directory |
 | **Board Member** | SAOC executive committee listing |
@@ -112,30 +112,26 @@ No code changes are needed — the website updates automatically.
 
 ---
 
-## 7. Managing the National Show Page
+## 7. The "National Show" Document — Read This Before Editing
 
-The National Show page shows a countdown timer and show details. Update this before each national show.
+This is the one place in the Studio where you need to know exactly what does and doesn't work yet, so you don't spend time on something that has no effect.
 
-1. Click **National Show** in the sidebar
-2. There should be one document — click it to open
-3. Update:
+1. Click **National Show** in the sidebar — there is one document, click it to open.
+2. You'll see six fields: Title, Show Date, Location, Hero Image, Countdown Target Date, Exhibitor Stages.
 
-| Field | Notes |
-|-------|-------|
-| **Title** | e.g. "19th SAOC National Orchid Show 2027" |
-| **Show Date** | Actual show date (used for display) |
-| **Location** | Venue and city |
-| **Hero Image** | Upload a large landscape photo (1200×600 or wider) |
-| **Countdown Target Date** | The date the timer counts down to — usually the show opening date |
-| **Exhibitor Stages** | Rich text — registration deadlines, staging schedule for exhibitors |
+**Only one of them currently does anything on the website: Countdown Target Date.**
 
-4. Click **Publish**
+- **Countdown Target Date** — this is real and live. It controls the countdown timer shown in the "Flagship Event" band on the **Home Page** (the four spinning numbers — days/hours/minutes/seconds). Change this to the actual show opening date and time, click **Publish**, and the home page countdown will update.
+  - **Important:** the National Show page (`/national-show`) also shows its own "Opens in" countdown, near the top — that one has its own fixed date written directly into the page and will **not** change when you edit this field. If you edit Countdown Target Date and check the National Show page instead of the Home Page, it will look like nothing happened — your edit did work, you're just looking at the wrong page. Check the Home Page to see it take effect.
+- **Title, Show Date, Location, Hero Image, Exhibitor Stages** — these fields exist and you can type into them, but **nothing on the live website reads them yet**. The National Show page (`/national-show`) currently shows its own fixed text, written directly into the page by a developer — editing these fields in the Studio will not change anything a visitor sees, on that page or anywhere else. This isn't a mistake you can fix by publishing again; the page simply isn't connected to these fields yet.
 
-The countdown on the home page and national show page updates immediately.
+**What this means for you:** if you only need to update the show's countdown, use Countdown Target Date here and you're done. If you need the National Show page itself to show different dates, venue, or exhibitor information, that requires a developer to wire it up first — contact the webmaster (Section 16) rather than assuming a Studio edit will reach the page.
 
 ---
 
 ## 8. Adding a Past Show to the Archive
+
+**Before you add one: this is only half-connected right now.** A show you add here will appear as a card on the Archive list page (`/national-show/archive`) — that part works. But each past show is also supposed to get its own individual page with the full write-up, gallery, and results (e.g. `/national-show/archive/2025`) — those individual pages only exist today for the shows already built into the site, not for anything you add in the Studio. If a visitor somehow reaches the address for a show you added, they'll get a "page not found" error rather than your write-up and gallery. This needs a developer to finish connecting before it's fully safe to use — check with the webmaster (Section 16) first if you're about to add a new one.
 
 After each national show, add a record to the show archive.
 
@@ -214,7 +210,7 @@ The home page hero carousel and mission statement are editable.
 1. Click **Home Page** — there is one document
 2. **Hero Images**: click "Add item" to add a photo, or drag to reorder. At least 3 photos recommended.
 3. **Mission Text**: the short paragraph below the hero
-4. **Countdown Target Date**: you will see this field on the Home Page document, but it is **not connected to anything on the website** — changing it has no effect on any countdown timer visitors see. The countdown shown to visitors is controlled entirely from the **National Show** page (see Section 7) — go there to change it. Leave this field as it is.
+4. **Countdown Target Date**: you will see this field on the Home Page document, but it is **not connected to anything on the website** — changing it has no effect on any countdown timer visitors see. To change the countdown shown to visitors, go to the **National Show** document instead (Section 7) and change its **Countdown Target Date** field — that's the one that actually drives the countdown banner on the home page. Leave this field on the Home Page document as it is.
 5. Click **Publish**
 
 ---
