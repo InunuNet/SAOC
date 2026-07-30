@@ -1,0 +1,34 @@
+{
+  "_id": "nationalShow",
+  "_type": "nationalShow",
+  "sourceComponents": ["components/home/ShowBand.tsx"],
+  "fields": {
+    "title": {
+      "kind": "exact",
+      "value": "The 19th South African National Orchid Show",
+      "note": "Migrated verbatim from the ShowBand.tsx headline (<h2>)."
+    },
+    "showDate": {
+      "kind": "absent",
+      "note": "GAP. ShowBand.tsx's SHOW_META only has a display string 'September 2027' ('Dates' row), which is not a parseable ISO datetime — inventing a specific day/time would be fabricating content, not migrating it. Left unset."
+    },
+    "location": {
+      "kind": "exact",
+      "value": "Cape Town International Convention Centre",
+      "note": "JUDGMENT CALL, recorded not papered over: ShowBand.tsx's SHOW_META has TWO separate location-ish strings — 'Host Region': 'Western Cape' and 'Venue': 'Cape Town International Convention Centre' — but the schema has only one 'location' field. Migrated the Venue string (the more specific physical location) verbatim. The Host Region value 'Western Cape' has no corresponding schema field and is NOT migrated anywhere — GAP, flag for @docs/Brad if a host-region field is wanted."
+    },
+    "hero": {
+      "kind": "image",
+      "note": "Migrated by uploading public/images/orchid-yellow.jpg as a Sanity image asset — the exact file ShowBand.tsx renders as its background image ('Yellow orchid on the show bench')."
+    },
+    "countdownDate": {
+      "kind": "exact",
+      "value": "2027-09-18T09:00:00+02:00",
+      "note": "Migrated verbatim from ShowBand.tsx's DEFAULT_COUNTDOWN_DATE constant."
+    },
+    "exhibitorStages": {
+      "kind": "absent",
+      "note": "GAP. No hardcoded exhibitor-stage copy exists anywhere in the codebase to migrate from. Also note per OVERNIGHT-PLAN and docs/f6-page-singletons.md: full, current nationalShow content is time-sensitive and owned by Brad/the National Show committee, tied to the still-open National Show brand-architecture question — this seed only migrates what is genuinely already hardcoded, it does not attempt to supply real show content."
+    }
+  }
+}

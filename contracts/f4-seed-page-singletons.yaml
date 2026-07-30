@@ -1,0 +1,168 @@
+schema: athanor.contract/v1
+slug: f4-seed-page-singletons
+goal: >
+  Seed the six page singletons (homePage, aboutPage, nationalShow, contactPage,
+  judgingPage, membersPage) with content MIGRATED verbatim from the copy already
+  hardcoded in app/(marketing)/ and components/ — no invented, rewritten, or
+  "improved" copy. F3's desk-structure pinning is already live (sanity/structure.ts,
+  commit df5ee43), so each document ID is fixed and deterministic: the document's own
+  _id equals its schema type name (e.g. homePage -> _id "homePage"), matching Sanity's
+  documented singleton pattern. membersPage stays an EMPTY placeholder per Brad's
+  decision (2026-07-29, recorded in sanity/structure.ts and the F3 contract) — it must
+  exist as a document but carry no content fields. Where a component's copy has no
+  corresponding schema field (or vice versa), the gap is recorded explicitly in the
+  golden files rather than papered over with invented content.
+created_at: '2026-07-30'
+autonomy: high
+
+# ============================================================================
+# SCOPE
+# ============================================================================
+# IN SCOPE:
+#   - Write (create, not just query) one document per singleton type at its pinned
+#     _id, via the Sanity API using SANITY_API_TOKEN (Editor, write-capable — see
+#     .env.local; extract with `grep '^SANITY_API_TOKEN=' .env.local | cut -d= -f2-`,
+#     never via dotenv banner output, never print the value).
+#   - Field values: see contracts/golden/f4-seed-page-singletons/*.golden.json, one
+#     file per document, sourced field-by-field from the components listed in each
+#     file's `sourceComponents`. Every field is tagged with a `kind` (exact /
+#     exactArray / portableText / image / imageArray / absent) that the check script
+#     validates structurally.
+#   - Two image uploads are required as part of seeding (not just text writes):
+#     homePage.heroImages (4 files from public/images/, order per
+#     lib/data/heroImages.ts) and nationalShow.hero (public/images/orchid-yellow.jpg).
+#     Use the Sanity client's asset upload API (`client.assets.upload`), then
+#     reference the resulting asset _id in the document field.
+#
+# EXPLICITLY OUT OF SCOPE:
+#   - Inventing, rewriting, or "improving" any copy. Every non-"absent" field in the
+#     goldens traces to an exact hardcoded string in a named component — @dev must
+#     match those strings byte-for-byte (portableText fields: the plain text content
+#     must match; Sanity's own _key/_type block IDs are allowed to differ, per the
+#     check script's extraction logic).
+#   - Any field marked "absent" in the goldens. These are documented gaps — do not
+#     fill them with placeholder or inferred content. See each golden's per-field
+#     `note` for why.
+#   - membersPage content of any kind — title, intro, resources all stay absent.
+#   - Section 7 / 12 fixes to docs/secretary-cms-guide.md — flagged below, this is a
+#     @docs follow-up once seeding lands, not part of this contract's assertions.
+#   - hostSociety / event slugs (F5), the end-to-end Studio-edit proof (F6), and
+#     nationalShow's real/current show content (time-sensitive, owned by Brad/the
+#     National Show committee per the mission's open-decisions list and the still-open
+#     National Show brand-architecture question) — this contract only migrates what is
+#     genuinely already hardcoded (title, the Venue string as location, the default
+#     countdown date, the background image), not real show logistics.
+#
+# ============================================================================
+# JUDGMENT CALLS MADE WHILE WRITING THE GOLDENS (flagging, not hiding)
+# ============================================================================
+# 1. homePage.title: no component reads this field at all (confirmed
+#    docs/f6-page-singletons.md section 2). Migrated the hardcoded page <metadata>
+#    title 'South African Orchid Council' as the closest analog — functionally inert
+#    either way. aboutPage.title is genuinely unused with no analog and is left absent.
+# 2. nationalShow.location: ShowBand.tsx has TWO separate hardcoded location strings
+#    (Host Region: 'Western Cape', Venue: 'Cape Town International Convention Centre')
+#    but the schema has one field. Migrated the Venue string; the Host Region value has
+#    no field to go into and is a recorded gap. If a host-region field is wanted later,
+#    that's a schema change, not something this contract should improvise around.
+# 3. judgingPage.showPublicDirectory = false: not a literal hardcoded boolean anywhere,
+#    but judging/page.tsx's own `data?.showPublicDirectory === true` check already
+#    treats "absent" as false today. Writing false explicitly makes the current live
+#    behaviour visible in the CMS rather than leaving it implicit — changes nothing
+#    about what renders. Full reasoning in judgingPage.golden.json.
+#
+# ============================================================================
+# FLAGGED FOR @docs (NOT part of this contract's assertions)
+# ============================================================================
+# docs/secretary-cms-guide.md section 7 ("Managing the National Show Page", step 2:
+# "There should be one document — click it to open") and section 12 ("Updating the
+# Home Page", step 1: "Click Home Page — there is one document") both currently
+# instruct the secretary to open a document that, before this contract lands, does not
+# exist. Once F4 ships, the documents WILL exist, so per docs/f6-page-singletons.md
+# section 3 the guide becomes literally true again for the "click it to open" step —
+# but section 12 step 4 ("Countdown Target Date: must match the National Show
+# countdown date") still describes a manual two-field sync where only
+# nationalShow.countdownDate is actually consumed by code (homePage.countdownDate is
+# seeded absent here, per the gap above) — that instruction stays misleading and needs
+# a @docs pass independent of this contract.
+#
+# ============================================================================
+# NEGATIVE-CONTROL EVIDENCE (captured by @architect 2026-07-30, before any seeding)
+# ============================================================================
+# All 6 singleton types have 0 documents today (confirmed live, same state F3's
+# contract recorded on 2026-07-29 — F3 pins but does not seed, so nothing has changed).
+#
+# A1 (check-seed-content.mjs) run against this exact unmodified state:
+#   $ node --import tsx/esm contracts/checks/f4-seed-page-singletons/check-seed-content.mjs
+#   Checked 0/6 documents, 0 fields.
+#   FAIL: aboutPage: document does not exist at the pinned id — 0 documents seeded (hard fail, not a skip)
+#   FAIL: contactPage: document does not exist at the pinned id — 0 documents seeded (hard fail, not a skip)
+#   FAIL: homePage: document does not exist at the pinned id — 0 documents seeded (hard fail, not a skip)
+#   FAIL: judgingPage: document does not exist at the pinned id — 0 documents seeded (hard fail, not a skip)
+#   FAIL: membersPage: document does not exist at the pinned id — 0 documents seeded (hard fail, not a skip)
+#   FAIL: nationalShow: document does not exist at the pinned id — 0 documents seeded (hard fail, not a skip)
+#   6 assertion(s) failed.
+#   Exit code: 1
+#   Genuine failure — every document is missing, none of the six checks vacuously
+#   passes. This is the falsifiable positive-path assertion the mission asked for.
+#
+# A2 (check-no-duplicate-seeds.mjs) run against the same state:
+#   $ node --import tsx/esm contracts/checks/f4-seed-page-singletons/check-no-duplicate-seeds.mjs
+#   PASS: all 6 pinned types still have 0-1 documents after seeding.
+#   Exit code: 0
+#   This is expected and correct — A2 is a standing data-integrity invariant (0-or-1
+#   documents per type), identical in kind to F3's A3, not a "does the code exist" check.
+#   It legitimately passes before AND after seeding; its job is to catch a duplicate if
+#   the seeding script misbehaves (e.g. writes doc #2 instead of the pinned id).
+#
+# Both scripts fail loudly (exit 1, explicit stderr message) on missing credentials —
+# same pattern as F3's check-document-counts.mjs, not independently re-verified here
+# since the guard is identical code reused from a script that already shipped.
+#
+# ============================================================================
+# WHY NOT A BROWSER/PLAYWRIGHT TEST
+# ============================================================================
+# Same wall as F3 (RF-11): the Studio at :3333 requires interactive Sanity OAuth login
+# with no stored Playwright storageState. A1/A2 instead query the live dataset
+# directly via the Sanity client (genuine behavioural verification of what the site's
+# GROQ queries — sanity/queries.ts — will actually resolve to at request time), not a
+# source-text grep and not a Studio UI walkthrough.
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        POSITIVE-PATH assertion (the one this mission explicitly called out as missing
+        from F2's checks). Each of the 6 pinned documents exists at its fixed _id in the
+        live dataset with the exact migrated field values from
+        contracts/golden/f4-seed-page-singletons/*.golden.json — scalars and arrays
+        exact-match, portableText compared by extracted plain text, images validated
+        structurally (valid asset reference), and every field marked "absent" in the
+        goldens genuinely stays empty (proves gaps were not papered over with invented
+        content). A missing token, unreachable API, or missing document is a hard FAIL,
+        never a skip.
+      command: node --import tsx/esm contracts/checks/f4-seed-page-singletons/check-seed-content.mjs
+
+    - id: A2
+      description: >
+        Data-integrity guard: none of the 6 pinned types has more than 1 document after
+        seeding — catches a seeding script that creates a duplicate instead of writing
+        to the pinned id (the API bypasses the Studio's create-new filter that F3
+        installed, so this is not redundant with F3's own checks).
+      command: node --import tsx/esm contracts/checks/f4-seed-page-singletons/check-no-duplicate-seeds.mjs
+
+    - id: A3
+      description: >
+        Type-check passes after any seed-script/query/type additions — catches
+        TypeScript errors the runtime checks above might not surface cleanly. Safe to
+        run alongside the port-3333 dev server (tsc --noEmit does not touch .next).
+      command: pnpm type-check
+
+    - id: A4
+      description: >
+        The port-3333 dev server Brad is using is still up and serving the home page
+        after seeding — non-destructive smoke check, guards against a seed script or
+        its dependencies crashing the shared dev server (constraint: never
+        restart/kill it).
+      command: curl -sf -o /dev/null -w "%{http_code}" http://localhost:3333/ | grep -q 200

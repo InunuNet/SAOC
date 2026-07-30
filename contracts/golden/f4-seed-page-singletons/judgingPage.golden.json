@@ -1,0 +1,40 @@
+{
+  "_id": "judgingPage",
+  "_type": "judgingPage",
+  "sourceComponents": ["app/(marketing)/judging/page.tsx"],
+  "fields": {
+    "title": {
+      "kind": "exact",
+      "value": "Judging at SAOC",
+      "note": "Migrated verbatim from the data?.title ?? 'Judging at SAOC' fallback in judging/page.tsx (rendered as the PageHero heading)."
+    },
+    "intro": {
+      "kind": "portableText",
+      "value": "SAOC operates a national orchid judging system — training and accrediting judges who score plants on form, colour, size, and cultural condition at affiliated shows.",
+      "note": "Migrated verbatim from the 'Overview' section's fallback paragraph, judging/page.tsx."
+    },
+    "howItWorks": {
+      "kind": "portableText",
+      "value": "Plants are assessed by accredited judging panels against published criteria. Awards are conferred when a plant meets the required point threshold.",
+      "note": "Migrated verbatim from the 'How judging works' section's fallback paragraph, judging/page.tsx."
+    },
+    "stats": {
+      "kind": "absent",
+      "note": "Not a gap — the stats section is explicitly conditional (renders nothing when data.stats is empty, judging/page.tsx line ~82) and has no hardcoded fallback numbers anywhere to migrate."
+    },
+    "becomingAJudge": {
+      "kind": "portableText",
+      "value": "Judging accreditation is earned through a structured training programme run by SAOC. Speak to your affiliated society to begin the pathway.",
+      "note": "Migrated verbatim from the 'Becoming a judge' section's fallback paragraph, judging/page.tsx."
+    },
+    "judges": {
+      "kind": "absent",
+      "note": "Not a gap for this feature — 0 judge documents exist in the dataset (confirmed prior audit), so there is nothing to reference. judges directory falls back to an empty array in code already."
+    },
+    "showPublicDirectory": {
+      "kind": "exact",
+      "value": false,
+      "note": "JUDGMENT CALL, recorded not papered over: no component has a hardcoded 'true'/'false' literal for this field per se, but judging/page.tsx's own logic (`data?.showPublicDirectory === true`) treats an absent/undefined value as false — i.e. the directory is hidden today. Writing false explicitly makes that current, already-live behaviour visible in the CMS document instead of leaving it implicit, and changes nothing about what the site renders. This is NOT new/invented content — it mirrors the code's existing default exactly."
+    }
+  }
+}

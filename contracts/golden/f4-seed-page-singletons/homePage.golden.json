@@ -1,0 +1,26 @@
+{
+  "_id": "homePage",
+  "_type": "homePage",
+  "sourceComponents": ["app/(marketing)/page.tsx", "components/home/MissionBlock.tsx", "lib/data/heroImages.ts"],
+  "fields": {
+    "title": {
+      "kind": "exact",
+      "value": "South African Orchid Council",
+      "note": "homePage.title is not consumed by Hero/MissionBlock/any component (confirmed docs/f6-page-singletons.md section 2). Migrated from the hardcoded page metadata title in app/(marketing)/page.tsx (export const metadata) as the closest hardcoded 'home page title' copy. Field remains functionally inert on the live site either way."
+    },
+    "missionText": {
+      "kind": "exact",
+      "value": "SAOC exists to promote the culture, hybridisation and appreciation of orchids across South Africa. We do this through a federated network of 21 societies, a nationally accredited judging system first standardised in 1990, and our annual publication Orchids South Africa.",
+      "note": "Migrated verbatim from components/home/MissionBlock.tsx fallback paragraph (hasCms === false branch). The source markup italicises 'Orchids South Africa' with <em>; missionText is a plain 'text' field in the schema (no rich-text/portableText), so italic emphasis cannot be represented and is dropped. GAP: recorded, not papered over — flag for @docs/Brad if italics matter."
+    },
+    "heroImages": {
+      "kind": "imageArray",
+      "minCount": 4,
+      "note": "Migrated by uploading the 4 static files referenced in lib/data/heroImages.ts (orchid-yellow.jpg, orchid-violet.jpg, orchid-pink.jpg, orchid-dark.jpg from public/images/) as Sanity image assets, in that order. The heroImages schema field has no alt sub-field and Hero.tsx renders CMS images with alt=\"\" (decorative) regardless, so the static array's alt text has nothing to migrate into."
+    },
+    "countdownDate": {
+      "kind": "absent",
+      "note": "GAP, not seeded. homePage.countdownDate is editable in Studio but read by no component (confirmed docs/f6-page-singletons.md section 2 and mission's open-decisions list, item 3). No hardcoded value exists anywhere labelled as belonging to homePage specifically — the only hardcoded countdown date in the codebase (ShowBand.tsx DEFAULT_COUNTDOWN_DATE) drives nationalShow.countdownDate, not this field. Do not invent a value for a dead field; wait for Brad's wire-up-or-remove decision."
+    }
+  }
+}

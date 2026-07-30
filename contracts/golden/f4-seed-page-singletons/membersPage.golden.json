@@ -1,0 +1,11 @@
+{
+  "_id": "membersPage",
+  "_type": "membersPage",
+  "sourceComponents": [],
+  "note": "Brad's decision, 2026-07-29 (recorded in sanity/structure.ts header comment and the F3 contract): membersPage stays an EMPTY placeholder. F3 already pinned it to a fixed document ID; F4's job is only to confirm the document exists with no content fields set — there is no route, no query, and no component copy to migrate for this type (docs/f6-page-singletons.md section 2: 'this schema is entirely orphaned').",
+  "fields": {
+    "title": { "kind": "absent", "note": "Must stay empty per Brad's decision — do not invent placeholder copy." },
+    "intro": { "kind": "absent", "note": "Must stay empty per Brad's decision." },
+    "resources": { "kind": "absent", "note": "Must stay empty per Brad's decision." }
+  }
+}

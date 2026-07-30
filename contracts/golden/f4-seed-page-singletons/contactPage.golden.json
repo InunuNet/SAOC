@@ -1,0 +1,23 @@
+{
+  "_id": "contactPage",
+  "_type": "contactPage",
+  "sourceComponents": ["app/(marketing)/contact/page.tsx"],
+  "fields": {
+    "title": {
+      "kind": "exact",
+      "value": "Contact SAOC",
+      "note": "Migrated verbatim from the data?.title ?? 'Contact SAOC' fallback in contact/page.tsx."
+    },
+    "directContacts": {
+      "kind": "exactArray",
+      "value": [
+        { "name": "SAOC Secretariat", "role": "General enquiries", "email": "info@saoc.co.za" }
+      ],
+      "note": "Migrated verbatim from the FALLBACK_CONTACTS constant in contact/page.tsx."
+    },
+    "formRecipients": {
+      "kind": "absent",
+      "note": "GAP, already documented (docs/f6-page-singletons.md section 2, mission's open-decisions item 4). Orphaned field — no code reads it, the contact form's actual submission target is elsewhere (app/api/contact/). No hardcoded value to migrate; do not invent recipients."
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "_id": "aboutPage",
+  "_type": "aboutPage",
+  "sourceComponents": ["app/(marketing)/about/page.tsx"],
+  "fields": {
+    "title": {
+      "kind": "absent",
+      "note": "GAP. aboutPage.title is never read by about/page.tsx — the PageHero heading ('A federated body of growers, since 1968.') is a separate hardcoded prop with no schema field of its own. Nothing hardcoded exists that is specifically labelled as this page's 'title'; do not invent one."
+    },
+    "pillars": {
+      "kind": "portableText",
+      "value": "SAOC has coordinated orchid cultivation across South Africa since 1968 — uniting affiliated societies in growing, showing, hybridising, and judging.",
+      "note": "Migrated verbatim from the 'Our mission' section's fallback paragraph, about/page.tsx (about?.pillars ? ... : <fallback>)."
+    },
+    "timelineNodes": {
+      "kind": "portableText",
+      "value": "Founded in 1968, the Council has grown to coordinate orchid societies nationwide.",
+      "note": "Migrated verbatim from the 'Our history' section's fallback paragraph, about/page.tsx."
+    },
+    "boardIntroText": {
+      "kind": "absent",
+      "note": "Not a gap — about/page.tsx renders nothing (no <p>) when boardIntroText is null; there is no fallback string to migrate, this is legitimately empty by design."
+    }
+  }
+}
