@@ -1,0 +1,182 @@
+schema: athanor.contract/v1
+slug: f5-event-slugs
+goal: >
+  Generate a stable, unique, URL-safe slug for every societyEvent document that
+  currently lacks one, so /events/[slug] has valid inputs to render — the reason
+  routes for 3 events could not be live-verified in an earlier session. Slugs are
+  derived MECHANICALLY from event title (+ a year-based disambiguator only on
+  collision) — no manual curation, no domain-knowledge decisions. hostSociety
+  assignment is explicitly OUT OF SCOPE (deferred, see below) — this contract has no
+  assertion touching it.
+created_at: '2026-07-30'
+autonomy: high
+
+# ============================================================================
+# SCOPE
+# ============================================================================
+# IN SCOPE:
+#   - Write a `slug` value (Sanity `slug` type: {_type: "slug", current: "..."}) to
+#     every societyEvent document whose slug is currently null/empty, via the Sanity
+#     API using SANITY_API_TOKEN (Editor, write-capable — see .env.local; extract with
+#     `grep '^SANITY_API_TOKEN=' .env.local | cut -d= -f2-`, never via dotenv banner
+#     output, never print the value).
+#   - Derivation algorithm: contracts/checks/f5-event-slugs/_slugify.mjs's
+#     slugifyBase()/deriveSlugs() is the canonical, ALREADY-VERIFIED implementation —
+#     @dev's seeding script MUST produce byte-identical output (import and reuse this
+#     module directly rather than reimplementing it; A3 below will fail on any
+#     divergence). Summary: NFKD-normalise, lowercase, collapse runs of non-[a-z0-9]
+#     characters (spaces, em dashes, punctuation) to a single hyphen, trim edge
+#     hyphens. On collision with any other slug in the collection (existing or
+#     assigned earlier in the same run, processed in (date asc, _id asc) order):
+#     append "-<year>" (4-digit year of the event's `date` field); if STILL
+#     colliding, append "-2", "-3", ... until free.
+#   - Idempotency: only assign to documents where slug is currently empty. Never
+#     overwrite or re-derive an existing slug — slugs are user-visible, effectively
+#     permanent URLs. A second run against a fully-seeded set must be a no-op.
+#
+# EXPLICITLY OUT OF SCOPE — DEFERRED, NOT DROPPED:
+#   - hostSociety assignment. Deciding which of the 21 affiliated societies runs which
+#     event is client domain knowledge (which society is "Cape Orchid Society" vs.
+#     "Northern Transvaal" vs. "East Rand" for a given show) — guessing would put
+#     wrong public-facing information in front of real users. DEFERRED pending Brad or
+#     the secretary's review (same conclusion as docs/f6-page-singletons.md section 4
+#     and the mission's own F5 brief). No assertion in this contract references
+#     hostSociety; @dev must not attempt to infer or backfill it as part of this work.
+#   - Any change to app code (queries, route handlers, schema) — the front end
+#     already correctly reads slug.current (confirmed: sanity/queries.ts
+#     eventBySlugQuery/eventSlugsQuery, app/(marketing)/events/[slug]/page.tsx). This
+#     is a pure content-migration/generation task, same category as F4.
+#   - Re-running the M2 route-coverage checks (mentioned in the mission's F5 brief as
+#     a follow-up) — that's a separate verification pass once this contract's gate is
+#     green, not part of this contract's own assertions.
+#
+# ============================================================================
+# REAL DATASET STATE (queried live by @architect, 2026-07-30, read-only)
+# ============================================================================
+# 18 societyEvent documents exist (matches the mission brief's "0 of 18" — count is
+# accurate, not stale). All 18 currently have slug == null. All 18 titles are DISTINCT
+# today, so applying the canonical derivation produces 18 unique bare-title slugs with
+# no year-suffix collision triggered — see
+# contracts/golden/f5-event-slugs/expected-slugs.golden.json for the full _id -> title
+# -> expectedSlug table, cross-checked against a strong independent signal: each
+# document's own _id already embeds a slug-shaped suffix from the original seed data
+# (e.g. _id "societyEvent-2-judging-workshop-paphiopedilum" for title "Judging
+# Workshop — Paphiopedilum") which matches the derivation exactly for all 18. The
+# collision/year-suffix branch is specified for forward compatibility (an annual show
+# recurring next year would collide on title) and is verified against synthetic input
+# in the negative-control section below — it is NOT exercised by today's real data.
+#
+# ============================================================================
+# WHY THE POSITIVE-PATH CHECK TARGETS THE LOCAL DEV SERVER, NOT THE DEPLOYED HOST
+# ============================================================================
+# A4 verifies against http://localhost:3333 (already running, never restarted/killed
+# per standing constraints). Reasons: F2 (the Next 16 production deploy) is reportedly
+# still in progress concurrently on a different working tree per team-lead, so the
+# deployed host is not a stable, honestly-verifiable target for F5's own gate right
+# now. F5 has no actual dependency on F2 — event slugs are dataset content read
+# directly from the same live Sanity dataset the deployed site also reads (no
+# local/prod dataset split in this project) — so a route rendering correctly against
+# :3333 is genuine evidence the same document would render on the deployed host too,
+# once F2 lands. Re-pointing A4 at the production host afterward is a one-line
+# BASE_URL change in check-route-renders.mjs, not a rewrite.
+#
+# ============================================================================
+# NEGATIVE-CONTROL EVIDENCE (captured by @architect 2026-07-30, before any seeding)
+# ============================================================================
+# All 4 checks run against the exact unmodified state (0/18 documents have a slug):
+#
+# A1 (check-slugs-well-formed.mjs):
+#   $ node --import tsx/esm contracts/checks/f5-event-slugs/check-slugs-well-formed.mjs
+#   Checked 18 societyEvent documents.
+#   FAIL: <all 18 _ids> ("<title>"): slug is missing/empty
+#   18 of 18 documents failed.
+#   Exit code: 1
+#
+# A2 (check-slugs-unique.mjs):
+#   $ node --import tsx/esm contracts/checks/f5-event-slugs/check-slugs-unique.mjs
+#   FAIL: <all 18 _ids> ("<title>"): slug is missing/empty — cannot check uniqueness of an incomplete set
+#   18 of 18 documents have no slug.
+#   Exit code: 1
+#
+# A3 (check-slugs-derivation-correct.mjs):
+#   $ node --import tsx/esm contracts/checks/f5-event-slugs/check-slugs-derivation-correct.mjs
+#   Checked 18 societyEvent documents against derivation + golden.
+#   FAIL: <all 18 _ids> ("<title>"): slug is missing/empty — cannot verify derivation
+#   18 of 18 documents failed.
+#   Exit code: 1
+#
+# A4 (check-route-renders.mjs):
+#   $ node --import tsx/esm contracts/checks/f5-event-slugs/check-route-renders.mjs
+#   FAIL: <all 18 _ids> ("<title>"): no slug — cannot verify its route renders
+#   18 of 18 documents have no slug to test.
+#   Exit code: 1
+#   (Script hard-fails before reaching the live HTTP fetch/negative-control step,
+#   which is correct — there's nothing to test yet. The underlying fetch mechanism
+#   itself was independently smoke-tested: `curl -o /dev/null -w '%{http_code}'
+#   http://localhost:3333/events/cape-orchid-society-autumn-show` -> 404 today (the
+#   expected-slug route genuinely 404s pre-seeding); `curl .../events` -> 200
+#   confirms the dev server itself is healthy, ruling out "host unreachable" as the
+#   cause; a direct `fetch()` to the script's own NEGATIVE_CONTROL_SLUG path returned
+#   404 with "could not be found" in the body, confirming the 404-assertion branch is
+#   reachable and correct code, not dead code.)
+#
+# All four are genuine failures — every check fails because the real gap exists (no
+# documents have slugs), none vacuously passes. This is the falsifiable positive-path
+# assertion set the mission asked for.
+#
+# Collision-rule unit verification (synthetic, not against real data — real data has
+# no collisions to exercise this branch): three synthetic documents sharing one title
+# ("Cape Orchid Society Autumn Show") across two dates were run through deriveSlugs()
+# directly: base slug assigned to the first (by date/_id order), "-2027" appended to
+# the second (same title, different year than the first), "-2027-2" appended to the
+# third (same title AND year as the second) — confirms the fallback chain (base ->
+# base-year -> base-year-N) executes correctly, not just the trivial no-collision path.
+#
+# ============================================================================
+# WHY NOT A BROWSER/PLAYWRIGHT TEST FOR THE STUDIO SIDE
+# ============================================================================
+# Same wall as F3/F4 (RF-11): Studio OAuth login has no stored Playwright
+# storageState. This contract doesn't need Studio verification anyway — slug writes
+# happen via the API directly (same pattern as F4's seeding), and A4 verifies the
+# actual public-facing consequence (the route rendering) via a real HTTP fetch against
+# the live dev server, which is genuine behavioural verification, not a source grep.
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        Every societyEvent document has a non-empty slug matching well-formed
+        lowercase kebab-case (no leading/trailing/double hyphens). Hard fails on 0
+        documents found, any missing/malformed slug, or any infrastructure failure —
+        never a skip.
+      command: node --import tsx/esm contracts/checks/f5-event-slugs/check-slugs-well-formed.mjs
+
+    - id: A2
+      description: >
+        All slugs are unique across the collection — the assertion that actually
+        catches the collision case (two events sharing a base title would otherwise
+        make eventBySlugQuery's unordered [0] silently pick an arbitrary match, the
+        same failure mode F3 fixed for the page singletons). Requires every document
+        to already have a slug (hard fails otherwise, does not skip the check on an
+        incomplete set).
+      command: node --import tsx/esm contracts/checks/f5-event-slugs/check-slugs-unique.mjs
+
+    - id: A3
+      description: >
+        Every slug matches BOTH a live re-derivation (via the canonical
+        _slugify.mjs algorithm run against the real title/date pairs) AND the static
+        pre-computed golden file — catches a seeding script that produced
+        well-formed, unique, but WRONG slugs (different slugify rules, different
+        collision resolution, or stale golden).
+      command: node --import tsx/esm contracts/checks/f5-event-slugs/check-slugs-derivation-correct.mjs
+
+    - id: A4
+      description: >
+        POSITIVE-PATH assertion — the real payoff. Every seeded event's
+        /events/<slug> route returns 200 with the event's title present in the
+        rendered HTML, fetched live from the :3333 dev server (never restarted). A
+        deliberately-invalid slug is asserted to 404 as a paired negative control,
+        proving the route isn't unconditionally 200ing. Hard fails on any missing
+        slug, any mismatch, or an unreachable host — never a skip.
+      command: node --import tsx/esm contracts/checks/f5-event-slugs/check-route-renders.mjs

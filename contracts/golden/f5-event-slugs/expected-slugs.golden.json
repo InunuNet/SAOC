@@ -1,0 +1,24 @@
+{
+  "note": "Canonical expected slug per societyEvent document, computed by @architect 2026-07-30 via contracts/checks/f5-event-slugs/_slugify.mjs's deriveSlugs() against the live dataset's 18 documents (all _type == societyEvent, queried read-only). All 18 titles are distinct today, so every slug is the bare slugify(title) base — the year-suffix collision rule is specified for future recurring events (e.g. next year's Autumn Show) but is not exercised by today's dataset. Cross-checked against the slug-like suffix already embedded in each document's own _id (a strong independent signal the derivation matches the seed data's original intent) — every entry below matches its _id suffix exactly.",
+  "sourceQuery": "*[_type == \"societyEvent\"]{_id, title, date}",
+  "documents": [
+    { "_id": "societyEvent-0-cape-orchid-society-autumn-show", "title": "Cape Orchid Society Autumn Show", "date": "2026-03-15", "expectedSlug": "cape-orchid-society-autumn-show" },
+    { "_id": "societyEvent-1-transvaal-autumn-orchid-show", "title": "Transvaal Autumn Orchid Show", "date": "2026-04-05", "expectedSlug": "transvaal-autumn-orchid-show" },
+    { "_id": "societyEvent-2-judging-workshop-paphiopedilum", "title": "Judging Workshop — Paphiopedilum", "date": "2026-05-10", "expectedSlug": "judging-workshop-paphiopedilum" },
+    { "_id": "societyEvent-1-cape-orchid-society-winter-show", "title": "Cape Orchid Society Winter Show", "date": "2026-07-11", "expectedSlug": "cape-orchid-society-winter-show" },
+    { "_id": "societyEvent-2-natal-winter-orchid-show", "title": "Natal Winter Orchid Show", "date": "2026-07-25", "expectedSlug": "natal-winter-orchid-show" },
+    { "_id": "societyEvent-3-saoc-council-agm-2026", "title": "SAOC Council AGM 2026", "date": "2026-08-01", "expectedSlug": "saoc-council-agm-2026" },
+    { "_id": "societyEvent-4-transvaal-spring-orchid-show", "title": "Transvaal Spring Orchid Show", "date": "2026-08-15", "expectedSlug": "transvaal-spring-orchid-show" },
+    { "_id": "societyEvent-5-judging-workshop-cattleya-alliance", "title": "Judging Workshop — Cattleya Alliance", "date": "2026-08-22", "expectedSlug": "judging-workshop-cattleya-alliance" },
+    { "_id": "societyEvent-6-cape-spring-orchid-show", "title": "Cape Spring Orchid Show", "date": "2026-09-05", "expectedSlug": "cape-spring-orchid-show" },
+    { "_id": "societyEvent-7-northern-transvaal-spring-show", "title": "Northern Transvaal Spring Show", "date": "2026-09-19", "expectedSlug": "northern-transvaal-spring-show" },
+    { "_id": "societyEvent-8-eastern-province-spring-show", "title": "Eastern Province Spring Show", "date": "2026-09-26", "expectedSlug": "eastern-province-spring-show" },
+    { "_id": "societyEvent-9-lowveld-spring-orchid-show", "title": "Lowveld Spring Orchid Show", "date": "2026-10-03", "expectedSlug": "lowveld-spring-orchid-show" },
+    { "_id": "societyEvent-10-midlands-orchid-show", "title": "Midlands Orchid Show", "date": "2026-10-17", "expectedSlug": "midlands-orchid-show" },
+    { "_id": "societyEvent-11-east-rand-cymbidium-show", "title": "East Rand Cymbidium Show", "date": "2026-11-07", "expectedSlug": "east-rand-cymbidium-show" },
+    { "_id": "societyEvent-12-hybridisation-symposium-2026", "title": "Hybridisation Symposium 2026", "date": "2026-11-21", "expectedSlug": "hybridisation-symposium-2026" },
+    { "_id": "societyEvent-13-summer-species-show", "title": "Summer Species Show", "date": "2027-02-20", "expectedSlug": "summer-species-show" },
+    { "_id": "societyEvent-14-judging-accreditation-exam-round-1", "title": "Judging Accreditation Exam — Round 1", "date": "2027-03-06", "expectedSlug": "judging-accreditation-exam-round-1" },
+    { "_id": "societyEvent-15-19th-south-african-national-orchid-show", "title": "19th South African National Orchid Show", "date": "2027-09-18", "expectedSlug": "19th-south-african-national-orchid-show" }
+  ]
+}
