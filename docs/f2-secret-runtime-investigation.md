@@ -33,15 +33,63 @@ env var *was* populated, with the wrong bytes.
 inside the handler function body, not at module scope — so this was never a
 stale-closure/cold-start-caching problem either. Zero application code changed to fix this.
 
-### How the corruption happened
+### How the corruption happened — CONFIRMED, same defect as the F1 dotenv finding
 
-Both secrets were set via a path that let something other than the raw token reach
-`--data-file`/stdin — consistent with this project's known dotenv-banner hazard (see
-`docs/dotenv-supply-chain-f1.md`): the `dotenv` package's own startup banner text can land
-on stdout ahead of the value being piped, silently prepending garbage to whatever consumes
-that stream. The prose-then-newline-then-token shape of the corrupted payload matches that
-failure mode. Both secrets broke the same way because both were set through the same broken
-invocation.
+This is the same defect surfacing twice, not a resemblance — confirmed, not inferred.
+
+`docs/dotenv-supply-chain-f1.md` flagged (2026-07-28) that `dotenv@17.4.2` prints a
+promotional banner to stdout on `config()` and judged it supply-chain-benign, fixing only
+`scripts/seed-sanity.ts`'s own call site (`config({ quiet: true })`). That fix did not
+remove `dotenv` from the project, and nothing stops any other ad-hoc invocation from calling
+`config()` without `quiet: true`.
+
+During this investigation, an ad-hoc command of exactly that shape —
+`node -e "require('dotenv').config(...); process.stdout.write(...)"`, used to extract a
+secret's value from `.env.local` for piping into `firebase apphosting:secrets:set` — did
+precisely that. This is already recorded independently in two places: `.agent/memory/project/learned.md`
+(the "dotenv banner goes to stdout" entry, 2026-07-29) and `contracts/f2-deploy-next16.yaml`'s
+A9 negative-control notes, both describing the same failure (a 137-char malformed value where
+the correct secret is 43 chars) and the same fix (extract with
+`grep '^KEY=' .env.local | cut -d= -f2-`, never a `dotenv`-loading `node -e`).
+
+Byte-level confirmation done in this pass, without touching any real secret value: dotenv's
+actual log functions (`node_modules/dotenv/lib/main.js`) prefix every banner line with `◇ `
+(U+25C7) and, when the tip selected is one of the `⌘`/`⌁`-prefixed variants (6 of 8 entries
+in the `TIPS` array), embed further `⌘`/`⌁` glyphs. `dim()` only wraps the tip in ANSI escape
+codes when `process.stdout.isTTY` is true — piped into a command substitution or a subsequent
+`process.stdout.write`, as in the extraction one-liner above, it is not a TTY, so the banner
+carries no ESC (`0x1b`) byte, only plain UTF-8. Reproducing dotenv's `config()` against a
+scratch `.env` file with stdout piped (not a TTY) and dumping the raw bytes gives, e.g.:
+```
+e297 8720 696e 6a65 6374 6564 2065 6e76   ◇ injected env
+2028 3129 2066 726f 6d20 742e 656e 7620    (1) from t.env
+2f2f 2074 6970 3a20 e28c 9820 656e 6162   // tip: ⌘ enab
+6c65 2064 6562 7567 6769 6e67 207b 2064  le debugging { d
+6562 7567 3a20 7472 7565 207d 0a         ebug: true }\n
+```
+— unique bytes `{e2, 97, 87, 20, ..., 8c, 98, ...}`, no `0x1b`, ending in a bare `\n` directly
+followed by whatever the script writes next. That byte set is exactly the `{0x87, 0x8c, 0x97,
+0x98, 0xe2}` the architect reported finding in the corrupted Secret Manager payload, and the
+"prose, then `\n`, then the real token, with no separator" shape matches a banner-then-write
+pipeline exactly. The earlier absence of the literal substrings "dotenv" or "injecting" in the
+corrupted head is not evidence against dotenv — it's consistent with it: the actual log text
+says "**injected**" (past tense, not "injecting"), and 6 of the 8 rotating tips (e.g. "⌘ enable
+debugging") don't contain the string "dotenv" at all — only the 2 tips referencing
+`dotenvx.com` do. And the corrupted head not starting with `{` was never in tension with this
+explanation; dotenv's banner is plain text, not JSON.
+
+Both secrets broke identically because both were extracted with the same broken `node -e`
+invocation in the same session.
+
+**No live trap remains in committed code.** The dangerous pattern was an ad-hoc shell
+command, never a committed script — `grep`ing the repo (`scripts/`, `docs/`, `contracts/`,
+root-level config) for `node -e` combined with `require('dotenv')` or `dotenv/config` found
+only the two warnings above (memory + contract), never an instruction to run it. The correct
+extraction command is already the one this doc's fix section and
+`contracts/f4-seed-page-singletons.yaml` use: `grep '^KEY=' .env.local | cut -d= -f2-`. The
+residual risk is that `dotenv` is still a project dependency and nothing stops a future
+one-off `node -e` from reintroducing this — worth remembering, not worth removing the
+dependency over.
 
 ### The fix
 
