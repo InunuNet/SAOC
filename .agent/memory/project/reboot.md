@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-07-30T07:24Z_
+_Generated: 2026-07-30T07:26Z_
 
 ## What happened last session
-F1 (countdown hydration) and F3 (pinned singletons) shipped and closed; F2 (secrets runtime access) deployed but incomplete — SANITY_REVALIDATE_SECRET/SANITY_API_TOKEN root cause confirmed (rollout dedup on failed-build commit SHA) but fix not yet verified live; mission stays open for F2 completion + F4/F5/F6.
+F1 hydration fix + F3 singleton pinning closed (gates 4/4, 5/5). Next 16 deployed — Sanity Studio P0 now fixed in production, editors render across 4 doc types. F2 NOT closed: SANITY_REVALIDATE_SECRET does not resolve at runtime (correct secret returns 401), blocking F6. IAM confirmed granted; rollouts:create is a no-op. Build-identity contradiction recorded in backlog.
