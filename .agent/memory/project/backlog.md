@@ -259,6 +259,36 @@ these are the residual items, not defects in what shipped.
   client answer before the Members Portal itself can be built (not blocking on F3,
   which only pins the placeholder).
 
+### [P0 BLOCKER] The CMS→site loop does not work in production — found 2026-07-30 by F6
+
+- [ ] **A published Studio edit never reaches the public site. The App Hosting CDN edge never
+  invalidates.** This is the mission's central claim failing, and it is NOT a check-script bug —
+  reproduced three times, and independently re-verified by the orchestrator.
+  **What works:** Studio publish writes to the dataset (confirmed by authoritative Content Lake read);
+  `POST /api/revalidate` with the correct secret returns 200 `{"ok":true,"revalidated":true}` (F2's fix
+  is real); `revalidateTag()` correctly marks Next's own cache stale.
+  **What fails:** the CDN in front keeps serving its own cached object. Live headers on `/about`:
+  `x-nextjs-cache: STALE` (Next knows) alongside `cdn-cache-status: hit`, `cache-control:
+  s-maxage=31536000` (one year), and `age` climbing monotonically across a 120s poll. Next marks it
+  stale; the edge serves the stale copy anyway.
+  **Lead, unconfirmed:** App Hosting is presumably meant to translate `revalidateTag()` into a CDN
+  purge — there are `cache-tag` response headers that look built for exactly that. Note
+  `x-fah-adapter: nextjs-14.0.21` is reported against a Next **16.2.12** app; that version gap is the
+  first thing for someone with App Hosting context to examine. Do not assume it is the cause.
+  **Consequence for the client:** the secretary can edit, publish, and see nothing change on any
+  already-cached page — the exact failure this mission exists to prevent. Everything else about the
+  CMS is now correct, so this single gap gates the whole deliverable.
+- [ ] **[P1] `/events/[slug]` has a second, independent propagation gap.**
+  `app/(marketing)/events/[slug]/page.tsx` tags its `sanityFetch` calls `['events']` only — no
+  `'sanity'` tag, and `'events'` does not match the real document `_type` (`societyEvent`) that a
+  webhook payload would send. So even once the CDN issue is fixed, event detail pages likely still
+  will not revalidate. Found while designing F6; deliberately NOT used as the test target so it could
+  not be confounded with the CDN finding.
+- [ ] Verifying the actual Sanity webhook fires end-to-end is currently impossible with the
+  dataset-scoped `SANITY_API_TOKEN` — reading webhook config needs the `sanity.project.webhooks/read`
+  grant (confirmed live: 401). F6 asserts the direct revalidate call instead, which is a weaker claim,
+  stated as such rather than overclaimed.
+
 ### CMS wiring gaps — site-wide route audit, 2026-07-30
 
 Source-first audit of all 18 `app/(marketing)/` routes: grepped every page for `sanityFetch`/query
