@@ -117,6 +117,7 @@ Research complete: `documents/hosting-research-2026-06-20.md`. Key findings: (1)
   - `test_contract_fix.py` (10/15) — **ORPHANED LOCAL TEST.** Authored locally in `e863d887` alongside a 15-line single-phase `gate_cmd` fix to `contract.py`; a later `make update-template` silently overwrote `contract.py` with upstream (fix lost; `contract.py` now byte-identical to upstream), leaving the test permanently red. Test deleted locally 2026-07-28 (recoverable at `e863d887`). Fix + clobber-friction filed upstream: https://github.com/InunuNet/Athanor/issues/1319
 - [ ] **[athanor-upstream] sync-autonomy v2** — `set-autonomy LEVEL=high` should propagate to `.claude/settings.json` permissionMode. Filed 2026-06-16.
 - [ ] **[athanor-upstream] mission.py slug fix** — cross-date slug scan fix needs upstreaming via `make update-template`. Filed 2026-06-16.
+- [ ] TEMPLATE BUG: `execution/gh_closure_scan.py` throws `ERROR: <file> has no YAML frontmatter` and returns zero candidates (silently, exit 0) if ANY file under `.agent/memory/project/missions/` lacks frontmatter — e.g. a plain planning note like `OVERNIGHT-PLAN-2026-07-30.md`. It should skip/warn on the one bad file and keep scanning the rest of the directory, not abort the whole scan. Found 2026-07-30 during mission close on `cms-activation-deploy`; user should run /report-bug.
 
 ## Deferred (auto-tracked)
 - [ ] [dev 2026-06-18] Factory loop script needs error handling — Out of scope for this task _(priority: low, handoff: 20260618T075409-dev.json)_
