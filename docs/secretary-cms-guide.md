@@ -25,7 +25,7 @@ The left sidebar lists all content types you can manage:
 | **Event** | Events calendar — shows, workshops, meetings |
 | **Society** | The 21 affiliated orchid societies |
 | **National Show** | Only one field here does anything right now — see Section 7 |
-| **Show** | Past show records (archive, results, gallery) |
+| **Show** | Past show records — do not add yet, see Section 8 |
 | **Judge** | Accredited judges directory |
 | **Board Member** | SAOC executive committee listing |
 | **Sponsor** | Sponsors page |
@@ -131,7 +131,13 @@ This is the one place in the Studio where you need to know exactly what does and
 
 ## 8. Adding a Past Show to the Archive
 
-**Before you add one: this is only half-connected right now.** A show you add here will appear as a card on the Archive list page (`/national-show/archive`) — that part works. But each past show is also supposed to get its own individual page with the full write-up, gallery, and results (e.g. `/national-show/archive/2025`) — those individual pages only exist today for the shows already built into the site, not for anything you add in the Studio. If a visitor somehow reaches the address for a show you added, they'll get a "page not found" error rather than your write-up and gallery. This needs a developer to finish connecting before it's fully safe to use — check with the webmaster (Section 16) first if you're about to add a new one.
+> ⚠️ **Do not add a past show here yet.** This part of the CMS is only half-connected, and adding one now can leave a dead end for visitors.
+>
+> - A show you add here **will** appear as a card on the public Archive page (`/national-show/archive`) — that part works.
+> - But the individual page for that show — the one with the full write-up, gallery, and results (e.g. `/national-show/archive/2025`) — **does not exist** for anything you add. Only the shows already built into the site by a developer have one. If a visitor ends up at the address for a show you added — for example if that link gets shared, or the archive card is ever made clickable — they'll land on a "page not found" error instead of your write-up and gallery.
+> - **This needs a developer to finish connecting before it's safe to use.** Contact the webmaster (Section 16) before adding a past show, rather than following the steps below.
+>
+> The steps and field list below are kept for reference, for once this is connected — treat them as a preview, not something to do today.
 
 After each national show, add a record to the show archive.
 
