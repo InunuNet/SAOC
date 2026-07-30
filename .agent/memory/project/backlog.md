@@ -259,6 +259,39 @@ these are the residual items, not defects in what shipped.
   client answer before the Members Portal itself can be built (not blocking on F3,
   which only pins the placeholder).
 
+### CMS wiring gaps — site-wide route audit, 2026-07-30
+
+Source-first audit of all 18 `app/(marketing)/` routes: grepped every page for `sanityFetch`/query
+imports and read what each does with the result. Method note: seeded copy was migrated FROM the
+component fallbacks, so the two are byte-identical and text matching proves nothing — discriminate
+via Sanity CDN asset URLs, PortableText `_key` UUIDs in the RSC payload, or source reading.
+
+- [ ] **[P1] `/national-show/archive/[year]` 404s for any show added in the Studio.** The archive LIST
+  (`archive/page.tsx:42`) is Sanity-backed via `pastShowsQuery`, so a `show` document created in the
+  Studio appears there and links to `/national-show/archive/<year>`. The DETAIL page
+  (`archive/[year]/page.tsx:6,49`) reads only the static `lib/data/shows` array and calls `notFound()`
+  otherwise. So the editor does exactly what the CMS invites, and publishes a broken public link.
+  Ranked above the inert-page item below: this doesn't just fail to work, it actively creates a 404.
+- [ ] **[P2] Orphaned document types — editable in the Studio, read by nothing.** `award`
+  (`AwardsGrid.tsx` reads the static `lib/data/awards` instead) and `province` (`society.province` is
+  free-text, not a reference to it). Either wire them or remove them from the Studio; leaving them
+  editable teaches the client that publishing does nothing. `membersPage` is also unread but is a
+  deliberate placeholder with no `/members` route yet. NOT orphaned despite absence from a naive
+  `_type ==` grep: `judge`, dereferenced via `judgingPageQuery`'s `judges[]->` (`queries.ts:142`).
+- [ ] **[P2] Unread schema fields:** `aboutPage.title`, `aboutPage.boardIntroText`, `judgingPage.stats`
+  (hero headings are hardcoded JSX). Same class as the already-recorded `homePage.countdownDate`.
+
+**Verified Sanity-backed** (safe to tell the client she can edit): `/` (hero images, mission text,
+countdown via `nationalShow.countdownDate`, events strip, partners), `/about` (pillars, timeline,
+board), `/judging` (all copy + judge directory), `/contact` (code path correct; unverifiable from HTML
+until F6), `/events` + `/events/[slug]`, `/sponsors`, `/societies` + `/societies/[slug]`,
+`/national-show/archive` (list only).
+
+**Verified NOT editable:** `nationalShow` title/venue/host/hero/exhibitor stages; the `/national-show`
+page's own countdown (`ShowCountdown.tsx:5` hardcodes the target — note this differs from the home-page
+countdown, which IS live); `archive/[year]`; `/media-kit`, `/constitution`, `/privacy`, `/terms`,
+`/national-show/exhibitors` (no CMS pretense — expected, not broken).
+
 ### Seeded-but-inert content — found 2026-07-30 by post-F4 render audit
 
 - [ ] **[P1] `/national-show` never reads the `nationalShow` singleton.** F4 seeded the document and its
