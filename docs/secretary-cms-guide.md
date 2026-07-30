@@ -214,7 +214,7 @@ The home page hero carousel and mission statement are editable.
 1. Click **Home Page** — there is one document
 2. **Hero Images**: click "Add item" to add a photo, or drag to reorder. At least 3 photos recommended.
 3. **Mission Text**: the short paragraph below the hero
-4. **Countdown Target Date**: must match the National Show countdown date
+4. **Countdown Target Date**: you will see this field on the Home Page document, but it is **not connected to anything on the website** — changing it has no effect on any countdown timer visitors see. The countdown shown to visitors is controlled entirely from the **National Show** page (see Section 7) — go there to change it. Leave this field as it is.
 5. Click **Publish**
 
 ---
