@@ -6,6 +6,32 @@
 
 ---
 
+## What You Can and Cannot Change Yourself
+
+The site is still being built, so not every part of it is connected to this CMS yet. This section tells you, up front, which changes will actually appear on the website and which ones currently won't — so you never waste time editing something, publishing it, and wondering why nothing changed. That's not something you'd be doing wrong; it just means that part isn't wired up yet.
+
+**You can edit these, and the public site will update:**
+
+- **Home page** — hero photos, mission text
+- **About page** — the mission/pillars text, the history timeline, and the board member listing
+- **Judging page** — all the text sections, and the judges directory
+- **Events** — the events list and each event's own page
+- **Societies** — the society list and each society's own page
+- **Sponsors**
+- **The National Show countdown date** — but note it appears on the **Home Page**, not the National Show page itself (see Section 7 for the full detail)
+- **Contact page details** — this should work, but we haven't been able to fully confirm it end-to-end yet. If you edit something here and it doesn't appear on the site, don't assume you did something wrong — tell the webmaster (Section 16) so it can be checked.
+
+**These don't do anything yet — they need a developer first:**
+
+- **The National Show page's own content** — its title, dates, venue, host, hero image, and exhibitor information are all fixed for now (see Section 7)
+- **Past show archive entries** — see the warning in Section 8 before adding one
+- **Award** and **Province** — these appear in the Studio sidebar, but nothing on the website reads them yet
+- **Media Kit, Constitution, Privacy Policy, and Terms** — these have always been fixed pages, not connected to the CMS. That's not a gap to report, just how they were built.
+
+This boundary will move as the site keeps being built — parts of the "not yet" list today may well be editable soon. If you're ever unsure whether something is connected, ask the webmaster (Section 16) rather than assuming this list is final.
+
+---
+
 ## 1. Logging In
 
 1. Go to `https://saoc.co.za/studio`
