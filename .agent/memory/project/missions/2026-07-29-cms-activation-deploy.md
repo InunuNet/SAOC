@@ -7,16 +7,16 @@ goal: Ship the Next 16 fix to production so the Studio actually works for the cl
   coverage, and prove end-to-end that a Studio edit changes the live site
 created_at: '2026-07-29T18:30:00.000000+00:00'
 started_at: '2026-07-30T07:24:51.199930+00:00'
-last_active_at: '2026-07-30T20:50:31.311515+00:00'
+last_active_at: '2026-07-30T20:54:12.021770+00:00'
 status: in_progress
 cost_estimate:
   features: 6
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: M2
-  feature: F4
-  ts: '2026-07-30T20:50:31.311515+00:00'
+  milestone: M3
+  feature: F5
+  ts: '2026-07-30T20:54:12.021770+00:00'
 features:
 - id: F1
   name: Fix the home-page hydration bug (useCountdown / ShowBand) before shipping
@@ -76,7 +76,7 @@ features:
   completed_at: '2026-07-30T20:50:31.311366+00:00'
 - id: F5
   name: Populate content gaps - event slugs and hostSociety
-  status: pending
+  status: done
   inline_brief: Two content gaps with real consequences. (a) 0 of 18 societyEvent
     docs have a slug - confirmed visually in Brad's Studio walkthrough - which is
     why /events/[slug] could not be live-verified in the M2 regression pass (59 of
@@ -86,6 +86,7 @@ features:
     domain knowledge - which society runs which event - so it may need Brad or the
     secretary rather than an agent. Afterwards, re-run the M2 route checks and confirm
     the three previously-skipped routes now render live.
+  completed_at: '2026-07-30T20:54:12.021620+00:00'
 - id: F6
   name: Prove the CMS end-to-end - a Studio edit changes the site
   status: pending
@@ -117,6 +118,7 @@ milestones:
   - F6
   gate: contract
 ---
+
 
 
 
