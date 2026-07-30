@@ -134,6 +134,47 @@ autonomy: high
 # since the guard is identical code reused from a script that already shipped.
 #
 # ============================================================================
+# REVISION 2026-07-30 (later same day): exactArray false-positive fix
+# ============================================================================
+# The exactArray branch of checkField() compared via
+# `JSON.stringify(stripKeys(actual)) !== JSON.stringify(stripKeys(spec.value))`.
+# JSON.stringify is sensitive to OBJECT KEY ORDER. Sanity's content-lake API
+# serialises object fields alphabetically on read regardless of write order, so a
+# genuinely-correct seed failed A1 on a false positive:
+#   FAIL: contactPage.directContacts: expected
+#   [{"name":"SAOC Secretariat","role":"General enquiries","email":"info@saoc.co.za"}],
+#   got [{"email":"info@saoc.co.za","name":"SAOC Secretariat","role":"General enquiries"}]
+# Same three key/value pairs, different key order — not a real defect.
+#
+# Fix: replaced the stringify comparison with a recursive deepEqual() that walks
+# objects/arrays directly. Object KEY ORDER is now insignificant (keys compared by
+# name + value, not serialised position). ARRAY ELEMENT ORDER remains significant
+# (directContacts and similar arrays render in sequence on the page — a reordered
+# array is still a real defect and must still fail). Values, types, key presence,
+# and array length are still compared exactly; nothing was loosened beyond the
+# key-order normalisation.
+#
+# Verification — positive path, against the real seeded data, after the fix:
+#   $ node --import tsx/esm contracts/checks/f4-seed-page-singletons/check-seed-content.mjs
+#   Checked 6/6 documents, 27 fields, 4 image asset ref(s) resolved.
+#   PASS: all six singletons exist at their pinned ids with the migrated field values.
+#   Exit code: 0
+#
+# Verification — three negative controls, run via an in-memory harness (copies of
+# stripKeys/deepEqual exercised against synthetic perturbations of the real
+# contactPage.directContacts value; no live data or golden file touched or mutated):
+#   0. baseline — same 3 keys as golden, reordered (mirrors what Sanity actually
+#      returns on read): PASS (equal) — confirms the fix
+#   1. CHANGED VALUE (email field mutated): FAIL (not equal) — still caught
+#   2. MISSING key (role dropped): FAIL (not equal) — still caught
+#   2b. EXTRA key (phone added): FAIL (not equal) — still caught
+#   3. REORDERED ARRAY ELEMENTS (two-item array, elements swapped, each also with
+#      internally-reordered keys): FAIL (not equal) — array order is still
+#      significant and still caught
+#   Combined harness output: {"r0":true,"r1":false,"r2":false,"r2b":false,"r3":false}
+#   "ALL NEGATIVE CONTROLS BEHAVED AS EXPECTED", exit code: 0
+#
+# ============================================================================
 # WHY NOT A BROWSER/PLAYWRIGHT TEST
 # ============================================================================
 # Same wall as F3 (RF-11): the Studio at :3333 requires interactive Sanity OAuth login

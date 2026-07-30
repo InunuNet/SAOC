@@ -80,6 +80,29 @@ function stripKeys(obj) {
   return obj;
 }
 
+// Deep-equal for exactArray comparison. ARRAY ELEMENT ORDER IS SIGNIFICANT (these
+// arrays render in sequence on the page — a reordered array is a real defect). OBJECT
+// KEY ORDER IS NOT significant: Sanity's content-lake API serialises object fields
+// alphabetically on read regardless of the order they were written in, so comparing
+// via JSON.stringify (which is key-order-sensitive) produced false-positive failures
+// on semantically identical data. This walks both structures directly instead of
+// stringifying, so values/types/presence/array-length are still compared exactly.
+function deepEqual(a, b) {
+  if (a === b) return true;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b)) return false;
+    if (a.length !== b.length) return false;
+    return a.every((item, i) => deepEqual(item, b[i]));
+  }
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    const aKeys = Object.keys(a);
+    const bKeys = Object.keys(b);
+    if (aKeys.length !== bKeys.length) return false;
+    return aKeys.every((k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k]));
+  }
+  return false;
+}
+
 function portableTextToPlain(blocks) {
   if (!Array.isArray(blocks)) return '';
   return blocks
@@ -137,10 +160,12 @@ function checkField(docId, fieldName, spec, actual, failures, resolvedAssets) {
       break;
     }
     case 'exactArray': {
-      const got = JSON.stringify(stripKeys(actual ?? null));
-      const want = JSON.stringify(stripKeys(spec.value));
-      if (got !== want) {
-        failures.push(`${docId}.${fieldName}: expected ${want}, got ${got}`);
+      const stripped = stripKeys(actual ?? null);
+      const wantStripped = stripKeys(spec.value);
+      if (!deepEqual(stripped, wantStripped)) {
+        failures.push(
+          `${docId}.${fieldName}: expected ${JSON.stringify(wantStripped)}, got ${JSON.stringify(stripped)}`
+        );
       }
       break;
     }
