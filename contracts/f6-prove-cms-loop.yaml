@@ -1,0 +1,217 @@
+schema: athanor.contract/v1
+slug: f6-prove-cms-loop
+goal: >
+  Prove the one thing the whole mission was created to prove: a secretary edits a
+  field in the DEPLOYED Sanity Studio, publishes, and the change appears on the
+  DEPLOYED public site — no developer, no localhost. This is the only assertion in
+  the mission that verifies the actual client-facing claim; every other feature (F1-F5)
+  proved a necessary PART, not the whole loop.
+created_at: '2026-07-30'
+autonomy: high
+
+# ============================================================================
+# HEADLINE RESULT — READ THIS FIRST
+# ============================================================================
+# The loop is CURRENTLY BROKEN in production. This was discovered live while building
+# this contract (not assumed, not synthesized) and is the real, reproducible
+# negative-control result below. The Studio publish itself works (confirmed by an
+# authoritative Content Lake read immediately after clicking Publish), and
+# POST /api/revalidate returns 200 {"ok":true} (F2's fix is genuinely live), but the
+# published change NEVER reaches the public page — confirmed by polling for 120
+# straight seconds (12 attempts, 10s apart) after a real publish + a real successful
+# revalidate call, with the live page's response headers showing an UNCHANGING cached
+# response the entire time (see "ROOT CAUSE" below). This is not a flaky/slow
+# propagation issue that a longer timeout would fix — the evidence points to a
+# structural gap, not a delay.
+#
+# This is exactly the failure mode the mission was worried about ("if this passes for
+# the wrong reason, we will have certified a CMS that doesn't work") — inverted: this
+# contract's checks correctly and honestly FAIL against the real, current, broken
+# state. That is the correct outcome for this session. Someone (likely @dev or a new
+# feature dispatched by team-lead) needs to fix the underlying gap before this
+# contract's gate can go green — this contract does not attempt that fix; per
+# instructions it is contract + checks only.
+#
+# ============================================================================
+# DESIGN DECISIONS
+# ============================================================================
+#
+# 1. WHAT TO EDIT: aboutPage.boardIntroText, on the real F3-pinned "aboutPage"
+#    document (not a synthetic/throwaway document). Chosen over a throwaway document
+#    because: the loop being proven is CACHE INVALIDATION on an already-cached page —
+#    a brand-new document/slug that Next.js has never rendered before would exercise
+#    dynamicParams on-demand SSR fallback on its first request (trivially "works",
+#    proves nothing about revalidation), not the actual on-demand-ISR-revalidation path
+#    a real content edit takes. Within "must touch a real document", boardIntroText is
+#    the least invasive real field available:
+#      - Currently EMPTY (confirmed live, both via the Content Lake API and by reading
+#        the value directly out of the Studio's own textarea DOM node before touching
+#        it: `{ tag: 'TEXTAREA', value: '', disabled: false }`).
+#      - F4's golden (contracts/golden/f4-seed-page-singletons/aboutPage.golden.json)
+#        already asserts this field "absent" — "not a gap, about/page.tsx renders
+#        nothing when boardIntroText is null". A temporary sentinel value here, fully
+#        reverted, returns to EXACTLY the state F4 already requires — no conflict with
+#        F4's byte-for-byte assertions on any OTHER field.
+#      - Renders unconditionally when present: about/page.tsx —
+#        `{about?.boardIntroText ? <p>...} : null}` — a plain paragraph, easy to
+#        substring-match in rendered HTML.
+#      - Its Sanity fetch (sanity/queries.ts aboutPageQuery via about/page.tsx) is
+#        tagged `['aboutPage', 'sanity']` — BOTH the blanket 'sanity' tag the
+#        revalidate route always invalidates AND the type-specific tag a real webhook
+#        payload's `_type` would trigger. This cleanly tests the CACHE-INVALIDATION
+#        mechanism itself, uncontaminated by a SEPARATE, ALSO-REAL finding: the event
+#        detail page's fetch (app/(marketing)/events/[slug]/page.tsx) is tagged only
+#        `['events']` — no 'sanity' tag, and 'events' doesn't match the real document
+#        `_type` ("societyEvent") a webhook would send either. That is its own latent
+#        bug, flagged for @dev/team-lead below, NOT chosen as this contract's test
+#        subject specifically so a confirmed-working revalidation path (or a confirmed-
+#        broken one, as it turned out) isn't confused with that separate tag-mismatch.
+#    A single, permanent, guaranteed-idle field is safer than creating throwaway
+#    documents that pollute upcomingEventsQuery/eventSlugsQuery or F5's slug-uniqueness
+#    invariant. Both A1 assertion attempts below fully restored the document — verified
+#    via a direct dataset read AND a rendered-page fetch each time (see transcripts).
+#
+# 2. HOW ARRIVAL IS DETECTED: read the value from the DEPLOYED PUBLIC PAGE's rendered
+#    HTML at runtime (`fetch(BASE_URL + '/about')`, `cache: 'no-store'` on OUR request
+#    so we always see whatever the edge currently serves, not a browser/local cache) —
+#    never the Studio, never a direct Content Lake read used as a stand-in. A
+#    standalone negative control (check-detects-absence.mjs, A2) proves the detection
+#    mechanism itself correctly reports ABSENCE for a value that was never written
+#    anywhere, so a "found" result in the main check can be trusted as a genuine
+#    positive, not a detector that always returns true.
+#
+# 3. WAIT/RETRY BOUND: 120s total, 10s between attempts (12 attempts) — see "HEADLINE
+#    RESULT". This number is not a guess: @architect polled live for 108s (10 x 12s)
+#    after a real publish + successful revalidate and observed the identical cached
+#    response the entire time (`age` header climbing 205->316 with zero change).
+#    120s gives a small margin over what was ACTUALLY tested, not an untested "maybe
+#    it just needs longer" figure. A timeout is a hard FAIL (see check script), never
+#    reported as inconclusive or skipped.
+#
+# 4. WEBHOOK vs. DIRECT CALL — BE EXPLICIT: this contract asserts the DIRECT
+#    `POST /api/revalidate` path, NOT that Sanity's own configured webhook fires
+#    automatically on publish. Checked whether the dataset-scoped SANITY_API_TOKEN
+#    could inspect the real webhook config first (it would prove more, per the
+#    dispatch brief) — it cannot:
+#      $ curl -s -H "Authorization: Bearer $SANITY_API_TOKEN" \
+#          "https://api.sanity.io/v2021-06-07/hooks/projects/26yfbug4"
+#      {"statusCode":401,"error":"Unauthorized","message":"User must have grant
+#        sanity.project.webhooks/read to perform this operation"}
+#    This is the real, live response — the Editor token in .env.local does not have
+#    webhook-management scope (a separate Sanity Management API grant). This contract
+#    therefore does NOT claim proof that a configured webhook fires automatically; it
+#    proves the endpoint the webhook would call behaves correctly when invoked with the
+#    right payload — the more limited, still-defensible option the dispatch brief
+#    allowed for. Whether a webhook is actually configured in the Sanity project to
+#    call this endpoint on publish is a separate, unverified question — flagged, not
+#    assumed either way.
+#
+# ============================================================================
+# ROOT CAUSE EVIDENCE FOR THE HEADLINE RESULT (live, 2026-07-30)
+# ============================================================================
+# Response headers from the live page during the failing propagation window
+# (GET https://saoc-prod--saoc-webapp.europe-west4.hosted.app/about), taken AFTER a
+# confirmed dataset publish and a confirmed 200 revalidate response:
+#   x-nextjs-cache: HIT
+#   cdn-cache-status: hit
+#   cache-control: s-maxage=31536000
+#   age: 205  (then 218, 230, 242, 255, 267, 279, 292, 304, 316 across the poll —
+#              monotonically increasing, i.e. the SAME cached object served every time)
+#   x-fah-adapter: nextjs-14.0.21   (this project runs Next 16.2.12 — a large version
+#              gap between the app and the adapter string App Hosting reports; may or
+#              may not be related, flagged as a possible lead, not confirmed as cause)
+# No `export const revalidate` appears anywhere in app/ (confirmed via grep) — the app
+# correctly relies entirely on on-demand revalidation via revalidateTag(), which is
+# the intended App Router pattern. revalidateTag() marks NEXT.JS's OWN Data/Full-Route
+# Cache stale (this DOES happen — confirmed in an earlier poll cycle where the very
+# first post-revalidate response showed `x-nextjs-cache: STALE` before subsequent
+# requests reverted to HIT). But the response we actually receive is served from
+# Firebase App Hosting's CDN edge (`cdn-cache-status: hit`) with a 1-year `s-maxage`,
+# which does not re-check with the Next.js origin on a cache hit — so it never learns
+# the origin was invalidated. WORKING HYPOTHESIS, not confirmed: Firebase App
+# Hosting's adapter is expected to translate a revalidateTag()/revalidatePath() call
+# into a corresponding CDN purge (the `cache-tag` response header exists for exactly
+# this), but that translation either isn't firing or isn't matching the requested tag
+# for this project/adapter version. This needs an engineer with App Hosting CDN/adapter
+# context, not something to guess further at here — flagging clearly for team-lead
+# rather than proposing an unverified fix.
+#
+# ============================================================================
+# NEGATIVE-CONTROL EVIDENCE (real, captured live 2026-07-30, @architect)
+# ============================================================================
+# A2 (check-detects-absence.mjs) — fast, read-only, non-mutating, run first:
+#   $ node contracts/checks/f6-prove-cms-loop/check-detects-absence.mjs
+#   Checking that a never-written value is correctly reported absent: F6-NEGATIVE-CONTROL-1785445556794-30e1d4d5
+#   GET /about -> status 200, hasNeedle: false
+#   PASS: detection mechanism correctly reports absence for content that was never published.
+#   Exit code: 0
+#   (Re-run a second time with a fresh nonce for this delivery — same result, exit 0,
+#   confirming reproducibility, not a one-off.)
+#
+# A1 (check-studio-edit-reaches-site.mjs) — the full round trip, run against the REAL
+# deployed Studio and REAL production site, sentinel = F6-LOOP-PROOF-1785445563795-707808:
+#   $ node contracts/checks/f6-prove-cms-loop/check-studio-edit-reaches-site.mjs
+#   Baseline dataset field: null | baseline page: { status: 200, hasNeedle: false, ... }
+#   --- Step 2: open Studio, edit, publish ---
+#   --- Step 3: confirm publish landed in the dataset ---
+#   Publish confirmed in dataset.
+#   --- Step 4: call /api/revalidate ---
+#   revalidate response: { status: 200, json: { ok: true, revalidated: true, type: 'aboutPage' } }
+#   --- Step 5: poll the live public page for the sentinel ---
+#     [propagation] attempt 1 (t+0s) through attempt 12 (t+114s): all {"ok":false,"hasNeedle":false}
+#   FAIL (propagation): sentinel never appeared on /about within 120s of a confirmed
+#     Studio publish + a 200 response from /api/revalidate. ...
+#   --- Cleanup: clearing the field and re-publishing (always attempted) ---
+#   Dataset after cleanup: null | clean: true
+#   Cleanup revalidate response: { status: 200, json: { ok: true, revalidated: true, type: 'aboutPage' } }
+#     [cleanup-propagation] attempt 1 (t+0s): {"ok":true,"status":200,"hasNeedle":false}
+#   Cleanup verified: dataset field is empty AND the live page no longer shows the sentinel.
+#   RESULT: FAIL (see above).
+#   Exit code: 1
+# Post-run independent verification (outside the script, direct API + curl):
+#   $ (dataset read) -> {"boardIntroText":null}
+#   $ curl -s https://saoc-prod--saoc-webapp.europe-west4.hosted.app/about | grep -o "F6-LOOP-PROOF[^<\"]*"
+#   -> (no output) -> confirmed: no sentinel residue on live page
+# This exact mechanism (create sentinel, publish, confirm dataset write, revalidate,
+# poll, cleanup, verify cleanup) was independently rehearsed TWICE before this final
+# run on the delivered script (once with a shorter ~18s poll, once with a ~108s poll)
+# with IDENTICAL propagation-failure results and successful cleanup both times — this
+# is a reproducible finding, not a one-off fluke or a script bug.
+#
+# Genuine negative control on both counts required by the dispatch brief: A1 fails
+# when the edit, though genuinely published, has not propagated (the real current
+# state); A2 fails to find a sentinel that was never published at all (proving the
+# detector isn't rigged). Neither is vacuous.
+#
+# ============================================================================
+# WHY NOT A DIFFERENT TARGET TO GET A CLEAN PASS
+# ============================================================================
+# Deliberately did not pick an easier-to-pass target (e.g. a page/field this contract
+# hadn't yet proven broken) once the CDN-cache finding emerged. The mission's whole
+# premise is that a false PASS here is worse than an honest FAIL — picking around a
+# real defect to get a green gate would exactly reproduce F2's original failure mode
+# (six green assertions that missed a real break) at the feature meant to catch it.
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        THE assertion: edit aboutPage.boardIntroText in the deployed Studio (real
+        browser automation, authenticated via the proven localStorage-token
+        mechanism), publish, call /api/revalidate with the correct secret, and poll
+        the deployed public /about page's rendered HTML for the sentinel — bounded at
+        120s, hard FAIL on timeout. ALWAYS attempts and verifies cleanup (field
+        cleared, re-published, confirmed absent via both the dataset and the live
+        page) regardless of whether the propagation check passed or failed. Currently
+        FAILS — see HEADLINE RESULT above; this is the correct, honest state of the
+        real system today, not a broken check.
+      command: node contracts/checks/f6-prove-cms-loop/check-studio-edit-reaches-site.mjs
+
+    - id: A2
+      description: >
+        Negative control on the detection mechanism itself: a freshly-generated
+        value that has never been written anywhere must be reported absent from the
+        live public page. Fast, read-only, non-mutating — proves A1's "found" branch
+        is reachable and meaningful, not hardcoded true.
+      command: node contracts/checks/f6-prove-cms-loop/check-detects-absence.mjs
