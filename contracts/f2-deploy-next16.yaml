@@ -112,6 +112,26 @@
 # permission to get URL") for any caller without the App Hosting invoker identity — so it
 # cannot be used to bypass the public hosted.app domain in this check; A9 must test through
 # the real public entrypoint, which is what production traffic actually uses anyway.
+#
+# --- RECONFIRMATION — 2026-07-30, @architect (arch-f2d) ---
+# Both scripts existed at the exact `command:` paths above and were re-run fresh,
+# independently of the transcripts already recorded above, with identical outcomes:
+#   $ node contracts/checks/f2-deploy-next16/positive-path-secret-resolution-deployed.mjs
+#   FAIL: https://saoc-prod--saoc-webapp.europe-west4.hosted.app: POST /api/revalidate
+#     correct secret -> expected 200, got 401; GET /api/draft correct secret -> expected
+#     3xx redirect, got 401
+#   EXIT CODE: 1
+#
+#   $ node contracts/checks/f2-deploy-next16/build-identity-deployed.mjs
+#   PASS: Currently-serving build is build-2026-07-30-001 (state READY, 100% traffic,
+#     agreed by App Hosting and Cloud Run), compiled from commit
+#     01dd63f10c6525f24110e6d273c06c92a26faf99 ("chore: refresh llms-full.txt [skip ci]",
+#     committed 2026-07-30T05:13:46Z). Confirmed via git merge-base --is-ancestor that it
+#     descends from all of: 604ba3a (F1 hydration fix), ffb4225 (F3 singleton pinning),
+#     84dbf58 (F2 apphosting.yaml secrets).
+#   EXIT CODE: 0
+# No changes needed to either script or to this header's prior AMENDMENT block — this
+# confirms the recorded transcripts are reproducible, not a one-off.
 # ============================================================================
 schema: athanor.contract/v1
 slug: f2-deploy-next16
