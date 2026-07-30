@@ -1,0 +1,213 @@
+# NEGATIVE CONTROLS (recorded 2026-07-29 by @architect, run against the CURRENTLY
+# DEPLOYED prod host — saoc-prod--saoc-webapp.europe-west4.hosted.app — BEFORE any
+# deploy from this feature. This is the real pre-deploy baseline the mission file
+# calls out as "a rare opportunity for a real negative control" — captured, not
+# synthesized.
+#
+# --- A1 (hydration) ---
+#   $ node contracts/checks/f2-deploy-next16/no-hydration-error-deployed.mjs
+#   FAIL: 1 hydration-related issue(s) loading https://saoc-prod--saoc-webapp.europe-west4.hosted.app/ under throttle:
+#     [1] Minified React error #418; visit https://react.dev/errors/418?args[]=text&args[]=
+#         for the full message or use the non-minified dev environment for full errors and
+#         additional helpful warnings.
+#   EXIT CODE: 1
+#
+# Confirms prod is still pre-F1 — the exact defect QA reproduced locally, now
+# confirmed live. Must flip to PASS once F1+F2 ship.
+#
+# --- A2 (Studio document pane) ---
+#   $ node contracts/checks/f2-deploy-next16/studio-document-pane-deployed.mjs
+#   FAIL: /studio/structure/homePage shows the STOCK list view ("Create new" /
+#   "No documents"), not F3's pinned singleton document editor. F3 has not reached
+#   this deployment yet.
+#   EXIT CODE: 1
+#
+# Authenticated with the real SANITY_API_TOKEN Editor token from .env.local via
+# localStorage injection (see _shared.mjs for how the auth mechanism was PROVEN,
+# not assumed — verified end-to-end locally first: the same script pointed at
+# http://localhost:3333 opens the homePage document editor with fields (Title,
+# Hero Images, Mission Text, Countdown Target Date) and zero page errors). Prod
+# right now falls through to Sanity's default per-type list view because F3's
+# custom desk structure (sanity/structure.ts) has not been deployed. This also
+# rules out the false lead an earlier check of mine raised: prod's plain
+# `/studio/structure` nav ALREADY lists "Home Page" etc. by label — but that's just
+# each schema type's configured `title`, present in Sanity's stock structureTool()
+# too, and proves nothing about F3. Only navigating INTO the type (list view vs.
+# direct singleton editor) discriminates old vs. new — which this check does.
+#
+# --- A8 reinforcement baseline (etag) ---
+#   $ curl -sI https://saoc-prod--saoc-webapp.europe-west4.hosted.app/ | grep -i etag
+#   etag: "176ebrtkypf1pnd"
+#
+# Secondary signal only — A1/A2 are the real proof the new build is live.
+schema: athanor.contract/v1
+slug: f2-deploy-next16
+goal: >-
+  Deploy the two commits already on main (65bb3ff F1 hydration fix, 0eb25ab F3 singleton
+  pinning — the actual code is done and gate-verified locally; this feature is the deploy
+  and its production verification) to Firebase App Hosting, and prove three things against
+  the REAL deployed host (saoc-prod--saoc-webapp.europe-west4.hosted.app), never localhost:
+  (1) the home page throws no hydration errors under a throttled load — F1 reaching real
+  users; (2) /studio opens a document pane without the useEffectEvent crash — the P0 the
+  whole mission exists to fix, exercised via the F3-pinned homePage singleton so the same
+  check also proves F3 shipped and this is not a cached pre-F3 build; (3) apphosting.yaml is
+  corrected to declare the two server-side secrets it is currently missing that ALREADY
+  exist in Secret Manager (SANITY_REVALIDATE_SECRET, SANITY_API_TOKEN — see below), so this
+  deploy does not trade one production bug (broken Studio) for a silent one (draft-mode/
+  webhook revalidation dead on arrival). RESEND_API_KEY is a known, deliberately deferred
+  gap — see "Deliberately deferred" below, not part of this feature's assertions.
+  runConfig.memoryMiB is raised from 512 to 1024 as a preventive measure against
+  Turbopack build-memory pressure flagged as a live, unconfirmed-either-way risk in
+  docs/f2-apphosting-next16-compat.md #8 — cheap insurance against a failed-build retry
+  loop, not proof of an actual OOM (Cloud Build resource limits are not locally
+  reproducible; if the build still fails on memory after this bump, that is a real signal
+  to raise further, not a contract-assertable condition).
+
+  DEFINITIVE ENV-VAR GAP ANALYSIS (every server-side `process.env.*` read in app/, lib/,
+  sanity/ audited via `grep -rn "process\.env\." app lib sanity --include='*.ts*'`):
+    - SANITY_REVALIDATE_SECRET (app/api/draft/route.ts, app/api/revalidate/route.ts) —
+      MISSING from apphosting.yaml. Both routes fail CLOSED (`!expected || ...` → 401) when
+      unset, so draft-mode preview and the Sanity webhook's on-demand revalidation are
+      completely inert in prod today, not degraded. Brad is separately adding this to Secret
+      Manager for F6 — F2 only needs apphosting.yaml to reference it.
+    - SANITY_API_TOKEN (app/api/events/submit/route.ts, the public event-submission form's
+      write client) — MISSING. Fails closed (500 "CMS not configured") when unset, so the
+      public submit-an-event flow is currently dead in prod, not silently degraded.
+    - RESEND_API_KEY (lib/email.ts, called from app/api/contact/route.ts) — MISSING, and
+      DELIBERATELY DEFERRED, not part of this feature's assertions (A5/A6 dropped
+      2026-07-29 per team-lead after confirming no Resend account exists yet — neither
+      Secret Manager nor .env.local has a value for it, so declaring a `secret:` ref now
+      would fail the whole rollout, exactly the failure mode this analysis exists to avoid).
+      CORRECTS an assumption in the original dispatch brief: this does NOT break the contact
+      form. app/api/contact/route.ts wraps sendEmail in its own try/catch and logs+swallows
+      the error (non-fatal) — the Firestore write and the 201 response both still succeed.
+      The real effect is a SILENT degradation: submitters get "success" but never receive
+      the confirmation email, and nothing in prod today would surface that. Tracked as an
+      accepted known gap in .agent/memory/project/backlog.md under "Blocked (awaiting
+      Brad)" — Brad signs up at resend.com, verifies the sending domain, sets the secret,
+      and a follow-up feature adds RESEND_API_KEY + RESEND_FROM_ADDRESS to apphosting.yaml.
+    - PAYFAST_SANDBOX_MERCHANT_ID / _KEY / _PASSPHRASE (app/api/tickets/checkout,
+      app/api/tickets/itn) — also missing, but OUT OF SCOPE for this feature: Brad does not
+      have PayFast sandbox credentials yet (tracked separately in
+      .agent/memory/project/needs-human.md, "PayFast Sandbox credentials"). Declaring a
+      `secret:` reference to a Secret Manager secret that does not exist yet would make the
+      App Hosting rollout fail to resolve it — DO NOT add these three to apphosting.yaml in
+      this feature. Both routes already fail closed without them (checkout: 500 "Payment
+      gateway is not configured"; ITN: signature mismatch, ticket left untouched) — ticketing
+      staying unavailable in prod is a pre-existing, already-tracked gap, not a regression
+      this deploy introduces.
+    - SANITY_API_READ_TOKEN, SANITY_WEBHOOK_SECRET — appear in .env.local.example and in
+      stale docs (docs/m1-foundation.md, docs/a8-ci.md, docs/launch-checklist.md) but are NOT
+      read by any code in app/, lib/, or sanity/ today (confirmed: zero grep hits outside
+      docs and stale worktree copies). Do NOT add these to apphosting.yaml — they would be
+      dead config. docs/launch-checklist.md's "Firebase App Hosting secrets" table is stale
+      on this point (and on the webhook URL, which it lists as
+      /api/sanity-revalidate — the real route is app/api/revalidate/route.ts) — flagging for
+      a future @docs pass, not fixed here (out of this feature's scope).
+
+  SECRETS — STATUS CONFIRMED 2026-07-29 (team-lead set both directly and verified in
+  Secret Manager; no further interactive action needed before @dev deploys):
+    1. SANITY_REVALIDATE_SECRET — Secret Manager version 1, confirmed byte-identical to
+       .env.local (43 chars).
+    2. SANITY_API_TOKEN — Secret Manager version 2, set from .env.local's Editor token.
+    Neither secret was added to apphosting.yaml by the `--force` set commands (despite the
+    CLI help text implying it might) — A3 and A4 below still need @dev to edit the YAML by
+    hand to reference them.
+    RESEND_API_KEY is explicitly NOT in this list — see "Deliberately deferred" above.
+
+  DEPLOY COMMAND SEQUENCE (for @dev, not run here — architect does not deploy):
+    1. Secrets are already confirmed present (see above) — no need to re-check with Brad.
+    2. Edit apphosting.yaml per A3-A4 and A7 below.
+    3. Do NOT run `pnpm build` locally — App Hosting builds via Cloud Build/Buildpacks in
+       Google's own infrastructure (docs/f2-apphosting-next16-compat.md #8), not from a
+       local .next, and a local build would risk colliding with Brad's dev server on the
+       shared .next directory (forbidden by mission constraints regardless).
+    4. `firebase apphosting:backends:list --project saoc-webapp` to get the exact backend id
+       and confirm whether it's git-integrated (auto-deploy on push to main) or needs a
+       manual rollout.
+    5a. If git-integrated: ensure 65bb3ff, 0eb25ab, and the apphosting.yaml commit are on
+        `main` and pushed — the backend deploys automatically.
+    5b. If not: `firebase apphosting:rollouts:create <backend-id> --project saoc-webapp`.
+    6. Poll rollout status (`firebase apphosting:rollouts:list <backend-id>`) until it
+       reports success before running this contract's assertions — a rollout still in
+       progress will make A1/A2 fail against the pre-deploy baseline, which is a correct
+       fail, not a flake to retry blindly.
+created_at: '2026-07-29'
+autonomy: high
+
+features:
+  - id: F2
+    name: Deploy Next 16 to Firebase App Hosting and verify production
+    status: pending
+
+goldens: []
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- A1 — PRIMARY: home page reaches real users hydration-clean ----------
+    - id: A1
+      description: >-
+        The deployed home page (saoc-prod--saoc-webapp.europe-west4.hosted.app/) produces
+        zero page errors and zero hydration-mismatch console errors under a throttled load.
+        FAILED against the pre-deploy baseline (see header) with React error #418 — must
+        flip to PASS once F1 is live. Never skips green on a broken environment; unreachable
+        host or browser-launch failure is a hard FAIL (Athanor#1322).
+      command: node contracts/checks/f2-deploy-next16/no-hydration-error-deployed.mjs
+
+    # ---------- A2 — PRIMARY: the actual P0 — Studio document pane on prod ----------
+    - id: A2
+      description: >-
+        The deployed /studio opens the F3-pinned homePage singleton document editor (fields
+        + Publish control) with zero page errors and without parking on the login screen.
+        Exercises the exact crash site (DocumentPaneInner/useResetHistoryParams) that the
+        Studio shell alone does not reach. FAILED against the pre-deploy baseline (stock list
+        view, no F3 structure) — must flip to PASS once F2+F3 are live. Requires
+        SANITY_API_TOKEN (from .env.local or the environment) to authenticate; missing token
+        is a hard FAIL, never a skip (Athanor#1322).
+      command: node contracts/checks/f2-deploy-next16/studio-document-pane-deployed.mjs
+
+    # ---------- A3-A4 — env var gap closure (config correctness, not deployed-site checks) ----------
+    - id: A3
+      description: >-
+        apphosting.yaml declares SANITY_REVALIDATE_SECRET as a RUNTIME secret, closing the
+        gap that leaves app/api/draft/route.ts and app/api/revalidate/route.ts fail-closed
+        in prod today.
+      command: >-
+        grep -A2 "variable: SANITY_REVALIDATE_SECRET" apphosting.yaml | grep -q "secret:
+        SANITY_REVALIDATE_SECRET"
+
+    - id: A4
+      description: >-
+        apphosting.yaml declares SANITY_API_TOKEN as a RUNTIME secret, closing the gap that
+        leaves app/api/events/submit/route.ts's public event-submission write client
+        fail-closed in prod today.
+      command: >-
+        grep -A2 "variable: SANITY_API_TOKEN" apphosting.yaml | grep -q "secret:
+        SANITY_API_TOKEN"
+
+    # A5/A6 (RESEND_API_KEY / RESEND_FROM_ADDRESS) intentionally NOT included — see goal's
+    # "Deliberately deferred" note. No Resend account exists yet, so no Secret Manager value
+    # exists to reference; declaring a `secret:` ref to a nonexistent secret would fail the
+    # whole App Hosting rollout. Tracked in .agent/memory/project/backlog.md, "Blocked
+    # (awaiting Brad)" — a follow-up feature adds this once Brad signs up for Resend.
+
+    # ---------- A7 — build-memory precaution ----------
+    - id: A7
+      description: >-
+        runConfig.memoryMiB raised from 512 to at least 1024 as a preventive measure against
+        Turbopack build-memory pressure (flagged as a live, unconfirmed-either-way risk in
+        docs/f2-apphosting-next16-compat.md #8).
+      command: >-
+        grep -qE "memoryMiB: (1[0-9]{3}|[2-9][0-9]{3})" apphosting.yaml
+
+    # ---------- A8 — secondary freshness reinforcement ----------
+    - id: A8
+      description: >-
+        The deployed home page's ETag differs from the pre-deploy baseline
+        ("176ebrtkypf1pnd", recorded in this contract's header). Every successful App
+        Hosting build produces new `_next/static/**` asset hashes embedded in the HTML, so
+        the etag changing is a cheap, always-true-on-real-redeploy signal, independent of
+        F1's specific content fix — reinforcement only, secondary to A1/A2 which are the
+        real proof of substance.
+      command: node contracts/checks/f2-deploy-next16/etag-changed-deployed.mjs

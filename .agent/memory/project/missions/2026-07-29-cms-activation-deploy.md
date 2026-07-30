@@ -6,17 +6,17 @@ goal: Ship the Next 16 fix to production so the Studio actually works for the cl
   seed them from the existing hardcoded copy, populate the content gaps blocking route
   coverage, and prove end-to-end that a Studio edit changes the live site
 created_at: '2026-07-29T18:30:00.000000+00:00'
-started_at: null
-last_active_at: '2026-07-29T19:05:53.433057+00:00'
-status: pending
+started_at: '2026-07-30T07:24:51.199930+00:00'
+last_active_at: '2026-07-30T07:24:51.199930+00:00'
+status: in_progress
 cost_estimate:
   features: 6
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: M2
-  feature: F3
-  ts: '2026-07-29T19:05:53.433057+00:00'
+  milestone: M1
+  feature: F2
+  ts: '2026-07-30T07:24:51.199930+00:00'
 features:
 - id: F1
   name: Fix the home-page hydration bug (useCountdown / ShowBand) before shipping
@@ -35,7 +35,7 @@ features:
   completed_at: '2026-07-29T18:38:34.642417+00:00'
 - id: F2
   name: Deploy Next 16 to Firebase App Hosting and verify production
-  status: pending
+  status: in_progress
   inline_brief: 'Deploy and confirm the fix reaches real users. apphosting.yaml already
     pins runConfig.runtime nodejs22 and package.json declares engines.node >=22 (added
     in M2, never exercised by a real deploy). F2 of the previous mission verified
@@ -46,6 +46,7 @@ features:
     opens a document without the useEffectEvent crash. Watch build memory - runConfig.memoryMiB
     is 512 and Turbopack is now the default builder. This is the highest-value feature
     in the mission; everything proven so far is local-only.'
+  started_at: '2026-07-30T07:24:51.199737+00:00'
 - id: F3
   name: Pin the page singletons in a custom desk structure
   status: done
@@ -114,6 +115,7 @@ milestones:
   - F6
   gate: contract
 ---
+
 
 
 

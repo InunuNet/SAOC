@@ -82,7 +82,21 @@ _The cloud RemoteTrigger routines were a once-off autonomy experiment that didn'
 - This workspace's job is the SAOC deliverables, nothing else (not WOSA, not Athanor autonomy R&D).
 - Use the Athanor harness AS DESIGNED (mission → contract+goldens → @dev → @qa → @docs → gate → @maintainer) while building SAOC, and file every harness bug, friction point, or improvement idea upstream as a GitHub issue (`gh`) on the Athanor repo (`InunuNet/Athanor`) rather than working around it silently.
 
+## F2 — Deploy: secrets do not resolve at runtime — PARTIALLY DONE, mission NOT closed (cms-activation-deploy, 2026-07-29/30)
+
+Deploy shipped (commit `84dbf58`, backend `saoc-prod`) and the P0 (Studio editing) is genuinely
+fixed for real users — `/studio/structure/{homePage,aboutPage,nationalShow,judgingPage}` all open
+real document editors and all 12 marketing routes return 200, contract gate 6/6 against
+production. BUT draft-mode preview and webhook revalidation are dead in production.
+
+- [ ] **[P0, blocker] `SANITY_REVALIDATE_SECRET` / `SANITY_API_TOKEN` do not resolve at runtime — root cause CONFIRMED, fix not yet applied.** Verified with a clean 43-char secret: correct secret → 401, wrong → 401, none → 401 (all three identical, meaning the env var is never populated at all, not merely mismatched). Root cause: rollout `rollout-2026-07-29-002` for commit `84dbf58` FAILED ~40s in with a secret-access-grant error (IAM propagation lag), so the backend kept serving the PREVIOUS build (`build-2026-07-28-006`, commit `df5ee43`, predates the secrets declaration entirely). The `grantaccess` re-run since verified via Secret Manager `getIamPolicy` REST that both secrets ARE bound to the backend's real service account — so the blocker now is getting a NEW build to actually run: `firebase apphosting:rollouts:create --git-branch main [--force]` reports success but creates nothing (likely dedupes on commit SHA against the already-failed build for `84dbf58`). A REST workaround was identified and started but not confirmed: `POST .../backends/saoc-prod/builds?buildId=<unique-id>` with `{"source":{"codebase":{"branch":"main"}}}` returned a real build operation (`build-manual-1785355696`) still in progress at session end. **Resume here:** poll that build (or a fresh one) to READY, confirm its `config.effectiveEnv` resolves both secrets, then re-probe `/api/revalidate` (correct secret → 200, wrong/none → still 401) and `/api/draft`. Full trace (auth method, exact API calls, evidence) recorded in `learned.md` under "F2 Deploy — Secrets Runtime Resolution Failure" since the original scratch investigation file is gone (`brain.py wrap-up` purges scratch).
+- [ ] **App Hosting continuous deployment appears unarmed.** Push to `main` did not trigger an automatic build/rollout despite the backend being git-integrated with `InunuNet-SAOC` — a rollout had to be created explicitly, and the CLI prompted to "pick a branch for continuous deployment," suggesting auto-deploy was never armed. Likely related to (may share root cause with) the rollout-creation dedupe bug above. Blocks unattended/overnight deploys until fixed.
+- [ ] Verify whether `SANITY_API_TOKEN` resolves at runtime once a good build is live (needs a Firebase ID token or a temporary diagnostic route) — same fix as the revalidate secret should cover it, but confirm separately since it's a different code path (`app/api/events/submit/route.ts`'s write client).
+- [ ] **[security] Rotate `FIREBASE_ADMIN_PRIVATE_KEY`** (leaked into a session transcript via a non-allowlist `sed` redaction of `.env.local` — the pattern only matched single-line pairs, missing the multi-line key body) **and `SANITY_REVALIDATE_SECRET`** (became visible in screenshots during verification) before launch.
+- [ ] **No admin UI lists `contactSubmissions`** — enquiries submitted via the contact form are visible only in the Firebase console, not anywhere in `/admin`. Real gap before launch; worth scoping as a small follow-up feature (a simple authenticated list/table view, same pattern as the door check-in scanner).
+
 ## Blocked (awaiting Brad)
+- **RESEND_API_KEY not set anywhere (no Resend account signed up yet)** — found during F2 (`cms-activation-deploy`) apphosting.yaml env-var gap audit, 2026-07-29. `lib/email.ts` reads `process.env.RESEND_API_KEY`; `app/api/contact/route.ts` calls it inside its own try/catch and swallows the error, so this is NOT a contact-form outage — the Firestore write and HTTP 201 still succeed. Effect is silent degradation: submitters get a success response but never receive the confirmation email, in prod today and after F2's deploy. Fix: Brad signs up at resend.com, verifies the saoc.co.za sending domain, runs `firebase apphosting:secrets:set RESEND_API_KEY --project saoc-webapp`, then apphosting.yaml gets a `RESEND_API_KEY` (secret) + `RESEND_FROM_ADDRESS` (plain value) entry in a follow-up feature. Deliberately dropped from F2's contract (A5/A6 removed 2026-07-29 per team-lead) rather than declaring a `secret:` ref to a Secret Manager entry that doesn't exist, which would fail the whole App Hosting rollout.
 - **PayFast live merchant account (FICA verification)**: Brad to gather non-profit docs (NPO/PBO/Section 21 registration, proof of address, bank-issued proof of account) and register at registration.payfast.io. Only blocks going LIVE — D2/D4 development can proceed now against PayFast's free Sandbox.
 - **DNS records**: SPF/DKIM/DMARC + Firebase hosting A-record. Brad to add after Resend domain verified.
 - **Domain transfer**: saoc.co.za from current registrar to Inunu Net.
@@ -244,3 +258,22 @@ these are the residual items, not defects in what shipped.
   be verified and kept in sync with SAOC's actual membership records. This needs a
   client answer before the Members Portal itself can be built (not blocking on F3,
   which only pins the placeholder).
+
+### F2 — open contradiction to resolve next session
+
+- [ ] **Which build is actually live on `saoc-prod`?** @dev inspected the build resource and concluded prod serves
+  `build-2026-07-28-006` from commit `df5ee43` (pre-F1/F3), because rollout `rollout-2026-07-29-002` for `84dbf58`
+  FAILED at 19:23:37Z with "Error resolving secret version … grant your App Hosting backend access". But behavioural
+  evidence contradicts that: `/studio/structure/homePage` opens F3's **pinned** singleton editor on production
+  (re-verified 2026-07-30), and that code did not exist before commit `ffb4225`. A stock build would show a
+  "Create new" list — which is exactly what @architect's pre-deploy negative control captured. Resolve before
+  trusting either. Behavioural evidence is the stronger of the two.
+- [ ] `firebase apphosting:rollouts:create` reports "Successfully created a new rollout!" while creating **no** new
+  rollout or build resource (verified by REST GET; next sequential ids 404). Appears to dedupe on git SHA. @dev
+  worked around it by POSTing directly to the App Hosting REST builds endpoint (`build-manual-1785355696`) — status
+  unknown, never polled to completion.
+- [ ] IAM is confirmed fixed and durable: `firebase-app-hosting-compute@saoc-webapp.iam.gserviceaccount.com` holds
+  `secretAccessor` + `viewer` on both `SANITY_REVALIDATE_SECRET` and `SANITY_API_TOKEN`, verified via Secret Manager
+  IAM policy REST calls. The remaining failure is getting a build that references the secrets to actually roll out.
+- [ ] Production ETag is NOT a build discriminator — it changed again (`a8e4pxlfw41lfq` → `1337qsztbrz1lfq`) without a
+  confirmed new rollout, because ISR prerender regeneration also changes it. A8 is weaker evidence than it looks.
