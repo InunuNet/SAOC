@@ -92,9 +92,18 @@ autonomy: high
 # All 6 singleton types have 0 documents today (confirmed live, same state F3's
 # contract recorded on 2026-07-29 — F3 pins but does not seed, so nothing has changed).
 #
+# REVISION 2026-07-30 (same day, before any @dev change): check-seed-content.mjs's
+# image/imageArray validation was tightened from a structural-only check (asset._ref
+# matches /^image-/) to also require the referenced sanity.imageAsset document to
+# RESOLVE with a non-empty `url` (batched `*[_id in $ids]{_id, url}` lookup, see the
+# script's collectAssetRefs/isResolvableImageRef). Reason: a well-formed but dangling
+# reference — the failure mode of a half-failed upload, where the document write
+# succeeds and the ref is well-formed but the asset never lands — previously passed.
+# It now hard-fails. Re-run below is AFTER this tightening.
+#
 # A1 (check-seed-content.mjs) run against this exact unmodified state:
 #   $ node --import tsx/esm contracts/checks/f4-seed-page-singletons/check-seed-content.mjs
-#   Checked 0/6 documents, 0 fields.
+#   Checked 0/6 documents, 0 fields, 0 image asset ref(s) resolved.
 #   FAIL: aboutPage: document does not exist at the pinned id — 0 documents seeded (hard fail, not a skip)
 #   FAIL: contactPage: document does not exist at the pinned id — 0 documents seeded (hard fail, not a skip)
 #   FAIL: homePage: document does not exist at the pinned id — 0 documents seeded (hard fail, not a skip)
@@ -103,8 +112,13 @@ autonomy: high
 #   FAIL: nationalShow: document does not exist at the pinned id — 0 documents seeded (hard fail, not a skip)
 #   6 assertion(s) failed.
 #   Exit code: 1
-#   Genuine failure — every document is missing, none of the six checks vacuously
-#   passes. This is the falsifiable positive-path assertion the mission asked for.
+#   Genuine failure, same reason as before the tightening — every document is missing
+#   (asset resolution never runs, "0 image asset ref(s) resolved", because there are no
+#   documents yet to collect refs from). None of the six checks vacuously passes. This
+#   is the falsifiable positive-path assertion the mission asked for; the asset-
+#   resolvability tightening is exercised once @dev's seed script actually uploads
+#   images and writes documents, at which point a dangling ref would now be caught
+#   where it previously was not.
 #
 # A2 (check-no-duplicate-seeds.mjs) run against the same state:
 #   $ node --import tsx/esm contracts/checks/f4-seed-page-singletons/check-no-duplicate-seeds.mjs

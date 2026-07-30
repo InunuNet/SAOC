@@ -13,16 +13,21 @@
 //   - "portableText" array of portable-text blocks; plain text is extracted (all
 //                  span text, blocks joined by "\n", trimmed) and compared to
 //                  golden.value as a string — ignores Sanity's random _key/_type ids
-//   - "image"      single image field: _type === "image" and asset._ref matches
-//                  /^image-/ — does not compare exact asset ids (non-deterministic
-//                  per upload)
+//   - "image"      single image field: _type === "image", asset._ref matches
+//                  /^image-/, AND the referenced sanity.imageAsset document actually
+//                  RESOLVES (batched `*[_id in $ids]{_id, url}` lookup) with a
+//                  non-empty `url` — a well-formed but dangling reference (the
+//                  failure mode of a half-failed upload: document write succeeds,
+//                  ref is well-formed, asset never landed) is a FAIL, not a pass.
+//                  Does not compare exact asset ids (non-deterministic per upload).
 //   - "imageArray" array of image fields; length >= golden.minCount, every item
-//                  passes the same "image" structural check
+//                  passes the same "image" structural + resolvability check
 //   - "absent"     field must be null/undefined/empty-string/empty-array — proves a
 //                  documented gap was NOT quietly papered over with invented content
 //
-// A missing token, an unreachable API, or a missing document is a HARD FAIL (never a
-// skip) — Athanor#1322 is exactly a SKIP silently reporting as PASS.
+// A missing token, an unreachable API, a missing document, or a dangling/unresolvable
+// asset reference is a HARD FAIL (never a skip) — Athanor#1322 is exactly a SKIP
+// silently reporting as PASS.
 //
 // Run as: node --import tsx/esm contracts/checks/f4-seed-page-singletons/check-seed-content.mjs
 // Requires SANITY_API_READ_TOKEN (or SANITY_API_TOKEN) in .env.local.
@@ -83,7 +88,7 @@ function portableTextToPlain(blocks) {
     .trim();
 }
 
-function isValidImageRef(img) {
+function isWellFormedImageRef(img) {
   return (
     img &&
     typeof img === 'object' &&
@@ -94,7 +99,34 @@ function isValidImageRef(img) {
   );
 }
 
-function checkField(docId, fieldName, spec, actual, failures) {
+// Structural check (well-formed ref) PLUS resolvability: the referenced
+// sanity.imageAsset document must actually exist and have a usable `url`.
+// `resolvedAssets` is a Map<assetId, url|undefined> built from a batched
+// `*[_id in $ids]{_id, url}` query — see resolveAssetRefs() below.
+function isResolvableImageRef(img, resolvedAssets) {
+  if (!isWellFormedImageRef(img)) return false;
+  const url = resolvedAssets.get(img.asset._ref);
+  return typeof url === 'string' && url.length > 0;
+}
+
+function collectAssetRefs(golden, doc, refs) {
+  for (const [fieldName, spec] of Object.entries(golden.fields ?? {})) {
+    if (spec.kind === 'image') {
+      const ref = doc?.[fieldName]?.asset?._ref;
+      if (typeof ref === 'string') refs.add(ref);
+    } else if (spec.kind === 'imageArray') {
+      const arr = doc?.[fieldName];
+      if (Array.isArray(arr)) {
+        for (const item of arr) {
+          const ref = item?.asset?._ref;
+          if (typeof ref === 'string') refs.add(ref);
+        }
+      }
+    }
+  }
+}
+
+function checkField(docId, fieldName, spec, actual, failures, resolvedAssets) {
   switch (spec.kind) {
     case 'exact': {
       if (actual !== spec.value) {
@@ -122,8 +154,12 @@ function checkField(docId, fieldName, spec, actual, failures) {
       break;
     }
     case 'image': {
-      if (!isValidImageRef(actual)) {
-        failures.push(`${docId}.${fieldName}: expected a valid Sanity image reference, got ${JSON.stringify(actual)}`);
+      if (!isWellFormedImageRef(actual)) {
+        failures.push(`${docId}.${fieldName}: expected a well-formed Sanity image reference, got ${JSON.stringify(actual)}`);
+      } else if (!isResolvableImageRef(actual, resolvedAssets)) {
+        failures.push(
+          `${docId}.${fieldName}: image reference "${actual.asset._ref}" is well-formed but does not resolve to an asset with a usable url — dangling reference (half-failed upload)`
+        );
       }
       break;
     }
@@ -135,8 +171,12 @@ function checkField(docId, fieldName, spec, actual, failures) {
         break;
       }
       actual.forEach((item, i) => {
-        if (!isValidImageRef(item)) {
-          failures.push(`${docId}.${fieldName}[${i}]: not a valid Sanity image reference — ${JSON.stringify(item)}`);
+        if (!isWellFormedImageRef(item)) {
+          failures.push(`${docId}.${fieldName}[${i}]: not a well-formed Sanity image reference — ${JSON.stringify(item)}`);
+        } else if (!isResolvableImageRef(item, resolvedAssets)) {
+          failures.push(
+            `${docId}.${fieldName}[${i}]: image reference "${item.asset._ref}" is well-formed but does not resolve to an asset with a usable url — dangling reference (half-failed upload)`
+          );
         }
       });
       break;
@@ -171,6 +211,11 @@ const failures = [];
 let checkedDocs = 0;
 let checkedFields = 0;
 
+// Pass 1: fetch every document, collect every image asset._ref referenced by any
+// "image"/"imageArray" golden field along the way.
+const loaded = [];
+const assetRefs = new Set();
+
 for (const file of goldenFiles.sort()) {
   const golden = JSON.parse(readFileSync(path.join(GOLDEN_DIR, file), 'utf8'));
   const docId = golden._id;
@@ -188,18 +233,37 @@ for (const file of goldenFiles.sort()) {
     continue;
   }
   checkedDocs += 1;
+  loaded.push({ docId, golden, doc });
+  collectAssetRefs(golden, doc, assetRefs);
+}
 
+// Pass 2: resolve every collected asset ref in one batched query. Unreachable API
+// here is a hard fail too — never silently treat "couldn't check" as "passes".
+const resolvedAssets = new Map();
+if (assetRefs.size > 0) {
+  let assetDocs;
+  try {
+    assetDocs = await client.fetch(`*[_id in $ids]{_id, url}`, { ids: [...assetRefs] });
+  } catch (err) {
+    console.error(`FAIL: asset-resolution GROQ query for ${assetRefs.size} ref(s) threw — ${err.message}`);
+    process.exit(1);
+  }
+  for (const a of assetDocs) resolvedAssets.set(a._id, a.url);
+}
+
+// Pass 3: validate every field, now with resolvedAssets available for image checks.
+for (const { docId, golden, doc } of loaded) {
   if (doc._type !== golden._type) {
     failures.push(`${docId}: expected _type "${golden._type}", got "${doc._type}"`);
   }
 
   for (const [fieldName, spec] of Object.entries(golden.fields ?? {})) {
-    checkField(docId, fieldName, spec, doc[fieldName], failures);
+    checkField(docId, fieldName, spec, doc[fieldName], failures, resolvedAssets);
     checkedFields += 1;
   }
 }
 
-console.log(`Checked ${checkedDocs}/${goldenFiles.length} documents, ${checkedFields} fields.`);
+console.log(`Checked ${checkedDocs}/${goldenFiles.length} documents, ${checkedFields} fields, ${assetRefs.size} image asset ref(s) resolved.`);
 
 if (failures.length > 0) {
   failures.forEach((f) => console.error(`FAIL: ${f}`));
