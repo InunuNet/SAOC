@@ -7,16 +7,16 @@ goal: Ship the Next 16 fix to production so the Studio actually works for the cl
   coverage, and prove end-to-end that a Studio edit changes the live site
 created_at: '2026-07-29T18:30:00.000000+00:00'
 started_at: '2026-07-30T07:24:51.199930+00:00'
-last_active_at: '2026-07-30T20:49:22.413364+00:00'
+last_active_at: '2026-07-30T20:50:31.311515+00:00'
 status: in_progress
 cost_estimate:
   features: 6
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: M1
-  feature: F2
-  ts: '2026-07-30T20:49:22.413364+00:00'
+  milestone: M2
+  feature: F4
+  ts: '2026-07-30T20:50:31.311515+00:00'
 features:
 - id: F1
   name: Fix the home-page hydration bug (useCountdown / ShowBand) before shipping
@@ -63,7 +63,7 @@ features:
   completed_at: '2026-07-29T19:05:53.432917+00:00'
 - id: F4
   name: Seed the six page singletons from existing hardcoded copy
-  status: pending
+  status: done
   inline_brief: Create one document per singleton, populated from the copy currently
     hardcoded in the components, so the site becomes genuinely CMS-driven without
     changing anything visible. Every page already has graceful per-field fallbacks
@@ -73,6 +73,7 @@ features:
     Then fix docs/secretary-cms-guide.md sections 7 and 12, which currently instruct
     the secretary to open documents that do not exist. The dataset is placeholder
     content on a pre-production site, so creating documents is safe.
+  completed_at: '2026-07-30T20:50:31.311366+00:00'
 - id: F5
   name: Populate content gaps - event slugs and hostSociety
   status: pending
@@ -116,6 +117,7 @@ milestones:
   - F6
   gate: contract
 ---
+
 
 
 
