@@ -7,6 +7,11 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { eventBySlugQuery, eventSlugsQuery } from '@/sanity/queries';
 import type { SanityEvent } from '@/types';
 
+// F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
+// Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
+// propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
+export const revalidate = 60;
+
 interface SlugResult {
   slug: string;
 }
@@ -14,7 +19,7 @@ interface SlugResult {
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
   const results = await sanityFetch<SlugResult[]>({
     query: eventSlugsQuery,
-    tags: ['events'],
+    tags: ['societyEvent', 'sanity'],
   });
   return (results ?? []).map((r) => ({ slug: r.slug }));
 }
@@ -28,7 +33,7 @@ export async function generateMetadata({
   const event = await sanityFetch<SanityEvent>({
     query: eventBySlugQuery,
     params: { slug },
-    tags: ['events'],
+    tags: ['societyEvent', 'sanity'],
   });
   const title = event?.title ?? 'Event';
   const description = event?.description ?? undefined;
@@ -61,7 +66,7 @@ export default async function EventDetailPage({
   const event = await sanityFetch<SanityEvent>({
     query: eventBySlugQuery,
     params: { slug },
-    tags: ['events'],
+    tags: ['societyEvent', 'sanity'],
   });
 
   if (!event) {
