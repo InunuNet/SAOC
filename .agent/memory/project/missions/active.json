@@ -1,9 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-07-29-cms-activation-deploy.md",
+  "mission": ".agent/memory/project/missions/2026-08-05-cms-loop-and-wiring.md",
   "checkpoint": {
-    "milestone": "M3",
-    "feature": "F6",
-    "ts": "2026-07-30T21:11:17.142770+00:00"
+    "milestone": null,
+    "feature": null
   },
-  "activated_at": "2026-07-30T21:11:17.143040+00:00"
+  "activated_at": "2026-08-05T21:34:38.351079+00:00"
 }

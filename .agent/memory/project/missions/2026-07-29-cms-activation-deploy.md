@@ -7,8 +7,8 @@ goal: Ship the Next 16 fix to production so the Studio actually works for the cl
   coverage, and prove end-to-end that a Studio edit changes the live site
 created_at: '2026-07-29T18:30:00.000000+00:00'
 started_at: '2026-07-30T07:24:51.199930+00:00'
-last_active_at: '2026-07-30T21:11:17.142770+00:00'
-status: in_progress
+last_active_at: '2026-08-05T21:34:38.129452+00:00'
+status: paused
 cost_estimate:
   features: 6
   milestones: 3
@@ -89,7 +89,7 @@ features:
   completed_at: '2026-07-30T20:54:12.021620+00:00'
 - id: F6
   name: Prove the CMS end-to-end - a Studio edit changes the site
-  status: blocked
+  status: skipped
   inline_brief: The assertion that actually matters to the client, and the one thing
     still unproven after the previous mission. Edit a field in the deployed Studio,
     publish, and confirm the change appears on the deployed site - exercising the
@@ -98,6 +98,8 @@ features:
     is EMPTY in .env.local, so the automated check for this silently SKIPs and a SKIP
     reports as PASS - set a real secret in the deployed environment or this proves
     nothing. Verify against the deployed site, not localhost.
+  notes: 'Skipped: Superseded by mission cms-loop-and-wiring F1 — root cause diagnosed
+    (missing CDN purge on revalidate), fix carried into the new mission'
 milestones:
 - id: M1
   name: Ship it - get the fix in front of real users
@@ -118,6 +120,8 @@ milestones:
   - F6
   gate: contract
 ---
+
+
 
 
 
