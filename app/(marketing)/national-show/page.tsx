@@ -2,13 +2,17 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
+import { PortableText } from '@portabletext/react';
+import type { PortableTextBlock } from '@portabletext/react';
 
 import { ShowCountdown } from '@/components/show';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { showClassesQuery, pastShowsQuery } from '@/sanity/queries';
+import { showClassesQuery, pastShowsQuery, nationalShowQuery } from '@/sanity/queries';
+import { urlFor } from '@/sanity/lib/image';
 import { showClasses as staticClasses } from '@/lib/data/showClasses';
 import { shows as staticShows } from '@/lib/data/shows';
 import type { ShowClass, NationalShow } from '@/types';
+import type { SanityImageSource } from '@sanity/image-url';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -37,6 +41,15 @@ interface SanityPastShow {
   entries: number | null;
   exhibitors: number | null;
   awards: number | null;
+}
+
+interface SanityNationalShow {
+  title: string | null;
+  showDate: string | null;
+  location: string | null;
+  hero: SanityImageSource | null;
+  countdownDate: string | null;
+  exhibitorStages: PortableTextBlock[] | null;
 }
 
 const EXHIBITOR_STAGES = [
@@ -90,10 +103,16 @@ function toRomanOrdinal(n: number): string {
 }
 
 export default async function NationalShowPage() {
-  const [sanityClasses, sanityShows] = await Promise.all([
+  const [sanityClasses, sanityShows, sanityShow] = await Promise.all([
     sanityFetch<SanityShowClass[]>({ query: showClassesQuery, tags: ['showClass', 'sanity'] }),
     sanityFetch<SanityPastShow[]>({ query: pastShowsQuery, tags: ['show', 'sanity'] }),
+    sanityFetch<SanityNationalShow>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
   ]);
+
+  const title = sanityShow?.title || 'The South African National Orchid Show';
+  const location = sanityShow?.location || 'CTICC, Cape Town';
+  const heroUrl = sanityShow?.hero ? urlFor(sanityShow.hero).width(2400).url() : '/images/orchid-dark.jpg';
+  const exhibitorStages = sanityShow?.exhibitorStages ?? null;
 
   const classes: ShowClass[] =
     sanityClasses && sanityClasses.length > 0
@@ -120,7 +139,7 @@ export default async function NationalShowPage() {
       {/* ── Show Hero ── */}
       <section className="relative flex min-h-[760px] items-end overflow-hidden bg-primary-800">
         <Image
-          src="/images/orchid-dark.jpg"
+          src={heroUrl}
           alt="National Show bench of orchids"
           fill
           priority
@@ -144,8 +163,7 @@ export default async function NationalShowPage() {
             {toRomanOrdinal(19)} · Nineteenth Edition
           </p>
           <h1 className="mt-4 max-w-[16ch] font-serif text-[clamp(42px,5.6vw,76px)] font-medium leading-[1.04] tracking-[-0.015em] text-ivory">
-            The South African National{' '}
-            <em className="not-italic text-accent-soft">Orchid Show</em>
+            {title}
           </h1>
 
           {/* 4-up meta grid */}
@@ -153,7 +171,7 @@ export default async function NationalShowPage() {
             {[
               { label: 'Dates', value: '18–21 Sep 2027' },
               { label: 'Host', value: 'Western Cape' },
-              { label: 'Venue', value: 'CTICC, Cape Town' },
+              { label: 'Venue', value: location },
               { label: 'Cycle', value: 'Triennial' },
             ].map(({ label, value }) => (
               <div key={label} className="border-l-2 border-accent/40 pl-4">
@@ -171,7 +189,7 @@ export default async function NationalShowPage() {
               Opens in
             </p>
             <Suspense fallback={null}>
-              <ShowCountdown />
+              <ShowCountdown countdownDate={sanityShow?.countdownDate} />
             </Suspense>
           </div>
 
@@ -354,24 +372,30 @@ export default async function NationalShowPage() {
             Exhibitor information
           </h2>
 
-          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {EXHIBITOR_STAGES.map(({ stage, title, dates, description }) => (
-              <div
-                key={stage}
-                className="flex flex-col gap-3 p-6"
-                style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
-              >
-                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-accent">
-                  Stage {stage}
-                </p>
-                <h3 className="font-serif text-[20px] font-medium leading-snug text-ivory">
-                  {title}
-                </h3>
-                <p className="font-mono text-[11px] tracking-[0.1em] text-ivory/50">{dates}</p>
-                <p className="font-sans text-[14px] leading-relaxed text-ivory/70">{description}</p>
-              </div>
-            ))}
-          </div>
+          {exhibitorStages && exhibitorStages.length > 0 ? (
+            <div className="mt-12 max-w-none font-sans text-[15px] leading-relaxed text-ivory/80">
+              <PortableText value={exhibitorStages} />
+            </div>
+          ) : (
+            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {EXHIBITOR_STAGES.map(({ stage, title, dates, description }) => (
+                <div
+                  key={stage}
+                  className="flex flex-col gap-3 p-6"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+                >
+                  <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-accent">
+                    Stage {stage}
+                  </p>
+                  <h3 className="font-serif text-[20px] font-medium leading-snug text-ivory">
+                    {title}
+                  </h3>
+                  <p className="font-mono text-[11px] tracking-[0.1em] text-ivory/50">{dates}</p>
+                  <p className="font-sans text-[14px] leading-relaxed text-ivory/70">{description}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

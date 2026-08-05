@@ -2,8 +2,14 @@
 
 import { useState, useSyncExternalStore } from 'react';
 
-const TARGET_MS = new Date('2027-09-18T09:00:00+02:00').getTime();
+// Mirrors components/home/ShowBand.tsx's DEFAULT_COUNTDOWN_DATE fallback pattern —
+// used when countdownDate is absent/invalid so the countdown never renders NaN.
+const DEFAULT_COUNTDOWN_DATE = '2027-09-18T09:00:00+02:00';
 const TICK_MS = 1_000;
+
+export interface ShowCountdownProps {
+  countdownDate?: string | null;
+}
 
 interface Remain {
   days: number;
@@ -12,8 +18,14 @@ interface Remain {
   seconds: number;
 }
 
-function compute(): Remain {
-  const diff = Math.max(0, TARGET_MS - Date.now());
+function resolveTargetMs(countdownDate?: string | null): number {
+  const candidate = countdownDate ? new Date(countdownDate) : null;
+  const target = candidate && !isNaN(candidate.getTime()) ? candidate : new Date(DEFAULT_COUNTDOWN_DATE);
+  return target.getTime();
+}
+
+function compute(targetMs: number): Remain {
+  const diff = Math.max(0, targetMs - Date.now());
   return {
     days: Math.floor(diff / 86_400_000),
     hours: Math.floor((diff % 86_400_000) / 3_600_000),
@@ -35,8 +47,8 @@ function getServerSnapshot(): Remain {
 // A tiny external store, one per component instance: it owns the interval
 // and a cached snapshot so getSnapshot() returns a stable reference between
 // ticks (required by useSyncExternalStore to avoid needless re-renders).
-function createCountdownStore() {
-  let snapshot = compute();
+function createCountdownStore(targetMs: number) {
+  let snapshot = compute(targetMs);
   const listeners = new Set<() => void>();
   let intervalId: ReturnType<typeof setInterval> | null = null;
 
@@ -44,7 +56,7 @@ function createCountdownStore() {
     listeners.add(onStoreChange);
     if (intervalId === null) {
       intervalId = setInterval(() => {
-        snapshot = compute();
+        snapshot = compute(targetMs);
         listeners.forEach((listener) => listener());
       }, TICK_MS);
     }
@@ -64,10 +76,10 @@ function createCountdownStore() {
   return { subscribe, getSnapshot };
 }
 
-export function ShowCountdown() {
+export function ShowCountdown({ countdownDate }: ShowCountdownProps) {
   // Lazy initializer: the store (and its interval) is created once per
   // mounted instance, not on every render.
-  const [{ subscribe, getSnapshot }] = useState(createCountdownStore);
+  const [{ subscribe, getSnapshot }] = useState(() => createCountdownStore(resolveTargetMs(countdownDate)));
 
   const remain = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
