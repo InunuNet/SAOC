@@ -162,3 +162,77 @@ face value; both wrong claims below were caught that way.
 - (2026-07-30) **Assert mechanisms only with a file:line, never from plausibility.** The orchestrator asserted twice this session that a mechanism was broken without checking the source first — that the national-show archive list "links to a 404" (the cards are plain `<div>`s, not links — only the detail page's prev/next buttons generate `archive/${year}` hrefs) and that `nationalShow.countdownDate` was a dead field (it drives the home-page countdown; a *different* field, the National Show page's own hardcoded countdown target, was the actually-dead one). Both were caught and corrected by agents pushing back with the actual line numbers. Record this as correct, expected agent behaviour — an agent contradicting the orchestrator with a specific citation should be trusted over an orchestrator's unverified claim, not treated as insubordination.
 - (2026-07-30) `firebase apphosting:rollouts:create --git-branch main [--force]` can report "Successfully created a new rollout!" while creating nothing verifiable — the CLI appears to dedupe on git commit SHA and silently reuse/reference an existing (possibly failed) Build for that SHA rather than starting fresh. Confirm any CLI-reported rollout by listing rollouts and sorting client-side by `createTime` (the API's default order is not chronological) or by a direct REST GET on the resulting ID. A REST `POST .../backends/<backend>/builds?buildId=<unique-id>` with an explicit source works as a bypass when the CLI path is stuck.
 - (2026-07-30) `execution/gh_closure_scan.py` throws and returns zero candidates (with a misleading `ERROR:` that looks like a hard failure but exits 0) when any file in `.agent/memory/project/missions/` lacks YAML frontmatter — e.g. a plain planning note like `OVERNIGHT-PLAN-2026-07-30.md`. It silently skips scanning the rest of the missions directory rather than warning and continuing. TEMPLATE BUG, filed to backlog per the standing "report upstream, don't fix Athanor directly" rule — not fixed here.
+
+## Orchestration Discipline — the recurring failure (2026-08-05/06, cms-loop-and-wiring)
+
+**This is the highest-value entry in this file. Brad has raised it repeatedly across sessions;
+it is the reason work feels like "perpetual loops of bug fixing" rather than progress.**
+
+- (2026-08-06) **The orchestrator's job is to dispatch a lean team against small, clearly-scoped
+  tasks — not to load context and execute.** The failure mode is subtle because it feels
+  productive: orchestrator reads a file to "check something", finds a bug, fixes the one-liner,
+  runs the check, reads the output, reruns it. Every one of those steps is context loaded into the
+  orchestrator instead of an agent, and the orchestrator's context is the one thing that cannot be
+  parallelised or discarded. Once it is full, the session ends and the next one re-derives
+  everything. **Symptom to watch for: if the orchestrator is running `node contracts/checks/...`
+  or editing a file, it has already gone wrong.** Delegate the verification, delegate the fix.
+- (2026-08-06) Concrete instance: the orchestrator hand-ran F1's A2/A3, F6's A1, and F2's A1,
+  read a 20k-char HTML dump into its own context, then edited `_shared.mjs` directly because
+  "it's only one line and dispatching is slower." It was not faster — @architect was already
+  mid-fix on the same file with a better diagnosis (`process.exit(1)` skipping `try/finally`
+  cleanup, not the `waitForTimeout` race the orchestrator found), so the edit was wasted work
+  AND collided with an agent's owned file.
+- (2026-08-06) **Small, complete, clearly-directed tasks beat large exploratory ones.** The
+  agents that performed best this session got a specific deliverable, a named output path, an
+  explicit "do not do X", and a definition of done (`docs/f1-cdn-purge-api-findings.md`,
+  `contracts/cms-loop-f4-orphaned-types.yaml`). The ones that stalled got open-ended briefs.
+- (2026-08-06) **Athanor is a guideline to follow, not a project to maintain.** Harness bugs get
+  fixed locally in whatever way is cleanest, PR'd to `InunuNet/Athanor`, and then dropped — they
+  are never allowed to become the session's focus. SAOC is the deliverable.
+
+## Verification-Harness Lessons (2026-08-06)
+
+- (2026-08-06) **`process.exit(1)` in a shared test helper silently skips every `try/finally`
+  cleanup block up the stack.** `process.exit()` does not unwind the stack the way a thrown
+  exception does. Every helper in `contracts/checks/f6-prove-cms-loop/_shared.mjs` called it on
+  failure, so a transient failure during a check's *cleanup* phase killed the process before the
+  cleanup could run or report — leaving a test sentinel live on the public site with no signal
+  that anything went wrong. Fix: helpers `throw`, never `process.exit`. Applies to any check that
+  mutates real content.
+- (2026-08-06) **A cleanup path that has never actually executed is not tested.** F6's cleanup
+  poll exited on the FIRST clean read, which was calibrated when the CDN TTL was one year and
+  propagation never succeeded — so "sentinel absent" was trivially true on attempt 1 and the path
+  was never genuinely exercised until F1 shipped. Any assertion whose happy path has never run
+  under real conditions should be treated as unverified code.
+- (2026-08-06) **Fixed `waitForTimeout(N)` before asserting on a DOM element is a flake generator.**
+  A pinned singleton renders one Studio pane and usually wins the race; a collection deep-link
+  (`type;id`) renders a list pane AND a document pane and intermittently loses. Wait on the
+  locator, not the clock. Worse, the failure message blamed "schema changed, or auth failed",
+  sending the orchestrator after the wrong cause — **a diagnostic that misdirects is worse than
+  none**; failure messages must name the most likely cause first.
+- (2026-08-06) **A running check is not a failed check.** The orchestrator curled a live page
+  mid-run, saw a test sentinel, and declared cleanup broken — dispatching an agent at a
+  non-existent bug. Cleanup was still in its verification poll and completed correctly at t+104s.
+  Mutating round trips now take ~4 minutes end-to-end (propagation poll + cleanup poll). Let them
+  exit; read the exit code, not a snapshot of the world mid-flight.
+- (2026-08-06) **Bounded staleness cuts both ways.** With `s-maxage=60`, a test sentinel is
+  visible on the live public page for up to the TTL window *after* cleanup writes the dataset —
+  cleanup is not instant and residue during that window is expected, not a defect.
+
+## F1 — No CDN Purge API on Firebase App Hosting (2026-08-05, CLOSED)
+
+- (2026-08-05) **Firebase App Hosting exposes no programmatic CDN purge/invalidation API.**
+  Verified against the `firebaseapphosting.googleapis.com` REST discovery document (v1 and
+  v1beta, every method enumerated — no purge/invalidate anywhere), the `firebase` CLI command
+  namespace, and Firebase's own "the basic Cloud CDN configuration is set by App Hosting and
+  cannot be modified". The `cache-tag: <project-number>` / `<project-number>:<backend-id>`
+  response headers are routing metadata, NOT an invalidation handle — a dead end. Only a full
+  rollout purges. Do not re-investigate this; see `docs/f1-cdn-purge-api-findings.md`.
+  One branch left unverified: `gcloud` was not installed, so `compute url-maps` was not
+  enumerated directly — but `managedResources` exposes only the Cloud Run service and serving
+  locality is `GLOBAL_ACCESS`, so the load balancer is not in our project to invalidate.
+- (2026-08-05) Consequence: `revalidateTag()` alone can never work behind a CDN. The fix is
+  time-bounded revalidation (`export const revalidate = 60` → `s-maxage=60` +
+  `stale-while-revalidate`), a **bounded-staleness workaround, not instant propagation** —
+  edits appear within ~60s. Scope it to CMS-driven routes only and assert that static routes and
+  `/_next/static` assets keep long TTLs, or the fix silently degrades asset caching sitewide.

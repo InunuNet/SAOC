@@ -1,0 +1,247 @@
+schema: athanor.contract/v1
+slug: cms-loop-f4-orphaned-types
+goal: >
+  Resolve the two orphaned Studio document types found by
+  docs/f4-orphaned-types-recon.md: `award` (editable in the Studio sidebar, read by
+  zero GROQ queries, rendered on /judging entirely from a hardcoded static import) and
+  `province` (same problem, but the correct fix is removing the sidebar entry, not
+  wiring it — see recon §4). Per team-lead's brief, the decisions below are already
+  made; this contract does not relitigate them, only verifies the current defect and
+  specifies how "fixed" is proven.
+created_at: '2026-08-05'
+autonomy: high
+
+# ============================================================================
+# SCOPE FLAG — READ BEFORE TREATING THIS AS "PROGRESS" ON ANYTHING ELSE
+# ============================================================================
+# This is NOT the "awards archive/gallery" feature discussed in
+# documents/SAOC-Secretary-Response-Draft-2026-07-01.md:70 and
+# documents/SAOC-LeeAnn-Call-Prep-2026-07-20.md:26,86 — a separate, bigger, unscoped
+# feature: a searchable public archive of per-show RESULTS (grand champions, category
+# winners, photographs), tied to `show` + exhibitor + plant + category. This contract
+# only wires the 6 standard award-GRADE definitions (AM/SAOC, FCC/SAOC, HCC/SAOC,
+# CCM/SAOC, CBR/SAOC, JC/SAOC) already seeded as `award` documents — a static
+# reference glossary on /judging, unrelated in data shape to the archive idea. Do not
+# report this contract's completion as progress toward the archive feature.
+#
+# ============================================================================
+# VERIFIED AGAINST THE ACTUAL FILES AND LIVE DATASET (2026-08-05, @architect)
+# ============================================================================
+# docs/f4-orphaned-types-recon.md's findings were re-verified independently, not
+# taken on trust:
+#   - sanity/structure.ts COLLECTION_TYPES includes both 'award' and 'province'
+#     (confirmed, lines 32-41).
+#   - sanity/schemas/documents/award.ts fields: code, name, description, year. NO
+#     threshold field, NO order field — confirmed by reading the file directly.
+#   - sanity/schemas/documents/province.ts fields: name, code, slug. Confirmed.
+#   - Live Content Lake query (2026-08-05): 6 award documents exist, description text
+#     matches lib/data/awards.ts verbatim, `year` is null on all 6 — confirmed exactly
+#     as recon states.
+#   - Live Content Lake query (2026-08-05): count(*[_type=="province"]) === 9 —
+#     confirmed exactly as recon states.
+#   - components/judging/AwardsGrid.tsx imports `awards` from `@/lib/data/awards`
+#     directly (no props) and conditionally renders `award.threshold` only when
+#     `award.threshold && award.threshold !== '—'` — confirmed by reading the file.
+#   - app/(marketing)/judging/page.tsx already tags its sanityFetch call
+#     `['judging', 'sanity']` — CORRECT already (unlike F2's events bug); no tag fix
+#     needed for the award round trip to work once F1 lands. Confirmed by reading the
+#     file — worth stating explicitly so nobody assumes F4 needs its own F2-style tag
+#     fix.
+#   - app/(marketing)/societies/SocietiesClient.tsx imports `provinces` from
+#     `@/lib/data/provinces` (static), uses `p.code` (not `p.name`) as the chip button
+#     label, and filters via plain string equality against `society.province` — never
+#     touches the `province` DOCUMENT type. Confirmed by reading the file.
+# Nothing found here contradicts the recon or the team-lead brief.
+#
+# ============================================================================
+# DESIGN — REUSING _shared.mjs AGAIN, NO FURTHER CHANGES TO IT
+# ============================================================================
+# All award round trips reuse contracts/checks/f6-prove-cms-loop/_shared.mjs's
+# parameterised helpers exactly as F2 left them (readDatasetField, fetchPublicPageContains,
+# openAuthenticatedDoc with its structurePath param, callRevalidate, setFieldAndPublish)
+# — no further edits to that file were needed. `award` is a plain COLLECTION type
+# (S.documentTypeListItem), like societyEvent, so it needs the same `type;id` Studio
+# deep-link pattern F2 discovered and fixed — contracts/checks/cms-loop-f4-orphaned-types/
+# _award-target.mjs sets AWARD_STRUCTURE_PATH = 'award;award-am-saoc' accordingly.
+# F6's own A1/A2 and F2's A1/A2 were re-run live after all F4 scripts were added — both
+# still pass/behave identically, confirming no regression.
+#
+# ============================================================================
+# WHY A STATIC ORDER/CONTENT CHECK ALONE PROVES NOTHING (read before trusting A5)
+# ============================================================================
+# The CURRENT, unwired static `lib/data/awards` import already renders all six award
+# codes in the correct curated order with the correct threshold values on /judging —
+# that's WHY it was usable as a seed source in the first place. A check that only
+# asserts "the six codes render in the right order with the right thresholds" would
+# PASS TODAY, before any of this mission's work, and would keep passing even if @dev
+# never actually wired Sanity at all. This is exactly the class of false-positive gate
+# the mission was created to stop. Two independent countermeasures are used instead:
+#   1. A1/A2 are DYNAMIC round trips: a random sentinel/an out-of-range order value is
+#      published to the deployed Studio and its appearance on the live page is polled
+#      for. The static array cannot produce a random nonce or move AM/SAOC to render
+#      last — if either passes, the page MUST be reading from Sanity, not the static
+#      fallback, for that field.
+#   2. A5 (static content/order check) is explicitly gated by ALSO requiring
+#      components/judging/AwardsGrid.tsx to no longer import `@/lib/data/awards` at
+#      all — so A5 can only pass once the static fallback is provably gone, not
+#      merely "correct content happens to be visible" (which was already true before
+#      any fix).
+#
+# ============================================================================
+# LIVE VERIFICATION DURING CONTRACT AUTHORING (real runs, 2026-08-05, @architect)
+# ============================================================================
+# Every check below was actually executed against the deployed host/dataset while
+# writing this contract:
+#
+# A1 (award threshold round trip): FAIL at the PRECONDITION step, as expected —
+#   `award-am-saoc.threshold` is `null` (the field does not exist on the schema yet).
+#   No mutation was attempted (the check hard-exits before touching the Studio), so
+#   nothing needed cleanup. Exit code 1.
+# A2 (award order round trip): FAIL at the PRECONDITION step, as expected —
+#   `award-am-saoc.order` is `null` (the field does not exist yet). No mutation
+#   attempted. Exit code 1.
+# A3 (negative control, /judging): PASS. GET /judging -> 200, nonce correctly absent.
+#   Exit code 0.
+# A4 (order-detector self-test, no network): PASS. All 7 synthetic cases (first/last/
+#   missing-code-fails-closed) behave correctly. Exit code 0.
+# A5 (static migration + steady-state content): FAIL, as expected — condition (a)
+#   fails (AwardsGrid.tsx still imports @/lib/data/awards). Confirmed condition (b)
+#   (live order + threshold content) is ALREADY true today (see "WHY A STATIC ORDER
+#   CHECK ALONE PROVES NOTHING" above) — this is expected and not itself informative;
+#   only condition (a) flipping makes A5 meaningful. Exit code 1.
+# A6 (province sidebar removed, real Playwright against deployed Studio): FAIL, as
+#   expected — 'Province' sidebar link count 1 (still present), 'Award' control link
+#   count 1 (present, as required). Exit code 1.
+# A7 (province still registered + 9 docs intact): PASS, and expected to PASS
+#   continuously (invariant) — schemaTypes still references province, dataset count
+#   is exactly 9. Exit code 0.
+# A8 (societies regression, real Playwright): PASS, and expected to PASS continuously
+#   (invariant) — SocietiesClient.tsx still imports @/lib/data/provinces, and all 9
+#   province filter chip buttons render live. TWO false starts were caught and fixed
+#   during this authoring session, both worth flagging so nobody "fixes" this check
+#   back to the broken version: (1) a plain `fetch()` first LOOKED like it passed but
+#   was a false positive — SocietiesClient is wrapped in
+#   `<Suspense fallback={null}>` because of `useSearchParams()`, so the filter chips
+#   never appear in raw server HTML; the fetch only matched province NAMES by
+#   coincidence inside a different society's `region` field in the RSC data payload.
+#   Switched to real Playwright rendering. (2) The first Playwright attempt searched
+#   for full province NAMES ("Western Cape" etc.) and came back all-false — reading
+#   SocietiesClient.tsx:66 showed the chip buttons render `province.code` ("WC",
+#   "KZN", ...), not the name. Fixed and re-verified: all 9 codes + "All" render.
+#   Exit code 0.
+#
+# ============================================================================
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        THE headline award assertion: edit award-am-saoc.threshold in the deployed
+        Studio, publish, call /api/revalidate with _type: 'award', and poll the
+        deployed /judging page for the sentinel — bounded at 120s, hard FAIL on
+        timeout, identical bound to F6/F2's A1. Baseline precondition requires the
+        field to already equal the correct backfilled value ('80–89 pts', verbatim
+        from lib/data/awards.ts) — not empty — since this field's correct steady
+        state is real content, not blank. ALWAYS attempts cleanup: restores the exact
+        original value (not empty), re-publishes, and verifies via both the dataset
+        and the live page that the SENTINEL (not the real value) is gone. Directly
+        proves the "silently dropped threshold" content is both restored AND
+        observably live — a sentinel appearing on /judging cannot be explained by the
+        static lib/data/awards import. Expected to FAIL today at the precondition
+        step (the `threshold` field does not exist on the schema yet); once @dev adds
+        the field and backfills it, expected to still fail at propagation until F1
+        (CDN purge, same mission) also lands.
+      command: node contracts/checks/cms-loop-f4-orphaned-types/check-award-threshold-reaches-site.mjs
+
+    - id: A2
+      description: >
+        THE headline curated-order assertion: temporarily set award-am-saoc.order to
+        99 (moving it from first to last in the curated AM/FCC/HCC/CCM/CBR/JC
+        sequence) via a real Studio publish, revalidate with _type: 'award', and poll
+        the live /judging page for AM/SAOC actually rendering LAST — bounded at 120s,
+        same discipline as A1. Baseline precondition requires order to already equal 1
+        AND the live page to already render AM/SAOC first. Cleanup always restores
+        order to 1 and verifies AM/SAOC is no longer rendered last on both the
+        dataset and the live page. Proves the curated order is genuinely read from
+        Sanity, not the hardcoded static array — the static array can never produce
+        this specific dynamic reordering. Detection logic (isRenderedFirst/Last) is
+        independently unit-tested by A4 before this check is trusted. Expected to
+        FAIL today at the precondition step (the `order` field does not exist on the
+        schema yet); same F1 dependency as A1 once wired.
+      command: node contracts/checks/cms-loop-f4-orphaned-types/check-award-order-reaches-site.mjs
+
+    - id: A3
+      description: >
+        Negative control on the substring-detection mechanism for /judging: a
+        freshly-generated nonce that was never written anywhere must be reported
+        absent. Fast, read-only, non-mutating — proves A1's "found" branch is
+        reachable and meaningful, not hardcoded true. Expected to PASS today and
+        always (does not depend on F1 or the award wiring).
+      command: node contracts/checks/cms-loop-f4-orphaned-types/check-detects-absence.mjs
+
+    - id: A4
+      description: >
+        Negative/positive self-test of the order-position-comparison logic
+        (_order-detect.mjs) against synthetic HTML — no network, no live dependency.
+        Proves isRenderedFirst/isRenderedLast correctly distinguish "AM/SAOC first",
+        "AM/SAOC last", and "a code missing entirely" (fails closed, no false
+        positive) BEFORE A2 is trusted to use this same logic against the real live
+        page. Run this first if A2 ever fails unexpectedly, to rule out a broken
+        detector before concluding the feature itself is broken. Expected to PASS
+        today and always — pure logic, no dependency on F1 or the award wiring.
+      command: node contracts/checks/cms-loop-f4-orphaned-types/check-order-detector-selftest.mjs
+
+    - id: A5
+      description: >
+        Static migration-completeness + live steady-state content check, combined —
+        SUPPORTING evidence alongside A1/A2's dynamic proof, never sufficient alone
+        (see contract header "WHY A STATIC ORDER/CONTENT CHECK ALONE PROVES
+        NOTHING"). Requires BOTH: (a) components/judging/AwardsGrid.tsx no longer
+        imports the static @/lib/data/awards array, AND (b) the live /judging page
+        renders all six award codes in the curated order plus the four non-dash
+        threshold values (CBR/SAOC and JC/SAOC are deliberately NOT asserted to show
+        '—' — the component correctly renders no threshold line for those two).
+        Condition (b) is expected to already be true today via the static array —
+        that is normal and uninformative on its own; only (a) flipping to true makes
+        this check meaningful. Gates the "retire the static import" requirement from
+        docs/f4-orphaned-types-recon.md §3 point 5. Expected to FAIL today (condition
+        a is false).
+      command: node contracts/checks/cms-loop-f4-orphaned-types/check-award-static-migration.mjs
+
+    - id: A6
+      description: >
+        THE headline province assertion: real browser automation (Playwright)
+        against the DEPLOYED Studio confirms 'Province' is absent from the desk
+        structure's top-level sidebar list, while 'Award' (control item) is present —
+        proving the structure pane loaded correctly and this isn't a vacuous "nothing
+        is listed" pass. Verifies the actual user-visible outcome (an editor no
+        longer sees Province in the sidebar) against the real deployed host, not the
+        sanity/structure.ts source diff alone — catches the class of gap where a
+        source change is unmerged or undeployed. Expected to FAIL today ('Province'
+        still present, count 1); expected to PASS once @dev removes 'province' from
+        COLLECTION_TYPES in sanity/structure.ts.
+      command: node contracts/checks/cms-loop-f4-orphaned-types/check-province-sidebar-removed.mjs
+
+    - id: A7
+      description: >
+        The "don't over-remove" guard, covering the two directions A6 does not: (a)
+        `province` must still be referenced in sanity/schemas/index.ts's schemaTypes
+        (the type itself must stay registered), and (b) exactly 9 province documents
+        must still exist in the live dataset (no data loss). A6 alone would also pass
+        if @dev destructively deregistered the type and/or deleted the documents —
+        explicitly forbidden by the team-lead brief. This is an INVARIANT check,
+        expected to PASS both before and after F4's change; any failure at any point
+        is a standalone defect independent of A6's result.
+      command: node contracts/checks/cms-loop-f4-orphaned-types/check-province-registered-and-intact.mjs
+
+    - id: A8
+      description: >
+        Regression guard for /societies, proving F4's province change (Studio
+        sidebar only) does not touch the unrelated free-text society.province
+        filtering: (a) SocietiesClient.tsx still imports the static
+        @/lib/data/provinces list, and (b) real Playwright rendering of the live
+        /societies page confirms all 9 province filter chip buttons (rendered as
+        codes — WC, EC, NC, FS, KZN, GP, MP, LP, NW — plus "All") are present.
+        INVARIANT check: expected to PASS both before and after F4's change; a
+        failure at any point is a standalone regression, independent of A6/A7.
+      command: node contracts/checks/cms-loop-f4-orphaned-types/check-societies-unaffected.mjs

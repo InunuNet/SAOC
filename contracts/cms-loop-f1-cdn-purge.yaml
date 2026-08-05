@@ -1,0 +1,171 @@
+schema: athanor.contract/v1
+slug: cms-loop-f1-cdn-purge
+goal: >
+  Close the gap docs/f6-cdn-invalidation-investigation.md diagnosed and
+  docs/f1-cdn-purge-api-findings.md confirmed has no direct fix: Firebase App Hosting
+  exposes no programmatic CDN purge API, so `revalidateTag()` alone can never make a
+  Studio publish reach the live site — the CDN keeps serving its cached copy until
+  `s-maxage` expires, which today is one year. The fix is time-bounded revalidation:
+  shorten `s-maxage` to <=60s with `stale-while-revalidate` on CMS-driven routes only,
+  so the CDN re-checks origin (which `revalidateTag()` genuinely does keep fresh) on a
+  short, bounded schedule instead of never.
+created_at: '2026-08-05'
+autonomy: high
+
+# ============================================================================
+# READ FIRST — WHAT THIS CONTRACT DOES AND DOES NOT CLAIM
+# ============================================================================
+# This is a BOUNDED-STALENESS WORKAROUND, not instant propagation. A secretary's edit
+# becomes visible to the public within roughly one s-maxage window of publishing
+# (worst case ~60-70s, see "TIMING ANALYSIS" below), not immediately. No assertion or
+# doc wording in this contract may claim "publish and it's live instantly" — if it
+# does, that is a bug in this contract, not a description of the real system.
+#
+# The purge-API option is CLOSED (docs/f1-cdn-purge-api-findings.md, verified against
+# the full firebaseapphosting.googleapis.com discovery document, the firebase CLI's
+# complete apphosting:* namespace, and Firebase's own "cannot be modified" language
+# about App Hosting's Cloud CDN config). Do not reopen it in this contract or in @dev's
+# implementation — there is nothing to call.
+#
+# ============================================================================
+# ROUTE LIST — VERIFIED, NOT TRUSTED
+# ============================================================================
+# The dispatch brief's candidate list (/, /about, /judging, /contact, /national-show
+# and sub-routes, /events and sub-routes, /societies and sub-routes, /sponsors,
+# /media-kit) was checked against the actual app tree, not applied as given. Verified
+# live (2026-08-05) via `grep -l sanityFetch` across every app/(marketing)/**/page.tsx
+# plus a live curl of each resulting route's current Cache-Control:
+#
+#   ACTUALLY CMS-driven (queries Sanity) — these get the short TTL, see CMS_ROUTES /
+#   CMS_DYNAMIC_ROUTES in contracts/checks/cms-loop-f1-cdn-purge/_shared.mjs:
+#     /, /about, /contact, /judging, /events, /events/[slug], /national-show,
+#     /national-show/archive, /societies, /societies/[slug], /sponsors
+#
+#   In the brief's candidate list but NOT actually Sanity-driven — CONTRADICTS the
+#   brief, flagging explicitly rather than silently including them:
+#     /media-kit                        — static content, no sanityFetch import
+#     /national-show/archive/[year]     — reads lib/data/shows (a static TS module),
+#                                          not Sanity
+#     /national-show/exhibitors         — static content, no sanityFetch import
+#     /national-show/upcoming           — a redirect to /national-show, not a render
+#   These must KEEP their long TTL (see STATIC_MARKETING_ROUTES / assertion A3) —
+#   applying a short TTL to a route that never queries Sanity would add Cloud Run
+#   origin traffic for zero freshness benefit.
+#
+#   Also excluded, discovered live, not in the brief either way:
+#     /events/submit — reads cookies() for an auth check, which forces Next.js into
+#     fully dynamic `private, no-cache, no-store, max-age=0, must-revalidate`
+#     rendering regardless of any CDN TTL policy. Neither CMS-driven nor
+#     long-TTL-cacheable — its own category, out of scope for both A2 and A3.
+#     /constitution, /privacy, /terms — plain static pages, correctly not in the
+#     brief's candidate list either; included in A3 for completeness.
+#
+# If /national-show/archive/[year] or /national-show/exhibitors are wired to Sanity by
+# a later feature (the mission's F3/F4 scope), they must be added to CMS_ROUTES then —
+# not implicitly covered by this contract today.
+#
+# ============================================================================
+# TIMING ANALYSIS — does 60s s-maxage fit inside F6's 120s, 10s-interval bound?
+# ============================================================================
+# Yes, with margin, and this is not a guess:
+#
+#   1. `revalidateTag()` genuinely invalidates Next.js's own server-side cache the
+#      instant /api/revalidate is called — already proven live in the F6 investigation
+#      (`x-nextjs-cache: STALE` observed on the request immediately following a
+#      revalidate call). This part of the loop already works and this contract does
+#      not touch it.
+#   2. With `s-maxage=60`, Cloud CDN re-checks origin at most 60s after it cached its
+#      current copy of a given URL — worst case, the CDN's copy was cached just before
+#      our /api/revalidate call fires, so the CDN doesn't re-check until ~60s later.
+#   3. `stale-while-revalidate` means that first post-expiry request is served the
+#      (now-stale) cached copy immediately while the CDN asynchronously refetches from
+#      origin in the background — origin (Next.js) already has fresh content per (1),
+#      so that background refetch picks it up. The NEXT request after that async
+#      refetch completes gets the fresh copy.
+#   4. F6's A1 polls every 10s for up to 120s (12 attempts). Worst case: ~60s for the
+#      CDN's s-maxage to expire + one more ~10s poll interval to land after the
+#      background refetch completes = ~70s worst case, comfortably inside the 120s
+#      bound with ~50s of margin.
+#
+# This is why A2 requires s-maxage <= 60s specifically (MAX_ACCEPTABLE_S_MAXAGE in
+# _shared.mjs) rather than accepting any "shorter than a year" value — a much longer
+# short TTL (e.g. 300s) would not reliably fit F6's 120s bound and must not be used.
+#
+# ============================================================================
+# ASSERTION DESIGN
+# ============================================================================
+# A1 is the headline and is UNCHANGED from F6 — this contract does not fork, weaken,
+# lengthen, or reimplement contracts/checks/f6-prove-cms-loop/check-studio-edit-
+# reaches-site.mjs. It is referenced by path. Before this fix it FAILs (see that
+# contract's own header for the live evidence); after @dev's fix it must flip to PASS
+# because of the mechanism analyzed above — a green A1 IS the positive-path,
+# user-visible-outcome proof this feature exists to produce ("a green gate is not a
+# working feature" — satisfied here because A1 drives a real browser through the real
+# Studio and reads the real public page, not a header inspection).
+#
+# A2 proves the mechanism that makes A1 possible: every CMS-driven route's
+# Cache-Control now has a short, bounded s-maxage + stale-while-revalidate, replacing
+# the year-long default. Verified live (2026-08-05, pre-fix) that this correctly FAILs
+# today against all 11 routes (see contract delivery notes) — not a check that would
+# pass by accident.
+#
+# A3 is the negative control the dispatch brief requires: it proves A2's mechanism is
+# not vacuously true by running the identical style of assertion against routes that
+# must NOT have changed (confirmed non-CMS-driven marketing pages, plus a /_next/static
+# build asset with a structurally different Cache-Control shape) and requiring them to
+# still show their pre-fix, long-TTL values. Verified live (2026-08-05, pre-fix) that
+# A3 correctly PASSES today — proving it isn't hardcoded to fail, and that it would
+# genuinely catch a blanket-applied fix that touched routes it shouldn't have.
+#
+# SKIP handling: none of these checks have a legitimate SKIP path. Every failure mode
+# (host unreachable, route 404s, no document with a slug exists to resolve a dynamic
+# route, Cache-Control header missing) is a hard `process.exit(1)` with a clear FAIL
+# message — never a silent exit 0. See contracts/checks/cms-loop-f1-cdn-purge/_shared.mjs
+# `resolveOneSlug()` and `fetchHeaders()`.
+#
+# ============================================================================
+# COORDINATION
+# ============================================================================
+# Nothing in contracts/checks/f6-prove-cms-loop/ was modified by this contract. All
+# new files live under contracts/checks/cms-loop-f1-cdn-purge/, which only this
+# contract owns.
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        THE positive-path, user-visible-outcome assertion (mandatory per dispatch
+        brief) — unchanged, unweakened, un-lengthened reference to F6's own headline
+        check: a secretary edits aboutPage.boardIntroText in the DEPLOYED Studio via
+        real browser automation, publishes, calls /api/revalidate, and polls the
+        DEPLOYED public /about page for the sentinel, bounded at 120s / 10s intervals,
+        hard FAIL on timeout, with guaranteed cleanup. Must flip FAIL -> PASS once
+        @dev's short-TTL fix (A2) is deployed — see "TIMING ANALYSIS" above for why
+        60s s-maxage fits inside this 120s bound. Do not fork, edit, or reimplement
+        this script; do not touch contracts/checks/f6-prove-cms-loop/_shared.mjs.
+      command: node contracts/checks/f6-prove-cms-loop/check-studio-edit-reaches-site.mjs
+
+    - id: A2
+      description: >
+        Every CMS-driven marketing route (9 static paths + 2 dynamically-resolved
+        [slug] routes, 11 total — see CMS_ROUTES/CMS_DYNAMIC_ROUTES in _shared.mjs)
+        on the DEPLOYED host carries Cache-Control with s-maxage <= 60 (and not the
+        legacy 31536000) plus a stale-while-revalidate directive. Proves the actual
+        mechanism behind A1's fix, not just that A1 happens to pass. Currently FAILS
+        (verified live, pre-fix, all 11 routes still show s-maxage=31536000) — this is
+        the correct, honest pre-fix state.
+      command: node contracts/checks/cms-loop-f1-cdn-purge/check-cms-routes-short-ttl.mjs
+
+    - id: A3
+      description: >
+        Negative control (mandatory per dispatch brief) proving A2 is not vacuously
+        true: confirmed non-CMS-driven marketing routes (/constitution, /privacy,
+        /terms, /media-kit, /national-show/exhibitors, /national-show/upcoming) plus a
+        dynamically-resolved /_next/static/*.css build asset must all still show their
+        pre-fix, long-TTL Cache-Control values on the DEPLOYED host — proving the fix
+        was scoped to CMS-driven routes only, not blanket-applied across
+        app/(marketing)/ or onto Next's own immutable asset caching. Currently PASSES
+        (verified live, pre-fix — the correct state both before and after @dev's fix,
+        since this contract requires these routes stay untouched throughout).
+      command: node contracts/checks/cms-loop-f1-cdn-purge/check-static-routes-unaffected.mjs

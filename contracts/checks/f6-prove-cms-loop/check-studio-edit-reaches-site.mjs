@@ -17,16 +17,21 @@
 //      sentinel string to appear in the rendered HTML, bounded by
 //      POLL_TIMEOUT_MS/POLL_INTERVAL_MS. A timeout is a HARD FAIL, not inconclusive.
 //   6. ALWAYS (even after a failure above) attempt cleanup: clear the field, publish
-//      again, re-revalidate, and verify via BOTH the dataset AND the live page that
-//      the sentinel is gone. Cleanup failing is ALSO a hard fail — the script will
-//      not exit 0 while the sentinel might still be live on the real site.
+//      again, re-revalidate, and verify via BOTH the dataset AND the live page —
+//      requiring several CONSECUTIVE clean reads, not just one (see _shared.mjs's
+//      verifyLiveAbsence header) — that the sentinel is gone. A cleanup that cannot
+//      be verified raises a loud, distinctly-exit-coded RESIDUE ALERT (exit 2), never
+//      a silent pass or an ordinary-looking FAIL — see _shared.mjs's 2026-08-06
+//      header for the incident that made this necessary.
 //
 // Run as: node contracts/checks/f6-prove-cms-loop/check-studio-edit-reaches-site.mjs
 // Requires SANITY_API_TOKEN and SANITY_REVALIDATE_SECRET in .env.local, network access
 // to the deployed host, and a working Playwright/Chromium install.
-// Exit codes: 0 = the sentinel appeared on the live page within the bound, AND cleanup
-// was verified. 1 = precondition violated, timeout, unreachable host, auth failure,
-// browser launch failure, or cleanup could not be verified — never a skip.
+// Exit codes: 0 = sentinel appeared within bound AND cleanup verified clean. 1 =
+// precondition violated, propagation timeout (but cleanup verified clean), unreachable
+// host, or auth failure BEFORE any mutation was attempted. 2 = RESIDUE ALERT — a
+// mutation was made and cleanup could NOT be verified; manual check required. Never a
+// skip.
 
 import {
   getSanityClient,
@@ -36,6 +41,10 @@ import {
   openAuthenticatedAboutPageDoc,
   setFieldAndPublish,
   loadEnvOrFail,
+  verifyLiveAbsence,
+  raiseResidueAlert,
+  installCrashGuard,
+  EXIT_CODE_RESIDUE_ALERT,
   TARGET_DOC_ID,
   TARGET_FIELD,
   TARGET_PAGE_PATH,
@@ -45,13 +54,18 @@ import {
 // attempts, 12s apart) after a real publish + real revalidate call and observed ZERO
 // movement (identical CDN cache hit, `age` header climbing monotonically the entire
 // time — see contract header). 120s gives a small margin over what was actually
-// tested, not an optimistic guess at an untested longer window.
+// tested, not an optimistic guess at an untested longer window. This is the
+// PROPAGATION bound (proving the feature works) — deliberately NOT the same bound
+// used for cleanup verification (see _shared.mjs's verifyLiveAbsence, a separate,
+// more conservative safety-net check).
 const POLL_TIMEOUT_MS = 120_000;
 const POLL_INTERVAL_MS = 10_000;
 
+const nonce = `F6-LOOP-PROOF-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+installCrashGuard({ checkName: 'f6-check-studio-edit-reaches-site', docId: TARGET_DOC_ID, field: TARGET_FIELD, sentinelValue: nonce, pagePath: TARGET_PAGE_PATH });
+
 const revalidateSecret = loadEnvOrFail('SANITY_REVALIDATE_SECRET');
 const client = getSanityClient();
-const nonce = `F6-LOOP-PROOF-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 console.log(`Sentinel value: ${nonce}`);
 console.log(`Target: ${TARGET_DOC_ID}.${TARGET_FIELD}, public page ${TARGET_PAGE_PATH}`);
 
@@ -70,6 +84,8 @@ async function poll(predicate, label) {
 
 let browser;
 let mutationAttempted = false;
+// exitCode: 0 = full pass, 1 = ordinary fail (no residue), 2 = residue alert (set only
+// by the cleanup block below, and only if cleanup cannot be verified clean).
 let exitCode = 1;
 
 try {
@@ -81,7 +97,7 @@ try {
         'This check requires starting from an empty field so the sentinel and the restore are unambiguous. ' +
         'Do not run this against a document with real content already in this field.'
     );
-    process.exit(1);
+    process.exit(1); // safe: mutationAttempted is still false, nothing to clean up
   }
   const baselinePage = await fetchPublicPageContains(nonce);
   console.log('Baseline dataset field:', baselineField, '| baseline page:', baselinePage);
@@ -118,11 +134,7 @@ try {
       } else {
         console.error(
           `FAIL (propagation): sentinel never appeared on ${TARGET_PAGE_PATH} within ${POLL_TIMEOUT_MS / 1000}s of a ` +
-            'confirmed Studio publish + a 200 response from /api/revalidate. The Studio write and the revalidate call ' +
-            'both succeeded in isolation — the site itself did not reflect the change. See the contract header for the ' +
-            'live CDN-cache diagnostic evidence (cdn-cache-status: hit, x-nextjs-cache: HIT, monotonically increasing ' +
-            "age header) — this looks like Firebase App Hosting's edge cache not being purged by Next's on-demand " +
-            'revalidateTag(), a defect independent of anything F4/F5 touched.'
+            'confirmed Studio publish + a 200 response from /api/revalidate.'
         );
       }
     }
@@ -132,6 +144,8 @@ try {
 } finally {
   if (mutationAttempted) {
     console.log('--- Cleanup: clearing the field and re-publishing (always attempted) ---');
+    let cleanupOk = false;
+    let afterCleanupDataset;
     try {
       // Re-open a fresh Studio session for cleanup in case the original page/browser
       // is in a bad state after a failure above.
@@ -140,39 +154,48 @@ try {
       browser = reopened.browser;
       await setFieldAndPublish(reopened.page, reopened.field, '');
 
-      const afterCleanupDataset = await readDatasetField(client);
+      afterCleanupDataset = await readDatasetField(client);
       const datasetClean = afterCleanupDataset == null || String(afterCleanupDataset).trim().length === 0;
       console.log('Dataset after cleanup:', afterCleanupDataset, '| clean:', datasetClean);
 
       const cleanupRevalidate = await callRevalidate(revalidateSecret, 'aboutPage');
       console.log('Cleanup revalidate response:', cleanupRevalidate);
 
-      const cleanupPropagation = await poll(async () => {
-        const r = await fetchPublicPageContains(nonce);
-        return { ok: !r.hasNeedle, status: r.status, hasNeedle: r.hasNeedle };
-      }, 'cleanup-propagation');
+      console.log(`--- Verifying live-page absence (requires ${3} consecutive clean reads, up to 5 min) ---`);
+      const cleanupPropagation = await verifyLiveAbsence(nonce, TARGET_PAGE_PATH);
 
-      if (!datasetClean || !cleanupPropagation.ok) {
+      cleanupOk = datasetClean && cleanupPropagation.ok;
+      if (!cleanupOk) {
         console.error(
           'FAIL: cleanup could not be verified — ' +
             (!datasetClean ? `dataset still shows ${JSON.stringify(afterCleanupDataset)}. ` : '') +
-            (!cleanupPropagation.ok ? `live page may still show the sentinel after ${POLL_TIMEOUT_MS / 1000}s. ` : '') +
-            `MANUAL CHECK REQUIRED: verify ${TARGET_DOC_ID}.${TARGET_FIELD} in the Studio directly.`
+            (!cleanupPropagation.ok ? `live page did not reach ${3} consecutive clean reads within the safety-net window. ` : '')
         );
-        exitCode = 1;
       } else {
-        console.log('Cleanup verified: dataset field is empty AND the live page no longer shows the sentinel.');
+        console.log('Cleanup verified: dataset field is empty AND the live page sustained absence of the sentinel.');
       }
     } catch (cleanupErr) {
-      console.error(
-        `FAIL: cleanup threw — ${cleanupErr.stack ?? cleanupErr.message}. ` +
-          `MANUAL CHECK REQUIRED: verify ${TARGET_DOC_ID}.${TARGET_FIELD} in the Studio directly and clear it if the sentinel is still there.`
-      );
-      exitCode = 1;
+      console.error(`Cleanup threw — ${cleanupErr.stack ?? cleanupErr.message}`);
+      cleanupOk = false;
+    }
+
+    if (!cleanupOk) {
+      raiseResidueAlert({
+        checkName: 'f6-check-studio-edit-reaches-site',
+        docId: TARGET_DOC_ID,
+        field: TARGET_FIELD,
+        expectedValue: '',
+        sentinelValue: nonce,
+        pagePath: TARGET_PAGE_PATH,
+        extra: `Dataset value observed at cleanup time: ${JSON.stringify(afterCleanupDataset)}`,
+      });
+      exitCode = EXIT_CODE_RESIDUE_ALERT;
     }
   }
   if (browser) await browser.close();
 }
 
-console.log(exitCode === 0 ? 'PASS: Studio edit reached the live site, and cleanup was verified.' : 'RESULT: FAIL (see above).');
+if (exitCode === 0) console.log('PASS: Studio edit reached the live site, and cleanup was verified.');
+else if (exitCode === EXIT_CODE_RESIDUE_ALERT) console.log('RESULT: RESIDUE ALERT (see above) — do not treat as an ordinary FAIL.');
+else console.log('RESULT: FAIL (see above).');
 process.exit(exitCode);

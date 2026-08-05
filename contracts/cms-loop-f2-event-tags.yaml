@@ -1,0 +1,237 @@
+schema: athanor.contract/v1
+slug: cms-loop-f2-event-tags
+goal: >
+  Fix app/(marketing)/events/[slug]/page.tsx's sanityFetch cache tags so that a
+  published edit to a real societyEvent document can reach its deployed
+  /events/<slug> page. Verified: today the page tags every sanityFetch call
+  ['events'] — that string matches neither 'sanity' (the blanket tag
+  app/api/revalidate/route.ts always invalidates) nor 'societyEvent' (the real
+  document _type a Sanity webhook payload sends, per app/api/revalidate/route.ts's
+  `revalidateTag(body._type, 'max')`). So even once F1 (this same mission) closes
+  the CDN-purge gap, event pages specifically would still never revalidate on
+  publish, because revalidateTag('societyEvent', ...) invalidates a cache entry
+  tagged 'events' — a tag that does not exist. This is independent of F1: F1 fixes
+  HOW invalidation reaches the CDN; F2 fixes WHICH tag gets invalidated for this
+  page. Both are required for the round trip below to pass; neither alone is
+  sufficient.
+created_at: '2026-08-05'
+autonomy: high
+
+# ============================================================================
+# VERIFIED AGAINST THE ACTUAL FILE (not taken on the dispatch brief's word)
+# ============================================================================
+# Read app/(marketing)/events/[slug]/page.tsx directly, 2026-08-05: all three
+# sanityFetch call sites (generateStaticParams, generateMetadata, the page body)
+# pass `tags: ['events']` — confirmed, the defect as described is real, not a
+# stale/already-fixed claim. Read app/api/revalidate/route.ts: confirmed it calls
+# `revalidateTag('sanity', 'max')` unconditionally, then `revalidateTag(body._type,
+# 'max')` if the webhook payload carries a `_type`. Read
+# sanity/schemas/documents/event.ts: confirmed the real document type name is
+# `societyEvent`, not `events`. All three GROQ queries this page uses
+# (eventBySlugQuery, eventSlugsQuery in sanity/queries.ts) filter on
+# `_type == "societyEvent"` — consistent with the schema.
+#
+# Fix (for @dev, not implemented here): change `tags: ['events']` to
+# `tags: ['societyEvent', 'sanity']` at all three call sites in
+# app/(marketing)/events/[slug]/page.tsx. Do not rename the GROQ queries or touch
+# app/api/revalidate/route.ts — that route already does the right thing; it is the
+# page's tag string that's wrong.
+#
+# ============================================================================
+# DESIGN — REUSING _shared.mjs, PARAMETERISED, NOT FORKED
+# ============================================================================
+# contracts/checks/f6-prove-cms-loop/_shared.mjs already contains a proven,
+# working harness (authenticated deployed-Studio browser automation via a
+# localStorage token, dataset reads, /api/revalidate calls, bounded polling of the
+# live page) — it was hardcoded to aboutPage.boardIntroText -> /about. Rather than
+# copy-pasting a second near-identical harness, this contract PARAMETERISES it:
+#   - readDatasetField(client, docId, field) — docId/field now optional params,
+#     defaulting to the original aboutPage target.
+#   - fetchPublicPageContains(needle, pagePath) — pagePath now an optional param,
+#     defaulting to the original /about target.
+#   - openAuthenticatedDoc(docId, field, structurePath = docId) — new generic
+#     function; the original openAuthenticatedAboutPageDoc() is kept as a zero-arg
+#     alias that calls it with the original defaults. The third param was added
+#     after a REAL live failure during this contract's own verification (see
+#     "LIVE VERIFICATION" below): aboutPage is a PINNED SINGLETON
+#     (sanity/structure.ts: `S.document().schemaType(t).documentId(t)`), whose
+#     desk deep-link is just the doc id (`/studio/structure/aboutPage`) — but
+#     societyEvent is a plain COLLECTION type (`S.documentTypeListItem`), whose
+#     deep-link pattern is `type;documentId`
+#     (`/studio/structure/societyEvent;societyEvent-10-...`). Passing the bare
+#     doc id for a collection document silently fails to reach the field. F2's
+#     own check scripts pass `structurePath` explicitly
+#     (TARGET_EVENT_STRUCTURE_PATH in _event-target.mjs); aboutPage's default
+#     (structurePath = docId) is unchanged.
+#   - callRevalidate(secret, type) and setFieldAndPublish(page, field, value) were
+#     already generic — untouched.
+# All of F6's existing exports (TARGET_DOC_ID, TARGET_FIELD, TARGET_PAGE_PATH,
+# openAuthenticatedAboutPageDoc, and every function called with its old
+# no-extra-args signature) behave identically to before — F6's own
+# check-studio-edit-reaches-site.mjs and check-detects-absence.mjs were re-read
+# after this change and require no edits. This satisfies the dispatch brief's
+# "keep your change additive and backward-compatible" constraint. F2's own event
+# targeting constants live in a new, separate file
+# (contracts/checks/cms-loop-f2-event-tags/_event-target.mjs) so a parallel F1
+# workstream touching _shared.mjs for CDN-purge-related reasons has minimal
+# surface to collide with.
+#
+# ============================================================================
+# TARGET DOCUMENT AND FIELD
+# ============================================================================
+# societyEvent-10-midlands-orchid-show ("Midlands Orchid Show", 2026-10-17,
+# Royal Agricultural Society Hall, PMB), field `description`. Confirmed via a
+# direct Content Lake read (2026-08-05) that this event's `description` field is
+# currently EMPTY/undefined — the same "start from an unambiguous empty baseline"
+# property F6 relied on for aboutPage.boardIntroText, rather than
+# overwrite-and-restore against a field that already holds real content. All 18
+# societyEvent docs were queried; this one was chosen as low-stakes (an ordinary
+# regional show, not the national show, not AGM-adjacent, not referenced by any
+# other contract's byte-for-byte assertions) and has a stable slug from F5
+# (cms-activation-deploy): /events/midlands-orchid-show.
+# `description` renders unconditionally when present, as a plain paragraph
+# (app/(marketing)/events/[slug]/page.tsx: `{event.description ? <p>...} : null}`)
+# — an easy, unambiguous substring match in rendered HTML, same shape as F6's
+# boardIntroText paragraph.
+#
+# ============================================================================
+# WHY THIS IS EXPECTED TO FAIL TODAY — DO NOT WEAKEN, DO NOT PICK AROUND IT
+# ============================================================================
+# A1 (the headline round trip) is expected to FAIL right now, for two independent,
+# layered reasons:
+#   (a) Pre-fix, the page's sanityFetch calls are tagged ['events'], which matches
+#       neither 'sanity' nor 'societyEvent' — so step 4's
+#       revalidateTag('societyEvent', 'max') call invalidates nothing this page's
+#       cache entries are tagged with. This is exactly what F2 fixes.
+#   (b) Independently, per docs/f6-cdn-invalidation-investigation.md and the
+#       (currently FAILING) contracts/f6-prove-cms-loop.yaml A1, Firebase App
+#       Hosting's CDN edge does not re-check origin on revalidateTag() alone — a
+#       CDN purge is missing. This is F1's job, in the SAME mission. Even after
+#       F2's tag fix lands on its own, this round trip will still fail until F1
+#       also lands, because both defects sit on the same request path
+#       (Studio publish -> dataset write -> revalidateTag -> CDN -> public page).
+# Per the dispatch brief and mission text verbatim: this is the correct, honest
+# state of the system today. Do not weaken A1, do not lengthen its 120s bound (it
+# is IDENTICAL to F6 A1's bound — already validated against this exact CDN
+# behaviour, not a fresh guess), and do not retarget A1 at an easier page/field to
+# manufacture a green result. A green gate that isn't a working feature is exactly
+# the failure mode that recurred twice on this project already.
+#
+# A1 is expected to flip to PASS only once BOTH F1 and F2 have landed. If F2's
+# code fix (the tags rename) lands before F1's CDN-purge fix, re-running A1 is
+# expected to STILL fail — that is not evidence the F2 fix is wrong; it is
+# evidence F1 hasn't landed yet. Do not use a still-failing A1 alone to conclude
+# F2's tag fix didn't work — check the static supporting assertion (A3) and the
+# CDN-layer evidence in docs/f6-cdn-invalidation-investigation.md /
+# contracts/f6-prove-cms-loop.yaml first.
+#
+# ============================================================================
+# WHAT WOULD BE A FALSE / VACUOUS PASS (AVOIDED HERE)
+# ============================================================================
+# - A1 passing on a page/field that was never actually broken would prove
+#   nothing about the fix. Mitigated: A2 (negative control) proves the detection
+#   mechanism can genuinely report "absent" — the "found" branch in A1 is not
+#   hardcoded true.
+# - A SKIP silently reported as PASS would hide a broken precondition (e.g.
+#   SANITY_API_TOKEN missing, Playwright not installed). Mitigated: every
+#   loadEnvOrFail / browser-launch / auth failure path in _shared.mjs calls
+#   process.exit(1), a hard FAIL — never a soft skip that the gate could read as
+#   passed (Athanor#1322).
+# - A static "the file contains the right tag strings" check alone would prove
+#   the string exists, not that revalidation actually works end-to-end (this is
+#   the exact class of gap that let the original ['events'] bug ship unnoticed).
+#   Mitigated: A3 (static) is explicitly a SUPPORTING check only; A1 (behavioural,
+#   real round trip) is the assertion whose result actually matters for
+#   "done means the CMS loop works."
+
+# ============================================================================
+# LIVE VERIFICATION DURING CONTRACT AUTHORING (real runs, 2026-08-05, @architect)
+# ============================================================================
+# All three checks were actually executed against the deployed host while writing
+# this contract — not asserted from theory:
+#
+# A2 (negative control), run standalone, non-mutating:
+#   $ node contracts/checks/cms-loop-f2-event-tags/check-detects-absence.mjs
+#   GET /events/midlands-orchid-show -> status 200, hasNeedle: false
+#   PASS: detection mechanism correctly reports absence for content that was
+#   never published.
+#   Exit code: 0
+#
+# A1 (full round trip), run for real against the deployed Studio + deployed site:
+#   $ node contracts/checks/cms-loop-f2-event-tags/check-studio-edit-reaches-site.mjs
+#   Sentinel value: F2-EVENT-LOOP-PROOF-1785966116469-738be9
+#   --- Step 1: baseline --- Baseline dataset field: null | baseline page: hasNeedle: false
+#   --- Step 2: open Studio, edit, publish --- (succeeded once structurePath was fixed)
+#   --- Step 3: confirm publish landed in the dataset --- Publish confirmed in dataset.
+#   --- Step 4: call /api/revalidate --- { status: 200, json: { ok: true, revalidated:
+#     true, type: 'societyEvent' } }
+#   --- Step 5: poll the live public page for the sentinel ---
+#     12 attempts over 114s, all {"ok":false,"hasNeedle":false}
+#   FAIL (propagation): sentinel never appeared on /events/midlands-orchid-show
+#     within 120s of a confirmed Studio publish + a 200 response from
+#     /api/revalidate.
+#   --- Cleanup: clearing the field and re-publishing (always attempted) ---
+#   Dataset after cleanup: null | clean: true
+#   Cleanup revalidate response: { status: 200, json: { ok: true, revalidated: true,
+#     type: 'societyEvent' } }
+#   [cleanup-propagation] attempt 1 (t+0s): {"ok":true,"status":200,"hasNeedle":false}
+#   Cleanup verified: dataset field is empty AND the live page no longer shows the
+#   sentinel.
+#   RESULT: FAIL (see above). Exit code: 1
+#   This is EXACTLY the expected, honest FAIL described above — the harness itself
+#   works end-to-end (auth, publish, dataset confirm, revalidate call, poll,
+#   cleanup); the round trip fails only because the page's tags are still wrong
+#   ['events'] AND the CDN purge gap (F1) is still open. Cleanup was independently
+#   confirmed clean, so this run left no residue on the live site or dataset.
+#
+# A3 (static), run against the current, unfixed source file:
+#   $ grep -q "tags: \['societyEvent', 'sanity'\]" "app/(marketing)/events/[slug]/page.tsx" \
+#       && ! grep -q "tags: \['events'\]" "app/(marketing)/events/[slug]/page.tsx"
+#   Exit code: 1 (FAIL, as expected — the fix has not landed yet)
+#   Verified against a simulated fixed copy (tags renamed via sed, not committed)
+#   that the same command exits 0 once the fix is applied in exactly the form the
+#   contract expects.
+#
+# ============================================================================
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        THE assertion: edit societyEvent-10-midlands-orchid-show.description in the
+        deployed Studio (real browser automation, authenticated via the proven
+        localStorage-token mechanism), publish, call /api/revalidate with the
+        correct secret and _type: 'societyEvent' (exactly what a real webhook
+        payload for this document would send), and poll the deployed public
+        /events/midlands-orchid-show page's rendered HTML for the sentinel —
+        bounded at 120s, hard FAIL on timeout, identical bound to F6's A1. ALWAYS
+        attempts and verifies cleanup (field cleared, re-published, confirmed
+        absent via both the dataset and the live page) regardless of whether the
+        propagation check passed or failed. Expected to FAIL today — see "WHY THIS
+        IS EXPECTED TO FAIL TODAY" above; this is the correct, honest state of the
+        real system until both F1 and F2 have landed, not a broken check.
+      command: node contracts/checks/cms-loop-f2-event-tags/check-studio-edit-reaches-site.mjs
+
+    - id: A2
+      description: >
+        Negative control on the detection mechanism itself, for the event page: a
+        freshly-generated value that has never been written anywhere must be
+        reported absent from the live public /events/midlands-orchid-show page.
+        Fast, read-only, non-mutating — proves A1's "found" branch is reachable and
+        meaningful, not hardcoded true. Expected to PASS today and always (it does
+        not depend on F1 or F2 — it only proves the detector isn't rigged).
+      command: node contracts/checks/cms-loop-f2-event-tags/check-detects-absence.mjs
+
+    - id: A3
+      description: >
+        Static SUPPORTING check only — never sufficient on its own (see "WHAT
+        WOULD BE A FALSE / VACUOUS PASS" above). Confirms
+        app/(marketing)/events/[slug]/page.tsx no longer tags any sanityFetch call
+        with the stale, non-matching 'events' string, and that it now uses the
+        real document _type 'societyEvent' plus the blanket 'sanity' tag that
+        app/api/revalidate/route.ts always invalidates. Expected to FAIL before
+        @dev's fix lands, PASS after — independent of F1/A1's CDN-layer result,
+        since this only inspects source text.
+      command: >-
+        grep -q "tags: \['societyEvent', 'sanity'\]" "app/(marketing)/events/[slug]/page.tsx"
+        && ! grep -q "tags: \['events'\]" "app/(marketing)/events/[slug]/page.tsx"
