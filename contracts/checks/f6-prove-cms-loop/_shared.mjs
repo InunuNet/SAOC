@@ -41,8 +41,8 @@
 // below replaces that with a requirement for several CONSECUTIVE clean reads spread
 // over a longer window, and `raiseResidueAlert` makes a failure to reach that
 // confidence bar loud, distinctly exit-coded, and durably logged to disk — never a
-// silent or ordinary-looking FAIL. See contracts/cms-loop-f6-cleanup-hardening.yaml
-// for the full incident writeup, verification, and audit of every mutating check.
+// silent or ordinary-looking FAIL. See docs/f6-a1-cleanup-incident-2026-08-06.md for
+// the full incident writeup, verification, and audit of every mutating check.
 
 import { chromium } from 'playwright';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';

@@ -29,10 +29,21 @@
 // _shared.mjs) — refuses to run, before any mutation, unless F1's short-TTL fix is
 // confirmed live.
 //
+// CLEANUP-SAFETY FIX (2026-08-06, same root cause as F6's incident and A1's — see
+// f6-prove-cms-loop/_shared.mjs and this contract's own _shared.mjs headers): the
+// local readStages() helper and the precondition check below no longer call
+// `process.exit(1)` directly (which would silently skip the `finally` cleanup block)
+// — both now `throw`. Cleanup's page-level verification now uses verifyLiveAbsence
+// (3 consecutive clean reads, 15s apart, up to 5 minutes) instead of a single-shot
+// poll, and raises a loud, distinctly-exit-coded, durably-logged residue alert
+// (raiseResidueAlert / EXIT_CODE_RESIDUE_ALERT) if it can't confirm removal, instead
+// of an ordinary FAIL that could be mistaken for "not wired yet."
+//
 // Exit codes: 0 = the exhibitorStages sentinel appeared on the live page within 120s
-// AND cleanup (cleared back to empty) was verified via both the dataset and the live
-// page. 1 = F1 not yet deployed, precondition violated, timeout, unreachable host, or
-// cleanup could not be verified — never a skip.
+// AND cleanup was verified. 1 = F1 not yet deployed, precondition violated, timeout,
+// or unreachable host. EXIT_CODE_RESIDUE_ALERT (2) = mutation succeeded but cleanup
+// could not be verified — treat as a live incident, not an ordinary FAIL. Never a
+// skip.
 
 import {
   getSanityClient,
@@ -41,10 +52,16 @@ import {
   loadEnvOrFail,
   poll,
   assertF1Deployed,
+  verifyLiveAbsence,
+  raiseResidueAlert,
+  installCrashGuard,
+  EXIT_CODE_RESIDUE_ALERT,
   TARGET_DOC_ID,
   TARGET_PAGE_PATH,
   REVALIDATE_TYPE,
 } from './_shared.mjs';
+
+installCrashGuard({ check: 'check-exhibitor-stages-round-trip', docId: TARGET_DOC_ID });
 
 await assertF1Deployed();
 
@@ -57,8 +74,9 @@ async function readStages() {
   try {
     return await client.fetch(`*[_id == $id][0].exhibitorStages`, { id: TARGET_DOC_ID });
   } catch (err) {
-    console.error(`FAIL: dataset read for ${TARGET_DOC_ID}.exhibitorStages threw — ${err.message}`);
-    process.exit(1);
+    const msg = `FAIL: dataset read for ${TARGET_DOC_ID}.exhibitorStages threw — ${err.message}`;
+    console.error(msg);
+    throw new Error(msg);
   }
 }
 
@@ -69,11 +87,11 @@ try {
   console.log('--- Step 1: baseline ---');
   const baseline = await readStages();
   if (baseline != null) {
-    console.error(
+    const msg =
       `FAIL: precondition violated — exhibitorStages is not empty (${JSON.stringify(baseline)}). ` +
-        'This check requires starting from an empty field, per F4\'s golden ("GAP... Left unset").'
-    );
-    process.exit(1);
+      'This check requires starting from an empty field, per F4\'s golden ("GAP... Left unset").';
+    console.error(msg);
+    throw new Error(msg);
   }
   console.log('Baseline exhibitorStages:', baseline);
 
@@ -135,31 +153,48 @@ try {
       const cleanupRevalidate = await callRevalidate(revalidateSecret, REVALIDATE_TYPE);
       console.log('Cleanup revalidate response:', cleanupRevalidate);
 
-      const cleanupPropagation = await poll(async () => {
-        const r = await fetchPublicPageContains(STAGES_SENTINEL_TEXT, TARGET_PAGE_PATH);
-        return { ok: !r.hasNeedle, status: r.status, hasNeedle: r.hasNeedle };
-      }, 'cleanup-propagation');
+      // 3 consecutive clean reads, 15s apart, up to 5 minutes — see file header and
+      // f6-prove-cms-loop/_shared.mjs. Deliberately separate from, and slower than,
+      // the 120s propagation-poll bound above.
+      const cleanupPropagation = await verifyLiveAbsence(STAGES_SENTINEL_TEXT, TARGET_PAGE_PATH, { label: 'cleanup-propagation' });
 
       if (!datasetClean || !cleanupPropagation.ok) {
-        console.error(
-          'FAIL: cleanup could not be fully verified — ' +
-            (!datasetClean ? `dataset still shows ${JSON.stringify(afterCleanup)}. ` : '') +
-            (!cleanupPropagation.ok ? 'live page may still show the exhibitorStages sentinel after 120s. ' : '') +
-            `MANUAL CHECK REQUIRED: verify ${TARGET_DOC_ID}.exhibitorStages in the Studio directly.`
-        );
-        exitCode = 1;
+        raiseResidueAlert({
+          checkName: 'cms-loop-f3-national-show/check-exhibitor-stages-round-trip',
+          docId: TARGET_DOC_ID,
+          field: 'exhibitorStages',
+          expectedValue: null,
+          sentinelValue: STAGES_SENTINEL_TEXT,
+          pagePath: TARGET_PAGE_PATH,
+          extra: !datasetClean ? `dataset still shows ${JSON.stringify(afterCleanup)}` : 'dataset confirmed clean; live page could not confirm sentinel absence within the sustained-check window',
+        });
+        // Set the exit code rather than calling process.exit() here directly — this
+        // is still inside the outer finally block; nothing further needs to run below
+        // in this script, but the pattern is kept consistent with A1 deliberately.
+        exitCode = EXIT_CODE_RESIDUE_ALERT;
       } else {
-        console.log('Cleanup verified: dataset AND live page both show the restored (empty) baseline.');
+        console.log('Cleanup verified: dataset AND live page both confirm the restored (empty) baseline.');
       }
     } catch (cleanupErr) {
-      console.error(
-        `FAIL: cleanup threw — ${cleanupErr.stack ?? cleanupErr.message}. ` +
-          `MANUAL CHECK REQUIRED: verify ${TARGET_DOC_ID}.exhibitorStages in the Studio directly and clear it if needed.`
-      );
-      exitCode = 1;
+      raiseResidueAlert({
+        checkName: 'cms-loop-f3-national-show/check-exhibitor-stages-round-trip',
+        docId: TARGET_DOC_ID,
+        field: 'exhibitorStages',
+        expectedValue: null,
+        sentinelValue: STAGES_SENTINEL_TEXT,
+        pagePath: TARGET_PAGE_PATH,
+        extra: `cleanup threw: ${cleanupErr.stack ?? cleanupErr.message}`,
+      });
+      exitCode = EXIT_CODE_RESIDUE_ALERT;
     }
   }
 }
 
-console.log(exitCode === 0 ? 'PASS: exhibitorStages reached the live site, and cleanup was verified.' : 'RESULT: FAIL (see above).');
+if (exitCode === 0) {
+  console.log('PASS: exhibitorStages reached the live site, and cleanup was verified.');
+} else if (exitCode === EXIT_CODE_RESIDUE_ALERT) {
+  console.log('RESULT: RESIDUE ALERT (see banner above) — treat as a live incident, not an ordinary FAIL.');
+} else {
+  console.log('RESULT: FAIL (see above).');
+}
 process.exit(exitCode);

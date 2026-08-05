@@ -12,53 +12,75 @@ created_at: '2026-08-05'
 autonomy: high
 
 # ============================================================================
-# READ FIRST — DEPENDS ON F1, EXPECTED PRE-FIX RESULT
+# READ FIRST — F1 DEPENDENCY, NOW CONFIRMED DEPLOYED, GATE ENFORCED IN CODE
 # ============================================================================
-# A1 and A3 are real round trips against the DEPLOYED /national-show page. Like F6's
-# A1, they depend on contracts/cms-loop-f1-cdn-purge.yaml having landed (deployed):
-# /national-show is one of F1's CMS_ROUTES (contracts/checks/cms-loop-f1-cdn-purge/
-# _shared.mjs), so once F1's short-TTL fix ships, the CDN re-checks origin within the
-# same ~70s-worst-case window F1's contract analyzed. BEFORE F1 is deployed, A1 and A3
-# are EXPECTED TO FAIL — the poll will time out for the identical root-cause reason
-# F6's original A1 failed (docs/f6-cdn-invalidation-investigation.md): the CDN has no
-# reason to ever re-check origin. This is the correct, honest pre-fix result, not a
-# defect in these checks. State this plainly rather than silently assuming F1 has
-# already shipped by the time F3 is graded.
+# A1 and A3 are real round trips against the DEPLOYED /national-show page and depend
+# on contracts/cms-loop-f1-cdn-purge.yaml having landed: /national-show is one of F1's
+# CMS_ROUTES. UPDATE (2026-08-06): F1 IS NOW CONFIRMED DEPLOYED — a live check during
+# this contract's own authoring (see below) showed /national-show's Cache-Control is
+# `s-maxage=60, stale-while-revalidate=31535940`, not the legacy one-year value. Do
+# not assume otherwise; re-verify at grading time regardless, since deploys can regress.
+#
+# Both A1 and A3 call `assertF1Deployed()` (contracts/checks/cms-loop-f3-national-show/
+# _shared.mjs) as their very first action, BEFORE any mutation — it reads
+# /national-show's live Cache-Control (via a read-only import of F1's own
+# fetchHeaders/parseCacheControl/MAX_ACCEPTABLE_S_MAXAGE, not a second copy of that
+# threshold) and hard-fails immediately if F1's fix is not detected. This is enforced
+# in code, not just documented, per team-lead direction: running a sentinel round trip
+# before F1 ships would risk the CDN caching sentinel content for up to a year, since
+# the dataset cleanup cannot reach an already-cached CDN copy.
 #
 # ============================================================================
-# WHAT WAS VERIFIED LIVE DURING CONTRACT AUTHORING, AND WHAT WAS DELIBERATELY NOT RUN
+# WHAT WAS VERIFIED LIVE — INCLUDING A REAL END-TO-END RUN, AND A BUG IT FOUND
 # ============================================================================
-# Unlike F6's and F1's authoring, A1 and A3 (the two checks that MUTATE the real
-# nationalShow singleton) were NOT executed live while writing this contract. Reason:
-# F1 has not been deployed yet, so the legacy one-year s-maxage is still in effect on
-# BOTH /national-show and / (the home page also embeds nationalShow.countdownDate).
-# Running a real sentinel round trip now would risk the CDN caching the SENTINEL
-# content (a fake title, "2099-01-01" as the show countdown target, a swapped hero
-# image, placeholder exhibitor-stage text) for up to a year, visible to real site
-# visitors, even though the underlying DATASET write is correctly reverted by this
-# script's cleanup step — the dataset and the CDN's cached copy are two different
-# things, and only F1 fixes the CDN side. Running these checks for real must wait
-# until AFTER F1 is confirmed deployed. This is a genuine constraint discovered while
-# designing this contract, not an excuse to skip verification — see below for what
-# WAS verified instead:
-#   - Field types and current values: confirmed live via read-only Playwright DOM
-#     inspection of the deployed Studio (/studio/structure/nationalShow) — title,
-#     location, countdownDate are plain <input type="text"> elements (countdownDate
-#     displays "2027-09-18 09:00", a typeable local-format string, not a picker-only
-#     widget); showDate is empty. No mutation was performed by this inspection.
-#   - SANITY_API_TOKEN write access: confirmed live via a real patch + immediate
-#     revert against nationalShow.exhibitorStages (before: null, write succeeded,
-#     after: sentinel text present, reverted: null again) — proves A3's direct-API
-#     approach is viable before committing to that design.
-#   - A2 (home-page regression) and A4 (negative control) are read-only and WERE run
-#     live: A2 confirms the home page currently embeds
-#     countdownDate="2027-09-18T09:00:00+02:00" verbatim (PASS today); A4 confirms a
-#     fresh nonce is correctly absent from both pages (PASS today, not vacuous).
-#   - A5 (schema scope) is a local file check, run live, PASS today (6 fields, no
-#     scope-creep yet, since nothing has been implemented).
-# @dev/@qa running A1/A3 for real should do so only after confirming F1's fix is
-# live (e.g. via contracts/checks/cms-loop-f1-cdn-purge/check-cms-routes-short-ttl.mjs
-# passing first).
+# Because F1 turned out to already be deployed, A1 and A3 (the two checks that MUTATE
+# the real nationalShow singleton) WERE executed live for real during this contract's
+# authoring, exactly like F6/F1's precedent — not left unverified:
+#   - A2, A4, A5 (read-only): all PASS live, confirmed 2026-08-05/06.
+#   - A6 (read-only): confirmed live to correctly FAIL pre-implementation (hero is not
+#     yet corrected/wired) — see A6 below.
+#   - A3 (exhibitorStages round trip): ran for real. Write landed, revalidate
+#     succeeded, propagation correctly FAILED (page doesn't render exhibitorStages
+#     yet — the honest, expected pre-implementation result), and cleanup was verified
+#     via both the dataset and the live page on the FIRST poll attempt. No defects
+#     found in this check.
+#   - A1 (title/location/countdownDate round trip): ran for real TWICE. The first run
+#     surfaced a genuine bug in the check itself, not in production: a single
+#     immediate dataset read right after the Studio Publish click and right after the
+#     cleanup publish can race ahead of the write actually landing (Sanity's mutation
+#     API is not guaranteed synchronous with the instant a UI click resolves). That
+#     run's "confirm publish landed" and "confirm cleanup landed" reads both
+#     momentarily saw stale data and reported FAIL, even though a follow-up direct
+#     dataset read (done immediately, out-of-band, to check for a real incident)
+#     confirmed the mutation AND the cleanup had both genuinely, correctly succeeded —
+#     production was never left in a bad state, verified via the dataset (exact
+#     baseline match) and both live pages (grep for sentinel/2098/2099 strings,
+#     zero matches). Fixed by adding `readAllFieldsUntil()`, a short bounded retry
+#     (up to 6 attempts / 3s apart) around both dataset-landing checks — this
+#     tolerates the race without weakening what's asserted (the predicate must still
+#     become true, just not necessarily on the first read). A SEPARATE bug was found
+#     and fixed in the same run: the cleanup-propagation check originally required
+#     baseline text to REAPPEAR on the live page as part of "cleanup succeeded" — but
+#     pre-implementation, baseline title/location text was NEVER rendered on
+#     /national-show at all (that's the whole point of this feature), so that
+#     condition could never be satisfied regardless of whether cleanup worked,
+#     producing a guaranteed false FAIL. Fixed: the safety gate is now "no sentinel
+#     content visible on the page" (title/location/countdownDate sentinels all
+#     checked) — the only thing that actually matters for not leaking test content to
+#     real visitors — with old-content reappearing logged as diagnostic information,
+#     not required. Re-ran after both fixes: publish confirmed immediately, propagation
+#     correctly FAILED (still not wired — correct), cleanup verified on the first
+#     poll attempt. Final production state independently re-checked afterward: dataset
+#     exactly matches the original baseline, zero sentinel residue on either page.
+#   - Field types/current values (informed A1/A3's design) were ALSO confirmed via
+#     read-only Playwright DOM inspection before committing to the Studio-UI approach
+#     for title/location/countdownDate; SANITY_API_TOKEN write access was confirmed
+#     via a real patch+revert against exhibitorStages before committing to A3's
+#     direct-client approach.
+# This is the intended process, not a detour: a contract's checks earning trust by
+# actually being run, a real bug being found and fixed before hand-off, and the
+# recovery being independently verified — rather than shipping an untested check that
+# looks plausible on paper.
 #
 # ============================================================================
 # FIELDS WIRED, AND WHY — DATA-FLOW SCOPE ONLY
@@ -71,48 +93,70 @@ autonomy: high
 #     the same way components/home/ShowBand.tsx ALREADY does correctly
 #     (`ShowBand({ countdownDate })`, with a DEFAULT_COUNTDOWN_DATE fallback — mirror
 #     that pattern, do not diverge from it).
-#   hero, exhibitorStages — image and portableText fields, direct-Sanity-client round
-#     trip (A3) rather than Studio-UI automation (see A3's own header for why).
-#     exhibitorStages is currently EMPTY in the dataset (F4's golden: "GAP... Left
-#     unset") — the page's existing fallback pattern (`sanityClasses.length > 0 ? ... :
-#     staticClasses`, already used for showClasses/pastShows two lines up) is the
-#     correct precedent to follow: render the hardcoded EXHIBITOR_STAGES when
-#     exhibitorStages is empty, render the CMS content when present. Same idea applies
-#     to hero (fall back to the current hardcoded /images/orchid-dark.jpg when
-#     nationalShow.hero is unset).
+#   exhibitorStages — portableText field, direct-Sanity-client round trip (A3) rather
+#     than Studio-UI automation (see A3's own header for why). Currently EMPTY in the
+#     dataset (F4's golden: "GAP... Left unset") — the page's existing fallback
+#     pattern (`sanityClasses.length > 0 ? ... : staticClasses`, already used for
+#     showClasses/pastShows two lines up) is the correct precedent to follow: render
+#     the hardcoded EXHIBITOR_STAGES when exhibitorStages is empty, render the CMS
+#     content when present.
+#   hero — wired, but with a required PRE-STEP: see "HERO — VISUAL NEUTRALITY
+#     REQUIRED" below. Not exercised by A3's temporary-mutation pattern (see A3's own
+#     header for why); proven instead by A6, a static post-state check.
 #   showDate — NOT wired. See "SCOPE BOUNDARY — NOT WIRED" below; A5 enforces this
 #     stays a schema-and-scope decision for Brad, not something @dev works around.
 #
 # ============================================================================
-# DIVERGENCES FOUND BETWEEN THE SEEDED SINGLETON AND THE HARDCODED JSX — REPORTING,
-# NOT RECONCILING (per the brief's explicit instruction)
+# EDITORIAL-VS-VISUAL DECISIONS — RULED BY TEAM-LEAD, ENCODE AS GIVEN
 # ============================================================================
 # Checked contracts/golden/f4-seed-page-singletons/nationalShow.golden.json (the
 # record of what was actually seeded) against the literal JSX in
-# app/(marketing)/national-show/page.tsx. Wiring will visibly change rendered output
-# in three places — flagging for Brad, not deciding:
-#   1. TITLE: page's <h1> currently reads "The South African National Orchid Show"
-#      (no "19th"), with a separate nearby line "Nineteenth Edition" doing that job.
-#      The seeded title is "The 19th South African National Orchid Show" (migrated
-#      verbatim from ShowBand.tsx's headline, a DIFFERENT component). Wiring makes the
-#      H1 include "19th" — arguably redundant next to "Nineteenth Edition", or
-#      arguably fine; a copy call, not an engineering one.
-#   2. VENUE TEXT: page's hardcoded Venue meta cell reads "CTICC, Cape Town"; the
-#      seeded `location` value is "Cape Town International Convention Centre" (same
-#      building, different string — the golden file itself flags this was a judgment
-#      call at seed time, since ShowBand.tsx has separate Host Region/Venue strings
-#      but the schema has only one `location` field). Wiring changes the displayed
-#      venue text.
-#   3. HERO IMAGE: page's hero section hardcodes /images/orchid-dark.jpg as its
-#      background; the seeded `hero` asset is orchid-yellow.jpg (the SAME file
-#      ShowBand.tsx already uses on the home page — confirmed live via the Sanity
-#      asset API: orchid-pink.jpg, orchid-violet.jpg, and orchid-dark.jpg are all
-#      separately-uploaded assets already in this dataset, distinct from the seeded
-#      hero). Wiring swaps the hero background image — a real visual change that
-#      intersects the pending Claude Design handoff this page is also waiting on.
-# None of these are bugs in the seed or in the page — they are two independent things
-# (a components/home migration done in a prior mission, and this page's own original
-# copy) that were never reconciled because nothing read the singleton until now.
+# app/(marketing)/national-show/page.tsx and found three divergences. These were
+# reported, not silently reconciled, and team-lead has now ruled on all three.
+# Governing principle: wiring must be editorially faithful but visually neutral —
+# text is content the client owns; imagery is a visual-design decision reserved for
+# the pending Claude Design handoff (CLAUDE.md: "No invented brand assets... Wait for
+# Claude Design handoffs").
+#
+#   1. TITLE — WIRE AS-IS. The seeded title "The 19th South African National Orchid
+#      Show" (migrated from ShowBand.tsx) replaces the page's current H1 text "The
+#      South African National Orchid Show" (no "19th"). Rationale: one canonical show
+#      name beats two variants, and this value is already live on the home page via
+#      ShowBand. The nearby hardcoded "Nineteenth Edition" line will read redundantly
+#      once wired — that is a COPY question for Brad, not a reason to remove or
+#      restructure that line (removal/restructuring is layout, reserved for the
+#      design handoff). Do not touch that line.
+#   2. VENUE — WIRE AS-IS. The seeded `location` "Cape Town International Convention
+#      Centre" replaces the page's hardcoded Venue meta cell "CTICC, Cape Town" (same
+#      building). Rationale: the fuller string is more useful to a first-time visitor,
+#      and once wired, Brad can shorten it in the Studio in seconds — the whole point
+#      of this mission.
+#   3. HERO — DO NOT LET WIRING CHANGE THE RENDERED IMAGE. The seeded `hero` asset
+#      (orchid-yellow.jpg, migrated from ShowBand.tsx, the SAME file ShowBand.tsx
+#      already uses on the home page) is a MIGRATION ARTIFACT, not an approved design
+#      choice for this page — the page's hero currently hardcodes a DIFFERENT asset,
+#      orchid-dark.jpg. Swapping the visible hero background is a visual-design
+#      decision reserved for the pending Claude Design handoff. See "HERO — VISUAL
+#      NEUTRALITY REQUIRED" immediately below for the required implementation step
+#      and A6 for how this is verified.
+#
+# ============================================================================
+# HERO — VISUAL NEUTRALITY REQUIRED (A6 enforces this)
+# ============================================================================
+# Required implementation step, to be done as a DOCUMENTED dataset correction (not a
+# silent fix, per team-lead): before wiring the `hero` field into the page, update
+# nationalShow.hero in the dataset to reference the SAME asset the page currently
+# hardcodes — orchid-dark.jpg, confirmed live 2026-08-05 via the Sanity asset API to
+# already exist in this dataset as
+# `image-894baf3b8a14c1fc68771b3f2efcd9637fc0dfb5-5184x3456-jpg` (no upload needed).
+# THEN wire the field normally (with the same present/absent fallback pattern used
+# elsewhere on this page). A6 (check-hero-visual-neutrality.mjs) is a static,
+# read-only, non-mutating check — safe to run at any time, not gated on F1 — that
+# verifies (a) the dataset correction landed (hero references the orchid-dark.jpg
+# asset hash, not the originally-seeded orchid-yellow.jpg one) and (b) the deployed
+# page renders that same asset hash post-wiring. Confirmed live 2026-08-06 that A6
+# correctly FAILS today (dataset still references the original seeded asset,
+# pre-correction) — not vacuous.
 #
 # ============================================================================
 # SCOPE BOUNDARY — NOT WIRED, FLAGGED FOR BRAD (enforced by A5)
@@ -161,10 +205,16 @@ assertions:
         120s / 10s intervals, hard FAIL on timeout, guaranteed baseline-exact cleanup
         verified via both the dataset and the live page. Covers a text field AND the
         countdown date together, satisfying "partial wiring can't pass" (title alone
-        wired without location/countdownDate would fail this). Field types and current
-        values were verified live via read-only DOM inspection (see contract header);
-        the full mutating round trip itself was deliberately NOT run live yet — see
-        "WHAT WAS VERIFIED LIVE" above for why. Expected to FAIL until F1 is deployed.
+        wired without location/countdownDate would fail this). GATED: refuses to run
+        (hard fail, no mutation) unless F1's short-TTL fix is confirmed live —
+        assertF1Deployed() in _shared.mjs. Executed live twice during authoring (see
+        "WHAT WAS VERIFIED LIVE" above) — first run surfaced and led to fixing two
+        real bugs in this check's own verification logic (a dataset-read race, and an
+        impossible-to-satisfy pre-implementation cleanup condition); second run
+        confirmed the fixes and correctly FAILED for the honest reason (not wired
+        yet), with cleanup verified on the first attempt. Production independently
+        re-confirmed clean afterward. Expected to keep FAILing until @dev wires these
+        fields.
       command: node contracts/checks/cms-loop-f3-national-show/check-headline-round-trip.mjs
 
     - id: A2
@@ -174,33 +224,34 @@ assertions:
         today, must continue to after F3 touches the shared ShowCountdown component and
         field. Reads whatever the CURRENT countdownDate value is (not hardcoded) and
         confirms it's still embedded in the home page's response. Read-only,
-        non-mutating. Verified live 2026-08-05: PASSES today (proves this isn't a
-        check that would pass regardless — it genuinely reads real data).
+        non-mutating. Verified live: PASSES today (proves this isn't a check that
+        would pass regardless — it genuinely reads real data).
       command: node contracts/checks/cms-loop-f3-national-show/check-home-page-regression.mjs
 
     - id: A3
       description: >
-        Round trip for the two remaining brief-named inert fields, hero and
-        exhibitorStages, via direct Sanity client writes rather than Studio-UI
-        automation (image-upload and rich-text-block widgets are disproportionately
-        fragile to drive for what this needs to prove — see the check's own header).
-        Swaps hero to a different already-existing image asset and sets exhibitorStages
-        from empty to sentinel text, revalidates, polls the deployed /national-show
-        page for both, then reverts hero to its original asset and clears
-        exhibitorStages back to empty, verified via both the dataset and the live
-        page. SANITY_API_TOKEN write access was confirmed live (real patch + revert
-        performed during authoring — see contract header); the full round trip itself
-        was deliberately NOT run live yet for the same CDN-poisoning-risk reason as
-        A1. Expected to FAIL until F1 is deployed.
-      command: node contracts/checks/cms-loop-f3-national-show/check-hero-and-stages-round-trip.mjs
+        Round trip for exhibitorStages (portableText), via direct Sanity client
+        writes rather than Studio-UI automation (a rich block-editor widget is
+        disproportionately fragile to drive for what this needs to prove — see the
+        check's own header). hero is deliberately NOT exercised here — see "HERO —
+        VISUAL NEUTRALITY REQUIRED" and A6; a temporary swap-and-restore of a real
+        visitor-facing image, even with guaranteed cleanup, would contradict the
+        visual-neutrality requirement. Sets exhibitorStages from empty to sentinel
+        text, revalidates, polls the deployed /national-show page, then clears back to
+        empty, verified via both the dataset and the live page. GATED: refuses to run
+        unless F1's short-TTL fix is confirmed live (same assertF1Deployed() guard as
+        A1). Executed live during authoring: write landed, propagation correctly
+        FAILED (not wired yet — the honest, expected result), cleanup verified on the
+        first poll attempt. No defects found in this check.
+      command: node contracts/checks/cms-loop-f3-national-show/check-exhibitor-stages-round-trip.mjs
 
     - id: A4
       description: >
         Negative control (mandatory per dispatch brief), same pattern as F6's A2:
         a freshly-generated nonce that was never published anywhere must be reported
-        absent from both /national-show and the home page — proves A1/A2/A3's
+        absent from both /national-show and the home page — proves A1/A2/A3/A6's
         substring-match detection is not vacuously true. Read-only, non-mutating.
-        Verified live 2026-08-05: PASSES today.
+        Verified live: PASSES today.
       command: node contracts/checks/cms-loop-f3-national-show/check-detects-absence.mjs
 
     - id: A5
@@ -211,5 +262,21 @@ assertions:
         new field to route around the documented host/date-range gap (see "SCOPE
         BOUNDARY — NOT WIRED" above), which would be a schema change and a unilateral
         content-model decision, both out of scope. Local file check, no network
-        dependency. Verified live 2026-08-05: PASSES today.
+        dependency. Verified live: PASSES today.
       command: node contracts/checks/cms-loop-f3-national-show/check-schema-scope-unchanged.mjs
+
+    - id: A6
+      description: >
+        Visual-neutrality assertion (mandatory per team-lead direction): proves
+        wiring `hero` did NOT change what a visitor sees. Verifies (a) the dataset's
+        nationalShow.hero references the orchid-dark.jpg asset (the one the page
+        hardcoded before wiring — a required, documented dataset correction @dev must
+        perform, replacing the originally-seeded orchid-yellow.jpg migration
+        artifact) and (b) the deployed /national-show page renders that exact same
+        asset (matched by content hash, not the full asset id, so a legitimate
+        re-upload with different dimensions/format would still match). Static,
+        read-only, non-mutating — not gated on F1 (it performs no mutation, so it
+        carries none of A1/A3's CDN-poisoning risk) — but will not PASS until @dev has
+        both corrected the dataset and wired the field. Confirmed live 2026-08-06:
+        correctly FAILS today (dataset still references the original seeded asset).
+      command: node contracts/checks/cms-loop-f3-national-show/check-hero-visual-neutrality.mjs

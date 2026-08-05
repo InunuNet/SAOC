@@ -25,9 +25,23 @@
 // title or a "2099" countdown could stay visibly cached on the live site, including
 // the home page, for up to a year. This is enforced in code, not just documented.
 //
+// CLEANUP-SAFETY FIX (2026-08-06, same root cause as F6's incident — see
+// f6-prove-cms-loop/_shared.mjs and this contract's own _shared.mjs headers): every
+// `process.exit(1)` in this script's own local helpers (readAllFields()) and in the
+// precondition check below has been converted to `throw`, so the cleanup block in
+// `finally` below is never silently skipped. The page-level cleanup verification
+// below also now uses verifySustainedCondition (3 consecutive clean reads, 15s apart,
+// up to 5 minutes) instead of a single-shot poll that exits on the first clean read —
+// a lone "not found" read is not reliable proof of removal across every CDN edge
+// node. A verification failure raises a loud, distinctly-exit-coded, durably-logged
+// residue alert (raiseResidueAlert / EXIT_CODE_RESIDUE_ALERT) instead of an ordinary
+// FAIL, so it can never be confused with "the feature just isn't wired yet."
+//
 // Exit codes: 0 = all three sentinels appeared on the live page within 120s AND
-// cleanup was verified. 1 = F1 not yet deployed, precondition violated, timeout,
-// unreachable host, or cleanup could not be verified — never a skip.
+// cleanup was verified. 1 = F1 not yet deployed, precondition violated, timeout, or
+// unreachable host. EXIT_CODE_RESIDUE_ALERT (2) = mutation succeeded but cleanup
+// could not be verified — treat as a live incident, not an ordinary FAIL. Never a
+// skip.
 
 import {
   getSanityClient,
@@ -38,11 +52,17 @@ import {
   poll,
   setFieldsAndPublish,
   assertF1Deployed,
+  verifySustainedCondition,
+  raiseResidueAlert,
+  installCrashGuard,
+  EXIT_CODE_RESIDUE_ALERT,
   TARGET_DOC_ID,
   TARGET_PAGE_PATH,
   STRUCTURE_PATH,
   REVALIDATE_TYPE,
 } from './_shared.mjs';
+
+installCrashGuard({ check: 'check-headline-round-trip', docId: TARGET_DOC_ID });
 
 await assertF1Deployed();
 
@@ -64,6 +84,7 @@ let browser;
 let mutationAttempted = false;
 let exitCode = 1;
 let baseline;
+let countdownNeedle; // set once the sentinel publish's authoritative stored ISO value is known
 
 // readDatasetField (imported) only reads ONE field by name via a GROQ projection
 // built from that name — it does not support a multi-field projection string
@@ -74,8 +95,9 @@ async function readAllFields() {
     const doc = await client.fetch(`*[_id == $id][0]{title, location, countdownDate}`, { id: TARGET_DOC_ID });
     return doc ?? {};
   } catch (err) {
-    console.error(`FAIL: dataset read for ${TARGET_DOC_ID} threw — ${err.message}`);
-    process.exit(1);
+    const msg = `FAIL: dataset read for ${TARGET_DOC_ID} threw — ${err.message}`;
+    console.error(msg);
+    throw new Error(msg);
   }
 }
 
@@ -104,12 +126,12 @@ try {
   console.log('--- Step 1: baseline ---');
   baseline = await readAllFields();
   if (!baseline.title || !baseline.location || !baseline.countdownDate) {
-    console.error(
+    const msg =
       `FAIL: precondition violated — expected title, location, and countdownDate to all already hold real values ` +
-        `(confirmed live 2026-08-05), got ${JSON.stringify(baseline)}. This check's cleanup restores to this exact ` +
-        'baseline; it requires that baseline to be real content, not empty.'
-    );
-    process.exit(1);
+      `(confirmed live 2026-08-05), got ${JSON.stringify(baseline)}. This check's cleanup restores to this exact ` +
+      'baseline; it requires that baseline to be real content, not empty.';
+    console.error(msg);
+    throw new Error(msg);
   }
   console.log('Baseline:', JSON.stringify(baseline));
 
@@ -131,7 +153,7 @@ try {
     console.error(`FAIL: Studio publish did not land as expected — dataset shows ${JSON.stringify(afterPublish)}`);
   } else {
     console.log('Publish confirmed in dataset:', JSON.stringify(afterPublish));
-    const countdownNeedle = afterPublish.countdownDate; // authoritative stored value, not a guessed format
+    countdownNeedle = afterPublish.countdownDate; // authoritative stored value, not a guessed format
 
     console.log('--- Step 4: call /api/revalidate ---');
     const revalRes = await callRevalidate(revalidateSecret, REVALIDATE_TYPE);
@@ -206,38 +228,65 @@ try {
       const cleanupRevalidate = await callRevalidate(revalidateSecret, REVALIDATE_TYPE);
       console.log('Cleanup revalidate response:', cleanupRevalidate);
 
-      const cleanupPropagation = await poll(async () => {
-        const r = await fetchPublicPageContains(baseline.title, TARGET_PAGE_PATH);
-        const restored = r.body.includes(baseline.title) && r.body.includes(baseline.location);
-        const sentinelsGone = !r.body.includes(sentinels.title) && !r.body.includes(sentinels.location);
-        return { ok: restored && sentinelsGone, status: r.status, restored, sentinelsGone };
-      }, 'cleanup-propagation');
+      // Safety gate is "no sentinel visible on the live page" — NOT "baseline text is
+      // visible" (that second condition is only meaningful once /national-show is
+      // actually wired; pre-wiring, baseline.title/location were NEVER rendered by
+      // the page at all — confirmed live 2026-08-06 that requiring it produced a
+      // false FAIL here even though the dataset was genuinely, correctly restored).
+      // What actually matters for safety is that no test content is left visible to
+      // real visitors; whether the ORIGINAL content re-appears depends on wiring
+      // that is out of this script's control.
+      //
+      // Uses verifySustainedCondition (3 consecutive clean reads, 15s apart, up to 5
+      // minutes — see f6-prove-cms-loop/_shared.mjs) instead of a single-shot poll
+      // that would exit on the very first clean read: one "not found" response is not
+      // reliable proof of removal across every CDN edge node/cache slot. This bound
+      // is deliberately separate from and slower than the 120s propagation-poll bound
+      // above — that bound proves the FEATURE works; this one proves cleanup is SAFE,
+      // a different question with a different (more conservative) risk tolerance.
+      const cleanupPropagation = await verifySustainedCondition(async () => {
+        const r = await fetchPublicPageContains(sentinels.title, TARGET_PAGE_PATH);
+        return (
+          !r.body.includes(sentinels.title) &&
+          !r.body.includes(sentinels.location) &&
+          !(countdownNeedle && r.body.includes(countdownNeedle))
+        );
+      }, { label: 'cleanup-propagation' });
 
       if (!datasetClean || !cleanupPropagation.ok) {
-        console.error(
-          'FAIL: cleanup could not be fully verified — ' +
-            (!datasetClean ? `dataset still shows ${JSON.stringify(afterCleanupDataset)}. ` : '') +
-            (!cleanupPropagation.ok ? `live page may still show sentinel content after ${POLL_TIMEOUT_MS_LABEL()}s. ` : '') +
-            `MANUAL CHECK REQUIRED: verify ${TARGET_DOC_ID} (title/location/countdownDate) in the Studio directly.`
-        );
-        exitCode = 1;
+        raiseResidueAlert({
+          checkName: 'cms-loop-f3-national-show/check-headline-round-trip',
+          docId: TARGET_DOC_ID,
+          field: 'title/location/countdownDate',
+          expectedValue: baseline,
+          sentinelValue: JSON.stringify(sentinels) + ` countdownDate=${countdownNeedle}`,
+          pagePath: TARGET_PAGE_PATH,
+          extra: !datasetClean ? `dataset still shows ${JSON.stringify(afterCleanupDataset)}` : 'dataset confirmed clean; live page could not confirm sentinel absence within the sustained-check window',
+        });
+        // Set the exit code rather than calling process.exit() here directly — this is
+        // still inside the outer finally block, and `if (browser) await
+        // browser.close()` still needs to run below. process.exit() would skip that,
+        // reintroducing the exact anti-pattern this whole fix removes elsewhere.
+        exitCode = EXIT_CODE_RESIDUE_ALERT;
       } else {
-        console.log('Cleanup verified: dataset AND live page both show the restored baseline.');
+        console.log('Cleanup verified: dataset restored AND live page sustained sentinel-absence across 3 consecutive checks.');
       }
     } catch (cleanupErr) {
-      console.error(
-        `FAIL: cleanup threw — ${cleanupErr.stack ?? cleanupErr.message}. ` +
-          `MANUAL CHECK REQUIRED: verify ${TARGET_DOC_ID} in the Studio directly and restore title/location/countdownDate if needed.`
-      );
-      exitCode = 1;
+      raiseResidueAlert({
+        checkName: 'cms-loop-f3-national-show/check-headline-round-trip',
+        docId: TARGET_DOC_ID,
+        field: 'title/location/countdownDate',
+        expectedValue: baseline,
+        sentinelValue: JSON.stringify(sentinels),
+        pagePath: TARGET_PAGE_PATH,
+        extra: `cleanup threw: ${cleanupErr.stack ?? cleanupErr.message}`,
+      });
+      exitCode = EXIT_CODE_RESIDUE_ALERT;
     }
   }
   if (browser) await browser.close();
 }
 
-function POLL_TIMEOUT_MS_LABEL() {
-  return 120;
-}
 function beforeRestoreDisplayFallback(iso) {
   // Only used if the pre-restore DOM read failed for some reason — reconstructs the
   // Studio's "YYYY-MM-DD HH:mm" local display format from the stored ISO baseline as
@@ -247,5 +296,11 @@ function beforeRestoreDisplayFallback(iso) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-console.log(exitCode === 0 ? 'PASS: national-show headline fields reached the live site, and cleanup was verified.' : 'RESULT: FAIL (see above).');
+if (exitCode === 0) {
+  console.log('PASS: national-show headline fields reached the live site, and cleanup was verified.');
+} else if (exitCode === EXIT_CODE_RESIDUE_ALERT) {
+  console.log('RESULT: RESIDUE ALERT (see banner above) — treat as a live incident, not an ordinary FAIL.');
+} else {
+  console.log('RESULT: FAIL (see above).');
+}
 process.exit(exitCode);

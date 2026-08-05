@@ -5,6 +5,26 @@
 // fetchPublicPageContains, callRevalidate, getSanityClient, loadEnvOrFail), the same
 // sanctioned reuse pattern cms-loop-f2-event-tags already established (pass explicit
 // docId/field/structurePath instead of forking the file).
+//
+// ============================================================================
+// 2026-08-06 CLEANUP-SAFETY FIX (same root cause as F6's incident — see
+// f6-prove-cms-loop/_shared.mjs's own header for the full writeup) — READ BEFORE EDITING
+// ============================================================================
+// This file's two LOCAL helpers, assertF1Deployed() and setFieldsAndPublish(), each
+// called `process.exit(1)` directly on failure. `process.exit()` terminates the
+// process immediately without unwinding the stack, so any `try/finally` above it —
+// including this contract's own A1/A3 cleanup blocks, whose entire purpose is to
+// guarantee cleanup always runs — would be silently skipped if either helper hit its
+// failure path while called from inside that try. Fixed: both now `throw new
+// Error(...)` instead, so normal try/catch/finally semantics apply. The imported
+// helpers from f6-prove-cms-loop/_shared.mjs were already converted the same way; this
+// file's own two additions had not been until now.
+//
+// Also re-exports f6's cleanup-safety helpers (verifySustainedCondition,
+// verifyLiveAbsence, raiseResidueAlert, installCrashGuard, EXIT_CODE_RESIDUE_ALERT,
+// CLEANUP_POLL_TIMEOUT_MS/INTERVAL_MS/REQUIRED_CONSECUTIVE_CLEAN) for A1/A3 to use in
+// place of their old single-shot cleanup polls — see those check scripts for the
+// applied fix. This is a read-only import, not a fork of f6's file.
 
 import {
   openAuthenticatedDoc,
@@ -14,6 +34,14 @@ import {
   getSanityClient,
   loadEnvOrFail,
   BASE_URL,
+  verifySustainedCondition,
+  verifyLiveAbsence,
+  raiseResidueAlert,
+  installCrashGuard,
+  EXIT_CODE_RESIDUE_ALERT,
+  CLEANUP_POLL_TIMEOUT_MS,
+  CLEANUP_POLL_INTERVAL_MS,
+  CLEANUP_REQUIRED_CONSECUTIVE_CLEAN,
 } from '../f6-prove-cms-loop/_shared.mjs';
 
 // Read-only import from F1's own checks directory (not modified, per dispatch
@@ -30,6 +58,14 @@ export {
   getSanityClient,
   loadEnvOrFail,
   BASE_URL,
+  verifySustainedCondition,
+  verifyLiveAbsence,
+  raiseResidueAlert,
+  installCrashGuard,
+  EXIT_CODE_RESIDUE_ALERT,
+  CLEANUP_POLL_TIMEOUT_MS,
+  CLEANUP_POLL_INTERVAL_MS,
+  CLEANUP_REQUIRED_CONSECUTIVE_CLEAN,
 };
 
 export const TARGET_DOC_ID = 'nationalShow';
@@ -61,14 +97,14 @@ export async function assertF1Deployed() {
   const deployed =
     parsed.sMaxage !== undefined && parsed.sMaxage !== LEGACY_S_MAXAGE && parsed.sMaxage <= MAX_ACCEPTABLE_S_MAXAGE;
   if (!deployed) {
-    console.error(
+    const msg =
       `FAIL: refusing to run — F1's short-TTL fix is not deployed yet on ${TARGET_PAGE_PATH} ` +
-        `(Cache-Control: ${JSON.stringify(headers.cacheControl)}). Running a mutating round trip before F1 ships risks ` +
-        'the CDN caching sentinel content for up to a year on this route and on the home page (see contract header ' +
-        '"READ FIRST — DEPENDS ON F1"). Run contracts/checks/cms-loop-f1-cdn-purge/check-cms-routes-short-ttl.mjs first ' +
-        'to confirm F1 is live, then re-run this check.'
-    );
-    process.exit(1);
+      `(Cache-Control: ${JSON.stringify(headers.cacheControl)}). Running a mutating round trip before F1 ships risks ` +
+      'the CDN caching sentinel content for up to a year on this route and on the home page (see contract header ' +
+      '"READ FIRST — DEPENDS ON F1"). Run contracts/checks/cms-loop-f1-cdn-purge/check-cms-routes-short-ttl.mjs first ' +
+      'to confirm F1 is live, then re-run this check.';
+    console.error(msg);
+    throw new Error(msg);
   }
   console.log(`F1 guard passed: ${TARGET_PAGE_PATH} Cache-Control (${headers.cacheControl}) confirms the short-TTL fix is deployed.`);
 }
@@ -83,8 +119,9 @@ export async function setFieldsAndPublish(page, fieldValues) {
   for (const [fieldId, value] of Object.entries(fieldValues)) {
     const locator = page.locator(`#${fieldId}`);
     if ((await locator.count()) === 0) {
-      console.error(`FAIL: #${fieldId} not found in the Studio — schema changed or auth failed.`);
-      process.exit(1);
+      const msg = `FAIL: #${fieldId} not found in the Studio — schema changed or auth failed.`;
+      console.error(msg);
+      throw new Error(msg);
     }
     await locator.scrollIntoViewIfNeeded();
     await locator.fill(value, { force: true });
@@ -96,8 +133,9 @@ export async function setFieldsAndPublish(page, fieldValues) {
   }
   const publishBtn = page.locator('[data-testid="action-publish"]');
   if ((await publishBtn.count()) === 0) {
-    console.error('FAIL: Publish button ([data-testid="action-publish"]) not found — Studio UI changed or auth failed.');
-    process.exit(1);
+    const msg = 'FAIL: Publish button ([data-testid="action-publish"]) not found — Studio UI changed or auth failed.';
+    console.error(msg);
+    throw new Error(msg);
   }
   await publishBtn.click({ force: true });
   await page.waitForTimeout(5000);
