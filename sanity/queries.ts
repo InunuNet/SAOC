@@ -85,6 +85,17 @@ export const boardMembersQuery = defineQuery(`
   }
 `);
 
+export const awardsQuery = defineQuery(`
+  *[_type == "award"] | order(order asc){
+    _id,
+    code,
+    name,
+    description,
+    threshold,
+    order
+  }
+`);
+
 export const societyBySlugQuery = defineQuery(`
   *[_type == "society" && slug.current == $slug][0]{
     _id,

@@ -4,9 +4,9 @@ import type { PortableTextBlock } from '@portabletext/react';
 
 import { PageHero } from '@/components/ui/PageHero';
 import { AwardsGrid, JudgesDirectory } from '@/components/judging';
-import type { SanityJudge } from '@/components/judging';
+import type { SanityAward, SanityJudge } from '@/components/judging';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { judgingPageQuery } from '@/sanity/queries';
+import { awardsQuery, judgingPageQuery } from '@/sanity/queries';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -31,10 +31,16 @@ interface JudgingPageData {
 }
 
 export default async function JudgingPage() {
-  const data = await sanityFetch<JudgingPageData>({
-    query: judgingPageQuery,
-    tags: ['judging', 'sanity'],
-  });
+  const [data, awards] = await Promise.all([
+    sanityFetch<JudgingPageData>({
+      query: judgingPageQuery,
+      tags: ['judging', 'sanity'],
+    }),
+    sanityFetch<SanityAward[]>({
+      query: awardsQuery,
+      tags: ['judging', 'sanity', 'award'],
+    }),
+  ]);
 
   const judges: SanityJudge[] = data?.judges ?? [];
   const showDirectory = data?.showPublicDirectory === true;
@@ -97,12 +103,12 @@ export default async function JudgingPage() {
           </section>
         ) : null}
 
-        {/* Awards grid — always static */}
+        {/* Awards grid */}
         <section>
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
             SAOC awards
           </p>
-          <AwardsGrid />
+          <AwardsGrid awards={awards ?? []} />
         </section>
 
         {/* Becoming a judge */}

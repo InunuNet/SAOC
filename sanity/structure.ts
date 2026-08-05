@@ -38,7 +38,6 @@ const COLLECTION_TYPES = [
   'award',
   'sponsor',
   'judge',
-  'province',
 ];
 
 export function structure(S: StructureBuilder, _context: StructureResolverContext) {
