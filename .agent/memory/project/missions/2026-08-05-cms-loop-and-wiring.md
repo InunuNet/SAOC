@@ -39,7 +39,7 @@ features:
     the same way A1 asserts /about.
 - id: F3
   name: Wire /national-show to its seeded singleton
-  status: pending
+  status: in_progress
   inline_brief: app/(marketing)/national-show/page.tsx fetches only showClassesQuery
     and pastShowsQuery. Title, dates, venue, host, hero image and exhibitor stages
     are literal JSX, so the seeded nationalShow singleton is inert — the client edits
@@ -53,9 +53,10 @@ features:
     like F6's, not by asserting the query exists. Then update docs/secretary-cms-guide.md
     section 7 and the top "What You Can and Cannot Change Yourself" section, which
     currently tell her this page is not editable.
+  started_at: '2026-08-06T07:09:05.562265+00:00'
 - id: F4
   name: Resolve the orphaned document types (award, province)
-  status: pending
+  status: done
   inline_brief: award and province appear in the Studio sidebar (sanity/structure.ts
     COLLECTION_TYPES) but no GROQ query reads either. AwardsGrid.tsx reads the static
     lib/data/awards; society.province is free text, not a reference. Decide per type
@@ -64,6 +65,7 @@ features:
     most likely wants removing (the free-text field works fine). Recommend, then implement
     — do not leave both open. Done when neither type is editable-but-inert, and the
     guide reflects the outcome.
+  completed_at: '2026-08-06T07:09:05.251585+00:00'
 milestones:
 - id: M1
   name: Make a published edit reach the live site
@@ -82,12 +84,15 @@ milestones:
   - F4
   gate: contract
 last_checkpoint:
-  milestone: M1
-  feature: F1
-  ts: '2026-08-05T21:36:32.070131+00:00'
-last_active_at: '2026-08-05T21:36:32.070131+00:00'
+  milestone: M2
+  feature: F3
+  ts: '2026-08-06T07:09:05.562477+00:00'
+last_active_at: '2026-08-06T07:09:05.562477+00:00'
 started_at: '2026-08-05T21:36:32.070131+00:00'
 ---
+
+
+
 
 
 # Mission — Close the CMS loop and wire the pages that ignore it
