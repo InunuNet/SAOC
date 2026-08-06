@@ -1,8 +1,9 @@
 {
   "mission": ".agent/memory/project/missions/2026-08-05-cms-loop-and-wiring.md",
   "checkpoint": {
-    "milestone": null,
-    "feature": null
+    "milestone": "M1",
+    "feature": "F1",
+    "ts": "2026-08-05T21:36:32.070131+00:00"
   },
-  "activated_at": "2026-08-05T21:34:38.351079+00:00"
+  "activated_at": "2026-08-05T21:36:32.071473+00:00"
 }

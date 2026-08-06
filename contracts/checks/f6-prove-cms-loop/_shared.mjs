@@ -301,6 +301,38 @@ export const CLEANUP_POLL_TIMEOUT_MS = 300_000; // 5 minutes
 export const CLEANUP_POLL_INTERVAL_MS = 15_000;
 export const CLEANUP_REQUIRED_CONSECUTIVE_CLEAN = 3;
 
+// PHASE LEGIBILITY (added 2026-08-06): a mutating round trip has TWO distinct phases
+// with different, unrelated success criteria — (1) PROPAGATION, proving the feature
+// works, bounded at 120s, and (2) CLEANUP, a safety teardown, bounded separately at up
+// to 5 minutes. A human or agent reading output mid-run must never have to guess which
+// phase is in progress or mistake a slow-but-correct teardown for a stuck/failed one —
+// that ambiguity produced a real, costly false escalation on this mission (see
+// docs/f6-a1-cleanup-incident-2026-08-06.md and its follow-up correction). These two
+// helpers print loud, unambiguous phase banners; every mutating check script calls
+// both, so the banner text and the runtime numbers never drift out of sync between
+// scripts.
+export function announceRuntimeExpectations(checkName) {
+  console.log(
+    `\n[${checkName}] EXPECTED RUNTIME: up to ~2 min for propagation (120s bound) + up to ~5 min for cleanup ` +
+      'verification (300s bound) = up to ~7 min worst case if both phases run to their full bound. Typical ' +
+      'observed runtime is much shorter (propagation FAILs surface at 120s; cleanup verification has completed ' +
+      'in ~30s in every real run so far). A run that has not finished by ~7 min is genuinely stuck, not slow.\n'
+  );
+}
+
+export function announceCleanupPhase() {
+  const lines = [
+    '',
+    '>>> ENTERING CLEANUP PHASE. This is a normal, expected part of every run — pass or fail above. <<<',
+    '>>> Live-page absence may lag the dataset write by up to ~60s (the CDN TTL introduced by F1) —  <<<',
+    '>>> that lag is NOT a failure. Do not curl the target mid-cleanup and read a still-cached        <<<',
+    '>>> response as proof cleanup failed; wait for this script\'s own PASS/FAIL/RESIDUE ALERT verdict <<<',
+    '>>> below — that is the only authoritative result.                                              <<<',
+    '',
+  ];
+  console.log(lines.join('\n'));
+}
+
 // Generic sustained-condition verifier: `checkFn()` is called repeatedly (async, no
 // args) and must return `true` CLEANUP_REQUIRED_CONSECUTIVE_CLEAN times IN A ROW,
 // within CLEANUP_POLL_TIMEOUT_MS, before this resolves ok. Any `false` resets the

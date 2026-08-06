@@ -6,7 +6,7 @@ goal: Close the CMS loop so a published Studio edit actually reaches the live si
   purge on revalidate, the /events/[slug] cache tags, the /national-show singleton,
   and the orphaned award/province types
 created_at: '2026-08-05T19:30:00.000000+00:00'
-status: pending
+status: in_progress
 autonomy: high
 supersedes_blocker: cms-activation-deploy F6
 cost_estimate:
@@ -16,7 +16,7 @@ cost_estimate:
 features:
 - id: F1
   name: Purge the CDN on revalidate (closes cms-activation-deploy F6)
-  status: pending
+  status: in_progress
   inline_brief: Root cause is diagnosed and verified verbatim against nextjs.org/docs/app/guides/cdn-caching
     — revalidateTag() invalidates only the Next.js server cache; the CDN keeps serving
     its copy until s-maxage expires unless a CDN purge is triggered alongside it.
@@ -27,6 +27,7 @@ features:
     do not silently choose it. Done when contracts/checks/f6-prove-cms-loop/check-studio-edit-reaches-site.mjs
     (A1) flips FAIL to PASS without weakening the check or lengthening its 120s bound,
     and the full contracts/f6-prove-cms-loop.yaml gate is green.
+  started_at: '2026-08-05T21:36:32.069785+00:00'
 - id: F2
   name: Fix /events/[slug] revalidation tags
   status: pending
@@ -80,7 +81,14 @@ milestones:
   features:
   - F4
   gate: contract
+last_checkpoint:
+  milestone: M1
+  feature: F1
+  ts: '2026-08-05T21:36:32.070131+00:00'
+last_active_at: '2026-08-05T21:36:32.070131+00:00'
+started_at: '2026-08-05T21:36:32.070131+00:00'
 ---
+
 
 # Mission — Close the CMS loop and wire the pages that ignore it
 

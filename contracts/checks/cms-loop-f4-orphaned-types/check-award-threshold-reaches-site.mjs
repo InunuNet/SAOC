@@ -58,6 +58,8 @@ import {
   verifyLiveAbsence,
   raiseResidueAlert,
   installCrashGuard,
+  announceRuntimeExpectations,
+  announceCleanupPhase,
   EXIT_CODE_RESIDUE_ALERT,
 } from '../f6-prove-cms-loop/_shared.mjs';
 import {
@@ -80,6 +82,7 @@ installCrashGuard({ checkName: 'f4-check-award-threshold-reaches-site', docId: A
 
 const revalidateSecret = loadEnvOrFail('SANITY_REVALIDATE_SECRET');
 const client = getSanityClient();
+announceRuntimeExpectations('f4-check-award-threshold-reaches-site');
 console.log(`Sentinel value: ${nonce}`);
 console.log(`Target: ${AWARD_DOC_ID}.${AWARD_THRESHOLD_FIELD}, public page ${AWARD_PAGE_PATH}, revalidate type ${AWARD_REVALIDATE_TYPE}`);
 
@@ -155,6 +158,7 @@ try {
   console.error(`FAIL: unexpected error — ${err.stack ?? err.message}`);
 } finally {
   if (mutationAttempted) {
+    announceCleanupPhase();
     console.log('--- Cleanup: restoring the exact original value and re-publishing (always attempted) ---');
     let cleanupOk = false;
     let afterCleanupDataset;

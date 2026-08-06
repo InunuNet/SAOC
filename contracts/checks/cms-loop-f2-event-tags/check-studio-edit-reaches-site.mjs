@@ -52,6 +52,8 @@ import {
   verifyLiveAbsence,
   raiseResidueAlert,
   installCrashGuard,
+  announceRuntimeExpectations,
+  announceCleanupPhase,
   EXIT_CODE_RESIDUE_ALERT,
 } from '../f6-prove-cms-loop/_shared.mjs';
 import {
@@ -76,6 +78,7 @@ installCrashGuard({ checkName: 'f2-check-studio-edit-reaches-site', docId: TARGE
 
 const revalidateSecret = loadEnvOrFail('SANITY_REVALIDATE_SECRET');
 const client = getSanityClient();
+announceRuntimeExpectations('f2-check-studio-edit-reaches-site');
 console.log(`Sentinel value: ${nonce}`);
 console.log(`Target: ${TARGET_EVENT_DOC_ID}.${TARGET_EVENT_FIELD}, public page ${TARGET_EVENT_PAGE_PATH}, revalidate type ${TARGET_EVENT_TYPE}`);
 
@@ -154,6 +157,7 @@ try {
   console.error(`FAIL: unexpected error — ${err.stack ?? err.message}`);
 } finally {
   if (mutationAttempted) {
+    announceCleanupPhase();
     console.log('--- Cleanup: clearing the field and re-publishing (always attempted) ---');
     let cleanupOk = false;
     let afterCleanupDataset;

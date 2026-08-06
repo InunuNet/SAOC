@@ -46,6 +46,8 @@ import {
   verifySustainedCondition,
   raiseResidueAlert,
   installCrashGuard,
+  announceRuntimeExpectations,
+  announceCleanupPhase,
   EXIT_CODE_RESIDUE_ALERT,
   BASE_URL,
 } from '../f6-prove-cms-loop/_shared.mjs';
@@ -72,6 +74,7 @@ installCrashGuard({ checkName: 'f4-check-award-order-reaches-site', docId: AWARD
 
 const revalidateSecret = loadEnvOrFail('SANITY_REVALIDATE_SECRET');
 const client = getSanityClient();
+announceRuntimeExpectations('f4-check-award-order-reaches-site');
 console.log(`Target: ${AWARD_DOC_ID}.${AWARD_ORDER_FIELD}, public page ${AWARD_PAGE_PATH}, revalidate type ${AWARD_REVALIDATE_TYPE}`);
 
 async function poll(predicate, label) {
@@ -162,6 +165,7 @@ try {
   console.error(`FAIL: unexpected error — ${err.stack ?? err.message}`);
 } finally {
   if (mutationAttempted) {
+    announceCleanupPhase();
     console.log('--- Cleanup: restoring the original order and re-publishing (always attempted) ---');
     let cleanupOk = false;
     let afterCleanupDataset;

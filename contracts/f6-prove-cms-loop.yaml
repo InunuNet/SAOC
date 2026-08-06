@@ -191,6 +191,22 @@ autonomy: high
 # premise is that a false PASS here is worse than an honest FAIL — picking around a
 # real defect to get a green gate would exactly reproduce F2's original failure mode
 # (six green assertions that missed a real break) at the feature meant to catch it.
+#
+# ============================================================================
+# EXPECTED RUNTIME — READ THIS BEFORE JUDGING A RUN "STUCK" OR MID-RUN OUTPUT AS FAIL
+# ============================================================================
+# A1's total runtime is variable and CAN reach ~7 minutes: up to ~2 min for the
+# PROPAGATION phase (120s bound, proves the feature works) plus up to ~5 min for the
+# separate CLEANUP verification phase (300s bound, a safety teardown requiring 3
+# consecutive clean live-page reads — see _shared.mjs's verifySustainedCondition).
+# These are two independent phases with unrelated success criteria; the script prints
+# an explicit ">>> ENTERING CLEANUP PHASE <<<" banner naming this before it starts.
+# Live-page absence during cleanup can lag the dataset write by up to ~60s (F1's CDN
+# TTL) — this is normal and NOT a failure. A real incident on this mission (2026-08-06,
+# see docs/f6-a1-cleanup-incident-2026-08-06.md and its follow-up correction) came from
+# curling the target mid-cleanup and mistaking that lag for a broken teardown. Trust
+# only this script's own final PASS/FAIL/RESIDUE ALERT verdict, never a manual read
+# taken while the script is still running.
 
 assertions:
   phase: 4

@@ -193,6 +193,19 @@ autonomy: high
 #   contract expects.
 #
 # ============================================================================
+# EXPECTED RUNTIME
+# ============================================================================
+# A1's total runtime is variable and CAN reach ~7 minutes: up to ~2 min for the
+# PROPAGATION phase (120s bound) plus up to ~5 min for the separate CLEANUP
+# verification phase (300s bound, requiring 3 consecutive clean live-page reads — see
+# f6-prove-cms-loop/_shared.mjs's verifySustainedCondition). These are independent
+# phases; the script prints an explicit cleanup-phase banner. Live-page absence during
+# cleanup can lag the dataset write by up to ~60s (F1's CDN TTL) — not a failure. See
+# docs/f6-a1-cleanup-incident-2026-08-06.md — a real false escalation on this mission
+# came from reading mid-cleanup output as a verdict. Trust only the script's own final
+# PASS/FAIL/RESIDUE ALERT line.
+#
+# ============================================================================
 assertions:
   phase: 4
   checks:
