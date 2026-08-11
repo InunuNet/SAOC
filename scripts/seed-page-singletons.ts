@@ -107,7 +107,11 @@ async function uploadImage(relPath: string) {
   const filePath = path.resolve(process.cwd(), 'public', 'images', relPath);
   const buffer = readFileSync(filePath);
   const asset = await client.assets.upload('image', buffer, { filename: relPath });
-  return { _type: 'image' as const, asset: { _type: 'reference' as const, _ref: asset._id } };
+  return {
+    _type: 'image' as const,
+    _key: randomUUID(),
+    asset: { _type: 'reference' as const, _ref: asset._id },
+  };
 }
 
 /** Reuse an existing single image field if it's already well-formed; else upload fresh. */
@@ -134,7 +138,12 @@ async function imageArrayFieldOrReuse(
     existing.every(isWellFormedImageRef)
   ) {
     console.log(`    reusing ${existing.length} existing hero image asset(s)`);
-    return existing as { _type: 'image'; asset: { _type: 'reference'; _ref: string } }[];
+    return (existing as Record<string, unknown>[]).map((item) => ({
+      ...item,
+      _key: typeof item._key === 'string' && item._key.length > 0 ? item._key : randomUUID(),
+      // Cast via unknown: `item` is a validated well-formed image ref widened to a plain
+      // record above, so the spread loses the specific shape TS can statically verify.
+    })) as unknown as { _type: 'image'; asset: { _type: 'reference'; _ref: string } }[];
   }
   console.log(`    uploading ${relPaths.length} hero image(s)`);
   const uploaded = [];

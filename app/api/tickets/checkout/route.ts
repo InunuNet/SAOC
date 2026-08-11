@@ -7,11 +7,25 @@ import { initAdmin } from '@/lib/firebase-admin';
 import { generateSignature, PAYFAST_SANDBOX_PROCESS_URL } from '@/lib/payfast';
 import type { TicketType } from '@/types/index';
 
-const SITE_URL = 'https://saoc.co.za';
-const RETURN_URL = `${SITE_URL}/tickets/confirmation`;
-const CANCEL_URL = `${SITE_URL}/tickets/cancelled`;
-const NOTIFY_URL = `${SITE_URL}/api/tickets/itn`;
+/**
+ * Canonical production origin. Used only as the fallback when `SITE_URL` is unset.
+ * PayFast sandbox testing MUST override it — `saoc.co.za` still resolves to the old
+ * Joomla site, so a sandbox `notify_url` built on this origin would deliver the ITN
+ * there and never reach this app. Set `SITE_URL` to the App Hosting origin instead.
+ */
+const DEFAULT_SITE_URL = 'https://saoc.co.za';
 const ITEM_NAME = 'SAOC 2027 National Show Ticket';
+
+/**
+ * Resolve the origin at request time, not module load. Firebase App Hosting supplies
+ * `SITE_URL` with RUNTIME availability only, so reading it at module scope would
+ * capture `undefined` during the build and bake the fallback into the bundle.
+ * Deliberately NOT `NEXT_PUBLIC_` — a public prefix is inlined at build time, which
+ * would defeat the same runtime lookup.
+ */
+function resolveSiteUrl(): string {
+  return process.env.SITE_URL?.trim().replace(/\/+$/, '') || DEFAULT_SITE_URL;
+}
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const BOOKING_REF_SUFFIX_MAX = 1_000_000;
@@ -118,12 +132,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // Field order matters — it IS the signature base string order (PayFast spec: attribute
   // order, not alphabetical). Compute the signature last, once all other fields are set.
+  const siteUrl = resolveSiteUrl();
   const signedFields: Record<string, string> = {
     merchant_id: merchantId,
     merchant_key: merchantKey,
-    return_url: RETURN_URL,
-    cancel_url: CANCEL_URL,
-    notify_url: NOTIFY_URL,
+    return_url: `${siteUrl}/tickets/confirmation`,
+    cancel_url: `${siteUrl}/tickets/cancelled`,
+    notify_url: `${siteUrl}/api/tickets/itn`,
     m_payment_id: bookingRef,
     amount: amountFormatted,
     item_name: ITEM_NAME,

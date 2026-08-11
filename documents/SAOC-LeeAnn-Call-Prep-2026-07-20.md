@@ -95,6 +95,79 @@ Most of these are Phase 2 (shared database + unified booking) territory — wort
 
 ---
 
+## E. Information custody — raise with Lee-Ann AND the council (added 2026-08-11)
+
+**The problem, stated plainly:** SAOC's institutional knowledge currently lives in individual
+people's possession — personal Google Drives, thumb drives, email accounts. When a committee
+member steps down, moves on, or loses a laptop, that material goes with them. A body running
+since 1968 has no business losing its own records this way. This is a governance risk, not an
+IT preference.
+
+**What we need:** a single organisation-owned, access-controlled home for SAOC documents, where
+access is granted by *role* rather than by *person*, so a handover is a permissions change and
+not an archaeology project.
+
+Scope of what belongs there: the constitution and amendments, minutes and AGM records, judging
+standards and accreditation records, show results and archives, brand and logo assets, sponsor
+agreements, financial and NPO/PBO registration documents, photography with its usage rights, and
+the website's own credentials and configuration.
+
+**Key principle to land with the council:** the account must be owned by SAOC as an organisation,
+not by whoever sets it up. If it is registered to a person's private address, we have rebuilt the
+exact problem we are solving. This matters most for the PayFast merchant account, the domain
+registration and the Google/Microsoft tenant.
+
+**Note on GitHub specifically:** GitHub is the right custody location for the website *source
+code* and it already is — but it is the wrong tool for committee documents, and non-technical
+committee members will not use it. Two different problems; propose two different homes rather
+than one compromise that serves neither.
+
+**Ask on the call:** does SAOC already have an organisational Google Workspace or Microsoft 365
+tenant, or is everything currently running on personal accounts? That answer determines whether
+this is a migration or a from-scratch setup, and it changes the cost.
+
+**Related, already open:** B4 (content-gathering ownership) and the domain-transfer approval
+emails — both are symptoms of the same missing custody structure. Worth presenting E as the
+underlying cause rather than as a separate agenda item.
+
+---
+
+## F. Society-published calendars, scraped (Phase 2 idea — back burner)
+
+**Brad's idea, 2026-08-11.** Rather than SAOC staff re-keying every society's events into the
+website, each of the 21 societies maintains its own public calendar, and the site subscribes to
+those feeds and aggregates them into the national events calendar.
+
+**Why it's the right shape:** it puts the maintenance burden where the knowledge already is. A
+society changes its own meeting date once, in the tool it already uses, and the national calendar
+follows. Nobody at SAOC becomes the bottleneck, and the alternative — per-society CMS logins —
+means 21 people to train, support and chase.
+
+**Terminology for the call:** "subscribe to their calendar feed", not "scrape". Scraping means
+parsing someone's web page and breaks whenever they redesign. What we would actually consume is
+an iCalendar (`.ics`) feed, which Google Calendar, Outlook and Facebook Events all publish
+natively. It is a stable, standard format — this is calendar software working as designed.
+
+**Encouraging:** the site already speaks this format in the outbound direction — `/api/events.ics`
+and per-event exports exist. Consuming feeds is the mirror image of what is already built.
+
+**Honest constraints, worth stating rather than discovering later:**
+- It is only as good as the societies' discipline. A society that doesn't maintain its calendar
+  disappears from the national one. That is a feature — it's visible — but the council should
+  expect it and decide the policy.
+- Feeds carry title, date, time and location reliably. Richer material — a show's classes,
+  entry fees, judging details — is not in the format and still needs entering somewhere.
+- Needs a moderation step before anything appears publicly. An automatic pipeline from
+  21 external sources onto SAOC's public site with no review is a reputational risk.
+- Some societies have no digital calendar at all, so manual entry has to stay available as a
+  fallback path.
+
+**Suggested framing:** Phase 2, and worth validating cheaply first — ask on the call how many of
+the 21 societies currently keep a Google Calendar or Facebook Events page. If the answer is three,
+the idea waits. If it's fifteen, it's the obvious way to run the calendar.
+
+---
+
 ## Log — new items
 
 _Add new questions/ideas here as they come up. Nothing below this line has been organised into the sections above yet._

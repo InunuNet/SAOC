@@ -1,0 +1,9 @@
+{
+  "_comment": "Shape every scripts/seed-page-singletons.ts-written homePage.heroImages array item must match after F1. _key is validated by the check scripts for presence/non-emptiness/uniqueness, not literal value — this file documents the shape, it is not string-diffed.",
+  "_type": "image",
+  "_key": "<non-empty string, unique within the heroImages array>",
+  "asset": {
+    "_type": "reference",
+    "_ref": "<string matching /^image-/>"
+  }
+}

@@ -76,3 +76,43 @@ C1 SAOC brand now Brad's own in-progress work, C3 Show assets resolved (permissi
 
 `cms-loop-and-wiring` — close it out rather than continue. Its F1/F2 verification is superseded
 by the CDN decision above.
+
+---
+
+## NEXT PUSH — ticketing pages (planned 2026-08-11 evening, NOT yet activated)
+
+Mission on disk and validated: `.agent/memory/project/missions/2026-08-11-ticketing-pages.md`
+(7 features, 4 milestones, ~15 agent calls). **Brad's intent: activate and run this after
+compaction.** Activate with `python3 execution/mission.py activate <path>`.
+
+Directive: "knock out all those ticketing pages, not placeholder pages, proper beautiful pages."
+
+Two hard constraints that must survive into implementation:
+1. **Sales default CLOSED.** Real prices were never confirmed by the council and the current
+   placeholders don't even match the five categories they use. Shipping a live buy button at
+   invented prices is the worst possible outcome.
+2. **Beautiful = the existing Sage & Paper system in `app/globals.css`, used rigorously.**
+   No new tokens, colours or fonts — the no-invented-brand-assets rule still stands.
+
+Closes a real loop: `/admin/door` scans a QR containing the bookingRef and currently has
+nothing to scan; `/tickets/confirmation` and `/tickets/cancelled` are live PayFast URLs that
+404 today.
+
+### PayFast sandbox — DONE this session, don't redo
+Brad's own sandbox credentials in `.env.local` with a custom passphrase matched both sides.
+Verified end to end: sandbox accepted a signed payload, minted a payment session, rendered the
+payment page ("SAOC 2027 National Show Ticket / R 150.00"). `SITE_URL` added and read at request
+time in the checkout route — **still absent from `apphosting.yaml`** (mission F7).
+
+### Sibling mission status
+`saoc-pages-editable` — M1 COMPLETE (F1 hero `_key` fixed + live data repaired, gate green on 4
+real assertions; F2 audit done, ~75 hardcoded fields). F3/F4/F5 still pending.
+
+**Blocker discovered, applies to BOTH missions:** `scripts/seed-page-singletons.ts` uses
+`createOrReplace` with hardcoded literals for every text field across six singletons. Running it
+silently reverts any editor's Studio changes. Verified no content was lost tonight (checked via
+Sanity history API), but it must become preserve-existing/create-if-absent before Lee-Ann is
+handed Studio.
+
+**Awaiting Brad:** was "Judges Training" ever meant to be its own page? No route or component
+exists; only a "Becoming a Judge" section inside `/judging`. Blocks a credible F3 estimate.

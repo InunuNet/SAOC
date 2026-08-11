@@ -5,61 +5,79 @@ goal: Wire every originally-scoped SAOC page into Sanity so Lee-Ann can edit con
   herself, unblock the home-page hero, and turn on Presentation live preview
 created_at: '2026-08-11T17:59:00.690950+00:00'
 started_at: null
-last_active_at: null
+last_active_at: '2026-08-11T18:36:09.392584+00:00'
 status: pending
 cost_estimate:
   features: 5
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M1
+  feature: F1
+  ts: '2026-08-11T18:36:09.392584+00:00'
 features:
-  - id: F1
-    inline_brief: >-
-      Fix homePage.heroImages missing _key (4 items, only occurrence in the dataset). Check first whether Brad already clicked Studio's 'Add missing keys'. Regardless, fix scripts/seed-sanity.ts to generate _key on array items so a reseed cannot reintroduce it.
-    title: Unblock home-page hero — fix missing _key on homePage.heroImages
-    status: pending
-    milestone: M1
-  - id: F2
-    inline_brief: >-
-      Audit the 8 originally-scoped pages field by field: which fields reach Sanity, which are hardcoded. Known: home hero lede hardcoded in components/home/Hero.tsx ~line 84. Output a per-page field table. Do before promising a date on F3.
-    title: Page-by-page editability audit across the 8 originally-scoped pages
-    status: pending
-    milestone: M1
-  - id: F3
-    inline_brief: >-
-      Wire every hardcoded field found in F2 into Sanity. Add schema fields where missing. Seed must pre-populate each new field from its current hardcoded value so Lee-Ann opens real content, never a blank form.
-    title: Wire the hardcoded gaps found by F2 into Sanity
-    status: pending
-    milestone: M2
-  - id: F4
-    inline_brief: >-
-      Enable Sanity Presentation mode (side-by-side live preview) using the existing /api/draft and /api/disable-draft routes. Do NOT reopen the CDN-purge investigation — settled.
-    title: Enable Sanity Presentation mode (side-by-side live preview)
-    status: pending
-    milestone: M3
-  - id: F5
-    inline_brief: >-
-      Write plain-language Studio walkthrough notes for Lee-Ann: opening Studio, what each page's fields control, publishing, and using preview. No jargon.
-    title: Secretary handover — Studio walkthrough notes for Lee-Ann
-    status: pending
-    milestone: M3
+- id: F1
+  inline_brief: null
+  title: Unblock home-page hero — fix missing _key on homePage.heroImages
+  status: done
+  milestone: M1
+  completed_at: '2026-08-11T18:36:09.392429+00:00'
+  spec: .agent/memory/project/missions/2026-08-11-saoc-pages-editable.md
+  contract: contracts/contract-f1-hero-keys.yaml
+- id: F2
+  inline_brief: 'Audit the 8 originally-scoped pages field by field: which fields
+    reach Sanity, which are hardcoded. Known: home hero lede hardcoded in components/home/Hero.tsx
+    ~line 84. Output a per-page field table. Do before promising a date on F3.'
+  title: Page-by-page editability audit across the 8 originally-scoped pages
+  status: done
+  milestone: M1
+  completed_at: '2026-08-11T18:27:33.994507+00:00'
+- id: F3
+  inline_brief: Wire every hardcoded field found in F2 into Sanity. Add schema fields
+    where missing. Seed must pre-populate each new field from its current hardcoded
+    value so Lee-Ann opens real content, never a blank form.
+  title: Wire the hardcoded gaps found by F2 into Sanity
+  status: pending
+  milestone: M2
+- id: F4
+  inline_brief: Enable Sanity Presentation mode (side-by-side live preview) using
+    the existing /api/draft and /api/disable-draft routes. Do NOT reopen the CDN-purge
+    investigation — settled.
+  title: Enable Sanity Presentation mode (side-by-side live preview)
+  status: pending
+  milestone: M3
+- id: F5
+  inline_brief: 'Write plain-language Studio walkthrough notes for Lee-Ann: opening
+    Studio, what each page''s fields control, publishing, and using preview. No jargon.'
+  title: Secretary handover — Studio walkthrough notes for Lee-Ann
+  status: pending
+  milestone: M3
 milestones:
-  - id: M1
-    title: Know the true size of the job, and the hero is editable
-    features: [F1, F2]
-    status: pending
-  - id: M2
-    title: Every originally-scoped page is fully editable in Sanity
-    features: [F3]
-    status: pending
-  - id: M3
-    title: Lee-Ann can edit confidently and see changes immediately
-    features: [F4, F5]
-    status: pending
+- id: M1
+  title: Know the true size of the job, and the hero is editable
+  features:
+  - F1
+  - F2
+  status: done
+  gate_ran_at: '2026-08-11T18:36:43.761420+00:00'
+  gate_result: pass
+- id: M2
+  title: Every originally-scoped page is fully editable in Sanity
+  features:
+  - F3
+  status: pending
+- id: M3
+  title: Lee-Ann can edit confidently and see changes immediately
+  features:
+  - F4
+  - F5
+  status: pending
 ---
+
+
+
+
+
 
 # Mission: Make the originally-scoped SAOC pages editable in Sanity
 
@@ -93,8 +111,13 @@ Two halves, and the second is the one that matters long-term:
 1. **Data:** Studio's "Add missing keys" button fixes the 4 items in one click, then Publish.
    Brad was told he can do this himself before the demo — **check whether it's already done before
    touching the data.**
-2. **Code:** `scripts/seed-sanity.ts` must generate `_key` on array items so a reseed cannot
-   reintroduce this. This half is required regardless of what Brad did manually.
+2. **Code:** the seeder must generate `_key` on array items so a reseed cannot reintroduce this.
+
+   **CORRECTION (2026-08-11, verified):** this brief originally named `scripts/seed-sanity.ts`.
+   That is WRONG — that script's mappers (awards, boardMembers, provinces, societies, events,
+   shows, showClasses, sponsors) never touch `homePage` or any array-of-objects field, and it
+   needs no change. The real writer is **`scripts/seed-page-singletons.ts`**, from the
+   predecessor singletons mission.
 
 Demo-safe home-page fields confirmed wired: Title, Mission Text, Countdown Target Date, and
 Hero Images once F1 lands.
@@ -108,6 +131,23 @@ authority question (reference vs local wording differ; see backlog). Several pag
 be partly CMS-driven and partly static.
 
 Output: a per-page field table. This sizes F3.
+
+**F2 COMPLETE (2026-08-11)** — audit at `.agent/memory/project/f2-editability-audit.md`.
+Result: ~75 hardcoded fields. Ranked: National Show landing ~28, Home ~24, Sponsors ~8,
+About ~4, Societies ~3, Events ~3, Contact ~3, Judging ~2.
+
+Two findings that change F3's shape, both independently verified:
+- **"Judges Training" does not exist** — no route, no component anywhere. Only `/judging`
+  exists, carrying a "Becoming a Judge" portable-text section. **Awaiting Brad's call:** build
+  a new page, or treat that section as the deliverable. Blocks a real F3 estimate.
+- **`contactPage.formRecipients` is a silent no-op** — defined in the schema and editable in
+  Studio, but nothing queries or consumes it. Lee-Ann could set the contact-form recipients,
+  publish, and change nothing. Delete the field or wire it BEFORE her walkthrough (F5) —
+  a field that accepts input and does nothing reads as a broken CMS.
+
+Also incidental: the WOSA URL is hardcoded in three places with three different values
+(`wosa.org.za` in the site-wide footer — does not resolve; `wosa.co.za`; `wildorchids.co.za` —
+the only correct one). The "19th" edition number is likewise hardcoded in three separate files.
 
 ### F3 — Wire the gaps
 

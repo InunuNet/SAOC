@@ -1,0 +1,129 @@
+schema: athanor.contract/v1
+slug: f1-hero-keys
+goal: >-
+  Unblock Studio editing of the home-page hero by fixing the missing `_key` on
+  homePage.heroImages array items (Sanity locks inline editing of any array whose
+  items lack keys — the "Missing keys" banner). VERIFIED LIVE STATE (2026-08-11, see
+  contracts/golden/f1-hero-keys/pre-fix-live-state.md): all 4 heroImages items still
+  lack `_key` entirely — Brad had NOT yet clicked Studio's "Add missing keys" button,
+  so the data half is still broken and still needs fixing. CORRECTION TO THE MISSION
+  BRIEF: the actual script that writes homePage.heroImages is
+  scripts/seed-page-singletons.ts, not scripts/seed-sanity.ts — the latter has no
+  array-of-objects mappers at all and needs no change here. Fix both the code
+  (uploadImage() must generate `_key`; the reuse branch in imageArrayFieldOrReuse()
+  must backfill `_key` onto already-existing items, not just newly uploaded ones) and
+  run the corrected script once as part of implementation — that single script run IS
+  the data fix, since createOrReplace against the pinned "homePage" _id patches the
+  live document. No separate manual Studio click is required or expected.
+created_at: '2026-08-11'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Generate _key on homePage.heroImages array items in
+      scripts/seed-page-singletons.ts, and repair the live document by running it
+    status: pending
+
+goldens:
+  - contracts/golden/f1-hero-keys/pre-fix-live-state.md
+  - contracts/golden/f1-hero-keys/expected-hero-image-item.json
+
+# ============================================================================
+# IMPLEMENTATION SPEC FOR @dev — unambiguous target
+# ============================================================================
+# File: scripts/seed-page-singletons.ts
+#
+# 1. uploadImage() (currently ~line 106-111): the returned object must include a
+#    `_key` field. Use `randomUUID()` (already imported at the top of the file, used
+#    by block() and seedContactPage() for the same purpose — reuse the same import,
+#    do not add a new one). New shape:
+#
+#      return {
+#        _type: 'image' as const,
+#        _key: randomUUID(),
+#        asset: { _type: 'reference' as const, _ref: asset._id },
+#      };
+#
+# 2. imageArrayFieldOrReuse() (currently ~line 127-145): the reuse branch (the
+#    `if (Array.isArray(existing) && ...)` block) currently returns `existing`
+#    unmodified. It must instead MAP over `existing` and backfill a `_key` on any
+#    item that doesn't already have a non-empty string one, WITHOUT re-uploading or
+#    changing `asset._ref` — this is what repairs the already-broken live document on
+#    the very next seed run, rather than only fixing newly-uploaded images:
+#
+#      if (Array.isArray(existing) && existing.length >= relPaths.length && existing.every(isWellFormedImageRef)) {
+#        return existing.map((item) => ({
+#          ...item,
+#          _key: typeof item._key === 'string' && item._key.length > 0 ? item._key : randomUUID(),
+#        }));
+#      }
+#
+#    Do not change `isWellFormedImageRef()` itself — it validates the asset
+#    reference shape, which is a separate concern from key presence, and widening it
+#    to also require `_key` would push already-good-asset items down the "upload
+#    fresh" branch, silently duplicating image assets in the Sanity media library on
+#    every reseed. Keep the two concerns (asset validity vs. key presence) separate.
+#
+# 3. imageFieldOrReuse() (single-image fields, e.g. nationalShow.hero): NO CHANGE.
+#    `_key` is only meaningful on items inside an array — a lone object field never
+#    needs one. Do not add `_key` here; it would be a no-op Sanity ignores, but it's
+#    still noise outside this bug's scope.
+#
+# 4. Run the corrected script once against the live dataset as part of landing this
+#    fix: `node --import tsx/esm scripts/seed-page-singletons.ts`. This performs the
+#    DATA half — the createOrReplace against the pinned "homePage" _id patches the
+#    live 4-item array in place, backfilling `_key` via step 2's reuse path (it will
+#    NOT re-upload the 4 existing images, since their asset refs are already
+#    well-formed).
+#
+# EXPLICITLY OUT OF SCOPE:
+#   - scripts/seed-sanity.ts — confirmed not implicated, see goal block above.
+#   - Any other page-singleton field. This is scoped to homePage.heroImages only.
+#   - Re-running the full 104-document dataset audit for other missing-key arrays —
+#     the mission already treats that as settled (only occurrence).
+#   - Manually clicking Studio's "Add missing keys" button — superseded by running
+#     the corrected script, which does the same repair in an automatable, re-runnable
+#     way instead of a one-off manual UI action.
+# ============================================================================
+
+assertions:
+  phase: 4
+  checks:
+    # Pre-fix negative-control evidence (both check-hero-keys-live.mjs and
+    # check-seed-source-shape.mjs re-verified failing against the live/unfixed state
+    # before this contract was written) is captured in
+    # contracts/golden/f1-hero-keys/pre-fix-live-state.md — not re-asserted here as a
+    # gate check since a negative control has nothing to gate once the fix lands.
+
+    - id: A2
+      description: >
+        POSITIVE-PATH assertion: after the fix, homePage.heroImages in the live
+        dataset has at least one item, and every item carries a unique non-empty
+        string `_key` plus a well-formed image asset reference. Queries the live
+        dataset directly (not source text) — a missing document, missing field, or
+        missing token is a hard FAIL, never a skip.
+      command: node --import tsx/esm contracts/checks/f1-hero-keys/check-hero-keys-live.mjs
+
+    - id: A3
+      description: >
+        Regression guard AND the actual data-repair mechanism: running
+        scripts/seed-page-singletons.ts twice in a row leaves homePage.heroImages
+        with the same 4 valid, unique `_key`s and the same asset references both
+        times — proves the reuse branch backfills/preserves keys instead of
+        regenerating them (which would be pointless churn) or re-uploading
+        duplicate image assets (which would bloat the media library). This is a
+        real integration run against the live dataset, not a mock.
+      command: node --import tsx/esm contracts/checks/f1-hero-keys/check-seed-idempotent-keys.mjs
+
+    - id: A4
+      description: >
+        Fast, network-free structural check that the fix is actually present in
+        source (not just in dataset state left over from a manual repair) — asserts
+        uploadImage() sets `_key: randomUUID()` and imageArrayFieldOrReuse()'s reuse
+        branch references `_key` to backfill it.
+      command: node contracts/checks/f1-hero-keys/check-seed-source-shape.mjs
+
+    - id: A5
+      description: strict TypeScript type-check passes after the edit (no `any`, no broken types)
+      command: pnpm type-check

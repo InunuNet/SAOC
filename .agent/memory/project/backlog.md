@@ -373,3 +373,24 @@ countdown, which IS live); `archive/[year]`; `/media-kit`, `/constitution`, `/pr
   IAM policy REST calls. The remaining failure is getting a build that references the secrets to actually roll out.
 - [ ] Production ETag is NOT a build discriminator — it changed again (`a8e4pxlfw41lfq` → `1337qsztbrz1lfq`) without a
   confirmed new rollout, because ISR prerender regeneration also changes it. A8 is weaker evidence than it looks.
+
+## Client / governance — raised 2026-08-11
+
+- [ ] **Secure organisation-owned document custody for SAOC** (council discussion point, not a
+  build task yet). Institutional records currently sit in individuals' Google Drives, thumb
+  drives and personal email. Need a role-based, SAOC-owned home for constitution, minutes,
+  judging standards, show archives, brand assets, sponsor agreements, NPO/PBO and financial
+  documents, photography rights, and site credentials. Critical sub-point: accounts must be
+  registered to SAOC as an organisation, not to whoever creates them — applies especially to
+  the PayFast merchant account, the domain, and any Google/Microsoft tenant. GitHub stays the
+  home for source code only; it is the wrong tool for committee documents. Written up as
+  section E in `documents/SAOC-LeeAnn-Call-Prep-2026-07-20.md`.
+- [ ] **Society-published calendar feeds aggregated into the national events calendar** (Phase 2,
+  back burner). Each of the 21 societies maintains its own iCalendar (`.ics`) feed; the site
+  subscribes and aggregates, so maintenance stays with the societies rather than loading SAOC
+  staff. NOT web scraping — `.ics` is a stable standard published natively by Google Calendar,
+  Outlook and Facebook Events. The codebase already emits `.ics` (`app/api/events.ics`,
+  per-event exports), so this is the mirror image of existing work. Needs a moderation step
+  before public display, and a manual-entry fallback for societies with no digital calendar.
+  Validate cheaply first: ask how many of the 21 societies actually keep one. Written up as
+  section F in the call-prep doc.
