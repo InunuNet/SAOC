@@ -1,9 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-08-11-ticketing-pages.md",
+  "mission": ".agent/memory/project/missions/2026-08-11-show-visitor-info.md",
   "checkpoint": {
-    "milestone": "M2",
-    "feature": "F4",
-    "ts": "2026-08-11T19:24:18.432146+00:00"
+    "milestone": null,
+    "feature": null
   },
-  "activated_at": "2026-08-11T19:24:18.432271+00:00"
+  "activated_at": "2026-08-11T19:34:19.772752+00:00"
 }
