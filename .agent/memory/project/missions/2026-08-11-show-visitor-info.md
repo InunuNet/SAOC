@@ -113,12 +113,24 @@ is a scope conversation, not a build task.
 - **WOSA §4.7 is OUT.** Wild-orchid habitat, fieldwork and conservation belong to WOSA's own site.
   Link to `wildorchids.co.za` — never describe that content here. (Note: the site-wide footer link
   currently points at `wosa.org.za`, which does not resolve — see backlog.)
-- **Do not invent facts.** We have no committee-confirmed venue address, dates, opening hours,
-  parking, accommodation or FAQ content. `CTICC, Cape Town` and `Sep 17–21 2027` exist ONLY as
-  hardcoded fallbacks in `page.tsx` and are NOT sourced to any client document — the 2026-08-11
-  status report still lists confirmed dates and venue as outstanding. Generic, verifiable travel
-  guidance (e.g. that CTICC is reachable from Cape Town International) is acceptable and should be
-  labelled as our own research; specifics are not.
+- **Working venue assumption: CTICC (Cape Town International Convention Centre).** Brad's call,
+  2026-08-11: "If we guessed wrong, they'll have to correct us and then we'll put the new venue
+  in. But we can still scope the work around that." So BUILD against CTICC — real directions,
+  real distance from Cape Town International Airport, real public-transport options, real
+  accommodation grouped by distance from CTICC. Concrete content beats empty scaffolding, and it
+  shows the committee what the page becomes.
+
+  **Two conditions on that.** (1) The venue must remain visibly marked as pending committee
+  confirmation wherever it appears — the 2026-08-11 status report still lists confirmed dates and
+  venue as outstanding, and `CTICC, Cape Town` / `Sep 17–21 2027` exist only as hardcoded
+  fallbacks in `page.tsx`, sourced to no client document. (2) Every venue-derived value must live
+  in Sanity, never hardcoded into a component. When the committee names a different venue, the
+  fix is editing fields in Studio — not a developer rewriting pages. Treat that as a design
+  constraint on F1's schema: if changing the venue would require a code change, the model is wrong.
+- **Do not invent facts beyond the venue assumption.** Dates, opening hours, parking specifics,
+  admission conditions and FAQ content stay labelled placeholders until the committee supplies
+  them. Travel and accommodation guidance researched against CTICC is acceptable and should be
+  labelled as our own research, not as committee-confirmed detail.
 - **Every unconfirmed value carries a visible marker** — same posture as the ticket prices'
   "Provisional price — pending council confirmation." The lesson from the ticketing mission: ship
   visibly-pending content, never plausible invention, because it goes in front of the council.
