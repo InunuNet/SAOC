@@ -1,0 +1,15 @@
+{
+  "note": "Field set for the new sanity/schemas/documents/ticketType.ts document type. Exactly these seven fields — no provisional/priority/status field invented on top.",
+  "name": "ticketType",
+  "type": "document",
+  "fields": [
+    { "name": "name", "title": "Name", "type": "string" },
+    { "name": "slug", "title": "Slug", "type": "slug", "options": { "source": "name" } },
+    { "name": "price", "title": "Price (ZAR)", "type": "number" },
+    { "name": "description", "title": "Description", "type": "text" },
+    { "name": "capacity", "title": "Capacity", "type": "number" },
+    { "name": "active", "title": "Active", "type": "boolean", "initialValue": true },
+    { "name": "order", "title": "Display Order", "type": "number" }
+  ],
+  "registration": "must be imported and added to schemaTypes in sanity/schemas/index.ts, under a new 'Ticketing' comment section alongside the existing Singletons/Collections/Objects grouping"
+}

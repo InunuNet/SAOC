@@ -1,0 +1,25 @@
+{
+  "note": "New sanity/schemas/documents/ticketsPage.ts — a page singleton, same pattern as homePage/aboutPage/judgingPage/contactPage. Holds EVERY piece of visible copy across /tickets, /tickets/confirmation and /tickets/cancelled. Deliberately plain 'string'/'text' fields, not portableText — this is short informational copy, not rich long-form body content, and portableText would add render complexity with no benefit under this deadline (contrast with judgingPage.intro, which IS long-form and correctly uses portableText).",
+  "name": "ticketsPage",
+  "type": "document",
+  "singleton": true,
+  "pinnedId": "ticketsPage",
+  "fields": [
+    { "name": "title", "title": "Buy Page Title", "type": "string", "usedOn": "/tickets" },
+    { "name": "intro", "title": "Buy Page Intro", "type": "text", "usedOn": "/tickets" },
+    { "name": "buyButtonLabel", "title": "Buy Button Label", "type": "string", "usedOn": "/tickets" },
+    { "name": "soldOutMessage", "title": "Sold Out Message", "type": "string", "usedOn": "/tickets (per-type badge and the all-sold-out banner)" },
+    { "name": "salesClosedMessage", "title": "Sales Closed Message", "type": "text", "usedOn": "/tickets (shown while nationalShow.salesOpen is false)" },
+    { "name": "termsNote", "title": "Terms / Refund / Door-Entry Note", "type": "text", "usedOn": "/tickets" },
+    { "name": "confirmationPendingHeading", "title": "Confirmation — Pending Heading", "type": "string", "usedOn": "/tickets/confirmation" },
+    { "name": "confirmationPendingMessage", "title": "Confirmation — Pending Message", "type": "text", "usedOn": "/tickets/confirmation" },
+    { "name": "confirmationSuccessHeading", "title": "Confirmation — Success Heading", "type": "string", "usedOn": "/tickets/confirmation" },
+    { "name": "confirmationSuccessMessage", "title": "Confirmation — Success Message", "type": "text", "usedOn": "/tickets/confirmation" },
+    { "name": "confirmationNotFoundMessage", "title": "Confirmation — Not Found Message", "type": "text", "usedOn": "/tickets/confirmation" },
+    { "name": "ticketIncludesNote", "title": "What Your Ticket Includes", "type": "text", "usedOn": "/tickets/confirmation (success state) — this is 'what a buyer is told they're getting'; the emailed/printable ticket view itself is F5, out of scope here" },
+    { "name": "cancelledHeading", "title": "Cancelled — Heading", "type": "string", "usedOn": "/tickets/cancelled" },
+    { "name": "cancelledMessage", "title": "Cancelled — Message", "type": "text", "usedOn": "/tickets/cancelled" },
+    { "name": "cancelledButtonLabel", "title": "Cancelled — Button Label", "type": "string", "usedOn": "/tickets/cancelled" }
+  ],
+  "registration": "imported and added to schemaTypes in sanity/schemas/index.ts, in the existing Singletons group alongside homePage/aboutPage/nationalShow/contactPage/judgingPage/membersPage"
+}

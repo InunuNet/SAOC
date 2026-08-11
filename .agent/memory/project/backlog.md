@@ -394,3 +394,21 @@ countdown, which IS live); `archive/[year]`; `/media-kit`, `/constitution`, `/pr
   before public display, and a manual-entry fallback for societies with no digital calendar.
   Validate cheaply first: ask how many of the 21 societies actually keep one. Written up as
   section F in the call-prep doc.
+- [ ] **Retrofit JSX-interpolation rigour onto pre-existing contracts** (raised by TKT-architect
+  2026-08-11, deferred — not what the demo needed). Assertions that check "this Sanity field is
+  rendered" via a plain substring grep for the field name are FALSE GREENS: they pass a field
+  that appears only in a fetch, destructure or type annotation and is never rendered. That is
+  precisely the live `aboutPage.title` bug (fetched at `about/page.tsx:19-20`, never rendered).
+  The correct check requires the field inside an actual JSX curly-brace interpolation, excluding
+  `{/* comment */}` matches. Also worth adding everywhere: assert no reversed fallback precedence
+  (`'literal' ?? data.field`), which lets a hardcoded string silently mask a published Studio
+  edit — same symptom as an unrendered field, different cause. Reference implementation:
+  A48/A49/A50/A50a in `contracts/contract-ticketing-m1-m2.yaml`.
+- [ ] **Two known silent no-op CMS fields — fix before Lee-Ann's Studio walkthrough.**
+  `contactPage.formRecipients` (in the schema, editable in Studio, consumed by nothing) and
+  `aboutPage.title` (fetched, never rendered). An editor changes either, publishes, sees no
+  effect, and concludes the CMS is broken. Delete or wire — do not leave as-is.
+- [ ] **Agent naming convention for parallel missions:** prefix subagent names with the mission
+  slug, not the feature ID. Running `saoc-pages-editable` and `ticketing-pages` concurrently
+  produced `F1-dev` and a `TKT-dev` whose contract also had an F1 — the second agent stopped and
+  asked whether it was duplicating work. Correct behaviour on its part, avoidable collision on ours.

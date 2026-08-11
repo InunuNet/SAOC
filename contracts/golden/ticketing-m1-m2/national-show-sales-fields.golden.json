@@ -1,0 +1,18 @@
+{
+  "note": "Exactly ONE field added to sanity/schemas/documents/nationalShow.ts, appended after the existing exhibitorStages field. Do not remove or rename any existing nationalShow field. A companion 'salesMessage' text field was in the original F1 draft but has been deliberately REMOVED from this document — see content-vs-money-boundary.golden.md. salesOpen is a functional state gate (kept here, on the show record); the copy shown alongside it is content and lives on ticketsPage.salesClosedMessage instead, so there is exactly one place an editor goes to change wording, not two documents that can drift out of sync.",
+  "fieldsToAdd": [
+    {
+      "name": "salesOpen",
+      "title": "Ticket Sales Open",
+      "type": "boolean",
+      "initialValue": false,
+      "description": "Defaults CLOSED. Real prices are not yet council-approved — do not flip this on without checking with Lee-Ann/the council first."
+    }
+  ],
+  "fieldsDeliberatelyNotAdded": [
+    {
+      "name": "salesMessage",
+      "reason": "Consolidated into ticketsPage.salesClosedMessage — see content-vs-money-boundary.golden.md decision on keeping all visitor-facing copy in one singleton."
+    }
+  ]
+}

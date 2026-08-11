@@ -111,6 +111,33 @@ milestones:
 
 # Mission: Build the National Show ticketing pages
 
+## DEMO DEADLINE — read first (Brad, 2026-08-11 ~20:50)
+
+**Lee-Ann sees this tomorrow morning; the council sees it tomorrow night.** Brad wants
+"something solid to look at."
+
+Priority order is therefore **M1 → M2, and M2 is the demo**. F5 (emailed QR ticket), F6 (a11y +
+security hardening) and F7 (docs) are the follow-up pass, not tonight. Do not let them delay the
+three pages. If time runs short, a beautiful, working `/tickets` → PayFast → confirmation flow
+beats a complete-but-rough everything.
+
+**Demo posture on the sales switch:** the default stays CLOSED in code, but for the demo dataset
+open sales with provisional prices **visibly labelled as provisional on the page itself**. The
+council must see a working purchase flow without anyone mistaking our invented numbers for
+approved pricing. Getting real prices out of that meeting is one of the wins available here —
+showing them a working flow with "provisional" on it is the fastest way to prompt the decision.
+
+## BRANDING DECISION — settled (Brad, 2026-08-11)
+
+**Use SAOC branding for the ticketing pages. The National Show has its own branding coming, but
+it is a SEPARATE LATER PASS.** Brad is explicitly happy to proceed on SAOC's identity for this
+proof of concept.
+
+Practically: build on the existing Sage & Paper system exactly as the rest of the site does.
+Do not attempt to anticipate, mock up or invent Show branding. When the Show identity lands it
+will be applied as its own pass, and this is consistent with the settled brand architecture —
+SAOC chrome site-wide, Show branding scoped below the header on `/national-show`.
+
 ## Context
 
 **Brad's directive, 2026-08-11 evening.** Build the ticketing pages properly — "not placeholder

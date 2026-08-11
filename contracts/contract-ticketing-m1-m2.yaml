@@ -1,0 +1,341 @@
+schema: athanor.contract/v1
+slug: ticketing-m1-m2
+goal: >-
+  M1+M2 of the ticketing-pages mission: move ticket pricing/capacity/sales-state AND every
+  piece of visible copy out of hardcoded values into Sanity (F1), then build the public buy
+  flow — /tickets (F2), /tickets/confirmation handling the PayFast ITN race honestly (F3), and
+  /tickets/cancelled (F4) — so a visitor can complete a real purchase against the PayFast
+  sandbox end to end, and the secretary can reword anything a visitor reads without a
+  developer. The line is explicit: anything a visitor READS is content (Sanity); anything
+  that MOVES MONEY is code (see contracts/golden/ticketing-m1-m2/content-vs-money-boundary.golden.md).
+  F5 (emailed QR ticket), F6 (a11y/security hardening) and F7 (docs) are a later pass and are
+  explicitly NOT covered by this contract.
+created_at: '2026-08-11'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      ticketType Sanity schema + ticketsPage copy singleton + nationalShow salesOpen +
+      server-derived pricing
+    status: pending
+  - id: F2
+    name: /tickets — the public buy page
+    status: pending
+  - id: F3
+    name: /tickets/confirmation — return landing that polls a new status endpoint
+    status: pending
+  - id: F4
+    name: /tickets/cancelled — cancellation landing
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-m1-m2/README.md
+  - contracts/golden/ticketing-m1-m2/ticket-type-schema.golden.json
+  - contracts/golden/ticketing-m1-m2/ticketsPage-schema.golden.json
+  - contracts/golden/ticketing-m1-m2/national-show-sales-fields.golden.json
+  - contracts/golden/ticketing-m1-m2/seed-ticketing.golden.json
+  - contracts/golden/ticketing-m1-m2/ticket-type-reconciliation.golden.md
+  - contracts/golden/ticketing-m1-m2/content-vs-money-boundary.golden.md
+  - contracts/golden/ticketing-m1-m2/status-endpoint-response.golden.json
+  - contracts/golden/ticketing-m1-m2/return-cancel-urls.golden.txt
+  - contracts/golden/ticketing-m1-m2/page-states.golden.md
+  - contracts/golden/ticketing-m1-m2/itn-route.golden.sha256
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- F1: schema + seeding + server-derived pricing ----------
+    - id: A1
+      description: F1 - ticketType Sanity document schema file exists
+      command: 'test -f sanity/schemas/documents/ticketType.ts'
+    - id: A2
+      description: F1 - ticketType schema declares all seven required fields
+      command: >-
+        grep -q "name: 'name'" sanity/schemas/documents/ticketType.ts &&
+        grep -q "name: 'slug'" sanity/schemas/documents/ticketType.ts &&
+        grep -q "name: 'price'" sanity/schemas/documents/ticketType.ts &&
+        grep -q "name: 'description'" sanity/schemas/documents/ticketType.ts &&
+        grep -q "name: 'capacity'" sanity/schemas/documents/ticketType.ts &&
+        grep -q "name: 'active'" sanity/schemas/documents/ticketType.ts &&
+        grep -q "name: 'order'" sanity/schemas/documents/ticketType.ts
+    - id: A3
+      description: F1 - ticketType registered in the schema index
+      command: >-
+        grep -q "ticketType" sanity/schemas/index.ts &&
+        grep -Eq "^\s*ticketType,\s*$" sanity/schemas/index.ts
+    - id: A4
+      description: F1 - nationalShow schema gains a salesOpen boolean defaulting to false
+      command: >-
+        grep -q "name: 'salesOpen'" sanity/schemas/documents/nationalShow.ts &&
+        grep -Eq "initialValue:\s*false" sanity/schemas/documents/nationalShow.ts
+    - id: A5
+      description: >-
+        F1 - nationalShow does NOT also carry a salesMessage copy field — that copy is
+        consolidated onto ticketsPage.salesClosedMessage so there is one place, not two,
+        an editor changes wording (see content-vs-money-boundary.golden.md)
+      command: >-
+        if grep -q "name: 'salesMessage'" sanity/schemas/documents/nationalShow.ts; then exit 1; fi
+    - id: A6
+      description: F1 - ticketsPage page-singleton schema file exists
+      command: 'test -f sanity/schemas/documents/ticketsPage.ts'
+    - id: A7
+      description: F1 - ticketsPage declares all fifteen required copy fields
+      command: >-
+        for f in title intro buyButtonLabel soldOutMessage salesClosedMessage termsNote confirmationPendingHeading confirmationPendingMessage confirmationSuccessHeading confirmationSuccessMessage confirmationNotFoundMessage ticketIncludesNote cancelledHeading cancelledMessage cancelledButtonLabel; do
+          grep -q "name: '$f'" sanity/schemas/documents/ticketsPage.ts || { echo "missing field $f"; exit 1; };
+        done
+    - id: A8
+      description: F1 - ticketsPage registered in the schema index Singletons group
+      command: >-
+        grep -q "ticketsPage" sanity/schemas/index.ts &&
+        grep -Eq "^\s*ticketsPage,\s*$" sanity/schemas/index.ts
+    - id: A9
+      description: F1 - a NEW, single ticketing seed script exists (does not extend seed-page-singletons.ts)
+      command: 'test -f scripts/seed-ticketing.ts'
+    - id: A10
+      description: F1 - seed-page-singletons.ts is untouched by this feature (still no ticketType/ticketsPage/salesOpen references)
+      command: >-
+        if grep -Eq "ticketType|ticketsPage|salesOpen" scripts/seed-page-singletons.ts; then exit 1; fi
+    - id: A11
+      description: F1 - all seeding (ticket types AND ticketsPage) is create-if-absent, never destructive overwrite
+      command: >-
+        grep -q "createIfNotExists" scripts/seed-ticketing.ts &&
+        if grep -q "createOrReplace" scripts/seed-ticketing.ts; then exit 1; fi
+    - id: A12
+      description: F1 - nationalShow.salesOpen is patched with setIfMissing, never force-set
+      command: >-
+        grep -q "setIfMissing" scripts/seed-ticketing.ts &&
+        if grep -Eq "\.set\(\s*\{[^}]*salesOpen" scripts/seed-ticketing.ts; then exit 1; fi
+    - id: A13
+      description: F1 - all five council categories are present in the seed script
+      command: >-
+        grep -q "'adult'" scripts/seed-ticketing.ts &&
+        grep -q "'pensioner'" scripts/seed-ticketing.ts &&
+        grep -q "'child'" scripts/seed-ticketing.ts &&
+        grep -q "'saoc-member'" scripts/seed-ticketing.ts &&
+        grep -q "'exhibitor'" scripts/seed-ticketing.ts
+    - id: A14
+      description: F1 - every seeded ticket type is visibly marked provisional
+      command: >-
+        [ "$(grep -c -i 'provisional' scripts/seed-ticketing.ts)" -ge 5 ]
+    - id: A15
+      description: F1 - no invented provisional/status boolean field added beyond the seven-field ticketType schema
+      command: >-
+        if grep -Eq "name:\s*'provisional'|name:\s*'priceStatus'" sanity/schemas/documents/ticketType.ts; then exit 1; fi
+    - id: A16
+      description: >-
+        F1 - every ticketsPage field the seed script writes has non-blank content (no empty
+        string literal anywhere in the seed script's object bodies)
+      command: >-
+        if grep -Eq ":\s*''|:\s*\"\"" scripts/seed-ticketing.ts; then exit 1; fi
+    - id: A17
+      description: F1 - TicketType is reconciled to a plain string, no longer a stale three-value union
+      command: >-
+        grep -Eq "export type TicketType = string;" types/index.ts &&
+        if grep -Eq "export type TicketType = 'general'" types/index.ts; then exit 1; fi
+    - id: A18
+      description: F1 - Ticket.ticketType field shape is unchanged (still TicketType, still required)
+      command: "grep -q 'ticketType: TicketType' types/index.ts"
+    - id: A19
+      description: F1 - checkout route no longer contains the hardcoded placeholder price map
+      command: >-
+        if grep -q "PLACEHOLDER_TICKET_PRICES" app/api/tickets/checkout/route.ts; then exit 1; fi
+    - id: A20
+      description: F1 - checkout route derives the ticket price from a Sanity fetch, not from a local constant
+      command: >-
+        grep -Eq "sanityFetch|client\.fetch" app/api/tickets/checkout/route.ts &&
+        grep -q "ticketType" app/api/tickets/checkout/route.ts
+    - id: A21
+      description: F1 - checkout route still never trusts a client-supplied amount (payment security boundary)
+      command: >-
+        if grep -Eq "body(\.|\[.)amount|amount \} = (await )?req" app/api/tickets/checkout/route.ts; then exit 1; fi
+    - id: A22
+      description: F1 - checkout route rejects a direct POST when sales are closed, not just hides the UI
+      command: >-
+        grep -q "salesOpen" app/api/tickets/checkout/route.ts &&
+        grep -Eq "status:\s*403" app/api/tickets/checkout/route.ts
+    - id: A23
+      description: F1 - return_url and cancel_url carry the booking reference so /tickets/confirmation and /tickets/cancelled can identify the ticket
+      command: >-
+        grep -Eq "tickets/confirmation\?ref=\\\$\{bookingRef\}" app/api/tickets/checkout/route.ts &&
+        grep -Eq "tickets/cancelled\?ref=\\\$\{bookingRef\}" app/api/tickets/checkout/route.ts
+
+    # ---------- F2: /tickets buy page ----------
+    - id: A24
+      description: F2 - /tickets page exists
+      command: 'test -f "app/(marketing)/tickets/page.tsx"'
+    - id: A25
+      description: F2 - /tickets page is a Server Component (no top-level 'use client')
+      command: >-
+        if head -3 "app/(marketing)/tickets/page.tsx" | grep -q "'use client'"; then exit 1; fi
+    - id: A26
+      description: F2 - a route-level loading state exists
+      command: 'test -f "app/(marketing)/tickets/loading.tsx"'
+    - id: A27
+      description: F2 - purchase form component exists and is a Client Component
+      command: >-
+        test -f components/tickets/TicketPurchaseForm.tsx &&
+        head -3 components/tickets/TicketPurchaseForm.tsx | grep -q "'use client'"
+    - id: A28
+      description: F2 - ticket type card component exists
+      command: 'test -f components/tickets/TicketTypeCard.tsx'
+    - id: A29
+      description: F2 - sales-closed notice component exists
+      command: 'test -f components/tickets/SalesClosedNotice.tsx'
+    - id: A30
+      description: F2 - form posts to the checkout API
+      command: "grep -q '/api/tickets/checkout' components/tickets/TicketPurchaseForm.tsx"
+    - id: A31
+      description: F2 - client-side email validation exists before submit
+      command: "grep -Eq '[A-Za-z0-9._%+-]\\+@|test\\(email\\)|EMAIL_PATTERN' components/tickets/TicketPurchaseForm.tsx"
+    - id: A32
+      description: F2 - sold-out state is handled per ticket type (capacity vs sold comparison)
+      command: >-
+        grep -Eiq "sold out|soldOut" components/tickets/TicketTypeCard.tsx
+    - id: A33
+      description: F2 - no new CSS custom properties invented in new ticketing files
+      command: >-
+        if grep -rEq -- "--[a-z-]+\s*:" "app/(marketing)/tickets" components/tickets 2>/dev/null; then exit 1; fi
+    - id: A34
+      description: F2 - no raw hex colour literals in new ticketing files (tokens only)
+      command: >-
+        if grep -rEq "#[0-9a-fA-F]{3,6}" "app/(marketing)/tickets" components/tickets 2>/dev/null; then exit 1; fi
+    - id: A35
+      description: F2 - each new ticketing component stays under the 150-line project limit
+      command: >-
+        for f in components/tickets/TicketPurchaseForm.tsx components/tickets/TicketTypeCard.tsx components/tickets/SalesClosedNotice.tsx; do
+          [ -f "$f" ] || exit 1;
+          lines=$(wc -l < "$f");
+          if [ "$lines" -gt 150 ]; then echo "$f exceeds 150 lines ($lines)"; exit 1; fi;
+        done
+    - id: A36
+      description: F2 - server error from checkout is surfaced, not silently swallowed (mandatory error state)
+      command: "grep -Eq \"role=.alert.\" components/tickets/TicketPurchaseForm.tsx"
+    - id: A37
+      description: F2 - buy page fetches the ticketsPage singleton (all its copy is content-sourced, not hardcoded)
+      command: >-
+        grep -q "ticketsPage" sanity/queries.ts &&
+        grep -q "ticketsPage" "app/(marketing)/tickets/page.tsx"
+
+    # ---------- F3: /tickets/confirmation + status endpoint ----------
+    - id: A38
+      description: F3 - read-only status endpoint exists
+      command: 'test -f app/api/tickets/status/route.ts'
+    - id: A39
+      description: F3 - status endpoint is keyed on a bookingRef query param, not an internal id
+      command: "grep -Eq \"searchParams.get\\(.ref.\\)\" app/api/tickets/status/route.ts"
+    - id: A40
+      description: F3 - status endpoint never returns other people's ticket data (PII fields absent from the whole file)
+      command: >-
+        if grep -Eq "attendeeEmail|attendeeName" app/api/tickets/status/route.ts; then exit 1; fi
+    - id: A41
+      description: F3 - status endpoint response is minimal (status field only, no amount/ids leaked)
+      command: >-
+        if grep -Eq "amount|m_payment_id|pf_payment_id|showId" app/api/tickets/status/route.ts; then exit 1; fi
+    - id: A42
+      description: F3 - confirmation page exists and polls the status endpoint client-side
+      command: >-
+        test -f "app/(marketing)/tickets/confirmation/page.tsx" &&
+        head -3 "app/(marketing)/tickets/confirmation/page.tsx" | grep -q "'use client'" &&
+        grep -q "/api/tickets/status" "app/(marketing)/tickets/confirmation/page.tsx"
+    - id: A43
+      description: F3 - confirmation page never claims success while status is still reserved (honest pending copy)
+      command: >-
+        grep -Eiq "reserved" "app/(marketing)/tickets/confirmation/page.tsx" &&
+        grep -Eiq "paid|checked-in" "app/(marketing)/tickets/confirmation/page.tsx"
+    - id: A44
+      description: F3 - polling is bounded, not an infinite loop
+      command: >-
+        grep -Eiq "MAX_POLL|maxAttempts|attempts >|attempts >=" "app/(marketing)/tickets/confirmation/page.tsx"
+
+    # ---------- F4: /tickets/cancelled ----------
+    - id: A45
+      description: F4 - cancelled page exists
+      command: 'test -f "app/(marketing)/tickets/cancelled/page.tsx"'
+    - id: A46
+      description: F4 - cancelled page links back to /tickets
+      command: 'grep -q "/tickets\b" "app/(marketing)/tickets/cancelled/page.tsx" || grep -Eq "href=\"/tickets\"" "app/(marketing)/tickets/cancelled/page.tsx"'
+    - id: A47
+      description: F4 - cancelled page documents that the reserved Firestore doc is left untouched (no destructive write)
+      command: >-
+        grep -Eiq "reserved" "app/(marketing)/tickets/cancelled/page.tsx" &&
+        if grep -Eq "\.delete\(\)|status:\s*'cancelled'" "app/(marketing)/tickets/cancelled/page.tsx"; then exit 1; fi
+
+    # ---------- ticketsPage copy: every field must be BOTH queried AND ACTUALLY RENDERED ----------
+    # Prevents a repeat of two confirmed bugs on this project: contactPage.formRecipients
+    # (a schema field consumed by nothing) and aboutPage.title (fetched into a variable but
+    # never placed in JSX — so it silently never rendered despite passing a naive substring
+    # grep). The "rendered" check below therefore requires the field to appear inside an
+    # actual JSX curly-brace interpolation, e.g. `{data.title}` — not merely mentioned
+    # anywhere in the file (a destructure, a type, or a comment would all fail this on
+    # purpose). Comment-only occurrences (`{/* ... */}`) are explicitly excluded.
+    - id: A48
+      description: >-
+        ticketsPage copy fields for /tickets (title, intro, buyButtonLabel, soldOutMessage,
+        salesClosedMessage, termsNote) are each queried in sanity/queries.ts AND actually
+        interpolated into JSX somewhere under the buy-page file tree
+      command: >-
+        for f in title intro buyButtonLabel soldOutMessage salesClosedMessage termsNote; do
+          grep -q "$f" sanity/queries.ts || { echo "not queried: $f"; exit 1; };
+          grep -rEn "\{[^{}]*\b$f\b[^{}]*\}" "app/(marketing)/tickets/page.tsx" components/tickets/ 2>/dev/null | grep -v '/\*' | grep -q . || { echo "not rendered in JSX: $f"; exit 1; };
+        done
+    - id: A49
+      description: >-
+        ticketsPage copy fields for /tickets/confirmation (confirmationPendingHeading,
+        confirmationPendingMessage, confirmationSuccessHeading, confirmationSuccessMessage,
+        confirmationNotFoundMessage, ticketIncludesNote) are each queried in sanity/queries.ts
+        AND actually interpolated into JSX in the confirmation page
+      command: >-
+        for f in confirmationPendingHeading confirmationPendingMessage confirmationSuccessHeading confirmationSuccessMessage confirmationNotFoundMessage ticketIncludesNote; do
+          grep -q "$f" sanity/queries.ts || { echo "not queried: $f"; exit 1; };
+          grep -En "\{[^{}]*\b$f\b[^{}]*\}" "app/(marketing)/tickets/confirmation/page.tsx" | grep -v '/\*' | grep -q . || { echo "not rendered in JSX: $f"; exit 1; };
+        done
+    - id: A50
+      description: >-
+        ticketsPage copy fields for /tickets/cancelled (cancelledHeading, cancelledMessage,
+        cancelledButtonLabel) are each queried in sanity/queries.ts AND actually interpolated
+        into JSX in the cancelled page
+      command: >-
+        for f in cancelledHeading cancelledMessage cancelledButtonLabel; do
+          grep -q "$f" sanity/queries.ts || { echo "not queried: $f"; exit 1; };
+          grep -En "\{[^{}]*\b$f\b[^{}]*\}" "app/(marketing)/tickets/cancelled/page.tsx" | grep -v '/\*' | grep -q . || { echo "not rendered in JSX: $f"; exit 1; };
+        done
+    - id: A50a
+      description: >-
+        the Sanity value wins whenever present — any hardcoded copy fallback on these three
+        pages must be in ($sanityValue ?? 'fallback') order, never the reverse, so a
+        published Studio edit is never masked by a hardcoded literal
+      command: >-
+        for file in "app/(marketing)/tickets/page.tsx" "app/(marketing)/tickets/confirmation/page.tsx" "app/(marketing)/tickets/cancelled/page.tsx"; do
+          [ -f "$file" ] || continue;
+          if grep -Eq "'[^']*'\s*\?\?" "$file"; then echo "reversed fallback order in $file"; exit 1; fi;
+        done
+
+    # ---------- Cross-cutting: content/money line held mechanically ----------
+    - id: A51
+      description: >-
+        the money-moving PayFast lib never imports Sanity — the content/money line holds
+        (see content-vs-money-boundary.golden.md)
+      command: >-
+        if grep -Eq "from ['\"](@/)?sanity" lib/payfast.ts; then exit 1; fi
+    - id: A52
+      description: >-
+        the ITN security boundary never imports Sanity — the content/money line holds
+      command: >-
+        if grep -Eq "from ['\"](@/)?sanity" app/api/tickets/itn/route.ts; then exit 1; fi
+    - id: A53
+      description: app/api/tickets/itn/route.ts is byte-identical to its state at contract-authoring time (verified security boundary, no incidental edits)
+      command: >-
+        echo "$(cat contracts/golden/ticketing-m1-m2/itn-route.golden.sha256)  app/api/tickets/itn/route.ts" | shasum -a 256 -c -
+
+    # ---------- Gates ----------
+    - id: A54
+      description: strict TypeScript type-check passes
+      command: 'pnpm type-check'
+    - id: A55
+      description: lint passes with zero errors
+      command: 'pnpm lint'
+    - id: A56
+      description: production build succeeds
+      command: 'pnpm build'

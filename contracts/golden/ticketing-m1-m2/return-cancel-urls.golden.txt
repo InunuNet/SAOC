@@ -1,0 +1,6 @@
+return_url = ${siteUrl}/tickets/confirmation?ref=${bookingRef}
+cancel_url = ${siteUrl}/tickets/cancelled?ref=${bookingRef}
+
+bookingRef is computed (generateBookingRef()) BEFORE signedFields is built, exactly as it is
+today for m_payment_id — so this only changes the two literal string values assigned to
+return_url and cancel_url, nothing about signature computation order or the Firestore write.

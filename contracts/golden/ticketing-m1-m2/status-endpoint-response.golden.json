@@ -1,0 +1,18 @@
+{
+  "note": "GET /api/tickets/status?ref=<bookingRef> — the ENTIRE success response shape. No other keys. This is the PII/enumeration mitigation for F3 — see README point 5.",
+  "querystringParam": "ref",
+  "responses": {
+    "200_found": { "status": "reserved" },
+    "200_found_alt": { "status": "paid" },
+    "404_not_found": { "error": "Not found." }
+  },
+  "forbiddenFields": [
+    "attendeeEmail",
+    "attendeeName",
+    "amount",
+    "id",
+    "m_payment_id",
+    "pf_payment_id",
+    "showId"
+  ]
+}
