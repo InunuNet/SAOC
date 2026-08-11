@@ -437,3 +437,8 @@ countdown, which IS live); `archive/[year]`; `/media-kit`, `/constitution`, `/pr
   the Sanity dataset is INVENTED by us and labelled "Provisional price — pending council
   confirmation.": Adult R150/300, Pensioner R100/100, SAOC Member R100/150, Child R50/100,
   Exhibitor free/50. The single most revenue-blocking open item.
+- [ ] **Proper favicon for the site.** We are currently serving a default — likely the Next.js,
+  Sanity Studio or Firebase placeholder rather than anything SAOC. Needs a real SAOC icon
+  (and check `/studio` separately, which may carry its own). Blocked on the SAOC org logo Brad
+  is designing; do the favicon pass once that lands so the mark is consistent. Raised by Brad
+  2026-08-11.
