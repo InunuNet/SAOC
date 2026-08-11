@@ -1,91 +1,78 @@
 # Reboot Context
-_Generated: 2026-08-06T00:30Z — session ended on quota exhaustion (resets 4am SAST)_
+_Generated: 2026-08-11T18:00Z_
 
-## Mission: `cms-loop-and-wiring` — all 4 features' code SHIPPED, 1 verification open
+## What happened last session
+Session 2026-08-11: read-only audit + client comms + mission scoping. Full Sanity dataset export (104 docs) audited — found homePage.heroImages has 4 items with _key:null (ONLY occurrence in dataset), which is the 'Missing keys' banner blocking home-page hero editing in Studio; fix is Studio's Add-missing-keys button + scripts/seed-sanity.ts generating _key. Mapped every empty content field across society/sponsor/boardMember/judge/show/societyEvent — judge type has ZERO docs, show docs are skeletons. Corrected an earlier wrong claim: /national-show/archive is NOT empty, it renders all 5 past shows and per-year pages return 200, but nothing links to them. Found live defect: footer WOSA link points to wosa.org.za which does not resolve (real site wildorchids.co.za). Studio P0 CLOSED — Brad edits documents in deployed Studio. Brad decisions: brand architecture RESOLVED (SAOC chrome site-wide incl. National Show header, Show branding below the header); POPIA deferred; Scott granted permission to redo logo assets, new Show logo exists, Brad designing SAOC org identity himself, NO branding implementation authorised yet; stop fighting the App Hosting CDN (no purge API exists) and use Sanity Presentation/draft preview for editors instead; stay with Sanity, do not migrate CMS. Ownership clarified: content flows via Lee-Ann to committee; Inunu initiates domain transfer from domains.co.za then registrar emails admin/owner contacts for approval; Brad supplies his own PayFast sandbox creds so dev is unblocked, SAOC must register its own non-profit merchant account for go-live. Wrote client status report documents/SAOC-Status-Report-LeeAnn-2026-08-11.md (fresh — old Gmail draft unretrievable, gws has no drafts subcommand, and was stale). Created mission 2026-08-11-saoc-pages-editable (5 features, 3 milestones) targeting end of week: wire all 8 originally-scoped pages into Sanity for Lee-Ann to self-edit. NO code written this session.
 
-| Feature | Code | Verified | Commit |
-|---|---|---|---|
-| F1 CDN TTL | shipped | **RELIABILITY UNPROVEN** | `82ef05f` |
-| F2 event tags | shipped | blocked on F1 | (with F1) |
-| F3 national-show wiring | shipped | read-only checks NOT run | `32f3b0f` |
-| F4 award/province | shipped | **5/5 read-only PASS** | `19b7fa8` |
+---
 
-## START HERE — the one open question
+## START HERE — Brad's directive (2026-08-11)
 
-**Does F1's propagation converge, or does only a rollout purge the CDN?**
+**Wire every originally-scoped SAOC page into Sanity so Lee-Ann can edit content herself, then
+start replacing placeholder content. Target: end of week (2026-08-14).**
 
-Tally so far: **1 pass, 4 fails** on the 120s bound, across F6 AND F2 — different documents,
-different pages, different tags. That pattern points at the feature, not the checks.
+Mission created and active: `.agent/memory/project/missions/2026-08-11-saoc-pages-editable.md`
+(5 features, 3 milestones, validated). **Read that mission file — it carries the full brief,
+the out-of-scope list, and the settled decisions.** Run `python3 execution/mission.py resume`.
 
-Two outcomes, opposite responses:
-- **Converges at ~150-200s** → fix works, 120s bound was calibrated against a wrong model of
-  `stale-while-revalidate`. Legitimate recalibration, stated openly. Likely mechanism: the CDN
-  only *triggers* a background refetch on the first request after the window, so fresh content
-  needs a further round trip — worst case well beyond 60s.
-- **Never converges** → `revalidate = 60` does not close the loop on App Hosting. F1 needs a
-  different approach and M1 fails as built.
+Brad meets Lee-Ann at 10:00 on 2026-08-12 and will issue a revised priority list afterwards.
+Re-read the mission against that list when it arrives; the wiring work stands regardless.
 
-**The decisive experiment** (was in flight when quota died): one mutation, then poll to 10+ min
-recording elapsed time, `x-nextjs-cache`, `cdn-cache-status`, `age`, sentinel present y/n.
-Watch `age` when the sentinel flips: **resetting to ~0 across all routes = rollout purge;
-one object refreshing while others climb = genuine stale-while-revalidate.** That distinction
-IS the answer.
+**Immediate, before anything else:** Brad may have already clicked Studio's "Add missing keys" on
+`homePage.heroImages` ahead of his demo. **Check the data before touching it.** The seed-script
+half of that fix (`scripts/seed-sanity.ts` must generate `_key`) is required either way.
 
-**Do NOT recalibrate the 120s bound to manufacture a pass.** Evidence first.
+## Dataset audit — verified via full export (104 docs), do not re-derive
 
-Confounder: rollouts purge the CDN. F4 pushed 22:26:52Z, F3 shortly after. Any sample
-overlapping a rollout is contaminated. Run in a quiet window.
+Well populated: **society** (21, all fields), **award** (6), **showClass** (10), **province** (9),
+and the About / Judging / Contact page singletons.
 
-## Next actions, in order
+Empty fields — this list is the basis of the content request to Lee-Ann:
+- **judge — 0 documents.** Directory is an empty shell.
+- **show (6)** — only title/year/location/slug/status, `entries` on 5 of 6. Missing date, venue,
+  heroImage, exhibitors, awards, summary, gallery, results, classes. Biggest content gap.
+- **society (21)** — missing `description`, `logo`, `website`, `markBadge` on all 21.
+- **sponsor (6)** — name only. Missing tier, logo, website, description, active.
+- **boardMember (6)** — name + role only. Missing email, photo, order.
+- **societyEvent (18)** — missing description, hostSociety, location on all 18; endDate on 5.
+- **membersPage** — exists with NO fields set at all (Phase 2, don't chase).
+- **nationalShow** — `showDate`, `exhibitorStages` empty.
+- **homePage** — `countdownDate` empty; live countdown is fed by `nationalShow.countdownDate`.
+- **aboutPage** — `boardIntroText` missing. **award** — `year` missing.
 
-1. Run the long-poll experiment above → decide F1's fate.
-2. Run F3's read-only checks against deployed: **A6 (hero visual neutrality)** first — proves
-   wiring didn't change the rendered image; **A2 (home-page countdown regression)** second —
-   `countdownDate` is shared with `ShowBand` and was the one field that already worked.
-   Then A4, A5. (`contracts/checks/cms-loop-f3-national-show/`)
-3. Once F1 is settled: run the mutating round trips (F2 A1, F3 A1/A3, F4 A1/A2). ~7min each.
-4. @docs, then M1/M2/M3 gates, then close out.
+## Live-site facts (verified)
 
-## Rules that were learned the hard way this session
+Host `saoc-prod--saoc-webapp.europe-west4.hosted.app` — all 19 routes 200.
+`/national-show/upcoming` 307s to `/national-show` (intentional).
 
-- **Mutating checks are EXCLUSIVE.** Never run two concurrently, never dispatch parallel agents
-  that mutate the same documents. This blocked @qa once tonight.
-- **Parallel @dev agents need disjoint file ownership stated in the brief** — two agents in one
-  worktree both stopped, correctly, rather than ship each other's work. Cost a round trip each.
-- **A running check is not a failed check.** Mutating checks take ~7min (120s propagation +
-  300s cleanup). Read exit codes, never curl mid-flight — that produced a false escalation.
-- **Orchestrator dispatches, never implements.** Violated once tonight; the direct edit collided
-  with an architect already mid-fix on the same file with a better diagnosis.
+- **`/national-show/archive` is NOT empty** (corrects an earlier claim): renders all 5 past shows;
+  `/archive/2012`, `/2018`, `/2024` all return 200 — but nothing links to them.
+- **Live defect:** footer WOSA link on every page → `https://wosa.org.za`, which does not resolve
+  at all (DNS failure). Real site is `wildorchids.co.za`. See [[project_wosa_not_ours]].
+- Studio P0 CLOSED — Brad edits documents in the deployed Studio.
 
-## Athanor — DONE, do not reopen
+## Client comms — drafted, awaiting Brad's review
 
-Two PRs open upstream, out of scope now:
-- **#1325** — orchestrator-discipline PreToolUse hook (warn-only; hard-block not safely possible),
-  verification-harness integrity rules in `coding.md`, task-sizing guidance in `workflow.md`.
-  Plus issue #1324 (`gh_closure_scan.py` frontmatter crash).
-- **#1326** — `TeammateIdle` hook enforcing a report before an agent may go idle (real
-  enforcement via exit 2; supersedes issue #1315), and `mission.py list` stderr noise.
+`documents/SAOC-Status-Report-LeeAnn-2026-08-11.md` — build status, Phase 1/2 sequencing, the
+content request list, asks split by owner. Has an internal note at the top to delete before
+sending. Written fresh; the unsent Gmail draft `r7069159880970212600` could not be retrieved
+(`gws` has no `drafts` subcommand) and was stale anyway.
 
-Neither takes effect here until merged + `make update-template`.
+`documents/SAOC-LeeAnn-Call-Prep-2026-07-20.md` updated this session: B6 POPIA marked deferred,
+C1 SAOC brand now Brad's own in-progress work, C3 Show assets resolved (permission granted).
 
-## Deferred — do not attempt
+## Decisions — do not reopen
 
-- Secret rotation — single pre-launch pass, Brad's call.
-- `hostSociety` assignment — needs Brad's domain knowledge.
-- National Show `showDate`/host schema fields — content-model decision tied to Brad's open
-  committee question on brand architecture (master brand vs rotating host sub-brand).
-- Awards archive/gallery (per-show winners + photos) — separate, bigger, unscoped feature.
-  F4 is NOT progress toward it.
+- **Brand architecture RESOLVED:** SAOC branding site-wide including the National Show header;
+  everything below the header on `/national-show` rebrands as the Show. Chrome already lives in
+  `app/(marketing)/layout.tsx`. Show tokens scope to the subtree, not `:root`.
+- **Logo work NOT authorised.** Brad supplies a Claude Design prompt with assets when ready.
+  Do not touch `branding/`.
+- **Stop fighting the CDN.** No purge API on App Hosting. Use Presentation/draft preview for
+  editors; accept public-visitor staleness. Do not restart the F1 CDN-purge investigation.
+- **Sanity stays.** No CMS migration.
 
-## Open items for Brad
+## Predecessor mission
 
-- `/national-show` H1 now reads "The 19th South African National Orchid Show", sitting next to a
-  hardcoded "Nineteenth Edition" line — reads redundantly. Copy call, layout untouched.
-- Venue now renders "Cape Town International Convention Centre" (was "CTICC, Cape Town").
-  Editable in the Studio.
-- Test sentinels are publicly visible ~60s after every mutating check completes. Constrains
-  running these against production post-launch.
-- `scripts/seed-sanity.ts`: `config({ quiet: true })` with no `path` misses `.env.local` —
-  `pnpm seed` likely broken today. Backlogged.
-- `firebase apphosting:rollouts:list` is not a valid CLI command and `gcloud` is not installed,
-  so there is no CLI path to a rollout ID. Tooling gap.
+`cms-loop-and-wiring` — close it out rather than continue. Its F1/F2 verification is superseded
+by the CDN decision above.
