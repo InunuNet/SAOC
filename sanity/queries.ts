@@ -38,6 +38,55 @@ export const nationalShowQuery = defineQuery(`
   }
 `);
 
+// F1 (ticketing-pages): the checkout API needs only the sales gate, kept as its own
+// small query rather than pulling the full nationalShowQuery into a payment route.
+export const nationalShowSalesQuery = defineQuery(`
+  *[_type == "nationalShow"][0]{
+    salesOpen
+  }
+`);
+
+export const activeTicketTypesQuery = defineQuery(`
+  *[_type == "ticketType" && active == true] | order(order asc){
+    _id,
+    name,
+    "slug": slug.current,
+    price,
+    description,
+    capacity,
+    order
+  }
+`);
+
+export const ticketTypeBySlugQuery = defineQuery(`
+  *[_type == "ticketType" && slug.current == $slug && active == true][0]{
+    _id,
+    name,
+    price,
+    capacity
+  }
+`);
+
+export const ticketsPageQuery = defineQuery(`
+  *[_type == "ticketsPage"][0]{
+    title,
+    intro,
+    buyButtonLabel,
+    soldOutMessage,
+    salesClosedMessage,
+    termsNote,
+    confirmationPendingHeading,
+    confirmationPendingMessage,
+    confirmationSuccessHeading,
+    confirmationSuccessMessage,
+    confirmationNotFoundMessage,
+    ticketIncludesNote,
+    cancelledHeading,
+    cancelledMessage,
+    cancelledButtonLabel
+  }
+`);
+
 export const upcomingEventsQuery = defineQuery(`
   *[_type == "societyEvent" && date >= now()] | order(date asc){
     _id,

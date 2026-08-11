@@ -1,68 +1,83 @@
 # Reboot Context
-_Generated: 2026-08-11T18:55Z_
+_Generated: 2026-08-11T22:00Z_
 
 ## What happened last session
-Session 2026-08-11 evening: PayFast sandbox configured and verified end-to-end against Brad's own sandbox account (signed payload accepted, payment session minted, payment page rendered). Fixed checkout SITE_URL hardcoded to old Joomla origin. Mission saoc-pages-editable M1 COMPLETE: F1 hero _key fix (seed-page-singletons.ts generates+backfills _key, live data repaired, gate green on 4 assertions, verified no image re-upload and no other keyless arrays) and F2 editability audit (~75 hardcoded fields ranked). Discovered blocker: seed-page-singletons.ts createOrReplace silently reverts editor content across 6 singletons (no loss tonight, verified via Sanity history API). Planned+activated mission ticketing-pages, contract contract-ticketing-m1-m2.yaml with 57 shell assertions and full goldens delivered; dev dispatched then STOPPED before writing anything - resumes fresh next session. Council discussion points added: document custody governance, society iCal feed aggregation.
+Session 2026-08-11 (continued): mission `ticketing-pages` M1+M2 (F1–F4) delivered and
+gate-green (57/57 shell assertions). The public ticket flow now exists: `/tickets` (buy page),
+`/tickets/confirmation` (honest pending/paid polling, handles the ITN race), `/tickets/cancelled`,
+plus `app/api/tickets/status`. Pricing, capacity, sales-open switch and all visitor-facing copy
+are Sanity-controlled (`ticketType` docs + `ticketsPage` singleton + `nationalShow.salesOpen`);
+the payment code itself never imports Sanity (mechanically enforced, A51/A52). Docs written:
+`docs/ticketing.md` and `docs/ticketing-for-editors.md` (plain-language guide for Lee-Ann).
+Sanity dataset seeded with 5 ticket types, `salesOpen=true` for tomorrow's demo. QA went past its
+brief and found two real pre-existing security gaps (door scanner admits unpaid tickets; capacity
+TOCTOU race) — both logged below and in `backlog.md`, neither fixed yet.
 
 ---
 
-# START HERE — resume instructions (2026-08-11, ~21:00)
+# START HERE — resume instructions (2026-08-11, ~22:00)
 
-## Active mission: `ticketing-pages` — ready to build, nothing written yet
+## Active mission: `ticketing-pages` — M1+M2 done, M3/M4 (F5–F7) not started
 
 `.agent/memory/project/missions/2026-08-11-ticketing-pages.md` (7 features, 4 milestones).
-**Contract and goldens are COMPLETE and validated. No implementation exists on disk.**
 
-- Contract: `contracts/contract-ticketing-m1-m2.yaml` — **57 shell assertions**, YAML valid,
-  covers F1–F4 (M1+M2). Zero `agent_review` assertions.
-- Goldens: `contracts/golden/ticketing-m1-m2/` — 11 files. Read `README.md` first.
+- **M1 (F1)** — done. CMS-controlled pricing/capacity/sales-open switch.
+- **M2 (F2–F4)** — done, gate green 57/57. `/tickets`, `/tickets/confirmation`,
+  `/tickets/cancelled` all live and working against the demo dataset.
+- **M3 (F5, pending)** — emailed QR ticket via Resend on confirmed payment. Closes the loop with
+  the existing door scanner at `/admin/door`, which today has nothing real to scan.
+- **M4 (F6/F7, pending)** — accessibility/responsive pass + payment-security hardening (F6);
+  docs/deploy-config/secretary handover (F7, includes `SITE_URL` in `apphosting.yaml`).
 
-**TO RESUME: dispatch @dev against the contract and goldens.** A dev agent was dispatched and
-then stopped before touching a single file — verified, working tree clean of ticketing code.
-Do not re-run @architect; the contract is the authority.
+**TO RESUME:** `python3 execution/mission.py resume`, then dispatch @architect for F5's contract
+(F5 depends on Resend being configured — check `RESEND_API_KEY` status in `backlog.md`'s
+"Blocked (awaiting Brad)" section first, it may still be unset).
 
-### HARD DEADLINE
-Brad demos to Lee-Ann **tomorrow morning** and to the council **tomorrow night (2026-08-12)**.
-Priority M1 → M2. **M2 (the three pages) IS the demo.** F5 (emailed QR ticket), F6 (a11y +
-security hardening) and F7 (docs) are the follow-up pass — do not let them delay the pages.
+### Demo status (tomorrow, 2026-08-12)
+Brad demos to Lee-Ann tomorrow morning and to the council tomorrow night. M2 (the three pages) IS
+the demo and is ready: dev server has `/tickets` → checkout → PayFast sandbox → `/tickets/confirmation`
+working end to end, `salesOpen=true`, 5 provisional ticket types seeded and clearly labelled
+"Provisional price — pending council confirmation." Do not let F5/F6/F7 delay or complicate the
+demo — they are the follow-up pass.
 
-### Decisions settled tonight — do not reopen
-- **SAOC branding for ticketing.** Show branding is coming but is a SEPARATE LATER PASS. Do not
-  anticipate or mock it up. Use the existing Sage & Paper system in `app/globals.css`; no new
-  tokens, colours or fonts.
-- **All visitor-facing copy must be Sanity-editable** — `ticketsPage` singleton, 15 fields, every
-  heading/message/button label. The line: **anything a visitor reads is content; anything that
-  moves money is code.** Mechanically enforced (A51/A52 assert `lib/payfast.ts` and the ITN route
-  never import Sanity).
-- **Sales default CLOSED**; checkout returns 403 on direct POST when closed. Prices are
-  provisional and must be visibly labelled so — the council has never confirmed real prices.
-- **Never modify `app/api/tickets/itn/route.ts`** — asserted byte-identical via SHA-256 (A43).
-- Seeding is create-if-absent ONLY. Never `createOrReplace`. Never touch `seed-page-singletons.ts`.
+## Known bugs found this session — not yet fixed, all logged in backlog.md
+1. **Door scanner admits unpaid tickets (HIGHEST ticketing priority for F6).**
+   `app/api/admin/checkin/route.ts` never checks `status === 'paid'` or `showId` — a merely
+   `reserved` ticket is as admissible as a paid one.
+2. **TOCTOU race on ticket capacity.** `app/api/tickets/checkout/route.ts`'s capacity check is an
+   unguarded read-then-write; @qa reproduced overselling live (54/50 on a 50-capacity type under
+   5 concurrent POSTs). Needs Firestore `runTransaction`.
+3. **Checkout idempotency + booking-ref enumeration.** No duplicate-POST protection beyond the
+   client disabling its submit button; booking refs are guessable 6-digit numbers.
+4. **`SITE_URL` still absent from `apphosting.yaml` (F7).** Works locally; a real deploy would
+   send PayFast's ITN callback to the old Joomla site (`https://saoc.co.za`) and every deployed
+   payment would sit permanently `reserved`.
 
-## PayFast sandbox — DONE, do not redo
-Brad's own sandbox credentials in `.env.local`, custom passphrase matched both sides. Verified
-live: `sandbox.payfast.co.za` accepted a signed payload, minted a payment session and rendered the
-payment page ("SAOC 2027 National Show Ticket / R 150.00"). Test tickets cleaned from Firestore.
-`SITE_URL` is set locally and read at request time — **still absent from `apphosting.yaml`**
-(mission F7), so a deployed ITN would use the fallback origin and never arrive.
+## Contract-design lesson to carry forward (see learned.md "PayFast Ticketing — Milestone M1+M2")
+Grep-based assertions produced false greens three times this session (comments matching a
+substring, not the actual behaviour) and once let a real bug (no server-side capacity
+enforcement) pass under a "sold out" string match. When writing the F5/F6 contract, assert
+behaviour (a real HTTP round-trip, a real concurrent-request test) wherever the thing being
+checked is security- or money-relevant — not a source grep.
 
-## Sibling mission `saoc-pages-editable` — M1 COMPLETE, F3/F4/F5 pending
-F1 (hero `_key`) and F2 (audit) done, M1 gate green on 4 real assertions. Audit at
-`.agent/memory/project/f2-editability-audit.md` — ~75 hardcoded fields, ranked.
+## Sibling mission `saoc-pages-editable` — still M1 complete, F3/F4/F5 pending (unchanged)
+F1 (hero `_key` fix) and F2 (editability audit) done, gate green on 4 assertions. Audit at
+`.agent/memory/project/f2-editability-audit.md` — ~75 hardcoded fields, ranked. Not touched this
+session; still queued behind `ticketing-pages`.
 
-## BLOCKER affecting both missions
-`scripts/seed-page-singletons.ts` uses `createOrReplace` with hardcoded literals across six
-singletons — running it silently reverts any editor's Studio changes. **No content was lost
-tonight** (verified by diffing against pre-seed state via the Sanity history API; only
-`nationalShow.countdownDate` changed, and only its timezone representation — same instant).
-Must become preserve-existing/create-if-absent before Lee-Ann is handed Studio.
+## Carried-over blockers (unchanged from before this session)
+1. **`scripts/seed-page-singletons.ts` uses destructive `createOrReplace`** across six
+   singletons — running it silently reverts any editor's Studio changes. No content lost yet
+   (verified via Sanity history API), but it must become preserve-existing/create-if-absent
+   before Lee-Ann is handed real Studio access. The `ticketing-pages` mission's own seed script
+   (`scripts/seed-ticketing.ts`) was written create-if-absent-only deliberately — use it as the
+   reference pattern when fixing this one.
+2. **Was "Judges Training" ever meant to be its own page?** No route or component exists; only a
+   "Becoming a Judge" section inside `/judging`. Still blocks a credible F3 estimate on
+   `saoc-pages-editable`. Awaiting Brad.
+3. **Real ticket prices and venue capacity from the council** — the single most revenue-blocking
+   open item; everything live in the demo dataset is an invented placeholder.
 
-## Awaiting Brad
-1. **Was "Judges Training" ever meant to be its own page?** No route or component exists; only a
-   "Becoming a Judge" section inside `/judging`. Blocks a credible F3 estimate on the sibling
-   mission.
-2. Real ticket prices and venue capacity from the council — the item most directly blocking revenue.
-
-## Process note
+## Process note (still applies)
 Brad's correction, and it stands: **plan → write mission to disk → wrap up → compact → resume.**
 Do not run a build chain in a context that is nearly spent. Wrapping up first is not overhead.

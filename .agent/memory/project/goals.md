@@ -10,11 +10,19 @@ Build and maintain the South African Orchid Council's digital presence and tooli
 2. Keep the Athanor workspace healthy and in sync
 3. Deliver working software for the South African Orchid Council
 
-## Current Mission Status (updated 2026-07-30)
+## Current Mission Status (updated 2026-08-11)
 
-`cms-activation-deploy` — 5 of 6 features done (F1 hydration fix, F2 deploy + secret-corruption
-fix, F3 singleton desk pinning, F4 seed six page singletons, F5 event slugs/hostSociety). F6
-(prove a Studio edit reaches the live site) is BLOCKED on a Firebase App Hosting CDN edge that
-never purges on `revalidateTag()` — a platform-level gap, not something this codebase can fix
-alone. See `backlog.md` "[P0 BLOCKER] The CMS→site loop does not work in production" for the
-live detail and next steps.
+`ticketing-pages` — M1+M2 (F1–F4) done, gate green 57/57. Public ticket flow exists end to end:
+`/tickets` (buy page), `/tickets/confirmation` (honest pending/paid polling against the ITN
+race), `/tickets/cancelled`, `/api/tickets/status`. Pricing, capacity, sales-open switch and all
+visitor-facing copy are Sanity-controlled (`ticketType` docs + `ticketsPage` singleton +
+`nationalShow.salesOpen`) — the payment code itself (`lib/payfast.ts`, the ITN route) never
+imports Sanity, mechanically enforced. Dataset seeded with 5 provisional ticket types,
+`salesOpen=true` for the demo. Docs: `docs/ticketing.md`, `docs/ticketing-for-editors.md`.
+Remaining: F5 (emailed QR ticket), F6 (a11y + payment-security hardening — see backlog's F6 door
+scanner / TOCTOU / idempotency items), F7 (docs + deploy config, incl. `SITE_URL` in
+`apphosting.yaml`). See `reboot.md` for resume instructions.
+
+`cms-activation-deploy` (prior mission) — 5 of 6 features done; F6 (Studio edit → live site) was
+BLOCKED on a Firebase App Hosting CDN edge, since resolved by the later `cms-loop-and-wiring`
+mission (bounded-staleness `revalidate = 60` fix, see `learned.md`).

@@ -6,16 +6,16 @@ goal: Build the complete public ticket-purchase flow for the 2027 National Show 
   and a scannable emailed ticket that closes the loop with the existing door scanner
 created_at: '2026-08-11T18:45:00.000000+00:00'
 started_at: null
-last_active_at: null
+last_active_at: '2026-08-11T19:24:18.432146+00:00'
 status: pending
 cost_estimate:
   features: 7
   milestones: 4
   total_calls: 15
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M2
+  feature: F4
+  ts: '2026-08-11T19:24:18.432146+00:00'
 features:
 - id: F1
   inline_brief: Move ticket pricing out of the hardcoded PLACEHOLDER_TICKET_PRICES
@@ -26,8 +26,9 @@ features:
     Seed the five real council categories with today's placeholder values clearly
     marked provisional.
   title: CMS-controlled ticket pricing, capacity and a sales-open switch
-  status: pending
+  status: done
   milestone: M1
+  completed_at: '2026-08-11T19:24:17.862224+00:00'
 - id: F2
   inline_brief: Build /tickets — the public buy page. Ticket-type selection with prices
     from Sanity, attendee name/email capture, client + server validation, POST to
@@ -36,8 +37,9 @@ features:
     and sold-out states. Uses the Sage & Paper design system only — no new colours,
     fonts or tokens.
   title: /tickets — the buy page
-  status: pending
+  status: done
   milestone: M2
+  completed_at: '2026-08-11T19:24:18.054493+00:00'
 - id: F3
   inline_brief: Build /tickets/confirmation, the PayFast return_url landing. CRITICAL
     correctness trap - the buyer lands here via browser redirect, which races the
@@ -45,16 +47,18 @@ features:
     at first paint. Must show an honest pending state and poll a new read-only status
     endpoint rather than claiming success or failure prematurely.
   title: /tickets/confirmation — return landing that handles the ITN race honestly
-  status: pending
+  status: done
   milestone: M2
+  completed_at: '2026-08-11T19:24:18.245307+00:00'
 - id: F4
   inline_brief: Build /tickets/cancelled, the PayFast cancel_url landing. Explain
     nothing was charged, offer a clear route back to /tickets, and leave the reserved
     Firestore doc in a documented state. Small page, but it is a live PayFast URL
     today and currently 404s.
   title: /tickets/cancelled — cancellation landing and recovery path
-  status: pending
+  status: done
   milestone: M2
+  completed_at: '2026-08-11T19:24:18.431959+00:00'
 - id: F5
   inline_brief: On confirmed payment, email the buyer their ticket via Resend, carrying
     the booking reference as a QR code. This CLOSES THE LOOP with the existing door
@@ -87,14 +91,18 @@ milestones:
     accident
   features:
   - F1
-  status: pending
+  status: done
+  gate_ran_at: '2026-08-11T19:24:18.612062+00:00'
+  gate_result: pass
 - id: M2
   title: A visitor can buy a ticket end to end against the PayFast sandbox
   features:
   - F2
   - F3
   - F4
-  status: pending
+  status: done
+  gate_ran_at: '2026-08-11T19:24:18.786298+00:00'
+  gate_result: pass
 - id: M3
   title: The buyer gets a scannable ticket and the door can admit them
   features:
@@ -107,6 +115,12 @@ milestones:
   - F7
   status: pending
 ---
+
+
+
+
+
+
 
 
 # Mission: Build the National Show ticketing pages

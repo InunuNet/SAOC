@@ -236,3 +236,35 @@ it is the reason work feels like "perpetual loops of bug fixing" rather than pro
   `stale-while-revalidate`), a **bounded-staleness workaround, not instant propagation** —
   edits appear within ~60s. Scope it to CMS-driven routes only and assert that static routes and
   `/_next/static` assets keep long TTLs, or the fix silently degrades asset caching sitewide.
+
+## PayFast Ticketing — Milestone M1+M2 (ticketing-pages, 2026-08-11)
+
+- (2026-08-11) **A grep-based contract assertion proves the string exists, not that the
+  behaviour exists.** Three of four "fixes" logged this session were rewording COMMENTS that
+  happened to trip a substring grep (a comment containing `createOrReplace`; another containing
+  `amount`) — the grep went green while the actual code was untouched. Worse, A32 ("sold-out
+  handled per ticket type") passed on a grep for the literal string "sold out" inside a component,
+  while the real server-side capacity enforcement did not exist at all — a visitor could oversell
+  the show by POSTing directly to `/api/tickets/checkout` (see the TOCTOU race item in
+  `backlog.md`). Compounds the pre-existing "[[JSX-interpolation rigour]]" backlog item (false
+  greens for "field is rendered" checks that only match a fetch/destructure). Contract assertions
+  must test behaviour; @qa must independently verify behaviour rather than trust a passing grep.
+- (2026-08-11) **`ListAgents` returning "no reachable agents" is not proof an agent has stopped.**
+  The orchestrator told a second agent that `TKT-dev` was not running (based on `ListAgents` +
+  file mtimes) and let a second agent start on the same contract/file scope. `TKT-dev` was in
+  fact still alive and working concurrently — it happened to converge cleanly because both agents
+  worked from the same contract, but that was luck, not design. Verify liveness by evidence of
+  ongoing work (changing mtimes, running processes), and prefer routing a follow-up to the
+  existing agent over spawning a parallel one on the same scope. Compounds `backlog.md`'s
+  "agent naming convention for parallel missions" note (mission-slug-prefixed names would also
+  have made the collision more visible).
+- (2026-08-11) **@qa following a thread past its original brief is high-value, not scope creep.**
+  Sent only to verify a capacity fix, @qa also found (a) client-supplied `showId` was unvalidated
+  and could reset the capacity ledger with a single spoofed string, and (b) the pre-existing door
+  scanner (`app/api/admin/checkin/route.ts`) admits `reserved` (unpaid) tickets, not just `paid`
+  ones — neither was in its brief. Continue giving @qa licence to chase what it finds.
+- (2026-08-11) The ticket prices/capacities seeded into Sanity this session are INVENTED
+  placeholders, not real council figures: Adult R150/300, Pensioner R100/100, SAOC Member
+  R100/150, Child R50/100, Exhibitor free/50 — each labelled "Provisional price — pending council
+  confirmation." in the UI. Real prices are the single most revenue-blocking open item
+  (`backlog.md`, "Council decision blocking ticketing").

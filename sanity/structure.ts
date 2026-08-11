@@ -17,6 +17,8 @@ const PINNED_SINGLETON_TYPES = [
   'contactPage',
   'judgingPage',
   'membersPage',
+  // F1 (ticketing-pages): pinned the same way — see ticketsPage-schema.golden.json.
+  'ticketsPage',
 ] as const;
 
 const SINGLETON_TITLES: Record<(typeof PINNED_SINGLETON_TYPES)[number], string> = {
@@ -26,6 +28,7 @@ const SINGLETON_TITLES: Record<(typeof PINNED_SINGLETON_TYPES)[number], string> 
   contactPage: 'Contact Page',
   judgingPage: 'Judging Page',
   membersPage: 'Members Page',
+  ticketsPage: 'Tickets Page',
 };
 
 // Collection (non-singleton) document types that keep the stock list behaviour.
@@ -38,6 +41,8 @@ const COLLECTION_TYPES = [
   'award',
   'sponsor',
   'judge',
+  // F1 (ticketing-pages)
+  'ticketType',
 ];
 
 export function structure(S: StructureBuilder, _context: StructureResolverContext) {

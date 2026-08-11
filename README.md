@@ -87,7 +87,7 @@ types/            — TypeScript interfaces
 | --------------- | ------ | ------------------------------------------------- |
 | M1 — Foundation | Done   | Scaffold + static data layer                      |
 | M2 — Chrome     | Done   | Global chrome: header, footer, search, mobile nav |
-| PayFast ticketing M1 | Done | Payment plumbing: ticket schema, checkout initiation, fail-closed ITN webhook. No buy-flow UI yet — see [docs/payfast-integration.md](docs/payfast-integration.md) |
+| Ticketing M1–M2 | Done | CMS-controlled pricing, buy page, confirmation/cancellation landings, PayFast sandbox integration. See [docs/ticketing.md](docs/ticketing.md) (developer) and [docs/ticketing-for-editors.md](docs/ticketing-for-editors.md) (secretary). |
 
 Full milestone docs are in [`docs/`](docs/).
 

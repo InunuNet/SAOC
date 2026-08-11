@@ -5,7 +5,10 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
 import { generateSignature, PAYFAST_SANDBOX_PROCESS_URL } from '@/lib/payfast';
-import type { TicketType } from '@/types/index';
+import { client } from '@/sanity/lib/client';
+import { nationalShowSalesQuery, ticketTypeBySlugQuery, ticketsPageQuery } from '@/sanity/queries';
+import { getSoldCountsByTicketType } from '@/lib/data/tickets';
+import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 
 /**
  * Canonical production origin. Used only as the fallback when `SITE_URL` is unset.
@@ -30,15 +33,16 @@ function resolveSiteUrl(): string {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const BOOKING_REF_SUFFIX_MAX = 1_000_000;
 
-// PLACEHOLDER PRICING — real 2027 Adult/Pensioner/Child/Member/Exhibitor tier prices
-// are not yet confirmed by Brad (flagged in .agent/memory/project/needs-human.md).
-// Amount is ALWAYS derived server-side from this map — never trust a client-supplied
-// amount, that is a payment security boundary.
-const PLACEHOLDER_TICKET_PRICES: Record<TicketType, number> = {
-  general: 150.0,
-  member: 100.0,
-  vip: 300.0,
-};
+interface SanityTicketType {
+  _id: string;
+  name: string;
+  price: number;
+  capacity: number;
+}
+
+interface SanityNationalShowSales {
+  salesOpen: boolean | null;
+}
 
 interface CheckoutRequestBody {
   showId?: unknown;
@@ -51,8 +55,13 @@ function isValidCheckoutBody(
   body: CheckoutRequestBody
 ): body is { showId: string; ticketType: string; attendeeName: string; attendeeEmail: string } {
   return (
+    // showId must be the known pinned nationalShow singleton id, not merely "a
+    // non-empty string" — getSoldCountsByTicketType(showId) scopes its capacity
+    // ledger by this exact value, so an unvalidated showId lets a spoofed value pick
+    // a fresh, always-empty ledger and bypass the capacity gate entirely. Same
+    // posture as amount/salesOpen: the request body is never the authority.
     typeof body.showId === 'string' &&
-    body.showId.trim().length > 0 &&
+    body.showId === NATIONAL_SHOW_ID &&
     typeof body.ticketType === 'string' &&
     typeof body.attendeeName === 'string' &&
     body.attendeeName.trim().length > 0 &&
@@ -84,9 +93,76 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const { showId, ticketType, attendeeName, attendeeEmail } = body;
 
-  const amount = PLACEHOLDER_TICKET_PRICES[ticketType as TicketType];
-  if (amount === undefined) {
+  if (!client) {
+    console.error('[tickets/checkout] Sanity client is not configured (missing project id).');
+    return NextResponse.json({ error: 'CMS is not configured.' }, { status: 500 });
+  }
+
+  // Payment security boundary: sales-open is a functional gate checked server-side on
+  // every direct POST, not just hidden in the UI. Amount is ALWAYS derived below from a
+  // fresh Sanity ticketType lookup — never from the client — this is the second half of
+  // that same boundary.
+  let salesOpen: SanityNationalShowSales | null;
+  try {
+    salesOpen = await client.fetch<SanityNationalShowSales | null>(nationalShowSalesQuery);
+  } catch (error) {
+    console.error('[tickets/checkout] Failed to fetch nationalShow sales state:', error);
+    return NextResponse.json(
+      { error: 'Unable to verify ticket sales state. Please try again.' },
+      { status: 500 }
+    );
+  }
+  if (salesOpen?.salesOpen !== true) {
+    return NextResponse.json({ error: 'Ticket sales are currently closed.' }, { status: 403 });
+  }
+
+  let ticketTypeDoc: SanityTicketType | null;
+  try {
+    ticketTypeDoc = await client.fetch<SanityTicketType | null>(ticketTypeBySlugQuery, {
+      slug: ticketType,
+    });
+  } catch (error) {
+    console.error('[tickets/checkout] Failed to fetch ticketType from Sanity:', error);
+    return NextResponse.json(
+      { error: 'Unable to look up ticket pricing. Please try again.' },
+      { status: 500 }
+    );
+  }
+  if (!ticketTypeDoc) {
     return NextResponse.json({ error: `Unknown ticketType: ${ticketType}` }, { status: 400 });
+  }
+  const amount = ticketTypeDoc.price;
+
+  // Capacity is enforced server-side, the same way price and sales-open are — the
+  // "sold out" badge on /tickets (app/(marketing)/tickets/page.tsx) is cosmetic on its
+  // own; without this check a direct POST past capacity would still return a real
+  // signed PayFast payload. Reuses the same counting helper /tickets uses (never a
+  // second counting path). One checkout request reserves exactly one seat — there is
+  // no multi-ticket-per-request field today — but the comparison is written in terms
+  // of the requested quantity so it stays correct if that's ever added.
+  const REQUESTED_QUANTITY = 1;
+  let soldCounts: Record<string, number>;
+  try {
+    soldCounts = await getSoldCountsByTicketType(showId);
+  } catch (error) {
+    console.error('[tickets/checkout] Failed to count sold tickets:', error);
+    return NextResponse.json(
+      { error: 'Unable to verify ticket availability. Please try again.' },
+      { status: 500 }
+    );
+  }
+  const alreadySold = soldCounts[ticketType] ?? 0;
+  if (alreadySold + REQUESTED_QUANTITY > ticketTypeDoc.capacity) {
+    // Visitor-facing copy comes from Sanity (ticketsPage.soldOutMessage), same field
+    // /tickets already uses for the cosmetic badge — not a new hardcoded string.
+    let soldOutMessage = 'Sold out.';
+    try {
+      const copy = await client.fetch<{ soldOutMessage?: string | null } | null>(ticketsPageQuery);
+      if (copy?.soldOutMessage) soldOutMessage = copy.soldOutMessage;
+    } catch (error) {
+      console.error('[tickets/checkout] Failed to fetch soldOutMessage, using fallback:', error);
+    }
+    return NextResponse.json({ error: soldOutMessage }, { status: 409 });
   }
 
   const merchantId = process.env.PAYFAST_SANDBOX_MERCHANT_ID;
@@ -114,7 +190,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       showId,
       attendeeName: attendeeName.trim(),
       attendeeEmail: attendeeEmail.trim().toLowerCase(),
-      ticketType: ticketType as TicketType,
+      ticketType,
       status: 'reserved',
       amount,
       purchasedAt: null,
@@ -136,8 +212,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const signedFields: Record<string, string> = {
     merchant_id: merchantId,
     merchant_key: merchantKey,
-    return_url: `${siteUrl}/tickets/confirmation`,
-    cancel_url: `${siteUrl}/tickets/cancelled`,
+    return_url: `${siteUrl}/tickets/confirmation?ref=${bookingRef}`,
+    cancel_url: `${siteUrl}/tickets/cancelled?ref=${bookingRef}`,
     notify_url: `${siteUrl}/api/tickets/itn`,
     m_payment_id: bookingRef,
     amount: amountFormatted,

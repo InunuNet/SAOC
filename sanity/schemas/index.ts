@@ -6,6 +6,7 @@ import { nationalShow } from './documents/nationalShow';
 import { contactPage } from './documents/contactPage';
 import { judgingPage } from './documents/judgingPage';
 import { membersPage } from './documents/membersPage';
+import { ticketsPage } from './documents/ticketsPage';
 import { society } from './documents/society';
 import { boardMember } from './documents/boardMember';
 import { event } from './documents/event';
@@ -15,6 +16,7 @@ import { award } from './documents/award';
 import { sponsor } from './documents/sponsor';
 import { judge } from './documents/judge';
 import { province } from './documents/province';
+import { ticketType } from './documents/ticketType';
 
 import { portableText } from './objects/portableText';
 
@@ -26,6 +28,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   contactPage,
   judgingPage,
   membersPage,
+  ticketsPage,
   // Collections
   society,
   boardMember,
@@ -36,6 +39,8 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   sponsor,
   judge,
   province,
+  // Ticketing
+  ticketType,
   // Objects
   portableText,
 ];

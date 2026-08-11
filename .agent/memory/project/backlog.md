@@ -412,3 +412,28 @@ countdown, which IS live); `archive/[year]`; `/media-kit`, `/constitution`, `/pr
   slug, not the feature ID. Running `saoc-pages-editable` and `ticketing-pages` concurrently
   produced `F1-dev` and a `TKT-dev` whose contract also had an F1 — the second agent stopped and
   asked whether it was duplicating work. Correct behaviour on its part, avoidable collision on ours.
+- [ ] **F6 — Door scanner admits unpaid tickets (HIGHEST ticketing priority).**
+  `app/api/admin/checkin/route.ts` looks a ticket up by `bookingRef` alone and only refuses one
+  that is ALREADY checked in. It never checks `status === 'paid'` and never checks `showId`. A
+  merely `reserved` (unpaid) ticket, including one created under a spoofed `showId`, is as
+  admissible at the door as a legitimate paid one. Pre-existing, outside the M1/M2 contract,
+  found by @qa 2026-08-11 while probing the capacity gate. Fix before any real door use.
+- [ ] **F6 — TOCTOU race on ticket capacity.** The capacity check in
+  `app/api/tickets/checkout/route.ts` is an unguarded read-then-write: it counts sold tickets,
+  then writes the reservation, with no transaction. @qa reproduced it live — a type at 49/50 hit
+  with 5 concurrent POSTs returned 201 five times, ending at 54/50 (4 oversold). Needs Firestore
+  `runTransaction` around count-then-write, not sequential awaits. Matters most exactly when a
+  popular type is selling out, which is when concurrent buyers are likeliest.
+- [ ] **F6 — Checkout idempotency + booking-ref enumeration.** No protection against rapid
+  duplicate POSTs from one client beyond the UI disabling its own submit button. Booking refs are
+  a fixed prefix plus a 6-digit number (`SAOC-2027-000000`–`999999`), i.e. guessable; the status
+  endpoint's minimal `{status}` response limits but does not eliminate the value of enumeration.
+- [ ] **F7 — `SITE_URL` is absent from `apphosting.yaml`.** Set locally and read at request time,
+  so PayFast sandbox works from this machine. On a deploy the checkout route falls back to
+  `https://saoc.co.za` — the OLD Joomla site — so the ITN callback would be delivered there and
+  never reach the app. Every deployed payment would sit permanently `reserved`. Blocks any real
+  deployed ticket sale.
+- [ ] **Council decision blocking ticketing: real prices and venue capacity.** Everything now in
+  the Sanity dataset is INVENTED by us and labelled "Provisional price — pending council
+  confirmation.": Adult R150/300, Pensioner R100/100, SAOC Member R100/150, Child R50/100,
+  Exhibitor free/50. The single most revenue-blocking open item.
