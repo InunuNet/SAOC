@@ -1,49 +1,57 @@
 # Reboot Context
-_Generated: 2026-08-12T16:46Z_
+_Generated: 2026-08-12T20:35Z_
 
-## What happened last session (afternoon, commits eec80fe..51460dd)
+## What happened last session (evening, commit 8bfe0f0)
 
-1. **Content intake from Lee-Ann's Drive folder**, accessed via the `gws` CLI (curl/Alembic only
-   see Drive's HTML shell — do not retry those for Drive links). Five docs pulled into
-   `documents/from-leeann-drive/` (gitignored — Spec V3 carries plaintext mailbox passwords).
-   Headline finding: **Spec V3 scopes TWO separate websites** (SAOC org site + a dedicated 2027
-   Show site), not the single site we've built. Open commercial question for Brad, deliberately
-   not acted on. Three client-approved Show copy docs arrived (first approved copy we have:
-   about-2027, exhibitors, what-to-expect) plus a vendor-registration form.
-2. **`beta.saoc.co.za` custom domain created** on the `saoc-prod` App Hosting backend via the
-   Firebase REST API (see `learned.md` "Do the configuration yourself"). All three DNS records
-   live and globally propagated; Firebase domain-ownership check was still pending at session end
-   — verify its state before assuming the subdomain is fully live.
-3. **Partners section redesigned** (`eec80fe`) — removed three invented partner orgs (American
-   Orchid Society, Royal Horticultural Society, World Orchid Conference) from home page + site
-   footer, fixed the dead `wosa.org.za` URL in both, rebuilt the remainder as real cards. Gate
-   24/24.
-4. **Favicon shipped** (`3e3f8e4`, `ccab0a2`) — SAOC orchid mark, 93KB source trimmed to 12KB,
-   then cropped to fill the tab icon.
-5. **Ticket reachability fixed** (`51460dd`) — `/tickets` was a dead end (only linked from a
-   footer paragraph). Added 3 entry points (header nav, home CTA, national-show hero). The 7th
-   header nav item then wrapped the desktop nav across ~1180–1210px, hitting iPad Pro 11"
-   landscape (1194px) — caught by QA, fixed by moving both the hamburger and desktop-nav
-   breakpoints together. Gate 16/16. Full lesson in `learned.md`.
+Full remediation chain for CTICC venue residue that the earlier venue-name sweep (`427fbaf`)
+missed. Two new contracts, both gate-green and independently verified by the orchestrator (not
+just self-reported):
 
-## Missions scoped this session
+- **`contract-venue-seed-truth.yaml`** (16 assertions) — purged "Cape Town International
+  Convention Centre" from `lib/data/shows.ts`, `lib/data/events.ts`,
+  `scripts/seed-page-singletons.ts`, `scripts/seed-show-visitor-info.ts`. Seeds are
+  `createIfNotExists`, so the stale copy was inert today, but any future rebuild-from-empty would
+  have regressed the venue.
+- **`contract-venue-prose-residue.yaml`** (31 assertions) — corrected three live Sanity FAQ
+  documents (`showFaq-accessibility-1`, `showFaq-getting-there-1`, `showFaq-getting-there-2`)
+  plus `showVisitorInfo.publicTransport`, the seed source, and the `show-visitor-info` golden
+  JSON. These carried prose that *described* the old venue's characteristics ("modern convention
+  centre", "parking garages") without naming it, so the name-only sweep missed them.
+- New doc: `docs/venue-prose-residue.md`. Updated: `docs/show-visitor-info.md`,
+  `docs/show-visitor-info-for-editors.md`.
+- Five orchestration-discipline lessons from this chain (uncommitted-work risk, self-inflicted
+  misdiagnosis, surgical-edit discipline, brief-imprecision propagation, tool-vs-spec
+  conformance) are in `learned.md` under "Orchestration Discipline — Venue Residue Remediation".
 
-- **`sandbox-ticket-proof` — ACTIVE** (`.agent/memory/project/missions/2026-08-12-sandbox-ticket-proof.md`).
-  Goal: prove the existing single-tier ticket flow end to end against the PayFast sandbox on a
-  deployed environment, then pause for council feedback before any multi-tier work. F1 (deploy
-  current `main` — deployed site is still on `01dd63f` from 2026-07-30, so `/tickets` and other
-  August routes 404 there) is the resume point: `python3 execution/mission.py resume`.
-- **`national-show-design-alignment` — pending, BLOCKED** on Brad delivering the Claude Design
-  handoff for the National Show section. Do not start F1 until the bundle lands; do not invent
-  brand assets in the meantime.
+## Active mission — `sandbox-ticket-proof`
+
+Status: `pending`, not yet started. Resume point is **F1** (deploy current `main`).
+`.agent/memory/project/missions/2026-08-12-sandbox-ticket-proof.md` has full detail; resume with
+`python3 execution/mission.py resume`.
+
+**Verified stale as of this wrap-up (commit `8bfe0f0`, checked live 2026-08-12T18:28Z):**
+`https://saoc-prod--saoc-webapp.europe-west4.hosted.app/` still serves the build from `01dd63f`
+(2026-07-30) — `/tickets` returns a live 404 in production while returning 200 locally. Every
+commit since 2026-08-01, including today's venue corrections, is undeployed. F1's eventual push
+will ship the venue-residue fix alongside everything else queued since 2026-08-01.
+
+F5 (door check-in) remains blocked on Firebase Auth (Email/Password) not being enabled on
+`saoc-webapp` — no account can exist in any environment until that changes. This is Brad's to
+unblock, logged in `needs-human.md`.
+
+## Do not touch
+
+Per Brad's standing instruction (2026-08-12), `branding/`, `design spec/`, and
+`design/Claude Design HTML/` are being reorganised by hand and are off-limits to every agent
+until he says otherwise — not even a hygiene pass. See `backlog.md` "Standing rule (2026-08-12,
+Brad)".
 
 ## Live blockers (verify current state against `backlog.md` rather than trusting this list)
 
 - **Firebase Auth (Email/Password) not enabled on `saoc-webapp`** — blocks `/admin` and the door
-  scanner in every environment. Highest value per minute of Brad's time; F5 of the active mission
-  is blocked on this.
-- **Deployed site stale at `01dd63f`** (2026-07-30) — `/tickets` and other August routes 404 in
-  production even though they work locally. F1 of the active mission.
+  scanner in every environment. F5 of the active mission is blocked on this.
+- **Deployed site stale at `01dd63f`** (2026-07-30) — reconfirmed live 2026-08-12T18:28Z. F1 of
+  the active mission.
 - **Real council ticket prices + venue capacity unconfirmed** — top revenue blocker, also a hard
   gate on going live.
 - **No Resend account** — confirmation emails silently do not send (contact form + ticket

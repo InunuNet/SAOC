@@ -22,10 +22,13 @@ features:
   inline_brief: The deployed site is stale — `/tickets`, `/national-show/faq` and
     `/national-show/plan-your-visit` all 404 on saoc-prod--saoc-webapp.europe-west4.hosted.app
     while returning 200 locally. Last confirmed deploy was `01dd63f` on 2026-07-30;
-    every August commit is undeployed. Nothing else in this mission can be tested
-    until this lands. Push-to-main autodeploy IS armed (proven by assertion A10 in
-    the F2 deploy work), so this may need nothing more than a push — verify a NEW
-    build id and commit sha actually serve traffic rather than assuming.
+    every August commit is undeployed. Re-confirmed live 2026-08-12T18:28Z after commit
+    8bfe0f0 (venue-residue purge) — still 404, still stale. Nothing else in this mission
+    can be tested until this lands. F1's eventual deploy will also ship the venue
+    corrections from 427fbaf/8bfe0f0 alongside everything queued since 2026-08-01.
+    Push-to-main autodeploy IS armed (proven by assertion A10 in the F2 deploy work),
+    so this may need nothing more than a push — verify a NEW build id and commit sha
+    actually serve traffic rather than assuming.
   status: pending
   milestone: M1
 - id: F2

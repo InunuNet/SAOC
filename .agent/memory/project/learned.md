@@ -464,6 +464,37 @@ assertion changes back through @architect even when the edit looks obviously ben
 
 4. **A negative control protecting something for an unwritten reason blocks legitimate correction.** v1's A13 froze the entire `nationalShowVenuePatch.venue` object as "historical," protecting both identity fields (correct — the research targeted CTICC) and descriptive prose (wrong — prose must reflect current venue or empty). The fix: explicit ruling separating identity (frozen, owned by another contract) from prose (in-scope, must be fixed). Documented in README, enforced by complementary assertions (one protects identity, the other requires prose to change).
 
+## Orchestration Discipline — Venue Residue Remediation (2026-08-12, commit 8bfe0f0)
+
+Five process lessons from the chain that produced `contract-venue-seed-truth.yaml` and
+`contract-venue-prose-residue.yaml`, distinct from the checker-conformance lessons above:
+
+1. **Uncommitted gate-green work is unprotected.** Three verified-green states were held
+   uncommitted across five agent handoffs before the eventual single commit. During that window
+   @architect rewrote `seed-show-visitor-info.golden.json` from a stale base to make a one-line
+   fix, silently reverting ten fields of @dev's round-2 work. **Commit each gate-green state
+   immediately** — do not batch to an end-of-session commit; a green gate with no commit behind
+   it is one careless full-file rewrite away from being erased.
+2. **An agent can misdiagnose damage it just caused.** The same agent then ran the checker, saw
+   violations, checked `git log`, found no commit touching the file, and concluded the earlier
+   fix "was never applied" — sound reasoning on a false premise, because the work was
+   uncommitted and it was looking at the aftermath of its own clobber. When an agent reports
+   prior verified work is missing, check whether it clobbered that work before trusting the
+   history read.
+3. **Agents must edit surgically, never regenerate whole files.** The clobber above was a
+   full-file rewrite, not a targeted diff. Briefs that touch shared files (goldens especially)
+   should say so explicitly and require an Edit, not a Write.
+4. **A brief's imprecision propagates into contract scope.** The orchestrator described
+   `showFaq-getting-there-3` as "the untouched tone model" — true of the LIVE document, false of
+   the golden's copy of it. @architect scoped the checker to exclude it on that basis, so a
+   stale "Cape Town International Convention Centre" string sat unchecked in the very file the
+   contract existed to purge. "The live doc is untouched" and "the golden's copy is untouched"
+   are different claims requiring different checks — say which one is meant.
+5. **Three green gates, three real defects.** Each round the gate measured what the tooling
+   implemented, not what the spec claimed. Assert tool-vs-spec conformance as its own check
+   (this project's pattern is now `A22`) rather than trusting a passing gate to mean the spec
+   was actually enforced.
+
 ## Backlog: Known Open Items From Venue Work
 
 Two stale items, deliberately deferred:
