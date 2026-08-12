@@ -490,6 +490,14 @@ countdown, which IS live); `archive/[year]`; `/media-kit`, `/constitution`, `/pr
   the Sanity dataset is INVENTED by us and labelled "Provisional price — pending council
   confirmation.": Adult R150/300, Pensioner R100/100, SAOC Member R100/150, Child R50/100,
   Exhibitor free/50. The single most revenue-blocking open item.
+- [x] **Proper favicon for the site — SHIPPED 2026-08-12 (interim).** `app/favicon.ico` now serves
+  Brad's yellow-orchid mark from `/Users/vetus/ai/SAOC Branding/favicon.ico` (outside the repo).
+  Rebuilt from 6 layers to 4 (16/32/48/64), dropping the 128 and 256 layers: 93,316 -> 12,272
+  bytes, an 87% cut, since 256px was 62KB of the file and never renders in a tab. Served copy
+  verified byte-identical and all four PNG payloads valid. **Revisit when the SAOC org logo
+  lands** — the mark is a detailed full-colour illustration that loses definition at 16px, and the
+  site chrome uses a monochrome line-drawing disa, so the tab icon and the header mark are not yet
+  the same identity. Original text below.
 - [ ] **Proper favicon for the site.** We are currently serving a default — likely the Next.js,
   Sanity Studio or Firebase placeholder rather than anything SAOC. Needs a real SAOC icon
   (and check `/studio` separately, which may carry its own). Blocked on the SAOC org logo Brad
