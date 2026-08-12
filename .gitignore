@@ -88,3 +88,6 @@ execution/tests/stress_test_log.txt
 *.p8
 *.jks
 .agent/overnight-resume.lock
+
+# Lee-Ann Drive mirror — Spec V3 contains plaintext mailbox passwords (Section: Email Collection Checklist)
+documents/from-leeann-drive/

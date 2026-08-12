@@ -17,28 +17,40 @@ interface PartnerCard {
   _id: string;
   name: string;
   website: string | null;
+  description: string | null;
 }
 
 const STATIC_PARTNERS: PartnerCard[] = [
-  { _id: 'wosa', name: 'Wild Orchids of Southern Africa', website: 'https://wosa.org.za' },
+  {
+    _id: 'wosa',
+    name: 'Wild Orchids of Southern Africa',
+    website: 'https://wildorchids.co.za',
+    description: 'Partner organisation hosting the WOSA Conference at the 2027 National Show.',
+  },
   {
     _id: 'sanbi',
     name: 'South African National Biodiversity Institute',
     website: 'https://www.sanbi.org',
+    description:
+      "South Africa's national institute for biodiversity science, conservation planning and botanical gardens.",
   },
   {
     _id: 'kirstenbosch',
     name: 'Kirstenbosch NBG',
     website: 'https://www.sanbi.org/gardens/kirstenbosch',
+    description:
+      "One of the world's great botanical gardens, managed by SANBI at the foot of Table Mountain.",
   },
-  { _id: 'aos', name: 'American Orchid Society', website: 'https://www.aos.org' },
-  { _id: 'rhs', name: 'Royal Horticultural Society', website: 'https://www.rhs.org.uk' },
-  { _id: 'woc', name: 'World Orchid Conference', website: null },
 ];
 
 function toCards(partners?: SanityPartner[] | null): PartnerCard[] {
   if (!partners || partners.length === 0) return STATIC_PARTNERS;
-  return partners.map((p) => ({ _id: p._id, name: p.name, website: p.website }));
+  return partners.map((p) => ({
+    _id: p._id,
+    name: p.name,
+    website: p.website,
+    description: p.description,
+  }));
 }
 
 export function PartnersSection({ partners }: PartnersSectionProps) {
@@ -51,12 +63,17 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
           <span className="eyebrow">In collaboration with</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-t border-l border-rule">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => {
-            const inner = (
-              <span className="font-serif text-[15px] text-ink text-center leading-snug">
-                {card.name}
-              </span>
+            const content = (
+              <>
+                <span className="font-serif text-lg text-ink leading-snug">{card.name}</span>
+                {card.description ? (
+                  <span className="mt-3 block text-[15px] text-muted leading-relaxed">
+                    {card.description}
+                  </span>
+                ) : null}
+              </>
             );
 
             return card.website ? (
@@ -65,16 +82,13 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
                 href={card.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center text-center h-[110px] px-4 border-b border-r border-rule hover:bg-parchment transition-colors duration-150"
+                className="block border border-rule p-8 transition-colors duration-150 hover:bg-parchment"
               >
-                {inner}
+                {content}
               </a>
             ) : (
-              <div
-                key={card._id}
-                className="flex items-center justify-center text-center h-[110px] px-4 border-b border-r border-rule"
-              >
-                {inner}
+              <div key={card._id} className="border border-rule p-8">
+                {content}
               </div>
             );
           })}

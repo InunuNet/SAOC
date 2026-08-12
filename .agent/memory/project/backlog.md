@@ -567,3 +567,51 @@ are what they left behind.
   diagnostic. Instance: `.agent/memory/scratch/gate-blocked-20260812T031704Z.md` (the pulse
   `qa -> docs` handoff froze itself after three failures). It blocked nothing this session only
   because agents were dispatched directly rather than through the pulse.
+
+## Content intake from Lee-Ann's Drive folder — 2026-08-12
+
+Folder "Docs for Brad": https://drive.google.com/drive/folders/1rZJVrYwrWM92vqmPw2c9E_HABQKEQoGa
+Access VERIFIED 2026-08-12 via the `gws` CLI (authenticated as Brad; plain curl/Alembic only see
+the HTML shell). All five files downloaded and read. Mirrored to `documents/from-leeann-drive/`,
+which is **gitignored** — Spec V3's final "Email Collection Checklist" carries plaintext mailbox
+passwords. Brad met Lee-Ann on Teams the same morning; no status email is owed to her.
+
+- [ ] **[P1, COMMERCIAL — Brad's call] `Website Development SpecificationV3.docx` scopes TWO
+  separate websites**, not one: a permanent SAOC organisational site (6 pages) and a dedicated
+  2027 National Show event site (18 pages). We built one site with the Show as a section under
+  `/national-show`. V3's Section 6 also marks as "Confirmed by INUNU" several items never priced
+  in the accepted 28-May proposal — unified multi-category checkout (Admission + Symposium +
+  WOSA + Workshops in one transaction), filterable exhibitor/guest databases, the relational
+  awards archive, and the Members Portal with journal library. This supersedes the V1/V2 phase-map
+  work. **Do not restructure routes; this needs a scope+price conversation first.**
+- [ ] **[P1] Spec V3 Section 8 is a direct question list for INUNU** (13 questions across CMS,
+  filtering, bookings, notifications and archiving). Several already have answers in our codebase.
+  Worth a written reply so the register's "Pending confirmation" rows can be closed.
+- [ ] **[P2] Real Show copy has arrived — three approved pages, ready to load into Sanity.**
+  `About - 2027 National Show.docx`, `What to Expect.docx`, `South African Exhibitors.docx`.
+  This is the first client-approved copy we have; it replaces our labelled placeholders on
+  `/national-show` and `/national-show/what-to-expect`. Confirms the show theme: **"From Wild
+  Origins to Cultivated Excellence: The Future of Orchids."** Small, well-scoped content mission.
+- [ ] **[P2] `2027_SAOC_National_Show_Vendor_Registration_Form.docx` is a 21k-char paper form**
+  covering vendor/business details, booth requirements, power, products, insurance and payment.
+  Natural candidate for a structured online vendor application (Firestore + confirmation email,
+  same pattern as event submissions) rather than a PDF download. Scope question, not yet a task.
+- [ ] **[security, low urgency] Spec V3 circulates SAOC mailbox passwords in plaintext** in a
+  shared Drive doc. The values are already stale — the 2026-07-20 VPS migration replaced all five
+  with generated passwords and deliberately did not restore the originals. Worth telling Lee-Ann
+  the doc should not carry credentials at all.
+- [ ] **[content] The `show@saoc.co.za` mailbox has been unused since 2020**; Lee-Ann suggests
+  archiving it. Also flagged in V3: Brad to create per-area show email addresses (symposium, WOSA,
+  bookings) so committee members get registration notifications for their own area.
+
+- [ ] **[P3] `components/chrome/Footer.tsx:117` links the dead `wosa.org.za`.** Site-wide footer,
+  every page. The live WOSA site is `https://wildorchids.co.za`. Found 2026-08-12 by
+  PARTNERS-architect while scoping the home-page partners redesign; deliberately left out of that
+  contract's scope (which fixes the same dead URL in `PartnersSection.tsx` only). One-line fix.
+- [ ] **[P3, a11y] Partners card link accessible name concatenates.** In
+  `components/home/PartnersSection.tsx` the name and description `<span>`s are JSX-adjacent with
+  no whitespace text node, so the anchor's accessible name reads
+  "Wild Orchids of Southern AfricaPartner organisation hosting…". Renders fine visually and most
+  screen readers pause at the block boundary, but it is not guaranteed across all AT. Found by
+  PARTNERS-qa in both review rounds 2026-08-12; deliberately not fixed in that feature. Fix with
+  an explicit `aria-label` on the link or a whitespace/`{' '}` separator.

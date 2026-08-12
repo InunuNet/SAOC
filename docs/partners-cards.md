@@ -1,133 +1,102 @@
-# PartnersSection — Editorial Cards
+# Partners section redesign
 
-**Component:** `components/home/PartnersSection.tsx`
-**Contract:** `contracts/partners-cards.yaml` (24 assertions, all green)
+Contract: [`contracts/contract-partners-cards.yaml`](../contracts/contract-partners-cards.yaml)
+(24/24 assertions green). Goldens: [`contracts/golden/partners-cards/`](../contracts/golden/partners-cards/).
 
----
+## What this is
 
-## Purpose
+Brad rejected the home page's "In collaboration with" section as a bare
+6-column bordered grid of names in 110px cells — it read as an unstyled
+table, not a designed section. This redesigns it as three typography-led
+partner cards and fixes a site-wide dead link the same review surfaced.
 
-Renders the "In collaboration with" section on the home page as a responsive grid of editorial cards — one card per partner organisation. Replaces the former bordered-grid box layout.
+## Files changed
 
----
+- `components/home/PartnersSection.tsx` — home page section, feeds from
+  Sanity `sponsor` docs with a static fallback (`STATIC_PARTNERS`).
+- `lib/data/partners.ts` — separate static list feeding the site-wide
+  footer's "Partners" column.
+- `components/chrome/Footer.tsx:117` — standalone "Looking for wild
+  orchids?" link.
 
-## Card Anatomy
+## Why three partners, not six
 
-Each card contains four stacked elements:
+The previous six included American Orchid Society, Royal Horticultural
+Society, and World Orchid Conference — invented during earlier work, with no
+basis in any client document. Publicly asserting a partnership with real
+external organisations that was never confirmed is a factual/legal exposure,
+not a design nitpick. They are removed from both `STATIC_PARTNERS` and
+`lib/data/partners.ts`, and the contract asserts their absence (PC-05–07,
+FTR-01–03) so nobody reintroduces them by "restoring" the old list.
 
-| Element | Implementation |
-|---------|----------------|
-| Badge | `<span className="eyebrow">` with the partner category string |
-| Heading | `<h3>` in `font-serif` at 20 px — the partner name |
-| Description | `<p>` in `font-sans` at 14 px, `text-ink/70` — 1–2 sentences |
-| Footer | `border-t border-rule` ruled separator with a right-aligned `→` arrow |
+The three kept partners (WOSA, SANBI, Kirstenbosch NBG) are real and
+documented. WOSA's card copy specifically names the 2027 National Show tie-in
+(WOSA hosts a conference at the Show — see Spec V3) rather than generic
+filler — per CLAUDE.md's scope boundary, the copy describes the *partnership
+and the Show tie-in*, never wild-orchid conservation as SAOC's own remit.
 
-Cards with a `website` value render as `<a target="_blank" rel="noopener noreferrer">` so they open externally without leaving the current page. Cards without a website (e.g. World Orchid Conference) render as `<div>`. Both share identical visual treatment and a `group-hover` translate on the arrow.
+## Why the footer was in scope
 
-**No logos.** The Sanity `partners` schema has a `logo` field, but no partner logos exist in the CMS. The component does not render images.
+The handoff originally targeted only the home page section. QA's PASS on
+that scope surfaced that `components/chrome/Footer.tsx` renders a *third*,
+independent partner list — `lib/data/partners.ts` — on every page via
+`app/(marketing)/layout.tsx`. Fixing only the section would have left the
+home page self-contradicting (3 partners in the section, 6 in its own
+footer) and every other page still asserting the invented partnerships. The
+team lead pulled the footer back into scope once this was caught. Lesson:
+a visual fix scoped to "the component the designer flagged" can still miss a
+second hardcoded copy of the same data — worth an explicit grep for other
+consumers before calling a data trim done.
 
----
+The footer fix is asserted on `/about` (FTR-01–08), not `/`, specifically to
+prove it's page-wide via the shared component rather than coincidentally
+correct only where the section also happens to be fixed.
 
-## Layout
+## Two hardcoded sources, deliberately not merged
 
-```
-grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6
-```
+`STATIC_PARTNERS` in `PartnersSection.tsx` and `partners` in
+`lib/data/partners.ts` are two separate arrays kept in sync by hand — both
+list the same three names, but the footer's list is `{ name }` only. This is
+a known, accepted trade-off, not an oversight: merging them into one shared
+data source is a data-model refactor (the `Partner` type in
+`types/index.ts:79` already has optional `url?`/`logoUrl?` fields that could
+carry it) and didn't belong in a visual fix. If the two lists ever need to
+diverge in structure again, that merge is the right-sized follow-up, not
+scope for a redesign task.
 
-Six partners produce a 2×3 grid at `lg` breakpoint (≥1024 px), 3×2 at `sm` (≥640 px), and a single column on mobile.
+## Sanity path — how an editor takes over
 
----
+The static list only renders because `sanity/queries.ts:164`'s
+`partnersQuery` filters `*[_type == "sponsor" && active == true]`, and no
+live `sponsor` document has `active` set today. To make Sanity content take
+over from `STATIC_PARTNERS`:
 
-## Data Flow
+1. In Studio, open a `sponsor` document and set `active: true`.
+2. Optionally set `description` — `PartnersSection.tsx` renders it under the
+   name (`toCards()` now carries `description` through from Sanity, same as
+   `name`/`website`).
+3. Repeat for each partner that should appear; `tier` controls sort order.
 
-```
-PartnersSection({ partners? })
-  └─ toCards(partners)
-       ├─ if partners is null/undefined/empty → return STATIC_PARTNERS
-       └─ otherwise → map SanityPartner[] to PartnerCard[]
-```
+The component does not assume exactly three cards — it maps over the full
+`cards` array with a responsive grid (`grid gap-6 sm:grid-cols-2
+lg:grid-cols-3`), so N live `sponsor` docs render correctly without a code
+change (guarded structurally by PC-10, which greps for hardcoded
+`slice(0,3)`/`cards[0]`/`length === 3`).
 
-### STATIC_PARTNERS fallback
+## What the gate does and doesn't prove
 
-Six hard-coded `PartnerCard` entries are embedded in the module. They are used whenever Sanity returns no data (empty array, null, or the prop is omitted). This ensures the section is never blank, even before the CMS is seeded.
+PC-09 asserts the section's rendered text exceeds 250 characters, as a
+proxy for "this is designed copy, not a bare name grid" (pre-change: ~190
+chars). It's a proxy, not a design check — it can't distinguish real partner
+descriptions from arbitrary padding text of the same length. Card layout,
+hover state, and typographic hierarchy were verified by QA screenshots
+across two rounds, not by any shell assertion. Treat the gate as proof of
+data correctness, dead-link fixes, accessibility attributes, and structural
+scalability — not proof of visual quality.
 
-| ID | Badge | Has website |
-|----|-------|-------------|
-| `wosa` | Local Partner | Yes |
-| `sanbi` | Local Partner | Yes |
-| `kirstenbosch` | Botanical Garden | Yes |
-| `aos` | International | Yes |
-| `rhs` | International | Yes |
-| `woc` | International | No |
+## Known open defect (not fixed here)
 
-### Sanity-sourced data
-
-When `SanityPartner[]` is passed in, `toCards()` maps each entry:
-
-```ts
-badge:       p.tier ?? 'Partner'   // Sanity tier string, fallback 'Partner'
-name:        p.name                // required in schema
-description: p.description ?? ''   // optional, blank if missing
-website:     p.website             // null = div, string = anchor
-```
-
-The `logo` field from `SanityPartner` is intentionally ignored — there are no partner logos.
-
----
-
-## Adding or Editing a Partner
-
-### Via Sanity CMS (recommended for production)
-
-Add a document to the `partners` collection with at minimum: `name`, `tier` (one of `Local Partner`, `Botanical Garden`, `International`), and `description`. Set `website` to the partner's URL or leave it null.
-
-Once any partner documents exist in Sanity and are passed to the component, the static fallback is bypassed entirely and only the CMS data is rendered.
-
-### Via static fallback (no CMS)
-
-Edit `STATIC_PARTNERS` in `components/home/PartnersSection.tsx` directly. Add a new entry following the `PartnerCard` interface:
-
-```ts
-interface PartnerCard {
-  _id: string;      // unique identifier (used as React key)
-  badge: string;    // category label shown in the eyebrow
-  name: string;     // partner name, rendered in serif
-  description: string;
-  website: string | null;  // null → renders as div, not a link
-}
-```
-
-Do not add an `image` or `logo` field — neither the interface nor the card template renders one.
-
----
-
-## Interfaces
-
-```ts
-// Sanity CMS shape (input)
-interface SanityPartner {
-  _id: string;
-  name: string;
-  tier: string | null;
-  logo: SanityImageSource | null;   // accepted but not rendered
-  website: string | null;
-  description: string | null;
-}
-
-// Internal card shape (rendered)
-interface PartnerCard {
-  _id: string;
-  badge: string;
-  name: string;
-  description: string;
-  website: string | null;
-}
-```
-
----
-
-## Related
-
-- Home page: `app/(marketing)/page.tsx`
-- SAOC/WOSA scope boundary: `CLAUDE.md` — SAOC is cultivation; WOSA covers wild orchid conservation
-- Design tokens: `app/globals.css` (`eyebrow`, `font-serif`, `bg-parchment`, `border-rule`)
+The card's name and description are adjacent JSX `<span>`s with no
+whitespace between them, so the anchor's accessible name concatenates them
+without a space (e.g. "...AfricaPartner organisation..."). Minor,
+non-blocking, logged as a follow-up — not fixed as part of this change.

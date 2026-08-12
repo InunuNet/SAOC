@@ -365,3 +365,33 @@ Corollary proved twice tonight: **commit before risky work.** ARCH-VISITOR3's in
 edit/restore of files another agent was using could only be cleared because everything sat
 at `be80580` — the diff was the independent record. Uncommitted, the restore would have
 destroyed the only evidence and the honest answer would have been "I don't know."
+
+## Do the configuration yourself — 2026-08-12 (Brad, direct instruction)
+
+**"Don't ask me to configure things for you — slowing us down."**
+
+Handing Brad a checklist of console clicks is a failure mode, not caution. Before routing any
+setup step to him, exhaust the programmatic path first. Credentials for almost everything are
+already on this machine:
+
+- **Firebase / Google Cloud REST** — refresh the Firebase CLI's cached OAuth token
+  (`~/.config/configstore/firebase-tools.json` → `tokens.refresh_token`) against
+  `https://oauth2.googleapis.com/token` using the public firebase-tools client id/secret, then
+  call the API with `Authorization: Bearer` + `X-Goog-User-Project: saoc-webapp`. The *stored*
+  `access_token` is usually stale and returns 401 `ACCESS_TOKEN_TYPE_UNSUPPORTED` — refresh it,
+  don't conclude the method is broken. `gcloud` is NOT installed; this is the way in.
+  Worked example: created the `beta.saoc.co.za` custom domain on the `saoc-prod` App Hosting
+  backend end-to-end via `POST .../backends/saoc-prod/domains?domainId=...` after having first
+  told Brad to do it in the console — the console instructions were pure friction.
+- **Google Workspace (Drive/Gmail/Docs/Sheets)** — the `gws` CLI at `/opt/homebrew/bin/gws` is
+  installed and authenticated as brad@inunu.net. Use it instead of curl/Alembic for anything
+  Drive-hosted; curl only ever sees the HTML shell.
+- **GitHub** — `gh` is authenticated.
+
+Only escalate to Brad for things that are genuinely his: an interactive login/consent screen, a
+credential no machine here holds, a payment or legal identity step, or a decision (scope, price,
+content authority). Verify a step is actually in that set before asking — the Firebase domain
+looked like console-only work and was not.
+
+Corollary: the same posture applies to *verifying* the result. Poll the API until it reports the
+real state rather than asking Brad whether it worked.

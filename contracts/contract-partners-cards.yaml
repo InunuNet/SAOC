@@ -1,0 +1,155 @@
+schema: athanor.contract/v1
+slug: partners-cards
+goal: >
+  Redesign the home page "In collaboration with" section from a bare
+  6-column bordered name grid into three beautifully styled, typography-led
+  partner cards (no logos), keeping only the three real partners, fixing the
+  dead WOSA URL, and preserving Sanity-driven scaling to N partners.
+created_at: '2026-08-12'
+autonomy: high
+
+features:
+  - id: F1
+    name: PartnersSection redesign — 3 real partners as designed cards, dead WOSA link fixed
+    status: pending
+
+goldens:
+  - contracts/golden/partners-cards/partners-data.golden.md
+  - contracts/golden/partners-cards/requirements.golden.md
+  - contracts/golden/partners-cards/negative-control.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    # ---- kept partners present (regression guards — see negative-control.golden.md) ----
+    - id: PC-01
+      description: "WOSA name present in rendered partners section"
+      command: node contracts/checks/partners-cards/extract-partners-html.mjs http://localhost:3333/ | grep -q "Wild Orchids of Southern Africa"
+      timeout_seconds: 30
+
+    - id: PC-02
+      description: "SANBI name present in rendered partners section"
+      command: node contracts/checks/partners-cards/extract-partners-html.mjs http://localhost:3333/ | grep -q "South African National Biodiversity Institute"
+      timeout_seconds: 30
+
+    - id: PC-03
+      description: "Kirstenbosch NBG name present in rendered partners section"
+      command: node contracts/checks/partners-cards/extract-partners-html.mjs http://localhost:3333/ | grep -q "Kirstenbosch NBG"
+      timeout_seconds: 30
+
+    # ---- WOSA href fix (real red-to-green, see negative-control.golden.md) ----
+    - id: PC-04
+      description: "wildorchids.co.za present in rendered partners section (corrected WOSA href)"
+      command: node contracts/checks/partners-cards/extract-partners-html.mjs http://localhost:3333/ | grep -q "wildorchids.co.za"
+      timeout_seconds: 30
+
+    # ---- invented partners removed (real red-to-green) ----
+    - id: PC-05
+      description: "American Orchid Society absent from rendered partners section"
+      command: '! node contracts/checks/partners-cards/extract-partners-html.mjs http://localhost:3333/ | grep -q "American Orchid Society"'
+      timeout_seconds: 30
+
+    - id: PC-06
+      description: "Royal Horticultural Society absent from rendered partners section"
+      command: '! node contracts/checks/partners-cards/extract-partners-html.mjs http://localhost:3333/ | grep -q "Royal Horticultural Society"'
+      timeout_seconds: 30
+
+    - id: PC-07
+      description: "World Orchid Conference absent from rendered partners section"
+      command: '! node contracts/checks/partners-cards/extract-partners-html.mjs http://localhost:3333/ | grep -q "World Orchid Conference"'
+      timeout_seconds: 30
+
+    - id: PC-08
+      description: "dead wosa.org.za href absent from rendered partners section"
+      command: '! node contracts/checks/partners-cards/extract-partners-html.mjs http://localhost:3333/ | grep -q "wosa.org.za"'
+      timeout_seconds: 30
+
+    # ---- design effort proxy (real red-to-green) ----
+    - id: PC-09
+      description: "partners section visible text exceeds 250 chars (proxy for 'more than bare names' — 3 names + eyebrow alone measure ~190 chars pre-change)"
+      command: '[ "$(node contracts/checks/partners-cards/extract-partners-html.mjs http://localhost:3333/ --text | wc -c)" -gt 250 ]'
+      timeout_seconds: 30
+
+    # ---- Sanity-scaling guard (structural; regression guard, see requirements.golden.md) ----
+    - id: PC-10
+      description: "no hardcoded 3-card assumption in PartnersSection.tsx (cards.slice(0,3) / cards[0] / length === 3)"
+      command: '! grep -qE "cards\.slice\(0,\s*3\)|cards\[0\]|cards\.length\s*===\s*3|length === 3" components/home/PartnersSection.tsx'
+      timeout_seconds: 15
+
+    # ---- accessibility: kept external link keeps safe target/rel (real red-to-green) ----
+    - id: PC-11
+      description: "wildorchids.co.za anchor has target=_blank and rel=noopener noreferrer"
+      command: node contracts/checks/partners-cards/extract-partners-html.mjs http://localhost:3333/ --assert-anchor-attrs wildorchids.co.za
+      timeout_seconds: 30
+
+    - id: PC-12
+      description: "sanbi.org anchor (or www.sanbi.org) retains target=_blank and rel=noopener noreferrer"
+      command: node contracts/checks/partners-cards/extract-partners-html.mjs http://localhost:3333/ --assert-anchor-attrs www.sanbi.org
+      timeout_seconds: 30
+
+    # ---- accessibility: focus visibility not silently removed (regression guard) ----
+    - id: PC-13
+      description: "PartnersSection.tsx does not add outline-none without a replacement focus style"
+      command: '! grep -q "outline-none" components/home/PartnersSection.tsx'
+      timeout_seconds: 15
+
+    # ---- responsive: no self-overflow at 375px (regression guard; detection capability separately proven against the known ShowBand bug — see negative-control.golden.md) ----
+    - id: PC-14
+      description: "partners <section> has no horizontal self-overflow at 375px viewport"
+      command: node contracts/checks/partners-cards/check-overflow-375.mjs
+      timeout_seconds: 60
+
+    # ---- footer partner list (lib/data/partners.ts), asserted on /about — a
+    # non-home page, so the fix is proven site-wide via the shared Footer
+    # component rather than only on the page the home-page section lives on.
+    # See negative-control.golden.md for full pre-change evidence. ----
+    - id: FTR-01
+      description: "American Orchid Society absent from footer on /about"
+      command: '! node contracts/checks/partners-cards/extract-footer-html.mjs http://localhost:3333/about | grep -q "American Orchid Society"'
+      timeout_seconds: 30
+
+    - id: FTR-02
+      description: "Royal Horticultural Society absent from footer on /about"
+      command: '! node contracts/checks/partners-cards/extract-footer-html.mjs http://localhost:3333/about | grep -q "Royal Horticultural Society"'
+      timeout_seconds: 30
+
+    - id: FTR-03
+      description: "World Orchid Conference absent from footer on /about"
+      command: '! node contracts/checks/partners-cards/extract-footer-html.mjs http://localhost:3333/about | grep -q "World Orchid Conference"'
+      timeout_seconds: 30
+
+    - id: FTR-04
+      description: "WOSA name present in footer on /about"
+      command: node contracts/checks/partners-cards/extract-footer-html.mjs http://localhost:3333/about | grep -q "Wild Orchids of Southern Africa"
+      timeout_seconds: 30
+
+    - id: FTR-05
+      description: "SANBI name present in footer on /about"
+      command: node contracts/checks/partners-cards/extract-footer-html.mjs http://localhost:3333/about | grep -q "South African National Biodiversity Institute"
+      timeout_seconds: 30
+
+    - id: FTR-06
+      description: "Kirstenbosch NBG name present in footer on /about"
+      command: node contracts/checks/partners-cards/extract-footer-html.mjs http://localhost:3333/about | grep -q "Kirstenbosch NBG"
+      timeout_seconds: 30
+
+    - id: FTR-07
+      description: "dead wosa.org.za href absent from footer on /about"
+      command: '! node contracts/checks/partners-cards/extract-footer-html.mjs http://localhost:3333/about | grep -q "wosa.org.za"'
+      timeout_seconds: 30
+
+    - id: FTR-08
+      description: "corrected wildorchids.co.za href present in footer on /about"
+      command: node contracts/checks/partners-cards/extract-footer-html.mjs http://localhost:3333/about | grep -q "wildorchids.co.za"
+      timeout_seconds: 30
+
+    # ---- build gate ----
+    - id: PC-GATE-01
+      description: "TypeScript strict-mode build passes"
+      command: 'pnpm tsc --noEmit 2>&1 | grep -c "error TS" | grep -q "^0$"'
+      timeout_seconds: 120
+
+    - id: PC-GATE-02
+      description: "ESLint passes on PartnersSection.tsx, lib/data/partners.ts and Footer.tsx"
+      command: "pnpm eslint components/home/PartnersSection.tsx lib/data/partners.ts components/chrome/Footer.tsx --max-warnings=0"
+      timeout_seconds: 60

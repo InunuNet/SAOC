@@ -114,7 +114,7 @@ export function Footer() {
               Looking for wild orchids?
             </div>
             <a
-              href="https://wosa.org.za"
+              href="https://wildorchids.co.za"
               target="_blank"
               rel="noopener noreferrer"
               className="font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150"
