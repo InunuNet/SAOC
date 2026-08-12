@@ -2,8 +2,6 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { PortableText } from '@portabletext/react';
-import type { PortableTextBlock } from '@portabletext/react';
 
 import { ConfirmationBadge, ShowCountdown } from '@/components/show';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -64,7 +62,6 @@ interface SanityNationalShow {
   venue: ShowVenue | null;
   hero: SanityImageSource | null;
   countdownDate: string | null;
-  exhibitorStages: PortableTextBlock[] | null;
 }
 
 // F5 (show-visitor-info): the landing page is the section's front door. These four
@@ -168,7 +165,6 @@ export default async function NationalShowPage() {
   // is fallback only. See show-identity-surfaces.golden.md.
   const venueLine = sanityShow?.venue?.name || sanityShow?.location || 'Venue to be confirmed';
   const heroUrl = sanityShow?.hero ? urlFor(sanityShow.hero).width(2400).url() : '/images/orchid-dark.jpg';
-  const exhibitorStages = sanityShow?.exhibitorStages ?? null;
 
   const edition = sanityShow?.edition ?? null;
   const dateRange = formatShowDateRange(sanityShow?.showDate, sanityShow?.showEndDate);
@@ -506,35 +502,33 @@ export default async function NationalShowPage() {
             Exhibitor information
           </h2>
 
-          {exhibitorStages && exhibitorStages.length > 0 ? (
-            <div className="mt-12 max-w-none font-sans text-[15px] leading-relaxed text-ivory/80">
-              <PortableText value={exhibitorStages} />
-            </div>
-          ) : (
-            <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {EXHIBITOR_STAGES.map(({ stage, title, description }) => (
-                <div
-                  key={stage}
-                  className="flex flex-col gap-3 p-6"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
-                >
-                  <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-accent">
-                    Stage {stage}
-                  </p>
-                  <h3 className="font-serif text-[20px] font-medium leading-snug text-ivory">
-                    {title}
-                  </h3>
-                  <p className="font-sans text-[14px] leading-relaxed text-ivory/70">{description}</p>
-                  <ConfirmationBadge
-                    status={datesStatus}
-                    pendingLabel={visitorInfo?.pendingLabel}
-                    researchLabel={visitorInfo?.researchLabel}
-                    tone="dark"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Retiring nationalShow.exhibitorStages (exhibitor F-7): this page no longer reads
+              that field. The exhibitor journey has one source — showExhibitorStep, rendered at
+              /national-show/exhibitors — and what stays here is a process summary that links
+              there, not a second copy an editor would have to keep in step. */}
+          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {EXHIBITOR_STAGES.map(({ stage, title, description }) => (
+              <div
+                key={stage}
+                className="flex flex-col gap-3 p-6"
+                style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+              >
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-accent">
+                  Stage {stage}
+                </p>
+                <h3 className="font-serif text-[20px] font-medium leading-snug text-ivory">
+                  {title}
+                </h3>
+                <p className="font-sans text-[14px] leading-relaxed text-ivory/70">{description}</p>
+                <ConfirmationBadge
+                  status={datesStatus}
+                  pendingLabel={visitorInfo?.pendingLabel}
+                  researchLabel={visitorInfo?.researchLabel}
+                  tone="dark"
+                />
+              </div>
+            ))}
+          </div>
 
           {/* The full exhibitor guide. The stages above are a summary; without this link
               /national-show/exhibitors is reachable from the home page only — the same

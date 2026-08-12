@@ -126,3 +126,26 @@ Neither check writes anything. `nationalShow` remains owned for mutation by
 The interim window described above is unchanged in length. What changed is that it can no longer
 widen silently: the two-source failure this mission forbids now trips a gate on the day it happens
 instead of being discovered later by a reader who believed the wrong journey.
+
+---
+
+## STATUS UPDATE 2026-08-12 — FU-2 is unblocked and landing
+
+The gate described below has been lifted by team-lead ruling. For the next reader, so this
+document is not read as still-blocked:
+
+- `contract-show-visitor-info.yaml` **A5** no longer lists `exhibitorStages`. It guards against
+  *collateral* deletion during F1; a deliberate retirement is the opposite of what it protects
+  against, and a grep cannot tell the two apart.
+- That contract gained **A77**, which asserts the retirement is COMPLETE — the field absent from
+  the schema, the GROQ projection AND the landing page's read path. FU-2 can no longer be
+  half-done and pass.
+- The deadlock had a **third side** not recorded below: `cms-loop-f3-national-show.yaml` **A3**
+  round-tripped a sentinel through `exhibitorStages` and asserted it rendered. Its subject was the
+  field itself, so it was permanently unsatisfiable once the read path went. Retired in the same
+  change, with the reasoning recorded in that contract.
+- Precondition re-verified before any deletion: `count(*[defined(exhibitorStages)]) == 0` across
+  every document type. No editorial content was destroyed.
+
+FU-1 (link the exhibitor guide from the landing page) and FU-3 (unify the two badge components)
+are unaffected by this update.

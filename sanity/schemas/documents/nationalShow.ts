@@ -53,7 +53,6 @@ export const nationalShow = defineType({
     }),
     defineField({ name: 'hero', title: 'Hero Image', type: 'image' }),
     defineField({ name: 'countdownDate', title: 'Countdown Target Date', type: 'datetime' }),
-    defineField({ name: 'exhibitorStages', title: 'Exhibitor Stages', type: 'portableText' }),
     // F1 (ticketing-pages): functional gate, not copy — defaults CLOSED because real
     // prices are not yet council-approved. The message shown alongside this state
     // lives on ticketsPage.salesClosedMessage, not here — one place for an editor to

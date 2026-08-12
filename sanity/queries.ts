@@ -36,8 +36,7 @@ export const nationalShowQuery = defineQuery(`
     location,
     venue,
     hero,
-    countdownDate,
-    exhibitorStages
+    countdownDate
   }
 `);
 

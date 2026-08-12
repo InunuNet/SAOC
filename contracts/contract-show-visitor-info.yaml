@@ -136,9 +136,18 @@ assertions:
         grep -q "name: 'location'" sanity/schemas/documents/nationalShow.ts &&
         grep -A4 "name: 'location'" sanity/schemas/documents/nationalShow.ts | grep -qi "venue"
     - id: A5
-      description: F1 - no pre-existing nationalShow field was removed while adding venue
+      description: >-
+        F1 - no pre-existing nationalShow field was removed while adding venue. This guards
+        against COLLATERAL deletion during F1; it was never meant to prevent a deliberate,
+        ruled retirement, and a grep cannot tell the two apart. AMENDED 2026-08-12:
+        exhibitorStages dropped from the list so the exhibitor stream's F-7 retirement can
+        land (sanity/schemas/documents/showExhibitorStep.ts:13 already records that this type
+        retires it as the source of exhibitor-journey content, and the dataset confirms
+        count(*[defined(exhibitorStages)]) == 0, so no content is destroyed). A5 keeps its full
+        force over the other six fields, and the retirement is not merely PERMITTED but
+        VERIFIED by A77 — a removal that stops halfway now fails.
       command: >-
-        for f in title showDate location hero countdownDate exhibitorStages salesOpen; do grep -q "name: '$f'" sanity/schemas/documents/nationalShow.ts || { echo "field $f was removed"; exit 1; }; done
+        for f in title showDate location hero countdownDate salesOpen; do grep -q "name: '$f'" sanity/schemas/documents/nationalShow.ts || { echo "field $f was removed"; exit 1; }; done
     - id: A6
       description: F1 - showVisitorInfo page-singleton schema file exists
       command: 'test -f sanity/schemas/documents/showVisitorInfo.ts'
@@ -530,6 +539,19 @@ assertions:
         if grep -Eq "if \(!\s*label\s*\) return null" components/show/ConfirmationBadge.tsx; then echo "still bails out on an empty label"; exit 1; fi
 
     # ---- S1/S4/S6/S7/S8: every show-identity fact, on every surface ----
+    - id: A77
+      description: >-
+        F1/exhibitor-F7 - nationalShow.exhibitorStages is retired COMPLETELY, not half-way. A5
+        stopped asserting the field must exist, and a field that is merely dropped from one
+        assertion's list while the schema, the query projection and the landing page still carry
+        it is the drift this retirement exists to end — Studio would keep offering editors a box
+        whose content nothing renders. Deleting the schema line without the read path is equally
+        bad: the query would project a field that no longer exists. So all three go together, and
+        this asserts all three. RED UNTIL @dev LANDS THE RETIREMENT — that is its purpose; it is
+        the acceptance criterion for the task, not a regression.
+      command: >-
+        if grep -q "exhibitorStages" sanity/schemas/documents/nationalShow.ts; then echo "the schema still declares exhibitorStages"; exit 1; fi; if grep -q "exhibitorStages" sanity/queries.ts; then echo "sanity/queries.ts still projects exhibitorStages"; exit 1; fi; if grep -qE "^[^/]*exhibitorStages" "app/(marketing)/national-show/page.tsx"; then echo "the landing page still reads exhibitorStages"; exit 1; fi
+      timeout_seconds: 60
     - id: A76
       description: >-
         META/S3 - the stale-copy defect class cannot be reintroduced. Three consecutive gate runs

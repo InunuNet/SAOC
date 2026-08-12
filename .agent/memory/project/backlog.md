@@ -175,8 +175,11 @@ code changed, per scope freeze.
   `sanity/queries.ts` and no `app/(marketing)/members/` route consume it. Needs a scope
   decision from Brad: build the page (new-page work, out of scope for F6) or remove the
   schema so it stops misleading editors.
-- [ ] Dead editable fields: `homePage.countdownDate` and `contactPage.formRecipients` are
+- [x] Dead editable fields: `homePage.countdownDate` and `contactPage.formRecipients` are
   editable in Studio but nothing reads them. Either wire them in or remove them.
+  **DONE 2026-08-12 (Stream C, `be80580`)** — both removed from the schemas after live
+  `defined()` counts confirmed zero documents used them. `nationalShow.location` and
+  `ticketType.price` (superseded duplicates) went the same way.
 - [ ] No custom desk structure in `sanity.config.ts` (stock `structureTool()`) — the six
   page singletons are not pinned to a single document. An editor can create duplicate
   `homePage` (etc.) docs and the site will silently render an arbitrary one (`[0]` of an
@@ -297,7 +300,11 @@ imports and read what each does with the result. Method note: seeded copy was mi
 component fallbacks, so the two are byte-identical and text matching proves nothing — discriminate
 via Sanity CDN asset URLs, PortableText `_key` UUIDs in the RSC payload, or source reading.
 
-- [ ] **[P2] `/national-show/archive/[year]` has no page for any show added in the Studio.** The archive
+- [x] **[P2] `/national-show/archive/[year]` has no page for any show added in the Studio.**
+  **FIXED 2026-08-12 (Stream C, `be80580`)** — `archive/[year]` now merges Sanity with the static
+  array, so a Studio-added show has a detail page. Leftover from that merge: `show.awards` lost its
+  rendered surface (no live effect — all values are null; booked in the new section below).
+  Original text: The archive
   LIST (`archive/page.tsx:42`) is Sanity-backed via `pastShowsQuery`, so a `show` document created in
   the Studio does appear there. The DETAIL page (`archive/[year]/page.tsx:6,49`) reads only the static
   `lib/data/shows` array and calls `notFound()` otherwise — so a Studio-added show has a list entry but
@@ -310,7 +317,14 @@ via Sanity CDN asset URLs, PortableText `_key` UUIDs in the RSC payload, or sour
   reaches that URL directly — a shared link, or once someone wires up card links — gets a 404.
   Downgraded to P2 accordingly. Note the latent trap: whoever later makes the list cards clickable
   turns this into the visible-broken-link problem it was mistakenly described as.
-- [ ] **[P2] Orphaned document types — editable in the Studio, read by nothing.** `award`
+- [x] **[P2] Orphaned document types — editable in the Studio, read by nothing.**
+  **PART STALE, PART DONE — corrected 2026-08-12 (Stream C, `be80580`).** ⚠️ The `award` half of
+  this entry was **wrong**: `award` is not orphaned. It has 6 documents, `awardsQuery` exists
+  (`sanity/queries.ts:196`) and `/judging` already fetches it
+  (`app/(marketing)/judging/page.tsx:9,40`). No work was needed; do not act on the claim below.
+  `province` was **wired, not removed** — 9 live docs — and the `/societies` chips were verified by
+  Playwright to actually filter. `membersPage` remains a deliberate placeholder (still open above).
+  Original text: `award`
   (`AwardsGrid.tsx` reads the static `lib/data/awards` instead) and `province` (`society.province` is
   free-text, not a reference to it). Either wire them or remove them from the Studio; leaving them
   editable teaches the client that publishing does nothing. `membersPage` is also unread but is a
@@ -332,7 +346,11 @@ countdown, which IS live); `archive/[year]`; `/media-kit`, `/constitution`, `/pr
 
 ### Seeded-but-inert content — found 2026-07-30 by post-F4 render audit
 
-- [ ] **[P1] `/national-show` never reads the `nationalShow` singleton.** F4 seeded the document and its
+- [x] **[P1] `/national-show` never reads the `nationalShow` singleton.** **FIXED 2026-08-12
+  (Stream B, `be80580`)** — show identity (title, venue, dates, edition, countdown) now flows from
+  Sanity to all seven surfaces, proven by a runtime swap sweep (A61) rather than a source grep.
+  Before the fix, swapping the venue rendered two different venues in one viewport.
+  Original text: F4 seeded the document and its
   gate passed 4/4 — but the gate asserts against the **Sanity API**, not the rendered page.
   `app/(marketing)/national-show/page.tsx:7-8,89-90` calls `sanityFetch` for `showClassesQuery` and
   `pastShowsQuery` only. There is no `nationalShowQuery`. Title, venue (`'CTICC, Cape Town'`, line 151),
@@ -412,23 +430,35 @@ countdown, which IS live); `archive/[year]`; `/media-kit`, `/constitution`, `/pr
   slug, not the feature ID. Running `saoc-pages-editable` and `ticketing-pages` concurrently
   produced `F1-dev` and a `TKT-dev` whose contract also had an F1 — the second agent stopped and
   asked whether it was duplicating work. Correct behaviour on its part, avoidable collision on ours.
-- [ ] **F6 — Door scanner admits unpaid tickets (HIGHEST ticketing priority).**
+- [x] **F6 — Door scanner admits unpaid tickets (HIGHEST ticketing priority).**
+  **FIXED 2026-08-12 (Stream A, `be80580`)** — admission logic extracted to `lib/checkin.ts`;
+  the route delegates and holds none. Every unenumerated state now fails closed (cancelled,
+  refunded, case/whitespace variants, absent status). Note the auth layer above it is still
+  non-functional — Firebase Auth is unprovisioned, see `needs-human.md`.
   `app/api/admin/checkin/route.ts` looks a ticket up by `bookingRef` alone and only refuses one
   that is ALREADY checked in. It never checks `status === 'paid'` and never checks `showId`. A
   merely `reserved` (unpaid) ticket, including one created under a spoofed `showId`, is as
   admissible at the door as a legitimate paid one. Pre-existing, outside the M1/M2 contract,
   found by @qa 2026-08-11 while probing the capacity gate. Fix before any real door use.
-- [ ] **F6 — TOCTOU race on ticket capacity.** The capacity check in
+- [x] **F6 — TOCTOU race on ticket capacity.** **FIXED 2026-08-12 (Stream A, `be80580`)** —
+  now a Firestore transaction; @qa measures exactly 1×201/19×409 at 20-way concurrency on the
+  boundary. The fix introduced its own regression (seats never released on abandonment), since
+  closed by a TTL that can never expire a paid ticket. Original text: The capacity check in
   `app/api/tickets/checkout/route.ts` is an unguarded read-then-write: it counts sold tickets,
   then writes the reservation, with no transaction. @qa reproduced it live — a type at 49/50 hit
   with 5 concurrent POSTs returned 201 five times, ending at 54/50 (4 oversold). Needs Firestore
   `runTransaction` around count-then-write, not sequential awaits. Matters most exactly when a
   popular type is selling out, which is when concurrent buyers are likeliest.
-- [ ] **F6 — Checkout idempotency + booking-ref enumeration.** No protection against rapid
+- [x] **F6 — Checkout idempotency + booking-ref enumeration.**
+  **FIXED 2026-08-12 (Stream A, `be80580`)** — booking refs are now 60-bit crypto-random, and
+  checkout is idempotent with the key bound to buyer and payload. Previously a replayed key
+  returned another buyer's booking reference, which is the door code. Original text: No protection against rapid
   duplicate POSTs from one client beyond the UI disabling its own submit button. Booking refs are
   a fixed prefix plus a 6-digit number (`SAOC-2027-000000`–`999999`), i.e. guessable; the status
   endpoint's minimal `{status}` response limits but does not eliminate the value of enumeration.
-- [ ] **F7 — `SITE_URL` is absent from `apphosting.yaml`.** Set locally and read at request time,
+- [x] **F7 — `SITE_URL` is absent from `apphosting.yaml`.** **FIXED 2026-08-12 (Stream A,
+  `be80580`)** — declared in `apphosting.yaml`; deployed ITNs would otherwise have reached the old
+  Joomla site. Original text: Set locally and read at request time,
   so PayFast sandbox works from this machine. On a deploy the checkout route falls back to
   `https://saoc.co.za` — the OLD Joomla site — so the ITN callback would be delivered there and
   never reach the app. Every deployed payment would sit permanently `reserved`. Blocks any real
@@ -442,3 +472,75 @@ countdown, which IS live); `archive/[year]`; `/media-kit`, `/constitution`, `/pr
   (and check `/studio` separately, which may carry its own). Blocked on the SAOC org logo Brad
   is designing; do the favicon pass once that lands so the mark is consistent. Raised by Brad
   2026-08-11.
+
+## Open after the overnight four-stream session (2026-08-12, commit `be80580`)
+
+All four streams are contract-green and documented (A 37/37, B 72/72, C 14/14, D 52/52). These
+are what they left behind.
+
+- [ ] **@qa round-2 findings R2-1 … R2-5 on ticketing — none fixed, all non-blocking.** Full text
+  in `.agent/memory/scratch/harden-qa.md`, round-2 section. Summary:
+  - **R2-1** — a new failure mode introduced by design and invisible to the operator.
+  - **R2-2** — a correct 409 the client cannot recover from.
+  - **R2-3** — pre-existing, but round 2 made it *look* handled, which is worse than leaving it
+    visibly broken.
+  - **R2-4** — the uncovered half of S5.
+  - **R2-5** — wrong copy on one refusal path.
+- [ ] **Streams B and D: round-2 fixes were verified by the gate but never re-reviewed by @qa.**
+  Round 1's equivalent on Stream A found five real defects *past* a green gate, including a
+  regression the fix itself introduced. Treat gate-green-but-unreviewed as unfinished.
+- [x] **`nationalShow.exhibitorStages` retirement — DONE 2026-08-12, by team-lead ruling.** The
+  deadlock turned out to have three sides, not two. Stream B's A5 was amended to drop the field
+  (it guards against *collateral* deletion during F1, which a deliberate retirement is not, and a
+  grep cannot tell them apart), and B gained **A77**, which asserts the retirement is COMPLETE
+  across schema, GROQ projection and the landing page's read path — so a half-done removal now
+  fails rather than passing quietly. The third side was
+  `cms-loop-f3-national-show.yaml` **A3**, whose whole subject was the field; retired in the same
+  change with the reasoning recorded inline. Dataset verified empty first
+  (`count(*[defined(exhibitorStages)]) == 0`), so no editorial content was destroyed.
+- [x] **Stream B's A41/A56/A24 rotating red by gate ordering — DONE 2026-08-12.** Fixed in the
+  shared helper as this entry asked, not per assertion: `settlePage()` polls until the page agrees
+  with the dataset, and **A76** now fails any dataset-sourced rendered check that calls
+  `fetchOkPage()` directly, so the defect cannot be reintroduced. Two causes hid behind the one
+  symptom — the page lagging the dataset (fixed by polling) and the dataset being *deliberately
+  invalid* mid-sweep, which polling cannot fix and which is why the read-only checks now take the
+  dataset lock too. Root cause of the dataset corruption underneath it all was missing
+  `timeout_seconds`: every mutating check inherited the 60s default and was SIGKILLed mid-mutation.
+
+- [ ] **`cms-loop-f3-national-show.yaml` A5 is superseded — needs a scope review, not a patch.**
+  It asserts the `nationalShow` schema still declares exactly its original six fields, so it is
+  **already red for a sanctioned reason**: the visitor stream legitimately added `showEndDate`,
+  `edition`, `hostRegion` and `venue`. That is a contract that has been overtaken by later work,
+  not a defect, and it wants a considered pass by someone with the context rather than a one-line
+  fix. While in there, decide whether to delete the now-unreferenced
+  `contracts/checks/cms-loop-f3-national-show/check-exhibitor-stages-round-trip.mjs` (retired A3,
+  kept only as the worked example of the round-trip pattern).
+- [ ] **`show.awards` lost its rendered surface in the archive merge** (Stream C). No live effect
+  today — every value is null — but the field is now editable with nothing reading it, which is the
+  exact pattern that teaches editors publishing does nothing.
+- [ ] **No SAOC-side notification exists for contact-form enquiries.** Submissions land in
+  Firestore and nothing tells anyone. Staff would have to go looking. Confirmed during Stream C.
+- [ ] **`scripts/seed-page-singletons.ts` still uses destructive `createOrReplace`** (7 occurrences,
+  verified 2026-08-12). Untouched by this session. Seeds must be create-if-absent; a re-run today
+  silently overwrites edited singletons.
+- [ ] **TEMPLATE BUG: `execution/gh_closure_scan.py` aborts on any non-mission file in
+  `.agent/memory/project/missions/`.** It exits with
+  `ERROR: .agent/memory/project/missions/OVERNIGHT-PLAN-2026-07-30.md has no YAML frontmatter`
+  and scans nothing, so closure scanning has been silently non-functional here. It should skip
+  files without frontmatter rather than abort. Not fixed (Athanor file, out of this project's
+  scope) — user may run `/report-bug`. Workaround: `InunuNet/SAOC` currently has **zero open
+  GitHub issues**, so nothing was missed this session.
+
+### Filed upstream this session (InunuNet/Athanor)
+
+- https://github.com/InunuNet/Athanor/issues/1337 — `contract.py` drops the CLI `--timeout-seconds`
+  override for sub-phases under `--phase all`. Verified in source: the per-sub-phase
+  `argparse.Namespace` omits `timeout_seconds`, so the consumer's `getattr(args, ..., 60)` falls
+  back to 60. **Per-assertion `timeout_seconds` DO survive** (`contract.py:137-138`) — an earlier
+  agent report claiming declared timeouts were dropped was wrong, and the issue says so. The
+  issue also asks for SAOC's local `normalize_contract` patch to be upstreamed.
+- https://github.com/InunuNet/Athanor/issues/1338 — `handoff_check.py`'s GATE BLOCKED file omits
+  the failure reason, artefact path, trend and mission id, so the human it escalates to gets no
+  diagnostic. Instance: `.agent/memory/scratch/gate-blocked-20260812T031704Z.md` (the pulse
+  `qa -> docs` handoff froze itself after three failures). It blocked nothing this session only
+  because agents were dispatched directly rather than through the pulse.

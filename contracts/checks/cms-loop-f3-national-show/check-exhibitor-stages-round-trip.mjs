@@ -1,4 +1,23 @@
 #!/usr/bin/env node
+
+// ============================================================================
+// RETIRED 2026-08-12 — NOT REFERENCED BY ANY CONTRACT. DO NOT RE-ADD AS AN ASSERTION.
+// ============================================================================
+// This was cms-loop-f3-national-show A3. The field it exercises,
+// `nationalShow.exhibitorStages`, has been retired (exhibitor stream F-7): the schema no
+// longer declares it, the GROQ projection no longer selects it, and /national-show no longer
+// renders it. Running this script now can only fail, because its subject is gone — that is a
+// permanent red, not a regression signal.
+//
+// Its replacement is contract-show-visitor-info.yaml A77, which asserts the retirement is
+// COMPLETE across schema, query and read path.
+//
+// Kept in the tree deliberately, as the worked example of the direct-Sanity-client
+// round-trip pattern (write sentinel -> revalidate -> poll the live page -> restore ->
+// verify the restore on both the dataset and the page) that A1 and the visitor contract's
+// mutating checks follow. See contracts/cms-loop-f3-national-show.yaml for the full ruling.
+// ============================================================================
+
 // cms-loop-f3-national-show A3: round trip for exhibitorStages (portableText),
 // the remaining brief-named inert field NOT covered by A1 or A6. hero is
 // deliberately NOT exercised here — per team-lead direction, wiring hero must be

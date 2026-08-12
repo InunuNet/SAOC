@@ -270,3 +270,45 @@ it is the reason work feels like "perpetual loops of bug fixing" rather than pro
   (`backlog.md`, "Council decision blocking ticketing").
 - (2026-08-12) `timeout_seconds` on an @architect-format contract check was **silently dropped**. `execution/contract.py` `check_cmd` reads `verify["timeout_seconds"]`, but `normalize_contract` builds `verify` as exactly `{kind, cmd}` from the `command:` key and discards everything else on the check. So the documented per-assertion timeout had no effect, every shell assertion fell back to the 60s default, and `report`/`gate` expose no `--timeout-seconds` override — a behavioural check that legitimately takes longer reported `Command timed out after 60s`, which is indistinguishable from a real failure and was **unfixable from the contract**. Hit ticketing-hardening A29 (372s) and A31 (126s); @dev correctly diagnosed the timeout but proposed adding the key to the contract, which would have looked right in the YAML and still timed out. Fixed locally in `normalize_contract` (carry `timeout_seconds` through when present); PR to `InunuNet/Athanor`. **General rule: before trusting a contract key, prove the harness reads it** — `python3 -c "import contract; print(contract.normalize_contract({...}))"` takes ten seconds.
 - (2026-08-12) A gate timeout leaks external fixtures, because `subprocess.run(timeout=)` **kills** the child and a killed process never unwinds its `finally`. The 60s false-timeout above left a Sanity `ticketType` (`harden2-check-*`, `active: true`, "ZZ DO NOT SELL") live in the shared dataset and visible on `/tickets` until a manual residue check found it. try/finally is necessary but NOT sufficient for anything outside the process. Every fixture namespace needs a **pre-run sweep** (the Firestore checks already had one via `sweepSentinels()`; the Sanity fixtures did not). Sweep on an id prefix you own AND an age filter, or a sweep run by one check deletes a concurrently-running check's live fixture.
+
+## Verification integrity — overnight four-stream session (2026-08-12)
+
+- (2026-08-12) **An assertion that sources its expected value from the same place as the actual
+  value cannot fail.** This is the session's central lesson and it recurred in every stream. A54
+  grepped *source* for a venue literal that actually lived in Sanity — green while `/national-show`
+  rendered two different venues in one viewport. A43 looked for the pending-marker label by reading
+  that label out of the dataset, so clearing the label emptied the needle and the check
+  short-circuited green. A11 proved booking-reference format and uniqueness, not entropy, so a
+  sequential counter would have passed. A14's negative grep missed `status !== "paid"` (wrong
+  operator, wrong quote style). A35 failed in the *opposite* direction — a substring match on
+  single-letter class codes could never pass. A33 scanned an enumerated field list and never saw
+  step bodies; the repair walks every string recursively, which is the general form of the fix.
+  Compounds the earlier grep-assertion entries above.
+- (2026-08-12) **Countermeasure that works: negative-control every new assertion against the
+  unfixed tree BEFORE @dev starts, and record red/green.** Two worthless Stream A assertions were
+  caught this way before they banked a false green. Make this standard in the chain — an assertion
+  that is green on the broken tree is not an assertion.
+- (2026-08-12) **A "fails closed" claim in a comment is an assertion to test, not a fact.** Four
+  files carried one while the code failed open: `components/show/ConfirmationBadge.tsx`,
+  `sanity/schemas/documents/ticketType.ts` (capacity description),
+  `app/api/tickets/itn/route.ts` (write guard), and
+  `contracts/checks/ticketing-hardening/check-capacity-no-oversell.mjs` (sweep claim).
+- (2026-08-12) **The gate itself corrupted the live Sanity dataset three times.** Mutating
+  round-trip checks declared no `timeout_seconds`, inherited the 60s default, and were SIGKILLed
+  mid-mutation — after the sentinel write, before the restore — once leaving a sentinel string
+  rendering on a public page for ~4.5h. SIGKILL is uncatchable, so a SIGTERM handler does not cover
+  this; only a real timeout prevents it. Any check that mutates Sanity needs all five: a real
+  `timeout_seconds`, an exclusive lock, poisoned-baseline rejection, dead-pid lock reaping, and a
+  verified restore.
+- (2026-08-12) **Never gate a stream while its own agents are still working.** Produced phantom
+  failures repeatedly — `pnpm build` catching a mid-edit tree, and mutating checks colliding on the
+  dataset lock and reporting an ordinary FAIL indistinguishable from a real defect. The orchestrator
+  did this twice knowing better.
+- (2026-08-12) **A fix can create a worse bug than the one it closes.** Making reservations
+  authoritative against capacity was the correct fix for overselling, but with no release path it
+  converted ordinary cart abandonment into permanent sell-out at zero revenue. It was invisible
+  beforehand because the oversell bug was absorbing it. Round-1 @qa found it only by going *past*
+  the assertions — which is the argument for keeping @qa's licence to chase what it finds.
+- (2026-08-12) **Every dev agent this session went idle without filing a report,** and several
+  claimed completion the gate then contradicted. Verify with the gate; never accept a self-report.
+  Reconfirmed alongside this: `ListAgents` reporting "no reachable agents" is not proof of death.

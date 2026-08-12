@@ -1,3 +1,25 @@
+# Needs human
+
+## READ FIRST — the two things blocking real progress (2026-08-12)
+
+Everything else in this file is detail. These two are not code problems and no agent can clear them.
+
+1. **Firebase Authentication is not provisioned on `saoc-webapp`.** `/admin` and the door check-in
+   scanner are non-functional in **every** environment — local and deployed — regardless of the
+   security hardening shipped overnight in `be80580`. Fix is console-only, ~5 minutes: Firebase
+   console → `saoc-webapp` → Build → Authentication → Get started → enable Email/Password, then
+   create the secretary and door-staff accounts. Nothing in the codebase changes. Full detail in
+   the BLOCKER section below. This blocks any door-scanning demo.
+2. **The committee still owes every real number and rule.** Ticket prices and venue capacity,
+   confirmed venue and dates, opening hours, parking, accessibility, photography policy,
+   cloakroom, accommodation, emergency contacts — and *all* exhibitor rules (entry deadline, fees,
+   staging times, ownership rule, sales terms, entry form). The site currently renders our
+   researched placeholders, visibly marked as pending committee confirmation on every surface,
+   which is honest but is not something to put in front of a sponsor indefinitely.
+
+Two smaller decisions are also waiting below: which PayFast payment methods will be enabled (it
+determines whether the 30-minute reservation TTL is safe), and whether the show H1 should carry
+the edition ordinal.
 
 ## PayFast Sandbox credentials (2026-07-03)
 Needed to test the D2/D4 PayFast checkout integration end-to-end. Free signup, no FICA required for sandbox:
@@ -261,7 +283,14 @@ no SIGTERM/SIGINT handler, so any killed run wedges the next one.
 belongs to the visitor stream. Someone on that stream should clear it and check that dataset for
 `SVI-` residue.
 
-## GATE HAZARD: `contract.py gate --run-checks` corrupts the dataset (2026-08-12, @dev round 2)
+## HARNESS BUG: `--phase all` drops the CLI `--timeout-seconds` (2026-08-12, @dev round 2)
+
+> **FILED UPSTREAM 2026-08-12: https://github.com/InunuNet/Athanor/issues/1337** — no further
+> action needed from Brad on this entry; kept for the diagnosis.
+> STATUS: no longer dangerous on this contract. Every mutating assertion now declares its own
+> `timeout_seconds`, and declared timeouts are unaffected by this bug. It caused three dataset
+> incidents on 2026-08-11/12 only because no assertion declared one at the time. Still worth
+> filing upstream. Original diagnosis below, narrowed.
 
 ROOT CAUSE FOUND, exact line: `execution/contract.py:472-476`. Under `--phase all`, the runner
 rebuilds a fresh `argparse.Namespace` per phase and copies only `contract`, `phase`, `run_checks`

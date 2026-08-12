@@ -240,22 +240,34 @@ assertions:
         would pass regardless — it genuinely reads real data).
       command: node contracts/checks/cms-loop-f3-national-show/check-home-page-regression.mjs
 
-    - id: A3
-      description: >
-        Round trip for exhibitorStages (portableText), via direct Sanity client
-        writes rather than Studio-UI automation (a rich block-editor widget is
-        disproportionately fragile to drive for what this needs to prove — see the
-        check's own header). hero is deliberately NOT exercised here — see "HERO —
-        VISUAL NEUTRALITY REQUIRED" and A6; a temporary swap-and-restore of a real
-        visitor-facing image, even with guaranteed cleanup, would contradict the
-        visual-neutrality requirement. Sets exhibitorStages from empty to sentinel
-        text, revalidates, polls the deployed /national-show page, then clears back to
-        empty, verified via both the dataset and the live page. GATED: refuses to run
-        unless F1's short-TTL fix is confirmed live (same assertF1Deployed() guard as
-        A1). Executed live during authoring: write landed, propagation correctly
-        FAILED (not wired yet — the honest, expected result), cleanup verified on the
-        first poll attempt. No defects found in this check.
-      command: node contracts/checks/cms-loop-f3-national-show/check-exhibitor-stages-round-trip.mjs
+    # ---------------------------------------------------------------------------
+    # A3 — RETIRED 2026-08-12, by team-lead ruling. Do not re-add.
+    # ---------------------------------------------------------------------------
+    # A3 was the exhibitorStages round trip: it wrote a sentinel to
+    # nationalShow.exhibitorStages and asserted the sentinel appeared on /national-show.
+    #
+    # THE FIELD IT TESTED NO LONGER EXISTS. `nationalShow.exhibitorStages` was retired as the
+    # source of exhibitor-journey content in favour of the structured showExhibitorStep /
+    # showExhibitorInfo types (exhibitor stream F-7). The landing page no longer reads it, the
+    # GROQ projection no longer selects it, and the schema no longer declares it. The dataset
+    # was verified empty before the deletion — count(*[defined(exhibitorStages)]) == 0 — so no
+    # editorial content was destroyed.
+    #
+    # That makes A3 PERMANENTLY UNSATISFIABLE BY CONSTRUCTION: it can only ever report red, and
+    # a permanent red is not a regression signal, it is noise that the next person to gate will
+    # silence without understanding why. Retiring it is the honest bookkeeping.
+    #
+    # ITS REPLACEMENT is contract-show-visitor-info.yaml A77, which asserts the opposite and is
+    # the stronger claim: exhibitorStages appears in NONE of the schema, the query projection or
+    # the landing page's read path. A retirement that stops half-way — say, the schema line
+    # deleted but the projection left behind — fails A77. Nothing that A3 protected is now
+    # unguarded; the CMS round-trip loop itself is still proven by A1 (title/location/
+    # countdownDate) and, on the visitor contract, by A42 and A61.
+    #
+    # The check script contracts/checks/cms-loop-f3-national-show/check-exhibitor-stages-round-trip.mjs
+    # is left in the tree, unreferenced, carrying a matching header: it is the worked example of
+    # the direct-Sanity-client round-trip pattern that A1 and the visitor contract's mutating
+    # checks follow. Delete it in the scope review noted in backlog.md if that is the call.
 
     - id: A4
       description: >
