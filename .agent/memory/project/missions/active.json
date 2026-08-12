@@ -1,8 +1,9 @@
 {
   "mission": ".agent/memory/project/missions/2026-08-11-show-visitor-info.md",
   "checkpoint": {
-    "milestone": null,
-    "feature": null
+    "milestone": "M3",
+    "feature": "F4",
+    "ts": "2026-08-12T09:11:59.926888+00:00"
   },
-  "activated_at": "2026-08-11T19:57:44.454329+00:00"
+  "activated_at": "2026-08-12T09:11:59.926991+00:00"
 }

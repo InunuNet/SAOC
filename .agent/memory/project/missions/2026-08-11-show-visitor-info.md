@@ -7,28 +7,29 @@ goal: Expand the National Show from a single teaser landing page into a visitor-
   pending committee confirmation
 created_at: '2026-08-11T19:33:26.786187+00:00'
 started_at: null
-last_active_at: null
-status: pending
+last_active_at: '2026-08-12T09:11:59.050987+00:00'
+status: done
 cost_estimate:
   features: 5
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M3
+  feature: F5
+  ts: '2026-08-12T09:11:59.050987+00:00'
 features:
 - id: F1
   title: Sanity schema + seed for show visitor information
-  inline_brief: 'New `showVisitorInfo` singleton (or extend `nationalShow`) carrying
+  inline_brief: New `showVisitorInfo` singleton (or extend `nationalShow`) carrying
     structured venue address, opening hours, admission notes, parking, accessibility,
     photography policy, cloakroom, travel-from-airport, accommodation and attractions.
-    New `showFaq` document type with category + question + answer + order. Seed
-    create-if-absent ONLY (never createOrReplace — see seed-page-singletons.ts bug).
-    Every placeholder value must carry a visible "To be confirmed by the show
-    committee" marker, exactly as ticket prices carry their provisional label.'
-  status: pending
+    New `showFaq` document type with category + question + answer + order. Seed create-if-absent
+    ONLY (never createOrReplace — see seed-page-singletons.ts bug). Every placeholder
+    value must carry a visible "To be confirmed by the show committee" marker, exactly
+    as ticket prices carry their provisional label.
+  status: done
   milestone: M1
+  completed_at: '2026-08-12T09:11:58.191937+00:00'
 - id: F2
   title: /national-show/plan-your-visit
   inline_brief: 'Spec §4.16. Getting there (incl. from Cape Town International and
@@ -36,52 +37,70 @@ features:
     distance from venue, local attractions, emergency contacts. Map: static embedded
     map or a linked map — do NOT add a paid maps SDK or any external key. All copy
     from Sanity.'
-  status: pending
+  status: done
   milestone: M2
+  completed_at: '2026-08-12T09:11:58.417479+00:00'
 - id: F3
   title: /national-show/what-to-expect
-  inline_brief: 'Spec §4.3 + §4.9 visitor-info half. Opening dates and hours,
-    admission and concession pricing (cross-link to /tickets, do not duplicate
-    prices — Sanity ticketType is the single source), food and refreshments,
-    photography policy, cloakroom / plant-holding area, wheelchair accessibility.'
-  status: pending
+  inline_brief: Spec §4.3 + §4.9 visitor-info half. Opening dates and hours, admission
+    and concession pricing (cross-link to /tickets, do not duplicate prices — Sanity
+    ticketType is the single source), food and refreshments, photography policy, cloakroom
+    / plant-holding area, wheelchair accessibility.
+  status: done
   milestone: M2
+  completed_at: '2026-08-12T09:11:58.638241+00:00'
 - id: F4
   title: /national-show/faq
-  inline_brief: 'Spec §4.17. Categorised Q&A (Accessibility, Tickets, Plant Sales,
+  inline_brief: Spec §4.17. Categorised Q&A (Accessibility, Tickets, Plant Sales,
     Getting There) driven by the `showFaq` document type, grouped by category and
     ordered. Accessible disclosure pattern — keyboard-operable, no JS-only reveal.
-    Cross-link to Plan Your Visit and Contact.'
-  status: pending
+    Cross-link to Plan Your Visit and Contact.
+  status: done
   milestone: M2
+  completed_at: '2026-08-12T09:11:58.853698+00:00'
 - id: F5
   title: Wire the section together — nav, landing-page links, venue block on Contact
-  inline_brief: 'The three new pages must be reachable by clicking, not just by URL
-    — this is the exact defect already logged against /national-show/archive.
-    Add them to the show landing page and site nav, put the venue address and
-    directions block on /contact (spec §4.18), and fix the dead
-    /national-show/upcoming redirect stub while in the area if cheap.'
-  status: pending
+  inline_brief: The three new pages must be reachable by clicking, not just by URL
+    — this is the exact defect already logged against /national-show/archive. Add
+    them to the show landing page and site nav, put the venue address and directions
+    block on /contact (spec §4.18), and fix the dead /national-show/upcoming redirect
+    stub while in the area if cheap.
+  status: done
   milestone: M3
+  completed_at: '2026-08-12T09:11:59.050786+00:00'
 milestones:
 - id: M1
   title: The content model exists and is seeded with honest placeholders
   features:
   - F1
-  status: pending
+  status: done
+  gate_ran_at: '2026-08-12T09:12:26.998264+00:00'
+  gate_result: pass
 - id: M2
   title: The three visitor-information pages exist and are fully editable
   features:
   - F2
   - F3
   - F4
-  status: pending
+  status: done
+  gate_ran_at: '2026-08-12T09:12:27.207074+00:00'
+  gate_result: pass
 - id: M3
   title: The section is reachable and coherent, not orphaned URLs
   features:
   - F5
-  status: pending
+  status: done
+  gate_ran_at: '2026-08-12T09:12:27.423276+00:00'
+  gate_result: pass
 ---
+
+
+
+
+
+
+
+
 
 # Mission: National Show visitor information
 
