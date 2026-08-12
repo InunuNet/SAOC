@@ -1,0 +1,17 @@
+app/(marketing)/about/page.tsx
+app/(marketing)/contact/page.tsx
+app/(marketing)/events/[slug]/page.tsx
+app/(marketing)/events/page.tsx
+app/(marketing)/judging/page.tsx
+app/(marketing)/national-show/archive/[year]/page.tsx
+app/(marketing)/national-show/archive/page.tsx
+app/(marketing)/national-show/exhibitors/page.tsx
+app/(marketing)/national-show/faq/page.tsx
+app/(marketing)/national-show/page.tsx
+app/(marketing)/national-show/plan-your-visit/page.tsx
+app/(marketing)/national-show/what-to-expect/page.tsx
+app/(marketing)/page.tsx
+app/(marketing)/societies/[slug]/page.tsx
+app/(marketing)/societies/page.tsx
+app/(marketing)/sponsors/page.tsx
+app/(marketing)/tickets/cancelled/page.tsx

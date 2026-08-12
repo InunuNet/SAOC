@@ -8,8 +8,16 @@ import { activeTicketTypesQuery, nationalShowSalesQuery, ticketsPageQuery } from
 import { getSoldCountsByTicketType } from '@/lib/data/tickets';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 
-// F1 cms-loop: bound CDN staleness to 60s (see contracts/cms-loop-f1-cdn-purge.yaml).
-export const revalidate = 60;
+// This page calls getSoldCountsByTicketType() (lib/data/tickets.ts), which uses the
+// Firebase Admin SDK — and FIREBASE_ADMIN_PROJECT_ID/CLIENT_EMAIL/PRIVATE_KEY are
+// deliberately RUNTIME-only in apphosting.yaml (sold counts are live inventory; baking
+// them into a prerendered build risks showing availability that isn't real and overselling
+// the show — see contracts/contract-build-without-secrets.yaml). force-dynamic renders this
+// page at request time on every hit instead of prerendering it, so the build never needs
+// Admin credentials. This intentionally opts /tickets OUT of the F1 cms-loop's 60s ISR bound
+// (contracts/cms-loop-f1-cdn-purge.yaml) — that bound still applies to every other
+// CMS-backed page (revalidate-60-pages.golden.txt), which deliberately excludes this page.
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = { title: 'Tickets' };
 
