@@ -312,3 +312,37 @@ it is the reason work feels like "perpetual loops of bug fixing" rather than pro
 - (2026-08-12) **Every dev agent this session went idle without filing a report,** and several
   claimed completion the gate then contradicted. Verify with the gate; never accept a self-report.
   Reconfirmed alongside this: `ListAgents` reporting "no reachable agents" is not proof of death.
+
+## Incident 4 — orchestrator-caused dataset corruption, and a false-negative sweep (2026-08-12 06:07)
+
+**What happened.** I sent SIGTERM to a long-running `contract.py gate` (pid 41308) to tidy up
+before handover. It was mid-A61, the show-identity sweep. The restore did not complete, leaving
+`nationalShow.venue.name/city/province/addressLines`, `hostRegion`, `edition` (41), both dates
+(2033) and `countdownDate` (unset) holding sweep values — `SVI-SWEEPVENUE-SENTINEL-…` was live on
+`/national-show`. Restored from `scripts/seed-show-visitor-info.ts` baselines; all 133 documents
+and all three affected pages verified clean afterwards.
+
+**Two lessons, the second more important than the first.**
+
+1. **A slow gate is not a hung gate — do not kill one.** @architect and @dev both warned me of
+   exactly this, in writing, minutes before I did it. Ceilings are now A61 1200s with a 420s lock
+   wait, so a full gate legitimately runs into tens of minutes. The SIGTERM handler added earlier
+   covers a check that owns the lock in its own process; it did not save a restore interrupted
+   partway. If a gate must be stopped, stop it and then immediately verify the dataset — do not
+   assume the handler cleaned up.
+
+2. **My sentinel sweep was a false negative all night.** I had been scanning with
+   `count(*[pt::text(@) match "*SENTINEL*"])`. `pt::text()` only reads portable-text blocks, so it
+   cannot see a sentinel in a plain string field — which is where every one of tonight's incidents
+   actually landed. Every "dataset clean" I reported from that query was unreliable, including the
+   ones that preceded my commits. The sweep that works fetches the documents and walks all string
+   values:
+   `const hits = (await c.fetch('*[]')).filter(d => JSON.stringify(d).includes('SENTINEL'))`
+   Use that. A verification query that cannot observe the failure mode it targets is the same
+   defect class as the assertions this whole session was spent fixing — I spent the night finding
+   it in other people's checks and shipped it in my own.
+
+**Also worth knowing:** a transient hit can appear and clear between two queries while a check
+completes its own restore. Confirm a sentinel is real by re-reading before acting, and confirm the
+RENDERED page separately — the dataset can be clean while Next/CDN still serves a stale copy for
+up to ~90s.
