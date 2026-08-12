@@ -683,7 +683,32 @@ passwords. Brad met Lee-Ann on Teams the same morning; no status email is owed t
   every write is `createIfNotExists`, so it cannot clobber the corrected dataset — but it is now a
   stale source of truth if the dataset is ever rebuilt from empty. Update the seed constants to
   match the corrected Sanity content. Code change, so it goes through the chain.
-- [ ] **[question for Brad] Is the Stellenbosch venue committee-confirmed?** `confirmations.venue`
+- [x] **[RESOLVED 2026-08-12] Stellenbosch venue is confirmed.** Lee-Ann confirmed it to Brad by
+  WhatsApp; `showVisitorInfo.confirmations.venue` set to `confirmed`, so the "to be confirmed by
+  the show committee" badge no longer renders under the venue. Remaining pending badges (parking,
+  accessibility, public transport, accommodation, attractions) are correct — those are still open.
+
+- [x] **[SUPERSEDED] Is the Stellenbosch venue committee-confirmed?** `confirmations.venue`
   was left at `pending`, so the site still shows a "to be confirmed by the show committee" badge
   under the venue. The venue name itself is now stated plainly (no "working venue" hedging). If the
   committee has signed it off, flip that one field to `confirmed` and the badge disappears.
+
+- [ ] **[P1, architecture] Make show identity edition-scoped so a venue/date change is ONE edit.**
+  Brad, 2026-08-12: "after three years they're going to do a new show and that'll have a new venue
+  — are we going to have to recreate all of this every time?" Correct concern. Verified today: the
+  venue fact is stored in **four** places — `nationalShow.venue.name`, `nationalShow.location`,
+  `show-19-2027.location`, and the national-show `societyEvent.venue` — plus four repo files. They
+  agree right now only because they were all written by hand in one sitting. That is the definition
+  of drift waiting to happen.
+  **What good looks like** (see `.claude/rules/content-modeling.md`):
+  1. One venue object as the single source; the edition doc and calendar event reference the show
+     rather than restating its location as free strings. Contract-assert the copies agree.
+  2. Venue-dependent prose (`showVisitorInfo`: travel, parking, accommodation, attractions) records
+     WHICH venue it was written for, so a venue change auto-flags it stale instead of silently
+     serving directions to the wrong side of the province. This is the fix that would have caught
+     the CTICC bug by itself — the current `confirmations.*` flags rely on a human remembering.
+  3. A documented, repeatable **show rollover** procedure: current edition → archive entry, new
+     edition → current. Must be a content operation, never a code change.
+  Blocked on nothing technically, but sequence it AFTER `contract-venue-seed-truth` lands (that one
+  removes the immediate from-empty-rebuild regression) and after the design-alignment mission, since
+  a Show redesign may move these surfaces anyway. Scope as its own mission via /mission new.
