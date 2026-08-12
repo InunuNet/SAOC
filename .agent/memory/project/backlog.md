@@ -23,7 +23,10 @@ _Last compacted: 2026-07-10 by session (machine-reboot wrap-up). Full history: g
 - [ ] **D2/D4: PayFast ticketing — M1 DONE, M2 BLOCKED.** Mission `2026-07-01-payfast-ticketing.md` ACTIVE, paused at the M1/M2 boundary (checkpoint M1/F3). Gateway = PayFast (Yoco waitlisted with no ETA; PayFast recommended + committed, verified against PayFast dev docs — Subscriptions API, Refunds API, hosted redirect + Onsite Beta, PCI DSS Level 1).
   - **M1 DONE (uncommitted):** F1 Firestore schema reworked off the old Stripe-shaped field to PayFast's model; F2 checkout initiation route; F3 ITN webhook handler. Documented in `docs/payfast-integration.md`. Gate green 33/33.
   - **M2 BLOCKED:** F4 buy-flow UI, F5 confirmation page + email (Resend), F6 sandbox verification. Blocked on TWO external inputs, both logged in `needs-human.md`: (1) **PayFast Sandbox credentials** (free signup at sandbox.payfast.co.za, no FICA — Merchant ID/Key/Passphrase into .env.local) — **(2026-07-28) Brad is waiting on the society to supply PayFast credentials; external wait, no agent action**; (2) **real 2027 Show ticket pricing** (adult/pensioner/child/member/exhibitor tiers + capacity). Resume: `python3 execution/mission.py resume` → `/spec` for F4.
-  - **Live merchant account (separate, Brad):** gather non-profit FICA docs (NPO/PBO/Section 21 registration, proof of address, bank-issued proof of account), register at registration.payfast.io. Only blocks going LIVE, not sandbox development.
+  - **Live merchant account — FICA COMPLETE (Brad, 2026-08-12).** The non-profit FICA verification is
+    done, which was the last gate on a live PayFast merchant account. **This no longer blocks going
+    live; the remaining live-payment work is now ours, not paperwork.** See the new "Go-live: PayFast
+    live credentials" entry below for exactly what is left.
 - [ ] **Configure SPF/DKIM/DMARC on saoc.co.za** — required before launch. Setup guide: docs/email-dns-setup.md. Brad to add DNS records once Resend domain verified.
 - [ ] **Domain transfer** — saoc.co.za to Inunu Net registrar. Brad to initiate. R172.50 once-off.
 - [ ] **DNS cutover** — point saoc.co.za to Firebase App Hosting. Requires domain transfer complete + SPF/DKIM/DMARC in place.
@@ -39,6 +42,26 @@ Old saoc.co.za (legacy cPanel at i-svr.net; access held by "Nico"; committee/Lee
 - [ ] Re-pull mail from legacy host ONE more time immediately before DNS cutover — today's restore is a snapshot; catches mail received 2026-07-20 → cutover day.
 - [ ] Real DNS/domain cutover saoc.co.za → new VPS (NOT done; legacy i-svr.net site still live/public).
 - [ ] Decide whether stale `public_html_1`/`public_html_2` are worth preserving.
+- [ ] **[P1, NEW 2026-08-12] Go-live: switch PayFast from sandbox to live credentials.** Unblocked by
+  FICA completion. The code is ready — the checkout, ITN webhook, capacity transaction, idempotency,
+  reservation TTL and 60-bit booking refs are all gate-green (`contracts/contract-ticketing-hardening.yaml`
+  37/37). What remains, in order:
+  1. Obtain live Merchant ID / Merchant Key / Passphrase from the verified PayFast account.
+  2. Store them in Secret Manager, NOT `.env.local` — `firebase apphosting:secrets:set` for each,
+     then reference them in `apphosting.yaml`. **Set them with `printf '%s' | --data-file=-`, never
+     `echo`** — the F2 incident was caused by a trailing newline and non-ASCII prose corrupting a
+     secret payload, and exact string comparison then never matched (see the F2 section above).
+  3. Flip `lib/payfast.ts` off the sandbox constants and confirm the live process URL is used.
+  4. `SITE_URL` in `apphosting.yaml` currently points at the App Hosting URL. It must become the real
+     domain before live ITNs will land correctly — **so this is gated behind the DNS cutover**, not
+     independent of it.
+  5. Re-verify the ITN signature path against a live transaction. `app/api/tickets/itn/route.ts` is
+     sha256-pinned (A15); changing it requires the documented re-pin ceremony in
+     `contracts/golden/ticketing-hardening/itn-write-guard.golden.md`.
+  **Do not go live before real council-confirmed prices are in** — every price in the dataset today is
+  an invented placeholder rendered with a "provisional" label, and a live gateway taking real money
+  against invented prices is the worst possible ordering.
+
 - [ ] **Live PayFast test transactions + cross-browser dry-run** — Phase 1 launch gate. Run after D2/D4 (PayFast M2) complete and live FICA-verified credentials are in place.
 - [ ] **Auto-refresh llms.txt + llms-full.txt via Alembic** — Alembic-based script BUILT (`scripts/refresh-llms.ts`, `pnpm refresh-llms`): crawls 7 routes through Alembic → regenerates `public/llms-full.txt`. ⚠️ Alembic blocks `localhost` hostnames by design, so the script only works against the live external URL (`https://saoc.co.za/<page>`) — usable only POST DNS-cutover, and NOT usable in CI (GitHub Actions can't reach local Alembic). `public/llms.txt` (index + descriptions) stays hand-authored. Production automation moved to the GROQ item below. Depends on live domain. Docs: `docs/llm-optimization.md`.
 - [x] **Home page UI drift audit — DONE 2026-07-28 (F5, `hardening-ui-fidelity` mission).** Full re-audit against `design/Claude Design HTML/SAOC Website (standalone).html`, superseding the stale 2026-06-30 notes below. Findings: `.agent/memory/scratch/home-audit-20260728/audit.md`. 9 deviations (D1–D9) found; code fixes for D2/D3/D5/D7/D8/D9 + D1's code half contracted as F6 (`contracts/f6-home-fidelity.yaml`). Two items split out as their own backlog entries below: D1 content population, D6 hero copy authority.
@@ -97,7 +120,7 @@ production. BUT draft-mode preview and webhook revalidation are dead in producti
 
 ## Blocked (awaiting Brad)
 - **RESEND_API_KEY not set anywhere (no Resend account signed up yet)** — found during F2 (`cms-activation-deploy`) apphosting.yaml env-var gap audit, 2026-07-29. `lib/email.ts` reads `process.env.RESEND_API_KEY`; `app/api/contact/route.ts` calls it inside its own try/catch and swallows the error, so this is NOT a contact-form outage — the Firestore write and HTTP 201 still succeed. Effect is silent degradation: submitters get a success response but never receive the confirmation email, in prod today and after F2's deploy. Fix: Brad signs up at resend.com, verifies the saoc.co.za sending domain, runs `firebase apphosting:secrets:set RESEND_API_KEY --project saoc-webapp`, then apphosting.yaml gets a `RESEND_API_KEY` (secret) + `RESEND_FROM_ADDRESS` (plain value) entry in a follow-up feature. Deliberately dropped from F2's contract (A5/A6 removed 2026-07-29 per team-lead) rather than declaring a `secret:` ref to a Secret Manager entry that doesn't exist, which would fail the whole App Hosting rollout.
-- **PayFast live merchant account (FICA verification)**: Brad to gather non-profit docs (NPO/PBO/Section 21 registration, proof of address, bank-issued proof of account) and register at registration.payfast.io. Only blocks going LIVE — D2/D4 development can proceed now against PayFast's free Sandbox.
+- ~~**PayFast live merchant account (FICA verification)**~~ **DONE 2026-08-12 (Brad).** FICA is complete and the live merchant account is available. No longer awaiting Brad. The remaining go-live work is engineering, tracked as "Go-live: PayFast live credentials" above — and it is gated behind the DNS cutover, because `SITE_URL` must be the real domain before live ITNs land correctly.
 - **DNS records**: SPF/DKIM/DMARC + Firebase hosting A-record. Brad to add after Resend domain verified.
 - **Domain transfer**: saoc.co.za from current registrar to Inunu Net.
 

@@ -428,3 +428,35 @@ buyers or delayed methods should be switched off for ticket sales. No code chang
 warranted until this is answered; @qa has separately recommended a log line in the ITN so
 that late-paid tickets are at least reconcilable (finding R2-1 in
 `.agent/memory/scratch/harden-qa.md`).
+
+---
+
+## 2026-08-12 — PayFast FICA COMPLETE; what Brad still owes, re-ranked
+
+**FICA is done.** The live PayFast merchant account is no longer blocked on paperwork. That closes
+the oldest external dependency on this project. Remaining go-live work is engineering, tracked in
+`backlog.md` under "Go-live: PayFast live credentials".
+
+**Ranked by what actually gates a launch, highest first:**
+
+1. **Enable Firebase Auth (Email/Password) on `saoc-webapp`.** Console task, minutes. Today
+   `createUser()` and `listUsers()` fail `auth/configuration-not-found`, so no account can exist in
+   any environment and `/admin` + the door scanner are untestable and undemoable. The admission
+   logic behind them is fixed and gate-verified — this is the only thing between that and a working
+   door flow. **Highest value per minute of Brad's time on the whole list.**
+2. **Real ticket prices and capacity from the council.** Every figure in the dataset is an invented
+   placeholder rendered with a "provisional — pending council confirmation" label. Live payments
+   must not be switched on against invented prices; this ordering matters.
+3. **Confirmed venue and exact dates.** CTICC/Sept 2027 is our working assumption, visibly marked
+   pending. The content model now takes a venue change as a Studio edit, so this is cheap to apply
+   once known — but it is on every visitor-facing page until then.
+4. **Domain transfer + DNS cutover.** Gates the live PayFast switch, because `SITE_URL` must be the
+   real domain before live ITNs land. Also gates SPF/DKIM/DMARC.
+5. **Resend account + verified sending domain.** No confirmation emails are sent today, and the
+   emailed QR ticket (mission `ticketing-pages` F5) was never built — so a buyer completes payment,
+   sees a confirmation page, and receives nothing scannable. That is the gap between "can sell" and
+   "can admit".
+6. **Exhibitor rules from the show committee** — entry deadline, fees, staging/removal times,
+   whether exhibitors may attend judging, ownership-duration rule, sales terms, insurance and
+   overnight security, and the entry-form PDF. The exhibitor guide currently presents researched
+   international convention, clearly marked as not-yet-SAOC-policy.
