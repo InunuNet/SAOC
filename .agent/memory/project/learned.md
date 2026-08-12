@@ -425,3 +425,29 @@ inferring from correlation. Worth reusing whenever a layout defect appears after
 strict superset (6 widths → 12) so no harm, and it was accepted, but @dev must never author
 assertions — the separation is what stops a failing check being "fixed" by weakening it. Route
 assertion changes back through @architect even when the edit looks obviously benign.
+
+## Recurring defect class: "the route returns 200 but nothing links to it" — 2026-08-12
+
+Seen three separate times now, on three unrelated features: `/national-show/archive` (built,
+unreachable from the archive landing page), `/tickets` (built, linked only from a paragraph on
+`/national-show/what-to-expect` — fixed 2026-08-12, see the nav-wrap entry above), and
+`/contact` (STILL BROKEN — verified 2026-08-12 with Playwright: zero visible `/contact` links in
+the header at 375px, before OR after opening the hamburger, because the button is
+`hidden sm:inline-block` and `MobileMenu.tsx` never includes it; booked P2, not yet fixed). Every one of these gate-passed, because "the page renders at its
+URL" and "a user can actually get there by clicking" are different claims, and contracts in this
+project have consistently only asserted the first.
+
+Carry forward: any contract for a new or restructured page needs an explicit reachability
+assertion — crawl from the homepage/nav and assert the target URL is reachable within N clicks,
+not just that a direct GET returns 200. A route existing is not the same as a route being part of
+the site.
+
+## Drive access: `gws` CLI, not curl/Alembic — 2026-08-12
+
+Google Drive-hosted docs (Lee-Ann's shared folder) are not fetchable via curl or Alembic — both
+only ever see Drive's HTML shell (login/preview chrome), never the document content. The `gws`
+CLI (`/opt/homebrew/bin/gws`, authenticated as brad@inunu.net) reads Drive/Docs/Sheets content
+directly and is the only path that works. Same tool already noted in the "Do the configuration
+yourself" entry above for Firebase/GCP REST — this is the Workspace-content half of that same
+lesson: don't retry curl/Alembic against a Drive link, go straight to `gws`.
+assertion changes back through @architect even when the edit looks obviously benign.
