@@ -1,3 +1,14 @@
+> **SUPERSEDED — historical research record, not current content.**
+> This file documented: The discriminating-assertion property, illustrated with CTICC-era examples.
+> The venue changed to **The Hangar, Stellenbosch Flying Club** on 2026-08-12.
+> Correction commits: `427fbaf` (corrected live content) and `32e01cf` (purged CTICC residue
+> from seed sources, goldens, and docs).
+> See `docs/venue-prose-residue.md` for the current state and the reasoning for keeping this
+> record intact. The content below is preserved as-authored and must not be edited to match
+> the current venue.
+
+---
+
 # Discriminating assertions
 
 > An assertion that sources its expected value from the same place as the actual value cannot

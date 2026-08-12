@@ -137,10 +137,20 @@ its target file, live document ID, or JSON field explicitly — never `grep -r`.
   own historical record of the CTICC research phase — dated, attributed, accurate
   as a record of what was researched and when; rewriting history here would violate
   the same rule this contract exists to uphold, applied to golden files themselves,
-  negative control A20)
+  negative control A20). AMENDED 2026-08-12: the first four now carry a prepended
+  "superseded" banner (docs/venue-prose-residue.md) pointing readers at the current
+  venue; A20 checks their BODIES survive intact, not byte-identity with the banner
+  included. A20 previously only actually checked cticc-research.golden.md despite
+  this table always claiming all five — extended to genuinely cover all five.
 - `contracts/golden/f4-seed-page-singletons/nationalShow.golden.json:17-18` (owned by
-  `contracts/cms-loop-f3-national-show.yaml`, flagged not asserted — see README,
-  negative control A19)
+  `contracts/cms-loop-f3-national-show.yaml` — this contract must never touch or depend
+  on that file; see README, negative control A19. AMENDED 2026-08-12: v1 of A19 asserted
+  the file still PINNED the stale CTICC string, which meant it broke the moment the
+  owning contract legitimately fixed its own golden — a negative control that fails on
+  correct behaviour is worse than none. Rewritten to a structural proof that does not
+  depend on the sibling contract's fix state: no assertion in this contract's own yaml
+  may reference that file path (this contract's commands are all read-only checks, so
+  "never referenced" is equivalent to "never touched").)
 - `.agent/memory/project/**` (session/mission logs — historical record, not
   user-or-editor-facing content)
 

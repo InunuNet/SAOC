@@ -14,8 +14,8 @@
     },
     "location": {
       "kind": "exact",
-      "value": "Cape Town International Convention Centre",
-      "note": "JUDGMENT CALL, recorded not papered over: ShowBand.tsx's SHOW_META has TWO separate location-ish strings — 'Host Region': 'Western Cape' and 'Venue': 'Cape Town International Convention Centre' — but the schema has only one 'location' field. Migrated the Venue string (the more specific physical location) verbatim. The Host Region value 'Western Cape' has no corresponding schema field and is NOT migrated anywhere — GAP, flag for @docs/Brad if a host-region field is wanted."
+      "value": "The Hangar, Stellenbosch Flying Club",
+      "note": "JUDGMENT CALL, recorded not papered over: at the time of the original migration, ShowBand.tsx's SHOW_META had TWO separate location-ish strings — 'Host Region': 'Western Cape' and 'Venue': 'Cape Town International Convention Centre' — but the schema has only one 'location' field. Migrated the Venue string (the more specific physical location) verbatim. The Host Region value 'Western Cape' has no corresponding schema field and is NOT migrated anywhere — GAP, flag for @docs/Brad if a host-region field is wanted. AMENDED 2026-08-12: the venue changed to The Hangar, Stellenbosch Flying Club (commits 427fbaf, 32e01cf); this value now tracks the current seed script (scripts/seed-page-singletons.ts), not the original CTICC string. ShowBand.tsx's SHOW_META constant no longer exists — the component was refactored (F7) to read venue/location from the nationalShow singleton instead of hardcoded module constants."
     },
     "hero": {
       "kind": "image",

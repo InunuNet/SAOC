@@ -97,7 +97,7 @@ assertions:
         contract-venue-seed-truth.yaml A7 (GET only, never a mutation).
       command: >-
         set -a; source .env.local; set +a;
-        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-accessibility-1%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-accessibility-1%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; d=json.load(sys.stdin); v=d.get('result'); (sys.exit(1) if v is None else print(v))") || { echo "FETCH FAILED - live query for showFaq-accessibility-1 did not return a result (bad token, network issue, or wrong project/dataset) — cannot verify, failing closed"; exit 1; };
         if echo "$LIVE" | grep -Eiq "convention centre"; then echo "showFaq-accessibility-1 still describes the venue as a convention centre"; exit 1; fi
       timeout_seconds: 60
 
@@ -107,7 +107,7 @@ assertions:
         venue has parking garages.
       command: >-
         set -a; source .env.local; set +a;
-        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-getting-there-2%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-getting-there-2%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; d=json.load(sys.stdin); v=d.get('result'); (sys.exit(1) if v is None else print(v))") || { echo "FETCH FAILED - live query for showFaq-getting-there-2 did not return a result (bad token, network issue, or wrong project/dataset) — cannot verify, failing closed"; exit 1; };
         if echo "$LIVE" | grep -Eiq "parking garage"; then echo "showFaq-getting-there-2 still claims parking garages"; exit 1; fi
       timeout_seconds: 60
 
@@ -121,8 +121,8 @@ assertions:
         drive-time claim is a status defect, not a text defect".
       command: >-
         set -a; source .env.local; set +a;
-        TEXT=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-getting-there-1%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
-        STATUS=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-getting-there-1%22%5D%5B0%5D.status" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        TEXT=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-getting-there-1%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; d=json.load(sys.stdin); v=d.get('result'); (sys.exit(1) if v is None else print(v))") || { echo "FETCH FAILED - live TEXT query for showFaq-getting-there-1 did not return a result (bad token, network issue, or wrong project/dataset) — cannot verify, failing closed"; exit 1; };
+        STATUS=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-getting-there-1%22%5D%5B0%5D.status" | python3 -c "import json,sys; d=json.load(sys.stdin); v=d.get('result'); (sys.exit(1) if v is None else print(v))") || { echo "FETCH FAILED - live STATUS query for showFaq-getting-there-1 did not return a result (bad token, network issue, or wrong project/dataset) — cannot verify, failing closed"; exit 1; };
         if echo "$TEXT" | grep -Eiq "half an hour from Cape Town International" && [ "$STATUS" = "research" ]; then echo "showFaq-getting-there-1 keeps the unverified drive-time claim while still marked research"; exit 1; fi
       timeout_seconds: 60
 
@@ -310,24 +310,45 @@ assertions:
 
     - id: A19
       description: >-
-        NEGATIVE CONTROL - contracts/golden/f4-seed-page-singletons/nationalShow.golden.json
-        is untouched by this contract. It is stale (still pins CTICC) but owned by
-        contracts/cms-loop-f3-national-show.yaml — fixing it here would be scope
-        creep into a golden this contract has no authority over. This assertion
-        proves the fix left it alone, not that it is correct.
+        NEGATIVE CONTROL - this contract never touches
+        contracts/golden/f4-seed-page-singletons/nationalShow.golden.json. That file
+        is owned by contracts/cms-loop-f3-national-show.yaml — fixing or depending on
+        it here would be scope creep into a golden this contract has no authority
+        over. AMENDED 2026-08-12: v1 asserted the file still PINNED the stale CTICC
+        string, which meant this negative control broke the moment the owning
+        contract legitimately fixed its own golden — a check that fails on correct
+        behaviour is worse than no check. Rewritten to a structural proof that does
+        not depend on the sibling contract's fix state at all: no assertion in THIS
+        contract's own yaml may reference that file path (this contract's commands
+        are read-only checks — grep/curl/node/tsc — so "does not reference the path"
+        is equivalent to "cannot have touched the file").
       command: >-
-        grep -qF '"value": "Cape Town International Convention Centre"' contracts/golden/f4-seed-page-singletons/nationalShow.golden.json || { echo "nationalShow.golden.json changed — that file is owned by contract-cms-loop-f3-national-show.yaml, not this contract"; exit 1; }
+        COUNT=$(grep -c "f4-seed-page-singletons" contracts/contract-venue-prose-residue.yaml);
+        if [ "$COUNT" -ne 3 ]; then echo "contract-venue-prose-residue.yaml now references f4-seed-page-singletons in $COUNT places (expected exactly 3 — this assertion's own description line plus its two command-body mentions, all in A19) — this contract must never touch a file owned by contract-cms-loop-f3-national-show.yaml"; exit 1; fi
       timeout_seconds: 30
 
     - id: A20
       description: >-
         NEGATIVE CONTROL - the show-visitor-info contract's own historical CTICC
-        research record (cticc-research.golden.md) is untouched. It is a dated,
-        attributed record of what was researched and when — rewriting it would
-        corrupt real project history, the exact failure content-modeling.md rule 6
-        warns against, applied to golden files themselves.
+        research records (cticc-research.golden.md, venue-single-source.golden.md,
+        show-identity-wiring.golden.md, assertion-discrimination.golden.md, and
+        README.md) all still carry their original body content. They are dated,
+        attributed records of what was researched and when — rewriting the BODY
+        would corrupt real project history, the exact failure content-modeling.md
+        rule 6 warns against, applied to golden files themselves. A superseded
+        banner may be prepended above the body (2026-08-12, see
+        docs/venue-prose-residue.md) — this checks the body survives, not that the
+        file is byte-identical. AMENDED 2026-08-12: v1 of this check only covered
+        cticc-research.golden.md even though phrase-denylist.golden.md's "Out of
+        scope" table always listed all five files as protected — the checker
+        under-implemented its own documented scope, the same drift class A22
+        exists to catch elsewhere. Extended to actually cover all five.
       command: >-
-        grep -qF "verified against cticc.co.za/contact-us" contracts/golden/show-visitor-info/cticc-research.golden.md || { echo "cticc-research.golden.md changed — this fix must not rewrite historical research records"; exit 1; }
+        grep -qF "verified against cticc.co.za/contact-us" contracts/golden/show-visitor-info/cticc-research.golden.md || { echo "cticc-research.golden.md body changed — this fix must not rewrite historical research records"; exit 1; };
+        grep -qF "editor changes the venue by editing" contracts/golden/show-visitor-info/venue-single-source.golden.md || { echo "venue-single-source.golden.md body changed — this fix must not rewrite historical research records"; exit 1; };
+        grep -qF "32f3b0f" contracts/golden/show-visitor-info/show-identity-wiring.golden.md || { echo "show-identity-wiring.golden.md body changed — this fix must not rewrite historical research records"; exit 1; };
+        grep -qF "57/59" contracts/golden/show-visitor-info/assertion-discrimination.golden.md || { echo "assertion-discrimination.golden.md body changed — this fix must not rewrite historical research records"; exit 1; };
+        grep -qF "Authoritative reference for the National Show visitor-information section" contracts/golden/show-visitor-info/README.md || { echo "show-visitor-info README.md changed — this fix must not rewrite historical research records"; exit 1; }
       timeout_seconds: 30
 
     # ================= no-regression gate =================
@@ -356,7 +377,7 @@ assertions:
         does). Nothing in the repo sources either claim — see README "Finding 2".
       command: >-
         set -a; source .env.local; set +a;
-        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-getting-there-1%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-getting-there-1%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; d=json.load(sys.stdin); v=d.get('result'); (sys.exit(1) if v is None else print(v))") || { echo "FETCH FAILED - live query for showFaq-getting-there-1 did not return a result (bad token, network issue, or wrong project/dataset) — cannot verify, failing closed"; exit 1; };
         echo "$LIVE" | python3 contracts/golden/venue-prose-residue/check_no_confident_transport_claim.py
       timeout_seconds: 60
 
@@ -367,7 +388,7 @@ assertions:
         longer asserts public transport availability either way as fact.
       command: >-
         set -a; source .env.local; set +a;
-        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showVisitorInfo%22%5D%5B0%5D.publicTransport" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showVisitorInfo%22%5D%5B0%5D.publicTransport" | python3 -c "import json,sys; d=json.load(sys.stdin); v=d.get('result'); (sys.exit(1) if v is None else print(v))") || { echo "FETCH FAILED - live query for showVisitorInfo.publicTransport did not return a result (bad token, network issue, or wrong project/dataset) — cannot verify, failing closed"; exit 1; };
         echo "$LIVE" | python3 contracts/golden/venue-prose-residue/check_no_confident_transport_claim.py
       timeout_seconds: 60
 
