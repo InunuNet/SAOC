@@ -13,5 +13,23 @@ export const province = defineType({
       type: 'slug',
       options: { source: 'name' },
     }),
+    defineField({
+      name: 'order',
+      title: 'Chip Order',
+      type: 'number',
+      description:
+        'Position in the /societies province filter. Lower sorts first. The sequence is ' +
+        'curated (roughly south-west to north-east), not alphabetical.',
+    }),
+  ],
+  orderings: [
+    {
+      title: 'Chip order',
+      name: 'chipOrder',
+      by: [
+        { field: 'order', direction: 'asc' },
+        { field: 'name', direction: 'asc' },
+      ],
+    },
   ],
 });

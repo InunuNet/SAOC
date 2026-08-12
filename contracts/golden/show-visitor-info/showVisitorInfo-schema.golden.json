@@ -1,0 +1,215 @@
+{
+  "_comment": [
+    "F1 — new page singleton holding every piece of visitor-facing copy across",
+    "/national-show/plan-your-visit, /national-show/what-to-expect and /national-show/faq.",
+    "Same pattern as ticketsPage: plain string/text fields for short informational copy,",
+    "arrays of named object types for repeating structured content.",
+    "Venue identity does NOT live here — it lives on nationalShow.venue. This document is",
+    "'what a visitor needs to plan'; nationalShow is 'what the show is'.",
+    "Pinned singleton, _id === type name, per sanity/structure.ts convention."
+  ],
+  "file": "sanity/schemas/documents/showVisitorInfo.ts",
+  "name": "showVisitorInfo",
+  "title": "Show Visitor Information",
+  "type": "document",
+  "groups": [
+    { "name": "labels", "title": "Pending Labels" },
+    { "name": "plan", "title": "Plan Your Visit" },
+    { "name": "expect", "title": "What to Expect" },
+    { "name": "faq", "title": "FAQ Page" },
+    { "name": "status", "title": "Confirmation Status" }
+  ],
+  "fields": [
+    {
+      "group": "labels",
+      "name": "pendingLabel",
+      "title": "Pending Label",
+      "type": "string",
+      "description": "Shown beside any block whose confirmation status is Pending. Reword here and it changes everywhere."
+    },
+    {
+      "group": "labels",
+      "name": "researchLabel",
+      "title": "Research Label",
+      "type": "string",
+      "description": "Shown beside any block whose confirmation status is Research — verified by the web team against the working venue, but not confirmed by the committee."
+    },
+
+    { "group": "plan", "name": "planTitle", "title": "Plan Your Visit — Page Title", "type": "string" },
+    { "group": "plan", "name": "planIntro", "title": "Plan Your Visit — Intro", "type": "text" },
+    { "group": "plan", "name": "gettingThereIntro", "title": "Getting There — Intro", "type": "text" },
+    {
+      "group": "plan",
+      "name": "airportRoutes",
+      "title": "Travel From Airports",
+      "type": "array",
+      "of": [{ "type": "travelRoute" }],
+      "description": "One entry per national airport a visitor might arrive at. Renders nothing if empty."
+    },
+    { "group": "plan", "name": "parking", "title": "Parking", "type": "text" },
+    { "group": "plan", "name": "publicTransport", "title": "Public Transport", "type": "text" },
+    { "group": "plan", "name": "accommodationIntro", "title": "Accommodation — Intro", "type": "text" },
+    {
+      "group": "plan",
+      "name": "accommodation",
+      "title": "Accommodation",
+      "type": "array",
+      "of": [{ "type": "accommodationOption" }],
+      "description": "Grouped on the page by distance band. Order within a band follows this array."
+    },
+    {
+      "group": "plan",
+      "name": "attractions",
+      "title": "Nearby Attractions",
+      "type": "array",
+      "of": [{ "type": "attraction" }]
+    },
+    {
+      "group": "plan",
+      "name": "emergencyContacts",
+      "title": "Emergency Contacts",
+      "type": "array",
+      "of": [{ "type": "emergencyContact" }]
+    },
+
+    { "group": "expect", "name": "expectTitle", "title": "What to Expect — Page Title", "type": "string" },
+    { "group": "expect", "name": "expectIntro", "title": "What to Expect — Intro", "type": "text" },
+    {
+      "group": "expect",
+      "name": "openingHours",
+      "title": "Opening Hours",
+      "type": "array",
+      "of": [{ "type": "openingHoursEntry" }]
+    },
+    {
+      "group": "expect",
+      "name": "admissionNote",
+      "title": "Admission Note",
+      "type": "text",
+      "description": "Explains how admission works — concessions, door vs advance, re-entry. DO NOT put prices here. Prices live on Ticket Types and are shown on /tickets; this page links there."
+    },
+    {
+      "group": "expect",
+      "name": "admissionLinkLabel",
+      "title": "Admission Link Label",
+      "type": "string",
+      "description": "Label for the link through to /tickets, e.g. 'See ticket prices and book'."
+    },
+    { "group": "expect", "name": "food", "title": "Food and Refreshments", "type": "text" },
+    { "group": "expect", "name": "photographyPolicy", "title": "Photography Policy", "type": "text" },
+    { "group": "expect", "name": "cloakroom", "title": "Cloakroom and Plant Holding", "type": "text" },
+    { "group": "expect", "name": "accessibility", "title": "Wheelchair Access and Accessibility", "type": "text" },
+
+    { "group": "faq", "name": "faqTitle", "title": "FAQ — Page Title", "type": "string" },
+    { "group": "faq", "name": "faqIntro", "title": "FAQ — Intro", "type": "text" },
+    {
+      "group": "faq",
+      "name": "faqContactNote",
+      "title": "FAQ — Contact Prompt",
+      "type": "text",
+      "description": "Shown under the questions, above the link to the contact page."
+    },
+
+    {
+      "group": "status",
+      "name": "confirmations",
+      "title": "Confirmation Status",
+      "type": "confirmationStatuses",
+      "description": "Controls the pending / research marker beside each block. Set a block to Confirmed only once the show committee has signed that detail off."
+    }
+  ],
+
+  "newObjectTypes": {
+    "_comment": "All five live in sanity/schemas/objects/ and are registered in sanity/schemas/index.ts under the Objects group, alongside portableText and showVenue.",
+
+    "travelRoute": {
+      "file": "sanity/schemas/objects/travelRoute.ts",
+      "title": "Travel Route",
+      "fields": [
+        { "name": "origin", "title": "Arriving From", "type": "string", "validation": "required" },
+        { "name": "distance", "title": "Approximate Distance", "type": "string", "description": "Free text so it can read 'about 22 km' rather than a false-precision number." },
+        { "name": "duration", "title": "Approximate Travel Time", "type": "string" },
+        { "name": "directions", "title": "Directions", "type": "text" },
+        { "name": "transportOptions", "title": "Transport Options", "type": "array", "of": [{ "type": "string" }] }
+      ],
+      "preview": { "select": { "title": "origin", "subtitle": "duration" } }
+    },
+
+    "accommodationOption": {
+      "file": "sanity/schemas/objects/accommodationOption.ts",
+      "title": "Accommodation Option",
+      "fields": [
+        { "name": "name", "title": "Name", "type": "string", "validation": "required" },
+        { "name": "area", "title": "Area / Suburb", "type": "string" },
+        {
+          "name": "distanceBand",
+          "title": "Distance From Venue",
+          "type": "string",
+          "options": { "list": ["walking", "nearby", "city", "further"] },
+          "initialValue": "nearby",
+          "validation": "required",
+          "description": "walking = under 1 km · nearby = 1–3 km · city = 3–10 km · further = over 10 km"
+        },
+        { "name": "note", "title": "Note", "type": "text" },
+        { "name": "url", "title": "Website", "type": "url" }
+      ],
+      "prohibited": "No price, star-rating or 'show rate' field. SAOC has negotiated no rates and must not appear to have done so.",
+      "preview": { "select": { "title": "name", "subtitle": "area" } }
+    },
+
+    "attraction": {
+      "file": "sanity/schemas/objects/attraction.ts",
+      "title": "Nearby Attraction",
+      "fields": [
+        { "name": "name", "title": "Name", "type": "string", "validation": "required" },
+        { "name": "note", "title": "Note", "type": "text" },
+        { "name": "url", "title": "Website", "type": "url" }
+      ]
+    },
+
+    "emergencyContact": {
+      "file": "sanity/schemas/objects/emergencyContact.ts",
+      "title": "Emergency Contact",
+      "fields": [
+        { "name": "label", "title": "Service", "type": "string", "validation": "required" },
+        { "name": "number", "title": "Number", "type": "string", "validation": "required" },
+        { "name": "note", "title": "Note", "type": "string" }
+      ]
+    },
+
+    "openingHoursEntry": {
+      "file": "sanity/schemas/objects/openingHoursEntry.ts",
+      "title": "Opening Hours Entry",
+      "fields": [
+        { "name": "label", "title": "Day or Period", "type": "string", "validation": "required", "description": "e.g. a named show day. Free text, because the show's day structure is not confirmed." },
+        { "name": "hours", "title": "Hours", "type": "string" },
+        { "name": "note", "title": "Note", "type": "string" }
+      ]
+    },
+
+    "confirmationStatuses": {
+      "file": "sanity/schemas/objects/confirmationStatuses.ts",
+      "title": "Confirmation Statuses",
+      "_comment": "Thirteen identical string fields. Build them with a small local map over the block names rather than thirteen hand-written defineField blocks — same options list, same initialValue, one place to change.",
+      "sharedFieldShape": {
+        "type": "string",
+        "options": { "list": [
+          { "title": "Pending — placeholder, committee must supply", "value": "pending" },
+          { "title": "Research — our own verified research, not committee-confirmed", "value": "research" },
+          { "title": "Confirmed — signed off by the show committee", "value": "confirmed" }
+        ] },
+        "initialValue": "pending"
+      },
+      "blocks": [
+        "venue", "dates", "openingHours", "admission", "parking", "publicTransport",
+        "accessibility", "photography", "cloakroom", "food", "accommodation",
+        "attractions", "emergencyContacts"
+      ]
+    }
+  },
+
+  "registration": {
+    "schemaIndex": "sanity/schemas/index.ts — showVisitorInfo in the Singletons group; showFaq in the Collections group; showVenue, travelRoute, accommodationOption, attraction, emergencyContact, openingHoursEntry, confirmationStatuses in the Objects group.",
+    "structure": "sanity/structure.ts — add 'showVisitorInfo' to PINNED_SINGLETON_TYPES and SINGLETON_TITLES ('Show Visitor Information'); add 'showFaq' to COLLECTION_TYPES."
+  }
+}

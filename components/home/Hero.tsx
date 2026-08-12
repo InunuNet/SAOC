@@ -6,7 +6,9 @@ import { useEffect, useState } from 'react';
 import type { SanityImageSource } from '@sanity/image-url';
 
 import { heroImages as staticHeroImages } from '@/lib/data';
+import { showLabelWithEdition, showYearOf } from '@/lib/show-identity';
 import { urlFor } from '@/sanity/lib/image';
+import type { ShowIdentity } from '@/types';
 
 const CAROUSEL_INTERVAL_MS = 5500;
 
@@ -18,9 +20,13 @@ interface HeroSlide {
 
 export interface HeroProps {
   images?: SanityImageSource[] | null;
+  /** Show identity from the nationalShow singleton — the CTA label is not a literal. */
+  show?: ShowIdentity | null;
 }
 
-export function Hero({ images }: HeroProps) {
+export function Hero({ images, show }: HeroProps) {
+  const showYear = showYearOf(show?.showDate);
+  const showCtaLabel = `${showLabelWithEdition(show?.edition)}${showYear ? `, ${showYear}` : ''}`;
   const slides: HeroSlide[] =
     images && images.length > 0
       ? images.map((img, i) => ({
@@ -97,7 +103,7 @@ export function Hero({ images }: HeroProps) {
             href="/national-show"
             className="font-sans text-[14px] font-medium border border-ivory/50 text-ivory px-6 py-3 hover:bg-ivory/10 transition-colors duration-150"
           >
-            19th National Show, 2027
+            {showCtaLabel}
           </Link>
         </div>
 

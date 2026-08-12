@@ -1,10 +1,16 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { initAdmin } from '@/lib/firebase-admin';
-import type { Ticket, TicketType, TicketStatus } from '@/types/index';
 
+import { checkInByBookingRef } from '@/lib/checkin';
+import { initAdmin } from '@/lib/firebase-admin';
+
+/**
+ * Door check-in endpoint. Auth only — every admission rule lives in lib/checkin.ts
+ * (contracts/golden/ticketing-hardening/checkin-admission-rules.golden.md), so the
+ * decision table cannot drift between the scanner and anything else that admits a
+ * ticket. Nothing is read from or written to Firestore before auth passes.
+ */
 export async function POST(request: Request) {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('session')?.value;
@@ -18,40 +24,34 @@ export async function POST(request: Request) {
   }
 
   const isAdmin =
-    decodedToken.admin === true ||
-    (decodedToken as Record<string, unknown>)['role'] === 'admin';
+    decodedToken.admin === true || (decodedToken as Record<string, unknown>)['role'] === 'admin';
   if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { bookingRef } = (await request.json()) as { bookingRef: string };
-  const db = getFirestore(initAdmin());
-
-  const snap = await db.collection('tickets').where('bookingRef', '==', bookingRef).limit(1).get();
-  if (snap.empty)
-    return NextResponse.json({ success: false, error: 'Ticket not found' }, { status: 404 });
-
-  const docRef = snap.docs[0].ref;
-  const data = snap.docs[0].data();
-
-  if ((data['status'] as TicketStatus) === 'checked-in') {
-    return NextResponse.json({ success: false, error: 'Already checked in' }, { status: 409 });
+  let body: { bookingRef?: unknown };
+  try {
+    body = (await request.json()) as { bookingRef?: unknown };
+  } catch (error) {
+    console.error('[admin/checkin] Failed to parse request body:', error);
+    return NextResponse.json({ success: false, error: 'Invalid request body.' }, { status: 400 });
   }
 
-  await docRef.update({ checkedInAt: Timestamp.now(), status: 'checked-in' });
+  let result: Awaited<ReturnType<typeof checkInByBookingRef>>;
+  try {
+    result = await checkInByBookingRef(body.bookingRef);
+  } catch (error) {
+    console.error('[admin/checkin] Check-in failed:', error);
+    return NextResponse.json(
+      { success: false, error: 'Check-in failed. Please try again.' },
+      { status: 500 }
+    );
+  }
 
-  const ticket: Ticket = {
-    id: docRef.id,
-    bookingRef: data['bookingRef'] as string,
-    showId: data['showId'] as string,
-    attendeeName: data['attendeeName'] as string,
-    attendeeEmail: data['attendeeEmail'] as string,
-    ticketType: data['ticketType'] as TicketType,
-    status: 'checked-in',
-    amount: data['amount'] as number,
-    purchasedAt: (data['purchasedAt'] as Timestamp) ?? null,
-    checkedInAt: Timestamp.now(),
-    m_payment_id: (data['m_payment_id'] as string) ?? null,
-    pf_payment_id: (data['pf_payment_id'] as string) ?? null,
-  };
+  if (!result.ok) {
+    return NextResponse.json(
+      { success: false, error: result.error },
+      { status: result.httpStatus }
+    );
+  }
 
-  return NextResponse.json({ success: true, ticket });
+  return NextResponse.json({ success: true, ticket: result.ticket });
 }

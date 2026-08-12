@@ -1,0 +1,263 @@
+schema: athanor.contract/v1
+slug: cms-wiring-cleanup
+goal: >-
+  Close the batch of small, independent CMS-correctness defects that leave parts of the Sanity
+  Studio inert — a document type or field the secretary can edit and publish with no effect on
+  the site. Every item is either WIRED so publishing does something, or REMOVED so nothing
+  promises what it cannot deliver; nothing is left editable-but-dead. Scope: the
+  /national-show/archive/[year] detail page (F2), the `province` document type (F3), the
+  aboutPage.title / homePage.countdownDate / contactPage.formRecipients fields (F4), a wrong
+  constant in an existing check script (F5), and the deprecated @sanity/image-url default
+  import (F6). F1 is a REGRESSION GUARD ONLY — the /events/[slug] tag defect it describes is
+  already fixed in the tree. EXPLICITLY NOT COVERED: the App Hosting CDN cache-invalidation
+  blocker, anything needing a deploy or Secret Manager, the prettier drift across ~160 files,
+  and the Sanity v6 upgrade.
+created_at: '2026-08-11'
+autonomy: high
+
+# ============================================================================
+# READ FIRST — THE BACKLOG IS PARTLY STALE. VERIFIED AGAINST THE TREE.
+# ============================================================================
+# Every defect in the dispatch brief was re-read against the actual source and the live
+# dataset on 2026-08-11 rather than taken on the brief's word. Four of them are already
+# fixed:
+#
+#   [P1] /events/[slug] revalidation tags — ALREADY FIXED. All three sanityFetch call
+#     sites now pass `tags: ['societyEvent', 'sanity']`, not `['events']`. Kept as A11,
+#     a regression guard. No work for @dev.
+#   [P2] `award` orphaned — ALREADY WIRED. `awardsQuery` exists (sanity/queries.ts),
+#     /judging fetches it, and AwardsGrid takes `awards` as a prop. It no longer reads
+#     lib/data/awards. No work for @dev.
+#   [P2] aboutPage.boardIntroText unread — ALREADY RENDERED, about/page.tsx:112-114.
+#   [P2] judgingPage.stats unread — ALREADY RENDERED (the conditional stats strip).
+#
+# What remains genuinely broken: the archive detail page (F2), `province` (F3),
+# aboutPage.title / homePage.countdownDate / contactPage.formRecipients (F4), the f3
+# check constant (F5), and the image-url import (F6).
+#
+# ============================================================================
+# WHY THE ASSERTIONS ARE ROUND TRIPS, NOT GREPS
+# ============================================================================
+# Grep-only assertions have produced false greens on this project repeatedly. The
+# canonical case is `aboutPage.title`: fetched into a variable, declared in an
+# interface, never placed in JSX — so any substring grep for "title" passes while the
+# field renders nowhere. Every behavioural claim here is proven by a real HTTP round
+# trip against the shared dev server at http://localhost:3333 (this session has no live
+# domain): mutate the dataset -> poll the rendered HTML -> restore the exact baseline ->
+# confirm the sentinel is gone from the rendered HTML.
+#
+# Greps appear only for structural facts with no rendered surface — a field removed from
+# a schema file, an import form changed, a constant corrected. Where a grep is used for
+# something load-bearing, it reads the real definition rather than a retyped literal
+# (A11 reads the schema's own type name and the revalidate route's own blanket tag).
+#
+# A6 uses Playwright rather than curl, deliberately: the countdown SSRs as "00" by
+# design (the f1-countdown-hydration fix renders hydration-safe zeros), so an
+# HTTP-only assertion on it would be a false green by construction.
+#
+# ============================================================================
+# CHECKS WERE RUN LIVE DURING AUTHORING — NON-VACUITY CONFIRMED
+# ============================================================================
+# The round-trip harness was exercised end to end against the real dataset and the real
+# dev server before any of it was written up, and each assertion was confirmed to fail
+# or pass today for the right reason:
+#   - Temp `show` doc for 1979: created, dataset readback matched, propagation to the
+#     already-Sanity-backed archive LIST observed after ~60s (13 polls x 5s — consistent
+#     with client.ts's `useCdn: true` 60s TTL, which is why every poll budget here is
+#     90s/120s and not a single read), /national-show/archive/1979 returned 404 (the
+#     honest pre-implementation result), cleanup verified from both the dataset and the
+#     rendered page. So A1 fails today for the right reason.
+#   - "Edition XVIII" on /national-show/archive: 0 occurrences today -> A2's list half
+#     genuinely fails now. "XVIII" on /national-show/archive/2024: present -> A2's
+#     detail half is a live regression guard, not a pass-by-default.
+#   - Province chips render exactly the golden order today -> A4 passes now and can only
+#     break if @dev reorders them.
+#   - Home page countdown read via Playwright: 402 days, matching the dataset's
+#     nationalShow.countdownDate -> A6 passes now and guards against removing the wrong
+#     countdownDate.
+#   - Home page serves a cdn.sanity.io URL today -> A9's behavioural half is live.
+#
+# ============================================================================
+# REMOVALS ARE GATED ON LIVE EMPTINESS, RE-CHECKED AT GRADING TIME
+# ============================================================================
+# Two schema fields are removed (homePage.countdownDate, contactPage.formRecipients).
+# Both were confirmed null by live GROQ on 2026-08-11, and A7 RE-CONFIRMS emptiness when
+# the gate runs — if anyone types a value in before then, A7 fails and the removal must
+# be re-decided rather than silently destroying content. `province` is NOT removed for
+# exactly this reason: it holds 9 documents, so the emptiness gate bars removal and the
+# type is wired instead. Full reasoning per item:
+# .agent/memory/project/specs/cms-wiring-cleanup/goldens/wire-vs-remove.golden.md
+#
+# ============================================================================
+# CLEANUP SAFETY
+# ============================================================================
+# Every mutating check captures the exact prior value first, restores it in a `finally`,
+# and verifies restoration against BOTH the dataset and the rendered page. No helper
+# calls process.exit() on a failure path (that would skip the `finally` whose entire
+# purpose is to restore state — the same bug cms-loop-f3-national-show documents); they
+# throw instead. Failure to PROVE restoration exits 90 with a RESIDUE ALERT banner, not
+# an ordinary exit 1, so a human notices. Sentinels are `ZZCHECK-<TAG>-<base36 time>`,
+# so any residue is greppable. No check ever prints a secret value.
+#
+# ============================================================================
+# CONFLICT AVOIDANCE — FILES RESERVED BY OTHER CONCURRENT STREAMS
+# ============================================================================
+# Nothing in this contract touches, and @dev must not touch:
+#   app/(marketing)/national-show/page.tsx
+#   app/(marketing)/national-show/{plan-your-visit,what-to-expect,faq}/**
+#   app/(marketing)/national-show/exhibitors/**
+#   components/show/ShowCountdown.tsx
+#   sanity/schemas/documents/nationalShow.ts
+#   app/api/tickets/**   app/api/admin/checkin/route.ts   apphosting.yaml
+# app/(marketing)/national-show/archive/** IS this contract's. A6 READS the home page's
+# ShowBand countdown but changes no show file: components/home/ShowBand.tsx is untouched.
+
+features:
+  - id: F1
+    name: /events/[slug] revalidation tags — REGRESSION GUARD ONLY, already fixed in the tree
+    status: pending
+  - id: F2
+    name: /national-show/archive/[year] renders Studio-added shows, via a merge both archive pages share
+    status: pending
+  - id: F3
+    name: the `province` document type is wired to the /societies filter chips
+    status: pending
+  - id: F4
+    name: aboutPage.title wired; homePage.countdownDate and contactPage.formRecipients removed
+    status: pending
+  - id: F5
+    name: f3-pin-singletons MUST_SURVIVE names the real `societyEvent` schema type
+    status: pending
+  - id: F6
+    name: sanity/lib/image.ts uses the named @sanity/image-url export
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/cms-wiring-cleanup/goldens/README.md
+  - .agent/memory/project/specs/cms-wiring-cleanup/goldens/wire-vs-remove.golden.md
+  - .agent/memory/project/specs/cms-wiring-cleanup/goldens/archive-show-merge.golden.md
+  - .agent/memory/project/specs/cms-wiring-cleanup/goldens/province-chip-order.golden.json
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- F2: archive/[year] ----------
+    - id: A1
+      description: >-
+        F2 POSITIVE PATH (mutating) — a `show` document created for a year absent from
+        lib/data/shows renders a real detail page at /national-show/archive/<year>.
+        Creates a temp doc for 1979, polls the page for its sentinel, deletes it, and
+        proves the sentinel is gone from both the detail page and the archive list.
+        Refuses to run if a real show already occupies that year. Confirmed live to
+        FAIL today (404) for the honest pre-implementation reason.
+      command: node contracts/checks/cms-wiring-cleanup/check-archive-year-round-trip.mjs
+
+    - id: A2
+      description: >-
+        F2 MERGE FIDELITY (read-only) — the archive list and detail page must agree
+        about the same show, and the merge must lose neither side's fields. Asserts
+        /national-show/archive/2024 still renders the static-only Roman edition "XVIII"
+        AND the Sanity-owned 1240 entry count, that the LIST renders "Edition XVIII"
+        rather than a bare year, and that the hardcoded `month: 'September'` no longer
+        overrides October for 2021. Confirmed live: the list half fails today, the
+        detail half passes — neither vacuous nor pass-by-default.
+      command: node contracts/checks/cms-wiring-cleanup/check-archive-merge-fidelity.mjs
+
+    - id: A3
+      description: >-
+        F3 POSITIVE PATH (mutating) — renaming a `province` document changes what a
+        visitor sees on /societies. Patches Northern Cape's name to a sentinel, polls
+        the rendered page, restores the exact captured baseline, and proves the sentinel
+        is gone. This is the assertion that makes "wired" mean wired.
+      command: node contracts/checks/cms-wiring-cleanup/check-province-round-trip.mjs
+
+    - id: A4
+      description: >-
+        F3 REGRESSION (read-only) — wiring the chips to Sanity must not reorder them.
+        Compares the rendered chip sequence against
+        goldens/province-chip-order.golden.json (captured from the live page before any
+        change), and guards that the synthesised "All" chip survives. Passes today.
+      command: node contracts/checks/cms-wiring-cleanup/check-province-chip-order.mjs
+
+    - id: A5
+      description: >-
+        F4 POSITIVE PATH (mutating) — aboutPage.title must actually reach /about. Sets
+        it to a sentinel, polls the rendered page, restores it to unset (its live
+        baseline), and then asserts the page falls back to its existing hardcoded
+        heading — so "wire it" cannot be implemented as "delete the fallback and render
+        an empty heading". This is the project's canonical false-green field.
+      command: node contracts/checks/cms-wiring-cleanup/check-about-title-round-trip.mjs
+
+    - id: A6
+      description: >-
+        F4 REGRESSION (read-only, Playwright) — removing homePage.countdownDate must not
+        disturb the LIVE countdown, which is driven by nationalShow.countdownDate. Loads
+        the home page in a real browser, waits for hydration, reads the rendered day
+        count, and compares it against the day count computed independently from the
+        dataset. Uses a browser because the countdown SSRs as "00" by design, so a
+        curl-based check here would be a false green. Read 402 days live during
+        authoring, matching the dataset.
+      command: node contracts/checks/cms-wiring-cleanup/check-countdown-regression.mjs
+
+    - id: A7
+      description: >-
+        F4 REMOVALS (structural + live emptiness) — homePage.countdownDate and
+        contactPage.formRecipients are gone from the schema AND the GROQ projection AND
+        the page's TypeScript interface AND the seed script's comments; the LIVE
+        countdown wiring (`countdownDate={show?.countdownDate}`) is untouched; /contact
+        still returns 200. Re-confirms via live GROQ that both fields hold no data at
+        grading time — if either has gained a value, the removal FAILS rather than
+        destroying content.
+      command: node contracts/checks/cms-wiring-cleanup/check-dead-fields-removed.mjs
+
+    - id: A8
+      description: >-
+        F3 STRUCTURE (read-only) — the province type is wired additively: 9+ documents
+        still present and all carrying a seeded `order`; the schema keeps name/code/slug
+        and gains `order`; a deterministic `provinceListQuery` exists; /societies fetches
+        it and passes a `provinces` prop; the "All" chip stays synthesised in code; chips
+        carry a dynamic aria-label; and no fallback is in reversed precedence order.
+        Also pins that society documents were NOT migrated to references.
+      command: node contracts/checks/cms-wiring-cleanup/check-province-wiring-structure.mjs
+
+    - id: A9
+      description: >-
+        F6 — sanity/lib/image.ts imports the NAMED `createImageUrlBuilder` export and no
+        longer uses the deprecated default (deprecated in @sanity/image-url 2.1.1, which
+        logs a warning on every home-page render in dev). Paired with a behavioural half:
+        the home page must still serve a cdn.sanity.io URL, proving urlFor() survived the
+        refactor — the failure a grep alone would miss.
+      command: node contracts/checks/cms-wiring-cleanup/check-image-url-import.mjs
+
+    - id: A10
+      description: >-
+        F5 — contracts/checks/f3-pin-singletons/check-new-document-filter.mjs's
+        MUST_SURVIVE constant names the real 'societyEvent' schema type and no longer the
+        bogus 'event' (an import binding name, not a type). Confirms 'societyEvent' is
+        genuinely declared in the event schema, so the constant cannot be swapped for
+        another wrong string, then RUNS the repaired check so this fix cannot break the
+        assertion it repairs.
+      command: node contracts/checks/cms-wiring-cleanup/check-f3-constant-fixed.mjs
+
+    - id: A11
+      description: >-
+        F1 REGRESSION GUARD (no work for @dev — already fixed). Every sanityFetch in
+        /events/[slug] tags both the real document type and the blanket revalidation tag,
+        and never reintroduces the bogus 'events'. Both expected strings are read from
+        their real definitions (the event schema's own `name`, the revalidate route's own
+        `revalidateTag` call) rather than retyped here. Paired with a live render check
+        that the detail page shows its Sanity title. States plainly what it does NOT
+        prove: cache tags are inert on a dev server, so this cannot demonstrate CDN
+        invalidation.
+      command: node contracts/checks/cms-wiring-cleanup/check-event-tags-regression.mjs
+
+    # ---------- Gates ----------
+    - id: A12
+      description: strict TypeScript type-check passes
+      command: pnpm type-check
+    - id: A13
+      description: lint passes with zero errors
+      command: pnpm lint
+    - id: A14
+      description: production build succeeds
+      command: pnpm build

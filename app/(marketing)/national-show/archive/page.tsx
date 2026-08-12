@@ -2,10 +2,15 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { shows as staticShows } from '@/lib/data/shows';
+import { mergePastShows } from '@/lib/data/mergeShows';
+import type { SanityShowProjection } from '@/lib/data/mergeShows';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { pastShowsQuery } from '@/sanity/queries';
-import type { NationalShow } from '@/types';
+import { nationalShowQuery, pastShowsQuery } from '@/sanity/queries';
+import {
+  formatShowMonthYear,
+  showLabelWithEdition,
+} from '@/lib/show-identity';
+import type { ShowIdentity } from '@/types';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -17,17 +22,6 @@ export const metadata: Metadata = {
   description:
     'A record of every South African National Orchid Show — past editions, host provinces, entry numbers, and winners.',
 };
-
-interface SanityPastShow {
-  _id: string;
-  title: string | null;
-  slug: string | null;
-  year: number;
-  location: string | null;
-  entries: number | null;
-  exhibitors: number | null;
-  awards: number | null;
-}
 
 function toRomanOrdinal(n: number): string {
   const val = [50, 40, 10, 9, 5, 4, 1];
@@ -43,25 +37,29 @@ function toRomanOrdinal(n: number): string {
 }
 
 export default async function ShowArchivePage() {
-  const sanityShows = await sanityFetch<SanityPastShow[]>({
-    query: pastShowsQuery,
-    tags: ['show', 'sanity'],
-  });
+  // F7: the CTA band advertised the edition, the month/year and the city as literals.
+  // Every one of them is a Studio edit away from being wrong, so all three come from
+  // the nationalShow singleton. See show-identity-surfaces.golden.md.
+  const [sanityShows, upcoming] = await Promise.all([
+    sanityFetch<SanityShowProjection[]>({ query: pastShowsQuery, tags: ['show', 'sanity'] }),
+    sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
+  ]);
 
-  const pastShows: NationalShow[] =
-    sanityShows && sanityShows.length > 0
-      ? sanityShows.map((s) => ({
-          edition: 0,
-          year: s.year,
-          month: 'September',
-          host: s.location ?? '',
-          venue: s.location ?? '',
-          status: 'past',
-          entries: s.entries ?? undefined,
-          visitors: s.exhibitors ?? undefined,
-          trophies: s.awards ?? undefined,
-        }))
-      : staticShows.filter((s) => s.status === 'past');
+  const upcomingLabel = showLabelWithEdition(upcoming?.edition);
+  const upcomingTitle = `The ${showLabelWithEdition(upcoming?.edition, 'National Orchid Show')}`;
+  const upcomingMonthYear = formatShowMonthYear(upcoming?.showDate);
+  const upcomingCity = upcoming?.venue?.city ?? null;
+  const upcomingSentence = [
+    `${upcomingTitle} takes place`,
+    upcomingMonthYear ? ` in ${upcomingMonthYear}` : ' on dates yet to be confirmed',
+    upcomingCity ? ` in ${upcomingCity}.` : '.',
+  ].join('');
+
+  // The same merge the detail page reads — the two pages previously disagreed about
+  // the same show because the list took the Sanity branch wholesale and substituted
+  // edition 0, a hardcoded month, and the host/venue and visitors/exhibitors
+  // conflations. See lib/data/mergeShows.ts.
+  const pastShows = mergePastShows(sanityShows);
 
   return (
     <>
@@ -109,26 +107,33 @@ export default async function ShowArchivePage() {
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
                 <span className="absolute left-3 top-3 font-mono text-[10px] uppercase tracking-[0.18em] bg-primary text-ivory px-2 py-1">
-                  {show.edition > 0 ? `Edition ${toRomanOrdinal(show.edition)}` : show.year}
+                  {show.edition ? `Edition ${toRomanOrdinal(show.edition)}` : show.year}
                 </span>
               </div>
 
               <div className="flex flex-col gap-4 p-6">
                 <div>
                   <p className="font-serif text-[22px] font-medium text-ink leading-snug">
-                    {show.year} — {show.month}
+                    {show.month ? `${show.year} — ${show.month}` : show.year}
                   </p>
-                  <p className="mt-1 font-sans text-[14px] text-muted">{show.host}</p>
+                  {show.host && (
+                    <p className="mt-1 font-sans text-[14px] text-muted">{show.host}</p>
+                  )}
                   {show.venue && show.venue !== show.host && (
                     <p className="font-sans text-[13px] text-muted/70">{show.venue}</p>
                   )}
                 </div>
 
-                {(show.entries || show.visitors || show.trophies) && (
+                {(show.entries || show.exhibitors || show.visitors || show.trophies) && (
                   <div className="flex flex-wrap gap-2 pt-3 border-t border-rule">
                     {show.entries && (
                       <span className="font-mono text-[10px] uppercase tracking-[0.14em] bg-bone px-2 py-1 text-muted">
                         {show.entries.toLocaleString()} entries
+                      </span>
+                    )}
+                    {show.exhibitors && (
+                      <span className="font-mono text-[10px] uppercase tracking-[0.14em] bg-bone px-2 py-1 text-muted">
+                        {show.exhibitors.toLocaleString()} exhibitors
                       </span>
                     )}
                     {show.visitors && (
@@ -163,17 +168,17 @@ export default async function ShowArchivePage() {
       <section className="bg-bone py-20">
         <div className="mx-auto max-w-[1280px] px-8 text-center">
           <h2 className="font-serif text-[clamp(26px,3.2vw,40px)] font-medium text-ink">
-            Planning for the 19th Show?
+            Planning for the {upcomingLabel}?
           </h2>
           <p className="mx-auto mt-4 max-w-xl font-sans text-[16px] text-ink/70">
-            The 19th National Orchid Show takes place in September 2027 in Cape Town.
+            {upcomingSentence}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
               href="/national-show"
               className="font-sans text-[14px] font-medium bg-primary px-6 py-3 text-ivory transition-colors duration-150 hover:bg-primary-800"
             >
-              View 19th Show Details
+              View {upcomingLabel} details
             </Link>
             <Link
               href="/contact"

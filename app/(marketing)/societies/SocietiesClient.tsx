@@ -3,15 +3,21 @@
 import { useMemo } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
-import { provinces } from '@/lib/data/provinces';
 import { SocietyCard } from '@/components/societies';
 import type { SanitySociety } from '@/components/societies';
+import type { Province } from '@/types';
+
+// The "All" chip is a UI affordance, not a province document — it is synthesised here
+// so no editor can delete it and break filtering.
+const ALL_CHIP: Province = { code: 'ALL', name: 'All provinces' };
 
 export interface SocietiesClientProps {
   societies: SanitySociety[];
+  /** Province filter chips, sourced from the Sanity `province` documents. */
+  provinces: Province[];
 }
 
-export function SocietiesClient({ societies }: SocietiesClientProps) {
+export function SocietiesClient({ societies, provinces }: SocietiesClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -58,7 +64,7 @@ export function SocietiesClient({ societies }: SocietiesClientProps) {
 
       {/* Province chips */}
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by province">
-        {provinces.map((p) => {
+        {[ALL_CHIP, ...provinces].map((p) => {
           const active = province === p.code;
           return (
             <button
@@ -66,6 +72,7 @@ export function SocietiesClient({ societies }: SocietiesClientProps) {
               type="button"
               onClick={() => setParam('province', p.code)}
               aria-pressed={active}
+              aria-label={p.name}
               className={
                 active
                   ? 'rounded-full border border-ink bg-ink px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-ivory'

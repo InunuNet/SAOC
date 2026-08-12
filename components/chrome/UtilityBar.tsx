@@ -3,11 +3,28 @@
 // Server Component — no interactivity needed.
 // Dark sage bar above the main header: email left, tagline centre,
 // CTA pills right.
+//
+// F7: the show pill renders on EVERY page, and it carried the edition and the show
+// month/year as literals — so a Studio edit to either left every page on the site
+// stale. Both now come from the nationalShow singleton, fetched in
+// app/(marketing)/layout.tsx. See show-identity-surfaces.golden.md.
 // =============================================================
 
 import Link from 'next/link';
 
-export function UtilityBar() {
+import { formatShowShortMonthYear, showLabelWithEdition } from '@/lib/show-identity';
+import type { ShowIdentity } from '@/types';
+
+export interface UtilityBarProps {
+  show?: ShowIdentity | null;
+}
+
+export function UtilityBar({ show }: UtilityBarProps) {
+  const monthYear = formatShowShortMonthYear(show?.showDate);
+  const showPillLabel = [showLabelWithEdition(show?.edition), monthYear]
+    .filter((part): part is string => Boolean(part))
+    .join(' · ');
+
   return (
     <div className="bg-primary-800 text-ivory">
       <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-8 py-2">
@@ -44,7 +61,7 @@ export function UtilityBar() {
             href="/national-show"
             className="hidden min-[900px]:inline-block border border-ivory/30 text-ivory rounded-full px-3 py-1 text-[13px] font-sans hover:border-ivory/60 transition-colors duration-150"
           >
-            19th National Show · Sep 2027
+            {showPillLabel}
           </Link>
           <Link
             href="/societies"

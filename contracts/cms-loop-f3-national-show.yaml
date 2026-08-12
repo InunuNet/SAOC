@@ -118,6 +118,18 @@ autonomy: high
 # the pending Claude Design handoff (CLAUDE.md: "No invented brand assets... Wait for
 # Claude Design handoffs").
 #
+#   [AMENDED 2026-08-12 — the seeded STRING has changed; this ruling has not.]
+#      Team-lead ruling on contract-show-visitor-info A61 removed the edition ordinal
+#      from the seeded title, which is now "The South African National Orchid Show".
+#      The ordinal duplicated a fact `nationalShow.edition` already owns, so changing
+#      the edition in Studio left a stale "19th" in the H1. Ruling 1 below is about
+#      WIRING (render the CMS title verbatim; do not restructure the H1) and is
+#      unaffected — the page still renders whatever the dataset holds, which is what
+#      keeps A56 green. Read "The 19th South African National Orchid Show" below as
+#      the historical seed value, not as a value to restore.
+#      Pinned copies updated: contracts/golden/f4-seed-page-singletons/nationalShow.golden.json
+#      and scripts/seed-page-singletons.ts.
+#
 #   1. TITLE — WIRE AS-IS. The seeded title "The 19th South African National Orchid
 #      Show" (migrated from ShowBand.tsx) replaces the page's current H1 text "The
 #      South African National Orchid Show" (no "19th"). Rationale: one canonical show

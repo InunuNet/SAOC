@@ -5,13 +5,24 @@ import Image from 'next/image';
 import { PortableText } from '@portabletext/react';
 import type { PortableTextBlock } from '@portabletext/react';
 
-import { ShowCountdown } from '@/components/show';
+import { ConfirmationBadge, ShowCountdown } from '@/components/show';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { showClassesQuery, pastShowsQuery, nationalShowQuery } from '@/sanity/queries';
+import {
+  showClassesQuery,
+  pastShowsQuery,
+  nationalShowQuery,
+  showVisitorInfoQuery,
+} from '@/sanity/queries';
 import { urlFor } from '@/sanity/lib/image';
 import { showClasses as staticClasses } from '@/lib/data/showClasses';
 import { shows as staticShows } from '@/lib/data/shows';
-import type { ShowClass, NationalShow } from '@/types';
+import {
+  formatShowDateRange,
+  formatShowMonthYear,
+  showYearOf,
+  toOrdinal,
+} from '@/lib/show-identity';
+import type { ShowClass, NationalShow, ShowVenue, ShowVisitorInfo } from '@/types';
 import type { SanityImageSource } from '@sanity/image-url';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
@@ -46,46 +57,80 @@ interface SanityPastShow {
 interface SanityNationalShow {
   title: string | null;
   showDate: string | null;
+  showEndDate: string | null;
+  edition: number | null;
+  hostRegion: string | null;
   location: string | null;
+  venue: ShowVenue | null;
   hero: SanityImageSource | null;
   countdownDate: string | null;
   exhibitorStages: PortableTextBlock[] | null;
 }
 
+// F5 (show-visitor-info): the landing page is the section's front door. These four
+// edges are what makes the visitor pages — and /national-show/archive, which returned
+// 200 for months while nothing linked to it — reachable by clicking.
+const VISITOR_CARDS = [
+  {
+    href: '/national-show/plan-your-visit',
+    title: 'Plan your visit',
+    description: 'Travel from the airports, parking, public transport, where to stay and what else to see.',
+  },
+  {
+    href: '/national-show/what-to-expect',
+    title: 'What to expect',
+    description: 'Opening hours, admission, food, photography, cloakroom and accessibility.',
+  },
+  {
+    href: '/national-show/faq',
+    title: 'Visitor questions',
+    description: 'The questions we are asked most, answered — and honestly marked where they are not yet settled.',
+  },
+  {
+    href: '/national-show/archive',
+    title: 'Past shows',
+    description: 'Previous editions, their grand champions and the galleries that went with them.',
+  },
+];
+
+// Titles and descriptions only: these are PROCESS, which is stable, not a schedule.
+// Round 1 carried four invented date ranges here that rendered live and unmarked
+// whenever nationalShow.exhibitorStages was unset. Deriving them from showDate was
+// rejected — staging and judging could be derived, but the stage-01/02 registration
+// windows are a committee schedule no arithmetic can honestly produce.
 const EXHIBITOR_STAGES = [
   {
     stage: '01',
     title: 'Register your interest',
-    dates: 'Oct 2026 – Jan 2027',
     description:
       'Contact your provincial society to express exhibitor interest. Early registration secures bench space and priority catalogue listing.',
   },
   {
     stage: '02',
     title: 'Confirm entry and classes',
-    dates: 'Feb – Apr 2027',
     description:
       'Submit your entry form with plant list and class selections. Entries reviewed against current SAOC judging standards.',
   },
   {
     stage: '03',
     title: 'Staging and preparation',
-    dates: 'Sep 17 2027',
     description:
-      'Arrive at the CTICC from 07:00 for bench set-up. All plants must be in place and labelled by 17:00. Judging begins the following morning.',
+      'Arrive at the venue for bench set-up from early morning. All plants must be in place and labelled before the close of staging. Judging begins the following morning.',
   },
   {
     stage: '04',
     title: 'Judging and awards',
-    dates: 'Sep 18–21 2027',
     description:
-      'SAOC accredited judges assess each class over the first two days. Awards ceremony on the evening of Sep 20. Show open to the public throughout.',
+      'SAOC accredited judges assess each class over the opening days, followed by the awards ceremony. Show open to the public throughout.',
   },
 ];
 
+// The past and future rows are historical/constitutional record. The CURRENT row is
+// overlaid from the nationalShow singleton at render time — its host, year and edition
+// are per-edition values an editor owns, not code.
 const CYCLE_YEARS = [
   { year: 2024, edition: 18, host: 'KwaZulu-Natal', status: 'past' as const },
-  { year: 2027, edition: 19, host: 'Western Cape', status: 'current' as const },
+  { year: 2027, edition: 19, host: null as string | null, status: 'current' as const },
   { year: 2030, edition: 20, host: 'TBC', status: 'future' as const },
 ];
 
@@ -103,16 +148,61 @@ function toRomanOrdinal(n: number): string {
 }
 
 export default async function NationalShowPage() {
-  const [sanityClasses, sanityShows, sanityShow] = await Promise.all([
+  const [sanityClasses, sanityShows, sanityShow, visitorInfo] = await Promise.all([
     sanityFetch<SanityShowClass[]>({ query: showClassesQuery, tags: ['showClass', 'sanity'] }),
     sanityFetch<SanityPastShow[]>({ query: pastShowsQuery, tags: ['show', 'sanity'] }),
     sanityFetch<SanityNationalShow>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
+    sanityFetch<ShowVisitorInfo>({
+      query: showVisitorInfoQuery,
+      tags: ['showVisitorInfo', 'sanity'],
+    }),
   ]);
 
   const title = sanityShow?.title || 'The South African National Orchid Show';
-  const location = sanityShow?.location || 'CTICC, Cape Town';
+  // Sanity wins in every fallback below. The dataset value always comes first and the
+  // literal is only the right-hand side — the reverse order would mask a published
+  // Studio edit behind a hardcoded default.
+  // S1: one fact, two fields. The hero read the LEGACY `location` string while the CTA
+  // sentence a screen below read `venue.city`, so a venue change in Studio rendered both
+  // the new and the old venue in a single viewport. `venue.name` is the source; `location`
+  // is fallback only. See show-identity-surfaces.golden.md.
+  const venueLine = sanityShow?.venue?.name || sanityShow?.location || 'Venue to be confirmed';
   const heroUrl = sanityShow?.hero ? urlFor(sanityShow.hero).width(2400).url() : '/images/orchid-dark.jpg';
   const exhibitorStages = sanityShow?.exhibitorStages ?? null;
+
+  const edition = sanityShow?.edition ?? null;
+  const dateRange = formatShowDateRange(sanityShow?.showDate, sanityShow?.showEndDate);
+  const monthYear = formatShowMonthYear(sanityShow?.showDate);
+  const hostRegion = sanityShow?.hostRegion || 'Host region to be confirmed';
+  const showYear = showYearOf(sanityShow?.showDate);
+  const venueCity = sanityShow?.venue?.city ?? null;
+  const datesStatus = visitorInfo?.confirmations?.dates;
+
+  const heroMeta = [
+    { label: 'Dates', value: dateRange ?? 'Dates to be confirmed' },
+    { label: 'Host', value: hostRegion },
+    { label: 'Venue', value: venueLine },
+    // Triennial is a standing constitutional fact about how the show is constituted,
+    // not a per-edition value — deliberately not a Sanity field.
+    { label: 'Cycle', value: 'Triennial' },
+  ];
+
+  const cycle = CYCLE_YEARS.map((entry) =>
+    entry.status === 'current'
+      ? {
+          ...entry,
+          year: showYear ?? entry.year,
+          edition: edition ?? entry.edition,
+          host: sanityShow?.hostRegion || 'To be confirmed',
+        }
+      : entry,
+  );
+
+  const ctaSentence = [
+    edition ? `The ${toOrdinal(edition)} National Orchid Show` : 'The National Orchid Show',
+    monthYear ? ` opens in ${monthYear}` : ' opens soon',
+    venueCity ? ` in ${venueCity}.` : '.',
+  ].join('');
 
   const classes: ShowClass[] =
     sanityClasses && sanityClasses.length > 0
@@ -159,21 +249,18 @@ export default async function NationalShowPage() {
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-accent">
             The Flagship
           </p>
-          <p className="mt-2 font-mono text-[13px] uppercase tracking-[0.18em] text-ivory/60">
-            {toRomanOrdinal(19)} · Nineteenth Edition
-          </p>
+          {edition ? (
+            <p className="mt-2 font-mono text-[13px] uppercase tracking-[0.18em] text-ivory/60">
+              Edition {toRomanOrdinal(edition)}
+            </p>
+          ) : null}
           <h1 className="mt-4 max-w-[16ch] font-serif text-[clamp(42px,5.6vw,76px)] font-medium leading-[1.04] tracking-[-0.015em] text-ivory">
             {title}
           </h1>
 
           {/* 4-up meta grid */}
           <dl className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              { label: 'Dates', value: '18–21 Sep 2027' },
-              { label: 'Host', value: 'Western Cape' },
-              { label: 'Venue', value: location },
-              { label: 'Cycle', value: 'Triennial' },
-            ].map(({ label, value }) => (
+            {heroMeta.map(({ label, value }) => (
               <div key={label} className="border-l-2 border-accent/40 pl-4">
                 <dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory/50">
                   {label}
@@ -183,13 +270,27 @@ export default async function NationalShowPage() {
             ))}
           </dl>
 
+          {/* The dates above are our working assumption, not a committee decision.
+              An unmarked plausible date range is exactly the invention this section
+              must not ship — the marker is driven by showVisitorInfo.confirmations. */}
+          <ConfirmationBadge
+            status={datesStatus}
+            pendingLabel={visitorInfo?.pendingLabel}
+            researchLabel={visitorInfo?.researchLabel}
+            tone="dark"
+          />
+
           {/* Countdown */}
           <div className="mt-10">
             <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-ivory/40">
               Opens in
             </p>
             <Suspense fallback={null}>
-              <ShowCountdown countdownDate={sanityShow?.countdownDate} />
+              <ShowCountdown
+                countdownDate={sanityShow?.countdownDate}
+                edition={edition}
+                pendingLabel={visitorInfo?.pendingLabel}
+              />
             </Suspense>
           </div>
 
@@ -257,6 +358,39 @@ export default async function NationalShowPage() {
         </div>
       </section>
 
+      {/* ── Planning a visit — the section's front door (F5 reachability) ── */}
+      <section className="mx-auto max-w-[1280px] px-8 pb-8">
+        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
+          Coming to the show
+        </p>
+        <h2 className="mt-3 font-serif text-[clamp(26px,3vw,36px)] font-medium text-ink">
+          Planning a visit
+        </h2>
+        <ul className="mt-8 grid grid-cols-1 gap-px bg-rule sm:grid-cols-2 lg:grid-cols-4">
+          {VISITOR_CARDS.map(({ href, title: cardTitle, description }) => (
+            <li key={href}>
+              <Link
+                href={href}
+                className="flex h-full flex-col gap-3 bg-parchment p-6 transition-shadow duration-150 hover:shadow-md"
+              >
+                <span className="font-serif text-[20px] font-medium leading-snug text-ink">
+                  {cardTitle}
+                </span>
+                <span className="font-sans text-[14px] leading-relaxed text-ink/65">
+                  {description}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="mt-auto border-t border-rule pt-3 text-muted"
+                >
+                  →
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       {/* ── Three-year cycle ── */}
       <section className="bg-bone py-20">
         <div className="mx-auto max-w-[1280px] px-8">
@@ -271,7 +405,7 @@ export default async function NationalShowPage() {
             {/* Connecting rail */}
             <div className="absolute left-[calc(16.7%+1rem)] right-[calc(16.7%+1rem)] top-8 h-px bg-rule" />
 
-            {CYCLE_YEARS.map(({ year, edition, host, status }) => (
+            {cycle.map(({ year, edition: cycleEdition, host, status }) => (
               <div
                 key={year}
                 className={[
@@ -310,7 +444,7 @@ export default async function NationalShowPage() {
                     status === 'current' ? 'text-ivory/60' : 'text-muted',
                   ].join(' ')}
                 >
-                  Edition {toRomanOrdinal(edition)}
+                  Edition {toRomanOrdinal(cycleEdition)}
                 </div>
                 <div
                   className={[
@@ -378,7 +512,7 @@ export default async function NationalShowPage() {
             </div>
           ) : (
             <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {EXHIBITOR_STAGES.map(({ stage, title, dates, description }) => (
+              {EXHIBITOR_STAGES.map(({ stage, title, description }) => (
                 <div
                   key={stage}
                   className="flex flex-col gap-3 p-6"
@@ -390,12 +524,29 @@ export default async function NationalShowPage() {
                   <h3 className="font-serif text-[20px] font-medium leading-snug text-ivory">
                     {title}
                   </h3>
-                  <p className="font-mono text-[11px] tracking-[0.1em] text-ivory/50">{dates}</p>
                   <p className="font-sans text-[14px] leading-relaxed text-ivory/70">{description}</p>
+                  <ConfirmationBadge
+                    status={datesStatus}
+                    pendingLabel={visitorInfo?.pendingLabel}
+                    researchLabel={visitorInfo?.researchLabel}
+                    tone="dark"
+                  />
                 </div>
               ))}
             </div>
           )}
+
+          {/* The full exhibitor guide. The stages above are a summary; without this link
+              /national-show/exhibitors is reachable from the home page only — the same
+              built-but-unlinked hole /national-show/archive had. */}
+          <div className="mt-10">
+            <Link
+              href="/national-show/exhibitors"
+              className="inline-block border border-ivory/40 px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-ivory/10"
+            >
+              Exhibitor information →
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -467,8 +618,8 @@ export default async function NationalShowPage() {
             Start planning your entry now.
           </h2>
           <p className="mx-auto mt-4 max-w-xl font-sans text-[16px] text-ink/70">
-            The 19th National Orchid Show opens in September 2027 in Cape Town. Register your
-            interest through your society or contact the council directly.
+            {ctaSentence} Register your interest through your society or contact the council
+            directly.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link

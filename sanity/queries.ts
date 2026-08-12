@@ -4,8 +4,7 @@ export const homePageQuery = defineQuery(`
   *[_type == "homePage"][0]{
     title,
     heroImages,
-    missionText,
-    countdownDate
+    missionText
   }
 `);
 
@@ -31,10 +30,70 @@ export const nationalShowQuery = defineQuery(`
   *[_type == "nationalShow"][0]{
     title,
     showDate,
+    showEndDate,
+    edition,
+    hostRegion,
     location,
+    venue,
     hero,
     countdownDate,
     exhibitorStages
+  }
+`);
+
+// F1/F2 (show-visitor-info): the show-identity facts the visitor pages need, with the
+// legacy `location` display string deliberately EXCLUDED. Those pages read venue.* only,
+// so the two can never drift invisibly — see venue-single-source.golden.md.
+export const nationalShowVenueQuery = defineQuery(`
+  *[_type == "nationalShow"][0]{
+    showDate,
+    showEndDate,
+    venue
+  }
+`);
+
+// F1 (show-visitor-info): every piece of visitor-facing copy across the three new pages.
+export const showVisitorInfoQuery = defineQuery(`
+  *[_type == "showVisitorInfo"][0]{
+    pendingLabel,
+    researchLabel,
+    planTitle,
+    planIntro,
+    gettingThereIntro,
+    airportRoutes,
+    parking,
+    publicTransport,
+    accommodationIntro,
+    accommodation,
+    attractions,
+    emergencyContacts,
+    expectTitle,
+    expectIntro,
+    openingHours,
+    admissionNote,
+    admissionLinkLabel,
+    food,
+    photographyPolicy,
+    cloakroom,
+    accessibility,
+    faqTitle,
+    faqIntro,
+    faqContactNote,
+    confirmations
+  }
+`);
+
+// Sorted server-side. The tertiary sort on question keeps rendering deterministic when two
+// entries share an order value — otherwise the HTML changes between requests and the
+// ordering assertion flakes.
+export const showFaqsQuery = defineQuery(`
+  *[_type == "showFaq" && active == true] | order(category asc, order asc, question asc){
+    _id,
+    question,
+    answer,
+    category,
+    order,
+    status
   }
 `);
 
@@ -182,10 +241,24 @@ export const pastShowsQuery = defineQuery(`
     title,
     "slug": slug.current,
     year,
+    status,
     location,
     entries,
     exhibitors,
     awards
+  }
+`);
+
+// F3 (cms-wiring-cleanup): the /societies filter chips read the `province` documents.
+// The explicit order(order asc, name asc) is load-bearing — the chip sequence is
+// curated, not alphabetical, and without a deterministic sort it reshuffles between
+// renders. See goldens/province-chip-order.golden.json.
+export const provinceListQuery = defineQuery(`
+  *[_type == "province"] | order(order asc, name asc){
+    _id,
+    name,
+    code,
+    order
   }
 `);
 
@@ -235,4 +308,60 @@ export const eventBySlugQuery = defineQuery(`
 
 export const eventSlugsQuery = defineQuery(`
   *[_type == "societyEvent" && defined(slug.current)]{ "slug": slug.current }
+`);
+
+// F1 (show-exhibitor-info): the /national-show/exhibitors singleton.
+//
+// Projects EVERY field on the schema. A field the schema declares but the query drops
+// renders as nothing — the false-green class this project has hit three times. The
+// entry-form asset URL is resolved here so EntryFormLink never has to build one, and so
+// the "no form yet" branch is decidable from the query result alone.
+export const showExhibitorInfoQuery = defineQuery(`
+  *[_type == "showExhibitorInfo"][0]{
+    title,
+    intro,
+    pendingLabel,
+    researchLabel,
+    questionLabel,
+    keyDatesHeading,
+    keyDatesNote,
+    keyDatesCaption,
+    keyDates[]{ _key, label, dateNote, detail, status },
+    entryFormHeading,
+    "entryFormFileUrl": entryFormFile.asset->url,
+    "entryFormFileName": entryFormFile.asset->originalFilename,
+    entryFormUrl,
+    entryFormPendingNote,
+    entryProcess{ heading, body },
+    fees{ heading, body },
+    classes{ heading, body },
+    judging{ heading, body },
+    eligibility{ heading, body },
+    display{ heading, body },
+    sales{ heading, body },
+    practicalities{ heading, body },
+    permits{ heading, body },
+    questionsHeading,
+    questionsIntro,
+    openQuestions[] | order(order asc){ _key, question, context, topic, order },
+    confirmations,
+    judgingLinkLabel,
+    classesLinkLabel,
+    contactNote
+  }
+`);
+
+// F1 (show-exhibitor-info): the exhibitor journey, in order.
+//
+// `active == true` rather than `!defined(active) || active`: initialValue guarantees the
+// field is set on anything created through the Studio, and the seed sets it explicitly.
+export const showExhibitorStepsQuery = defineQuery(`
+  *[_type == "showExhibitorStep" && active == true] | order(order asc){
+    _id,
+    title,
+    "when": when,
+    body,
+    order,
+    status
+  }
 `);

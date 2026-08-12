@@ -6,6 +6,18 @@ The ticketing system allows visitors to purchase tickets for the 2027 National S
 
 **Critical**: Prices and capacities seeded in the dataset are **invented placeholders** pending council confirmation. Ticket sales default to CLOSED (`nationalShow.salesOpen = false`), and every seeded ticket type is explicitly marked "Provisional price — pending council confirmation."
 
+### Security hardening
+
+A dedicated hardening pass closed the door-scanner admission logic, the checkout
+capacity race, checkout idempotency, booking-reference entropy, reservation expiry, and
+several further defects found under adversarial QA. See
+[docs/ticketing-hardening.md](ticketing-hardening.md) for the full account — several
+claims elsewhere in this document (booking-ref format, the capacity TOCTOU gap, the
+`SITE_URL` gap) predate that pass and are corrected inline below where they are now
+stale. **The door scanner still cannot be exercised end to end in any environment
+today** — Firebase Auth is not provisioned on `saoc-webapp`; see that document's
+"Standing blocker" section.
+
 ## The Flow: End to End
 
 ```
@@ -46,7 +58,9 @@ The ticketing system allows visitors to purchase tickets for the 2027 National S
     ↓
 11. Simultaneously, PayFast POSTs /api/tickets/itn (server-to-server)
     - Signature check, source-IP allowlist, amount match, PayFast server confirm
-    - Atomic idempotent write: `status: reserved` → `status: paid` + `purchasedAt: now()`
+    - Atomic write, guarded positively on `status === 'reserved'` (not merely
+      `!== 'paid'`) so a late/duplicate ITN can never resurrect a `checked-in` or
+      `cancelled` ticket — see docs/ticketing-hardening.md's "ITN write guard" section
     ↓
 12. /tickets/confirmation polling resolves to "confirmed" state
     - Shows "You're booked in"
@@ -68,7 +82,7 @@ The buyer's browser redirect (step 9) arrives instantly. The server-to-server IT
 3. **Graceful timeout** — after ~1 minute of polling, suggests contacting info@saoc.co.za with booking ref
 4. **Honest states**: `checking` / `reserved` / `confirmed` / `not-found` / `timed-out`
 
-The status endpoint returns **only `{ status }`** — no name, email, amount, or ids — because a booking ref is guessable (`SAOC-2027-` + 6 digits). Rate limiting is deferred to F6; this pass relies on "return only status" as the mitigation.
+The status endpoint returns **only `{ status }`** — no name, email, amount, or ids. Booking references are now 60-bit random values (see [Security hardening](#security-hardening) below), so the original "return only status" reasoning about a guessable ref is no longer why this matters — but the endpoint still returns status only, and per-IP rate limiting remains deferred.
 
 ### If the Buyer Cancels (F4)
 
@@ -200,17 +214,21 @@ The client never supplies or influences `amount`. A request body field is ignore
 
 ### Capacity Checking
 
-Before writing the `reserved` ticket doc, the route counts sold tickets for the requested type:
+The count, an idempotency-key replay check, and the reservation write all happen
+**inside one Firestore transaction** (`reserveTicket` in
+`app/api/tickets/checkout/route.ts`):
 
 ```typescript
-// lines 137–160
-const alreadySold = soldCounts[ticketType] ?? 0;
-if (alreadySold + REQUESTED_QUANTITY > ticketTypeDoc.capacity) {
-  return NextResponse.json({ error: soldOutMessage }, { status: 409 });
-}
+const alreadyHeld = soldCounts[input.ticketType] ?? 0;
+if (alreadyHeld + REQUESTED_QUANTITY > input.capacity) return { kind: 'over-capacity' };
 ```
 
-**Known gap (F6)**: This is a **read-then-write without a transaction** (TOCTOU: Time-Of-Check, Time-Of-Use). Two buyers mid-checkout for the last seat could both be shown available and both could POST the checkout route before either's Firestore write lands. The capacity check would pass for both, and the second would silently oversell. This is documented in the code and deferred to F6. The mitigation for now: the ITN write is transactional and idempotent (does not double-count), but overselling is theoretically possible under high concurrency.
+This was previously a read-then-write with no transaction (a TOCTOU race) and was
+demonstrated to oversell — 5 concurrent checkouts for the last seat all returned 201.
+It is now transactional; see docs/ticketing-hardening.md (F2) for the fix and its
+verification, which pushed to 20-way concurrency with no oversell. A `reserved`
+ticket also stops counting toward capacity once its `expiresAt` passes (F5 in that same
+document — reservations are no longer held forever by an abandoned checkout).
 
 ### Sales-Open Gate
 
@@ -233,13 +251,18 @@ Each purchase attempt creates (or reserves) a document:
 
 ```typescript
 interface Ticket {
-  bookingRef: string;       // "SAOC-2027-XXXXXX" (6-digit random)
+  bookingRef: string;       // "SAOC-2027-" + 12-char Crockford base32 (60-bit random)
   showId: string;           // Always "nationalShow" for now
   attendeeName: string;     // Buyer's entered name
   attendeeEmail: string;    // Buyer's entered email (lowercase)
   ticketType: string;       // Slug: "adult", "pensioner", etc.
   status: "reserved" | "paid" | "cancelled" | "checked-in";
   amount: number;           // ZAR (derived from Sanity)
+  expiresAt: Timestamp | null;    // Reservation TTL (lib/tickets-constants.ts); a
+                                   // `reserved` doc past this no longer counts toward
+                                   // capacity. Never checked once status is 'paid'.
+  idempotencyKey: string;   // From the Idempotency-Key header; bound to attendeeEmail
+                             // + ticketType, not matched on the key alone
   purchasedAt: Timestamp | null;  // Set by ITN webhook
   checkedInAt: Timestamp | null;  // Set by door scanner
   m_payment_id: string;     // Matches bookingRef (for PayFast signature)
@@ -249,10 +272,15 @@ interface Ticket {
 
 **Statuses:**
 
-- `reserved` — created by checkout, not yet paid (ITN pending)
-- `paid` — ITN webhook confirmed; purchasedAt is set
-- `cancelled` — buyer clicked PayFast cancel (reserved doc left untouched)
-- `checked-in` — door scanner scanned the QR code
+- `reserved` — created by checkout, not yet paid (ITN pending). Releases its seat
+  automatically once `expiresAt` passes (see docs/ticketing-hardening.md, F5) — no
+  status write happens, it simply stops being counted.
+- `paid` — ITN webhook confirmed; purchasedAt is set. A `paid` ticket's seat is held
+  forever regardless of `expiresAt`.
+- `cancelled` — buyer clicked PayFast cancel (reserved doc left untouched; this status
+  is not currently written by any route)
+- `checked-in` — door scanner scanned the QR code. The ITN write guard cannot move a
+  `checked-in` ticket back to `paid` (docs/ticketing-hardening.md, F8).
 
 ### Sanity `nationalShow` Additions
 
@@ -335,31 +363,38 @@ components/tickets/
 
 Each component stays under 150 lines (project limit) and uses only the Sage & Paper design system (no new tokens, no invented colours).
 
-## Known Gaps Deferred to F6 / F7
+## Known Gaps
 
-### TOCTOU Race on Capacity (F6)
+The gaps formerly tracked here — the capacity TOCTOU race, missing duplicate-POST
+idempotency, the guessable 6-digit booking reference, the missing `SITE_URL`, and
+unreleased abandoned reservations — were all closed by the security hardening pass;
+see [docs/ticketing-hardening.md](ticketing-hardening.md) for what changed and how each
+is verified. What remains open:
 
-Read-then-write without a transaction. Two concurrent checkouts for the last seat can both pass the capacity check. Mitigated by: ITN write is transactional and idempotent (does not double-count the payment), but overselling is theoretically possible. Recommended fix: database transaction or Firestore distributed locks (F6).
+### Emailed QR Ticket Not Yet Built (F5, ticketing-pages mission)
 
-### No Duplicate-POST Idempotency (F6)
+The door scanner (`app/admin/door`) is wired and waiting, but see the standing blocker
+below. It reads QR codes containing the booking reference. Emailing a ticket with a
+scannable QR code to `attendeeEmail` on confirmed payment is not yet built.
 
-If a buyer's browser double-submits the form (network hiccup, user impatience), two separate `reserved` tickets are created. A second attempt by the same buyer is treated as a new purchase. Recommended fix: idempotency key in the checkout request and Firestore index on `(idempotencyKey, attendeeEmail)` (F6).
+### Standing blocker: Firebase Auth not provisioned
 
-### Guessable Booking Reference (F6)
+Firebase Authentication has never been enabled on the `saoc-webapp` project, so no
+admin session cookie can be minted by anything. `/admin/login` and the door scanner
+(`POST /api/admin/checkin`) are non-functional in every environment today —
+independent of the ticketing security fixes, which cover the admission *logic*
+(`lib/checkin.ts`) but not the authenticated *path* to it. See
+docs/ticketing-hardening.md's "Standing blocker" section and
+`.agent/memory/project/needs-human.md`.
 
-The booking ref format (`SAOC-2027-XXXXXX`) is deterministic and `XXXXXX` is a 6-digit random (0–999999). Brute-force guessing is possible but statistically expensive (10^6 attempts to discover a single valid ref). The status endpoint mitigates by returning only `{ status }` (no PII). Recommended fix: per-IP rate limiting on the status endpoint (F6), and/or longer random suffix (F7).
+### Reservation expiry is 30 minutes, no active release on cancel
 
-### Missing SITE_URL in apphosting.yaml (F7)
-
-Deployed ITN would fail (the fallback `DEFAULT_SITE_URL = 'https://saoc.co.za'` still points to the old Joomla site). F7 must add `SITE_URL` to both `apphosting.yaml` (production secret) and `.env.local.example` (development example). The App Hosting runtime will inject it; the checkout route reads it at request time.
-
-### Emailed QR Ticket Not Yet Built (F5)
-
-The door scanner (`app/admin/door`) is wired and waiting. It reads QR codes containing the booking reference. F5 (not in M1–M2 scope) emails a ticket with a scannable QR code to `attendeeEmail` on confirmed payment, closing the loop.
-
-### No Expiry Job for Stale Reservations (F6/F7)
-
-Cancelled or abandoned `reserved` tickets live forever in Firestore. F6/F7 should add a scheduled job that deletes `reserved` tickets older than X days (e.g., 30 days). For now, stale docs are left untouched.
+An abandoned checkout now releases its seat automatically after
+`RESERVATION_TTL_MINUTES` (30 minutes, `lib/tickets-constants.ts`) — see F5 in
+docs/ticketing-hardening.md. Clicking PayFast's cancel button still does **not**
+actively write anything (deliberately — an unauthenticated write keyed on a printed
+booking reference is a worse problem than a 30-minute hold); the seat is released only
+once the lazy TTL passes.
 
 ## Environment & Deployment
 
@@ -374,24 +409,15 @@ pnpm dev
 
 Visit [http://localhost:3000/tickets](http://localhost:3000/tickets).
 
-### Deployment (F7)
+### Deployment
 
-Add to `apphosting.yaml`:
-
-```yaml
-env:
-  - var: SITE_URL
-    value: https://<app-hosting-origin>  # e.g., https://saoc-app.firebaseapp.com
-  # PayFast credentials (already in Secret Manager)
-  - var: PAYFAST_SANDBOX_MERCHANT_ID
-    secret: PAYFAST_SANDBOX_MERCHANT_ID
-  - var: PAYFAST_SANDBOX_MERCHANT_KEY
-    secret: PAYFAST_SANDBOX_MERCHANT_KEY
-  - var: PAYFAST_SANDBOX_PASSPHRASE
-    secret: PAYFAST_SANDBOX_PASSPHRASE
-```
-
-The checkout route reads `SITE_URL` at request time (not build time) so the fallback is never baked into the bundle.
+`apphosting.yaml` now declares `SITE_URL` (`RUNTIME` availability only, not a secret —
+see docs/ticketing-hardening.md F4) alongside the `PAYFAST_SANDBOX_*` secret
+references. The checkout route reads `SITE_URL` at request time (not build time) so the
+fallback (`DEFAULT_SITE_URL = 'https://saoc.co.za'`, which still resolves to the old
+Joomla site) is never baked into the bundle and never used once `SITE_URL` is set.
+Nothing here is deployed today — there is no production domain and PayFast is sandbox
+only.
 
 ## Testing Checklist (Before Going Live)
 
@@ -446,8 +472,13 @@ All defined in `sanity/queries.ts`.
 
 ### Firestore Queries
 
-- `db.collection('tickets').where('showId', '==', showId).where('status', '==', 'paid')` — count sold tickets (used by `/tickets` and checkout route)
-- `db.collection('tickets').where('bookingRef', '==', ref)` — look up a single ticket by ref (used by status endpoint)
+- `getSoldCountsByTicketType()` (`lib/data/tickets.ts`) — the single counting path for
+  both `/tickets` sold-out badges and the checkout route's capacity check. Queries
+  `where('showId', '==', showId)` for both `status == 'reserved'` and `status == 'paid'`,
+  then filters out any `reserved` document whose `expiresAt` has passed. Accepts an
+  optional Firestore `Transaction` so the checkout route's read is part of its
+  reservation transaction.
+- `db.collection('tickets').where('bookingRef', '==', ref)` — look up a single ticket by ref (used by status endpoint and `lib/checkin.ts`)
 
 ### REST Endpoints
 
@@ -472,11 +503,10 @@ All defined in `sanity/queries.ts`.
 
 **Q: Can I change the booking reference format?**
 
-A: Yes, but carefully. The format is hardcoded in `app/api/tickets/checkout/route.ts:68–70`:
-```typescript
-const suffix = randomInt(0, BOOKING_REF_SUFFIX_MAX).toString().padStart(6, '0');
-return `SAOC-2027-${suffix}`;
-```
+A: Yes, but carefully. Generation now lives in `lib/booking-ref.ts`
+(`generateBookingRef()`), drawing from `node:crypto` `randomBytes` into a 12-character
+Crockford base32 segment (60 bits of entropy) — not the checkout route, and not a
+6-digit counter. See docs/ticketing-hardening.md (F3) for why the format changed.
 Changing it affects:
 - QR codes generated in F5 emails
 - Door scanner lookups (must scan the same ref)
@@ -492,7 +522,14 @@ The `reserved` ticket stays in Firestore untouched. The buyer can contact suppor
 
 **Q: Can I edit `app/api/tickets/itn/route.ts`?**
 
-A: No. It is a verified security boundary (SHA-256 pinned in the contract). Any change — even a comment, even a benign refactor — breaks the contract assertion (A53). If you need to modify the ITN handler, file a bug with the full reasoning; the change will require adversarial security review before it lands.
+A: No. It is a verified security boundary (SHA-256 pinned, contract assertion A15 in
+`contracts/contract-ticketing-hardening.yaml`). Any change — even a comment, even a
+benign refactor — breaks that assertion. The file *has* been deliberately re-pinned
+once, to fix a genuine defect found inside it (docs/ticketing-hardening.md, "ITN write
+guard, and the A15 re-pin ceremony") — the re-pin was computed by `@architect` from an
+architect-authored expected file before any code was written, never by `@dev`. If you
+need to modify the ITN handler, file a bug with the full reasoning; the change will
+require the same ceremony and adversarial security review before it lands.
 
 **Q: Can I add more ticket type fields?**
 

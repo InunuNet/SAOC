@@ -21,11 +21,5 @@ export const contactPage = defineType({
         },
       ],
     }),
-    defineField({
-      name: 'formRecipients',
-      title: 'Form Recipients',
-      type: 'array',
-      of: [{ type: 'string' }],
-    }),
   ],
 });

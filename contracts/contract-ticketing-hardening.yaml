@@ -1,0 +1,459 @@
+schema: athanor.contract/v1
+slug: ticketing-hardening
+goal: >-
+  Close the four confirmed security/money defects in the ticketing flow (mission
+  `ticketing-pages`, F6 payment-security half): the door scanner admits unpaid and
+  wrong-show tickets; the checkout capacity check is an unguarded read-then-write that
+  demonstrably oversells; checkout has no duplicate-POST protection and issues guessable
+  6-digit booking references; and `SITE_URL` is missing from `apphosting.yaml`, so every
+  deployed payment would send its PayFast ITN to the old Joomla site and sit permanently
+  `reserved`. Specification lives in contracts/golden/ticketing-hardening/ — read the
+  goldens before writing code.
+created_at: '2026-08-11'
+autonomy: high
+
+# ---------------------------------------------------------------------------
+# HOW THIS CONTRACT IS VERIFIED — read before adding or editing an assertion
+# ---------------------------------------------------------------------------
+# The previous session's contract produced three FALSE GREENS from source greps: a
+# comment matched the pattern meant to detect its absence, and a "sold out" string match
+# passed while server-side capacity enforcement did not exist at all. So: every
+# security- or money-relevant claim below is proved by BEHAVIOUR — a real HTTP
+# round-trip against the running dev server, a real concurrent-request race, a real
+# browser submitting the real form, and a real Firestore read-back. Greps appear only
+# for facts with no runtime surface in the gate (A12 deploy config, A14 module
+# delegation, A15 the ITN hash pin, A16 the no-secret-logging rule), and each says why.
+#
+# PRECONDITIONS (a failure here is an environment problem, not a code defect — the
+# scripts say so explicitly rather than reporting an ordinary FAIL):
+#   1. dev server running at http://localhost:3333 (override with CHECK_BASE_URL)
+#   2. .env.local present (Firebase admin credentials + SITE_URL)
+#   3. Sanity: nationalShow.salesOpen == true, ticketType 'exhibitor' active
+#
+# MUTATION AND CLEANUP: checks write real Firestore tickets (the 'exhibitor' type,
+# price 0). Everything written carries a `@harden-check.invalid` sentinel email; every
+# check runs inside withCleanup(), which sweeps on pass, fail AND throw, then polls to
+# catch documents written by requests still in flight. Residue exits 9, never a plain
+# FAIL (learned.md, 2026-08-06). While A6 runs (~40s) the 'exhibitor' type reads as sold
+# out on the public /tickets page; the dataset is pre-production, and A6 does not merely
+# sweep — it polls the held count back down to the baseline it started from and fails
+# loudly if the seats do not come back.
+#
+# CONCURRENCY — the suite is serialised, and this is why. sweepSentinels() deletes EVERY
+# document carrying the sentinel domain, including ones written by another process. A
+# full gate run on 2026-08-12 failed A7 with "no Firestore ticket was written for an
+# accepted checkout" and passed standalone seconds later: the checkout HAD written its
+# ticket and a foreign sweep removed it between the 201 and the read-back (reproduced
+# deliberately against a competing sweep loop — identical message every time). Every
+# mutating check now takes one advisory lock file for the whole of its body AND its
+# cleanup, so two runners queue instead of deleting each other's fixtures; a lock left by
+# a killed process is stolen on a pid-liveness check, so nothing can wedge the gate. If a
+# live holder is still there after 90s the check runs anyway and any failure it reports
+# carries a note naming the contention — a slow gate beats a stuck one.
+#
+# REMAINING HAZARDS, stated rather than assumed:
+#   - The lock is advisory and machine-local. Anything mutating the tickets collection
+#     from outside these scripts (a second checkout of this repo, another machine, a
+#     human in the console) is still invisible to it.
+#   - A19 and A20 also fill 'exhibitor' to its capacity boundary. They are safe today
+#     only because withCleanup's sweep + assertNoResidue poll leaves zero sentinel docs
+#     before returning; unlike A6 they do not independently verify the seat count came
+#     back. Give them A6's afterCleanup guard if either is ever seen to flake.
+#   - A29/A31 create ephemeral Sanity ticketType documents. Those are outside the
+#     Firestore sweep and are cleaned by withEphemeralTicketType's own finally.
+#
+# ENVIRONMENT CONSTRAINT — Firebase Auth is NOT provisioned on `saoc-webapp`. Verified
+# 2026-08-11: getAuth().listUsers() and createUser() both fail `auth/configuration-not-
+# found`, so no ID token and therefore no admin session cookie can be minted by anything
+# — /admin login and the door scanner are non-functional in every environment today,
+# independently of the defects here. A1–A4 therefore call the extracted lib/checkin.ts
+# against real Firestore (real writes, real read-back, real concurrency) instead of
+# going through the authenticated route; A5 covers the auth layer unauthenticated, and
+# A14 covers the route's delegation to that module. Logged to needs-human.md.
+#
+# DO NOT TOUCH app/api/tickets/itn/route.ts. It is a repeatedly hash-verified payment
+# security boundary and none of these four fixes requires editing it. A15 pins its
+# sha256.
+
+features:
+  - id: F1
+    name: 'Door scanner: admit only paid tickets for this show, transactionally, once'
+    status: pending
+  - id: F2
+    name: 'Checkout capacity: transactional, cannot oversell under concurrency'
+    status: pending
+  - id: F3
+    name: 'Checkout idempotency + unguessable booking references'
+    status: pending
+  - id: F4
+    name: 'SITE_URL declared in apphosting.yaml so deployed ITNs reach this app'
+    status: pending
+  # ---- round 2: defects @qa found by attacking BEYOND A1-A20 (harden-qa.md) ----
+  - id: F5
+    name: 'Reservation expiry: an abandoned checkout stops consuming a seat (S1, HIGH)'
+    status: pending
+  - id: F6
+    name: 'Idempotency key bound to buyer and payload; constant keys rejected (S2)'
+    status: pending
+  - id: F7
+    name: 'Checkout rejects an unusable Sanity capacity or price before reserving (S3, S5)'
+    status: pending
+  - id: F8
+    name: 'ITN write guard: a late notification cannot resurrect a checked-in ticket (S4)'
+    status: pending
+  - id: F9
+    name: 'Three source comments that assert untrue things are corrected (S6, S7)'
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-hardening/README.md
+  - contracts/golden/ticketing-hardening/checkin-admission-rules.golden.md
+  - contracts/golden/ticketing-hardening/capacity-transaction.golden.md
+  - contracts/golden/ticketing-hardening/idempotency-and-booking-ref.golden.md
+  - contracts/golden/ticketing-hardening/booking-ref-format.golden.txt
+  - contracts/golden/ticketing-hardening/apphosting-site-url.golden.yaml
+  - contracts/golden/ticketing-hardening/itn-route.golden.sha256
+  # ---- round 2 ----
+  - contracts/golden/ticketing-hardening/reservation-expiry.golden.md
+  - contracts/golden/ticketing-hardening/idempotency-binding.golden.md
+  - contracts/golden/ticketing-hardening/capacity-and-price-validation.golden.md
+  - contracts/golden/ticketing-hardening/itn-write-guard.golden.md
+  - contracts/golden/ticketing-hardening/itn-route.expected.ts.txt
+  - contracts/golden/ticketing-hardening/comment-accuracy.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- F1: door admission (behaviour, against real Firestore) ----------
+    - id: A1
+      description: >-
+        F1 - a reserved (unpaid) ticket is REFUSED at the door and Firestore read-back
+        proves nothing was written. Currently red - this is the highest-severity defect.
+      command: pnpm exec tsx contracts/checks/ticketing-hardening/check-checkin-refuses-unpaid.mts
+      timeout_seconds: 180
+    - id: A2
+      description: >-
+        F1 - a genuinely paid ticket for this show is still ADMITTED and really flips to
+        checked-in. Regression guard: stops A1/A3/A4 passing by refusing everything.
+      command: pnpm exec tsx contracts/checks/ticketing-hardening/check-checkin-admits-paid.mts
+      timeout_seconds: 180
+    - id: A3
+      description: >-
+        F1 - a paid ticket carrying another showId is REFUSED and left untouched.
+      command: pnpm exec tsx contracts/checks/ticketing-hardening/check-checkin-refuses-foreign-show.mts
+      timeout_seconds: 180
+    - id: A4
+      description: >-
+        F1 - two concurrent scans of one paid ticket admit exactly once, and a refused
+        re-scan never overwrites the original checkedInAt audit timestamp.
+      command: pnpm exec tsx contracts/checks/ticketing-hardening/check-checkin-double-scan.mts
+      timeout_seconds: 180
+    - id: A5
+      description: >-
+        F1 - over real HTTP, a check-in with no session cookie and one with a forged
+        cookie are both 401, and the paid ticket they targeted is unchanged.
+      command: node contracts/checks/ticketing-hardening/check-checkin-requires-auth.mjs
+      timeout_seconds: 120
+
+    # ---------- F2: capacity under real concurrency ----------
+    - id: A6
+      description: >-
+        F2 - with exactly one seat left, five CONCURRENT checkout POSTs produce exactly
+        one reservation and the held count never exceeds capacity. Reproduces the live
+        54/50 oversell @qa found; currently red.
+      command: node contracts/checks/ticketing-hardening/check-capacity-no-oversell.mjs
+      timeout_seconds: 240
+    - id: A7
+      description: >-
+        F2 - with seats free, a normal checkout still succeeds, writes one reserved
+        ticket, and stores the server-derived Sanity price. False-green guard for A6.
+      command: node contracts/checks/ticketing-hardening/check-capacity-admits-when-free.mjs
+      timeout_seconds: 120
+
+    # ---------- F3: idempotency + booking-ref entropy ----------
+    - id: A8
+      description: >-
+        F3 - five concurrent POSTs sharing one Idempotency-Key create exactly ONE
+        Firestore ticket and all return the same bookingRef. Currently red (5 tickets).
+      command: node contracts/checks/ticketing-hardening/check-idempotent-duplicate-post.mjs
+      timeout_seconds: 120
+    - id: A9
+      description: >-
+        F3 - two POSTs with DIFFERENT keys from the same buyer create two tickets. Guards
+        against deduplication that is too broad (e.g. keyed on email) and would silently
+        block genuine second purchases.
+      command: node contracts/checks/ticketing-hardening/check-distinct-keys-distinct-tickets.mjs
+      timeout_seconds: 120
+    - id: A10
+      description: >-
+        F3 - a checkout with a missing or malformed Idempotency-Key is HTTP 400 and
+        writes no Firestore document.
+      command: node contracts/checks/ticketing-hardening/check-idempotency-key-required.mjs
+      timeout_seconds: 120
+    - id: A11
+      description: >-
+        F3 - sixteen booking references issued by the live route match the golden format,
+        none matches the guessable 6-digit form, all are distinct, AND the random segments
+        show no counter signature (no shared leading characters, not monotonically
+        ordered, no constant position) - format plus uniqueness alone would be satisfied
+        by a fully enumerable sequential counter. The heuristics self-test against a
+        counter fixture and a random fixture before judging the live samples.
+      command: node contracts/checks/ticketing-hardening/check-booking-ref-entropy.mjs
+      timeout_seconds: 180
+    - id: A17
+      description: >-
+        F3 - the REAL /tickets form in a real browser sends a UUID Idempotency-Key and is
+        accepted (201). Without this a server-only fix would 400 every genuine purchase
+        and no other assertion would notice.
+      command: node contracts/checks/ticketing-hardening/check-form-sends-idempotency-key.mjs
+      timeout_seconds: 180
+
+    # ---------- F4: deployed ITN callback origin ----------
+    - id: A12
+      description: >-
+        F4 - apphosting.yaml declares SITE_URL as a plain RUNTIME-only https value that
+        is not saoc.co.za. STRUCTURAL by necessity (the gate cannot deploy), but the YAML
+        is PARSED, not grepped, so a mention in a comment cannot satisfy it.
+      command: node contracts/checks/ticketing-hardening/check-site-url-apphosting.mjs
+    - id: A13
+      description: >-
+        F4 - behavioural half: a real checkout returns notify_url, return_url and
+        cancel_url all built on SITE_URL at request time, never on the saoc.co.za
+        fallback. Currently green - it must stay green.
+      command: node contracts/checks/ticketing-hardening/check-notify-url-uses-site-url.mjs
+      timeout_seconds: 120
+
+    # ---------- Structural guards ----------
+    - id: A14
+      description: >-
+        F1 - the route delegates: app/api/admin/checkin/route.ts calls
+        checkInByBookingRef and contains no admission logic of its own. Structural
+        because Firebase Auth is unprovisioned, so the authenticated HTTP path cannot be
+        exercised; A1-A4 prove the logic itself. Operator- and quote-agnostic, comments
+        stripped, and self-tested against one compliant and five escaping fixtures - the
+        original inline grep matched neither `status !== "paid"` nor double-quoted
+        literals.
+      command: node contracts/checks/ticketing-hardening/check-checkin-route-delegates.mjs
+    - id: A15
+      description: >-
+        app/api/tickets/itn/route.ts is byte-identical to its pinned state - the verified
+        PayFast security boundary must not drift. RE-PINNED in round 2, deliberately:
+        6dcde6d5...18a3cb -> 7c96726a...3b4d0f. S4 (a late ITN resurrects a checked-in
+        ticket, so the same booking reference opens the door twice) is IN this file and
+        cannot be fixed anywhere else. The new value is the sha256 of
+        contracts/golden/ticketing-hardening/itn-route.expected.ts.txt, computed by
+        @architect from an architect-authored expected file BEFORE any code was written -
+        @dev never re-pins, and the only way to a green A15 is to make the source
+        byte-identical to a file @dev did not author. Rationale, both hashes and the
+        reason the boundary moved are recorded in
+        contracts/golden/ticketing-hardening/itn-write-guard.golden.md. The assertion
+        itself is unchanged: same id, same command, not loosened, still catches all
+        future drift.
+      command: >-
+        echo "$(cat contracts/golden/ticketing-hardening/itn-route.golden.sha256)  app/api/tickets/itn/route.ts" | shasum -a 256 -c -
+    - id: A16
+      description: >-
+        no check script can leak a credential: none logs process.env, and none stringifies
+        a raw checkout response body (which carries merchant_key and the PayFast
+        signature) - safeBody() is used instead.
+      command: >-
+        if grep -rEq "console\.(log|error)\([^)]*process\.env" contracts/checks/ticketing-hardening/; then exit 1; fi;
+        if grep -rEq "JSON\.stringify\(([a-zA-Z]+\.)?body\)" contracts/checks/ticketing-hardening/; then exit 1; fi
+
+    # =====================================================================
+    # ROUND 2 (A21-A37) - defects @qa found by attacking beyond A1-A20.
+    # Evidence: .agent/memory/scratch/harden-qa.md
+    # @dev brief + full pre-fix baseline: .agent/memory/scratch/harden-brief-2.md
+    #
+    # Every one of these was executed against the current tree BEFORE any fix
+    # existed and its red/green state recorded. The ones that are green pre-fix
+    # say so in their own description and say what they are for; an assertion
+    # that cannot discriminate must not be allowed to imply that it can.
+    # =====================================================================
+
+    # ---------- F5: reservation expiry (S1, HIGH) ----------
+    - id: A21
+      description: >-
+        F5 - BEHAVIOURAL. With the type filled to capacity by 49 live holds plus 1 hold
+        that expired a day ago, the next buyer is accepted (201). Pre-fix RED: 409 "Sold
+        out" - the abandoned-checkout seat loss @qa reproduced.
+      command: node contracts/checks/ticketing-hardening/check-expired-reservation-releases-seat.mjs
+      timeout_seconds: 240
+    - id: A22
+      description: >-
+        F5 - BEHAVIOURAL. The converse: filled to capacity with LIVE holds, the next buyer
+        is refused 409 and the held count never exceeds capacity. Pre-fix GREEN by design -
+        it is the regression guard that stops A21 being satisfied by simply not counting
+        reserved tickets, which would restore the round-1 oversell wholesale.
+      command: node contracts/checks/ticketing-hardening/check-live-reservation-holds-seat.mjs
+      timeout_seconds: 240
+    - id: A23
+      description: >-
+        F5 - BEHAVIOURAL, CATASTROPHE GUARD. A ticket that was PAID after its reservation
+        window elapsed keeps a long-past expiresAt; it must still consume its seat (409 for
+        the next buyer) and must never be mutated, and a checked-in ticket with a past
+        expiresAt must keep its status and its checkedInAt audit stamp. Expiring a paid
+        seat turns a paying attendee away at the door and is the obvious way to get S1
+        wrong. Pre-fix GREEN by design - it exists to stay green forever.
+      command: node contracts/checks/ticketing-hardening/check-expiry-never-touches-paid.mjs
+      timeout_seconds: 240
+    - id: A24
+      description: >-
+        F5 - BEHAVIOURAL, writer half. A reservation created by the real route carries a
+        future expiresAt Timestamp inside the documented 30-minute TTL. Without it the
+        counter's fail-closed default for a missing expiresAt would silently restore the
+        defect while A21 still passed against a hand-built fixture. Pre-fix RED: no
+        expiresAt is written at all.
+      command: node contracts/checks/ticketing-hardening/check-reservation-carries-expiry.mjs
+      timeout_seconds: 120
+
+    # ---------- F6: idempotency key binding (S2) ----------
+    - id: A25
+      description: >-
+        F6 - BEHAVIOURAL. Bob replaying Alice's Idempotency-Key with his own email gets
+        409, the response contains neither Alice's bookingRef (which is the door code) nor
+        any PayFast payload, and Alice's stored attendee is unchanged. A8 and A9 both pass
+        today because neither varies the buyer. Pre-fix RED: 200 + Alice's ref, exactly as
+        @qa measured.
+      command: node contracts/checks/ticketing-hardening/check-idempotency-bound-to-buyer.mjs
+      timeout_seconds: 120
+    - id: A26
+      description: >-
+        F6 - BEHAVIOURAL. The same key replayed for a DIFFERENT ticketType gets 409, with
+        no signed payload and no leak of the original ticket's reference. The second type
+        is read live from Sanity, so a Studio rename cannot turn this into a no-op. Pre-fix
+        RED: 200 returning the exhibitor ticket at amount 0.00 for an adult request.
+      command: node contracts/checks/ticketing-hardening/check-idempotency-bound-to-payload.mjs
+      timeout_seconds: 120
+    - id: A27
+      description: >-
+        F6 - BEHAVIOURAL. A key may only be replayed while its reservation is still
+        payable. Both sub-cases: a ticket already 'checked-in', and a hold that has
+        expired. Each must be 409 with no live PayFast payload. Pre-fix RED: 200 with a
+        freshly signed payment page for a seat whose holder has walked through the door.
+      command: node contracts/checks/ticketing-hardening/check-idempotency-replay-not-payable.mjs
+      timeout_seconds: 180
+    - id: A28
+      description: >-
+        F6 - BEHAVIOURAL. The nil UUID and the max UUID are 400, in both cases, and no
+        Firestore document is written. A constant key is not an idempotency key: it
+        deduplicates unrelated buyers onto the first caller's reservation and hands them
+        that person's door code. Pre-fix RED: the nil UUID is accepted with 201 because it
+        matches UUID_PATTERN.
+      command: node contracts/checks/ticketing-hardening/check-constant-idempotency-key-rejected.mjs
+      timeout_seconds: 120
+
+    # ---------- F7: capacity and price validation (S3, S5) ----------
+    - id: A29
+      description: >-
+        F7 - BEHAVIOURAL. A ticket type whose capacity is not a usable number cannot be
+        sold, and writes no Firestore document. NOTE, @qa's S3 is partly wrong and this
+        assertion corrects it: GROQ projects a missing attribute as null, `1 > null` is
+        `1 > 0`, so the absent-capacity case 409s today rather than failing open. The
+        fail-open is real but reached by a different value - measured, `capacity: "50"` as
+        a string (which the seed script and the HTTP API can both write, since Sanity does
+        not enforce field types at the API level) makes `1 > "50"` false and the checkout
+        returns 201 against an unlimited ledger. Both cases are asserted; the string case
+        is pre-fix RED, the absent case pre-fix green as a regression guard.
+      command: node contracts/checks/ticketing-hardening/check-missing-capacity-fails-closed.mjs
+      # The slowest assertion in the contract, and irreducibly so: two ephemeral Sanity
+      # ticketType fixtures, each waiting on CDN propagation twice (create and delete),
+      # against a 60s CDN TTL. Measured 372s on 2026-08-12. 900 is not padding — 420 left
+      # only 48s of headroom on a poll whose floor is set by someone else's cache.
+      timeout_seconds: 900
+    - id: A30
+      description: >-
+        F7 - STRUCTURAL, and structural by necessity: a Sanity schema `description` is
+        Studio-authoring copy with no runtime surface at all, so there is nothing
+        behavioural to measure. The description must no longer claim a blank capacity
+        "reads as sold out at checkout (fails closed)" - validation is an authoring guard,
+        not a read-time guarantee, and A29 shows the read path can be driven open.
+        Pre-fix RED.
+      command: >-
+        if grep -qE "fails closed|reads as sold out" sanity/schemas/documents/ticketType.ts; then exit 1; fi
+    - id: A31
+      description: >-
+        F7 - BEHAVIOURAL. A ticket type with a blank price writes ZERO Firestore documents.
+        The 500 is not the defect; the committed seat is. Pre-fix RED: reserveTicket
+        commits, `amount.toFixed(2)` then throws outside the try/catch, the seat is held,
+        the idempotency key is burned, and the buyer's retry replays into the identical
+        crash forever.
+      command: node contracts/checks/ticketing-hardening/check-missing-price-fails-closed.mjs
+      timeout_seconds: 420
+    - id: A32
+      description: >-
+        F7 - STRUCTURAL by necessity (Studio-only surface, as A30). The `price` field
+        carries `Rule.required().min(0)`. Whitespace-insensitive and scoped to the price
+        field's own block, so capacity's existing `Rule.required().integer().min(0)` cannot
+        satisfy it. Pre-fix RED: price has no validation at all.
+      command: >-
+        grep -A6 "name: 'price'" sanity/schemas/documents/ticketType.ts | tr -d ' \n' | grep -q "Rule.required().min(0)"
+
+    # ---------- F8: ITN write guard (S4) ----------
+    - id: A33
+      description: >-
+        F8 - STRUCTURAL BY NECESSITY, and this is the assertion that actually proves S4.
+        app/api/tickets/itn/route.ts must be byte-identical to the architect-authored
+        expected file; diff (not grep) gives @dev a readable failure. It is structural
+        because the handler's write path is UNREACHABLE from the gate in either direction:
+        an ITN issued here dies at the source-IP gate (DNS-resolved PayFast hosts) and,
+        past that, at the server-confirm gate, which returns VALID only for a payment
+        PayFast actually processed. The one way to make it behavioural would be an
+        env-overridable PAYFAST_SANDBOX_VALIDATE_URL - a test hook inside a payment
+        security boundary - explicitly rejected in itn-write-guard.golden.md. Pre-fix RED.
+      command: >-
+        diff app/api/tickets/itn/route.ts contracts/golden/ticketing-hardening/itn-route.expected.ts.txt
+    - id: A34
+      description: >-
+        F8 - BEHAVIOURAL, REGRESSION GUARD ONLY, and honest about it. After a correctly
+        signed duplicate ITN is delivered for a checked-in ticket, the ticket is still
+        'checked-in', its checkedInAt is unchanged, and lib/checkin.ts still refuses
+        re-admission. Pre-fix GREEN - it cannot discriminate, for the reason given in A33.
+        It earns its place because it fails if any future change lets one booking reference
+        open the door twice, by whatever route.
+      command: pnpm exec tsx contracts/checks/ticketing-hardening/check-itn-does-not-resurrect-checked-in.mts
+      timeout_seconds: 180
+
+    # ---------- F9: comments that assert untrue things (S6, S7) ----------
+    # All three are STRUCTURAL by necessity: a source comment has no runtime surface.
+    # They are asserted because a comment documenting a security property that has rotted
+    # is how the next editor talks themselves into removing the mitigation it justifies.
+    - id: A35
+      description: >-
+        F9 - STRUCTURAL (comment, no runtime surface). /api/tickets/status no longer
+        justifies "return only status" on refs being "guessable enough (SAOC-2027- + 6
+        digits)" - refs are 60-bit - and states the real entropy. The mitigation stays;
+        only the stale reasoning goes. Pre-fix RED.
+      command: >-
+        if grep -q "6 digits" app/api/tickets/status/route.ts; then exit 1; fi; grep -qE "60[ -]bit" app/api/tickets/status/route.ts
+    - id: A36
+      description: >-
+        F9 - STRUCTURAL (comment, no runtime surface). lib/booking-ref.ts no longer claims
+        rejection sampling is occurring - `byte & 0x1f` is always < 32, so the branch is
+        dead - and says the guard is retained for a future alphabet of a different length.
+        The guard itself stays. Pre-fix RED.
+      command: >-
+        if grep -qi "rejection sampling keeps the distribution uniform" lib/booking-ref.ts; then exit 1; fi; grep -qi "unreachable" lib/booking-ref.ts
+    - id: A37
+      description: >-
+        F9 - STRUCTURAL (comment, no runtime surface). TicketPurchaseForm no longer claims
+        the idempotency key "is only replaced once a reservation has been handed off" - it
+        is never replaced - and records that a browser Back from PayFast REMOUNTS the form
+        with a new key and therefore takes a second seat, which reservation expiry (F5) is
+        what releases. Comment only: the key's lifecycle must not change. Pre-fix RED.
+      command: >-
+        if grep -q "only replaced" components/tickets/TicketPurchaseForm.tsx; then exit 1; fi; grep -qi "remount" components/tickets/TicketPurchaseForm.tsx
+
+    # ---------- Gates ----------
+    - id: A18
+      description: strict TypeScript type-check passes
+      command: pnpm type-check
+      timeout_seconds: 300
+    - id: A19
+      description: lint passes with zero errors
+      command: pnpm lint
+      timeout_seconds: 300
+    - id: A20
+      description: production build succeeds
+      command: pnpm build
+      timeout_seconds: 600

@@ -1,0 +1,256 @@
+{
+  "_comment": [
+    "GOLDEN — sanity/schemas/documents/showExhibitorInfo.ts, plus the object types it composes.",
+    "Pinned singleton, fixed _id 'showExhibitorInfo' (the project convention: _id === schema type name).",
+    "",
+    "SHAPE RATIONALE. Research Section 9 found a near-universal pattern: every established show",
+    "separates exhibitor information into distinct documents — registration instructions, the class",
+    "schedule, rules/eligibility, awards — rather than one blob. Research Section 10 found SAOC's",
+    "current state is the opposite: a single unstructured `nationalShow.exhibitorStages` portableText",
+    "field. This schema is that separation, expressed as one typed field per topic.",
+    "",
+    "WHAT THIS SCHEMA DELIBERATELY DOES NOT CONTAIN:",
+    "  - No `datetime` field for any exhibitor deadline. See showExhibitorDate below.",
+    "  - No class list. Show classes already render on /national-show from the `showClass` type.",
+    "  - No judging criteria. SAOC judging standards already live on /judging.",
+    "  - No online entry submission fields. Out of scope per the mission; needs its own",
+    "    data-handling decision the council has not been asked for."
+  ],
+
+  "documentType": {
+    "name": "showExhibitorInfo",
+    "title": "Show Exhibitor Info",
+    "type": "document",
+    "fields": [
+      { "name": "title", "type": "string", "seeded": "Exhibitor Information" },
+      { "name": "intro", "type": "text", "rows": 4 },
+
+      {
+        "_group": "STATUS LABELS — the wording of every marker, editable in one place",
+        "name": "pendingLabel",
+        "type": "string",
+        "description": "Shown on blocks the committee still has to supply."
+      },
+      { "name": "researchLabel", "type": "string" },
+      { "name": "questionLabel", "type": "string" },
+
+      {
+        "_group": "KEY DATES — F3",
+        "name": "keyDatesHeading",
+        "type": "string",
+        "seeded": "Key dates"
+      },
+      {
+        "name": "keyDatesNote",
+        "type": "text",
+        "description": "Sits above the dates table. Must make clear none of these are set yet."
+      },
+      {
+        "name": "keyDates",
+        "type": "array",
+        "of": [{ "type": "showExhibitorDate" }],
+        "description": "Entry closes, staging, judging, show days, removal."
+      },
+
+      {
+        "_group": "ENTRY FORM — F3. A committee-supplied PDF, NOT an online submission form.",
+        "name": "entryFormHeading",
+        "type": "string"
+      },
+      {
+        "name": "entryFormFile",
+        "type": "file",
+        "options": { "accept": ".pdf" },
+        "description": "Upload the committee's entry form PDF. Until one exists, leave this empty — the page renders an honest 'to be published' state rather than a dead link.",
+        "seeded": false,
+        "_note": "NOT seeded. There is no entry form. Seeding a placeholder file would be the exact harm this mission is about."
+      },
+      {
+        "name": "entryFormUrl",
+        "type": "url",
+        "description": "Only if the form is hosted elsewhere. Leave empty if you uploaded a file above.",
+        "seeded": false
+      },
+      {
+        "name": "entryFormPendingNote",
+        "type": "text",
+        "description": "Shown when neither a file nor a URL is set. This is the honest empty state — it must never render as a link.",
+        "seeded": "The entry form for the 19th National Show has not been published yet. When the show committee releases it, it will be available for download here. In the meantime, contact the council if you intend to exhibit."
+      },
+
+      {
+        "_group": "CONTENT SECTIONS — one per research section. Each is an `exhibitorSection` object.",
+        "name": "entryProcess",
+        "type": "exhibitorSection",
+        "_research": "Section 1"
+      },
+      { "name": "fees", "type": "exhibitorSection", "_research": "Section 1 (fee structuring)" },
+      {
+        "name": "classes",
+        "type": "exhibitorSection",
+        "_research": "Section 3",
+        "_note": "Points at the class list already on /national-show. Must NOT restate the classes."
+      },
+      {
+        "name": "judging",
+        "type": "exhibitorSection",
+        "_research": "Section 4",
+        "_note": "Points at /judging for standards. Must NOT restate the judging criteria."
+      },
+      { "name": "eligibility", "type": "exhibitorSection", "_research": "Section 5" },
+      { "name": "display", "type": "exhibitorSection", "_research": "Section 6" },
+      { "name": "sales", "type": "exhibitorSection", "_research": "Section 7" },
+      { "name": "practicalities", "type": "exhibitorSection", "_research": "Section 8" },
+      {
+        "name": "permits",
+        "type": "exhibitorSection",
+        "_research": "Section 11",
+        "_note": "CITES, provincial movement, indigenous species. Status is ALWAYS 'question' at seed. This block states no requirement — it asks."
+      },
+
+      {
+        "_group": "OPEN QUESTIONS — research Section 12, as structured data rather than prose",
+        "name": "questionsHeading",
+        "type": "string",
+        "seeded": "Questions for the show committee"
+      },
+      { "name": "questionsIntro", "type": "text" },
+      {
+        "name": "openQuestions",
+        "type": "array",
+        "of": [{ "type": "exhibitorQuestion" }],
+        "description": "Things the research could not establish. These render on the page so an exhibitor knows what is genuinely undecided, and so the committee can see its own to-do list."
+      },
+
+      {
+        "_group": "STATUS",
+        "name": "confirmations",
+        "type": "exhibitorConfirmationStatuses"
+      },
+
+      {
+        "_group": "CROSS-LINKS — editable labels for the two links we must not duplicate content behind",
+        "name": "judgingLinkLabel",
+        "type": "string",
+        "seeded": "SAOC judging standards"
+      },
+      { "name": "classesLinkLabel", "type": "string", "seeded": "Show classes" },
+      { "name": "contactNote", "type": "text" }
+    ]
+  },
+
+  "objectTypes": {
+    "exhibitorSection": {
+      "_file": "sanity/schemas/objects/exhibitorSection.ts",
+      "fields": [
+        { "name": "heading", "type": "string" },
+        { "name": "body", "type": "portableText" }
+      ],
+      "_note": [
+        "No status field here on purpose. Status for fixed singleton blocks lives centrally on",
+        "`confirmations`, keyed by the same field name. Two sources of status would drift."
+      ]
+    },
+
+    "showExhibitorDate": {
+      "_file": "sanity/schemas/objects/showExhibitorDate.ts",
+      "fields": [
+        { "name": "label", "type": "string", "_eg": "Entries close" },
+        {
+          "name": "dateNote",
+          "type": "string",
+          "_eg": "To be set by the show committee"
+        },
+        { "name": "detail", "type": "text", "_eg": "What the exhibitor has to have done by then" },
+        {
+          "name": "status",
+          "type": "string",
+          "options": { "list": ["pending", "research", "question", "confirmed"] },
+          "initialValue": "pending"
+        }
+      ],
+      "_WHY_dateNote_IS_A_STRING_NOT_A_DATETIME": [
+        "This is the single most important type decision in the schema.",
+        "",
+        "A `datetime` field must hold a date. There is no such thing as an honestly-empty datetime",
+        "that still renders as a row in a dates table. Seeding one would mean inventing a staging",
+        "date — and research Section 1 is explicit: 'specific lead time for entry deadlines varies",
+        "from same-week on-site registration to multi-week advance cutoffs — no consistent interval",
+        "across shows. Do not bake in a specific number of days.'",
+        "",
+        "An invented datetime is also the most dangerous possible field on this page, because a date",
+        "renders as a date. A reader scanning for a deadline will read '4 September 2027' as fact no",
+        "matter what badge sits beside it. A string reading 'To be set by the show committee' cannot",
+        "be misread that way.",
+        "",
+        "COST, ACCEPTED: no sorting, no countdown, no .ics export from these dates. When the",
+        "committee supplies real dates, adding a parallel optional `date: datetime` is a small",
+        "follow-up — and at that point the values are real, so it is safe. Doing it now is not."
+      ]
+    },
+
+    "exhibitorQuestion": {
+      "_file": "sanity/schemas/objects/exhibitorQuestion.ts",
+      "fields": [
+        { "name": "question", "type": "text", "_note": "Phrased as a question TO the committee." },
+        {
+          "name": "context",
+          "type": "text",
+          "_note": "Why we are asking — what the research did and did not find. This is what stops the question reading as ignorance."
+        },
+        {
+          "name": "topic",
+          "type": "string",
+          "options": {
+            "list": [
+              "deadlines",
+              "fees",
+              "eligibility",
+              "display-build",
+              "sales",
+              "security",
+              "watering",
+              "loading",
+              "insurance",
+              "results-notification",
+              "permits",
+              "precedent"
+            ]
+          }
+        },
+        { "name": "order", "type": "number" }
+      ]
+    },
+
+    "exhibitorConfirmationStatuses": {
+      "_file": "sanity/schemas/objects/exhibitorConfirmationStatuses.ts",
+      "_note": [
+        "Deliberately NOT the visitor stream's confirmationStatuses.ts — that object's thirteen",
+        "block names are visitor-specific and the file is in flight in another stream."
+      ],
+      "blocks": [
+        "entryProcess",
+        "fees",
+        "classes",
+        "judging",
+        "eligibility",
+        "display",
+        "sales",
+        "practicalities",
+        "permits",
+        "entryForm"
+      ],
+      "everyBlock": {
+        "type": "string",
+        "options": { "list": ["pending", "research", "question", "confirmed"] },
+        "initialValue": "pending"
+      }
+    }
+  },
+
+  "showExhibitorInfoQuery": {
+    "_file": "sanity/queries.ts",
+    "name": "showExhibitorInfoQuery",
+    "_note": "Must project EVERY field above. A field in the schema that the query drops renders as nothing — the exact false-green class this project has hit three times."
+  }
+}

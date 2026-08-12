@@ -19,6 +19,12 @@ const PINNED_SINGLETON_TYPES = [
   'membersPage',
   // F1 (ticketing-pages): pinned the same way — see ticketsPage-schema.golden.json.
   'ticketsPage',
+  // F1 (show-visitor-info): pinned the same way — see showVisitorInfo-schema.golden.json.
+  'showVisitorInfo',
+  // F1 (show-exhibitor-info): pinned the same way — see showExhibitorInfo-schema.golden.json.
+  // Without the pin an editor can create a duplicate that the query's [0] may silently
+  // pick over the intended one.
+  'showExhibitorInfo',
 ] as const;
 
 const SINGLETON_TITLES: Record<(typeof PINNED_SINGLETON_TYPES)[number], string> = {
@@ -29,6 +35,8 @@ const SINGLETON_TITLES: Record<(typeof PINNED_SINGLETON_TYPES)[number], string> 
   judgingPage: 'Judging Page',
   membersPage: 'Members Page',
   ticketsPage: 'Tickets Page',
+  showVisitorInfo: 'Show Visitor Information',
+  showExhibitorInfo: 'Show Exhibitor Information',
 };
 
 // Collection (non-singleton) document types that keep the stock list behaviour.
@@ -43,6 +51,11 @@ const COLLECTION_TYPES = [
   'judge',
   // F1 (ticketing-pages)
   'ticketType',
+  // F1 (show-visitor-info)
+  'showFaq',
+  // F1 (show-exhibitor-info): a listed collection, so the committee can add, remove and
+  // reorder journey steps without a developer.
+  'showExhibitorStep',
 ];
 
 export function structure(S: StructureBuilder, _context: StructureResolverContext) {

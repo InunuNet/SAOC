@@ -15,6 +15,8 @@
     "format:check": "prettier --check .",
     "type-check": "tsc --noEmit",
     "seed": "tsx scripts/seed-sanity.ts",
+    "seed:exhibitor": "tsx scripts/seed-show-exhibitor-info.ts",
+    "seed:visitor": "tsx scripts/seed-show-visitor-info.ts",
     "refresh-llms": "tsx scripts/refresh-llms.ts"
   },
   "dependencies": {

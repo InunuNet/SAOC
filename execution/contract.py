@@ -124,13 +124,22 @@ def normalize_contract(contract: dict) -> dict:
             cid = check.get("id", "")
             desc = check.get("description", "")
             cmd = check.get("command", "")
+            verify = {
+                "kind": "shell",
+                "cmd": cmd,
+            }
+            # check_cmd reads verify["timeout_seconds"], so a per-assertion timeout
+            # declared on the @architect-format check must survive normalization. Without
+            # this it is silently dropped and the assertion falls back to the 60s default
+            # — a behavioural check that legitimately takes longer then reports
+            # "Command timed out after 60s", which is indistinguishable from a real
+            # failure and cannot be fixed from the contract at all.
+            if "timeout_seconds" in check:
+                verify["timeout_seconds"] = check["timeout_seconds"]
             assertion_list.append({
                 "id": cid,
                 "description": desc,
-                "verify": {
-                    "kind": "shell",
-                    "cmd": cmd,
-                }
+                "verify": verify,
             })
             assertion_ids.append(cid)
 

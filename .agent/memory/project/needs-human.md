@@ -127,3 +127,275 @@ empty"; it is the latter.
 
 Still open (minor): a live edit → publish → persist round-trip has not been performed.
 The Publish button renders; persistence is not yet demonstrated.
+
+## BLOCKER — Firebase Authentication is not provisioned on `saoc-webapp` (2026-08-11)
+
+Found by @architect while designing `contracts/contract-ticketing-hardening.yaml`.
+Verified against the real project with the service-account credentials in `.env.local`:
+
+```
+getAuth().listUsers()  -> auth/configuration-not-found
+getAuth().createUser() -> auth/configuration-not-found
+```
+
+`auth/configuration-not-found` means Firebase Authentication has never been enabled for
+the project — there is no Identity Platform config to talk to. Consequences, all present
+today and unrelated to any code defect:
+
+- `/admin/login` cannot sign anyone in — no ID token can be minted by any client.
+- `POST /api/admin/session` can never mint a session cookie, so `/admin` and the door
+  check-in scanner are unusable in every environment, local and deployed.
+- Security-wise the endpoints fail CLOSED (everything is 401), so this is a
+  functionality blocker, not an exposure.
+
+**Human action (Brad):** Firebase console → project `saoc-webapp` → Build →
+Authentication → Get started → enable the Email/Password provider, then create the
+secretary/door-staff accounts. Nothing in the codebase changes.
+
+Until then, the door-admission assertions (A1–A4 of the ticketing-hardening contract)
+exercise `lib/checkin.ts` directly against real Firestore rather than through the
+authenticated HTTP route; the auth layer itself is covered unauthenticated by A5.
+
+---
+
+## show-exhibitor-info — sequencing decisions the orchestrator must make (2026-08-11, @architect)
+
+These are not blocked on a human *judgement*; they are blocked on a **merge sequence** only the
+orchestrator can order, because the files belong to the `show-visitor-info` stream which is editing
+them concurrently. Full reasoning:
+`contracts/golden/show-exhibitor-info/exhibitorStages-reconciliation.golden.md`.
+
+**FU-1 — link the exhibitor guide from the show landing page. DONE 2026-08-12 (@dev DEV-VISITOR3).**
+`app/(marketing)/national-show/page.tsx` now links to `/national-show/exhibitors` from the
+"Exhibitor information" section, below the stages summary. Added additively — the inline
+exhibitor-stages section was NOT replaced (that is FU-2, and the stages block is still the only
+thing carrying the pending markers). Verified in the rendered HTML of `/national-show`.
+
+**FU-2 — delete `nationalShow.exhibitorStages`.**
+The exhibitor guide never reads it (asserted, A12), so there is one source *for that page* from the
+moment this ships. Removing the field itself needs `sanity/schemas/documents/nationalShow.ts`,
+`sanity/queries.ts` and the landing page — and there is a harder blocker than file ownership: the
+sibling contract's **A5 explicitly asserts `exhibitorStages` still exists**. Deleting it while that
+contract is open turns the sibling's gate red. The two contracts would be asserting opposite things
+about the same line of the same file.
+*Gated on:* FU-1, **and** `contracts/contract-show-visitor-info.yaml` A5 being amended to drop
+`exhibitorStages` from its field list. Amending that assertion is the orchestrator's call, not
+either stream's.
+*Interim state, deliberately visible:* until FU-2, the landing page shows the old portable-text blob
+and `/national-show/exhibitors` shows the structured guide. Bounded and booked, not abandoned.
+
+**FU-3 — unify `ExhibitorStatusBadge` with the visitor stream's `ConfirmationBadge`.**
+Two badge components is real duplication. The exhibitor stream needs a fourth status value
+(`question`) that the visitor stream's three-value model does not have, so the merged component
+takes the four-value list. Same for the two `_shared.mjs` check helpers, which are near-copies.
+*Gated on:* both streams landed and stable.
+
+## A61 venue-change sweep: two cross-stream rulings needed (2026-08-12, @dev round 2)
+
+`contracts/checks/show-visitor-info/check-show-identity-sweep.mjs` (A61) is down from 24 failing
+assertions to 2. Both survivors are **content/ownership decisions, not production defects** — the
+show-identity wiring itself is complete and proven (a venue swap now updates all 14 surfaces in
+`show-identity-surfaces.golden.md`). @dev cannot resolve either without editing another stream's
+contract or overriding a recorded team-lead ruling.
+
+**1. `nationalShow.title` embeds the edition ordinal.**
+Seeded value: `"The 19th South African National Orchid Show"`. The edition also lives in its own
+`edition` field. A61 swaps `edition` to 41 and then fails `/national-show renders NO trace of "19th"`,
+because the landing page renders the CMS `title` verbatim — which A56 (currently GREEN) *requires*
+it to do (`check-show-identity-rendered.mjs:65`).
+- Conflict: `contracts/cms-loop-f3-national-show.yaml:121` records a team-lead ruling
+  "TITLE — WIRE AS-IS", deliberately choosing the ordinal-bearing title.
+- Also pinned by `contracts/golden/f4-seed-page-singletons/nationalShow.golden.json:8` and
+  `scripts/seed-page-singletons.ts:212` (which this round's brief forbids @dev from editing).
+- Note: `show-identity-surfaces.golden.md:8` defines a "show-identity fact" as venue name/city/
+  province/dates/edition/host region/countdown — `title` is **not** on that list, and the H1 is not
+  one of the inventory's 14 rows. So the golden and the check disagree here, and the golden agrees
+  with the current code.
+- Recommended: drop the ordinal from the seeded title ("The South African National Orchid Show").
+  A56 keeps passing (the page still renders whatever the dataset holds) and the edition renders from
+  `edition` everywhere. Needs the CMS stream to update its golden + seed, so it is a team-lead call.
+
+**2. A past show legitimately held in Cape Town.**
+`show` document `year: 2018, location: "Cape Town City Hall"` is rendered in the landing page's
+"Past editions" list. A61 lists `OLD.city` in the **fail** set for `/national-show` with no
+allowPhrases, so a venue change can never clear it — no Studio edit should rewrite a historical
+record. The check already exempts city on `/national-show/archive` for exactly this reason, and
+`show-identity-surfaces.golden.md` row 5 calls past/future rows "constitutional record".
+- Recommended: apply the archive's existing carve-out to `/national-show`, which renders the same
+  past-editions list. That is a check change, which @dev is not permitted to make this round.
+
+
+---
+
+## QA @ show-exhibitor-info (Stream D), 2026-08-12 — contract changes @qa cannot make
+
+Full report: `.agent/memory/scratch/exhibitor-qa.md`. Verdict FAIL (narrow — the page content is
+sound; the failures are in the contract, one check's coverage, and two knowingly-deferred F4 items).
+
+**A live content incident was found and remediated during this pass.**
+`showExhibitorInfo.keyDates[0].dateNote` held `EXH-DEADLINE-SENTINEL-1786483529527` and was
+rendering on `/national-show/exhibitors` as the "Entries close" value for roughly 4.5 hours
+(written 23:25, found 03:49). Restored to `To be set by the show committee`, verified. Dataset is
+clean as of 04:10.
+
+**1. A36 has no `timeout_seconds` and is guaranteed to be SIGKILLed mid-mutation. Fix first.**
+`contracts/contract-show-exhibitor-info.yaml:313-320` inherits the 60s default from
+`execution/contract.py:254`, while `check-cms-round-trip.mjs` budgets 240s/phase and takes ~140s.
+Every gate run therefore kills it after the sentinel write. This is the root cause of the incident
+above **and** of both leaked locks tonight; it reproduced on my own gate run. Until
+`timeout_seconds: 420` lands, every `contract.py gate` on this contract risks republishing a
+sentinel as the exhibitor entry deadline. The check passes cleanly given adequate time (43/43).
+
+**2. `check-policy-language.mjs` (A33) does not scan step bodies — 7 documents are exempt.**
+`contracts/checks/show-exhibitor-info/check-policy-language.mjs:84-86` collects only `title` and
+`when` from `showExhibitorStep`. Proved with a control: "Entries close on 3 March at 4pm. The entry
+fee is R250 per plant…" planted in `showExhibitorStep-enter.body` → A33 green, zero failures; the
+identical sentence in `fees.body` → 7 failures. This is the mission's crux check with a hole in it.
+Fix is one line: push `portableTextToPlain(s.body)` into `collectCopy`.
+
+Both are contract/check edits, which this round's rules bar @qa (and @dev) from making.
+
+**3. Lock leak affects the sibling stream too.** `_mutation-guard.mjs` has no stale-lock reaping and
+no SIGTERM/SIGINT handler, so any killed run wedges the next one.
+`show-visitor-info-dataset.lock` currently holds `pid 49199`, which is dead — left in place, as it
+belongs to the visitor stream. Someone on that stream should clear it and check that dataset for
+`SVI-` residue.
+
+## GATE HAZARD: `contract.py gate --run-checks` corrupts the dataset (2026-08-12, @dev round 2)
+
+ROOT CAUSE FOUND, exact line: `execution/contract.py:472-476`. Under `--phase all`, the runner
+rebuilds a fresh `argparse.Namespace` per phase and copies only `contract`, `phase`, `run_checks`
+and `handoff` — **the CLI-level `timeout_seconds` override is not copied**, so any check without
+its own declared timeout falls back to the 60s default at line 254. NARROWED 2026-08-12 after
+ARCH-VISITOR3 added per-assertion timeouts: a `timeout_seconds` declared on the assertion itself
+DOES survive normalization (`contract.py:137-138`) and is unaffected. The bug is only the CLI
+override, so it bites any assertion that has not declared its own. `--phase <n>` passes `args` straight through and does NOT have the bug.
+Observed: `--phase all --run-checks --timeout-seconds 600` recorded
+`"Command timed out after 60s"` for A42/A60/A61 (see
+`.agent/memory/scratch/contract-results/show-visitor-info/A42.json`), all three of which pass when
+run individually.
+
+Fix is one line — add `timeout_seconds=getattr(args, "timeout_seconds", 60),` to the Namespace at
+`execution/contract.py:472`. NOT applied by me: `execution/` is shared harness code and four other
+streams were running gates against it tonight. Worth a PR to InunuNet/Athanor, since every project
+on this harness has the same hazard.
+
+Why this matters beyond a wrong verdict: **killing a mutating check at 60s kills it mid-write**,
+before its `finally` restore runs. That leaves the dataset swapped, a sentinel rendering on a
+public page, and a stale lock that blocks every later run. That is the same failure mode as
+tonight's two content incidents. Running the gate this way is not a read-only operation.
+
+Workarounds until fixed:
+- Run the four mutating checks individually
+  (`python3 execution/contract.py check <contract> --assertion A61 --timeout-seconds 900`),
+  then evaluate the gate **without** `--run-checks` so it reads the fresh result files.
+- Never `kill` a running check — wait for it. Its `finally` block is the only thing that restores
+  the dataset.
+
+Suggested fix (execution/contract.py, harness-wide): pass the gate's `timeout_seconds` through to
+`check_cmd`, and let a contract declare a per-assertion timeout so slow perturbation checks are not
+governed by a 60s default.
+
+---
+
+## A61 rulings applied 2026-08-12 (@architect) — both items from the 2026-08-12 @dev entry above are RESOLVED
+
+**Ruling 1 — the show title no longer carries the edition ordinal.** `nationalShow.title` is now
+`"The South African National Orchid Show"` (was `"The 19th South African National Orchid Show"`)
+in the live dataset, the golden and — pending @dev — `scripts/seed-page-singletons.ts`. The
+ordinal is `nationalShow.edition`'s fact and still renders everywhere it should, derived from that
+field, so changing the edition in Studio now updates the H1 too.
+
+**FOR BRAD — a copy decision, not a blocker:** this is a visible change to the show's name in the
+H1 on `/national-show` and on the home page. It was made for a structural reason (one fact, one
+field). If SAOC wants the ordinal in the displayed name, the right fix is to compose it at render
+time from `edition`, not to put it back into `title` — say the word and it can be done in an hour.
+
+**Ruling 2 — the "Past editions" list is exempt from the venue sweep, for the city token only.**
+A past show legitimately held in the current venue's city (2018, Cape Town City Hall) is historical
+record. Scope and cost documented in
+`contracts/golden/show-visitor-info/show-identity-surfaces.golden.md`.
+
+**Known hazard for the orchestrator, no human action needed:** the read-only checks (A39/A41/A43…)
+take no lock, so running one while a mutating check holds the lock can produce a false RED —
+`check-confirmation-markers` failed once tonight purely because `check-marker-fail-closed` had
+`pendingLabel` cleared at that moment. It passed on re-run. A read-side lock wait would close it.
+
+## show-exhibitor-info round 2 — three items for the orchestrator (2026-08-12, @architect)
+
+**FU-1 is now asserted and the exhibitor gate is RED on it (A50).**
+The exhibitor guide is still unreachable from `/national-show`, which is where an exhibitor
+actually starts. Round 1 booked this as a follow-up with no assertion behind it — the same shape
+as the `/national-show/archive` orphan this project already shipped once. It now has
+`contracts/checks/show-exhibitor-info/check-landing-links-guide.mjs` behind it, crawling real
+`href` attributes, and it will stay red until the link lands.
+
+The change is **one additive link** in `app/(marketing)/national-show/page.tsx`. That file belongs
+to the visitor stream, which is editing it right now (visitor round-2 item S4 rewrites the
+`EXHIBITOR_STAGES` constant at lines 132–160). Exhibitor @dev must NOT touch it — a collision there
+costs more than the link is worth. *Decision needed:* assign the one-liner to whoever holds
+`page.tsx` when visitor round 2 lands, or sequence it immediately after. It is not exhibitor @dev's
+to take.
+
+**FU-2 is unchanged and still correctly blocked — but the harm is now guarded.**
+`contracts/contract-show-visitor-info.yaml:131` still asserts `exhibitorStages` must exist in
+`sanity/schemas/documents/nationalShow.ts`, so deleting the field would turn the sibling gate red
+over the same line of the same file. Verified still true on 2026-08-12; nothing has changed.
+
+Rather than leave the window unguarded, the exhibitor contract's new **A51** guards the *content*
+instead of the schema: it goes red the moment anyone publishes anything through `exhibitorStages`,
+and it separately checks the rendered landing page is not restating the journey from a hardcoded
+fallback. Today it is green. So the latent defect — a committee member finding an inviting empty
+"Exhibitor Stages" box in Studio and filling it in — now trips a gate instead of quietly putting
+two contradictory exhibitor journeys on the site. FU-2 remains the real fix; A51 makes the wait
+safe rather than merely documented.
+
+**F-9 is not what it looked like, and the real cause belongs to the CMS stream.**
+@qa measured every content propagation at ~60s and never less, and inferred `/api/revalidate` was
+not invalidating this route by tag. The tag wiring is in fact correct end to end — the exhibitor
+page tags its reads `['showExhibitorInfo', …]` / `['showExhibitorStep', …]`
+(`app/(marketing)/national-show/exhibitors/page.tsx:44-51`), and the route calls
+`revalidateTag(body._type, 'max')` as well as `revalidateTag('sanity', 'max')`
+(`app/api/revalidate/route.ts:25-28`). New **A52** locks that wiring in place.
+
+The 60s floor comes from somewhere else: `sanity/lib/client.ts:14` sets `useCdn: true`, so
+invalidating the Next cache only causes a re-fetch **through Sanity's own CDN**, which serves a
+copy up to 60s stale. No amount of tag work will beat that. Fixing it means `useCdn: false` for
+server-side reads (or a `perspective`-aware client), which is a **site-wide** change to a file the
+CMS-wiring stream owns — not an exhibitor-page defect and deliberately not changed here.
+*Decision needed:* whether the CMS stream picks this up. It is a real editor-experience cost
+(every Studio edit appears to "not work" for a minute) but nothing is broken.
+
+**ROOT CAUSE of tonight's three dataset incidents — fixed 2026-08-12 (@architect).** Not CDN lag.
+`contracts/contract-show-visitor-info.yaml` declared no `timeout_seconds` on any assertion, so
+`contract.py` applied its 60s default and SIGKILLed the mutating checks mid-window — after the
+sentinel write, before the restore — on every gate run. Measured: A61 246s, A42 161s, A60 82s (all
+over 60s, so this was deterministic, not a flake). All 13 node assertions now declare measured
+ceilings, and `_mutation-guard.mjs` reaps locks whose pid is dead (the SIGKILL half) and releases
+on SIGTERM/SIGINT/SIGHUP (the catchable half). No human action needed; recorded because it explains
+the incidents.
+
+**Ticketing: does PayFast need a delayed payment method, and if so is a 30-minute
+reservation TTL right?** (@qa, ticketing-hardening round 2, 2026-08-12 — needs Brad, then
+possibly Lee-Ann.)
+
+Round 2 gave unpaid reservations a 30-minute TTL (`lib/tickets-constants.ts`
+`RESERVATION_TTL_MINUTES`), which fixes the round-1 defect where an abandoned checkout held
+a seat forever. The deliberate trade-off, recorded in
+`contracts/golden/ticketing-hardening/reservation-expiry.golden.md`: a payment that lands
+*after* the TTL is still honoured, so if the released seat was resold in the meantime the
+show oversells by one. Measured 2026-08-12: capacity 50 → 51 held. Refusing a paying
+attendee at the door would be worse, so this is the right call — but it assumes late
+payments are rare.
+
+That assumption depends on which PayFast payment methods SAOC enables. Card and Instant EFT
+settle in minutes and 30 minutes is generous. **Manual EFT / bank transfer settles in one to
+two business days**, so every buyer using it would expire, then resurrect as paid — the rare
+case becomes systematic, and a popular ticket type could oversell by a lot.
+
+*Decision needed:* (a) which payment methods will be enabled on the live PayFast account,
+and (b) if a delayed method is in scope, whether the TTL should be much longer for those
+buyers or delayed methods should be switched off for ticket sales. No code change is
+warranted until this is answered; @qa has separately recommended a log line in the ITN so
+that late-paid tickets are at least reconcilable (finding R2-1 in
+`.agent/memory/scratch/harden-qa.md`).

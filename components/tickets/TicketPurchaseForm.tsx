@@ -37,6 +37,17 @@ export function TicketPurchaseForm({
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [redirect, setRedirect] = useState<CheckoutFields | null>(null);
+  // One key per form instance, so a double-click through a slow response or a retry
+  // reuses it and the server answers with the SAME reservation instead of holding a
+  // second seat nobody will pay for. The lazy initialiser keeps it stable across
+  // re-renders. It is never replaced in place: handing off to PayFast unmounts this
+  // component into PayfastRedirectForm, so a browser Back from PayFast REMOUNTS the form
+  // with a brand-new key and the next submit takes a SECOND seat. Reservation expiry
+  // (lib/tickets-constants.ts RESERVATION_TTL_MINUTES) is what releases that seat. Do not
+  // "fix" this by persisting the key across the Back navigation — that would replay the
+  // first reservation, which the server now refuses with 409 once it is paid or expired,
+  // blocking a buyer who is legitimately retrying.
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,7 +66,7 @@ export function TicketPurchaseForm({
     try {
       const res = await fetch('/api/tickets/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
         body: JSON.stringify({
           showId: NATIONAL_SHOW_ID,
           ticketType: selectedType,

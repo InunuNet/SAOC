@@ -87,3 +87,4 @@ execution/tests/stress_test_log.txt
 *.pfx
 *.p8
 *.jks
+.agent/overnight-resume.lock

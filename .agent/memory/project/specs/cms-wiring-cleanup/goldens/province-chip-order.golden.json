@@ -1,0 +1,39 @@
+{
+  "_comment": [
+    "The exact, curated, non-alphabetical order the /societies province filter chips must",
+    "render in. Captured from the rendered page at http://localhost:3333/societies on",
+    "2026-08-11, BEFORE any wiring change — this is the current visitor-facing behaviour,",
+    "not a preference invented by this contract.",
+    "",
+    "It matches lib/data/provinces.ts. The `province` schema has no ordering field today,",
+    "so sourcing the chips from Sanity without adding one would silently reshuffle a",
+    "visitor-facing control into alphabetical order. F3 therefore adds an `order` field and",
+    "seeds it to reproduce exactly this sequence. check-province-chip-order.mjs reads this",
+    "file rather than hardcoding the array."
+  ],
+  "chipOrder": ["All", "WC", "EC", "NC", "FS", "KZN", "GP", "MP", "LP", "NW"],
+  "orderValues": {
+    "_comment": "Seed these as province.order. 'All' is synthesised in code and is NOT a document.",
+    "WC": 1,
+    "EC": 2,
+    "NC": 3,
+    "FS": 4,
+    "KZN": 5,
+    "GP": 6,
+    "MP": 7,
+    "LP": 8,
+    "NW": 9
+  },
+  "datasetNames": {
+    "_comment": "Live province document names, read 2026-08-11. Each becomes its chip's aria-label.",
+    "WC": "Western Cape",
+    "EC": "Eastern Cape",
+    "NC": "Northern Cape",
+    "FS": "Free State",
+    "KZN": "KwaZulu-Natal",
+    "GP": "Gauteng",
+    "MP": "Mpumalanga",
+    "LP": "Limpopo",
+    "NW": "North West"
+  }
+}

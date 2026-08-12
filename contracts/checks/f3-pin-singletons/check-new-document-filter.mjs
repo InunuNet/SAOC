@@ -14,7 +14,7 @@
 // import failure, or any case behaves incorrectly. Never a silent skip (Athanor#1322).
 
 const PINNED_TYPES = ['homePage', 'aboutPage', 'nationalShow', 'contactPage', 'judgingPage', 'membersPage'];
-const MUST_SURVIVE = ['society', 'event']; // ordinary collections, unaffected by F3
+const MUST_SURVIVE = ['society', 'societyEvent']; // ordinary collections, unaffected by F3
 
 let structureModule;
 try {

@@ -3,7 +3,19 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { shows as staticShows } from '@/lib/data/shows';
+import { mergePastShows, type ArchiveShow } from '@/lib/data/mergeShows';
+import type { SanityShowProjection } from '@/lib/data/mergeShows';
+import { sanityFetch } from '@/sanity/lib/fetch';
+import { nationalShowQuery, pastShowsQuery } from '@/sanity/queries';
+import { showLabelWithEdition, showYearOf } from '@/lib/show-identity';
+import type { ShowIdentity } from '@/types';
+
+// F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
+// Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
+// propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
+export const revalidate = 60;
+
+const NOT_RECORDED = '—';
 
 function toRomanOrdinal(n: number): string {
   const val = [50, 40, 10, 9, 5, 4, 1];
@@ -18,10 +30,46 @@ function toRomanOrdinal(n: number): string {
   return result;
 }
 
-export async function generateStaticParams() {
-  return staticShows
-    .filter((s) => s.status === 'past')
-    .map((s) => ({ year: String(s.year) }));
+/**
+ * "Edition XVIII · 2024" where the edition is known, the bare year where it is not —
+ * a Sanity-only show has no static counterpart to supply an edition number, and
+ * inventing one or rendering "Edition " with nothing after it would both be wrong.
+ */
+function editionLabel(show: ArchiveShow): string {
+  return show.edition ? `Edition ${toRomanOrdinal(show.edition)} · ${show.year}` : String(show.year);
+}
+
+/** Joins only the facts that are actually recorded, so nothing renders as "undefined". */
+function subtitle(show: ArchiveShow): string {
+  return [show.month ? `${show.month} ${show.year}` : String(show.year), show.venue, show.host]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+function summarySentence(show: ArchiveShow): string {
+  const name = show.edition
+    ? `The ${toRomanOrdinal(show.edition)} National Orchid Show`
+    : `The ${show.year} National Orchid Show`;
+  const when = show.month ? ` in ${show.month} ${show.year}` : ` in ${show.year}`;
+  const where = show.venue ? ` at ${show.venue}` : '';
+  const host = show.host ? `, hosted by the orchid societies of ${show.host}` : '';
+  const trophies = show.trophies ? ` ${show.trophies} trophies and awards were presented.` : '';
+  return `${name} was held${when}${where}${host}.${trophies}`;
+}
+
+async function loadPastShows(): Promise<ArchiveShow[]> {
+  const sanityShows = await sanityFetch<SanityShowProjection[]>({
+    query: pastShowsQuery,
+    tags: ['show', 'sanity'],
+  });
+  return mergePastShows(sanityShows);
+}
+
+export async function generateStaticParams(): Promise<Array<{ year: string }>> {
+  // Unions the static years and the Sanity `status == "past"` years, so a show added in
+  // the Studio is prerendered rather than left to the dynamic fallback.
+  const pastShows = await loadPastShows();
+  return pastShows.map((s) => ({ year: String(s.year) }));
 }
 
 export async function generateMetadata({
@@ -30,11 +78,14 @@ export async function generateMetadata({
   params: Promise<{ year: string }>;
 }): Promise<Metadata> {
   const { year } = await params;
-  const show = staticShows.find((s) => String(s.year) === year);
+  const pastShows = await loadPastShows();
+  const show = pastShows.find((s) => String(s.year) === year);
   if (!show) return { title: `National Show ${year}` };
   return {
-    title: `${year} National Orchid Show — ${show.host}`,
-    description: `The ${toRomanOrdinal(show.edition)} South African National Orchid Show, held in ${show.month} ${show.year} in ${show.host}.`,
+    title: show.host
+      ? `${year} National Orchid Show — ${show.host}`
+      : `${year} National Orchid Show`,
+    description: summarySentence(show),
   };
 }
 
@@ -44,11 +95,22 @@ export default async function ShowYearPage({
   params: Promise<{ year: string }>;
 }) {
   const { year } = await params;
-  const show = staticShows.find((s) => String(s.year) === year);
+  const [pastShows, upcoming] = await Promise.all([
+    loadPastShows(),
+    sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
+  ]);
+  const show = pastShows.find((s) => String(s.year) === year);
 
-  if (!show || show.status !== 'past') notFound();
+  if (!show) notFound();
 
-  const pastShows = staticShows.filter((s) => s.status === 'past');
+  // F7: edition, city and year on the CTA are show-identity facts, from the singleton.
+  const upcomingLabel = showLabelWithEdition(upcoming?.edition);
+  const upcomingYear = showYearOf(upcoming?.showDate);
+  const upcomingPlaceAndYear = [upcoming?.venue?.city, upcomingYear ? String(upcomingYear) : null]
+    .filter((part): part is string => Boolean(part))
+    .join(' ');
+  const upcomingWhere = upcomingPlaceAndYear ? `, ${upcomingPlaceAndYear}` : '';
+
   const currentIdx = pastShows.findIndex((s) => s.year === show.year);
   const nextShow = pastShows[currentIdx - 1] ?? null;
   const prevShow = pastShows[currentIdx + 1] ?? null;
@@ -73,15 +135,13 @@ export default async function ShowYearPage({
             ← Archive
           </Link>
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-accent mb-2">
-            Edition {toRomanOrdinal(show.edition)} · {show.year}
+            {editionLabel(show)}
           </p>
           <h1 className="font-serif text-[clamp(36px,4.8vw,64px)] font-medium leading-[1.06] tracking-[-0.012em] text-ivory max-w-[18ch]">
             The {show.year} South African National{' '}
             <em className="not-italic text-accent-soft">Orchid Show</em>
           </h1>
-          <p className="mt-5 font-sans text-[17px] text-ivory/70">
-            {show.month} {show.year} · {show.venue} · {show.host}
-          </p>
+          <p className="mt-5 font-sans text-[17px] text-ivory/70">{subtitle(show)}</p>
         </div>
       </section>
 
@@ -90,14 +150,17 @@ export default async function ShowYearPage({
         <div className="mx-auto max-w-[1280px] px-8 py-16">
           <div className="grid grid-cols-2 gap-px bg-rule sm:grid-cols-4">
             {[
-              { value: toRomanOrdinal(show.edition), label: 'Edition' },
-              { value: show.days ? `${show.days} days` : '—', label: 'Duration' },
               {
-                value: show.entries ? show.entries.toLocaleString() : '—',
+                value: show.edition ? toRomanOrdinal(show.edition) : NOT_RECORDED,
+                label: 'Edition',
+              },
+              { value: show.days ? `${show.days} days` : NOT_RECORDED, label: 'Duration' },
+              {
+                value: show.entries ? show.entries.toLocaleString() : NOT_RECORDED,
                 label: 'Entries',
               },
               {
-                value: show.visitors ? show.visitors.toLocaleString() : '—',
+                value: show.visitors ? show.visitors.toLocaleString() : NOT_RECORDED,
                 label: 'Visitors',
               },
             ].map(({ value, label }) => (
@@ -122,10 +185,13 @@ export default async function ShowYearPage({
               About the show
             </p>
             <p className="font-sans text-[16px] leading-relaxed text-ink/80">
-              The {toRomanOrdinal(show.edition)} National Orchid Show was held in {show.month}{' '}
-              {show.year} at {show.venue}, hosted by the orchid societies of {show.host}.
-              {show.trophies ? ` ${show.trophies} trophies and awards were presented.` : ''}
+              {summarySentence(show)}
             </p>
+            {show.exhibitors ? (
+              <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
+                {show.exhibitors.toLocaleString()} exhibitors took part.
+              </p>
+            ) : null}
             {show.note && (
               <p className="mt-4 font-serif text-[16px] italic text-muted">{show.note}</p>
             )}
@@ -155,7 +221,7 @@ export default async function ShowYearPage({
                 ← Earlier
               </span>
               <span className="font-serif text-[20px] font-medium text-ink group-hover:text-primary transition-colors duration-150">
-                {prevShow.year} — {prevShow.host}
+                {prevShow.host ? `${prevShow.year} — ${prevShow.host}` : prevShow.year}
               </span>
             </Link>
           ) : (
@@ -170,7 +236,7 @@ export default async function ShowYearPage({
                 Later →
               </span>
               <span className="font-serif text-[20px] font-medium text-ink group-hover:text-primary transition-colors duration-150">
-                {nextShow.year} — {nextShow.host}
+                {nextShow.host ? `${nextShow.year} — ${nextShow.host}` : nextShow.year}
               </span>
             </Link>
           ) : (
@@ -183,14 +249,14 @@ export default async function ShowYearPage({
       <section className="bg-bone py-16">
         <div className="mx-auto max-w-[1280px] px-8 text-center">
           <h2 className="font-serif text-[clamp(24px,3vw,36px)] font-medium text-ink">
-            Next up: the 19th Show, Cape Town 2027
+            Next up: the {upcomingLabel}{upcomingWhere}
           </h2>
           <div className="mt-6 flex flex-wrap justify-center gap-4">
             <Link
               href="/national-show"
               className="font-sans text-[14px] font-medium bg-primary px-6 py-3 text-ivory transition-colors duration-150 hover:bg-primary-800"
             >
-              View 19th Show
+              View {upcomingLabel}
             </Link>
             <Link
               href="/national-show/archive"

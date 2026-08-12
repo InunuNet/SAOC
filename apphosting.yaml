@@ -65,3 +65,14 @@ env:
     secret: SANITY_API_TOKEN
     availability:
       - RUNTIME
+  # The checkout route builds notify_url/return_url/cancel_url on this at REQUEST time,
+  # falling back to https://saoc.co.za — which still resolves to the OLD Joomla site, so
+  # without this entry every deployed payment's ITN would be delivered there and the
+  # ticket would sit permanently 'reserved'. A public origin, not a secret. RUNTIME only:
+  # a BUILD entry would bake the origin into the bundle and defeat the per-environment
+  # lookup. If the backend is renamed or a custom domain is cut over, this changes with
+  # it — and it must never be saoc.co.za until that domain points at this app.
+  - variable: SITE_URL
+    value: "https://saoc-prod--saoc-webapp.europe-west4.hosted.app"
+    availability:
+      - RUNTIME

@@ -1,0 +1,541 @@
+schema: athanor.contract/v1
+slug: show-exhibitor-info
+goal: >-
+  Rebuild /national-show/exhibitors from a 108-line generic placeholder into a Sanity-driven entry
+  guide, seeded with researched international orchid-show convention that is visibly and
+  structurally marked as NOT YET SAOC POLICY. F1 builds the content model — a showExhibitorInfo
+  singleton carrying nine typed content sections, a key-dates block, an entry-form slot and a list
+  of open questions, plus a repeatable showExhibitorStep type for the exhibitor journey, and a
+  create-if-absent seed script. F2 rebuilds the page around that content in the order an exhibitor
+  experiences it. F3 adds the key-dates summary and an entry-form download that degrades to an
+  honest "to be published" state rather than a dead link. F4 keeps the page reachable and
+  cross-linked, and retires nationalShow.exhibitorStages as far as file ownership allows.
+  One rule outranks all others and is asserted, not merely written down: never state a rule as
+  SAOC policy that SAOC has not confirmed
+  (contracts/golden/show-exhibitor-info/research-to-copy-map.golden.md).
+created_at: '2026-08-11'
+autonomy: high
+
+# ---------------------------------------------------------------------------
+# READ FIRST
+# ---------------------------------------------------------------------------
+# WHY THE SUBSTANTIVE ASSERTIONS ARE NODE SCRIPTS, NOT GREPS
+# Grep-only assertions produced three false greens on this project last session: a field can be
+# present in a schema, present in a GROQ query, assigned to a variable in a page component, and
+# still never reach the rendered HTML. Every assertion below labelled STRUCTURAL settles only what
+# a grep can actually settle — a file exists, a field is declared, a script contains no
+# `createOrReplace`, a component emits no `href="#"`. Every claim of the form "the page shows X"
+# is a real HTTP round trip against the dev server at http://localhost:3333 (SHARED with three
+# other streams — do not kill or restart it; override with EXH_BASE_URL).
+#
+# NEEDLES ARE READ LIVE FROM THE DATASET. A check that hardcodes the expected copy would pass
+# against a page with that copy frozen into JSX. Every content needle is fetched from Sanity first.
+#
+# THE ONE RULE THIS CONTRACT EXISTS TO ENFORCE
+# An exhibitor who drives to Cape Town and is turned away at staging because this page invented a
+# deadline has been harmed by us. The seeded content is researched international convention offered
+# for the committee to CORRECT. A31/A32/A33 are the assertions that make that structural rather
+# than aspirational — A33 in particular reads the seeded copy out of the dataset and rejects
+# unhedged rule statements and invented times, dates and fees, so the posture survives future
+# Studio edits and not just the initial seed.
+#
+# A33 IS THE ASSERTION MOST WORTH DISTRUSTING, because it is the one whose silence looks identical
+# to success. It has been wrong twice. It scanned only `title` and `when` on each journey step, so
+# the seven step documents — the second-largest body of prose on the page — were exempt; QA proved
+# it by planting "Entries close on 3 March at 4pm. The entry fee is R250 per plant." in a step body
+# and getting ZERO failures, against seven for the identical sentence in a scanned field. Six more
+# fields were unscanned for the same reason. It now walks every string in both document types
+# (133 fields, up from ~35) rather than working from a list someone has to remember to update, and
+# the same planted sentence now produces six failures naming the step body it sits in. It also
+# requires every rule-shaped SENTENCE to carry a hedging cue, which is what finally caught the
+# three bare rules sitting in the key-dates Detail column.
+#
+# MUTATING CHECKS: A22 (check-seed-idempotent), A36 (check-cms-round-trip) and A47
+# (check-marker-fallback). All three capture a baseline before any write, restore in a `finally`,
+# verify the restore, and exit 2 with a RESIDUE ALERT if they cannot. None calls process.exit()
+# inside a try — process.exit() does not unwind the stack, so a bare exit there would silently skip
+# the restore. All three take the exclusive lock in _mutation-guard.mjs (A22 did not, until
+# 2026-08-12; it wrote to the same document as A36 with nothing serialising them). All three
+# confine their writes to showExhibitorInfo fields rendered on one page and read by nothing else.
+# None touches nationalShow: contracts/checks/cms-loop-f3-national-show already owns mutating that
+# document, and A51 guards that field's CONTENT without writing to it.
+#
+# ---------------------------------------------------------------------------
+# TIMEOUTS — READ THIS BEFORE ADDING AN ASSERTION THAT MUTATES OR POLLS
+# ---------------------------------------------------------------------------
+# THE RULE: the runner timeout must strictly EXCEED the check's own internal deadline. It exists to
+# catch a wedged process, never to race a check that is working correctly.
+#
+# On 2026-08-11 A36 declared no timeout_seconds and inherited the 60s default
+# (execution/contract.py:254). The check needs ~140s and budgets up to 240s per poll phase, so
+# contract.py SIGKILLed it on EVERY gate run — reliably after it had written its sentinel and
+# usually before it could restore. Twice that night the exhibitor page published
+# EXH-DEADLINE-SENTINEL-… as its entry deadline; one instance rendered live for about four and a
+# half hours. Each kill also leaked the lock file, because SIGKILL does not run `finally`, which
+# wedged every later run. A missing timeout on a mutating check is not a slow gate — it is a
+# content incident generator.
+#
+# So every timeout below is derived from the check's own internal budget, not from how long it
+# happens to take on an idle machine:
+#   - grep/test only ............... no timeout; the 60s default is ample
+#   - HTTP or Sanity read .......... 180s (measured ~1s, but the dev server is shared with three
+#                                    streams and can stall on a cold route compile)
+#   - pnpm type-check / lint ....... 300s (measured 3s / 5s)
+#   - pnpm build ................... 900s (measured 18s idle; four concurrent streams)
+#   - mutating + polling ........... lock wait (900s, _mutation-guard.mjs LOCK_WAIT_TIMEOUT_MS)
+#                                    + every poll window the check can serially enter (240s each)
+#                                    + margin. Hence A22 1200, A47 1500, A36 1800.
+# The mutating numbers look enormous and are meant to. A normal A36 run finishes in ~140s; it can
+# only approach 1800s if it is waiting on a lock a concurrent gate run legitimately holds, and
+# waiting is the correct behaviour there. If you shorten these, shorten LOCK_WAIT_TIMEOUT_MS and
+# the poll windows FIRST — a runner timeout below the check's own deadline is the F-1 bug again.
+#
+# FILE OWNERSHIP — three other streams are running concurrently. This contract asserts against
+# files it owns: app/(marketing)/national-show/exhibitors/**, the new exhibitor schema/query/seed
+# files, components/show/Exhibitor*.tsx, components/show/EntryFormLink.tsx, and one-line additive
+# edits to sanity/schemas/index.ts, sanity/structure.ts, sanity/queries.ts and
+# components/chrome/SearchOverlay.tsx. It contracts NO change to
+# app/(marketing)/national-show/page.tsx, sanity/schemas/documents/nationalShow.ts,
+# plan-your-visit, what-to-expect, faq, archive, ShowCountdown.tsx, app/api/**, apphosting.yaml or
+# sanity/lib/image.ts. Two consequences of that are booked as follow-ups rather than silently
+# dropped — see A40 and contracts/golden/show-exhibitor-info/exhibitorStages-reconciliation.golden.md.
+
+features:
+  - id: F1
+    name: >-
+      Content model — showExhibitorInfo singleton, showExhibitorStep document type, four supporting
+      object types, GROQ queries, and a create-if-absent seed script carrying the researched
+      conventions as visibly-unconfirmed content
+    status: pending
+  - id: F2
+    name: >-
+      /national-show/exhibitors rebuilt as a structured entry guide in the order an exhibitor
+      experiences it — decide, enter, prepare, stage, judging, show days, removal
+    status: pending
+  - id: F3
+    name: >-
+      Key-dates summary block and entry-form download, with an honest pending state in place of a
+      dead link. No online entry submission.
+    status: pending
+  - id: F4
+    name: >-
+      Reachability, cross-links to /judging and the show classes without duplicating either, and
+      retirement of nationalShow.exhibitorStages as far as file ownership permits
+    status: pending
+
+goldens:
+  - contracts/golden/show-exhibitor-info/README.md
+  - contracts/golden/show-exhibitor-info/exhibitor-confirmation-model.golden.md
+  - contracts/golden/show-exhibitor-info/showExhibitorInfo-schema.golden.json
+  - contracts/golden/show-exhibitor-info/showExhibitorStep-schema.golden.json
+  - contracts/golden/show-exhibitor-info/research-to-copy-map.golden.md
+  - contracts/golden/show-exhibitor-info/exhibitor-page-map.golden.md
+  - contracts/golden/show-exhibitor-info/exhibitorStages-reconciliation.golden.md
+  - contracts/golden/show-exhibitor-info/seed-show-exhibitor-info.golden.json
+
+assertions:
+  phase: 4
+  checks:
+    # ================= F1 — schema (STRUCTURAL) =================
+    - id: A1
+      description: 'STRUCTURAL: F1 - the showExhibitorInfo singleton schema file exists'
+      command: 'test -f sanity/schemas/documents/showExhibitorInfo.ts'
+    - id: A2
+      description: >-
+        STRUCTURAL: F1 - showExhibitorInfo declares every field the page renders. A field the page
+        needs but the schema lacks renders as nothing.
+      command: >-
+        for f in title intro pendingLabel researchLabel questionLabel keyDatesHeading keyDatesNote keyDates entryFormHeading entryFormFile entryFormUrl entryFormPendingNote entryProcess fees classes judging eligibility display sales practicalities permits questionsHeading questionsIntro openQuestions confirmations judgingLinkLabel classesLinkLabel contactNote; do grep -q "name: '$f'" sanity/schemas/documents/showExhibitorInfo.ts || { echo "missing showExhibitorInfo field $f"; exit 1; }; done
+    - id: A3
+      description: 'STRUCTURAL: F1 - the four supporting object types exist'
+      command: >-
+        for f in exhibitorSection showExhibitorDate exhibitorQuestion exhibitorConfirmationStatuses; do test -f "sanity/schemas/objects/$f.ts" || { echo "missing object type $f"; exit 1; }; done
+    - id: A4
+      description: >-
+        STRUCTURAL: F1 - exhibitorConfirmationStatuses covers all ten content blocks and carries the
+        four-value list. The fourth value, 'question', is this stream's deliberate extension of the
+        sibling's three — see exhibitor-confirmation-model.golden.md.
+      command: >-
+        for b in entryProcess fees classes judging eligibility display sales practicalities permits entryForm; do grep -q "name: '$b'" sanity/schemas/objects/exhibitorConfirmationStatuses.ts || { echo "missing confirmation block $b"; exit 1; }; done && for v in pending research question confirmed; do grep -q "'$v'" sanity/schemas/objects/exhibitorConfirmationStatuses.ts || { echo "missing status value $v"; exit 1; }; done
+    - id: A5
+      description: >-
+        STRUCTURAL: F1 - every confirmation block defaults to pending, so an unset status can never
+        read as confirmed. Fail closed.
+      command: >-
+        grep -Eq "initialValue:\s*'pending'" sanity/schemas/objects/exhibitorConfirmationStatuses.ts &&
+        if grep -Eq "initialValue:\s*'(confirmed|research|question)'" sanity/schemas/objects/exhibitorConfirmationStatuses.ts; then echo "a block defaults to something other than pending"; exit 1; fi
+    - id: A6
+      description: >-
+        STRUCTURAL: F1 - THE MOST IMPORTANT TYPE DECISION. showExhibitorDate.dateNote is a STRING,
+        not a datetime. A datetime field must hold a date, and there is no honestly-empty date — so
+        a datetime here would force us to invent a staging deadline, which renders as fact no matter
+        what badge sits beside it. See showExhibitorInfo-schema.golden.json.
+      command: >-
+        grep -A3 "name: 'dateNote'" sanity/schemas/objects/showExhibitorDate.ts | grep -q "type: 'string'" &&
+        if grep -q "datetime" sanity/schemas/objects/showExhibitorDate.ts; then echo "a datetime field appeared on showExhibitorDate — see the golden"; exit 1; fi
+    - id: A7
+      description: 'STRUCTURAL: F1 - showExhibitorStep document type exists with its six fields'
+      command: >-
+        test -f sanity/schemas/documents/showExhibitorStep.ts &&
+        for f in title when body order status active; do grep -q "name: '$f'" sanity/schemas/documents/showExhibitorStep.ts || { echo "missing showExhibitorStep field $f"; exit 1; }; done &&
+        grep -Eq "initialValue:\s*'pending'" sanity/schemas/documents/showExhibitorStep.ts
+    - id: A8
+      description: >-
+        STRUCTURAL: F1 - the confirmations block set and the section field set agree. A section can
+        never be added without a status, and a status can never dangle without a section.
+      command: >-
+        for b in entryProcess fees classes judging eligibility display sales practicalities permits; do grep -q "name: '$b'" sanity/schemas/documents/showExhibitorInfo.ts || { echo "section $b missing from the singleton"; exit 1; }; grep -q "name: '$b'" sanity/schemas/objects/exhibitorConfirmationStatuses.ts || { echo "section $b has no confirmation status"; exit 1; }; done
+    - id: A9
+      description: 'STRUCTURAL: F1 - every new type is registered in the schema index'
+      command: >-
+        for t in showExhibitorInfo showExhibitorStep exhibitorSection showExhibitorDate exhibitorQuestion exhibitorConfirmationStatuses; do grep -Eq "^[[:space:]]*$t,[[:space:]]*$" sanity/schemas/index.ts || { echo "$t not registered in schemaTypes"; exit 1; }; done
+    - id: A10
+      description: >-
+        STRUCTURAL: F1 - showExhibitorInfo is a PINNED SINGLETON and showExhibitorStep is a LISTED
+        COLLECTION in the Studio structure (the sibling's convention). Without the pin, an editor can
+        create a duplicate that the query's [0] may silently pick over the intended one.
+      command: >-
+        grep -q "'showExhibitorInfo'" sanity/structure.ts &&
+        grep -q "showExhibitorInfo:" sanity/structure.ts &&
+        grep -q "'showExhibitorStep'" sanity/structure.ts
+    - id: A11
+      description: 'STRUCTURAL: F1 - GROQ queries exist for both new types'
+      command: >-
+        grep -q "showExhibitorInfoQuery" sanity/queries.ts &&
+        grep -q "showExhibitorStepsQuery" sanity/queries.ts
+    - id: A12
+      description: >-
+        STRUCTURAL: F4 (step 1) - the new page and its queries never read nationalShow.exhibitorStages.
+        From the moment this ships there is exactly one source for exhibitor-journey content.
+        See exhibitorStages-reconciliation.golden.md.
+      command: >-
+        if grep -rq "exhibitorStages" "app/(marketing)/national-show/exhibitors" components/show/ExhibitorSteps.tsx 2>/dev/null; then echo "the exhibitor guide reads the field it is meant to be retiring"; exit 1; fi &&
+        if grep -q "exhibitorStages" scripts/seed-show-exhibitor-info.ts; then echo "the seed writes the field it is meant to be retiring"; exit 1; fi
+
+    # ================= F1 — seeding (STRUCTURAL) =================
+    - id: A13
+      description: >-
+        STRUCTURAL: F1 - a NEW seed script exists. scripts/seed-page-singletons.ts is never extended;
+        it uses createOrReplace, which silently reverts every editor change on each run.
+      command: 'test -f scripts/seed-show-exhibitor-info.ts'
+    - id: A14
+      description: 'STRUCTURAL: F1 - seeding is create-if-absent ONLY'
+      command: >-
+        grep -q "createIfNotExists" scripts/seed-show-exhibitor-info.ts &&
+        if grep -q "createOrReplace" scripts/seed-show-exhibitor-info.ts; then exit 1; fi
+    - id: A15
+      description: >-
+        STRUCTURAL: F1 - field patches use setIfMissing, never .set(). An editor's correction always
+        wins over the seed.
+      command: >-
+        grep -q "setIfMissing" scripts/seed-show-exhibitor-info.ts &&
+        if grep -Eq "\.set\(" scripts/seed-show-exhibitor-info.ts; then echo "a .set() would overwrite an editor's change on the next run"; exit 1; fi
+    - id: A16
+      description: 'STRUCTURAL: F1 - the known-hazardous seed-page-singletons.ts is untouched by this feature'
+      command: >-
+        if grep -Eq "showExhibitorInfo|showExhibitorStep|exhibitorSection|exhibitorQuestion" scripts/seed-page-singletons.ts; then exit 1; fi
+    - id: A17
+      description: >-
+        STRUCTURAL: F1 - no seeded field is an empty string. A blank field is indistinguishable from
+        a bug, and on this page it is indistinguishable from a rule we forgot to state.
+      command: >-
+        if grep -Eq ":\s*''|:\s*\"\"" scripts/seed-show-exhibitor-info.ts; then exit 1; fi
+    - id: A18
+      description: >-
+        STRUCTURAL: F1 - all three marker labels are seeded and NOTHING is seeded 'confirmed'.
+        Nothing on this page ships as committee-confirmed fact.
+      command: >-
+        grep -q "pendingLabel" scripts/seed-show-exhibitor-info.ts &&
+        grep -q "researchLabel" scripts/seed-show-exhibitor-info.ts &&
+        grep -q "questionLabel" scripts/seed-show-exhibitor-info.ts &&
+        if grep -q "'confirmed'" scripts/seed-show-exhibitor-info.ts; then echo "something is seeded as confirmed"; exit 1; fi
+    - id: A19
+      description: >-
+        STRUCTURAL: F1 - portable-text keys are deterministic. A random key makes the seed
+        non-idempotent and every re-run produces a spurious document revision.
+      command: >-
+        if grep -Eq "randomUUID|Math\.random|nanoid|uuid\(\)" scripts/seed-show-exhibitor-info.ts; then exit 1; fi
+    - id: A20
+      description: >-
+        STRUCTURAL: F3 - the seed never writes entryFormFile or entryFormUrl. There is no entry form.
+        Seeding a placeholder file would be the exact harm this mission exists to prevent.
+      command: >-
+        if grep -Eq "entryFormFile|entryFormUrl" scripts/seed-show-exhibitor-info.ts; then echo "the seed fabricates an entry form"; exit 1; fi &&
+        grep -q "entryFormPendingNote" scripts/seed-show-exhibitor-info.ts
+    - id: A21
+      description: 'STRUCTURAL: F1 - the seed is runnable. An unrunnable seed script is not a seed script.'
+      command: 'grep -q "seed:exhibitor" package.json'
+    - id: A22
+      timeout_seconds: 1200
+      description: >-
+        DATASET: F1 - re-running the seed moves no document revision, creates no duplicate, and does
+        NOT revert an editor's change (proven against the real dataset, with verified cleanup).
+        Exit 2 means residue was left and must be treated as a live content incident.
+      command: 'node contracts/checks/show-exhibitor-info/check-seed-idempotent.mjs'
+
+    # ================= F2/F3 — page structure (STRUCTURAL) =================
+    - id: A23
+      description: 'STRUCTURAL: F2 - the page and its route-level loading state exist'
+      command: >-
+        test -f "app/(marketing)/national-show/exhibitors/page.tsx" &&
+        test -f "app/(marketing)/national-show/exhibitors/loading.tsx"
+    - id: A24
+      description: 'STRUCTURAL: F2 - the page is a Server Component and carries the standard 60s revalidate'
+      command: >-
+        if head -3 "app/(marketing)/national-show/exhibitors/page.tsx" | grep -q "'use client'"; then echo "the exhibitor page is a client component"; exit 1; fi &&
+        grep -Eq "export const revalidate = 60" "app/(marketing)/national-show/exhibitors/page.tsx"
+    - id: A25
+      description: 'STRUCTURAL: F2/F3 - the six new show components exist'
+      command: >-
+        for c in ExhibitorStatusBadge ExhibitorKeyDates ExhibitorSteps ExhibitorSection ExhibitorQuestions EntryFormLink; do test -f "components/show/$c.tsx" || { echo "missing component $c"; exit 1; }; done
+    - id: A26
+      description: 'STRUCTURAL: F2/F3 - every new component stays under the 150-line limit'
+      command: >-
+        for c in ExhibitorStatusBadge ExhibitorKeyDates ExhibitorSteps ExhibitorSection ExhibitorQuestions EntryFormLink; do lines=$(wc -l < "components/show/$c.tsx"); if [ "$lines" -gt 150 ]; then echo "components/show/$c.tsx exceeds 150 lines ($lines)"; exit 1; fi; done
+    - id: A27
+      description: >-
+        STRUCTURAL: F2 - no new CSS custom properties and no raw hex colour literals in the new files.
+        Sage & Paper tokens only; no invented brand assets.
+      command: >-
+        if grep -rEq -- "--[a-z-]+\s*:" "app/(marketing)/national-show/exhibitors" components/show/Exhibitor*.tsx components/show/EntryFormLink.tsx 2>/dev/null; then echo "a new CSS custom property was introduced"; exit 1; fi &&
+        if grep -rEq "#[0-9a-fA-F]{3,6}\b" "app/(marketing)/national-show/exhibitors" components/show/Exhibitor*.tsx components/show/EntryFormLink.tsx 2>/dev/null; then echo "a raw hex colour literal was introduced"; exit 1; fi
+    - id: A28
+      description: >-
+        STRUCTURAL: F2 - the whole page renders on the server. Nothing here needs browser state, and
+        a client boundary would put the honesty markers behind hydration.
+      command: >-
+        if grep -rq "'use client'" "app/(marketing)/national-show/exhibitors" components/show/Exhibitor*.tsx components/show/EntryFormLink.tsx 2>/dev/null; then echo "a client component appeared in the exhibitor guide"; exit 1; fi
+    - id: A29
+      description: >-
+        STRUCTURAL: F2 - the key-dates block is a semantic table with a caption. A dates table read
+        by a screen reader as a pile of divs is not accessible, and this block is the single most
+        likely thing on the page to be read assistively.
+      command: >-
+        grep -q "<table" components/show/ExhibitorKeyDates.tsx &&
+        grep -q "<caption" components/show/ExhibitorKeyDates.tsx &&
+        grep -q "scope=" components/show/ExhibitorKeyDates.tsx
+    - id: A30
+      description: >-
+        STRUCTURAL: F2 - the exhibitor journey renders as an ordered list. The order is meaning, not
+        styling.
+      command: 'grep -q "<ol" components/show/ExhibitorSteps.tsx'
+
+    # ================= RENDERED — real HTTP round trips =================
+    - id: A31
+      timeout_seconds: 180
+      description: >-
+        RENDERED - the page returns 200 and actually renders every seeded field, section heading and
+        body, key-date row, active step, and open question. Inactive steps are hidden and the steps
+        render in `order` ascending. Every needle is read live from Sanity, so copy frozen into JSX
+        cannot satisfy this.
+      command: 'node contracts/checks/show-exhibitor-info/check-page-renders.mjs'
+    - id: A32
+      timeout_seconds: 180
+      description: >-
+        RENDERED - THE HONESTY CHECK. Every one of the ten blocks has a legal status, nothing is
+        'confirmed', and the dataset's own marker text renders on the page at least once per block
+        carrying that status. ExhibitorStatusBadge hardcodes none of the three labels and has exactly
+        one null return (the confirmed branch), so an unset status cannot render as silence.
+      command: 'node contracts/checks/show-exhibitor-info/check-status-markers.mjs'
+    - id: A33
+      timeout_seconds: 180
+      description: >-
+        DATASET - THE SUBSTANTIVE CRUX. The seeded copy states no rule as settled SAOC fact, contains
+        no invented time, date, or fee, scopes CITES to international movement and asserts no CITES
+        requirement for domestic entries, attributes the twelve-month ownership figure to the show
+        that actually uses it, and stays inside SAOC's cultivation remit. Runs against the dataset,
+        not the page source, so it keeps protecting the posture after future Studio edits.
+      command: 'node contracts/checks/show-exhibitor-info/check-policy-language.mjs'
+    - id: A34
+      timeout_seconds: 180
+      description: >-
+        RENDERED - F3: the entry form is never a dead link. With no form in the dataset the heading
+        and the pending note both render as text with no anchor around them; with one, it renders as
+        a real href. No href="#", href="", href="undefined" or href="null" anywhere on the page.
+      command: 'node contracts/checks/show-exhibitor-info/check-entry-form-state.mjs'
+    - id: A35
+      timeout_seconds: 180
+      description: >-
+        RENDERED - F4: the show classes are linked, never restated (class codes read LIVE from the
+        showClass documents), no judging-page copy is duplicated, and neither the venue nor an
+        explicit show date range is repeated here.
+      command: 'node contracts/checks/show-exhibitor-info/check-no-duplication.mjs'
+    - id: A36
+      timeout_seconds: 1800
+      description: >-
+        THE DEADLINE-CHANGE TEST - a write to the dataset provably reaches the rendered page
+        (two-sided: the new value appears AND the old one disappears), proving the committee can set
+        a real deadline without a developer. Phase 2 proves fail-closed behaviourally: an
+        unrecognised status still renders the pending marker and the raw value never leaks to the
+        page. Verified restore of both baselines; exit 2 means residue was left.
+      command: 'node contracts/checks/show-exhibitor-info/check-cms-round-trip.mjs'
+    - id: A37
+      timeout_seconds: 180
+      description: >-
+        RENDERED - F4 reachability. A 200 is not accepted as evidence: the check crawls real HTML for
+        href attributes. It asserts FIRST that the pre-existing home-page link (components/home/
+        ShowBand.tsx) survived the rebuild — orphaning a page that was reachable before is a
+        regression dressed as a rewrite — then the outbound links to /national-show, /judging and
+        /contact, and the site-wide search entry.
+      command: 'node contracts/checks/show-exhibitor-info/check-reachability.mjs'
+    - id: A38
+      timeout_seconds: 180
+      description: >-
+        META - proves this contract's checks can actually fail: the link primitive reports absence for
+        an unlinked page, the text primitive ignores copy that lives only in a script or style block
+        or an attribute, a non-existent route is surfaced as non-200, and an unreachable dev server is
+        a hard failure rather than a silent skip.
+      command: 'node contracts/checks/show-exhibitor-info/check-detects-absence.mjs'
+
+    # ================= F4 — wiring (STRUCTURAL) =================
+    - id: A39
+      description: >-
+        STRUCTURAL: F4 - site-wide search offers the exhibitor guide, and the primary header nav is
+        deliberately NOT expanded (a six-item bar stays a six-item bar — the sibling's decision).
+      command: >-
+        grep -q "/national-show/exhibitors" components/chrome/SearchOverlay.tsx &&
+        if grep -q "/national-show/exhibitors" components/chrome/Header.tsx; then echo "the header nav was expanded — see exhibitor-page-map.golden.md"; exit 1; fi
+    - id: A40
+      description: >-
+        STRUCTURAL: F4 - the two things this contract CANNOT do, because the visitor stream owns the
+        files, are booked rather than dropped: FU-1 (the /national-show landing-page link) and FU-2
+        (deleting nationalShow.exhibitorStages, which the sibling contract's A5 currently asserts must
+        still exist). An undocumented follow-up is an abandoned one.
+      command: >-
+        grep -q "FU-1" contracts/golden/show-exhibitor-info/exhibitorStages-reconciliation.golden.md &&
+        grep -q "FU-2" contracts/golden/show-exhibitor-info/exhibitorStages-reconciliation.golden.md &&
+        grep -q "FU-1" .agent/memory/project/needs-human.md &&
+        grep -q "FU-2" .agent/memory/project/needs-human.md
+
+    # ================= ROUND 2 — QA findings F-1 … F-10 =================
+    # Added 2026-08-12 after the first adversarial pass. Every assertion here was verified RED
+    # against the tree as QA left it, except A44 and A51, which are green because they lock in
+    # behaviour that was fixed or verified in this pass rather than behaviour still to be built.
+
+    - id: A44
+      timeout_seconds: 240
+      description: >-
+        META (F-1/F-2) - the dataset mutation guard behaves under the conditions that broke it. A
+        lock held by a DEAD process is reaped promptly instead of being waited out for the 1800s
+        stale window; a lock held by a LIVE process is respected; release is ownership-checked so a
+        run whose lock was reaped cannot delete the lock of whoever took over; SIGTERM releases on
+        the way out; and a poisoned baseline is still refused. The over-correction cases (a live
+        lock, an ownership-checked release) matter as much as the bug: a leaked lock stops work
+        loudly, while a STOLEN lock lets two writers into one document quietly, which is the
+        original defect this whole mechanism exists to prevent. Touches no dataset and no network.
+      command: 'node contracts/checks/show-exhibitor-info/check-lock-safety.mjs'
+
+    - id: A45
+      description: >-
+        STRUCTURAL: F-5 - the three marker labels are REQUIRED in the schema. showExhibitorInfo
+        shipped with zero validation rules of any kind, so an editor could clear the field that
+        carries the page's entire "not yet SAOC policy" posture and get no warning at all.
+      command: >-
+        for f in pendingLabel researchLabel questionLabel; do grep -A8 "name: '$f'" sanity/schemas/documents/showExhibitorInfo.ts | grep -q "Rule.required()" || { echo "$f has no Rule.required() — an editor can clear it silently"; exit 1; }; done
+
+    - id: A46
+      description: >-
+        STRUCTURAL: F-5 - ExhibitorStatusBadge carries a last-resort fallback CONSTANT, and the
+        three Sanity labels are still props. A safety device must not have an off switch, and an
+        empty text field in Studio was the off switch. This deliberately relaxes the original
+        "no label strings in this file" rule by exactly one string: the constant is the floor no
+        dataset value can lower, not editable copy.
+      command: >-
+        grep -Eq "^const [A-Z_]*FALLBACK[A-Z_]*\b" components/show/ExhibitorStatusBadge.tsx &&
+        for l in pendingLabel researchLabel questionLabel; do grep -q "$l" components/show/ExhibitorStatusBadge.tsx || { echo "$l is no longer a prop — the labels must stay editable"; exit 1; }; done
+
+    - id: A47
+      timeout_seconds: 1500
+      description: >-
+        RENDERED: F-5 - THE SAFETY DEVICE HAS NO OFF SWITCH, proven with the switch flipped. Clears
+        all three label fields in the dataset and requires that the SAME NUMBER of markers still
+        render and that every one still carries non-empty visible text. QA cleared these three
+        fields and measured 23 bordered boxes containing nothing but an aria-hidden glyph: a
+        sighted reader saw 23 empty rectangles and a screen-reader user was told nothing, while the
+        researched convention stayed on the page reading as settled SAOC policy. Markers are
+        counted STRUCTURALLY via a data attribute derived from neither the dataset nor the copy —
+        the copy is precisely what this test removes, so counting it would be circular, and the
+        glyph is aria-hidden, so counting that would score an unreadable box as working. Mutating;
+        verified restore; exit 2 means the labels are still cleared on the live page.
+      command: 'node contracts/checks/show-exhibitor-info/check-marker-fallback.mjs'
+
+    - id: A48
+      description: >-
+        STRUCTURAL: F-4 - the key-dates caption is editor-owned content, not a factual claim frozen
+        in JSX. It read "Key dates for exhibitors. None of these are set yet." — true today, and
+        false the moment the committee sets real dates and the badges correctly disappear, leaving
+        two contradictory claims in one viewport with no editor able to reach either. The caption
+        moves to keyDatesCaption in Sanity (where A33 then polices its language like every other
+        field), and the "none are set" claim is deleted rather than duplicated: the per-row badges
+        already say it, correctly and dynamically.
+      command: >-
+        grep -q "name: 'keyDatesCaption'" sanity/schemas/documents/showExhibitorInfo.ts &&
+        grep -q "keyDatesCaption" scripts/seed-show-exhibitor-info.ts &&
+        perl -0ne 'exit(/<caption[^>]*>\s*\{/s ? 0 : 1)' components/show/ExhibitorKeyDates.tsx &&
+        if grep -Eqi "none of these|are set yet|not yet set|nothing is set" components/show/ExhibitorKeyDates.tsx; then echo "the caption still asserts a fact the dataset will contradict"; exit 1; fi
+
+    - id: A49
+      description: >-
+        STRUCTURAL: F-10 - no hardcoded show edition in the page metadata. Everything else on this
+        page is Sanity-driven; the title says "19th National Orchid Show" and goes stale at the
+        20th, in the one place nobody looks.
+      command: >-
+        if grep -Eq "[0-9]+(st|nd|rd|th) National" "app/(marketing)/national-show/exhibitors/page.tsx"; then echo "the page metadata hardcodes a show edition"; exit 1; fi
+
+    - id: A50
+      timeout_seconds: 180
+      description: >-
+        RENDERED: F-6 / F4 / M3 - the show landing page links to the exhibitor guide. The guide is
+        reachable from the home-page ShowBand and from search, and A37 proves both — but an
+        exhibitor starts at /national-show, and from there they cannot get here. The mission's own
+        wording is "link the exhibitor guide from the show landing page and site nav" and half of
+        it is unmet. This assertion is EXPECTED RED until FU-1 lands, because "built and
+        unreachable is not built" and this project has already shipped that mistake once with
+        /national-show/archive, booked as a follow-up with no assertion behind it. Crawls real href
+        attributes; a 200 is not accepted as evidence.
+      command: 'node contracts/checks/show-exhibitor-info/check-landing-links-guide.mjs'
+
+    - id: A51
+      timeout_seconds: 180
+      description: >-
+        DATASET: F-7 / F4 - one source for the exhibitor journey, guarded as a state of the DATA
+        rather than of the schema. nationalShow.exhibitorStages cannot be deleted by this contract:
+        the files belong to the visitor stream and that stream's A5 currently asserts the field
+        must still exist, so removing it would turn a sibling gate red over the same line of the
+        same file. The content is guarded instead. Today the field is unset, which is exactly what
+        makes it dangerous — a latent defect with a human trigger, waiting for a committee member
+        to find an inviting empty box in Studio and fill it in, at which point the site publishes
+        two exhibitor journeys that drift apart with no editor able to see that the other exists.
+        Also asserts, against rendered bytes, that the landing page is not restating the journey
+        from a hardcoded fallback constant, which the dataset test alone would not catch.
+      command: 'node contracts/checks/show-exhibitor-info/check-exhibitor-stages-retired.mjs'
+
+    - id: A52
+      description: >-
+        STRUCTURAL: F-9 - the exhibitor page tags its Sanity reads by document type and
+        /api/revalidate invalidates those tags. QA measured every propagation at ~60s and never
+        less, and inferred the webhook was not invalidating this route. The wiring is in fact
+        correct and this assertion locks it in place; the 60s floor comes from somewhere else
+        entirely — sanity/lib/client.ts sets useCdn:true, so a revalidated Next cache re-fetches
+        through a Sanity CDN copy that is itself up to 60s stale. That is a site-wide client
+        setting owned by the CMS stream, not an exhibitor-page defect, and is booked rather than
+        changed here. Worth an assertion anyway: the tags are one careless edit from being dropped,
+        and if they were, nothing else would notice.
+      command: >-
+        grep -q "tags: \['showExhibitorInfo'" "app/(marketing)/national-show/exhibitors/page.tsx" &&
+        grep -q "tags: \['showExhibitorStep'" "app/(marketing)/national-show/exhibitors/page.tsx" &&
+        grep -q "revalidateTag(body._type" app/api/revalidate/route.ts
+
+    # ================= Gates =================
+    - id: A41
+      timeout_seconds: 300
+      description: strict TypeScript type-check passes
+      command: 'pnpm type-check'
+    - id: A42
+      timeout_seconds: 300
+      description: lint passes with zero errors
+      command: 'pnpm lint'
+    - id: A43
+      timeout_seconds: 900
+      description: production build succeeds
+      command: 'pnpm build'

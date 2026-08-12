@@ -1,9 +1,17 @@
 import type { Metadata } from 'next';
 
+import Link from 'next/link';
+
 import { PageHero } from '@/components/ui/PageHero';
 import { ContactForm } from '@/components/contact';
+import { VenueCard } from '@/components/show';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { contactPageQuery } from '@/sanity/queries';
+import {
+  contactPageQuery,
+  nationalShowVenueQuery,
+  showVisitorInfoQuery,
+} from '@/sanity/queries';
+import type { ShowVenue, ShowVisitorInfo } from '@/types';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -28,11 +36,21 @@ const FALLBACK_CONTACTS: DirectContact[] = [
   { name: 'SAOC Secretariat', role: 'General enquiries', email: 'info@saoc.co.za' },
 ];
 
+interface ShowVenueData {
+  venue: ShowVenue | null;
+}
+
 export default async function ContactPage() {
-  const data = await sanityFetch<ContactPageData>({
-    query: contactPageQuery,
-    tags: ['contact', 'sanity'],
-  });
+  // The venue block renders the SAME VenueCard against the SAME nationalShow.venue
+  // object as the show pages, so the two can never drift apart (spec §4.18).
+  const [data, show, info] = await Promise.all([
+    sanityFetch<ContactPageData>({ query: contactPageQuery, tags: ['contact', 'sanity'] }),
+    sanityFetch<ShowVenueData>({ query: nationalShowVenueQuery, tags: ['nationalShow', 'sanity'] }),
+    sanityFetch<ShowVisitorInfo>({
+      query: showVisitorInfoQuery,
+      tags: ['showVisitorInfo', 'sanity'],
+    }),
+  ]);
 
   const contacts: DirectContact[] =
     data?.directContacts && data.directContacts.length > 0
@@ -74,6 +92,24 @@ export default async function ContactPage() {
                 </li>
               ))}
             </ul>
+
+            <VenueCard
+              venue={show?.venue}
+              heading="National Show venue"
+              status={info?.confirmations?.venue}
+              pendingLabel={info?.pendingLabel}
+              researchLabel={info?.researchLabel}
+            />
+            <p className="font-sans text-[14px] text-ink/70">
+              Visiting the show?{' '}
+              <Link
+                href="/national-show"
+                className="underline underline-offset-2 hover:text-accent"
+              >
+                See the National Show
+              </Link>{' '}
+              for travel, hours and admission.
+            </p>
           </aside>
 
           {/* RIGHT — contact form */}

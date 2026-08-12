@@ -37,7 +37,11 @@ interface EventResult {
 const SUGGESTIONS: ReadonlyArray<{ label: string; href: string }> = [
   { label: 'About SAOC', href: '/about' },
   { label: 'Find a society', href: '/societies' },
-  { label: '19th National Show', href: '/national-show' },
+  { label: 'National Show', href: '/national-show' },
+  { label: 'Plan your visit to the show', href: '/national-show/plan-your-visit' },
+  { label: 'What to expect at the show', href: '/national-show/what-to-expect' },
+  { label: 'Visitor questions', href: '/national-show/faq' },
+  { label: 'Exhibit at the National Show', href: '/national-show/exhibitors' },
   { label: 'Events calendar', href: '/events' },
   { label: 'Contact the council', href: '/contact' },
 ];

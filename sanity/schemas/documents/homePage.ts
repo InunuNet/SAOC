@@ -8,6 +8,7 @@ export const homePage = defineType({
     defineField({ name: 'title', title: 'Title', type: 'string' }),
     defineField({ name: 'heroImages', title: 'Hero Images', type: 'array', of: [{ type: 'image' }] }),
     defineField({ name: 'missionText', title: 'Mission Text', type: 'text' }),
-    defineField({ name: 'countdownDate', title: 'Countdown Target Date', type: 'datetime' }),
+    // The show countdown is driven by `nationalShow.countdownDate`, which the home page
+    // passes to ShowBand. A duplicate field here was editable but inert, so it was removed.
   ],
 });

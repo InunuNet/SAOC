@@ -104,14 +104,17 @@ function mapEvents(): Record<string, unknown>[] {
 }
 
 function mapProvinces(): Record<string, unknown>[] {
+  // `order` mirrors the curated array position (ALL excluded) so a fresh seed
+  // reproduces the /societies chip sequence rather than an alphabetical one.
   return provinces
     .filter((p) => p.code !== 'ALL')
-    .map((p) => ({
+    .map((p, index) => ({
       _id: safeid('province', p.code),
       _type: 'province',
       name: p.name,
       code: p.code,
       slug: { _type: 'slug', current: slugify(p.code) },
+      order: index + 1,
     }));
 }
 

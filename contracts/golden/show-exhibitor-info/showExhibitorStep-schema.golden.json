@@ -1,0 +1,115 @@
+{
+  "_comment": [
+    "GOLDEN — sanity/schemas/documents/showExhibitorStep.ts.",
+    "A LISTED COLLECTION in the Studio (not a pinned singleton) — the sibling convention for a",
+    "repeatable type. The committee can add, remove and reorder steps without a developer.",
+    "",
+    "WHY A DOCUMENT TYPE AND NOT AN ARRAY ON THE SINGLETON:",
+    "F2's spine is the exhibitor journey, and the number of stages is exactly the thing SAOC's",
+    "committee is most likely to change (research Section 2: staging windows vary from a single",
+    "afternoon to two days depending on show size). An array on the singleton would work, but a",
+    "document type gives each step its own Studio URL, its own edit history, and its own",
+    "confirmation status the committee can flip one at a time as it settles each stage. It also",
+    "matches how the visitor stream modelled showFaq, for the same reason."
+  ],
+
+  "documentType": {
+    "name": "showExhibitorStep",
+    "title": "Show Exhibitor Step",
+    "type": "document",
+    "fields": [
+      { "name": "title", "type": "string" },
+      {
+        "name": "when",
+        "type": "string",
+        "_note": "Free text, not a date, for the same reason showExhibitorDate.dateNote is. e.g. 'Before the entry deadline'.",
+        "_eg": "By the published entry deadline"
+      },
+      { "name": "body", "type": "portableText" },
+      {
+        "name": "order",
+        "type": "number",
+        "validation": "required, integer",
+        "_note": "GROQ orders by this ascending. Seeded 1..7 in tens (10,20,...) so the committee can insert a step between two without renumbering everything."
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "options": { "list": ["pending", "research", "question", "confirmed"] },
+        "initialValue": "pending"
+      },
+      {
+        "name": "active",
+        "type": "boolean",
+        "initialValue": true,
+        "_note": "Lets the committee retire a step without deleting its edit history. The query filters on it; the contract proves an inactive step does not render."
+      }
+    ]
+  },
+
+  "seededSteps": [
+    {
+      "_id": "showExhibitorStep-decide",
+      "order": 10,
+      "title": "Decide to enter",
+      "when": "As early as you can",
+      "status": "research",
+      "_research": "Section 1 — exhibitors register plants under an Exhibitor Number matched against a published Show Schedule."
+    },
+    {
+      "_id": "showExhibitorStep-enter",
+      "order": 20,
+      "title": "Enter by the deadline",
+      "when": "By the published entry deadline",
+      "status": "pending",
+      "_research": "Section 1 — near-universal that an entry cutoff exists; the interval is show-specific, so the SAOC date is pending."
+    },
+    {
+      "_id": "showExhibitorStep-prepare",
+      "order": 30,
+      "title": "Prepare and label your plants",
+      "when": "In the weeks before the show",
+      "status": "research",
+      "_research": "Section 5 — pest/disease freedom and correct nomenclature are both near-universal."
+    },
+    {
+      "_id": "showExhibitorStep-deliver",
+      "order": 40,
+      "title": "Deliver and stage",
+      "when": "During the staging window, before the show opens",
+      "status": "pending",
+      "_research": "Section 2 — a fixed pre-opening staging window is near-universal; SAOC's times are not set."
+    },
+    {
+      "_id": "showExhibitorStep-judging",
+      "order": 50,
+      "title": "Judging",
+      "when": "After staging closes, before the public are admitted",
+      "status": "research",
+      "_research": "Section 4 — judging between staging and opening, exhibitors normally not present, 'Do Not Judge' opt-out."
+    },
+    {
+      "_id": "showExhibitorStep-show-days",
+      "order": 60,
+      "title": "During the show",
+      "when": "The full run of the show",
+      "status": "question",
+      "_research": "Section 8 — watering and care responsibility during the run was not found in ANY public exhibitor document. This step is mostly a question."
+    },
+    {
+      "_id": "showExhibitorStep-removal",
+      "order": 70,
+      "title": "Removal",
+      "when": "After the published closing time",
+      "status": "pending",
+      "_research": "Section 2 — plants remain benched for the full run is near-universal; the removal time itself is SAOC's to set."
+    }
+  ],
+
+  "showExhibitorStepsQuery": {
+    "_file": "sanity/queries.ts",
+    "name": "showExhibitorStepsQuery",
+    "groq": "*[_type == \"showExhibitorStep\" && active == true] | order(order asc){ _id, title, when, body, order, status }",
+    "_note": "active == true, not !defined(active) || active — initialValue guarantees the field is set on anything created through the Studio, and the seed sets it explicitly."
+  }
+}

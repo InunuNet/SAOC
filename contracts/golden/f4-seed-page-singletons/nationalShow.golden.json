@@ -5,8 +5,8 @@
   "fields": {
     "title": {
       "kind": "exact",
-      "value": "The 19th South African National Orchid Show",
-      "note": "Migrated verbatim from the ShowBand.tsx headline (<h2>)."
+      "value": "The South African National Orchid Show",
+      "note": "AMENDED 2026-08-12 by team-lead ruling (contract-show-visitor-info A61). Originally migrated verbatim from the ShowBand.tsx headline as 'The 19th South African National Orchid Show'. The ordinal came out: the edition is `nationalShow.edition`'s fact, and duplicating it in the title meant changing the edition in Studio left a stale '19th' in the H1 — the exact class of failure the show-identity work exists to eliminate. The ordinal still renders everywhere it should, derived from `edition`. This amends the seeded STRING only; the 'TITLE — WIRE AS-IS' ruling at contracts/cms-loop-f3-national-show.yaml:121 (render the CMS title verbatim, do not restructure the H1) stands unchanged."
     },
     "showDate": {
       "kind": "absent",

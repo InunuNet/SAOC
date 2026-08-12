@@ -1,0 +1,91 @@
+{
+  "_comment": [
+    "F1 — the FAQ collection document type driving /national-show/faq (F4).",
+    "A collection, not an array on the singleton, because the committee will add and confirm",
+    "questions one at a time and each needs its own confirmation status."
+  ],
+  "file": "sanity/schemas/documents/showFaq.ts",
+  "name": "showFaq",
+  "title": "Show FAQ",
+  "type": "document",
+  "fields": [
+    {
+      "name": "question",
+      "title": "Question",
+      "type": "string",
+      "validation": "required"
+    },
+    {
+      "name": "answer",
+      "title": "Answer",
+      "type": "portableText",
+      "description": "Reuses the existing portableText object type — same as nationalShow.exhibitorStages, so it renders with the <PortableText> component already used on /national-show."
+    },
+    {
+      "name": "category",
+      "title": "Category",
+      "type": "string",
+      "validation": "required",
+      "options": {
+        "list": [
+          { "title": "Getting There", "value": "getting-there" },
+          { "title": "Tickets", "value": "tickets" },
+          { "title": "Accessibility", "value": "accessibility" },
+          { "title": "Plant Sales", "value": "plant-sales" },
+          { "title": "General", "value": "general" }
+        ]
+      },
+      "initialValue": "general",
+      "_comment": "The four categories named in spec §4.17 plus General as the honest home for anything that fits none of them."
+    },
+    {
+      "name": "order",
+      "title": "Order",
+      "type": "number",
+      "description": "Sort position within the category. Lower first.",
+      "initialValue": 0
+    },
+    {
+      "name": "status",
+      "title": "Confirmation Status",
+      "type": "string",
+      "options": {
+        "list": [
+          { "title": "Pending — placeholder answer, committee must supply", "value": "pending" },
+          { "title": "Research — our own verified research, not committee-confirmed", "value": "research" },
+          { "title": "Confirmed — signed off by the show committee", "value": "confirmed" }
+        ]
+      },
+      "initialValue": "pending",
+      "_comment": "Identical three-value list to confirmationStatuses. Per-document because FAQs get confirmed individually."
+    },
+    {
+      "name": "active",
+      "title": "Show on the site",
+      "type": "boolean",
+      "initialValue": true,
+      "description": "Uncheck to hide a question without deleting it. Same pattern as Ticket Types."
+    }
+  ],
+  "preview": {
+    "select": { "title": "question", "subtitle": "category" }
+  },
+  "query": {
+    "name": "showFaqsQuery",
+    "location": "sanity/queries.ts",
+    "groq": "*[_type == \"showFaq\" && active == true] | order(category asc, order asc, question asc){ _id, question, answer, category, order, status }",
+    "_comment": "Sorted server-side. The tertiary sort on question makes rendering deterministic when two entries share an order value — otherwise the page HTML changes between requests and the ordering assertion flakes."
+  },
+  "categoryOrderOnPage": {
+    "_comment": "Category display order is a PRESENTATION decision, not editor content — it is a fixed constant in the page/component, and it is the ONLY hardcoded list permitted by this contract. It contains no venue-derived value.",
+    "order": ["getting-there", "tickets", "accessibility", "plant-sales", "general"],
+    "labels": {
+      "getting-there": "Getting there",
+      "tickets": "Tickets",
+      "accessibility": "Accessibility",
+      "plant-sales": "Plant sales",
+      "general": "General"
+    },
+    "rule": "A category with zero active FAQs renders no heading at all. An unknown category value coming back from Sanity is appended under General rather than dropped — never silently discard editor content."
+  }
+}

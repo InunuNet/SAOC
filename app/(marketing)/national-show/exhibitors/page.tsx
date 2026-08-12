@@ -1,108 +1,194 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 
-export const metadata: Metadata = {
-  title: 'Exhibitor Information — 19th National Orchid Show',
-  description:
-    'Information for exhibitors entering the 19th South African National Orchid Show, Cape Town, September 2027.',
-};
+import { PageHero } from '@/components/ui/PageHero';
+import {
+  EntryFormLink,
+  ExhibitorKeyDates,
+  ExhibitorQuestions,
+  ExhibitorSection,
+  ExhibitorSteps,
+} from '@/components/show';
+import { sanityFetch } from '@/sanity/lib/fetch';
+import { showExhibitorInfoQuery, showExhibitorStepsQuery } from '@/sanity/queries';
+import type { ShowExhibitorInfo, ShowExhibitorStep } from '@/types';
 
-const INFO_BLOCKS = [
-  {
-    heading: 'Who can exhibit',
-    body: 'Any member of an SAOC-affiliated society may enter plants in the competitive show. Non-competitive display space is available to affiliated societies by arrangement.',
-  },
-  {
-    heading: 'Entry categories',
-    body: 'Plants are judged against SAOC standards in genus-based classes. Grand Champion and Reserve Champion trophies are awarded from the class winners. Full category list will be published six months before the show.',
-  },
-  {
-    heading: 'Setup and staging',
-    body: 'Exhibitors may stage plants on the Thursday and Friday before opening. The show runs Friday evening through Sunday afternoon. Exact times are confirmed closer to the event.',
-  },
-  {
-    heading: 'Judging',
-    body: 'All judging is conducted by SAOC-accredited judges. Plants are assessed on flower quality, cultural merit, presentation, and labelling. See our judging page for the full standards.',
-  },
-];
+// Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
+export const revalidate = 60;
 
-export default function ExhibitorInfoPage() {
+// Everything visible on this page is Sanity-driven; the metadata used to hardcode "19th
+// National Orchid Show", which goes stale at the 20th in the one place nobody looks. The
+// title now comes from the same singleton the page renders, and the edition is not
+// restated here at all — /national-show owns the show's identity.
+export async function generateMetadata(): Promise<Metadata> {
+  const info = await sanityFetch<ShowExhibitorInfo>({
+    query: showExhibitorInfoQuery,
+    tags: ['showExhibitorInfo', 'sanity'],
+  });
+
+  return {
+    title: `${info?.title ?? 'Exhibitor Information'} — National Orchid Show`,
+    description:
+      'Entering plants in the South African National Orchid Show: how entry works, what is ' +
+      'still to be confirmed by the show committee, and the questions we are asking them.',
+  };
+}
+
+// Section order is the exhibitor's own sequence, not the schema's: someone arriving here
+// is checking a deadline, not reading an essay. Key dates come first for that reason.
+// The nine reference sections follow the journey, in the order the research groups them.
+// See contracts/golden/show-exhibitor-info/exhibitor-page-map.golden.md.
+const REFERENCE_SECTIONS = [
+  'entryProcess',
+  'fees',
+  'classes',
+  'judging',
+  'eligibility',
+  'display',
+  'sales',
+  'practicalities',
+  'permits',
+] as const;
+
+export default async function ExhibitorInfoPage() {
+  const [info, steps] = await Promise.all([
+    sanityFetch<ShowExhibitorInfo>({
+      query: showExhibitorInfoQuery,
+      tags: ['showExhibitorInfo', 'sanity'],
+    }),
+    sanityFetch<ShowExhibitorStep[]>({
+      query: showExhibitorStepsQuery,
+      tags: ['showExhibitorStep', 'sanity'],
+    }),
+  ]);
+
+  const pendingLabel = info?.pendingLabel;
+  const researchLabel = info?.researchLabel;
+  const questionLabel = info?.questionLabel;
+  const status = info?.confirmations ?? {};
+
   return (
     <>
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-primary py-20">
-        <Image
-          src="/images/orchid-purple.jpg"
-          alt=""
-          fill
-          priority
-          className="object-cover opacity-20"
-          sizes="100vw"
-        />
-        <div className="relative z-10 mx-auto max-w-[1280px] px-8">
+      <PageHero
+        image="/images/orchid-purple.jpg"
+        eyebrow="National Show"
+        heading={info?.title ?? 'Exhibitor Information'}
+        lede={info?.intro ?? undefined}
+      />
+
+      <div className="mx-auto max-w-[1280px] space-y-12 px-8 py-16">
+        <p>
           <Link
             href="/national-show"
-            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/60 hover:text-ivory transition-colors duration-150 mb-8"
+            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-muted transition-colors duration-150 hover:text-ink"
           >
             ← Show overview
           </Link>
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-accent mb-3">
-            19th National Orchid Show · Cape Town 2027
-          </p>
-          <h1 className="font-serif text-[clamp(36px,4.8vw,60px)] font-medium leading-[1.06] tracking-[-0.012em] text-ivory max-w-[20ch]">
-            Exhibitor Information
-          </h1>
-          <p className="mt-5 font-sans text-[17px] text-ivory/70 max-w-2xl">
-            Everything you need to enter your plants in the 19th South African National
-            Orchid Show.
-          </p>
-        </div>
-      </section>
+        </p>
 
-      {/* Info grid */}
-      <section className="mx-auto max-w-[1280px] px-8 py-20">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-          {INFO_BLOCKS.map((block) => (
-            <div key={block.heading} className="border-t border-rule pt-8">
-              <h2 className="font-serif text-[22px] font-medium text-primary mb-3">
-                {block.heading}
-              </h2>
-              <p className="font-sans text-[16px] leading-relaxed text-ink/80">{block.body}</p>
-            </div>
+        <ExhibitorKeyDates
+          heading={info?.keyDatesHeading}
+          note={info?.keyDatesNote}
+          caption={info?.keyDatesCaption}
+          rows={info?.keyDates}
+          pendingLabel={pendingLabel}
+          researchLabel={researchLabel}
+          questionLabel={questionLabel}
+        />
+
+        <EntryFormLink
+          heading={info?.entryFormHeading}
+          fileUrl={info?.entryFormFileUrl}
+          fileName={info?.entryFormFileName}
+          url={info?.entryFormUrl}
+          entryFormPendingNote={info?.entryFormPendingNote}
+          status={status.entryForm}
+          pendingLabel={pendingLabel}
+          researchLabel={researchLabel}
+          questionLabel={questionLabel}
+        />
+
+        <ExhibitorSteps
+          heading="From deciding to enter, to taking your plants home"
+          steps={steps}
+          pendingLabel={pendingLabel}
+          researchLabel={researchLabel}
+          questionLabel={questionLabel}
+        />
+
+        <div className="space-y-10">
+          {REFERENCE_SECTIONS.map((name) => (
+            <ExhibitorSection
+              key={name}
+              section={info?.[name]}
+              status={status[name]}
+              pendingLabel={pendingLabel}
+              researchLabel={researchLabel}
+              questionLabel={questionLabel}
+            >
+              {name === 'classes' ? (
+                <p className="mt-4">
+                  <Link
+                    href="/national-show"
+                    className="font-sans text-[15px] font-medium text-primary underline underline-offset-4"
+                  >
+                    {info?.classesLinkLabel ?? 'Show classes'} →
+                  </Link>
+                </p>
+              ) : null}
+              {name === 'judging' ? (
+                <p className="mt-4">
+                  <Link
+                    href="/judging"
+                    className="font-sans text-[15px] font-medium text-primary underline underline-offset-4"
+                  >
+                    {info?.judgingLinkLabel ?? 'SAOC judging standards'} →
+                  </Link>
+                </p>
+              ) : null}
+              {name === 'permits' ? (
+                <p className="mt-4">
+                  <a
+                    href="https://wildorchids.co.za"
+                    rel="noopener noreferrer"
+                    className="font-sans text-[15px] font-medium text-primary underline underline-offset-4"
+                  >
+                    Wild Orchids of Southern Africa →
+                  </a>
+                </p>
+              ) : null}
+            </ExhibitorSection>
           ))}
         </div>
-      </section>
 
-      {/* Coming soon + CTA */}
-      <section className="bg-bone py-16 border-t border-rule">
-        <div className="mx-auto max-w-[1280px] px-8 text-center">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-3">
-            Full details coming 2026
-          </p>
-          <h2 className="font-serif text-[clamp(24px,3vw,36px)] font-medium text-ink mb-4">
-            Entry forms, rules, and schedules
-          </h2>
-          <p className="mx-auto max-w-xl font-sans text-[16px] leading-relaxed text-ink/70 mb-8">
-            Complete exhibitor rules, entry forms, and staging schedules will be published
-            here in 2026. In the meantime, contact us with any questions.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
+        <ExhibitorQuestions
+          heading={info?.questionsHeading}
+          intro={info?.questionsIntro}
+          questions={info?.openQuestions}
+        />
+
+        <section className="border-t border-rule pt-8">
+          {info?.contactNote ? (
+            <p className="max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">
+              {info.contactNote}
+            </p>
+          ) : null}
+          <div className="mt-6 flex flex-wrap gap-4">
             <Link
               href="/contact"
-              className="font-sans text-[14px] font-medium bg-primary px-6 py-3 text-ivory transition-colors duration-150 hover:bg-primary/85"
+              className="bg-primary px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary/85"
             >
-              Contact Us
+              Contact the council
             </Link>
             <Link
               href="/judging"
-              className="font-sans text-[14px] font-medium border border-ink/30 px-6 py-3 text-ink transition-colors duration-150 hover:bg-ink/5"
+              className="border border-ink/30 px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-ink/5"
             >
-              Judging Standards
+              {info?.judgingLinkLabel ?? 'SAOC judging standards'}
             </Link>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </>
   );
 }

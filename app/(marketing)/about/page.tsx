@@ -66,7 +66,7 @@ export default async function AboutPage() {
       <PageHero
         image="/images/orchid-violet.jpg"
         eyebrow="Our heritage"
-        heading="A federated body of growers, since 1968."
+        heading={about?.title ?? 'A federated body of growers, since 1968.'}
         lede="Four societies met in Bloemfontein on the 29th of July, 1968 to form a national council. Fifty-eight years later, that council coordinates twenty-one societies from the Cape to the Limpopo."
       />
 

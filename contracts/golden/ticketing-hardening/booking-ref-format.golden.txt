@@ -1,0 +1,16 @@
+# Booking reference format — golden
+
+# REQUIRED: every newly issued booking reference must match this regex exactly.
+# 12 Crockford base32 characters (alphabet 0123456789ABCDEFGHJKMNPQRSTVWXYZ — I, L, O
+# and U are excluded so a reference can be read aloud or hand-copied at a door without
+# ambiguity). ~60 bits of entropy from node:crypto, i.e. not enumerable and not
+# collision-prone at any plausible sales volume.
+REQUIRED_REGEX=^SAOC-2027-[0-9ABCDEFGHJKMNPQRSTVWXYZ]{12}$
+
+# FORBIDDEN: the current 6-digit form. 1,000,000 values, trivially enumerable, and the
+# reference IS the door code and the PayFast m_payment_id.
+FORBIDDEN_REGEX=^SAOC-2027-[0-9]{6}$
+
+# The prefix is unchanged on purpose — it is human-recognisable on a bank statement and
+# in PayFast's merchant dashboard. Only the random part changes.
+PREFIX=SAOC-2027-

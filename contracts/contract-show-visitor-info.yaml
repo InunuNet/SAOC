@@ -1,0 +1,685 @@
+schema: athanor.contract/v1
+slug: show-visitor-info
+goal: >-
+  Expand the National Show from a single teaser landing page into a visitor-information
+  section. F1 builds the content model — a structured venue object on nationalShow, a new
+  showVisitorInfo page singleton, a new showFaq document type, and a create-if-absent seed
+  script carrying honestly-labelled placeholder content. F2–F4 build
+  /national-show/plan-your-visit, /national-show/what-to-expect and /national-show/faq
+  entirely from that content. F5 wires the section together so the pages are reachable by
+  clicking, adds the venue block to /contact, and makes the /national-show/upcoming redirect
+  permanent. Two rules override everything: changing the venue must be a Studio edit and never
+  a code change (contracts/golden/show-visitor-info/venue-single-source.golden.md), and every
+  unconfirmed value must carry a visible pending marker
+  (contracts/golden/show-visitor-info/confirmation-status-model.golden.md).
+created_at: '2026-08-11'
+autonomy: high
+
+# ---------------------------------------------------------------------------
+# READ FIRST — why so many of these assertions are node scripts, not greps
+# ---------------------------------------------------------------------------
+# Grep-only assertions produced three false greens on this project last session: a field can
+# be present in a GROQ query, mentioned in a page file, and still never reach the rendered
+# HTML. Source greps below settle only what a grep can actually settle — a schema field
+# exists, a seed script contains no `createOrReplace`, no venue literal appears in a new
+# component. Every claim of the form "the page shows X" is settled by a real HTTP round trip
+# against the dev server at http://localhost:3333 (NOT 3000, and NOT package.json's dev port
+# 3002 — override with SVI_BASE_URL). Needles in those checks are read live out of the Sanity
+# dataset, never hardcoded in the check, so a check cannot be satisfied by copy frozen into
+# JSX that happens to match today's seed data.
+#
+# FOUR checks MUTATE the dataset (check-cms-round-trip, check-seed-idempotent,
+# check-marker-fail-closed, check-show-identity-sweep). All four go through
+# contracts/checks/show-visitor-info/_mutation-guard.mjs, and all four write to DIFFERENT
+# fields. Every one: refuses to start on a sentinel-shaped baseline, holds an exclusive lock
+# for the whole mutate/verify/restore window, restores under an `ifRevisionID` guard, verifies
+# the restore in the dataset AND on the rendered page, and exits 2 with a RESIDUE ALERT if it
+# cannot — never a bare process.exit() inside a try, which would skip the restore.
+# See contracts/golden/show-visitor-info/dataset-mutation-safety.golden.md.
+#
+# EXIT CODES — this contract's status channel, because contract.py records pass/fail only:
+#   0 = passed
+#   1 = a real failure. Go and look at the code.
+#   2 = RESIDUE ALERT. The dataset may be holding check data that is RENDERING LIVE. Treat as an
+#       incident, not a test result.
+#   3 = BLOCKED. The check never ran, because another check held the dataset lock. It tested
+#       NOTHING and proves nothing either way. Re-run it; do not diagnose it. Added 2026-08-12
+#       after a lock collision was reported as an ordinary FAIL and cost the team lead a
+#       diagnosis of a non-problem.
+#
+# ---------------------------------------------------------------------------
+# ROUND 2 — why several assertions were REPLACED rather than added to
+# ---------------------------------------------------------------------------
+# Round 1 scored 57/59 and @qa still returned FAIL, because three assertions passed while the
+# rule they existed to enforce was violated. All three shared one defect: the expected value
+# came from the same place as the actual value, so they could not fail.
+#   A43 read pendingLabel out of the dataset and looked for it in a page that renders
+#       pendingLabel from the dataset. Clearing the field emptied the NEEDLE, textContains
+#       short-circuited on `target.length > 0`, and 23 vanished markers read as green.
+#   A54 grepped source for a venue literal. The stale venue was in SANITY (the legacy
+#       `location` field), so the grep was structurally blind to it.
+#   A53 forbade the exact string "18-21 Sep 2027". The code said "Sep 18-21 2027".
+# The governing rule is now contracts/golden/show-visitor-info/assertion-discrimination.golden.md:
+# name the realistic state in which an assertion fails, then produce that state and watch it go
+# red. Causal claims ("a Studio edit changes the site") are settled by PERTURBATION — write a
+# value the check invents, sweep every surface, restore, verify — never by a source grep. Source
+# greps survive only as fast fences that fail in milliseconds before the slow check runs.
+
+features:
+  - id: F1
+    name: >-
+      Content model — nationalShow.venue object, showVisitorInfo singleton, showFaq document
+      type, supporting object types, and a create-if-absent seed script
+    status: pending
+  - id: F2
+    name: /national-show/plan-your-visit — getting there, parking, transport, accommodation, attractions, emergency contacts
+    status: pending
+  - id: F3
+    name: /national-show/what-to-expect — hours, admission (cross-linked to /tickets), food, photography, cloakroom, accessibility
+    status: pending
+  - id: F4
+    name: /national-show/faq — categorised, ordered, keyboard-operable disclosure
+    status: pending
+  - id: F5
+    name: Wiring — landing-page and section navigation, search entries, venue block on /contact, permanent upcoming redirect
+    status: pending
+  - id: F6
+    name: >-
+      Complete and PROVE the /national-show show-identity wiring — showEndDate/edition/hostRegion
+      fields, the remaining hardcoded date, edition and venue literals, and the first
+      rendered-level proof that the singleton actually reaches the page
+    status: pending
+  - id: F7
+    name: >-
+      Round 2 — close the three HIGH defects @qa proved against the live dataset (dual-sourced
+      venue, fail-open confirmation markers, concurrency-unsafe mutating checks), extend
+      show-identity single-sourcing to EVERY surface, and replace the non-discriminating
+      assertions that let all of it pass
+    status: pending
+
+goldens:
+  - contracts/golden/show-visitor-info/README.md
+  - contracts/golden/show-visitor-info/nationalShow-venue-object.golden.json
+  - contracts/golden/show-visitor-info/showVisitorInfo-schema.golden.json
+  - contracts/golden/show-visitor-info/showFaq-schema.golden.json
+  - contracts/golden/show-visitor-info/confirmation-status-model.golden.md
+  - contracts/golden/show-visitor-info/venue-single-source.golden.md
+  - contracts/golden/show-visitor-info/page-map.golden.md
+  - contracts/golden/show-visitor-info/cticc-research.golden.md
+  - contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json
+  - contracts/golden/show-visitor-info/show-identity-wiring.golden.md
+  - contracts/golden/show-visitor-info/assertion-discrimination.golden.md
+  - contracts/golden/show-visitor-info/dataset-mutation-safety.golden.md
+  - contracts/golden/show-visitor-info/show-identity-surfaces.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    # ================= F1 — schema =================
+    - id: A1
+      description: F1 - showVenue object type file exists
+      command: 'test -f sanity/schemas/objects/showVenue.ts'
+    - id: A2
+      description: F1 - showVenue declares every venue-derived field the pages need
+      command: >-
+        for f in name addressLines city province postalCode latitude longitude mapsUrl mapImage mapImageAlt directionsNote phone; do grep -q "name: '$f'" sanity/schemas/objects/showVenue.ts || { echo "missing showVenue field $f"; exit 1; }; done
+    - id: A3
+      description: F1 - nationalShow gains a venue field of type showVenue
+      command: >-
+        grep -q "name: 'venue'" sanity/schemas/documents/nationalShow.ts &&
+        grep -q "type: 'showVenue'" sanity/schemas/documents/nationalShow.ts
+    - id: A4
+      description: >-
+        F1 - the legacy nationalShow.location field is kept (contracts/checks/cms-loop-f3-national-show
+        mutates it in a live round-trip check) and gains a description pointing editors at the venue object
+      command: >-
+        grep -q "name: 'location'" sanity/schemas/documents/nationalShow.ts &&
+        grep -A4 "name: 'location'" sanity/schemas/documents/nationalShow.ts | grep -qi "venue"
+    - id: A5
+      description: F1 - no pre-existing nationalShow field was removed while adding venue
+      command: >-
+        for f in title showDate location hero countdownDate exhibitorStages salesOpen; do grep -q "name: '$f'" sanity/schemas/documents/nationalShow.ts || { echo "field $f was removed"; exit 1; }; done
+    - id: A6
+      description: F1 - showVisitorInfo page-singleton schema file exists
+      command: 'test -f sanity/schemas/documents/showVisitorInfo.ts'
+    - id: A7
+      description: F1 - showVisitorInfo declares every copy field the three pages render
+      command: >-
+        for f in pendingLabel researchLabel planTitle planIntro gettingThereIntro airportRoutes parking publicTransport accommodationIntro accommodation attractions emergencyContacts expectTitle expectIntro openingHours admissionNote admissionLinkLabel food photographyPolicy cloakroom accessibility faqTitle faqIntro faqContactNote confirmations; do grep -q "name: '$f'" sanity/schemas/documents/showVisitorInfo.ts || { echo "missing showVisitorInfo field $f"; exit 1; }; done
+    - id: A8
+      description: F1 - confirmationStatuses object exists and covers all thirteen content blocks with the three-value list
+      command: >-
+        test -f sanity/schemas/objects/confirmationStatuses.ts &&
+        for b in venue dates openingHours admission parking publicTransport accessibility photography cloakroom food accommodation attractions emergencyContacts; do grep -q "$b" sanity/schemas/objects/confirmationStatuses.ts || { echo "missing confirmation block $b"; exit 1; }; done &&
+        grep -q "'pending'" sanity/schemas/objects/confirmationStatuses.ts &&
+        grep -q "'research'" sanity/schemas/objects/confirmationStatuses.ts &&
+        grep -q "'confirmed'" sanity/schemas/objects/confirmationStatuses.ts
+    - id: A9
+      description: F1 - every confirmation block defaults to pending, so an unset status can never read as confirmed
+      command: >-
+        grep -Eq "initialValue:\s*'pending'" sanity/schemas/objects/confirmationStatuses.ts &&
+        if grep -Eq "initialValue:\s*'confirmed'" sanity/schemas/objects/confirmationStatuses.ts; then exit 1; fi
+    - id: A10
+      description: F1 - the five supporting object types exist
+      command: >-
+        for f in travelRoute accommodationOption attraction emergencyContact openingHoursEntry; do test -f "sanity/schemas/objects/$f.ts" || { echo "missing object type $f"; exit 1; }; done
+    - id: A11
+      description: >-
+        F1 - accommodationOption groups by distance band and carries no price, rating or negotiated-rate
+        field (SAOC has no arrangement with any property and must not appear to)
+      command: >-
+        grep -q "name: 'distanceBand'" sanity/schemas/objects/accommodationOption.ts &&
+        for b in walking nearby city further; do grep -q "'$b'" sanity/schemas/objects/accommodationOption.ts || { echo "missing distance band $b"; exit 1; }; done &&
+        if grep -Eq "name:\s*'(price|rate|rating|stars|showRate)'" sanity/schemas/objects/accommodationOption.ts; then exit 1; fi
+    - id: A12
+      description: F1 - showFaq document type exists with question, answer, category, order, status and active
+      command: >-
+        test -f sanity/schemas/documents/showFaq.ts &&
+        for f in question answer category order status active; do grep -q "name: '$f'" sanity/schemas/documents/showFaq.ts || { echo "missing showFaq field $f"; exit 1; }; done
+    - id: A13
+      description: F1 - showFaq covers the four spec-4.17 categories plus general, and defaults to pending
+      command: >-
+        for c in getting-there tickets accessibility plant-sales general; do grep -q "'$c'" sanity/schemas/documents/showFaq.ts || { echo "missing category $c"; exit 1; }; done &&
+        grep -Eq "initialValue:\s*'pending'" sanity/schemas/documents/showFaq.ts
+    - id: A14
+      description: F1 - every new type is registered in the schema index
+      command: >-
+        for t in showVisitorInfo showFaq showVenue travelRoute accommodationOption attraction emergencyContact openingHoursEntry confirmationStatuses; do grep -Eq "^[[:space:]]*$t,[[:space:]]*$" sanity/schemas/index.ts || { echo "$t not registered in schemaTypes"; exit 1; }; done
+    - id: A15
+      description: F1 - showVisitorInfo is a pinned singleton and showFaq is a listed collection in the Studio structure
+      command: >-
+        grep -q "'showVisitorInfo'" sanity/structure.ts &&
+        grep -q "showVisitorInfo:" sanity/structure.ts &&
+        grep -q "'showFaq'" sanity/structure.ts
+    - id: A16
+      description: F1 - GROQ queries exist for the new content, and nationalShow's query projects the venue object
+      command: >-
+        grep -q "showVisitorInfoQuery" sanity/queries.ts &&
+        grep -q "showFaqsQuery" sanity/queries.ts &&
+        grep -q "nationalShowVenueQuery" sanity/queries.ts
+
+    # ================= F1 — seeding =================
+    - id: A17
+      description: F1 - a NEW seed script exists (seed-page-singletons.ts is not extended)
+      command: 'test -f scripts/seed-show-visitor-info.ts'
+    - id: A18
+      description: >-
+        F1 - seeding is create-if-absent ONLY. createOrReplace is the scripts/seed-page-singletons.ts
+        bug that silently reverts editor changes on every run; it must not appear.
+      command: >-
+        grep -q "createIfNotExists" scripts/seed-show-visitor-info.ts &&
+        if grep -q "createOrReplace" scripts/seed-show-visitor-info.ts; then exit 1; fi
+    - id: A19
+      description: F1 - nationalShow.venue is patched with setIfMissing, never force-set over an editor's correction
+      command: >-
+        grep -q "setIfMissing" scripts/seed-show-visitor-info.ts &&
+        if grep -Eq "\.set\(\s*\{[^}]*venue" scripts/seed-show-visitor-info.ts; then exit 1; fi
+    - id: A20
+      description: F1 - the known-hazardous seed-page-singletons.ts is untouched by this feature
+      command: >-
+        if grep -Eq "showVisitorInfo|showFaq|showVenue" scripts/seed-page-singletons.ts; then exit 1; fi
+    - id: A21
+      description: F1 - no seeded field is an empty string (a blank field is indistinguishable from a bug)
+      command: >-
+        if grep -Eq ":\s*''|:\s*\"\"" scripts/seed-show-visitor-info.ts; then exit 1; fi
+    - id: A22
+      description: >-
+        F1 - the seed marks confirmation status on every block and seeds both marker labels, so nothing
+        ships as committee-confirmed fact
+      command: >-
+        grep -q "pendingLabel" scripts/seed-show-visitor-info.ts &&
+        grep -q "researchLabel" scripts/seed-show-visitor-info.ts &&
+        [ "$(grep -c "'pending'" scripts/seed-show-visitor-info.ts)" -ge 8 ] &&
+        if grep -q "'confirmed'" scripts/seed-show-visitor-info.ts; then exit 1; fi
+    - id: A23
+      description: F1 - portable-text keys in seeded FAQ answers are deterministic, not random (a random key breaks idempotence)
+      command: >-
+        if grep -Eq "randomUUID|Math\.random|nanoid" scripts/seed-show-visitor-info.ts; then exit 1; fi
+    - id: A24
+      description: >-
+        F1 - re-running the seed changes no document revision, creates no duplicate, and does not revert
+        an editor's change (proven against the real dataset, with verified cleanup)
+      command: 'node contracts/checks/show-visitor-info/check-seed-idempotent.mjs'
+      # Measured 13s on 2026-08-12. Without this line contract.py applies its 60s
+      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+      # mutates nationalShow.venue + showVisitorInfo; short, but a mutating check must never be killed mid-window. Covers runtime + the 240s lock wait.
+      # Ceiling = lock wait + runtime (lock wait 420s + 13s measured); see LOCK_WAIT_TIMEOUT_MS in _mutation-guard.mjs.
+      timeout_seconds: 600
+
+    # ================= F2/F3/F4 — page structure =================
+    - id: A25
+      description: F2/F3/F4 - the three pages and their route-level loading states exist
+      command: >-
+        for p in plan-your-visit what-to-expect faq; do test -f "app/(marketing)/national-show/$p/page.tsx" || { echo "missing page $p"; exit 1; }; test -f "app/(marketing)/national-show/$p/loading.tsx" || { echo "missing loading state for $p"; exit 1; }; done
+    - id: A26
+      description: F2/F3/F4 - all three pages are Server Components and carry the standard 60s revalidate
+      command: >-
+        for p in plan-your-visit what-to-expect faq; do if head -3 "app/(marketing)/national-show/$p/page.tsx" | grep -q "'use client'"; then echo "$p is a client component"; exit 1; fi; grep -Eq "export const revalidate = 60" "app/(marketing)/national-show/$p/page.tsx" || { echo "$p missing revalidate"; exit 1; }; done
+    - id: A27
+      description: F2/F3/F4 - the seven new show components exist
+      command: >-
+        for c in ConfirmationBadge VisitorInfoBlock VenueCard TravelRoutes AccommodationList ShowFaqList ShowSectionNav; do test -f "components/show/$c.tsx" || { echo "missing component $c"; exit 1; }; done
+    - id: A28
+      description: F2/F3/F4 - every new show component stays under the project's 150-line limit
+      command: >-
+        for c in ConfirmationBadge VisitorInfoBlock VenueCard TravelRoutes AccommodationList ShowFaqList ShowSectionNav; do lines=$(wc -l < "components/show/$c.tsx"); if [ "$lines" -gt 150 ]; then echo "components/show/$c.tsx exceeds 150 lines ($lines)"; exit 1; fi; done
+    - id: A29
+      description: >-
+        F2/F3/F4 - no new CSS custom properties in the new files (Sage & Paper tokens in app/globals.css only,
+        no invented brand assets)
+      command: >-
+        if grep -rEq -- "--[a-z-]+\s*:" "app/(marketing)/national-show/plan-your-visit" "app/(marketing)/national-show/what-to-expect" "app/(marketing)/national-show/faq" components/show 2>/dev/null; then exit 1; fi
+    - id: A30
+      description: F2/F3/F4 - no raw hex colour literals in the new files
+      command: >-
+        if grep -rEq "#[0-9a-fA-F]{3,6}\b" "app/(marketing)/national-show/plan-your-visit" "app/(marketing)/national-show/what-to-expect" "app/(marketing)/national-show/faq" components/show 2>/dev/null; then exit 1; fi
+    - id: A31
+      description: >-
+        THE VENUE-CHANGE TEST (source half) - no venue literal anywhere in the new pages or components.
+        If changing the venue would require editing one of these files, the content model is wrong.
+      command: >-
+        if grep -rEiq "CTICC|Cape Town International Convention|Lower Long Street|Convention Square|Foreshore|Heerengracht|-33\.9|18\.42" "app/(marketing)/national-show/plan-your-visit" "app/(marketing)/national-show/what-to-expect" "app/(marketing)/national-show/faq" components/show 2>/dev/null; then echo "a venue literal is hardcoded in a new file"; exit 1; fi
+    - id: A32
+      description: >-
+        THE VENUE-CHANGE TEST (source half) - the /contact venue block is the same VenueCard component
+        reading the same Sanity object, so it cannot drift from the show pages
+      command: >-
+        grep -q "VenueCard" "app/(marketing)/contact/page.tsx" &&
+        if grep -rEiq "CTICC|Cape Town International Convention|Lower Long Street" "app/(marketing)/contact/page.tsx"; then exit 1; fi
+    - id: A33
+      description: F2 - no paid maps SDK or external maps key is introduced anywhere in the repo's dependencies or new files
+      command: >-
+        if grep -Eq "\"(@react-google-maps/api|mapbox-gl|react-map-gl|leaflet|@googlemaps/[a-z-]+)\"" package.json; then exit 1; fi &&
+        if grep -rEq "maps\.googleapis\.com|api\.mapbox\.com|MAPS_API_KEY" "app/(marketing)/national-show" components/show 2>/dev/null; then exit 1; fi
+    - id: A34
+      description: F4 - the FAQ disclosure is a native details/summary element, not a hand-rolled JS accordion
+      command: >-
+        grep -q "<details" components/show/ShowFaqList.tsx &&
+        grep -q "<summary" components/show/ShowFaqList.tsx &&
+        if head -3 components/show/ShowFaqList.tsx | grep -q "'use client'"; then exit 1; fi &&
+        if grep -Eq "useState|onClick" components/show/ShowFaqList.tsx; then exit 1; fi
+
+    # ================= F5 — wiring =================
+    - id: A35
+      description: F5 - the show landing page links to all three new pages and to the previously-orphaned archive
+      command: >-
+        for p in plan-your-visit what-to-expect faq archive; do grep -q "/national-show/$p" "app/(marketing)/national-show/page.tsx" || { echo "landing page does not link to $p"; exit 1; }; done
+    - id: A36
+      description: F5 - the three new pages are offered by site-wide search
+      command: >-
+        for p in plan-your-visit what-to-expect faq; do grep -q "/national-show/$p" components/chrome/SearchOverlay.tsx || { echo "SearchOverlay missing $p"; exit 1; }; done
+    - id: A37
+      description: >-
+        F5 - the primary header nav is deliberately NOT expanded (a six-item bar stays a six-item bar);
+        reachability comes from the landing cards and the section nav instead
+      command: >-
+        if grep -q "/national-show/plan-your-visit" components/chrome/Header.tsx; then echo "Header NAV was expanded — see page-map.golden.md"; exit 1; fi
+    - id: A38
+      description: F5 - the /national-show/upcoming stub issues a permanent redirect
+      command: >-
+        grep -q "permanentRedirect" "app/(marketing)/national-show/upcoming/page.tsx" &&
+        if grep -Eq "^import \{ redirect \}|[^t]redirect\(" "app/(marketing)/national-show/upcoming/page.tsx"; then exit 1; fi
+
+    # ================= Rendered behaviour — real HTTP round trips =================
+    - id: A39
+      description: >-
+        RENDERED - all three pages return 200 and actually render every seeded copy field, travel route,
+        accommodation entry, attraction, emergency contact and opening-hours row (needles read live from Sanity)
+      command: 'node contracts/checks/show-visitor-info/check-pages-render.mjs'
+      # Measured 2s on 2026-08-12. Without this line contract.py applies its 60s
+      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+      # seven HTTP round trips; a cold Next dev-server route compile dominates and can take tens of seconds per route.
+      # Now settles 3 page(s) at up to 90s each before asserting (dataset-sourced
+      # needles race every writer); ceiling covers the worst case plus compile headroom.
+      timeout_seconds: 420
+    - id: A40
+      description: >-
+        RENDERED - F5 reachability: every new page is reachable by FOLLOWING LINKS from /national-show and
+        from the home page, and the section cross-links both ways. A 200 response is not accepted as
+        evidence — /national-show/archive returns 200 and is linked from nothing.
+      command: 'node contracts/checks/show-visitor-info/check-reachability.mjs'
+      # Measured 3s on 2026-08-12. Without this line contract.py applies its 60s
+      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+      # follows links across five routes; cold-compile bound, as A39.
+      timeout_seconds: 180
+    - id: A41
+      description: >-
+        THE VENUE-CHANGE TEST (rendered half) - the venue name, address lines, city, postal code and map
+        link CURRENTLY STORED IN SANITY appear in the rendered HTML of /national-show/plan-your-visit and
+        /contact, with no maps SDK and no API key in the markup
+      command: 'node contracts/checks/show-visitor-info/check-venue-single-source.mjs'
+      # Measured 1s on 2026-08-12. Without this line contract.py applies its 60s
+      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+      # two HTTP round trips; cold-compile bound.
+      # Now settles 2 page(s) at up to 90s each before asserting (dataset-sourced
+      # needles race every writer); ceiling covers the worst case plus compile headroom.
+      # Also takes the dataset READ lock (240s wait) so it cannot observe a dataset a
+      # mutating check has deliberately invalidated mid-flight.
+      timeout_seconds: 420
+    - id: A42
+      description: >-
+        THE VENUE-CHANGE TEST (causal half) - a write to the dataset provably reaches the rendered page
+        (two-sided: the new value appears AND the old one disappears), with verified restore of the
+        captured baseline. Exit code 2 means residue was left and must be treated as a live incident.
+      command: 'node contracts/checks/show-visitor-info/check-cms-round-trip.mjs'
+      # Measured 161s on 2026-08-12. Without this line contract.py applies its 60s
+      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+      # MUTATES + polls the CDN. Measured 161s: propagation 64-96s, then a polled cleanup verification. Worst case ~350s + the 240s lock wait.
+      # Ceiling = lock wait + runtime (lock wait 420s + 240s measured worst case); see LOCK_WAIT_TIMEOUT_MS in _mutation-guard.mjs.
+      timeout_seconds: 900
+    - id: A43
+      description: >-
+        RENDERED - every pending block carries the dataset's pendingLabel and every research block
+        carries its researchLabel, once per block. REWRITTEN in round 2: the label needles are now
+        validated at the boundary (assertUsableNeedle), because the previous version derived its
+        needle from the same field it was testing and went green when @qa cleared that field and
+        all 23 markers disappeared. The old "ConfirmationBadge hardcodes no label text" grep is
+        gone — it forbade the S2 fix; the same claim is now asserted on the rendered page by A60.
+      command: 'node contracts/checks/show-visitor-info/check-confirmation-markers.mjs'
+      # Measured 2s on 2026-08-12. Without this line contract.py applies its 60s
+      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+      # four HTTP round trips; cold-compile bound.
+      # Now settles 5 page(s) at up to 90s each before asserting (dataset-sourced
+      # needles race every writer); ceiling covers the worst case plus compile headroom.
+      timeout_seconds: 600
+    - id: A44
+      description: >-
+        RENDERED - /national-show/what-to-expect links to /tickets and duplicates none of the ticketType
+        price figures (Sanity ticketType is the single source, and those prices are still provisional)
+      command: 'node contracts/checks/show-visitor-info/check-no-price-duplication.mjs'
+      # Measured 2s on 2026-08-12. Without this line contract.py applies its 60s
+      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+      # cold-compile bound.
+      # Also takes the dataset READ lock (240s wait) so it cannot observe a dataset a
+      # mutating check has deliberately invalidated mid-flight.
+      timeout_seconds: 420
+    - id: A45
+      description: >-
+        RENDERED - the FAQ page renders every active showFaq, hides inactive ones, and orders both the
+        questions within each category and the categories themselves as specified
+      command: 'node contracts/checks/show-visitor-info/check-faq-grouping.mjs'
+      # Measured 1s on 2026-08-12. Without this line contract.py applies its 60s
+      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+      # cold-compile bound.
+      # Now settles 1 page(s) at up to 90s each before asserting (dataset-sourced
+      # needles race every writer); ceiling covers the worst case plus compile headroom.
+      # Also takes the dataset READ lock (240s wait) so it cannot observe a dataset a
+      # mutating check has deliberately invalidated mid-flight.
+      timeout_seconds: 420
+    - id: A46
+      description: >-
+        A11Y - the FAQ disclosure is driven with real Playwright keyboard input: Tab reaches a summary,
+        Enter opens it and the answer becomes visibly sized, Enter closes it again, and with JavaScript
+        disabled every question is still in the DOM (no JS-only reveal)
+      command: 'node contracts/checks/show-visitor-info/check-faq-keyboard.mjs'
+      # Measured 3s on 2026-08-12. Without this line contract.py applies its 60s
+      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+      # launches Playwright; a cold browser start plus a cold route compile.
+      timeout_seconds: 180
+    - id: A47
+      description: >-
+        META - proves this contract's checks can actually fail: the reachability primitive reports absence
+        for an unlinked page, the text primitive ignores copy that exists only in a script or style block,
+        a non-existent route is surfaced as non-200, and an unreachable dev server is a hard failure
+        rather than a silent skip
+      command: 'node contracts/checks/show-visitor-info/check-detects-absence.mjs'
+      # Measured 1s on 2026-08-12. Without this line contract.py applies its 60s
+      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+      # cold-compile bound.
+      timeout_seconds: 180
+
+    # ================= F6 — show-identity wiring on /national-show =================
+    # The backlog P1 this addresses is PARTLY STALE: commit 32f3b0f (2026-08-06) already wired
+    # title, location, hero, exhibitorStages and countdownDate, and ShowCountdown already takes
+    # a countdownDate prop. What was never done is PROVING any of it at the rendered-page level
+    # — the gate that passed asserted against the Sanity API. See show-identity-wiring.golden.md.
+    - id: A51
+      description: >-
+        F6 - nationalShow gains the three fields that forced the remaining hardcoding (a single
+        showDate cannot express a date range, which is why the Dates cell stayed literal)
+      command: >-
+        for f in showEndDate edition hostRegion; do grep -q "name: '$f'" sanity/schemas/documents/nationalShow.ts || { echo "missing nationalShow field $f"; exit 1; }; done
+    - id: A52
+      description: F6 - the new show-identity fields are seeded with setIfMissing, never force-set
+      command: >-
+        grep -q "showEndDate" scripts/seed-show-visitor-info.ts &&
+        grep -q "edition" scripts/seed-show-visitor-info.ts &&
+        grep -q "hostRegion" scripts/seed-show-visitor-info.ts &&
+        if grep -Eq "\.set\(\s*\{[^}]*(edition|showDate|hostRegion)" scripts/seed-show-visitor-info.ts; then exit 1; fi
+    - id: A53
+      description: >-
+        F6/F7 - showDate is no longer an inert field: no month/year date literal survives on the
+        landing page, in ANY word order. REWRITTEN in round 2 from a four-string denylist, which
+        forbade "18-21 Sep 2027" while the code said "Sep 18-21 2027" and five fabricated
+        committee dates rendered live and unmarked. Denies the SHAPE, not the spelling.
+      command: >-
+        if grep -nE '(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[^A-Za-z]{0,10}20[0-9]{2}|20[0-9]{2}[^A-Za-z]{0,10}(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*' "app/(marketing)/national-show/page.tsx"; then echo "a month/year literal remains on the landing page"; exit 1; fi
+    - id: A54
+      description: >-
+        F6/F7 - FAST FENCE ONLY: no venue literal in any show-identity surface file. Round 2
+        widens the file set from two to the full inventory in show-identity-surfaces.golden.md.
+        This assertion is explicitly NOT the venue-change proof — it passed in round 1 while
+        /national-show rendered two different venues in one viewport, because the stale value was
+        in Sanity, not in code. A61 is the proof; this just fails faster.
+      command: >-
+        if grep -Eiq "CTICC|Cape Town International Convention|Lower Long Street" "app/(marketing)/national-show/page.tsx" "app/(marketing)/national-show/archive/page.tsx" "app/(marketing)/national-show/archive/[year]/page.tsx" components/show/ShowCountdown.tsx components/home/ShowBand.tsx components/home/Hero.tsx components/home/NavCards.tsx components/chrome/UtilityBar.tsx; then echo "a venue literal remains"; exit 1; fi
+    - id: A55
+      description: >-
+        F6 - the Sanity value still wins in every landing-page fallback (never 'literal' || sanityValue),
+        so a published Studio edit can never be masked by a hardcoded default
+      command: >-
+        if grep -Eq "'[^']*'\s*(\|\||\?\?)\s*sanityShow" "app/(marketing)/national-show/page.tsx"; then echo "reversed fallback order"; exit 1; fi
+    - id: A56
+      description: >-
+        F6 RENDERED - /national-show actually renders the dataset's title, location, hostRegion,
+        edition and show-date years, marks the unconfirmed dates with the pending label, and the
+        countdown (read in a real browser after hydration) is driven by the dataset countdownDate
+        rather than ShowCountdown's DEFAULT_COUNTDOWN_DATE fallback
+      command: 'node contracts/checks/show-visitor-info/check-show-identity-rendered.mjs'
+      # Measured 3s on 2026-08-12. Without this line contract.py applies its 60s
+      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+      # HTTP plus a Playwright hydration read; cold-compile and cold-browser bound. Raised to
+      # 300 because the check now polls the landing page until it has caught up with the
+      # dataset (up to 150s) before asserting: it reads its needles from Sanity, so any write
+      # to nationalShow races it. @dev caught this as A56 being the only red in an otherwise
+      # clean gate run at 02:20 on 2026-08-12, minutes after the title changed.
+      # Also takes the dataset READ lock (240s wait) so it cannot observe a dataset a
+      # mutating check has deliberately invalidated mid-flight.
+      timeout_seconds: 420
+
+    # ================= F7 — round 2: the assertions that can actually fail =================
+    # Every check below was RED against the tree as it stood after round 2's QA. Pre-fix state
+    # for each is recorded in .agent/memory/scratch/visitor-brief-2.md.
+
+    # ---- S2: the confirmation marker must fail closed ----
+    - id: A60
+      description: >-
+        S2 PERTURBATION - with showVisitorInfo.pendingLabel CLEARED in the live dataset, the
+        confirmation markers must all still be there. Counted structurally by
+        [data-confirmation-badge], an observable derived from neither the dataset nor the copy,
+        so no field an editor can empty can reduce the count silently. Also asserts the inverse
+        with the labels seeded: every rendered badge shows one of the two DATASET labels, which
+        is the "no hardcoded label copy" claim asserted where it is observable. @qa cleared this
+        one field and 23 markers vanished across four pages while every status was still pending.
+      command: 'node contracts/checks/show-visitor-info/check-marker-fail-closed.mjs'
+      # Measured 82s on 2026-08-12. Without this line contract.py applies its 60s
+      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+      # MUTATES + polls. Measured 82s. Worst case ~200s + the 240s lock wait.
+      # Ceiling = lock wait + runtime (lock wait 420s + 165s measured through contract.py); see LOCK_WAIT_TIMEOUT_MS in _mutation-guard.mjs.
+      timeout_seconds: 720
+    - id: A62
+      description: >-
+        S2 - both confirmation label fields are required in the schema. Advisory only (Sanity
+        validation does not block an API write), which is why A60 tests the component fallback
+        as the load-bearing defence — but it stops the path that actually happened, an editor
+        clearing the field in Studio.
+      command: >-
+        grep -A10 "name: 'pendingLabel'" sanity/schemas/documents/showVisitorInfo.ts | grep -q "Rule.required()" &&
+        grep -A10 "name: 'researchLabel'" sanity/schemas/documents/showVisitorInfo.ts | grep -q "Rule.required()"
+    - id: A63
+      description: >-
+        S2 FAST FENCE - ConfirmationBadge's control flow: exactly one `return null`, guarded by
+        status === 'confirmed', and no bail-out on an empty label. `if (!label) return null` at
+        line 44 is the entire S2 defect and it is what a grep can settle in milliseconds.
+      command: >-
+        [ "$(grep -c "return null" components/show/ConfirmationBadge.tsx)" -eq 1 ] &&
+        grep -Eq "if \(status === 'confirmed'\) return null" components/show/ConfirmationBadge.tsx &&
+        grep -q "data-confirmation-badge" components/show/ConfirmationBadge.tsx &&
+        grep -q "FALLBACK_PENDING_LABEL" components/show/ConfirmationBadge.tsx &&
+        grep -q "FALLBACK_RESEARCH_LABEL" components/show/ConfirmationBadge.tsx &&
+        if grep -Eq "if \(!\s*label\s*\) return null" components/show/ConfirmationBadge.tsx; then echo "still bails out on an empty label"; exit 1; fi
+
+    # ---- S1/S4/S6/S7/S8: every show-identity fact, on every surface ----
+    - id: A76
+      description: >-
+        META/S3 - the stale-copy defect class cannot be reintroduced. Three consecutive gate runs
+        each produced exactly one red — A56, then A41, then A39 — because a rendered check that
+        reads its needles from the dataset and fetches ONCE races whatever just wrote. Patching
+        only the assertions that happened to fire moves the red to a fourth. This asserts the
+        RULE structurally: a check that reads Sanity AND renders pages must hold the dataset lock,
+        and if it fetches pages it must do so through settlePage(), which polls until the page
+        agrees with the dataset. Three deliberate exemptions: check-reachability asserts link
+        structure, which no dataset write can change; check-detects-absence calls the raw
+        primitive on purpose, since proving the primitive reports absence is its whole job; and
+        the MUTATING checks (identified by restoreGuarded) implement their own bespoke perturbation
+        polling, which settlePage's "agree with the dataset" semantics would fight.
+      command: >-
+        for f in contracts/checks/show-visitor-info/check-*.mjs; do case "$f" in *check-reachability*|*check-detects-absence*) continue;; esac; grep -q "restoreGuarded" "$f" && continue; grep -q "getSanityClient" "$f" || continue; grep -q "fetchOkPage\|chromium" "$f" || continue; grep -q "withDatasetLock" "$f" || { echo "$f reads the dataset and renders pages but takes no dataset lock"; exit 1; }; if grep -q "fetchOkPage(" "$f"; then echo "$f calls fetchOkPage() directly; dataset-sourced rendered checks must fetch through settlePage()"; exit 1; fi; done
+      timeout_seconds: 60
+    - id: A61
+      description: >-
+        S1/S4/S6/S7/S8 THE VENUE-CHANGE TEST, SWEPT - the assertion this contract needed and did
+        not have. Swaps the WHOLE show identity in the dataset for values the check invents at
+        runtime (venue name/city/province/address, both dates, edition, host region) and unsets
+        countdownDate, then sweeps home, landing, contact, archive and the three visitor pages:
+        every surface must render the new values and NO surface may render any token of the old
+        one. Deliberately leaves the legacy nationalShow.location holding the old venue — any
+        surface that prefers it over venue.name is caught. Also proves S6: with countdownDate
+        unset, nothing may render a fabricated ticking countdown or a stale edition aria-label.
+        Restores under a revision guard and verifies the restore on the rendered page.
+        AMENDED 2026-08-12 (team-lead rulings, @architect):
+          (a) HISTORICAL CARVE-OUT. The landing page's "Past editions" list names each past
+              show's own venue, and the 2018 show was legitimately held in the current venue's
+              city — a constitutional record (show-identity-surfaces.golden.md row 5) that no
+              Studio edit may rewrite, so the city token could never be cleared there. The city
+              token is now exempted INSIDE THAT ONE <section> only, cut out structurally rather
+              than by phrase window. Venue name, year, ordinal and roman edition are still swept
+              across the whole page, and a stale CURRENT city anywhere outside that section
+              still fails. The check asserts the section was found and that the excision stays
+              under 40% of the page, so the carve-out cannot silently widen into a page-level
+              exemption.
+          (b) POLL, DO NOT SLEEP. The old fixed 2 x 20s warm window sometimes failed to outlast
+              the one stale copy a `revalidate = 60` route serves after a write, making the
+              mission's crux assertion pass or fail on timing. Each surface is now polled until
+              every NEW token it must render is present, and every assertion — negatives
+              included — is made against that proven-fresh response.
+        Depends on the same ruling's removal of the edition ordinal from nationalShow.title.
+      command: 'node contracts/checks/show-visitor-info/check-show-identity-sweep.mjs'
+      # Measured 184s on 2026-08-12. Without this line contract.py applies its 60s
+      # default (execution/contract.py:254) and SIGKILLs the check mid-run.
+      # MUTATES the whole show identity + polls the CDN twice (propagation gate, then cleanup) + settles seven surfaces + drives Playwright. Measured 184s; @qa measured propagation alone at 64s/72s/96s under load, so the realistic worst case is ~400s, plus the 240s lock wait.
+      # Ceiling = lock wait + runtime (lock wait 420s + 248s measured through contract.py, with room for CDN weather); see LOCK_WAIT_TIMEOUT_MS in _mutation-guard.mjs.
+      timeout_seconds: 1200
+    - id: A64
+      description: >-
+        S6/S7 - no fabricated fallback date. A hardcoded ISO date in a countdown is an INVENTED
+        date presented as a live ticking fact, with no pending marker, the moment an editor
+        clears countdownDate. When a show-identity fact is absent, render the absence.
+      command: >-
+        if grep -nE "20[0-9]{2}-[0-9]{2}-[0-9]{2}" components/show/ShowCountdown.tsx components/home/ShowBand.tsx; then echo "a fabricated fallback date remains"; exit 1; fi
+    - id: A65
+      description: >-
+        S6/S7/S8 - no hardcoded edition ordinal on any show-identity surface. Screen-reader users
+        got "Countdown to 19th National Show" from ShowCountdown's aria-label; the home page, the
+        utility bar on EVERY page, and both archive pages carried the same stale edition.
+      command: >-
+        if grep -nE '[0-9]+(st|nd|rd|th) (National|South African|Show)' "app/(marketing)/national-show/page.tsx" "app/(marketing)/national-show/archive/page.tsx" "app/(marketing)/national-show/archive/[year]/page.tsx" components/show/ShowCountdown.tsx components/home/ShowBand.tsx components/home/Hero.tsx components/home/NavCards.tsx components/chrome/UtilityBar.tsx; then echo "a hardcoded edition ordinal remains"; exit 1; fi
+    - id: A66
+      description: >-
+        S7/S8 - A53's shape-based month/year fence, applied to the rest of the surface inventory.
+        The home page is the most-seen surface on the site and it advertised the venue, the dates
+        and the host region as module constants.
+      command: >-
+        if grep -nE '(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[^A-Za-z]{0,10}20[0-9]{2}|20[0-9]{2}[^A-Za-z]{0,10}(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*' components/home/ShowBand.tsx components/home/Hero.tsx components/home/NavCards.tsx components/chrome/UtilityBar.tsx "app/(marketing)/national-show/archive/page.tsx" "app/(marketing)/national-show/archive/[year]/page.tsx"; then echo "a month/year literal remains on a show-identity surface"; exit 1; fi
+    - id: A67
+      description: >-
+        S1 - the landing hero venue prefers the structured venue object over the legacy location
+        string. One fact, two fields, was the whole of S1: the hero read location while the CTA
+        sentence one screen below read venue.city, and @qa's swap rendered both at once.
+      command: >-
+        grep -q "sanityShow?.venue?.name || sanityShow?.location" "app/(marketing)/national-show/page.tsx"
+    - id: A68
+      description: >-
+        S4 - the EXHIBITOR_STAGES fallback carries no dates at all. These were unconfirmed
+        committee dates rendering live with no pending marker, and an editor could not correct
+        them without authoring a whole portable-text block. Deriving them from showDate was
+        rejected: stages 1 and 2 are a registration schedule no arithmetic can honestly produce.
+      command: >-
+        if grep -nE "^\s*dates:" "app/(marketing)/national-show/page.tsx"; then echo "the stage fallback still carries fabricated dates"; exit 1; fi
+    - id: A69
+      description: >-
+        S4 - the exhibitor-stage fallback is marked as unconfirmed, since it is scaffolding the
+        committee has not signed off
+      command: >-
+        grep -A40 "EXHIBITOR_STAGES.map" "app/(marketing)/national-show/page.tsx" | grep -q "ConfirmationBadge"
+
+    # ---- S3/S5: the checks themselves ----
+    - id: A70
+      description: >-
+        S3 - the shared mutation guard exists and EVERY mutating check goes through it. A check
+        that writes outside the lock reopens the interleaving hole for all the others. On
+        2026-08-11 two runs interleaved, one captured the other's sentinel as its baseline,
+        restored it, and left QA text rendering on a live public page while reporting clean.
+      command: >-
+        test -f contracts/checks/show-visitor-info/_mutation-guard.mjs &&
+        for c in check-cms-round-trip check-seed-idempotent check-marker-fail-closed check-show-identity-sweep; do grep -q "withDatasetLock" "contracts/checks/show-visitor-info/$c.mjs" || { echo "$c does not take the dataset lock"; exit 1; }; grep -q "assertUsableBaseline" "contracts/checks/show-visitor-info/$c.mjs" || { echo "$c does not reject a poisoned baseline"; exit 1; }; grep -q "restoreGuarded" "contracts/checks/show-visitor-info/$c.mjs" || { echo "$c restores without a revision guard"; exit 1; }; done
+    - id: A71
+      description: >-
+        S3 - a sentinel-shaped baseline is a hard refusal, never a value that gets restored, and
+        every sentinel this contract writes shares one recognisable shape so that any check can
+        detect any other check's residue
+      command: >-
+        grep -q "PoisonedBaselineError" contracts/checks/show-visitor-info/_mutation-guard.mjs &&
+        grep -Eq "SENTINEL_PATTERN\s*=\s*/SVI-" contracts/checks/show-visitor-info/_mutation-guard.mjs &&
+        grep -q "ifRevisionID" contracts/checks/show-visitor-info/_mutation-guard.mjs
+    - id: A72
+      description: >-
+        S3 - the two seed/round-trip checks write to DIFFERENT fields, so two assertions in this
+        one contract cannot collide with each other even if the lock is bypassed
+      command: >-
+        grep -Eq "^const FIELD = 'parking'" contracts/checks/show-visitor-info/check-cms-round-trip.mjs &&
+        grep -Eq "^const FIELD = 'cloakroom'" contracts/checks/show-visitor-info/check-seed-idempotent.mjs
+    - id: A73
+      description: >-
+        S3 - propagation timeouts have real headroom. Propagation is bounded by the Sanity CDN
+        (sanity/lib/fetch.ts sets useCdn:true), not by /api/revalidate; @qa measured 64s, 72s and
+        ~96s under load, so the old 180s was ~2x the worst observed, which is a coin flip.
+      command: >-
+        for c in check-cms-round-trip check-marker-fail-closed check-show-identity-sweep; do grep -q "POLL_TIMEOUT_MS = 240_000" "contracts/checks/show-visitor-info/$c.mjs" || { echo "$c has insufficient propagation headroom"; exit 1; }; done
+    - id: A74
+      description: >-
+        S5 - check-faq-keyboard no longer races hydration. It passed and failed within ten
+        minutes with no code change: at domcontentloaded the mid-hydration tree had 22 focusables
+        including a search input absent from the settled order, and one run wrapped focus back to
+        body without ever reaching a summary. The settled tab count is a stable 12, so raising
+        MAX_TABS would have masked it rather than fixed it.
+      command: >-
+        grep -q "waitUntil: 'networkidle'" contracts/checks/show-visitor-info/check-faq-keyboard.mjs &&
+        if grep -q "PATHS.faq}\`, { waitUntil: 'domcontentloaded' }" contracts/checks/show-visitor-info/check-faq-keyboard.mjs; then echo "still tabbing against a mid-hydration tree"; exit 1; fi
+
+    # ---- S9 ----
+    - id: A75
+      description: S9 - the visitor seed is runnable as an npm script, like every other seed
+      command: >-
+        grep -q '"seed:visitor"' package.json
+
+    # ================= Gates =================
+    - id: A57
+      description: strict TypeScript type-check passes
+      command: 'pnpm type-check'
+    - id: A58
+      description: lint passes with zero errors
+      command: 'pnpm lint'
+    - id: A59
+      description: production build succeeds
+      command: 'pnpm build'

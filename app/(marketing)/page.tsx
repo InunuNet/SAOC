@@ -20,16 +20,12 @@ import {
 } from '@/sanity/queries';
 import type { SanityEvent } from '@/components/home/EventsStrip';
 import type { SanityPartner } from '@/components/home/PartnersSection';
+import type { ShowIdentity } from '@/types';
 
 interface HomePageData {
   title?: string;
   heroImages?: SanityImageSource[] | null;
   missionText?: string | null;
-  countdownDate?: string | null;
-}
-
-interface NationalShowData {
-  countdownDate?: string | null;
 }
 
 const BASE_URL = 'https://saoc.co.za';
@@ -65,16 +61,16 @@ export default async function HomePage() {
     sanityFetch<HomePageData>({ query: homePageQuery, tags: ['homePage', 'sanity'] }),
     sanityFetch<SanityEvent[]>({ query: upcomingEventsQuery, tags: ['societyEvent', 'sanity'] }),
     sanityFetch<SanityPartner[]>({ query: partnersQuery, tags: ['sponsor', 'sanity'] }),
-    sanityFetch<NationalShowData>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
+    sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
   ]);
 
   return (
     <>
       <JsonLd data={organizationJsonLd()} />
-      <Hero images={home?.heroImages} />
+      <Hero images={home?.heroImages} show={show} />
       <MissionBlock missionText={home?.missionText} />
-      <NavCards />
-      <ShowBand countdownDate={show?.countdownDate} />
+      <NavCards show={show} />
+      <ShowBand show={show} />
       <EventsStrip events={eventsData} />
       <YearbookStrip />
       <PartnersSection partners={partnersData} />

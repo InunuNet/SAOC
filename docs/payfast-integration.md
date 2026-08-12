@@ -168,21 +168,31 @@ If this file is ever touched again, re-run that script before assuming the chang
 this exact bug (taking the last hop instead of the second-to-last) shipped once during this
 milestone's QA rounds and silently broke every ITN.
 
-### 3. Atomic Firestore transaction for idempotency
+### 3. Atomic Firestore transaction for idempotency, guarded positively
 
 PayFast retries ITN delivery until it receives HTTP 200, and can genuinely deliver the same
 valid notification twice in close succession. The final `paid` write is wrapped in
 `db.runTransaction()`:
 
 1. Re-read the ticket doc fresh, inside the transaction.
-2. If it's already `paid`, no-op and return (idempotent).
+2. If its status is anything **other than `'reserved'`**, no-op and return (idempotent).
 3. Otherwise, write `status: 'paid'`, `pf_payment_id`, `purchasedAt: Timestamp.now()`.
 
-Without this, two concurrent valid ITNs for the same `m_payment_id` could both read `reserved`
-before either writes, both pass every check, and both attempt to write — not itself harmful in
-this case, but it breaks the "at-most-once write" guarantee the handler is supposed to provide,
-and would matter more if the write side effects ever grow (e.g. sending a confirmation email
-per write — see [M2](#whats-not-built-yet-m2)).
+Step 2 was originally written the other way round — a negative check, `!== 'paid'` — which
+meant a ticket already `checked-in` still passed the guard and got written back to `paid`,
+letting a late/duplicate ITN reopen the door for a booking reference already used. The guard
+was corrected to a positive `=== 'reserved'` check (equivalently, no-op unless
+`status === 'reserved'`) during the ticketing security hardening pass; this is the one place
+in that pass that required editing this hash-pinned file, done under a recorded re-pin
+ceremony. See [docs/ticketing-hardening.md](ticketing-hardening.md) — "The ITN write guard,
+and the A15 re-pin ceremony" — for the full defect, fix, and why it can only be verified
+structurally (byte-diff + hash pin) rather than behaviourally.
+
+Without the transaction, two concurrent valid ITNs for the same `m_payment_id` could both read
+`reserved` before either writes, both pass every check, and both attempt to write — not itself
+harmful in this case, but it breaks the "at-most-once write" guarantee the handler is supposed
+to provide, and would matter more if the write side effects ever grow (e.g. sending a
+confirmation email per write — see [M2](#whats-not-built-yet-m2)).
 
 The **external server-confirm HTTP call stays outside the transaction, before it starts**
 (contract assertion A32 checks the line ordering directly). Firestore transactions must not
@@ -190,10 +200,13 @@ wrap external network calls — a transaction retry would re-issue the HTTP call
 hold the transaction open for the full round-trip duration.
 
 There's also a non-transactional idempotency **fast path** earlier in the handler (an initial
-read that skips the amount-check and server-confirm entirely if the ticket already shows
-`paid`) — this is a pure optimisation, not the correctness guarantee. It's explicitly commented
-in the code as such: the real guarantee is the transactional re-read immediately before the
-write.
+read that skips the amount-check and server-confirm entirely unless the ticket currently shows
+`reserved`) — this is a pure optimisation, not the correctness guarantee; the real guarantee is
+the transactional re-read immediately before the write, described above. It's explicitly
+commented in the code as such. A status that is neither `reserved` nor `paid` at this point (a
+cancelled or malformed document with money apparently attached to it) is logged via
+`console.error`, not silently dropped, so an operator can reconcile it — the ordinary
+already-`paid` duplicate-delivery case stays silent.
 
 ---
 

@@ -180,9 +180,8 @@ async function seedHomePage(): Promise<void> {
     missionText:
       'SAOC exists to promote the culture, hybridisation and appreciation of orchids across South Africa. We do this through a federated network of 21 societies, a nationally accredited judging system first standardised in 1990, and our annual publication Orchids South Africa.',
     heroImages,
-    // countdownDate: absent — dead field, no component reads it (golden gap).
   });
-  console.log('    seeded title, missionText, heroImages (countdownDate left absent)');
+  console.log('    seeded title, missionText, heroImages');
 }
 
 async function seedAboutPage(): Promise<void> {
@@ -210,7 +209,7 @@ async function seedNationalShow(): Promise<void> {
   await client.createOrReplace({
     _id: 'nationalShow',
     _type: 'nationalShow',
-    title: 'The 19th South African National Orchid Show',
+    title: 'The South African National Orchid Show',
     // showDate: absent — only a non-parseable display string exists (golden gap).
     location: 'Cape Town International Convention Centre',
     hero,
@@ -236,9 +235,8 @@ async function seedContactPage(): Promise<void> {
         email: 'info@saoc.co.za',
       },
     ],
-    // formRecipients: absent — orphaned field, no hardcoded value (golden gap).
   });
-  console.log('    seeded title, directContacts (formRecipients left absent)');
+  console.log('    seeded title, directContacts');
 }
 
 async function seedJudgingPage(): Promise<void> {

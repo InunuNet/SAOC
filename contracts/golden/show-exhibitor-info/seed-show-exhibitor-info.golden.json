@@ -1,0 +1,110 @@
+{
+  "_comment": [
+    "GOLDEN — scripts/seed-show-exhibitor-info.ts.",
+    "",
+    "Full copy for every body field is in research-to-copy-map.golden.md. This file settles the",
+    "MECHANICS: document ids, which write primitive each field uses, key derivation, and the",
+    "invariants the contract asserts against.",
+    "",
+    "A NEW SCRIPT. scripts/seed-page-singletons.ts is NOT extended — it uses createOrReplace,",
+    "which silently reverts every editor change on each run. This script must not import from it,",
+    "mention any exhibitor type inside it, or contain the string createOrReplace anywhere."
+  ],
+
+  "invariants": [
+    "createIfNotExists for every document. Never createOrReplace.",
+    "setIfMissing for every field patch. Never .set() — an editor's correction always wins.",
+    "No seeded value is an empty string. A blank field is indistinguishable from a bug.",
+    "No seeded status is 'confirmed'. Nothing ships as committee-confirmed fact.",
+    "Every portable-text _key is deterministic, derived from the block's own slug and index. No randomUUID, no Math.random, no nanoid — a random key makes the seed non-idempotent and every re-run produces a spurious revision.",
+    "Re-running the script changes no document revision and creates no duplicate. Proven against the real dataset by check-seed-idempotent.mjs.",
+    "The script never writes nationalShow.exhibitorStages — see exhibitorStages-reconciliation.golden.md.",
+    "The script never writes entryFormFile or entryFormUrl. There is no entry form; seeding a placeholder file would be the exact harm this mission exists to prevent."
+  ],
+
+  "keyDerivation": {
+    "pattern": "`${blockSlug}-${index}`",
+    "examples": ["entryProcess-0", "entryProcess-1", "eligibility-0", "permits-2"],
+    "_note": "Deterministic and human-readable. Re-running produces byte-identical blocks, so setIfMissing is a no-op and the revision does not move."
+  },
+
+  "documents": [
+    {
+      "_id": "showExhibitorInfo",
+      "_type": "showExhibitorInfo",
+      "primitive": "createIfNotExists({ _id, _type }) then patch(...).setIfMissing({ ...allFields })",
+      "fields": {
+        "title": "Exhibitor Information",
+        "intro": "Everything we currently know about entering plants in the 19th South African National Orchid Show — and, just as importantly, everything that is not settled yet. Most of what follows is established practice at orchid shows internationally, offered so the show committee has something to correct rather than a blank page. None of it is SAOC policy until the committee says so.",
+
+        "pendingLabel": "To be confirmed by the show committee",
+        "researchLabel": "Researched international show practice — a starting point for the show committee, not yet SAOC policy",
+        "questionLabel": "Open question for the show committee — we could not establish this",
+
+        "keyDatesHeading": "Key dates",
+        "keyDatesNote": "None of these dates are set yet. The show committee will confirm them and they will be published here. Do not make travel or freight arrangements against anything on this page.",
+        "keyDates": "6 showExhibitorDate items — see research-to-copy-map.golden.md. Every one status 'pending'. Every dateNote a string, never a date.",
+
+        "entryFormHeading": "Entry form",
+        "entryFormPendingNote": "The entry form for the 19th National Show has not been published yet. When the show committee releases it, it will be available for download here. In the meantime, contact the council if you intend to exhibit.",
+
+        "entryProcess": "{ heading, body } — see copy map",
+        "fees": "{ heading, body } — see copy map",
+        "classes": "{ heading, body } — see copy map. Contains no class code.",
+        "judging": "{ heading, body } — see copy map. Restates no judging criterion.",
+        "eligibility": "{ heading, body } — see copy map",
+        "display": "{ heading, body } — see copy map",
+        "sales": "{ heading, body } — see copy map",
+        "practicalities": "{ heading, body } — see copy map",
+        "permits": "{ heading, body } — see copy map. The CITES block.",
+
+        "questionsHeading": "Questions for the show committee",
+        "questionsIntro": "see copy map",
+        "openQuestions": "13 exhibitorQuestion items — see copy map",
+
+        "judgingLinkLabel": "SAOC judging standards",
+        "classesLinkLabel": "Show classes",
+        "contactNote": "If you are planning to exhibit and need an answer before these pages are complete, contact the council directly and we will put you in touch with the show committee.",
+
+        "confirmations": {
+          "entryProcess": "research",
+          "fees": "pending",
+          "classes": "research",
+          "judging": "research",
+          "eligibility": "research",
+          "display": "research",
+          "sales": "research",
+          "practicalities": "question",
+          "permits": "question",
+          "entryForm": "pending"
+        }
+      }
+    },
+    {
+      "_type": "showExhibitorStep",
+      "count": 7,
+      "primitive": "createIfNotExists per step, then patch(...).setIfMissing(...)",
+      "_ids": [
+        "showExhibitorStep-decide",
+        "showExhibitorStep-enter",
+        "showExhibitorStep-prepare",
+        "showExhibitorStep-deliver",
+        "showExhibitorStep-judging",
+        "showExhibitorStep-show-days",
+        "showExhibitorStep-removal"
+      ],
+      "_note": [
+        "Fixed, readable _ids rather than generated ones — so a re-run finds the existing document",
+        "instead of creating a duplicate, and so a human reading the dataset can tell what a",
+        "document is without opening it.",
+        "orders: 10,20,30,40,50,60,70 — gaps let the committee insert a step without renumbering.",
+        "statuses and content: showExhibitorStep-schema.golden.json"
+      ]
+    }
+  ],
+
+  "package_json": {
+    "script": "\"seed:exhibitor\": \"tsx scripts/seed-show-exhibitor-info.ts\"",
+    "_note": "Matches the existing seed-script convention. An unrunnable seed script is not a seed script."
+  }
+}

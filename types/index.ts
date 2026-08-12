@@ -1,4 +1,6 @@
 import type { Timestamp } from 'firebase-admin/firestore';
+import type { PortableTextBlock } from '@portabletext/react';
+import type { SanityImageSource } from '@sanity/image-url';
 
 export type Society = {
   name: string;
@@ -36,6 +38,8 @@ export type NationalShow = {
   status: 'upcoming' | 'past';
   days?: number;
   entries?: number;
+  /** Exhibitor count — Sanity's `show.exhibitors`. Distinct from `visitors`. */
+  exhibitors?: number;
   visitors?: number;
   trophies?: number;
   heroImage?: string;
@@ -81,6 +85,8 @@ export type Partner = {
 export type Province = {
   code: string;
   name: string;
+  /** Curated chip position on /societies. Lower sorts first. */
+  order?: number;
 };
 
 export type ShowClass = {
@@ -144,3 +150,240 @@ export interface Ticket {
   m_payment_id: string | null;
   pf_payment_id: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// F1 (show-visitor-info) — National Show visitor information.
+// Mirrors the Sanity shapes in sanity/schemas/documents/showVisitorInfo.ts and
+// sanity/schemas/objects/*. Every field is nullable because Sanity content is
+// editor-controlled: a page must render sensibly against a half-filled document.
+// ---------------------------------------------------------------------------
+
+export type ConfirmationStatus = 'pending' | 'research' | 'confirmed';
+
+export type ConfirmationBlock =
+  | 'venue'
+  | 'dates'
+  | 'openingHours'
+  | 'admission'
+  | 'parking'
+  | 'publicTransport'
+  | 'accessibility'
+  | 'photography'
+  | 'cloakroom'
+  | 'food'
+  | 'accommodation'
+  | 'attractions'
+  | 'emergencyContacts';
+
+export type ConfirmationStatuses = Partial<Record<ConfirmationBlock, ConfirmationStatus>>;
+
+export type ShowVenue = {
+  name?: string | null;
+  addressLines?: string[] | null;
+  city?: string | null;
+  province?: string | null;
+  postalCode?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  mapsUrl?: string | null;
+  mapImage?: SanityImageSource | null;
+  mapImageAlt?: string | null;
+  directionsNote?: string | null;
+  phone?: string | null;
+};
+
+export type TravelRoute = {
+  _key?: string;
+  origin?: string | null;
+  distance?: string | null;
+  duration?: string | null;
+  directions?: string | null;
+  transportOptions?: string[] | null;
+};
+
+export type AccommodationDistanceBand = 'walking' | 'nearby' | 'city' | 'further';
+
+export type AccommodationOption = {
+  _key?: string;
+  name?: string | null;
+  area?: string | null;
+  distanceBand?: AccommodationDistanceBand | null;
+  note?: string | null;
+  url?: string | null;
+};
+
+export type Attraction = {
+  _key?: string;
+  name?: string | null;
+  note?: string | null;
+  url?: string | null;
+};
+
+export type EmergencyContact = {
+  _key?: string;
+  label?: string | null;
+  number?: string | null;
+  note?: string | null;
+};
+
+export type OpeningHoursEntry = {
+  _key?: string;
+  label?: string | null;
+  hours?: string | null;
+  note?: string | null;
+};
+
+export type ShowVisitorInfo = {
+  pendingLabel?: string | null;
+  researchLabel?: string | null;
+  planTitle?: string | null;
+  planIntro?: string | null;
+  gettingThereIntro?: string | null;
+  airportRoutes?: TravelRoute[] | null;
+  parking?: string | null;
+  publicTransport?: string | null;
+  accommodationIntro?: string | null;
+  accommodation?: AccommodationOption[] | null;
+  attractions?: Attraction[] | null;
+  emergencyContacts?: EmergencyContact[] | null;
+  expectTitle?: string | null;
+  expectIntro?: string | null;
+  openingHours?: OpeningHoursEntry[] | null;
+  admissionNote?: string | null;
+  admissionLinkLabel?: string | null;
+  food?: string | null;
+  photographyPolicy?: string | null;
+  cloakroom?: string | null;
+  accessibility?: string | null;
+  faqTitle?: string | null;
+  faqIntro?: string | null;
+  faqContactNote?: string | null;
+  confirmations?: ConfirmationStatuses | null;
+};
+
+export type ShowFaqCategory =
+  | 'getting-there'
+  | 'tickets'
+  | 'accessibility'
+  | 'plant-sales'
+  | 'general';
+
+export type ShowFaq = {
+  _id: string;
+  question?: string | null;
+  answer?: PortableTextBlock[] | null;
+  category?: string | null;
+  order?: number | null;
+  status?: ConfirmationStatus | null;
+};
+
+// ---------------------------------------------------------------------------
+// F1 (show-exhibitor-info) — /national-show/exhibitors
+//
+// A separate four-value status union rather than an extension of ConfirmationStatus:
+// the exhibitor research has a category the visitor research did not — things the
+// survey looked for and could not establish. Those are neither placeholders nor
+// findings, and `question` is the only honest label for them. Unifying the two unions
+// is booked as FU-3.
+// ---------------------------------------------------------------------------
+
+export type ExhibitorStatus = 'pending' | 'research' | 'question' | 'confirmed';
+
+export type ExhibitorConfirmationBlock =
+  | 'entryProcess'
+  | 'fees'
+  | 'classes'
+  | 'judging'
+  | 'eligibility'
+  | 'display'
+  | 'sales'
+  | 'practicalities'
+  | 'permits'
+  | 'entryForm';
+
+// A status read from Sanity may be absent or, after a hand-edit, unrecognised. The badge
+// falls those cases through to the pending marker rather than to silence, so the wider
+// `string` here is deliberate — narrowing it would push the unsafe case into a cast.
+export type ExhibitorConfirmationStatuses = Partial<
+  Record<ExhibitorConfirmationBlock, ExhibitorStatus | string>
+>;
+
+export type ExhibitorSection = {
+  heading?: string | null;
+  body?: PortableTextBlock[] | null;
+};
+
+export type ShowExhibitorDate = {
+  _key?: string;
+  label?: string | null;
+  /** Free text, never a calendar value — see sanity/schemas/objects/showExhibitorDate.ts. */
+  dateNote?: string | null;
+  detail?: string | null;
+  status?: ExhibitorStatus | string | null;
+};
+
+export type ExhibitorQuestion = {
+  _key?: string;
+  question?: string | null;
+  context?: string | null;
+  topic?: string | null;
+  order?: number | null;
+};
+
+export type ShowExhibitorStep = {
+  _id: string;
+  title?: string | null;
+  when?: string | null;
+  body?: PortableTextBlock[] | null;
+  order?: number | null;
+  status?: ExhibitorStatus | string | null;
+};
+
+export type ShowExhibitorInfo = {
+  title?: string | null;
+  intro?: string | null;
+  pendingLabel?: string | null;
+  researchLabel?: string | null;
+  questionLabel?: string | null;
+  keyDatesHeading?: string | null;
+  keyDatesNote?: string | null;
+  keyDatesCaption?: string | null;
+  keyDates?: ShowExhibitorDate[] | null;
+  entryFormHeading?: string | null;
+  entryFormFileUrl?: string | null;
+  entryFormFileName?: string | null;
+  entryFormUrl?: string | null;
+  entryFormPendingNote?: string | null;
+  entryProcess?: ExhibitorSection | null;
+  fees?: ExhibitorSection | null;
+  classes?: ExhibitorSection | null;
+  judging?: ExhibitorSection | null;
+  eligibility?: ExhibitorSection | null;
+  display?: ExhibitorSection | null;
+  sales?: ExhibitorSection | null;
+  practicalities?: ExhibitorSection | null;
+  permits?: ExhibitorSection | null;
+  questionsHeading?: string | null;
+  questionsIntro?: string | null;
+  openQuestions?: ExhibitorQuestion[] | null;
+  confirmations?: ExhibitorConfirmationStatuses | null;
+  judgingLinkLabel?: string | null;
+  classesLinkLabel?: string | null;
+  contactNote?: string | null;
+};
+
+// F7 (show-visitor-info round 2): the show-identity facts every surface outside
+// /national-show needs from the nationalShow singleton. Home, the utility bar and both
+// archive pages carried these as hardcoded literals until round 2 — changing the venue
+// or the dates is a Studio edit, so every surface reads this shape.
+// See contracts/golden/show-visitor-info/show-identity-surfaces.golden.md.
+export type ShowIdentity = {
+  showDate?: string | null;
+  showEndDate?: string | null;
+  edition?: number | null;
+  hostRegion?: string | null;
+  /** Legacy display string. Fallback only — always prefer `venue.name`. */
+  location?: string | null;
+  venue?: ShowVenue | null;
+  countdownDate?: string | null;
+};

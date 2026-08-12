@@ -1,0 +1,130 @@
+{
+  "_comment": [
+    "F1 — the structured venue object added to sanity/schemas/documents/nationalShow.ts.",
+    "This is THE single source for every venue-derived value the site renders. See",
+    "venue-single-source.golden.md for the rule and its verification.",
+    "Placement: immediately after the existing 'location' field, before 'hero', so an editor",
+    "sees the legacy display string and the structured object adjacent to each other.",
+    "The existing fields (title, showDate, location, hero, countdownDate, exhibitorStages,",
+    "salesOpen) are NOT modified, reordered or removed — location only gains a description."
+  ],
+  "modifies": "sanity/schemas/documents/nationalShow.ts",
+  "existingFieldChanged": {
+    "name": "location",
+    "change": "description added only — type, name and position unchanged",
+    "description": "Short one-line display string used in the show landing-page hero. The authoritative venue detail lives in the Venue object below — keep the two consistent when the committee confirms the venue."
+  },
+  "newObjectType": {
+    "file": "sanity/schemas/objects/showVenue.ts",
+    "name": "showVenue",
+    "title": "Show Venue",
+    "type": "object",
+    "_comment": "A named object type, not an inline object, so it can be referenced from a future exhibitor/programme document without duplicating the shape. Registered in sanity/schemas/index.ts alongside portableText under the Objects group.",
+    "fields": [
+      {
+        "name": "name",
+        "title": "Venue Name",
+        "type": "string",
+        "description": "Full venue name as a visitor would read it, e.g. the convention centre's official name.",
+        "validation": "required"
+      },
+      {
+        "name": "addressLines",
+        "title": "Street Address Lines",
+        "type": "array",
+        "of": [{ "type": "string" }],
+        "description": "One entry per printed address line, in order. Do not include city or postal code here."
+      },
+      { "name": "city", "title": "City", "type": "string" },
+      { "name": "province", "title": "Province", "type": "string" },
+      { "name": "postalCode", "title": "Postal Code", "type": "string" },
+      {
+        "name": "latitude",
+        "title": "Latitude",
+        "type": "number",
+        "description": "Decimal degrees. Used only to build a map link — no maps SDK is loaded."
+      },
+      {
+        "name": "longitude",
+        "title": "Longitude",
+        "type": "number",
+        "description": "Decimal degrees."
+      },
+      {
+        "name": "mapsUrl",
+        "title": "Map Link",
+        "type": "url",
+        "description": "Link-out to a map of the venue, opened in a new tab. Any provider. No API key is used."
+      },
+      {
+        "name": "mapImage",
+        "title": "Static Map Image",
+        "type": "image",
+        "description": "Optional. A static map screenshot or venue location graphic, uploaded here. Leave empty to show the map link on its own — never a broken embed."
+      },
+      {
+        "name": "mapImageAlt",
+        "title": "Static Map Image Alt Text",
+        "type": "string",
+        "description": "Describe the map for a screen-reader user, e.g. the venue's position relative to a named landmark. Required whenever a static map image is set."
+      },
+      {
+        "name": "directionsNote",
+        "title": "Directions Note",
+        "type": "text",
+        "description": "Free-text arrival guidance — which entrance to use, where to be dropped off, landmarks to look for."
+      },
+      {
+        "name": "phone",
+        "title": "Venue Switchboard",
+        "type": "string",
+        "description": "General venue enquiries. NOT an emergency number — emergency contacts live on Show Visitor Information."
+      }
+    ]
+  },
+  "newFieldOnNationalShow": {
+    "name": "venue",
+    "title": "Venue",
+    "type": "showVenue",
+    "description": "The single source for every venue detail the website shows. Changing the venue means editing this object — nothing in the code needs to change.",
+    "insertAfter": "location"
+  },
+
+  "additionalShowIdentityFields": {
+    "_comment": [
+      "F6 — the three fields whose absence forced the landing page to keep hardcoding.",
+      "Commit 32f3b0f (2026-08-06) explicitly deferred these as 'a content-model decision for",
+      "Brad/committee, not something to route around here'. F1 IS that content-model pass, so",
+      "the decision is made here. See show-identity-wiring.golden.md."
+    ],
+    "showEndDate": {
+      "name": "showEndDate",
+      "title": "Show End Date",
+      "type": "datetime",
+      "insertAfter": "showDate",
+      "description": "The last day of the show. A single showDate cannot express a date range, which is why the hero's Dates cell stayed hardcoded.",
+      "_comment": "showDate itself already exists and is already queried at page.tsx:48 — it is simply used by nothing. This is the missing half, not a replacement."
+    },
+    "edition": {
+      "name": "edition",
+      "title": "Edition Number",
+      "type": "number",
+      "description": "e.g. 19 for the nineteenth show. Rendered as a roman numeral in the hero eyebrow and used in the closing call-to-action.",
+      "validation": "positive integer"
+    },
+    "hostRegion": {
+      "name": "hostRegion",
+      "title": "Host Region",
+      "type": "string",
+      "description": "The host province or region, shown in the hero meta grid."
+    },
+    "notAdded": {
+      "cycle": "The hero's 'Cycle: Triennial' cell stays hardcoded on purpose — it is a standing fact about how the show is constituted, not a per-edition value, and a field for it would be a field nobody ever edits."
+    }
+  },
+  "prohibited": [
+    "Removing or renaming nationalShow.location — contracts/checks/cms-loop-f3-national-show mutates it in a verified live round-trip check.",
+    "Adding a venue-name default or initialValue in the schema — seeding is the seed script's job, and an initialValue would silently re-appear in a new document.",
+    "Any coordinate, address or venue-name literal in a component or page file."
+  ]
+}

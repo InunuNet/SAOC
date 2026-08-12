@@ -1,6 +1,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
+import {
+  formatShowShortMonthYear,
+  showLabelWithEdition,
+  showYearOf,
+} from '@/lib/show-identity';
+import type { ShowIdentity } from '@/types';
+
 interface NavCardData {
   href: string;
   badge: string;
@@ -10,6 +17,12 @@ interface NavCardData {
   image: string;
   alt: string;
 }
+
+// F7: the National Show card's title and meta line are show-identity facts (edition,
+// year, month, city) and came from the nationalShow singleton only after round 2 — they
+// were literals, so a venue or date change in Studio left this card stale.
+// See show-identity-surfaces.golden.md.
+const TBC = 'To be confirmed';
 
 const NAV_CARDS: NavCardData[] = [
   {
@@ -24,9 +37,10 @@ const NAV_CARDS: NavCardData[] = [
   {
     href: '/national-show',
     badge: 'National Show',
-    title: 'The 19th National Orchid Show, 2027',
+    // Overwritten from the nationalShow singleton in buildNavCards().
+    title: '',
     body: 'Every three years. Four days. A thousand plants at their peak.',
-    meta: 'Sep 2027 · Cape Town',
+    meta: '',
     image: '/images/orchid-yellow.jpg',
     alt: 'Yellow orchid',
   },
@@ -50,7 +64,30 @@ const NAV_CARDS: NavCardData[] = [
   },
 ];
 
-export function NavCards() {
+const SHOW_CARD_HREF = '/national-show';
+
+function buildNavCards(show?: ShowIdentity | null): NavCardData[] {
+  const year = showYearOf(show?.showDate);
+  const title = [
+    `The ${showLabelWithEdition(show?.edition, 'National Orchid Show')}`,
+    year ? `, ${year}` : '',
+  ].join('');
+  const meta = [formatShowShortMonthYear(show?.showDate), show?.venue?.city]
+    .filter((part): part is string => Boolean(part))
+    .join(' · ');
+
+  return NAV_CARDS.map((card) =>
+    card.href === SHOW_CARD_HREF ? { ...card, title, meta: meta || TBC } : card,
+  );
+}
+
+export interface NavCardsProps {
+  show?: ShowIdentity | null;
+}
+
+export function NavCards({ show }: NavCardsProps) {
+  const cards = buildNavCards(show);
+
   return (
     <section className="py-24 px-8 md:px-16 bg-bone">
       <div className="max-w-[1280px] mx-auto">
@@ -64,7 +101,7 @@ export function NavCards() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {NAV_CARDS.map((card) => (
+          {cards.map((card) => (
             <Link
               key={card.href}
               href={card.href}

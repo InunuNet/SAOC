@@ -17,13 +17,20 @@ export const ticketType = defineType({
       type: 'slug',
       options: { source: 'name' },
     }),
-    defineField({ name: 'price', title: 'Price (ZAR)', type: 'number' }),
+    defineField({
+      name: 'price',
+      title: 'Price (ZAR)',
+      type: 'number',
+      // No .integer() — ZAR prices may carry cents.
+      validation: (Rule) => Rule.required().min(0),
+    }),
     defineField({ name: 'description', title: 'Description', type: 'text' }),
     defineField({
       name: 'capacity',
       title: 'Capacity',
       type: 'number',
-      description: 'Must be set — a blank capacity reads as sold out at checkout (fails closed).',
+      description:
+        'Required. Enforced again at checkout — a ticket type with no capacity cannot be sold.',
       validation: (Rule) => Rule.required().integer().min(0),
     }),
     defineField({ name: 'active', title: 'Active', type: 'boolean', initialValue: true }),

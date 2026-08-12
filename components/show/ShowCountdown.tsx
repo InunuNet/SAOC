@@ -2,13 +2,17 @@
 
 import { useState, useSyncExternalStore } from 'react';
 
-// Mirrors components/home/ShowBand.tsx's DEFAULT_COUNTDOWN_DATE fallback pattern —
-// used when countdownDate is absent/invalid so the countdown never renders NaN.
-const DEFAULT_COUNTDOWN_DATE = '2027-09-18T09:00:00+02:00';
+import { ConfirmationBadge } from './ConfirmationBadge';
+import { showLabelWithEdition } from '@/lib/show-identity';
+
 const TICK_MS = 1_000;
 
 export interface ShowCountdownProps {
   countdownDate?: string | null;
+  /** Edition number from the nationalShow singleton — never hardcoded here. */
+  edition?: number | null;
+  /** Pending label from showVisitorInfo, for the "no date" state. */
+  pendingLabel?: string | null;
 }
 
 interface Remain {
@@ -18,10 +22,14 @@ interface Remain {
   seconds: number;
 }
 
-function resolveTargetMs(countdownDate?: string | null): number {
-  const candidate = countdownDate ? new Date(countdownDate) : null;
-  const target = candidate && !isNaN(candidate.getTime()) ? candidate : new Date(DEFAULT_COUNTDOWN_DATE);
-  return target.getTime();
+// Returns null when the dataset has no usable countdown date. There is deliberately no
+// fallback date: a hardcoded ISO date here is an INVENTED date presented as a live
+// ticking fact the moment an editor clears countdownDate. When a show-identity fact is
+// absent we render the absence — see show-identity-surfaces.golden.md.
+function resolveTargetMs(countdownDate?: string | null): number | null {
+  if (!countdownDate) return null;
+  const candidate = new Date(countdownDate);
+  return Number.isNaN(candidate.getTime()) ? null : candidate.getTime();
 }
 
 function compute(targetMs: number): Remain {
@@ -76,12 +84,28 @@ function createCountdownStore(targetMs: number) {
   return { subscribe, getSnapshot };
 }
 
-export function ShowCountdown({ countdownDate }: ShowCountdownProps) {
+export function ShowCountdown({ countdownDate, edition, pendingLabel }: ShowCountdownProps) {
+  const targetMs = resolveTargetMs(countdownDate);
+
   // Lazy initializer: the store (and its interval) is created once per
-  // mounted instance, not on every render.
-  const [{ subscribe, getSnapshot }] = useState(() => createCountdownStore(resolveTargetMs(countdownDate)));
+  // mounted instance, not on every render. Hooks stay unconditional — the
+  // "no date" branch is taken after they have run.
+  const [{ subscribe, getSnapshot }] = useState(() => createCountdownStore(targetMs ?? Date.now()));
 
   const remain = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+  const ariaLabel = `Countdown to the ${showLabelWithEdition(edition)}`;
+
+  if (targetMs === null) {
+    return (
+      <div>
+        <p className="font-serif text-[24px] leading-none text-accent-soft">
+          Show dates to be confirmed
+        </p>
+        <ConfirmationBadge status="pending" pendingLabel={pendingLabel} tone="dark" />
+      </div>
+    );
+  }
 
   const units = [
     { label: 'Days', value: remain.days },
@@ -91,7 +115,7 @@ export function ShowCountdown({ countdownDate }: ShowCountdownProps) {
   ];
 
   return (
-    <div className="flex gap-6" aria-label="Countdown to 19th National Show">
+    <div className="flex gap-6" aria-label={ariaLabel}>
       {units.map(({ label, value }) => (
         <div key={label} className="text-center">
           <div className="font-serif text-[42px] leading-none text-accent-soft">

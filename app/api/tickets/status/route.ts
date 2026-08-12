@@ -5,11 +5,13 @@ import { initAdmin } from '@/lib/firebase-admin';
 
 // F3 (ticketing-pages) — read-only status endpoint so /tickets/confirmation can poll
 // without claiming success or failure prematurely (the PayFast ITN race). Returns the
-// absolute minimum: { status }. No name, email, price paid, or internal ids — a booking
-// ref is guessable enough (SAOC-2027- + 6 digits) that "return only status" is the
-// load-bearing mitigation for this pass (see
-// contracts/golden/ticketing-m1-m2/status-endpoint-response.golden.json). Per-IP rate
-// limiting is deferred to F6, not blocking M2.
+// absolute minimum: { status }. No name, email, price paid, or internal ids (see
+// contracts/golden/ticketing-m1-m2/status-endpoint-response.golden.json).
+// Unauthenticated by necessity — the buyer has no account, only the ref in their return
+// URL. Booking refs are 60 bits (lib/booking-ref.ts), so this is not enumerable; but
+// anyone holding a ref — a photo of a ticket — can see its check-in state, so "status
+// only" stays the load-bearing mitigation and must not be widened. Per-IP rate limiting
+// is deferred to F6.
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const ref = request.nextUrl.searchParams.get('ref');
   if (!ref || ref.trim().length === 0) {

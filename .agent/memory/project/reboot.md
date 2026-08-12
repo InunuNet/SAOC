@@ -1,83 +1,122 @@
 # Reboot Context
-_Generated: 2026-08-11T22:00Z_
+_Written 2026-08-12 05:32 local, during the overnight resume session (relaunched 03:11 by the
+one-shot crontab, which has since self-evicted — there is no further scheduled relaunch)._
 
-## What happened last session
-Session 2026-08-11 (continued): mission `ticketing-pages` M1+M2 (F1–F4) delivered and
-gate-green (57/57 shell assertions). The public ticket flow now exists: `/tickets` (buy page),
-`/tickets/confirmation` (honest pending/paid polling, handles the ITN race), `/tickets/cancelled`,
-plus `app/api/tickets/status`. Pricing, capacity, sales-open switch and all visitor-facing copy
-are Sanity-controlled (`ticketType` docs + `ticketsPage` singleton + `nationalShow.salesOpen`);
-the payment code itself never imports Sanity (mechanically enforced, A51/A52). Docs written:
-`docs/ticketing.md` and `docs/ticketing-for-editors.md` (plain-language guide for Lee-Ann).
-Sanity dataset seeded with 5 ticket types, `salesOpen=true` for tomorrow's demo. QA went past its
-brief and found two real pre-existing security gaps (door scanner admits unpaid tickets; capacity
-TOCTOU race) — both logged below and in `backlog.md`, neither fixed yet.
+## ⚡ STATE AT A GLANCE
 
----
+| Stream | Contract | Gate | QA | Docs | Committed |
+|---|---|---|---|---|---|
+| A — ticketing hardening | `contract-ticketing-hardening.yaml` | **37/37 ×2 runs** | round 1 done; **round 2 verdict never arrived** | done | NO |
+| B — show-visitor-info | `contract-show-visitor-info.yaml` | 71/72, confirming run in flight | FAIL→fixed, **not re-reviewed** | in progress | NO |
+| C — CMS wiring cleanup | `contract-cms-wiring-cleanup.yaml` | 14/14 | PASS | done | NO |
+| D — show-exhibitor-info | `contract-show-exhibitor-info.yaml` | **52/52** | FAIL→fixed, **not re-reviewed** | done | NO |
 
-# START HERE — resume instructions (2026-08-11, ~22:00)
+**NOTHING IS COMMITTED.** ~100 dirty paths. Last commit `d1e11df`. That is the single largest
+risk in the tree — larger than any remaining defect. Commit before starting new work.
 
-## Active mission: `ticketing-pages` — M1+M2 done, M3/M4 (F5–F7) not started
+## Standing constraints (each has been violated at least once)
+- **Dev server on port 3333**, shared. Do not kill/restart.
+- **Never gate a stream while its agents are working.** Produced phantom failures repeatedly:
+  `pnpm build` catches mid-edit, and mutating checks collide on the dataset lock and report an
+  ordinary FAIL indistinguishable from a real defect.
+- **Assert behaviour, never source greps**, for anything security-, money- or content-truth
+  relevant. See "The lesson".
+- **`app/api/tickets/itn/route.ts` is hash-pinned** at
+  `7c96726ab4bba28ec8ef027dd7747c39358d23bb27ca1dcac4328201df3b4d0f`. It was edited exactly once,
+  under specific authorisation, with the decision + old/new hashes recorded in
+  `contracts/golden/ticketing-hardening/itn-write-guard.golden.md`. That authorisation is spent.
+  @dev never re-pins a golden.
+- Seed create-if-absent only; never `createOrReplace`. `scripts/seed-page-singletons.ts` still
+  has that bug (7 occurrences) — untouched, still open.
+- Keep scratch/probe files OUT of the repo tree; an in-repo probe fails `pnpm lint`, an assertion
+  in every contract, and false-failed three streams once tonight.
+- Never print or log secrets. No new brand assets/colours/fonts.
 
-`.agent/memory/project/missions/2026-08-11-ticketing-pages.md` (7 features, 4 milestones).
+## What shipped
 
-- **M1 (F1)** — done. CMS-controlled pricing/capacity/sales-open switch.
-- **M2 (F2–F4)** — done, gate green 57/57. `/tickets`, `/tickets/confirmation`,
-  `/tickets/cancelled` all live and working against the demo dataset.
-- **M3 (F5, pending)** — emailed QR ticket via Resend on confirmed payment. Closes the loop with
-  the existing door scanner at `/admin/door`, which today has nothing real to scan.
-- **M4 (F6/F7, pending)** — accessibility/responsive pass + payment-security hardening (F6);
-  docs/deploy-config/secretary handover (F7, includes `SITE_URL` in `apphosting.yaml`).
+**A — ticketing security hardening (37 assertions).** Round 1 closed four confirmed defects: door
+scanner admitting unpaid/wrong-show tickets (logic extracted to `lib/checkin.ts`, route delegates);
+capacity TOCTOU (Firestore transaction; QA pushed 20-way concurrency at the boundary → exactly
+1×201/19×409); booking refs from guessable 6-digit to 60-bit crypto-random; `SITE_URL` in
+`apphosting.yaml`. Round 2 closed five defects QA found *past* a green gate — including **a
+regression this work introduced**: making reservations authoritative against capacity was right,
+but with no release path, cart abandonment would have sold the show out with zero revenue. Now a
+TTL with a guard that a paid ticket can never be expired. Also: idempotency key bound to buyer and
+payload (Bob replaying Alice's key previously got Alice's booking reference — the door code);
+capacity fail-open on a *string* capacity; a late ITN retry resurrecting a checked-in ticket so the
+same ref opened the door twice. Docs: `docs/ticketing-hardening.md`, plus corrections to
+`docs/ticketing.md` and `docs/payfast-integration.md`.
 
-**TO RESUME:** `python3 execution/mission.py resume`, then dispatch @architect for F5's contract
-(F5 depends on Resend being configured — check `RESEND_API_KEY` status in `backlog.md`'s
-"Blocked (awaiting Brad)" section first, it may still be unset).
+**B — show-visitor-info (72 assertions).** Three visitor pages + show-identity wiring. Before this,
+`/national-show` never read its `nationalShow` singleton — venue/dates/edition/countdown were
+hardcoded JSX. A61 now swaps the whole show identity at runtime and sweeps seven surfaces; @dev
+also proved the swap independently under a lock. Confirmation markers were fixed twice: they had an
+off switch (clearing one unvalidated `pendingLabel` removed all 23 markers while every status still
+said `pending`), and the 14 FAQ markers were invisible inside collapsed `<details>`.
 
-### Demo status (tomorrow, 2026-08-12)
-Brad demos to Lee-Ann tomorrow morning and to the council tomorrow night. M2 (the three pages) IS
-the demo and is ready: dev server has `/tickets` → checkout → PayFast sandbox → `/tickets/confirmation`
-working end to end, `salesOpen=true`, 5 provisional ticket types seeded and clearly labelled
-"Provisional price — pending council confirmation." Do not let F5/F6/F7 delay or complicate the
-demo — they are the follow-up pass.
+**C — CMS wiring cleanup (14 assertions).** Complete. `award` was already wired (backlog entry was
+stale). `province` wired not removed (9 live docs); chips verified to actually filter via Playwright.
+Two dead fields removed after live `defined()` count 0. Docs: `docs/cms-wiring-cleanup.md`,
+`docs/provinces-for-editors.md`.
 
-## Known bugs found this session — not yet fixed, all logged in backlog.md
-1. **Door scanner admits unpaid tickets (HIGHEST ticketing priority for F6).**
-   `app/api/admin/checkin/route.ts` never checks `status === 'paid'` or `showId` — a merely
-   `reserved` ticket is as admissible as a paid one.
-2. **TOCTOU race on ticket capacity.** `app/api/tickets/checkout/route.ts`'s capacity check is an
-   unguarded read-then-write; @qa reproduced overselling live (54/50 on a 50-capacity type under
-   5 concurrent POSTs). Needs Firestore `runTransaction`.
-3. **Checkout idempotency + booking-ref enumeration.** No duplicate-POST protection beyond the
-   client disabling its submit button; booking refs are guessable 6-digit numbers.
-4. **`SITE_URL` still absent from `apphosting.yaml` (F7).** Works locally; a real deploy would
-   send PayFast's ITN callback to the old Joomla site (`https://saoc.co.za`) and every deployed
-   payment would sit permanently `reserved`.
+**D — show-exhibitor-info (52 assertions).** Exhibitor guide built on researched international
+convention, clearly marked as pending committee confirmation. Docs: `docs/show-exhibitor-info.md`,
+`docs/exhibitor-guide-for-editors.md`.
 
-## Contract-design lesson to carry forward (see learned.md "PayFast Ticketing — Milestone M1+M2")
-Grep-based assertions produced false greens three times this session (comments matching a
-substring, not the actual behaviour) and once let a real bug (no server-side capacity
-enforcement) pass under a "sold out" string match. When writing the F5/F6 contract, assert
-behaviour (a real HTTP round-trip, a real concurrent-request test) wherever the thing being
-checked is security- or money-relevant — not a source grep.
+## The lesson (for learned.md)
 
-## Sibling mission `saoc-pages-editable` — still M1 complete, F3/F4/F5 pending (unchanged)
-F1 (hero `_key` fix) and F2 (editability audit) done, gate green on 4 assertions. Audit at
-`.agent/memory/project/f2-editability-audit.md` — ~75 hardcoded fields, ranked. Not touched this
-session; still queued behind `ticketing-pages`.
+**Assertions that source their expected value from the same place as the actual value cannot fail.**
+Every stream demonstrated it: A54 grepped source for a venue literal that lived in Sanity → green
+while the page rendered two different venues in one viewport. A43 looked for the pending-marker
+label by reading that label from the dataset → clearing the label made the needle empty and the
+check short-circuited green. A11 proved booking-ref format+uniqueness, not entropy → a sequential
+counter passed. A14's negative grep missed `status !== "paid"` (wrong operator, wrong quote style).
+A35 failed in the opposite direction — a substring match on single-letter class codes could never
+pass. A33 scanned an enumerated field list and never saw step bodies; the repair walks every string
+recursively, which is the general form of the fix.
 
-## Carried-over blockers (unchanged from before this session)
-1. **`scripts/seed-page-singletons.ts` uses destructive `createOrReplace`** across six
-   singletons — running it silently reverts any editor's Studio changes. No content lost yet
-   (verified via Sanity history API), but it must become preserve-existing/create-if-absent
-   before Lee-Ann is handed real Studio access. The `ticketing-pages` mission's own seed script
-   (`scripts/seed-ticketing.ts`) was written create-if-absent-only deliberately — use it as the
-   reference pattern when fixing this one.
-2. **Was "Judges Training" ever meant to be its own page?** No route or component exists; only a
-   "Becoming a Judge" section inside `/judging`. Still blocks a credible F3 estimate on
-   `saoc-pages-editable`. Awaiting Brad.
-3. **Real ticket prices and venue capacity from the council** — the single most revenue-blocking
-   open item; everything live in the demo dataset is an invented placeholder.
+**Countermeasure that worked:** run every new assertion against the unfixed tree and record
+red/green BEFORE @dev starts. That caught two worthless assertions on Stream A before they banked a
+false green.
 
-## Process note (still applies)
-Brad's correction, and it stands: **plan → write mission to disk → wrap up → compact → resume.**
-Do not run a build chain in a context that is nearly spent. Wrapping up first is not overhead.
+**Second lesson:** four separate files carried comments claiming they "fail closed" while the code
+failed open (`ConfirmationBadge.tsx`, `ticketType.ts`'s capacity description, `itn/route.ts`'s
+guard, `check-capacity-no-oversell.mjs`'s sweep claim). Treat a fail-closed claim in a comment as
+an assertion to test, not a fact.
+
+**Third:** the gate itself corrupted the live dataset three times. Mutating round-trip checks
+declared no `timeout_seconds`, inherited the 60s default, and were SIGKILLed mid-mutation — after
+the sentinel write, before the restore. SIGKILL is uncatchable, so a SIGTERM handler does not cover
+it; only the timeout prevents it. All such checks now carry real timeouts, and the lock guard reaps
+dead-pid locks. Dataset verified clean.
+
+## Outstanding
+
+- **A: round-2 QA verdict never arrived.** The new security code (reservation TTL, buyer-bound
+  idempotency, capacity/price validation, ITN write guard) is gate-green but never adversarially
+  reviewed. Round 1's equivalent found five real defects past a green gate. **Highest-value
+  remaining work.** Specific questions: can the expiry sweep ever touch a paid ticket; what happens
+  when an ITN arrives for a reservation the sweep already expired; did round 2 introduce its own
+  second-order regression the way round 1 did.
+- **B and D: round-2 fixes verified by gate but not re-reviewed by QA.**
+- **`nationalShow.exhibitorStages` retirement is blocked** — a cross-contract deadlock: B's own A5
+  asserts the field must exist, so deleting it turns B's gate red. Field holds zero content and is
+  guarded by A51. Deferred deliberately; needs both contracts moved together.
+- **B's A41/A56/A24 rotate red by gate ordering** — single-fetch rendered checks adjacent to
+  mutating checks eat the one stale CDN copy served after a restore. @dev measured that one warm
+  fetch suffices. Fix belongs in the shared helper, not per-assertion.
+- **Harness bug to file upstream (InunuNet/Athanor):** `contract.py:473` drops the CLI-level
+  `--timeout-seconds` override for sub-phases under `--phase all`. Per-assertion `timeout_seconds`
+  DO survive (`contract.py:137-138`) — an earlier report claiming otherwise was wrong and is
+  corrected in needs-human.md.
+- `.agent/memory/scratch/gate-blocked-20260812T031704Z.md` — the Athanor pulse `qa -> docs` handoff
+  froze itself after 3 failures. Did not block this session (agents dispatched directly).
+
+## For Brad (also in needs-human.md)
+- **Firebase Auth is NOT provisioned on `saoc-webapp`** — `listUsers()`/`createUser()` fail
+  `auth/configuration-not-found`. `/admin` and the door scanner are non-functional in EVERY
+  environment today, regardless of tonight's fixes. Blocks any door-scanning demo.
+- No SAOC-side notification exists for contact-form enquiries — staff only see them in Firestore.
+- Committee still owes: real ticket prices and capacity, confirmed venue and dates, opening hours,
+  parking, accessibility, photography policy, cloakroom, accommodation, emergency contacts, and all
+  exhibitor rules (entry deadline, fees, staging times, ownership rule, sales terms, entry form).

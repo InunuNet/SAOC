@@ -17,8 +17,23 @@ import { sponsor } from './documents/sponsor';
 import { judge } from './documents/judge';
 import { province } from './documents/province';
 import { ticketType } from './documents/ticketType';
+import { showVisitorInfo } from './documents/showVisitorInfo';
+import { showFaq } from './documents/showFaq';
+import { showExhibitorInfo } from './documents/showExhibitorInfo';
+import { showExhibitorStep } from './documents/showExhibitorStep';
 
 import { portableText } from './objects/portableText';
+import { showVenue } from './objects/showVenue';
+import { travelRoute } from './objects/travelRoute';
+import { accommodationOption } from './objects/accommodationOption';
+import { attraction } from './objects/attraction';
+import { emergencyContact } from './objects/emergencyContact';
+import { openingHoursEntry } from './objects/openingHoursEntry';
+import { confirmationStatuses } from './objects/confirmationStatuses';
+import { exhibitorSection } from './objects/exhibitorSection';
+import { showExhibitorDate } from './objects/showExhibitorDate';
+import { exhibitorQuestion } from './objects/exhibitorQuestion';
+import { exhibitorConfirmationStatuses } from './objects/exhibitorConfirmationStatuses';
 
 export const schemaTypes: SchemaTypeDefinition[] = [
   // Singletons
@@ -29,6 +44,10 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   judgingPage,
   membersPage,
   ticketsPage,
+  // F1 (show-visitor-info)
+  showVisitorInfo,
+  // F1 (show-exhibitor-info)
+  showExhibitorInfo,
   // Collections
   society,
   boardMember,
@@ -39,8 +58,22 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   sponsor,
   judge,
   province,
+  showFaq,
+  showExhibitorStep,
   // Ticketing
   ticketType,
   // Objects
   portableText,
+  showVenue,
+  travelRoute,
+  accommodationOption,
+  attraction,
+  emergencyContact,
+  openingHoursEntry,
+  confirmationStatuses,
+  // F1 (show-exhibitor-info) objects
+  exhibitorSection,
+  showExhibitorDate,
+  exhibitorQuestion,
+  exhibitorConfirmationStatuses,
 ];
