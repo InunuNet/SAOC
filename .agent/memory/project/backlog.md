@@ -664,3 +664,26 @@ passwords. Brad met Lee-Ann on Teams the same morning; no status email is owed t
   Same defect class as the ticket-reachability fix — a real entry point that exists but cannot be
   clicked. Fix by adding `/contact` to the MobileMenu, not by unhiding the button (which would
   crowd the mobile header).
+
+- [ ] **[P1, content] Rebuild visitor travel content for the Stellenbosch venue.** Brad corrected
+  the National Show venue on 2026-08-12: it is **The Hangar, Stellenbosch Flying Club** (Stellenbosch
+  Airfield, R44, Stellenbosch 7600; approx. -33.9794, 18.8196), NOT the CTICC placeholder. The
+  `nationalShow.venue` object, `show-19-2027.location`, the national-show societyEvent, and two
+  `showFaq-getting-there-*` answers were all corrected in Sanity, and every CTICC-anchored travel
+  section was **cleared rather than rewritten**, because inventing airfield transport detail is
+  exactly the failure mode the project bans. Emptied: `airportRoutes`, `accommodation`, `attractions`
+  (all list components return null when empty, so pages degrade cleanly — verified over HTTP).
+  Neutralised to "not confirmed" prose: `publicTransport`, `parking`, `accessibility`,
+  `gettingThereIntro`, `accommodationIntro`. Confirmations for those six set to `pending`.
+  **What is owed:** real Stellenbosch-area travel, parking, accommodation and attractions content —
+  needs committee input (there is no scheduled public transport to the airfield, so arrival is
+  effectively drive/e-hail only, which changes the shape of the advice). Pre-change values are
+  backed up at `.agent/memory/scratch/venue-change-2026-08-12/before.json`.
+- [ ] **[P2] `scripts/seed-show-visitor-info.ts` still contains the CTICC copy.** Inert today —
+  every write is `createIfNotExists`, so it cannot clobber the corrected dataset — but it is now a
+  stale source of truth if the dataset is ever rebuilt from empty. Update the seed constants to
+  match the corrected Sanity content. Code change, so it goes through the chain.
+- [ ] **[question for Brad] Is the Stellenbosch venue committee-confirmed?** `confirmations.venue`
+  was left at `pending`, so the site still shows a "to be confirmed by the show committee" badge
+  under the venue. The venue name itself is now stated plainly (no "working venue" hedging). If the
+  committee has signed it off, flip that one field to `confirmed` and the badge disappears.
