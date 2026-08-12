@@ -145,6 +145,12 @@ export function ShowBand({ show }: ShowBandProps) {
             >
               Exhibitor info
             </Link>
+            <Link
+              href="/tickets"
+              className="font-sans text-[14px] font-medium border border-ivory/30 text-ivory px-6 py-3 hover:bg-ivory/10 transition-colors duration-150"
+            >
+              Book Tickets
+            </Link>
           </div>
         </div>
       </div>

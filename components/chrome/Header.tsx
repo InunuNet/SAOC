@@ -5,7 +5,7 @@
 // Sticky parchment header. Three zones: logo lockup, primary nav,
 // actions (search / sign in / contact / hamburger).
 // Becomes elevated (shadow + hairline) on scroll > 4px.
-// Below 1180px: nav + Sign in hide, hamburger appears.
+// Below 1240px: nav + Sign in hide, hamburger appears.
 // =============================================================
 
 import { useEffect, useState } from 'react';
@@ -22,6 +22,7 @@ const NAV: ReadonlyArray<{ id: string; label: string; href: string; disabled?: b
   { id: 'judging', label: 'Judging & Awards', href: '/judging' },
   { id: 'show', label: 'National Show', href: '/national-show' },
   { id: 'events', label: 'Events', href: '/events' },
+  { id: 'tickets', label: 'Tickets', href: '/tickets' },
   { id: 'learn', label: 'Learn', href: '#', disabled: true },
 ];
 
@@ -95,7 +96,7 @@ export function Header() {
           </Link>
 
           {/* Zone 2 — primary nav */}
-          <nav aria-label="Primary" className="hidden min-[1180px]:flex items-center gap-7">
+          <nav aria-label="Primary" className="hidden min-[1240px]:flex items-center gap-7">
             {NAV.map((n) => {
               const active = !n.disabled && isActive(n.href);
               if (n.disabled) {
@@ -154,7 +155,7 @@ export function Header() {
             <button
               type="button"
               aria-label="Open menu"
-              className="p-2 text-ink min-[1180px]:hidden hover:text-primary transition-colors duration-150"
+              className="p-2 text-ink min-[1240px]:hidden hover:text-primary transition-colors duration-150"
               onClick={() => setMobileOpen(true)}
             >
               <Menu size={22} strokeWidth={1.5} />

@@ -395,3 +395,33 @@ looked like console-only work and was not.
 
 Corollary: the same posture applies to *verifying* the result. Poll the API until it reports the
 real state rather than asking Brad whether it worked.
+
+## Nav-wrap regression: a one-line nav addition broke a real device width — 2026-08-12
+
+Adding a 7th item to `NAV` in `components/chrome/Header.tsx` (ticket reachability) wrapped the
+desktop nav to two lines across ~1180–1210px. **iPad Pro 11" landscape is 1194px**, so this hit a
+common real device, not a theoretical edge. The gate was 15/15 green when the defect shipped —
+TKT-01/02 grep the isolated `<header>` HTML for an anchor, which says nothing about layout, and
+no assertion in the contract was viewport-swept.
+
+Three things worth carrying forward:
+
+1. **Presence assertions are not layout assertions.** "The link is in the HTML" and "the header
+   is not broken" are different claims. Any change to a horizontal list of items (nav, CTA rows,
+   tab bars) needs a swept-width layout check, not just a presence grep.
+2. **Sweep the band around a breakpoint, not just round numbers.** The defect lived in the ~30px
+   window immediately after `min-[1180px]` revealed the desktop nav. A checkpoint test at 1024 and
+   1280 would have missed it entirely. TKT-14 now brackets the boundary at 1239/1240/1241.
+3. **Moving a breakpoint can create a dead band.** Hamburger visibility and desktop-nav visibility
+   are separate rules; moving one without the other yields a width range with NO navigation at
+   all. The fix moved both symmetrically in one file. The assertion checks "exactly one of
+   {nav, hamburger} is visible" at every width, which catches both the wrap and the dead band.
+
+Method note that made this stick: QA proved causality by deleting the new anchor from the live
+DOM via `page.evaluate()` and re-measuring — same viewport, same page, one variable — rather than
+inferring from correlation. Worth reusing whenever a layout defect appears after an additive change.
+
+**Process slip to avoid repeating:** @dev edited the contract to broaden TKT-14's sweep. It was a
+strict superset (6 widths → 12) so no harm, and it was accepted, but @dev must never author
+assertions — the separation is what stops a failing check being "fixed" by weakening it. Route
+assertion changes back through @architect even when the edit looks obviously benign.

@@ -1,0 +1,140 @@
+schema: athanor.contract/v1
+slug: ticket-reachability
+goal: >
+  Make /tickets reachable by clicking from the places a visitor would
+  actually look — site header (desktop nav AND mobile menu), the
+  /national-show landing page, and the home page — closing the same
+  unreachable-page defect class already recorded against
+  /national-show/archive, but on the page that takes money.
+created_at: '2026-08-12'
+autonomy: high
+
+features:
+  - id: F1
+    name: /tickets linked from header NAV, national-show hero CTA, and home ShowBand CTA
+    status: pending
+
+goldens:
+  - contracts/golden/ticket-reachability/requirements.golden.md
+  - contracts/golden/ticket-reachability/negative-control.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    # ---- header (isolated element, on /about — a non-home page, to prove the
+    # header is genuinely global) — real red-to-green, see negative-control.golden.md ----
+    - id: TKT-01
+      description: "header on /about contains an <a href=\"/tickets\">"
+      command: node contracts/checks/ticket-reachability/extract-header-html.mjs http://localhost:3333/about | grep -q 'href="/tickets"'
+      timeout_seconds: 30
+
+    - id: TKT-02
+      description: "header on /about carries visible text containing \"Tickets\" (not a bare/decorative link)"
+      command: node contracts/checks/ticket-reachability/extract-header-html.mjs http://localhost:3333/about --text | grep -qi "Tickets"
+      timeout_seconds: 30
+
+    # ---- mobile reachability at 375px, full click-through — real red-to-green ----
+    - id: TKT-03
+      description: >
+        at a 375px viewport, opening the header hamburger reveals the
+        MobileMenu dialog with a visible a[href="/tickets"]; clicking it
+        navigates to /tickets successfully. A desktop-only link (e.g. the
+        Header's own hidden-below-640px action-zone button) cannot pass
+        this — see requirements.golden.md for why NAV-array placement was
+        chosen over an action-zone button.
+      command: node contracts/checks/ticket-reachability/check-mobile-tickets-link.mjs http://localhost:3333/about
+      timeout_seconds: 60
+
+    # ---- home page (/) — real red-to-green ----
+    - id: TKT-04
+      description: "home page (/) rendered HTML contains an <a href=\"/tickets\">"
+      command: curl -s http://localhost:3333/ | grep -q 'href="/tickets"'
+      timeout_seconds: 30
+
+    - id: TKT-05
+      description: "the /tickets anchor on the home page has meaningful link text (non-empty, not \"click here\")"
+      command: '[ -n "$(node contracts/checks/ticket-reachability/extract-anchor-text.mjs http://localhost:3333/ /tickets)" ] && ! node contracts/checks/ticket-reachability/extract-anchor-text.mjs http://localhost:3333/ /tickets | grep -qi "click here"'
+      timeout_seconds: 30
+
+    # ---- national-show landing page — real red-to-green ----
+    - id: TKT-06
+      description: "/national-show rendered HTML contains an <a href=\"/tickets\">"
+      command: curl -s http://localhost:3333/national-show | grep -q 'href="/tickets"'
+      timeout_seconds: 30
+
+    - id: TKT-07
+      description: "the /tickets anchor on /national-show has meaningful link text (non-empty, not \"click here\")"
+      command: '[ -n "$(node contracts/checks/ticket-reachability/extract-anchor-text.mjs http://localhost:3333/national-show /tickets)" ] && ! node contracts/checks/ticket-reachability/extract-anchor-text.mjs http://localhost:3333/national-show /tickets | grep -qi "click here"'
+      timeout_seconds: 30
+
+    # ---- destination proof: following any of the links above lands on a
+    # working page (regression guards — already green pre-change, see
+    # negative-control.golden.md; a link to a broken page is not reachability) ----
+    - id: TKT-08
+      description: "/tickets returns HTTP 200"
+      command: '[ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3333/tickets)" = "200" ]'
+      timeout_seconds: 30
+
+    - id: TKT-09
+      description: "/tickets rendered body contains the Adult ticket type"
+      command: curl -s http://localhost:3333/tickets | grep -q '>Adult<'
+      timeout_seconds: 30
+
+    - id: TKT-10
+      description: "/tickets rendered body contains the Child ticket type"
+      command: curl -s http://localhost:3333/tickets | grep -q '>Child<'
+      timeout_seconds: 30
+
+    - id: TKT-11
+      description: "/tickets rendered body contains the Pensioner ticket type"
+      command: curl -s http://localhost:3333/tickets | grep -q '>Pensioner<'
+      timeout_seconds: 30
+
+    # ---- structural guard: no header/home/national-show restructuring —
+    # NAV array grows by exactly one Tickets entry, not a rewrite ----
+    - id: TKT-12
+      description: "Header.tsx NAV array still contains all five pre-existing destinations (About, Societies, Judging & Awards, National Show, Events) — additive only, not a rewrite"
+      command: >-
+        grep -qE "href: '/about'" components/chrome/Header.tsx &&
+        grep -qE "href: '/societies'" components/chrome/Header.tsx &&
+        grep -qE "href: '/judging'" components/chrome/Header.tsx &&
+        grep -qE "href: '/national-show'" components/chrome/Header.tsx &&
+        grep -qE "href: '/events'" components/chrome/Header.tsx
+      timeout_seconds: 15
+
+    # ---- accessibility: no focus-visibility regression on touched files ----
+    - id: TKT-13
+      description: "no outline-none added without replacement focus style in touched files"
+      command: '! grep -l "outline-none" components/chrome/Header.tsx components/home/ShowBand.tsx "app/(marketing)/national-show/page.tsx" 2>/dev/null | grep -q .'
+      timeout_seconds: 15
+
+    # ---- desktop-nav wrap regression, found by @qa after F1's NAV entry was
+    # added: adding a 7th NAV item wraps the desktop <nav> to two lines in a
+    # ~1180-1210px band (iPad Pro 11" landscape = 1194px sits inside it), and
+    # that band sits exactly at min-[1180px] where the hamburger disappears
+    # and the desktop nav takes over — real red on the current tree, see
+    # negative-control.golden.md ----
+    - id: TKT-14
+      description: >
+        sweeping viewport widths 1180/1194/1200/1220/1230/1239/1240/1241/1250/1260/1280/1320
+        on /about — straddling the new min-[1240px] desktop-nav breakpoint
+        (moved from 1180 to make room for the 7th "Tickets" NAV item; see
+        requirements.golden.md) — at every width exactly one of {desktop
+        <nav aria-label="Primary">, hamburger "Open menu" button} is visible
+        (no dead band), and whenever the desktop nav is visible its items
+        sit on a single line (all top-level children share the same
+        bounding-box top — no hardcoded pixel baseline, derived from the nav
+        itself each run).
+      command: node contracts/checks/ticket-reachability/check-nav-no-wrap.mjs http://localhost:3333/about "1180,1194,1200,1220,1230,1239,1240,1241,1250,1260,1280,1320"
+      timeout_seconds: 60
+
+    # ---- build gate ----
+    - id: TKT-GATE-01
+      description: "TypeScript strict-mode build passes"
+      command: 'pnpm tsc --noEmit 2>&1 | grep -c "error TS" | grep -q "^0$"'
+      timeout_seconds: 120
+
+    - id: TKT-GATE-02
+      description: "ESLint passes on the touched files"
+      command: 'pnpm eslint components/chrome/Header.tsx components/home/ShowBand.tsx "app/(marketing)/national-show/page.tsx" --max-warnings=0'
+      timeout_seconds: 60

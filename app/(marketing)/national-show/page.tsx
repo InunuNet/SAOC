@@ -304,6 +304,12 @@ export default async function NationalShowPage() {
             >
               Find Your Society
             </Link>
+            <Link
+              href="/tickets"
+              className="font-sans text-[14px] font-medium border border-ivory/40 px-6 py-3 text-ivory transition-colors duration-150 hover:bg-ivory/10"
+            >
+              Book Tickets →
+            </Link>
           </div>
         </div>
       </section>

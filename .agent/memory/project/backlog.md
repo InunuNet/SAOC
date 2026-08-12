@@ -623,3 +623,44 @@ passwords. Brad met Lee-Ann on Teams the same morning; no status email is owed t
   screen readers pause at the block boundary, but it is not guaranteed across all AT. Found by
   PARTNERS-qa in both review rounds 2026-08-12; deliberately not fixed in that feature. Fix with
   an explicit `aria-label` on the link or a whitespace/`{' '}` separator.
+
+- [ ] **[P1, sequencing decision — Brad 2026-08-12] Ticketing: single tier first, multi-tier
+  PAUSED.** Prove the existing General Admission flow end to end against the PayFast sandbox
+  before building anything else. Only then expand to multi-tier (General Admission / Symposium /
+  WOSA Conference / Workshops / Exhibitor), and pause again for council feedback before
+  committing to that shape. Rationale: de-risk the payment path once, cheaply, rather than
+  discovering a gateway problem inside a five-product checkout — and the multi-tier structure
+  can't be finalised without real council prices, capacities, and Lee-Ann's per-event write-ups
+  anyway. Note the two-level shape when it does come: General Admission has CATEGORIES under it
+  (adult/pensioner/child/member) while Symposium/WOSA/Workshops are separate PRODUCTS with their
+  own capacity and waiting lists; the current flat `ticketType` schema will not stretch to that.
+  Also outstanding from Lee-Ann: a cocktail event with option dropdowns (her spreadsheet, tab 2)
+  that is not in the five tiers.
+
+## Missions scoped and written to disk — 2026-08-12
+
+- [ ] **MISSION `sandbox-ticket-proof`** (`.agent/memory/project/missions/2026-08-12-sandbox-ticket-proof.md`)
+  — 5 features, 3 milestones, validated, **now the active mission**. Prove the existing
+  single-tier ticket flow end to end against the PayFast sandbox on a DEPLOYED environment, then
+  pause. F1 is deploying current `main` — the deployed site is still on `01dd63f` (2026-07-30) and
+  `/tickets` 404s there, so nothing is testable until it lands. F5 (door admission) is blocked on
+  Firebase Auth. Sandbox only; no live credentials, no price changes, no ITN route edits.
+- [ ] **MISSION `national-show-design-alignment`** (`.agent/memory/project/missions/2026-08-12-national-show-design-alignment.md`)
+  — 4 features, 3 milestones, validated, **BLOCKED pending Brad delivering the Claude Design
+  bundle**. Ingest the design system, add tokens to `globals.css` without breaking the placeholder
+  "Sage & Paper" set used site-wide, rebuild the Show section against the design without
+  restructuring routes or re-hardcoding anything currently wired to the `nationalShow` singleton,
+  then apply the 2027 Show brand layer below the header. Cannot start until the assets arrive —
+  no agent invents brand assets.
+
+- [ ] **[P2, mobile] `/contact` is unreachable from the header on mobile.** Verified live at 375px
+  with Playwright 2026-08-12: the header's Contact button is `hidden sm:inline-block`
+  (`components/chrome/Header.tsx:150`) so it does not render, and `MobileMenu.tsx` renders only the
+  NAV array plus a `mailto:council@saoc.co.za` link — it never includes `/contact`. Count of
+  visible `a[href="/contact"]` in the header at 375px: **0 before opening the menu, 0 after**.
+  So a phone visitor has no route to the contact form from the header at all; the footer is the
+  only remaining path. Found by PARTNERS-docs while documenting ticket reachability (it chose
+  NAV-array placement for Tickets precisely because the Contact button pattern is mobile-invisible).
+  Same defect class as the ticket-reachability fix — a real entry point that exists but cannot be
+  clicked. Fix by adding `/contact` to the MobileMenu, not by unhiding the button (which would
+  crowd the mobile header).
