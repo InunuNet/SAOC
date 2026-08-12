@@ -346,3 +346,22 @@ and all three affected pages verified clean afterwards.
 completes its own restore. Confirm a sentinel is real by re-reading before acting, and confirm the
 RENDERED page separately — the dataset can be clean while Next/CDN still serves a stale copy for
 up to ~90s.
+
+### The unifying failure mode (synthesis by @dev, 2026-08-12)
+
+The exit-3 bug and the sentinel-sweep blind spot are the same failure one layer apart:
+**a signal that exists but is never read.** The lock guard prints BLOCKED in capitals and
+`contract.py` records `fail`. The sweep queries `pt::text()` and reports clean while a plain
+string field holds a sentinel. In both cases the tooling was **confident and wrong in the
+safe-looking direction** — a red that means nothing, and a green that means nothing.
+
+That is the same shape as the session's headline lesson about assertions sourcing their
+expected value from the actual value. All three are verification that cannot observe the
+thing it claims to check. The test to apply to any new check, sweep, or status signal:
+*if the failure I care about were happening right now, would this output be different?*
+If not, it is decoration.
+
+Corollary proved twice tonight: **commit before risky work.** ARCH-VISITOR3's in-place
+edit/restore of files another agent was using could only be cleared because everything sat
+at `be80580` — the diff was the independent record. Uncommitted, the restore would have
+destroyed the only evidence and the honest answer would have been "I don't know."
