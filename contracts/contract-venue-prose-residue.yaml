@@ -1,0 +1,438 @@
+schema: athanor.contract/v1
+slug: venue-prose-residue
+goal: >-
+  Fix venue-DESCRIPTIVE prose that survived the name-anchored CTICC-to-Hangar sweep
+  (427fbaf + the uncommitted contract-venue-seed-truth fix) because it never named
+  the venue at all — it described physical characteristics ("a modern convention
+  centre with step-free access", "several parking garages", "a drive of roughly
+  half an hour from Cape Town International", "MyCiTi... V&A Waterfront...
+  Kirstenbosch") that were true of CTICC and are false or unverified for the real
+  venue, The Hangar, Stellenbosch Flying Club. v2 (2026-08-12): a second adversarial
+  QA pass found v1's checker under-implemented its own documented denylist (2 of 4
+  phrases, 2 of 3 FAQ ids) — the gate went green while most of the defect class
+  stayed open in the golden copy-source JSON — and found v1's own fix invented a new
+  unsourced claim ("no scheduled public transport to the airfield"), a rule 5
+  violation. Three live Sanity showFaq documents (showFaq-accessibility-1,
+  showFaq-getting-there-2, showFaq-getting-there-1), the showVisitorInfo singleton's
+  publicTransport field, the seed script that reproduces all of these from empty
+  (scripts/seed-show-visitor-info.ts), the golden JSON that was their copy source
+  (contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json — A12
+  documents every field Finding 1 identified as in scope, across
+  airportRoutes/accommodation/attractions/publicTransport/gettingThereIntro/
+  accommodationIntro/directionsNote, not just the two FAQ answers v1 covered), two
+  editor/dev docs, and venue-seed-truth's own README (which falsely claimed the
+  dataset sweep found zero remaining stale strings) all need surgical, honest
+  correction — never invented replacement detail either direction
+  (content-modeling.md rule 5), never a bulk sweep (rule 6). v3 (2026-08-12): a
+  third adversarial QA pass found the architect's own v2 briefing conflated "the
+  LIVE showFaq-getting-there-3 document is untouched" (true) with "the GOLDEN
+  JSON's copy of that same entry is untouched" (false) — TARGET_FAQ_IDS never
+  covered showFaq.getting-there.3, so the golden's copy kept pre-fix CTICC text.
+  v3 also found the golden JSON is currently RED against A12 for reasons beyond
+  that gap (parking/accessibility/publicTransport/gettingThereIntro/airportRoutes/
+  accommodation/attractions/directionsNote all still stale) despite this document
+  previously claiming those fields were "already corrected" in v2 — that claim was
+  never verified before being written down. Full context:
+  contracts/golden/venue-prose-residue/README.md "v3".
+created_at: '2026-08-12'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Rewrite the three defective FAQ answers (live Sanity, surgical patch to named
+      document IDs), the showVisitorInfo singleton's publicTransport field, and
+      their reproductions in the seed script and copy-source golden JSON to honest
+      "not confirmed"/silent prose in the tone of showFaq-getting-there-3, with no
+      invented Hangar-specific detail in either direction (neither a plausible
+      distance/route nor a confident "there is no public transport" claim); clear
+      the golden JSON's airportRoutes/accommodation/attractions arrays to `[]` and
+      its directionsNote field to match the corrected seed script; correct the two
+      docs that still tell editors/devs CTICC is the current working assumption;
+      correct venue-seed-truth's README to stop claiming a complete sweep it did not
+      perform; leave every out-of-scope file/field (schema field description,
+      past-show real venues, real Civic-Centre-named society venues, unrelated
+      Kirstenbosch references, the nationalShowVenuePatch.venue IDENTITY fields
+      owned by venue-seed-truth, the show-visitor-info contract's own historical
+      CTICC research record, the F4 golden owned by another contract) untouched.
+    status: pending
+
+goldens:
+  - contracts/golden/venue-prose-residue/README.md
+  - contracts/golden/venue-prose-residue/phrase-denylist.golden.md
+  - contracts/golden/venue-prose-residue/correct-tone-model.golden.md
+  - contracts/golden/venue-prose-residue/check_json_denylist.py
+  - contracts/golden/venue-prose-residue/check_denylist_conformance.py
+  - contracts/golden/venue-prose-residue/check_no_confident_transport_claim.py
+  - contracts/golden/venue-prose-residue/selftest.py
+
+assertions:
+  phase: 4
+  checks:
+    # ================= detector self-test (must run first) =================
+    - id: A1
+      description: >-
+        META - self-test, delegated to selftest.py. Proves every documented
+        denylist phrase fires on synthetic text drawn from the real defects;
+        proves the denylist WOULD false-positive on the legitimate schema field
+        description and on a bare "Kirstenbosch" match (so file-scoping, not
+        phrase precision, is what protects showVenue.ts and lib/data/events.ts —
+        see phrase-denylist.golden.md); proves it does NOT false-positive on the
+        two real live "Civic Centre" society venues or on the tone-model text;
+        proves check_json_denylist.check() passes a clean synthetic fixture AND
+        fails a fixture reproducing today's real defects (both directions), AND
+        fails a fixture reproducing specifically the v3 defect (a stale
+        showFaq.getting-there.3 entry with everything else clean) — proving
+        TARGET_FAQ_IDS actually covers that id now, not just documents it; proves
+        check_no_confident_transport_claim.check() fires on the real invented
+        claim and does not false-positive on silence or an honest hedge.
+      command: python3 contracts/golden/venue-prose-residue/selftest.py
+      timeout_seconds: 30
+
+    # ================= live Sanity: the three defective documents (read-only) =================
+    - id: A2
+      description: >-
+        READ-ONLY LIVE CHECK - showFaq-accessibility-1's answer no longer describes
+        the venue as a "convention centre". Follows the auth pattern in
+        contract-venue-seed-truth.yaml A7 (GET only, never a mutation).
+      command: >-
+        set -a; source .env.local; set +a;
+        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-accessibility-1%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        if echo "$LIVE" | grep -Eiq "convention centre"; then echo "showFaq-accessibility-1 still describes the venue as a convention centre"; exit 1; fi
+      timeout_seconds: 60
+
+    - id: A3
+      description: >-
+        READ-ONLY LIVE CHECK - showFaq-getting-there-2's answer no longer claims the
+        venue has parking garages.
+      command: >-
+        set -a; source .env.local; set +a;
+        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-getting-there-2%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        if echo "$LIVE" | grep -Eiq "parking garage"; then echo "showFaq-getting-there-2 still claims parking garages"; exit 1; fi
+      timeout_seconds: 60
+
+    - id: A4
+      description: >-
+        READ-ONLY LIVE CHECK - showFaq-getting-there-1's unresearched drive-time
+        claim ("half an hour from Cape Town International") is not simultaneously
+        present AND marked `research`. Not a flat text ban: dropping the claim
+        (status may be anything) or keeping it after real research (status stays
+        research) both satisfy this invariant — see phrase-denylist.golden.md "The
+        drive-time claim is a status defect, not a text defect".
+      command: >-
+        set -a; source .env.local; set +a;
+        TEXT=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-getting-there-1%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        STATUS=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-getting-there-1%22%5D%5B0%5D.status" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        if echo "$TEXT" | grep -Eiq "half an hour from Cape Town International" && [ "$STATUS" = "research" ]; then echo "showFaq-getting-there-1 keeps the unverified drive-time claim while still marked research"; exit 1; fi
+      timeout_seconds: 60
+
+    # ================= live Sanity negative controls (read-only) =================
+    - id: A5
+      description: >-
+        NEGATIVE CONTROL, READ-ONLY LIVE CHECK - showFaq-getting-there-3, the tone
+        model this fix must not need to touch, is still byte-identical to the
+        pre-fix text captured in correct-tone-model.golden.md.
+      command: >-
+        set -a; source .env.local; set +a;
+        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-getting-there-3%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        EXPECTED="At the hangar at Stellenbosch Flying Club, Stellenbosch Airfield, on the R44 in the Cape Winelands. On-site details such as the entrance to use, parking and accessibility are still being worked out and will be published here as they are settled.";
+        if [ "$LIVE" != "$EXPECTED" ]; then echo "showFaq-getting-there-3 changed unexpectedly — this fix must not touch the tone model"; exit 1; fi
+      timeout_seconds: 60
+
+    - id: A6
+      description: >-
+        NEGATIVE CONTROL, READ-ONLY LIVE CHECK - showFaq-accessibility-2,
+        showFaq-general-1 and showFaq-general-2, none of which mention the venue's
+        physical characteristics, are still byte-identical to their pre-fix text.
+        Guards against this fix's edits spreading beyond the named documents.
+      command: >-
+        set -a; source .env.local; set +a;
+        for pair in "showFaq-accessibility-2::This has not been confirmed. Please contact us before the show so we can give you a definite answer." "showFaq-general-1::The photography policy has not been confirmed. Personal photography is normally welcome; tripods, flash near the benches and any commercial or press photography usually need prior arrangement." "showFaq-general-2::Catering arrangements have not been confirmed."; do
+        ID="${pair%%::*}"; EXP="${pair#*::}";
+        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22$ID%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        if [ "$LIVE" != "$EXP" ]; then echo "negative control $ID changed unexpectedly"; exit 1; fi;
+        done
+      timeout_seconds: 90
+
+    # ================= repo: seed script reproduces the fix, not the defect =================
+    - id: A7
+      description: >-
+        scripts/seed-show-visitor-info.ts's showFaq-accessibility-1 FAQ entry (the
+        block between its id and the next FAQ's id) no longer contains the
+        convention-centre phrase. Scoped with awk, not a whole-file grep, because
+        line 164's dev comment legitimately mentions "a Cape Town city-centre
+        convention centre" as accurate history of the old working-venue assumption
+        (content-modeling.md rule 3 in action) and must survive.
+      command: >-
+        BLOCK=$(awk '/showFaq-accessibility-1/,/showFaq-accessibility-2/' scripts/seed-show-visitor-info.ts);
+        if echo "$BLOCK" | grep -Eiq "convention centre"; then echo "seed-show-visitor-info.ts's showFaq-accessibility-1 entry still describes a convention centre"; exit 1; fi
+      timeout_seconds: 30
+
+    - id: A8
+      description: >-
+        scripts/seed-show-visitor-info.ts's showFaq-getting-there-2 FAQ entry no
+        longer claims parking garages. Same awk-scoping rationale as A7.
+      command: >-
+        BLOCK=$(awk '/showFaq-getting-there-2/,/showFaq-getting-there-3/' scripts/seed-show-visitor-info.ts);
+        if echo "$BLOCK" | grep -Eiq "parking garage"; then echo "seed-show-visitor-info.ts's showFaq-getting-there-2 entry still claims parking garages"; exit 1; fi
+      timeout_seconds: 30
+
+    - id: A9
+      description: >-
+        scripts/seed-show-visitor-info.ts's showFaq-getting-there-1 FAQ entry
+        satisfies the same status invariant as A4: if the unresearched drive-time
+        claim is still present, `status` in that same entry must not be 'research'.
+      command: >-
+        BLOCK=$(awk '/showFaq-getting-there-1/,/showFaq-getting-there-2/' scripts/seed-show-visitor-info.ts);
+        if echo "$BLOCK" | grep -Eiq "half an hour from Cape Town International" && echo "$BLOCK" | grep -Eq "status:\s*'research'"; then echo "seed-show-visitor-info.ts keeps the unverified drive-time claim while status is still 'research'"; exit 1; fi
+      timeout_seconds: 30
+
+    - id: A10
+      description: >-
+        NEGATIVE CONTROL - scripts/seed-show-visitor-info.ts's showFaq-getting-there-3
+        entry (the tone model) and its historical dev comment at line ~163-168 about
+        the previous CTICC working-venue assumption are both still present unchanged.
+      command: >-
+        grep -qF "At the hangar at Stellenbosch Flying Club, Stellenbosch Airfield, on the R44 in the Cape" scripts/seed-show-visitor-info.ts &&
+        grep -qF "city-centre convention centre" scripts/seed-show-visitor-info.ts
+      timeout_seconds: 30
+
+    - id: A11
+      description: >-
+        No new travel/accommodation/attraction content was invented to fill the gap
+        — reproduces the same instruction as venue-seed-truth's A12/A13, restated
+        here because this contract touches the same file and a dev fixing the FAQ
+        text could otherwise be tempted to "helpfully" add real-sounding detail
+        elsewhere in the same edit.
+      command: >-
+        for t in travelRoute accommodationOption attraction; do if grep -q "_type: '$t'" scripts/seed-show-visitor-info.ts; then echo "seed script constructs a $t entry — inventing content this fix must not add"; exit 1; fi; done
+      timeout_seconds: 30
+
+    # ================= repo: golden copy-source JSON =================
+    - id: A12
+      description: >-
+        contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json no
+        longer contains any denylisted phrase in its prose fields (parking,
+        accessibility, publicTransport, gettingThereIntro, accommodationIntro,
+        the four named showFaq answers, and nationalShowVenuePatch.venue.
+        directionsNote), and its airportRoutes/accommodation/attractions arrays
+        are `[]`, matching the corrected seed script. Scoped with
+        check_json_denylist.py, not a whole-file grep, because this same JSON
+        legitimately still carries historical CTICC venue-IDENTITY fields
+        (name/addressLines/city/.../phone) that are NOT owned by any other
+        contract (verified — see README "Finding 3" audit); only this contract's
+        own A13 keeps them as a historical record — see the README "Current-state
+        vs historical-record ruling" and phrase-denylist.golden.md "Out of scope".
+        v2: this check now covers every field Finding 1 identified as still stale,
+        not just the two FAQ answers v1 covered. v3: TARGET_FAQ_IDS now also
+        covers showFaq.getting-there.3 — its golden copy is a DIFFERENT artifact
+        from the live document that is the tone model, and the golden copy was
+        never actually in scope before this version. See README "Finding 3".
+      command: python3 contracts/golden/venue-prose-residue/check_json_denylist.py contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json
+      timeout_seconds: 30
+
+    - id: A13
+      description: >-
+        NEGATIVE CONTROL - the same golden JSON's historical CTICC
+        venue-IDENTITY fields (name, city) are untouched by this fix. v3:
+        narrowed from v2, which also pinned showFaq.getting-there.3's answer to
+        its pre-fix "not formally confirmed... planning around the CTICC" text —
+        that was pinning the exact defect this version fixes (the golden copy of
+        that entry is now corrected prose, in scope via A12/A31, not a frozen
+        negative control; the LIVE document is the actual untouched tone model,
+        asserted separately by A5). v3 also corrects the ownership language: these
+        identity fields are not "owned by contract-venue-seed-truth.yaml" — no
+        other contract's assertions open this file (verified by grep across
+        contract-venue-seed-truth.yaml and its README) — only this A13 protects
+        them, as a dated historical record with the same standing as
+        cticc-research.golden.md.
+      command: >-
+        python3 -c "import json; d=json.load(open('contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json')); assert d['nationalShowVenuePatch']['venue']['name'] == 'Cape Town International Convention Centre', 'historical venue-identity NAME field was touched — out of scope for this contract'; assert d['nationalShowVenuePatch']['venue']['city'] == 'Cape Town', 'historical venue-identity CITY field was touched — out of scope for this contract'"
+      timeout_seconds: 30
+
+    - id: A31
+      description: >-
+        v3 NEW - the golden JSON's showFaq.getting-there.3 answer now equals the
+        corrected tone-model text verbatim (matching both the LIVE document, per
+        A5, and scripts/seed-show-visitor-info.ts, per A10) — direct proof of the
+        Finding 3 fix, and a drift guard against this specific entry silently
+        reverting to stale text again. Complements, does not duplicate, A12's
+        denylist scan of the same field.
+      command: >-
+        python3 -c "import json; d=json.load(open('contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json')); f=[e for e in d['showFaqDocuments'] if e['_id']=='showFaq.getting-there.3'][0]; expected='At the hangar at Stellenbosch Flying Club, Stellenbosch Airfield, on the R44 in the Cape Winelands. On-site details such as the entrance to use, parking and accessibility are still being worked out and will be published here as they are settled.'; assert f['answer'] == expected, 'golden showFaq.getting-there.3 answer does not match the corrected tone-model text verbatim'"
+      timeout_seconds: 30
+
+    # ================= repo: editor/dev docs =================
+    - id: A14
+      description: >-
+        docs/show-visitor-info-for-editors.md no longer tells Lee-Ann that CTICC is
+        the current working assumption.
+      command: >-
+        if grep -qF "Working assumption right now:** Cape Town International Convention Centre" docs/show-visitor-info-for-editors.md; then echo "docs/show-visitor-info-for-editors.md still presents CTICC as the current working assumption"; exit 1; fi
+      timeout_seconds: 30
+
+    - id: A15
+      description: >-
+        docs/show-visitor-info.md's "Seeded working-venue assumption" line no
+        longer names CTICC as the seeded venue.
+      command: >-
+        if grep -qF "Seeded working-venue assumption" docs/show-visitor-info.md && grep -A2 "Seeded working-venue assumption" docs/show-visitor-info.md | grep -qF "Cape Town International Convention Centre"; then echo "docs/show-visitor-info.md still names CTICC as the seeded venue"; exit 1; fi
+      timeout_seconds: 30
+
+    # ================= repo: venue-seed-truth's own false claim =================
+    - id: A16
+      description: >-
+        contracts/golden/venue-seed-truth/README.md no longer claims a complete
+        sweep found zero remaining stale strings — that claim is what this contract
+        disproves. "A golden that lies is worse than no golden."
+      command: >-
+        if grep -qF "swept the whole dataset for stale venue strings — zero remain" contracts/golden/venue-seed-truth/README.md; then echo "venue-seed-truth/README.md still makes the disproven zero-remain claim"; exit 1; fi
+      timeout_seconds: 30
+
+    # ================= negative controls: out-of-scope files untouched =================
+    - id: A17
+      description: >-
+        NEGATIVE CONTROL - sanity/schemas/objects/showVenue.ts's field description
+        still legitimately says "convention centre" (generic guidance to an editor,
+        not prose about this show's venue). Proves this fix did not overreach into
+        schema files.
+      command: >-
+        grep -qF "the convention centre's official name" sanity/schemas/objects/showVenue.ts || { echo "showVenue.ts field description was touched — out of scope for this contract"; exit 1; }
+      timeout_seconds: 30
+
+    - id: A18
+      description: >-
+        NEGATIVE CONTROL - lib/data/shows.ts's Durban ICC past-show entry (a real
+        convention centre, correctly named, a different city) is untouched.
+      command: >-
+        grep -qF "Durban ICC" lib/data/shows.ts || { echo "Durban ICC entry missing from lib/data/shows.ts"; exit 1; }
+      timeout_seconds: 30
+
+    - id: A19
+      description: >-
+        NEGATIVE CONTROL - contracts/golden/f4-seed-page-singletons/nationalShow.golden.json
+        is untouched by this contract. It is stale (still pins CTICC) but owned by
+        contracts/cms-loop-f3-national-show.yaml — fixing it here would be scope
+        creep into a golden this contract has no authority over. This assertion
+        proves the fix left it alone, not that it is correct.
+      command: >-
+        grep -qF '"value": "Cape Town International Convention Centre"' contracts/golden/f4-seed-page-singletons/nationalShow.golden.json || { echo "nationalShow.golden.json changed — that file is owned by contract-cms-loop-f3-national-show.yaml, not this contract"; exit 1; }
+      timeout_seconds: 30
+
+    - id: A20
+      description: >-
+        NEGATIVE CONTROL - the show-visitor-info contract's own historical CTICC
+        research record (cticc-research.golden.md) is untouched. It is a dated,
+        attributed record of what was researched and when — rewriting it would
+        corrupt real project history, the exact failure content-modeling.md rule 6
+        warns against, applied to golden files themselves.
+      command: >-
+        grep -qF "verified against cticc.co.za/contact-us" contracts/golden/show-visitor-info/cticc-research.golden.md || { echo "cticc-research.golden.md changed — this fix must not rewrite historical research records"; exit 1; }
+      timeout_seconds: 30
+
+    # ================= no-regression gate =================
+    - id: A21
+      description: strict TypeScript type-check passes after the content-only edits
+      command: 'pnpm type-check'
+      timeout_seconds: 180
+
+    # ================= v2: checker/spec conformance (root-cause fix for this round) =================
+    - id: A22
+      description: >-
+        check_json_denylist.py's implemented DENYLIST regex and TARGET_FAQ_IDS set
+        actually match every phrase and FAQ id phrase-denylist.golden.md documents.
+        This is the direct fix for the root cause of this whole second adversarial
+        round: a checker that silently under-implemented its own documented spec,
+        letting the gate go green while the defect class stayed open. If a future
+        edit adds a phrase to one file without the other, this fails.
+      command: python3 contracts/golden/venue-prose-residue/check_denylist_conformance.py
+      timeout_seconds: 30
+
+    # ================= v2 Finding 2: no invented public-transport claim =================
+    - id: A23
+      description: >-
+        READ-ONLY LIVE CHECK - showFaq-getting-there-1's answer no longer asserts,
+        as fact, that no scheduled public transport exists to the venue (or that it
+        does). Nothing in the repo sources either claim — see README "Finding 2".
+      command: >-
+        set -a; source .env.local; set +a;
+        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showFaq-getting-there-1%22%5D%5B0%5D.answer%5B0%5D.children%5B0%5D.text" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        echo "$LIVE" | python3 contracts/golden/venue-prose-residue/check_no_confident_transport_claim.py
+      timeout_seconds: 60
+
+    - id: A24
+      description: >-
+        READ-ONLY LIVE CHECK - the showVisitorInfo singleton's publicTransport
+        field (a second, independent location carrying the same invented claim) no
+        longer asserts public transport availability either way as fact.
+      command: >-
+        set -a; source .env.local; set +a;
+        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22showVisitorInfo%22%5D%5B0%5D.publicTransport" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        echo "$LIVE" | python3 contracts/golden/venue-prose-residue/check_no_confident_transport_claim.py
+      timeout_seconds: 60
+
+    - id: A25
+      description: >-
+        scripts/seed-show-visitor-info.ts's showFaq-getting-there-1 FAQ entry no
+        longer contains the invented public-transport claim. awk-scoped, same
+        rationale as A7-A9.
+      command: >-
+        awk '/showFaq-getting-there-1/,/showFaq-getting-there-2/' scripts/seed-show-visitor-info.ts | python3 contracts/golden/venue-prose-residue/check_no_confident_transport_claim.py
+      timeout_seconds: 30
+
+    - id: A26
+      description: >-
+        scripts/seed-show-visitor-info.ts's top-level publicTransport const block
+        (the showVisitorInfo document's copy of the same claim, independent of the
+        FAQ entry A25 checks) no longer contains the invented public-transport
+        claim.
+      command: >-
+        awk '/publicTransport:/,/accommodationIntro:/' scripts/seed-show-visitor-info.ts | python3 contracts/golden/venue-prose-residue/check_no_confident_transport_claim.py
+      timeout_seconds: 30
+
+    # ================= v2: additional negative controls for the expanded denylist =================
+    - id: A27
+      description: >-
+        NEGATIVE CONTROL - lib/data/shows.ts's Durban ICC entry is still untouched
+        after the expanded denylist lands (restates A18 post-expansion; the
+        expanded phrase list adds no new risk to this specific file, verified
+        explicitly rather than assumed).
+      command: >-
+        grep -qF "Durban ICC" lib/data/shows.ts || { echo "Durban ICC entry missing from lib/data/shows.ts after the denylist expansion"; exit 1; }
+      timeout_seconds: 30
+
+    - id: A28
+      description: >-
+        NEGATIVE CONTROL - lib/data/events.ts's three "Kirstenbosch Hall, Cape
+        Town"/"Kirstenbosch Hall" event-venue entries and lib/data/partners.ts's
+        "Kirstenbosch NBG" partner entry are untouched. Both are real, unrelated
+        uses of "Kirstenbosch" that the expanded denylist's bare-word phrase would
+        match if it were ever applied to these files — it never is, because
+        check_json_denylist.py only opens seed-show-visitor-info.golden.json. This
+        proves the scoping held, not just the regex.
+      command: >-
+        grep -qF "Kirstenbosch Hall" lib/data/events.ts || { echo "Kirstenbosch Hall entries missing from lib/data/events.ts — out of scope for this contract"; exit 1; };
+        grep -qF "Kirstenbosch NBG" lib/data/partners.ts || { echo "Kirstenbosch NBG entry missing from lib/data/partners.ts — out of scope for this contract"; exit 1; }
+      timeout_seconds: 30
+
+    - id: A29
+      description: >-
+        NEGATIVE CONTROL, READ-ONLY LIVE CHECK - the live society-highveld-orchid-society
+        document's venue is still "Witbank Civic Centre" — a real venue the
+        expanded "Civic Centre station" phrase must not touch (it is scoped to the
+        exact MyCiTi-stop phrase, not the bare words "Civic Centre").
+      command: >-
+        set -a; source .env.local; set +a;
+        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22society-highveld-orchid-society%22%5D%5B0%5D.venue" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        if [ "$LIVE" != "Witbank Civic Centre" ]; then echo "society-highveld-orchid-society's venue changed unexpectedly — out of scope for this contract"; exit 1; fi
+      timeout_seconds: 60
+
+    - id: A30
+      description: >-
+        NEGATIVE CONTROL, READ-ONLY LIVE CHECK - the live societyEvent-3-saoc-council-agm-2026
+        document's venue is still "Bloemfontein Civic Centre" — same rationale as A29.
+      command: >-
+        set -a; source .env.local; set +a;
+        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22societyEvent-3-saoc-council-agm-2026%22%5D%5B0%5D.venue" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        if [ "$LIVE" != "Bloemfontein Civic Centre" ]; then echo "societyEvent-3-saoc-council-agm-2026's venue changed unexpectedly — out of scope for this contract"; exit 1; fi
+      timeout_seconds: 60

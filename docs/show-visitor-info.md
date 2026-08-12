@@ -185,10 +185,11 @@ QA (`_rev`/`_updatedAt` diffed across two runs — no drift, no duplicates, no e
 by contract check A24. Runnable as `pnpm seed:visitor` (added this round; previously only
 runnable via `npx tsx`).
 
-Seeded working-venue assumption (Brad's call, 2026-08-11 — "if we guessed wrong, they'll correct
-us"): **Cape Town International Convention Centre**, Cape Town, Western Cape, edition 19,
-18–21 September 2027, host region Western Cape. Every one of these values is a Studio-editable
-field, not a code literal — see the venue-change guarantee above.
+Seeded venue (client-confirmed 2026-08-12): **The Hangar, Stellenbosch Flying Club**,
+Stellenbosch, Western Cape, edition 19, 18–21 September 2027, host region Western Cape. Every one
+of these values is a Studio-editable field, not a code literal — see the venue-change guarantee
+above. Travel/accommodation prose for this venue is deliberately unresearched (see
+`contracts/golden/venue-prose-residue/README.md`) — those blocks stay `pending`, not `research`.
 
 ---
 
@@ -201,7 +202,7 @@ pages need a distinction ticketing didn't:
 | Status | Means | Example |
 |---|---|---|
 | `pending` | Placeholder scaffolding. The committee must supply the real value. | Opening hours, parking specifics, admission conditions, photography policy, cloakroom, most FAQ answers |
-| `research` | Real, verified by the web team against the CTICC working assumption — correct today, invalid the day the venue changes. | Airport routes, public transport, accommodation, attractions |
+| `research` | Real, verified by the web team against a confirmed venue — correct when verified, stale if the venue changes. | (Currently none; see "Seeded venue" above — travel/accommodation prose for Hangar is pending, not research) |
 | `confirmed` | The committee has signed this value off. Renders with no marker. | Nothing yet |
 
 Rendered by the shared `components/show/ConfirmationBadge.tsx` server component. Styling reuses

@@ -53,9 +53,10 @@ To change it:
 Do the same for the **"Dates"**, **"Edition"** and **"Host Region"** fields on that same document
 when the committee confirms them.
 
-**Working assumption right now:** Cape Town International Convention Centre, 18–21 September
-2027. This is our best guess, not a booking — the committee may correct it, and when they do, the
-one-place-change above is how you fix it everywhere.
+**Confirmed venue:** The Hangar, Stellenbosch Flying Club, Stellenbosch Airfield, R44, Stellenbosch 7600, 18–21 September
+2027 (client-confirmed 2026-08-12). Travel, parking and accessibility detail for this venue has
+not been researched yet — those pages honestly say "not confirmed" rather than guess, and the
+one-place-change above is how you fix the venue everywhere if it ever changes again in 2030.
 
 ## The "To Be Confirmed" Tags — What They Mean and How They Work
 

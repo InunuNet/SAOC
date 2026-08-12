@@ -17,11 +17,11 @@
  *   - Portable-text _key values are derived from the document _id, never random:
  *     a random key changes the document on every run and defeats idempotence.
  *
- * EVERY seeded value is either verified research (sourced in
- * contracts/golden/show-visitor-info/cticc-research.golden.md) or an honest
- * "not confirmed" placeholder. Nothing is invented, and no block is seeded with a
- * committee-signed-off status — the confirmations object below marks each block
- * pending or research, and the pages render a visible marker for both.
+ * EVERY seeded value is either verified research (sourced in the show-visitor-info
+ * research golden file) or an honest "not confirmed" placeholder. Nothing is
+ * invented, and no block is seeded with a committee-signed-off status — the
+ * confirmations object below marks each block pending, research or confirmed, and
+ * the pages render a visible marker for all three.
  *
  * Required env (read directly from .env.local, NOT via the `dotenv` package — its
  * banner writes to stdout and has corrupted captured values on this project before):
@@ -101,27 +101,24 @@ function keyed<T extends object>(ownerId: string, prefix: string, items: T[]): A
 // nationalShow — venue object plus the three show-identity fields whose absence
 // forced the landing page to keep hardcoding a date range, a host and an edition.
 // setIfMissing throughout: never force-set over an editor's correction.
-// Values sourced in cticc-research.golden.md, retrieved 2026-08-11. All RESEARCH
-// status — the show committee has confirmed no venue.
+// Venue confirmed by the client 2026-08-12 — see
+// contracts/golden/venue-seed-truth/expected-venue.json. No confirmed switchboard
+// number or arrival note exists yet for this venue, so phone and directionsNote are
+// left unset rather than carrying over the previous venue's values.
 // ---------------------------------------------------------------------------
 
 const VENUE = {
-  name: 'Cape Town International Convention Centre',
-  addressLines: ['Convention Square', '1 Lower Long Street'],
-  city: 'Cape Town',
+  name: 'The Hangar, Stellenbosch Flying Club',
+  addressLines: ['Stellenbosch Airfield', 'R44'],
+  city: 'Stellenbosch',
   province: 'Western Cape',
-  postalCode: '8001',
-  latitude: -33.915141,
-  longitude: 18.425657,
+  postalCode: '7600',
+  latitude: -33.9794,
+  longitude: 18.8196,
   // OpenStreetMap deliberately: no API key, no account, no terms-of-service question
   // about embedding, and the link works for every visitor.
   mapsUrl:
-    'https://www.openstreetmap.org/?mlat=-33.915141&mlon=18.425657#map=17/-33.915141/18.425657',
-  directionsNote:
-    'Working venue assumption only — the show committee has not confirmed a venue. The CTICC ' +
-    'is on the Foreshore at the harbour end of the city centre. Which entrance the show uses ' +
-    'will be confirmed closer to the time.',
-  phone: '+27 21 410 5000',
+    'https://www.openstreetmap.org/?mlat=-33.9794&mlon=18.8196#map=15/-33.9794/18.8196',
 };
 
 // The dates mirror the countdownDate already in the dataset, so they introduce no new
@@ -163,125 +160,17 @@ async function patchNationalShow(): Promise<void> {
 // showVisitorInfo — all visitor-page copy.
 // ---------------------------------------------------------------------------
 
-const AIRPORT_ROUTES = [
-  {
-    _type: 'travelRoute',
-    origin: 'Cape Town International Airport (CPT)',
-    distance: 'About 22 km',
-    duration: 'Roughly 25 to 40 minutes by road, depending on traffic',
-    directions:
-      'Follow the N2 towards the city centre and take the Foreshore off-ramps. The venue sits ' +
-      'on the Foreshore at the harbour end of the central business district.',
-    transportOptions: [
-      'MyCiTi bus route A01 runs between the airport and Civic Centre station, roughly every ' +
-        '20 minutes in peak periods and about hourly off-peak, taking around 30 minutes. Civic ' +
-        'Centre station is on Hertzog Boulevard, a walk of about 600 m from the venue.',
-      "Metered taxis and e-hailing services operate from the airport's designated ranks.",
-      "Car hire desks are in the airport's central terminal building.",
-    ],
-  },
-  {
-    _type: 'travelRoute',
-    origin: 'OR Tambo International Airport, Johannesburg (JNB)',
-    distance: 'About 1 400 km — not a practical drive',
-    duration: 'About 2 hours by connecting flight',
-    directions:
-      'Connect to Cape Town International, then follow the Cape Town International guidance above.',
-    transportOptions: ['Domestic connecting flights run throughout the day.'],
-  },
-  {
-    _type: 'travelRoute',
-    origin: 'King Shaka International Airport, Durban (DUR)',
-    distance: 'About 1 650 km — not a practical drive',
-    duration: 'About 2 hours by connecting flight',
-    directions:
-      'Connect to Cape Town International, then follow the Cape Town International guidance above.',
-    transportOptions: ['Domestic connecting flights run throughout the day.'],
-  },
-];
+// The venue changed from the previous working-venue assumption (a Cape Town
+// city-centre convention centre) to Stellenbosch Airfield. That travel research no
+// longer applies to the new venue and none of it has been redone yet, so these
+// arrays are cleared rather than reintroduce stale content or invent new
+// airfield-specific detail. Matches the live Sanity dataset, which was cleared the
+// same way — see contracts/golden/venue-seed-truth/README.md.
+const AIRPORT_ROUTES: Record<string, unknown>[] = [];
 
-const ACCOMMODATION = [
-  {
-    _type: 'accommodationOption',
-    name: 'Foreshore hotels adjoining the convention precinct',
-    area: 'Foreshore',
-    distanceBand: 'walking',
-    note:
-      "Several large hotels sit within a few minutes' walk of the working venue. Specific " +
-      'properties will be listed once the venue is confirmed.',
-  },
-  {
-    _type: 'accommodationOption',
-    name: 'V&A Waterfront',
-    area: 'V&A Waterfront',
-    distanceBand: 'nearby',
-    note:
-      'About 2 km. A wide range of hotels and serviced apartments, with restaurants and the ' +
-      'Robben Island ferry on the doorstep.',
-  },
-  {
-    _type: 'accommodationOption',
-    name: "City Bowl and Company's Garden",
-    area: 'Cape Town City Centre',
-    distanceBand: 'nearby',
-    note:
-      'About 1 to 2 km. Smaller hotels and guesthouses within walking distance of the museums ' +
-      "and the Company's Garden.",
-  },
-  {
-    _type: 'accommodationOption',
-    name: 'Green Point and Sea Point',
-    area: 'Atlantic Seaboard',
-    distanceBand: 'city',
-    note:
-      'About 3 to 6 km. Guesthouses and self-catering apartments along the Atlantic seaboard ' +
-      'promenade.',
-  },
-  {
-    _type: 'accommodationOption',
-    name: 'Southern Suburbs',
-    area: 'Newlands, Claremont and surrounds',
-    distanceBand: 'further',
-    note:
-      'About 10 to 15 km. Quieter, leafier, and close to Kirstenbosch — worth considering if ' +
-      'you are extending your stay.',
-  },
-];
+const ACCOMMODATION: Record<string, unknown>[] = [];
 
-const ATTRACTIONS = [
-  {
-    _type: 'attraction',
-    name: 'V&A Waterfront',
-    note:
-      'About 2 km from the working venue. Shops, restaurants, the aquarium, and the departure ' +
-      'point for Robben Island ferries.',
-  },
-  {
-    _type: 'attraction',
-    name: 'Kirstenbosch National Botanical Garden',
-    note:
-      "About 13 km. South Africa's flagship botanical garden, on the eastern slopes of Table " +
-      'Mountain — the obvious companion outing for a show visitor.',
-  },
-  {
-    _type: 'attraction',
-    name: 'Table Mountain Aerial Cableway',
-    note:
-      "About 6 km. Runs weather permitting; check the cableway's own status before travelling.",
-  },
-  {
-    _type: 'attraction',
-    name: "Company's Garden and the city museums",
-    note:
-      'About 1.5 km. The original 17th-century garden, with the South African Museum and the ' +
-      'National Gallery alongside it.',
-  },
-  {
-    _type: 'attraction',
-    name: 'Bo-Kaap',
-    note: 'About 2 km. Historic neighbourhood on the slopes of Signal Hill.',
-  },
-];
+const ATTRACTIONS: Record<string, unknown>[] = [];
 
 const EMERGENCY_CONTACTS = [
   { _type: 'emergencyContact', label: 'Police (national)', number: '10111' },
@@ -315,23 +204,24 @@ const OPENING_HOURS = [
   },
 ];
 
-// One status per content block. Nothing here is signed off by the show committee, so
-// nothing seeds with a signed-off status: research where we verified it ourselves,
-// pending where the value is a placeholder the committee must supply.
+// One status per content block. The venue is now client-confirmed (2026-08-12);
+// everything else is still pending — the travel/accommodation research done against
+// the previous working venue no longer applies to the new one and has not been
+// redone, so those blocks are pending, not research.
 const CONFIRMATIONS = {
   _type: 'confirmationStatuses',
-  venue: 'research',
+  venue: 'confirmed',
   dates: 'pending',
   openingHours: 'pending',
   admission: 'pending',
   parking: 'pending',
-  publicTransport: 'research',
+  publicTransport: 'pending',
   accessibility: 'pending',
   photography: 'pending',
   cloakroom: 'pending',
   food: 'pending',
-  accommodation: 'research',
-  attractions: 'research',
+  accommodation: 'pending',
+  attractions: 'pending',
   emergencyContacts: 'pending',
 };
 
@@ -356,24 +246,18 @@ async function seedVisitorInfo(): Promise<void> {
       'accommodation guidance below is our own research against the working venue; the show ' +
       'committee will confirm the final details.',
     gettingThereIntro:
-      'Most visitors from outside the Western Cape arrive by air. Whichever national airport ' +
-      'you start from, your route runs through Cape Town International.',
+      'The show venue has changed to the Stellenbosch Flying Club. Travel, parking and ' +
+      'accommodation guidance for the new venue has not been worked out yet — the previous ' +
+      'guidance was written for a Cape Town city-centre venue and no longer applies.',
     airportRoutes: keyed(VISITOR_INFO_ID, 'route', AIRPORT_ROUTES),
 
-    parking:
-      'Parking arrangements for show visitors have not been confirmed. The venue has multiple ' +
-      'parking garages; rates, capacity and which garage show visitors should use will be ' +
-      'published once the committee confirms the booking.',
-    publicTransport:
-      "MyCiTi is Cape Town's scheduled bus service. Civic Centre station on Hertzog Boulevard " +
-      'is the closest stop to the working venue — about 600 m, a walk of roughly seven minutes ' +
-      '— and is the city terminus of the A01 airport route. Metered taxis and e-hailing ' +
-      'services operate throughout the central city.',
+    parking: 'Parking arrangements have not been confirmed for the new venue.',
+    publicTransport: 'Public transport options to Stellenbosch Airfield have not been confirmed.',
 
     accommodationIntro:
-      'A starting point for booking, grouped by how far you would be from the venue. These are ' +
-      'suggestions from our own research, not recommendations or negotiated rates — SAOC has no ' +
-      'arrangement with any property listed.',
+      'Accommodation guidance for the Stellenbosch area is still being put together. The ' +
+      'previous list was written for a Cape Town city-centre venue and has been removed rather ' +
+      'than left to mislead.',
     accommodation: keyed(VISITOR_INFO_ID, 'stay', ACCOMMODATION),
     attractions: keyed(VISITOR_INFO_ID, 'attraction', ATTRACTIONS),
     emergencyContacts: keyed(VISITOR_INFO_ID, 'emergency', EMERGENCY_CONTACTS),
@@ -402,11 +286,7 @@ async function seedVisitorInfo(): Promise<void> {
       'Cloakroom and plant-holding arrangements have not been confirmed. If you buy plants at ' +
       'the show, we expect a holding area will be available so you need not carry them for the ' +
       'rest of your visit — this will be confirmed.',
-    accessibility:
-      'Accessibility details have not been confirmed. The working venue is a modern convention ' +
-      'centre with step-free access and accessible facilities. Specifics — accessible parking, ' +
-      'wheelchair availability, aisle widths between benches, and assistance on request — will ' +
-      'be confirmed by the committee.',
+    accessibility: 'Accessibility details have not been confirmed for the new venue.',
 
     faqTitle: 'Frequently asked questions',
     faqIntro:
@@ -439,12 +319,12 @@ const FAQS: SeedFaq[] = [
     id: 'showFaq-getting-there-1',
     category: 'getting-there',
     order: 1,
-    status: 'research',
+    status: 'pending',
     question: 'How do I get to the show from Cape Town International Airport?',
     answer:
-      'The venue is about 22 km from the airport, roughly 25 to 40 minutes by road. The MyCiTi ' +
-      'A01 bus runs from the airport to Civic Centre station, about 600 m from the working ' +
-      'venue. Full detail is on the Plan your visit page.',
+      'The show is at Stellenbosch Flying Club, on the R44 at Stellenbosch Airfield in the Cape ' +
+      'Winelands. Public transport options to the venue have not been confirmed. Detailed travel ' +
+      'guidance for the venue will be added to the Plan your visit page once it is confirmed.',
   },
   {
     id: 'showFaq-getting-there-2',
@@ -453,9 +333,8 @@ const FAQS: SeedFaq[] = [
     status: 'pending',
     question: 'Is there parking at the venue?',
     answer:
-      'Parking arrangements have not been confirmed by the show committee. The working venue ' +
-      'has several parking garages; we will publish rates and directions once the booking is ' +
-      'confirmed.',
+      'Parking arrangements have not been confirmed by the show committee. We will publish rates ' +
+      'and directions once the booking is confirmed.',
   },
   {
     id: 'showFaq-getting-there-3',
@@ -464,9 +343,9 @@ const FAQS: SeedFaq[] = [
     status: 'pending',
     question: 'Where exactly is the show being held?',
     answer:
-      'The venue has not been formally confirmed. We are planning around the Cape Town ' +
-      'International Convention Centre and will update this page the moment the committee ' +
-      'confirms.',
+      'At the hangar at Stellenbosch Flying Club, Stellenbosch Airfield, on the R44 in the Cape ' +
+      'Winelands. On-site details such as the entrance to use, parking and accessibility are ' +
+      'still being worked out and will be published here as they are settled.',
   },
   {
     id: 'showFaq-tickets-1',
@@ -505,10 +384,8 @@ const FAQS: SeedFaq[] = [
     status: 'pending',
     question: 'Is the venue wheelchair accessible?',
     answer:
-      'Accessibility specifics have not been confirmed. The working venue is a modern ' +
-      'convention centre with step-free access and accessible facilities; we will publish the ' +
-      'confirmed detail, including accessible parking and assistance on request, once the ' +
-      'committee supplies it.',
+      'Accessibility specifics have not been confirmed. We will publish the confirmed detail, ' +
+      'including accessible parking and assistance on request, once the committee supplies it.',
   },
   {
     id: 'showFaq-accessibility-2',

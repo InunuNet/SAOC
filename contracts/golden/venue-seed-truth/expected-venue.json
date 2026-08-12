@@ -1,0 +1,16 @@
+{
+  "_comment": "Canonical target values, captured live from the corrected Sanity dataset (nationalShow._id, showVisitorInfo._id) on 2026-08-12, after the CTICC-to-Hangar venue correction (427fbaf + follow-up). This is what every seed source in the repo must agree with. If a live re-query of nationalShow.venue.name ever disagrees with this file, THE FILE IS STALE, not the check (see A8 in contract-venue-seed-truth.yaml).",
+  "name": "The Hangar, Stellenbosch Flying Club",
+  "addressLines": ["Stellenbosch Airfield", "R44"],
+  "city": "Stellenbosch",
+  "province": "Western Cape",
+  "postalCode": "7600",
+  "latitude": -33.9794,
+  "longitude": 18.8196,
+  "mapsUrl": "https://www.openstreetmap.org/?mlat=-33.9794&mlon=18.8196#map=15/-33.9794/18.8196",
+  "phone": null,
+  "showDate": "2027-09-18T09:00:00+02:00",
+  "showEndDate": "2027-09-21T17:00:00+02:00",
+  "edition": 19,
+  "hostRegion": "Western Cape"
+}

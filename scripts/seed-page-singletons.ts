@@ -211,7 +211,7 @@ async function seedNationalShow(): Promise<void> {
     _type: 'nationalShow',
     title: 'The South African National Orchid Show',
     // showDate: absent — only a non-parseable display string exists (golden gap).
-    location: 'Cape Town International Convention Centre',
+    location: 'The Hangar, Stellenbosch Flying Club',
     hero,
     countdownDate: '2027-09-18T09:00:00+02:00',
     // exhibitorStages: absent — no hardcoded copy to migrate (golden gap).

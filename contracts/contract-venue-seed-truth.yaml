@@ -1,0 +1,229 @@
+schema: athanor.contract/v1
+slug: venue-seed-truth
+goal: >-
+  Fix the repo's SEED SOURCES, not the dataset — the live Sanity dataset was already
+  corrected (427fbaf + a follow-up flipping showVisitorInfo.confirmations.venue to
+  confirmed) after the client confirmed on 2026-08-12 that the National Show 2027
+  venue is The Hangar, Stellenbosch Flying Club (Stellenbosch Airfield, R44,
+  Stellenbosch 7600, Western Cape, approx -33.9794/18.8196), replacing an invented
+  "Cape Town International Convention Centre" (CTICC) working-venue placeholder.
+  Every seed write in this project is createIfNotExists/setIfMissing, so the stale
+  CTICC copy still sitting in lib/data/shows.ts, lib/data/events.ts,
+  scripts/seed-page-singletons.ts and scripts/seed-show-visitor-info.ts is inert
+  today — but if the dataset is ever rebuilt from empty, the site regresses straight
+  back to CTICC. This contract closes that regression path: seed sources must agree
+  with the live (source-of-truth) dataset, without corrupting the many OTHER,
+  genuinely-different venues that happen to share substrings with the denylist (see
+  contracts/golden/venue-seed-truth/legitimate-other-venues.golden.md). Full context:
+  contracts/golden/venue-seed-truth/README.md.
+created_at: '2026-08-12'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Purge CTICC-anchored strings from all four seed sources, bring the venue
+      identity fields (name/address/city/province/postal/coordinates/phone) into
+      agreement with the live Sanity dataset, reproduce the dataset's cleared
+      travel-content shape (empty arrays, honest pending copy) rather than
+      reintroducing invented CTICC content or fabricating new Hangar-specific
+      content, and preserve every legitimate other venue untouched.
+    status: pending
+
+goldens:
+  - contracts/golden/venue-seed-truth/README.md
+  - contracts/golden/venue-seed-truth/expected-venue.json
+  - contracts/golden/venue-seed-truth/legitimate-other-venues.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    # ================= detector self-test (must run first — proves the detectors below can fail) =================
+    - id: A1
+      description: >-
+        META - self-test, not a source check. Proves the three grep-based detectors
+        used below (CTICC denylist, travel-content-object detector, confirmations
+        'pending' detector) actually fire on synthetic bad input and actually reject
+        it correctly on synthetic good input. An assertion that cannot fail is
+        worthless — this is why A1 runs before any assertion that depends on these
+        patterns.
+      command: >-
+        echo "near CTICC, on the Foreshore, via MyCiTi, Convention Square, Lower Long Street" | grep -Eiq "CTICC|Cape Town International Convention|Foreshore|MyCiTi|Civic Centre station|Convention Square|Lower Long Street" || { echo "denylist self-test FAILED to detect known-bad text"; exit 1; };
+        echo "Bloemfontein Civic Centre" | grep -Eiq "CTICC|Cape Town International Convention|Foreshore|MyCiTi|Civic Centre station|Convention Square|Lower Long Street" && { echo "denylist self-test FALSE POSITIVE on a legitimate 'Civic Centre' venue"; exit 1; };
+        echo "_type: 'travelRoute'," | grep -q "_type: 'travelRoute'" || { echo "travel-content detector self-test FAILED"; exit 1; };
+        echo "publicTransport: 'research'," | grep -Eq "publicTransport:\s*'pending'" && { echo "pending-detector self-test FALSE POSITIVE on 'research'"; exit 1; };
+        echo "publicTransport: 'pending'," | grep -Eq "publicTransport:\s*'pending'" || { echo "pending-detector self-test FAILED to match 'pending'"; exit 1; };
+        exit 0
+      timeout_seconds: 30
+
+    # ================= no CTICC-anchored strings remain =================
+    - id: A2
+      description: >-
+        No seed source or lib/data file contains any CTICC-anchored string. Denylist
+        is deliberately venue-specific phrases, never bare "Cape Town" or bare
+        "Civic Centre" — see A5/A6/A7 for why those bare substrings are legitimately
+        present elsewhere and must not be banned.
+      command: >-
+        if grep -rEiq "CTICC|Cape Town International Convention|Foreshore|MyCiTi|Civic Centre station|Convention Square|Lower Long Street" lib/data/shows.ts lib/data/events.ts scripts/seed-page-singletons.ts scripts/seed-show-visitor-info.ts; then echo "a CTICC-anchored string remains in a seed source"; exit 1; fi
+      timeout_seconds: 30
+
+    - id: A3
+      description: >-
+        The old CTICC switchboard number does not survive as an orphaned venue.phone
+        literal. This string matches none of A2's denylist phrases — a naive
+        find-and-replace on the denylist alone is structurally blind to it — so it is
+        checked separately. The live dataset's nationalShow.venue.phone is null (no
+        confirmed number for the new venue yet); see
+        contracts/golden/venue-seed-truth/README.md "A miss the original brief did
+        not catch".
+      command: >-
+        if grep -q "+27 21 410 5000" scripts/seed-show-visitor-info.ts; then echo "the CTICC switchboard number is still hardcoded as the venue phone"; exit 1; fi
+      timeout_seconds: 30
+
+    # ================= negative controls: legitimate other venues survive unchanged =================
+    - id: A4
+      description: >-
+        NEGATIVE CONTROL - every legitimate past-National-Show venue in
+        lib/data/shows.ts (editions 14-18) is still present unchanged. Guards
+        against a careless global replace corrupting sibling records; roster is
+        contracts/golden/venue-seed-truth/legitimate-other-venues.golden.md.
+      command: >-
+        for v in "Durban ICC" "Walter Sisulu NBG" "Cape Town City Hall" "NMBay Boardwalk" "Bloemfontein Showgrounds"; do grep -qF "$v" lib/data/shows.ts || { echo "legitimate past-show venue missing from lib/data/shows.ts: $v"; exit 1; }; done
+      timeout_seconds: 30
+
+    - id: A5
+      description: >-
+        NEGATIVE CONTROL - every legitimate society-event venue in lib/data/events.ts
+        is still present unchanged, INCLUDING two that legitimately contain the bare
+        substring "Cape Town" ("Kirstenbosch Hall, Cape Town") and one that
+        legitimately contains the bare substring "Civic Centre"
+        ("Bloemfontein Civic Centre") — proof the fix used the venue-specific
+        denylist in A2, not a naive "Cape Town" / "Civic Centre" ban.
+      command: >-
+        for v in "Kirstenbosch Hall, Cape Town" "Bloemfontein Civic Centre" "Stellenbosch University" "Walter Sisulu NBG, Roodepoort" "Durban Botanic Gardens" "Pretoria NBG"; do grep -qF "$v" lib/data/events.ts || { echo "legitimate event venue missing from lib/data/events.ts: $v"; exit 1; }; done
+      timeout_seconds: 30
+
+    - id: A6
+      description: >-
+        NEGATIVE CONTROL - lib/data/societies.ts (never in scope for this fix, and
+        never referenced CTICC) still carries its "Civic Centre" and "Stellenbosch"
+        venues unchanged, reinforcing A5's proof that those bare substrings were
+        never denylisted.
+      command: >-
+        for v in "Witbank Civic Centre" "Stellenbosch University Botanical Garden"; do grep -qF "$v" lib/data/societies.ts || { echo "legitimate society venue missing from lib/data/societies.ts: $v"; exit 1; }; done
+      timeout_seconds: 30
+
+    # ================= dataset agreement (Sanity is the source of truth) =================
+    - id: A7
+      description: >-
+        READ-ONLY LIVE CHECK - contracts/golden/venue-seed-truth/expected-venue.json
+        is not itself stale: re-queries nationalShow.venue.name from the live Sanity
+        dataset right now and confirms it still matches the golden file. Every other
+        assertion in this contract checks source against the GOLDEN FILE (fast,
+        deterministic); this is the one assertion tying the golden file back to
+        reality. Read-only — issues a GET, never a mutation.
+      command: >-
+        set -a; source .env.local; set +a;
+        LIVE=$(curl -s -H "Authorization: Bearer $SANITY_API_READ_TOKEN" "https://$NEXT_PUBLIC_SANITY_PROJECT_ID.api.sanity.io/v2024-01-01/data/query/$NEXT_PUBLIC_SANITY_DATASET?query=%2A%5B_id%3D%3D%22nationalShow%22%5D%5B0%5D.venue.name" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'])");
+        GOLDEN=$(python3 -c "import json; print(json.load(open('contracts/golden/venue-seed-truth/expected-venue.json'))['name'])");
+        if [ "$LIVE" != "$GOLDEN" ]; then echo "golden expected-venue.json is stale: live Sanity venue.name='$LIVE' golden='$GOLDEN'"; exit 1; fi
+      timeout_seconds: 60
+
+    - id: A8
+      description: >-
+        The venue name from contracts/golden/venue-seed-truth/expected-venue.json
+        appears verbatim in all four seed sources, replacing the CTICC name.
+      command: >-
+        NAME=$(python3 -c "import json; print(json.load(open('contracts/golden/venue-seed-truth/expected-venue.json'))['name'])");
+        for f in lib/data/shows.ts lib/data/events.ts scripts/seed-page-singletons.ts scripts/seed-show-visitor-info.ts; do grep -qF "$NAME" "$f" || { echo "expected venue name missing from $f"; exit 1; }; done
+      timeout_seconds: 30
+
+    - id: A9
+      description: >-
+        scripts/seed-show-visitor-info.ts's structured VENUE object agrees with the
+        golden file on city, province and postal code (the three fields a simple
+        name-string check in A8 cannot cover).
+      command: >-
+        for k in city province postalCode; do V=$(python3 -c "import json; print(json.load(open('contracts/golden/venue-seed-truth/expected-venue.json'))['$k'])"); grep -qF "$V" scripts/seed-show-visitor-info.ts || { echo "seed-show-visitor-info.ts missing venue.$k = $V"; exit 1; }; done
+      timeout_seconds: 30
+
+    - id: A10
+      description: >-
+        scripts/seed-show-visitor-info.ts's VENUE object carries the golden file's
+        address lines and coordinates (both signs of latitude/longitude checked
+        literally, since a stray minus-sign flip is a realistic transcription slip).
+      command: >-
+        grep -qF "Stellenbosch Airfield" scripts/seed-show-visitor-info.ts &&
+        grep -qF "'R44'" scripts/seed-show-visitor-info.ts &&
+        grep -qF -- "-33.9794" scripts/seed-show-visitor-info.ts &&
+        grep -qF "18.8196" scripts/seed-show-visitor-info.ts
+      timeout_seconds: 30
+
+    - id: A11
+      description: >-
+        show-identity fields (showDate/showEndDate/edition/hostRegion), which were
+        already correct before this fix and are NOT part of the venue correction,
+        are still present and untouched in scripts/seed-show-visitor-info.ts — this
+        fix must not collaterally disturb them.
+      command: >-
+        grep -qF "2027-09-18T09:00:00+02:00" scripts/seed-show-visitor-info.ts &&
+        grep -qF "2027-09-21T17:00:00+02:00" scripts/seed-show-visitor-info.ts &&
+        grep -Eq "edition:\s*19" scripts/seed-show-visitor-info.ts &&
+        grep -qF "hostRegion: 'Western Cape'" scripts/seed-show-visitor-info.ts
+      timeout_seconds: 30
+
+    # ================= cleared shape, not reinvented content =================
+    - id: A12
+      description: >-
+        The seed no longer constructs any travelRoute, accommodationOption or
+        attraction entry — reproducing the dataset's CLEARED shape
+        (airportRoutes/accommodation/attractions all []). The instruction is
+        explicit: do not reintroduce CTICC content AND do not invent new
+        Hangar-specific travel/accommodation/attraction content to fill the gap.
+      command: >-
+        for t in travelRoute accommodationOption attraction; do if grep -q "_type: '$t'" scripts/seed-show-visitor-info.ts; then echo "seed script still constructs a $t entry — travel content was not cleared"; exit 1; fi; done
+      timeout_seconds: 30
+
+    - id: A13
+      description: >-
+        None of the five neutralised prose fields (publicTransport, parking,
+        accessibility, gettingThereIntro, accommodationIntro) is seeded as an empty
+        string. The dataset's neutralised copy is honest "not confirmed" prose, not
+        a blank field — a blank field is indistinguishable from a bug.
+      command: >-
+        for f in publicTransport parking accessibility gettingThereIntro accommodationIntro; do if grep -Eq "^\s*$f:\s*(''|\"\")\s*,?\s*$" scripts/seed-show-visitor-info.ts; then echo "$f is seeded as a blank string"; exit 1; fi; done
+      timeout_seconds: 30
+
+    - id: A14
+      description: >-
+        The CONFIRMATIONS object seeds publicTransport, accommodation, attractions,
+        parking and accessibility as 'pending' — not 'research' (the old CTICC-era
+        research no longer applies to an unresearched new venue) and not 'confirmed'
+        (nothing here has actually been confirmed by the committee).
+      command: >-
+        BLOCK=$(awk '/^const CONFIRMATIONS/,/^};/' scripts/seed-show-visitor-info.ts);
+        for k in publicTransport accommodation attractions parking accessibility; do echo "$BLOCK" | grep -Eq "$k:\s*'pending'" || { echo "confirmations.$k is not seeded 'pending'"; exit 1; }; done
+      timeout_seconds: 30
+
+    # ================= seeds stay create-if-absent =================
+    - id: A15
+      description: >-
+        STANDING RULE - scripts/seed-show-visitor-info.ts (the only NEW-style,
+        create-if-absent seed script this fix touches) still uses
+        createIfNotExists/setIfMissing throughout, never createOrReplace. Note:
+        scripts/seed-page-singletons.ts is EXCLUDED from this check on purpose — it
+        already uses createOrReplace pre-existing and elsewhere, a documented hazard
+        this fix does not touch or extend (see contracts/contract-show-visitor-info.yaml
+        A20); banning createOrReplace across that whole file would fail this contract
+        for reasons unrelated to the venue fix.
+      command: >-
+        if grep -q "createOrReplace" scripts/seed-show-visitor-info.ts; then echo "scripts/seed-show-visitor-info.ts introduces createOrReplace — forbidden, see standing project rule"; exit 1; fi;
+        grep -q "createIfNotExists" scripts/seed-show-visitor-info.ts &&
+        grep -q "setIfMissing" scripts/seed-show-visitor-info.ts
+      timeout_seconds: 30
+
+    # ================= no-regression gate =================
+    - id: A16
+      description: strict TypeScript type-check passes
+      command: 'pnpm type-check'
+      timeout_seconds: 180

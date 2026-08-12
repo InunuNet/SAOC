@@ -6,7 +6,7 @@ export const shows: NationalShow[] = [
     year: 2027,
     month: 'September',
     host: 'Western Cape',
-    venue: 'Cape Town International Convention Centre',
+    venue: 'The Hangar, Stellenbosch Flying Club',
     status: 'upcoming',
     days: 4,
   },

@@ -451,3 +451,23 @@ directly and is the only path that works. Same tool already noted in the "Do the
 yourself" entry above for Firebase/GCP REST — this is the Workspace-content half of that same
 lesson: don't retry curl/Alembic against a Drive link, go straight to `gws`.
 assertion changes back through @architect even when the edit looks obviously benign.
+
+## Venue Prose Residue — Defect Class & Checker Conformance (2026-08-12)
+
+**Four transferable lessons from a contract that went green twice before catching the real bugs:**
+
+1. **Name-anchored sweeps miss characteristic-describing prose.** A complete find-and-replace on "CTICC" / "Cape Town International Convention" landed, but prose describing physical characteristics ("modern convention centre", "parking garages", "MyCiTi bus") survived intact — it never *named* the venue, only described features true of the old one and false for the new. **Sweep instruction**: when rewriting venue-dependent content, search for what content *asserts* about the location, not just what it *names* — geography, transport routes, nearby landmarks, drive times, etc. A name-only denylist is structurally incomplete. Content-modeling rule 3 in action.
+
+2. **A checker that under-implements its own documented spec turns a green gate into false assurance.** v1's golden file documented four denied phrases; the checker implemented two. The gate went green; the golden-source JSON kept carrying deprecated Cape Town attractions in its field values — the checker never saw what it claimed to catch. **Verification rule**: new assertion types should include a meta-check (A22, `check_denylist_conformance.py`) proving the implementation matches the spec. If a future edit adds to one without the other, the gate fails rather than silently diverging.
+
+3. **Fixing stale content is itself a moment of high risk for inventing more.** Round 1's fix for one FAQ entry introduced a new unsourced claim ("there is no scheduled public transport to the airfield") — rule 5 violation, adding fabrication while removing it. **Guard**: use a checker that validates the *shape* of claims (a confidence-level check: no certain assertions about unknowns, only honesty or silence) rather than just fixing specific text. Rewording an invented claim different ways can slip past a text-based ban; banning the pattern catches it regardless of wording.
+
+4. **A negative control protecting something for an unwritten reason blocks legitimate correction.** v1's A13 froze the entire `nationalShowVenuePatch.venue` object as "historical," protecting both identity fields (correct — the research targeted CTICC) and descriptive prose (wrong — prose must reflect current venue or empty). The fix: explicit ruling separating identity (frozen, owned by another contract) from prose (in-scope, must be fixed). Documented in README, enforced by complementary assertions (one protects identity, the other requires prose to change).
+
+## Backlog: Known Open Items From Venue Work
+
+Two stale items, deliberately deferred:
+
+- `contracts/golden/f4-seed-page-singletons/nationalShow.golden.json` still pins CTICC as expected output of `seedNationalShow()` — the seed script changed but this golden didn't. Owned by `contracts/cms-loop-f3-national-show.yaml`. Self-detecting on re-run; marked as stale until then.
+
+- Historical golden files (`cticc-research.golden.md`, `venue-single-source.golden.md`, `show-identity-wiring.golden.md`, `assertion-discrimination.golden.md`) from the old research phase remain intact as dated research records. Worth a human decision: carry a "superseded" banner, or archive them?
