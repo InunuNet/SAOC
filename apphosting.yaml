@@ -76,3 +76,23 @@ env:
     value: "https://saoc-prod--saoc-webapp.europe-west4.hosted.app"
     availability:
       - RUNTIME
+  # PayFast SANDBOX credentials. Without these the deployed checkout route returns
+  # "Payment gateway is not configured" and no purchase can be tested at all — the state
+  # this backend was in until 2026-08-13. These are the council's own sandbox account
+  # values, not PayFast's public 10000100/46f0cd694581a test pair, so they are held in
+  # Secret Manager rather than inlined here. RUNTIME only: the signature is computed per
+  # request, and a BUILD entry would bake credentials into the bundle.
+  # Going live means adding the LIVE equivalents alongside these and switching
+  # lib/payfast.ts off the sandbox host — do not repurpose these three variables for it.
+  - variable: PAYFAST_SANDBOX_MERCHANT_ID
+    secret: PAYFAST_SANDBOX_MERCHANT_ID
+    availability:
+      - RUNTIME
+  - variable: PAYFAST_SANDBOX_MERCHANT_KEY
+    secret: PAYFAST_SANDBOX_MERCHANT_KEY
+    availability:
+      - RUNTIME
+  - variable: PAYFAST_SANDBOX_PASSPHRASE
+    secret: PAYFAST_SANDBOX_PASSPHRASE
+    availability:
+      - RUNTIME
