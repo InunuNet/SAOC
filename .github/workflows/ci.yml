@@ -13,9 +13,29 @@ jobs:
     env:
       NEXT_TELEMETRY_DISABLED: 1
       TURBO_TELEMETRY_DISABLED: 1
+      # Must mirror apphosting.yaml's BUILD-availability variables — no more, no less.
+      # If CI has credentials the App Hosting builder lacks, a green CI says nothing
+      # about whether the deploy will succeed. That is not hypothetical: /tickets
+      # prerendered against the Firebase Admin SDK (RUNTIME-only creds) and broke every
+      # deploy from early August to 2026-08-13 while CI stayed green throughout.
       NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
-      NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
-      SANITY_API_READ_TOKEN: ${{ secrets.SANITY_API_READ_TOKEN }}
+      # A literal, not a secret: the dataset name is public and is already plaintext in
+      # apphosting.yaml. It was previously read from a secret that had never been created,
+      # so it resolved to "" — and `dataset ?? 'production'` does NOT fall back on an empty
+      # string, so every sanityFetch in CI threw, salesOpen resolved false, and the admin
+      # call behind `if (salesOpen)` was never reached. CI was too broken to see the bug.
+      NEXT_PUBLIC_SANITY_DATASET: production
+      # The remaining BUILD-availability entries from apphosting.yaml, as literals for the
+      # same reason: all are NEXT_PUBLIC_* and already plaintext there. Deliberately absent,
+      # because the builder does not get them either: FIREBASE_ADMIN_*, SANITY_API_TOKEN,
+      # SANITY_REVALIDATE_SECRET, SITE_URL and the PAYFAST_* secrets are all RUNTIME-only.
+      # Do not "fix" a CI failure by adding one of those here — that hides a real deploy break.
+      NEXT_PUBLIC_FIREBASE_API_KEY: AIzaSyAfJhvCRX7O5OYTH6CN7WqfGO5DDpnss6Y
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: saoc-webapp.firebaseapp.com
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: saoc-webapp
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: saoc-webapp.firebasestorage.app
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "1003063203247"
+      NEXT_PUBLIC_FIREBASE_APP_ID: "1:1003063203247:web:77f89e8963900274060b5a"
 
     steps:
       - name: Checkout
@@ -27,7 +47,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Match apphosting.yaml's runConfig.runtime (nodejs22). CI previously ran 20,
+          # so it exercised a different Node than the builder and the deployed server.
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
