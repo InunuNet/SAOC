@@ -2,6 +2,10 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
+  // Local dev is reached at https://dev.saoc.co.za (see scripts/install-dev-domain.sh and
+  // the `dev:secure` script). Without this, Next refuses that origin's dev requests because
+  // it is not localhost. Dev-only — it has no effect on a production build.
+  allowedDevOrigins: ['dev.saoc.co.za'],
   images: {
     remotePatterns: [
       {

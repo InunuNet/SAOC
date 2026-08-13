@@ -17,7 +17,8 @@
     "seed": "tsx scripts/seed-sanity.ts",
     "seed:exhibitor": "tsx scripts/seed-show-exhibitor-info.ts",
     "seed:visitor": "tsx scripts/seed-show-visitor-info.ts",
-    "refresh-llms": "tsx scripts/refresh-llms.ts"
+    "refresh-llms": "tsx scripts/refresh-llms.ts",
+    "dev:secure": "next dev --port 3333 --experimental-https --experimental-https-key .certs/dev.saoc.co.za+2-key.pem --experimental-https-cert .certs/dev.saoc.co.za+2.pem"
   },
   "dependencies": {
     "@portabletext/react": "^6.2.0",
