@@ -738,3 +738,20 @@ passwords. Brad met Lee-Ann on Teams the same morning; no status email is owed t
 - [ ] **[venue-prose-residue, KNOWN-OPEN] Historical golden files from old CTICC research phase.** `contracts/golden/show-visitor-info/{cticc-research.golden.md, venue-single-source.golden.md, show-identity-wiring.golden.md, assertion-discrimination.golden.md}` are preserved as dated research records of what was researched and when for the old venue. Deliberate preservation under content-modeling rule 6 (don't corrupt real history with careless global replace). Worth a human decision: mark with a "superseded" banner to clarify they are historical, or archive them entirely? Not a defect; clearing decision is optional.
 
 - [ ] **[venue-prose-residue, needs second pair of eyes] Review remaining scope exclusions in the venue-prose-residue checkers.** @architect audited the checkers' scope exclusions during this contract and found one bad attribution: the golden's identity fields (e.g. `showFaq-getting-there-3`'s copy) were claimed as "owned by `contract-venue-seed-truth`," but that was never true — only this contract's own A13 actually protects them. That one was caught and corrected; the audit was not exhaustive. Worth a second reviewer walking `contracts/golden/venue-prose-residue/README.md` and the checker scripts' exclusion lists end to end, given this is the exact defect class (imprecise ownership claims narrowing a checker's scope) that let stale CTICC prose survive two earlier green gates.
+
+## Local dev URL — https://dev.saoc.co.za (added 2026-08-13)
+
+`scripts/install-dev-domain.sh` gives the local dev server a permanent hostname.
+**Brad must run it once from Terminal.app** (`cd ~/ai/SAOC && sudo bash scripts/install-dev-domain.sh`)
+— sudo cannot prompt for a password in the agent shell, so no agent can complete this step.
+Until it is run, the working URL is `https://dev.saoc.co.za:3333` (hosts entry + cert are
+already in place); after it is run, the bare `https://dev.saoc.co.za` works and persists
+across reboots. Reverse with `--uninstall`.
+
+Start the server with `pnpm dev:secure` (NOT `pnpm dev`, which is HTTP on :3002 and will
+fail in Chrome — Chrome auto-upgrades .co.za to https and an HTTP server returns
+ERR_SSL_PROTOCOL_ERROR).
+
+**Never drive a PayFast test from the local server.** `SITE_URL` is unset locally and falls
+back to `https://saoc.co.za`, the old Joomla site, so the ITN would be delivered there and
+the ticket would sit `reserved` forever. Use the deployed host for payment testing.
