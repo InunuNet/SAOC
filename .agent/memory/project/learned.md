@@ -1,3 +1,27 @@
+## Secret Corruption — Defect Class & Verification Practice (2026-08-12)
+
+Three separate secret corruption incidents across 16 weeks (F2 in July, F3 incidents in August) revealed
+a shared defect class: **secrets extracted via pipelines that silently decorate the value (dotenv banner,
+trailing whitespace, stray characters) with no post-write verification to catch the corruption before it
+reaches production.** The failures look like auth errors, gateway misconfigurations, or hung transactions —
+everything except the actual problem, which is in the stored bytes.
+
+**Transferable lessons:**
+- A green deploy and healthy pages prove nothing about Admin SDK writes — investigate 500s on mutating
+  routes specifically, not just the general site health.
+- Secret values must be verified by bytes (digest + length comparison, never by printing) immediately
+  after writing to Secret Manager, before any rollout.
+- App Hosting resolves secrets at Cloud Run revision creation time, so a rollout is mandatory after any
+  secret change — the value sits unused in Secret Manager until a new revision boots.
+- `.env.local` itself can be the corruption source (trailing tabs, stray chars) — verify the source line
+  with `od` or `xxd` before extracting.
+- Always use `printf '%s' | <tool> --data-file=-` for secret writes, never `echo` (which appends `\n`)
+  and never anything that routes through `dotenv` (its stdout banner is a documented corruptor on this
+  project).
+
+**Documentation:** `docs/secret-corruption-incidents.md` (full incident record + verification practice
+proposal as a candidate contract).
+
 ## Hooks & Gates
 
 - GitHub Issue #1274 (bug: require_docs.sh hook substring-matches any command containing gate keyword): This issue has been fixed. The `execution/hooks/require_docs.sh` script's `case` statement was updated from `"python3 "*"contract.py"*"gate"*)` to `"contract.py gate "*|"contract.py gate")` to enforce strict prefix matching. This ensures the hook only triggers for explicit `contract.py gate` commands. This fix has been implemented and verified by `test_require_docs_fix.sh`.

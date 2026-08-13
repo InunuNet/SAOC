@@ -1,43 +1,55 @@
 # Reboot Context
-_Generated: 2026-08-12T20:35Z_
+_Generated: 2026-08-13T00:00Z_
 
-## What happened last session (evening, commit 8bfe0f0)
+## What happened in this session (2026-08-12, evening through night)
 
-Full remediation chain for CTICC venue residue that the earlier venue-name sweep (`427fbaf`)
-missed. Two new contracts, both gate-green and independently verified by the orchestrator (not
-just self-reported):
+### Venue Residue Remediation (commit 8bfe0f0)
+Full remediation chain for CTICC residue that the earlier sweep (`427fbaf`) missed. Two new contracts:
 
-- **`contract-venue-seed-truth.yaml`** (16 assertions) — purged "Cape Town International
-  Convention Centre" from `lib/data/shows.ts`, `lib/data/events.ts`,
-  `scripts/seed-page-singletons.ts`, `scripts/seed-show-visitor-info.ts`. Seeds are
-  `createIfNotExists`, so the stale copy was inert today, but any future rebuild-from-empty would
-  have regressed the venue.
-- **`contract-venue-prose-residue.yaml`** (31 assertions) — corrected three live Sanity FAQ
-  documents (`showFaq-accessibility-1`, `showFaq-getting-there-1`, `showFaq-getting-there-2`)
-  plus `showVisitorInfo.publicTransport`, the seed source, and the `show-visitor-info` golden
-  JSON. These carried prose that *described* the old venue's characteristics ("modern convention
-  centre", "parking garages") without naming it, so the name-only sweep missed them.
-- New doc: `docs/venue-prose-residue.md`. Updated: `docs/show-visitor-info.md`,
-  `docs/show-visitor-info-for-editors.md`.
-- Five orchestration-discipline lessons from this chain (uncommitted-work risk, self-inflicted
-  misdiagnosis, surgical-edit discipline, brief-imprecision propagation, tool-vs-spec
-  conformance) are in `learned.md` under "Orchestration Discipline — Venue Residue Remediation".
+- **`contract-venue-seed-truth.yaml`** (16 assertions) — purged CTICC from `lib/data/shows.ts`,
+  `lib/data/events.ts`, `scripts/seed-page-singletons.ts`, `scripts/seed-show-visitor-info.ts`.
+- **`contract-venue-prose-residue.yaml`** (31 assertions) — corrected three Sanity FAQs + seed source +
+  golden JSON. Carried venue-describing prose ("modern convention centre", "parking garages") without
+  naming it, so name-only sweep missed them.
+- New doc: `docs/venue-prose-residue.md`. Updated: `docs/show-visitor-info.md`, helpers.
+- Five orchestration lessons logged in `learned.md` (uncommitted-work risk, self-inflicted misdiagnosis,
+  surgical-edit discipline, brief-imprecision, tool-vs-spec conformance).
 
-## Active mission — `sandbox-ticket-proof`
+### Secret Corruption Incidents (2026-08-12, incident root cause found and documented)
+Three separate incidents in 16 weeks (F2 July, F3 incidents Aug) share one defect class: values
+extracted via pipelines that silently decorate them (dotenv banner, trailing whitespace, stray chars)
+with no verification after writing. All reached production looking like different problems (auth
+failures, gateway misconfigurations, hung transactions).
 
-Status: `pending`, not yet started. Resume point is **F1** (deploy current `main`).
-`.agent/memory/project/missions/2026-08-12-sandbox-ticket-proof.md` has full detail; resume with
-`python3 execution/mission.py resume`.
+- **F2 (July):** `SANITY_REVALIDATE_SECRET` + `SANITY_API_TOKEN` stored with 80–95 bytes of dotenv
+  banner prose prepended.
+- **F3 parallel (Aug 12):** `PAYFAST_SANDBOX_MERCHANT_KEY` stored with trailing tab (14 bytes, not 13).
+- **F3 main (Aug 12):** `FIREBASE_ADMIN_CLIENT_EMAIL` stored with stray `Y\n` (61 bytes, not 59) —
+  corrupted since 2026-06-23, never surfaced until `/api/contact` and `/api/tickets` went live today.
 
-**Verified stale as of this wrap-up (commit `8bfe0f0`, checked live 2026-08-12T18:28Z):**
-`https://saoc-prod--saoc-webapp.europe-west4.hosted.app/` still serves the build from `01dd63f`
-(2026-07-30) — `/tickets` returns a live 404 in production while returning 200 locally. Every
-commit since 2026-08-01, including today's venue corrections, is undeployed. F1's eventual push
-will ship the venue-residue fix alongside everything else queued since 2026-08-01.
+**Fixes:** Re-write all three using `printf '%s' | --data-file=-`, verify by SHA-256 + byte length,
+force rollout. **Standing recommendation:** post-write verification as a contract assertion.
 
-F5 (door check-in) remains blocked on Firebase Auth (Email/Password) not being enabled on
-`saoc-webapp` — no account can exist in any environment until that changes. This is Brad's to
-unblock, logged in `needs-human.md`.
+**Documentation:** `docs/secret-corruption-incidents.md` (root cause, ruled-out hypotheses, verification
+practice, mandatory-rollout-on-secret-change fact). Lessons added to `learned.md`.
+
+### Mission `sandbox-ticket-proof` — M1 Complete, M2 Partial (2026-08-12)
+
+Status: **active**, partially complete. Resume with `python3 execution/mission.py resume`.
+
+- **F1 DONE:** Deploy pushed; commit `4212e88` now serving. `/tickets`, `/national-show/faq`,
+  `/national-show/plan-your-visit` all 200. Venue corrections live (Stellenbosch Flying Club, zero
+  CTICC refs).
+- **F2 DONE:** `SITE_URL` verified as it resolves at runtime — checkout returns correct PayFast URLs
+  built on `https://saoc-prod--saoc-webapp.europe-west4.hosted.app`.
+- **F3 PARTIAL:** Reservation works — `POST /api/tickets/checkout` returns 201 with valid payload,
+  booking ref `SAOC-2027-C584G82Z7F6D`, sandbox process URL. Still unproven: PayFast sandbox UI
+  payment completion, Firestore `reserved` → `paid` transition, confirmation page render. Note: two
+  test reservations + two contact submissions exist in Firestore from diagnostics — marked for cleanup.
+- **F4/F5 unchanged:** F5 still blocked on Firebase Auth (Email/Password) enablement.
+
+**Also resolved in deploy:** CI now matches App Hosting builder's BUILD-availability variables exactly
+(was too broken to catch failures — dataset secret resolved empty, token secret missing, Node 20 vs 22).
 
 ## Do not touch
 
@@ -49,10 +61,10 @@ Brad)".
 ## Live blockers (verify current state against `backlog.md` rather than trusting this list)
 
 - **Firebase Auth (Email/Password) not enabled on `saoc-webapp`** — blocks `/admin` and the door
-  scanner in every environment. F5 of the active mission is blocked on this.
-- **Deployed site stale at `01dd63f`** (2026-07-30) — reconfirmed live 2026-08-12T18:28Z. F1 of
-  the active mission.
+  scanner in every environment. F5 of the active mission is blocked on this. Brad to unblock.
 - **Real council ticket prices + venue capacity unconfirmed** — top revenue blocker, also a hard
-  gate on going live.
+  gate on going live. Content input required from the committee.
 - **No Resend account** — confirmation emails silently do not send (contact form + ticket
   purchase both degrade silently by design, not a new bug).
+- **Sandbox merchant key now secured** (fixed trailing-tab corruption today); merchant key in
+  `.env.local` also trimmed. PayFast checkout now works on production sandbox.

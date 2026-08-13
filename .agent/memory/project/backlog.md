@@ -42,6 +42,21 @@ Old saoc.co.za (legacy cPanel at i-svr.net; access held by "Nico"; committee/Lee
 - [ ] Re-pull mail from legacy host ONE more time immediately before DNS cutover — today's restore is a snapshot; catches mail received 2026-07-20 → cutover day.
 - [ ] Real DNS/domain cutover saoc.co.za → new VPS (NOT done; legacy i-svr.net site still live/public).
 - [ ] Decide whether stale `public_html_1`/`public_html_2` are worth preserving.
+- [ ] **[P2, candidate contract, NEW 2026-08-12] Secret verification guard** — after any
+  `firebase apphosting:secrets:set`, read the secret back and assert: (a) SHA-256 digest matches the
+  intended value, (b) byte length matches exactly, (c) no leading/trailing whitespace. Three separate
+  incidents of secret-payload corruption in 16 weeks (dotenv banner, trailing tab, stray character)
+  went undetected until they reached production because no post-write verification ran. **Note:** `gcloud`
+  is NOT installed in the typical project environment and is NOT needed — the Firebase CLI's cached
+  OAuth token in `~/.config/configstore/firebase-tools.json` has `cloud-platform` scope and works
+  against Secret Manager, IAM, Firestore, Service Usage, and Cloud Logging REST APIs. Use the Firebase
+  CLI or REST directly. Details: `docs/secret-corruption-incidents.md`.
+
+- [ ] **[P3, cleanup, NEW 2026-08-12] Remove four test documents from Firestore** — added during
+  PayFast diagnostic probes today: two `tickets` collection documents (booking refs
+  `SAOC-2027-JG6Q598FG0QD` and `SAOC-2027-C584G82Z7F6D`), and two `contactSubmissions` diagnostic
+  records. These are test data only; remove before any UAT involving real reservations or contact forms.
+
 - [ ] **[P1, NEW 2026-08-12] Go-live: switch PayFast from sandbox to live credentials.** Unblocked by
   FICA completion. The code is ready — the checkout, ITN webhook, capacity transaction, idempotency,
   reservation TTL and 60-bit booking refs are all gate-green (`contracts/contract-ticketing-hardening.yaml`

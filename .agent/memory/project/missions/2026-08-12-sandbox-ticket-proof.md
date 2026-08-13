@@ -5,9 +5,9 @@ goal: Prove the existing single-tier ticket flow end to end against the PayFast 
   on a deployed environment, then pause for council feedback before any multi-tier
   work
 created_at: '2026-08-12T16:31:04.626500+00:00'
-started_at: null
-last_active_at: null
-status: pending
+started_at: '2026-08-12T16:31:04.626500+00:00'
+last_active_at: '2026-08-12T20:35:00+00:00'
+status: in_progress
 cost_estimate:
   features: 5
   milestones: 3
@@ -19,36 +19,43 @@ last_checkpoint:
 features:
 - id: F1
   title: Deploy current main so the ticket flow exists in a deployed environment
-  inline_brief: The deployed site is stale — `/tickets`, `/national-show/faq` and
-    `/national-show/plan-your-visit` all 404 on saoc-prod--saoc-webapp.europe-west4.hosted.app
-    while returning 200 locally. Last confirmed deploy was `01dd63f` on 2026-07-30;
-    every August commit is undeployed. Re-confirmed live 2026-08-12T18:28Z after commit
-    8bfe0f0 (venue-residue purge) — still 404, still stale. Nothing else in this mission
-    can be tested until this lands. F1's eventual deploy will also ship the venue
-    corrections from 427fbaf/8bfe0f0 alongside everything queued since 2026-08-01.
-    Push-to-main autodeploy IS armed (proven by assertion A10 in the F2 deploy work),
-    so this may need nothing more than a push — verify a NEW build id and commit sha
-    actually serve traffic rather than assuming.
-  status: pending
+  inline_brief: DONE. Deploy pushed 2026-08-12T20:35Z; verified live within 2 minutes.
+    Commit `4212e88` now serving; `/tickets`, `/national-show/faq`, `/national-show/plan-your-visit`
+    all return 200. Venue corrections from 427fbaf/8bfe0f0 now live (Stellenbosch Flying
+    Club showing in 4 places, zero CTICC-era references).
+  status: done
   milestone: M1
 - id: F2
   title: Confirm SITE_URL resolves to a publicly reachable host at runtime
-  inline_brief: The ITN callback is delivered to whatever `SITE_URL` names. It is declared
-    in `apphosting.yaml` as the hosted.app URL, which is public and sufficient for
-    sandbox testing — beta.saoc.co.za is NOT required for this mission. Verify the
-    value that actually resolves at runtime, not the value in the yaml; this project
-    has a documented incident where a secret resolved to a corrupted payload and every
-    outcome looked identical.
-  status: pending
+  inline_brief: DONE. The deployed checkout returns `return_url`, `cancel_url`, and
+    `notify_url` all correctly built on `https://saoc-prod--saoc-webapp.europe-west4.hosted.app`.
+    Verified by captured PayFast payload. ITN callbacks are delivered to this URL
+    (publicly reachable, sufficient for sandbox).
+  status: done
   milestone: M1
 - id: F3
   title: Complete a real sandbox purchase end to end
-  inline_brief: Buy one ticket through the deployed UI against sandbox.payfast.co.za
-    — checkout → PayFast → return → confirmation page. Confirm the Firestore ticket
-    document transitions `reserved` → `paid`, the booking reference is 60-bit random
-    (not sequential), and the confirmation page renders the real reference. Assert
-    over real HTTP round-trips, never source greps — this is money-relevant.
-  status: pending
+  inline_brief: |-
+    PARTIAL. The reservation half works: POST /api/tickets/checkout returns 201 with a
+    valid PayFast payload, booking ref format SAOC-2027-C584G82Z7F6D, amount 150.00,
+    sandbox process URL, and all three callback URLs correctly built on SITE_URL.
+
+    Still unproven, and required to complete F3 - completing payment through the PayFast
+    sandbox UI, the Firestore reserved -> paid transition on callback, and the
+    confirmation page rendering the real booking ref.
+
+    The merchant key IS now correct (a trailing tab was stripped and rolled out ~07:35 on
+    2026-08-13; see docs/secret-corruption-incidents.md) - do not repeat the earlier note
+    claiming the real key is still needed.
+
+    IMPORTANT when testing: PayFast's sandbox 404s at /eng/process/finish/<uuid> even when
+    the payment succeeded and the callback fired. Judge success from the ITN entry in Cloud
+    Logging and the Firestore ticket status, never from PayFast's return page.
+
+    Test data to clean up before UAT: 4 ticket documents (SAOC-2027-E8WND2SM4HTD,
+    SAOC-2027-JG6Q598FG0QD, SAOC-2027-5H63FBAE8AHP, SAOC-2027-C584G82Z7F6D), all still
+    'reserved', plus 2 contactSubmissions diagnostic documents.
+  status: in_progress
   milestone: M2
 - id: F4
   title: Verify the ITN webhook signature path against a real sandbox callback
@@ -56,7 +63,25 @@ features:
     — do NOT modify it; changing it requires the documented re-pin ceremony in `contracts/golden/ticketing-hardening/itn-write-guard.golden.md`.
     Confirm a genuine PayFast sandbox ITN is received, passes signature and source-IP
     validation, and marks the ticket paid. Also confirm a tampered/invalid ITN is rejected
-    — a webhook that accepts everything passes the happy path too.'
+    — a webhook that accepts everything passes the happy path too.
+
+
+    PROGRESS 2026-08-13 — the REJECT half is PROVEN, unexpectedly and for real. Two genuine
+    PayFast sandbox ITNs arrived at the deployed endpoint (Cloud Logging, 07:24:51 and
+    07:30:10) for m_payment_id SAOC-2027-E8WND2SM4HTD and SAOC-2027-5H63FBAE8AHP, and both
+    were rejected with "[tickets/itn] Signature mismatch — rejecting ITN". So: PayFast can
+    reach the endpoint, the route runs, signature validation executes, and an ITN whose
+    signature does not match is refused rather than blindly accepted. That is the half most
+    webhooks get wrong, and it was proven by accident rather than by a crafted tamper test.
+
+    The mismatch cause was OUR bug, not PayFast''s: PAYFAST_SANDBOX_MERCHANT_KEY carried a
+    trailing tab (14 bytes, not 13) from .env.local into Secret Manager, so the signed
+    payload never matched. Fixed and rolled out ~07:35. See docs/secret-corruption-incidents.md.
+
+    STILL UNPROVEN: the ACCEPT path — a valid ITN passing signature AND source-IP validation
+    and transitioning the ticket reserved -> paid. Retry a purchase now that the key is clean.
+    Note the authoritative signal is the ITN log entry, NOT PayFast''s return page: their
+    sandbox 404s at /eng/process/finish/<uuid> even when the payment and callback succeed.'
   status: pending
   milestone: M2
 - id: F5
@@ -77,13 +102,13 @@ milestones:
   features:
   - F1
   - F2
-  status: pending
+  status: done
 - id: M2
   title: A real sandbox payment completes and the webhook is trustworthy
   features:
   - F3
   - F4
-  status: pending
+  status: in_progress
 - id: M3
   title: Admission verified, and every remaining gap named honestly
   features:
@@ -135,6 +160,26 @@ sandbox purchase form. Ticket reachability (header, home, `/national-show`) ship
   as a bug during F3.
 - **Real prices and venue capacity** are still unconfirmed by the council — the single most
   revenue-blocking open item, and a hard gate on going live (not on this mission).
+
+## Progress (2026-08-12)
+
+**M1 Complete** — Deployment succeeded; `/tickets`, `/national-show/faq`, `/national-show/plan-your-visit`
+now return 200 on production. Venue corrections (Stellenbosch Flying Club) confirmed live. Sandbox merchant key
+secured in Secret Manager after identifying and fixing a trailing-tab corruption in the earlier write.
+
+**M2 Partial** — The reservation half (checkout → PayFast redirect) works and returns a valid booking
+reference. Remaining: completing a live payment through the PayFast sandbox UI, verifying the Firestore
+`reserved` → `paid` transition on ITN callback, confirming the confirmation page renders the booking ref.
+
+**Known gap:** Two prior test reservations exist in Firestore (`SAOC-2027-JG6Q598FG0QD`, `SAOC-2027-C584G82Z7F6D`)
+and two `contactSubmissions` records — test data from diagnostic probes, marked for cleanup before UAT.
+
+**Also addressed today:** Three separate secret-corruption incidents in 16 weeks, all from the same defect class
+(values decorated by extraction pipelines with no post-write verification). A standing practice recommendation
+and candidate contract assertion are now documented in `docs/secret-corruption-incidents.md`. See `learned.md`
+for the transferable lessons.
+
+**Resume:** Run `python3 execution/mission.py resume` for F3 completion path.
 
 ## Notes
 
