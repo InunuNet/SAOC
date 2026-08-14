@@ -1,8 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-08-14-admin-auth-hardening.md",
+  "mission": ".agent/memory/project/missions/2026-08-14-research-adversarial-audit.md",
   "checkpoint": {
     "milestone": null,
     "feature": null
   },
-  "activated_at": "2026-08-14T13:50:58.661625+00:00"
+  "activated_at": "2026-08-14T16:43:56.813650+00:00"
 }
