@@ -131,3 +131,43 @@ Must be checked before any three-way claim is made.
 "is it common to all?" rule and IS worth keeping in the paper. But the Yoco gap must be closed
 first, and legal characterisation (whether the clause is enforceable against members) is for a
 lawyer, not for us. State the clause and the concern; do not opine on enforceability.
+
+## MERCHANT EVIDENCE + CERTIFICATIONS (agent complete, full file: merchant-evidence.md)
+
+**Review volume is itself the finding.** Hellopeter reviews in 12 months: **Yoco 353, PayFast
+108, Ozow 7.** The paper currently quotes Ozow's 2.1/5 from 7 reviews as a mark against Ozow and
+does not mention PayFast's numbers at all. PayFast is a **barbell: 41.7% 5-star / 51.9% 1-star
+across 108 reviews** — far more evidence of merchant problems than exists for Ozow. Ozow's thin
+sample is UNINFORMATIVE, not reassuring, and must be said that way.
+
+**PayFast — the most corroborated negative pattern of the three.** Funds locked in-account for
+weeks to 5+ months during verification/payout, across 5+ independent named-detail reviews. Also
+one account of ITN failures causing commission charged on cancelled transactions. Positive
+reviews cluster on individual support staff, not on the structural fund-hold issue. This is the
+only case where public merchant experience corroborates a contract clause actually being
+exercised.
+
+**Yoco — highest volume, most positive (64.3% 5-star)**, but a real corroborated pattern of
+sudden account suspension with funds/hardware locked and no warning (2 detailed Hellopeter
+accounts + a Trustpilot snippet, one invoking CPA ss. 40/41/48/54). Also a non-profit
+donor-refund-in-error case — directly relevant to SAOC.
+
+**Ozow — too little evidence to characterise.** One usable merchant account (payout ~4x slower
+than the promised 24hr window, unresponsive support). No dedicated Ozow Trustpilot business page.
+
+**No public evidence that the long-duration clauses are exercised** — PayFast's 540-day hold or
+dormancy termination, Ozow's 180-day reserve or 9-month dormancy, Yoco's 90-day refund cap. Weak
+evidence in BOTH directions; explicitly not reassurance.
+
+**CERTIFICATIONS — NONE VERIFIED. All CLAIMED-ONLY.**
+- Ozow: claims "PCI DSS Level 1 Certified and ISO 27001 Certified", unqualified, in its own T&Cs.
+- PayFast: claims PCI DSS Level 1 + ISO 27001 **"(where applicable)"** — a hedge Ozow does not use.
+- Yoco: only generic "PCI compliance", no level stated, and **no ISO 27001 claim found at all**.
+  This CONTRADICTS the paper's line that all providers claim ISO 27001 — verify before printing.
+
+Registries were unreachable, not failed: Visa Global Registry is a JS search (returns
+"Searching..." with 0 rows, or dumps all 9,023 records ignoring the filter); Mastercard SDP is
+PDF-only and additionally WAF-blocked (Akamai Access Denied); IAF CertSearch is a JS SPA
+returning only a marketing stub. **Add to the Alembic bug list** — as is the finding that
+individual Hellopeter review deep-links are ~50% low-confidence through Alembic while aggregate
+listing pages are consistently high.
