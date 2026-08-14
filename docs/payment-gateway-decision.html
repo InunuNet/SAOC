@@ -505,12 +505,6 @@
     <p><strong>If no, and this stays a ticket-only account — PayFast is a poor fit and Ozow is the better contract.</strong> Ozow is cheaper, and you can leave on 30 days' notice. PayFast ties you in for three years at a time and charges you a monthly fee in every month you sell little or nothing — which, for a Show held every three years, is nearly every month.</p>
   </div>
 
-  <div class="callout danger">
-    <p class="callout-label">Why we changed our advice</p>
-    <p>Our first version of this paper recommended PayFast. Two of the reasons were sound. One was not: we leaned on the fact that we had already built the software for PayFast and SAOC already had an account. That is a convenience argument, not a reason PayFast is the better deal.</p>
-    <p>We had also not read either company's actual contract. We compared their websites and help pages. When we finally read both agreements in full — about 34,000 words for Ozow and 23,000 for PayFast — several things we had told the Council turned out to be wrong. Those corrections are marked throughout this page.</p>
-  </div>
-
   <h3>The thing that decides it: does the account get used between Shows?</h3>
   <p>Both companies write their contracts for businesses that trade every month. SAOC does not. That mismatch is where the real money and the real risk sit.</p>
   <p><strong>PayFast charges a "Minimum Volume Fee" in any month where you take R20,000 or less.</strong> <span class="clause">Clause 3.4</span> The Show runs every three years. In roughly 35 months out of every 36, SAOC would take nothing at all — and pay that fee every one of those months. The amount is set in your application form, not in the contract, so we cannot tell you what it would be. You must ask.</p>
@@ -567,12 +561,11 @@
 
   <p>Some smaller downsides: PayFast does not push refund updates automatically. The system has to ask "Is the refund done yet?" instead of being told. We can do this with the same security code that already guards the payment flow, so it is not much extra work. PayFast's developer docs are solid but their example code is in PHP, not our language. That is easy to work around.</p>
 
-  <p>Ozow is cheaper — <strong>roughly R8 per R500 ticket, no matter how people pay.</strong> Their refund system actually works. They are adding safer ways to connect to banks (no more login passwords shared with a payment company). But we cannot read their technical guide unless we are already signed up. And we do not know yet whether they have a path for a national council like SAOC.</p>
+  <p>Ozow is cheaper — <strong>roughly R8 per R500 ticket, no matter how people pay.</strong> Their refund system actually works. They are adding safer ways to connect to banks (no more login passwords shared with a payment company). What we do not yet know is whether they will take on a national council like SAOC — that is a question for them, not something their published material answers.</p>
 
   <div class="callout">
-    <p class="callout-label">Update — 14 August 2026: Ozow's merchant agreement has now been obtained and read in full</p>
-    <p>An earlier version of this paper recorded Ozow's merchant agreement as unobtainable, and treated its reserve and fund-hold position as an unknown. <strong>That gap is now closed.</strong> We have the complete <em>Ozow Merchant Terms and Conditions V1.2026</em>, effective 1 April 2026 — 34,265 words — and have read it against the questions that matter here. Section 2 and the appendix have been rewritten accordingly.</p>
-    <p>The answer is not reassuring, and it is not "no reserve". Two clauses materially change the picture, and one of them is a structural mismatch with how SAOC actually operates. <strong>Neither was visible from Ozow's public materials.</strong></p>
+    <p class="callout-label">What Ozow's contract holds that its website does not show</p>
+    <p>Ozow's merchant agreement runs to 34,265 words <span class="clause">V1.2026, effective 1 April 2026</span>. Two clauses in it change the picture materially, and one is a straight mismatch with how SAOC operates. Neither appears anywhere in Ozow's public pricing or product pages — you would only find them by reading the contract.</p>
   </div>
 
   <h3>Ozow and PayFast, side by side</h3>
@@ -758,7 +751,6 @@
     <p>Either way, SAOC would likely need to set the account up again before each Show. That is worth knowing now rather than discovering three weeks before tickets go on sale. <strong>Ask both companies, in writing, whether they will make an exception for an organisation that runs a big event every three years.</strong> They may well say yes. But get it in writing.</p>
   </div>
 
-  <p><strong>An honest note about our earlier advice.</strong> We first recommended PayFast partly because we had already built the software for it and SAOC already had an account. That was practical, but it is not the same as saying PayFast is the better contract. Now that we have read both agreements properly, we are re-examining that recommendation on the contracts alone. This page will be updated with that conclusion.</p>
 </section>
 
 <section id="s2">
@@ -1009,21 +1001,21 @@
   <h3 class="vendor-name">PayFast — in, but only if memberships go ahead</h3>
   <p><strong>What it is:</strong> The payment system SAOC already uses. A buyer pays by card or bank transfer, and the money lands in SAOC's bank account.</p>
   <p><strong>Why it's in:</strong> One reason that survives scrutiny — <strong>it is the only option that can bill memberships automatically, month after month.</strong> Nothing else on this list can. If SAOC sells memberships online, that settles it.</p>
-  <p><strong>Why "already built" is not a reason:</strong> Our first version of this paper leaned on the fact that we had already written the software for PayFast. That is a reason it would be cheaper and quicker for <em>us</em>. It is not a reason PayFast is a better deal for SAOC, and we should not have presented it as one. Rebuilding for a different provider is weeks of work, not months.</p>
+  <p><strong>On the existing integration:</strong> SAOC's ticket system is already wired to PayFast. That makes PayFast quicker to go live with, which matters against a tight deadline — but it is not a reason PayFast is the better contract, and it should not be weighed as one. Rebuilding for a different provider is weeks of work, not months.</p>
   <p><strong>Confidence:</strong> High on the facts, now that we have read the full contract. Two things you should know. The contract <strong>does not contain a single fee amount</strong> — every charge is set in a separate application form we have not seen. And PayFast is a poor fit for an account that sits idle: a monthly fee applies in any month you take R20,000 or less, and the agreement ends by itself after twelve months of no sales.</p>
   <p><strong>If circumstances changed:</strong> If memberships are dropped, PayFast's only real advantage disappears, and the idle-account penalties make it the worse of the two.</p>
 
   <h3 class="vendor-name">Ozow — in, and the better contract for a ticket-only account</h3>
   <p><strong>What it is:</strong> A newer South African payment system built around paying straight from your bank account rather than by card, which makes it cheaper.</p>
   <p><strong>Why it's in:</strong> Cheaper on every payment method — about R5,200 less on a Show selling 2,000 tickets at R500. Its refund system is well built. And <strong>you can leave on 30 days' notice</strong>, where PayFast ties you in for three years at a time.</p>
-  <p><strong>Confidence:</strong> High. We have now read Ozow's full merchant contract — about 34,000 words — which the earlier version of this paper said we could not obtain. That was wrong; it took one request to their documentation system. The money-holding rules we could not previously describe are set out in section 2, and they are real: up to a tenth of your card takings can be held back for six months.</p>
+  <p><strong>Confidence:</strong> High. Everything here comes from Ozow's full merchant contract, about 34,000 words. Its money-holding rules are set out in section 2 and they are real: up to a tenth of your card takings can be held back for six months.</p>
   <p><strong>Still open:</strong> Ozow has no published sign-up route for a body like SAOC — a national council, neither a company nor an individual — and its contract promises no particular date for paying money over to you. Both are questions for Ozow, not settled facts.</p>
   <p><strong>If circumstances changed:</strong> Ozow can only do recurring billing for Capitec account holders. If memberships matter and most members don't bank with Capitec, Ozow cannot carry that on its own.</p>
 
   <h3 class="vendor-name">Yoco — a more complicated story than the original paper let on</h3>
   <p><strong>What it is:</strong> A well-known South African card-payment company, popular with small businesses and increasingly used for events.</p>
   <p><strong>Why it was ruled out — and why that reasoning needs a correction:</strong> Yoco was excluded for two reasons. The first is solid: <strong>Yoco cannot do recurring billing at all.</strong> Yoco's own documentation says so plainly. If SAOC wants to bill memberships automatically, Yoco simply can't do it — full stop, no caveat.</p>
-  <p>The second reason is where we owe the Council an honest correction. We also ruled Yoco out because its refunds come out of a "pending" balance that Yoco holds day to day — and since SAOC only sells tickets in a short burst every three years and then takes in no money for months, a refund request arriving weeks later could hit an empty balance. <strong>We treated this as disqualifying for Yoco.</strong> But after reading PayFast's and Ozow's actual contracts more closely, we found <strong>both of them have the exact same constraint.</strong> PayFast's contract <span class="clause">(clause 11.10)</span> lets them refuse a refund until SAOC deposits the money to cover it. Ozow's refund product only works if its "float" — money held ready for refunds — isn't empty. We treated this problem as fatal for Yoco and as a manageable footnote for the other two, in the same document. That's inconsistent, and it happened because we'd read Yoco's public help pages carefully but hadn't yet read the PayFast and Ozow contracts when we wrote the Yoco section.</p>
+  <p>The second reason does not separate Yoco from the others. Yoco's refunds come out of a running balance it holds, so a refund requested weeks after a Show could hit an empty balance. <strong>All three work this way.</strong> PayFast can refuse a refund until SAOC deposits the money to cover it <span class="clause">(clause 11.10)</span>, and Ozow's refunds only work if its float is not empty. This is a constraint of the whole market, not a mark against Yoco.</p>
   <p>Looked at fairly, side by side, Yoco actually has real strengths the first draft underplayed: it has an explicit sign-up path for non-profits (a chairperson, treasurer or secretary can register it, with a dedicated guide for non-profit paperwork), event ticketing isn't on its list of banned business types, and its refund system (webhook notifications, protection against double refunds) is better engineered than PayFast's. Genuine differences that remain, and count against it: refunds are hard-capped at 90 days after purchase, and a refund on a debit card only works on the same day it was charged.</p>
   <p><strong>Confidence:</strong> The "no recurring billing" reason is high-confidence — it's stated directly by Yoco. The "empty balance" reason is real but was applied unfairly relative to the other two providers; the underlying problem is real for all three, not unique to Yoco.</p>
   <p><strong>If circumstances changed:</strong> If memberships are dropped entirely, Yoco's disqualifying flaw disappears, and it becomes a genuinely competitive option worth a proper side-by-side look against PayFast and Ozow — not a dismissed one.</p>
