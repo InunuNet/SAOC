@@ -1,0 +1,374 @@
+<title>Gateway Comparison</title>
+<style>
+  :root {
+    --ground: #faf9f6;
+    --panel: #fff;
+    --line: #e0dcd2;
+    --line-soft: #eeebe3;
+    --ink: #1c1a17;
+    --ink-mid: #55504a;
+    --ink-soft: #868076;
+    --accent: #4f6a4a;
+    --accent-soft: #ecf0e9;
+    --bar: #7a9470;
+    --v: #3f6b3e;
+    --p: #a5701e;
+    --n: #9a938a;
+    --shadow: 0 1px 2px rgba(28,26,23,.05), 0 10px 28px -18px rgba(28,26,23,.28);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #15171a; --panel: #1c1f22; --line: #32373c; --line-soft: #262a2e;
+      --ink: #eceae4; --ink-mid: #b2ada5; --ink-soft: #8a847b;
+      --accent: #9fbd94; --accent-soft: #232a22; --bar: #6f8a66;
+      --v: #8dba8a; --p: #d69b52; --n: #8a847b;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #15171a; --panel: #1c1f22; --line: #32373c; --line-soft: #262a2e;
+    --ink: #eceae4; --ink-mid: #b2ada5; --ink-soft: #8a847b;
+    --accent: #9fbd94; --accent-soft: #232a22; --bar: #6f8a66;
+    --v: #8dba8a; --p: #d69b52; --n: #8a847b;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px -18px rgba(0,0,0,.7);
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground); color: var(--ink); margin: 0; padding: 0 20px 90px;
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+  h1,h2,h3 { font-family: ui-serif, Georgia, "Times New Roman", serif; font-weight: 600; margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); letter-spacing: -.015em; }
+  h2 { font-size: 1.25rem; margin-bottom: .4rem; }
+  p { margin: 0 0 .8rem; max-width: 70ch; color: var(--ink-mid); }
+  .eyebrow { font-size: .71rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; margin: 0 0 .5rem; }
+  header { padding: 54px 0 26px; border-bottom: 1px solid var(--line); margin-bottom: 30px; }
+  section { margin-bottom: 42px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; box-shadow: var(--shadow); }
+
+  .results { display: flex; flex-direction: column; gap: 9px; }
+  .row { display: grid; grid-template-columns: 24px 132px 1fr 58px; align-items: center; gap: 12px; padding: 9px 11px; border-radius: 8px; border: 1px solid transparent; }
+  .row.lead { background: var(--accent-soft); border-color: var(--line); }
+  .rank { font-variant-numeric: tabular-nums; color: var(--ink-soft); font-size: .84rem; text-align: right; }
+  .who { font-weight: 600; }
+  .who small { display: block; font-weight: 400; font-size: .73rem; color: var(--ink-soft); }
+  .track { background: var(--line-soft); border-radius: 4px; height: 20px; overflow: hidden; }
+  .fill { background: var(--bar); height: 100%; width: 0; transition: width .3s cubic-bezier(.4,0,.2,1); }
+  .row.lead .fill { background: var(--accent); }
+  .score { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+
+  .crit { border-top: 1px solid var(--line-soft); padding: 15px 0; }
+  .crit:first-child { border-top: 0; }
+  .crit-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .crit-head label { font-weight: 600; font-size: .95rem; cursor: pointer; flex: 1 1 auto; }
+  .wval { font-variant-numeric: tabular-nums; font-size: .78rem; color: var(--ink-soft); white-space: nowrap; }
+  .crit .why { font-size: .84rem; color: var(--ink-soft); margin: .25rem 0 .55rem; }
+  .tag { font-size: .64rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft); white-space: nowrap; }
+  .tag.mine { color: var(--p); border-color: var(--p); }
+  input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
+  input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .off { opacity: .42; }
+
+  .scroller { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; min-width: 860px; font-size: .84rem; }
+  th, td { padding: 9px 11px; text-align: left; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  thead th { background: var(--ground); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+  tbody th { font-weight: 600; font-size: .84rem; min-width: 150px; }
+  td b { font-variant-numeric: tabular-nums; }
+  td span.f { display: block; font-size: .78rem; color: var(--ink-soft); margin-top: 2px; }
+  .st { font-size: .62rem; font-weight: 700; letter-spacing: .05em; }
+  .st.v { color: var(--v); } .st.p { color: var(--p); } .st.n { color: var(--n); }
+
+  .note { border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; margin: 16px 0; }
+  .note p { font-size: .9rem; margin-bottom: .35rem; }
+  .note strong { color: var(--ink); }
+  ul { padding-left: 1.15rem; color: var(--ink-mid); } li { margin-bottom: .4rem; max-width: 70ch; }
+  footer { border-top: 1px solid var(--line); padding-top: 18px; font-size: .8rem; color: var(--ink-soft); }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85em; background: var(--line-soft); padding: 1px 5px; border-radius: 4px; }
+  @media (max-width: 620px) { .row { grid-template-columns: 22px 1fr 52px; } .row .track { grid-column: 1/-1; } }
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">South African Orchid Council &middot; five payment gateways</p>
+  <h1>You decide what matters. This does the arithmetic.</h1>
+  <p style="font-size:1.05rem;margin-top:.9rem">Every provider was read to the same fifteen headings, from the contract each one
+  actually makes you accept at sign-up &mdash; not from its marketing. Set the importance of each
+  factor below and the ranking follows. There is no recommended setting and no default answer
+  hidden in here.</p>
+</header>
+
+<section>
+  <h2>Ranking</h2>
+  <p>Out of 100, based only on the factors you have switched on and the weights you have set.</p>
+  <div class="results panel" id="results"></div>
+</section>
+
+<section>
+  <h2>The factors</h2>
+  <p>Untick any factor to remove it entirely. Factors marked <span class="tag mine">proposed</span>
+  are ones I added &mdash; they are not yours, so drop them if you disagree.</p>
+  <div class="panel" id="crits"></div>
+</section>
+
+<section>
+  <h2>The facts behind each score</h2>
+  <p>The number is the score; the line under it is the fact it came from. <b class="st v">V</b> verified
+  from the contract or the provider's own pricing page and quoted in the research files;
+  <b class="st p">P</b> partly established; <b class="st n">—</b> not established.</p>
+  <div class="scroller"><table id="matrix"></table></div>
+</section>
+
+<section>
+  <h2>Things the scoring cannot capture</h2>
+
+  <div class="note">
+    <p><strong>Only Peach puts the price in the contract.</strong> Its rates sit in Annexure A of the
+    signed agreement, changeable only by mutual agreement. Ozow, Yoco and Paystack all defer to their
+    public pricing pages &mdash; visible, but alterable. PayFast defers to a private "Application" you
+    cannot see until you apply, and its clause 3.4 commits you to a Minimum Volume Fee whenever monthly
+    volume is R20,000 or under, with the amount disclosed nowhere. For a show held once every three
+    years, that threshold is unmet in roughly 35 months out of 36.</p>
+  </div>
+
+  <div class="note">
+    <p><strong>Yoco's own two contracts disagree with each other.</strong> The 2020 Merchant Agreement
+    requires binding arbitration in Cape Town; the 2026 Main T&amp;Cs says no arbitration and any court.
+    The liability cap differs too. Ask Yoco which document governs before signing anything.</p>
+  </div>
+
+  <div class="note">
+    <p><strong>Yoco has no 3-D Secure statement for online checkout.</strong> All five are confirmed
+    PASA-registered from the regulator's own public register &mdash; that part is independently verified,
+    not marketing. But Yoco is the only one with no discoverable 3DS commitment for card-not-present
+    payments; its security material is all about card machines. SAOC's ticket sales are 100% online, and
+    3DS is what shifts fraud liability away from you. Ask before signing.</p>
+    <p>It compounds: Mastercard publishes a register of every service provider that has filed a PCI
+    Attestation of Compliance, with the auditor's name and date. Ozow, PayFast, Peach and Paystack are
+    all on it. <strong>Yoco is not.</strong> That is a checkable absence, not proof of non-compliance
+    &mdash; Yoco may rely on its acquiring bank's certification, or simply not submit to Mastercard's
+    list. But it is the one registry that could actually be queried, and Yoco is missing from it while
+    its four competitors are present. Ask Yoco directly for its PCI status and its AOC.</p>
+    <p>Two caveats on the others. Paystack's attestation is filed under <em>Paystack, Inc.</em>, the
+    global entity &mdash; not confirmed as covering Paystack South Africa, which is who you would
+    contract with; and its own compliance page cites PCI DSS 3.2, an older standard than Peach's stated
+    4.0.1. Every provider's <em>level</em> and <em>version</em> remains its own word: Mastercard's list
+    records that an attestation exists, not what it says. Ask each for the document.</p>
+  </div>
+
+  <div class="note">
+    <p><strong>Nobody has an account anywhere.</strong> The PayFast integration on the website is a
+    developer sandbox, not an SAOC account. All five start from zero, all five need FICA, and the
+    deadline is the end of August &mdash; about two weeks. Not one of the five publishes a verification
+    turnaround time, so "can we actually be live" is the one factor no amount of further research will
+    settle. It needs an email to each.</p>
+  </div>
+
+  <div class="note">
+    <p><strong>One unanswered question could move PayFast a long way.</strong> It is the only provider
+    with a non-profit product &mdash; a Cause account with "reduced fees" &mdash; but the rate is
+    published nowhere, and the marketing is written around donations while SAOC sells tickets. If that
+    discount reaches ticket sales, PayFast goes from dearest to cheapest. Worth an email before you
+    decide.</p>
+  </div>
+</section>
+
+<section>
+  <h2>What to ask each provider, in writing</h2>
+  <ul>
+    <li><strong>All five:</strong> how long does verification take for a registered NPO, from submission
+    to live? None publish it.</li>
+    <li><strong>PayFast:</strong> what is the Minimum Volume Fee amount, does the Cause rate apply to
+    ticket sales rather than donations, and what is that rate? Also: clause 21.2(iii) refers to a
+    Termination Fee in clause 21.3(ii), which does not exist in the document &mdash; what is the fee?</li>
+    <li><strong>Yoco:</strong> which contract governs, the 2020 Merchant Agreement or the 2026 Main
+    T&amp;Cs? They conflict on arbitration and on the liability cap.</li>
+    <li><strong>Ozow:</strong> clause 20.8.1 has SAOC consent, on its ticket buyers' behalf, to Ozow
+    marketing to them and to their data being processed across borders, on an opt-out basis. Can it be
+    waived? SAOC cannot give that consent for its members.</li>
+    <li><strong>Peach:</strong> what is the KYC turnaround, is there a bespoke NPO rate, and is there a
+    cap on how long funds can be held during a dispute? The contract sets none.</li>
+    <li><strong>Paystack:</strong> the contract allows termination on 24 hours' notice and disclaims any
+    uptime guarantee. What happens if that falls during the show weekend?</li>
+  </ul>
+</section>
+
+<footer>
+  Compiled 14 August 2026 from each provider's operative click-through contract, its own pricing pages
+  and its support documentation. Full write-ups, with clause numbers and verbatim quotes, are in
+  <code>docs/research-evidence/</code>. Rates and terms change &mdash; confirm before signing.
+</footer>
+</div>
+
+<script>
+const PROV = [
+  { id:"ozow",     name:"Ozow",     note:"Instant EFT first" },
+  { id:"paystack", name:"Paystack", note:"Stripe-owned, SA entity" },
+  { id:"peach",    name:"Peach",    note:"Sales-led onboarding" },
+  { id:"yoco",     name:"Yoco",     note:"Online + card machines" },
+  { id:"payfast",  name:"PayFast",  note:"Sandbox already wired" }
+];
+
+// [score 0-10, fact, status v|p|n]
+const CRIT = [
+  { id:"cost", label:"Cost of a R500 card ticket", yours:true,
+    why:"Published card rate, ex-VAT, on one R500 ticket.",
+    s:{ ozow:[10,"R14.25 · 2.85%","v"], paystack:[8.3,"R15.50 · 2.9% + R1","v"],
+        peach:[7.3,"R16.25 · 2.95% + R1.50","v"], yoco:[6.7,"R16.75 · 2.95% + R2","v"],
+        payfast:[5,"R18.00 · 3.2% + R2","v"] } },
+
+  { id:"rail", label:"Cheapest rail available", yours:true,
+    why:"Bank-transfer and instant-EFT rails, which most ticket buyers will happily use.",
+    s:{ ozow:[10,"R7.50 · Pay by Bank 1.5%","v"], peach:[9,"R9.00 · Capitec Pay 1.5% + R1.50","v"],
+        paystack:[8.5,"R10.00 · Capitec/Ozow EFT 2% flat","v"], payfast:[8,"R10.00 · Instant EFT 2%","v"],
+        yoco:[4,"R16.75 · no cheaper rail found","p"] } },
+
+  { id:"gap", label:"Is the price actually in the contract?", yours:true,
+    why:"Your decider: the gap between the advertised price and what they commit to in writing.",
+    s:{ peach:[10,"Rates in Annexure A; change by mutual agreement","v"],
+        paystack:[5.5,"Defers to public pricing page; 30 days' notice","v"],
+        ozow:[5,"Defers to Order Form or website; 14 days' notice","v"],
+        yoco:[3,"Defers to Fee Schedule; may change fees WITHOUT notice (cl. 5.2)","v"],
+        payfast:[1,"No amount anywhere; private Application; broken cross-reference","v"] } },
+
+  { id:"exit", label:"Getting out again", yours:true,
+    why:"Minimum term, notice, penalties — and how easily they can drop you.",
+    s:{ peach:[10,"Indefinite; you exit anytime; they need 45 days; no penalty","v"],
+        yoco:[9,"No minimum term, cancel anytime, no penalty","v"],
+        ozow:[7,"No minimum term; 30 days' notice","v"],
+        paystack:[6,"You exit anytime — but they can exit on 24 hours","v"],
+        payfast:[1,"36-month auto-renewing; undisclosed termination fee","v"] } },
+
+  { id:"dormant", label:"Surviving three idle years", yours:true,
+    why:"The account sits unused for ~36 months between shows.",
+    s:{ yoco:[10,"Profile simply remains inactive; no fee","v"],
+        peach:[7,"Silent — 'dormancy' absent from all 35 pages","v"],
+        paystack:[7,"Silent — no clause either way","v"],
+        ozow:[4,"Termination permitted at 9 months","v"],
+        payfast:[1,"Suspend at 6 months, auto-terminate at 12 + fee; R20k minimum-volume fee","v"] } },
+
+  { id:"types", label:"Ways people can pay", yours:true,
+    why:"Once-off, subscriptions, donations, and card machines at the door.",
+    s:{ payfast:[9,"Card, EFT, BNPL, subscriptions, donations, POS hardware lease","v"],
+        peach:[8,"Card, EFT, BNPL, donations, tokenised recurring; POS deferred","v"],
+        yoco:[8,"Card, online links, card readers supplied; recurring not addressed","v"],
+        paystack:[7,"Card, EFT, Capitec, QR, donations, subscriptions; no hardware","v"],
+        ozow:[5,"Pay by Bank, PayShap, card, BNPL, crypto; no recurring, no POS","v"] } },
+
+  { id:"refunds", label:"Refunds", yours:true,
+    why:"Full and partial refunds, time limits, who carries the fee.",
+    s:{ yoco:[8,"90-day window; partial refunds explicit","v"],
+        payfast:[6,"To original card, capped at original amount","v"],
+        paystack:[5,"Deducted from payout; no time limit or fee-bearer clause","p"],
+        peach:[4,"You cannot refund directly — request via Peach; R3 fee; fees not returned","v"],
+        ozow:[4,"Funding-gated; partial refunds and time limits both absent","v"] } },
+
+  { id:"npo", label:"Documented non-profit support", yours:true,
+    why:"A real published non-profit product, not an NPO tick-box on a KYC form.",
+    s:{ payfast:[7,"Cause account real, KYC route documented — rate unpublished","p"],
+        yoco:[5,"NPO business type + FICA guide; no pricing tier","v"],
+        peach:[5,"NPO/NPC KYC types + FICA checklist; no fee schedule","v"],
+        paystack:[3,"Charities may register; no SA discount exists","v"],
+        ozow:[1,"Absent — confirmed twice against the full agreement","v"] } },
+
+  { id:"data", label:"Your members' personal data", yours:false,
+    why:"Does the contract take marketing rights over your ticket buyers, or move their data offshore?",
+    s:{ yoco:[10,"No marketing clause, no cross-border clause in either contract","v"],
+        peach:[9,"No marketing rights; standard POPIA-adequacy wording","v"],
+        payfast:[6,"No cardholder marketing; broad cross-border consent","v"],
+        paystack:[4,"Transfer to 'Third Countries' permitted; consent burden on you","v"],
+        ozow:[1,"Cl. 20.8.1 — may market to your customers; trans-border; opt-out","v"] } },
+
+  { id:"sla", label:"Promised service levels", yours:false,
+    why:"Sales concentrate into one weekend every three years. An outage then is unrecoverable.",
+    s:{ peach:[10,"99.0% monthly uptime, tiered resolution, service credits","v"],
+        ozow:[6,"States service targets","p"],
+        yoco:[2,"Absent","v"], payfast:[2,"Absent","v"],
+        paystack:[1,"Explicitly disclaims any uptime guarantee","v"] } },
+
+  { id:"live", label:"Can we be live by end of August", yours:false,
+    why:"About two weeks. No provider publishes a verification turnaround — all scores are indicative.",
+    s:{ yoco:[9,"Self-serve; NPO business type; 48h per stakeholder review","p"],
+        paystack:[7,"Self-serve; no Nigerian link needed; no turnaround stated","p"],
+        ozow:[7,"Self-serve sign-up proven; no turnaround stated","p"],
+        payfast:[5,"Standard onboarding; no turnaround stated","p"],
+        peach:[3,"NPO route is a sales-led lead form; no timeframe","p"] } },
+
+  { id:"sec", label:"Security standing and regulatory status", yours:true,
+    why:"Checked against Mastercard's own register of who holds a PCI attestation, and against PASA's public register — not against marketing badges.",
+    s:{ peach:[9,"AOC on Mastercard register 04/11/2024 (Galix); PASA SO + TPPP; 3DS priced","v"],
+        payfast:[8.5,"AOC 22/05/2025 (Foregenix) — most recent of the five; PASA SO + TPPP; 3DS in contract","v"],
+        ozow:[8,"AOC 10/04/2024 (Galix); PASA SO + TPPP, four banks; 3DS in contract","v"],
+        paystack:[6.5,"AOC 08/11/2024 — but the US entity, not confirmed for the SA one; ISO 27001 + 27701 claimed","p"],
+        yoco:[2,"Absent from Mastercard's register; no ISO claim; no 3DS statement for online checkout","v"] } },
+
+  { id:"money", label:"Getting your money, and holds on it", yours:false,
+    why:"Settlement speed, and whether they may sit on funds during a dispute.",
+    s:{ peach:[7,"T+1 daily; discretionary hold, no stated cap","v"],
+        ozow:[6,"Float-based; R350 chargeback fee fixed in contract","v"],
+        paystack:[5,"T+2; discretionary reserve, ~6 months after termination","v"],
+        yoco:[5,"Not established from the contracts","n"],
+        payfast:[5,"Not established from the contracts","n"] } }
+];
+
+const W = {}; const ON = {};
+CRIT.forEach(c => { W[c.id] = 3; ON[c.id] = true; });
+const $ = id => document.getElementById(id);
+const WORDS = ["ignore","barely","a little","matters","important","decisive"];
+
+function build() {
+  $("crits").innerHTML = "";
+  CRIT.forEach(c => {
+    const d = document.createElement("div");
+    d.className = "crit" + (ON[c.id] ? "" : " off");
+    d.innerHTML =
+      '<div class="crit-head">' +
+        '<input type="checkbox" id="on-'+c.id+'" '+(ON[c.id]?"checked":"")+' style="width:16px;height:16px;accent-color:var(--accent)">' +
+        '<label for="on-'+c.id+'">'+c.label+'</label>' +
+        (c.yours ? '' : '<span class="tag mine">proposed</span>') +
+        '<span class="wval" id="v-'+c.id+'"></span>' +
+      '</div>' +
+      '<div class="why">'+c.why+'</div>' +
+      '<input type="range" id="w-'+c.id+'" min="0" max="5" step="1" value="'+W[c.id]+'">';
+    $("crits").appendChild(d);
+    d.querySelector("#w-"+c.id).addEventListener("input", e => { W[c.id] = +e.target.value; label(c); render(); });
+    d.querySelector("#on-"+c.id).addEventListener("change", e => { ON[c.id] = e.target.checked; build(); render(); });
+    label(c);
+  });
+}
+function label(c) { $("v-"+c.id).textContent = W[c.id] + " — " + WORDS[W[c.id]]; }
+
+function render() {
+  const live = CRIT.filter(c => ON[c.id] && W[c.id] > 0);
+  const tw = live.reduce((a,c) => a + W[c.id], 0);
+  const out = PROV.map(p => ({ p, v: tw ? live.reduce((a,c) => a + c.s[p.id][0]*W[c.id], 0)/tw*10 : 0 }))
+                  .sort((a,b) => b.v - a.v);
+  const top = out[0].v;
+  $("results").innerHTML = "";
+  out.forEach((r,i) => {
+    const row = document.createElement("div");
+    row.className = "row" + (i===0 && top>0 ? " lead" : "");
+    row.innerHTML = '<span class="rank">'+(i+1)+'</span>' +
+      '<span class="who">'+r.p.name+'<small>'+r.p.note+'</small></span>' +
+      '<span class="track"><span class="fill"></span></span>' +
+      '<span class="score">'+r.v.toFixed(1)+'</span>';
+    $("results").appendChild(row);
+    requestAnimationFrame(() => { row.querySelector(".fill").style.width = (top>0 ? r.v/top*100 : 0)+"%"; });
+  });
+}
+
+function matrix() {
+  let h = "<thead><tr><th>Factor</th>" + PROV.map(p=>"<th>"+p.name+"</th>").join("") + "</tr></thead><tbody>";
+  CRIT.forEach(c => {
+    h += "<tr><th>"+c.label+"</th>" + PROV.map(p => {
+      const [s,f,st] = c.s[p.id];
+      return "<td><b>"+s+"</b> <span class='st "+st+"'>"+(st==="v"?"V":st==="p"?"P":"—")+"</span><span class='f'>"+f+"</span></td>";
+    }).join("") + "</tr>";
+  });
+  $("matrix").innerHTML = h + "</tbody>";
+}
+
+build(); matrix(); render();
+</script>

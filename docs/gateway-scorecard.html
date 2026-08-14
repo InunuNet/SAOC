@@ -1,0 +1,433 @@
+<title>Gateway Scorecard</title>
+<style>
+  :root {
+    --ground: #fbfaf7;
+    --panel: #ffffff;
+    --line: #e2ded4;
+    --line-soft: #efece4;
+    --ink: #1f1d1a;
+    --ink-mid: #56514a;
+    --ink-soft: #837c72;
+    --accent: #5a6f3f;
+    --accent-soft: #eef1e6;
+    --warn: #a8641c;
+    --bad: #9c3d2e;
+    --good: #40693f;
+    --bar: #7f9455;
+    --shadow: 0 1px 2px rgba(31,29,26,.05), 0 8px 24px -16px rgba(31,29,26,.25);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #16181a;
+      --panel: #1d2023;
+      --line: #33383d;
+      --line-soft: #272b2f;
+      --ink: #eceae5;
+      --ink-mid: #b3aea6;
+      --ink-soft: #8b857c;
+      --accent: #a8c07a;
+      --accent-soft: #262c22;
+      --warn: #d99a51;
+      --bad: #d97a67;
+      --good: #8fbb87;
+      --bar: #7f9455;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -16px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #16181a;
+    --panel: #1d2023;
+    --line: #33383d;
+    --line-soft: #272b2f;
+    --ink: #eceae5;
+    --ink-mid: #b3aea6;
+    --ink-soft: #8b857c;
+    --accent: #a8c07a;
+    --accent-soft: #262c22;
+    --warn: #d99a51;
+    --bad: #d97a67;
+    --good: #8fbb87;
+    --bar: #7f9455;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    margin: 0;
+    padding: 0 20px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  h1, h2, h3 { font-family: ui-serif, Georgia, "Times New Roman", serif; font-weight: 600; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); letter-spacing: -.015em; }
+  h2 { font-size: 1.3rem; margin-bottom: .35rem; }
+  h3 { font-size: 1.05rem; }
+  p { margin: 0 0 .8rem; max-width: 68ch; color: var(--ink-mid); }
+  .eyebrow {
+    font-size: .72rem; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600; margin: 0 0 .55rem;
+  }
+
+  header { padding: 56px 0 28px; border-bottom: 1px solid var(--line); margin-bottom: 32px; }
+  header p.lede { font-size: 1.05rem; margin-top: 1rem; }
+
+  section { margin: 0 0 44px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 22px; box-shadow: var(--shadow);
+  }
+
+  /* ---- results ---- */
+  .results { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+  .row {
+    display: grid; grid-template-columns: 26px 128px 1fr 62px;
+    align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px; border: 1px solid transparent;
+    transition: background .18s ease, border-color .18s ease;
+  }
+  .row.lead { background: var(--accent-soft); border-color: var(--line); }
+  .rank { font-variant-numeric: tabular-nums; color: var(--ink-soft); font-size: .85rem; text-align: right; }
+  .who { font-weight: 600; }
+  .who small { display: block; font-weight: 400; font-size: .74rem; color: var(--ink-soft); }
+  .track { background: var(--line-soft); border-radius: 4px; height: 22px; overflow: hidden; }
+  .fill { background: var(--bar); height: 100%; width: 0; border-radius: 4px; transition: width .3s cubic-bezier(.4,0,.2,1); }
+  .row.lead .fill { background: var(--accent); }
+  .score { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; font-size: 1rem; }
+
+  /* ---- weights ---- */
+  .crit { border-top: 1px solid var(--line-soft); padding: 14px 0; }
+  .crit:first-of-type { border-top: 0; }
+  .crit-head { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; }
+  .crit-head label { font-weight: 600; font-size: .95rem; cursor: pointer; }
+  .wval { font-variant-numeric: tabular-nums; font-size: .8rem; color: var(--ink-soft); white-space: nowrap; }
+  .crit p { font-size: .85rem; margin: .2rem 0 .5rem; color: var(--ink-soft); }
+  input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
+  input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  button {
+    font: inherit; font-size: .84rem; font-weight: 500;
+    background: var(--panel); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 6px 14px; cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  button:hover { background: var(--accent-soft); border-color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+
+  .toggle { display: flex; align-items: center; gap: 9px; font-size: .87rem; color: var(--ink-mid); margin-top: 16px; }
+  .toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+  /* ---- matrix ---- */
+  .scroller { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; min-width: 780px; font-size: .87rem; }
+  th, td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  thead th { background: var(--ground); font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); position: sticky; top: 0; }
+  tbody th { font-weight: 600; font-size: .85rem; min-width: 190px; }
+  td.n { font-variant-numeric: tabular-nums; text-align: center; width: 92px; }
+  .cell { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+  .dot.v { background: var(--good); }
+  .dot.p { background: var(--warn); }
+  .dot.u { background: var(--ink-soft); }
+  tr:last-child td, tr:last-child th { border-bottom: 0; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: .8rem; color: var(--ink-soft); margin-top: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+  .note { border-left: 3px solid var(--warn); padding: 2px 0 2px 14px; margin: 18px 0; }
+  .note p { font-size: .9rem; margin-bottom: .4rem; }
+  .note strong { color: var(--ink); }
+
+  ul { margin: 0 0 .9rem; padding-left: 1.1rem; color: var(--ink-mid); }
+  li { margin-bottom: .35rem; max-width: 68ch; }
+  footer { border-top: 1px solid var(--line); padding-top: 20px; font-size: .82rem; color: var(--ink-soft); }
+
+  @media (max-width: 620px) {
+    .row { grid-template-columns: 22px 1fr 54px; }
+    .row .track { grid-column: 1 / -1; }
+  }
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">South African Orchid Council &middot; payment gateway decision</p>
+  <h1>Which gateway should we sell tickets through?</h1>
+  <p class="lede">Five South African payment providers, scored on eleven things that actually matter to a
+  three-day show held once every three years. Move the sliders to say what matters most to the
+  Council &mdash; the ranking recalculates as you go.</p>
+</header>
+
+<section>
+  <h2>The ranking</h2>
+  <p>Out of 100. A provider only scores well here if it scores well on the things <em>you</em> weighted.</p>
+  <div class="results panel" id="results"></div>
+  <label class="toggle">
+    <input type="checkbox" id="excludeUnknown">
+    <span>Ignore criteria where we could not verify the facts for every provider (marked grey below)</span>
+  </label>
+</section>
+
+<section>
+  <h2>What matters, and how much</h2>
+  <p>Start from one of these, then adjust anything. Zero means "we don't care about this".</p>
+  <div class="presets" id="presets"></div>
+  <div class="panel" id="weights"></div>
+</section>
+
+<section>
+  <h2>The evidence behind every score</h2>
+  <p>Each score is 0&ndash;10. The dot shows how solid the underlying fact is: verified from the
+  provider's own contract or pricing page, partly verified, or not established.</p>
+  <div class="scroller"><table id="matrix"></table></div>
+  <div class="legend">
+    <span><i class="dot v"></i> Verified from a primary source</span>
+    <span><i class="dot p"></i> Partly verified &mdash; third-party or incomplete</span>
+    <span><i class="dot u"></i> Not established &mdash; scored at the midpoint</span>
+  </div>
+</section>
+
+<section>
+  <h2>Three things to know before you read the ranking</h2>
+
+  <div class="note">
+    <p><strong>Nobody has an account anywhere yet.</strong> The website has a test-mode PayFast
+    connection built by the developer, but SAOC holds no merchant account with any of these five.
+    Every provider starts from zero, and every one needs FICA paperwork before it can take money.</p>
+  </div>
+
+  <div class="note">
+    <p><strong>The deadline is the end of August 2026</strong> &mdash; about two weeks. Whichever
+    provider is chosen has to get through sign-up, entity verification and activation inside that
+    window. This is why "how fast can we actually open an account" is one of the eleven criteria and
+    not a footnote.</p>
+  </div>
+
+  <div class="note">
+    <p><strong>One unanswered question could change the winner.</strong> PayFast is the only provider
+    with a non-profit product &mdash; a "Cause account" with reduced fees. It is advertised for
+    donations, and SAOC sells tickets, not donations. Nobody publishes the Cause rate; the only figure
+    in writing anywhere is a one-day promotion from 2018. If that discount does reach ticket sales,
+    PayFast goes from the most expensive of the five to comfortably the cheapest. That is a question
+    for PayFast, and it is worth asking before the Council votes.</p>
+  </div>
+</section>
+
+<section>
+  <h2>What the numbers are built on</h2>
+  <ul>
+    <li><strong>Cost</strong> is the fee on one R500 card ticket, before VAT, at each provider's
+    published standard rate: Ozow R14.25, Paystack R15.50, Peach R16.25, Yoco R16.75, PayFast R18.00.
+    Across 2,000 tickets that is a spread of roughly R7,500 between cheapest and dearest &mdash; real
+    money, but less than a single bad clause could cost.</li>
+    <li><strong>The advertised-versus-signed gap</strong> is the Council's own test: does the contract
+    you sign actually commit the provider to the price on the website? PayFast fails this hardest
+    &mdash; its general terms contain no fee amounts at all, deferring every charge to an application
+    form you don't see until you apply. Paystack does best: a published rate with a worked example and
+    the VAT basis stated.</li>
+    <li><strong>Lock-in and dormancy</strong> matter far more here than for a normal business, because
+    the account sits idle for about 36 months between shows. Yoco's terms say an inactive profile
+    simply stays inactive. PayFast's suspend at six months and auto-terminate at twelve, with a fee.</li>
+    <li><strong>Card machines</strong> are a real operational difference over three show days. Yoco is
+    the only one of the five that supplies them, so door and stall sales run on the same account as
+    online tickets.</li>
+    <li><strong>Customer data</strong> is where Ozow stands out badly: its terms have SAOC consent, on
+    its ticket buyers' behalf, to Ozow marketing to them directly and to their data being processed
+    outside South Africa. It is written as opt-out. SAOC cannot give that consent for its members, and
+    whether the clause is enforceable is a question for a lawyer, not for us &mdash; but no other
+    provider's terms ask for it.</li>
+  </ul>
+  <p>Every figure traces to a source document kept in the project's research folder, including both
+  merchant contracts in full.</p>
+</section>
+
+<footer>
+  Compiled 14 August 2026 from providers' own contracts, pricing pages and support documentation.
+  Rates change; confirm before signing. Grey dots mark facts that could not be established from public
+  sources &mdash; they are questions for the providers, not gaps to be filled by guesswork.
+</footer>
+</div>
+
+<script>
+const PROV = [
+  { id: "ozow",     name: "Ozow",     note: "Instant EFT first" },
+  { id: "paystack", name: "Paystack", note: "Cards, no monthly fee" },
+  { id: "peach",    name: "Peach",    note: "Sales-led onboarding" },
+  { id: "yoco",     name: "Yoco",     note: "Online + card machines" },
+  { id: "payfast",  name: "PayFast",  note: "Already wired in test mode" }
+];
+
+// s = score 0-10, c = confidence: v verified, p partial, u unknown
+const CRIT = [
+  { id: "cost", label: "Cost per ticket",
+    blurb: "Fee on one R500 card ticket at the published standard rate.",
+    d: 4,
+    s: { ozow:[10,"v"], paystack:[8.5,"v"], peach:[7,"p"], yoco:[6.5,"v"], payfast:[5,"v"] } },
+
+  { id: "gap", label: "Advertised price vs the price you sign for",
+    blurb: "Does the contract commit them to the website's rate, or leave fees open?",
+    d: 4,
+    s: { ozow:[5,"v"], paystack:[9,"v"], peach:[4,"p"], yoco:[4,"p"], payfast:[2,"v"] } },
+
+  { id: "onboard", label: "Can we be live by end of August",
+    blurb: "Self-serve sign-up, non-profit paperwork path, verification time.",
+    d: 5,
+    s: { ozow:[6,"p"], paystack:[6,"u"], peach:[4,"p"], yoco:[9,"v"], payfast:[5,"p"] } },
+
+  { id: "lockin", label: "Getting out again",
+    blurb: "Minimum term, notice period, cancellation penalties.",
+    d: 3,
+    s: { ozow:[7,"v"], paystack:[5,"u"], peach:[5,"u"], yoco:[10,"v"], payfast:[2,"v"] } },
+
+  { id: "dormant", label: "Surviving three idle years",
+    blurb: "What happens to an unused account between shows.",
+    d: 4,
+    s: { ozow:[5,"v"], paystack:[5,"u"], peach:[5,"u"], yoco:[10,"v"], payfast:[2,"v"] } },
+
+  { id: "npo", label: "Documented non-profit support",
+    blurb: "A real, published non-profit product — not just an NPO tick-box on a form.",
+    d: 3,
+    s: { ozow:[1,"v"], paystack:[1,"v"], peach:[3,"v"], yoco:[5,"v"], payfast:[8,"p"] } },
+
+  { id: "methods", label: "Ways people can pay",
+    blurb: "Card, instant EFT, recurring payments, and card machines at the door.",
+    d: 4,
+    s: { ozow:[5,"v"], paystack:[7,"v"], peach:[7,"v"], yoco:[10,"v"], payfast:[8,"v"] } },
+
+  { id: "data", label: "Our members' personal data",
+    blurb: "Does the contract take marketing rights over our ticket buyers?",
+    d: 4,
+    s: { ozow:[2,"v"], paystack:[5,"u"], peach:[5,"u"], yoco:[5,"u"], payfast:[8,"v"] } },
+
+  { id: "refunds", label: "Refunds and disputes",
+    blurb: "Refund windows, partial refunds, and where an argument gets settled.",
+    d: 2,
+    s: { ozow:[5,"v"], paystack:[5,"u"], peach:[5,"u"], yoco:[8,"v"], payfast:[6,"v"] } },
+
+  { id: "sla", label: "Promised service levels",
+    blurb: "Does the contract commit to uptime or support response times at all?",
+    d: 2,
+    s: { ozow:[6,"v"], paystack:[5,"u"], peach:[5,"u"], yoco:[2,"v"], payfast:[2,"v"] } },
+
+  { id: "record", label: "Track record with other merchants",
+    blurb: "Public complaint volume and how it's handled. Read with care — a big provider draws more complaints.",
+    d: 2,
+    s: { ozow:[4,"p"], paystack:[5,"u"], peach:[5,"p"], yoco:[7,"p"], payfast:[6,"p"] } }
+];
+
+const PRESETS = [
+  { id: "balanced", label: "Balanced (default)", w: null },
+  { id: "deadline", label: "Just get us live in time",
+    w: { onboard:5, methods:4, cost:2, gap:2, lockin:1, dormant:1, npo:1, data:2, refunds:1, sla:1, record:1 } },
+  { id: "cost", label: "Cheapest wins",
+    w: { cost:5, gap:3, npo:3, onboard:2, methods:2, lockin:1, dormant:1, data:1, refunds:1, sla:1, record:1 } },
+  { id: "cautious", label: "Protect us from the fine print",
+    w: { gap:5, data:5, lockin:4, dormant:4, sla:3, refunds:3, record:3, cost:2, onboard:2, npo:2, methods:2 } },
+  { id: "show", label: "Show-day operations",
+    w: { methods:5, onboard:5, refunds:3, sla:3, record:3, cost:3, gap:2, dormant:2, lockin:1, npo:1, data:2 } }
+];
+
+const weights = {};
+CRIT.forEach(c => weights[c.id] = c.d);
+let activePreset = "balanced";
+
+const $ = id => document.getElementById(id);
+
+function buildPresets() {
+  $("presets").innerHTML = "";
+  PRESETS.forEach(p => {
+    const b = document.createElement("button");
+    b.textContent = p.label;
+    b.setAttribute("aria-pressed", String(p.id === activePreset));
+    b.onclick = () => {
+      activePreset = p.id;
+      CRIT.forEach(c => weights[c.id] = p.w ? p.w[c.id] : c.d);
+      buildPresets(); syncSliders(); render();
+    };
+    $("presets").appendChild(b);
+  });
+}
+
+function buildWeights() {
+  $("weights").innerHTML = "";
+  CRIT.forEach(c => {
+    const d = document.createElement("div");
+    d.className = "crit";
+    d.innerHTML =
+      '<div class="crit-head"><label for="w-' + c.id + '">' + c.label + '</label>' +
+      '<span class="wval" id="v-' + c.id + '"></span></div>' +
+      '<p>' + c.blurb + '</p>' +
+      '<input type="range" id="w-' + c.id + '" min="0" max="5" step="1" value="' + weights[c.id] + '">';
+    $("weights").appendChild(d);
+    d.querySelector("input").addEventListener("input", e => {
+      weights[c.id] = Number(e.target.value);
+      activePreset = "";
+      buildPresets(); syncSliders(); render();
+    });
+  });
+  syncSliders();
+}
+
+const WORDS = ["ignore", "barely", "a little", "matters", "important", "decisive"];
+function syncSliders() {
+  CRIT.forEach(c => {
+    $("w-" + c.id).value = weights[c.id];
+    $("v-" + c.id).textContent = weights[c.id] + " — " + WORDS[weights[c.id]];
+  });
+}
+
+function activeCrit() {
+  const skipU = $("excludeUnknown").checked;
+  return CRIT.filter(c =>
+    weights[c.id] > 0 &&
+    (!skipU || !PROV.some(p => c.s[p.id][1] === "u"))
+  );
+}
+
+function render() {
+  const crits = activeCrit();
+  const totalW = crits.reduce((a, c) => a + weights[c.id], 0);
+  const scored = PROV.map(p => {
+    const v = totalW === 0 ? 0
+      : crits.reduce((a, c) => a + c.s[p.id][0] * weights[c.id], 0) / totalW * 10;
+    return { p, v };
+  }).sort((a, b) => b.v - a.v);
+
+  const top = scored[0].v;
+  $("results").innerHTML = "";
+  scored.forEach((r, i) => {
+    const row = document.createElement("div");
+    row.className = "row" + (i === 0 && top > 0 ? " lead" : "");
+    row.innerHTML =
+      '<span class="rank">' + (i + 1) + '</span>' +
+      '<span class="who">' + r.p.name + '<small>' + r.p.note + '</small></span>' +
+      '<span class="track"><span class="fill"></span></span>' +
+      '<span class="score">' + r.v.toFixed(1) + '</span>';
+    $("results").appendChild(row);
+    requestAnimationFrame(() => {
+      row.querySelector(".fill").style.width = (top > 0 ? (r.v / top) * 100 : 0) + "%";
+    });
+  });
+}
+
+function buildMatrix() {
+  let h = "<thead><tr><th>Criterion</th>" +
+    PROV.map(p => '<th class="n">' + p.name + "</th>").join("") + "</tr></thead><tbody>";
+  CRIT.forEach(c => {
+    h += "<tr><th>" + c.label + "</th>" + PROV.map(p => {
+      const [s, cf] = c.s[p.id];
+      return '<td class="n"><span class="cell"><i class="dot ' + cf + '"></i>' + s + "</span></td>";
+    }).join("") + "</tr>";
+  });
+  $("matrix").innerHTML = h + "</tbody>";
+}
+
+$("excludeUnknown").addEventListener("change", render);
+buildPresets(); buildWeights(); buildMatrix(); render();
+</script>

@@ -1,0 +1,145 @@
+
+{
+  "hide_powered_by": true,
+  "collapseTableOfContents": true,
+  "items": [
+    {
+      "title": "OZOW"
+    },
+    {
+      "id": "jvx9ph1ikx9si",
+      "title": "Getting started",
+      "type": "article",
+      "slug": "jvx9ph1ikx9si-getting-started",
+      "meta": ""
+    },
+    {
+      "id": "q4xp0h410lq2h",
+      "title": "About Ozow",
+      "type": "article",
+      "slug": "q4xp0h410lq2h-about-ozow",
+      "meta": ""
+    },
+    {
+      "id": "59bojco5b3kr8",
+      "title": "Products",
+      "type": "article",
+      "slug": "59bojco5b3kr8-products",
+      "meta": "",
+      "items": [
+        {
+          "id": "59bojco5b3kr8",
+          "title": "Overview",
+          "type": "article",
+          "slug": "59bojco5b3kr8-products",
+          "meta": ""
+        },
+        {
+          "title": "Money In Products",
+          "items": [
+            {
+              "id": "uzyd4lt3aabcd",
+              "title": "Pay By Bank",
+              "type": "article",
+              "slug": "uzyd4lt3aabcd-pay-by-bank",
+              "meta": ""
+            },
+            {
+              "id": "a25kt3jdcguzg",
+              "title": "PayShap Request",
+              "type": "article",
+              "slug": "a25kt3jdcguzg-pay-shap-request",
+              "meta": ""
+            },
+            {
+              "id": "nd12fxzhr14u8",
+              "title": "Bank APIs",
+              "type": "article",
+              "slug": "nd12fxzhr14u8-bank-ap-is",
+              "meta": ""
+            }
+          ]
+        },
+        {
+          "title": "Money Out Products",
+          "items": [
+            {
+              "id": "1q8mcxmkk39lq",
+              "title": "Refunds",
+              "type": "article",
+              "slug": "1q8mcxmkk39lq-refunds",
+              "meta": ""
+            },
+            {
+              "id": "vwj0e8l9ou2vd",
+              "title": "Payouts",
+              "type": "article",
+              "slug": "vwj0e8l9ou2vd-payouts",
+              "meta": ""
+            }
+          ]
+        },
+        {
+          "id": "b0za6uxhpw6y2",
+          "title": "Ozow Me",
+          "type": "article",
+          "slug": "b0za6uxhpw6y2-ozow-me",
+          "meta": ""
+        },
+        {
+          "id": "tjgvrtvek9znq",
+          "title": "Pocket",
+          "type": "article",
+          "slug": "tjgvrtvek9znq-pocket",
+          "meta": ""
+        }
+      ]
+    },
+    {
+      "id": "vwurmc13zde83",
+      "title": "Marketing HUB",
+      "type": "article",
+      "slug": "vwurmc13zde83-marketing-hub",
+      "meta": ""
+    },
+    {
+      "title": "API DOCUMENTATION"
+    },
+    {
+      "title": "Payments API",
+      "url": "https://hub.ozow.com/docs/payin-api/9ob8krs7bvs82-pay-in"
+    },
+    {
+      "title": "Payouts API",
+      "url": "https://hub.ozow.com/docs/payouts-api/u9mys734unls3-payouts-api"
+    },
+    {
+      "title": "OneAPI (Beta)",
+      "url": "https://hub.ozow.com/docs/one-api/u9dgo2smpkkz3-overview"
+    },
+    {
+      "title": "GUIDES"
+    },
+    {
+      "id": "2qc4nf91ox7d1",
+      "title": "Top Up Float Guide",
+      "type": "article",
+      "slug": "2qc4nf91ox7d1-top-up-guide",
+      "meta": ""
+    },
+    {
+      "id": "zynb6lokanrxw",
+      "title": "Migrating from i-Pay to Ozow domains",
+      "type": "article",
+      "slug": "zynb6lokanrxw-migrating-from-i-pay-to-ozow-domain",
+      "meta": ""
+    },
+    {
+      "id": "tz5juxzj8ywh0",
+      "title": "FAQs",
+      "type": "article",
+      "slug": "tz5juxzj8ywh0-fa-qs",
+      "meta": ""
+    }
+  ]
+}

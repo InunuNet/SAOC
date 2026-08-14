@@ -1,0 +1,117 @@
+# Mission — gateway-rubric
+
+**Goal:** Let the Council decide between five payment gateways by assigning its own importance
+weights to its own deciding factors, on evidence gathered to one uniform standard.
+
+**Providers (all five, no pre-elimination):** Ozow, PayFast, Yoco, Peach Payments, Paystack.
+
+---
+
+## THE PIPELINE — run in this order, do not skip ahead
+
+This is the instruction Brad has now given three times. It is written here because context
+compaction keeps losing it and the session keeps jumping to the artifact.
+
+### Stage 1 — REACHABILITY (in progress)
+Prove, per gateway, that Alembic can retrieve **fair, comparable** source material:
+T&Cs / merchant contract, technical docs, marketing + pricing, support centre, NPO pages.
+
+- Five agents dispatched 2026-08-14, one per gateway. Output: `.agent/memory/scratch/reach/<gateway>.md`
+- Every fetch logged with: URL, HTTP status, Alembic strategy + confidence header, word count, VERDICT.
+- VERDICT ∈ REACHABLE | PARTIAL | BLOCKED | NOT FOUND.
+- **False-HIGH-confidence check is mandatory on every fetch.** Alembic returns HIGH confidence while
+  serving navigation menus (confirmed on support.yoco.help, peachpayments.com/fees). If the returned
+  heading does not match the requested document, it is BLOCKED, whatever the header says.
+- **Gate:** Stage 2 does not start until the five reports exist and the comparability gaps are known.
+  If a doc type is unreachable for one provider, that asymmetry must be stated, not papered over.
+
+### Stage 2 — RESEARCH, ONE GATEWAY AT A TIME
+One mission per gateway. Run them **sequentially, not in parallel** — Brad's instruction. Each writes
+up its own data to the same fixed template so the five are genuinely comparable. No cross-provider
+comparison inside a per-gateway write-up.
+
+### Stage 3 — THE ARTIFACT
+Only after all five write-ups exist. It compares them and **lets Brad assign the importance of each
+deciding factor.**
+
+---
+
+## HARD CONSTRAINTS ON THE ARTIFACT (violated once already — 2026-08-14)
+
+- **The weighting is Brad's, not mine.** No opinionated presets. A first build shipped with invented
+  presets ("show-day operations", "cheapest wins", "protect us from the fine print") — that is the
+  session's judgement wearing the Council's clothes. Removed; do not reintroduce.
+- **Deciding factors come from Brad**, not from what the research happened to turn up.
+  Factors he has named so far: pricing/fees; payment types supported (once-off, subscriptions,
+  donations, in-person); refunds; harsh T&Cs; documented non-profit support; and **the gap between
+  the marketing price and the price actually committed to in the contract** — he calls this his
+  harsh-T&Cs decider. He has invited additional factors to be proposed, but proposed ≠ imposed.
+- **Unverified facts must be visibly unverified**, never silently scored at a midpoint and blended in.
+- The artifact holds evidence and does arithmetic. It does not lean.
+
+---
+
+## Standing facts (already established — do not re-derive)
+
+- Deadline: **end of August 2026**, ~2 weeks. Show runs **three days**, then the account idles ~36 months.
+- SAOC has **no merchant account anywhere**. The PayFast integration is a personal sandbox, not an account.
+- Verified fee per R500 card ticket, ex-VAT: Ozow R14.25 · Paystack R15.50 · Peach R16.25 · Yoco R16.75 · PayFast R18.00.
+- Only PayFast has a named NPO product (Cause account). Its rate is unpublished and whether it covers
+  ticket sales rather than donations is **unresolved — the hinge fact**. Question drafted and ready to
+  send: `docs/research-evidence/npo-pricing.md`.
+- Evidence already on disk (do NOT re-fetch): `docs/research-evidence/` — both merchant contracts
+  verbatim, three teardowns, merchant evidence, NPO pricing sweep, exclusions write-up.
+- Ozow docs route: Stoplight JSON API, `https://hub.ozow.com/api/v1/projects/cHJqOjIzNzc2Mg/nodes/<slug>`.
+
+## Known Alembic defects (report upstream)
+1. PDFs unsupported — blocks Yoco's merchant agreement entirely. `?js=true` 502s on PDF URLs.
+2. **False HIGH confidence on nav-menu extractions** — support.yoco.help, peachpayments.com/fees.
+   Workaround: append `.md` to force content-negotiation. This one defeats the evidence protocol.
+
+## Superseded
+`docs/gateway-scorecard.html` — built out of order, at Stage 3 before Stage 1 finished, with invented
+presets. Kept only as a layout reference. Do not publish it as the deliverable.
+
+---
+
+## STATUS 2026-08-14 19:00 — Stages 1–3 COMPLETE
+
+**Deliverable:** https://claude.ai/code/artifact/3371d306-8941-423a-88ee-6e34a307d636
+Source: `docs/gateway-comparison.html`. Republish same path to update. Favicon ⚖️.
+13 factors, sliders start equal at 3, each tickable off, NO presets, NO recommendation.
+Factors Brad did not name are tagged "proposed" in the UI.
+
+**Evidence on disk — all five to the same 15 headings:**
+`docs/research-evidence/{ozow,payfast,yoco,peach,paystack}-writeup.md`
+`docs/research-evidence/security-certifications.md` (282 lines)
+`docs/research-evidence/alembic-defects-2026-08-14.md` → filed as InunuNet/Alembic#351
+`.agent/memory/scratch/reach/*.md` — reachability proof, retrieval routes per provider
+
+**Headline findings (do not re-derive):**
+- Peach is the ONLY provider whose contract states the rates (Annexure A, change by mutual
+  agreement). Ozow/Yoco/Paystack defer to public pricing pages; PayFast to a private
+  "Application" — and its cl. 21.2(iii) cross-references cl. 21.3(ii), which does not exist.
+- So the marketing-vs-contract gap is near-universal, NOT a PayFast quirk. Framing corrected.
+- Ozow cl. 20.8.1 (marketing to SAOC's customers + trans-border, opt-out) is UNIQUE — Yoco and
+  Peach confirmed absent from primary sources, PayFast scoped to merchant only, Paystack has no
+  marketing clause but permits Third Country transfer with consent burden on merchant.
+- Cheapest rails per R500: Ozow Pay by Bank R7.50 · Peach Capitec R9.00 · Paystack EFT R10.00 ·
+  PayFast Instant EFT R10.00. Card: Ozow R14.25 < Paystack R15.50 < Peach R16.25 < Yoco R16.75
+  < PayFast R18.00.
+- Peach is the only one with an SLA (99.0%, service credits). Paystack explicitly disclaims uptime.
+- Yoco: ABSENT from Mastercard's SDP register (other four present with AOC dates + QSA names);
+  no ISO claim; no 3DS statement for online checkout. Its two contracts also conflict with each
+  other on arbitration and liability cap.
+- Paystack's AOC is filed under Paystack, Inc. (US), not confirmed for the SA entity.
+- PASA registers ARE reachable via r.jina.ai → all five VERIFIED registered. Visa registry,
+  IAF CertSearch, SGS directory remain unreachable (IAF is paywalled even for humans).
+
+**Retrieval routes that work (reuse, don't rediscover):**
+- PDFs Alembic reports `pdf-unsupported`: `curl -s "http://localhost:7077/https://r.jina.ai/<pdf-url>"`
+- Cloudflare-fronted pages (paystack.com): `?no_cache=true` + `Accept: application/json`
+- Peach fees table: `?js=true` (plain fetch returns a sitemap at HIGH confidence)
+- Yoco/Fern support articles: append `.md` to force content-negotiation
+
+**Open — needs the vendors, not more research:** no provider publishes a verification turnaround;
+PayFast's Minimum Volume Fee amount and Cause rate/scope; Yoco's governing contract, PCI status
+and 3DS; Peach's KYC turnaround and hold cap; Paystack SA entity's own attestation.
