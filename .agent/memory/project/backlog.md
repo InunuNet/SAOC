@@ -795,7 +795,7 @@ the ticket would sit `reserved` forever. Use the deployed host for payment testi
   expose a Refunds API (GET/POST /refunds/:pf_payment_id, same MD5+passphrase auth as the ITN),
   so this is buildable — see docs/payment-gateway-research-2026-08.md.
 
-- [ ] **[P2, NEW 2026-08-14] Additional sign-in providers (Google/Microsoft/Apple) — BLOCKED on the P0 above.**
+- [ ] **[P2, NEW 2026-08-14] Additional sign-in providers — now MISSION admin-auth-hardening (M2). Brad CONFIRMED he holds a paid Apple Developer membership, so Apple is viable.**
   Brad wants Google, Microsoft and Apple. Effort is very uneven: Google is near-zero config;
   Microsoft needs an Azure/Entra app registration (tenant, client id, secret); Apple needs a
   paid Apple Developer Program membership (~$99/yr) plus a Services ID and signing key.
