@@ -76,15 +76,37 @@ rdr pass on lo0 inet proto tcp from any to 127.0.0.1 port 80 -> 127.0.0.1 port $
 EOF
 echo "pf: wrote ${ANCHOR_FILE}"
 
-# 4. reference it from pf.conf (rdr-anchors must precede filter rules)
-if grep -q "$ANCHOR_NAME" /etc/pf.conf; then
-  echo "pf.conf: anchor already referenced"
-else
-  cp /etc/pf.conf "/etc/pf.conf.backup-$(date +%Y%m%d%H%M%S)"
-  printf 'rdr-anchor "%s"\nload anchor "%s" from "%s"\n' \
-    "$ANCHOR_NAME" "$ANCHOR_NAME" "$ANCHOR_FILE" >> /etc/pf.conf
-  echo "pf.conf: anchor added (original backed up)"
+# 4. reference it from pf.conf.
+#
+# ORDER IS LOAD-BEARING. pf requires rules grouped as: options, normalization, queueing,
+# translation, filtering. `rdr-anchor` is TRANSLATION, so it must appear before the
+# `anchor "com.apple/*"` FILTER line. Appending to the end of the file puts it after that
+# line and pf refuses the whole ruleset with:
+#   "Rules must be in order: options, normalization, queueing, translation, filtering"
+# — which silently leaves the redirect inactive while everything else looks like it worked.
+# So: insert rdr-anchor directly after the existing com.apple rdr-anchor, and append only
+# the `load anchor` line (which is not order-sensitive) at the end.
+cp /etc/pf.conf "/etc/pf.conf.backup-$(date +%Y%m%d%H%M%S)"
+
+# Drop any previous (possibly misplaced) entries so re-running repairs rather than duplicates.
+sed -i '' "/${ANCHOR_NAME}/d" /etc/pf.conf
+
+sed -i '' "/^rdr-anchor \"com.apple\/\*\"/a\\
+rdr-anchor \"${ANCHOR_NAME}\"
+" /etc/pf.conf
+printf 'load anchor "%s" from "%s"\n' "$ANCHOR_NAME" "$ANCHOR_FILE" >> /etc/pf.conf
+echo "pf.conf: anchor placed in the translation section (original backed up)"
+
+# Fail loudly if the ruleset is still invalid — a silent failure here is what made the
+# first version of this script appear to succeed while doing nothing.
+if ! pfctl -n -f /etc/pf.conf 2>/tmp/pfcheck.$$; then
+  echo "ERROR: /etc/pf.conf is still invalid — redirect NOT active:" >&2
+  sed 's/^/  /' /tmp/pfcheck.$$ >&2
+  rm -f /tmp/pfcheck.$$
+  exit 1
 fi
+rm -f /tmp/pfcheck.$$
+echo "pf.conf: ruleset validates"
 
 # 5. LaunchDaemon so the redirect survives a reboot
 cat > "$PLIST" <<'EOF'
