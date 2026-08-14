@@ -115,3 +115,38 @@ Factors Brad did not name are tagged "proposed" in the UI.
 **Open — needs the vendors, not more research:** no provider publishes a verification turnaround;
 PayFast's Minimum Volume Fee amount and Cause rate/scope; Yoco's governing contract, PCI status
 and 3DS; Peach's KYC turnaround and hold cap; Paystack SA entity's own attestation.
+
+## UPDATE — six providers, factors revised
+
+- **Flutterwave added as a sixth** after `docs/research-evidence/exclusions-audit.md` found it was
+  never assessed. PASA-verified (Flutterwave Technology Solutions (Pty) Ltd, reg 2017/146006/07,
+  Absa-sponsored), ZAR settlement, self-serve SA KYC, ~72h published approval (the ONLY provider
+  publishing one). Write-up: `docs/research-evidence/flutterwave-writeup.md`.
+  **Two disqualifier-grade findings:** contractual 10% rolling reserve held 180 days (~R100k of a
+  R1m show, for six months), and its SA-served MSA is Nigeria-templated (Nigerian law, Lagos
+  arbitration) contradicting its own /za/terms. Also NGO/Charities need pre-approval.
+- **Factor "Can we be live by end of August" REPLACED** with "How quickly it can be built"
+  (`docs/research-evidence/integration-effort.md`) — Brad's point: approval turnaround is
+  unpublished and unknowable, whereas documentation quality is measurable. Ozow scores worst (3):
+  its Stoplight API reference returns HTTP 500 on every node, confirmed across two sessions, and
+  webhook verification docs sit behind those broken pages. PayFast scores 9 — demo credentials
+  published in-docs, no account needed. None of the six has a first-party Node SDK except
+  Flutterwave.
+- Removed a "no Nigerian link needed" note on Paystack — that was this session's framing, not a
+  finding, and carried an unpleasant implication. Do not reintroduce.
+- All 78 cells (13 factors × 6 providers) now open a plain-English explanation on click:
+  what the factor means, what it means for that provider, and how solid the evidence is.
+
+## Exclusions audit — outcome
+`docs/research-evidence/exclusions-audit.md`. Confirmed DROP on evidence: Stripe (no SA merchant
+onboarding), PayPal (cannot hold/pay out ZAR), Mukuru (remittance, no checkout product), DPO Pay /
+PayGate (**same corporate parent as PayFast — never a second option**), Adumo, PayJustNow.
+KEEP-PENDING if the list ever reopens: Zapper (only provider naming NPOs on its own pricing page,
+rate sales-gated), Netcash, Stitch Express, iKhokha.
+**Process finding:** Yoco was partly excluded for an "empty balance refund risk" that PayFast and
+Ozow carry identically and were not penalised for — the criterion was applied unevenly.
+
+## UNRESOLVED CONTRADICTION — do not average away
+The exclusions audit put PayFast's R500 card fee at ~R14.68. Every other source, including
+PayFast's own worked example on payfast.io/fees/, gives **R18.00 (3.2% + R2)**. R18.00 stands as
+the vendor-quoted figure; the discrepancy is logged, not reconciled.
