@@ -290,7 +290,41 @@ not spend verification budget re-proving them.
 3. **The Show's duration is three days.** Confirm the article states this correctly wherever the
    selling window or event length is described.
 
-4. **The article presents an either/or that the contracts do not require.** Brad asked on
+4. **THE "MEMBERSHIPS FIX THE CONTRACT PROBLEM" PARAGRAPH IS WRONG. Highest-priority correction
+   after the deadline.** The article's section 1 says: "The Minimum Volume Fee stops applying once
+   monthly income passes R20,000... The membership plan does not just add revenue — it fixes the
+   contract problem." Brad rejected this on 2026-08-14: "There's no ways a society is going to do
+   20k of membership fees a month, it's just unrealistic." He is right, and the arithmetic was
+   never done.
+
+   R20,000/month is **R240,000 per year** in membership subscriptions. At a realistic R200–500 per
+   member per year that requires roughly 500–1,200 paying members transacting through
+   saoc.co.za — implausible for a national council of 21 affiliated societies.
+
+   THE CORRECTED POSITION, verified against both contracts:
+   - PayFast's inactivity clauses (21.2(i), 21.2(iii)) trigger on whether Payment Transactions are
+     submitted, NOT on volume. So monthly membership billing DOES keep the account alive and does
+     defuse the 6-month suspension and 12-month auto-termination. That half of the claim survives.
+   - The Minimum Volume Fee (cl. 3.4) keys on monthly income of R20,000 or less. Memberships will
+     not clear it. **The fee therefore applies in essentially every month, permanently** — not
+     just between Shows.
+   - The amount is not in the contract; it is set in the Application form, which we have never
+     seen. So it is an **unknown recurring monthly charge, in perpetuity, on a 36-month
+     auto-renewing agreement.**
+   - **Ozow has no equivalent.** Verified: no minimum volume fee, no monthly fee, no minimum term
+     (cl. 4.1.1 indefinite), no auto-renewal, no early-termination penalty, 30 days' notice either
+     side (cl. 4.3.1).
+
+   WHY IT MATTERS TO THE DECISION: at only R200/month the fee is R7,200 across a three-year cycle
+   — already more than the ~R5,175 that choosing Ozow saves on ticket fees for an entire Show. An
+   unknown fee could therefore exceed the entire cost difference the article spends its main table
+   computing. F6 must model this at several plausible fee levels rather than assert a conclusion,
+   and must obtain or flag the actual figure as a blocking question for PayFast.
+
+   The "memberships → PayFast" arm of the recommendation survives ONLY on the recurring-billing
+   capability, which nothing else has. It must no longer be justified by the minimum-fee argument.
+
+5. **The article presents an either/or that the contracts do not require.** Brad asked on
    2026-08-14 whether SAOC could run tickets through Ozow and memberships through PayFast. It can:
    PayFast cl. 2.2 provides its services "on non-exclusive basis"; Ozow cl. 3.1.1 grants a
    "non-exclusive, non-transferable, revocable licence". **Neither contract prohibits using
