@@ -1,7 +1,6 @@
-import { cookies } from 'next/headers';
-import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
+import { getAdminSession } from '@/lib/admin-auth';
 import { initAdmin } from '@/lib/firebase-admin';
 
 const CSV_HEADER = 'bookingRef,attendeeName,attendeeEmail,ticketType,status,purchasedAt';
@@ -14,26 +13,10 @@ function escapeField(value: string): string {
 }
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get('session')?.value;
-
-  if (!sessionCookie) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  let decodedToken: Awaited<ReturnType<ReturnType<typeof getAuth>['verifySessionCookie']>>;
-  try {
-    decodedToken = await getAuth(initAdmin()).verifySessionCookie(sessionCookie, true);
-  } catch {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  const isAdmin =
-    decodedToken.admin === true ||
-    (decodedToken as Record<string, unknown>)['role'] === 'admin';
-
-  if (!isAdmin) {
-    return new Response('Forbidden', { status: 403 });
+  const session = await getAdminSession();
+  if (!session.ok) {
+    const status = session.reason === 'no-session' || session.reason === 'invalid-session' ? 401 : 403;
+    return new Response(status === 401 ? 'Unauthorized' : 'Forbidden', { status });
   }
 
   const db = getFirestore(initAdmin());

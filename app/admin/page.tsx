@@ -1,31 +1,13 @@
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
+import { getAdminSession } from '@/lib/admin-auth';
 import { initAdmin } from '@/lib/firebase-admin';
 import type { Ticket, TicketType, TicketStatus } from '@/types/index';
 
 export default async function AdminPage() {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get('session')?.value;
-
-  if (!sessionCookie) {
-    redirect('/admin/login');
-  }
-
-  let decodedToken: Awaited<ReturnType<ReturnType<typeof getAuth>['verifySessionCookie']>>;
-  try {
-    decodedToken = await getAuth(initAdmin()).verifySessionCookie(sessionCookie, true);
-  } catch {
-    redirect('/admin/login');
-  }
-
-  const isAdmin =
-    decodedToken.admin === true ||
-    (decodedToken as Record<string, unknown>)['role'] === 'admin';
-
-  if (!isAdmin) {
+  const session = await getAdminSession();
+  if (!session.ok) {
     redirect('/admin/login');
   }
 

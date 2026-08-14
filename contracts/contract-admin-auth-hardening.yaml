@@ -1,0 +1,208 @@
+schema: athanor.contract/v1
+slug: admin-auth-hardening
+goal: >-
+  Mission admin-auth-hardening, milestone M1, features F1+F2 only. Close the two
+  confirmed gaps in /admin authorisation — POST /api/admin/session mints a cookie for
+  ANY valid idToken with no claim check, and /admin/door renders the scanner UI to
+  anyone unauthenticated — by giving all six admin surfaces one shared, allowlist-backed
+  authorisation helper that fails closed on every unenumerated state, then proving it
+  behaviourally against the real running server. F3 (provisioning/revocation script,
+  docs/admin-access.md, disabling self-signup) and F4-F6 (sign-in providers, human
+  verification) are separate, later contracts — not built or asserted here. Full context
+  and design decisions: contracts/golden/admin-auth-hardening/README.md.
+created_at: '2026-08-14'
+autonomy: high
+
+# ---------------------------------------------------------------------------
+# HOW THIS CONTRACT IS VERIFIED
+# ---------------------------------------------------------------------------
+# This project has a documented history of false-green assertions -
+# contracts/contract-d5-admin-dashboard.yaml D5-04 greps for "admin" plus
+# "claim|role|verifySessionCookie" in one file, which cannot distinguish a real
+# authorisation check from an incidental mention, and it passed the entire time the
+# session route was silently minting cookies for anyone. This contract supersedes it
+# (see README.md "What D5-04 got wrong"). Every security-relevant assertion below is a
+# REAL HTTP round trip against the running server, or a real Admin SDK mutation followed
+# by a real HTTP round trip. Source greps appear only for A-STRUCT-01, which asserts a
+# fact a grep can actually settle (the decision lives in exactly one file) and says so.
+#
+# SERVER UNDER TEST — the gate OWNS this, it is not a human precondition. A0 below runs
+# contracts/checks/admin-auth-hardening/server-ctl.sh start, which rsync's the CURRENT
+# working tree (uncommitted changes included — this is what must be tested, never a
+# stale committed snapshot) into an isolated scratch directory, `pnpm install`s and
+# `pnpm build`s there, and starts a production server on http://127.0.0.1:3400. A-STOP
+# tears it down and removes the scratch tree. Retargeted 2026-08-14 away from
+# https://dev.saoc.co.za:3333 (pnpm dev:secure) - that target was independently fatal
+# two ways, both measured: dev-mode first-hit compilation took 75-120s per route
+# (blowing every check's timeout_seconds mid-run, the exact incident class this
+# project's timeout rule exists to prevent), and Node's fetch cannot complete a TLS
+# handshake against it at all (mkcert CA not in Node's trust store, though `curl -k`
+# succeeds). The isolated scratch build also means this gate can run safely even while
+# someone else has `pnpm dev:secure` up on 3333 in this same checkout - it never touches
+# this checkout's own .next. Override the target with ADMIN_AUTH_CHECK_BASE_URL to point
+# every other check at a different already-running server instead (skip A0/A-STOP in
+# that case). Full rationale: server-ctl.sh's own header comment.
+#
+# PRECONDITIONS (the ones the gate genuinely cannot satisfy itself):
+#   1. .env.local present at the repo root: NEXT_PUBLIC_FIREBASE_API_KEY,
+#      FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL, FIREBASE_ADMIN_PRIVATE_KEY.
+#      server-ctl.sh copies this file into the scratch build tree; nothing else supplies it.
+#   2. ADMIN_EMAIL_ALLOWLIST in that SAME .env.local includes the value of
+#      ADMIN_AUTH_CHECK_ALLOWLISTED_EMAIL (default
+#      admin-auth-check-allowlisted@saoc.co.za) - flagged exactly as loudly as the server
+#      precondition above, because the allowlist is read from the server PROCESS's env at
+#      request time and no check process can reach into that process's env from outside.
+#      Missing this makes A-ALLOW-01, A-STATE-01 and A-STATE-02 fail with a 403 that LOOKS
+#      IDENTICAL to a real gate defect; each of those checks' failure messages say to
+#      verify this allowlist entry first. See README.md "Fixture accounts" for why a bare
+#      allowlist entry with no account/claim behind it grants nobody anything and is safe
+#      to leave configured permanently.
+#
+# WARM-UP: every check that touches the app server issues a warm-up request (its own
+# 10s budget, separate from timeout_seconds) to each surface it is about to assert
+# against, BEFORE any assertion runs. A warm-up failure reports as "PRECONDITION
+# FAILED" (server not ready / not reachable), never as a failing security assertion -
+# see _shared.mjs `warmUp()` / `PreconditionError`.
+#
+# FIXTURES AND CLEANUP: every Firebase Auth user these checks create (probe accounts,
+# the allowlisted fixture account) is deleted in a finally, whether assertions pass or
+# fail. Nothing here leaves a standing privileged account. See README.md "Fixture
+# accounts this contract's checks create and destroy".
+#
+# ORDERING: contract.py executes this phase's checks sequentially in FILE ORDER (same
+# guarantee contract-ticketing-hardening.yaml relies on) - A0 (server start) is listed
+# first and A-STOP last for exactly that reason. Within the middle, A-NEGCTL-01 is
+# listed before the behavioural checks it validates, so a broken probe-and-assert
+# harness is caught before its silence is mistaken for security.
+
+features:
+  - id: F1
+    name: Authorisation gate - allowlist + custom claim, one shared helper, fails closed
+    status: pending
+  - id: F2
+    name: Adversarial proof that a self-registered account is refused everywhere
+    status: pending
+
+goldens:
+  - contracts/golden/admin-auth-hardening/README.md
+  - contracts/golden/admin-auth-hardening/admin-auth-gate.golden.md
+  - contracts/golden/admin-auth-hardening/session-route.golden.md
+  - contracts/golden/admin-auth-hardening/door-gate.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- server lifecycle: gate-owned, runs first ----------
+    - id: A0-SERVER-START
+      description: >-
+        Starts the isolated locally-built production server this whole contract tests
+        against (see "SERVER UNDER TEST" above and server-ctl.sh's header comment).
+        Rsync + pnpm install + pnpm build + next start, measured 2026-08-14: ~79s total
+        (rsync+install ~10s, build ~22s, server ready ~1s, plus a few seconds of shell
+        overhead). 240s leaves ample headroom for a cold pnpm store or a slower CI host.
+      command: bash contracts/checks/admin-auth-hardening/server-ctl.sh start
+      timeout_seconds: 240
+
+    # ---------- negative control, runs first ----------
+    - id: A-NEGCTL-01
+      description: >-
+        Negative control. The probe-and-assert HTTP logic used throughout this contract
+        correctly reports FAILURE (200 + cookie issued) when pointed at a fixture server
+        that deliberately reproduces the pre-fix defect. Proves the checks below can
+        fail; does not touch the real dev server.
+      command: node contracts/checks/admin-auth-hardening/check-negative-control.mjs
+      timeout_seconds: 90  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 1.4s
+
+    # ---------- F2: the core adversarial proof ----------
+    - id: A-PROBE-01
+      description: >-
+        F2 - a freshly self-registered probe account (real accounts:signUp with the
+        public web API key) is refused a session cookie (403, no Set-Cookie), then
+        refused at every admin surface with no cookie at all, then deleted and confirmed
+        gone. Reproduces the original attack end to end. Currently RED on the session
+        exchange (measured 2026-08-14: 200 + cookie issued).
+      command: node contracts/checks/admin-auth-hardening/check-probe-refused-everywhere.mjs
+      timeout_seconds: 120  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 3.2s
+
+    # ---------- regression guards: the baseline-correct surfaces must stay correct ----------
+    - id: A-REGRESS-01
+      description: >-
+        F2 - regression guard. /admin, /api/admin/tickets and /api/admin/export-csv,
+        which the 2026-08-14 baseline already measured correct, still refuse a request
+        with NO cookie at all after this fix. A fix that breaks a working gate is a
+        regression, not a fix. Currently GREEN; must stay green.
+      command: node contracts/checks/admin-auth-hardening/check-regression-guard-unauthenticated.mjs
+      timeout_seconds: 90  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 0.11s
+
+    # ---------- F1: the door gate defect, flipped ----------
+    - id: A-DOOR-01
+      description: >-
+        F1 - /admin/door redirects to /admin/login (and renders no scanner markup) for
+        an unauthenticated visitor. Currently RED (measured 2026-08-14: 200, scanner UI
+        renders).
+      command: node contracts/checks/admin-auth-hardening/check-door-gate-flips.mjs
+      timeout_seconds: 90  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 0.10s
+
+    # ---------- the gate does not simply refuse everyone ----------
+    - id: A-ALLOW-01
+      description: >-
+        F1/F2 - a genuinely allowlisted, claim-bearing, email-verified identity still
+        succeeds everywhere: session mint (200 + cookie), /admin (200), /admin/door (200
+        + scanner markup), /api/admin/tickets (200), /api/admin/export-csv (200).
+        Regression guard against a gate that blocks all access. Requires the
+        ADMIN_EMAIL_ALLOWLIST precondition above.
+      command: node contracts/checks/admin-auth-hardening/check-allowlisted-identity-succeeds.mjs
+      timeout_seconds: 120  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 9.7s
+
+    # ---------- fail-closed on every unenumerated state ----------
+    - id: A-STATE-01
+      description: >-
+        F1 - claim present but not allowlisted, malformed claim (string 'true', not
+        boolean), missing claim entirely, and claim present but email unverified are all
+        refused (403, no cookie), each isolated as the sole varying condition against an
+        otherwise-valid fixture identity.
+      command: node contracts/checks/admin-auth-hardening/check-fail-closed-states.mjs
+      timeout_seconds: 120  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 15.7s
+
+    - id: A-STATE-02
+      description: >-
+        F1 - a revoked session (revokeRefreshTokens) is refused immediately on its next
+        use, at /admin and /api/admin/tickets, proving verifySessionCookie's checkRevoked
+        argument is actually wired through and not just present as an unused parameter.
+      command: node contracts/checks/admin-auth-hardening/check-revoked-session-refused.mjs
+      timeout_seconds: 120  # measured 2026-08-14 vs local prod build (127.0.0.1:3400): 8.1s
+
+    # ---------- structural: one home for the decision, supersedes D5-04 ----------
+    - id: A-STRUCT-01
+      description: >-
+        Supersedes contract-d5-admin-dashboard.yaml D5-04. All six admin surfaces
+        (app/admin/page.tsx, app/admin/door/layout.tsx, app/api/admin/tickets/route.ts,
+        app/api/admin/checkin/route.ts, app/api/admin/export-csv/route.ts,
+        app/api/admin/session/route.ts) import the shared helper from lib/admin-auth and
+        none contains the old inline duplicated claim check. Includes a self-test
+        proving the residue pattern actually fires on the known old code shape.
+      command: node contracts/checks/admin-auth-hardening/check-single-home-structural.mjs
+      timeout_seconds: 30  # measured 2026-08-14: 0.08s (source grep only, no server dependency)
+
+    # ---------- gates ----------
+    - id: A-GATE-01
+      description: strict TypeScript type-check passes
+      command: pnpm type-check
+      timeout_seconds: 300  # measured 2026-08-14: 4.0s
+    - id: A-GATE-02
+      description: lint passes with zero errors
+      command: pnpm lint
+      timeout_seconds: 300  # measured 2026-08-14: 5.9s
+
+    # ---------- server lifecycle: gate-owned, runs last, unconditionally ----------
+    - id: A-STOP-SERVER
+      description: >-
+        Stops the isolated production server started by A0-SERVER-START and removes its
+        scratch build tree, whether the checks above passed or failed. Must run even on
+        an earlier failure — a leaked background server on 3400 is exactly the kind of
+        residue this project's contracts treat as unacceptable (see README.md "Fixture
+        accounts"). If the gate runner does not itself guarantee teardown-on-failure,
+        the operator must run `bash contracts/checks/admin-auth-hardening/server-ctl.sh
+        stop` by hand - said here as loudly as every other precondition in this file.
+      command: bash contracts/checks/admin-auth-hardening/server-ctl.sh stop
+      timeout_seconds: 30  # measured 2026-08-14: <1s

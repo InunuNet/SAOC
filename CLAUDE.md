@@ -101,6 +101,15 @@ The `FIREBASE_PRIVATE_KEY` contains literal `\n` characters in the JSON — past
 | `nationalShows` | Past and upcoming national shows — add as Firestore docs |
 | `contactSubmissions` | Written by the `/api/contact` route — do not edit manually |
 
+### Admin authorisation
+
+All `/admin` surfaces are gated through one shared helper, `lib/admin-auth.ts` —
+`admin === true` custom claim, `email_verified === true`, and live membership of
+`ADMIN_EMAIL_ALLOWLIST`, all re-checked per request; fails closed on every unenumerated
+state. See [`docs/admin-access.md`](docs/admin-access.md) for the policy, the debugging
+`reason` values, and known traps (unverified-email lockouts, an empty allowlist that
+fails closed silently).
+
 ---
 
 ## Adding Data (No Code Changes Needed)

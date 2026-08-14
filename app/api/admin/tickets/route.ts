@@ -1,32 +1,15 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
+import { getAdminSession } from '@/lib/admin-auth';
 import { initAdmin } from '@/lib/firebase-admin';
 import type { Ticket, TicketType, TicketStatus } from '@/types/index';
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get('session')?.value;
-
-  if (!sessionCookie) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  let decodedToken: Awaited<ReturnType<ReturnType<typeof getAuth>['verifySessionCookie']>>;
-  try {
-    decodedToken = await getAuth(initAdmin()).verifySessionCookie(sessionCookie, true);
-  } catch {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const isAdmin =
-    decodedToken.admin === true ||
-    (decodedToken as Record<string, unknown>)['role'] === 'admin';
-
-  if (!isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const session = await getAdminSession();
+  if (!session.ok) {
+    const status = session.reason === 'no-session' || session.reason === 'invalid-session' ? 401 : 403;
+    return NextResponse.json({ error: status === 401 ? 'Unauthorized' : 'Forbidden' }, { status });
   }
 
   const db = getFirestore(initAdmin());

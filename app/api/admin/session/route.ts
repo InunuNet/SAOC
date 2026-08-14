@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuth } from 'firebase-admin/auth';
+import { getAuth, type DecodedIdToken } from 'firebase-admin/auth';
 
+import { isAdminToken } from '@/lib/admin-auth';
 import { initAdmin } from '@/lib/firebase-admin';
 
 const SESSION_DURATION_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
@@ -12,6 +13,17 @@ export async function POST(request: NextRequest) {
 
   if (typeof idToken !== 'string' || !idToken) {
     return NextResponse.json({ error: 'idToken is required' }, { status: 400 });
+  }
+
+  let decodedIdToken: DecodedIdToken;
+  try {
+    decodedIdToken = await getAuth(initAdmin()).verifyIdToken(idToken, true);
+  } catch {
+    return NextResponse.json({ error: 'Failed to create session' }, { status: 401 });
+  }
+
+  if (!isAdminToken(decodedIdToken)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   let sessionCookie: string;
