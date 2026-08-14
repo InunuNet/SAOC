@@ -18,10 +18,22 @@ last_checkpoint:
 features:
 - id: F1
   title: Authorisation gate — allowlist or custom claim, enforced server-side, failing closed
-  inline_brief: 'Every /admin page AND every /api/admin route must check AUTHORISATION,
-    not merely authentication. Today they call verifySessionCookie and stop — see
-    app/admin/page.tsx:19 and app/api/admin/tickets/route.ts:19. A valid session for
-    ANY account on the project is currently sufficient.
+  inline_brief: 'PREMISE CORRECTED 2026-08-14 by live test against the deployed host.
+    Five of six surfaces ALREADY check a custom claim (app/admin/page.tsx:24,
+    api/admin/tickets:25, checkin:27, export-csv:32) and correctly return 403 / 307 to
+    a self-registered account. Admin DATA was never reachable. The real gaps are
+    narrower and specific:
+
+    (a) POST /api/admin/session mints a session cookie for ANY valid idToken — measured
+    200 with a cookie issued for a freshly self-registered account. No claim check.
+    (b) app/admin/door/page.tsx is a client component with no server gate and there is
+    no middleware.ts, so the scanner UI renders to anyone unauthenticated (check-in
+    POSTs still 403, so this is UI exposure, not check-in capability).
+    (c) NO ALLOWLIST governs who may hold the admin claim — grant/revoke is undefined.
+    (d) Open self-signup at the Identity Platform level.
+
+    Do not rewrite the five working claim checks for the sake of uniformity; make them
+    read from one shared helper so the allowlist has a single home, and close (a)–(d).
 
     Approach: a custom claim (e.g. admin:true) set by an out-of-band path, checked
     server-side on every admin surface, with an explicit allowlist of permitted email
@@ -43,7 +55,16 @@ features:
 - id: F2
   title: Adversarial proof that a self-registered account is refused everywhere
   inline_brief: 'The assertion that closes this mission. A source-grep is NOT evidence
-    — this project has a documented history of false-green assertions.
+    — this project has a documented history of false-green assertions, and
+    contracts/contract-d5-admin-dashboard.yaml D5-04 is a live example: it greps for
+    "admin" plus "claim|role|verifySessionCookie" in one file, which cannot distinguish
+    a real authorisation check from an incidental mention. It passed throughout. Replace
+    it as part of this feature.
+
+    A MEASURED BASELINE now exists (2026-08-14, deployed host): session route 200 +
+    cookie issued, /api/admin/tickets 403, /api/admin/export-csv 403, /admin 307 to
+    login, /admin/door 200. The test must assert the two failures flip and the four
+    passes STAY passing — a fix that breaks a working gate is a regression.
 
     Reproduce the original attack exactly: create an account via an unauthenticated
     POST to identitytoolkit.googleapis.com/v1/accounts:signUp using the PUBLIC web API
@@ -163,25 +184,37 @@ milestones:
 
 ## Why this mission exists
 
-On 2026-08-14, while checking whether it was safe to add sign-in providers, I proved that
-**anyone can obtain full `/admin` access with a single unauthenticated curl**. No invitation,
-no console access:
+> **PREMISE CORRECTED 2026-08-14.** This mission was written on the claim that a self-registered
+> account could reach the buyer list, the CSV export and the door scanner — a POPIA
+> notifiable-breach shape. That claim was an **inference** from a successful `accounts:signUp`;
+> the chain was never tested to the asset. Re-tested end to end against the deployed host the
+> same day, it does not hold. **Admin data was never reachable.** The section below records what
+> is actually true.
 
-- Firebase Email/Password self-signup is open by default.
-- The web API key is public by design — it ships in the client bundle.
-- `/admin` and every `/api/admin` route gate only on `verifySessionCookie`, i.e. "is this a
-  valid session for this project" — **authentication, with no authorisation**.
+Measured against `https://saoc-prod--saoc-webapp.europe-west4.hosted.app` with a freshly
+self-registered account (both probe accounts deleted and verified gone afterwards):
 
-I created such an account against the live project, confirmed it, then deleted it and verified
-it was gone (uid `uvAs3B4gjXRJiJnn7zSmfALzSlR2`).
+| Surface | Result |
+|---|---|
+| `accounts:signUp` via the public web API key | account created — self-signup is open |
+| `POST /api/admin/session` | **200, session cookie issued** — no claim check |
+| `/api/admin/tickets` | 403 Forbidden |
+| `/api/admin/export-csv` | 403 Forbidden |
+| `/admin` | 307 → `/admin/login` |
+| `/admin/door` | **200, scanner UI renders** |
 
-Reachable that way: the ticket admin, the buyer list, the CSV export, and the door check-in
-scanner. Buyer names, emails and phone numbers are personal information under POPIA, so this
-is a notifiable-breach shape rather than a nuisance.
+Five of six surfaces already check `decodedToken.admin === true || role === 'admin'`. What
+remains genuinely broken is the ungated session route, the ungated door page, the absence of any
+allowlist governing who may hold the claim, and open self-signup.
 
-**This is why the mission leads with the gate and not the providers.** Brad asked for Google,
-Microsoft and Apple sign-in. Adding any of them first would widen the hole from "anyone who
-can call an API" to "every Google account on earth".
+**The project has zero auth accounts and zero admin claims.** `/admin` is inaccessible to
+everyone, including Brad — that, not a breach, is why the door scanner has been untestable in
+every environment. Provisioning (F3) is the unblocker, and it is the reason the mission still
+leads with the gate rather than the providers: F1/F3 define who may hold the claim, and adding
+Google before that means defining it for every Google account on earth.
+
+**Method lesson, recorded because it cost a wrong severity call:** a successful first step is not
+proof of the last step. Test the whole chain to the asset before recording severity.
 
 ## What changed on 2026-08-14 that makes this possible now
 

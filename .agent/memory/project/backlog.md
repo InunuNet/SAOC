@@ -759,24 +759,39 @@ ERR_SSL_PROTOCOL_ERROR).
 back to `https://saoc.co.za`, the old Joomla site, so the ITN would be delivered there and
 the ticket would sit `reserved` forever. Use the deployed host for payment testing.
 
-- [ ] **[P0, SECURITY, NEW 2026-08-14] `/admin` accepts ANY Firebase account — self-signup is open.**
-  PROVEN, not theorised: on 2026-08-14 I created an account against the live project with a
-  single unauthenticated curl to `identitytoolkit.googleapis.com/v1/accounts:signUp` using the
-  public web API key, with no invitation and no console access. The account was deleted
-  immediately after (uid uvAs3B4gjXRJiJnn7zSmfALzSlR2, verified gone).
-  Admin access is gated ONLY on `verifySessionCookie` — see `app/admin/page.tsx:19` and
-  `app/api/admin/tickets/route.ts:19`. There is no allowlist, no custom claim, no email check.
-  So: anyone who reads the API key out of the client bundle (it is public by design) can
-  self-register and obtain a valid session, then reach the ticket admin, the buyer list, the
-  CSV export and the door check-in scanner. Buyer names/emails/phones are POPIA personal
-  information, so this is a notifiable-breach shape, not just a nuisance.
-  FIX: gate on an explicit allowlist or a custom claim set by an admin-only path, enforced
-  server-side in every /admin route AND every /api/admin route, failing closed. Enabling any
-  further sign-in provider (Google/Microsoft/Apple) BEFORE this is done widens the hole —
-  every Google account on earth would qualify.
-  Must be contract-driven with an adversarial assertion that a freshly self-registered account
-  is REFUSED by every admin surface. Do not accept a source-grep as evidence; this project has
-  a documented history of false-green assertions.
+- [ ] **[P1, SECURITY, NEW 2026-08-14 — SEVERITY CORRECTED same day] Open self-signup, an ungated
+  session route, and an ungated `/admin/door`. Admin DATA was never reachable.**
+  **The original P0 entry claimed a self-registered account could reach the buyer list, CSV
+  export and door scanner, and called it a POPIA notifiable-breach shape. That was an inference
+  from a successful `accounts:signUp`, never tested end to end. Re-tested against the deployed
+  host on 2026-08-14 and it is WRONG.** Measured, with a freshly self-registered account:
+  `POST /api/admin/session` → **200, session cookie issued** (real defect, no claim check);
+  `/api/admin/tickets` → 403; `/api/admin/export-csv` → 403; `/admin` → 307 to `/admin/login`;
+  `/admin/door` → **200, scanner UI renders** (client component, no server gate, no middleware —
+  UI exposure only, since check-in POSTs are 403). Five of six surfaces already check
+  `decodedToken.admin === true || role === 'admin'` (`app/admin/page.tsx:24`,
+  `app/api/admin/tickets/route.ts:25`, `checkin/route.ts:27`, `export-csv/route.ts:32`).
+  Both probe accounts deleted and verified gone; project now has 0 accounts.
+  GENUINE WORK: (a) `/api/admin/session` must refuse to mint a session for a non-allowlisted
+  identity; (b) `/admin/door` needs a server-side gate; (c) no allowlist governs who may hold
+  the `admin` claim — grant/revoke is undefined; (d) close open self-signup as defence in depth.
+  ALSO: **the project has ZERO auth accounts and ZERO admin claims**, so `/admin` is currently
+  inaccessible to everyone including Brad — that, not a breach, is why the door scanner has been
+  untestable in every environment. Provisioning is the unblocker.
+  ALSO: `contracts/contract-d5-admin-dashboard.yaml` assertion D5-04 is a false-green shape —
+  it greps for `admin` plus `claim|role|verifySessionCookie` in the same file, which cannot
+  distinguish a real authorisation check from an incidental mention. Replace with a live check.
+  Lesson recorded: a successful first step is not proof of the last step.
+
+- [ ] **[P2, NEW 2026-08-14] Empty-allowlist scenario is reasoned about, not proven live.** QA's adversarial
+  pass on F1 confirmed every other fail-closed state with real HTTP, but did NOT restart the harness
+  server with an empty/unset/whitespace-only/trailing-comma `ADMIN_EMAIL_ALLOWLIST` — that needed a
+  server restart outside its remit. `parseAllowlist()` is a deterministic trimmed/lowercased split
+  over `[].includes()`, so residual risk is low, but this is EXACTLY the secret-corruption defect
+  class: an empty allowlist fails closed for everyone and is indistinguishable from a working gate
+  from outside. The `[admin-auth] ADMIN_EMAIL_ALLOWLIST parsed length: 0` log line is the only
+  external signal. Add a real assertion that boots the server with each malformed value and proves
+  (a) everyone is refused and (b) the length-0 log line appears. Fold into F3 if F3 touches this path.
 
 - [ ] **[P1, NEW 2026-08-14] Ticket delivery does not exist — buyers receive nothing.**
   `lib/email.ts` contains no ticket/booking logic and is never called from

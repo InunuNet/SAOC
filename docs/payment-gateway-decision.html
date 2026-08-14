@@ -454,7 +454,86 @@
 
   <p>Secondary concerns are less critical but real: PayFast has no refund <em>webhook</em>, so refund status must be polled rather than pushed into the Council's admin dashboard. The refund API reuses the existing, already-reviewed signature-verification code (MD5-hash-plus-passphrase), so integration effort is modest. There is no official Node SDK — only a PHP one — but the REST API is fully documented and straightforward to wrap.</p>
 
-  <p>Ozow is materially cheaper — <strong>roughly R8 per R500 ticket, across every payment method modelled.</strong> Its refund product is real and well-designed. Its recent bank-access upgrades are genuine. But its merchant agreement could not be located for review, its Integration Manual is released only to committed merchants, and no documented path exists for a national council entity to sign up. These are procurement risks worth resolving before a second Show, not migration risks weeks before the first one.</p>
+  <p>Ozow is materially cheaper — <strong>roughly R8 per R500 ticket, across every payment method modelled.</strong> Its refund product is real and well-designed. Its recent bank-access upgrades are genuine. Its Integration Manual is still released only to committed merchants, and no documented path exists for a national council entity to sign up.</p>
+
+  <div class="callout">
+    <p class="callout-label">Update — 14 August 2026: Ozow's merchant agreement has now been obtained and read in full</p>
+    <p>An earlier version of this paper recorded Ozow's merchant agreement as unobtainable, and treated its reserve and fund-hold position as an unknown. <strong>That gap is now closed.</strong> We have the complete <em>Ozow Merchant Terms and Conditions V1.2026</em>, effective 1 April 2026 — 34,265 words — and have read it against the questions that matter here. Section 2 and the appendix have been rewritten accordingly.</p>
+    <p>The answer is not reassuring, and it is not "no reserve". Two clauses materially change the picture, and one of them is a structural mismatch with how SAOC actually operates. <strong>Neither was visible from Ozow's public materials.</strong></p>
+  </div>
+
+  <h3>Head-to-head — Ozow and PayFast on the points that decide this</h3>
+  <p>The comparison below is deliberately asymmetric in confidence, and it is important to read it that way. <strong>Every Ozow row is sourced from the signed-terms document itself, with clause numbers.</strong> The PayFast rows are carried forward from earlier research based on public materials; <strong>PayFast's terms have not yet been obtained and read the same way.</strong> Until they are, the two columns are not equally evidenced, and the fair reading is that we now know more about Ozow's downside than about PayFast's — not that PayFast's is smaller.</p>
+
+  <div class="table-wrap">
+    <table>
+      <caption>Ozow vs PayFast on the decisive criteria, as at 14 August 2026</caption>
+      <thead>
+        <tr><th>Criterion</th><th>Ozow — from the terms</th><th>PayFast — not yet verified</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Cost per R500 ticket</strong></td>
+          <td>~R8. Cheapest modelled, on every method. Clear advantage.</td>
+          <td>Materially higher on card.</td>
+        </tr>
+        <tr>
+          <td><strong>Can the Council refund a cancelled ticket?</strong></td>
+          <td>Yes, but gated on money being available first. Clause 7.3.1 processes refunds only "subject to there being sufficient funds in the Merchant's Float or aggregated balance". Clause 7.2.1 lets Ozow set that Float "in an amount determined by Ozow from time to time"; 7.2.2 requires top-up on demand.</td>
+          <td>Understood to deduct refunds from held proceeds first, and to reserve a discretion to debit the Council's bank account if those are insufficient. <em>Clause references unverified.</em></td>
+        </tr>
+        <tr>
+          <td><strong>If the Council does not fund a float</strong></td>
+          <td>Clause 7.3.2 falls back to reversal through the payment rail. So a float is not strictly mandatory — but which model applies is Ozow's decision, not the Council's, and the terms do not fix it.</td>
+          <td>Not established.</td>
+        </tr>
+        <tr>
+          <td><strong>Can funds be held back?</strong></td>
+          <td>Yes. Up to <strong>10% of monthly card turnover, held 180 days</strong> (Annexure 3, cl. 9.5). Clause 9.7 permits extending that period. Survives termination (cl. 16.2).</td>
+          <td>Reported to permit holds of <strong>up to 540 days</strong> from delivery, with twelve discretionary triggers. <em>Unverified — must be read directly.</em></td>
+        </tr>
+        <tr>
+          <td><strong>Is SAOC classed as high-risk?</strong></td>
+          <td><strong>No</strong> — Schedule 2's list covers lending, crypto, forex, gambling and financial services. Non-profits, events and ticketing are absent. Genuinely good news. But cl. 2.2 lets Ozow designate any merchant high-risk on volume, velocity or "other risk indicators", and the reserve above is <em>not</em> gated on that status anyway.</td>
+          <td>Explicitly onboards non-profits — a real, current advantage.</td>
+        </tr>
+        <tr>
+          <td><strong>Survives a three-year gap between Shows?</strong></td>
+          <td><strong>No, as written.</strong> Clause 4.5.1 permits suspension or termination after <strong>nine months</strong> of dormancy. See below — this is the most consequential finding in this update.</td>
+          <td>Not established. Should be asked as a direct question.</td>
+        </tr>
+        <tr>
+          <td><strong>Settlement timing</strong></td>
+          <td>No fixed commitment. Cl. 7.1.1 promises only "reasonable endeavours"; no annexure states a day-count for any rail except crypto. Cl. 8.2.1 excludes Ozow's liability for settlement delay entirely.</td>
+          <td>Published timings exist. Not re-verified in this pass.</td>
+        </tr>
+        <tr>
+          <td><strong>VAT basis</strong></td>
+          <td><strong>Resolved.</strong> Cl. 6.3.2: "All prices in this Agreement are exclusive of VAT." Previously flagged as a critical gap; now a high-confidence answer.</td>
+          <td>Confirmed ex-VAT.</td>
+        </tr>
+        <tr>
+          <td><strong>Recurring billing for memberships</strong></td>
+          <td>Capitec Pay only.</td>
+          <td>Full support — still the only candidate doing both tickets and memberships on one relationship.</td>
+        </tr>
+        <tr>
+          <td><strong>Chargeback cost</strong></td>
+          <td>R350 excl. VAT per chargeback (Annexure 3, cl. 9.3). On a R150 ticket, one chargeback costs more than two tickets earn.</td>
+          <td>Not established in this pass.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout danger">
+    <p class="callout-label">The single most consequential finding — dormancy versus a triennial Show</p>
+    <p><strong>Ozow clause 4.5.1 permits Ozow to suspend or terminate the agreement immediately on written notice if the account has processed no transactions for nine continuous months.</strong> The National Show runs every three years. Between Shows, a SAOC merchant account would sit idle for roughly thirty-six months — four times the dormancy trigger.</p>
+    <p>There is no carve-out in the terms for known-cyclical merchants, and no cure period beyond the notice itself. On a plain reading, the account would be exposed to termination long before the next Show, requiring re-onboarding each cycle — which compounds with the still-unresolved question of how a national council entity onboards at all.</p>
+    <p>This is a structural mismatch between SAOC's operating rhythm and Ozow's standard contract, and it is a larger problem than anything previously identified for either vendor. <strong>It should be put to Ozow in writing before Ozow is relied upon for any Show</strong>, and a negotiated variation or written assurance obtained. It is entirely possible Ozow will accommodate it — but that must be secured, not assumed.</p>
+  </div>
+
+  <p><strong>What this does not change:</strong> the recommendation above stands. Ozow remains materially cheaper, its refund product is real, and none of these clauses are unusual for the South African market — they are the terms a payment provider writes to protect itself, and PayFast's may well prove comparable or worse once read. What has changed is that Ozow's risks are now <em>specific and quantified</em> rather than unknown, which is the position from which a council can actually negotiate.</p>
 </section>
 
 <section id="s2">
@@ -567,11 +646,42 @@
   <p>Hellopeter's Trustindex for Ozow shows 2.1 out of 5 stars on 7 reviews submitted in the past 12 months. All are one-star, with recurring themes of delayed payouts and refunds.</p>
   <p><strong>Important context:</strong> this is a very small sample size; it represents consumer-side feedback, not merchant-side experience; and Hellopeter reviewers are self-selected. Do not overweight it. But do not dismiss it either. <strong>The Council should search for independent merchant testimonials on the company's handling of volume growth and refund backlogs before signing.</strong></p>
 
-  <h3>Merchant agreement — unknown reserve policy</h3>
-  <p>The Council cannot locate Ozow's standard merchant agreement. This means <strong>the company's fund-hold and reserve practices are unknown.</strong> No reserve clause was found in public materials. This is different from "there is no reserve"; it is "we cannot see the terms before signing."</p>
+  <h3>Merchant agreement — obtained, read, and materially more onerous than the public materials suggest</h3>
+  <p>This section previously recorded the merchant agreement as unobtainable and the reserve position as unknown. <strong>We now have it in full:</strong> <em>Ozow Merchant Terms and Conditions V1.2026</em>, effective 1 April 2026, 34,265 words across three Parts, nine Annexures and four Schedules. Every clause cited below is quoted from that document. Capitalised terms are defined in its Schedule 1, which is load-bearing — several clauses do not mean what they appear to mean without it.</p>
+
+  <p><strong>Rolling Reserve (Annexure 3, clauses 9.5–9.10).</strong> Ozow may require a reserve of up to <strong>10% of monthly card turnover, held for 180 days</strong>, as security against chargebacks, fines and penalties. Two details matter more than the headline. First, the trigger is not limited to formally high-risk merchants: it applies to card high-risk activities "<em>or where otherwise deemed applicable by Ozow in its discretion</em>". Second, clause 9.7 permits Ozow to increase the percentage or extend the holdback period where it identifies suspicious transactions, a high reversal rate, or increased risk of loss — with no stated cap on the extension. Clause 16.2 confirms the reserve survives termination, so ending the relationship does not accelerate release.</p>
+  <p>For a triennial Show this is a real cost-of-capital question: a reserve struck on the Show's concentrated sales window would release roughly six months after the event, once the funds are most needed for reconciliation.</p>
+
+  <p><strong>Dormancy (Part 2, clause 4.5.1).</strong> Suspension or termination is permitted after nine months without a transaction. Against a three-year Show cycle this is the sharpest edge in the document, and it is covered in full in section 1.</p>
+
+  <p><strong>Set-off without notice (clause 3.5).</strong> Ozow may set off amounts owed to it against any funds held on the Council's behalf, "without prior notice."</p>
+
+  <p><strong>Asymmetric liability (clauses 9 and 10).</strong> Ozow's liability is capped at twelve months' processing fees. The Council's indemnities to Ozow are <strong>uncapped</strong>, survive termination indefinitely for conduct during the term, and clause 10.4.1.4 gives Ozow sole discretion to take over the defence and settlement of a claim at the Council's cost. Legal costs run on the attorney-and-own-client scale — a materially higher standard than party-and-party.</p>
+
+  <p><strong>Suspension grounds are partly subjective (clause 5.1.1).</strong> Grounds include conduct that "could be prejudicial to Ozow", that "may threaten Ozow's relationships", or that exposes Ozow to reputational damage. These take effect immediately, and would apply to a payment rail mid-Show.</p>
+
+  <p><strong>Marketing consent granted on members' behalf (clause 20.8.1).</strong> Accepting these terms extends a marketing-contact consent covering the Council's ticket-buyers and members to Ozow. Given SAOC's own POPIA posture toward its membership, the Council should see this clause specifically.</p>
+
+  <p><strong>POPIA roles (clause 20.5).</strong> The Council is the Responsible Party for customer personal information. This is a real, ongoing obligation that exists independently of the fact that Ozow's refund routing means SAOC never handles members' bank details. Earlier drafts of this paper framed Ozow's refund privacy as a clean advantage; that remains true for the narrow point that SAOC never collects members' bank details, but it does not touch the Council's broader Responsible Party duties, which apply whichever gateway is chosen.</p>
+
+  <h3>Costs that do not appear on the pricing page</h3>
+  <p>Ozow's published pricing is genuinely transparent and remains its strongest advantage. The agreement, however, adds cost categories that no pricing page shows, and the Council should budget for them rather than discover them.</p>
+  <ul>
+    <li><strong>Pass-through fees (clause 6.7)</strong> — third-party costs are passed on to the merchant, with notice given only as line items on an invoice. That is notice <em>after</em> the charge, and the category is open-ended.</li>
+    <li><strong>Penalty handling fee (Annexure 3, clause 9.4)</strong> — where a card scheme fines the merchant, Ozow adds 1.05% of the fine on top, as its own handling charge.</li>
+    <li><strong>Chargeback fee</strong> — R350 excl. VAT per chargeback (clause 9.3), itself subject to change.</li>
+    <li><strong>Refund fees</strong> — confirmed to exist, but set by reference to Ozow's published pricing rather than fixed in the contract (Annexure 1, clause 6.4).</li>
+  </ul>
+  <p>The pattern matters more than any single figure: <strong>most fee amounts are set by reference to Ozow's website rather than fixed in the agreement</strong>, which means they can change without renegotiating the contract.</p>
+
+  <h3>Where Ozow can change the deal unilaterally</h3>
+  <p>Reading the agreement as a whole, most of the levers that determine the Council's costs and cash position sit with Ozow and require no defined advance notice. Fee increases carry fourteen days and general amendments thirty; but <strong>float sizing, rolling-reserve size and duration, high-risk designation, transaction limits and suspension grounds are all exercisable at Ozow's discretion</strong>, several on the basis of its own "reasonable opinion".</p>
+  <p>This is not evidence of bad faith and it is not unusual — payment providers carry the fraud and scheme-fine risk, and price that latitude into their terms. It is, though, the reason the two questions in the box below should be answered <em>in the Order Form</em>, where they become contractual, rather than in an email from a salesperson, where they do not.</p>
+
   <div class="callout danger">
-    <p class="callout-label">Material procurement risk</p>
-    <p>Before proceeding with Ozow, the full merchant agreement should be reviewed and the reserve and fund-hold position confirmed in writing.</p>
+    <p class="callout-label">What the Council should do with this</p>
+    <p>None of the above disqualifies Ozow, and none of it is exotic for the South African market — these are the protections a payment provider writes for itself. Two items should nonetheless be resolved <strong>in writing, before signing</strong>: the nine-month dormancy clause against a triennial cycle, and whether a rolling reserve would be applied to a non-profit selling event tickets. Both are negotiable in principle. Neither should be assumed.</p>
+    <p>The Council should also have counsel read clauses 9, 10 and 23 (arbitration) before signature. That is ordinary practice for an uncapped indemnity, not a reflection on Ozow.</p>
   </div>
 </section>
 
@@ -943,7 +1053,12 @@
       <li>Can SAOC enable the "Card Payments" product (for international cards) while disabling the generic "Pay By Bank" product, to give members a choice of which banks to use?</li>
       <li>Can we see the Integration Manual before we commit to a merchant account?</li>
       <li>What entity type and FICA documents would SAOC need to provide to sign up as a national council?</li>
-      <li>Does Ozow hold any reserve or fund-hold against merchant accounts? If yes, under what circumstances, and for how long?</li>
+      <li><strong>Clause 4.5.1 permits suspension or termination after nine months of dormancy. Our National Show is triennial, so the account will be idle for about thirty-six months between events. Will you provide a written variation, or written assurance, that dormancy will not be invoked against a known-cyclical non-profit account?</strong> This is our most material question and it should be resolved before any other.</li>
+      <li>Annexure 3 clause 9.5 permits a Rolling Reserve of up to 10% of monthly card turnover held for 180 days, applicable to card high-risk activities "or where otherwise deemed applicable by Ozow in its discretion". Would a reserve be applied to a registered non-profit selling advance tickets to a triennial event? If so, at what percentage, and can that be fixed in the Order Form?</li>
+      <li>Clause 9.7 permits extending the holdback period with no stated cap. What are the criteria, and what is the maximum period in practice?</li>
+      <li>Clause 7.1.1 commits only to "reasonable endeavours" and no annexure states a settlement day-count for any rail except crypto, while clause 8.2.1 excludes liability for settlement delay. Will you commit to specific settlement timings in the Order Form, so they sit inside the contract rather than outside it?</li>
+      <li>Clause 7.2.1 sets the Float "in an amount determined by Ozow from time to time". For a non-profit, an open-ended top-up obligation is difficult to budget. Can the Float requirement be capped or fixed in the Order Form, and would you instead operate us on the clause 7.3.2 rail-reversal model?</li>
+      <li>Clause 20.8.1 extends a marketing-contact consent covering our members and ticket-buyers to Ozow. Can this be waived or narrowed? Our members' consent is not ours to give.</li>
       <li>What is the real settlement timing for cards vs. EFT vs. bank-access payments? (Your public materials state three different figures; we need clarity.)</li>
       <li>Does the Refunds API emit a webhook when a refund is processed?</li>
       <li>How does the pre-funded float top-up work? What happens if the float is empty during high-volume refund activity?</li>
@@ -1008,15 +1123,19 @@
 <section id="s12" class="appendix">
   <h2><span class="num">12</span>What Is Not Yet Verified — Appendix</h2>
   <ul>
-    <li><strong>VAT basis (Ozow and Peach):</strong> Ozow's and Peach's pricing pages do not label their rates as ex-VAT or incl-VAT. PayFast and Yoco are confirmed ex-VAT. For Ozow and Peach, clarification is needed via the vendor questions in section 11. Fairness note: if either is incl-VAT, they are actually cheaper than comparison tables in this paper show.</li>
+    <li><strong>PayFast's merchant agreement — now the largest gap in this paper.</strong> Ozow's terms have been obtained and read in full; PayFast's have not. Every PayFast clause reference in this paper (including the 540-day hold at clause 9.8, the twelve triggers at 9.6, and the refund-funding discretion at 11.10) is carried forward from earlier research and <strong>has not been verified against the current agreement.</strong> The two vendors are therefore not equally evidenced in this document. Reading PayFast's terms the same way is the single highest-value next step, and until it is done the honest position is that we know Ozow's downside in detail and PayFast's only by report.</li>
+    <li><strong>VAT basis (Peach):</strong> Peach's pricing page does not label rates ex-VAT or incl-VAT. PayFast and Yoco are confirmed ex-VAT. <em>Ozow is now resolved</em> — clause 6.3.2 of its terms states all prices are exclusive of VAT. Fairness note: if Peach is incl-VAT, it is cheaper than the comparison tables here show.</li>
     <li><strong>Peach recurring billing:</strong> Peach's offering has not been researched for recurring-billing capability. Before using Peach as a membership processor, this must be confirmed.</li>
     <li><strong>Paystack recurring billing:</strong> same gap.</li>
     <li><strong>Yoco API reference:</strong> the Checkout API reference has not been read end-to-end. Estimated engineering time to migrate from PayFast to Yoco is "weeks", not "months", but this is an estimate. The right time to test this is the start of the next build cycle, not weeks before a Show.</li>
     <li><strong>Peach / Paystack NPO onboarding:</strong> eligibility and documentation requirements for non-profit entities are unconfirmed. Must be asked directly.</li>
     <li><strong>Capitec Pay VRP cancellation workflows:</strong> how a member cancels a VRP mandate in their banking app, and how SAOC is notified, has not been verified with the vendor. The outline (cancellation in banking app, notification after the fact) comes from SAOC's own integration knowledge, not Capitec.</li>
     <li><strong>All PCI-DSS and ISO 27001 claims:</strong> every vendor claims compliance but publishes no certificate. This is normal but must be verified before signing.</li>
-    <li><strong>PayFast merchant agreement reserve clause:</strong> could not be located. Assumed non-existent, but unconfirmed. Must be requested.</li>
-    <li><strong>Ozow merchant agreement:</strong> could not be located for review before committing. This is a material unknown.</li>
+    <li><strong>PayFast merchant agreement reserve clause:</strong> could not be located. <strong>Must not be assumed non-existent</strong> — Ozow's reserve was equally invisible in its public materials and turned out to be 10% held for 180 days. Absence of evidence has already misled this paper once.</li>
+    <li><strong>Ozow merchant agreement: RESOLVED.</strong> Obtained and read in full on 14 August 2026 (V1.2026, effective 1 April 2026). See sections 1 and 2. The reserve, dormancy, set-off and liability positions are now documented with clause references rather than listed here as unknowns.</li>
+    <li><strong>Ozow onboarding path for a national council entity:</strong> still unresolved. The merchant terms govern the relationship once formed but do not describe entity-type onboarding tracks, so this remains a direct question for the vendor — now made more pressing by the nine-month dormancy clause, which implies re-onboarding before each Show.</li>
+    <li><strong>Ozow refund fee amount and processing schedule:</strong> the terms confirm a refund fee exists but set it by reference to Ozow's externally published pricing (Annexure 1, clause 6.4) rather than fixing a number. The R3 figure and the twice-daily/48–72-hour timings quoted earlier appear nowhere in the contract and remain reseller-sourced. Treat both as unconfirmed.</li>
+    <li><strong>Ozow settlement day-counts:</strong> the contract states none for any rail except crypto, and clause 8.2.1 excludes liability for settlement delay. Any timing given verbally by sales would sit outside the contract and outside that exclusion. Get it in writing, and get it into the Order Form.</li>
     <li><strong>Ozow's fraud record:</strong> self-reported as "no fraud incidents since 2014 launch". Independent verification does not exist.</li>
     <li><strong>Hellopeter reviews:</strong> Ozow's Hellopeter rating (2.1/5 on 7 reviews) is a small sample, consumer-side, and self-selected. Do not weight this heavily, but do investigate independent merchant testimonials.</li>
     <li><strong>Refund fee recovery:</strong> it is not confirmed from Ozow's published materials whether the R3 refund fee is deducted from proceeds or is a separate charge. Source is a reseller's published copy of merchant terms, marked as strong but not verbatim-confirmed for direct merchants.</li>
@@ -1024,7 +1143,8 @@
 </section>
 
 <footer class="doc-footer">
-  <p>This paper draws on research conducted in two phases: June–July 2026 (initial survey) and August 2026 (vendor clarification and public-materials review). Pricing, policies and feature availability are current as at 14 August 2026 and are subject to change without notice.</p>
+  <p>This paper draws on research conducted in three phases: June–July 2026 (initial survey), August 2026 (vendor clarification and public-materials review), and 14 August 2026 (review of Ozow's <em>Merchant Terms and Conditions V1.2026</em>, effective 1 April 2026, obtained in full and read against the criteria in section 1). Pricing, policies and feature availability are current as at 14 August 2026 and are subject to change without notice.</p>
+  <p><strong>A note on evidential symmetry.</strong> Ozow's contractual position is now documented from the agreement itself, with clause references. PayFast's is not — its clauses are carried forward from earlier research and remain unverified. Readers should not infer from the greater detail on Ozow's risks that Ozow is the riskier vendor; it currently means only that Ozow's risks have been read and PayFast's have not. Obtaining and reading PayFast's agreement to the same standard is the recommended next step.</p>
   <p>Developers' conflicts of interest are noted in section 3 (Ozow / Yoco / Peach / Paystack costs are estimated, not measured, because we built the custom system) and section 7 (the fee comparison is our work vs. theirs).</p>
   <p>Questions or requests for clarification: contact the developer team.</p>
 </footer>
