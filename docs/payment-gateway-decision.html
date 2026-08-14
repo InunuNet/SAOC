@@ -551,7 +551,7 @@
   <ol>
     <li><strong>The code is already written and tested.</strong> PayFast's security layer has been reviewed. Switching gateways three weeks before you open ticket sales means throwing away that work and rebuilding it in a rush. That is real risk for no clear gain.</li>
     <li><strong>PayFast handles both tickets and memberships.</strong> If you sell society memberships through the website (which you are thinking about but have not decided yet), PayFast is the only one that handles one-off tickets <em>and</em> recurring charges on the same account.</li>
-    <li><strong>PayFast knows non-profits.</strong> They have it built into their signup. We already have an account. The code is live and ready.</li>
+    <li><strong>The ticket software is already written for PayFast.</strong> That saves build time, though the merchant account still has to be applied for from scratch, as it does with any of them.</li>
   </ol>
 
   <div class="callout danger">
@@ -696,6 +696,20 @@
         <div class="compare-cell verified">
           <p class="compare-vendor">PayFast</p>
           <p><strong>Yes.</strong> Still the only one that handles both one-off ticket sales and recurring membership subscriptions on a single account.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="compare-row">
+      <p class="compare-criterion">Taking payments at the Show itself</p>
+      <div class="compare-cols">
+        <div class="compare-cell verified">
+          <p class="compare-vendor">Ozow and PayFast</p>
+          <p>Online only. Neither supplies a card machine. Anything sold at the door, at the plant tables or at the refreshment stand would need a separate arrangement.</p>
+        </div>
+        <div class="compare-cell verified">
+          <p class="compare-vendor">Yoco</p>
+          <p><strong>Yoco is first and foremost a card-machine company.</strong> The same account that takes online ticket payments also covers handheld card readers for use over the three days of the Show — door sales, plant sales, the tea table. One provider, one set of paperwork, one place the money lands.</p>
         </div>
       </div>
     </div>
@@ -981,7 +995,7 @@
   </ul>
   <p><strong>Refunds:</strong> built in properly. Peach actually tells your system when a refund is done (that is the strongest refund support of any company we looked at). Real engineering went into this.</p>
   <p><strong>Security:</strong> stronger hashing than PayFast (SHA256 instead of MD5), plus they check your IP address and retry failed messages automatically.</p>
-  <p><strong>Unknowns:</strong> no example code in your language. Whether they sign up non-profits is not documented. They market to big companies, not orchid councils.</p>
+  <p><strong>Not checked:</strong> whether Peach can bill memberships on a repeat basis. That is the one question that could rule it out, and nobody asked it. Their marketing is aimed at larger businesses, but that is advertising style, not a rule about who they accept.</p>
 
   <h3 class="vendor-name">Paystack (owned by Stripe, but separate)</h3>
   <p>Paystack is in South Africa and owned by Stripe, but it is its own product. <strong>You do not get Stripe's support team or reliability promises.</strong> Do not assume Stripe will bail you out.</p>
@@ -996,7 +1010,7 @@
     <li>You get paid in 2 business days</li>
   </ul>
   <p><strong>Refunds:</strong> best documented of everyone. Full or partial refunds work, you can issue multiple partials for one payment, and Paystack tells your system when it is done. If a refund needs the member's bank details, Paystack tells you. Members wait up to 10 business days for refund money.</p>
-  <p><strong>Unknowns:</strong> whether they accept non-profits is not documented. Whether event ticketing is allowed is not documented. You have to ask.</p>
+  <p><strong>Not checked:</strong> whether Paystack can bill memberships on a repeat basis, and whether event ticketing sits on their permitted list.</p>
 </section>
 
 <section id="s4">
@@ -1027,7 +1041,7 @@
 
   <h3 class="vendor-name">Peach Payments and Paystack — never properly checked, and we should say so plainly</h3>
   <p><strong>What they are:</strong> Two more South African payment processors. Peach is aimed more at larger businesses; Paystack operates here but is owned by Stripe (a big American payments company) — though the Council would be dealing with Paystack directly, not Stripe.</p>
-  <p><strong>Why they weren't chosen:</strong> Honestly — not because we found a disqualifying problem, but because we ran out of research time before checking the two things that matter most for SAOC: whether either can do recurring membership billing, and whether either has a proper sign-up path for a non-profit. Neither was confirmed one way or the other. Peach's refund system, from what we did check, looks like the best-engineered of everything we looked at — refunds trigger proper notifications automatically. Paystack's refund documentation was the most complete and clear of any provider reviewed.</p>
+  <p><strong>Why they weren't chosen:</strong> Honestly — not because we found a disqualifying problem, but because we ran out of research time before checking the two things that matter most for SAOC: whether either can bill memberships on a repeat basis. That was never confirmed either way, and it is the only question that would rule them out. Peach's refund system, from what we did check, looks like the best-engineered of everything we looked at — refunds trigger proper notifications automatically. Paystack's refund documentation was the most complete and clear of any provider reviewed.</p>
   <p><strong>Confidence: this is the important part — low, on purpose.</strong> We are not saying these are bad options. We are saying we did not do the work to know. Calling this "ruled out" would overstate what happened. The honest label is "not yet researched enough to decide" — both deserve a proper look if the Council wants a genuine three-way comparison instead of a two-horse race.</p>
   <p><strong>If circumstances changed:</strong> Not applicable — nothing has been established well enough yet to say what would or wouldn't hold up.</p>
 
@@ -1313,7 +1327,7 @@
     <li><strong>PayFast refund updates:</strong> you have to ask for refund status, not receive it automatically. This is extra work at high refund volume but doable.</li>
     <li><strong>Your refund-state tracking:</strong> fix the system to track refunds before sales close (section 5).</li>
     <li><strong>Ozow's settlement timing (if you choose Ozow):</strong> get them to write down how many days for each payment method.</li>
-    <li><strong>Ozow's non-profit path (if you choose Ozow):</strong> confirm which documents they need to sign you up.</li>
+    <li><strong>Ozow signup documents:</strong> which papers they need for a council. Their form branches by business type, so the route may sit under a general category rather than a named non-profit one.</li>
     <li><strong>Ozow's float top-up (if you choose Ozow):</strong> understand how to put money in and what happens if it runs empty.</li>
     <li><strong>Ozow's international cards (if you choose Ozow):</strong> make sure Card Payments is turned on in your settings.</li>
     <li><strong>Ozow's bank access status (if you choose Ozow):</strong> ask which banks no longer need passwords. Ozow is moving month to month.</li>
@@ -1422,7 +1436,7 @@
     <li><strong>Peach's VAT basis:</strong> Peach does not label their prices ex-VAT or incl-VAT. If they are incl-VAT, Peach is cheaper than our tables show.</li>
     <li><strong>Peach and Paystack recurring billing:</strong> can they handle membership charges? Unknown. Must be asked.</li>
     <li><strong>Yoco's API:</strong> we have not read all of Yoco's API docs. Migrating away from PayFast would take "weeks", we estimate, but this is a guess. Only test this at the start of a new build cycle, not weeks before a Show.</li>
-    <li><strong>Peach and Paystack non-profit path:</strong> whether they take non-profits is not documented. Ask them.</li>
+    <li><strong>Peach's card machines:</strong> whether Peach or Paystack offer in-person card readers for use at the Show, as Yoco does.</li>
     <li><strong>Capitec Pay VRP cancellation:</strong> how members cancel in their banking app and how Ozow notifies you is not verified with the vendor. Our info comes from your own knowledge.</li>
     <li><strong>Compliance certificates:</strong> all vendors claim PCI-DSS and ISO 27001 but publish no certificate numbers. This is normal but must be checked before signing.</li>
     <li><strong>PayFast reserve clause:</strong> we could not find one in their public materials. But Ozow's reserve was also invisible until we read the contract. Do not assume PayFast has no reserve.</li>

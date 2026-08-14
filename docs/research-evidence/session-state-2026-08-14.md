@@ -171,3 +171,33 @@ PDF-only and additionally WAF-blocked (Akamai Access Denied); IAF CertSearch is 
 returning only a marketing stub. **Add to the Alembic bug list** — as is the finding that
 individual Hellopeter review deep-links are ~50% low-confidence through Alembic while aggregate
 listing pages are consistently high.
+
+## LATER CORRECTIONS (same session, after the teardowns)
+
+**Non-profit onboarding is NOT a discriminator — stop treating it as one.** Brad ran Ozow's
+signup himself: selecting an IT category dead-ended on an ECNS licence demand, but going back and
+choosing "Other" then "SME" got through. Every gateway will onboard a non-profit under some
+category. "Not documented on the website" is not evidence of a barrier, and the paper was using
+it as one against Peach, Paystack and Ozow. All such lines rewritten to ask the question that
+actually rules a provider out — can it bill memberships on a repeat basis.
+
+**Peach Payments was never disqualified on evidence.** Its published position is strong: cards
+2.95% + R1.50, bank transfer 1.50% + R1.50, next-business-day settlement (better than any of the
+three finalists), refund webhooks (the best refund support found anywhere in this research), and
+SHA256 signing against PayFast's MD5. The only two "reasons" it fell out were that its recurring
+billing was never researched and its NPO path was undocumented — an unknown and a non-issue.
+Same failure mode as Yoco. Per R500 card ticket it is about R16.25, between Ozow (R15.25) and
+Yoco (R16.75), and below PayFast (R18.00).
+
+**Yoco has card machines — a capability the other two do not have at all.** Brad raised this and
+it is material. The National Show runs three days with door sales, plant tables and refreshments.
+Yoco is primarily an in-person card-reader company that also does online, so a single Yoco account
+covers both online advance tickets AND on-the-day card payments: one provider, one FICA process,
+one settlement account. Ozow and PayFast are online-only; anything taken at the venue would need
+a separate arrangement. Added as its own comparison row.
+
+**Refunds demoted from decider to mechanics.** All three require funds available before refunding
+so it separates none of them; volume will be tiny; and a committee member can simply phone the
+person and EFT the money back, which needs nothing built. Caveats kept: SAOC then holds bank
+details (privacy duty), and a manual EFT does not prevent the buyer also disputing the card
+payment. PayFast Refunds API endpoint/auth/SDK detail stripped — engineering, not a Council input.
