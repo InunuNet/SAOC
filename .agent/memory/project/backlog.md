@@ -758,3 +758,48 @@ ERR_SSL_PROTOCOL_ERROR).
 **Never drive a PayFast test from the local server.** `SITE_URL` is unset locally and falls
 back to `https://saoc.co.za`, the old Joomla site, so the ITN would be delivered there and
 the ticket would sit `reserved` forever. Use the deployed host for payment testing.
+
+- [ ] **[P0, SECURITY, NEW 2026-08-14] `/admin` accepts ANY Firebase account — self-signup is open.**
+  PROVEN, not theorised: on 2026-08-14 I created an account against the live project with a
+  single unauthenticated curl to `identitytoolkit.googleapis.com/v1/accounts:signUp` using the
+  public web API key, with no invitation and no console access. The account was deleted
+  immediately after (uid uvAs3B4gjXRJiJnn7zSmfALzSlR2, verified gone).
+  Admin access is gated ONLY on `verifySessionCookie` — see `app/admin/page.tsx:19` and
+  `app/api/admin/tickets/route.ts:19`. There is no allowlist, no custom claim, no email check.
+  So: anyone who reads the API key out of the client bundle (it is public by design) can
+  self-register and obtain a valid session, then reach the ticket admin, the buyer list, the
+  CSV export and the door check-in scanner. Buyer names/emails/phones are POPIA personal
+  information, so this is a notifiable-breach shape, not just a nuisance.
+  FIX: gate on an explicit allowlist or a custom claim set by an admin-only path, enforced
+  server-side in every /admin route AND every /api/admin route, failing closed. Enabling any
+  further sign-in provider (Google/Microsoft/Apple) BEFORE this is done widens the hole —
+  every Google account on earth would qualify.
+  Must be contract-driven with an adversarial assertion that a freshly self-registered account
+  is REFUSED by every admin surface. Do not accept a source-grep as evidence; this project has
+  a documented history of false-green assertions.
+
+- [ ] **[P1, NEW 2026-08-14] Ticket delivery does not exist — buyers receive nothing.**
+  `lib/email.ts` contains no ticket/booking logic and is never called from
+  `app/api/tickets/checkout/route.ts` or `app/api/tickets/itn/route.ts`. Nothing generates a
+  QR code, yet `app/admin/door/page.tsx` scans QR codes (html5-qrcode) — so the scanner has
+  nothing to scan and every attendee would be checked in by typing a 12-character reference
+  by hand at the gate. Buyer currently gets a booking reference rendered on a web page and no
+  email at all. Needed before ticket sales open, independent of gateway choice.
+  Note: no Resend account exists yet, so delivery also needs an email provider decision.
+
+- [ ] **[P1, NEW 2026-08-14] Refunds cannot be represented in the data model.**
+  'refund' appears nowhere in app/, lib/ or types/. `TicketStatus` (types/index.ts:128) is
+  'reserved' | 'paid' | 'cancelled' | 'checked-in' — no 'refunded'. A refund today means
+  refunding in the PayFast dashboard and hand-editing Firestore, with nothing linking the two
+  and no way to distinguish a refunded ticket from one cancelled before payment. PayFast DOES
+  expose a Refunds API (GET/POST /refunds/:pf_payment_id, same MD5+passphrase auth as the ITN),
+  so this is buildable — see docs/payment-gateway-research-2026-08.md.
+
+- [ ] **[P2, NEW 2026-08-14] Additional sign-in providers (Google/Microsoft/Apple) — BLOCKED on the P0 above.**
+  Brad wants Google, Microsoft and Apple. Effort is very uneven: Google is near-zero config;
+  Microsoft needs an Azure/Entra app registration (tenant, client id, secret); Apple needs a
+  paid Apple Developer Program membership (~$99/yr) plus a Services ID and signing key.
+  Also note `app/admin/login/page.tsx` only implements `signInWithEmailAndPassword` — enabling
+  providers in the console has NO effect until the login UI adds buttons for them.
+  Scope question to settle first: these providers matter for FUTURE MEMBER login, not for the
+  handful of committee staff who use /admin. Decide which audience before building.
