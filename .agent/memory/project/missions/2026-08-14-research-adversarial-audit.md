@@ -9,7 +9,7 @@ started_at: null
 last_active_at: null
 status: pending
 cost_estimate:
-  features: 6
+  features: 7
   milestones: 3
   total_calls: 0
 last_checkpoint:
@@ -157,6 +157,53 @@ features:
     that single fact decides whether they belong in the comparison at all.'
   status: pending
   milestone: M2
+- id: F7
+  title: Enforcement evidence — what these companies actually DO, not only what they may do
+  inline_brief: 'Brad, 2026-08-14: "Because they state these things in their terms and
+    conditions doesn''t mean they enforce them. Stating they have the right to do it
+    doesn''t mean they will do it."
+
+    He is right, and this is the mirror image of the mistake that started all of
+    this. The original research trusted marketing pages — what a company SAYS it
+    does. The rewrite trusts contracts — what a company MAY do. Both are half a
+    picture. A contractual right is an exposure, not a certainty, and the article
+    currently reads as though every clause will be exercised.
+
+    Gather evidence on ACTUAL PRACTICE, via Alembic, for the clauses that carry real
+    money: PayFast''s 540-day hold (9.8), its Minimum Volume Fee (3.4), its 6/12-month
+    dormancy (21.2), its collateral demand (20.1); Ozow''s 10%/180-day Rolling
+    Reserve (Annexure 3, 9.5), its Float requirement (7.2), its 9-month dormancy
+    (4.5.1).
+
+    Where to look: South African merchant forums and communities, Hellopeter and
+    similar review sites (merchant-side, not consumer-side — they are different
+    populations and the article already over-weights a 7-review consumer sample),
+    MyBroadband, developer forums, small-business and e-commerce groups, National
+    Consumer Commission or Ombud complaint records, and any court or tribunal
+    reports. Search for the experience, not the policy: held funds, delayed
+    settlement, frozen accounts, reserve imposed, account closed for inactivity.
+
+    RATE EACH CLAUSE on two axes and keep them separate: how BAD it would be if
+    exercised (already known from the contract) and how LIKELY it is to be exercised
+    (this feature''s job). Report the evidence base honestly — "no merchant reports
+    found" is a legitimate and useful answer, and it is NOT the same as "this never
+    happens". Absence of complaints from a small market is weak evidence either way,
+    and must be labelled as such.
+
+    **THE ASYMMETRY THAT MATTERS MOST, and it cuts against the reassuring reading:**
+    SAOC''s pattern is precisely the profile discretionary risk clauses exist to
+    catch — an account dormant for three years that suddenly processes ~R1,000,000
+    in three days, for entry delivered weeks after payment, with no trading history
+    to price against. Sudden volume spike, advance-purchase exposure, thin file.
+    These clauses may go unused for ordinary steady merchants and still fire for
+    this one. Assess likelihood for SAOC''S SPECIFIC PROFILE, not for a typical
+    merchant, and say plainly if the evidence cannot support that distinction.
+
+    Do not soften a finding because enforcement looks rare, and do not sharpen one
+    because a clause reads harshly. Report frequency and severity separately so the
+    Council can weigh them itself.'
+  status: pending
+  milestone: M2
 - id: F6
   title: Ranked fix list, delivered as proposed changes — nothing applied
   inline_brief: 'Output is `.agent/memory/scratch/audit/findings.md` plus the
@@ -197,6 +244,7 @@ milestones:
   - F3
   - F4
   - F5
+  - F7
   status: pending
 - id: M3
   title: Ranked fix list delivered, recommendation re-tested
