@@ -405,7 +405,34 @@ not spend verification budget re-proving them.
    Note the ECNS licence dead end Brad hit is itself evidence the flow is category-driven and
    recoverable by re-selecting, not a hard gate.
 
-7. **The article presents an either/or that the contracts do not require.** Brad asked on
+7. **YOCO WAS EXCLUDED BY A REASONING ERROR AND MUST BE REINSTATED FOR TICKETS. Rank this with
+   the deadline.** Brad asked repeatedly why Yoco is no longer in the research; the paper never
+   gives a straight answer. Here it is: only ONE exclusion reason survives — Yoco cannot do
+   recurring billing — and that disqualifies it for MEMBERSHIPS, a future use case the Council has
+   not scoped or confirmed. It says nothing about SELLING TICKETS, which is the actual, funded,
+   fourteen-day requirement. Yoco was removed from the whole comparison on a criterion that only
+   applies to the part of the job it was not needed for.
+
+   The arithmetic makes it worse. On card, per R500 ticket: **Yoco R14.75, Ozow R15.25, PayFast
+   R18.00.** On R1,000,000 incl VAT: Yoco R33,925, Ozow R35,075, PayFast R41,400. **Yoco is the
+   cheapest card option of the three** — it charges a flat 2.95% with no per-transaction fee where
+   Ozow adds R1 per payment. This also falsifies the article's claim that Ozow is cheapest "on
+   every payment method": Ozow's genuine advantage is bank transfer (R8.50 per R500), which is a
+   different claim.
+
+   Yoco also has the best-evidenced non-profit onboarding of any provider reviewed — explicit NPO
+   path, signup by chairperson/treasurer/secretary, dedicated non-profit FICA guide. Against a
+   fourteen-day deadline, onboarding speed is the binding constraint, and we excluded the vendor
+   that scores highest on it.
+
+   F6 MUST: reinstate Yoco as a candidate for TICKETS; re-verify the 2.95% rate live (it is
+   carried from June-July research and never re-fetched — STALE risk); confirm whether Yoco
+   charges any per-transaction or monthly minimum fee, since its cost advantage depends on there
+   being none; and check the 90-day refund cap and same-day-only debit refunds against SAOC's
+   realistic refund window, as those ARE genuine constraints unlike the withdrawn balance
+   argument.
+
+8. **The article presents an either/or that the contracts do not require.** Brad asked on
    2026-08-14 whether SAOC could run tickets through Ozow and memberships through PayFast. It can:
    PayFast cl. 2.2 provides its services "on non-exclusive basis"; Ozow cl. 3.1.1 grants a
    "non-exclusive, non-transferable, revocable licence". **Neither contract prohibits using
