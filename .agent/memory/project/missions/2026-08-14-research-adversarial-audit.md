@@ -290,6 +290,33 @@ not spend verification budget re-proving them.
 3. **The Show's duration is three days.** Confirm the article states this correctly wherever the
    selling window or event length is described.
 
+4. **The article presents an either/or that the contracts do not require.** Brad asked on
+   2026-08-14 whether SAOC could run tickets through Ozow and memberships through PayFast. It can:
+   PayFast cl. 2.2 provides its services "on non-exclusive basis"; Ozow cl. 3.1.1 grants a
+   "non-exclusive, non-transferable, revocable licence". **Neither contract prohibits using
+   another provider, and the article never says so.** That is a material omission — the paper
+   frames the decision as picking one, when the Council may use both.
+
+   F6 must evaluate the SPLIT option properly alongside the other two, on evidence, not opinion.
+   Points it must resolve rather than assert:
+   - Splitting does not solve dormancy, it duplicates it. Tickets-on-Ozow means the Ozow account
+     is idle ~36 months between Shows and hits cl. 4.5.1's nine-month trigger. Only the account
+     carrying the monthly memberships stays warm.
+   - PayFast's Minimum Volume Fee (cl. 3.4) keys off monthly income reaching PayFast. If
+     memberships alone fall under R20,000/month, the fee applies every month. **Get the actual
+     member count and subscription price — this cannot be answered without them**, and the answer
+     decides whether the split costs or saves.
+   - Two gateways = two integrations, two reconciliations, two payout streams, two FICA
+     onboardings, and refunds handled in two places, all carried by a volunteer treasurer.
+     Quantify the admin burden honestly; it may exceed the ~R5,175 fee saving per Show.
+   - Against a fourteen-day deadline, building two integrations is almost certainly not feasible.
+     Say so plainly if the evidence supports it.
+
+   The likely shape of the answer is a SEQUENCE rather than a choice — what SAOC runs for the 2027
+   Show given the time available, versus what it should deliberately set up afterwards. Present it
+   that way if the evidence supports it, and keep the time constraint visibly separate from the
+   sunk-cost argument the paper was correctly criticised for.
+
 ## What good looks like
 
 A list Brad can act on in an hour, ordered by what would embarrass us or mislead the Council if it
