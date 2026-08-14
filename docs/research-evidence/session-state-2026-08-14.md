@@ -201,3 +201,28 @@ so it separates none of them; volume will be tiny; and a committee member can si
 person and EFT the money back, which needs nothing built. Caveats kept: SAOC then holds bank
 details (privacy duty), and a manual EFT does not prevent the buyer also disputing the card
 payment. PayFast Refunds API endpoint/auth/SDK detail stripped — engineering, not a Council input.
+
+## NPO PRICING — MAJOR LEAD, RESEARCH IN PROGRESS
+
+**PayFast has a "Cause Account" for registered NPOs with REDUCED FEES.** Confirmed from
+https://payfast.io/account-types/ (Alembic confidence LOW — re-verify): *"A Cause account is for
+registered NPOs (Non Profit Organisations) to aid them in fundraising by accepting donations
+online. This account comes with reduced fees as well as a cause page hosted by Payfast."* PayFast
+has also run a #GivingTuesdaySA promotion reducing processing fees to 1.5%.
+
+**The paper does not mention this anywhere.** Nor does it ask whether any other provider has an
+NPO tier. That is a significant omission — the entire cost comparison assumes standard business
+rates for an organisation that is not a business.
+
+**THE CRUX, unresolved:** the Cause account is described for DONATIONS and fundraising. A R500
+admission ticket is a sale, not a donation. If the reduced rate covers donations only, the Cause
+account is irrelevant to the Show and matters only for a donate button. **Do not assume either
+way — this must be established or flagged as a question for PayFast.**
+
+Current standard-rate ranking per R500 card ticket, ex-VAT: Ozow R15.25, Peach ~R16.25, Yoco
+R16.75, PayFast R18.00. **If the Cause rate is real and applies to ticket sales, PayFast could
+become the cheapest of all** — reversing a recommendation already revised twice today.
+
+Also unverified, from a third-party source (a ChatGPT session), currently NOT evidence:
+Paystack "2.9% + R1, no monthly fees, free payouts"; Peach "R200/month tokenisation charge".
+Agent `npo-pricing` is verifying all of the above against live sources.
