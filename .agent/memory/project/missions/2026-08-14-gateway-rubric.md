@@ -150,3 +150,53 @@ Ozow carry identically and were not penalised for — the criterion was applied 
 The exclusions audit put PayFast's R500 card fee at ~R14.68. Every other source, including
 PayFast's own worked example on payfast.io/fees/, gives **R18.00 (3.2% + R2)**. R18.00 stands as
 the vendor-quoted figure; the discrepancy is logged, not reconciled.
+
+---
+
+## FINAL — 2026-08-14 (session close). Ten providers, audited.
+
+**Deliverable:** https://claude.ai/code/artifact/3371d306-8941-423a-88ee-6e34a307d636
+Source `docs/gateway-comparison.html` — "Payment Gateway Teardown". 13 factors × 10 providers =
+130 cells, each opening a plain-English explanation AND a live link to the provider's own source
+document. Sliders start equal, no presets, no recommendation.
+
+**Providers IN (10):** Ozow, PayFast, Yoco, Peach, Paystack, Flutterwave, Stitch, iKhokha, Zapper,
+PayGenius. Census of 35 assessed: `docs/research-evidence/gateway-census.md` (19 OUT with reason
+codes, 1 unresolved naming question). Four of the ten had originally been dropped without anyone
+reading their contracts.
+
+**Audits run this session — read these before trusting any number:**
+- `scoring-audit.md` — adversarial review of the scoring system
+- `provenance-audit-A.md` / `-B.md` — all 130 cells traced to source. 129 SOURCED, 1 UNSOURCED
+  (PayFast money — fixed), 12 WEAK (all fixed)
+- `integration-effort-v2.md` — the build row rebuilt after the first pass scored our fetch failures
+  as provider defects
+
+## THREE SCORING PRINCIPLES — learned the hard way, do not regress
+
+1. **Silence is not protection.** A contract that says nothing scores MID, never high. Yoco scored
+   10/VERIFIED on customer data because its contract was silent; corrected to 6/PARTIAL. Same fix
+   applied across the dormancy row.
+2. **A stated maximum is a protection; silence is not.** The inverse error, made the same day:
+   PayFast's 540-day hold cap (cl. 9.8) was scored 1.5 as the worst term found anywhere. It is the
+   CEILING on cl. 9.7's otherwise open-ended hold, and it tracks card-scheme dispute windows. Peach
+   and Stitch reserve the same hold with NO cap. Corrected to 4; Peach 7→6.
+3. **A right reserved is not a practice.** Brad's point, now a note on the page: these are worst-case
+   legal powers, used against merchants in trouble, not a forecast of behaviour toward SAOC.
+   We can read what contracts permit; we cannot read how they behave. Only merchant references can.
+
+## Standing corrections
+- PayFast R500 card fee is **R18.00** (3.2% + R2, its own worked example). The R14.68 in
+  `exclusions-audit.md` is uncited and unused — do not resurrect it.
+- "Bot-walled" / "500 error" / "could not retrieve" is OUR failure, never a provider defect.
+  Every such claim in this project eventually proved retrievable.
+
+## Open — needs the vendors, not more research
+No provider publishes an approval turnaround except Flutterwave (~72h). PayFast's Minimum Volume
+Fee amount and Cause-account rate/scope. Yoco's governing contract (its 2020 and 2026 documents
+conflict on arbitration and liability cap), its PCI status (absent from Mastercard's register) and
+whether 3DS covers online checkout. Peach's KYC turnaround. Zapper's NPO Custom rate. Paystack SA
+entity's own PCI attestation. Zapper has NO webhook signing in its published spec — ask before building.
+
+## Next session
+Brad may do a single review pass. Nothing is mid-flight; all agents completed.

@@ -1,9 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-08-14-research-adversarial-audit.md",
+  "mission": ".agent/memory/project/missions/2026-08-14-gateway-rubric.md",
   "checkpoint": {
-    "milestone": "M1",
-    "feature": "F2",
-    "ts": "2026-08-14T17:03:25.477240+00:00"
+    "milestone": null,
+    "feature": null
   },
-  "activated_at": "2026-08-14T17:03:25.477404+00:00"
+  "activated_at": "2026-08-14T18:17:07.618140+00:00"
 }

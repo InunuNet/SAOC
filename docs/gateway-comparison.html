@@ -47,7 +47,7 @@
     color: var(--ink-mid); margin: .55rem 0 0; max-width: 46ch; line-height: 1.4;
   }
   h2 { font-size: 1.25rem; margin-bottom: .4rem; }
-  p { margin: 0 0 .8rem; max-width: 70ch; color: var(--ink-mid); }
+  p { margin: 0 0 .8rem; color: var(--ink-mid); }
   .eyebrow { font-size: .71rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; margin: 0 0 .5rem; }
   header { padding: 54px 0 26px; border-bottom: 1px solid var(--line); margin-bottom: 30px; }
   section { margin-bottom: 42px; }
@@ -70,26 +70,52 @@
   .crit-head label { font-weight: 600; font-size: .95rem; cursor: pointer; flex: 1 1 auto; }
   .wval { font-variant-numeric: tabular-nums; font-size: .78rem; color: var(--ink-soft); white-space: nowrap; }
   .crit .why { font-size: .84rem; color: var(--ink-soft); margin: .25rem 0 .55rem; }
-  .tag { font-size: .64rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft); white-space: nowrap; }
-  .tag.mine { color: var(--p); border-color: var(--p); }
+  button.info {
+    flex: 0 0 auto; width: 20px; height: 20px; padding: 0; border-radius: 50%;
+    border: 1px solid var(--line); background: transparent; color: var(--ink-soft);
+    font: 600 .74rem/1 ui-sans-serif, system-ui, sans-serif; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  button.info:hover { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+  button.info:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
   input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   .off { opacity: .42; }
 
   .scroller { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
-  table { border-collapse: collapse; width: 100%; min-width: 860px; font-size: .84rem; }
-  th, td { padding: 9px 11px; text-align: left; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
-  thead th { background: var(--ground); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
-  tbody th { font-weight: 600; font-size: .84rem; min-width: 150px; }
-  td b { font-variant-numeric: tabular-nums; }
-  td span.f { display: block; font-size: .78rem; color: var(--ink-soft); margin-top: 2px; }
-  .st { font-size: .62rem; font-weight: 700; letter-spacing: .05em; }
+  table { border-collapse: collapse; width: 100%; font-size: .84rem; table-layout: fixed; }
+  th, td { padding: 7px 6px; text-align: center; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+  thead th {
+    background: var(--ground); font-size: .68rem; letter-spacing: .04em; color: var(--ink-soft);
+    font-weight: 700; padding: 9px 4px; position: sticky; top: 0; z-index: 2;
+  }
+  tbody th, thead th:first-child {
+    text-align: left; font-weight: 600; font-size: .82rem; line-height: 1.3;
+    padding-left: 12px; width: 20%; min-width: 132px;
+    position: sticky; left: 0; background: var(--panel); z-index: 1;
+  }
+  thead th:first-child { background: var(--ground); z-index: 3; }
+  td b { font-variant-numeric: tabular-nums; font-size: .98rem; font-weight: 600; }
+  .st { font-size: .58rem; font-weight: 700; letter-spacing: .04em; margin-left: 3px; vertical-align: 1px; }
   .st.v { color: var(--v); } .st.p { color: var(--p); } .st.n { color: var(--n); }
 
-  td.cell { cursor: pointer; transition: background .15s ease; }
-  td.cell:hover, td.cell:focus-visible { background: var(--accent-soft); outline: none; }
-  td.cell:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
-  .hint { font-size: .78rem; color: var(--ink-soft); margin-top: 10px; }
+  td.cell { cursor: pointer; transition: box-shadow .12s ease; position: relative; }
+  td.cell::before {
+    content: ""; position: absolute; inset: 3px; border-radius: 5px;
+    background: var(--bar); opacity: var(--t, 0); pointer-events: none;
+  }
+  td.cell > * { position: relative; }
+  td.cell:hover { box-shadow: inset 0 0 0 2px var(--accent); }
+  td.cell:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); outline: none; }
+  td.cell.unk b { color: var(--ink-soft); font-weight: 400; }
+
+  @media (max-width: 780px) {
+    table { font-size: .8rem; }
+    thead th { font-size: .6rem; }
+    tbody th, thead th:first-child { min-width: 108px; font-size: .74rem; }
+  }
+  .hint { font-size: .8rem; color: var(--ink-soft); margin-top: 12px; }
 
   dialog {
     border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink);
@@ -101,18 +127,22 @@
   .dlg-head h3 { font-size: 1.2rem; }
   .dlg-body { padding: 18px 22px 22px; }
   .dlg-body h4 { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 .4rem; font-family: inherit; font-weight: 700; }
-  .dlg-body p { font-size: .93rem; margin-bottom: 1.1rem; }
+  .dlg-body p { font-size: .93rem; margin-bottom: 1.1rem; max-width: none; }
   .dlg-body p:last-child { margin-bottom: 0; }
   .verdict { display: flex; align-items: baseline; gap: 10px; margin-bottom: 1.1rem; flex-wrap: wrap; }
   .verdict b { font-size: 1.7rem; font-variant-numeric: tabular-nums; font-family: ui-serif, Georgia, serif; }
   .verdict span { font-size: .9rem; color: var(--ink-mid); }
   .dlg-close { position: absolute; top: 14px; right: 16px; background: none; border: 0; font-size: 1.4rem; line-height: 1; color: var(--ink-soft); cursor: pointer; padding: 4px 8px; border-radius: 6px; }
   .dlg-close:hover { background: var(--line-soft); color: var(--ink); }
+  #dlg-status { line-height: 1.5; }
+  #dlg-status a { color: var(--accent); font-weight: 600; word-break: break-all; }
+  #dlg-status .dim { color: var(--ink-soft); font-size: .93em; }
+  #dlg-status b { color: var(--ink); }
 
-  .note { border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; margin: 16px 0; }
-  .note p { font-size: .9rem; margin-bottom: .35rem; }
+  .note { border-left: 3px solid var(--accent); padding: 2px 0 2px 16px; margin: 18px 0; }
+  .note p { font-size: .92rem; line-height: 1.6; margin-bottom: .45rem; }
   .note strong { color: var(--ink); }
-  ul { padding-left: 1.15rem; color: var(--ink-mid); } li { margin-bottom: .4rem; max-width: 70ch; }
+  ul { padding-left: 1.15rem; color: var(--ink-mid); } li { margin-bottom: .5rem; }
   footer { border-top: 1px solid var(--line); padding-top: 18px; font-size: .8rem; color: var(--ink-soft); }
   code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85em; background: var(--line-soft); padding: 1px 5px; border-radius: 4px; }
   @media (max-width: 620px) { .row { grid-template-columns: 22px 1fr 52px; } .row .track { grid-column: 1/-1; } }
@@ -138,19 +168,21 @@
 
 <section>
   <h2>The factors</h2>
-  <p>Untick any factor to remove it entirely. Factors marked <span class="tag mine">proposed</span>
-  are ones I added &mdash; they are not yours, so drop them if you disagree.</p>
+  <p>Drag a slider to say how much each one matters, from "ignore" to "decisive". Untick any factor
+  to leave it out of the scoring entirely. Press the <b>?</b> beside a factor for a fuller
+  explanation of what it means and why it might matter.</p>
   <div class="panel" id="crits"></div>
 </section>
 
 <section>
   <h2>The facts behind each score</h2>
-  <p>The number is the score; the line under it is the fact it came from. <b class="st v">V</b> verified
+  <p>Ten providers, thirteen factors. <b class="st v">V</b> verified
   from the contract or the provider's own pricing page and quoted in the research files;
   <b class="st p">P</b> partly established; <b class="st n">—</b> not established.</p>
   <div class="scroller"><table id="matrix"></table></div>
-  <p class="hint">Click any square for a plain-English explanation of what it means &mdash; including
-  what the acronyms stand for.</p>
+  <p class="hint">Each square is a score out of 10 &mdash; the stronger the tint, the better that
+  provider does on that row. <b>Click any square</b> for the fact behind it in plain English,
+  including what the acronyms mean. Hovering shows a one-line summary.</p>
 </section>
 
 <dialog id="dlg" aria-labelledby="dlg-title">
@@ -173,12 +205,29 @@
   <h2>Things the scoring cannot capture</h2>
 
   <div class="note">
+    <p><strong>A contract says what they may do, not what they will do.</strong> Everything scored here
+    is a legal right a provider has reserved for itself &mdash; not a description of how they normally
+    behave. Payment companies write broad discretionary powers into their terms because they carry the
+    risk when a merchant disappears mid-dispute; most of those powers are used rarely, against merchants
+    in trouble, and would look nothing like this in practice for a twenty-year-old orchid council selling
+    show tickets. Read the harsh clauses as worst-case exposure, not as a forecast.</p>
+    <p>The reverse trap is just as easy. PayFast's terms let it hold funds "until we are satisfied that
+    all sums due have been fully paid" &mdash; open-ended &mdash; and then cap that hold at 540 days,
+    taking the earliest of three clocks including the card schemes' own dispute window. Eighteen months
+    sounds alarming, and this page initially scored it as the worst term found anywhere. It is the
+    opposite: it is the <em>ceiling</em> on an otherwise unbounded hold, and it tracks card-scheme rules
+    rather than PayFast's whim. Peach and Stitch reserve the same kind of hold and state no limit at all.
+    A stated maximum is a protection; silence is not.</p>
+  </div>
+
+  <div class="note">
     <p><strong>Only Peach puts the price in the contract.</strong> Its rates sit in Annexure A of the
     signed agreement, changeable only by mutual agreement. Ozow, Yoco and Paystack all defer to their
     public pricing pages &mdash; visible, but alterable. PayFast defers to a private "Application" you
     cannot see until you apply, and its clause 3.4 commits you to a Minimum Volume Fee whenever monthly
     volume is R20,000 or under, with the amount disclosed nowhere. For a show held once every three
-    years, that threshold is unmet in roughly 35 months out of 36.</p>
+    years, that threshold is met only during the months when tickets are actually selling, and unmet
+    through the long quiet stretch either side of it.</p>
   </div>
 
   <div class="note">
@@ -261,7 +310,7 @@
     <li><strong>Peach:</strong> what is the KYC turnaround, is there a bespoke NPO rate, and is there a
     cap on how long funds can be held during a dispute? The contract sets none.</li>
     <li><strong>Paystack:</strong> the contract allows termination on 24 hours' notice and disclaims any
-    uptime guarantee. What happens if that falls during the show weekend?</li>
+    uptime guarantee. What happens if that falls during the final days of ticket sales, or across the show itself?</li>
   </ul>
 </section>
 
@@ -288,7 +337,7 @@ const PROV = [
 
 // [score 0-10, fact, status v|p|n, plain-English detail]
 const CRIT = [
-  { id:"cost", label:"Cost of a R500 card ticket", yours:true,
+  { id:"cost", label:"What we pay them for each ticket sold",
     why:"Published card rate, ex-VAT, on one R500 ticket.",
     explain:"What every provider charges when someone pays by credit or debit card. The fee is usually a percentage plus a small fixed amount — so \"2.85%\" means R14.25 on a R500 ticket. <b>Ex-VAT</b> means VAT is added on top of the figures shown. Across 2,000 tickets the gap between the cheapest and dearest provider here is about R7,500.",
     s:{ ozow:[10,"R14.25 · 2.85%","v","No fixed fee per transaction at all, just the percentage — which is why it comes out cheapest on card."],
@@ -297,16 +346,16 @@ const CRIT = [
         yoco:[6.7,"R16.75 · 2.95% + R2","v","This is Yoco's ONLINE rate. Its cheaper advertised rates are for in-person card machines, which is not how you'll sell tickets."],
         payfast:[5,"R18.00 · 3.2% + R2","v","The dearest card rate of the ten. PayFast's own website shows this exact R500 worked example."] } },
 
-  { id:"rail", label:"Cheapest rail available", yours:true,
+  { id:"rail", label:"Cheaper ways to pay than by card",
     why:"Bank-transfer and instant-EFT rails, which most ticket buyers will happily use.",
     explain:"A \"rail\" is simply a route the money can travel. Besides cards, most providers offer <b>instant EFT</b> — the buyer logs into their own internet banking during checkout and pays directly, and the provider confirms it instantly. It is much cheaper than card because there are no card-scheme fees. <b>Capitec Pay</b> and <b>PayShap</b> are South African bank-to-bank versions of the same idea. The catch: buyers must be willing to use it, and some won't.",
     s:{ ozow:[10,"R7.50 · Pay by Bank 1.5%","v","Ozow started as an EFT specialist, and this is the cheapest single rate found anywhere across the ten — roughly half the cost of card."],
-        peach:[9,"R9.00 · Capitec Pay 1.5% + R1.50","v","Only helps buyers who bank with Capitec, but Capitec is South Africa's largest bank by customer numbers."],
+        peach:[9,"R9.00 · PayByBank 1.5% + R1.50","v","A bank-transfer rail at 1.5%, plus Peach's universal R1.50 per-transaction fee — the R1.50 is not specific to this rail. Available to any buyer with internet banking, not only Capitec customers as an earlier label implied."],
         paystack:[8.5,"R10.00 · Capitec/Ozow EFT 2% flat","v","Note what this is: Paystack reselling Ozow's own EFT rail at 2% flat with no fixed fee."],
         payfast:[8,"R10.00 · Instant EFT 2%","v","2% with a R2 minimum. On a R500 ticket the minimum never bites, so it's a flat R10."],
         yoco:[4,"R16.75 · no cheaper rail found","p","No cheaper online rail was found in Yoco's documentation, so card is the only realistic route — which makes it the most expensive option here."] } },
 
-  { id:"gap", label:"Is the price actually in the contract?", yours:true,
+  { id:"gap", label:"Does the contract commit to the advertised price?",
     why:"Your decider: the gap between the advertised price and what they commit to in writing.",
     explain:"A price on a website is marketing. A price in the contract is a commitment. This factor asks whether the agreement you click \"accept\" on actually names the rate, or whether it points somewhere else that they control and can change. It turns out four of the ten point elsewhere — so this is largely an industry norm rather than one company behaving badly — but the <em>degree</em> varies enormously, and one provider is genuinely different.",
     s:{ peach:[10,"Rates in Annexure A; change by mutual agreement","v","The only one of the ten with the actual rates inside the signed document, changeable only if both sides agree. That is a materially stronger position than everyone else."],
@@ -315,43 +364,43 @@ const CRIT = [
         yoco:[3,"Defers to Fee Schedule; may change fees WITHOUT notice (cl. 5.2)","v","Clause 5.2 says in plain words: \"We can change our fees or introduce new ones without notifying you. You must accept these changes if you want to keep using our payment services.\""],
         payfast:[1,"No amount anywhere; private Application; broken cross-reference","v","The contract contains no fee amount at all — everything defers to an \"Application\" you only see once you apply. And the one fee it does try to name, the Termination Fee, points to a clause that does not exist in the document."] } },
 
-  { id:"exit", label:"Getting out again", yours:true,
+  { id:"exit", label:"How easily we can leave, and they can drop us",
     why:"Minimum term, notice, penalties — and how easily they can drop you.",
     explain:"How hard it is to leave — and, just as important, how easily they can leave <em>you</em>. \"Auto-renewing\" means the contract renews itself for another full term unless you actively cancel in time. For a body that only needs a payment provider every three years, being locked into a rolling multi-year term is a real cost.",
     s:{ peach:[10,"Indefinite; you exit anytime; they need 45 days; no penalty","v","The most balanced of the ten: no minimum term, you can walk away whenever, and they must give you 45 days' warning before they do."],
-        yoco:[9,"No minimum term, cancel anytime, no penalty","v","Clean and simple. Cancel whenever you like with nothing to pay."],
+        yoco:[7,"No minimum term or penalty — but they may suspend without telling you first","v","No lock-in and nothing to pay on the way out, which is genuinely good. Marked down from 9 because the newer Payment Services T&Cs also let Yoco terminate or suspend \"whenever necessary\" without prior notice — a one-sided power the earlier score ignored."],
         ozow:[7,"No minimum term; 30 days' notice","v","No lock-in, but you must give a month's notice rather than simply stopping."],
         paystack:[6,"You exit anytime — but they can exit on 24 hours","v","You're free to leave instantly; they can end it on 24 hours' notice, or immediately for cause. That is the shortest notice against you of the ten."],
         payfast:[1,"36-month auto-renewing; undisclosed termination fee","v","A three-year term that renews itself, plus a termination fee whose amount is never disclosed anywhere in the document."] } },
 
-  { id:"dormant", label:"Surviving three idle years", yours:true,
+  { id:"dormant", label:"What happens to the account between shows",
     why:"The account sits unused for ~36 months between shows.",
     explain:"The National Show runs once every three years. Between shows the account processes nothing for roughly 36 months. Many providers assume a normal business trading every month, so their terms treat a long silence as a reason to suspend, close or charge the account. This is the factor where your unusual situation matters most — and where a clause that is harmless for a shop is expensive for you.",
-    s:{ yoco:[10,"Profile simply remains inactive; no fee","v","The best answer of the ten: nothing happens. The profile just sits there and you pick it up again next time."],
-        peach:[7,"Silent — 'dormancy' absent from all 35 pages","v","The word never appears in the 35-page agreement. No mechanism to close you, but equally no promise they won't — silence protects you less than an explicit clause would."],
-        paystack:[7,"Silent — no clause either way","v","Same position as Peach: nothing written down in either direction."],
+    s:{ yoco:[6,"Silent in both contracts; the \"no fee\" claim comes from a help article","p","This scored 10 until an audit caught it breaking the same rule applied everywhere else on this row: neither contract addresses dormancy at all, and the reassuring \"profile simply remains inactive\" comes from a Help Centre article, not the agreement. Silence is not a promise. Scored the same as Peach and Paystack, which are identically silent."],
+        peach:[6,"Silent — 'dormancy' absent from all 35 pages","v","The word never appears in the 35-page agreement, established by reading the whole document. But silence is not a promise: nothing stops them acting on a long-idle account, there is simply no clause describing it either way. Scored mid, not high — the same rule applied to the personal-data row."],
+        paystack:[6,"Silent — no clause either way","v","Nothing written down in either direction. As with Peach, that is an absence of a stated rule rather than a protection — it leaves the position undefined rather than safe."],
         ozow:[4,"Termination permitted at 9 months","v","They may terminate after nine months of inactivity — which your three-year cycle would trigger every single time."],
-        payfast:[1,"Suspend at 6 months, auto-terminate at 12 + fee; R20k minimum-volume fee","v","The worst fit of the ten for a triennial event. Suspended at six months, closed at twelve with a fee — and a Minimum Volume Fee applies in any month under R20,000, which for you is roughly 35 months out of 36. The amount is not disclosed."] } },
+        payfast:[1,"Suspend at 6 months, auto-terminate at 12 + fee; R20k minimum-volume fee","v","The worst fit of the ten for a triennial event. Suspended at six months, closed at twelve with a fee — and a Minimum Volume Fee applies in any month under R20,000, which for you is most of the three-year cycle — every month outside the ticket-selling window. The amount is not disclosed."] } },
 
-  { id:"types", label:"Ways people can pay", yours:true,
+  { id:"types", label:"How many ways people can pay us",
     why:"Once-off, subscriptions, donations, and card machines at the door.",
     explain:"What you can actually sell and how. <b>BNPL</b> is \"buy now, pay later\" (PayFlex, PayJustNow) — the buyer pays in instalments while you still get paid up front, but the fees are much higher. <b>POS</b> means point of sale: a physical card machine for the door or a stall. <b>Tokenised recurring</b> means the provider safely stores a card so it can be charged again later, which is what annual society memberships would need.",
     s:{ payfast:[9,"Card, EFT, BNPL, subscriptions, donations, POS hardware lease","v","The widest coverage of the ten, and one of only two that will lease you a physical card machine for the door."],
         peach:[8,"Card, EFT, BNPL, donations, tokenised recurring; POS deferred","v","Everything online, including stored-card recurring payments. Card machines are mentioned but the terms are \"to be agreed separately\", so treat them as not included."],
         yoco:[8,"Card, online links, card readers supplied; recurring not addressed","v","The strongest for in-person: Yoco supplies card readers directly, so door sales and online tickets sit in one account. Recurring billing isn't addressed in its contracts."],
-        paystack:[7,"Card, EFT, Capitec, QR, donations, subscriptions; no hardware","v","Good online coverage including subscriptions, but no card machines — you'd need a separate arrangement for door sales."],
+        paystack:[7,"Card, EFT, Capitec, QR, donations, subscriptions; no hardware","p","Good online coverage including subscriptions, but no card machines — you'd need a separate arrangement for door sales."],
         ozow:[5,"Pay by Bank, PayShap, card, BNPL, crypto; no recurring, no POS","v","Strong on bank-transfer rails, but no recurring billing and no card machines. Online-only, redirect-based."] } },
 
-  { id:"refunds", label:"Refunds", yours:true,
+  { id:"refunds", label:"Giving a ticket buyer their money back",
     why:"Full and partial refunds, time limits, who carries the fee.",
     explain:"What happens when a ticket buyer needs their money back — someone can't come, a session is cancelled, or a payment goes through twice. Three things matter: can you do it yourself or must you ask the provider; can you refund <em>part</em> of a payment; and do you get the original transaction fee back (almost always no). \"Funding-gated\" means the refund only goes through if you have enough money sitting in the account to cover it.",
-    s:{ yoco:[8,"90-day window; partial refunds explicit","v","The clearest terms of the ten: 90 days to refund, and partial refunds are spelled out rather than left to guesswork."],
+    s:{ yoco:[7,"90-day refund window in the contract (cl. 8.2.2); partial refunds only in developer docs","p","The 90-day window is genuinely contractual and quoted. But partial refunds are not addressed in either contract — that evidence comes from the developer documentation, which is weaker. Two facts of different strength had been bundled under one verified label."],
         payfast:[6,"To original card, capped at original amount","v","Refunds go back to the card that paid, and can't exceed the original amount. Reasonable, if unremarkable."],
         paystack:[5,"Deducted from payout; no time limit or fee-bearer clause","p","Refunds come out of your next payout. The contract sets no time limit and doesn't say who carries the fee — an ambiguity, not a restriction."],
         peach:[4,"You cannot refund directly — request via Peach; R3 fee; fees not returned","v","The most awkward operationally: every refund is a request to Peach rather than something you action yourself, plus a R3 fee each time. Something to consider if refunds are likely."],
         ozow:[4,"Funding-gated; partial refunds and time limits both absent","v","Refunds only process if the account holds enough money, and the agreement never addresses partial refunds or time limits at all."] } },
 
-  { id:"npo", label:"Documented non-profit support", yours:true,
+  { id:"npo", label:"Whether being a non-profit gets us anything",
     why:"A real published non-profit product, not an NPO tick-box on a KYC form.",
     explain:"Whether being a registered non-profit actually gets you anything. There's an important difference between a genuine discounted product and simply being <em>allowed</em> to register as an NPO — most providers offer the latter and it saves you nothing. <b>KYC</b> (\"know your customer\") and <b>FICA</b> are the identity checks every financial provider must run before taking your money; being an NPO changes which documents you supply, not what you pay.",
     s:{ payfast:[7,"Cause account real, KYC route documented — rate unpublished","p","The only genuine non-profit product of the ten. But the discounted rate is published nowhere, and the marketing is written around donations while you sell tickets — so whether it would apply to you is unresolved."],
@@ -360,34 +409,34 @@ const CRIT = [
         paystack:[3,"Charities may register; no SA discount exists","v","Charities are explicitly welcome to register, but no South African non-profit discount exists at all."],
         ozow:[1,"Absent — confirmed twice against the full agreement","v","Nothing. No non-profit pricing, no non-profit route, checked twice against the full 34,000-word agreement."] } },
 
-  { id:"data", label:"Your members' personal data", yours:false,
+  { id:"data", label:"What they may do with our buyers' details",
     why:"Does the contract take marketing rights over your ticket buyers, or move their data offshore?",
-    explain:"When someone buys a ticket, they hand over their name, email and phone number. This factor asks what the provider is permitted to do with that. <b>POPIA</b> is South Africa's privacy law; under it you are the \"Responsible Party\" for your members' information, and consent to direct marketing must come from the person themselves — not from SAOC on their behalf. \"Trans-border\" or \"cross-border\" means their data may be stored or processed outside South Africa.",
-    s:{ yoco:[10,"No marketing clause, no cross-border clause in either contract","v","Cleanest of the ten. Both contracts were read in full and neither claims marketing rights nor permits sending data offshore. (Its separate privacy policy wasn't reviewed.)"],
-        peach:[9,"No marketing rights; standard POPIA-adequacy wording","v","No marketing rights over your buyers, and its cross-border wording is the standard legal language for transferring to countries with comparable privacy laws."],
+    explain:"When someone buys a ticket, they hand over their name, email and phone number. This factor asks what the provider is permitted to do with that. <b>POPIA</b> is South Africa's privacy law; under it you are the \"Responsible Party\" for your members' information, and consent to direct marketing must come from the person themselves — not from SAOC on their behalf. \"Trans-border\" or \"cross-border\" means their data may be stored or processed outside South Africa.<br><br><b>How silence is treated here:</b> a contract that says nothing scores in the middle, not at the top. Saying nothing is not a promise not to do it — it means there is no contractual restriction, and the provider's separate privacy policy may permit what the contract never mentions. Only an explicit safeguard earns a high score; an explicit permission earns a low one.",
+    s:{ yoco:[6,"Silent — no clause either way; privacy policy not reviewed","p","Both contracts were read in full and neither claims marketing rights nor permits sending data offshore. But silence is not protection — nothing stops it either, and Yoco's separate privacy policy was never reviewed, so the picture is incomplete. Scored mid, not high. Worth asking Yoco directly what its privacy policy permits."],
+        peach:[8,"No marketing rights; explicit POPIA-adequacy safeguard on transfers","v","The strongest of the ten, and the only high score here that rests on a positive commitment rather than silence. It claims no marketing rights over your buyers, and where data does cross borders the contract binds itself to the POPIA adequacy standard — a stated safeguard, not an omission."],
         payfast:[6,"No cardholder marketing; broad cross-border consent","v","Doesn't claim the right to market to your buyers — its terms actually put the duty on you to handle their data lawfully. But it does take a broad cross-border consent."],
         paystack:[4,"Transfer to 'Third Countries' permitted; consent burden on you","v","No marketing clause, but data may go to \"Third Countries\" and the responsibility for having obtained consent sits with you. Paystack is Stripe-owned and Nigeria-headquartered, so this isn't hypothetical."],
         ozow:[1,"Cl. 20.8.1 — may market to your customers; trans-border; opt-out","v","The one genuinely troubling clause found in any of the ten. By accepting, SAOC consents on its ticket buyers' behalf to Ozow marketing to them — by phone, SMS, email, even automated dialling — and to their data crossing borders. It is written as opt-out, while POPIA requires opt-in consent from the person themselves. Whether it is enforceable is a lawyer's question."] } },
 
-  { id:"sla", label:"Promised service levels", yours:false,
-    why:"Sales concentrate into one weekend every three years. An outage then is unrecoverable.",
-    explain:"An <b>SLA</b> (service level agreement) is a written promise about uptime and how fast they'll respond when something breaks — with a penalty if they miss it, usually a credit against your fees. Most payment providers promise nothing at all. It matters more for you than for a normal business: your sales concentrate into one weekend every three years, so an outage during it can't be made up later.",
+  { id:"sla", label:"Whether they promise to stay online",
+    why:"Tickets sell from launch until the show closes — then the account goes quiet for three years.",
+    explain:"An <b>SLA</b> (service level agreement) is a written promise about uptime and how quickly they will respond when something breaks, usually with a credit against your fees if they miss it. Most payment providers promise nothing at all. Weigh it against how you will actually sell: tickets go on sale at launch and sell right through to the show, so a short outage early in that window costs you a few hours of sales and is largely recoverable. The exposure is concentrated at the end — the final days before the show, and the three show days themselves, when demand peaks and there is no later to catch up in. A provider that commits to nothing is betting you will not have a bad afternoon in that particular fortnight.",
     s:{ peach:[10,"99.0% monthly uptime, tiered resolution, service credits","v","The only real SLA of the ten: a 99% monthly uptime commitment, defined response times by severity, and service credits if they miss."],
         ozow:[6,"States service targets","p","States service targets in its agreement — better than silence, though weaker than Peach's committed figure with a remedy attached."],
         yoco:[2,"Absent","v","No uptime or response commitment anywhere in either contract."],
         payfast:[2,"Absent","v","No uptime or response commitment in the agreement."],
         paystack:[1,"Explicitly disclaims any uptime guarantee","v","Goes further than silence — the contract expressly disclaims any guarantee that the service will be available."] } },
 
-  { id:"build", label:"How quickly it can be built", yours:true,
+  { id:"build", label:"How much website work it takes to set up",
     why:"Documentation quality and what's supplied — the part of the deadline that is actually measurable.",
     explain:"With about two weeks, the binding constraint is developer time, and that comes down to how well the provider documents itself. Three things decide it. A <b>sandbox</b> is a test account for building against before you have a real one — if it needs an approved live account first, all development stops until the paperwork clears. An <b>SDK</b> is a ready-made code library; none of the ten has an official one for this website's language, so all ten are hand-built either way. <b>Webhook signature verification</b> is the security-critical step where your site confirms a payment message genuinely came from the provider and wasn't forged — if that isn't documented, it can't be built safely. Note the separate unknown: <em>approval</em> time, from application to being allowed to take money, is published by none of the ten and can only be answered by asking them.",
-    s:{ payfast:[9,"Self-serve sandbox with published demo credentials; MD5 verification documented; ~4–8 hrs","v","Fastest by a distance. Working test credentials are printed in the docs, so a developer can start immediately without any account. Signature verification is documented, and a reference implementation already exists in this repo — that is not sunk cost, it is a real head start on the build itself."],
-        yoco:[8,"HMAC-SHA256 verification with a ready Node example; ~6–10 hrs","v","Clean redirect checkout with a documented signing scheme and a copy-pasteable Node sample. Sandbox appears self-serve but wasn't independently confirmed."],
-        paystack:[8,"HMAC-SHA512 verification with a ready Node example; ~6–10 hrs","v","Well-documented redirect flow with a working Node verification sample. The docs sit behind a bot check that blocks automated reading, but content is fine in a browser."],
-        peach:[5,"Sandbox unconfirmed; the signature-verification page is bot-walled; ~10–16 hrs","p","A proper sandbox environment exists, but the one page explaining how to verify webhook signatures could not be read — blocked twice. The algorithm is named; the actual steps aren't reachable. Solvable with a support email, but it is a real delay against a two-week deadline."],
-        ozow:[3,"API reference returns HTTP 500; no webhook verification docs found; ~12–20+ hrs","v","The weakest of the ten and the widest estimate. Its API reference pages return server errors on every attempt, confirmed across two separate sessions, and the webhook verification documentation lives behind those same broken pages. Building against it means guessing or waiting on support — which is a poor position with two weeks left."] } },
+    s:{ payfast:[9,"Public demo credentials; MD5 ITN verification; ~4–8 hrs","v","Among the fastest. Working test credentials are printed openly in the docs, so a developer can start immediately without an account, and signature verification is documented. A reference implementation already exists in this repo — a real head start on the build, though not a reason to prefer the contract."],
+        yoco:[8,"HMAC-SHA256 documented with a ready Node example; ~6–10 hrs","p","Clean redirect checkout with a documented signing scheme and a copy-pasteable sample. Marked partial because the sandbox appears self-serve but was never independently confirmed — its own detail always said so, while the label claimed otherwise."],
+        paystack:[8.5,"Self-serve sandbox with published test cards; HMAC-SHA512 documented; ~6–10 hrs","v","Well-documented redirect flow with a working Node verification sample, and the sandbox is now confirmed self-serve with published test cards — so a developer can start before any account is approved. Its docs serve a bot check to automated tools but read normally in a browser."],
+        peach:[7.5,"HMAC-SHA256 fully documented with worked examples; ~6–10 hrs","v","Previously scored 5 because a page appeared bot-walled. It was not — that was our fetch, not their documentation. The authentication page carries the full HMAC-SHA256 construction with working Python and JavaScript examples, and the webhooks page names all four signed headers. Corrected."],
+        ozow:[7,"SHA512 hash construction documented on its primary site; ~6–10 hrs","v","Previously scored 3 on the false claim that Ozow does not document its API. It does — ozow.com/integrations carries the full redirect flow, the field list, and the complete SHA512 hash construction for both the outbound request and the inbound webhook. What was broken was a secondary docs mirror we happened to try first. Corrected on positive evidence."] } },
 
-  { id:"sec", label:"Security standing and regulatory status", yours:true,
+  { id:"sec", label:"Proven security and regulator registration",
     why:"Checked against Mastercard's own register of who holds a PCI attestation, and against PASA's public register — not against marketing badges.",
     explain:"<b>PCI DSS</b> is the card industry's security standard; providers handling card data must be audited against it, and the resulting certificate is an <b>AOC</b> (Attestation of Compliance). Anyone can put a \"PCI compliant\" badge on a website — the AOC is the proof. Mastercard publishes a register of who has actually filed one, with the auditor's name and date, and that is what these scores are checked against. <b>PASA</b> is the South African payments regulator; <b>3DS</b> (3-D Secure) is the extra verification step on online card payments that shifts fraud liability away from you. Seven of the ten are confirmed PASA-registered.",
     s:{ peach:[9,"AOC on Mastercard register 04/11/2024 (Galix); PASA SO + TPPP; 3DS priced","v","On Mastercard's register with a current attestation, registered with PASA as both a System Operator and a payment provider, and 3DS is priced explicitly in its fee schedule. Registered as Baobab Payments GmbH, a German entity."],
@@ -396,14 +445,14 @@ const CRIT = [
         paystack:[6.5,"AOC 08/11/2024 — but the US entity, not confirmed for the SA one; ISO 27001 + 27701 claimed","p","The attestation is filed under Paystack, Inc. — the global company — not confirmed as covering Paystack South Africa, which is who you'd contract with. It is the only one claiming ISO 27001 and 27701 (the privacy standard), though those claims couldn't be independently checked."],
         yoco:[2,"Absent from Mastercard's register; no ISO claim; no 3DS statement for online checkout","v","Not on Mastercard's register while all four of the PCI-registered competitors are, no ISO claim, and no 3DS commitment found for online payments — its security material is all about card machines. This is not proof of non-compliance: Yoco may rely on its bank's certification. But it is the one registry that could be checked, and it's the direct question to put to them."] } },
 
-  { id:"money", label:"Getting your money, and holds on it", yours:false,
+  { id:"money", label:"How fast we get paid, and holds on our money",
     why:"Settlement speed, and whether they may sit on funds during a dispute.",
     explain:"How long before ticket money reaches SAOC's bank account, and under what circumstances they can keep hold of it. <b>T+1</b> means one business day after the payment; <b>T+2</b> means two. A <b>reserve</b> or <b>hold</b> is money the provider retains as protection against refunds and chargebacks — a <b>chargeback</b> is when a cardholder disputes a payment with their bank and it's reversed. For a single large event, a long hold could mean the show's takings arrive well after the bills are due.",
-    s:{ peach:[7,"T+1 daily; discretionary hold, no stated cap","v","Fastest settlement of the ten at one business day, paid out daily. But it may hold funds during a dispute or fraud check with no stated limit on how long or how much."],
+    s:{ peach:[6,"T+1 daily — but a discretionary hold with no stated ceiling","v","Fastest settlement of the ten at one business day, paid out daily, and that is a genuine strength. Against it: the contract lets Peach hold funds during a dispute or fraud check with no stated limit on how long or how much. An uncapped hold is arguably a weaker position than PayFast\u2019s capped one, even though the cap sounds worse at first hearing."],
         ozow:[6,"Float-based; R350 chargeback fee fixed in contract","v","Money sits in a \"float\" balance you draw from. Notably, the R350 chargeback fee is one of the only figures actually fixed in Ozow's contract rather than deferred."],
         paystack:[5,"T+2; discretionary reserve, ~6 months after termination","v","Two business days to settle. It may impose a reserve at its discretion, and after termination funds can be held around six months — worth knowing before a three-year gap in trading."],
         yoco:[5,"Not established from the contracts","n","Settlement timing and any reserve terms weren't established from the contract documents. Treat as an open question rather than a good or bad result."],
-        payfast:[5,"Not established from the contracts","n","Settlement timing and any reserve terms weren't established from the contract documents. Treat as an open question rather than a good or bad result."] } }
+        payfast:[4,"Hold on twelve grounds, capped at 540 days — the only stated ceiling of the ten (cl. 9.6–9.8)","v","Read the two clauses together. Clause 9.7 is the open-ended one: PayFast may hold funds \"until we are satisfied that all sums due have been fully paid\", with no end date. Clause 9.8 then CAPS that at 540 days, taking the earliest of three clocks — from delivery, from termination, or when the card schemes\u2019 own dispute window closes. So 540 days is not a figure PayFast invented; it is the outer limit of card-scheme chargeback rules, and it is the ceiling on an otherwise unbounded hold. Peach and Stitch state no cap at all, which on this dimension is weaker. Marked down mainly because no interest accrues on held funds (cl. 9.3) and the settlement frequency itself is left to the private Application."] } }
 ];
 
 // Flutterwave — added late, after an audit found it had never been assessed at all.
@@ -412,13 +461,13 @@ const FW = {
   rail:[6.5,"R12.50 · EFT 2.5%","v","An EFT rail at 2.5%, cheaper than card but dearer than the 1.5–2% rails at Ozow, Peach, Paystack and PayFast."],
   gap:[4.5,"Defers to Annexure 1 / pricing page, with notice on change","p","Defers like most others, though it does commit to notifying you of changes. Marked down because the contract carrying that clause is a Nigeria-templated document (see below) — so it is unclear which paperwork actually binds."],
   exit:[4,"12-month initial term, auto-renews annually; 1 month's notice either way","v","The only provider besides PayFast with a fixed initial term that renews itself. A year is far shorter than PayFast's three, notice is symmetrical, and no penalty clause was found — but it is still a lock-in on a three-yearly cycle."],
-  dormant:[7,"Silent — no clause found","v","Nothing written either way about long inactivity, the same position as Peach and Paystack. No mechanism to close you, but no protection either."],
+  dormant:[5.5,"Silent — no clause found","p","Nothing found either way about long inactivity. Scored below Peach and Paystack on identical wording for a reason: this contract was read later and less exhaustively than theirs, so \"silent\" here carries less confidence than a confirmed full-document read."],
   types:[6,"Card, EFT, vouchers, Apple/Google Pay, SA bank collections","p","Solid online coverage including Apple and Google Pay. A dedicated donations rail and in-person card machines for South Africa were not confirmed."],
   refunds:[5,"Merchant-instructed; the processing fee is not returned","p","You initiate refunds yourself, which is better than Peach's request process. Detail is thin — the clearest documentation found was written for another region, so treat it as indicative."],
   npo:[3,"'Non-Profit entity' is a KYC type only — no discount, and charities need pre-approval","v","This is the finding that undercuts the reason Flutterwave was added. There is a non-profit account type but no discounted rate, and 'NGO/Charities' appears on Flutterwave's own list of merchants requiring pre-approval — so it is not straightforwardly self-serve for a body like SAOC after all."],
   data:[5,"POPIA compliance claimed; no marketing-rights clause found","p","No clause claiming rights over your ticket buyers, which is good. But with the contract governed by Nigerian law, where members' data sits and which regulator applies is genuinely unresolved."],
   sla:[2,"None — 'best efforts', explicitly not warranted uninterrupted","v","No uptime or response commitment, and the contract expressly declines to warrant the service will run without interruption."],
-  build:[10,"Official Node SDK; instant self-serve test keys; HMAC-SHA256 verification documented","v","The best of all six, and not close. It is the only provider with an official first-party Node library (flutterwave-node-v3), test keys issue instantly with no account approval, and webhook signature verification is properly documented. A developer could start this afternoon."],
+  build:[9.5,"Official Node SDK (flutterwave-node-v3); instant test keys; HMAC-SHA256 documented; ~4–8 hrs","v","Among the fastest of the ten. One of only two providers with an official first-party Node library, test keys issue instantly with no account approval, and webhook verification is documented."],
   sec:[5,"PASA-registered TPPP (Absa-sponsored), reg 2017/146006/07 — PCI status not established","p","Independently confirmed on PASA's register, sponsored by Absa and certified for credit and debit card. Its PCI attestation status was not established, so this sits below the four confirmed on Mastercard's register."],
   money:[2,"10% rolling reserve held for 180 days (contractual)","v","The most expensive term found anywhere in this exercise. A contractual 10% rolling reserve held for 180 days means roughly R100,000 of a R1m show withheld for six months — money you would need for suppliers long before it is released. This alone may rule Flutterwave out."]
 };
@@ -436,7 +485,7 @@ const ST = {
   npo:[2,"None found","v","No non-profit tier, and nothing found either excluding or specially supporting non-profits. You would onboard as an ordinary business at ordinary rates."],
   data:[4,"Cross-border processing explicitly permitted via overseas sub-processors","v","The contract expressly allows your buyers' data to be processed by sub-processors outside South Africa. No clear marketing-rights clause over your customers, though a generic marketing clause in the privacy policy is ambiguously worded."],
   sla:[1.5,"None — the contract explicitly disclaims any uptime warranty","v","Its marketing page advertises 99.995% uptime. The contract expressly warrants nothing. That gap between the advertised promise and the committed one is worth noting on a page about exactly that distinction."],
-  build:[9.5,"Official Node SDK; self-serve sandbox; HMAC-SHA256 verification via Svix documented","v","Very nearly the best of the ten. Official first-party Node library, a sandbox needing no approved account, and webhook verification documented with a working library example. The developer-first positioning holds up when tested."],
+  build:[9.5,"Official Node SDK (@stitch-money/node); documented sandbox; HMAC-SHA256 via Svix; ~4–8 hrs","v","Level with Flutterwave at the top. Official Node library, a sandbox needing no approved account, and webhook verification documented with a working library example. The developer-first positioning holds up when tested."],
   sec:[5.5,"PASA-registered on both registers — Stitch Money (Pty) Ltd, reg 2018/409288/07, Absa-sponsored","v","Independently confirmed on PASA's Third-Party Payment Provider and System Operator registers, with the registration number matching the contracting entity in its terms exactly. Its PCI attestation status was not established."],
   money:[3,"No contractual settlement time; open-ended, uncapped discretionary hold","v","Support pages claim next-day settlement but the contract commits to no timeframe at all. Worse, its fund-retention clause allows withholding with no stated percentage and no stated duration — less defined than Flutterwave's 10% for 180 days, which at least tells you the worst case."]
 };
@@ -448,31 +497,31 @@ const IK = {
   cost:[9.5,"R14.25 · from 2.85%","p","Ties Ozow for the cheapest card rate — but note \"from\". It is a floor, not a confirmed flat rate, and the actual figure is set per merchant. A separate product, iK Pay API, advertises \"from 2%\" — a different thing; do not conflate them."],
   rail:[5,"Not established","n","No EFT or bank-transfer rate is published for the online gateway. Card appears to be the only documented route."],
   gap:[2,"Contract defers to a per-merchant Schedule that is printed blank","p","The only e-commerce agreement obtainable is a 2021 template whose fee schedule is an empty table of 16 categories to be filled in per merchant. Worse than deferring to a public page — there is nothing to read in advance. Marked partial because a current contract could not be retrieved."],
-  exit:[5,"Not established","n","No term, notice or penalty terms could be confirmed from the accessible documents."],
+  exit:[7,"Indefinite term; 30 days' notice; no penalty (cl. 27, 2021 template)","p","Clause 27 of the e-commerce agreement sets an indefinite term with 30 days' notice either way and no penalty — merchant-friendly, and comparable to Ozow. Marked partial only because the document is the 2021 template; a current version could not be obtained."],
   dormant:[5,"Not established","n","No dormancy clause found, but the document is a 2021 template — silence here is not the same as the confirmed silence found at Peach or Zapper."],
   types:[4,"Card confirmed; other rails not established","p","Card payments through a plugin-based gateway. Nothing else is documented for the online product."],
-  refunds:[5,"Not established; a per-chargeback fee exists","n","The agreement provides for a chargeback fee but the refund terms themselves could not be established."],
+  refunds:[4,"Refund mechanism exists, but the 2021 terms bar EFT refunds — contradicting its own guide","p","A real refund process is documented. It also carries a contradiction: clause 14 of the 2021 agreement states EFT payments are not refundable, while iKhokha's own WooCommerce guidance describes refunding. Flagged rather than reconciled — ask which governs."],
   npo:[2,"None found","v","No non-profit tier, discount or entity route found across the pricing page, FAQ, help centre or agreement."],
-  data:[6,"No marketing clause found; current terms could not be located","p","The 2021 agreement contains nothing claiming rights over your buyers, and restricts you from disclosing cardholder data. But the current terms and privacy policy could not be retrieved, so this is not a clean absence."],
-  sla:[5,"Not established","n","No uptime or response commitment found either way."],
-  build:[5,"Plugin-based gateway; no Node SDK established","p","Built around e-commerce plugins rather than a documented API for a custom site. For a Next.js build that matters — a WooCommerce plugin is no help here."],
+  data:[5,"No marketing clause in a 2021 template; current terms could not be located","p","The 2021 agreement contains nothing claiming rights over your buyers, and restricts you from disclosing cardholder data. But the current terms and privacy policy could not be retrieved, so this is not a clean absence."],
+  sla:[5,"Not established","n","No uptime or response commitment found in the accessible agreement."],
+  build:[3.5,"Its own example code skips webhook verification; docs site unreadable; ~10–16 hrs","p","The weakest of the ten on evidence rather than on a failed fetch. iKhokha documents signing for outbound requests (HMAC-SHA256, IK-SIGN header) in its own GitHub example repo — but that same first-party example does not verify inbound webhooks at all, which is the security-critical direction. Its developer docs site is a client-rendered shell that no route could open, so the GitHub repo had to stand in."],
   sec:[5,"Not established","n","PCI attestation and PASA registration were not confirmed for the online gateway entity."],
   money:[5,"FICA approval required before any payout","p","Settlement only begins once FICA approval completes, and the timing itself was not established."]
 };
 const ZA = {
-  cost:[9.7,"R14.50 · 2.9% (Basic plan)","v","Third-cheapest card rate of the ten, on a plan that is free to join with no monthly charge. Its \"from 2.5%\" marketing refers to the paid Business tier, not this one."],
+  cost:[9.7,"R14.50 · 2.9% (Basic plan)","p","Third-cheapest card rate of the ten, on a plan free to join with no monthly charge. Marked partial, not verified: our fetch of Zapper's pricing page came back low-confidence and the figure rests partly on third-party corroboration rather than a clean read of Zapper's own page. Confirm the rate directly before relying on it."],
   rail:[5,"Pay-by-bank offered, but no separate cheaper rate published","n","Bank payments are supported, but the 2.9% appears to be blended across rails rather than discounted for bank transfers."],
   gap:[5,"Clause 4.3 defers to the pricing page; 30 days' notice to change","v","Explicitly points at zapper.com/pricing rather than naming a figure — the same pattern as most others. At least the page is public and you get 30 days' warning."],
-  exit:[5,"Not established","n","Term and notice provisions could not be confirmed from the accessible agreement."],
-  dormant:[7,"Silent — confirmed by a full read of all 21 clauses","v","No inactivity clause anywhere in the agreement, established by reading the whole document rather than by not finding one. No mechanism to close you, but no protection either."],
+  exit:[8.5,"No minimum term; 30 days' notice either way; no penalty (cl. 16.1, 2.4, 5.2)","v","Among the most merchant-friendly exit terms in the whole exercise, and it was hiding behind a 'not established' label until an audit caught it. Three quoted clauses: no lock-in, symmetrical notice, nothing to pay on the way out."],
+  dormant:[6.5,"Silent — confirmed by a full read of all 21 clauses","v","No inactivity clause anywhere in the agreement, established by reading the whole document rather than by failing to find one — which is why it edges above providers whose silence is merely unconfirmed. But silence is still not a safeguard, so it scores mid."],
   types:[7,"QR app, cards, linked bank accounts, store cards, vouchers, BNPL and crypto wallets","v","Unusual shape: Zapper is QR-first, built around its own consumer app, which carries over ten payment methods behind it. Strong if your buyers already use Zapper, less so if they don't."],
-  refunds:[5,"Not established","n","Refund terms could not be confirmed from the accessible agreement."],
+  refunds:[5.5,"You process refunds yourself; the transaction fee is not returned (cl. 9, 9.4)","v","Refunds are actioned by you rather than requested from Zapper, which is better than Peach's process. The original fee is not returned — standard across the industry."],
   npo:[5,"A 'Custom Plan' names NPOs explicitly — but it is sales-gated with no rate","v","The only provider of all ten naming non-profits on its own public pricing page, which is real structural recognition. But no rate, discount or eligibility rule is published anywhere. Same unresolved shape as PayFast's Cause account."],
-  data:[8,"No marketing-rights clause and no trans-border clause, on a full read","v","A complete read of the agreement found nothing claiming rights over your buyers and no cross-border permission. Its clause 15 covers only your own information. Note that Zapper's app users are governed by separate consumer terms not reviewed here."],
-  sla:[5,"Not established","n","No uptime or response commitment found either way."],
-  build:[6,"Hosted checkout with webhooks; plugins for WooCommerce and Shopify; no Node SDK confirmed","p","A redirect checkout and webhooks are documented, which is the shape this site needs. No first-party Node library was confirmed, so it would be hand-built."],
+  data:[6.5,"Silent on both, confirmed by a full read of all 21 clauses","v","A complete read of all 21 clauses found nothing claiming rights over your buyers and no cross-border permission — confirmed silence rather than a gap in our research, which is why it edges above the others that are merely undocumented. But silence is still not a safeguard, so it scores mid. Zapper's app users are governed by separate consumer terms not reviewed here, which is where such rights would more likely sit."],
+  sla:[4,"A 2-business-day response commitment on outages (cl. 20.2)","v","Not an uptime guarantee, but a written response commitment — more than the several providers offering nothing at all, and well short of Peach's 99% with service credits."],
+  build:[2.5,"No webhook signing of any kind in its full payload specification; ~12–18 hrs","v","The one genuine documentation gap found in the whole exercise, and it is not our tooling: Zapper's complete webhook payload specification was read in full, all four pages, and contains no signature, HMAC or shared-secret field anywhere. Without that, your site cannot prove a payment notification really came from Zapper. Ask before building."],
   sec:[5,"Not established","n","PCI attestation status was not confirmed."],
-  money:[3,"Weekly settlement on the Basic plan","v","The slowest of the ten by a distance — weekly, against T+1 or T+2 elsewhere. Daily settlement requires the paid Business tier at R220 a month, which for an account idle 35 months out of 36 is exactly the charge to avoid."]
+  money:[3,"Weekly settlement on the Basic plan","v","The slowest of the ten by a distance — weekly, against T+1 or T+2 elsewhere. Daily settlement requires the paid Business tier at R220 a month, which for an account that is quiet for most of a three-year cycle is exactly the charge to avoid."]
 };
 const PG = {
   cost:[7,"R15.00 at best · \"from 3%\" is a floor, not a rate","p","Unlike Stitch's \"from 2.95%\", this one really is a floor — the actual rate is negotiated per merchant on the Application Form. R15.00 is therefore the best case, not the price."],
@@ -484,8 +533,8 @@ const PG = {
   refunds:[3,"The contract defines a Refund Fee — contradicting the marketing page's \"No Refund Fees\"","v","Clause 4.1 lists six chargeable fee types including \"Refund Fee: a fixed fee on each refund\", while the website advertises no refund fees. That contradiction is precisely the advertised-versus-contracted gap this page exists to surface. Flagged, not reconciled."],
   npo:[2,"None found","v","No non-profit tier, discount or entity route found on the fees page, homepage or merchant agreement."],
   data:[5,"Not established — the General Terms could not be retrieved","n","The merchant agreement contains no marketing or trans-border clause, but the separate General Terms, where such clauses would more likely sit, could not be read. A genuine gap rather than a confirmed absence."],
-  sla:[5,"Not established","n","No uptime or response commitment found either way."],
-  build:[5,"Not established","n","Integration model, SDK availability and webhook verification could not be established from the accessible documentation."],
+  sla:[2,"24-hour 'reasonable care' language, explicitly not warranted (cl. 10.1)","v","The contract mentions responding with reasonable care but expressly declines to warrant the service. Effectively no commitment, but it is written down rather than absent."],
+  build:[7,"MD5(paymentReference + secret) verification documented; ~6–10 hrs","v","Previously marked \"not established\" — wrongly. Its reference documentation sets out webhook verification in full: an MD5 hash of the payment reference concatenated with your secret. Hosted payment pages, so a standard redirect integration."],
   sec:[5,"Not established","n","PCI attestation status was not confirmed."],
   money:[3,"Settlement timing is set per merchant in your Application Form","v","There is no published settlement period at all — clause 3.4.1 makes it merchant-specific, set in the document you only see once you apply. A reserve mechanism exists; its percentage and duration are not published."]
 };
@@ -505,7 +554,7 @@ function build() {
       '<div class="crit-head">' +
         '<input type="checkbox" id="on-'+c.id+'" '+(ON[c.id]?"checked":"")+' style="width:16px;height:16px;accent-color:var(--accent)">' +
         '<label for="on-'+c.id+'">'+c.label+'</label>' +
-        (c.yours ? '' : '<span class="tag mine">proposed</span>') +
+        '<button class="info" data-f="'+c.id+'" aria-label="What does &quot;'+c.label+'&quot; mean?">?</button>' +
         '<span class="wval" id="v-'+c.id+'"></span>' +
       '</div>' +
       '<div class="why">'+c.why+'</div>' +
@@ -542,13 +591,68 @@ function matrix() {
   CRIT.forEach(c => {
     h += "<tr><th>"+c.label+"</th>" + PROV.map(p => {
       const [s,f,st] = c.s[p.id];
-      return "<td class='cell' tabindex='0' role='button' data-c='"+c.id+"' data-p='"+p.id+"'>" +
-        "<b>"+s+"</b> <span class='st "+st+"'>"+(st==="v"?"V":st==="p"?"P":"—")+"</span>" +
-        "<span class='f'>"+f+"</span></td>";
+      // tint scales with the score, so strength reads at a glance; unknowns stay flat.
+      const tint = st === "n" ? 0 : Math.max(0, (s - 3) / 7 * 0.34).toFixed(3);
+      return "<td class='cell" + (st === "n" ? " unk" : "") + "' tabindex='0' role='button'" +
+        " style='--t:" + tint + "' data-c='" + c.id + "' data-p='" + p.id + "'" +
+        " title='" + f.replace(/'/g, "&#39;").replace(/"/g, "&quot;") + "'>" +
+        "<b>" + s + "</b><span class='st " + st + "'>" + (st==="v"?"V":st==="p"?"P":"—") + "</span></td>";
     }).join("") + "</tr>";
   });
   $("matrix").innerHTML = h + "</tbody>";
 }
+
+// Every provider was written up against the same numbered headings, so each factor
+// maps to a specific named section of that provider's file.
+const SECTION = {
+  cost:"§1 Fees, advertised", rail:"§1 Fees, advertised — other rails",
+  gap:"§2 Fees, contractual", exit:"§6 Contract term and exit",
+  dormant:"§7 Dormancy", types:"§4 Payment types", refunds:"§5 Refunds",
+  npo:"§13 Non-profit support", data:"§12 Customer data",
+  sla:"§11 Service levels", build:"§16 Integration effort",
+  sec:"security-certifications.md", money:"§8 Settlement and holds"
+};
+const FILE = {
+  ozow:"ozow-writeup.md", payfast:"payfast-writeup.md", yoco:"yoco-writeup.md",
+  peach:"peach-writeup.md", paystack:"paystack-writeup.md",
+  flutterwave:"flutterwave-writeup.md", stitch:"stitch-writeup.md",
+  ikhokha:"ikhokha-writeup.md", zapper:"zapper-writeup.md", paygenius:"paygenius-writeup.md"
+};
+// Live links to the provider's own document, so any score can be checked at source.
+// All verified to resolve, except Paystack's two, which serve a bot challenge to
+// automated requests but open normally in a browser.
+const LINKS = {
+  ozow:       { terms:"https://ozow.com/terms-and-conditions", pricing:"https://ozow.com/pricing", docs:"https://hub.ozow.com" },
+  payfast:    { terms:"https://payfast.io/legal/general-terms-conditions/", pricing:"https://payfast.io/fees/", docs:"https://developers.payfast.co.za" },
+  yoco:       { terms:"https://yoco.com/merchant-agreement.pdf", pricing:"https://yoco.com/za/pricing/", docs:"https://developer.yoco.com" },
+  peach:      { terms:"https://peachpayments.com/legal-doc/merchant-service-agreement/", pricing:"https://peachpayments.com/fees", docs:"https://developer.peachpayments.com" },
+  paystack:   { terms:"https://paystack.com/za/terms", pricing:"https://paystack.com/za/pricing", docs:"https://paystack.com/docs" },
+  flutterwave:{ terms:"https://flutterwave.com/za/merchant-service-agreement", pricing:"https://flutterwave.com/za/pricing", docs:"https://developer.flutterwave.com" },
+  stitch:     { terms:"https://stitch.money/legal", pricing:"https://pricing.stitch.money", docs:"https://docs.stitch.money" },
+  ikhokha:    { terms:"https://ikhokha.com/pricing", pricing:"https://ikhokha.com/pricing", docs:"https://help.ikhokha.com" },
+  zapper:     { terms:"https://zapper.com/terms", pricing:"https://zapper.com/pricing/", docs:"https://zapper.com/terms" },
+  paygenius:  { terms:"https://www.paygenius.co.za/", pricing:"https://info.paygenius.co.za/fees", docs:"https://developer.paygenius.co.za" }
+};
+// Which of the provider's documents each factor was actually read from.
+const DOCFOR = {
+  cost:"pricing", rail:"pricing", gap:"terms", exit:"terms", dormant:"terms",
+  types:"terms", refunds:"terms", npo:"pricing", data:"terms", sla:"terms",
+  build:"docs", sec:"terms", money:"terms"
+};
+const DOCNAME = { terms:"the contract", pricing:"the pricing page", docs:"the developer documentation" };
+
+const PRIMARY = {
+  ozow:"Ozow Merchant T&Cs V1.2026 (26 clauses) + ozow.com/pricing",
+  payfast:"PayFast General T&Cs (click-accepted) + payfast.io/fees",
+  yoco:"Yoco Merchant Agreement + Payment Services T&Cs (both PDFs, read in full)",
+  peach:"Peach MSA, 35pp, 22 July 2025 + fees page",
+  paystack:"Paystack ZA Terms incl. Merchant Services Agreement (31,261 words)",
+  flutterwave:"Flutterwave merchant service agreement + ZA pricing page",
+  stitch:"Stitch Express T&Cs + pricing.stitch.money",
+  ikhokha:"iKhokha e-commerce Merchant Agreement (2021 template) + help centre",
+  zapper:"Zapper Merchant Agreement (21 clauses) + zapper.com/pricing",
+  paygenius:"PayGenius ZA Merchant Agreement (36 clauses) + info.paygenius.co.za/fees"
+};
 
 const STATUS = {
   v: "Verified — taken from the provider's own contract or pricing page and quoted in the research files.",
@@ -566,9 +670,39 @@ function openCell(cid, pid) {
   $("dlg-explain").innerHTML = c.explain;
   $("dlg-dh").textContent = "What this means for " + p.name;
   $("dlg-detail").textContent = detail;
-  $("dlg-status").textContent = STATUS[st];
+  const sec = SECTION[cid];
+  const file = sec.endsWith(".md") ? sec : FILE[pid];
+  const kind = DOCFOR[cid];
+  const url = LINKS[pid][kind];
+  const bot = pid === "paystack" && kind !== "docs"
+    ? " <em>(serves a bot check to automated tools; opens normally in a browser)</em>" : "";
+  $("dlg-status").innerHTML =
+    "<b>Check it at source</b><br>" +
+    "Read from " + DOCNAME[kind] + ": <a href='" + url + "' target='_blank' rel='noopener'>" +
+      url.replace(/^https?:\/\//, "") + "</a>" + bot + "<br>" +
+    "<span class='dim'>" + PRIMARY[pid] + "</span><br>" +
+    "<span class='dim'>Written up in docs/research-evidence/" + file +
+      (sec.endsWith(".md") ? "" : " &mdash; " + sec) + "</span>" +
+    "<br><br>" + STATUS[st];
   $("dlg").showModal();
 }
+
+function openFactor(cid) {
+  const c = CRIT.find(x => x.id === cid);
+  $("dlg-prov").textContent = "About this factor";
+  $("dlg-title").textContent = c.label;
+  $("dlg-score").textContent = "";
+  $("dlg-fact").textContent = "";
+  $("dlg-explain").innerHTML = c.explain;
+  $("dlg-dh").textContent = "How it is scored";
+  $("dlg-detail").textContent = c.why;
+  $("dlg-status").textContent = "Each provider's square in the table below opens the specific facts behind its score.";
+  $("dlg").showModal();
+}
+$("crits").addEventListener("click", e => {
+  const b = e.target.closest("button.info");
+  if (b) { e.preventDefault(); openFactor(b.dataset.f); }
+});
 
 $("matrix").addEventListener("click", e => {
   const td = e.target.closest("td.cell");
