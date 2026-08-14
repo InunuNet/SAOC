@@ -372,7 +372,40 @@ not spend verification budget re-proving them.
    The "memberships → PayFast" arm of the recommendation survives ONLY on the recurring-billing
    capability, which nothing else has. It must no longer be justified by the minimum-fee argument.
 
-5. **The article presents an either/or that the contracts do not require.** Brad asked on
+5. **"Ozow's Integration Manual is only released to committed merchants" is FALSE — and it was
+   our own tooling failure, not a vendor restriction.** The article states this in section 1 and
+   uses it as a mark against Ozow. It is wrong. The documentation hub at hub.ozow.com is a
+   Stoplight single-page app; we were fetching it incorrectly and getting the navigation shell
+   back, then read that as a paywall. On 2026-08-14 the entire hub proved readable through
+   Stoplight's public JSON API via Alembic — that is how we obtained the 34,265-word merchant
+   agreement in the first place. Pattern: `/api/v1/projects/cHJqOjIzNzc2Mg/nodes/<slug>`, with
+   the site map at `/api/v1/projects/cHJqOjIzNzc2Mg/table-of-contents`.
+
+   Remove the claim, and pull the actual integration documentation before the Council meets —
+   whether Ozow's API can do what SAOC needs is now answerable, not a gap.
+
+6. **"Ozow has no documented non-profit onboarding path" is UNSUPPORTED, and PayFast's opposite
+   claim is equally unverified. Same error, opposite directions.** Brad, 2026-08-14: "If you
+   didn''t run through the sign-up options on Ozow, how can you be certain that they don''t
+   support non-profits? For example, when I was doing the sign up on Ozow... I selected [IT
+   company] and got stuck with that communications licence issue, but when I went back and
+   selected Other, the second option I could select was SME."
+
+   **He has actually used the signup flow. We never did.** We inferred an absence from marketing
+   pages and reported it as a finding. An entity type that is not advertised on a landing page
+   may well be selectable two steps into the form — his experience shows the flow branches in
+   exactly that way.
+
+   The symmetry is the real lesson and F6 must state it: we CREDITED PayFast with non-profit
+   onboarding on the strength of its marketing copy, and DEBITED Ozow for the absence of the same
+   copy. Neither was tested. Both claims must be marked UNSUPPORTED unless someone completes the
+   signup flows far enough to see the entity-type options. That test is cheap — it does not
+   require signing anything — and should be done before the Council meets.
+
+   Note the ECNS licence dead end Brad hit is itself evidence the flow is category-driven and
+   recoverable by re-selecting, not a hard gate.
+
+7. **The article presents an either/or that the contracts do not require.** Brad asked on
    2026-08-14 whether SAOC could run tickets through Ozow and memberships through PayFast. It can:
    PayFast cl. 2.2 provides its services "on non-exclusive basis"; Ozow cl. 3.1.1 grants a
    "non-exclusive, non-transferable, revocable licence". **Neither contract prohibits using
