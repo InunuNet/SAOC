@@ -862,21 +862,23 @@
 
   <h3>What other companies say about them</h3>
   <p>Hellopeter (a review site) shows Ozow at 2.1 out of 5 stars. Seven reviews, all one-star. People say they have to wait for payouts and refunds.</p>
-  <p><strong>But take this with salt:</strong> seven reviews is tiny. These are from customers, not merchants. People only review when they are angry. Do not overweight it. But do not ignore it either. <strong>Before you commit, search online for what other merchants say about Ozow — especially about how they handle busy seasons and refund backlogs.</strong></p>
+  <p><strong>Take this with salt.</strong> Seven reviews is a tiny sample, they are from members of the public rather than businesses, and people mostly review when they are angry. It is worth noting and not worth much more than that.</p>
+  <p>We are separately gathering what <em>businesses</em> say about all three companies — how they behave during busy periods, whether refunds back up, and whether funds actually get held. That is our work to do, and the findings will be added to this section. We would rather bring you evidence than send you looking for it.</p>
 
   <h3>What the actual contract says — the good and the rough</h3>
   <p>We got the real contract: <em>Ozow Merchant Terms and Conditions V1.2026</em>, dated 1 April 2026. 34,000 words. Every fact below is quoted from that document. When we cite a clause, you can look it up.</p>
 
   <p><strong>They can hold back your card takings <span class="clause">Annexure 3, clauses 9.5–9.10</span>.</strong> Ozow can hold up to <strong>10% of your monthly card sales for 180 days</strong> as a safety buffer for disputed payments and penalties. Two problems: first, this applies not just to "high-risk" merchants but to anyone Ozow decides is risky. Second, Ozow can make the holdback bigger or longer if they see dodgy transactions or too many refunds — with no limit written into the contract. If you end the relationship, the held money does not come back faster.</p>
-  <p>For a Show this is real money trouble: you take all the ticket money in three days, then six months later you get it back, after the venue bills are paid and the event is over.</p>
+  <p>For a Show this is a real cash-flow problem: you take the ticket money in three days, then wait six months for part of it, long after the venue has to be paid.</p>
+  <p><em>PayFast is not better here — it is worse on paper.</em> It can hold funds for <strong>up to 540 days, about 18 months</strong>, and can additionally require a cash deposit or bank guarantee as security. Holding money back is something all of these companies do; the difference is how long, and Ozow's window is the shorter of the two.</p>
 
   <p><strong>They can freeze you for nine months of inactivity <span class="clause">Part 2, clause 4.5.1</span>.</strong> If nothing happens for nine months, Ozow can shut down the account. This is a real problem for a council that only runs a Show every three years (covered fully in section 1).</p>
 
-  <p><strong>They can take their fees from your money without asking first <span class="clause">clause 3.5</span>.</strong> Ozow can deduct what you owe them from any money they hold for you, and they do not have to warn you first.</p>
+  <p><strong>They can take their fees from your money without asking first <span class="clause">Ozow clause 3.5, PayFast clauses 9.2 and 9.9</span>.</strong> <em>Both companies do this, so it is not a reason to prefer one over the other.</em> Either can deduct what you owe from money they are holding for you, without warning you beforehand. PayFast says it will tell you "as soon as practically possible" — which is after the money has gone, not before.</p>
 
-  <p><strong>Liability is one-way <span class="clause">clauses 9 and 10</span>.</strong> If Ozow messes up, you can only recover up to twelve months of processing fees. If you messes up (or Ozow says you did), your obligation to Ozow is unlimited. Ozow can take over your legal defence themselves and charge you the full cost — the expensive end of the cost scale.</p>
+  <p><strong>Liability is one-way <span class="clause">Ozow clauses 9 and 10</span>.</strong> If Ozow gets something wrong, you can recover at most twelve months of processing fees. What you owe Ozow is unlimited, and Ozow can take over your legal defence and bill you for it at the expensive end of the scale. <em>This lopsidedness is standard across the industry — but the size of the cap is not.</em> <strong>PayFast caps its own liability at about two months of fees, roughly six times tighter than Ozow's.</strong> On a Show that only sells for a few weeks, two months of fees is a very small number.</p>
 
-  <p><strong>They can shut you down for subjective reasons <span class="clause">clause 5.1.1</span>.</strong> Ozow can suspend you immediately if they think you are doing something "prejudicial" to them, or "threatening to" their relationships, or damaging their reputation. This could happen in the middle of your Show.</p>
+  <p><strong>They can shut you down on judgement calls <span class="clause">Ozow clause 5.1.1, PayFast clause 21.2(ii)(c) and (g)</span>.</strong> <em>Both again.</em> Ozow can suspend immediately if it thinks you are doing something "prejudicial" to it or damaging to its reputation. PayFast can terminate immediately over anything that is, "in our reasonable opinion", suspected fraud or a reputational risk. Either could in principle happen mid-Show. There is no meaningful difference between them here.</p>
 
   <p><strong>By signing up, you agree they can email your members about special offers <span class="clause">clause 20.8.1</span>.</strong> You are giving Ozow permission to market to your ticket buyers and members. That is permission you cannot actually give on their behalf.</p>
 
@@ -1224,7 +1226,8 @@
   <h2><span class="num">9</span>Security, Compliance and the Law</h2>
 
   <h3>Payment card security (PCI-DSS)</h3>
-  <p><strong>All six companies say they meet PCI-DSS. None publish their certificate number or expiry date.</strong> This is normal. Before you sign, <strong>ask them for the certificate and check it on the IAF public register.</strong></p>
+  <p><strong>Every company says it meets PCI-DSS. None publishes a certificate number or expiry date on its website.</strong> That is normal and not in itself suspicious.</p>
+  <p>We are checking this ourselves against the public registers the card schemes maintain — Visa and Mastercard both publish lists of approved service providers — rather than taking the claim on trust or asking you to chase it. Findings will be added here.</p>
   <p>PCI-DSS certifies how a company operates, not just a product. A vendor can be certified for one part of their business and not another.</p>
   <p><strong>Your setup now is the safest:</strong> your site sends customers to PayFast's site to enter their card. Card data never touches your servers. PayFast handles the card data. You handle login security, session management, and webhook verification.</p>
   <p><strong>New rules came in 31 March 2025.</strong> Two apply if you ever change:</p>
@@ -1249,7 +1252,8 @@
 
   <h3>ISO 27001 — data security management</h3>
   <p><strong>All six companies claim ISO 27001. None publish the certificate number, registrar, or what exactly is certified.</strong></p>
-  <p>ISO 27001 is a certificate that a company has proper information-security processes. A vendor can be certified for one part of their business and not another. <strong>Ask for their certificate and check it on the IAF register.</strong></p>
+  <p>ISO 27001 means a company has been audited on how it manages information security. The catch is that a company can be certified for one part of its business and not another, so the certificate alone does not tell you the payment system is covered.</p>
+  <p>We are searching the public certificate databases for all three companies and their parent groups, and will report what is actually verifiable — including where the answer is "claimed, but nothing public confirms it".</p>
 
   <h3>SOC 2 — do not expect this</h3>
   <p>SOC 2 is a US security audit, not a certificate. South African gateways almost never have it. Do not ask for it.</p>

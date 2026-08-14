@@ -433,7 +433,36 @@ not spend verification budget re-proving them.
    realistic refund window, as those ARE genuine constraints unlike the withdrawn balance
    argument.
 
-8. **The article presents an either/or that the contracts do not require.** Brad asked on
+8. **EDITORIAL RULE — a point shared by all providers is not a point against any one of them.**
+   Brad, 2026-08-14, on a paragraph criticising Ozow for deducting fees without prior notice:
+   "Don't all the payment gateways take their fees first? Feels like we're picking on Ozow. If
+   the point's the same for all three, then it's not really a point worth bringing up. Make this
+   a rule for all the points we are highlighting. If it's the same for all of them, then we must
+   just state so. Or leave it out unless it's an important point."
+
+   Adopt this as a rule and apply it to EVERY criticism in the article. For each one, check the
+   other providers' contracts. Then: if it is common to all, either say so explicitly ("both
+   companies do this, so it is not a reason to prefer one") or cut it; if it differs, state the
+   difference and say which is worse and by how much.
+
+   This is the same defect that produced the Yoco error — a market-wide characteristic presented
+   as a vendor-specific flaw. Section 2 was a one-sided list of Ozow's rough edges with no PayFast
+   comparison, which reads as bias whether or not it was intended.
+
+   Already corrected on 2026-08-14, verify the fixes hold: set-off without notice (Ozow 3.5 =
+   PayFast 9.2/9.9 — identical, now stated as common); discretionary suspension (Ozow 5.1.1 =
+   PayFast 21.2(ii)(c)/(g) — both on "reasonable opinion", now stated as common); one-way
+   liability (standard everywhere, but PayFast's cap is ~2 months' fees against Ozow's ~12, so the
+   asymmetry is common and the magnitude is not); fund holds (Ozow 10%/180 days vs PayFast 540
+   days plus a collateral demand — common practice, Ozow's window shorter).
+
+   STILL TO CHECK against PayFast and Yoco, and correct if they are common: Ozow's marketing
+   consent over the merchant's own customers (cl. 20.8.1 — no PayFast equivalent found, so this
+   one may be genuinely Ozow-specific and should be verified, not assumed); the Responsible Party
+   position under POPIA (already flagged in-text as applying regardless of provider); refund
+   pre-funding (already established as common to all three).
+
+9. **The article presents an either/or that the contracts do not require.** Brad asked on
    2026-08-14 whether SAOC could run tickets through Ozow and memberships through PayFast. It can:
    PayFast cl. 2.2 provides its services "on non-exclusive basis"; Ozow cl. 3.1.1 grants a
    "non-exclusive, non-transferable, revocable licence". **Neither contract prohibits using
