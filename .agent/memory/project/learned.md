@@ -526,3 +526,26 @@ Two stale items, deliberately deferred:
 - `contracts/golden/f4-seed-page-singletons/nationalShow.golden.json` still pins CTICC as expected output of `seedNationalShow()` — the seed script changed but this golden didn't. Owned by `contracts/cms-loop-f3-national-show.yaml`. Self-detecting on re-run; marked as stale until then.
 
 - Historical golden files (`cticc-research.golden.md`, `venue-single-source.golden.md`, `show-identity-wiring.golden.md`, `assertion-discrimination.golden.md`) from the old research phase remain intact as dated research records. Worth a human decision: carry a "superseded" banner, or archive them?
+
+## 2026-08-14 — Never hand-write harness-managed files
+
+Wrote plain markdown directly over `.agent/memory/project/missions/2026-08-14-gateway-rubric.md`,
+destroying its `athanor.mission/v1` YAML frontmatter. `mission.py list` reported it as a parse
+error and the harness lost track of it. Brad: *"You should never be editing the harness files.
+You don't maintain those."*
+
+**Rule:** mission files, agent definitions, skills and rules under `.agent/`, `.claude/` and
+`.gemini/` are harness-owned. Mutate them through `execution/mission.py` and `make update-template`
+only. Free-form notes belong in `docs/` or `.agent/memory/scratch/`, never in a schema'd file.
+
+Recovery: restored the frontmatter by hand and ran `make update-template`. Cost a wrap-up cycle.
+
+## 2026-08-14 — Prove reachability before building anything on it
+
+Built a scoring artifact before confirming the underlying documents could be retrieved. Every
+problem that surfaced afterwards — Ozow's contract question, Peach's readable-after-all PDF,
+nav menus arriving at HIGH confidence — would have been caught by the step that was skipped.
+Roughly 7% of a quota window spent on work that had to be redone.
+
+**Rule:** when a deliverable rests on external data, prove the data is retrievable first, per
+source, and record the working route. Then build.

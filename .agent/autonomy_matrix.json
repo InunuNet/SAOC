@@ -1,0 +1,67 @@
+{
+  "_comment": "Athanor Autonomy Matrix — source of truth for check_autonomy.sh and sync-autonomy",
+  "levels": ["off", "low", "medium", "high", "loop"],
+  "default": "medium",
+  "onboarding_default": "medium",
+  "floor_denials": {
+    "paths": ["\\.git/", "\\.env", "\\.sops\\.yaml", "\\.pem$", "\\.key$", "/secrets/", "init\\.sh", "full_boot\\.sh", "\\.gemini/policies/", "~/.ssh/", "~/.aws/", "~/.gnupg/"],
+    "commands": ["rm -rf /", "rm -rf ~", "git push --force.*main", "git push --force.*master", "chmod 777", "curl.*\\| *sh", "wget.*\\| *sh", "dd if=/dev/zero", "sudo"],
+    "note": "These are never permitted at any level including high"
+  },
+  "matrix": {
+    "off": {
+      "reads": "project files only",
+      "writes": "ask for every write",
+      "shell": "ask for every command",
+      "git": "ask for all git operations",
+      "network": "Alembic only (localhost:7077)",
+      "subagents": ["analyst", "architect"],
+      "shell_allowlist": []
+    },
+    "low": {
+      "reads": "project files",
+      "writes": [".agent/memory/scratch/", ".agent/memory/project/"],
+      "shell": "allowlist only",
+      "git": "status, diff, log, show, branch (read-only)",
+      "network": "Alembic only (localhost:7077)",
+      "subagents": "all 8 agents",
+      "shell_allowlist": [
+        "ls", "cat", "grep", "make", "python3", "bash", "echo", "pwd",
+        "git status", "git diff", "git log", "git show", "git branch",
+        "gh issue", "gh api", "gh repo",
+        "jq", "wc", "head", "tail", "sort", "uniq", "awk",
+        "sed -n", "sed -e", "sed -f",
+        "find", "test", "printf", "date",
+        "basename", "dirname", "which", "type"
+      ]
+    },
+    "medium": {
+      "reads": "project files",
+      "writes": "all project files except floor-denied paths",
+      "write_deny_extra": [".agent/rules/_core/", ".gemini/policies/", ".claude/settings.json", "Makefile"],
+      "shell": "low allowlist + build tools",
+      "git": "add, commit, checkout, switch, branch, merge --ff-only, stash, pull --ff-only",
+      "network": "Alembic only (localhost:7077)",
+      "subagents": "all 8 agents",
+      "shell_allowlist_additions": ["npm", "pnpm", "yarn", "make test", "pytest", "jest", "go", "cargo", "swift", "xcodebuild"]
+    },
+    "high": {
+      "reads": "project files",
+      "writes": "everything except floor-denied paths",
+      "shell": "medium + release/deploy commands",
+      "git": "medium + push (non-protected branches), rebase, cherry-pick",
+      "network": "Alembic only (localhost:7077)",
+      "subagents": "all 8 agents, parallel writers permitted",
+      "shell_allowlist_additions": ["gh pr create", "gh pr merge", "gh release", "fastlane", "xcodebuild -exportArchive"]
+    },
+    "loop": {
+      "reads": "project files",
+      "writes": "everything except floor-denied paths",
+      "shell": "medium + release/deploy commands",
+      "git": "medium + push (non-protected branches), rebase, cherry-pick",
+      "network": "Alembic only (localhost:7077)",
+      "subagents": "all 8 agents, parallel writers permitted",
+      "shell_allowlist_additions": ["gh pr create", "gh pr merge", "gh release", "fastlane", "xcodebuild -exportArchive"]
+    }
+  }
+}

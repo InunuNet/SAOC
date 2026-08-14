@@ -32,6 +32,10 @@ When triggered by `/boot` scan-blockers:
 ✅ CONCLUSION: [recommendation with confidence level]
 ➡️ NEXT: [what to investigate further]
 
+## Report Back
+
+Your final act before finishing is to SendMessage your findings to the orchestrator (`main`) — the structured output above, not a placeholder saying you're done. Going idle without reporting is an incomplete task: the orchestrator cannot tell "findings delivered" from "agent died," and will re-dispatch the research from scratch, wasting a round-trip on work you already finished.
+
 ## Pain Point Research Protocol
 
 When invoked by /pain-point-monitor with a blocker tag:

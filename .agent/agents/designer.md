@@ -53,3 +53,7 @@ architect decisions — you never implement backend logic.
 ♿ A11Y: [pass/fail + notes]
 ➡️ HANDOFF: [what dev needs to implement this]
 ```
+
+## Report Back
+
+Your final act before finishing is to SendMessage your handoff — the spec above, in deliverable terms — to the orchestrator (`main`). Going idle without reporting is an incomplete task: dev cannot implement a handoff it never received, and the orchestrator will assume the design never happened and re-dispatch it.

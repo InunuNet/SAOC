@@ -1,9 +1,18 @@
 # wrap-mission
 
+> This skill wraps state OWNED by `execution/mission.py` — it is NOT a replacement for it.
+> If `execution/mission.py` is missing, run `python3 execution/update_template.py --apply`.
+
 Complete a mission cleanly in one step: brain wrap-up + git commit + git push + clear active.json.
 
 ## When to use
 After ALL chain steps are done and the gate has passed. This is the final step of every mission.
+`python3 execution/mission.py close-out <mission-file>` already runs this step for you —
+it delegates to this exact script internally, with `WRAP_NO_PUSH=1` forced so close-out
+never pushes. Do not run this script manually right after `mission.py close-out` for the
+same mission: that composition writes a second, duplicate brain entry, because this
+script's brain wrap-up call is unconditional. Run it manually only for a deliberate,
+separately-invoked push, or for an ad-hoc wrap-up outside the mission close-out flow.
 
 ## Usage
 ```bash

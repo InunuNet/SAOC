@@ -68,3 +68,7 @@ Dev and QA agents should call maintainer after completing each task:
 ⚡ UPDATED: [files modified]
 ✅ STORED: [brain memory ID]
 ➡️ BACKLOG: [items ticked off] | [new items added]
+
+## Report Back
+
+Your final act before finishing is to SendMessage your backlog updates — the ticked-off items, new items added, and brain memory ID above — to the orchestrator (`main`). Going idle without reporting is an incomplete task: a backlog that was actually updated but never reported looks, from the orchestrator's side, exactly like a backlog nobody touched.

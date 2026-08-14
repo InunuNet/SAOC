@@ -36,6 +36,8 @@ MILESTONE_RE = re.compile(r"^M[0-9]+$")
 VALID_STATUS = {"pending", "in_progress", "done", "blocked", "skipped", "paused", "abandoned"}
 VALID_FEATURE_STATUS = {"pending", "in_progress", "done", "blocked", "skipped"}
 VALID_MISSION_STATUS = {"pending", "in_progress", "done", "paused", "abandoned", "close_out"}
+COMPACTION_HINT_FILE = Path(".agent/memory/scratch/compaction-hint.json")
+SUGGESTED_COMPACT_PCT = 45
 
 # ── YAML/JSON helpers ──────────────────────────────────────────────────────────
 
@@ -164,9 +166,38 @@ def write_active(mission_path: str, checkpoint: dict | None = None):
     os.replace(tmp, str(ACTIVE_JSON))
 
 
-def clear_active():
-    if ACTIVE_JSON.exists():
-        ACTIVE_JSON.unlink()
+def clear_active(mission_path: str | None = None):
+    """Clear active.json, but only when it actually points at mission_path.
+
+    When mission_path is None, clears unconditionally (used by callers that
+    have already established ownership themselves). When mission_path is
+    given, active.json is left completely untouched unless its "mission"
+    field resolves to the same path — this is the fix for GH #1333, where
+    an unconditional clear let pausing one mission wipe another's active
+    pointer.
+    """
+    if not ACTIVE_JSON.exists():
+        return False
+    if mission_path is not None:
+        active = read_active()
+        if not active or not active.get("mission"):
+            return False
+        if Path(active["mission"]).resolve() != Path(mission_path).resolve():
+            return False
+    ACTIVE_JSON.unlink()
+    return True
+
+
+def emit_compaction_hint(trigger: str, reason: str) -> None:
+    """Emit an advisory compaction hint (stdout marker + scratch file). Never raises."""
+    payload = {"trigger": trigger, "reason": reason,
+               "suggested_override_pct": SUGGESTED_COMPACT_PCT, "ts": now_iso()}
+    try:
+        COMPACTION_HINT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        COMPACTION_HINT_FILE.write_text(json.dumps(payload))
+    except Exception:
+        pass
+    print("COMPACTION_HINT: " + json.dumps(payload))
 
 
 # ── Subcommands ────────────────────────────────────────────────────────────────
@@ -429,7 +460,73 @@ def cmd_cost(args):
     write_mission_file(args.mission, fm, body)
 
 
+QUOTA_ADMISSION_DEFAULT_THRESHOLD = 85
+
+
+def _quota_admission_threshold() -> float:
+    """Read the admission-blocking threshold (percent used) from the env,
+    defaulting to QUOTA_ADMISSION_DEFAULT_THRESHOLD when unset or malformed
+    (fail open -- a garbage env var must never block admission)."""
+    raw = os.environ.get("ATHANOR_QUOTA_ADMISSION_THRESHOLD", QUOTA_ADMISSION_DEFAULT_THRESHOLD)
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return float(QUOTA_ADMISSION_DEFAULT_THRESHOLD)
+
+
+def _quota_admission_check() -> tuple[bool, dict]:
+    """Return (allowed, quota_data) for starting a brand-new feature right now.
+
+    Consults `execution/quota.py status --json` and fails OPEN (allows) on any
+    degraded signal -- quota.py missing/crashing, malformed JSON, or an
+    explicit state other than "ok" (e.g. "unknown"). Only an explicit
+    state == "ok" AND used_pct >= the admission threshold blocks. This is
+    deliberately conservative: quota infrastructure failing must never stop
+    real work.
+    """
+    cmd = [sys.executable, "execution/quota.py", "status", "--json"]
+    mirror_path = os.environ.get("ATHANOR_QUOTA_MIRROR_PATH")
+    if mirror_path:
+        cmd += ["--mirror-path", mirror_path]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        data = json.loads(result.stdout)
+    except Exception:
+        # quota.py missing, crashed, timed out, or emitted malformed JSON --
+        # fail open.
+        return True, {}
+
+    if data.get("state") != "ok":
+        return True, data
+
+    used_pct = data.get("used_pct")
+    if used_pct is None or used_pct < _quota_admission_threshold():
+        return True, data
+
+    return False, data
+
+
+def _quota_block_message(data: dict) -> str:
+    threshold = _quota_admission_threshold()
+    return (
+        f"BLOCKED: quota admission check refused new work — used_pct="
+        f"{data.get('used_pct')} >= threshold={threshold}. resets_at="
+        f"{data.get('resets_at')} seconds_to_reset={data.get('seconds_to_reset')}. "
+        "Pass --ignore-quota to override."
+    )
+
+
 def cmd_checkpoint(args):
+    mission_path = args.mission
+    if not mission_path:
+        active = read_active()
+        mission_path = active.get("mission") if active else None
+        if not mission_path:
+            print("ERROR: no active mission and no mission path given. Run: "
+                  "python3 execution/mission.py activate <mission.md>", file=sys.stderr)
+            sys.exit(1)
+        args.mission = mission_path
+
     fm, body = parse_mission_file(args.mission)
 
     fid = args.feature
@@ -446,6 +543,14 @@ def cmd_checkpoint(args):
         sys.exit(1)
 
     old_status = feature["status"]
+
+    is_new_start = new_status == "in_progress" and not feature.get("started_at")
+    if is_new_start and not getattr(args, "ignore_quota", False):
+        allowed, quota_data = _quota_admission_check()
+        if not allowed:
+            print(_quota_block_message(quota_data), file=sys.stderr)
+            sys.exit(3)
+
     feature["status"] = new_status
 
     if new_status == "in_progress" and not feature.get("started_at"):
@@ -477,6 +582,8 @@ def cmd_checkpoint(args):
         write_active(active["mission"], fm["last_checkpoint"])
 
     write_mission_file(args.mission, fm, body)
+    if new_status == "done":
+        emit_compaction_hint("checkpoint", fid)
     print(f"Checkpoint: {fid} {old_status} → {new_status}")
 
 
@@ -520,6 +627,7 @@ def cmd_gate(args):
 
     any_fail = False
     skipped = 0
+    unverified = 0  # features with no contract found anywhere (SKIP verdict)
     ran = 0
 
     for fid in feature_ids:
@@ -536,14 +644,21 @@ def cmd_gate(args):
 
         contract = f.get("contract")
         if not contract:
-            # No contract — if feature is done, count as pass; otherwise warn
-            if f["status"] == "done":
-                print(f"  PASS {fid}: done (no contract)")
-            elif f["status"] in ("pending", "in_progress"):
+            # No contract attached via attach-spec — before falling back to a
+            # status-only verdict, auto-discover a real contract already on
+            # disk (same derivation cmd_resume uses) and run it. A feature
+            # must never be certified PASS purely on its status field while
+            # a real, discoverable contract was never executed.
+            contract = _existing_contract_for_feature(fm, fid)
+
+        if not contract:
+            # Truly no contract anywhere for this feature.
+            if f["status"] in ("pending", "in_progress"):
                 print(f"  FAIL {fid}: status={f['status']} (not done, no contract)")
                 any_fail = True
             else:
-                print(f"  PASS {fid}: status={f['status']} (no contract)")
+                print(f"  SKIP {fid}: status={f['status']} (no contract found anywhere)")
+                unverified += 1
             ran += 1
             continue
 
@@ -574,17 +689,59 @@ def cmd_gate(args):
         write_mission_file(args.mission, fm, body)
         print(f"\nFAIL Milestone {mid} gate FAILED — resolve failing features before advancing.")
         sys.exit(2)
+    elif unverified and not args.allow_skips:
+        milestone["gate_result"] = "fail"
+        write_mission_file(args.mission, fm, body)
+        print(
+            f"\nFAIL Milestone {mid} gate FAILED. {unverified} feature(s) never verified "
+            "(no contract found anywhere; use --allow-skips to permit)."
+        )
+        sys.exit(2)
     else:
         milestone["gate_result"] = "pass"
         milestone["status"] = "done"
-        # Check if all milestones done → mission done
+        # Check if all milestones done → close_out (never done directly — only
+        # cmd_close_out may write status: done, after a mandatory brain wrap-up)
         all_done = all(m.get("status") == "done" for m in fm.get("milestones", []))
         if all_done:
-            fm["status"] = "done"
+            fm["status"] = "close_out"
         write_mission_file(args.mission, fm, body)
-        print(f"\nPASS Milestone {mid} gate passed ({ran} ran, {skipped} skipped).")
+        emit_compaction_hint("gate_pass", mid)
+        unverified_note = f", {unverified} unverified (--allow-skips)" if unverified else ""
+        print(f"\nPASS Milestone {mid} gate passed ({ran} ran, {skipped} skipped{unverified_note}).")
         if all_done:
-            print("All milestones complete. Mission status → done.")
+            print(
+                "All milestones complete. Mission status → close_out. "
+                f"MAINTAINER WRAP-UP REQUIRED — dispatch @maintainer. "
+                f"Run: python3 execution/mission.py close-out {args.mission}"
+            )
+
+
+def _existing_contract_for_feature(fm: dict, fid: str) -> str | None:
+    """Return the path to feature `fid`'s contract if it exists on disk and validates.
+
+    Derives specs/<slug>/contract-f<N>.yaml from the mission's slug and the feature
+    id's numeric suffix, independent of whether attach-spec was ever run — some
+    missions use inline_brief and never record a `contract` field on the feature.
+    """
+    match = re.match(r"^F([0-9]+)$", fid)
+    if not match:
+        return None
+    slug = fm.get("slug")
+    if not slug:
+        return None
+    contract_path = Path(".agent/memory/project/specs") / slug / f"contract-f{match.group(1)}.yaml"
+    if not contract_path.exists():
+        return None
+
+    contract_script = Path(__file__).parent / "contract.py"
+    result = subprocess.run(
+        [sys.executable, str(contract_script), "validate", str(contract_path)],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        return None
+    return str(contract_path)
 
 
 def cmd_resume(args):
@@ -625,7 +782,21 @@ def cmd_resume(args):
         if pending_features:
             fid = pending_features[0]
             feat = feat_map[fid]
-            print(f"RESUME: run /spec for {fid} '{feat.get('title', '')}' (milestone {mid})")
+
+            if not feat.get("started_at") and not getattr(args, "ignore_quota", False):
+                allowed, quota_data = _quota_admission_check()
+                if not allowed:
+                    print(_quota_block_message(quota_data), file=sys.stderr)
+                    sys.exit(3)
+
+            contract_path = _existing_contract_for_feature(fm, fid)
+            if contract_path:
+                print(
+                    f"RESUME: dispatch @dev against existing contract for {fid} "
+                    f"'{feat.get('title', '')}' (milestone {mid}): {contract_path}"
+                )
+            else:
+                print(f"RESUME: run /spec for {fid} '{feat.get('title', '')}' (milestone {mid})")
             return
 
         # All features in milestone are done/skipped — need gate
@@ -654,6 +825,41 @@ def cmd_resume(args):
             print(f"RESUME: run mission.py gate --milestone {remaining[0]['id']} for remaining milestones")
 
 
+def _secret_guard_preflight() -> list[str]:
+    """Return the secret-looking paths that wrap_mission.sh's own guard would see,
+    WITHOUT staging anything ourselves. wrap_mission.sh checks `git diff --cached
+    --name-only` AFTER its own `git add -A` -- so its real guard sees the union of
+    (a) paths not yet staged that `git add -A` would newly stage, and (b) paths
+    already staged in the index before close-out even ran (e.g. an operator's own
+    prior `git add`). `git add -A -n` alone only reports (a) -- it is silent about
+    (b), which would let a pre-staged secret slip past this pre-flight and only
+    get caught by wrap_mission.sh's guard, after its unconditional brain call
+    (line ~51) has already fired. So we check the union of both sets here, making
+    this pre-flight a strict superset of wrap_mission.sh's real guard."""
+    dry_run = subprocess.run(["git", "add", "-A", "-n"], capture_output=True, text=True)
+    would_stage = {
+        m.group(1)
+        for line in dry_run.stdout.splitlines()
+        if (m := re.match(r"^(?:add|remove) '(.*)'$", line))
+    }
+    already_staged = subprocess.run(
+        ["git", "diff", "--cached", "--name-only"], capture_output=True, text=True
+    )
+    already_staged_paths = {p for p in already_staged.stdout.splitlines() if p.strip()}
+    paths = sorted(would_stage | already_staged_paths)
+    if not paths:
+        return []
+    guard = subprocess.run(
+        ["python3", "execution/skills/lib/secret_guard.py", "--stdin"],
+        input="\n".join(paths),
+        capture_output=True,
+        text=True,
+    )
+    if guard.returncode == 0:
+        return []
+    return [p for p in guard.stdout.splitlines() if p.strip()]
+
+
 def cmd_close_out(args):
     fm, body = parse_mission_file(args.mission)
     if fm.get("status") != "close_out":
@@ -663,21 +869,61 @@ def cmd_close_out(args):
             file=sys.stderr,
         )
         sys.exit(1)
+
+    # Secret-guard pre-flight, BEFORE any mission-file mutation and before
+    # delegating. wrap_mission.sh's own secret_guard check aborts AFTER its
+    # brain wrap-up call (line ~51) -- by then a brain entry already exists,
+    # so catching the failure here is what actually prevents the stuck-state
+    # / duplicate-entry bug, rather than merely cleaning up after it.
+    secrets = _secret_guard_preflight()
+    if secrets:
+        print(
+            "ERROR: secret-looking file(s) would be staged by the close-out "
+            "delegate -- refusing to close out (no mission-state change, no "
+            "brain wrap-up):\n"
+            + "\n".join(f"  {p}" for p in secrets)
+            + "\nAdd them to .gitignore or remove them, then retry.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     slug = fm.get("slug", Path(args.mission).stem)
     goal = fm.get("goal", "")
-    result = subprocess.run(
-        ["python3", "execution/brain.py", "wrap-up", "-s", f"{slug}: {goal}", "-t", f"mission,{slug},complete"],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        print(f"ERROR: brain wrap-up failed:\n{result.stderr}", file=sys.stderr)
-        sys.exit(1)
+
+    # Status must be written to disk BEFORE delegating: wrap_mission.sh's
+    # mission_complete.py check reads status from disk and only clears
+    # active.json once it already says "done".
     fm["status"] = "done"
     fm["completed_at"] = now_iso()
     fm["last_active_at"] = now_iso()
     write_mission_file(args.mission, fm, body)
-    clear_active()
+
+    # Delegate to wrap_mission.sh as the SOLE canonical close-out path
+    # (brain wrap-up + secret-guarded commit + active.json-clear). Force
+    # WRAP_NO_PUSH=1 unconditionally so close-out can never push to the
+    # shared remote -- pushing stays a deliberate, separately-run step.
+    env = dict(os.environ)
+    env["WRAP_NO_PUSH"] = "1"
+    result = subprocess.run(
+        ["bash", "execution/skills/wrap_mission.sh", f"{slug}: {goal}", f"mission,{slug},complete"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    if result.returncode != 0:
+        # Roll back the premature status write so an immediate retry passes
+        # the status == close_out guard above and can proceed cleanly. This
+        # is a safety net for non-secret delegate failures -- the secret-guard
+        # pre-flight above is what prevents the common (and otherwise
+        # unrecoverable, since a brain entry may already be written by the
+        # time wrap_mission.sh's own guard trips) failure mode outright.
+        fm["status"] = "close_out"
+        fm.pop("completed_at", None)
+        fm.pop("last_active_at", None)
+        write_mission_file(args.mission, fm, body)
+        print(f"ERROR: wrap_mission.sh failed:\n{result.stderr}", file=sys.stderr)
+        sys.exit(1)
+    emit_compaction_hint("close_out", slug)
     print("DONE: mission closed. Commit now.")
 
 
@@ -695,11 +941,7 @@ def cmd_close_stub(args):
     fm["last_active_at"] = now_iso()
     write_mission_file(args.mission, fm, body)
 
-    active = read_active()
-    if active and active.get("mission"):
-        same_mission = Path(active["mission"]).resolve() == Path(args.mission).resolve()
-        if same_mission:
-            clear_active()
+    clear_active(args.mission)
 
     print(f"DONE: stub mission closed ({args.mission}).")
 
@@ -715,9 +957,10 @@ def cmd_pause(args):
     fm["status"] = "paused"
     fm["last_active_at"] = now_iso()
     write_mission_file(args.mission, fm, body)
-    clear_active()
+    cleared = clear_active(args.mission)
     print(f"Paused: {args.mission}")
-    print("active.json cleared.")
+    if cleared:
+        print("active.json cleared.")
 
 
 def cmd_abandon(args):
@@ -784,10 +1027,12 @@ def main():
 
     # checkpoint
     p_cp = sub.add_parser("checkpoint", help="Update feature status")
-    p_cp.add_argument("mission", help="Path to mission .md file")
+    p_cp.add_argument("mission", nargs="?", help="Path to mission .md (defaults to active.json)")
     p_cp.add_argument("--feature", required=True, help="Feature ID (e.g. F1)")
     p_cp.add_argument("--status", required=True, help="New status")
     p_cp.add_argument("--handoff", help="Path to handoff JSON file")
+    p_cp.add_argument("--ignore-quota", action="store_true", default=False,
+                       help="Bypass the quota admission check for this checkpoint")
 
     # attach-spec
     p_as = sub.add_parser("attach-spec", help="Attach spec+contract to a feature")
@@ -800,10 +1045,16 @@ def main():
     p_gate = sub.add_parser("gate", help="Run milestone gate")
     p_gate.add_argument("mission", help="Path to mission .md file")
     p_gate.add_argument("--milestone", required=True, help="Milestone ID (e.g. M1)")
+    p_gate.add_argument("--allow-skips", action="store_true", default=False,
+                         help="Do not fail the gate solely because a feature had no "
+                              "contract anywhere (SKIP verdict); a discovered contract "
+                              "that actually fails still fails the gate regardless")
 
     # resume
     p_resume = sub.add_parser("resume", help="Print next action for active mission")
     p_resume.add_argument("mission", nargs="?", help="Path to mission .md (defaults to active.json)")
+    p_resume.add_argument("--ignore-quota", action="store_true", default=False,
+                           help="Bypass the quota admission check for this resume")
 
     # activate
     p_act = sub.add_parser("activate", help="Set a mission as active")

@@ -346,9 +346,17 @@ setup_instructions() {
     cp "$agents_src" "$PROJECT_PATH/AGENTS.md" 2>/dev/null || true
     cp "$TEMPLATE_DIR/GITHUB.md" "$PROJECT_PATH/GITHUB.md" 2>/dev/null || true
 
-    rm -f "$PROJECT_PATH/CLAUDE.md" "$PROJECT_PATH/GEMINI.md" 2>/dev/null || true
-    ln -sf AGENTS.md "$PROJECT_PATH/CLAUDE.md" 2>/dev/null || cp "$PROJECT_PATH/AGENTS.md" "$PROJECT_PATH/CLAUDE.md" 2>/dev/null || true
-    ln -sf AGENTS.md "$PROJECT_PATH/GEMINI.md" 2>/dev/null || cp "$PROJECT_PATH/AGENTS.md" "$PROJECT_PATH/GEMINI.md" 2>/dev/null || true
+    # Skip the rm+relink entirely when a file already correctly resolves to
+    # AGENTS.md — pure churn reduction on re-init (issue #1313). Only fall
+    # through to rm+relink (+ cp fallback) when missing, a real file, or a
+    # symlink pointing somewhere else.
+    for _f in CLAUDE.md GEMINI.md; do
+        if [ -L "$PROJECT_PATH/$_f" ] && [ "$(readlink "$PROJECT_PATH/$_f")" = "AGENTS.md" ]; then
+            continue
+        fi
+        rm -f "$PROJECT_PATH/$_f" 2>/dev/null || true
+        ln -sf AGENTS.md "$PROJECT_PATH/$_f" 2>/dev/null || cp "$PROJECT_PATH/AGENTS.md" "$PROJECT_PATH/$_f" 2>/dev/null || true
+    done
 }
 
 # ── Gitignore ─────────────────────────────────────────────────────────────────

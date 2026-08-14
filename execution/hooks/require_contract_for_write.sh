@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # require_contract_for_write.sh — PreToolUse contract gate
 # exit 0 = allow, exit 2 = block (no contract for active mission)
-# Uses bash/jq only — no python3 startup cost per hooks.md rule
+# Uses bash/jq only — avoids interpreter startup cost per hooks.md rule
 # Fails OPEN on any internal error so a hook bug never paralyses the workspace.
 
 INPUT=$(cat)
@@ -9,7 +9,7 @@ INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""' 2>/dev/null || echo "")
 
 # ── Normalize FILE_PATH to eliminate .. traversal before safe-zone check ──────
-# Uses cd/pwd/basename — works on macOS without python3 startup cost.
+# Uses cd/pwd/basename — works on macOS without extra interpreter startup cost.
 # If the parent directory exists, resolve it fully; otherwise leave as-is and
 # apply the /../ substring guard below as a fallback.
 if [ -n "$FILE_PATH" ]; then
@@ -49,6 +49,12 @@ case "$FILE_PATH" in
     exit 0 ;;
   README.md|*/README.md)
     exit 0 ;;
+  /tmp/*|*/tmp/*)
+    exit 0 ;;
+  /private/tmp/*|*/private/tmp/*)
+    exit 0 ;;
+  */scratchpad/*)
+    exit 0 ;;
 esac
 
 # ── FILE_PATH empty means we cannot determine target — fail open ──────────────
@@ -84,6 +90,20 @@ done
 if [ -z "$SLUG" ]; then
   # Cannot derive slug — fail open
   exit 0
+fi
+
+# ── Terminal-status mission guard (GH #1300) ──────────────────────────────────
+# active.json can linger pointing at a mission whose frontmatter status has
+# already reached a terminal state (complete/"done"/abandoned). Treat that as
+# not-active and fail open instead of blocking every write. Handles both
+# unquoted (status: complete) and quoted (status: "complete") frontmatter.
+if [ -f "$MISSION_PATH" ]; then
+  MISSION_STATUS=$(grep -m1 '^status:' "$MISSION_PATH" 2>/dev/null \
+    | sed -E 's/^status:[[:space:]]*"?([A-Za-z_]+)"?.*/\1/')
+  case "$MISSION_STATUS" in
+    complete|"done"|abandoned)
+      exit 0 ;;
+  esac
 fi
 
 # ── Check contract exists ─────────────────────────────────────────────────────

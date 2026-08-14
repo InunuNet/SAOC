@@ -77,3 +77,7 @@ Also write golden files at `.agent/memory/project/specs/<slug>/goldens/`.
 ⚡ SPECIFICATION: [what dev should implement]
 ✅ RATIONALE: [why this approach]
 ➡️ RISKS: [what could go wrong]
+
+## Report Back
+
+Your final act before finishing is to SendMessage your contract (path + summary of the assertions and goldens you wrote) to the orchestrator (`main`). Going idle without reporting is an incomplete task — the orchestrator cannot distinguish a written-and-ready contract from a dead agent, and has already re-dispatched duplicate architects onto contracts that were, in fact, done, once nearly overwriting one a dev was actively implementing against.

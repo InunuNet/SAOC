@@ -6,6 +6,9 @@ usage: Invoke this skill (or source the helper) when any script or agent needs t
 
 # active-mission
 
+> This skill reads state OWNED by `execution/mission.py` — it is NOT a replacement for it.
+> If `execution/mission.py` is missing, run `python3 execution/update_template.py --apply`.
+
 Canonical reader for `.agent/memory/project/missions/active.json`. Eliminates 6 different inline parsers each with their own bug (double-`.md` suffix, double-date prefix, slug-with-numeric-prefix).
 
 ## When to use

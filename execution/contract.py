@@ -117,37 +117,58 @@ def normalize_contract(contract: dict) -> dict:
             pass
         checks = assertions_raw.get("checks", [])
 
+        # GH #1317 / F6: if at least one check declares its own `phase:`
+        # field, per-check phase routing is active for this whole checks:
+        # list -- each check is routed to its own phase (falling back to
+        # the block-level phase_id when a check omits the field), instead
+        # of every check collapsing onto one block-level phase.
+        per_check_phase_active = any("phase" in check for check in checks)
+
         # Convert checks to internal assertion list
         assertion_list = []
         assertion_ids = []
+        phase_order = []
+        phase_members = {}
         for check in checks:
             cid = check.get("id", "")
             desc = check.get("description", "")
             cmd = check.get("command", "")
-            verify = {
-                "kind": "shell",
-                "cmd": cmd,
-            }
-            # check_cmd reads verify["timeout_seconds"], so a per-assertion timeout
-            # declared on the @architect-format check must survive normalization. Without
-            # this it is silently dropped and the assertion falls back to the 60s default
-            # — a behavioural check that legitimately takes longer then reports
-            # "Command timed out after 60s", which is indistinguishable from a real
-            # failure and cannot be fixed from the contract at all.
-            if "timeout_seconds" in check:
-                verify["timeout_seconds"] = check["timeout_seconds"]
             assertion_list.append({
                 "id": cid,
                 "description": desc,
-                "verify": verify,
+                "verify": {
+                    "kind": "shell",
+                    "cmd": cmd,
+                },
+                "required": check.get("required", False),
             })
             assertion_ids.append(cid)
+
+            if per_check_phase_active:
+                if "phase" in check:
+                    resolved_phase = check.get("phase")
+                    try:
+                        resolved_phase = int(resolved_phase)
+                    except (TypeError, ValueError):
+                        pass
+                else:
+                    resolved_phase = phase_id
+                if resolved_phase not in phase_members:
+                    phase_order.append(resolved_phase)
+                    phase_members[resolved_phase] = []
+                phase_members[resolved_phase].append(cid)
 
         c["assertions"] = assertion_list
 
         # Synthesize phases if not present
         if "phases" not in c:
-            c["phases"] = [{"id": phase_id, "assertions": assertion_ids}]
+            if per_check_phase_active:
+                c["phases"] = [
+                    {"id": pid, "assertions": phase_members[pid]}
+                    for pid in phase_order
+                ]
+            else:
+                c["phases"] = [{"id": phase_id, "assertions": assertion_ids}]
 
     return c
 
@@ -255,18 +276,13 @@ def check_cmd(args):
         tf_name = None
         try:
             import tempfile
-            actual_cmd = cmd
-            use_shell = True
-            # Any multiline command → write to a temp bash script to avoid shell parsing issues
-            # (covers multiline python3 -c, heredocs emitted by @architect, and bare multiline cmds)
-            if "\n" in cmd or "\\n" in cmd:
-                cleaned = cmd.replace("\\n", "\n")
-                with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as tf:
-                    tf.write("#!/usr/bin/env bash\n" + cleaned)
-                    tf_name = tf.name
-                os.chmod(tf_name, 0o755)
-                actual_cmd = tf_name
-                use_shell = False
+            # Always execute via a temp bash script (no shell=True, no branching on
+            # command content). Writes cmd verbatim -- no mutation of any kind --
+            # so literal "\n" sequences inside quoted arguments are never rewritten.
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as tf:
+                tf.write("#!/usr/bin/env bash\n" + cmd)
+                tf_name = tf.name
+            os.chmod(tf_name, 0o755)
             # Prefer the project's own .venv for bare python3/pip PATH resolution, so
             # assertions checking installed-package/interpreter state see the venv that
             # actually runs the project, not whatever ambient PATH invoked contract.py.
@@ -277,12 +293,16 @@ def check_cmd(args):
             if venv_python.exists():
                 run_env = os.environ.copy()
                 run_env["PATH"] = str(venv_python.parent) + os.pathsep + run_env.get("PATH", "")
-            shell_kwargs = {"executable": "/bin/bash"} if use_shell else {}
-            result = subprocess.run(actual_cmd, shell=use_shell, env=run_env,
-                                    capture_output=True, text=True, timeout=timeout,
-                                    **shell_kwargs)
+            result = subprocess.run(tf_name, shell=False, env=run_env,
+                                    capture_output=True, text=True, timeout=timeout)
             evidence = (result.stdout + result.stderr).strip()[:500]
-            verdict = "pass" if result.returncode == expected_exit else "fail"
+            # Reserved skip exit code (autotools convention): checked BEFORE
+            # comparison against expect_exit -- exit 77 always means skip,
+            # regardless of what expect_exit was configured to.
+            if result.returncode == 77:
+                verdict = "skip"
+            else:
+                verdict = "pass" if result.returncode == expected_exit else "fail"
         except subprocess.TimeoutExpired:
             evidence = f"Command timed out after {timeout}s"
             verdict = "fail"
@@ -410,6 +430,8 @@ def _gate_single_phase(contract: dict, args) -> bool:
         return False
 
     phase_assertions = phase.get("assertions", [])
+    allow_skips = getattr(args, "allow_skips", False)
+    assertions_by_id = {a["id"]: a for a in contract.get("assertions", [])}
 
     # --run-checks always re-executes every assertion, never reads stale cache
     if run_checks:
@@ -426,12 +448,17 @@ def _gate_single_phase(contract: dict, args) -> bool:
                 pass
 
     failing = []
+    skipped = []
+    pass_count = 0
+    skip_count = 0
+    fail_count = 0
 
     for aid in phase_assertions:
         rf = result_file(contract, aid)
         if not rf.exists():
             print(f"  WARNING: {aid}: no result file — run check first")
             failing.append(aid)
+            fail_count += 1
             continue
         result = json.loads(rf.read_text())
         verdict = result.get("verdict", "fail")
@@ -439,11 +466,33 @@ def _gate_single_phase(contract: dict, args) -> bool:
         print(f"  {icon} {aid}: {verdict}")
         if verdict == "fail":
             failing.append(aid)
+            fail_count += 1
+        elif verdict == "skip":
+            # required:true is a hard override -- a skip on a required check
+            # is treated as a failure regardless of --allow-skips.
+            required = bool(assertions_by_id.get(aid, {}).get("required", False))
+            if required:
+                failing.append(aid)
+                fail_count += 1
+            else:
+                skipped.append(aid)
+                skip_count += 1
+        else:
+            pass_count += 1
+
+    print(f"\nPhase {phase_n} summary: {pass_count} pass, {skip_count} skip, {fail_count} fail")
 
     if failing:
         print(f"\nFAIL Phase {phase_n} gate FAILED. Failing: {', '.join(failing)}")
         print("   Resolve before proceeding to the next phase.")
         return False
+    elif skipped and not allow_skips:
+        print(f"\nFAIL Phase {phase_n} gate FAILED. Skipped (use --allow-skips to permit): {', '.join(skipped)}")
+        print("   Resolve before proceeding to the next phase.")
+        return False
+    elif skipped:
+        print(f"\nPASS Phase {phase_n} gate PASSED (skips allowed). Proceed to next phase.")
+        return True
     else:
         print(f"\nPASS Phase {phase_n} gate PASSED. Proceed to next phase.")
         return True
@@ -474,7 +523,8 @@ def gate_cmd(args):
                 contract=args.contract,
                 phase=str(phase_id),
                 run_checks=getattr(args, "run_checks", False),
-                handoff=getattr(args, "handoff", None)
+                handoff=getattr(args, "handoff", None),
+                allow_skips=getattr(args, "allow_skips", False),
             )
             if not _gate_single_phase(contract, single_phase_args):
                 print(f"\nFAIL: Phase {phase_id} failed. Stopping all-phase gate.")
@@ -556,6 +606,8 @@ def main():
                    help="Phase id (integer), 'max' for highest phase, or 'all' for all phases in contract")
     g.add_argument("--run-checks", action="store_true", default=False,
                    help="Auto-run check for each assertion that lacks a result file before evaluating the gate")
+    g.add_argument("--allow-skips", action="store_true", default=False,
+                   help="Do not fail the gate when a non-required assertion is verdict=skip (default: off)")
     g.add_argument("--timeout-seconds", type=int, default=60,
                    help="Shell assertion timeout in seconds (default: 60)")
 

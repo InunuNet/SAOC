@@ -1,0 +1,47 @@
+{
+  "provider": "claude-code",
+  "version": "3.5.0",
+  "display_name": "Claude Code",
+  "headless_command": ["claude", "-p", "{prompt}"],
+  "continue_command": ["claude", "-c"],
+  "supports_headless": true,
+  "supports_continue": true,
+  "supports_hooks": true,
+  "supports_subagents": true,
+  "supports_max_turns": true,
+  "supports_max_tokens": false,
+  "token_accounting": "provider-reported-only",
+  "routing_policy": {
+    "auto_route": true,
+    "cost_tier": "frontier",
+    "complexity": ["standard", "complex"],
+    "domains": ["architecture", "code", "docs", "qa", "research"],
+    "priority": 30,
+    "escalation_order": ["opencode", "gemini-cli"]
+  },
+  "role_capabilities": {
+    "schema": "athanor.role-capabilities/v1",
+    "mode": "native",
+    "roles": {
+      "lead": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced lead agent through its native agent system."},
+      "analyst": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced analyst agent through its native agent system."},
+      "architect": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced architect agent through its native agent system."},
+      "dev": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced dev agent through its native agent system."},
+      "qa": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced qa agent through its native agent system."},
+      "docs": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced docs agent through its native agent system."},
+      "maintainer": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced maintainer agent through its native agent system."},
+      "designer": {"supported": true, "dispatch": "native", "reason": "Claude Code can invoke the synced designer agent through its native agent system."}
+    }
+  },
+  "hooks_dir": ".claude/hooks",
+  "agents_dir": ".claude/agents",
+  "skills_dir": ".claude/skills",
+  "rules_dir": ".claude/rules",
+  "settings_file": ".claude/settings.json",
+  "notes": "Provider adapter only; scheduled/background work must enqueue tickets instead of launching this command directly.",
+  "autonomy": {
+    "supports_policy_sync": true,
+    "max_honerable_level": "loop",
+    "sync_mechanism": "check_autonomy.sh hook"
+  }
+}

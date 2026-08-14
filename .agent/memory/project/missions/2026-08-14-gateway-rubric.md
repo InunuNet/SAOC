@@ -1,3 +1,48 @@
+---
+schema: athanor.mission/v1
+slug: gateway-rubric
+goal: Research every South African payment gateway to one uniform evidence standard
+  and deliver an interactive weighted teardown the Council can drive itself
+created_at: '2026-08-14T18:20:00.000000+00:00'
+started_at: '2026-08-14T18:20:00.000000+00:00'
+last_active_at: '2026-08-14T22:05:00.000000+00:00'
+status: done
+cost_estimate:
+  features: 5
+  milestones: 3
+  total_calls: 0
+last_checkpoint:
+  milestone: M3
+  feature: F5
+  ts: '2026-08-14T22:05:00.000000+00:00'
+features:
+- id: F1
+  title: Prove Alembic can retrieve comparable source material for every provider
+  status: done
+- id: F2
+  title: Write up each gateway against one fixed 15-heading template
+  status: done
+- id: F3
+  title: Census the whole SA market; every exclusion evidenced with a reason code
+  status: done
+- id: F4
+  title: Build the weighted teardown artifact with sources linked per cell
+  status: done
+- id: F5
+  title: Audit the scoring adversarially and trace all 130 cells to source
+  status: done
+milestones:
+- id: M1
+  title: Reachability proven
+  status: done
+- id: M2
+  title: Ten providers written up
+  status: done
+- id: M3
+  title: Artifact published and audited
+  status: done
+---
+
 # Mission — gateway-rubric
 
 **Goal:** Let the Council decide between five payment gateways by assigning its own importance

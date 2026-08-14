@@ -213,6 +213,7 @@ audit:
 	@bash execution/validate_manifest.sh || (echo "  FAIL: manifest coverage gaps found" && exit 1)
 	@echo "  OK: manifest coverage complete"
 	@python3 execution/audit_gates.py
+	@python3 execution/checks/verify_version_fields_match.py && echo "✅ version fields match" || (echo "❌ version fields diverged"; exit 1)
 
 backlog-audit:
 	@bash execution/backlog_audit.sh

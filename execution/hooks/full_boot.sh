@@ -11,21 +11,41 @@ echo "════ BOOT CONTEXT (Athanor Harness) ════"
 echo "Core Mandates: Specialized agents, Tiered memory, Autonomous self-improvement, Alembic (URL distilling)."
 echo ""
 
+# HARNESS-completeness check (issue #1311): a partially-propagated project can be
+# missing the harness's own executables entirely. Detect that up front with a loud,
+# actionable message instead of letting downstream steps misreport it (e.g. as a
+# stale mission pointer). Non-fatal — boot must never abort on this.
+_HARNESS_MISSING=""
+for _critical_file in execution/mission.py execution/contract.py; do
+  [ -f "$_critical_file" ] || _HARNESS_MISSING="$_HARNESS_MISSING $_critical_file"
+done
+if [ -n "$_HARNESS_MISSING" ]; then
+  echo "⛔ HARNESS INCOMPLETE — missing:$_HARNESS_MISSING"
+  echo "   Propagation failed. Run: python3 execution/update_template.py --apply"
+  echo ""
+fi
+unset _HARNESS_MISSING _critical_file
+
 # Auto-update check: compare local template_version to upstream
-# SKIP if active mission in flight — overwriting hooks mid-session breaks everything
-CURRENT_VER=$(python3 -c "import json; print(json.load(open('.agent/profile.json')).get('template_version','0'))" 2>/dev/null || echo "0")
-LATEST_VER=$(gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' 2>/dev/null | base64 -d 2>/dev/null | tr -d '\n' || echo "")
+# Prefer .agent/.template_state (updater-owned, written on every fully
+# successful --apply run) over profile.json, which can lag or never move if
+# a prior run bailed early — falls back to profile.json when state file is
+# missing or unparsable (issue #1295/#1312).
+CURRENT_VER=$(python3 -c "import json; print(json.load(open('.agent/.template_state')).get('template_version','0'))" 2>/dev/null || python3 -c "import json; print(json.load(open('.agent/profile.json')).get('template_version','0'))" 2>/dev/null || echo "0")
+_UPDATE_CHECK_ERR=$(mktemp)
+LATEST_VER=$(gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' 2>"$_UPDATE_CHECK_ERR" | base64 -d 2>>"$_UPDATE_CHECK_ERR" | tr -d '\n' || echo "")
+if [ -z "$LATEST_VER" ] && [ -s "$_UPDATE_CHECK_ERR" ]; then
+  echo "⚠️  update check failed: $(tail -1 "$_UPDATE_CHECK_ERR")"
+fi
+rm -f "$_UPDATE_CHECK_ERR"
+unset _UPDATE_CHECK_ERR
 ACTIVE_MISSION=$(python3 -c "import json,pathlib; d=json.loads(pathlib.Path('.agent/memory/project/missions/active.json').read_text()); print(d.get('mission') or '')" 2>/dev/null || echo "")
+# Detect-and-prompt only — boot never applies template updates itself, in either
+# the mission-active or no-mission case. See .claude/rules/behavior.md "Ask
+# Before Destructive Actions" and mission harness-integrity-hardening F5.
 if [[ -n "$LATEST_VER" && "$CURRENT_VER" != "$LATEST_VER" ]]; then
-  if [[ -n "$ACTIVE_MISSION" ]]; then
-    echo "⬆️  UPDATE AVAILABLE ($CURRENT_VER → $LATEST_VER) — skipped: mission '$ACTIVE_MISSION' in progress."
-    echo "   Run 'make update-template' after mission completes."
-  else
-    echo "⬆️  HARNESS UPDATE: template $CURRENT_VER → $LATEST_VER — applying..."
-    python3 execution/update_template.py --apply 2>/dev/null && \
-      echo "✅ Harness updated to $LATEST_VER. New hooks and rules are now active." || \
-      echo "⚠️  Auto-update failed — run: make update-template"
-  fi
+  echo "⬆️  HARNESS UPDATE AVAILABLE: template $CURRENT_VER → $LATEST_VER"
+  echo "   Run 'make update-template' to review and apply it (boot never applies updates automatically)."
 fi
 
 # Step 0.5: Quota-death warm restart — one-shot checkpoint left by quota_death_checkpoint.sh (StopFailure)
@@ -42,9 +62,21 @@ if [ -f "$QUOTA_CP" ]; then
 fi
 
 echo "--- ACTIVE MISSION ---"
+# wrap_mission.sh's own clear step (post close-out) writes active.json as
+# {"mission": null, ...} rather than unlinking it -- so gate on the "mission"
+# field being non-null/non-empty, not merely on the file existing, or a
+# freshly-closed mission misreports as a stale pointer here (issue: F3 QA).
+ACTIVE_MISSION_SLUG=""
 if [ -f .agent/memory/project/missions/active.json ]; then
-  python3 execution/mission.py status "$(python3 -c 'import json; print(json.load(open(".agent/memory/project/missions/active.json"))["mission"])' 2>/dev/null)" 2>/dev/null || echo "(stale mission pointer — run: python3 execution/mission.py list)"
   ACTIVE_MISSION_SLUG=$(python3 -c "import json,pathlib; d=json.loads(pathlib.Path('.agent/memory/project/missions/active.json').read_text()); print(d.get('mission') or '')" 2>/dev/null || echo "")
+fi
+if [ -n "$ACTIVE_MISSION_SLUG" ]; then
+  if [ -f execution/mission.py ]; then
+    python3 execution/mission.py status "$ACTIVE_MISSION_SLUG" 2>/dev/null || echo "(stale mission pointer — run: python3 execution/mission.py list)"
+  else
+    echo "⛔ HARNESS INCOMPLETE — missing: execution/mission.py"
+    echo "   Propagation failed. Run: python3 execution/update_template.py --apply"
+  fi
   MISSION_STATUS=""
   if [ -n "$ACTIVE_MISSION_SLUG" ]; then
     MISSION_FILE=$(find .agent/memory/project/missions -maxdepth 1 -name "${ACTIVE_MISSION_SLUG}" 2>/dev/null | head -1)
@@ -203,12 +235,10 @@ echo ""
 echo "--- PROJECT RULES ---"
 if [ -f ".agent/memory/project/rules.md" ]; then
   RULES_LINES=$(wc -l < ".agent/memory/project/rules.md")
-  if [ "$RULES_LINES" -gt 30 ]; then
-    echo "[Note: rules.md has $RULES_LINES lines — showing last 30. Run \`cat .agent/memory/project/rules.md\` for full history.]"
-    tail -30 .agent/memory/project/rules.md
-  else
-    cat .agent/memory/project/rules.md
+  if [ "$RULES_LINES" -gt 400 ]; then
+    echo "[WARNING: rules.md has $RULES_LINES lines — grown past its intended size. Injecting in full below, but this file should be compacted.]"
   fi
+  cat .agent/memory/project/rules.md
 else
   echo "(no rules.md)"
 fi

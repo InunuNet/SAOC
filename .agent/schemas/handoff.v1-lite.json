@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Athanor Agent Handoff v1-lite",
+  "type": "object",
+  "required": ["schema", "agent", "task", "completed"],
+  "properties": {
+    "schema": {"type": "string", "const": "athanor.handoff/v1-lite"},
+    "agent": {"type": "string", "enum": ["lead","analyst"]},
+    "task": {"type": "string", "description": "Brief description of the task assigned"},
+    "completed": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "What was actually finished"
+    },
+    "left_undone": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item", "reason"],
+        "properties": {
+          "item": {"type": "string"},
+          "reason": {"type": "string"},
+          "priority": {"type": "string", "enum": ["low","medium","high"], "default": "low"}
+        }
+      }
+    },
+    "issues_discovered": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "procedures_followed": {
+      "type": "object",
+      "required": ["followed"],
+      "properties": {
+        "followed": {"type": "boolean"},
+        "notes": {"type": "string"}
+      }
+    }
+  }
+}

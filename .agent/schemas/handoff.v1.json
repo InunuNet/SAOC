@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Athanor Agent Handoff v1",
+  "type": "object",
+  "required": ["schema", "agent", "task", "completed", "left_undone", "procedures_followed"],
+  "properties": {
+    "schema": {"type": "string", "const": "athanor.handoff/v1"},
+    "agent": {"type": "string", "enum": ["dev","qa","designer","docs","architect","maintainer"]},
+    "task": {"type": "string", "description": "Brief description of the task assigned"},
+    "completed": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "What was actually finished"
+    },
+    "left_undone": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item", "reason"],
+        "properties": {
+          "item": {"type": "string"},
+          "reason": {"type": "string"},
+          "priority": {"type": "string", "enum": ["low","medium","high"], "default": "low"}
+        }
+      }
+    },
+    "commands_run": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["cmd", "exit_code"],
+        "properties": {
+          "cmd": {"type": "string"},
+          "exit_code": {"type": "integer"}
+        }
+      }
+    },
+    "issues_discovered": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "procedures_followed": {
+      "type": "object",
+      "required": ["followed"],
+      "properties": {
+        "followed": {"type": "boolean"},
+        "notes": {"type": "string"}
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "File paths created or modified"
+    },
+    "assertions": {
+      "type": "array",
+      "description": "Assertion verdicts for this phase (required from qa, optional from dev)",
+      "items": {
+        "type": "object",
+        "required": ["id", "verdict"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^A[0-9]+$"},
+          "verdict": {"type": "string", "enum": ["pass", "fail", "skip"]},
+          "evidence": {"type": "string"},
+          "phase": {"type": "integer"}
+        }
+      }
+    },
+    "contract_path": {
+      "type": "string",
+      "description": "Path to the validation contract file for this task"
+    }
+  }
+}

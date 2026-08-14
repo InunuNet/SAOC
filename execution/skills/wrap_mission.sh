@@ -47,11 +47,33 @@ normalize_remote() {
     printf '%s' "$url"
 }
 
+echo "[wrap-mission] Checking scope guard..."
+# GH live incident 2026-07-30: an unscoped `git add -A` swept
+# .anti/agents.json and .claude/settings.json -- other, concurrently-running
+# sessions' shared/generated harness infra -- into a mission close-out
+# commit. Refuse (before anything else, including the brain wrap-up) if any
+# denylisted shared/generated file is dirty, unless the operator explicitly
+# opts in via WRAP_ALLOW_OUT_OF_SCOPE=1.
+DENYLIST=(.claude/settings.json .claude/settings.local.json .gemini/settings.json .anti/agents.json)
+if [ "${WRAP_ALLOW_OUT_OF_SCOPE:-0}" != "1" ]; then
+    OUT_OF_SCOPE="$(git status --porcelain -- "${DENYLIST[@]}" 2>/dev/null | awk '{print $2}')"
+    if [ -n "$OUT_OF_SCOPE" ]; then
+        echo "[wrap-mission] ABORT: out-of-scope shared/generated file(s) are dirty:" >&2
+        echo "$OUT_OF_SCOPE" >&2
+        echo "These belong to shared/generated harness infra, not this mission -- refusing to stage or commit them." >&2
+        echo "Set WRAP_ALLOW_OUT_OF_SCOPE=1 to explicitly override and include them." >&2
+        exit 1
+    fi
+fi
+
 echo "[wrap-mission] Running brain wrap-up..."
 python3 execution/brain.py wrap-up -s "$SUMMARY" -t "$TAGS"
 
 echo "[wrap-mission] Staging..."
-git add -A 2>/dev/null || true
+# .claude/worktrees/** holds OTHER agents' live git worktree checkouts --
+# structurally present during nearly every concurrent multi-agent session
+# and never legitimate commit content. Silently excluded, never blocking.
+git add -A -- . ':!.claude/worktrees' 2>/dev/null || true
 
 echo "[wrap-mission] Checking for secret-looking files..."
 SECRETS="$(git diff --cached --name-only | "$PY" execution/skills/lib/secret_guard.py --stdin || true)"

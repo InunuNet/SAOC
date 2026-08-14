@@ -3,16 +3,19 @@
 test_mission.py — 8 tests for execution/mission.py
 Run from project root: python3 execution/tests/test_mission.py
 """
-import json
-import os
 import subprocess
 import sys
 import tempfile
 import shutil
 from pathlib import Path
 
-MISSION_CLI = ["python3", "execution/mission.py"]
-MISSIONS_DIR = Path(".agent/memory/project/missions")
+MISSION_PY = Path(__file__).resolve().parent.parent / "mission.py"
+MISSION_CLI = ["python3", str(MISSION_PY)]
+# mission.py resolves its own MISSIONS_DIR relative to its invocation CWD, so
+# every subprocess invocation of MISSION_CLI must be run with cwd=BASE_DIR
+# for it to land inside this private sandbox rather than the real repo.
+BASE_DIR = Path(tempfile.mkdtemp(prefix="test_mission_"))
+MISSIONS_DIR = BASE_DIR / ".agent" / "memory" / "project" / "missions"
 
 PASS = 0
 FAIL = 0
@@ -23,7 +26,7 @@ def run(cmd: list[str], cwd: str | None = None, input_text: str | None = None):
         cmd,
         capture_output=True,
         text=True,
-        cwd=cwd or os.getcwd(),
+        cwd=cwd or str(BASE_DIR),
         input=input_text,
     )
 
@@ -47,10 +50,10 @@ def main():
     print("=== test_mission.py ===")
     print()
 
-    # Create a temp missions dir for tests (override MISSIONS_DIR in subprocess via env isn't easy,
-    # so we test in the actual dir and clean up afterwards)
+    # All mission.py subprocess invocations run with cwd=BASE_DIR (a private
+    # tempfile.mkdtemp() sandbox), so this test file never reads, writes, or
+    # deletes anything under the real .agent/memory/project/missions/.
     MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
-    created_files = []
 
     # ── Test 1: new command creates .md file ──────────────────────────────────
     print("Test 1: mission.py new creates .md file and exits 0")
@@ -60,8 +63,6 @@ def main():
     created = sorted(MISSIONS_DIR.glob("*test-goal-auto*.md"))
     ok("new creates .md file", len(created) >= 1, f"found: {[str(c) for c in created]}")
     test_mission_path = str(created[-1]) if created else None
-    if test_mission_path:
-        created_files.append(test_mission_path)
     print()
 
     # ── Test 2: validate on fresh file exits 0 (schema valid, empty features OK for new) ──
@@ -109,7 +110,6 @@ def main():
     import datetime
 
     checkpoint_mission = MISSIONS_DIR / "test-checkpoint-mission.md"
-    created_files.append(str(checkpoint_mission))
     fm = {
         "schema": "athanor.mission/v1",
         "slug": "test-checkpoint",
@@ -161,8 +161,10 @@ def main():
 
     # ── Test 6: gate with all features done exits 0 ───────────────────────────
     print("Test 6: mission.py gate exits 0 when all features done (no contracts)")
-    # Reuse the checkpoint mission file — F1 is now done
-    r = run(MISSION_CLI + ["gate", str(checkpoint_mission), "--milestone", "M1"])
+    # Reuse the checkpoint mission file — F1 is now done. No contract is attached
+    # or discoverable on disk for this synthetic test mission, so --allow-skips
+    # is required for gate to PASS rather than FAIL on the unverified feature.
+    r = run(MISSION_CLI + ["gate", str(checkpoint_mission), "--milestone", "M1", "--allow-skips"])
     assert_exit("gate exits 0", r, 0)
     ok("gate output contains 'PASS'", "PASS" in r.stdout,
        f"stdout: {r.stdout[:300]}")
@@ -171,7 +173,6 @@ def main():
     # ── Test 7: validate on invalid file exits 1 ──────────────────────────────
     print("Test 7: mission.py validate on invalid file exits 1")
     invalid_mission = MISSIONS_DIR / "test-invalid-mission.md"
-    created_files.append(str(invalid_mission))
     # Missing inline_brief/spec AND bad schema
     bad_fm = {
         "schema": "wrong.schema/v99",
@@ -222,9 +223,14 @@ def main():
     assert_exit("activate exits 0", r_activate, 0)
 
     r = run(MISSION_CLI + ["resume"])
-    assert_exit("resume exits 0", r, 0)
+    # All milestones are done (Test 6's gate passed), so mission.py's resume
+    # intentionally transitions the mission to close_out and exits 2 with a
+    # MAINTAINER WRAP-UP instruction rather than 0 — that is correct, designed
+    # behavior (mission.py:806-815), not a failure.
+    assert_exit("resume exits 2 (close_out wrap-up required)", r, 2)
     ok("resume prints RESUME or completion message",
-       "RESUME" in r.stdout or "complete" in r.stdout.lower() or "no active" in r.stdout.lower(),
+       "RESUME" in r.stdout or "complete" in r.stdout.lower() or "no active" in r.stdout.lower()
+       or "WRAP-UP" in r.stdout,
        f"stdout: {r.stdout[:300]}")
     print()
 
@@ -236,8 +242,6 @@ def main():
     today_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
     collision_seed = MISSIONS_DIR / f"2026-01-01-{collision_slug}.md"
     collision_expected = MISSIONS_DIR / f"{today_str}-{collision_slug}.md"
-    created_files.append(str(collision_seed))
-    created_files.append(str(collision_expected))
 
     seed_fm = {
         "schema": "athanor.mission/v1",
@@ -263,20 +267,10 @@ def main():
     print()
 
     # ── Cleanup ───────────────────────────────────────────────────────────────
-    for f in created_files:
-        try:
-            Path(f).unlink(missing_ok=True)
-        except Exception:
-            pass
-    # Clean up active.json if it was set to our test mission
-    active_json = MISSIONS_DIR / "active.json"
-    if active_json.exists():
-        try:
-            data = json.loads(active_json.read_text())
-            if any(Path(data.get("mission", "")).name == Path(f).name for f in created_files):
-                active_json.unlink()
-        except Exception:
-            pass
+    # BASE_DIR is a private tempfile.mkdtemp() sandbox created solely for this
+    # run; removing it wholesale replaces the old per-file/active.json
+    # tracking and cannot leak into real repo state.
+    shutil.rmtree(BASE_DIR, ignore_errors=True)
 
     # ── Summary ───────────────────────────────────────────────────────────────
     print()

@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""quota.py — project-local quota oracle (mission quota-aware-execution F1).
+
+Reads ONLY the project-local mirror file written by
+execution/hooks/inject_pressure.sh on every UserPromptSubmit turn
+(default .agent/memory/scratch/.quota_status.json). NEVER reads the global
+Claude usage cache under the user's home directory, directly or via
+subprocess — that path is sanctioned for inject_pressure.sh alone (see
+.claude/rules/scope.md).
+
+Degrades to state=unknown (never a fabricated used_pct) when the mirror is
+missing, stale (captured_at older than STALE_SECONDS), or malformed.
+
+Exit codes: always 0 for a successful `status` read, ok or unknown alike —
+an unreadable quota signal is a normal degrade path, not a program error.
+Exit 2 is reserved for CLI usage errors (bad flags).
+"""
+import argparse
+import datetime
+import json
+import sys
+from pathlib import Path
+
+SCHEMA = "athanor.quota/v1"
+STALE_SECONDS = 900
+DEFAULT_MIRROR_PATH = ".agent/memory/scratch/.quota_status.json"
+REQUIRED_FIELDS = ("used_pct", "resets_at", "seconds_to_reset", "captured_at")
+
+
+def _unknown(reason):
+    return {
+        "schema": SCHEMA,
+        "state": "unknown",
+        "used_pct": None,
+        "resets_at": None,
+        "seconds_to_reset": None,
+        "captured_at": None,
+        "age_seconds": None,
+        "reason": reason,
+    }
+
+
+def read_status(mirror_path):
+    """Read and validate the project-local quota mirror. Never raises."""
+    path = Path(mirror_path)
+    if not path.is_file():
+        return _unknown("missing_mirror")
+
+    try:
+        raw = path.read_text()
+        data = json.loads(raw)
+    except (OSError, json.JSONDecodeError):
+        return _unknown("malformed")
+
+    if not isinstance(data, dict) or not all(k in data for k in REQUIRED_FIELDS):
+        return _unknown("malformed")
+
+    try:
+        captured_at_raw = data["captured_at"]
+        captured_at = datetime.datetime.fromisoformat(
+            str(captured_at_raw).replace("Z", "+00:00")
+        )
+        if captured_at.tzinfo is None:
+            captured_at = captured_at.replace(tzinfo=datetime.timezone.utc)
+        used_pct = int(data["used_pct"])
+        resets_at_raw = data["resets_at"]
+        seconds_to_reset = float(data["seconds_to_reset"])
+    except (TypeError, ValueError):
+        return _unknown("malformed")
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    age_seconds = (now - captured_at).total_seconds()
+
+    if age_seconds > STALE_SECONDS:
+        return _unknown("stale")
+
+    return {
+        "schema": SCHEMA,
+        "state": "ok",
+        "used_pct": used_pct,
+        "resets_at": resets_at_raw,
+        "seconds_to_reset": seconds_to_reset,
+        "captured_at": captured_at_raw,
+        "age_seconds": age_seconds,
+        "reason": None,
+    }
+
+
+def format_text(status):
+    if status["state"] == "ok":
+        resets_hrs = status["seconds_to_reset"] / 3600.0
+        return (
+            f"quota: state=ok used={status['used_pct']}% "
+            f"resets_in={resets_hrs:.1f}h"
+        )
+    return f"quota: state=unknown reason={status['reason']}"
+
+
+def cmd_status(args):
+    status = read_status(args.mirror_path)
+    if args.json:
+        print(json.dumps(status))
+    else:
+        print(format_text(status))
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="quota.py",
+        description="Project-local quota oracle — reads only the local mirror.",
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    status_parser = subparsers.add_parser(
+        "status", help="Report current quota state from the project-local mirror"
+    )
+    status_parser.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+    status_parser.add_argument(
+        "--mirror-path",
+        default=DEFAULT_MIRROR_PATH,
+        help=f"Path to the mirror file (default: {DEFAULT_MIRROR_PATH})",
+    )
+    status_parser.set_defaults(func=cmd_status)
+
+    args = parser.parse_args()
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
