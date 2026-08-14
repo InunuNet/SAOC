@@ -30,7 +30,7 @@ jobs:
       # because the builder does not get them either: FIREBASE_ADMIN_*, SANITY_API_TOKEN,
       # SANITY_REVALIDATE_SECRET, SITE_URL and the PAYFAST_* secrets are all RUNTIME-only.
       # Do not "fix" a CI failure by adding one of those here — that hides a real deploy break.
-      NEXT_PUBLIC_FIREBASE_API_KEY: AIzaSyAfJhvCRX7O5OYTH6CN7WqfGO5DDpnss6Y
+      NEXT_PUBLIC_FIREBASE_API_KEY: AIzaSyAfJhvCRX705OYTH6CN7WqfGO5DDpnss6Y
       NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: saoc-webapp.firebaseapp.com
       NEXT_PUBLIC_FIREBASE_PROJECT_ID: saoc-webapp
       NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: saoc-webapp.firebasestorage.app
