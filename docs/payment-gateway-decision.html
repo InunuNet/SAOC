@@ -861,9 +861,12 @@
   <p>(Section 9 shows you how to verify these before you sign.)</p>
 
   <h3>What other companies say about them</h3>
-  <p>Hellopeter (a review site) shows Ozow at 2.1 out of 5 stars. Seven reviews, all one-star. People say they have to wait for payouts and refunds.</p>
-  <p><strong>Take this with salt.</strong> Seven reviews is a tiny sample, they are from members of the public rather than businesses, and people mostly review when they are angry. It is worth noting and not worth much more than that.</p>
-  <p>We are separately gathering what <em>businesses</em> say about all three companies — how they behave during busy periods, whether refunds back up, and whether funds actually get held. That is our work to do, and the findings will be added to this section. We would rather bring you evidence than send you looking for it.</p>
+  <p>We went looking for what <em>businesses</em> say about all three, not just customers. The first thing we found was how little there is to go on for one of them.</p>
+  <p><strong>Reviews on Hellopeter in the past year: Yoco 353, PayFast 108, Ozow 7.</strong> An earlier version of this section quoted Ozow's 2.1-out-of-5 rating as a mark against it. That was unfair. Seven reviews tells you almost nothing — it is not a good score or a bad one, it is an empty page. And judged the same way, PayFast looks worse, not better: across 108 reviews it splits roughly half five-star and half one-star.</p>
+  <p><strong>PayFast</strong> — the clearest pattern of the three, and the only case where what businesses report matches something in the contract. Five or more separate merchants describe money sitting locked in their account during verification or payout, for anything from a few weeks to over five months. Their positive reviews tend to praise particular support staff rather than say the money problem does not happen.</p>
+  <p><strong>Yoco</strong> — the most reviewed and the best rated of the three, around two-thirds five-star. But several businesses describe accounts being suspended suddenly, with money and card machines locked and no warning given. One case involved a non-profit and a donor refund that went wrong, which is close to home for SAOC.</p>
+  <p><strong>Ozow</strong> — not enough to judge. We found one usable business account: a payout that took about four times longer than the 24 hours promised, with unresponsive support. That is not a pattern, and we will not pretend it is one.</p>
+  <p><strong>What none of this shows.</strong> We found no public case of any of them actually using the harsher powers in their contracts — no 18-month hold, no account closed for going quiet, no reserve imposed. That is worth saying plainly, and it is worth not over-reading: in a market this small, nobody writing about it online is weak evidence either way. It is not proof these things do not happen.</p>
 
   <h3>What the actual contract says — the good and the rough</h3>
   <p>We got the real contract: <em>Ozow Merchant Terms and Conditions V1.2026</em>, dated 1 April 2026. 34,000 words. Every fact below is quoted from that document. When we cite a clause, you can look it up.</p>
@@ -936,15 +939,8 @@
 
   <p><strong>When you get the money:</strong> 48 hours after the payment clears, then 1–2 more working days to your bank. R8.70 per payout (no VAT). If you ask for money every day you pay R8.70 daily. If you ask once a week you pay R8.70 weekly — batch your requests to save money.</p>
 
-  <p><strong>Refunds — API documented.</strong> PayFast has a fully documented Refunds API reachable at <code>https://api.payfast.co.za/refunds/</code>:</p>
-  <ul>
-    <li><code>GET /refunds/query/:pf_payment_id</code> — query what is refundable and by which method</li>
-    <li><code>POST /refunds/:pf_payment_id</code> — create a refund (full or partial)</li>
-    <li><code>GET /refunds/:pf_payment_id</code> — retrieve refund status</li>
-  </ul>
-  <p>Authentication uses the same MD5-hash-plus-passphrase scheme SAOC's existing ITN webhook already implements and has had security review. <strong>There is no refund webhook, so refund status must be polled.</strong> There is no official Node/TypeScript SDK, only a PHP one; the REST API is straightforward and can be wrapped in a few lines.</p>
-
-  <p><strong>Refund costs and timing:</strong> R2.00 per refund (no VAT), flat. But you do not get back the original fee you paid to process the payment. So refunding a R150 card ticket costs you R6.80 (the lost original fee) plus R2.00 (the refund fee) = R8.80 total. Cheaper tickets hurt more proportionally. Buyers wait 7–10 business days for card refunds, 2–3 days for bank-transfer refunds.</p>
+  <p><strong>Refunds.</strong> PayFast can do them, full or partial, and we can build it. The building is our problem, not the Council's — what matters to you is that the ability exists and what it costs.</p>
+  <p><strong>Cost:</strong> R2.00 per refund, flat. The catch is that the fee you paid to take the payment in the first place is not returned. So refunding a R150 card ticket costs about R8.80 all in — R6.80 of lost original fee plus the R2.00 refund fee. Cheaper tickets hurt proportionally more. Buyers wait 7–10 working days for card refunds, 2–3 for bank transfers.</p>
 
   <div class="callout danger">
     <p class="callout-label">Bank details problem</p>
@@ -1086,7 +1082,16 @@
 </section>
 
 <section id="s5">
-  <h2><span class="num">5</span>Refunds — A Cross-Cutting Technical Reality</h2>
+  <h2><span class="num">5</span>Refunds — Important, But Not the Decider</h2>
+
+  <div class="callout">
+    <p class="callout-label">Read this part first</p>
+    <p>Earlier drafts leaned heavily on refunds when comparing the three companies. On reflection that weighting was wrong, for two reasons.</p>
+    <p><strong>First, they are all the same in the way that matters.</strong> None of them will refund a buyer unless money is available to do it from — whether they call it a float, a balance, or a deposit into your bank account. So refund funding does not separate them.</p>
+    <p><strong>Second, the volume will be small.</strong> People do not buy tickets to an orchid show unless they intend to go. Refund requests will be rare and usually caused by something unexpected — illness, a family matter, travel falling through.</p>
+    <p><strong>And there is a simpler option nobody has to build.</strong> If someone asks for a refund, a committee member can phone or email them, take their bank details, and pay it back directly by EFT. For a handful of requests that is entirely workable, it avoids every constraint described in this section, and it can be done from day one. Two things to be aware of: the buyer's bank details then sit with SAOC, which carries a privacy duty; and a manual EFT does not stop someone <em>also</em> disputing the original card payment with their bank, so the refund must be recorded and the buyer told clearly it has been paid.</p>
+    <p>The rest of this section explains the mechanics for when automatic refunds are worth building. <strong>It should not decide which company you choose.</strong></p>
+  </div>
 
   <h3>Why cheap payments are hard to refund</h3>
   <p>This is how payment systems work: cheap payment methods are hard to refund.</p>
@@ -1231,8 +1236,9 @@
   <h2><span class="num">9</span>Security, Compliance and the Law</h2>
 
   <h3>Payment card security (PCI-DSS)</h3>
-  <p><strong>Every company says it meets PCI-DSS. None publishes a certificate number or expiry date on its website.</strong> That is normal and not in itself suspicious.</p>
-  <p>We are checking this ourselves against the public registers the card schemes maintain — Visa and Mastercard both publish lists of approved service providers — rather than taking the claim on trust or asking you to chase it. Findings will be added here.</p>
+  <p><strong>Every company says it meets PCI-DSS. None publishes a certificate number or expiry date.</strong> That is normal and not in itself suspicious.</p>
+  <p>We tried to confirm it independently against the registers Visa and Mastercard publish, and against the international certificate database. <strong>We could not check any of them</strong> — Visa's register only works through a search box that our tools cannot drive, Mastercard publishes its list as a PDF behind a block, and the certificate database is the same kind of page. That is a limitation of our tools, <em>not</em> a finding against any of the three companies.</p>
+  <p>So the honest position is: <strong>claimed by all, confirmed by us for none.</strong> Worth noting how they word it. Ozow states flatly that it is "PCI DSS Level 1 Certified". PayFast says the same but adds "where applicable" — a qualification Ozow does not use. Yoco mentions only general "PCI compliance" without naming a level.</p>
   <p>PCI-DSS certifies how a company operates, not just a product. A vendor can be certified for one part of their business and not another.</p>
   <p><strong>Your setup now is the safest:</strong> your site sends customers to PayFast's site to enter their card. Card data never touches your servers. PayFast handles the card data. You handle login security, session management, and webhook verification.</p>
   <p><strong>New rules came in 31 March 2025.</strong> Two apply if you ever change:</p>
@@ -1256,7 +1262,7 @@
   </div>
 
   <h3>ISO 27001 — data security management</h3>
-  <p><strong>All six companies claim ISO 27001. None publish the certificate number, registrar, or what exactly is certified.</strong></p>
+  <p><strong>This one is not the same for all of them.</strong> Ozow states it is ISO 27001 certified. PayFast says so too, again qualified with "where applicable". <strong>For Yoco we could find no ISO 27001 claim at all</strong> — which may simply mean they do not claim it. None publishes a certificate number or registrar, and as above, we could not reach the public certificate database to check.</p>
   <p>ISO 27001 means a company has been audited on how it manages information security. The catch is that a company can be certified for one part of its business and not another, so the certificate alone does not tell you the payment system is covered.</p>
   <p>We are searching the public certificate databases for all three companies and their parent groups, and will report what is actually verifiable — including where the answer is "claimed, but nothing public confirms it".</p>
 
@@ -1365,7 +1371,7 @@
     <ol>
       <li>Under what circumstances would you apply Clause 9.6 or 9.8 (fund hold) to a merchant account selling Show tickets? Specifically: if SAOC takes payment 4 weeks before the Show but delivers the ticket immediately (digitally), would the clock start on payment date or on the Show date?</li>
       <li>We need this in writing as a term of service, not as an assurance. Can you provide a commitment?</li>
-      <li>Confirm the Refunds API (<code>GET /refunds/query/</code>, <code>POST /refunds/</code>, <code>GET /refunds/</code>) is as documented at <code>https://api.payfast.co.za/refunds/</code>, and whether webhooks are available for refund status changes.</li>
+      <li>Is there any limit on how long after a sale a refund can be made, and can refunds be partial?</li>
       <li>Will you sign a POPIA operator agreement obligating you to notify SAOC immediately on detecting a data breach?</li>
       <li>Confirm whether your published fees (3.2% + R2.00 for cards, 2.0% for Instant EFT, etc.) are ex-VAT or incl-VAT.</li>
       <li>Can you provide a PCI-DSS certificate with certificate number, registrar, and expiry date?</li>
