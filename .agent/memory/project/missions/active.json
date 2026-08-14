@@ -1,8 +1,9 @@
 {
   "mission": ".agent/memory/project/missions/2026-08-14-research-adversarial-audit.md",
   "checkpoint": {
-    "milestone": null,
-    "feature": null
+    "milestone": "M1",
+    "feature": "F2",
+    "ts": "2026-08-14T17:03:25.477240+00:00"
   },
-  "activated_at": "2026-08-14T16:43:56.813650+00:00"
+  "activated_at": "2026-08-14T17:03:25.477404+00:00"
 }

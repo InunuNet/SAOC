@@ -6,22 +6,22 @@ goal: Adversarially verify every factual claim in the payment-gateway research a
   to Lee-Ann
 created_at: '2026-08-14T16:42:04.450405+00:00'
 started_at: null
-last_active_at: null
+last_active_at: '2026-08-14T17:03:25.477240+00:00'
 status: pending
 cost_estimate:
   features: 7
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M1
+  feature: F2
+  ts: '2026-08-14T17:03:25.477240+00:00'
 features:
 - id: F1
   title: Claims register — every falsifiable assertion extracted, atomised and numbered
   inline_brief: 'Audit target is FROZEN, not live: `.agent/memory/scratch/FROZEN-payment-gateway-decision-b79c871.html`
-    (100,986 bytes, commit b79c871). Brad is reading the live artifact right now. DO
-    NOT EDIT `docs/payment-gateway-decision.html` during this mission — not one
+    (100,986 bytes, commit b79c871). Brad is reading the live artifact right now.
+    DO NOT EDIT `docs/payment-gateway-decision.html` during this mission — not one
     character. Every finding is a proposed change, delivered as a list, applied only
     after Brad has read the audit.
 
@@ -36,22 +36,22 @@ features:
     | ARITHMETIC | CHARACTERISATION.
 
     materiality: HIGH if it could change the Council''s decision or its money (fees,
-    holds, lock-in, refund capability, termination, who owns whom); MEDIUM if it
-    shapes the argument; LOW if incidental. Rank the fix list by this, not by
-    section order.
+    holds, lock-in, refund capability, termination, who owns whom); MEDIUM if it shapes
+    the argument; LOW if incidental. Rank the fix list by this, not by section order.
 
-    Expect 150-250 claims. If you produce fewer than 120 you have not atomised
-    properly — go back. Include claims made by IMPLICATION and by OMISSION where the
-    framing asserts something (e.g. presenting two options as the field implies no
-    third is viable).'
-  status: pending
+    Expect 150-250 claims. If you produce fewer than 120 you have not atomised properly
+    — go back. Include claims made by IMPLICATION and by OMISSION where the framing
+    asserts something (e.g. presenting two options as the field implies no third is
+    viable).'
+  status: done
   milestone: M1
+  completed_at: '2026-08-14T17:03:25.212849+00:00'
 - id: F2
   title: Evidence protocol and negative control — prove the process can catch a lie
-  inline_brief: 'The mission''s core constraint, in Brad''s words: "I don''t want any
-    LLM memory weights interfering with this, must just be raw research facts." That
-    needs enforcement, not an instruction — a model asked not to use its priors will
-    still use them and will still sound certain.
+  inline_brief: 'The mission''s core constraint, in Brad''s words: "I don''t want
+    any LLM memory weights interfering with this, must just be raw research facts."
+    That needs enforcement, not an instruction — a model asked not to use its priors
+    will still use them and will still sound certain.
 
     THE RULE: no claim may be marked CONFIRMED without (a) a URL fetched live this
     session, (b) the fetch date, (c) a VERBATIM quote from that page containing the
@@ -60,144 +60,143 @@ features:
     obviously correct, it still gets fetched — that costs one request and removes
     the entire failure mode.
 
-    ALL fetching via Alembic (`curl -s http://localhost:7077/<url>`, search
-    `curl "http://localhost:7077/?q=..."`). Record `X-Alembic-Confidence`; anything
-    LOW is not evidence on its own and needs a second independent source. Note the
-    Ozow docs hub is a Stoplight SPA — fetch its JSON API, pattern recorded in
-    `.agent/memory/scratch/ozow-terms-20260814/`.
+    ALL fetching via Alembic (`curl -s http://localhost:7077/<url>`, search `curl
+    "http://localhost:7077/?q=..."`). Record `X-Alembic-Confidence`; anything LOW
+    is not evidence on its own and needs a second independent source. Note the Ozow
+    docs hub is a Stoplight SPA — fetch its JSON API, pattern recorded in `.agent/memory/scratch/ozow-terms-20260814/`.
 
-    SOURCE HIERARCHY, and a claim is only as good as the best source actually
-    obtained: (1) the merchant contract itself; (2) the vendor''s own published
-    pricing or docs page; (3) a regulator, court or official register; (4) reputable
-    press; (5) a reseller or third-party summary — weakest, flag it.
+    SOURCE HIERARCHY, and a claim is only as good as the best source actually obtained:
+    (1) the merchant contract itself; (2) the vendor''s own published pricing or docs
+    page; (3) a regulator, court or official register; (4) reputable press; (5) a
+    reseller or third-party summary — weakest, flag it.
 
-    NEGATIVE CONTROL, and this feature is not done without it: seed at least 8
-    deliberately FALSE claims into the register, mixed in and not flagged to the
-    verifying agents — some plausible-but-wrong (a rate shifted by 0.3%, a clause
-    number moved by one, a date wrong by a year), some true-sounding but fabricated.
-    Run them through the same pipeline. If any is marked CONFIRMED, the pipeline is
-    unsound and every other green verdict is suspect — stop and report that, do not
-    continue. Record which seeds were caught and by what.'
-  status: pending
+    NEGATIVE CONTROL, and this feature is not done without it: seed at least 8 deliberately
+    FALSE claims into the register, mixed in and not flagged to the verifying agents
+    — some plausible-but-wrong (a rate shifted by 0.3%, a clause number moved by one,
+    a date wrong by a year), some true-sounding but fabricated. Run them through the
+    same pipeline. If any is marked CONFIRMED, the pipeline is unsound and every other
+    green verdict is suspect — stop and report that, do not continue. Record which
+    seeds were caught and by what.'
+  status: done
   milestone: M1
+  completed_at: '2026-08-14T17:03:25.477037+00:00'
 - id: F3
   title: Verify prices, corporate facts and legal/regulatory claims against live sources
   inline_brief: 'Every PRICE, CORPORATE_FACT and LEGAL_REGULATORY claim, verified
     independently. Adversarial stance: your job is to REFUTE the claim, not to find
-    a page that agrees with it. Default to CONTRADICTED or UNSUPPORTED when the
-    evidence is thin.
+    a page that agrees with it. Default to CONTRADICTED or UNSUPPORTED when the evidence
+    is thin.
 
     Verdicts: CONFIRMED | CONTRADICTED | UNSUPPORTED (no source found — different
-    from disproved, and must be reported as its own category) | STALE (was true,
-    superseded) | UNVERIFIABLE (behind a login or sales process — say so plainly).
+    from disproved, and must be reported as its own category) | STALE (was true, superseded)
+    | UNVERIFIABLE (behind a login or sales process — say so plainly).
 
     Watch specifically for STALE. Several figures were gathered in June-July 2026
     and the paper is dated 14 August 2026. Fees change. Re-fetch every rate; do not
     carry a number forward because it appeared in an earlier draft.
 
     Known high-materiality targets: Ozow 2.85% + R1 card / 1.5% + R1 EFT; PayFast
-    3.2% + R2 card / 2.0% EFT; Yoco 2.95% ex-VAT; the VAT treatment of each; the
-    DPO -> Network International (2021) -> Brookfield (2024, GBP 2.2bn) ownership
-    chain including whether Brookfield still holds it; PASA/Systems Operator and
-    TPPP status; Stripe''s and PayPal''s South African availability; and every
-    PCI-DSS / ISO 27001 assertion — those are claimed by every vendor and evidenced
-    by none, so the honest verdict is likely UNSUPPORTED rather than CONFIRMED.'
+    3.2% + R2 card / 2.0% EFT; Yoco 2.95% ex-VAT; the VAT treatment of each; the DPO
+    -> Network International (2021) -> Brookfield (2024, GBP 2.2bn) ownership chain
+    including whether Brookfield still holds it; PASA/Systems Operator and TPPP status;
+    Stripe''s and PayPal''s South African availability; and every PCI-DSS / ISO 27001
+    assertion — those are claimed by every vendor and evidenced by none, so the honest
+    verdict is likely UNSUPPORTED rather than CONFIRMED.'
   status: pending
   milestone: M2
 - id: F4
   title: Verify every contract-clause citation against the source documents
   inline_brief: 'Every CONTRACT_CLAUSE claim checked against the actual agreements
-    already on disk — `.agent/memory/scratch/ozow-terms-20260814/ozow-terms.md`
-    (34,265 words, V1.2026 eff. 1 April 2026) and
-    `.agent/memory/scratch/payfast-terms-20260814/payfast-terms.md` (22,916 words).
+    already on disk — `.agent/memory/scratch/ozow-terms-20260814/ozow-terms.md` (34,265
+    words, V1.2026 eff. 1 April 2026) and `.agent/memory/scratch/payfast-terms-20260814/payfast-terms.md`
+    (22,916 words).
 
     For each citation confirm THREE things separately: (a) the clause number exists;
     (b) it says what we claim; (c) our plain-English rendering does not change its
-    meaning. (c) is where this audit will actually find things — the article was
-    deliberately rewritten into everyday language for a lay council, and
-    simplification is exactly how a caveat quietly disappears. Check especially any
-    place where a discretionary power ("may", "at its sole discretion", "reasonable
-    opinion") has been rendered as a certainty.
+    meaning. (c) is where this audit will actually find things — the article was deliberately
+    rewritten into everyday language for a lay council, and simplification is exactly
+    how a caveat quietly disappears. Check especially any place where a discretionary
+    power ("may", "at its sole discretion", "reasonable opinion") has been rendered
+    as a certainty.
 
-    Re-verify the load-bearing findings from scratch rather than trusting the
-    teardowns, which are our own work: PayFast 3.4 minimum volume fee at R20,000;
-    21.2(i)/(iii) six- and twelve-month dormancy; the missing clause 21.3(ii);
-    9.8''s 540 days; 11.10 refund pre-funding; the ~2 months'' fees liability cap;
-    the absence of any SLA. Ozow: 4.5.1 nine-month dormancy; Annexure 3 cl. 9.5
-    10%/180-day reserve; 7.2/7.3 float; 6.3.2 VAT; 4.3.1 thirty-day termination;
-    Schedule 2 cl. 2.1 high-risk list.
+    Re-verify the load-bearing findings from scratch rather than trusting the teardowns,
+    which are our own work: PayFast 3.4 minimum volume fee at R20,000; 21.2(i)/(iii)
+    six- and twelve-month dormancy; the missing clause 21.3(ii); 9.8''s 540 days;
+    11.10 refund pre-funding; the ~2 months'' fees liability cap; the absence of any
+    SLA. Ozow: 4.5.1 nine-month dormancy; Annexure 3 cl. 9.5 10%/180-day reserve;
+    7.2/7.3 float; 6.3.2 VAT; 4.3.1 thirty-day termination; Schedule 2 cl. 2.1 high-risk
+    list.
 
-    Also confirm both documents are the CURRENT versions — a contract superseded
-    since we fetched it would invalidate the whole comparison. Check for a newer
-    effective date at source.'
+    Also confirm both documents are the CURRENT versions — a contract superseded since
+    we fetched it would invalidate the whole comparison. Check for a newer effective
+    date at source.'
   status: pending
   milestone: M2
 - id: F5
   title: Check arithmetic, internal consistency and the excluded-provider write-ups
   inline_brief: 'Three separate sweeps.
 
-    ARITHMETIC: recompute every number independently rather than checking the
-    working. The R1,000,000 worked example (2,000 x R500), each fee line, the VAT
-    additions, the R5,175 / R6,325 / R3,450 differences, and every "R8 per R500
-    ticket" style figure. Confirm the stated payment mix actually produces the
-    stated blended total.
+    ARITHMETIC: recompute every number independently rather than checking the working.
+    The R1,000,000 worked example (2,000 x R500), each fee line, the VAT additions,
+    the R5,175 / R6,325 / R3,450 differences, and every "R8 per R500 ticket" style
+    figure. Confirm the stated payment mix actually produces the stated blended total.
 
     INTERNAL CONSISTENCY: the article was rewritten in layers, by several agents,
-    over one afternoon. One self-contradiction has already been caught and fixed
-    (section 4 still called PayFast "the one we''re recommending to keep" and said
-    Ozow''s contract could not be obtained, on a page quoting it throughout). Assume
-    there are more. Cross-check the summary against the comparison blocks against
-    section 4 against the appendix. Every figure must agree everywhere it appears.
+    over one afternoon. One self-contradiction has already been caught and fixed (section
+    4 still called PayFast "the one we''re recommending to keep" and said Ozow''s
+    contract could not be obtained, on a page quoting it throughout). Assume there
+    are more. Cross-check the summary against the comparison blocks against section
+    4 against the appendix. Every figure must agree everywhere it appears.
 
-    EXCLUDED PROVIDERS: each of the thirteen write-ups states a reason and a
-    confidence. Verify the reason is true and the stated confidence is honest —
-    over-claimed confidence is itself a defect here. Peach and Paystack are recorded
-    as never properly researched; confirm that admission is accurate rather than an
-    excuse, and establish whether either actually supports recurring billing, since
-    that single fact decides whether they belong in the comparison at all.'
+    EXCLUDED PROVIDERS: each of the thirteen write-ups states a reason and a confidence.
+    Verify the reason is true and the stated confidence is honest — over-claimed confidence
+    is itself a defect here. Peach and Paystack are recorded as never properly researched;
+    confirm that admission is accurate rather than an excuse, and establish whether
+    either actually supports recurring billing, since that single fact decides whether
+    they belong in the comparison at all.'
   status: pending
   milestone: M2
 - id: F7
-  title: Enforcement evidence — what these companies actually DO, not only what they may do
-  inline_brief: 'Brad, 2026-08-14: "Because they state these things in their terms and
-    conditions doesn''t mean they enforce them. Stating they have the right to do it
-    doesn''t mean they will do it."
+  title: Enforcement evidence — what these companies actually DO, not only what they
+    may do
+  inline_brief: 'Brad, 2026-08-14: "Because they state these things in their terms
+    and conditions doesn''t mean they enforce them. Stating they have the right to
+    do it doesn''t mean they will do it."
 
-    He is right, and this is the mirror image of the mistake that started all of
-    this. The original research trusted marketing pages — what a company SAYS it
-    does. The rewrite trusts contracts — what a company MAY do. Both are half a
-    picture. A contractual right is an exposure, not a certainty, and the article
-    currently reads as though every clause will be exercised.
+    He is right, and this is the mirror image of the mistake that started all of this.
+    The original research trusted marketing pages — what a company SAYS it does. The
+    rewrite trusts contracts — what a company MAY do. Both are half a picture. A contractual
+    right is an exposure, not a certainty, and the article currently reads as though
+    every clause will be exercised.
 
     Gather evidence on ACTUAL PRACTICE, via Alembic, for the clauses that carry real
     money: PayFast''s 540-day hold (9.8), its Minimum Volume Fee (3.4), its 6/12-month
-    dormancy (21.2), its collateral demand (20.1); Ozow''s 10%/180-day Rolling
-    Reserve (Annexure 3, 9.5), its Float requirement (7.2), its 9-month dormancy
-    (4.5.1).
+    dormancy (21.2), its collateral demand (20.1); Ozow''s 10%/180-day Rolling Reserve
+    (Annexure 3, 9.5), its Float requirement (7.2), its 9-month dormancy (4.5.1).
 
-    Where to look: South African merchant forums and communities, Hellopeter and
-    similar review sites (merchant-side, not consumer-side — they are different
-    populations and the article already over-weights a 7-review consumer sample),
-    MyBroadband, developer forums, small-business and e-commerce groups, National
-    Consumer Commission or Ombud complaint records, and any court or tribunal
-    reports. Search for the experience, not the policy: held funds, delayed
-    settlement, frozen accounts, reserve imposed, account closed for inactivity.
+    Where to look: South African merchant forums and communities, Hellopeter and similar
+    review sites (merchant-side, not consumer-side — they are different populations
+    and the article already over-weights a 7-review consumer sample), MyBroadband,
+    developer forums, small-business and e-commerce groups, National Consumer Commission
+    or Ombud complaint records, and any court or tribunal reports. Search for the
+    experience, not the policy: held funds, delayed settlement, frozen accounts, reserve
+    imposed, account closed for inactivity.
 
-    RATE EACH CLAUSE on two axes and keep them separate: how BAD it would be if
-    exercised (already known from the contract) and how LIKELY it is to be exercised
-    (this feature''s job). Report the evidence base honestly — "no merchant reports
-    found" is a legitimate and useful answer, and it is NOT the same as "this never
-    happens". Absence of complaints from a small market is weak evidence either way,
-    and must be labelled as such.
+    RATE EACH CLAUSE on two axes and keep them separate: how BAD it would be if exercised
+    (already known from the contract) and how LIKELY it is to be exercised (this feature''s
+    job). Report the evidence base honestly — "no merchant reports found" is a legitimate
+    and useful answer, and it is NOT the same as "this never happens". Absence of
+    complaints from a small market is weak evidence either way, and must be labelled
+    as such.
 
     **THE ASYMMETRY THAT MATTERS MOST, and it cuts against the reassuring reading:**
-    SAOC''s pattern is precisely the profile discretionary risk clauses exist to
-    catch — an account dormant for three years that suddenly processes ~R1,000,000
-    in three days, for entry delivered weeks after payment, with no trading history
-    to price against. Sudden volume spike, advance-purchase exposure, thin file.
-    These clauses may go unused for ordinary steady merchants and still fire for
-    this one. Assess likelihood for SAOC''S SPECIFIC PROFILE, not for a typical
-    merchant, and say plainly if the evidence cannot support that distinction.
+    SAOC''s pattern is precisely the profile discretionary risk clauses exist to catch
+    — an account dormant for three years that suddenly processes ~R1,000,000 in three
+    days, for entry delivered weeks after payment, with no trading history to price
+    against. Sudden volume spike, advance-purchase exposure, thin file. These clauses
+    may go unused for ordinary steady merchants and still fire for this one. Assess
+    likelihood for SAOC''S SPECIFIC PROFILE, not for a typical merchant, and say plainly
+    if the evidence cannot support that distinction.
 
     Do not soften a finding because enforcement looks rare, and do not sharpen one
     because a clause reads harshly. Report frequency and severity separately so the
@@ -206,16 +205,16 @@ features:
   milestone: M2
 - id: F6
   title: Ranked fix list, delivered as proposed changes — nothing applied
-  inline_brief: 'Output is `.agent/memory/scratch/audit/findings.md` plus the
-    completed claims register. DO NOT EDIT the article. Brad applies, or authorises
-    applying, after reading.
+  inline_brief: 'Output is `.agent/memory/scratch/audit/findings.md` plus the completed
+    claims register. DO NOT EDIT the article. Brad applies, or authorises applying,
+    after reading.
 
-    Structure by what he has to decide, not by section order:
-    (1) WRONG — must fix before Lee-Ann sees it, with the correct fact and its
-    source; (2) OVERSTATED — true but claimed with more confidence than the evidence
-    carries; (3) STALE — needs a re-check before the meeting; (4) UNSUPPORTED — we
-    cannot show it is true, so it should be softened or dropped; (5) MISSING — a
-    material fact the audit surfaced that the article should carry.
+    Structure by what he has to decide, not by section order: (1) WRONG — must fix
+    before Lee-Ann sees it, with the correct fact and its source; (2) OVERSTATED —
+    true but claimed with more confidence than the evidence carries; (3) STALE — needs
+    a re-check before the meeting; (4) UNSUPPORTED — we cannot show it is true, so
+    it should be softened or dropped; (5) MISSING — a material fact the audit surfaced
+    that the article should carry.
 
     For each: the exact current wording, the proposed wording, the source URL, and
     one line on why it matters to the Council.
@@ -252,6 +251,8 @@ milestones:
   - F6
   status: pending
 ---
+
+
 
 # Mission: adversarially audit the payment-gateway research before it reaches Lee-Ann
 
