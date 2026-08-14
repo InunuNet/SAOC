@@ -6,17 +6,19 @@
 
 ## 1. Summary and Recommendation
 
-The Council's 2027 National Show needs a payment gateway by the end of this year to allow advance ticket sales. Six payment providers have been researched against the Council's stated criteria: cheap, refund-capable, and trusted.
+This is independent research prepared by SAOC's web developers on SAOC's behalf. Nothing here has been agreed with the Council; it is a basis for their discussion and decision. The recommendation is ours, offered for their consideration. Ozow is examined first and most fully because it has been raised as a likely candidate — that prominence reflects the reason for the deeper review, not an endorsement or a settled position. All figures were verified on 14 August 2026 and should be reconfirmed with vendors before contracting.
+
+The Council's 2027 National Show needs a payment gateway by the end of this year to allow advance ticket sales. Six payment providers have been researched against criteria we identified as decisive: cheap, refund-capable, and trusted.
 
 **Recommendation: stay on PayFast for the 2027 Show. Add Ozow as a second payment option, subject to vendor clarification questions in section 11.**
 
 Three reasons support this:
 
-1. PayFast's integration is already built, tested, and has been through security review. The ticket flow is proven. Switching gateways weeks before sales open introduces engineering and operational risk for uncertain benefit.
+1. PayFast's payment gateway integration is built, hardened, and has been through security review. Its webhook verification is security-critical and would need to be rebuilt and re-hardened if switched now. Changing gateways weeks before sales open means discarding this work and rebuilding that layer shortly before a live event — a genuine operational risk for uncertain benefit.
 
-2. PayFast is the only candidate that supports *both* one-off ticket sales *and* recurring membership billing on a single merchant relationship — a requirement the Council confirmed.
+2. PayFast is the only candidate that supports *both* one-off ticket sales *and* recurring membership billing on a single merchant relationship — relevant if SAOC proceeds with selling society memberships through the website, which we understand is intended but which the Council has not yet scoped or confirmed.
 
-3. PayFast explicitly onboards non-profits and is already live in SAOC's production system.
+3. PayFast explicitly onboards non-profits. The integration is built and deployed to the live hosting environment, currently running against sandbox credentials with end-to-end payment verification still in progress.
 
 **The strongest argument against it** is real and must be raised with PayFast directly: PayFast's Clause 9.8 permits them to hold sale proceeds for up to 540 days following delivery, and Clause 9.6 lists twelve discretionary triggers for doing so. For a body selling tickets weeks before an event, this is a genuine risk. The Council cannot proceed without a written commitment from PayFast on this point.
 
@@ -26,9 +28,9 @@ Ozow is materially cheaper — **roughly R8 per R500 ticket, across every paymen
 
 ---
 
-## 2. Ozow — the Council's Preferred Option, Assessed on Its Merits
+## 2. Ozow — Examined First, and on Its Merits
 
-Ozow launched in 2014 and operates as a PASA-licensed Systems Operator and Third-Party Payments Provider.
+Ozow launched in 2014 and operates as a PASA-licensed Systems Operator and Third-Party Payments Provider. It is examined here first and in the greatest depth because it has been raised as a likely candidate; this prominence reflects investigative thoroughness, not a Council preference or endorsement.
 
 ### Pricing — the decisive advantage
 
@@ -60,7 +62,7 @@ No minimum monthly revenue. Enterprise tier applies only above R1.5m per month (
 - R1500 card payment: R42.75 (Ozow) vs R50.00 (PayFast)
 - R1500 EFT payment: R22.50 (Ozow) vs R30.00 (PayFast)
 
-Ozow is cheaper on every scenario modelled. This is not marginal — it is consistent and material. **This is the single strongest argument for the Council's preference for Ozow.**
+Ozow is cheaper on every scenario modelled. This is not marginal — it is consistent and material. **This is the single strongest argument in Ozow's favour.**
 
 ### Bank-Access Mechanism — Real Progress, Ongoing Migration
 
@@ -78,13 +80,13 @@ The fair picture, in order:
 
 5. **Coverage is expanding.** Ozow is actively migrating off the flagged mechanism bank by bank.
 
-**What the Council must do:** Ask Ozow directly which banks are credential-free TODAY, and whether there is a timeline for completing the migration. The company's public commitments suggest movement; the monthly change rate determines whether the risk is acceptable before sales open.
+**What we recommend asking Ozow:** which banks are credential-free today, and whether there is a timeline for completing the migration. The company's public commitments suggest movement; the monthly change rate determines whether the risk is acceptable before sales open.
 
 ### International Cards — a Necessary Activation Step
 
 Ozow's "Pay By Bank" product handles South African bank-account holders. **International visitors to the Show cannot pay with it.**
 
-Ozow offers a separate "Card Payments" product for genuine Visa and Mastercard acceptance at 3.5% + R1 minimum. **The Council must explicitly activate this in their merchant settings, or overseas Show attendees will see a payment failure.** This is not a default; it is a vendor-specific onboarding step.
+Ozow offers a separate "Card Payments" product for genuine Visa and Mastercard acceptance at 3.5% + R1 minimum. **This must be explicitly activated in merchant settings, or overseas Show attendees will see a payment failure.** This is not a default; it is a vendor-specific onboarding step.
 
 ### Refunds — Full Product, Real Float Risk
 
@@ -96,7 +98,7 @@ Refund timeline: processed twice daily (09h00 and 12h00), weekdays only. Money r
 
 **Cost of a refund:** R3 per transaction PLUS the original transaction fee is not returned. For a R500 EFT ticket (R7.50 processing fee), issuing a refund costs the Council roughly R10.50 plus returning the R500. (This figure is sourced from merchant service terms via a reseller's published copy and marked as strong but not verbatim-confirmed directly from Ozow for standard merchants — verify with the vendor.)
 
-**Float mechanics:** The Council must understand how to top up the float and what happens if it runs empty during high-volume refund activity. This must be in writing before sales open.
+**Float mechanics:** Understanding how to top up the float and what happens if it runs empty during high-volume refund activity is essential. This should be confirmed in writing before sales open.
 
 ### Recurring Billing — Capitec Pay Only
 
@@ -104,7 +106,7 @@ Ozow supports one recurring product: Capitec Pay VRP (Variable Recurring Payment
 
 **Capitec Pay VRP works for Capitec account holders only.** No equivalent product is confirmed for FNB, Standard Bank, Absa or Nedbank customers. No debit-order alternative is documented. 
 
-A member can cancel a VRP mandate at any time through their Capitec banking app. SAOC is notified after the fact. **The Council must build the workflow to handle mid-cycle cancellations.**
+A member can cancel a VRP mandate at any time through their Capitec banking app. SAOC is notified after the fact. **The workflow to handle mid-cycle cancellations must be built into the system.**
 
 ### Settlement Timing — a Contradiction to Resolve
 
@@ -114,13 +116,13 @@ Ozow's public materials state three different settlement timings:
 - "Same-day settlement for EFT" (FAQ)
 - "Settlement once a week for cards" (FAQ)
 
-These are not reconcilable from public documents. **The Council must obtain a written confirmation of settlement timing for each payment method before committing.**
+These are not reconcilable from public documents. **Written confirmation of settlement timing for each payment method must be obtained before committing.**
 
 ### Non-Profit Onboarding — No Documented Path
 
 Ozow's signup documentation does not mention a non-profit entity type or PBO/NPO path. Two tracks are documented: "Registered Company" (CIPC registration + business bank account) and "Informal Merchant" (individual ID + proof of residence).
 
-SAOC is neither. Account creation is quoted at three hours to two working days depending on complexity. **The Council must confirm in writing which entity path Ozow would use and what documents they would need.** This is not a blocker, but it is an unknown.
+SAOC is neither. Account creation is quoted at three hours to two working days depending on complexity. **This should be confirmed in writing before committing — which entity path Ozow would use and what documents they would need.** This is not a blocker, but it is an unknown.
 
 ### Compliance — Asserted, Not Verified
 
@@ -139,7 +141,7 @@ Hellopeter's Trustindex for Ozow shows 2.1 out of 5 stars on 7 reviews submitted
 
 The Council cannot locate Ozow's standard merchant agreement. This means **the company's fund-hold and reserve practices are unknown.** No reserve clause was found in public materials. This is different from "there is no reserve"; it is "we cannot see the terms before signing."
 
-**This is a material procurement risk.** Before proceeding with Ozow, the Council must review the full merchant agreement and confirm the reserve and fund-hold position in writing.
+**This is a material procurement risk.** Before proceeding with Ozow, the full merchant agreement should be reviewed and the reserve and fund-hold position confirmed in writing.
 
 ---
 
@@ -147,7 +149,7 @@ The Council cannot locate Ozow's standard merchant agreement. This means **the c
 
 ### PayFast (the Incumbent)
 
-PayFast is Network International's primary gateway for South Africa. It is already live in SAOC's sandbox and production systems.
+PayFast is Network International's primary gateway for South Africa. The integration is built and deployed to the live hosting environment, currently running against sandbox credentials.
 
 **Pricing** (confirmed ex-VAT):
 
@@ -220,7 +222,7 @@ Peach explicitly states no monthly fee on the Growth plan — verified against t
 
 **Gaps:** No official Node/TypeScript server SDK. NPO eligibility and onboarding process are unconfirmed. The company's marketing emphasises enterprise deployments.
 
-### Paystack (the Council's Second Named Candidate, July 2026)
+### Paystack (Raised Alongside Ozow)
 
 Paystack operates in South Africa and is owned by Stripe, but is a separate product. **The Council would not receive Stripe's product roadmap, support desk or reliability guarantees.** Do not assume a "Stripe reliability halo".
 
@@ -327,15 +329,15 @@ A gateway strong on one is often weak on the other.
 
 **Peach and Paystack** have not been researched for recurring-billing capability.
 
-The Council confirmed requiring both, which narrows the field to PayFast and possibly Ozow with architectural workarounds.
+Our research assumes both ticket sales and membership billing are wanted, which narrows the field to PayFast and possibly Ozow with architectural workarounds.
 
 ---
 
 ## 7. Should SAOC Use a Ticketing Platform Instead?
 
-The Council has built a custom ticket system (reserve, pay, check in). Commercial ticketing platforms (Quicket, uTickets, Webtickets) offer turnkey alternatives.
+We have built the payment and admin layers of a custom ticket system for SAOC (payment processing and door check-in). Commercial ticketing platforms (Quicket, uTickets, Webtickets) offer complete turnkey alternatives including ticket delivery by email with scannable QR codes.
 
-This section is written with candour about a conflict of interest: we built the custom system, so the choice to use a platform partly means abandoning our work.
+This section is written with candour about a conflict of interest: we built the custom payment system, so the choice to use a platform partly means abandoning our work. However, the custom system is not yet complete — ticket delivery and QR code generation are not yet implemented. The cost comparison below reflects gateway fees only; the custom build requires additional work before it can replace a platform.
 
 ### Fee Comparison
 
@@ -412,7 +414,7 @@ Gateway fees are quoted either ex-VAT or incl-VAT, and the pricing pages do not 
 - **If SAOC is a registered VAT vendor**: VAT paid on gateway fees is recoverable. Use the ex-VAT figures throughout. On PayFast, R1,500 card ticket costs R50.00 in ex-VAT fees.
 - **If SAOC is not registered**: The full 15% VAT is unrecoverable and applies to the final cost. Same R1,500 card ticket costs R57.50 incl. VAT.
 
-**Action required:** Confirm SAOC's VAT status with the treasurer. Add "Confirm whether your published rates are ex-VAT or incl-VAT" to the vendor questions for Ozow and Peach (section 10), with an explicit fairness note: if your rates are incl-VAT, the comparison favours you more than shown here.
+**Action required:** Confirm SAOC's VAT status with the treasurer. We will ask Ozow and Peach to confirm whether their published rates are ex-VAT or incl-VAT (section 11), with an explicit fairness note: if your rates are incl-VAT, the comparison favours you more than shown here.
 
 ---
 
@@ -482,7 +484,7 @@ Section 17 allows the merchant to impose a cancellation charge if it is *reasona
 
 Section 17(5) forbids *any* cancellation fee where the ticket-holder has died or been hospitalised.
 
-**Important caveat:** This synthesis is based on primary legal texts (the Consumer Protection Act and the ECTA) and represents a careful reading, not a lawyer's opinion. **The Council must have an attorney review this before publishing a refund policy.**
+**Important caveat:** This synthesis is based on primary legal texts (the Consumer Protection Act and the ECTA) and represents a careful reading, not a lawyer's opinion. **We strongly recommend the Council obtains an attorney's review before publishing any refund policy.**
 
 ### Chargeback Implications
 
@@ -528,9 +530,27 @@ Recommend a published policy that:
 
 ---
 
-## 11. Questions to Put to the Vendors
+## 10a. Outstanding Work — Custom Ticketing System
 
-Use this numbered list to email each vendor. Copy-paste format.
+Before the Council can open ticket sales, the custom ticketing system requires completion of the following work, independent of which payment gateway is chosen:
+
+1. **End-to-end payment verification** — The PayFast integration is currently running against sandbox credentials. The full payment flow (checkout → payment processing → ITN webhook → ticket creation) must be verified end-to-end with real transactions before live sales open.
+
+2. **Ticket delivery by email** — Buyers currently receive no confirmation email. The system must send a confirmation email to each buyer immediately after successful payment, including their booking reference or order number.
+
+3. **QR code generation and delivery** — The door scanner reads QR codes, but the system does not generate them. Buyers must receive a unique, scannable QR code in their confirmation email or a follow-up message, so that door staff can check them in by scanning rather than typing reference numbers by hand.
+
+4. **Refund capability** — The system has no refund state and cannot track refunds. Refund handling must be built before the Council can accept refund requests from members. This work is independent of which gateway is chosen and is separate from the gateway's refund API.
+
+5. **Firebase Auth for door scanner** — Admin access to the door check-in scanner must be protected by authentication. Firebase Auth must be enabled and tested before the Show.
+
+These are infrastructure gaps in the ticketing system itself, not limitations of any payment gateway. They will need to be completed regardless of whether PayFast, Ozow, or any other provider is chosen.
+
+---
+
+## 11. Questions We Recommend Putting to the Vendors
+
+These are questions we recommend sending to each vendor to resolve the gaps in this research. We can send these on the Council's behalf, or the Council may prefer to ask directly. Copy-paste format is provided below for each vendor.
 
 ### To Ozow
 
