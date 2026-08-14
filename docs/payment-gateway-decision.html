@@ -1,0 +1,1016 @@
+<title>Paying for the 2027 Show</title>
+<style>
+  :root {
+    --ground: #F7F8F5;
+    --ink: #1A1D17;
+    --muted: #5B6358;
+    --muted-line: #D8DCD2;
+    --surface: #FFFFFF;
+    --accent: #2F5233;
+    --accent-weak: #E4EBE1;
+    --risk: #8A5A16;
+    --risk-bg: #FBF1DE;
+    --risk-border: #C98F31;
+    --danger: #8C3B32;
+    --danger-bg: #F7E9E4;
+    --danger-border: #B25C48;
+    --shadow: 0 1px 2px rgba(26, 29, 23, 0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #12150F;
+      --ink: #E8E9E2;
+      --muted: #9AA394;
+      --muted-line: #333A2E;
+      --surface: #191D15;
+      --accent: #7FB088;
+      --accent-weak: #1E2A1F;
+      --risk: #E0B064;
+      --risk-bg: #2A2313;
+      --risk-border: #6E4E1E;
+      --danger: #E29082;
+      --danger-bg: #2B1815;
+      --danger-border: #6E332A;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #12150F;
+    --ink: #E8E9E2;
+    --muted: #9AA394;
+    --muted-line: #333A2E;
+    --surface: #191D15;
+    --accent: #7FB088;
+    --accent-weak: #1E2A1F;
+    --risk: #E0B064;
+    --risk-bg: #2A2313;
+    --risk-border: #6E4E1E;
+    --danger: #E29082;
+    --danger-bg: #2B1815;
+    --danger-border: #6E332A;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Charter", serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 1.25rem 6rem;
+  }
+
+  .doc {
+    max-width: 44rem;
+    margin: 0 auto;
+  }
+
+  .util {
+    font-family: ui-monospace, "SF Mono", "Courier New", monospace;
+  }
+
+  header.masthead {
+    padding: 2.75rem 0 1.75rem;
+    border-bottom: 1px solid var(--muted-line);
+    margin-bottom: 2rem;
+  }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", "Courier New", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.6rem;
+  }
+
+  h1 {
+    font-size: clamp(1.7rem, 5vw, 2.35rem);
+    line-height: 1.15;
+    margin: 0 0 0.6rem;
+    text-wrap: balance;
+    font-weight: 600;
+  }
+
+  .dek {
+    font-size: 1.05rem;
+    color: var(--muted);
+    margin: 0 0 1.1rem;
+    max-width: 38rem;
+  }
+
+  .currency-note {
+    font-family: ui-monospace, "SF Mono", "Courier New", monospace;
+    font-size: 0.8rem;
+    color: var(--risk);
+    background: var(--risk-bg);
+    border: 1px solid var(--risk-border);
+    border-radius: 3px;
+    padding: 0.6rem 0.85rem;
+    display: inline-block;
+    line-height: 1.5;
+  }
+
+  nav.toc {
+    background: var(--surface);
+    border: 1px solid var(--muted-line);
+    border-radius: 4px;
+    padding: 1.25rem 1.4rem;
+    margin-bottom: 2.75rem;
+    box-shadow: var(--shadow);
+  }
+
+  nav.toc h2 {
+    font-family: ui-monospace, "SF Mono", "Courier New", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.85rem;
+    font-weight: 600;
+  }
+
+  nav.toc ol {
+    margin: 0;
+    padding-left: 1.4rem;
+    columns: 1;
+  }
+
+  nav.toc li {
+    margin-bottom: 0.45rem;
+    font-size: 0.94rem;
+  }
+
+  nav.toc a {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--muted-line);
+  }
+
+  nav.toc a:hover, nav.toc a:focus-visible {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  section {
+    margin-bottom: 3rem;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    line-height: 1.25;
+    margin: 0 0 1.1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--muted-line);
+    text-wrap: balance;
+    scroll-margin-top: 1.5rem;
+  }
+
+  h2 .num {
+    font-family: ui-monospace, "SF Mono", "Courier New", monospace;
+    color: var(--accent);
+    font-weight: 600;
+    margin-right: 0.5rem;
+    font-size: 0.9em;
+  }
+
+  h3 {
+    font-size: 1.08rem;
+    margin: 1.9rem 0 0.75rem;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+
+  h3.vendor-name {
+    font-size: 1.2rem;
+    margin-top: 2.4rem;
+    color: var(--accent);
+    border-top: 1px solid var(--muted-line);
+    padding-top: 1.6rem;
+  }
+
+  p { margin: 0 0 1rem; max-width: 42rem; }
+
+  ul, ol { margin: 0 0 1rem; padding-left: 1.4rem; max-width: 42rem; }
+  li { margin-bottom: 0.45rem; }
+
+  strong { font-weight: 700; }
+
+  a { color: var(--accent); }
+  a:hover { text-decoration-thickness: 2px; }
+
+  code {
+    font-family: ui-monospace, "SF Mono", "Courier New", monospace;
+    font-size: 0.85em;
+    background: var(--accent-weak);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+  }
+
+  hr.sep {
+    border: none;
+    border-top: 1px solid var(--muted-line);
+    margin: 0 0 3rem;
+  }
+
+  /* Recommendation block */
+  .recommendation {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-left: 5px solid var(--accent);
+    border-radius: 4px;
+    padding: 1.5rem 1.6rem 1.6rem;
+    margin: 1.5rem 0 2rem;
+    box-shadow: var(--shadow);
+  }
+
+  .recommendation .label {
+    font-family: ui-monospace, "SF Mono", "Courier New", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.6rem;
+    font-weight: 600;
+  }
+
+  .recommendation p:last-child { margin-bottom: 0; }
+  .recommendation strong { color: var(--accent); }
+
+  /* Callouts */
+  .callout {
+    border: 1px solid var(--risk-border);
+    background: var(--risk-bg);
+    border-radius: 4px;
+    padding: 1.1rem 1.3rem;
+    margin: 1.3rem 0;
+  }
+
+  .callout .callout-label {
+    font-family: ui-monospace, "SF Mono", "Courier New", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--risk);
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+  }
+
+  .callout p, .callout ul { max-width: none; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .callout.danger {
+    border-color: var(--danger-border);
+    background: var(--danger-bg);
+  }
+  .callout.danger .callout-label { color: var(--danger); }
+
+  /* Tables */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 1.4rem 0;
+    border: 1px solid var(--muted-line);
+    border-radius: 4px;
+    background: var(--surface);
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 30rem;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.92rem;
+  }
+
+  caption {
+    text-align: left;
+    font-family: ui-monospace, "SF Mono", "Courier New", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  th, td {
+    padding: 0.55rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--muted-line);
+    white-space: nowrap;
+  }
+
+  th {
+    font-family: ui-monospace, "SF Mono", "Courier New", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  td.num, th.num { text-align: right; }
+
+  tbody tr:nth-child(even) { background: var(--accent-weak); }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* Vendor question lists */
+  .vendor-block {
+    background: var(--surface);
+    border: 1px solid var(--muted-line);
+    border-radius: 4px;
+    padding: 1.3rem 1.4rem 1.4rem;
+    margin: 1.3rem 0;
+  }
+
+  .vendor-block h4 {
+    font-family: ui-monospace, "SF Mono", "Courier New", monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.9rem;
+  }
+
+  .vendor-block ol {
+    max-width: none;
+    padding-left: 1.5rem;
+  }
+
+  .vendor-block li {
+    font-family: ui-monospace, "SF Mono", "Courier New", monospace;
+    font-size: 0.86rem;
+    line-height: 1.55;
+    margin-bottom: 0.7rem;
+  }
+
+  /* Appendix */
+  .appendix {
+    background: transparent;
+    border: 1px dashed var(--muted-line);
+    border-radius: 4px;
+    padding: 1.3rem 1.4rem;
+  }
+
+  .appendix h2 { border-bottom-style: dashed; }
+
+  .appendix ul { max-width: none; }
+  .appendix li { color: var(--ink); }
+  .appendix li::marker { color: var(--muted); }
+
+  footer.doc-footer {
+    border-top: 1px solid var(--muted-line);
+    padding-top: 1.5rem;
+    margin-top: 3rem;
+    color: var(--muted);
+    font-size: 0.88rem;
+  }
+
+  /* Focus visibility */
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { scroll-behavior: auto !important; }
+  }
+
+  @media print {
+    body {
+      background: #FFFFFF;
+      color: #000000;
+      padding: 0;
+    }
+    nav.toc { display: none; }
+    .recommendation, .callout, .vendor-block, .table-wrap, .appendix {
+      break-inside: avoid;
+      box-shadow: none;
+      border-color: #000000;
+    }
+    a { color: #000000; text-decoration: underline; }
+    h2 { border-bottom-color: #000000; }
+    .currency-note { border-color: #000000; color: #000000; background: none; }
+    section { break-inside: avoid-page; }
+  }
+
+  @media (min-width: 640px) {
+    nav.toc ol { columns: 2; column-gap: 2rem; }
+  }
+</style>
+
+<div class="doc">
+
+<header class="masthead">
+  <p class="eyebrow">SAOC Council Paper</p>
+  <h1>Paying for the 2027 Show</h1>
+  <p class="dek">A decision paper on payment gateways for advance ticket sales and membership billing, prepared for the Council of the South African Orchid Council.</p>
+  <p class="currency-note">Verified 14 August 2026 — pricing and vendor capabilities change; confirm figures before contracting.</p>
+</header>
+
+<nav class="toc" aria-label="Table of contents">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#s1">Summary and Recommendation</a></li>
+    <li><a href="#s2">Ozow — Assessed on Its Merits</a></li>
+    <li><a href="#s3">The Main Alternatives</a></li>
+    <li><a href="#s4">Ruled Out — and Why</a></li>
+    <li><a href="#s5">Refunds — A Cross-Cutting Reality</a></li>
+    <li><a href="#s6">Tickets vs. Memberships</a></li>
+    <li><a href="#s7">A Ticketing Platform Instead?</a></li>
+    <li><a href="#s8">VAT — The Full Cost</a></li>
+    <li><a href="#s9">Security, Compliance and the Law</a></li>
+    <li><a href="#s10">Risks to Resolve Before Going Live</a></li>
+    <li><a href="#s11">Questions for the Vendors</a></li>
+    <li><a href="#s12">What Is Not Yet Verified</a></li>
+  </ol>
+</nav>
+
+<section id="s1">
+  <h2><span class="num">1</span>Summary and Recommendation</h2>
+  <p>The Council's 2027 National Show needs a payment gateway by the end of this year to allow advance ticket sales. Six payment providers have been researched against the Council's stated criteria: cheap, refund-capable, and trusted.</p>
+
+  <div class="recommendation">
+    <p class="label">Recommendation</p>
+    <p><strong>Stay on PayFast for the 2027 Show. Add Ozow as a second payment option, subject to the vendor clarification questions in section 11.</strong></p>
+  </div>
+
+  <p>Three reasons support this:</p>
+  <ol>
+    <li>PayFast's integration is already built, tested, and has been through security review. The ticket flow is proven. Switching gateways weeks before sales open introduces engineering and operational risk for uncertain benefit.</li>
+    <li>PayFast is the only candidate that supports <em>both</em> one-off ticket sales <em>and</em> recurring membership billing on a single merchant relationship — a requirement the Council confirmed.</li>
+    <li>PayFast explicitly onboards non-profits and is already live in SAOC's production system.</li>
+  </ol>
+
+  <div class="callout danger">
+    <p class="callout-label">Must resolve before go-live</p>
+    <p>The strongest argument against PayFast is real and must be raised with PayFast directly: <strong>PayFast's Clause 9.8 permits them to hold sale proceeds for up to 540 days following delivery</strong>, and Clause 9.6 lists twelve discretionary triggers for doing so. For a body selling tickets weeks before an event, this is a genuine risk. The Council cannot proceed without a written commitment from PayFast on this point.</p>
+  </div>
+
+  <p>Secondary concerns are less critical but real: PayFast has no refund <em>webhook</em>, so refund status must be polled rather than pushed into the Council's admin dashboard. The refund API reuses the existing, already-reviewed signature-verification code (MD5-hash-plus-passphrase), so integration effort is modest. There is no official Node SDK — only a PHP one — but the REST API is fully documented and straightforward to wrap.</p>
+
+  <p>Ozow is materially cheaper — <strong>roughly R8 per R500 ticket, across every payment method modelled.</strong> Its refund product is real and well-designed. Its recent bank-access upgrades are genuine. But its merchant agreement could not be located for review, its Integration Manual is released only to committed merchants, and no documented path exists for a national council entity to sign up. These are procurement risks worth resolving before a second Show, not migration risks weeks before the first one.</p>
+</section>
+
+<section id="s2">
+  <h2><span class="num">2</span>Ozow — the Council's Preferred Option, Assessed on Its Merits</h2>
+  <p>Ozow launched in 2014 and operates as a PASA-licensed Systems Operator and Third-Party Payments Provider.</p>
+
+  <h3>Pricing — the decisive advantage</h3>
+  <p>Ozow publishes its pricing in full. No sales call or quote is needed. This alone makes it unusual among South African payment gateways.</p>
+
+  <div class="table-wrap">
+    <table>
+      <caption>Ozow pricing, as at 14 August 2026</caption>
+      <thead>
+        <tr><th>Payment method</th><th class="num">Fee</th><th class="num">Minimum</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Local card (Visa, Mastercard)</td><td class="num">2.85%</td><td class="num">R1</td></tr>
+        <tr><td>International card</td><td class="num">3.5%</td><td class="num">R1</td></tr>
+        <tr><td>Pay By Bank (EFT)</td><td class="num">1.5%</td><td class="num">R1</td></tr>
+        <tr><td>Capitec Pay</td><td class="num">1.5%</td><td class="num">R1</td></tr>
+        <tr><td>Capitec Pay VRP (recurring)</td><td class="num">1.5%</td><td class="num">R1</td></tr>
+        <tr><td>Nedbank Direct EFT</td><td class="num">1.5%</td><td class="num">R1</td></tr>
+        <tr><td>Absa Pay</td><td class="num">1.5%</td><td class="num">R1</td></tr>
+        <tr><td>PayShap Request</td><td class="num">1.5%</td><td class="num">R1</td></tr>
+        <tr><td>Refund per transaction</td><td class="num">R3</td><td class="num">—</td></tr>
+        <tr><td>Payout (settlement)</td><td class="num">R3</td><td class="num">—</td></tr>
+        <tr><td>Monthly fee</td><td class="num">None</td><td class="num">—</td></tr>
+        <tr><td>Setup fee</td><td class="num">None</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>No minimum monthly revenue. Enterprise tier applies only above R1.5m per month (irrelevant to the Council).</p>
+
+  <div class="table-wrap">
+    <table>
+      <caption>Real-world comparison to PayFast (current incumbent)</caption>
+      <thead>
+        <tr><th>Scenario</th><th class="num">Ozow</th><th class="num">PayFast</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>R500 card payment</td><td class="num">R14.25</td><td class="num">R18.00</td></tr>
+        <tr><td>R500 EFT payment</td><td class="num">R7.50</td><td class="num">R10.00</td></tr>
+        <tr><td>R1500 card payment</td><td class="num">R42.75</td><td class="num">R50.00</td></tr>
+        <tr><td>R1500 EFT payment</td><td class="num">R22.50</td><td class="num">R30.00</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Ozow is cheaper on every scenario modelled. This is not marginal — it is consistent and material. <strong>This is the single strongest argument for the Council's preference for Ozow.</strong></p>
+
+  <h3>Bank-access mechanism — real progress, ongoing migration</h3>
+  <p>Ozow's refund product and recurring billing are both routed through bank access. The Council's members deserve candour on how that access is negotiated.</p>
+  <p>The fair picture, in order:</p>
+  <ol>
+    <li><strong>Capitec Pay is credential-free.</strong> Ozow's own material cites SARB's open-banking vision. This is genuine.</li>
+    <li><strong>FNB and RMB have recently moved to OAuth authentication.</strong> Between 30 July and 5 August 2026, Ozow launched OAuth-authenticated API payments with both banks, explicitly removing the credential-sharing mechanism. This fact appears in three independent industry sources.</li>
+    <li><strong>For Standard Bank, Absa and Nedbank, Ozow's training material still documents the older flow:</strong> a customer chooses their bank, logs into their online banking profile, and Ozow performs a transaction on their behalf. This is the mechanism SARB, the FSCA and PASA jointly warned against in November 2020.</li>
+    <li><strong>Ozow publicly rejected that framing.</strong> The company reports no fraud incidents since its 2014 launch (a self-reported figure).</li>
+    <li><strong>Coverage is expanding.</strong> Ozow is actively migrating off the flagged mechanism bank by bank.</li>
+  </ol>
+
+  <div class="callout">
+    <p class="callout-label">Council must confirm</p>
+    <p>Ask Ozow directly which banks are credential-free today, and whether there is a timeline for completing the migration. The company's public commitments suggest movement; the monthly change rate determines whether the risk is acceptable before sales open.</p>
+  </div>
+
+  <h3>International cards — a necessary activation step</h3>
+  <p>Ozow's "Pay By Bank" product handles South African bank-account holders. <strong>International visitors to the Show cannot pay with it.</strong></p>
+  <p>Ozow offers a separate "Card Payments" product for genuine Visa and Mastercard acceptance at 3.5% + R1 minimum. <strong>The Council must explicitly activate this in their merchant settings, or overseas Show attendees will see a payment failure.</strong> This is not a default; it is a vendor-specific onboarding step.</p>
+
+  <h3>Refunds — full product, real float risk</h3>
+  <p>Ozow offers a real refund product: a dashboard interface and an API, full or partial refunds, routed back to the account that paid. <strong>This is a genuine POPIA advantage</strong> — the Council never needs to collect or store members' bank details separately.</p>
+
+  <div class="callout">
+    <p class="callout-label">Risk — must resolve before go-live</p>
+    <p><strong>Refunds are funded from a pre-funded float held by Ozow.</strong> If the float is empty, refunds cannot be processed until it is topped up. This is not a soft limit; it is a hard requirement.</p>
+  </div>
+
+  <p>Refund timeline: processed twice daily (09h00 and 12h00), weekdays only. Money reflects in the member's account in 48–72 hours.</p>
+  <p><strong>Cost of a refund:</strong> R3 per transaction plus the original transaction fee is not returned. For a R500 EFT ticket (R7.50 processing fee), issuing a refund costs the Council roughly R10.50 plus returning the R500. <em>(This figure is sourced from merchant service terms via a reseller's published copy and marked as strong but not verbatim-confirmed directly from Ozow for standard merchants — verify with the vendor.)</em></p>
+  <p><strong>Float mechanics:</strong> The Council must understand how to top up the float and what happens if it runs empty during high-volume refund activity. This must be in writing before sales open.</p>
+
+  <h3>Recurring billing — Capitec Pay only</h3>
+  <p>Ozow supports one recurring product: Capitec Pay VRP (Variable Recurring Payment). This requires a one-time consent from the member; thereafter Ozow collects up to an agreed cap automatically at intervals the Council sets.</p>
+  <p><strong>Capitec Pay VRP works for Capitec account holders only.</strong> No equivalent product is confirmed for FNB, Standard Bank, Absa or Nedbank customers. No debit-order alternative is documented.</p>
+  <p>A member can cancel a VRP mandate at any time through their Capitec banking app. SAOC is notified after the fact. <strong>The Council must build the workflow to handle mid-cycle cancellations.</strong></p>
+
+  <h3>Settlement timing — a contradiction to resolve</h3>
+  <p>Ozow's public materials state three different settlement timings:</p>
+  <ul>
+    <li>"Next-day settlement" (pricing page)</li>
+    <li>"Same-day settlement for EFT" (FAQ)</li>
+    <li>"Settlement once a week for cards" (FAQ)</li>
+  </ul>
+  <p>These are not reconcilable from public documents. <strong>The Council must obtain a written confirmation of settlement timing for each payment method before committing.</strong></p>
+
+  <h3>Non-profit onboarding — no documented path</h3>
+  <p>Ozow's signup documentation does not mention a non-profit entity type or PBO/NPO path. Two tracks are documented: "Registered Company" (CIPC registration + business bank account) and "Informal Merchant" (individual ID + proof of residence).</p>
+  <p>SAOC is neither. Account creation is quoted at three hours to two working days depending on complexity. <strong>The Council must confirm in writing which entity path Ozow would use and what documents they would need.</strong> This is not a blocker, but it is an unknown.</p>
+
+  <h3>Compliance — asserted, not verified</h3>
+  <ul>
+    <li>PCI-DSS Level 1 claimed on Ozow's website with no certificate number, registrar or expiry date.</li>
+    <li>ISO 27001 claimed with no supporting documentation.</li>
+  </ul>
+  <p>(See section 9 for how to verify these claims before signing.)</p>
+
+  <h3>Public reputation</h3>
+  <p>Hellopeter's Trustindex for Ozow shows 2.1 out of 5 stars on 7 reviews submitted in the past 12 months. All are one-star, with recurring themes of delayed payouts and refunds.</p>
+  <p><strong>Important context:</strong> this is a very small sample size; it represents consumer-side feedback, not merchant-side experience; and Hellopeter reviewers are self-selected. Do not overweight it. But do not dismiss it either. <strong>The Council should search for independent merchant testimonials on the company's handling of volume growth and refund backlogs before signing.</strong></p>
+
+  <h3>Merchant agreement — unknown reserve policy</h3>
+  <p>The Council cannot locate Ozow's standard merchant agreement. This means <strong>the company's fund-hold and reserve practices are unknown.</strong> No reserve clause was found in public materials. This is different from "there is no reserve"; it is "we cannot see the terms before signing."</p>
+  <div class="callout danger">
+    <p class="callout-label">Material procurement risk</p>
+    <p>Before proceeding with Ozow, the Council must review the full merchant agreement and confirm the reserve and fund-hold position in writing.</p>
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="num">3</span>The Main Alternatives</h2>
+
+  <h3 class="vendor-name">PayFast (the Incumbent)</h3>
+  <p>PayFast is Network International's primary gateway for South Africa. It is already live in SAOC's sandbox and production systems.</p>
+
+  <p><strong>Pricing</strong> (confirmed ex-VAT):</p>
+  <div class="table-wrap">
+    <table>
+      <caption>PayFast pricing</caption>
+      <thead><tr><th>Method</th><th class="num">Fee</th></tr></thead>
+      <tbody>
+        <tr><td>Cards</td><td class="num">3.2% + R2.00</td></tr>
+        <tr><td>Instant EFT</td><td class="num">2.0%</td></tr>
+        <tr><td>Capitec Pay</td><td class="num">2.0%</td></tr>
+        <tr><td>Apple Pay / Google Pay / Samsung Pay</td><td class="num">3.2% + R2.00</td></tr>
+        <tr><td>SnapScan</td><td class="num">3.5% + R2.00</td></tr>
+        <tr><td>Zapper</td><td class="num">4.5% + R5.00</td></tr>
+        <tr><td>Mobicred</td><td class="num">3.2%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>No setup fee, no monthly fee. PayFast is consistently more expensive than Ozow across every payment method modelled, by R3.50–R8.50 per transaction depending on size and method.</p>
+
+  <p><strong>Settlement</strong> is 48 hours after the transaction clears, then typically 1–2 working days to the merchant's bank. Payout fee is R8.70 ex VAT, flat per payout, whether manual or automated. Batching payouts minimises this cost.</p>
+
+  <p><strong>Refunds — API documented.</strong> PayFast has a fully documented Refunds API reachable at <code>https://api.payfast.co.za/refunds/</code>:</p>
+  <ul>
+    <li><code>GET /refunds/query/:pf_payment_id</code> — query what is refundable and by which method</li>
+    <li><code>POST /refunds/:pf_payment_id</code> — create a refund (full or partial)</li>
+    <li><code>GET /refunds/:pf_payment_id</code> — retrieve refund status</li>
+  </ul>
+  <p>Authentication uses the same MD5-hash-plus-passphrase scheme SAOC's existing ITN webhook already implements and has had security review. <strong>There is no refund webhook, so refund status must be polled.</strong> There is no official Node/TypeScript SDK, only a PHP one; the REST API is straightforward and can be wrapped in a few lines.</p>
+
+  <p><strong>Refund costs and timing:</strong> flat R2.00 ex VAT per refund (since 1 October 2020, "irrespective of the amount"). The original acceptance fee is <strong>not returned</strong> — a refunded R150 card ticket costs SAOC roughly R6.80 (the lost original fee) plus R2.00 (the refund fee), proportionally worse on cheaper tickets. Buyer wait: cards 7–10 business days, Instant EFT 2–3 business days.</p>
+
+  <div class="callout danger">
+    <p class="callout-label">Privacy consideration</p>
+    <p><strong>Instant EFT refunds require bank details.</strong> Card refunds are reversed down the card rail. However, Instant EFT refunds use a different method (<code>BANK_PAYOUT</code>) and <strong>require SAOC to collect and supply the buyer's bank details: account holder name, bank name, branch code, account number and account type.</strong> This means <strong>SAOC must retain members' bank details to process EFT refunds, a POPIA obligation that does not apply to other gateways</strong> (see section 9). Some transactions cannot be refunded at all (status: <code>NOT_AVAILABLE</code>).</p>
+  </div>
+
+  <p><strong>Explicitly onboards non-profits</strong> — account type selectable at signup. FICA requirement: proof of ID, address and bank account.</p>
+  <p>PayFast owns SnapScan, Zapper and Mobicred and embeds them inside its payment menu at no extra integration cost — a settings toggle, not a new vendor relationship. Card refunds are available for all three.</p>
+
+  <p><strong>Recurring memberships</strong> — two products support the membership use case. <em>Subscriptions</em> (scheduled, including annual billing; Capitec Pay also works) are "designed especially for businesses that run a membership or retainer style business model." <em>Tokenization</em> (card-on-file) allows storing a card with an initial R0.00 charge, useful for "join now, bill next year" workflows, with charges triggered by merchant API call (<code>POST /subscriptions/:token/adhoc</code>). Caveat: no silent account-updater for expired cards — the customer is sent a link to update their card details on renewal, so renewals are not fully automatic.</p>
+
+  <p><strong>Webhook security:</strong> MD5 hash signature with a shared passphrase, plus source-IP validation. MD5 is weaker hashing than peers, but IP validation is a genuine strength. This is what SAOC's existing integration implements and has undergone security review.</p>
+
+  <h3 class="vendor-name">Yoco</h3>
+  <p>Yoco explicitly onboards non-profit organisations — registered or unregistered, signed up by a chairperson, treasurer or secretary. This nearly exactly fits SAOC's structure. There is also a dedicated NPC path and a dedicated Non-Profit FICA review guide.</p>
+  <p>Event ticketing does not appear on Yoco's 21-category prohibited list.</p>
+  <p><strong>Pricing</strong> depends on turnover and package tier. Starter plan: 2.95% flat, no monthly fee. Pro (R249/month) and Plus (R499/month) tiers trade subscription for lower rates.</p>
+  <p><strong>Real-world cost on a R150 ticket:</strong> 2.95% totals R4.43 in processing cost vs R6.80 on PayFast.</p>
+
+  <div class="callout danger">
+    <p class="callout-label">Disqualifying for memberships</p>
+    <p><strong>Yoco does not support subscriptions or recurring billing.</strong> This is decisive for membership revenue. Yoco's own documentation confirms this gap. If the Council intends to sell memberships, Yoco is not an option.</p>
+  </div>
+
+  <p><strong>Refunds — poor fit for SAOC's seasonal pattern.</strong> Yoco has a documented REST API (<code>POST /checkouts/{id}/refund</code>, supporting full or partial refunds and idempotency keys) and fires a <code>refund.succeeded</code> webhook — more systematic than PayFast. However, Yoco settles the full balance to the merchant's bank account every day, and refunds are drawn from the <em>pending</em> balance held by Yoco. According to Yoco's own troubleshooting documentation, refunds often fail because the balance is too low, with three suggested workarounds: wait for new sales, EFT the customer yourself and tell Yoco to cancel the pending refund, or contact support. For a body like SAOC that concentrates all ticket sales into a 3-day window and then sits at zero revenue for months, a refund request arriving 4–6 weeks later will very likely hit an empty Yoco balance. Additionally, Yoco enforces a hard 90-day refund limit, and debit-card payments can only be refunded on the same day. <em>To Yoco's credit, this limitation is documented transparently;</em> however, the refund-failure risk is structural and a poor fit for SAOC's use case.</p>
+
+  <p><strong>Webhooks</strong> use HMAC-SHA256 with replay protection and versioned signatures — more modern and stronger than PayFast's MD5.</p>
+  <p><strong>PCI compliance</strong> is asserted but no level is stated and no certificate is provided — weaker disclosure than PayFast.</p>
+  <p>No official Node/TypeScript server SDK exists.</p>
+
+  <h3 class="vendor-name">Peach Payments</h3>
+  <p>Peach explicitly states no monthly fee on the Growth plan — verified against the vendor's published materials. (The R300/month figure circulating in third-party blogs belongs to the Enterprise tier for merchants processing R500k+ per month.)</p>
+  <p><strong>Pricing:</strong></p>
+  <ul>
+    <li>Cards: 2.95% + R1.50</li>
+    <li>Pay by Bank / Capitec Pay / Nedbank Direct EFT: 1.50% + R1.50</li>
+    <li>Settlement: next-business-day claimed</li>
+  </ul>
+  <p><strong>Refunds</strong> are a first-class transaction type. Checkout webhooks explicitly fire on refund state changes — the strongest refund automation story of any gateway examined. This is genuine engineering investment.</p>
+  <p><strong>Webhooks</strong> use HMAC-SHA256, opt-in via a self-service dashboard toggle (added 21 July 2026), plus IP allowlisting and 30-day exponential-backoff retries.</p>
+  <p><strong>Gaps:</strong> no official Node/TypeScript server SDK. NPO eligibility and onboarding process are unconfirmed. The company's marketing emphasises enterprise deployments.</p>
+
+  <h3 class="vendor-name">Paystack (the Council's Second Named Candidate, July 2026)</h3>
+  <p>Paystack operates in South Africa and is owned by Stripe, but is a separate product. <strong>The Council would not receive Stripe's product roadmap, support desk or reliability guarantees.</strong> Do not assume a "Stripe reliability halo".</p>
+  <p><strong>Pricing</strong> (local South African rates, ex-VAT, plus 15% VAT):</p>
+  <ul>
+    <li>Local cards: 2.9% + R1.00</li>
+    <li>International cards: 3.1% + R1.00</li>
+    <li>Capitec Pay and Ozow EFT: 2% flat</li>
+    <li>R1 minimum waived under R10</li>
+    <li>Payouts: R3</li>
+    <li>No monthly or setup fee</li>
+    <li>Settlement: T+2 business days, ZAR throughout</li>
+  </ul>
+  <p><strong>Refunds</strong> are the best-documented of all candidates. Full and partial refunds are supported, multiple partial refunds against one transaction are permitted, and five webhook events are fired including one that fires when bank details need manual supply. Buyers may wait up to 10 business days for settlement.</p>
+  <p><strong>Gaps:</strong> no NPO/PBO guidance in the public documentation. No statement on event ticketing as an allowed use case. Must be asked directly.</p>
+</section>
+
+<section id="s4">
+  <h2><span class="num">4</span>Ruled Out — and Why</h2>
+
+  <p><strong>FNB, Standard Bank, Absa, Nedbank</strong> (direct merchant accounts): all require an ongoing business-banking relationship with pricing behind a sales process or PDF. SAOC transacts once every three years; these are not the right shape for a body with that cadence.</p>
+
+  <p><strong>Adumo:</strong> pricing gated behind "schedule a demo". Investor materials confirm a subscription-fee component. Support docs state refunds are executed by the merchant's own bank, not Adumo — an extra dependency and support burden. Skip this one.</p>
+
+  <p><strong>DPO Pay / PayGate:</strong> same corporate parent as PayFast (Network International). PayGate is the gateway-only model for merchants with their own bank merchant account, sold at negotiated prices. This is not an independent alternative; it is a different product shape for a different merchant profile. PayFast is the right product for SAOC.</p>
+
+  <p><strong>Stripe:</strong> cannot be used by a South African entity. Stripe declined a prospective South African merchant directly with this limitation.</p>
+
+  <p><strong>PayPal:</strong> cannot hold or receive ZAR. Requires a foreign-currency balance and a bank bridge with FX cost. Not viable for SAOC's revenue model.</p>
+
+  <div class="callout danger">
+    <p class="callout-label">Real operational risk — BNPL</p>
+    <p><strong>BNPL providers</strong> (PayFlex, PayJustNow, Mobicred as a plan): fee premiums are unjustified at the R150–R1500 ticket price point. PayJustNow's terms state that if a merchant refunds a buyer <em>directly</em> (cash, voucher, or EFT), the buyer still owes every remaining instalment. A volunteer refunding cash at the door during the Show could inadvertently leave a member paying off a ticket they returned. Recommend not enabling BNPL.</p>
+  </div>
+</section>
+
+<section id="s5">
+  <h2><span class="num">5</span>Refunds — A Cross-Cutting Technical Reality</h2>
+
+  <h3>The structural point</h3>
+  <p>The cheapest payment rails are the hardest to refund. This is not a vendor choice; it is a property of the payment system.</p>
+  <p>Card networks (Visa, Mastercard, American Express) have built-in reversal flows — they are designed for refunds. Bank-push payments (Instant EFT, Capitec Pay, PayShap) are cheap because no card network sits behind them. The absence of a network is also why money does not flow backwards easily.</p>
+
+  <h3>Fund availability — a sector-wide constraint</h3>
+  <p>Both PayFast and Ozow require funds to be available to process refunds. This is not a distinguishing weakness of either provider; it is a sector-wide characteristic.</p>
+  <ul>
+    <li><strong>PayFast</strong> deducts refunds first from held Sale Proceeds; if insufficient, Clause 11.10 reserves PayFast's discretion to debit the merchant's bank account for the shortfall. However, Clause 11.10 also states PayFast may refuse a refund "unless amount to be so refunded has been deposited by you into the Bank Account" — effectively the same failure mode as Ozow's: insufficient funds = refund blocked.</li>
+    <li><strong>Ozow</strong> holds a pre-funded float and refuses refunds if the float is empty. Both refund costs (R3 fee, and the original transaction fee not returned) must be covered by the float.</li>
+  </ul>
+  <p><strong>Honest assessment:</strong> neither is cleanly better. Both require available funds. Whichever gateway is chosen, the Council must manage its float (or bank balance) with enough buffer to cover anticipated refund costs.</p>
+
+  <h3>Rail-specific constraints</h3>
+  <ul>
+    <li><strong>Capitec Pay cannot be reversed.</strong> Capitec's own words: once approved it cannot be cancelled or reversed. Contact the merchant. A refund is a new, separate outbound payment.</li>
+    <li><strong>PayShap supports one refund per transaction only</strong> (source: Peach's developer documentation). A partial refund burns the refund allocation for that transaction. Group or family bookings with partial refunds become problematic.</li>
+    <li><strong>Apple Pay and Google Pay</strong> refund normally via card rails. Support tip: staff needing to process a refund may require the token's virtual-card last-4, not the physical card's last-4.</li>
+    <li><strong>Zapper has a proper refund API</strong> referencing the original transaction. <strong>SnapScan (standalone QR, outside PayFast) has no confirmed refund path.</strong> Avoid standalone SnapScan for this reason.</li>
+  </ul>
+
+  <h3>Privacy: Ozow's advantage, PayFast's constraint</h3>
+  <p><strong>Ozow refunds require no personal data.</strong> Ozow routes refunds back to the same account that paid, so the Council never needs to collect or store members' bank account details.</p>
+  <div class="callout danger">
+    <p class="callout-label">POPIA burden — PayFast Instant EFT only</p>
+    <p><strong>PayFast card refunds work the same way</strong> — they reverse down the card rail. But <strong>PayFast Instant EFT refunds require the Council to collect and handle the payer's banking details.</strong> The refund request must include account holder name, bank name, branch code, account number and account type. <strong>This means SAOC must retain members' bank details specifically to process EFT refunds, creating a POPIA data-retention obligation that does not apply to other gateways.</strong> For a body with limited IT infrastructure, this is a genuine compliance burden. If SAOC chooses PayFast and sells significant Instant EFT volume, this data-handling workflow must be auditable and properly governed (see section 9 on POPIA).</p>
+  </div>
+
+  <h3>SAOC's own system — a gap</h3>
+  <p><strong>The Council's system today cannot represent a refund.</strong> Verification: the word "refund" appears nowhere in the codebase (<code>app/</code>, <code>lib/</code>, <code>types/</code>). <code>TicketStatus</code> in <code>types/index.ts:128</code> is <code>'reserved' | 'paid' | 'cancelled' | 'checked-in'</code> — there is no refund state.</p>
+  <p>Today, processing a refund means:</p>
+  <ol>
+    <li>Issuing the refund in the gateway's dashboard (or API).</li>
+    <li>Hand-editing the ticket status in Firestore.</li>
+    <li>Documenting the refund somewhere (spreadsheet, email, or not at all).</li>
+  </ol>
+  <p>Nothing links the gateway refund to the Firestore record. A refunded ticket is indistinguishable from one cancelled before payment was ever taken.</p>
+  <p><strong>At what volume does this become a problem?</strong> A rough estimate (not a measurement, not a commitment): each refund takes a volunteer 10–20 minutes. At 20 refunds across a Show, this is 3–7 hours. At 200 refunds (perhaps 10% of the Show's ticket volume), this is 30–65 unpaid hours during the week the Council is running the Show.</p>
+  <p><strong>The ticket system does not need to build this before sales open, but it will need to before ticket sales close.</strong> The window for building it properly is months, not weeks.</p>
+  <p><strong>This is a gap in the Council's system, not a gateway's failure.</strong> Flag it plainly. Whichever gateway is chosen, refund state tracking is a prerequisite for a sustainable operation.</p>
+</section>
+
+<section id="s6">
+  <h2><span class="num">6</span>Selling Tickets vs. Selling Memberships — Why the Use Cases Pull Differently</h2>
+  <p>The Council does two things with payment gateways:</p>
+  <ol>
+    <li><strong>Ticket sales for the Show:</strong> one-off transactions, high volume over a short window, high refund likelihood during a specific period, nearly all refunds happen before the event.</li>
+    <li><strong>Membership billing:</strong> low-volume recurring charges, distributed across the year, members stay or cancel, an easy cancellation mechanism is essential for member retention.</li>
+  </ol>
+  <p>These pull the gateway choice in opposite directions. Ticket sales favour cheap payment rails (EFT, bank access). Memberships favour recurring-billing infrastructure and ease of enrollment.</p>
+  <p>A gateway strong on one is often weak on the other.</p>
+  <p><strong>PayFast supports both.</strong> Its subscriptions API is documented. Recurring billing and tokenised card-on-file are native.</p>
+  <p><strong>Yoco does not support recurring billing at all.</strong> It is disqualified for membership revenue.</p>
+  <p><strong>Ozow supports only Capitec Pay VRP for recurring</strong> (Capitec account holders only), and requires explicit build-out for cancellation workflows.</p>
+  <p><strong>Peach and Paystack</strong> have not been researched for recurring-billing capability.</p>
+  <p>The Council confirmed requiring both, which narrows the field to PayFast and possibly Ozow with architectural workarounds.</p>
+</section>
+
+<section id="s7">
+  <h2><span class="num">7</span>Should SAOC Use a Ticketing Platform Instead?</h2>
+  <p>The Council has built a custom ticket system (reserve, pay, check in). Commercial ticketing platforms (Quicket, uTickets, Webtickets) offer turnkey alternatives.</p>
+  <p>This section is written with candour about a conflict of interest: we built the custom system, so the choice to use a platform partly means abandoning our work.</p>
+
+  <h3>Fee comparison</h3>
+  <div class="table-wrap">
+    <table>
+      <caption>Organiser cost — gateway + custom build vs. platform + embedded gateway, R150 tickets</caption>
+      <thead>
+        <tr><th>Volume</th><th class="num">Custom + gateway</th><th class="num">Quicket NPO</th><th class="num">uTickets</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>200 tickets</td><td class="num">R600</td><td class="num">R1,553</td><td class="num">R2,100</td></tr>
+        <tr><td>500 tickets</td><td class="num">R1,500</td><td class="num">R3,881</td><td class="num">R5,250</td></tr>
+        <tr><td>1,000 tickets</td><td class="num">R3,000</td><td class="num">R7,763</td><td class="num">R10,500</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>At R400 ticket price, 500 tickets:</strong> R4,000 (custom) vs. R10,356 (Quicket) vs. R14,000 (uTickets).</p>
+  <p>Assumptions: gateway fees only; development already spent; no refunds or failed payments modelled; Quicket's R7.50 booking fee included.</p>
+  <p>The custom build is cheaper in rand-per-ticket. A platform is cheaper in volunteer hours.</p>
+
+  <h3>Refunds — where platforms have an advantage</h3>
+  <p><strong>Quicket's refund flow is genuinely better than SAOC's today.</strong> An organiser can refund an order in the Quicket dashboard in 1–2 minutes. Because Quicket holds funds until after the event, pre-event cancellations are refunded from money Quicket already holds — no cash-flow strain, no float management.</p>
+  <p>SAOC's custom system has the refund-state gap documented in section 5.</p>
+  <p><strong>But there is a hidden cost:</strong> Quicket's R7.50 booking fee is never refunded to the member, regardless of whether the order is cancelled. And Quicket applies "refund fees" at the same rate as sale commissions — unless SAOC absorbs that cost and pushes it to the cancelling member.</p>
+
+  <h3>Fund hold — a ticket-sales problem</h3>
+  <p>Every South African ticketing platform (Quicket, uTickets, Webtickets, Howler) holds funds until 2–3 working days <em>after</em> the event. Quicket pays out T+2 or T+3 post-show.</p>
+  <div class="callout">
+    <p class="callout-label">Direct problem for SAOC</p>
+    <p>The Council typically pays a venue deposit weeks before the Show (a non-negotiable requirement from most venues). Ticket revenue must flow fast enough to cover it.</p>
+  </div>
+  <p><strong>Exception:</strong> uTickets offers next-business-day settlement and a pre-event early-withdrawal option. But uTickets is newer and much smaller (R2m processed, ~500 events) — counterparty risk exists that a larger player does not.</p>
+
+  <h3>Memberships — not available on any platform</h3>
+  <p><strong>No South African ticketing platform researched — Quicket, uTickets, Webtickets, Howler, Computicket/TicketPro — offers memberships, subscriptions, or recurring billing.</strong></p>
+  <p>This means the platform route does not replace a gateway; it <em>adds</em> to one. The Council would need:</p>
+  <ul>
+    <li>A platform for one-off ticket sales</li>
+    <li>A separate gateway for membership billing</li>
+    <li>Two merchant relationships</li>
+    <li>Two fee schedules</li>
+    <li>Two places member data lives</li>
+  </ul>
+  <p>This architectural friction favours the custom build, which uses one gateway for both.</p>
+
+  <h3>The honest framing</h3>
+  <p>The custom build is cheaper in rand per ticket. A platform is cheaper in volunteer hours. Which matters more is a Council judgement, not a finance one.</p>
+  <p><strong>Context that dwarfs fee differences:</strong> South African cart abandonment reached 84% in 2025. 62% of consumers who hit a payment failure never return. EFT is the dominant online payment habit in South Africa.</p>
+  <p>A checkout missing a buyer's preferred payment method costs far more than a 2–3% rate difference. The right question is not "which is cheaper?" but "will our members actually use it?"</p>
+</section>
+
+<section id="s8">
+  <h2><span class="num">8</span>VAT — Understanding the Full Cost</h2>
+  <p>Gateway fees are quoted either ex-VAT or incl-VAT, and the pricing pages do not always make this clear. The difference matters.</p>
+
+  <h3>Confirmed ex-VAT</h3>
+  <ul>
+    <li><strong>PayFast:</strong> explicitly labelled "ex VAT" on its fee page. Real cost incl. VAT is 15% higher.</li>
+    <li><strong>Yoco:</strong> 2.95% "ex VAT" — explicitly stated in their help centre. Real cost incl. VAT is 3.39%.</li>
+  </ul>
+
+  <h3>Unconfirmed (assumed ex-VAT, but not labelled)</h3>
+  <div class="callout">
+    <p class="callout-label">Fairness note</p>
+    <ul>
+      <li><strong>Ozow:</strong> pricing page carries no ex/incl-VAT label anywhere. Its terms mention VAT once, on an unrelated AVS fee ("R0.50 excl. VAT"), suggestive of an ex-VAT convention for headline rates, but <strong>not proof</strong>. Critical gap: <strong>if Ozow's rates are VAT-inclusive, Ozow is actually cheaper than any comparison table shown in this paper.</strong> The possible error makes Ozow look worse than it is, not better.</li>
+      <li><strong>Peach:</strong> no ex/incl-VAT label on pricing. Status unknown.</li>
+    </ul>
+  </div>
+
+  <h3>Impact for SAOC</h3>
+  <ul>
+    <li><strong>If SAOC is a registered VAT vendor:</strong> VAT paid on gateway fees is recoverable. Use the ex-VAT figures throughout. On PayFast, a R1,500 card ticket costs R50.00 in ex-VAT fees.</li>
+    <li><strong>If SAOC is not registered:</strong> the full 15% VAT is unrecoverable and applies to the final cost. The same R1,500 card ticket costs R57.50 incl. VAT.</li>
+  </ul>
+  <p><strong>Action required:</strong> confirm SAOC's VAT status with the treasurer. Add "Confirm whether your published rates are ex-VAT or incl-VAT" to the vendor questions for Ozow and Peach (section 11), with an explicit fairness note: if your rates are incl-VAT, the comparison favours you more than shown here.</p>
+</section>
+
+<section id="s9">
+  <h2><span class="num">9</span>Security, Compliance and the Law</h2>
+
+  <h3>Payment Card Industry Data Security Standard (PCI-DSS)</h3>
+  <p><strong>All six vendors claim PCI-DSS compliance. No vendor publishes a certificate number, registrar or expiry date.</strong> This is the norm, not the exception. Before signing, <strong>request the certificate and its scope statement, and verify the vendor via the IAF CertSearch public register.</strong></p>
+  <p>PCI-DSS certifies a <em>management system</em>, not a product. A vendor can be certified for an unrelated part of its business (e.g. the back office) while its payment platform sits outside that scope.</p>
+  <p><strong>SAOC's current setup — hosted redirect (customer sent to PayFast's site) — is the lightest tier: SAQ A.</strong> Card data never touches SAOC's servers. SAOC is responsible for TLS on its domain, session handling, webhook signature validation and admin access control; PayFast is responsible for the card data itself.</p>
+  <p><strong>PCI-DSS v4.0.1 compliance is mandatory as of 31 March 2025.</strong> Two new requirements bite:</p>
+  <ul>
+    <li>6.4.3: Secure payment-page script integrity</li>
+    <li>11.6.1: Tamper detection</li>
+  </ul>
+  <p>These do <em>not</em> apply to full-page redirects (PCI SSC FAQ 1588). If the Council ever considers embedding card fields in an iframe or inline form — do not do this for cosmetic reasons. It jumps compliance to SAQ A-EP with real, ongoing obligations.</p>
+  <div class="callout danger">
+    <p class="callout-label">Hard design constraint</p>
+    <p>Never move the checkout inline without raising this to the Council in writing.</p>
+  </div>
+
+  <h3>POPIA — Protection of Personal Information Act and bank detail handling</h3>
+  <p>SAOC is the <strong>responsible party</strong>. The gateway is an <strong>operator</strong>.</p>
+  <p>Section 21 requires a written contract obliging the operator to maintain section 19 security safeguards — i.e., implement reasonable security measures. <strong>SAOC must obtain and sign such a contract with whichever gateway is chosen.</strong></p>
+  <p>Section 22 places the breach-notification duty on SAOC, not on the gateway. However, the contract should obligate the gateway to notify SAOC <em>immediately</em> on discovering a compromise, so the Council can meet its legal deadline.</p>
+  <div class="callout danger">
+    <p class="callout-label">Special note — PayFast Instant EFT refunds</p>
+    <p>If SAOC processes Instant EFT refunds through PayFast, it must collect and retain members' bank account details (account holder name, bank name, branch code, account number, account type). This creates a POPIA data-retention obligation. SAOC's data-handling procedures must be auditable and comply with section 19's security requirements. This obligation does not exist for other gateways (Ozow, Yoco, Peach, Paystack), which handle refunds without requiring member banking details. If SAOC chooses PayFast and enables Instant EFT refunds, this workflow must be properly governed.</p>
+  </div>
+
+  <h3>ISO 27001</h3>
+  <p><strong>All vendors claim ISO 27001. No vendor publishes a certificate number, registrar or scope.</strong></p>
+  <p>ISO 27001 certifies an information-security management system. Vendors can be certified for unrelated activities. Request the certificate and its scope statement, and verify via the IAF CertSearch register.</p>
+
+  <h3>SOC 2</h3>
+  <p>SOC 2 is a US audit report, not a certificate. It is rare among South African gateways. Do not expect it.</p>
+
+  <h3>What no certification covers</h3>
+  <p>Regardless of the gateway's own certifications:</p>
+  <ul>
+    <li>SAOC is responsible for TLS on saoc.co.za</li>
+    <li>SAOC is responsible for session handling and admin access control</li>
+    <li>SAOC is responsible for webhook signature validation</li>
+    <li>SAOC is responsible for any personal data stored in Firestore (member names, email addresses, phone numbers)</li>
+  </ul>
+  <p>The gateway's PCI-DSS or ISO 27001 cert does not transfer these obligations.</p>
+
+  <h3>Refund law — cooling-off rights</h3>
+  <p>South African law gives some online buyers a right to cancel. The Council needs to know the boundary.</p>
+  <p><strong>The Consumer Protection Act, section 16 (direct marketing):</strong> a 5-day cooling-off right applies to distance contracts. But this applies only to direct marketing (unsolicited offers). A ticket purchase a member initiates themselves is not direct marketing. Section 16 does not apply.</p>
+  <p><strong>The Electronic Communications and Transactions Act, section 44 (ordinary online purchases):</strong> a 7-day cooling-off right covers ordinary online transactions.</p>
+  <p><strong>But section 42(2)(j) excludes leisure services supplied on a specific date.</strong> A Show ticket for a fixed date falls inside that exclusion.</p>
+  <p><strong>The practical outcome:</strong> no statutory cooling-off right applies to Show tickets under either Act. SAOC's own cancellation policy governs, under the Consumer Protection Act, section 17 (reasonable cancellation charges).</p>
+  <p>Section 17 allows the merchant to impose a cancellation charge if it is <em>reasonable</em>. Regulation 5(3) sets reasonableness factors: notice given, ability to resell, actual costs incurred.</p>
+  <p>Section 17(5) forbids <em>any</em> cancellation fee where the ticket-holder has died or been hospitalised.</p>
+  <div class="callout">
+    <p class="callout-label">Important caveat</p>
+    <p>This synthesis is based on primary legal texts (the Consumer Protection Act and the ECTA) and represents a careful reading, not a lawyer's opinion. <strong>The Council must have an attorney review this before publishing a refund policy.</strong></p>
+  </div>
+
+  <h3>Chargeback implications</h3>
+  <p><strong>Instant EFT and bank-access payments cannot be charged back.</strong> No consumer dispute mechanism exists.</p>
+  <p>This is good news for SAOC (no chargeback fees, no fraud losses). But it means a member refused a refund has no bank-mediated recourse. <strong>The Council's own good faith is the only protection a member has.</strong> This is an argument for a generous, clearly published refund policy.</p>
+
+  <h3>Recommendation for SAOC's refund policy</h3>
+  <p>Recommend a published policy that:</p>
+  <ol>
+    <li>States clearly that no statutory cooling-off applies.</li>
+    <li>Sets a sliding-scale cancellation fee justified by real costs (e.g. venue deposit lost, catering order placed, staff time).</li>
+    <li>Waives all fees if the member has died or been hospitalised.</li>
+    <li>Commits to a full unconditional refund if SAOC cancels or postpones the Show.</li>
+    <li>States refund timelines separately per payment method (because Capitec Pay refunds take longer than card refunds, etc.).</li>
+  </ol>
+</section>
+
+<section id="s10">
+  <h2><span class="num">10</span>Risks to Resolve Before Going Live</h2>
+  <ol>
+    <li><strong>PayFast Clause 9.8</strong> — the 540-day retention clause must be raised with PayFast in writing. The Council needs a commitment on this before sales open. Without it, SAOC faces the risk of event revenue being held indefinitely while outstanding balance-sheet disputes are resolved.</li>
+    <li><strong>PayFast refund automation</strong> — there is no refund webhook, so refund status must be polled rather than pushed via a callback. The refund API exists and is straightforward to integrate (same signature scheme as the existing ITN handler), but active polling adds a small operational burden at high refund volume.</li>
+    <li><strong>SAOC's refund-state tracking</strong> — the system cannot represent a refunded ticket. Upgrade this before ticket sales close (documented in section 5).</li>
+    <li><strong>Ozow's settlement timing</strong> — if Ozow is chosen as a second option, obtain written confirmation of settlement timing for each payment method.</li>
+    <li><strong>Ozow's non-profit onboarding</strong> — if Ozow is chosen, confirm the entity type SAOC would use and required documents in writing.</li>
+    <li><strong>Ozow's fund-float mechanics</strong> — if Ozow is chosen, understand float top-up workflows before sales open.</li>
+    <li><strong>International card acceptance</strong> — if Ozow is chosen, ensure the Card Payments product is explicitly activated.</li>
+    <li><strong>Bank-access status</strong> — if Ozow is chosen, ask which banks are credential-free today (section 11). The company is actively migrating; coverage is expanding month to month.</li>
+    <li><strong>Compliance certificates</strong> — for any gateway chosen, request PCI-DSS and ISO 27001 certificates and verify them via IAF CertSearch before signing.</li>
+    <li><strong>POPIA operator agreement</strong> — for any gateway chosen, ensure a written POPIA operator agreement is signed, obligating the gateway to notify SAOC on detecting a breach.</li>
+    <li><strong>Legal review</strong> — have an attorney review SAOC's refund policy and its legal position under the Consumer Protection Act and ECTA before publishing it.</li>
+  </ol>
+</section>
+
+<section id="s11">
+  <h2><span class="num">11</span>Questions to Put to the Vendors</h2>
+  <p>Use this numbered list to email each vendor. Copy-paste format.</p>
+
+  <div class="vendor-block">
+    <h4>To Ozow</h4>
+    <ol>
+      <li>Which banks are currently credential-free under your current API or OAuth implementation? (As at today's date.)</li>
+      <li>For the remaining banks (those still using the online-banking-login flow), what is your timeline for OAuth migration?</li>
+      <li>Can SAOC enable the "Card Payments" product (for international cards) while disabling the generic "Pay By Bank" product, to give members a choice of which banks to use?</li>
+      <li>Can we see the Integration Manual before we commit to a merchant account?</li>
+      <li>What entity type and FICA documents would SAOC need to provide to sign up as a national council?</li>
+      <li>Does Ozow hold any reserve or fund-hold against merchant accounts? If yes, under what circumstances, and for how long?</li>
+      <li>What is the real settlement timing for cards vs. EFT vs. bank-access payments? (Your public materials state three different figures; we need clarity.)</li>
+      <li>Does the Refunds API emit a webhook when a refund is processed?</li>
+      <li>How does the pre-funded float top-up work? What happens if the float is empty during high-volume refund activity?</li>
+      <li>Can you provide a PCI-DSS certificate with certificate number, registrar, and expiry date?</li>
+      <li>Can you provide an ISO 27001 certificate with certificate number, registrar, and scope statement?</li>
+      <li>Will you sign a POPIA operator agreement obligating you to notify SAOC immediately on detecting a data breach?</li>
+      <li>Confirm whether your published fees (2.85% for local cards, 1.5% for EFT, etc.) are ex-VAT or incl-VAT. (Important: if your rates are incl-VAT, you are actually cheaper than this paper shows.)</li>
+      <li>What is your chargeback fee (for chargebacks that do apply to card payments)?</li>
+      <li>When a refund is issued, is the original transaction fee returned to the merchant?</li>
+    </ol>
+  </div>
+
+  <div class="vendor-block">
+    <h4>To PayFast</h4>
+    <ol>
+      <li>Under what circumstances would you apply Clause 9.6 or 9.8 (fund hold) to a merchant account selling Show tickets? Specifically: if SAOC takes payment 4 weeks before the Show but delivers the ticket immediately (digitally), would the clock start on payment date or on the Show date?</li>
+      <li>We need this in writing as a term of service, not as an assurance. Can you provide a commitment?</li>
+      <li>Confirm the Refunds API (<code>GET /refunds/query/</code>, <code>POST /refunds/</code>, <code>GET /refunds/</code>) is as documented at <code>https://api.payfast.co.za/refunds/</code>, and whether webhooks are available for refund status changes.</li>
+      <li>Will you sign a POPIA operator agreement obligating you to notify SAOC immediately on detecting a data breach?</li>
+      <li>Confirm whether your published fees (3.2% + R2.00 for cards, 2.0% for Instant EFT, etc.) are ex-VAT or incl-VAT.</li>
+      <li>Can you provide a PCI-DSS certificate with certificate number, registrar, and expiry date?</li>
+      <li>What is your chargeback fee?</li>
+      <li>When a refund is issued, is the original transaction fee (e.g. the R2.00 on a card refund) returned to the merchant?</li>
+    </ol>
+  </div>
+
+  <div class="vendor-block">
+    <h4>To Yoco</h4>
+    <ol>
+      <li>Event ticketing (one-off ticket sales for a three-day Show) — is this an allowed use case under your terms? Can you confirm in writing?</li>
+      <li>The Checkout API documentation does not mention recurring billing or subscriptions. Is this a confirmed limitation, or does a separate API exist for memberships?</li>
+      <li>Can you provide a PCI-DSS certificate with certificate number, registrar, and expiry date?</li>
+      <li>What is your chargeback fee?</li>
+      <li>When a refund is issued, is the original transaction fee returned to the merchant?</li>
+    </ol>
+  </div>
+
+  <div class="vendor-block">
+    <h4>To Peach Payments</h4>
+    <ol>
+      <li>Does your offering support recurring billing or subscriptions for memberships?</li>
+      <li>The Checkout Webhook documentation mentions state changes including "refund" events. Can you confirm that Peach Checkout refunds are fully supported (not beta)?</li>
+      <li>Confirm whether your published fees (2.95% for cards, 1.50% for bank access, etc.) are ex-VAT or incl-VAT.</li>
+      <li>Can you provide a PCI-DSS certificate with certificate number, registrar, and expiry date?</li>
+      <li>What is your chargeback fee?</li>
+      <li>When a refund is issued, is the original transaction fee returned to the merchant?</li>
+    </ol>
+  </div>
+
+  <div class="vendor-block">
+    <h4>To Paystack</h4>
+    <ol>
+      <li>Event ticketing (one-off ticket sales for a three-day Show) — is this an allowed use case under your terms of service? Can you confirm in writing?</li>
+      <li>Does your offering support recurring billing or subscriptions for memberships?</li>
+      <li>Can you provide a PCI-DSS certificate with certificate number, registrar, and expiry date?</li>
+      <li>What is your chargeback fee?</li>
+      <li>When a refund is issued, is the original transaction fee returned to the merchant?</li>
+    </ol>
+  </div>
+</section>
+
+<section id="s12" class="appendix">
+  <h2><span class="num">12</span>What Is Not Yet Verified — Appendix</h2>
+  <ul>
+    <li><strong>VAT basis (Ozow and Peach):</strong> Ozow's and Peach's pricing pages do not label their rates as ex-VAT or incl-VAT. PayFast and Yoco are confirmed ex-VAT. For Ozow and Peach, clarification is needed via the vendor questions in section 11. Fairness note: if either is incl-VAT, they are actually cheaper than comparison tables in this paper show.</li>
+    <li><strong>Peach recurring billing:</strong> Peach's offering has not been researched for recurring-billing capability. Before using Peach as a membership processor, this must be confirmed.</li>
+    <li><strong>Paystack recurring billing:</strong> same gap.</li>
+    <li><strong>Yoco API reference:</strong> the Checkout API reference has not been read end-to-end. Estimated engineering time to migrate from PayFast to Yoco is "weeks", not "months", but this is an estimate. The right time to test this is the start of the next build cycle, not weeks before a Show.</li>
+    <li><strong>Peach / Paystack NPO onboarding:</strong> eligibility and documentation requirements for non-profit entities are unconfirmed. Must be asked directly.</li>
+    <li><strong>Capitec Pay VRP cancellation workflows:</strong> how a member cancels a VRP mandate in their banking app, and how SAOC is notified, has not been verified with the vendor. The outline (cancellation in banking app, notification after the fact) comes from SAOC's own integration knowledge, not Capitec.</li>
+    <li><strong>All PCI-DSS and ISO 27001 claims:</strong> every vendor claims compliance but publishes no certificate. This is normal but must be verified before signing.</li>
+    <li><strong>PayFast merchant agreement reserve clause:</strong> could not be located. Assumed non-existent, but unconfirmed. Must be requested.</li>
+    <li><strong>Ozow merchant agreement:</strong> could not be located for review before committing. This is a material unknown.</li>
+    <li><strong>Ozow's fraud record:</strong> self-reported as "no fraud incidents since 2014 launch". Independent verification does not exist.</li>
+    <li><strong>Hellopeter reviews:</strong> Ozow's Hellopeter rating (2.1/5 on 7 reviews) is a small sample, consumer-side, and self-selected. Do not weight this heavily, but do investigate independent merchant testimonials.</li>
+    <li><strong>Refund fee recovery:</strong> it is not confirmed from Ozow's published materials whether the R3 refund fee is deducted from proceeds or is a separate charge. Source is a reseller's published copy of merchant terms, marked as strong but not verbatim-confirmed for direct merchants.</li>
+  </ul>
+</section>
+
+<footer class="doc-footer">
+  <p>This paper draws on research conducted in two phases: June–July 2026 (initial survey) and August 2026 (vendor clarification and public-materials review). Pricing, policies and feature availability are current as at 14 August 2026 and are subject to change without notice.</p>
+  <p>Developers' conflicts of interest are noted in section 3 (Ozow / Yoco / Peach / Paystack costs are estimated, not measured, because we built the custom system) and section 7 (the fee comparison is our work vs. theirs).</p>
+  <p>Questions or requests for clarification: contact the developer team.</p>
+</footer>
+
+</div>
