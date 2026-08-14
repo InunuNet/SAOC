@@ -226,3 +226,36 @@ become the cheapest of all** — reversing a recommendation already revised twic
 Also unverified, from a third-party source (a ChatGPT session), currently NOT evidence:
 Paystack "2.9% + R1, no monthly fees, free payouts"; Peach "R200/month tokenisation charge".
 Agent `npo-pricing` is verifying all of the above against live sources.
+
+## NPO PRICING — RESULT
+
+**Only PayFast has a non-profit product.** Ozow, Yoco, Peach and Paystack all confirmed to have
+NO NPO tier — a non-profit pays their standard published rate.
+
+**PayFast Cause Account: two unknowns, both must go to PayFast.**
+1. Does the reduced rate apply to TICKET SALES or only DONATIONS? Unresolved from public sources.
+   All marketing frames it as donations/fundraising; one KB article says "donations and/or
+   payments", which leaves it open. NOT assumed either way.
+2. What IS the rate? Not published. PayFast's live fees page has no Cause line. The only figure
+   in writing anywhere is a one-day #GivingTuesdaySA promo from 27 Nov 2018 (1.5% ex VAT) — not
+   a standing rate.
+
+**MY ERROR, corrected.** I had been adding Ozow's "R1" as a per-transaction fee. In the source
+table that R1 sits under a column headed **Minimum** — a floor for tiny payments, not an addition.
+On a R500 ticket, 2.85% = R14.25 already exceeds it. Corrected figures below.
+
+**Verified standard rates per R500 card ticket, ex-VAT (all fetched live 2026-08-14):**
+Ozow R14.25 (2.85%) · Paystack R15.50 (2.9%+R1) · Peach R16.25 (2.95%+R1.50) ·
+Yoco R16.75 (2.95%+R2) · PayFast R18.00 (3.2%+R2)
+
+**Corrected R1,000,000 worked example (2,000 × R500), VAT included:**
+- Card: Ozow R32,775 vs PayFast R41,400 — **R8,625 gap** (was stated as R6,325)
+- Bank transfer: Ozow R17,250 vs PayFast R23,000 — **R5,750 gap** (was R3,450)
+- 60/40 mix: Ozow R26,565 vs PayFast R34,040 — **R7,475 gap** (was R5,175)
+
+**Third-party claims resolved:** PayFast 3.2%+R2 CONFIRMED (own fees page). Peach R200/month
+tokenisation CONFIRMED (3 independent sources; Peach's own fees page failed through Alembic
+twice — tool failure, not evidence about Peach). Paystack 2.9%+R1, no monthly fee, free payouts,
+annual subscriptions — ALL CONFIRMED, current, ex-VAT.
+
+**Still open:** Ozow's VAT basis is unlabelled (pre-existing, unchanged).
