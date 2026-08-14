@@ -489,6 +489,37 @@ not spend verification budget re-proving them.
    that way if the evidence supports it, and keep the time constraint visibly separate from the
    sunk-cost argument the paper was correctly criticised for.
 
+## Evidence gathered after this mission was written — READ BEFORE VERIFYING ANYTHING
+
+All of it is tracked in `docs/research-evidence/` (scratch is gitignored and gets purged):
+- `session-state-2026-08-14.md` — the running record of every correction, with sources.
+- `ozow-merchant-terms-v1.2026.md`, `payfast-general-terms.md` — the two contracts verbatim.
+- `ozow-teardown.md`, `payfast-teardown.md`, `yoco-teardown.md` — nine sections each, same shape.
+- `merchant-evidence.md` — merchant-side experience + certification registry attempts.
+- `npo-pricing.md` — non-profit tiers across all five providers.
+- `exclusions-writeup.md` — all 13 providers, why in or out.
+
+Corrections already made and verified — do NOT re-derive, just confirm they hold:
+1. **Ozow's "R1" is a MINIMUM, not a per-transaction addition.** I had been adding it. On a R500
+   ticket 2.85% = R14.25 already clears the floor. Every figure in the worked example was
+   recomputed; the gaps WIDENED in Ozow's favour (card R8,625, EFT R5,750, mix R7,475 incl VAT).
+2. **Verified standard rates per R500 card ticket ex-VAT** (all fetched live 2026-08-14):
+   Ozow R14.25 · Paystack R15.50 · Peach R16.25 · Yoco R16.75 · PayFast R18.00.
+3. **Only PayFast has an NPO tier** (Cause Account). Rate unpublished; applicability to ticket
+   sales vs donations UNRESOLVED. Both are questions for PayFast, not assumptions.
+4. **Yoco supplies card machines**; Ozow and PayFast are online-only. Material for a three-day
+   show with door and stall sales. Added as a comparison row.
+5. **Peach was never disqualified on evidence** — next-day settlement, refund webhooks, SHA256,
+   ~R16.25/ticket. It fell out on two unknowns, same as Yoco.
+6. **Non-profit onboarding is not a discriminator.** Every gateway onboards NPOs under some
+   category; absence of a named path on a website is not a barrier. Removed as a strike throughout.
+7. **Review counts are the finding**: Hellopeter 12-month — Yoco 353, PayFast 108, Ozow 7. Seven
+   reviews is an empty page, not a bad score. PayFast splits ~52% one-star across 108.
+8. **No certification independently verified** — Visa, Mastercard and IAF registries were all
+   unreachable through Alembic. That is a tool limitation, NOT a finding against any vendor.
+9. **Refunds demoted from decider to mechanics** — all three require funds available, volume will
+   be tiny, and manual EFT refunds by a committee member need nothing built.
+
 ## What good looks like
 
 A list Brad can act on in an hour, ordered by what would embarrass us or mislead the Council if it
