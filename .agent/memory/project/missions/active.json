@@ -1,8 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-08-14-gateway-rubric.md",
+  "mission": ".agent/memory/project/missions/2026-08-14-admin-auth-hardening.md",
   "checkpoint": {
     "milestone": null,
     "feature": null
   },
-  "activated_at": "2026-08-14T18:17:07.618140+00:00"
+  "activated_at": "2026-08-14T22:12:35.155263+00:00"
 }

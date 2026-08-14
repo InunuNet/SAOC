@@ -1,0 +1,160 @@
+schema: athanor.contract/v1
+slug: admin-auth-f3-provisioning
+goal: >-
+  Mission admin-auth-hardening, milestone M1, feature F3 only. A repeatable, scripted way to
+  grant and revoke admin access — scripts/admin-grant.ts, scripts/admin-revoke.ts,
+  scripts/admin-list.ts — plus docs/admin-access.md extended with the grant/revoke/verify
+  procedure and a documented (not scripted) note on disabling self-signup at the Identity
+  Platform level. Sibling to contracts/contract-admin-auth-hardening.yaml (F1+F2, gate green
+  12/12) — does not modify lib/admin-auth.ts, which already correctly wires checkRevoked in
+  both verifySessionCookie and verifyIdToken (confirmed by inspection before this contract was
+  written; F1/F2's own A-STATE-02 already proves it live). F4-F6 (sign-in providers, human
+  verification) are separate, later contracts. Full context and design decisions:
+  contracts/golden/admin-auth-f3-provisioning/README.md and
+  .agent/memory/scratch/f3-architect-plan.md.
+created_at: '2026-08-15'
+autonomy: high
+
+# ---------------------------------------------------------------------------
+# HOW THIS CONTRACT IS VERIFIED
+# ---------------------------------------------------------------------------
+# Every grant/revoke assertion below runs the ACTUAL SCRIPT (scripts/admin-grant.ts,
+# scripts/admin-revoke.ts) as a real child process via `pnpm exec tsx`, never a test helper
+# that merely calls the same Admin SDK methods the script happens to call — see
+# contracts/checks/admin-auth-f3-provisioning/_shared.mjs `runScript()`. A-REVOKE-01 additionally
+# proves the effect over real HTTP against the running server, reusing the isolated production
+# build F1/F2's contract already owns (server-ctl.sh), not a second server.
+#
+# SERVER UNDER TEST — reused, not duplicated. A0 below runs
+# contracts/checks/admin-auth-hardening/server-ctl.sh (relative path from this contract's own
+# checks directory) exactly as contract-admin-auth-hardening.yaml does: rsyncs the current
+# working tree into an isolated scratch directory, builds, and starts a production server on
+# http://127.0.0.1:3400. A-STOP tears it down. Override with ADMIN_AUTH_CHECK_BASE_URL to point
+# at an already-running server instead (skip A0/A-STOP in that case) — same env var name F1/F2
+# uses, read by the same _shared.mjs helper this contract re-exports.
+#
+# PRECONDITIONS (the ones the gate genuinely cannot satisfy itself):
+#   1. .env.local present at the repo root: NEXT_PUBLIC_FIREBASE_API_KEY,
+#      FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL, FIREBASE_ADMIN_PRIVATE_KEY.
+#   2. ADMIN_EMAIL_ALLOWLIST in that SAME .env.local must include BOTH:
+#        - the value of ADMIN_AUTH_F3_CHECK_ALLOWLISTED_EMAIL (default
+#          admin-auth-f3-check-allowlisted@saoc.co.za) — required by A-REVOKE-01.
+#        - F1/F2's own ADMIN_AUTH_CHECK_ALLOWLISTED_EMAIL (default
+#          admin-auth-check-allowlisted@saoc.co.za) — NOT required by this contract directly,
+#          but if F1/F2's contract runs in the same server process (likely, since A0 here reuses
+#          F1/F2's server-ctl.sh script and may find its server already up), both addresses
+#          need to be live for both contracts to pass in the same session. See
+#          contracts/golden/admin-auth-f3-provisioning/README.md "Design decisions" #5 for why
+#          these are deliberately TWO addresses, not one shared fixture.
+#      Missing either makes the relevant check fail with a 403 that LOOKS IDENTICAL to a real
+#      script defect — verify the allowlist first.
+#
+# FIXTURES AND CLEANUP: every Firebase Auth user these checks create is deleted in a finally,
+# whether assertions pass or fail. Nothing here leaves a standing privileged account. See
+# README.md "Fixture accounts this contract's checks create and destroy".
+#
+# ORDERING: contract.py executes this phase's checks sequentially in FILE ORDER. A0 (server
+# start) is listed first, A-STOP last. A-GRANT-01 and A-REVOKE-02 have no server dependency and
+# could in principle run before A0, but are kept after it for a single predictable order and to
+# match F1/F2's own convention.
+
+features:
+  - id: F3
+    name: >-
+      Admin account provisioning - documented, repeatable grant and revoke, including
+      immediate session termination on revoke
+    status: pending
+
+goldens:
+  - contracts/golden/admin-auth-f3-provisioning/README.md
+  - contracts/golden/admin-auth-f3-provisioning/provisioning-scripts.golden.md
+  - contracts/golden/admin-auth-f3-provisioning/docs-admin-access-additions.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- server lifecycle: gate-owned, runs first ----------
+    - id: A0-SERVER-START
+      description: >-
+        Starts (or confirms already running) the isolated locally-built production server this
+        contract's HTTP-dependent check (A-REVOKE-01) tests against. Reuses F1/F2's
+        server-ctl.sh directly rather than duplicating it. Same measured cost as F1/F2: ~79s
+        cold, near-instant if another contract in this session already started it.
+      command: bash contracts/checks/admin-auth-hardening/server-ctl.sh start
+      timeout_seconds: 240
+
+    # ---------- grant: fresh-create + idempotency ----------
+    - id: A-GRANT-01
+      description: >-
+        F3 - scripts/admin-grant.ts, run as a real child process, creates a never-before-seen
+        account, sets admin:true, sets emailVerified:true. Re-run on the same email is
+        idempotent - no error, no second account (same uid), same end state. No server
+        dependency (Admin SDK only).
+      command: node contracts/checks/admin-auth-f3-provisioning/check-grant-fixture.mjs
+      timeout_seconds: 90
+
+    # ---------- revoke: the mission's real point ----------
+    - id: A-REVOKE-01
+      description: >-
+        F3 - the core proof. scripts/admin-grant.ts provisions a fixture, a real session cookie
+        is minted and confirmed working, then scripts/admin-revoke.ts is run as a real child
+        process and the SAME cookie is confirmed refused at /admin and /api/admin/tickets
+        immediately (not after 5 days). Also confirms the admin claim reads back false and that
+        a FRESH session-mint attempt for the same identity is refused, proving claim-clearing
+        works independently of session revocation. Requires the ADMIN_EMAIL_ALLOWLIST
+        precondition above.
+      command: node contracts/checks/admin-auth-f3-provisioning/check-revoke-effective.mjs
+      timeout_seconds: 120
+
+    - id: A-REVOKE-02
+      description: >-
+        F3 - revoking an email with no Firebase Auth account behind it is a safe no-op (exit 0,
+        explanatory stdout), never a crash. No server dependency.
+      command: node contracts/checks/admin-auth-f3-provisioning/check-revoke-idempotent.mjs
+      timeout_seconds: 60
+
+    # ---------- structural: scripts exist, use the right SDK, never leak secrets ----------
+    - id: A-STRUCT-01
+      description: >-
+        scripts/admin-grant.ts, scripts/admin-revoke.ts and scripts/admin-list.ts all exist,
+        all import from 'firebase-admin/auth' (never 'firebase/auth', the client SDK), and none
+        of the three calls console.log (or any logging call) on process.env wholesale or on any
+        variable capturing FIREBASE_ADMIN_PRIVATE_KEY or ADMIN_EMAIL_ALLOWLIST. A source grep is
+        appropriate here - this is a structural fact about which SDK is imported and whether a
+        specific literal appears, exactly the kind of fact A-STRUCT-01 in the sibling F1/F2
+        contract also settles by grep, not a behavioural claim standing in for a real test.
+      command: bash contracts/checks/admin-auth-f3-provisioning/check-structural.sh
+      timeout_seconds: 30
+
+    # ---------- docs ----------
+    - id: A-DOCS-01
+      description: >-
+        docs/admin-access.md contains the five required new section headers (see
+        contracts/golden/admin-auth-f3-provisioning/docs-admin-access-additions.golden.md for
+        the exact text and required content per section) and references both provisioning
+        scripts by path, revokeRefreshTokens, and states plainly that disabling self-signup is
+        console-only and unverifiable by an automated check in this repo.
+      command: bash contracts/checks/admin-auth-f3-provisioning/check-docs-complete.sh
+      timeout_seconds: 30
+
+    # ---------- gates ----------
+    - id: A-GATE-01
+      description: strict TypeScript type-check passes
+      command: pnpm type-check
+      timeout_seconds: 300
+    - id: A-GATE-02
+      description: lint passes with zero errors
+      command: pnpm lint
+      timeout_seconds: 300
+
+    # ---------- server lifecycle: gate-owned, runs last, unconditionally ----------
+    - id: A-STOP-SERVER
+      description: >-
+        Stops the isolated production server and removes its scratch build tree, whether the
+        checks above passed or failed. If another contract in this session is still using the
+        same server (started by its own A0), server-ctl.sh's own lock/refcount handling governs
+        - see its header comment. If the gate runner does not itself guarantee teardown on
+        failure, the operator must run
+        `bash contracts/checks/admin-auth-hardening/server-ctl.sh stop` by hand.
+      command: bash contracts/checks/admin-auth-hardening/server-ctl.sh stop
+      timeout_seconds: 30
