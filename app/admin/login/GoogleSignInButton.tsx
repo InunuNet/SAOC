@@ -15,15 +15,17 @@ interface GoogleSignInButtonProps {
 export function GoogleSignInButton({ onClick, disabled, loading }: GoogleSignInButtonProps) {
   return (
     <>
-      <div style={{ margin: '1.5rem 0', textAlign: 'center', color: '#666' }} aria-hidden="true">
-        or
+      <div className="my-6 flex items-center gap-3" aria-hidden="true">
+        <span className="h-px flex-1 bg-rule" />
+        <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">or</span>
+        <span className="h-px flex-1 bg-rule" />
       </div>
       <button
         type="button"
         onClick={onClick}
         disabled={disabled}
         aria-label="Sign in with Google"
-        style={{ width: '100%', padding: '0.5rem 1.5rem' }}
+        className="w-full rounded-sm border border-primary/30 px-4 py-2.5 font-sans text-[14px] font-medium text-primary transition-colors duration-150 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? 'Signing in…' : 'Sign in with Google'}
       </button>

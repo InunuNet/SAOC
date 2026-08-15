@@ -57,6 +57,14 @@ env:
     secret: FIREBASE_ADMIN_PRIVATE_KEY
     availability:
       - RUNTIME
+  # Who may hold admin. Read live per request by lib/admin-auth.ts — an empty or
+  # missing value fails closed for everyone, which is exactly what happened before
+  # this entry existed. Contract-check fixture addresses belong in .env.local only,
+  # never here. See docs/admin-access.md.
+  - variable: ADMIN_EMAIL_ALLOWLIST
+    secret: ADMIN_EMAIL_ALLOWLIST
+    availability:
+      - RUNTIME
   - variable: SANITY_REVALIDATE_SECRET
     secret: SANITY_REVALIDATE_SECRET
     availability:

@@ -11,6 +11,7 @@ import {
 
 import { getFirebaseApp } from '@/lib/firebase';
 import { GoogleSignInButton } from './GoogleSignInButton';
+import { LoginFormFields } from './LoginFormFields';
 
 const SESSION_ERROR_MESSAGE = 'Session creation failed';
 const GENERIC_SIGN_IN_ERROR = 'Sign-in failed. Please try again.';
@@ -100,45 +101,30 @@ export default function AdminLoginPage() {
   const disabled = loading || googleLoading;
 
   return (
-    <main style={{ maxWidth: '400px', margin: '4rem auto', fontFamily: 'sans-serif' }}>
-      <h1>Admin Login</h1>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="email">Email</label>
-          <br />
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={disabled}
-            style={{ width: '100%', padding: '0.5rem' }}
-          />
-        </div>
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="password">Password</label>
-          <br />
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={disabled}
-            style={{ width: '100%', padding: '0.5rem' }}
-          />
-        </div>
-        {error && (
-          <p role="alert" style={{ color: 'red' }}>
-            {error}
-          </p>
-        )}
-        <button type="submit" disabled={disabled} style={{ padding: '0.5rem 1.5rem' }}>
-          {loading ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-      <GoogleSignInButton onClick={handleGoogleSignIn} disabled={disabled} loading={googleLoading} />
+    <main className="flex min-h-screen items-center justify-center bg-parchment px-4 py-16">
+      <div className="w-full max-w-[400px] border border-rule bg-ivory p-8">
+        <span className="eyebrow">Admin</span>
+        <h1 className="mt-4 font-serif text-[28px] font-semibold leading-tight text-ink">
+          Sign in
+        </h1>
+
+        <LoginFormFields
+          email={email}
+          onEmailChange={setEmail}
+          password={password}
+          onPasswordChange={setPassword}
+          error={error}
+          disabled={disabled}
+          loading={loading}
+          onSubmit={handleSubmit}
+        />
+
+        <GoogleSignInButton
+          onClick={handleGoogleSignIn}
+          disabled={disabled}
+          loading={googleLoading}
+        />
+      </div>
     </main>
   );
 }
