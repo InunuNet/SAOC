@@ -94,3 +94,6 @@ documents/from-leeann-drive/
 
 # Locally-trusted dev certificates (mkcert) — never commit private keys
 .certs/
+
+# Playwright CLI session state (browser QA agents)
+.playwright-cli/
