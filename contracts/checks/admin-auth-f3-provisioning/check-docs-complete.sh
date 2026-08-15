@@ -28,8 +28,12 @@ for text in \
   "scripts/admin-grant.ts" \
   "scripts/admin-revoke.ts" \
   "revokeRefreshTokens" \
-  "console-only"; do
-  if ! grep -qF "$text" "$DOC"; then
+  "console-only" \
+  "dangerous against pre-existing accounts" \
+  "--existing" \
+  "creationTime" \
+  "redirect this script's stdout"; do
+  if ! grep -qF -- "$text" "$DOC"; then
     echo "FAIL: $DOC does not mention required text: $text"
     FAIL=1
   fi

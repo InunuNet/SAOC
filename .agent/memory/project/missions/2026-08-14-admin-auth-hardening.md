@@ -4,103 +4,44 @@ slug: admin-auth-hardening
 goal: Close the proven /admin authentication hole, then add Google, Microsoft and
   Apple sign-in safely on top of a working authorisation gate
 created_at: '2026-08-14T13:50:58.639386+00:00'
-started_at: null
-last_active_at: '2026-08-14T16:13:40.463933+00:00'
-status: pending
+started_at: '2026-08-14T22:20:13.696373+00:00'
+last_active_at: '2026-08-15T01:38:55.531418+00:00'
+status: paused
 cost_estimate:
   features: 6
   milestones: 3
   total_calls: 0
 last_checkpoint:
   milestone: M1
-  feature: F2
-  ts: '2026-08-14T16:13:40.463933+00:00'
+  feature: F3
+  ts: '2026-08-15T01:38:55.531418+00:00'
 features:
 - id: F1
   title: Authorisation gate — allowlist or custom claim, enforced server-side, failing
     closed
-  inline_brief: 'PREMISE CORRECTED 2026-08-14 by live test against the deployed host.
-    Five of six surfaces ALREADY check a custom claim (app/admin/page.tsx:24, api/admin/tickets:25,
-    checkin:27, export-csv:32) and correctly return 403 / 307 to a self-registered
-    account. Admin DATA was never reachable. The real gaps are narrower and specific:
-
-    (a) POST /api/admin/session mints a session cookie for ANY valid idToken — measured
-    200 with a cookie issued for a freshly self-registered account. No claim check.
-    (b) app/admin/door/page.tsx is a client component with no server gate and there
-    is no middleware.ts, so the scanner UI renders to anyone unauthenticated (check-in
-    POSTs still 403, so this is UI exposure, not check-in capability). (c) NO ALLOWLIST
-    governs who may hold the admin claim — grant/revoke is undefined. (d) Open self-signup
-    at the Identity Platform level.
-
-    Do not rewrite the five working claim checks for the sake of uniformity; make
-    them read from one shared helper so the allowlist has a single home, and close
-    (a)–(d).
-
-    Approach: a custom claim (e.g. admin:true) set by an out-of-band path, checked
-    server-side on every admin surface, with an explicit allowlist of permitted email
-    addresses as the source of truth for who may hold that claim. Fail CLOSED on every
-    unenumerated state — missing claim, malformed claim, revoked session, claim present
-    but email no longer on the allowlist.
-
-    Surfaces to cover, all of them: app/admin/page.tsx, app/admin/door/page.tsx, app/api/admin/tickets/route.ts,
-    app/api/admin/checkin/route.ts, app/api/admin/export-csv/route.ts, app/api/admin/session/route.ts.
-    Missing one leaves the hole open; the CSV export alone leaks the full buyer list.
-
-    The session route deserves particular thought: it currently mints a session cookie
-    for any valid idToken. Refusing to mint a session for a non-allowlisted identity
-    is the cleanest choke point, but the per-route checks must still exist — defence
-    in depth, not a single gate.'
+  inline_brief: null
   status: done
   milestone: M1
   completed_at: '2026-08-14T16:13:40.201695+00:00'
+  spec: docs/admin-access.md
+  contract: contracts/contract-admin-auth-hardening.yaml
 - id: F2
   title: Adversarial proof that a self-registered account is refused everywhere
-  inline_brief: 'The assertion that closes this mission. A source-grep is NOT evidence
-    — this project has a documented history of false-green assertions, and contracts/contract-d5-admin-dashboard.yaml
-    D5-04 is a live example: it greps for "admin" plus "claim|role|verifySessionCookie"
-    in one file, which cannot distinguish a real authorisation check from an incidental
-    mention. It passed throughout. Replace it as part of this feature.
-
-    A MEASURED BASELINE now exists (2026-08-14, deployed host): session route 200
-    + cookie issued, /api/admin/tickets 403, /api/admin/export-csv 403, /admin 307
-    to login, /admin/door 200. The test must assert the two failures flip and the
-    four passes STAY passing — a fix that breaks a working gate is a regression.
-
-    Reproduce the original attack exactly: create an account via an unauthenticated
-    POST to identitytoolkit.googleapis.com/v1/accounts:signUp using the PUBLIC web
-    API key, exchange it for a session, then attempt EVERY admin surface over real
-    HTTP and assert each returns 401/403 and no data. Then delete the probe account
-    and assert it is gone.
-
-    The test must also prove the gate does not simply refuse everyone: an allowlisted
-    account must still succeed. A guard that blocks all access passes a refuse-the-attacker
-    test while breaking the product.
-
-    Include a negative control proving the test can FAIL — run it against the current
-    (unfixed) code path or a deliberately weakened gate and confirm it reports failure.
-    A test that cannot fail proves nothing.
-
-    Every check needs an explicit timeout_seconds; the 60s default has caused four
-    live incidents by SIGKILLing checks mid-run.'
+  inline_brief: null
   status: done
   milestone: M1
   completed_at: '2026-08-14T16:13:40.463718+00:00'
+  spec: docs/admin-access.md
+  contract: contracts/contract-admin-auth-hardening.yaml
 - id: F3
   title: Admin account provisioning — a documented, repeatable way to grant and revoke
-  inline_brief: 'Granting admin cannot be "Brad remembers a console click". Needs
-    a documented procedure and a script: add an email to the allowlist, set the claim,
-    and — equally important — REVOKE, including revoking existing sessions so a removed
-    committee member loses access immediately rather than in five days when the cookie
-    expires (SESSION_DURATION_MS is 5 days).
-
-    Consider disabling open self-signup at the Identity Platform level as defence
-    in depth. It is not a substitute for F1 — the allowlist is the real control —
-    but it removes the trivial attack path entirely and costs nothing.
-
-    Document in docs/admin-access.md: who may hold admin, how to grant, how to revoke,
-    and how to verify. The Council will eventually run this without us.'
-  status: pending
+  inline_brief: null
+  status: done
   milestone: M1
+  started_at: '2026-08-14T22:20:13.696193+00:00'
+  completed_at: '2026-08-15T01:38:55.531203+00:00'
+  spec: docs/admin-access.md
+  contract: contracts/contract-admin-auth-f3-provisioning.yaml
 - id: F4
   title: Google sign-in
   inline_brief: 'Cheapest of the three and safe ONLY once F1/F2 are green — before
@@ -166,7 +107,9 @@ milestones:
   - F1
   - F2
   - F3
-  status: pending
+  status: done
+  gate_ran_at: '2026-08-15T01:53:11.619626+00:00'
+  gate_result: pass
 - id: M2
   title: Google, Microsoft and Apple sign-in, on top of a gate that holds
   features:
@@ -179,6 +122,16 @@ milestones:
   - F6
   status: pending
 ---
+
+
+
+
+
+
+
+
+
+
 
 
 

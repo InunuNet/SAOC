@@ -549,3 +549,46 @@ Roughly 7% of a quota window spent on work that had to be redone.
 
 **Rule:** when a deliverable rests on external data, prove the data is retrievable first, per
 source, and record the working route. Then build.
+
+## admin-auth-hardening F3 — a green gate is not a security property (2026-08-15)
+
+M1 (F1 authorisation gate, F2 adversarial refusal proof, F3 provisioning) is fully gated —
+11/11 F3 assertions, 12/12 on F1/F2's contract, milestone gate passed. New:
+`scripts/admin-grant.ts` (with `--existing` gating), `admin-revoke.ts`, `admin-list.ts`;
+`docs/admin-access.md` extended.
+
+1. **A green contract gate proves the tooling did what the spec said, not that the spec was
+   safe.** `admin-grant.ts` passed all 6 original assertions, type-check and lint while setting
+   `admin:true` AND `emailVerified:true` unconditionally — including on PRE-EXISTING accounts.
+   With self-signup still open, an attacker can pre-register an address an operator will later
+   onboard (e.g. `brad@saoc.co.za`) and be silently handed a privileged, "verified" account while
+   the real owner gets nothing (account pre-hijacking). The assertions never exercised that
+   branch — only ever a fresh, never-before-seen email. **Ask what a passing assertion would
+   ALSO pass against, not just what it was written to catch.**
+2. **The golden file was the defect, not the implementation.** The golden explicitly mandated the
+   unconditional `emailVerified` set; @dev built exactly what it was told. The fix correctly
+   routed back to @architect to amend the contract and goldens, not to @dev to patch around them
+   — record this as the correct chain response when adversarial QA fails a faithful build.
+3. **Running beats reasoning, repeatedly.** A build an agent believed was network-blocked ran
+   clean first try outside that agent's sandbox. A new check's own bug (`grep -qF "--existing"`
+   parses the string as a grep flag; needs `grep -qF --`) was only caught because the check was
+   required to prove RED before being trusted. Self-signup-is-open was confirmed directly against
+   the live `accounts:signUp` endpoint (`WEAK_PASSWORD`, not `ADMIN_RESTRICTED_OPERATION`) rather
+   than inferred.
+4. **A stdout substring match cannot prove a security property.** A-GRANT-03's "no reset link
+   printed" check false-positived on prose containing "password reset link" with no actual link —
+   and even a correct substring match would be wrong in principle, because *generating* a reset
+   link is the live credential-reset event whether or not it's printed. Same shape as the
+   already-recorded D5-04 false-green. Open follow-up for @architect, not fixed this session:
+   observe the Admin SDK call itself, not stdout.
+5. **Milestone gate results can depend on what ran immediately before them, not just current
+   state.** `mission.py`'s M1 gate went "no contract found anywhere" → fail again → pass with no
+   code change once the F1/F2 contract had just been run directly. Looks like it reads cached
+   check results rather than re-running; worth a closer look if a milestone gate ever needs to be
+   trusted without a fresh manual run first.
+
+**Open items, not fixed:** disabling self-signup in the GCIP console
+(`console.cloud.google.com/customer-identity/settings?project=saoc-webapp` → "Disable user
+actions") is the actual fix — `--existing` is a guard rail while that stays undone. F4/F5
+(federated sign-in) must treat `emailVerified` as untrustworthy once Google/Apple auto-verify on
+link, since that can flip a pre-existing squatted account's guard. See `backlog.md`.

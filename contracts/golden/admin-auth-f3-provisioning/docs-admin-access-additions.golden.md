@@ -24,13 +24,28 @@ State plainly: admin is for SAOC committee members with an operational need (doo
 ticket export), granted per person, not per role/device. No shared logins.
 
 ### Granting admin access
-Document the command `pnpm exec tsx scripts/admin-grant.ts <email>` and, critically, the
-**two-step nature of granting**: (1) run the script, which creates the account if needed, sets
-the `admin` claim, and marks the email verified; (2) separately add the same email to
-`ADMIN_EMAIL_ALLOWLIST` in Secret Manager (deployed) or `.env.local` (local) — the script
-cannot do step 2 itself. Both steps are required; either alone leaves the person unable to
-reach `/admin`. Reference the existing "empty-allowlist trap" section already in this document
-rather than repeating it.
+Document the command `pnpm exec tsx scripts/admin-grant.ts <email> [--existing]` and,
+critically, the **two-step nature of granting**: (1) run the script, which creates the account
+if needed, sets the `admin` claim, and (only on a fresh account) marks the email verified;
+(2) separately add the same email to `ADMIN_EMAIL_ALLOWLIST` in Secret Manager (deployed) or
+`.env.local` (local) — the script cannot do step 2 itself. Both steps are required; either
+alone leaves the person unable to reach `/admin`. Reference the existing "empty-allowlist trap"
+section already in this document rather than repeating it.
+
+State plainly, using this exact phrase somewhere in the section: self-signup being left open
+makes `scripts/admin-grant.ts` **dangerous against pre-existing accounts** — because the public
+signup endpoint is still reachable (see "Disabling self-signup" below), an email an operator
+means to grant may already belong to someone else's self-registered, unverified account. Explain
+the `--existing` flag as the control for this: the script refuses to touch a pre-existing
+account unless `--existing` is passed, and always prints the account's provenance
+(`creationTime`, provider IDs, current `emailVerified`) before acting — an operator MUST read
+that provenance and confirm it looks like the intended person before ever passing `--existing`.
+State that granting onto a pre-existing account never sets `emailVerified: true` — the script
+only verifies an email it created itself.
+
+State, with this exact phrase, that operators must **not redirect this script's stdout to a
+file** or run it under anything that logs or persists output — the one-time password reset link
+printed on a fresh grant is usable by whoever reads it later, not just the intended recipient.
 
 ### Revoking admin access
 Document `pnpm exec tsx scripts/admin-revoke.ts <email>`, and state explicitly that this

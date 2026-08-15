@@ -810,6 +810,32 @@ the ticket would sit `reserved` forever. Use the deployed host for payment testi
   expose a Refunds API (GET/POST /refunds/:pf_payment_id, same MD5+passphrase auth as the ITN),
   so this is buildable — see docs/payment-gateway-research-2026-08.md.
 
+## admin-auth-hardening — M1 done (2026-08-15)
+
+F1 (authorisation gate), F2 (adversarial refusal proof), F3 (account provisioning) all `done`,
+milestone M1 gated (F1/F2 contract 12/12, F3's own contract 11/11). New scripts:
+`scripts/admin-grant.ts` (grants `admin:true`, `--existing` flag required to touch a
+pre-existing account — see [[learned.md]] "admin-auth-hardening F3"), `admin-revoke.ts`,
+`admin-list.ts`. `docs/admin-access.md` extended. M2 (F4 Google, F5 Microsoft+Apple, F6 TBD) is
+`pending`, mission currently `paused` at the M1/M2 boundary.
+
+- [ ] **[P1, human action, highest value] Disable self-signup on `saoc-webapp`.** This is the
+  actual fix for the account pre-hijacking risk `--existing` only guards against —
+  `console.cloud.google.com/customer-identity/settings?project=saoc-webapp` → "Disable user
+  actions". Confirm via `auth/admin-restricted-operation` on a subsequent `accounts:signUp` probe.
+- [ ] **[P2, design input for F4/F5] Federated sign-in auto-verifies email.** The `--existing`
+  guard in `admin-grant.ts` holds only because `emailVerified` currently requires mailbox
+  control. Google/Apple sign-in sets `emailVerified: true` automatically on link — linking a
+  federated provider to a pre-existing squatted account could flip the guard. F4/F5 must design
+  around this, not just add sign-in buttons.
+- [ ] **[P2] `/admin/login` should handle `auth/admin-restricted-operation` gracefully** once
+  self-signup is disabled above — today the UI has no path for that error code.
+- [ ] **[P2] A-GRANT-03's stdout-grep assertion doesn't prove anything** (see
+  [[learned.md]] item 4) — rewrite to observe the Admin SDK call rather than grep stdout for
+  "reset link".
+- [ ] **[P3, untested] Concurrent grant/revoke race on the same identity** — low likelihood for a
+  manual single-operator CLI, not exercised this session.
+
 - [ ] **[P2, NEW 2026-08-14] Additional sign-in providers — now MISSION admin-auth-hardening (M2). Brad CONFIRMED he holds a paid Apple Developer membership, so Apple is viable.**
   Brad wants Google, Microsoft and Apple. Effort is very uneven: Google is near-zero config;
   Microsoft needs an Azure/Entra app registration (tenant, client id, secret); Apple needs a

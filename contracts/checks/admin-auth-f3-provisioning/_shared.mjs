@@ -29,6 +29,11 @@ export function randomGrantFixtureEmail() {
   return `admin-auth-f3-check-grant-${rand}@saoc-contract-check.invalid`;
 }
 
+export function randomPreExistingFixtureEmail() {
+  const rand = Math.random().toString(36).slice(2, 10);
+  return `admin-auth-f3-check-preexisting-${rand}@saoc-contract-check.invalid`;
+}
+
 export function neverCreatedEmail() {
   const rand = Math.random().toString(36).slice(2, 10);
   return `admin-auth-f3-check-nonexistent-${rand}@saoc-contract-check.invalid`;
@@ -107,6 +112,20 @@ export async function mintIdTokenForUid(uid) {
   const auth = await getAdminAuth();
   const customToken = await auth.createCustomToken(uid);
   return exchangeCustomToken(customToken);
+}
+
+// Creates an account the way a self-registered attacker's would look: password provider,
+// NOT created by scripts/admin-grant.ts, NOT verified, NO custom claims. This is the
+// pre-hijacking / account pre-registration fixture — A-GRANT-02 and A-GRANT-03 run
+// scripts/admin-grant.ts against an account created THIS way, never one the script itself
+// created, to prove the existing-account branch behaves safely when the script cannot know
+// who actually controls the mailbox.
+export async function createPreExistingUnverifiedFixture(email) {
+  const auth = await getAdminAuth();
+  const { randomBytes } = await import('node:crypto');
+  const password = randomBytes(24).toString('base64url');
+  const user = await auth.createUser({ email, password, emailVerified: false });
+  return user.uid;
 }
 
 export async function deleteUserIfExists(email) {

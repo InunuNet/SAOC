@@ -12,6 +12,15 @@ goal: >-
   verification) are separate, later contracts. Full context and design decisions:
   contracts/golden/admin-auth-f3-provisioning/README.md and
   .agent/memory/scratch/f3-architect-plan.md.
+  AMENDMENT (2026-08-15, post-QA): adversarial QA found that the original golden spec required
+  admin-grant.ts to set emailVerified:true unconditionally on EVERY run, including onto a
+  pre-existing account it did not create — a pre-registration/pre-hijacking hole, since
+  self-signup (accounts:signUp) is still open in this project (F1/F2's own
+  check-probe-refused-everywhere.mjs proves it) and F3 is the first code able to promote such an
+  account. Fixed at the design level: admin-grant.ts now requires an explicit --existing flag to
+  act on any pre-existing account, always prints that account's provenance first, and NEVER sets
+  emailVerified on the existing-account branch. See A-GRANT-02/A-GRANT-03 below and the amended
+  provisioning-scripts.golden.md grant section.
 created_at: '2026-08-15'
 autonomy: high
 
@@ -87,10 +96,34 @@ assertions:
     - id: A-GRANT-01
       description: >-
         F3 - scripts/admin-grant.ts, run as a real child process, creates a never-before-seen
-        account, sets admin:true, sets emailVerified:true. Re-run on the same email is
-        idempotent - no error, no second account (same uid), same end state. No server
-        dependency (Admin SDK only).
+        account, sets admin:true, sets emailVerified:true. Re-run on the same email (now taking
+        the pre-existing-account branch, so it is run with --existing) is idempotent - no
+        error, no second account (same uid), same end state. No server dependency (Admin SDK
+        only).
       command: node contracts/checks/admin-auth-f3-provisioning/check-grant-fixture.mjs
+      timeout_seconds: 90
+
+    # ---------- grant: pre-registration / pre-hijacking defence (2026-08-15 amendment) ----------
+    - id: A-GRANT-02
+      description: >-
+        F3 - pre-registration/pre-hijacking defence. Against an account scripts/admin-grant.ts
+        did NOT create (password provider, emailVerified:false - what a self-registered
+        squatter looks like, since the accounts:signUp endpoint is still open), running
+        admin-grant.ts WITHOUT --existing must refuse: exit non-zero, no admin claim set, no
+        emailVerified change, and the account's provenance (creationTime/uid) printed before
+        refusing. No server dependency (Admin SDK only).
+      command: node contracts/checks/admin-auth-f3-provisioning/check-grant-existing-refused.mjs
+      timeout_seconds: 90
+
+    - id: A-GRANT-03
+      description: >-
+        F3 - with the explicit --existing opt-in, granting onto the SAME pre-existing account
+        must succeed (admin:true set) but must NEVER set emailVerified:true on an account the
+        script did not itself create - emailVerified stays false, and no password reset link is
+        printed on this branch. This is the load-bearing fix: even a deliberately-confirmed
+        grant cannot manufacture a verified email for a mailbox the operator does not control.
+        No server dependency (Admin SDK only).
+      command: node contracts/checks/admin-auth-f3-provisioning/check-grant-existing-explicit.mjs
       timeout_seconds: 90
 
     # ---------- revoke: the mission's real point ----------
@@ -133,7 +166,11 @@ assertions:
         contracts/golden/admin-auth-f3-provisioning/docs-admin-access-additions.golden.md for
         the exact text and required content per section) and references both provisioning
         scripts by path, revokeRefreshTokens, and states plainly that disabling self-signup is
-        console-only and unverifiable by an automated check in this repo.
+        console-only and unverifiable by an automated check in this repo. AMENDED 2026-08-15:
+        also requires the literal phrase "dangerous against pre-existing accounts", the
+        --existing flag, creationTime (provenance), and a caveat against redirecting the
+        script's stdout to a file or persistent log (the one-time reset link is readable by
+        whoever reads that output later).
       command: bash contracts/checks/admin-auth-f3-provisioning/check-docs-complete.sh
       timeout_seconds: 30
 

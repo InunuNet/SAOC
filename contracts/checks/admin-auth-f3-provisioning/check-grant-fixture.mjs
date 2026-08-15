@@ -2,6 +2,12 @@
 // never-before-seen email: creates the account, sets admin:true, sets emailVerified:true.
 // Re-run on the SAME email proves idempotency: no error, no second account, same end state.
 // No server dependency — this exercises the Admin SDK directly through the script, not HTTP.
+//
+// The second run passes --existing. This is intentional, not a workaround: the script is
+// stateless and cannot tell "an account I created a moment ago" from "an account someone else
+// created since" (see A-GRANT-02/A-GRANT-03 for the pre-hijacking scenario that distinction
+// exists to defend against), so every re-grant on an already-existing email takes the
+// pre-existing-account branch and requires the same explicit opt-in, uniformly.
 
 import {
   randomGrantFixtureEmail,
@@ -26,8 +32,8 @@ await runCheck('A-GRANT-01 grant script creates, claims and verifies; idempotent
 
     const uidAfterFirst = afterFirst?.uid;
 
-    const second = await runScript('admin-grant', [email]);
-    r.check(second.code === 0, 'second (idempotent) grant run exits 0', `exit ${second.code} — stderr: ${second.stderr.slice(0, 500)}`);
+    const second = await runScript('admin-grant', [email, '--existing']);
+    r.check(second.code === 0, 'second (idempotent) grant run with --existing exits 0', `exit ${second.code} — stderr: ${second.stderr.slice(0, 500)}`);
 
     const afterSecond = await readUserByEmail(email);
     r.check(Boolean(afterSecond), 'user still exists after second grant run');

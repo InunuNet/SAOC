@@ -147,9 +147,88 @@ for the full detail:
   fail with a 403 that is indistinguishable from a real gate defect — this is the same
   trap as #2 above, just hitting the contract's own fixture instead of a real admin.
 
+## Who may hold admin
+
+Admin access is reserved for SAOC committee members who have an operational need to use the admin panel — for door check-in during a national show or to export ticket records. Admin is granted per person, never per role or device. No shared logins. Each account must have a named individual owner.
+
+## Granting admin access
+
+To grant admin access to an email address, run:
+
+```bash
+pnpm exec tsx scripts/admin-grant.ts <email> [--existing]
+```
+
+The script performs two actions:
+1. **Grant the claim** (automatic): sets the `admin: true` custom claim, creates the Firebase Auth account if it does not exist yet (via the Admin SDK, which stays available even after self-signup is disabled at the console level), and on a fresh account, marks the email as verified and prints a one-time password-reset link.
+2. **Add the email to `ADMIN_EMAIL_ALLOWLIST`** (manual, separate step): the script cannot do this itself — `ADMIN_EMAIL_ALLOWLIST` is a live environment variable read by the running server process, not a record these credentials can reach. On the deployed server, add the email to Secret Manager's `ADMIN_EMAIL_ALLOWLIST` value. On your local dev environment, add it to `.env.local`.
+
+**Both steps are required.** The script alone leaves the account unable to reach `/admin`. See the "empty-allowlist trap" section above for how to verify the allowlist was actually updated.
+
+### Fresh accounts (script creates the account)
+
+If no account exists for the email, the script creates it via the Admin SDK, sets the `admin` claim, marks the email verified, and prints a one-time password-reset link. Hand this link to the new admin over a secure out-of-band channel (Signal, a phone call — never email in the clear, never commit or paste it anywhere persistent).
+
+Do not redirect this script's stdout to a file or run it under anything that logs or persists output — the one-time password reset link printed by the script is usable by whoever reads it later, not just the intended recipient.
+
+### Pre-existing accounts: the `--existing` flag
+
+Self-signup being left open makes `scripts/admin-grant.ts` **dangerous against pre-existing accounts**. Because the public signup endpoint (`accounts:signUp`) is still reachable on this project (see "Disabling self-signup" below), an email you intend to grant may already belong to someone else's self-registered account. An attacker could pre-register the real admin's email address and sit on it.
+
+When you run the script against a pre-existing account **without** the `--existing` flag:
+- The script prints the account's provenance: its uid, `creationTime`, provider IDs, and current `emailVerified` status.
+- The script **refuses to mutate anything** — the account is left exactly as found.
+- The script exits with an error.
+
+Before re-running **with** the `--existing` flag, you **must** review that provenance and confirm it looks like the intended person. Check when the account was created (`creationTime`) against when this person actually asked for access — if a pre-existing account was created weeks ago and the person only just requested access now, that's a red flag.
+
+When you pass `--existing`, the script sets the `admin` claim on the pre-existing account but **never** sets `emailVerified: true`. An unverified self-registered account stays unverified, which means it remains refused by `lib/admin-auth.ts` (which requires `email_verified === true`), even though it now holds the `admin` claim. This keeps a self-registered squatter who somehow got the real person's email locked out despite being promoted, until the person themselves can verify the account through a legitimate email verification flow or the admin sets it manually after independently confirming they control that mailbox.
+
+## Revoking admin access
+
+To revoke admin access from an email address, run:
+
+```bash
+pnpm exec tsx scripts/admin-revoke.ts <email>
+```
+
+The script performs two actions:
+1. **Revoke the claim and sessions** (automatic and immediate): sets the `admin` custom claim to an explicit `false` (not removal — a readback shows a deliberate revoke, not an ambiguous "never had one") and calls `revokeRefreshTokens()`, which terminates any existing session cookie immediately. You do not have to wait for token expiry — the session cookie fails at the next `/admin` request because `lib/admin-auth.ts` already calls `verifySessionCookie(cookie, true)` with `checkRevoked: true` on every request.
+2. **Remove from `ADMIN_EMAIL_ALLOWLIST`** (manual, recommended second step for defence in depth): this is optional but recommended. The claim clear and session revoke above already end access on their own, but removing the email from the allowlist provides an additional layer. On the deployed server, remove the email from Secret Manager's `ADMIN_EMAIL_ALLOWLIST` value. On your local dev environment, remove it from `.env.local`.
+
+If no account exists for the email, the script exits cleanly with a message — an operator removing a committee member under time pressure must not be blocked by a typo or a person who never signed up.
+
+## Verifying grant or revoke actually took effect
+
+To audit who currently holds the `admin` claim, run:
+
+```bash
+pnpm exec tsx scripts/admin-list.ts
+```
+
+This read-only command lists every Firebase Auth account currently holding `admin: true`, along with their uid, `emailVerified` status, and `tokensValidAfterTime` (which indicates when tokens were revoked, if they were).
+
+The definitive verification, however, is always the same as for the allowlist: **actually sign in as the account and attempt to reach `/admin`.** For a grant, `/admin` should load. For a revoke, you should see "You can't in" — the gate is working. Trusting a script's exit code alone is not sufficient, because the gate has three independent preconditions (claim, email verification, and allowlist membership), and a script lists only what it was designed to report.
+
+## Disabling self-signup (defence in depth, console-only)
+
+This is a defence-in-depth measure, **not** a substitute for the allowlist and custom claim gate (`lib/admin-auth.ts` already refuses a freshly self-registered account with no claim, proven by the contract check `contracts/checks/admin-auth-hardening/check-probe-refused-everywhere.mjs`).
+
+Disabling open self-signup on `/admin/login` cannot be done via a script in this repository, because:
+
+- The classic Firebase Authentication console toggle for the "Email/Password" provider disables both sign-up and sign-in together, which would also break the admin login page itself.
+- The correct control — the "restrict account creation" setting — lives one level up in the **Google Cloud Identity Platform console**, not the Firebase Authentication panel. It separates sign-up from sign-in, allowing existing accounts to log in while preventing new self-registered accounts.
+- Neither `firebase-admin` nor `firebase-tools` expose a documented, stable API for this setting as of this project's pinned dependency versions. Scripting against an under-documented surface risks a silent no-op — this project has direct history of exactly that failure shape (see `docs/secret-corruption-incidents.md`) — so this remains a manual console step.
+
+To disable self-signup:
+
+1. Navigate to the Identity Platform Settings page directly: https://console.cloud.google.com/customer-identity/settings?project=saoc-webapp
+2. Find the "Disable user actions" setting (also labelled "Restrict account creation" in some versions of the console).
+3. Enable it to prevent new self-registered accounts while keeping existing sign-in functional.
+4. Optionally, review the Email/Password provider configuration: https://console.cloud.google.com/customer-identity/providers?project=saoc-webapp
+
+**A green contract gate does NOT prove this console step was performed.** The gate verifies the documentation mentions it, not that the console setting is actually enabled. After enabling it, test by attempting to self-register a new account on `/admin/login` — you should see an error with code `auth/admin-restricted-operation`. Confirm that existing admin accounts can still sign in normally. Note: the login page should handle the `auth/admin-restricted-operation` error gracefully (log the error or show a message); if it does not, that's a follow-up for the `/admin/login` page owner.
+
 ## Out of scope here (F3 / M2)
 
-Grant/revoke tooling for the allowlist and custom claims, disabling open self-signup on
-`/admin/login`, and adding Google/Microsoft/Apple sign-in providers are later work
-(mission `admin-auth-hardening`, features F3 and beyond). This document covers only the
-authorisation gate itself (F1/F2) as it exists today.
+Adding Google/Microsoft/Apple sign-in providers and the human end-to-end door-scanner proof are later work (mission `admin-auth-hardening`, features F4/F5 and beyond).

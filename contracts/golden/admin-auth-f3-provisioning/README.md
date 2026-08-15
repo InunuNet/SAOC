@@ -56,12 +56,37 @@ Full reasoning: `.agent/memory/scratch/f3-architect-plan.md`.
    in one session). **Both addresses must be present in the running server's
    `ADMIN_EMAIL_ALLOWLIST`** for both contracts' full suites to pass.
 
+## Design decisions (amendment, 2026-08-15)
+
+6. **`admin-grant.ts` never sets `emailVerified: true` on an account it did not create, and
+   requires an explicit `--existing` flag to act on a pre-existing account at all.** Found by
+   adversarial QA against the original spec, which required `emailVerified: true`
+   unconditionally on every run. That was a pre-registration/pre-hijacking hole: self-signup
+   (`accounts:signUp`) is still open in this project, and `admin-grant.ts` is the first code
+   able to promote an arbitrary existing account. An attacker who self-registers the real
+   admin's email ahead of time would previously have received a fully verified admin account
+   the moment an operator ran the onboarding script. F1's gate already refuses an unverified
+   claim (`email-unverified`), so simply never verifying an email the script didn't itself
+   create keeps a self-registered squatter refused by a check that already exists — see
+   `provisioning-scripts.golden.md`'s "Why the `--existing` flag exists" for the full reasoning.
+   A consequence worth calling out: because the script is stateless, this applies even to
+   re-granting an account the script itself created moments earlier (A-GRANT-01's second run
+   now passes `--existing`) — there is no reliable way for the script to distinguish that case
+   from an attacker's account, so it treats both the same.
+
 ## Fixture accounts this contract's checks create and destroy
 
 - **Grant/idempotency fixture**: a fresh, never-before-seen email
   (`admin-auth-f3-check-grant-<random>@saoc-contract-check.invalid`) — created BY the grant
-  script under test (not pre-created by the check), granted, re-granted (idempotency), read
-  back via Admin SDK, then deleted via `auth.deleteUser` in a `finally`.
+  script under test (not pre-created by the check), granted, re-granted with `--existing`
+  (idempotency), read back via Admin SDK, then deleted via `auth.deleteUser` in a `finally`.
+- **Pre-existing-account fixture** (A-GRANT-02, A-GRANT-03): a fresh email
+  (`admin-auth-f3-check-preexisting-<random>@saoc-contract-check.invalid`) created directly via
+  the Admin SDK by the check itself (`password` provider, `emailVerified: false`) — deliberately
+  NOT via the grant script, to look like a self-registered squatter's account. A-GRANT-02 proves
+  `admin-grant.ts` refuses it without `--existing`; A-GRANT-03 proves granting it with
+  `--existing` sets the claim but never flips `emailVerified`. Deleted via `auth.deleteUser` in
+  a `finally` in both checks.
 - **Revoke end-to-end fixture**: `ADMIN_AUTH_F3_CHECK_ALLOWLISTED_EMAIL` — granted by the grant
   script, used to mint a real session cookie over real HTTP, revoked by the revoke script,
   proven refused, then deleted via `auth.deleteUser` in a `finally`. Requires the allowlist
