@@ -31,23 +31,37 @@ async function mintSession(idToken: string): Promise<void> {
   });
 
   if (!response.ok) {
+    // Status only — never the response body, which may carry the gate's refusal reason
+    // (no-claim / email-unverified / not-allowlisted). That reason must stay server-side.
+    console.error('mintSession failed', { status: response.status });
     throw new Error(SESSION_ERROR_MESSAGE);
   }
 }
 
-function googleSignInErrorMessage(err: unknown): string {
-  const code =
-    typeof err === 'object' && err !== null && 'code' in err
-      ? String((err as { code: unknown }).code)
-      : '';
+function firebaseErrorCode(err: unknown): string | undefined {
+  return typeof err === 'object' && err !== null && 'code' in err
+    ? String((err as { code: unknown }).code)
+    : undefined;
+}
 
-  switch (code) {
+function googleSignInErrorMessage(err: unknown): string {
+  switch (firebaseErrorCode(err)) {
     case 'auth/popup-closed-by-user':
       return 'Sign-in was cancelled before it completed. Please try again.';
     case 'auth/popup-blocked':
       return 'Your browser blocked the sign-in popup. Please allow popups for this site and try again.';
     case 'auth/admin-restricted-operation':
       return 'This sign-in method is restricted for this account. Contact an administrator.';
+    case 'auth/unauthorized-domain':
+      return "This site's domain is not authorised in Firebase Auth settings. An administrator must add it.";
+    case 'auth/account-exists-with-different-credential':
+      return 'An account already exists for this email with a different sign-in method.';
+    case 'auth/operation-not-allowed':
+      return 'Google sign-in is not enabled for this project. Contact an administrator.';
+    case 'auth/network-request-failed':
+      return 'Network error — check your connection and try again.';
+    case 'auth/cancelled-popup-request':
+      return 'Another sign-in attempt is already in progress.';
     default:
       return GENERIC_SIGN_IN_ERROR;
   }
@@ -73,6 +87,7 @@ export default function AdminLoginPage() {
       await mintSession(idToken);
       router.push('/admin');
     } catch (err: unknown) {
+      console.error('Password sign-in failed', { code: firebaseErrorCode(err), error: err });
       const message = err instanceof Error ? err.message : GENERIC_SIGN_IN_ERROR;
       setError(message);
     } finally {
@@ -92,6 +107,7 @@ export default function AdminLoginPage() {
       await mintSession(idToken);
       router.push('/admin');
     } catch (err: unknown) {
+      console.error('Google sign-in failed', { code: firebaseErrorCode(err), error: err });
       setError(googleSignInErrorMessage(err));
     } finally {
       setGoogleLoading(false);
@@ -101,7 +117,7 @@ export default function AdminLoginPage() {
   const disabled = loading || googleLoading;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-parchment px-4 py-16">
+    <div className="flex min-h-[70vh] items-center justify-center bg-parchment px-4 py-16">
       <div className="w-full max-w-[400px] border border-rule bg-ivory p-8">
         <span className="eyebrow">Admin</span>
         <h1 className="mt-4 font-serif text-[28px] font-semibold leading-tight text-ink">
@@ -125,6 +141,6 @@ export default function AdminLoginPage() {
           loading={googleLoading}
         />
       </div>
-    </main>
+    </div>
   );
 }
