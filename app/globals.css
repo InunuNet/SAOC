@@ -255,3 +255,146 @@ body {
 .on-dark .mono-label {
   color: var(--fg-on-dark-muted);
 }
+
+/* ============================================================
+   QR scanner (html5-qrcode) — scoped overrides.
+   Html5QrcodeScanner injects its own unstyled DOM into #qr-reader
+   at runtime (app/admin/door/page.tsx) — Tailwind utility classes
+   never reach it. Every selector below is scoped under #qr-reader
+   so nothing leaks to other pages. IDs without the elementId
+   prefix (e.g. #html5-qrcode-button-camera-permission) are global
+   in the library, hence the explicit #qr-reader ancestor on each.
+   ============================================================ */
+#qr-reader {
+  border: none !important; /* library sets inline border: 1px solid silver */
+  padding: 0 !important;
+}
+
+/* "Powered by ScanApp" info icon — adds nothing at a show-door check-in table. */
+#qr-reader img[alt='Info icon'] {
+  display: none !important;
+}
+
+/* Header status line (permission requesting / errors / last match). */
+#qr-reader__header_message {
+  font-family: var(--sans) !important;
+  font-size: var(--body-sm) !important;
+  border-top: none !important;
+  border-radius: var(--radius-1);
+}
+
+/* Scan region — the live video (or placeholder icon before a camera starts).
+   This is the page's focal point; give it room. */
+#qr-reader__scan_region {
+  min-height: 280px !important;
+}
+#qr-reader__scan_region video,
+#qr-reader__scan_region img {
+  width: 100% !important;
+  border-radius: var(--radius-1);
+}
+
+#qr-reader__dashboard_section {
+  padding: var(--space-4) 0 !important;
+}
+
+/* Primary action — "Request Camera Permissions" / "Start Scanning".
+   Matches the Check In button (app/admin/door/page.tsx) exactly. */
+#qr-reader #html5-qrcode-button-camera-permission,
+#qr-reader #html5-qrcode-button-camera-start {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-1);
+  background: var(--primary);
+  color: var(--ivory);
+  font-family: var(--sans);
+  font-size: var(--body-lg);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+#qr-reader #html5-qrcode-button-camera-permission:hover,
+#qr-reader #html5-qrcode-button-camera-start:hover,
+#qr-reader #html5-qrcode-button-camera-permission:active,
+#qr-reader #html5-qrcode-button-camera-start:active {
+  background: var(--primary-800);
+}
+#qr-reader #html5-qrcode-button-camera-permission:disabled,
+#qr-reader #html5-qrcode-button-camera-start:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Secondary actions — "Stop Scanning" and the file-picker button. */
+#qr-reader #html5-qrcode-button-camera-stop,
+#qr-reader #html5-qrcode-button-file-selection {
+  display: inline-flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  background: var(--ivory);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--body-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+#qr-reader #html5-qrcode-button-camera-stop:hover,
+#qr-reader #html5-qrcode-button-file-selection:hover {
+  background: var(--bone);
+}
+
+/* "Scan an Image File" — was a bare underlined link; now a subordinate control. */
+#qr-reader #html5-qrcode-anchor-scan-type-change {
+  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  margin-top: var(--space-3);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  background: transparent;
+  color: var(--primary);
+  font-family: var(--sans);
+  font-size: var(--body-sm);
+  font-weight: 600;
+  text-decoration: none !important;
+  cursor: pointer;
+}
+#qr-reader #html5-qrcode-anchor-scan-type-change:hover {
+  background: var(--bone);
+}
+
+/* Camera picker (only rendered when more than one camera is available). */
+#qr-reader #html5-qrcode-select-camera {
+  width: 100%;
+  min-height: 48px;
+  margin-bottom: var(--space-3);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  background: var(--ivory);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--body-md);
+}
+
+#qr-reader #html5-qrcode-button-camera-permission:focus-visible,
+#qr-reader #html5-qrcode-button-camera-start:focus-visible,
+#qr-reader #html5-qrcode-button-camera-stop:focus-visible,
+#qr-reader #html5-qrcode-button-file-selection:focus-visible,
+#qr-reader #html5-qrcode-anchor-scan-type-change:focus-visible,
+#qr-reader #html5-qrcode-select-camera:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--parchment),
+    0 0 0 4px rgba(56, 65, 56, 0.4); /* --primary at 40% alpha, matches ring-primary/40 */
+}

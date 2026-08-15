@@ -66,7 +66,7 @@ export default function DoorPage() {
           Door Check-in
         </h1>
 
-        <div id={SCANNER_ELEMENT_ID} className="mt-5 border border-rule bg-ivory p-2" />
+        <div id={SCANNER_ELEMENT_ID} className="mt-5 border border-rule bg-ivory p-4" />
 
         <form onSubmit={handleManualSubmit} className="mt-5 space-y-2">
           <label
