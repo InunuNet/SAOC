@@ -934,3 +934,27 @@ working end to end, by a human) remains `pending`, milestone M3.
 - [ ] **[P1, NEW 2026-08-15] Door scanner (F6's second half) still unproven at a real entrance.**
   F4 proved the admin dashboard end to end with a human login; the door check-in scanner has not
   had the same human proof yet. Milestone M3 remains `pending` until this happens.
+
+## Ticket status stuck at `reserved` — found 2026-08-15 during F6 door testing
+
+All four tickets in the live Firestore `tickets` collection show status **`reserved`**, none
+`paid`, and `purchasedAt` is empty (`—`) on every row. Confirmed visually on the styled
+`/admin` dashboard.
+
+**Why it matters:** the door scanner correctly refuses a `reserved` ticket with "This ticket
+has not been paid for" — verified on a real Samsung S23 FE with booking ref
+`SAOC-2027-5H63FBAE8AHP`. So the check-in gate works, but **no ticket can ever be admitted
+until something sets status to `paid`.** At a real door, every attendee would be refused.
+
+**Suspected cause:** the PayFast ITN webhook (`app/api/tickets/itn/route.ts`, sha256-pinned)
+is not flipping `reserved` → `paid`. Either it never fires in sandbox, fails verification
+silently, or was never exercised. Brad's understanding was that these tickets ARE paid, which
+suggests payments completed on PayFast's side while our record never updated — the worst shape
+of failure, because it is invisible until the door.
+
+**Next steps:** trace one sandbox payment end to end; confirm whether the ITN endpoint is
+reachable from PayFast and whether it writes. Relates to the `sandbox-ticket-proof` mission.
+Do NOT modify `app/api/tickets/itn/route.ts` without checking its sha256 pin first.
+
+**Blocks:** a successful door check-in cannot be demonstrated (F6) until at least one ticket
+reaches `paid`.
