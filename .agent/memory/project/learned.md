@@ -643,3 +643,44 @@ eliminated.
 irreversible Identity Platform upgrade, deliberately deferred. F5 (Microsoft + Apple) is PARKED —
 two open questions (Apple Developer membership ownership; reconciling `privaterelay.appleid.com`
 relay addresses with an email-based allowlist). See `backlog.md`.
+
+## F4 meets reality — three real defects plus one false alarm (2026-08-15)
+
+F4 (Google sign-in) passed its gate 6/6 and was committed (`27ccf8b`), then hit beta and three
+defects appeared that no contract could catch, plus a false alarm from a browser agent.
+Commits: `79ee2f8`, `93c5855`, `22397a1`. Full narrative kept in the commit messages; distilled
+lessons below.
+
+- **A green gate proves the code, not the product.** `/admin/login` rendered as bare text with
+  invisible input fields (inline styles, a pre-existing style debt deliberately left out of the
+  F4 diff as a separate concern) while the contract stayed green — structural/grep assertions
+  cannot see a rendered page. This is the incident behind the new standing rule in `rules.md`,
+  "Visual work is not done until a browser has seen it" — reference that rule rather than
+  re-describing it here.
+- **A fix for the reported symptom does not cover its neighbours.** `/admin` and `/admin/door`
+  had the identical unstyled-HTML defect as the login page and were fixed only after the user
+  found them one click away. When a defect class is found on one page, check every page behind
+  it in the same flow before declaring the class closed.
+- **Local contract checks cannot see deployed configuration.** `ADMIN_EMAIL_ALLOWLIST` was
+  declared in `.env.local` but never added to `apphosting.yaml`/Secret Manager, so the deployed
+  server parsed an empty allowlist and refused every identity — including a valid Google
+  sign-in — while local worked. This is the "empty allowlist fails closed silently" trap
+  `docs/admin-access.md` already documented in the abstract; it took a real deploy to hit it,
+  because contract checks in this project run against a local server reading `.env.local` and
+  structurally cannot exercise deployed secrets. Tracked as a harness coverage gap in
+  `backlog.md` (post-deploy smoke assertion candidate).
+- **A console screenshot shows post-action state, not pre-action state.** `beta.saoc.co.za` was
+  hypothesised as missing from Firebase's authorised domains, then wrongly retracted on seeing
+  it listed — the user had just added it moments before the screenshot was taken. When
+  confirming a fix via a live console/dashboard view, get the timestamp of the state change, not
+  just the current state.
+- **Do not infer build freshness from appearance.** A browser agent confidently reported the
+  Google logo entirely absent from shipped markup — wrong, caused by two deploys landing close
+  together (chrome in `93c5855`, the logo in `22397a1`) and the agent inferring "this page looks
+  styled, therefore this is the current build." Query the actual deploy time
+  (`firebase apphosting:backends:get <backend>`) or check for a commit-unique marker instead of
+  reasoning from how polished a page looks.
+
+**F4 is proven end to end by a human**, not just by the gate: Brad signed in with Google and
+reached `/admin` with real ticket data, same Firebase uid throughout, admin claim intact, no
+second account created — closing F6's admin half. The door-scanner half of F6 is still open.

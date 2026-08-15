@@ -810,7 +810,7 @@ the ticket would sit `reserved` forever. Use the deployed host for payment testi
   expose a Refunds API (GET/POST /refunds/:pf_payment_id, same MD5+passphrase auth as the ITN),
   so this is buildable — see docs/payment-gateway-research-2026-08.md.
 
-## admin-auth-hardening — M1 done, F4 done, F5 parked (2026-08-15)
+## admin-auth-hardening — M1 done, F4 done and proven end-to-end, F5 parked (2026-08-15)
 
 F1 (authorisation gate), F2 (adversarial refusal proof), F3 (account provisioning) all `done`,
 milestone M1 gated (F1/F2 contract 12/12, F3's own contract 11/11). New scripts:
@@ -832,6 +832,22 @@ design, not a raw guard).
 `brad@inunu.net` is now the only admin — Firebase uid `NhSVXoMlT2bl6h4gDoyr5NZ1VW52`,
 `admin` claim, `emailVerified: true`, account created by us (so no pre-existing squatter risk
 on this address). Local `.env.local` allowlist updated.
+
+**Post-ship hardening, 2026-08-15 (`79ee2f8`, `93c5855`, `22397a1`) — see [[learned.md]] "F4
+meets reality".** A green gate did not mean a working product: `/admin/login` shipped with
+invisible input fields (inline styles), and `/admin`/`/admin/door` one click behind it had the
+identical unstyled defect. `ADMIN_EMAIL_ALLOWLIST` was missing from `apphosting.yaml`/Secret
+Manager entirely, so the deployed server refused every identity including valid Google
+sign-ins — fixed via Secret Manager, value verified byte-exact. Fixed: login restyled on real
+site tokens with site chrome added (`app/admin/login/layout.tsx`); `/admin` dashboard styled
+with a real table (`components/admin/TicketsTable.tsx`, `StatusPill.tsx`); `/admin/door` styled
+for one-handed show-entrance use, deliberately no marketing chrome (`DoorResultBanner.tsx`);
+Google button rebuilt to Google's published branding guidelines (official four-colour G inlined
+as SVG, `#747775` stroke, height-matched); autocomplete attributes added for password managers;
+client-side auth errors now log real Firebase codes. **F4 is now proven end to end by a human**
+— Brad signed in with Google and reached `/admin` with real ticket data, same Firebase uid
+throughout (`NhSVXoMlT2bl6h4gDoyr5NZ1VW52`), admin claim intact, no second account — this
+closes F6's admin half; the door-scanner half of F6 is still open.
 
 **F5 (Microsoft + Apple sign-in) PARKED by user decision 2026-08-15** — see mission file
 `missions/2026-08-14-admin-auth-hardening.md` (still shows `status: pending`, not edited here
@@ -886,3 +902,35 @@ working end to end, by a human) remains `pending`, milestone M3.
   plus a Services ID and signing key. Scope question to settle before resuming: these providers
   matter for FUTURE MEMBER login, not for the handful of committee staff who use /admin. Decide
   which audience before building.
+
+- [ ] **[P2, accessibility, NEW 2026-08-15] `ContactForm` and `TicketPurchaseForm` render error
+  text as `text-accent`** — 2.94:1 contrast on ivory, fails WCAG AA. Public-facing, affects
+  visitors, not just admins. Found while restyling the admin pages, which now use a bordered
+  callout at 13.6:1 instead — apply the same pattern to the two public forms.
+- [ ] **[P3, NEW 2026-08-15] OAuth consent screen shows `saoc-webapp.firebaseapp.com`** instead
+  of the Council's name during Google sign-in. Needs a custom `authDomain` configured in
+  Firebase Auth settings.
+- [ ] **[P1, cleanup, NEW 2026-08-15] A 53 MB zip is in git history from commit `5b67fdf`**
+  (`branding/National Show 2027/Old NOS 2027 Assets.zip`) — `branding/` is Brad's own active
+  workstream (see the standing rule above: leave it alone) and a binary that size does not
+  belong in git regardless. Repo is now 171 MB. Removal needs a history rewrite + force-push, so
+  it needs Brad's explicit permission and a quiet moment when nobody else is pushing.
+- [ ] **[P2, NEW 2026-08-15] No test admin credentials exist for automated visual QA** — `/admin`
+  and `/admin/door` are behind the Firebase Auth gate, so a browser agent cannot sign in and
+  verify them; only a human (Brad) can currently see these pages render. Worth solving —
+  candidates: a dedicated test admin account with narrowly scoped, rotatable credentials, or a
+  gate-bypass token for CI/QA use only, never for production traffic.
+- [ ] **[P2, harness, NEW 2026-08-15] Contract checks cannot detect missing DEPLOYED
+  configuration** — this project's contract gate runs against a local server reading
+  `.env.local`, so it structurally cannot catch a secret/env var that's declared locally but
+  missing from `apphosting.yaml`/Secret Manager (see the F4 `ADMIN_EMAIL_ALLOWLIST` incident
+  above). Consider a post-deploy smoke-assertion step that probes the live URL for the specific
+  failure mode (e.g. a known-good credential should reach 200, not 401/403) rather than relying
+  on local-only checks for anything that depends on deployed secrets.
+- [ ] **[P4, informational, NEW 2026-08-15] Google Sans is not loaded** — the Google sign-in
+  button uses the site's own sans stack instead of Google's specified typeface, a known and
+  accepted deviation from the letter of Google's branding spec. Not worth loading a webfont for
+  one button; no action expected unless this becomes a wider pattern.
+- [ ] **[P1, NEW 2026-08-15] Door scanner (F6's second half) still unproven at a real entrance.**
+  F4 proved the admin dashboard end to end with a human login; the door check-in scanner has not
+  had the same human proof yet. Milestone M3 remains `pending` until this happens.

@@ -56,7 +56,15 @@ mission (bounded-staleness `revalidate = 60` fix, see `learned.md`).
 
 M1 (auth gate closed + proven + provisioning) done and gated. **F4 (Google sign-in) done
 2026-08-15**, gate green 6/6 — claim-first provisioning design, see `learned.md`. **F5
-(Microsoft + Apple sign-in) PARKED by user decision.** F6 (a human logs in and the door scanner
-runs end to end) still `pending`, milestone M3. Two human actions block F4 actually working in
-production: enable Google in the Firebase console, and add `brad@inunu.net` to the deployed
-allowlist in Secret Manager. See `backlog.md` "admin-auth-hardening" section.
+(Microsoft + Apple sign-in) PARKED by user decision.**
+
+**2026-08-15, post-ship:** F4 met reality and needed three real fixes a green gate could not
+catch — invisible login inputs (and the identical defect on `/admin`/`/admin/door` one click
+behind it), a missing deployed `ADMIN_EMAIL_ALLOWLIST`, and `beta.saoc.co.za` not yet in
+Firebase's authorised domains. All three fixed (`79ee2f8`, `93c5855`, `22397a1`), verified by
+browser against the live build, and **F4 is now proven end to end by a human** — Brad signed in
+with Google and reached `/admin` with real ticket data, same Firebase uid throughout, no second
+account. This closes F6's admin half. **F6's door-scanner half is still `pending`, milestone
+M3** — not yet proven at a real entrance by a human. New standing rule added to `rules.md`:
+"Visual work is not done until a browser has seen it." See `backlog.md`
+"admin-auth-hardening" section and `learned.md` "F4 meets reality" for full detail.
