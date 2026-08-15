@@ -87,6 +87,28 @@ function printProvenance(user: UserRecord): void {
   );
 }
 
+/**
+ * True for the exact shape a self-registered squatter necessarily has: no federated
+ * provider (password only) and never verified by anyone (federated providers set
+ * emailVerified: true automatically, so this project has no other way to end up
+ * password-only AND unverified). See F4's provisioning-squatter-warning.golden.md.
+ */
+function isPasswordOnlyUnverified(user: UserRecord): boolean {
+  const hasFederatedProvider = user.providerData.some((p) => p.providerId !== 'password');
+  return !hasFederatedProvider && !user.emailVerified;
+}
+
+function printSquatterShapeWarning(): void {
+  console.warn(
+    '\nWARNING — password provider only, never verified: no federated identity provider has\n' +
+      'ever asserted control of this mailbox. This is exactly the shape a self-registered\n' +
+      "squatter has on this project's still-open signup endpoint (accounts:signUp). Before\n" +
+      'passing --existing, check whether the person you intend to grant has already signed in\n' +
+      'via a federated provider elsewhere (Google, etc.) — that would show up as an additional\n' +
+      'entry in providerData above. If it has not, treat this account with real suspicion.',
+  );
+}
+
 async function createAndGrantFreshUser(
   auth: ReturnType<typeof getAuth>,
   email: string,
@@ -117,6 +139,9 @@ async function grantExistingUser(
   printProvenance(user);
 
   if (!allowExisting) {
+    if (isPasswordOnlyUnverified(user)) {
+      printSquatterShapeWarning();
+    }
     console.error(
       '\nREFUSED — this account already existed before this run. Granting admin onto a\n' +
         'pre-existing account requires informed human confirmation: review the provenance\n' +

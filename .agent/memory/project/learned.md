@@ -592,3 +592,54 @@ M1 (F1 authorisation gate, F2 adversarial refusal proof, F3 provisioning) is ful
 actions") is the actual fix — `--existing` is a guard rail while that stays undone. F4/F5
 (federated sign-in) must treat `emailVerified` as untrustworthy once Google/Apple auto-verify on
 link, since that can flip a pre-existing squatted account's guard. See `backlog.md`.
+
+## admin-auth-hardening F4 — Google sign-in, claim-first design (2026-08-15)
+
+F4 gate green (6/6, 100% machine-verifiable, zero `agent_review`). Shipped `GoogleAuthProvider`
++ `signInWithPopup` on `/admin/login`, `app/admin/login/GoogleSignInButton.tsx`, a squatter-shape
+warning in `scripts/admin-grant.ts`, `docs/admin-access.md` extended. `lib/admin-auth.ts` and the
+session route were NOT touched. **The design:** claim-first provisioning under Firebase's DEFAULT
+account-linking setting — an email must go through `admin-grant.ts` BEFORE it is added to
+`ADMIN_EMAIL_ALLOWLIST`. This works because Firebase enforces email uniqueness unconditionally:
+once claimed, nobody can re-register that address, so the squatting race that F3's item 1 above
+identified is closed by the platform, not by operator discipline. The residual risk (a squatter
+who reached an address first) is an operator-discipline defence, honestly labelled as such — not
+eliminated.
+
+1. **Weak-assertion defect class — now confirmed with a FOURTH instance in this project's own
+   checks, not just in the code under test.** Prior three: F3's A-GRANT-03 grepped stdout for
+   "password reset link" and false-positived on innocuous prose (see item 4 above); F4's original
+   A-GRANT-04/05 required a fixture that could NEVER be built (`auth/email-already-exists` is
+   unconditional, so the check was permanently red, masquerading as an outstanding human task);
+   F4's `check-docs-complete.sh` graded a WITHDRAWN design and would have forced docs to instruct
+   a real operator to flip a console setting that had already been rejected. Fourth: `A-STRUCT-02`
+   grepped for the literal string `/api/admin/session` anywhere in the file, so it would have
+   passed an implementation whose Google branch posted to a different endpoint while a stray
+   string survived in a comment. Fixed — it now asserts exactly one `fetch(` call site, that it
+   targets the session route, and `>=2` `await mintSession(` invocations. **Standing rule: a new
+   check must be proven to REJECT a deliberately broken variant, not merely proven to pass the
+   real code.** @architect built the broken variant in scratch and demonstrated rejection —
+   expected practice going forward, not a one-off.
+2. **Orchestration failure: out-of-order messages to a subagent read as contradictory
+   instructions, and it obeys the last one it processes, not the last one sent.** The F4 design
+   reversed three times this session because an acceptance of design A crossed in flight with its
+   own reversal to design B — @architect processed the stale acceptance and reverted to A, and
+   @dev (mid-build on B) was wrongly told it had "drifted." When a design decision is genuinely
+   open, settle it in ONE message and do not send a follow-up until the reply lands.
+3. **A wrong console URL sent a human toward an irreversible action.** Brad was told to enable
+   Google sign-in at the Identity Platform console. Identity Platform was NOT enabled on
+   `saoc-webapp`, and enabling it is IRREVERSIBLE (no downgrade path per Google support) — his own
+   screenshot caught the mismatch before he clicked through. The correct setting was in the plain
+   Firebase console the whole time. **Verify a console surface actually exists on the target
+   project before instructing a human to use it**, especially when the action can't be undone.
+4. **QA reporting "no finding" is the correct outcome, not an under-delivery.** Asked to find a
+   gap in the squatter warning (accounts that are password-verified but not federated), @qa traced
+   the case and reported it is NOT exploitable — verifying a Firebase email requires mailbox
+   access, and there is no in-app signup/verification UI, so anyone in that state already owns the
+   address. Record and reward "traced it, it's not exploitable" over manufactured severity.
+
+**Open items, not fixed:** self-signup remains open, verified live
+(`accounts:signUp` → `WEAK_PASSWORD`, not `admin-restricted-operation`); closing it needs the
+irreversible Identity Platform upgrade, deliberately deferred. F5 (Microsoft + Apple) is PARKED —
+two open questions (Apple Developer membership ownership; reconciling `privaterelay.appleid.com`
+relay addresses with an email-based allowlist). See `backlog.md`.

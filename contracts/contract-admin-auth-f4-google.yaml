@@ -1,0 +1,145 @@
+schema: athanor.contract/v1
+slug: admin-auth-f4-google
+goal: >-
+  Mission admin-auth-hardening, milestone M2, feature F4 only (SCOPE 2026-08-15: Google sign-in
+  only — Microsoft and Apple are PARKED, see contracts/contract-admin-auth-f5-federated.yaml
+  and its golden README's "PARKED" banner; nothing in this contract depends on F5). Add Google
+  sign-in to /admin/login on top of the working, already-green authorisation gate (F1/F2) and
+  provisioning scripts (F3) — without dissolving F3's squatter defence. Federated providers set
+  emailVerified:true automatically, and Firebase's default account-linking behaviour (one
+  account per email) means a Google sign-in for an address that already has a self-registered
+  password account LINKS onto that same account and verifies it, while the squatter's original
+  password credential keeps working. DECISION (settled 2026-08-15 after two rounds of
+  team-lead challenge — full trail, including a same-day flip-flop caused by out-of-order
+  messages, in README.md "Decision reversed" and "Note on the flip-flop"): the defence is
+  CLAIM-FIRST PROVISIONING on the UNCHANGED DEFAULT Identity Platform account-linking setting
+  ("One account per email address") — an address must be granted via scripts/admin-grant.ts
+  BEFORE it is ever added to ADMIN_EMAIL_ALLOWLIST, and admin-grant.ts's existing pre-existing-
+  account refusal (F3) is strengthened to print an explicit warning when an account's shape
+  matches a self-registered squatter (password-only, unverified). This requires NO console
+  setting change and NO --uid disambiguation. Sibling to
+  contracts/contract-admin-auth-hardening.yaml (F1+F2) and
+  contracts/contract-admin-auth-f3-provisioning.yaml (F3), both already green — this contract
+  does not modify lib/admin-auth.ts's decision logic and asserts it stays that way
+  (A-STRUCT-01). Full context: contracts/golden/admin-auth-f4-google/README.md.
+created_at: '2026-08-15'
+autonomy: high
+
+# ---------------------------------------------------------------------------
+# HOW THIS CONTRACT IS VERIFIED
+# ---------------------------------------------------------------------------
+# No check here drives a real Google OAuth consent flow — nothing in this repo's toolchain can
+# do that headlessly, and Google will not authenticate a scripted test account without real
+# user interaction. Every assertion instead does one of two things, and never a third:
+#   1. Exercises REAL Admin SDK state and REAL child processes (scripts/admin-grant.ts run for
+#      real via `pnpm exec tsx`), using the SAME squatter-shape fixture F3's own A-GRANT-02/03
+#      already use (createPreExistingUnverifiedFixture) — not a new, unverifiable fixture. An
+#      earlier draft of this contract tried to construct two Firebase Auth accounts sharing one
+#      email via Admin SDK, for a "Multiple accounts per email address" design that was
+#      considered, tried, and ultimately NOT adopted (see README.md "Decision reversed") —
+#      partly because that fixture cannot be built at all, under any project configuration:
+#      auth.createUser() enforces email uniqueness unconditionally (Firebase's own Admin Auth
+#      API Errors reference: auth/email-already-exists, "Each user must have a unique email",
+#      no carve-out for the account-linking project setting, which governs only client-SDK
+#      sign-in/link flows). Confirmed live against the real saoc-webapp project.
+#   2. Settles a structural fact by source grep, in the narrow sense this project's own
+#      precedent already allows (contract-admin-auth-hardening.yaml A-STRUCT-01,
+#      contract-admin-auth-f3-provisioning.yaml A-STRUCT-01): "which SDK call is present",
+#      "which literal string appears", never a security decision standing in for a behavioural
+#      test.
+# ZERO agent_review assertions.
+#
+# NO CONSOLE PREREQUISITE FOR THE SECURITY DEFENCE ITSELF: claim-first provisioning needs no
+# Identity Platform setting change at all — it runs entirely on Firebase Authentication's
+# unchanged default ("One account per email address"). The only console step F4 still needs is
+# enabling Google as a sign-in provider (support email only, near-zero configuration — see
+# README.md), which is orthogonal to the security defence and does not gate any assertion below.
+#
+# PRECONDITIONS shared with F1/F2/F3 (repeated here because this contract can run standalone):
+#   1. .env.local at the repo root with FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL,
+#      FIREBASE_ADMIN_PRIVATE_KEY. A-GRANT-04 uses the Admin SDK directly plus a real child
+#      process — no server dependency, no ADMIN_EMAIL_ALLOWLIST entry needed.
+#
+# FIXTURES AND CLEANUP: every Firebase Auth user these checks create is deleted in a finally,
+# whether assertions pass or fail. Nothing here leaves a standing account.
+#
+# ORDERING: structural checks (no server, no Admin SDK writes) run first; the grant check
+# (mutating, Admin SDK writes) runs after; docs and gates last, matching F1/F2/F3's own
+# file-order convention.
+
+features:
+  - id: F4
+    name: >-
+      Google sign-in — added on top of the gate without dissolving F3's squatter defence, via
+      claim-first provisioning (grant before allowlist) and an explicit squatter-shape warning
+      in admin-grant.ts, on the unchanged default Identity Platform account-linking setting
+    status: pending
+
+goldens:
+  - contracts/golden/admin-auth-f4-google/README.md
+  - contracts/golden/admin-auth-f4-google/provisioning-squatter-warning.golden.md
+  - contracts/golden/admin-auth-f4-google/login-google-button.golden.md
+  - contracts/golden/admin-auth-f4-google/docs-admin-access-f4-additions.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- structural: the gate's decision surface must not have grown a provider branch ----------
+    - id: A-STRUCT-01
+      description: >-
+        Regression guard, must stay green. lib/admin-auth.ts and
+        app/api/admin/session/route.ts contain no provider-conditional literal
+        (google.com/microsoft.com/apple.com/sign_in_provider/firebase.identities/providerId/
+        providerData). This is what lets F1/F2's existing behavioural proofs (A-STATE-01,
+        A-ALLOW-01) generalise to federated identities without a new OAuth-driven check — see
+        README.md. Includes a self-test proving the forbidden-pattern grep actually fires on a
+        known bad shape.
+      command: bash contracts/checks/admin-auth-f4-google/check-gate-provider-agnostic-structural.sh
+      timeout_seconds: 30
+
+    # ---------- structural: login UI offers the Google path, reuses the existing session route ----------
+    - id: A-STRUCT-02
+      description: >-
+        app/admin/login/page.tsx constructs a GoogleAuthProvider and calls signInWithPopup or
+        signInWithRedirect (client SDK only — no firebase-admin import in this browser-shipped
+        file), and its idToken still POSTs to the existing /api/admin/session route (no second,
+        parallel session-mint path). Currently RED — the login page implements only
+        signInWithEmailAndPassword today.
+      command: bash contracts/checks/admin-auth-f4-google/check-login-google-structural.sh
+      timeout_seconds: 30
+
+    # ---------- the claim-first defence's load-bearing enhancement ----------
+    - id: A-GRANT-04
+      description: >-
+        F4's core new security property. Against a pre-existing account shaped like a
+        self-registered squatter (password provider only, never verified — F3's own
+        createPreExistingUnverifiedFixture, the same fixture A-GRANT-02/03 use),
+        scripts/admin-grant.ts run without --existing prints an EXPLICIT warning naming the
+        password-only/no-federated-provider shape and telling the operator what to check
+        (whether the intended person has already signed in via a federated provider elsewhere)
+        — not just generic provenance (uid/creationTime), which A-GRANT-02 already covers and
+        this check does not duplicate.
+      command: node contracts/checks/admin-auth-f4-google/check-grant-squatter-warning.mjs
+      timeout_seconds: 90
+
+    # ---------- docs ----------
+    - id: A-DOCS-01
+      description: >-
+        docs/admin-access.md documents the claim-first ordering rule (run admin-grant.ts on an
+        address BEFORE it is ever added to ADMIN_EMAIL_ALLOWLIST — an unallowlisted address
+        grants nobody anything even if squatted, so there is never a reason to allowlist first),
+        why it defeats the account-linking attack without any console setting change, the
+        squatter-shape warning behaviour, and Google sign-in setup. See
+        docs-admin-access-f4-additions.golden.md for exact required text.
+      command: bash contracts/checks/admin-auth-f4-google/check-docs-complete.sh
+      timeout_seconds: 30
+
+    # ---------- gates ----------
+    - id: A-GATE-01
+      description: strict TypeScript type-check passes
+      command: pnpm type-check
+      timeout_seconds: 300
+    - id: A-GATE-02
+      description: lint passes with zero errors
+      command: pnpm lint
+      timeout_seconds: 300

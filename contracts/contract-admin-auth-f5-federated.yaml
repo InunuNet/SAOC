@@ -1,0 +1,117 @@
+schema: athanor.contract/v1
+slug: admin-auth-f5-federated
+goal: >-
+  Mission admin-auth-hardening, milestone M2, feature F5 only. Add Microsoft and Apple
+  sign-in to /admin/login as a THIN addition on top of F4's provider-agnostic plumbing — the
+  gate (lib/admin-auth.ts), the session route, and the account-linking defence [NOTE: this
+  parenthetical names F4's WITHDRAWN --uid design; F4's CURRENT, FINAL defence is claim-first
+  provisioning + a squatter-shape warning, with no --uid — see the PARKED/HISTORICAL note below
+  and contracts/contract-admin-auth-f4-google.yaml] (scripts/admin-grant.ts's --uid
+  disambiguation) are all already provider-agnostic by design
+  (F4 A-STRUCT-01 proves it) and are NOT re-tested here; this contract asserts only what is
+  actually NEW for these two providers: the login UI paths, the Apple 'email' scope
+  requirement, and the human console prerequisites specific to Microsoft (Entra app
+  registration, tenant decision) and Apple (paid Developer Program, Services ID, private
+  key, Team ID, Return URL, private email relay). Sibling to
+  contracts/contract-admin-auth-f4-google.yaml, which must land first (same login page file,
+  same account-linking decision). Full context: contracts/golden/admin-auth-f5-federated/README.md.
+created_at: '2026-08-15'
+autonomy: high
+
+# ---------------------------------------------------------------------------
+# PARKED / HISTORICAL NOTE (added after F4's design settled on claim-first, not touched
+# further per architect constraints while F5 itself is parked — see
+# contracts/golden/admin-auth-f5-federated/README.md's PARKED banner for the two open
+# questions blocking resumption): the two paragraphs immediately below still describe an
+# EARLIER, WITHDRAWN F4 design ("--uid disambiguation," "A-GRANT-04/A-GRANT-05" plural,
+# "Multiple accounts per email address" as "F4's decision"). F4's ACTUAL, FINAL, CURRENT
+# design is claim-first provisioning on the UNCHANGED DEFAULT account-linking setting, with a
+# single A-GRANT-04 (squatter-shape warning) — see contracts/contract-admin-auth-f4-google.yaml
+# and its README's "Decision history". None of the text below is a live requirement of this
+# (F5) contract's own assertions, which do not reference --uid or multiple-accounts anywhere —
+# it is left unedited only because F5 is parked and this project's convention is to label stale
+# context rather than silently rewrite parked work; a resumer must re-derive F5's premises from
+# F4's CURRENT state, not from this paragraph.
+# ---------------------------------------------------------------------------
+# HOW THIS CONTRACT IS VERIFIED
+# ---------------------------------------------------------------------------
+# This contract deliberately does NOT duplicate F4's A-GRANT-04/A-GRANT-05 (account-linking
+# disambiguation) or A-STRUCT-01 (gate provider-agnostic) — both are already proven provider-
+# independent by F4, and Admin-SDK-constructed fixtures cannot distinguish "a Microsoft-shaped
+# account" from "a Google-shaped account" any more precisely than F4's proxy already does (see
+# F4 README "Why no new behavioural gate check for F4/F5"). Re-running the identical proof under
+# a different provider label would not test anything F4 didn't already test — see this
+# project's own rule against assertions that cannot fail differently from an existing one.
+#
+# What IS new and asserted here: the login UI must actually offer these two providers (a
+# structural fact, same class as F4's A-STRUCT-02), and the Apple path must request the
+# 'email' scope explicitly — without it, once "Multiple accounts per email address" is enabled
+# (F4's decision), Firebase stops auto-requesting email/name scopes from Apple and a sign-in
+# can come back with no email at all, which the allowlist check cannot evaluate (fails closed,
+# but for the wrong, undiagnosable reason). ZERO agent_review assertions.
+#
+# EXTERNAL PREREQUISITES THIS GATE CANNOT SATISFY OR VERIFY (documented only, per
+# docs-admin-access-f5-additions.golden.md and check-docs-complete.sh):
+#   - Microsoft: an Entra ID (Azure AD) app registration — requires a Microsoft tenant, which
+#     this project does not currently have evidence of possessing. See README.md decision #2.
+#   - Apple: a PAID Apple Developer Program membership (99 USD/year, confirmed live via Apple's
+#     own compare-memberships page 2026-08-15 — nonprofit fee waiver may apply, SAOC is a
+#     registered non-profit, unconfirmed whether Apple's waiver program covers this org).
+#     Mission notes record Brad already holds a paid membership as of 2026-08-14, so this is not
+#     currently blocking — but the requirement itself is real and independent of who happens to
+#     already have it, and would block a different implementer.
+#   - Apple: Services ID, Sign In with Apple private key + Key ID, Team ID, Return URL
+#     (`https://<PROJECT_ID>.firebaseapp.com/__/auth/handler`) registered on Apple's developer
+#     site — entered into Firebase Console's Apple provider config, never into this repo's own
+#     env vars (see README.md "Where the credentials actually live").
+#
+# PRECONDITIONS shared with F1/F2/F3/F4: same .env.local requirements. No server dependency —
+# every check here is either a source grep (structural) or a docs grep.
+
+features:
+  - id: F5
+    name: >-
+      Microsoft and Apple sign-in — thin addition on F4's provider-agnostic plumbing; new
+      surface area is the login UI paths, Apple's email scope, and provider-specific console
+      prerequisites, all documented not scripted
+    status: pending
+
+goldens:
+  - contracts/golden/admin-auth-f5-federated/README.md
+  - contracts/golden/admin-auth-f5-federated/login-microsoft-apple-buttons.golden.md
+  - contracts/golden/admin-auth-f5-federated/docs-admin-access-f5-additions.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- structural: login UI offers both paths, reuses existing plumbing ----------
+    - id: A-STRUCT-01
+      description: >-
+        app/admin/login/page.tsx constructs OAuthProvider('microsoft.com') and
+        OAuthProvider('apple.com'), both funnel through the existing /api/admin/session route
+        (no parallel session-mint path per provider), and the Apple path calls
+        addScope('email') explicitly. Currently RED — none of this exists in the login page yet.
+      command: bash contracts/checks/admin-auth-f5-federated/check-login-microsoft-apple-structural.sh
+      timeout_seconds: 30
+
+    # ---------- docs ----------
+    - id: A-DOCS-01
+      description: >-
+        docs/admin-access.md documents Microsoft's Entra app registration + the tenant
+        decision (any Microsoft account via the 'common' endpoint, not restricted to a single
+        tenant — see README.md decision #2) and Apple's paid-Developer-Program requirement,
+        Services ID / private key / Key ID / Team ID / Return URL, and the private-email-relay
+        interaction with the email-based allowlist. See
+        docs-admin-access-f5-additions.golden.md for exact required text.
+      command: bash contracts/checks/admin-auth-f5-federated/check-docs-complete.sh
+      timeout_seconds: 30
+
+    # ---------- gates ----------
+    - id: A-GATE-01
+      description: strict TypeScript type-check passes
+      command: pnpm type-check
+      timeout_seconds: 300
+    - id: A-GATE-02
+      description: lint passes with zero errors
+      command: pnpm lint
+      timeout_seconds: 300

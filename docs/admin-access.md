@@ -229,6 +229,58 @@ To disable self-signup:
 
 **A green contract gate does NOT prove this console step was performed.** The gate verifies the documentation mentions it, not that the console setting is actually enabled. After enabling it, test by attempting to self-register a new account on `/admin/login` — you should see an error with code `auth/admin-restricted-operation`. Confirm that existing admin accounts can still sign in normally. Note: the login page should handle the `auth/admin-restricted-operation` error gracefully (log the error or show a message); if it does not, that's a follow-up for the `/admin/login` page owner.
 
-## Out of scope here (F3 / M2)
+## Claim before allowlist
 
-Adding Google/Microsoft/Apple sign-in providers and the human end-to-end door-scanner proof are later work (mission `admin-auth-hardening`, features F4/F5 and beyond).
+**An email address must be granted via `scripts/admin-grant.ts` before it is ever added to `ADMIN_EMAIL_ALLOWLIST`.** This ordering rule is the core of F4's defence against the account linking hazard.
+
+### Why this order matters
+
+An unallowlisted address grants access to nobody, ever — `lib/admin-auth.ts` refuses it at the third gate condition regardless of what account exists behind it. So there is never a legitimate reason to add an address to the allowlist before it has gone through `admin-grant.ts` at least once. The ordering closes two attack paths:
+
+- **No pre-existing account.** When `admin-grant.ts` creates a fresh account for an email, it sets `emailVerified: true` immediately (we vouched for it — same as F3's own rule). Firebase enforces email uniqueness unconditionally at the Admin SDK level — no second account for that same email can ever be created via client-side signup (`accounts:signUp`) from that point onward. The address is permanently claimed by the real admin. Later, when the real admin signs in with Google and Firebase **links** the Google credential onto this account, it's the legitimate account, not a squatter's.
+
+- **Pre-existing account (the dangerous case).** A squatter may have self-registered the address first via the still-open signup endpoint. This is exactly the case F3's existing gate already handles: `admin-grant.ts` refuses without `--existing`, prints the account's provenance, and even with `--existing`, never sets `emailVerified: true` on a pre-existing account — so an unverified squatter stays locked out by F3's `email_verified` check regardless. What F4 adds is an explicit warning when the account matches the squatter-shape exactly: password provider only, never verified.
+
+### This is operator discipline, not a technical guarantee
+
+Claiming the address first is a documented ordering rule, not a platform setting that enforces itself. This project's own history (F3's own amendment) shows that operator discipline can be documented without false guarantees. The concrete residual risk remains: an operator could misjudge a pre-existing account as legitimate, run `admin-grant.ts` with `--existing`, and later watch that squatter's account get verified when the real admin signs in with Google and Firebase links the Google credential onto the same uid.
+
+This is a real, known, documented limitation. Two controls address it:
+
+1. **The sharper warning from `admin-grant.ts`** — when a pre-existing account is password-only and never verified, the script prints an explicit message at grant time, not buried in a manual step. An operator reading "password provider only, never verified — check whether they've already signed in via a federated provider elsewhere" is less likely to rubber-stamp `--existing` than one reading only a uid and timestamp.
+
+2. **This documentation** — the ordering rule and its rationale are written here as a hard rule, following this project's convention of documenting what cannot be scripted (see F3's "Disabling self-signup" section above — the same principle).
+
+Accepted as a known, documented limitation, backed by the sharper warning and operator discipline, not solved further here.
+
+## Google sign-in
+
+Admins can now sign in with Google as well as email/password. Both paths converge through the same `/api/admin/session` route and the same authorisation gate — signing in with Google confers **nothing by itself**. The allowlist plus the `admin` custom claim still decide access, re-checked on every request, exactly as they do for password sign-in.
+
+### Prerequisites — Firebase console setup
+
+Enabling Google sign-in requires one manual step in the Firebase Console:
+
+1. **Navigate directly:** https://console.firebase.google.com/project/saoc-webapp/authentication/providers
+2. **Enable the Google provider** — set a support email address. That is all. Google's OAuth client is auto-configured, tied to the existing GCP project. No client ID or secret needs to be obtained; the credentials are managed by Google Cloud and Firebase automatically.
+3. **No `.env.local` change needed** — this project's client code uses Firebase's `GoogleAuthProvider` from the `firebase/auth` library (see `app/admin/login/page.tsx`), which communicates only with Firebase's hosted OAuth redirect handler (`https://<PROJECT_ID>.firebaseapp.com/__/auth/handler`). Firebase stores the provider configuration itself; no credentials land in this repository's environment variables or secret-corruption surface.
+
+**A green contract gate does NOT prove this console step was performed.** The gate verifies this documentation mentions it and the code is structured correctly, not that a human actually enabled Google in the Firebase Console. After enabling Google, test by attempting to sign in via the "Sign in with Google" button on `/admin/login` — it should open a popup. Confirm that both a password sign-in and a Google sign-in for the same allowlisted, admin-claimed account work correctly and both land at `/admin`.
+
+### The new pre-existing-account warning
+
+`scripts/admin-grant.ts` now prints an explicit warning when a pre-existing account matches the squatter-shape exactly: **password provider only, never verified**. This never occurs naturally on this project — federated providers set `email_verified: true` automatically, and self-registered password accounts remain unverified. Before passing `--existing` to promote such an account to admin, you must independently verify it belongs to the intended person, not a squatter.
+
+Example workflow:
+
+1. You run `admin-grant.ts` on an address about to be onboarded.
+2. The script finds a pre-existing account and prints its provenance.
+3. If the provenance shows "password provider only, never verified," the script prints a warning — do not automatically assume this is safe.
+4. Ask the intended admin directly: "Have you ever signed into this admin panel before, via Google or another federated provider?" If they answer no, the account is a red flag — investigate further before passing `--existing`.
+5. If the intended admin confirms they have already signed in via Google elsewhere, that sign-in would show up as an additional `providerData` entry (e.g. `google.com`) in the provenance above — that confirms the account belongs to the right person and it is safe to pass `--existing`.
+
+This is an operator-discipline control, not a technical barrier. It sharpens the warning from F3's existing refusal path and makes the dangerous shape explicit at the moment it matters.
+
+## Out of scope here (F4 / M2)
+
+Microsoft and Apple sign-in providers and the human end-to-end door-scanner proof are later work (mission `admin-auth-hardening`, features F5 and beyond).

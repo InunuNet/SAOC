@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-08-15T01:54Z_
+_Generated: 2026-08-15T11:17Z_
 
 ## What happened last session
-admin-auth-hardening F3 (account provisioning) closed M1 with a real adversarial find: admin-grant.ts unconditionally set admin:true+emailVerified:true on pre-existing accounts, enabling account pre-hijacking while self-signup stays open. Fixed via a --existing gate; contract/goldens amended (spec was the defect, not @dev's build). M1 now fully gated (F1/F2 12/12, F3 11/11); M2 (federated sign-in) still pending.
+F4 (Google sign-in) shipped and gated 6/6 for admin-auth-hardening: GoogleAuthProvider on /admin/login with claim-first provisioning (email must go through admin-grant.ts before ADMIN_EMAIL_ALLOWLIST, closing the squatting race via Firebase's unconditional email-uniqueness rather than operator discipline). F5 (Microsoft+Apple) PARKED by user decision; F6 (human proof) remains. Confirmed a 4th instance of the weak-assertion defect class (A-STRUCT-02 substring-matched an endpoint literal) and fixed it with a proven-to-reject-broken-variant standard. Logged an orchestration failure (out-of-order messages caused 3 design reversals) and a near-miss where a human was pointed at an irreversible Identity Platform console setting that didn't apply.

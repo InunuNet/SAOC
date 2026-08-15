@@ -51,3 +51,12 @@ scanner / TOCTOU / idempotency items), F7 (docs + deploy config, incl. `SITE_URL
 `cms-activation-deploy` (prior mission) — 5 of 6 features done; F6 (Studio edit → live site) was
 BLOCKED on a Firebase App Hosting CDN edge, since resolved by the later `cms-loop-and-wiring`
 mission (bounded-staleness `revalidate = 60` fix, see `learned.md`).
+
+### admin-auth-hardening (started 2026-08-14, in progress)
+
+M1 (auth gate closed + proven + provisioning) done and gated. **F4 (Google sign-in) done
+2026-08-15**, gate green 6/6 — claim-first provisioning design, see `learned.md`. **F5
+(Microsoft + Apple sign-in) PARKED by user decision.** F6 (a human logs in and the door scanner
+runs end to end) still `pending`, milestone M3. Two human actions block F4 actually working in
+production: enable Google in the Firebase console, and add `brad@inunu.net` to the deployed
+allowlist in Secret Manager. See `backlog.md` "admin-auth-hardening" section.

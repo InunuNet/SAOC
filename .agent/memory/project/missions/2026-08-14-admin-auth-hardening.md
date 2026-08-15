@@ -5,16 +5,16 @@ goal: Close the proven /admin authentication hole, then add Google, Microsoft an
   Apple sign-in safely on top of a working authorisation gate
 created_at: '2026-08-14T13:50:58.639386+00:00'
 started_at: '2026-08-14T22:20:13.696373+00:00'
-last_active_at: '2026-08-15T01:38:55.531418+00:00'
+last_active_at: '2026-08-15T11:15:38.161455+00:00'
 status: paused
 cost_estimate:
   features: 6
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: M1
-  feature: F3
-  ts: '2026-08-15T01:38:55.531418+00:00'
+  milestone: M2
+  feature: F4
+  ts: '2026-08-15T11:15:38.161455+00:00'
 features:
 - id: F1
   title: Authorisation gate — allowlist or custom claim, enforced server-side, failing
@@ -44,19 +44,13 @@ features:
   contract: contracts/contract-admin-auth-f3-provisioning.yaml
 - id: F4
   title: Google sign-in
-  inline_brief: 'Cheapest of the three and safe ONLY once F1/F2 are green — before
-    that it widens the hole from "anyone who can call an API" to "every Google account
-    on earth".
-
-    Near-zero configuration in Firebase (auto-configured; set the support email).
-    The real work is in app/admin/login/page.tsx, which today implements only signInWithEmailAndPassword
-    — enabling a provider in the console has NO effect until the login UI offers it.
-
-    Verify the allowlist gate holds for a Google identity specifically: a Google account
-    NOT on the allowlist must be refused with the same fail-closed behaviour as an
-    unknown email/password account.'
-  status: pending
+  inline_brief: null
+  status: done
   milestone: M2
+  started_at: '2026-08-15T10:38:45.735938+00:00'
+  completed_at: '2026-08-15T11:15:38.161232+00:00'
+  spec: docs/admin-access.md
+  contract: contracts/contract-admin-auth-f4-google.yaml
 - id: F5
   title: Microsoft and Apple sign-in
   inline_brief: 'Brad CONFIRMED on 2026-08-14 that he holds a paid Apple Developer
@@ -122,6 +116,9 @@ milestones:
   - F6
   status: pending
 ---
+
+
+
 
 
 

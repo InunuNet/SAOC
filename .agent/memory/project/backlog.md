@@ -810,24 +810,59 @@ the ticket would sit `reserved` forever. Use the deployed host for payment testi
   expose a Refunds API (GET/POST /refunds/:pf_payment_id, same MD5+passphrase auth as the ITN),
   so this is buildable — see docs/payment-gateway-research-2026-08.md.
 
-## admin-auth-hardening — M1 done (2026-08-15)
+## admin-auth-hardening — M1 done, F4 done, F5 parked (2026-08-15)
 
 F1 (authorisation gate), F2 (adversarial refusal proof), F3 (account provisioning) all `done`,
 milestone M1 gated (F1/F2 contract 12/12, F3's own contract 11/11). New scripts:
 `scripts/admin-grant.ts` (grants `admin:true`, `--existing` flag required to touch a
 pre-existing account — see [[learned.md]] "admin-auth-hardening F3"), `admin-revoke.ts`,
-`admin-list.ts`. `docs/admin-access.md` extended. M2 (F4 Google, F5 Microsoft+Apple, F6 TBD) is
-`pending`, mission currently `paused` at the M1/M2 boundary.
+`admin-list.ts`. `docs/admin-access.md` extended.
 
-- [ ] **[P1, human action, highest value] Disable self-signup on `saoc-webapp`.** This is the
-  actual fix for the account pre-hijacking risk `--existing` only guards against —
+**F4 (Google sign-in) done 2026-08-15**, gate green 6/6, 100% machine-verifiable, zero
+`agent_review`. Shipped: `GoogleAuthProvider` + `signInWithPopup` on `/admin/login`,
+`app/admin/login/GoogleSignInButton.tsx`, a squatter-shape warning in `admin-grant.ts`,
+`docs/admin-access.md` extended with "Google sign-in" + "Claim before allowlist". Design is
+**claim-first provisioning**: an email must go through `admin-grant.ts` BEFORE it is added to
+`ADMIN_EMAIL_ALLOWLIST`, because Firebase enforces email uniqueness unconditionally once
+claimed — this closes the squatting race at the platform level rather than by operator
+discipline alone. `lib/admin-auth.ts` and the session route were NOT touched by F4. This
+closes the "federated sign-in auto-verifies email" item below (now resolved by the claim-first
+design, not a raw guard).
+
+`brad@inunu.net` is now the only admin — Firebase uid `NhSVXoMlT2bl6h4gDoyr5NZ1VW52`,
+`admin` claim, `emailVerified: true`, account created by us (so no pre-existing squatter risk
+on this address). Local `.env.local` allowlist updated.
+
+**F5 (Microsoft + Apple sign-in) PARKED by user decision 2026-08-15** — see mission file
+`missions/2026-08-14-admin-auth-hardening.md` (still shows `status: pending`, not edited here
+per hand-editing restriction; team-lead/orchestrator owns updating it). Two open questions
+blocking F5, unresolved: (1) whether Apple sign-in should depend on an individual's personal
+Apple Developer membership rather than SAOC's own; (2) how Apple's `privaterelay.appleid.com`
+opaque relay addresses reconcile with an email-based allowlist. F6 (door scanner/admin proven
+working end to end, by a human) remains `pending`, milestone M3.
+
+- [ ] **[P0, human, required for F4 to function] Enable Google sign-in in Firebase Auth.**
+  A green gate does NOT prove this was done — go to
+  `https://console.firebase.google.com/project/saoc-webapp/authentication/providers`, enable
+  Google, set a support email.
+- [ ] **[P0, human] Add `brad@inunu.net` to the DEPLOYED `ADMIN_EMAIL_ALLOWLIST`** in Secret
+  Manager — only `.env.local` (local) has been updated. The two `saoc.co.za` entries in
+  `.env.local` are contract fixtures and must NOT go into Secret Manager.
+- [ ] **[P1, human action, highest value] Disable self-signup on `saoc-webapp`.** Verified still
+  live 2026-08-15 (`accounts:signUp` returns `WEAK_PASSWORD`, not
+  `auth/admin-restricted-operation`). This is the actual fix for the account pre-hijacking risk
+  `--existing` only guards against —
   `console.cloud.google.com/customer-identity/settings?project=saoc-webapp` → "Disable user
-  actions". Confirm via `auth/admin-restricted-operation` on a subsequent `accounts:signUp` probe.
-- [ ] **[P2, design input for F4/F5] Federated sign-in auto-verifies email.** The `--existing`
-  guard in `admin-grant.ts` holds only because `emailVerified` currently requires mailbox
-  control. Google/Apple sign-in sets `emailVerified: true` automatically on link — linking a
-  federated provider to a pre-existing squatted account could flip the guard. F4/F5 must design
-  around this, not just add sign-in buttons.
+  actions". **Closing this requires the irreversible Identity Platform upgrade (no downgrade
+  path per Google support) — deliberately deferred, do not enable Identity Platform without a
+  explicit go-ahead.** Confirm via `auth/admin-restricted-operation` on a subsequent
+  `accounts:signUp` probe once done.
+- [x] ~~**[P2, design input for F4/F5] Federated sign-in auto-verifies email.**~~ **RESOLVED by
+  F4's claim-first design (see above)** — the squatting race is closed by Firebase's
+  unconditional email-uniqueness enforcement, not by the `--existing` guard alone. @qa traced
+  the residual gap (a verified password-only account pre-existing at an address) and confirmed
+  it is NOT exploitable: verifying a Firebase email requires mailbox access, and there is no
+  in-app signup/verification UI, so anyone in that state already owns the address.
 - [ ] **[P2] `/admin/login` should handle `auth/admin-restricted-operation` gracefully** once
   self-signup is disabled above — today the UI has no path for that error code.
 - [ ] **[P2] A-GRANT-03's stdout-grep assertion doesn't prove anything** (see
@@ -835,12 +870,19 @@ pre-existing account — see [[learned.md]] "admin-auth-hardening F3"), `admin-r
   "reset link".
 - [ ] **[P3, untested] Concurrent grant/revoke race on the same identity** — low likelihood for a
   manual single-operator CLI, not exercised this session.
+- [ ] **[P3, style] `app/admin/login/page.tsx` uses inline styles throughout**, against
+  `.claude/rules/coding.md` (wants tokens/utility classes). Pre-dates F4; deliberately not fixed
+  inside an auth change — own task, own review.
+- [ ] **[P3] No tooling here can drive a real Google OAuth consent flow** — the sign-in button is
+  structurally verified but never exercised end to end. Belongs to F6's human proof.
+- [ ] **[P1, audit] Audit remaining contracts for the weak-assertion defect class** (see
+  [[learned.md]] "Weak-assertion defect class — 4th confirmed instance"), starting with the
+  already-recorded D5-04 false-green in `contract-d5-admin-dashboard.yaml`.
 
-- [ ] **[P2, NEW 2026-08-14] Additional sign-in providers — now MISSION admin-auth-hardening (M2). Brad CONFIRMED he holds a paid Apple Developer membership, so Apple is viable.**
-  Brad wants Google, Microsoft and Apple. Effort is very uneven: Google is near-zero config;
-  Microsoft needs an Azure/Entra app registration (tenant, client id, secret); Apple needs a
-  paid Apple Developer Program membership (~$99/yr) plus a Services ID and signing key.
-  Also note `app/admin/login/page.tsx` only implements `signInWithEmailAndPassword` — enabling
-  providers in the console has NO effect until the login UI adds buttons for them.
-  Scope question to settle first: these providers matter for FUTURE MEMBER login, not for the
-  handful of committee staff who use /admin. Decide which audience before building.
+- [ ] **[P2, NEW 2026-08-14, F5 scope — PARKED, see above] Additional sign-in providers.**
+  Brad wants Google (done, F4), Microsoft and Apple (F5, parked). Effort is very uneven: Google
+  was near-zero config; Microsoft needs an Azure/Entra app registration (tenant, client id,
+  secret); Apple needs a paid Apple Developer Program membership (Brad confirmed he holds one)
+  plus a Services ID and signing key. Scope question to settle before resuming: these providers
+  matter for FUTURE MEMBER login, not for the handful of committee staff who use /admin. Decide
+  which audience before building.
