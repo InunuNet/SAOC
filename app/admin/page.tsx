@@ -3,18 +3,63 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 import { getAdminSession } from '@/lib/admin-auth';
 import { initAdmin } from '@/lib/firebase-admin';
+import { UtilityBar, Header, Footer } from '@/components/chrome';
+import { sanityFetch } from '@/sanity/lib/fetch';
+import { nationalShowQuery } from '@/sanity/queries';
+import { TicketsTable } from '@/components/admin/TicketsTable';
+import type { ShowIdentity } from '@/types';
 import type { Ticket, TicketType, TicketStatus } from '@/types/index';
 
+// This dashboard gets the site's chrome directly (rather than via a shared
+// app/admin/layout.tsx) because a layout at that level would also wrap
+// /admin/door and /admin/login, both of which must NOT inherit it — see
+// app/admin/login/layout.tsx and app/admin/door/layout.tsx for why each is
+// scoped to its own subtree.
 export default async function AdminPage() {
   const session = await getAdminSession();
   if (!session.ok) {
     redirect('/admin/login');
   }
 
+  const [show, tickets] = await Promise.all([
+    sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
+    fetchTickets(),
+  ]);
+
+  return (
+    <>
+      <UtilityBar show={show} />
+      <Header />
+      <main>
+        <div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-8 sm:py-16">
+          <span className="eyebrow">Admin</span>
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+            <h1 className="font-serif text-[28px] font-semibold leading-tight text-ink sm:text-[34px]">
+              Ticket Admin
+            </h1>
+            <a
+              href="/api/admin/export-csv"
+              className="inline-block rounded-sm border border-rule bg-ivory px-4 py-2.5 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory"
+            >
+              Download CSV
+            </a>
+          </div>
+
+          <div className="mt-8">
+            <TicketsTable tickets={tickets} />
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </>
+  );
+}
+
+async function fetchTickets(): Promise<Ticket[]> {
   const db = getFirestore(initAdmin());
   const snapshot = await db.collection('tickets').get();
 
-  const tickets: Ticket[] = snapshot.docs.map((doc) => {
+  return snapshot.docs.map((doc) => {
     const data = doc.data();
     return {
       id: doc.id,
@@ -31,41 +76,4 @@ export default async function AdminPage() {
       pf_payment_id: data['pf_payment_id'] ?? null,
     };
   });
-
-  return (
-    <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>Ticket Admin</h1>
-      <p>
-        <a href="/api/admin/export-csv">Download CSV</a>
-      </p>
-      <table border={1} cellPadding={8} style={{ borderCollapse: 'collapse', width: '100%' }}>
-        <thead>
-          <tr>
-            <th>Booking Ref</th>
-            <th>Attendee Name</th>
-            <th>Attendee Email</th>
-            <th>Ticket Type</th>
-            <th>Status</th>
-            <th>Purchased At</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tickets.map((ticket) => (
-            <tr key={ticket.id}>
-              <td>{ticket.bookingRef}</td>
-              <td>{ticket.attendeeName}</td>
-              <td>{ticket.attendeeEmail}</td>
-              <td>{ticket.ticketType}</td>
-              <td>{ticket.status}</td>
-              <td>
-                {ticket.purchasedAt
-                  ? new Date(ticket.purchasedAt.toMillis()).toISOString()
-                  : '—'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </main>
-  );
 }

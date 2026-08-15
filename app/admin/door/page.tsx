@@ -2,21 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import type { TicketType } from '@/types/index';
 
-type CheckInResult =
-  | {
-      success: true;
-      ticket: {
-        attendeeName: string;
-        ticketType: TicketType;
-        bookingRef: string;
-      };
-    }
-  | { success: false; error: string };
+import { DoorResultBanner, type CheckInResult } from '@/components/admin/DoorResultBanner';
 
 const SCANNER_ELEMENT_ID = 'qr-reader';
 
+// Deliberately NOT wrapped in site chrome — a nav bar is an obstacle at a show entrance.
+// Same fonts/tokens as the rest of the site, but tuned for one-handed, at-speed use in
+// bright daylight: large touch targets, high contrast, minimal chrome.
 export default function DoorPage() {
   const [result, setResult] = useState<CheckInResult | null>(null);
   const [manualRef, setManualRef] = useState('');
@@ -50,12 +43,9 @@ export default function DoorPage() {
       false,
     );
 
-    scanner.render(
-      (decodedText) => {
-        void handleCheckIn(decodedText);
-      },
-      undefined,
-    );
+    scanner.render((decodedText) => {
+      void handleCheckIn(decodedText);
+    }, undefined);
 
     return () => {
       scanner.clear().catch(() => undefined);
@@ -69,88 +59,47 @@ export default function DoorPage() {
   }
 
   return (
-    <div
-      style={{
-        maxWidth: 480,
-        margin: '0 auto',
-        padding: '1rem',
-        fontFamily: 'system-ui, sans-serif',
-      }}
-    >
-      <h1 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Door Check-in</h1>
+    <div className="min-h-screen bg-parchment px-4 py-6">
+      <div className="mx-auto max-w-[480px]">
+        <span className="eyebrow">SAOC</span>
+        <h1 className="mt-3 font-serif text-[26px] font-semibold leading-tight text-ink">
+          Door Check-in
+        </h1>
 
-      <div id={SCANNER_ELEMENT_ID} style={{ marginBottom: '1.5rem' }} />
+        <div id={SCANNER_ELEMENT_ID} className="mt-5 border border-rule bg-ivory p-2" />
 
-      <form onSubmit={handleManualSubmit} style={{ marginBottom: '1.5rem' }}>
-        <label
-          htmlFor="manual-ref"
-          style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}
-        >
-          Manual entry
-        </label>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <input
-            id="manual-ref"
-            type="text"
-            value={manualRef}
-            onChange={(e) => setManualRef(e.target.value)}
-            placeholder="Booking reference"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                void handleCheckIn(manualRef);
-                setManualRef('');
-              }
-            }}
-            style={{
-              flex: 1,
-              padding: '0.5rem',
-              border: '1px solid #ccc',
-              borderRadius: 4,
-              fontSize: '1rem',
-            }}
-          />
-          <button
-            type="submit"
-            style={{
-              padding: '0.5rem 1rem',
-              background: '#2563eb',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 4,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
+        <form onSubmit={handleManualSubmit} className="mt-5 space-y-2">
+          <label
+            htmlFor="manual-ref"
+            className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted"
           >
-            Check In
-          </button>
-        </div>
-      </form>
+            Manual entry
+          </label>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input
+              id="manual-ref"
+              type="text"
+              value={manualRef}
+              onChange={(e) => setManualRef(e.target.value)}
+              placeholder="Booking reference"
+              autoComplete="off"
+              className="min-w-0 flex-1 rounded-sm border border-rule bg-ivory px-4 py-4 font-sans text-[18px] text-ink outline-none placeholder:text-muted focus-visible:ring-2 focus-visible:ring-primary/40"
+            />
+            <button
+              type="submit"
+              className="rounded-sm bg-primary px-6 py-4 font-sans text-[18px] font-bold text-ivory transition-colors active:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            >
+              Check In
+            </button>
+          </div>
+        </form>
 
-      {result && (
-        <div
-          role="status"
-          style={{
-            padding: '1rem',
-            borderRadius: 6,
-            background: result.success ? '#dcfce7' : '#fee2e2',
-            color: result.success ? '#166534' : '#991b1b',
-            fontWeight: 600,
-          }}
-        >
-          {result.success ? (
-            <>
-              <div>Checked in</div>
-              <div>{result.ticket.attendeeName}</div>
-              <div style={{ fontWeight: 400, fontSize: '0.875rem' }}>
-                {result.ticket.ticketType} — {result.ticket.bookingRef}
-              </div>
-            </>
-          ) : (
-            <div>{result.error}</div>
-          )}
-        </div>
-      )}
+        {result && (
+          <div className="mt-5">
+            <DoorResultBanner result={result} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
