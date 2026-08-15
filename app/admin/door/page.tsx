@@ -1,11 +1,35 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Html5Qrcode, type CameraCapabilities } from 'html5-qrcode';
 
 import { DoorResultBanner, type CheckInResult } from '@/components/admin/DoorResultBanner';
 
+type TorchFeature = ReturnType<CameraCapabilities['torchFeature']>;
+
 const SCANNER_ELEMENT_ID = 'qr-reader';
+const SCAN_CONFIG = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+// Camera lifecycle, surfaced to the volunteer instead of a blank box on failure.
+type CameraStatus = 'starting' | 'running' | 'permission-denied' | 'no-camera' | 'error';
+
+function classifyCameraError(error: unknown): CameraStatus {
+  const text = String(error);
+  if (text.includes('NotAllowedError') || text.includes('PermissionDeniedError')) {
+    return 'permission-denied';
+  }
+  if (text.includes('NotFoundError') || text.includes('OverconstrainedError')) {
+    return 'no-camera';
+  }
+  return 'error';
+}
+
+const CAMERA_STATUS_MESSAGE: Record<Exclude<CameraStatus, 'starting' | 'running'>, string> = {
+  'permission-denied':
+    'Camera access was denied. Allow camera access in your browser settings, or use manual entry below.',
+  'no-camera': 'No camera was found on this device. Use manual entry below.',
+  error: 'The camera could not be started. Use manual entry below.',
+};
 
 // Deliberately NOT wrapped in site chrome — a nav bar is an obstacle at a show entrance.
 // Same fonts/tokens as the rest of the site, but tuned for one-handed, at-speed use in
@@ -13,7 +37,11 @@ const SCANNER_ELEMENT_ID = 'qr-reader';
 export default function DoorPage() {
   const [result, setResult] = useState<CheckInResult | null>(null);
   const [manualRef, setManualRef] = useState('');
+  const [cameraStatus, setCameraStatus] = useState<CameraStatus>('starting');
+  const [torchFeature, setTorchFeature] = useState<TorchFeature | null>(null);
+  const [torchOn, setTorchOn] = useState(false);
   const scanningRef = useRef<boolean>(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
 
   async function handleCheckIn(bookingRef: string): Promise<void> {
     if (scanningRef.current) return;
@@ -36,27 +64,77 @@ export default function DoorPage() {
     }
   }
 
-  useEffect(() => {
-    const scanner = new Html5QrcodeScanner(
-      SCANNER_ELEMENT_ID,
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      false,
-    );
+  // Constructs a scanner and starts it. All state updates here happen inside
+  // start()'s async callbacks, never synchronously — safe to call from an effect.
+  const beginScan = useCallback(() => {
+    const scanner = new Html5Qrcode(SCANNER_ELEMENT_ID, { verbose: false });
+    scannerRef.current = scanner;
 
-    scanner.render((decodedText) => {
-      void handleCheckIn(decodedText);
-    }, undefined);
+    scanner
+      .start(
+        { facingMode: 'environment' },
+        SCAN_CONFIG,
+        (decodedText) => {
+          void handleCheckIn(decodedText);
+        },
+        undefined, // per-frame "no QR found" noise — expected during normal scanning, not an error
+      )
+      .then(() => {
+        setCameraStatus('running');
+        const torch = scanner.getRunningTrackCameraCapabilities().torchFeature();
+        if (torch.isSupported()) {
+          setTorchFeature(torch);
+        }
+      })
+      .catch((error: unknown) => {
+        setCameraStatus(classifyCameraError(error));
+      });
+  }, []);
+
+  useEffect(() => {
+    beginScan();
 
     return () => {
-      scanner.clear().catch(() => undefined);
+      const scanner = scannerRef.current;
+      if (!scanner) return;
+      if (scanner.isScanning) {
+        scanner
+          .stop()
+          .then(() => scanner.clear())
+          .catch(() => undefined);
+      } else {
+        scanner.clear();
+      }
     };
-  }, []);
+  }, [beginScan]);
+
+  // Retry, triggered from the "Try camera again" button — an event handler, so
+  // resetting state synchronously here (unlike in the mount effect) is safe.
+  function retryCamera() {
+    setCameraStatus('starting');
+    setTorchFeature(null);
+    setTorchOn(false);
+    beginScan();
+  }
+
+  async function toggleTorch() {
+    if (!torchFeature) return;
+    const next = !torchOn;
+    try {
+      await torchFeature.apply(next);
+      setTorchOn(next);
+    } catch {
+      setTorchFeature(null); // device claimed torch support but the call failed — stop offering it
+    }
+  }
 
   function handleManualSubmit(e: React.FormEvent) {
     e.preventDefault();
     void handleCheckIn(manualRef);
     setManualRef('');
   }
+
+  const cameraFailed = cameraStatus !== 'starting' && cameraStatus !== 'running';
 
   return (
     <div className="min-h-screen bg-parchment px-4 py-6">
@@ -66,7 +144,39 @@ export default function DoorPage() {
           Door Check-in
         </h1>
 
-        <div id={SCANNER_ELEMENT_ID} className="mt-5 border border-rule bg-ivory p-4" />
+        <div className="mt-5 border border-rule bg-ivory p-4">
+          <div id={SCANNER_ELEMENT_ID} />
+
+          {cameraStatus === 'starting' && (
+            <p className="mt-3 font-sans text-[15px] text-muted">Starting camera…</p>
+          )}
+
+          {cameraFailed && (
+            <div className="mt-3 space-y-3">
+              <p className="font-sans text-[15px] text-ink">
+                {CAMERA_STATUS_MESSAGE[cameraStatus]}
+              </p>
+              <button
+                type="button"
+                onClick={retryCamera}
+                className="w-full rounded-sm border border-rule bg-ivory px-4 py-3 font-sans text-[15px] font-semibold text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              >
+                Try camera again
+              </button>
+            </div>
+          )}
+
+          {cameraStatus === 'running' && torchFeature && (
+            <button
+              type="button"
+              onClick={() => void toggleTorch()}
+              aria-pressed={torchOn}
+              className="mt-3 w-full rounded-sm border border-rule bg-ivory px-4 py-3 font-sans text-[15px] font-semibold text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              {torchOn ? 'Turn off torch' : 'Turn on torch'}
+            </button>
+          )}
+        </div>
 
         <form onSubmit={handleManualSubmit} className="mt-5 space-y-2">
           <label
