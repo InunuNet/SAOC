@@ -1,0 +1,16 @@
+/* Fixture: the ORIGINAL (defective) token values, before remediation.
+   Used ONLY to prove check_contrast.py actually rejects a failing palette —
+   never read by the app. Rejects: the pre-fix --accent (#9e8c6b), which
+   measures 2.94:1 on parchment / 2.62:1 on bone / 2.94:1 as a bg-accent
+   button fill under ivory text — all below the 4.5:1 AA requirement. Also
+   keeps text-accent (not text-accent-soft) as the intended dark-surface
+   pairing, so accent-vs-primary/primary-800 is exercised at the old value too. */
+:root {
+  --primary: #384138;
+  --primary-800: #22281f;
+  --accent: #9e8c6b;
+  --accent-soft: #c2b393;
+  --parchment: #f4f3ec;
+  --bone: #e8e6dc;
+  --ivory: #f4f3ec;
+}

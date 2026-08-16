@@ -1,0 +1,115 @@
+schema: athanor.contract/v1
+slug: wcag-accent-contrast
+goal: >
+  Fix WCAG AA contrast failures on the --accent design token, which fails at
+  2.94:1 (needs 4.5:1) as text on parchment/bone backgrounds across the
+  public site — including the originally-reported ContactForm and
+  TicketPurchaseForm error text — plus the same root-cause failure on
+  bg-accent button fills and on six dark-surface eyebrow labels using the
+  wrong accent variant.
+created_at: '2026-08-16'
+autonomy: high
+features:
+  - id: F1
+    name: >
+      Darken --accent token (#9e8c6b -> #74654c) in app/globals.css so every
+      light-surface text-accent usage and every bg-accent+text-ivory button
+      fill meets 4.5:1 against --parchment and --bone.
+    status: pending
+  - id: F2
+    name: >
+      Swap text-accent -> text-accent-soft on the six dark-surface eyebrow
+      labels (app/not-found.tsx:21; national-show/archive/page.tsx:83;
+      national-show/archive/[year]/page.tsx:137; national-show/page.tsx:245,
+      504, 522) so darkening --accent in F1 does not break them.
+    status: pending
+  - id: F3
+    name: >
+      Swap text-primary -> text-ivory in components/chrome/UtilityBar.tsx:68,
+      the one pairing that gets WORSE (3.24:1 -> 1.87:1) after F1's token
+      darkening.
+    status: pending
+goldens:
+  - contracts/golden/wcag-accent-contrast/check_contrast.py
+  - contracts/golden/wcag-accent-contrast/fixture-broken.css
+  - contracts/golden/wcag-accent-contrast/contrast-audit.md
+  - contracts/golden/wcag-accent-contrast/remedy.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        check_contrast.py rejects the pre-fix fixture (proves the checker's
+        rejection logic works independent of live repo state; the fixture
+        holds the original --accent #9e8c6b, which fails 2.94:1 on
+        parchment and 2.62:1 on bone).
+      command: >-
+        ! python3 contracts/golden/wcag-accent-contrast/check_contrast.py contracts/golden/wcag-accent-contrast/fixture-broken.css
+    - id: A2
+      description: >
+        check_contrast.py passes against the REAL app/globals.css (proves
+        --accent was actually darkened to meet 4.5:1 on parchment and bone,
+        and --accent-soft still meets 4.5:1 on primary/primary-800 -- parsed
+        live from the CSS file, not a hardcoded palette copy).
+      command: python3 contracts/golden/wcag-accent-contrast/check_contrast.py app/globals.css
+    - id: A3
+      description: >
+        --accent token in app/globals.css is exactly the prescribed remedy
+        value, not some other arbitrary darkening (rejects any other hex,
+        including one that merely happens to pass the checker's five sampled
+        pairings by coincidence).
+      command: grep -qE -- "--accent:\s*#74654c\s*;" app/globals.css
+    - id: A4
+      description: >
+        --accent-soft was left untouched at its known-good value (rejects a
+        variant where accent-soft was also edited, which is unnecessary and
+        risks silently breaking its already-passing dark-surface ratios).
+      command: grep -qE -- "--accent-soft:\s*#c2b393\s*;" app/globals.css
+    - id: A5
+      description: >
+        not-found.tsx eyebrow label uses text-accent-soft, not text-accent
+        (rejects the un-migrated dark-surface usage, which would read at
+        1.87:1 after F1's darkening -- unreadable against bg-primary).
+      command: grep -q "text-accent-soft" app/not-found.tsx
+    - id: A6
+      description: >
+        not-found.tsx no longer uses bare text-accent on its bg-primary
+        hero (rejects a variant that added text-accent-soft elsewhere but
+        left the original failing class in place too).
+      command: '! grep -qE "text-accent[^-]" app/not-found.tsx'
+    - id: A7
+      description: >
+        national-show archive index eyebrow label migrated off text-accent
+        (rejects the un-migrated bg-primary-800 usage at line ~83).
+      command: >-
+        grep -q "text-accent-soft" "app/(marketing)/national-show/archive/page.tsx"
+    - id: A8
+      description: >
+        national-show archive [year] eyebrow label migrated off text-accent
+        (rejects the un-migrated bg-primary-800 usage at line ~137; note
+        line ~142 legitimately keeps text-accent-soft already and must stay).
+      command: >-
+        grep -c "text-accent-soft" "app/(marketing)/national-show/archive/[year]/page.tsx" | grep -qE "^[2-9]"
+    - id: A9
+      description: >
+        national-show/page.tsx has at least 4 text-accent-soft usages after
+        migration (3 pre-existing at lines ~142/485/plus the 3 newly-migrated
+        dark-surface eyebrows at ~245/504/522; rejects a variant that missed
+        one or more of the three required swaps).
+      command: >-
+        grep -c "text-accent-soft" "app/(marketing)/national-show/page.tsx" | grep -qE "^[4-9]|^[1-9][0-9]"
+    - id: A10
+      description: >
+        UtilityBar chip text uses text-ivory, not text-primary, on its
+        bg-accent fill (rejects the unfixed pairing that would read at
+        1.87:1 once --accent is darkened -- the worst ratio in the whole set).
+      command: >-
+        grep -A1 "bg-accent text-primary" components/chrome/UtilityBar.tsx | grep -q "text-ivory" || ! grep -q "bg-accent text-primary" components/chrome/UtilityBar.tsx
+    - id: A11
+      description: >
+        The three originally-reported public-facing error-text usages still
+        render via the --accent token (not silently switched to a different
+        color that would sidestep the token-level fix) -- rejects a variant
+        that patched around the defect instead of fixing the token.
+      command: >-
+        grep -q "accent" components/contact/ContactForm.tsx && grep -q "text-accent" components/tickets/TicketFormField.tsx && grep -q "text-accent" components/tickets/TicketPurchaseForm.tsx
