@@ -1,0 +1,117 @@
+schema: athanor.contract/v1
+slug: payfast-itn-signature
+goal: >
+  Split lib/payfast.ts's single (outbound-only-correct) parameter-string builder into a
+  distinct inbound builder matching PayFast's documented ITN verification algorithm, so
+  real sandbox ITNs (which always contain blank fields) stop failing signature
+  verification at guard 1 of app/api/tickets/itn/route.ts — the reason no ticket has ever
+  reached 'paid' and F6 (door check-in) cannot be demonstrated.
+created_at: '2026-08-15'
+autonomy: low
+
+# ⚠️ HUMAN ACTION REQUIRED BEFORE @dev RUNS ⚠️
+# app/api/tickets/itn/route.ts is sha256-pinned
+# (7c96726ab4bba28ec8ef027dd7747c39358d23bb27ca1dcac4328201df3b4d0f as of 2026-08-15).
+# Implementing this contract requires editing that file (see required-split.golden.md
+# "Call sites that MUST change" — line 89 and line 193, plus the import statement).
+# A human must lift the pin before @dev is dispatched against this contract. Architect
+# has NOT edited that file and has NOT lifted the pin — that is outside architect's
+# authority and outside this task's scope.
+
+features:
+  - id: F1
+    name: Split PayFast outbound signing from inbound ITN verification (payment-security defect)
+    status: pending
+
+goldens:
+  - contracts/golden/payfast-itn-signature/inbound-algorithm.golden.md
+  - contracts/golden/payfast-itn-signature/required-split.golden.md
+  - contracts/golden/payfast-itn-signature/fixtures.golden.md
+  - contracts/golden/payfast-itn-signature/sandbox-itn.raw.txt
+  - contracts/golden/payfast-itn-signature/sandbox-itn-tampered.raw.txt
+  - contracts/golden/payfast-itn-signature/verify_itn_signature.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        generateNotifySignature (new, inbound-only) reproduces the independently-computed
+        MD5 for the realistic sandbox ITN fixture (posted order, no trim, no blank-skip).
+        REJECTS the broken variant where lib/payfast.ts has no separate inbound signature
+        function at all (current state: `generateNotifySignature is not exported` →
+        exit 1) or where it exists but still routes through the trim+skip-blank outbound
+        builder (produces a different digest than PayFast's documented algorithm →
+        exit 1, verified against contracts/golden/payfast-itn-signature/current-buggy
+        equivalent during architect design — the current lib/payfast.ts fails this
+        exact way today).
+      command: node_modules/.bin/tsx contracts/golden/payfast-itn-signature/verify_itn_signature.ts valid
+
+    - id: A2
+      description: >
+        Altering amount_gross in the ITN body changes the signature generateNotifySignature
+        computes, and the tampered fixture (unchanged signature field, altered amount)
+        fails verification. REJECTS a broken variant that silently omits amount_gross (or
+        any other field) from the signed string — such a variant would make the original
+        and tampered bodies hash identically; the assertion computes both with the SAME
+        implementation and requires they differ, so field-omission bugs are caught even if
+        they coincidentally also drift from the fixture's embedded reference signature.
+      command: cd /Users/vetus/ai/SAOC && node_modules/.bin/tsx contracts/golden/payfast-itn-signature/verify_itn_signature.ts tampered
+
+    - id: A3
+      description: >
+        buildPayfastNotifyParamString (inbound) and buildPayfastParamString (outbound)
+        produce DIFFERENT output on a fixture containing blank fields — proving the split
+        is real and not an alias. REJECTS the broken variant where the "new" inbound
+        function is just `export const buildPayfastNotifyParamString =
+        buildPayfastParamString` (i.e. the bug is left in place under a new name) — this
+        is exactly the current lib/payfast.ts's structure and this assertion fails against
+        it today (exit 1, `no split exists (BUG PRESENT)`).
+      command: cd /Users/vetus/ai/SAOC && node_modules/.bin/tsx contracts/golden/payfast-itn-signature/verify_itn_signature.ts split
+
+    - id: A4
+      description: >
+        buildPayfastParamString (outbound / checkout signing) still trims values and skips
+        blank fields — i.e. this fix must not alter outbound behaviour. REJECTS a broken
+        variant where a developer "fixes" the shared function in place (removes trim/skip
+        to satisfy the inbound need) instead of adding a separate inbound function —
+        that would break the currently-working checkout signing path.
+      command: cd /Users/vetus/ai/SAOC && node_modules/.bin/tsx contracts/golden/payfast-itn-signature/verify_itn_signature.ts outbound-unchanged
+
+    - id: A5
+      description: >
+        Call site app/api/tickets/itn/route.ts:89 (guard 1) must call the NEW
+        generateNotifySignature, not the outbound generateSignature. Static grep — the
+        line that assigns expectedSignature must not read
+        `generateSignature(fields, passphrase)` verbatim; it must read
+        `generateNotifySignature(fields, passphrase)`. REJECTS a fix that adds the new
+        functions to lib/payfast.ts but forgets to update the call site (the actual
+        currently-failing line).
+      command: grep -q "generateNotifySignature(fields, passphrase)" /Users/vetus/ai/SAOC/app/api/tickets/itn/route.ts
+
+    - id: A6
+      description: >
+        Call site app/api/tickets/itn/route.ts:193 (guard 4, server-confirm POST body) must
+        use the new buildPayfastNotifyParamString, not the outbound buildPayfastParamString.
+        REJECTS a fix that corrects guard 1's signature check but leaves guard 4's
+        server-confirm body on the old (wrong) builder — per the docs, PayFast's
+        /eng/query/validate endpoint expects the SAME (inbound) param string as the
+        signature check, so this call site has the identical defect and must change too.
+      command: 'grep -q "body: buildPayfastNotifyParamString(fields)" /Users/vetus/ai/SAOC/app/api/tickets/itn/route.ts'
+
+    - id: A7
+      description: >
+        checkout/route.ts:406 (outbound signing) must remain untouched — still calls
+        generateSignature, not generateNotifySignature. REJECTS a fix that (incorrectly)
+        "unifies" both call sites onto the new inbound function, which would break outbound
+        checkout signing (currently working).
+      command: grep -q "generateSignature(signedFields, passphrase)" /Users/vetus/ai/SAOC/app/api/tickets/checkout/route.ts
+
+    - id: A8
+      description: >
+        lib/payfast.ts must export both new inbound functions by name (static check,
+        cheap pre-flight before the tsx-based dynamic-import assertions A1-A4 run).
+        REJECTS a fix that implements the inbound algorithm inline inside
+        app/api/tickets/itn/route.ts instead of as reusable, independently-testable
+        exports from lib/payfast.ts.
+      command: grep -q "export function buildPayfastNotifyParamString" /Users/vetus/ai/SAOC/lib/payfast.ts && grep -q "export function generateNotifySignature" /Users/vetus/ai/SAOC/lib/payfast.ts

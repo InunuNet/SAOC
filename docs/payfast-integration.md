@@ -210,6 +210,26 @@ already-`paid` duplicate-delivery case stays silent.
 
 ---
 
+## ⚠️ Known defect — ITN signature verification algorithm (partially fixed)
+
+**Status:** `lib/payfast.ts` has been updated with the correct inbound ITN verification algorithm, but `app/api/tickets/itn/route.ts` remains pinned and has not yet been updated to use it. This blocks the fix from shipping.
+
+**The problem:** Real PayFast ITNs always contain blank fields (e.g., `name_last=''`, `custom_str1=''`). The route's current signature verification reuses the outbound (checkout-signing) algorithm, which skips blank fields and trims values — an algorithm that is correct for outbound but mathematically **incompatible** with PayFast's inbound ITN verification spec. Every real ITN arrives with a blank field, so the recomputed digest can never match.
+
+**Evidence:** On 2026-08-15, two ITNs arrived and were rejected at guard 1 with `[tickets/itn] Signature mismatch`, even though payment was genuinely completed in PayFast Sandbox. Cloud Logging confirms both rejections; no ticket has reached `paid` in this project's history.
+
+**The fix (in lib/payfast.ts, committed):** Two new exports, `buildPayfastNotifyParamString` and `generateNotifySignature`, implement PayFast's inbound algorithm correctly (posted order, no blank-skip, no trim). The outbound path (`generateSignature`) remains untouched and working.
+
+**What's left:** The route file is sha256-pinned, so updating its two call sites (line 89 and line 193) to use the new functions requires:
+1. Lifting the pin
+2. Updating the two function calls
+3. Re-pinning with the new hash
+4. Running the contract again (assertions A5 and A6 currently fail on this blocker)
+
+This is documented in full in [docs/payfast-itn-signature.md](payfast-itn-signature.md) — **read that for the complete root cause, algorithm details, and verification strategy.**
+
+---
+
 ## Known limitation — placeholder ticket pricing
 
 `PLACEHOLDER_TICKET_PRICES` in `app/api/tickets/checkout/route.ts` is a hardcoded map:
@@ -276,12 +296,20 @@ are added to `.env.local`:
    Check the Firestore `tickets` collection for the new `reserved` doc, and confirm the
    response's `fields.signature` is present.
 
-3. **Full sandbox round-trip (F6, once F4's buy-flow UI exists)** — because `notify_url` in
-   `app/api/tickets/checkout/route.ts` is hardcoded to `https://saoc.co.za/api/tickets/itn`
-   (production), PayFast's sandbox cannot reach a `localhost` ITN handler directly. A full
-   round-trip test needs either a deployed preview environment or a tunnel (e.g. `ngrok`)
-   pointed at the local ITN route with `NOTIFY_URL` temporarily overridden. This is part of the
-   still-unbuilt F6 — not yet exercised.
+   **⚠️ Important:** This curl example creates a `reserved` ticket that has no associated
+   payment. No ITN will ever complete this reservation, so the ticket will expire after
+   `RESERVATION_TTL_MINUTES` and be released. Do not use this example as a model for
+   production test data — it creates orphaned documents. A real reservation only forms when
+   a buyer actually completes payment in PayFast.
+
+3. **Full sandbox round-trip (F6, once F4's buy-flow UI exists)** — The `notify_url` is
+   resolved at request time from `process.env.SITE_URL` (with a fallback to
+   `https://saoc.co.za`). For sandbox testing, `SITE_URL` must be set to the App Hosting
+   origin so that PayFast's ITN can reach the handler. Without this override, a sandbox
+   `notify_url` built on the fallback production origin would deliver the ITN to the old
+   Joomla site and never reach this app. A full round-trip test additionally needs either a
+   deployed preview environment or a tunnel (e.g. `ngrok`) pointed at the local ITN route.
+   This is part of the still-unbuilt F6 — not yet exercised.
 
 4. **Manual ITN payload testing** — PayFast Sandbox's merchant dashboard can resend a test ITN
    for a sandbox transaction, which is the most reliable way to exercise the fail-closed
@@ -291,6 +319,7 @@ are added to `.env.local`:
 
 ## Related
 
+- ITN signature defect: [docs/payfast-itn-signature.md](payfast-itn-signature.md) — root cause, fix status, and verification
 - Ticket schema: [docs/firestore-ticket-schema.md](firestore-ticket-schema.md)
 - Mission: `.agent/memory/project/missions/2026-07-01-payfast-ticketing.md`
 - Contract: `contracts/contract-payfast-m1.yaml`

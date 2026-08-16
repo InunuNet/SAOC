@@ -90,6 +90,56 @@ export function generateSignature(
 }
 
 /**
+ * Build the PayFast INBOUND (ITN verification) parameter string.
+ *
+ * PayFast documents TWO DIFFERENT algorithms for its parameter string — an outbound one
+ * used to sign the checkout form, and a separate inbound one used to verify a posted ITN
+ * and to build the server-confirm POST body. They are genuinely different (posted order
+ * vs insertion order is the same in practice, but inbound does NOT skip blank fields and
+ * does NOT trim() values) and are deliberately kept as two separate functions here rather
+ * than unified into one — a prior version of this file reused the outbound builder
+ * (`buildPayfastParamString`) for the inbound path, which recomputes a digest that real
+ * PayFast ITNs (which always contain multiple blank fields, e.g. `name_last`,
+ * `custom_str1..5`) can never match. See
+ * contracts/golden/payfast-itn-signature/inbound-algorithm.golden.md for the verbatim
+ * PayFast PHP reference. Iterate `fields` in the EXACT order the caller received them
+ * (the caller is responsible for posted-order preservation) and include every field,
+ * blank or not, unmodified except for `phpUrlEncode`.
+ */
+export function buildPayfastNotifyParamString(fields: Record<string, string>): string {
+  const pairs: string[] = [];
+  for (const [key, value] of Object.entries(fields)) {
+    pairs.push(`${key}=${phpUrlEncode(value)}`);
+  }
+  return pairs.join('&');
+}
+
+/**
+ * Generate a PayFast MD5 signature for INBOUND ITN verification.
+ *
+ * Builds the parameter string via `buildPayfastNotifyParamString` (posted order, no
+ * blank-skip, no trim), appends `&passphrase=urlencode(passphrase)` — with NO trim() on
+ * the passphrase either, matching PayFast's documented `pfValidSignature()` — only when a
+ * passphrase is supplied, then returns the lowercase hex MD5 digest.
+ *
+ * This is deliberately separate from `generateSignature` (outbound). Do not unify them —
+ * see the comment on `buildPayfastNotifyParamString` for why. These two exports are
+ * unused until app/api/tickets/itn/route.ts (currently sha256-pinned) is updated to call
+ * them — that is expected; do not delete them as dead code.
+ */
+export function generateNotifySignature(
+  fields: Record<string, string>,
+  passphrase?: string | null
+): string {
+  let paramString = buildPayfastNotifyParamString(fields);
+  if (passphrase) {
+    paramString += `&passphrase=${phpUrlEncode(passphrase)}`;
+  }
+
+  return createHash('md5').update(paramString).digest('hex');
+}
+
+/**
  * Trust boundary: Firebase App Hosting is NOT bare Cloud Run. Per
  * https://firebase.google.com/docs/app-hosting/about-app-hosting, "the request is served
  * by Google Cloud Load Balancer with Cloud CDN enabled. Uncached requests are sent to your
