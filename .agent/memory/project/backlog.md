@@ -1,5 +1,46 @@
 # Athanor Issue Backlog
 
+## Closure Candidates (needs sign-off)
+_(2026-08-16) `execution/gh_closure_scan.py --format lines` errored (`OVERNIGHT-PLAN-2026-07-30.md`
+has no YAML frontmatter — the known template bug logged below under Harness Upstream) and returned
+zero candidates. No GitHub issue closures to surface this session._
+
+## Session 2026-08-16 — safety scanner shipped, PayFast pin-lift still blocking, WCAG held
+
+- [x] **Live-dataset residue scanner + CI guard — DONE, commit `f7155fe`.**
+  `scripts/scan-dataset-residue.ts` + `dataset-residue-guard` job in `.github/workflows/ci.yml`
+  (push/PR/daily cron), contract 14/14, `docs/dataset-residue-guard.md`. Built directly in
+  response to the `/national-show` sentinel-in-production incident this session (see content
+  repair item below). See `learned.md` "Dataset Residue Guard" for the two rounds of adversarial
+  QA findings folded into the final version.
+- [x] **National Show live-content repair — DONE, no commit (Sanity dataset, not code).**
+  `/national-show` had been serving `F3-TITLE-SENTINEL-1786560879358` as its H1 with the
+  countdown target set to 2098-12-31 for ~3 days. Restored `title`/`location`/`countdownDate`
+  on the `nationalShow` singleton from `scripts/seed-page-singletons.ts` (~lines 211-216),
+  revalidated, verified live, and scanned all 133 dataset docs clean.
+- [ ] **[P1, BLOCKER] PayFast ITN signature helpers shipped but route stays pinned — commit
+  `2828d0a`, QA PASS, contract 6/8, marked BLOCKED.** `lib/payfast.ts` now has the inbound ITN
+  signature helper functions, but `app/api/tickets/itn/route.ts` is sha256-pinned
+  (`itn-route.expected.ts.txt` / `itn-route.golden.sha256`) and the two call sites (lines 89, 193)
+  plus the import were never wired in — needs Brad to authorize the documented re-pin ceremony.
+  Until the pin lifts, assertions A5/A6 stay red and **no ticket can reach `paid`**, which blocks
+  mission feature F6 (door check-in proven end to end) and go-live. Fold in the second item below
+  when doing the re-pin — don't do it twice.
+- [ ] **[P1] `parseOrderedFields` uses `continue` where the ITN spec implies `break` at the
+  signature key — latent divergence inside the same pinned route, found this session, NOT fixed
+  by the pin-lift above on its own.** Needs its own line item in the same re-pin ceremony so it
+  isn't silently reintroduced.
+- [ ] **[P2] No branch protection on `main`** (`gh api` → 404 confirmed this session) — the new
+  `dataset-residue-guard` CI job (and every other CI check) is advisory only; a broken push still
+  merges. Remedy URL + exact `gh` command are recorded in the residue-guard golden README and
+  `docs/dataset-residue-guard.md`.
+- [ ] **[P2, HELD for Brad's design call] WCAG accent-token contrast audit — commit `011d98b`,
+  docs only, no production code changed.** 30-row audit + contract identify real accent-contrast
+  failures on live public pages. Remedy is fully specified in
+  `contracts/golden/wcag-accent-contrast/remedy.md`, but is deliberately not applied — it's a
+  design-token decision, not an engineering call. This is a live accessibility failure on public
+  pages; should not sit indefinitely once Brad greenlights the token change.
+
 ## SAOC Project — Active (Phase 1 scope only)
 
 _Last compacted: 2026-07-10 by session (machine-reboot wrap-up). Full history: git log on this file._

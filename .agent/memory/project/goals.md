@@ -68,3 +68,15 @@ account. This closes F6's admin half. **F6's door-scanner half is still `pending
 M3** — not yet proven at a real entrance by a human. New standing rule added to `rules.md`:
 "Visual work is not done until a browser has seen it." See `backlog.md`
 "admin-auth-hardening" section and `learned.md` "F4 meets reality" for full detail.
+
+### 2026-08-16 — safety scanner shipped ahead of mission chain, ticketing still blocked on the pin
+
+Out-of-mission session (active mission checkpoint stayed at M2/F4, unchanged) shipped three
+commits: `f7155fe` live-dataset residue scanner + CI guard (DONE), `2828d0a` PayFast ITN
+signature helpers (BLOCKED — route stays sha256-pinned, no ticket can reach `paid` until Brad
+authorizes the re-pin ceremony), `011d98b` WCAG accent-contrast audit (HELD for Brad's design
+call, no production code). Also repaired a live content defect found this session: the
+`/national-show` H1 had been serving a leftover `F3-TITLE-SENTINEL-*` string with a
+2098-12-31 countdown for ~3 days — restored from seed, revalidated, verified. **The PayFast
+pin-lift is now the single blocker standing between the codebase and F6 (door check-in proven
+end to end) / go-live** — see `backlog.md` "Session 2026-08-16" section.

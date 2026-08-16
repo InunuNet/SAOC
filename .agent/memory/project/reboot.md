@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-08-15T13:14Z_
+_Generated: 2026-08-16T08:30Z_
 
 ## What happened last session
-F4 (Google sign-in) shipped and gated 6/6, then met production reality: invisible login inputs (and identical defect on /admin, /admin/door), a missing deployed ADMIN_EMAIL_ALLOWLIST, and an authorised-domains timing miss — all fixed and browser-verified. F4 now proven end to end by a human login. New standing rule: visual work isn't done until a browser has seen it. Door scanner (F6 second half) still unproven.
+Shipped 3 commits: live-dataset residue scanner + CI guard (DONE), PayFast ITN signature helpers (BLOCKED — route pinned, F6/go-live blocked until Brad authorizes re-pin), WCAG accent-contrast audit (HELD for design call). Also repaired a live /national-show content defect (sentinel title + wrong countdown, ~3 days) by restoring from seed. No branch protection on main confirmed via gh api 404.

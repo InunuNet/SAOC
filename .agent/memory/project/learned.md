@@ -1,3 +1,55 @@
+## Dataset Residue Guard — Green Gate ≠ Proven Property (2026-08-16)
+
+Built `scripts/scan-dataset-residue.ts` + CI job to catch sentinel/placeholder values (like
+`F3-TITLE-SENTINEL-*`) leaking into the live Sanity dataset — motivated directly by the
+`/national-show` incident this session where a sentinel string served as the live H1 for ~3 days
+with a countdown target of 2098-12-31. First pass gated 7/7 green; two rounds of adversarial QA
+then found four real defects the green gate did not catch: Portable Text span-split blindness
+(a sentinel split across adjacent spans wasn't reassembled before matching), non-string leaf
+values never tested (numbers/booleans skipped entirely), a non-global regex that only inspected
+the leftmost match per text block (a second sentinel later in the same block was invisible), and
+a far-future-year pattern that false-positived on a plausible `ticketType.price` of 2099.
+**Lesson: a green gate proves the assertions were satisfied, not that the property holds. Every
+new detection assertion must be proven to REJECT a deliberately broken/adversarial variant before
+it's trusted — QA against your own scanner, not just against known-good fixtures.**
+
+## Fixtures Must Not Shape Production Behaviour (2026-08-16)
+
+During the residue-guard build, a test fixture's `_id` was set to `doc-sentinel` — and that name
+alone led a dev to exempt `_id`/`_type`/`_rev` fields from the detection pattern, weakening real
+production coverage just to make the fixture pass. Root cause traced to the fixture's name, not
+a genuine need to exempt system fields. Renamed the fixture, reverted the exemption. Now recorded
+in the golden README as a standing rule: fixtures exist to prove behaviour, never to justify
+narrowing it. Also logged honestly: an overly tight brief ("do not modify fixtures") is what
+pushed the dev into that corner in the first place — briefs need an explicit "rename fixtures if
+their name is misleading the implementation" escape hatch.
+
+## Contract Checks That Mutate Live Content Are a Production Risk (2026-08-16)
+
+Audit found 19 files under `contracts/checks/` capable of writing to the live Sanity dataset.
+The instinct to "harden" each one individually is not the fix — the most-hardened check in the
+set was still the one that produced the live `/national-show` sentinel incident. The actual fix
+is detection a human sees (the residue guard + CI cron), not more defensive code around
+write-capable checks. Treat any contract check with dataset write access as a standing risk to
+flag, not a problem to patch away file by file.
+
+## BrowserAgent: Trust What Rendered, Verify Every "Why" (2026-08-16)
+
+Two confident BrowserAgent claims during the PayFast ITN investigation were both wrong: "PayFast
+never fired the webhook" (Cloud Logging proved it did fire) and "the confirmation page hangs
+forever" (the page caps polling at 20 attempts and shows correct timeout copy — it doesn't hang).
+Both collapsed in one grep against source. Lesson: a browser agent's report of what rendered is
+reliable; its inference about *why* something rendered that way is not — always verify the "why"
+against source or logs before acting on it.
+
+## Diagnostic Method: Cloud Logging Separates "Never Arrived" From "Arrived and Rejected" (2026-08-16)
+
+Firestore state alone cannot distinguish "the ITN never arrived" from "the ITN arrived and was
+rejected" — both leave the ticket in the same pre-paid state. Cloud Logging, reached via the
+firebase-tools cached OAuth token (run any `firebase` command first to refresh it — no `gcloud`
+install needed), is what separates the two. Use this method first on any future payment-webhook
+diagnosis; it is faster and more conclusive than reasoning from Firestore alone.
+
 ## Secret Corruption — Defect Class & Verification Practice (2026-08-12)
 
 Three separate secret corruption incidents across 16 weeks (F2 in July, F3 incidents in August) revealed
