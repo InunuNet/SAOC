@@ -263,3 +263,35 @@ field *value*, never via the identifier. The renamed fixture doc is now
 `_id` changed. A12 (below) proves the underlying `_id`/`_type`/`_rev` non-exemption
 directly, so this trade-off cannot resurface silently through a future fixture
 rename.
+
+## Rule: assertions and CI must invoke a shared script identically (2026-08-16)
+
+Any contract assertion that exercises a script CI also runs must invoke that
+script the SAME WAY CI does — same interpreter, same loader/runner flags, same
+script path (differing only in what a genuine test-isolation wrapper adds, e.g.
+`--fixture <path>` or an `env -u` credential-unset prefix). If the assertion's
+invocation and CI's invocation are allowed to drift independently, a green
+contract proves nothing about whether CI can actually run the thing.
+
+**Why this rule exists:** on 2026-08-16 the `dataset-residue-guard` CI job ran
+`node --import tsx/esm scripts/scan-dataset-residue.ts` and died on GitHub's
+Node 22 runner with `ERR_REQUIRE_CYCLE_MODULE`. It worked locally on Node
+26.4.0. This contract was 14/14 green throughout the incident — every assertion
+(A1, A2, A4, A8, A9, A11-A14) invoked the same scanner and passed, because none
+of them ran on the CI runner's Node version, and nothing checked that the
+assertions' invocation even matched CI's. A10 only checked structurally that a
+`schedule:`/`cron:` trigger existed — it said nothing about whether the command
+the trigger runs actually works.
+
+**A15** (added in this amendment) closes the half of this gap that is
+checkable without a Node 22 runner: it parses both
+`.github/workflows/ci.yml` and this contract's own assertions and fails if the
+`dataset-residue-guard` job's invocation form ever diverges from every
+assertion's invocation form (`contracts/checks/dataset-residue-guard/check_invocation_parity.py`).
+It is a real, useful check — and it is also incomplete by construction. It
+cannot and does not prove the matched invocation runs successfully on the CI
+runner's Node version; that half of the 2026-08-16 incident (a Node-22-specific
+module-loader behaviour that does not reproduce on Node 26.4.0) has no cheap
+local equivalent. Do not describe A15 as "proving CI works" — describe it as
+"proving the contract has actually exercised the same command CI runs," which
+is a narrower, honest claim.

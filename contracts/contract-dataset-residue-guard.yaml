@@ -69,6 +69,7 @@ goldens:
   - contracts/golden/dataset-residue-guard/fixture-id-residue.json
   - contracts/golden/dataset-residue-guard/fixture-joined-block-multi-match.json
   - contracts/golden/dataset-residue-guard/fixture-far-future-year-numeric-fp.json
+  - contracts/checks/dataset-residue-guard/check_invocation_parity.py
 
 assertions:
   phase: 4
@@ -85,7 +86,7 @@ assertions:
         Also proves the output format is exact, not approximate.
       command: >-
         out=$(mktemp); env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
-        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        NEXT_PUBLIC_SANITY_DATASET pnpm exec tsx
         scripts/scan-dataset-residue.ts --fixture
         contracts/golden/dataset-residue-guard/fixture-dirty-nested.json > "$out"
         2>&1; code=$?; grep -q
@@ -103,7 +104,7 @@ assertions:
         as A1, to keep proving fixture mode is network-free.
       command: >-
         out=$(mktemp); env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
-        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        NEXT_PUBLIC_SANITY_DATASET pnpm exec tsx
         scripts/scan-dataset-residue.ts --fixture
         contracts/golden/dataset-residue-guard/fixture-clean.json > "$out" 2>&1;
         code=$?; grep -qi "ALL CLEAR" "$out" && test "$code" -eq 0
@@ -136,7 +137,7 @@ assertions:
         not just a bare four-digit run.
       command: >-
         out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
-        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        NEXT_PUBLIC_SANITY_DATASET pnpm exec tsx
         scripts/scan-dataset-residue.ts --fixture
         contracts/golden/dataset-residue-guard/fixture-all-patterns.json); code=$?;
         echo "$out" | grep -q "found 9 residue hit(s)" && test "$code" -ne 0
@@ -191,7 +192,7 @@ assertions:
         claim a single span held the whole marker) and must exit non-zero.
       command: >-
         out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
-        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        NEXT_PUBLIC_SANITY_DATASET pnpm exec tsx
         scripts/scan-dataset-residue.ts --fixture
         contracts/golden/dataset-residue-guard/fixture-span-split-residue.json);
         code=$?; echo "$out" | grep -q "F3-TITLE-SENTINEL-1786560879358" && echo
@@ -215,7 +216,7 @@ assertions:
         requirement — this assertion checks numbers only, which is the reproduced gap.
       command: >-
         out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
-        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        NEXT_PUBLIC_SANITY_DATASET pnpm exec tsx
         scripts/scan-dataset-residue.ts --fixture
         contracts/golden/dataset-residue-guard/fixture-nonstring-leaf.json); code=$?;
         echo "$out" | grep -q "countdownEpoch = 1786560879358" && test "$code" -ne 0
@@ -254,7 +255,7 @@ assertions:
         is the confirmed QA gap #4 (MODERATE).
       command: >-
         out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
-        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        NEXT_PUBLIC_SANITY_DATASET pnpm exec tsx
         scripts/scan-dataset-residue.ts --fixture
         contracts/golden/dataset-residue-guard/fixture-lowercase-residue.json);
         code=$?; echo "$out" | grep -qi "f3-title-sentinel-test" && test "$code" -ne 0
@@ -282,7 +283,7 @@ assertions:
         CLEAR — scanned 1 document(s), no residue found." and exits 0.
       command: >-
         out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
-        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        NEXT_PUBLIC_SANITY_DATASET pnpm exec tsx
         scripts/scan-dataset-residue.ts --fixture
         contracts/golden/dataset-residue-guard/fixture-id-residue.json); code=$?;
         echo "$out" | grep -q "leftover-SENTINEL-in-doc-id" && test "$code" -ne 0
@@ -310,7 +311,7 @@ assertions:
         joined-block scan) and never mentions SVI-BBB-SENTINEL-2.
       command: >-
         out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
-        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        NEXT_PUBLIC_SANITY_DATASET pnpm exec tsx
         scripts/scan-dataset-residue.ts --fixture
         contracts/golden/dataset-residue-guard/fixture-joined-block-multi-match.json);
         code=$?; echo "$out" | grep -q "SVI-AAA-SENTINEL-1" && echo "$out" | grep -q
@@ -336,7 +337,44 @@ assertions:
         price = 2099" and exits 1.
       command: >-
         out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
-        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        NEXT_PUBLIC_SANITY_DATASET pnpm exec tsx
         scripts/scan-dataset-residue.ts --fixture
         contracts/golden/dataset-residue-guard/fixture-far-future-year-numeric-fp.json);
         code=$?; echo "$out" | grep -qi "ALL CLEAR" && test "$code" -eq 0
+
+    - id: A15
+      description: >-
+        Invocation-form parity between the dataset-residue-guard CI job and this
+        contract's own assertions. 2026-08-16 incident: the dataset-residue-guard
+        CI job ran `node --import tsx/esm scripts/scan-dataset-residue.ts` and died
+        on GitHub's Node 22 with ERR_REQUIRE_CYCLE_MODULE, while every assertion in
+        this contract (A1, A2, A4, A8, A9, A11-A14) invoked the identical scanner
+        locally and stayed green throughout, because they run under a different
+        Node (26.4.0) and — more fundamentally — nothing in this contract ever
+        checked that the assertions launch the scanner the SAME WAY the CI job
+        does. Both files are parsed structurally (YAML, not grep for a hardcoded
+        literal) by
+        contracts/checks/dataset-residue-guard/check_invocation_parity.py, so this
+        cannot be satisfied by a comment or a stale hardcoded string — if either
+        side's invocation changes without the other following, this fails. WHAT
+        THIS PROVES: the interpreter + loader/runner flags + script path the CI
+        job's `dataset-residue-guard` step runs is identical to at least one
+        invocation form exercised by this contract's assertions. WHAT THIS DOES
+        NOT AND CANNOT PROVE: that the matched invocation actually succeeds on the
+        CI runner's Node version. The ERR_REQUIRE_CYCLE_MODULE failure was a
+        Node-22-specific module-loader behaviour that does not reproduce on this
+        machine's Node 26.4.0 — no static/YAML-structural check run locally can see
+        it. No cheap local equivalent exists for that half of the gap; the only way
+        to actually catch it is running the exact command under Node 22 (via
+        nvm/volta locally, or in CI itself — the thing that just failed). Rejects
+        the broken variant "the contract's assertions and the CI job quietly drift
+        to different invocation forms (different runner, different flags) and nothing
+        notices because both independently stay green." Confirmed FAILING against the
+        current (uncommitted, in-progress) workflow during architecture review on
+        2026-08-16: the dataset-residue-guard job runs `pnpm exec tsx
+        scripts/scan-dataset-residue.ts` while every contract assertion still runs
+        `node --import tsx/esm scripts/scan-dataset-residue.ts` — reconciling this
+        (updating one side to match the other, and confirming the reconciled form
+        actually works in CI) is separate follow-up work, not proven by this
+        assertion alone.
+      command: python3 contracts/checks/dataset-residue-guard/check_invocation_parity.py
