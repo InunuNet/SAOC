@@ -75,10 +75,24 @@ assertions:
       cmd: 'grep -Eq "export (async )?function POST" app/api/admin/checkin/route.ts'
 
   - id: D6-10
-    description: checkin route uses the Admin SDK (initAdmin)
+    description: >-
+      [RETIRED 2026-08-16] Was: checkin route uses the Admin SDK (initAdmin) — a grep
+      for the literal import path in app/api/admin/checkin/route.ts. Stale after the F1
+      ticketing-hardening refactor (contract-ticketing-hardening.yaml) extracted all
+      Firestore access out of the route into lib/checkin.ts's checkInByBookingRef; the
+      route now only calls getAdminSession() and checkInByBookingRef and never imports
+      lib/firebase-admin directly, so the grep fails on correct code. See the
+      SUPERSESSION NOTE above D6-SERVER-START.
     verify:
       kind: shell
-      cmd: "grep -Eq \"from '(@/)?lib/firebase-admin'\" app/api/admin/checkin/route.ts"
+      cmd: >-
+        echo "SUPERSEDED: D6-10 retired 2026-08-16 -- the route no longer imports
+        lib/firebase-admin directly (extracted to lib/checkin.ts by F1
+        ticketing-hardening). That the Admin SDK is genuinely wired and working is now
+        proven live by D6-13 below (real HTTP round trip through the route mutates a
+        real Firestore document) and by contract-ticketing-hardening.yaml A1-A4 (real
+        Firestore transactions via checkInByBookingRef) and A14 (route delegates to
+        checkInByBookingRef with no admission logic of its own)." >&2; exit 77
 
   # D6-11/D6-12/D6-13/D6-16 REPLACED 2026-08-16 (post-audit hardening). The originals
   # were grep-only and would not notice a regression: D6-11's "admin|role" grep was
@@ -113,6 +127,46 @@ assertions:
   # ("FAIL: <KEY> is not set in .env.local") rather than reporting a silent green;
   # server startup itself (D6-SERVER-START) is the first thing to fail loudly in that
   # case, before any assertion runs, and is never treated as a passing check by the gate.
+  #
+  # ---------------------------------------------------------------------------
+  # SUPERSESSION NOTE (D6-10, D6-14, D6-15, D6-16) — 2026-08-16
+  # ---------------------------------------------------------------------------
+  # P1 weak-assertion audit, second pass. D6-10/D6-14/D6-15/D6-16 were the four
+  # remaining structural greps against app/api/admin/checkin/route.ts, and after
+  # 382e157 landed the D6-11/D6-12/D6-13 round-trip checks above, all four went red —
+  # not because of any regression, but because commit for F1 (contract-ticketing-
+  # hardening.yaml) legitimately extracted every line of admission logic out of the
+  # route (Admin SDK access, the checkedInAt write, the Timestamp, the status write)
+  # into lib/checkin.ts's checkInByBookingRef, leaving the route as a thin
+  # getAdminSession() + checkInByBookingRef() delegate (see route.ts's own comment:
+  # "Nothing is read from or written to Firestore before auth passes... every
+  # admission rule lives in lib/checkin.ts"). Verified by source read 2026-08-16: the
+  # route no longer contains the literals 'lib/firebase-admin', 'checkedInAt',
+  # 'Timestamp.now', or 'checked-in' at all — the greps could not possibly pass
+  # against genuinely correct current code, exactly the D5-04 lesson repeated (a
+  # keyword grep cannot survive a legitimate refactor).
+  #
+  # All four are retired below (verify.kind: shell, always exits 77, prints a
+  # SUPERSEDED message) rather than deleted or rewritten against the new file,
+  # because the properties they were protecting are now proven BETTER, not merely
+  # elsewhere:
+  #   - D6-13 (above, this contract) is a real HTTP round trip through the actual
+  #     route — real admin session, real POST, real Firestore read-back — and
+  #     directly observes the Admin SDK connection working, checkedInAt being
+  #     stamped, and status flipping to 'checked-in'. It supersedes D6-10, D6-14, and
+  #     D6-16 outright.
+  #   - The server-only nature of checkedInAt (D6-15's intent) is proven by D6-13's
+  #     request never sending a checkedInAt value and the field still appearing on
+  #     read-back — it can only be server-derived.
+  #   - contract-ticketing-hardening.yaml A1-A4 exercise checkInByBookingRef directly
+  #     against real Firestore (including concurrency and the double-scan case), A2
+  #     specifically re-proving the checkedInAt/status write, and A14 is a structural
+  #     check (self-tested against compliant and escaping fixtures) that the route
+  #     contains no admission logic of its own and delegates entirely to
+  #     checkInByBookingRef.
+  # No production code was touched to produce this note or these retirements, and no
+  # live vulnerability was found — the code is correct; the four assertions could no
+  # longer see it.
   - id: D6-SERVER-START
     description: >-
       Starts (or confirms already running) the isolated locally-built production server
@@ -161,25 +215,56 @@ assertions:
       cmd: node contracts/checks/d6-door-checkin/check-admin-succeeds.mjs
 
   - id: D6-14
-    description: checkin route sets the checkedInAt field on the ticket
+    description: >-
+      [RETIRED 2026-08-16] Was: checkin route sets the checkedInAt field on the ticket —
+      a grep for the literal "checkedInAt" in app/api/admin/checkin/route.ts. Stale after
+      the F1 ticketing-hardening refactor moved the field write into lib/checkin.ts
+      (admit(), via transaction.update(doc.ref, { status: 'checked-in', checkedInAt })).
+      See the SUPERSESSION NOTE above D6-SERVER-START.
     verify:
       kind: shell
-      cmd: 'grep -q "checkedInAt" app/api/admin/checkin/route.ts'
+      cmd: >-
+        echo "SUPERSEDED: D6-14 retired 2026-08-16 -- checkedInAt is now set in
+        lib/checkin.ts, not app/api/admin/checkin/route.ts. Proven live by D6-13 below
+        (real HTTP round trip through the route, real Firestore read-back confirms
+        checkedInAt is actually written) and by contract-ticketing-hardening.yaml A2
+        (same property at the lib/checkin.ts level, real Firestore read-back)." >&2; exit 77
 
   - id: D6-15
-    description: checkin route writes a server Timestamp for checkedInAt
+    description: >-
+      [RETIRED 2026-08-16] Was: checkin route writes a server Timestamp for checkedInAt —
+      a grep for Timestamp.now()/FieldValue.serverTimestamp() in
+      app/api/admin/checkin/route.ts. Stale for the same reason as D6-14: the write
+      (Timestamp.now()) now lives in lib/checkin.ts, not the route. See the SUPERSESSION
+      NOTE above D6-SERVER-START.
     verify:
       kind: shell
-      cmd: "grep -Eq \"Timestamp\\.now\\(\\)|FieldValue\\.serverTimestamp\\(\\)\" app/api/admin/checkin/route.ts"
+      cmd: >-
+        echo "SUPERSEDED: D6-15 retired 2026-08-16 -- the Timestamp.now() call moved to
+        lib/checkin.ts (confirmed present there by source read 2026-08-16), not
+        app/api/admin/checkin/route.ts. That checkedInAt is server-derived, not
+        client-suppliable, is proven live by D6-13 below: its POST body carries only
+        bookingRef, never checkedInAt, and the real Firestore read-back afterward shows
+        checkedInAt actually stamped -- the value can only have come from the server.
+        Also covered by contract-ticketing-hardening.yaml A2." >&2; exit 77
 
-  # D6-16 (real outcome) is now covered by D6-13's Firestore read-back above (status
-  # actually flips to 'checked-in'). Kept here too as a cheap structural sanity check —
-  # this one is NOT load-bearing on its own since D6-13 already proves the real effect.
   - id: D6-16
-    description: checkin route sets status to 'checked-in' (structural sanity only — D6-13 proves the real effect)
+    description: >-
+      [RETIRED 2026-08-16] Was: checkin route sets status to 'checked-in' -- a grep for
+      the literal "checked-in" and "status" in app/api/admin/checkin/route.ts. Stale for
+      the same reason as D6-14/D6-15 -- the write moved to lib/checkin.ts. This
+      assertion's own prior note already said D6-13 was the load-bearing proof; it is
+      now retired outright rather than kept as a non-load-bearing structural check that
+      merely fails on a legitimate refactor. See the SUPERSESSION NOTE above
+      D6-SERVER-START.
     verify:
       kind: shell
-      cmd: "grep -Eq \"checked-in\" app/api/admin/checkin/route.ts && grep -q \"status\" app/api/admin/checkin/route.ts"
+      cmd: >-
+        echo "SUPERSEDED: D6-16 retired 2026-08-16 -- status: 'checked-in' is now set in
+        lib/checkin.ts, not app/api/admin/checkin/route.ts. Proven live by D6-13 below
+        (real HTTP round trip, real Firestore read-back confirms status actually flips
+        to checked-in) and by contract-ticketing-hardening.yaml A2 (same property at the
+        lib/checkin.ts level)." >&2; exit 77
 
   - id: D6-STOP-SERVER
     description: >-
