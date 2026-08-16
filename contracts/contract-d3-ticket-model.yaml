@@ -11,6 +11,26 @@ created_at: '2026-06-13T00:00:00.000000+00:00'
 #   3. docs/firestore-ticket-schema.md exists and documents the `tickets` collection
 # Plus type-check and lint gates. No buy flow, no Stripe integration — types + doc only.
 
+# ---------------------------------------------------------------------------
+# CORRECTION NOTE — 2026-08-16
+# ---------------------------------------------------------------------------
+# D3-16 and D3-19 originally required a `stripePaymentIntentId` field on Ticket and in
+# this doc. That field was DELIBERATELY REMOVED when the project moved off Stripe onto
+# PayFast — contract-payfast-m1.yaml A1 requires it be fully absent from types/app/docs/lib
+# ('if grep -rq "stripePaymentIntentId" types app docs lib; then exit 1; fi'), and its A2/A3
+# require the replacement fields m_payment_id and pf_payment_id instead. Since D3 asserted
+# the field's presence and payfast-m1 asserted its absence, D3's gate was permanently red
+# (verified 2026-08-16: 19 pass, 2 fail — D3-16, D3-19) — not a false green, but a
+# contradiction that trains people to ignore red on this contract.
+#
+# Both assertions are corrected below to check for the CURRENT payment-reference fields
+# (m_payment_id, pf_payment_id) instead of the removed one. This is not a weakening: the
+# verification method (grep-for-a-field-name against source text, since the artifact under
+# test IS source text) is unchanged and sound; only the field names being checked for were
+# wrong. No other D3 assertion is touched — D3-01 through D3-15, D3-17, D3-18 all still
+# describe the current Ticket shape correctly and are left as-is.
+#
+
 assertions:
   # ---- 1-3: union + interface declarations exist and are exported ----
   - id: D3-01
@@ -114,10 +134,15 @@ assertions:
       cmd: 'grep -Eq "checkedInAt: Timestamp \| null" types/index.ts'
 
   - id: D3-16
-    description: Ticket declares a nullable stripePaymentIntentId field
+    description: >-
+      [CORRECTED 2026-08-16, was: "Ticket declares a nullable stripePaymentIntentId
+      field"] Ticket declares nullable PayFast payment-reference fields (m_payment_id,
+      pf_payment_id) — stripePaymentIntentId was removed by contract-payfast-m1.yaml A1
+      when the project moved from Stripe to PayFast; m_payment_id/pf_payment_id are its
+      replacement, required by that same contract's A2/A3. See this file's CORRECTION NOTE.
     verify:
       kind: shell
-      cmd: 'grep -Eq "stripePaymentIntentId: string \| null" types/index.ts'
+      cmd: 'grep -Eq "m_payment_id: string \| null" types/index.ts && grep -Eq "pf_payment_id: string \| null" types/index.ts'
 
   # ---- 14-16: Firestore schema documentation ----
   - id: D3-17
@@ -134,10 +159,14 @@ assertions:
       pattern: 'tickets'
 
   - id: D3-19
-    description: schema doc documents every Ticket field name
+    description: >-
+      [CORRECTED 2026-08-16, was: required stripePaymentIntentId in the schema doc]
+      schema doc documents every current Ticket field name, including the PayFast
+      payment-reference fields (m_payment_id, pf_payment_id) that replaced the removed
+      stripePaymentIntentId. See this file's CORRECTION NOTE.
     verify:
       kind: shell
-      cmd: grep -q "bookingRef" docs/firestore-ticket-schema.md && grep -q "showId" docs/firestore-ticket-schema.md && grep -q "attendeeName" docs/firestore-ticket-schema.md && grep -q "attendeeEmail" docs/firestore-ticket-schema.md && grep -q "ticketType" docs/firestore-ticket-schema.md && grep -q "status" docs/firestore-ticket-schema.md && grep -q "purchasedAt" docs/firestore-ticket-schema.md && grep -q "checkedInAt" docs/firestore-ticket-schema.md && grep -q "stripePaymentIntentId" docs/firestore-ticket-schema.md
+      cmd: grep -q "bookingRef" docs/firestore-ticket-schema.md && grep -q "showId" docs/firestore-ticket-schema.md && grep -q "attendeeName" docs/firestore-ticket-schema.md && grep -q "attendeeEmail" docs/firestore-ticket-schema.md && grep -q "ticketType" docs/firestore-ticket-schema.md && grep -q "status" docs/firestore-ticket-schema.md && grep -q "purchasedAt" docs/firestore-ticket-schema.md && grep -q "checkedInAt" docs/firestore-ticket-schema.md && grep -q "m_payment_id" docs/firestore-ticket-schema.md && grep -q "pf_payment_id" docs/firestore-ticket-schema.md
 
   # ---- 17-18: Gates ----
   - id: D3-GATE-01

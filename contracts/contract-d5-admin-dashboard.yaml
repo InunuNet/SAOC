@@ -12,6 +12,43 @@ created_at: '2026-06-13T00:00:00.000000+00:00'
 # Auth gate uses Firebase Auth session cookie verified server-side via the
 # Admin SDK, requiring a `role: admin` (admin) custom claim.
 
+# ---------------------------------------------------------------------------
+# SUPERSESSION NOTE — 2026-08-16
+# ---------------------------------------------------------------------------
+# D5-04, D5-16 and D5-23 are RETIRED (see each assertion below). All three used the
+# pattern:
+#   grep -Eqi "admin" <file> && grep -Eqi "claim|role|verifySessionCookie|verifyIdToken" <file>
+# Demonstrated bypass: a stub app/admin/page.tsx whose only auth content is the comment
+# `// claim role verifySessionCookie verifyIdToken -- comment only, never called`,
+# rendering an ungated `<div>admin dashboard, no auth at all</div>`, passes both greps.
+# D5-16/D5-23 are mechanically identical, guarding app/api/admin/tickets/route.ts and
+# app/api/admin/export-csv/route.ts — real attendee PII.
+#
+# This was not caught in a live incident: the current code refactored all three surfaces
+# onto one shared helper, getAdminSession() in lib/admin-auth.ts, so the keyword-in-file
+# grep now legitimately FAILS on correct code (the keywords moved out of these files
+# entirely) — proof by itself that source-text keyword matching cannot track this
+# property through a refactor, let alone catch a deliberate bypass.
+#
+# The property these three were trying to prove — that the admin surfaces actually
+# enforce the admin claim — is now proven behaviourally, over real HTTP against a real
+# running server, by contracts/contract-admin-auth-hardening.yaml:
+#   A-PROBE-01   — unauthenticated / non-admin requests are refused
+#   A-ALLOW-01   — allowlisted + claimed admin is let through
+#   A-STATE-01   — session state transition (grant) is enforced live
+#   A-STATE-02   — session state transition (revoke) is enforced live
+#   A-NEGCTL-01  — negative control proving the probe harness itself can fail loudly
+#     (i.e. the above aren't silently vacuous)
+# See that contract's own header ("HOW THIS CONTRACT IS VERIFIED") for why it already
+# names this exact D5-04 pattern as the incident it supersedes.
+#
+# Each retired assertion below has verify.kind: shell with a command that always exits
+# 77 (this project's reserved skip code) and prints the forwarding pointer above, so
+# `contract.py check` reports SKIP with the reason in the evidence line, and running
+# the phase-1 gate without --allow-skips fails loudly with these three named — it is not
+# possible to get a silent/misleading green out of this file for these three IDs.
+#
+
 assertions:
   # ---- 1: admin page (app/admin/page.tsx) ----
   - id: D5-01
@@ -33,10 +70,15 @@ assertions:
       cmd: 'grep -q "/admin/login" app/admin/page.tsx && grep -q "redirect" app/admin/page.tsx'
 
   - id: D5-04
-    description: admin page verifies the admin custom claim
+    description: >-
+      [RETIRED 2026-08-16] admin page verifies the admin custom claim — this file-keyword grep cannot distinguish a real
+      check from an incidental mention (demonstrated bypass: a comment containing the
+      keywords with no auth call passes it). Superseded by contract-admin-auth-hardening.yaml
+      A-PROBE-01/A-ALLOW-01/A-STATE-01/A-STATE-02 (proven live over HTTP), backstopped by
+      A-NEGCTL-01. See the SUPERSESSION NOTE at the top of this file.
     verify:
       kind: shell
-      cmd: "grep -Eqi \"admin\" app/admin/page.tsx && grep -Eqi \"claim|role|verifySessionCookie|verifyIdToken\" app/admin/page.tsx"
+      cmd: 'echo "SUPERSEDED: D5-04 retired 2026-08-16 -- app/admin/page.tsx auth is now proven live in contract-admin-auth-hardening.yaml (A-PROBE-01, A-ALLOW-01, A-STATE-01, A-STATE-02, A-NEGCTL-01), not by grepping this file. See this contract file SUPERSESSION NOTE." >&2; exit 77'
 
   - id: D5-05
     description: admin page reads the tickets Firestore collection
@@ -107,10 +149,15 @@ assertions:
       cmd: "grep -q \"collection('tickets')\" app/api/admin/tickets/route.ts || grep -q 'collection(\"tickets\")' app/api/admin/tickets/route.ts"
 
   - id: D5-16
-    description: tickets route enforces the admin role from the session cookie
+    description: >-
+      [RETIRED 2026-08-16] tickets route enforces the admin role from the session cookie — this file-keyword grep cannot distinguish a real
+      check from an incidental mention (demonstrated bypass: a comment containing the
+      keywords with no auth call passes it). Superseded by contract-admin-auth-hardening.yaml
+      A-PROBE-01/A-ALLOW-01/A-STATE-01/A-STATE-02 (proven live over HTTP), backstopped by
+      A-NEGCTL-01. See the SUPERSESSION NOTE at the top of this file.
     verify:
       kind: shell
-      cmd: "grep -Eqi \"admin\" app/api/admin/tickets/route.ts && grep -Eqi \"claim|role|verifySessionCookie|verifyIdToken|cookie\" app/api/admin/tickets/route.ts"
+      cmd: 'echo "SUPERSEDED: D5-16 retired 2026-08-16 -- app/api/admin/tickets/route.ts auth is now proven live in contract-admin-auth-hardening.yaml (A-PROBE-01, A-ALLOW-01, A-STATE-01, A-STATE-02, A-NEGCTL-01), not by grepping this file. See this contract file SUPERSESSION NOTE." >&2; exit 77'
 
   - id: D5-17
     description: tickets route returns 401/403 for unauthorized requests
@@ -150,10 +197,15 @@ assertions:
       cmd: "grep -q 'text/csv' app/api/admin/export-csv/route.ts"
 
   - id: D5-23
-    description: export-csv route enforces the admin role
+    description: >-
+      [RETIRED 2026-08-16] export-csv route enforces the admin role — this file-keyword grep cannot distinguish a real
+      check from an incidental mention (demonstrated bypass: a comment containing the
+      keywords with no auth call passes it). Superseded by contract-admin-auth-hardening.yaml
+      A-PROBE-01/A-ALLOW-01/A-STATE-01/A-STATE-02 (proven live over HTTP), backstopped by
+      A-NEGCTL-01. See the SUPERSESSION NOTE at the top of this file.
     verify:
       kind: shell
-      cmd: "grep -Eqi \"admin\" app/api/admin/export-csv/route.ts && grep -Eqi \"claim|role|verifySessionCookie|verifyIdToken|cookie\" app/api/admin/export-csv/route.ts"
+      cmd: 'echo "SUPERSEDED: D5-23 retired 2026-08-16 -- app/api/admin/export-csv/route.ts auth is now proven live in contract-admin-auth-hardening.yaml (A-PROBE-01, A-ALLOW-01, A-STATE-01, A-STATE-02, A-NEGCTL-01), not by grepping this file. See this contract file SUPERSESSION NOTE." >&2; exit 77'
 
   - id: D5-24
     description: export-csv route emits a Content-Disposition attachment header
