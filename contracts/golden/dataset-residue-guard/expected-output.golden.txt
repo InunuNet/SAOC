@@ -1,0 +1,10 @@
+# Golden: exact hit-line format the scanner must produce for
+# fixture-dirty-nested.json (see contracts/golden/dataset-residue-guard/README.md
+# for the fixture design). This is the ONLY hit in that fixture — top-level
+# title/location/countdownDate are deliberately clean so a top-level-only scan
+# would wrongly report ALL CLEAR. A9 in the contract greps for this exact
+# fieldPath substring in the scanner's stdout.
+#
+# Format: <docId> (<docType>) . <fieldPath> = <value>
+
+nationalShow (nationalShow) . highlights[0].children[0].text = Come celebrate orchids in cultivation. F3-STAGES-SENTINEL-1786560879358

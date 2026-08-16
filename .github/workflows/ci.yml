@@ -5,6 +5,14 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    # Daily detection backstop for dataset-residue-guard: main has no branch
+    # protection, so a red push/PR job blocks nothing, and residue written outside a
+    # PR (e.g. by a check's mutation path, as in the 2026-08-15 incident) would
+    # otherwise sit undetected until someone next opens a PR. Daily is sufficient —
+    # this is a backstop, not a real-time monitor. See
+    # contracts/golden/dataset-residue-guard/README.md.
+    - cron: '0 3 * * *'
 
 jobs:
   ci:
@@ -63,3 +71,20 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  dataset-residue-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Scan live Sanity dataset for test residue
+        env:
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: production
+          SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
+        run: node --import tsx/esm scripts/scan-dataset-residue.ts

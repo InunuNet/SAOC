@@ -1,0 +1,17 @@
+[
+  {
+    "_id": "nationalShow",
+    "_type": "nationalShow",
+    "title": "Clean top-level title",
+    "highlights": [
+      {
+        "_type": "block",
+        "_key": "b1",
+        "children": [
+          { "_type": "span", "_key": "b1s1", "text": "SVI-AAA-SENTINEL-1 recorded. Then SVI-BBB-SENT" },
+          { "_type": "span", "_key": "b1s2", "text": "INEL-2 pending." }
+        ]
+      }
+    ]
+  }
+]

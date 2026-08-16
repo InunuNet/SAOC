@@ -1,0 +1,8 @@
+[
+  {
+    "_id": "ticketType.vip",
+    "_type": "ticketType",
+    "price": 2099,
+    "capacity": 40
+  }
+]

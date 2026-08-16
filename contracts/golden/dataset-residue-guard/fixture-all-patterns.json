@@ -1,0 +1,47 @@
+[
+  {
+    "_id": "doc-svi",
+    "_type": "test",
+    "a": "SVI-FOO-SENTINEL-123"
+  },
+  {
+    "_id": "doc-exh",
+    "_type": "test",
+    "a": "EXH-BAR-SENTINEL-456"
+  },
+  {
+    "_id": "doc-status",
+    "_type": "test",
+    "a": "not-a-real-status-789"
+  },
+  {
+    "_id": "doc-f3",
+    "_type": "test",
+    "a": "F3-TITLE-SENTINEL-111"
+  },
+  {
+    "_id": "doc-year",
+    "_type": "test",
+    "a": "Countdown target 2098-12-31T22:00:00.000Z"
+  },
+  {
+    "_id": "doc-zzcheck",
+    "_type": "test",
+    "a": "ZZCHECK-AB12-CD34"
+  },
+  {
+    "_id": "doc-f6loop",
+    "_type": "test",
+    "a": "F6-LOOP-PROOF-1-abc123"
+  },
+  {
+    "_id": "doc-catchall-case",
+    "_type": "test",
+    "a": "leftover SENTINEL text"
+  },
+  {
+    "_id": "doc-epoch",
+    "_type": "test",
+    "a": "code 1786560879358 nonce"
+  }
+]

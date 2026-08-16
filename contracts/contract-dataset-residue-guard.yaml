@@ -1,0 +1,342 @@
+schema: athanor.contract/v1
+slug: dataset-residue-guard
+goal: >-
+  Close the standing risk behind the 2026-08-15 incident (F3-TITLE-SENTINEL-... and a
+  2098 countdown left live on /national-show for ~3 days after a hardened cleanup
+  path still failed) with an always-on, independent detector rather than further
+  hardening the cleanup paths of the 16+ checks under contracts/checks/ that mutate
+  the live Sanity dataset. Ship scripts/scan-dataset-residue.ts — a read-only,
+  recursive scanner that walks every string field of every document in the dataset
+  for a catalogued set of test-marker patterns — and wire it into CI as its own job
+  so a hit is impossible to miss. Full design: contracts/golden/dataset-residue-guard/README.md.
+  Marker catalogue (9 patterns, each traced to the file/line that writes it):
+  contracts/golden/dataset-residue-guard/marker-catalogue.md.
+created_at: '2026-08-16'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      scripts/scan-dataset-residue.ts: fetches all Sanity documents (live mode) or
+      reads a local JSON fixture (--fixture <path>, no network/credentials touched),
+      recursively walks every string at any nesting depth (objects, arrays, Portable
+      Text blocks — no field exempt), tests each against the 9-pattern marker
+      catalogue, prints hits as "<docId> (<docType>) . <fieldPath> = <value>", exits
+      non-zero on any hit / zero on none, never calls a Sanity mutation method
+      (.patch/.createOrReplace/.createIfNotExists/.delete/.mutate/.transaction/.create),
+      and hard-fails loudly (not silently) if live-mode credentials are missing.
+    status: pending
+  - id: F2
+    name: >-
+      .github/workflows/ci.yml: new standalone job `dataset-residue-guard` (not a
+      step inside the existing `ci:` job — keeps the RUNTIME-only SANITY_API_TOKEN
+      out of the documented build-availability env block) that installs deps and
+      runs the scanner in live mode using the NEXT_PUBLIC_SANITY_PROJECT_ID and
+      SANITY_API_TOKEN repo secrets (both already exist — verified via `gh secret
+      list`, no new secret needed) plus the literal NEXT_PUBLIC_SANITY_DATASET:
+      production, matching the existing job's own documented reason for using a
+      literal there.
+    status: pending
+  - id: F3
+    name: >-
+      Amendment (2026-08-16 QA gaps #5 CRITICAL and #6 MEDIUM). (a)
+      collectJoinedBlockHits must scan each catalogued pattern exhaustively across a
+      joined Portable Text block (global match / matchAll), testing EVERY match of a
+      pattern individually for single-span containment — not just the leftmost
+      pattern.regex.exec() match — so a second, later occurrence of the SAME pattern
+      that IS split across a span boundary is still reported even when an earlier
+      occurrence of that pattern was already fully caught inside one span. Dedup
+      still applies per matched marker string, not per pattern. (b) Pattern #5
+      FAR-FUTURE-YEAR is tightened from the unanchored bare-run /20(9[0-9])/ to
+      require ISO date-like context — a 209x year immediately followed by -MM-DD,
+      e.g. /20(9[0-9])-\d{2}-\d{2}/ — so it no longer false-positives on an ordinary
+      numeric leaf (e.g. ticketType.price: 2099) coerced through the patterns per F1's
+      A9 numeric-leaf handling, while still catching the real incident shape
+      (2098-12-31T22:00:00.000Z) and the other 209x-dated value already in the
+      catalogue (SENTINEL_DATETIME_INPUT = '2099-01-01 00:00').
+    status: pending
+
+goldens:
+  - contracts/golden/dataset-residue-guard/README.md
+  - contracts/golden/dataset-residue-guard/marker-catalogue.md
+  - contracts/golden/dataset-residue-guard/fixture-clean.json
+  - contracts/golden/dataset-residue-guard/fixture-dirty-nested.json
+  - contracts/golden/dataset-residue-guard/expected-output.golden.txt
+  - contracts/golden/dataset-residue-guard/fixture-span-split-residue.json
+  - contracts/golden/dataset-residue-guard/fixture-nonstring-leaf.json
+  - contracts/golden/dataset-residue-guard/fixture-lowercase-residue.json
+  - contracts/golden/dataset-residue-guard/fixture-all-patterns.json
+  - contracts/golden/dataset-residue-guard/fixture-id-residue.json
+  - contracts/golden/dataset-residue-guard/fixture-joined-block-multi-match.json
+  - contracts/golden/dataset-residue-guard/fixture-far-future-year-numeric-fp.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        Scanner REJECTS a fixture whose ONLY residue is nested 4 levels deep
+        (nationalShow.highlights[0].children[0].text — a Portable Text span), while
+        every top-level field in the same fixture is clean. Rejects the broken
+        variant "scanner only checks top-level string fields." Also proves fixture
+        mode needs no live credentials by running with SANITY_API_TOKEN,
+        NEXT_PUBLIC_SANITY_PROJECT_ID and NEXT_PUBLIC_SANITY_DATASET explicitly
+        unset — rejects the broken variant "fixture mode still calls the Sanity API."
+        Also proves the output format is exact, not approximate.
+      command: >-
+        out=$(mktemp); env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
+        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        scripts/scan-dataset-residue.ts --fixture
+        contracts/golden/dataset-residue-guard/fixture-dirty-nested.json > "$out"
+        2>&1; code=$?; grep -q
+        "nationalShow (nationalShow) . highlights\[0\].children\[0\].text = Come
+        celebrate orchids in cultivation. F3-STAGES-SENTINEL-1786560879358" "$out"
+        && test "$code" -ne 0
+
+    - id: A2
+      description: >-
+        Scanner exits 0 and prints an unambiguous all-clear on a fixture with no
+        residue anywhere, including nested fields (proves the recursive walk itself
+        doesn't false-positive on ordinary nested content). Rejects the broken
+        variant "scanner always exits non-zero" or "scanner false-positives on
+        normal Portable Text / nested objects." Also run with credentials unset, same
+        as A1, to keep proving fixture mode is network-free.
+      command: >-
+        out=$(mktemp); env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
+        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        scripts/scan-dataset-residue.ts --fixture
+        contracts/golden/dataset-residue-guard/fixture-clean.json > "$out" 2>&1;
+        code=$?; grep -qi "ALL CLEAR" "$out" && test "$code" -eq 0
+
+    - id: A3
+      description: >-
+        Scanner source never calls a Sanity mutation method. Rejects the broken
+        variant "scanner is implemented with a write-capable client / accidentally
+        calls .patch or .createOrReplace while building the report."
+      command: >-
+        ! grep -E
+        "\.patch\(|\.createOrReplace\(|\.createIfNotExists\(|\.delete\(|\.mutate\(|\.transaction\(|\.create\("
+        scripts/scan-dataset-residue.ts
+
+    - id: A4
+      description: >-
+        Marker catalogue coverage — FUNCTIONAL, not textual. Drives all 9 catalogued
+        pattern families through the scanner via fixture-all-patterns.json (one
+        document per pattern: SVI-SENTINEL, EXH-SENTINEL, NOT-A-REAL-STATUS,
+        F3-SENTINEL, FAR-FUTURE-YEAR, ZZCHECK-SENTINEL, F6-LOOP-PROOF, SENTINEL
+        catch-all, EPOCH-MS-NONCE) and requires the scanner to report exactly 9 hits
+        and exit non-zero. Rejects the broken variant "scanner source merely mentions
+        each pattern name in a comment while the regex catalogue silently drops one or
+        more of them" — a defect A4's prior textual-grep form could not catch because
+        it only checked the source file for substrings, not scanner behaviour.
+        fixture-all-patterns.json's doc-year value is
+        "Countdown target 2098-12-31T22:00:00.000Z" (2026-08-16 amendment) — the real
+        incident shape, ISO date-like context (209x-MM-DD) — proving pattern #5 still
+        catches the real incident value after the F3(b) tightening in this amendment,
+        not just a bare four-digit run.
+      command: >-
+        out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
+        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        scripts/scan-dataset-residue.ts --fixture
+        contracts/golden/dataset-residue-guard/fixture-all-patterns.json); code=$?;
+        echo "$out" | grep -q "found 9 residue hit(s)" && test "$code" -ne 0
+
+    - id: A5
+      description: >-
+        Live-mode missing-credentials path is a loud, distinct hard failure, not a
+        silent skip and not an uncaught stack trace. Rejects the broken variant "CI
+        job with no credentials configured either crashes unreadably or exits 0
+        having scanned nothing."
+      command: >-
+        grep -q "missing NEXT_PUBLIC_SANITY_PROJECT_ID" scripts/scan-dataset-residue.ts
+
+    - id: A6
+      description: >-
+        CI wiring exists as its own job (not folded into the existing `ci:` job),
+        runs the scanner, and is supplied the two repo secrets that already exist
+        (verified via `gh secret list`: NEXT_PUBLIC_SANITY_PROJECT_ID,
+        SANITY_API_TOKEN) plus the dataset literal. Rejects the broken variant
+        "scanner ships but nothing in CI ever calls it" and "wired as a step inside
+        `ci:` instead of a separate job."
+      command: >-
+        grep -q "dataset-residue-guard:" .github/workflows/ci.yml && grep -q
+        "scan-dataset-residue" .github/workflows/ci.yml && grep -q
+        "SANITY_API_TOKEN" .github/workflows/ci.yml && grep -q
+        "NEXT_PUBLIC_SANITY_DATASET: production" .github/workflows/ci.yml
+
+    - id: A7
+      description: >-
+        Fixture golden files themselves are well-formed JSON arrays (guards against
+        a broken golden making A1/A2 meaningless for the wrong reason).
+      command: >-
+        node -e "JSON.parse(require('fs').readFileSync('contracts/golden/dataset-residue-guard/fixture-clean.json','utf8'))"
+        && node -e
+        "JSON.parse(require('fs').readFileSync('contracts/golden/dataset-residue-guard/fixture-dirty-nested.json','utf8'))"
+
+    - id: A8
+      description: >-
+        Portable Text span-split residue — a sentinel broken across two adjacent
+        `children[]` spans of the SAME block (as real Sanity editing does at mark
+        boundaries: bold, links) must be caught by concatenating each block's span
+        text and pattern-testing the joined string, IN ADDITION TO per-span testing.
+        fixture-span-split-residue.json has the marker
+        "F3-TITLE-SENTINEL-1786560879358" split across three consecutive spans such
+        that NO individual span matches ANY of the 9 catalogued patterns on its own
+        (verified: neither "F3-TITLE-SENT", nor "INEL-17865", nor "60879358 orchids"
+        matches alone) — only the concatenated block text does. Every top-level field
+        is clean, so a false pass here cannot be explained by a top-level hit
+        elsewhere. Rejects the broken variant "scanner tests each string leaf
+        independently and misses markers split across Portable Text spans" — this is
+        the confirmed QA gap #1 (CRITICAL). The hit line must identify the block (not
+        claim a single span held the whole marker) and must exit non-zero.
+      command: >-
+        out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
+        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        scripts/scan-dataset-residue.ts --fixture
+        contracts/golden/dataset-residue-guard/fixture-span-split-residue.json);
+        code=$?; echo "$out" | grep -q "F3-TITLE-SENTINEL-1786560879358" && echo
+        "$out" | grep -qi "highlights\[0\]" && test "$code" -ne 0
+
+    - id: A9
+      description: >-
+        Non-string leaf residue — a JSON number leaf (Sanity numeric field, e.g. a
+        countdown epoch written as `1786560879358` rather than as a string) must be
+        coerced through the same pattern tests as string leaves, at minimum for
+        numbers. fixture-nonstring-leaf.json has `countdownEpoch: 1786560879358` as a
+        genuine JSON number (not a quoted string) with every other field clean.
+        Rejects the broken variant "walk() only branches on typeof value ===
+        'string' and silently drops every non-string primitive leaf" — this is the
+        confirmed QA gap #2 (CRITICAL). Booleans and Date-like objects: Sanity always
+        serialises dates as ISO strings over its HTTP API (never native Date
+        instances), so a Date-leaf case cannot occur in fetched documents and is
+        deliberately out of scope — this is a documented decision, not a silent gap.
+        Booleans carry no marker-shaped content in this catalogue (no pattern can
+        match "true"/"false"), so their coercion is a documented no-op, not a scanner
+        requirement — this assertion checks numbers only, which is the reproduced gap.
+      command: >-
+        out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
+        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        scripts/scan-dataset-residue.ts --fixture
+        contracts/golden/dataset-residue-guard/fixture-nonstring-leaf.json); code=$?;
+        echo "$out" | grep -q "countdownEpoch = 1786560879358" && test "$code" -ne 0
+
+    - id: A10
+      description: >-
+        CI cadence — the dataset-residue-guard job must fire on a schedule, not only
+        on push/pull_request, because main has NO branch protection (confirmed via
+        `gh api repos/InunuNet/SAOC/branches/main/protection` returning 404 "Branch
+        not protected" during QA), so a red job on a PR blocks nothing and residue
+        written outside a PR (e.g. directly by a check's mutation path, as in the
+        2026-08-15 incident) is invisible until someone happens to open a PR. Requires
+        a `schedule:` trigger with a `cron:` value inside the top-level `on:` block of
+        .github/workflows/ci.yml. Rejects the broken variant "guard only ever runs on
+        push/pull_request, so residue written during a quiet stretch between PRs sits
+        undetected for days" — this is the confirmed QA gap #3 (CRITICAL, structural).
+        This assertion proves the trigger exists; it does NOT and CANNOT prove branch
+        protection exists — that is a GitHub repo setting, not a file, and is recorded
+        as an outstanding human action for Brad in the golden README, not as dev work.
+      command: >-
+        python3 -c "import sys,yaml; d=yaml.safe_load(open('.github/workflows/ci.yml'));
+        on=d.get(True) or d.get('on'); sys.exit(0 if isinstance(on, dict) and 'schedule'
+        in on and on['schedule'] and 'cron' in on['schedule'][0] else 1)"
+
+    - id: A11
+      description: >-
+        Case-insensitive matching for the case-sensitive pattern families (SVI, EXH,
+        F3, ZZCHECK, F6-LOOP-PROOF, and the SENTINEL catch-all) — consistency with
+        NOT-A-REAL-STATUS, which already carries the `/i` flag, and with the marker
+        catalogue's stated "deliberately broad" detection intent.
+        fixture-lowercase-residue.json has `title: "f3-title-sentinel-test"`
+        (all-lowercase F3 marker) with every other field clean. Rejects the broken
+        variant "F3/SVI/EXH/ZZCHECK/F6 patterns and the SENTINEL catch-all stay
+        case-sensitive, so a lowercased marker (e.g. from a manual paste, an editor
+        auto-lowercase, or a differently-cased script) slips through silently" — this
+        is the confirmed QA gap #4 (MODERATE).
+      command: >-
+        out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
+        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        scripts/scan-dataset-residue.ts --fixture
+        contracts/golden/dataset-residue-guard/fixture-lowercase-residue.json);
+        code=$?; echo "$out" | grep -qi "f3-title-sentinel-test" && test "$code" -ne 0
+
+    - id: A12
+      description: >-
+        Structural-ID non-exemption — a marker planted directly in a document's
+        `_id` field MUST be detected. Rejects the broken variant "scanner exempts
+        _id/_type/_rev from pattern matching to avoid a fixture's own naming choice
+        (e.g. a doc id containing the word 'sentinel') producing a false positive" —
+        that trade-off was shipped as `STRUCTURAL_ID_FIELDS` in
+        scripts/scan-dataset-residue.ts, disabling the SENTINEL catch-all pattern for
+        `_id`/`_type`/`_rev`, and directly contradicts this contract's own "no field
+        is exempt — including _id/_type/_rev" rule (golden README, "Recursive walk").
+        A duplicate-document bug or a future mutating check could plant a sentinel in
+        a real document's `_id` exactly as easily as in a field value; exempting
+        structural ID fields defeats the guard for that case. fixture-id-residue.json
+        has `_id: "leftover-SENTINEL-in-doc-id"` with no other marker-shaped content
+        anywhere in the document (deliberately avoids the 13-digit epoch and
+        prefixed-family patterns so ONLY the SENTINEL catch-all on `_id` can produce
+        a hit) — the fixture fix for the sibling issue (fixture-all-patterns.json's
+        `doc-sentinel` id, renamed to `doc-catchall-case`) must not be achieved by
+        reintroducing this exemption. Confirmed FAILING against the current
+        (exempting) scanner during architecture review on 2026-08-16: it prints "ALL
+        CLEAR — scanned 1 document(s), no residue found." and exits 0.
+      command: >-
+        out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
+        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        scripts/scan-dataset-residue.ts --fixture
+        contracts/golden/dataset-residue-guard/fixture-id-residue.json); code=$?;
+        echo "$out" | grep -q "leftover-SENTINEL-in-doc-id" && test "$code" -ne 0
+
+    - id: A13
+      description: >-
+        Joined-block scan must be exhaustive per pattern, not leftmost-match-only.
+        2026-08-16 QA finding #5 (CRITICAL, reproduced): collectJoinedBlockHits calls
+        pattern.regex.exec(joinedText) WITHOUT the /g flag, so only the leftmost match
+        per pattern is inspected; if that leftmost match is already fully contained in
+        a single span, the code `continue`s to the next pattern and never looks
+        further into the block for a LATER occurrence of the same pattern that IS
+        split across a span boundary — that later marker is silently dropped.
+        fixture-joined-block-multi-match.json reproduces this exactly: span0 =
+        "SVI-AAA-SENTINEL-1 recorded. Then SVI-BBB-SENT" (a complete, single-span
+        SVI-SENTINEL match), span1 = "INEL-2 pending." — joined text contains BOTH
+        SVI-AAA-SENTINEL-1 (already caught by span0 alone) and the split
+        SVI-BBB-SENTINEL-2 (only visible joined). Both must be reported, with no
+        double-report of SVI-AAA-SENTINEL-1. Rejects the broken variant "joined-block
+        scan stops per pattern after its first already-covered match instead of
+        walking every match individually (global match / matchAll) for single-span
+        containment." Confirmed FAILING against the current scanner during
+        architecture review on 2026-08-16: it reports only 1 hit
+        (SVI-AAA-SENTINEL-1, found via the ordinary per-span leaf test, not the
+        joined-block scan) and never mentions SVI-BBB-SENTINEL-2.
+      command: >-
+        out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
+        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        scripts/scan-dataset-residue.ts --fixture
+        contracts/golden/dataset-residue-guard/fixture-joined-block-multi-match.json);
+        code=$?; echo "$out" | grep -q "SVI-AAA-SENTINEL-1" && echo "$out" | grep -q
+        "SVI-BBB-SENTINEL-2" && test "$code" -ne 0
+
+    - id: A14
+      description: >-
+        FAR-FUTURE-YEAR false-positive guard on numeric leaves. 2026-08-16 QA finding
+        #6 (MEDIUM, reproduced): since A9 coerces numeric leaves through the pattern
+        tests, pattern #5 FAR-FUTURE-YEAR (unanchored bare-run /20(9[0-9])/) fires on
+        an ordinary numeric field such as ticketType.price whenever its value falls in
+        2090-2099. fixture-far-future-year-numeric-fp.json is
+        `{"_id":"ticketType.vip","_type":"ticketType","price":2099,"capacity":40}` — a
+        plausible real ticket price, no date shape, no other marker anywhere. Per the
+        F3(b) direction, pattern #5 is tightened to require ISO date-like context (a
+        209x year immediately followed by -MM-DD) instead of an ad-hoc "skip numeric
+        leaves for this one pattern" carve-out, so this fixture must scan ALL CLEAR
+        and exit 0. Rejects the broken variant "pattern #5 stays an unanchored
+        bare-four-digit-run match, so any numeric field whose value happens to fall in
+        2090-2099 (a ticket price, a capacity, a count, an attendee total) is reported
+        as residue." Confirmed FAILING against the current scanner during
+        architecture review on 2026-08-16: it reports "ticketType.vip (ticketType) .
+        price = 2099" and exits 1.
+      command: >-
+        out=$(env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u
+        NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm
+        scripts/scan-dataset-residue.ts --fixture
+        contracts/golden/dataset-residue-guard/fixture-far-future-year-numeric-fp.json);
+        code=$?; echo "$out" | grep -qi "ALL CLEAR" && test "$code" -eq 0

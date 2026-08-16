@@ -1,0 +1,18 @@
+[
+  {
+    "_id": "nationalShow",
+    "_type": "nationalShow",
+    "title": "Clean top-level title",
+    "highlights": [
+      {
+        "_type": "block",
+        "_key": "abc123",
+        "children": [
+          { "_type": "span", "text": "Come see F3-TITLE-SENT" },
+          { "_type": "span", "text": "INEL-17865" },
+          { "_type": "span", "text": "60879358 orchids" }
+        ]
+      }
+    ]
+  }
+]
