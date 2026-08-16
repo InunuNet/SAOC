@@ -32,6 +32,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { createClient, type SanityClient } from '@sanity/client';
 
@@ -385,7 +386,16 @@ async function main(): Promise<void> {
   process.exit(exitCode);
 }
 
-main().catch((err: unknown) => {
-  console.error('Residue scan failed:', err);
-  process.exit(1);
-});
+// Importing this module (to reuse readEnvLocal or any other export) must not fire a live
+// Sanity scan and process.exit() as a side effect. Only run when this file is the actual
+// entry point. Mirrors the identical guard in scripts/scan-firestore-residue.ts — keep the
+// two in step.
+const isEntryPoint =
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isEntryPoint) {
+  main().catch((err: unknown) => {
+    console.error('Residue scan failed:', err);
+    process.exit(1);
+  });
+}
