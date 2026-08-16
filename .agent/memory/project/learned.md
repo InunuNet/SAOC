@@ -736,3 +736,54 @@ lessons below.
 **F4 is proven end to end by a human**, not just by the gate: Brad signed in with Google and
 reached `/admin` with real ticket data, same Firebase uid throughout, admin claim intact, no
 second account created — closing F6's admin half. The door-scanner half of F6 is still open.
+
+## P1 weak-assertion audit — DONE, no live vulnerability found (2026-08-16)
+
+Audited every P1 payment/auth-security contract assertion. **Result: no live vulnerability
+anywhere.** Every audited property (admin claim enforcement, ITN signature, amount match,
+server-confirm gating, transaction atomicity, idempotent replay) is correctly implemented in
+the code — verified by reading the security-critical ones myself. The *assertions guarding
+them* could not tell the difference: a stub ITN handler whose entire body was
+`return new Response('ok')`, with security keywords appearing only in comments, passed all six
+payfast security assertions while marking every ticket paid; a stub admin page with auth
+keywords in a comment passed all three D5 auth greps. Grep-shaped assertions test for the
+presence of words, not behaviour.
+
+**Structural finding — a permanently-red contract is worse than a weak one.** Three contracts
+(D5, D6, D3) were RED going into this session, and in each case *because the code had
+improved*: auth moved into the shared `getAdminSession()` helper and literal-matching greps
+stopped matching it; Stripe fields were deleted from the schema and D3 kept asserting their
+presence. Red-by-default trains people to read red as "stale," which defeats the gate. Remedy,
+now applied to D5/D6/D3: retire the stale assertion via `exit 77` with a `SUPERSEDED:` message
+naming the assertion id(s) that now prove the property and where — coverage keeps a forwarding
+address instead of going silently green or staying uselessly red. Reuse this pattern any time a
+contract goes red because the code got better, not worse.
+
+**Reusable proof techniques from this audit** (see commits `382e157`, `f87bcb3`): prove auth and
+webhook behaviour by *round trip* (real HTTP request against a running server, asserting on the
+actual response) and by *AST inspection* (parse the route file, assert the signature-check
+function is actually called on the request path) — not by grepping for keywords, which a stub
+trivially satisfies.
+
+## Verification-of-verification lessons (2026-08-16)
+
+- **An unchanged detector reading is not evidence of cleanliness — the detector may be blind.**
+  The dataset-residue scanner reported an identical hit count while 7 new residue documents were
+  actually present; reading "no count change" as "no new residue" was the bug. Measure something
+  the detector doesn't depend on (a raw independent count, a timestamp) before trusting "no
+  change" as a clean bill of health.
+- **Firestore `createTime` and Cloud Logging timestamps are UTC; SAOC operates SAST (+2).**
+  Comparing a UTC timestamp to wall-clock time produced a false "disproof" of a correct
+  attribution, which was then published as a correction — and the correction was itself wrong.
+  A retraction needs the same verification standard as the original claim, not a lower one.
+- **The audit reproduced its own defect class by hand.** Grepped for `delete()` in one directory,
+  found none, concluded cleanup was missing — when the cleanup lived in a shared helper one
+  import away (`withCleanup()`). This is the exact wrong-path failure (checking the surface, not
+  the actual call graph) that the P1 audit above was cataloguing in the contracts themselves.
+- **Agents state inferences in the same confident register as observations.** Three false causal
+  claims in one session: a webhook reported as "never fired" that Cloud Logging showed had fired;
+  a page reported as "hung" that had correct timeout copy; a commit reported as "unauthorized"
+  that the reflog showed was the agent's own. Verify against the artifact (logs, reflog, response
+  body), not against a summary of the artifact. Countervailing note: twice in the same session
+  "phantom work" was wrongly called on agents whose files simply hadn't been written yet —
+  over-correcting into false negatives is the same failure mode in the other direction.

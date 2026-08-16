@@ -80,3 +80,16 @@ call, no production code). Also repaired a live content defect found this sessio
 2098-12-31 countdown for ~3 days — restored from seed, revalidated, verified. **The PayFast
 pin-lift is now the single blocker standing between the codebase and F6 (door check-in proven
 end to end) / go-live** — see `backlog.md` "Session 2026-08-16" section.
+
+### 2026-08-16 (afternoon) — P1 weak-assertion audit: DONE, no live vulnerability
+
+~~P1 weak-assertion audit across payment/auth-security contracts~~ ✅ Every audited property
+(admin claim enforcement, ITN signature, amount match, server-confirm gating, transaction
+atomicity, idempotent replay) verified correctly implemented in the actual code; the assertions
+guarding several of them were weak enough that stub handlers with only comment-level keywords
+passed them. Fixed across `650d02c` through `f4a37bd` (six commits) — see `backlog.md` and
+`learned.md` for full detail and the reusable "retire via `exit 77` + `SUPERSEDED:`" remedy for
+contracts that go red because the code improved. **New open finding, not yet explained:** the
+Firestore `tickets` fixture-leak count is climbing session over session (5→12→17 docs) despite
+checks calling `withCleanup()` — root cause unmeasured, tracked in `backlog.md`. The PayFast
+sha256-pin lift (Brad's call) remains the single blocker on F6/go-live; untouched this session.

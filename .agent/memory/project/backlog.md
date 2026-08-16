@@ -1,11 +1,45 @@
 # Athanor Issue Backlog
 
 ## Closure Candidates (needs sign-off)
-_(2026-08-16) `execution/gh_closure_scan.py --format lines` errored (`OVERNIGHT-PLAN-2026-07-30.md`
-has no YAML frontmatter — the known template bug logged below under Harness Upstream) and returned
-zero candidates. No GitHub issue closures to surface this session._
+_(2026-08-16, repeated later same day) `execution/gh_closure_scan.py --format lines` still errors
+on the same `OVERNIGHT-PLAN-2026-07-30.md` missing-frontmatter bug (see Harness Upstream below)
+and returns zero candidates both runs today. No GitHub issue closures to surface this session._
 
-## Session 2026-08-16 — safety scanner shipped, PayFast pin-lift still blocking, WCAG held
+## Session 2026-08-16 (afternoon) — P1 weak-assertion audit complete, no live vulnerability
+
+- [x] **P1 weak-assertion audit — DONE, no live vulnerability found anywhere.** Full narrative in
+  `learned.md` "P1 weak-assertion audit". Retired/rewrote weak assertions across four contracts:
+  `650d02c`/`8e3e98b` (entry-point guard on scan-dataset-residue.ts + false-claim correction),
+  `808ca7b` (D5-04/16/23 retired as auth-greps-a-comment-satisfies; D3-16/19 corrected off a
+  deleted Stripe field), `382e157` (D6 door check-in auth proven by real HTTP round trip),
+  `f87bcb3` (payfast-m1 ITN validation proven behaviourally + by AST), `0b5f0ea` (D6's four
+  remaining stale greps retired), `f4a37bd` (scanner now detects D6 + known-residue fixtures; A34
+  leak-regression guard added). Sprint doc corrections in `7222e12`/`4c8a1a0`/`2deda6c`.
+- [ ] **[P1, unexplained] Firestore fixture leak is ONGOING.** `tickets` collection went 5 → 12 →
+  17 documents today; scanner went 12 hits/13 docs → 29 hits/18 docs. Checks DO call
+  `withCleanup()` — the open question is why it isn't reclaiming these documents. A34 (new,
+  `f4a37bd`) now measures the delta directly instead of trusting an unchanged scanner count (see
+  `learned.md` "unchanged detector reading" lesson). **Do not guess the cause — measure it next
+  session.** 12+ detect-only documents remain live in Firestore; deletion is Brad's call, not an
+  agent's.
+- [ ] **[P1, pre-existing, cannot pass as written] payfast-m1 A1 and A6 — same stale/self-defeating
+  grep family as the retired D5/D6 assertions, NOT yet fixed.** A1 forbids the string
+  `stripePaymentIntentId` anywhere under `docs/` and trips on the sentence in `docs/` explaining
+  the field was removed (red since commit `e7de1e0`). A6 expects `m_payment_id` literally inside
+  a route file that now correctly delegates that logic to `lib/checkin.ts`. Retire-or-rewrite
+  using the same `exit 77` / `SUPERSEDED:` pattern applied to D5/D6 this session.
+- [ ] **[P2] Shared contract test-server has no lock/refcount — one check can kill another's
+  server mid-run.** `contracts/checks/admin-auth-hardening/server-ctl.sh` claims lock/refcount
+  handling in its comments but implements none: a single fixed PIDFILE on port 3400, so one
+  contract's `stop()` can tear down a server a different contract is still using. Causes
+  intermittent failures specifically in busy multi-agent sessions. Shared infra — deliberately
+  left untouched this session, flagging for whoever owns contract tooling next.
+- [ ] **[P2, lower severity, unfixed] Two more weak assertions found but not fixed this session.**
+  `contract-ticketing-m1-m2.yaml` A20 (price source assertion is easily satisfied without the
+  real property holding) and `contract-ticketing-hardening.yaml` A16 (secret-leak regex evaded by
+  indirection or multiline formatting).
+
+## Session 2026-08-16 (morning) — safety scanner shipped, PayFast pin-lift still blocking, WCAG held
 
 - [x] **Live-dataset residue scanner + CI guard — DONE, commit `f7155fe`.**
   `scripts/scan-dataset-residue.ts` + `dataset-residue-guard` job in `.github/workflows/ci.yml`
