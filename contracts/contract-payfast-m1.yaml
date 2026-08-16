@@ -197,3 +197,12 @@ assertions:
         ("spoofedIp, realClientIp, loadBalancerIp") and asserts it extracts "realClientIp"
         specifically (real behaviour gate, not a string match)
       command: 'pnpm exec tsx scripts/verify-payfast-itn-ip.ts'
+    - id: A34
+      description: >-
+        Regression guard (contracts/golden/payfast-m1-residue-cleanup/): a full run of
+        the four Firestore-mutating payfast-m1 behavioural checks (A18-A21, A30-A31)
+        leaves the `tickets` collection document count unchanged. Pure comparator
+        self-test always runs (no credentials needed); the live count-before/count-after
+        half is LOCAL-ONLY, same credential/skip convention as A18. See
+        contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs.
+      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs'

@@ -1,0 +1,207 @@
+schema: athanor.contract/v1
+slug: payfast-m1-residue-cleanup
+goal: >-
+  Close two linked defects Brad confirmed live on 2026-08-16 against the
+  Firestore `tickets` collection. (1) Running contract-payfast-m1.yaml's gate
+  left 7 ticket documents behind (tickets 5 -> 12) — add a regression guard
+  that proves a full run of the four Firestore-mutating payfast-m1 checks
+  leaves the tickets collection count unchanged, on top of the withCleanup()
+  cleanup those checks already call. (2) scripts/scan-firestore-residue.ts
+  cannot see those 7 documents (no marker-shaped bookingRef, attendeeName
+  'Proof' not in the catalogue) NOR contracts/checks/d6-door-checkin/'s
+  already-deliberately-marked fixtures (@d6-door-checkin-check.invalid,
+  'D6 Door Checkin Check', D6-NOAUTH-/D6-ADMIN-/D6-NONADMIN- booking refs) —
+  extend contracts/golden/firestore-residue-guard/marker-catalogue.md and
+  scripts/scan-firestore-residue.ts's MARKER_PATTERNS + a new
+  KNOWN_RESIDUE_DOC_IDS literal allowlist to cover both. Full design and
+  evidence: contracts/golden/payfast-m1-residue-cleanup/README.md and
+  leaked-docs-2026-08-16.md. Deletion of the 12 pre-existing/leaked
+  documents is explicitly OUT OF SCOPE — detect and report only; that
+  decision is Brad's, not made here. Do NOT modify
+  app/api/tickets/itn/route.ts, lib/admin-auth.ts, or
+  app/api/admin/checkin/route.ts (pinned/verified elsewhere). Use `pnpm exec
+  tsx`, never `node --import tsx/esm` (broken on Node 22, per
+  contracts/golden/firestore-residue-guard/README.md and this repo's own
+  CI history).
+created_at: '2026-08-16'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Regression guard: contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs
+      proves a full run of the four Firestore-mutating payfast-m1 checks
+      leaves the `tickets` collection document count unchanged. Two halves:
+      a pure, always-runs, no-credentials-needed self-test of a
+      judgeResidue(before, after) comparator (proves the comparator itself
+      can discriminate a leak, same convention as
+      check-paid-write-inside-transaction-scope.mjs's judge() self-test); and
+      a LOCAL-ONLY live half (credentialsAvailable()/skipForMissingCredentials()
+      from _itn-harness.mts, same skip convention as A18/A30) that counts
+      `tickets` via db.collection('tickets').count().get() before and after
+      spawning the four existing behavioural checks as real child processes
+      (`pnpm exec tsx <file>` each, via node:child_process — not by
+      re-importing them in-process). This script itself never calls
+      `.delete(` — cleanup stays delegated to the sub-scripts' own
+      withCleanup(). Wired into contract-payfast-m1.yaml as new assertion A34.
+    status: pending
+  - id: F2
+    name: >-
+      Marker-catalogue + scanner extension. Add three new pattern families to
+      scripts/scan-firestore-residue.ts's MARKER_PATTERNS —
+      D6-SENTINEL-EMAIL-DOMAIN (/@d6-door-checkin-check\.invalid\b/i),
+      D6-BOOKING-REF (/^D6-(NOAUTH|ADMIN|NONADMIN)-/i), D6-ATTENDEE-NAME
+      (/^D6 Door Checkin Check$/i) — each traced to the exact file:line in
+      contracts/checks/d6-door-checkin/_shared.mjs that writes it, documented
+      in contracts/golden/firestore-residue-guard/marker-catalogue.md in the
+      same style as the existing five. Add a new literal
+      KNOWN_RESIDUE_DOC_IDS set (the 7 doc IDs from
+      leaked-docs-2026-08-16.md, matched via the scanner's existing `id`
+      fieldPath walk) checked alongside the existing
+      KNOWN_RESIDUE_BOOKING_REFS in matchesAnyPattern(). Document these 7
+      IDs in marker-catalogue.md as awaiting Brad's decision, explicitly not
+      to be deleted. Do not touch contract-firestore-residue-guard.yaml's
+      existing A1-A10 assertions or its fixture-all-patterns.json (owned by a
+      concurrently-active session) — this feature only edits
+      scripts/scan-firestore-residue.ts and marker-catalogue.md, proven here
+      via a new, separate fixture.
+    status: pending
+
+goldens:
+  - contracts/golden/payfast-m1-residue-cleanup/README.md
+  - contracts/golden/payfast-m1-residue-cleanup/leaked-docs-2026-08-16.md
+  - contracts/golden/payfast-m1-residue-cleanup/fixture-d6-and-known-residue.json
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- F1: cleanup regression guard ----------
+    - id: A1
+      description: >-
+        Every Firestore-mutating payfast-m1 behavioural check still routes
+        its cleanup through shared.withCleanup() — regression guard against
+        a future check being added (or edited) without it. Rejects "a new
+        payfast-m1 check writes tickets outside withCleanup()."
+      command: >-
+        for f in check-itn-amount-tamper-rejected.mts
+        check-itn-server-confirm-and-status-gating.mts
+        check-itn-atomic-idempotent-write.mts
+        check-itn-source-ip-validation.mts; do grep -q "withCleanup("
+        "contracts/checks/payfast-m1/$f" || exit 1; done
+
+    - id: A2
+      description: F1 - the new residue-regression script exists.
+      command: test -f contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs
+
+    - id: A3
+      description: >-
+        F1 - the script's comparator self-test runs and passes on its own
+        (no credentials, no network) — proves judgeResidue(before, after)
+        can discriminate a count change before anything live is trusted.
+        Rejects "the comparator always reports clean" and "the self-test was
+        never wired to actually run."
+      command: >-
+        env -u FIREBASE_ADMIN_PROJECT_ID -u FIREBASE_ADMIN_CLIENT_EMAIL -u
+        FIREBASE_ADMIN_PRIVATE_KEY pnpm exec tsx
+        contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs
+        2>&1 | grep -qi "self-test"
+
+    - id: A4
+      description: >-
+        F1 - the script performs a real Firestore aggregate count() before
+        and after running the suite (not a full document listing) and never
+        deletes anything itself — cleanup stays delegated to the
+        sub-scripts' own withCleanup(). Rejects "the check invents its own
+        parallel delete path" and "the check silently reads full documents
+        instead of a cheap count()."
+      command: >-
+        grep -q "count()" contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs
+        && ! grep -E "\.delete\(" contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs
+
+    - id: A5
+      description: >-
+        F1 - the new check is wired into the real gate (contract-payfast-m1.yaml),
+        not just present on disk. Rejects "script exists but nothing runs it."
+      command: grep -q "check-suite-leaves-no-ticket-residue.mjs" contracts/contract-payfast-m1.yaml
+
+    # ---------- F2: marker catalogue + scanner extension ----------
+    - id: A6
+      description: >-
+        marker-catalogue.md documents the three new D6 pattern families,
+        traced to d6-door-checkin/_shared.mjs, in the same file:line-traced
+        style as the existing five.
+      command: >-
+        grep -q "D6-SENTINEL-EMAIL-DOMAIN" contracts/golden/firestore-residue-guard/marker-catalogue.md
+        && grep -q "D6-BOOKING-REF" contracts/golden/firestore-residue-guard/marker-catalogue.md
+        && grep -q "D6-ATTENDEE-NAME" contracts/golden/firestore-residue-guard/marker-catalogue.md
+        && grep -q "d6-door-checkin/_shared.mjs" contracts/golden/firestore-residue-guard/marker-catalogue.md
+
+    - id: A7
+      description: >-
+        marker-catalogue.md documents the 7 leaked 2026-08-16 doc IDs as a
+        literal, awaiting-decision allowlist entry — not silently folded
+        into a regex.
+      command: >-
+        grep -q "CrF2gcbRQCMPGRKSn8Da" contracts/golden/firestore-residue-guard/marker-catalogue.md
+        && grep -qi "awaiting Brad" contracts/golden/firestore-residue-guard/marker-catalogue.md
+
+    - id: A8
+      description: >-
+        scripts/scan-firestore-residue.ts's MARKER_PATTERNS array carries the
+        three new D6 regex patterns.
+      command: >-
+        grep -q "d6-door-checkin-check" scripts/scan-firestore-residue.ts
+        && grep -q "D6-(NOAUTH|ADMIN|NONADMIN)" scripts/scan-firestore-residue.ts
+        && grep -q "D6 Door Checkin Check" scripts/scan-firestore-residue.ts
+
+    - id: A9
+      description: >-
+        scripts/scan-firestore-residue.ts carries a KNOWN_RESIDUE_DOC_IDS
+        literal set with all 7 leaked doc IDs, checked in matchesAnyPattern()
+        alongside the existing KNOWN_RESIDUE_BOOKING_REFS.
+      command: >-
+        grep -q "KNOWN_RESIDUE_DOC_IDS" scripts/scan-firestore-residue.ts &&
+        for id in CrF2gcbRQCMPGRKSn8Da MbnMi9tAL7WiFXTMKufc HorxzPqpPWfo7sw1w3Hx
+        diLuP0fkUEXhv9P2f21D kPxuUXcKF8jTw0IczYI4 OXauVpRMw6CX2bPeYjrY
+        W7yyX5eB63WYKxspuR5I; do grep -q "$id" scripts/scan-firestore-residue.ts
+        || exit 1; done
+
+    - id: A10
+      description: >-
+        FUNCTIONAL proof, not textual: scanning
+        contracts/golden/payfast-m1-residue-cleanup/fixture-d6-and-known-residue.json
+        (12 docs: 3 d6-door-checkin-shaped fixtures each carrying 3 markers
+        [bookingRef + attendeeEmail + attendeeName] = 9 hits, 7 known-residue
+        doc IDs matched on the `id` fieldPath = 7 hits, 2 deliberate
+        near-miss real-shaped documents that must NOT match) produces
+        exactly 16 hits and a non-zero exit, AND neither near-miss fixture
+        id appears anywhere in the output — proves both halves (new patterns
+        fire, and don't over-fire on real-shaped data), directly answering
+        the false-positive risk called out in the task brief (the prior
+        ticketType.price=2099 false positive). Rejects "the new patterns
+        exist in source but are never actually wired into MARKER_PATTERNS /
+        the KNOWN_RESIDUE checks" and "the new patterns are too broad and
+        flag ordinary real tickets."
+      command: >-
+        out=$(env -u FIREBASE_ADMIN_PROJECT_ID -u FIREBASE_ADMIN_CLIENT_EMAIL
+        -u FIREBASE_ADMIN_PRIVATE_KEY pnpm exec tsx
+        scripts/scan-firestore-residue.ts --fixture
+        contracts/golden/payfast-m1-residue-cleanup/fixture-d6-and-known-residue.json
+        2>&1); code=$?; echo "$out" | grep -q "found 16 residue hit(s)" &&
+        test "$code" -ne 0 && ! echo "$out" | grep -q "real-ticket-near-miss"
+
+    - id: A11
+      description: Fixture golden file is well-formed JSON (guards A10 for the right reason).
+      command: >-
+        node -e
+        "JSON.parse(require('fs').readFileSync('contracts/golden/payfast-m1-residue-cleanup/fixture-d6-and-known-residue.json','utf8'))"
+
+    - id: A12
+      description: >-
+        Pinned/verified files were not touched by this task — regression
+        guard against scope creep into files this contract explicitly
+        forbids editing.
+      command: >-
+        git diff --name-only HEAD -- app/api/tickets/itn/route.ts
+        lib/admin-auth.ts app/api/admin/checkin/route.ts | grep -q . && exit
+        1 || exit 0

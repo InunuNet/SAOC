@@ -4,7 +4,7 @@ Every entry below is traced to the specific file/line that writes it. Do not inv
 new patterns and do not drop any of these without updating this file and the
 contract's A4/A9/A10 assertions together.
 
-## Regex pattern families (5)
+## Regex pattern families (8)
 
 1. **SENTINEL-EMAIL-DOMAIN** — `/@harden-check\.invalid\b/i`
    Source: `contracts/checks/ticketing-hardening/_shared.mjs:387`
@@ -49,9 +49,37 @@ contract's A4/A9/A10 assertions together.
    cents/rand under 6 digits, all timestamps stored as Firestore `Timestamp`,
    never a raw epoch-ms integer).
 
+6. **D6-SENTINEL-EMAIL-DOMAIN** — `/@d6-door-checkin-check\.invalid\b/i`
+   Source: `contracts/checks/d6-door-checkin/_shared.mjs:33`
+   (`const SENTINEL_EMAIL_DOMAIN = 'd6-door-checkin-check.invalid';`), stamped onto every
+   ticket fixture's `attendeeEmail` by `createPaidTicketFixture()` at `:70-82` via
+   `sentinelEmail()` (`:38-40`). `.invalid` is RFC 2606-reserved, same reasoning as
+   pattern #1. d6-door-checkin's own cleanup (`deleteTicketFixture()` in a `finally`
+   block in each of its three checks) is correct and not in question — this closes a
+   scanner-coverage gap on a suite that already announces its fixtures properly.
+
+7. **D6-BOOKING-REF** — `/^D6-(NOAUTH|ADMIN|NONADMIN)-/i`
+   Source: `contracts/checks/d6-door-checkin/_shared.mjs`'s three checks each build a
+   `bookingRef` with one of these three literal prefixes before calling
+   `createPaidTicketFixture(bookingRef)`. Exact-anchored to exactly the three suffixes
+   used in real source (not a wildcard `D6-` prefix) so a real bookingRef can never
+   collide — no bookingRef issued by `/api/tickets/checkout` (format
+   `SAOC-<year>-<10-char base36>`, see #6 below) starts with `D6-` at all, and a
+   near-miss like `D60-REAL-...` is deliberately not matched (proven in
+   `contracts/golden/payfast-m1-residue-cleanup/fixture-d6-and-known-residue.json`). See
+   item #9 below for the real bookingRef shape this is guaranteed never to collide with.
+
+8. **D6-ATTENDEE-NAME** — `/^D6 Door Checkin Check$/i`
+   Source: `contracts/checks/d6-door-checkin/_shared.mjs:76`
+   (`createPaidTicketFixture`: `attendeeName: 'D6 Door Checkin Check'`). Exact-anchored
+   (`^...$`, not a substring match) so a real attendee whose name merely contains the
+   phrase, e.g. `D6 Door Checkin Checked Out Guest`, is never flagged — proven by the
+   same fixture referenced above, per the 2099-price false-positive precedent this task
+   was explicitly warned against repeating.
+
 ## Literal known-residue allowlist (not a pattern — exact string match)
 
-6. **KNOWN-RESIDUE-BOOKING-REF** — exact match against:
+9. **KNOWN-RESIDUE-BOOKING-REF** — exact match against:
    `SAOC-2027-E8WND2SM4HTD`, `SAOC-2027-JG6Q598FG0QD`, `SAOC-2027-5H63FBAE8AHP`,
    `SAOC-2027-C584G82Z7F6D`.
    These four `tickets` documents were created by real, successful sandbox
@@ -68,6 +96,24 @@ contract's A4/A9/A10 assertions together.
    documents only 2 of these 4 refs plus "two more" unnamed — the mission file
    is the more complete source and is what this catalogue uses. Report this
    discrepancy, do not silently reconcile it.
+
+10. **KNOWN-RESIDUE-DOC-ID** — exact match against the Firestore document ID itself
+    (`fieldPath: 'id'`, not a data field): `CrF2gcbRQCMPGRKSn8Da`, `MbnMi9tAL7WiFXTMKufc`,
+    `HorxzPqpPWfo7sw1w3Hx`, `diLuP0fkUEXhv9P2f21D`, `kPxuUXcKF8jTw0IczYI4`,
+    `OXauVpRMw6CX2bPeYjrY`, `W7yyX5eB63WYKxspuR5I`.
+    These 7 `tickets` documents were created during the `contract-payfast-m1.yaml` gate
+    run on 2026-08-16 (`tickets` went 5 -> 12) and were never removed. Every carries
+    `attendeeName: 'Proof'` and a Firestore auto-generated ID — no marker-shaped
+    `bookingRef`, so unlike the `KNOWN-RESIDUE-BOOKING-REF` entries above they can only
+    be named by document ID. Full evidence, including the timestamp table and the
+    documented gap in explaining their origin (`git log --all -p` and a full-repo
+    `grep -rl "Proof"` turn up no committed source that ever wrote `attendeeName:
+    'Proof'`), is in
+    `contracts/golden/payfast-m1-residue-cleanup/leaked-docs-2026-08-16.md`. **These 7
+    documents, and the 5 pre-existing ones, are awaiting Brad's decision — do not
+    delete.** Adding them here is why the scanner's hit count is expected to rise from
+    12 to 19; a rising count is the scanner becoming able to see documents it was
+    previously blind to, not a regression.
 
 ## Explicitly NOT pattern-detectable (documented gap, not a silent omission)
 

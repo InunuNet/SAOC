@@ -53,6 +53,9 @@ const MARKER_PATTERNS: readonly MarkerPattern[] = [
   { name: 'HARDEN-ATTENDEE-NAME', regex: /^Harden (Check|Filler)$/i },
   { name: 'M2-CHECK-ITN-PROBE', regex: /^m2-check-itn-\d+-[a-z0-9]+$/i },
   { name: 'EPOCH-MS-NONCE (catch-all, heuristic)', regex: /(?<!\d)\d{13}(?!\d)/ },
+  { name: 'D6-SENTINEL-EMAIL-DOMAIN', regex: /@d6-door-checkin-check\.invalid\b/i },
+  { name: 'D6-BOOKING-REF', regex: /^D6-(NOAUTH|ADMIN|NONADMIN)-/i },
+  { name: 'D6-ATTENDEE-NAME', regex: /^D6 Door Checkin Check$/i },
 ];
 
 // Real `tickets` documents written by the live /api/tickets/checkout route during
@@ -64,6 +67,23 @@ const KNOWN_RESIDUE_BOOKING_REFS: ReadonlySet<string> = new Set([
   'SAOC-2027-JG6Q598FG0QD',
   'SAOC-2027-5H63FBAE8AHP',
   'SAOC-2027-C584G82Z7F6D',
+]);
+
+// 7 `tickets` documents left behind by the 2026-08-16 payfast-m1 gate run
+// (attendeeName: 'Proof', no marker-shaped bookingRef — see
+// contracts/golden/payfast-m1-residue-cleanup/leaked-docs-2026-08-16.md). Their origin
+// is not fully explained by any committed source (see that file); they are matched
+// literally against the Firestore document ID itself, not a field value, since no regex
+// can distinguish a bare 'Proof' attendeeName from a real one. Deletion is out of scope
+// here — awaiting Brad's decision, not made in this contract.
+const KNOWN_RESIDUE_DOC_IDS: ReadonlySet<string> = new Set([
+  'CrF2gcbRQCMPGRKSn8Da',
+  'MbnMi9tAL7WiFXTMKufc',
+  'HorxzPqpPWfo7sw1w3Hx',
+  'diLuP0fkUEXhv9P2f21D',
+  'kPxuUXcKF8jTw0IczYI4',
+  'OXauVpRMw6CX2bPeYjrY',
+  'W7yyX5eB63WYKxspuR5I',
 ]);
 
 // ---------------------------------------------------------------------------
@@ -80,7 +100,8 @@ interface Hit {
 function matchesAnyPattern(value: string): boolean {
   return (
     MARKER_PATTERNS.some((pattern) => pattern.regex.test(value)) ||
-    KNOWN_RESIDUE_BOOKING_REFS.has(value)
+    KNOWN_RESIDUE_BOOKING_REFS.has(value) ||
+    KNOWN_RESIDUE_DOC_IDS.has(value)
   );
 }
 

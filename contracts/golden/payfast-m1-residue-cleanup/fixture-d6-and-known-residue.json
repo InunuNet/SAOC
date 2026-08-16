@@ -1,0 +1,92 @@
+[
+  {
+    "collection": "tickets",
+    "id": "d6-fixture-noauth",
+    "data": {
+      "bookingRef": "D6-NOAUTH-abcd1234",
+      "attendeeEmail": "fixture-D6-NOAUTH-abcd1234@d6-door-checkin-check.invalid",
+      "attendeeName": "D6 Door Checkin Check",
+      "status": "paid",
+      "amount": 0
+    }
+  },
+  {
+    "collection": "tickets",
+    "id": "d6-fixture-admin",
+    "data": {
+      "bookingRef": "D6-ADMIN-ef567890",
+      "attendeeEmail": "fixture-D6-ADMIN-ef567890@d6-door-checkin-check.invalid",
+      "attendeeName": "D6 Door Checkin Check",
+      "status": "paid",
+      "amount": 0
+    }
+  },
+  {
+    "collection": "tickets",
+    "id": "d6-fixture-nonadmin",
+    "data": {
+      "bookingRef": "D6-NONADMIN-11223344",
+      "attendeeEmail": "fixture-D6-NONADMIN-11223344@d6-door-checkin-check.invalid",
+      "attendeeName": "D6 Door Checkin Check",
+      "status": "paid",
+      "amount": 0
+    }
+  },
+  {
+    "collection": "tickets",
+    "id": "CrF2gcbRQCMPGRKSn8Da",
+    "data": { "attendeeName": "Proof", "status": "reserved", "amount": 250 }
+  },
+  {
+    "collection": "tickets",
+    "id": "MbnMi9tAL7WiFXTMKufc",
+    "data": { "attendeeName": "Proof", "status": "reserved", "amount": 250 }
+  },
+  {
+    "collection": "tickets",
+    "id": "HorxzPqpPWfo7sw1w3Hx",
+    "data": { "attendeeName": "Proof", "status": "reserved", "amount": 250 }
+  },
+  {
+    "collection": "tickets",
+    "id": "diLuP0fkUEXhv9P2f21D",
+    "data": { "attendeeName": "Proof", "status": "reserved", "amount": 250 }
+  },
+  {
+    "collection": "tickets",
+    "id": "kPxuUXcKF8jTw0IczYI4",
+    "data": { "attendeeName": "Proof", "status": "reserved", "amount": 250 }
+  },
+  {
+    "collection": "tickets",
+    "id": "OXauVpRMw6CX2bPeYjrY",
+    "data": { "attendeeName": "Proof", "status": "reserved", "amount": 250 }
+  },
+  {
+    "collection": "tickets",
+    "id": "W7yyX5eB63WYKxspuR5I",
+    "data": { "attendeeName": "Proof", "status": "reserved", "amount": 250 }
+  },
+  {
+    "collection": "tickets",
+    "id": "real-ticket-near-miss-booking-ref",
+    "data": {
+      "bookingRef": "D60-REAL-99999999",
+      "attendeeName": "D6 Door Checkin Checked Out Guest",
+      "attendeeEmail": "realguest@gmail.com",
+      "status": "paid",
+      "amount": 250
+    }
+  },
+  {
+    "collection": "tickets",
+    "id": "real-ticket-near-miss-generic",
+    "data": {
+      "bookingRef": "SAOC-2027-ZZZZZZZZZZ",
+      "attendeeName": "Real Attendee",
+      "attendeeEmail": "real@example.com",
+      "amount": 250,
+      "status": "paid"
+    }
+  }
+]
