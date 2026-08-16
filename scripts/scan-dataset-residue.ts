@@ -194,27 +194,88 @@ function scanDocument(doc: Record<string, unknown>): Hit[] {
 // Env — parsed directly from .env.local, no dotenv (see file header).
 // ---------------------------------------------------------------------------
 
+/**
+ * Normalises CRLF and lone-CR line endings to LF before any line-based parsing.
+ * Without this, a CRLF `.env.local` (common when a file is edited or copied from a
+ * Windows tool) leaves a trailing `\r` on every line, so `nextLine.endsWith(quoteChar)`
+ * in the multi-line continuation loop below never matches the true closing line — the
+ * loop then swallows every remaining line into the value AND the variables after it
+ * silently disappear from the parsed result. This is a credential-corrupting parser
+ * bug class; normalise once, up front, so no downstream comparison can be defeated by
+ * a stray `\r`.
+ */
+function normalizeLineEndings(raw: string): string {
+  return raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+}
+
+/**
+ * Parses .env.local by hand (no `dotenv` package — its startup banner has corrupted
+ * an env value on this project before). A quoted value (e.g. SANITY_API_TOKEN, or any
+ * PEM-shaped credential in a sibling env file) may legitimately span multiple physical
+ * lines with real embedded newlines before its closing quote — a naive
+ * single-line-per-entry split truncates the value at its first line and corrupts the
+ * credential. Continuation lines are collected verbatim (not trimmed) until a line
+ * ending in the matching quote char. Handles unquoted values, values containing `=` or
+ * `#`, trailing whitespace, and a final line with no trailing newline. An unterminated
+ * quoted value (no closing quote before EOF) throws rather than silently swallowing
+ * the rest of the file. Kept byte-identical to the sibling parser in
+ * scripts/scan-firestore-residue.ts — do not let these two diverge.
+ */
 function readEnvLocal(): Record<string, string> {
   const envPath = path.resolve(process.cwd(), '.env.local');
   if (!existsSync(envPath)) {
     return {};
   }
   const raw = readFileSync(envPath, 'utf8');
+  const lines = normalizeLineEndings(raw).split('\n');
   const out: Record<string, string> = {};
-  for (const line of raw.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const eq = trimmed.indexOf('=');
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    let value = trimmed.slice(eq + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
+
+  let i = 0;
+  while (i < lines.length) {
+    const trimmed = lines[i].trim();
+    if (!trimmed || trimmed.startsWith('#')) {
+      i += 1;
+      continue;
     }
-    out[key] = value;
+    const eq = trimmed.indexOf('=');
+    if (eq === -1) {
+      i += 1;
+      continue;
+    }
+    const key = trimmed.slice(0, eq).trim();
+    const valuePart = trimmed.slice(eq + 1).trim();
+    const quoteChar = valuePart.startsWith('"') || valuePart.startsWith("'") ? valuePart[0] : undefined;
+    i += 1;
+
+    if (!quoteChar) {
+      out[key] = valuePart;
+      continue;
+    }
+
+    const body = valuePart.slice(1);
+    if (body.endsWith(quoteChar)) {
+      out[key] = body.slice(0, -1);
+      continue;
+    }
+
+    const segments = [body];
+    let closed = false;
+    while (i < lines.length) {
+      const nextLine = lines[i];
+      i += 1;
+      if (nextLine.endsWith(quoteChar)) {
+        segments.push(nextLine.slice(0, -1));
+        closed = true;
+        break;
+      }
+      segments.push(nextLine);
+    }
+    if (!closed) {
+      throw new Error(
+        `.env.local: unterminated quoted value for ${key} — no closing ${quoteChar} found before EOF.`,
+      );
+    }
+    out[key] = segments.join('\n');
   }
   return out;
 }

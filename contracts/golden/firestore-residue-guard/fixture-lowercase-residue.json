@@ -1,0 +1,12 @@
+[
+  {
+    "collection": "tickets",
+    "id": "tkt-lowercase-domain",
+    "data": {
+      "attendeeName": "Real Attendee",
+      "attendeeEmail": "test@HARDEN-CHECK.INVALID",
+      "status": "reserved",
+      "bookingRef": "SAOC-2027-Z9Y8X7W6V5"
+    }
+  }
+]

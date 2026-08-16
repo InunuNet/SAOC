@@ -1,0 +1,331 @@
+schema: athanor.contract/v1
+slug: firestore-residue-guard
+goal: >-
+  Close the Firestore half of the 2026-08-15 residue-detection gap. The Sanity
+  half was closed by contracts/contract-dataset-residue-guard.yaml (a separate,
+  concurrently-edited contract — do not modify its files). That guard's own
+  scope explicitly excluded Firestore, even though the identical risk class
+  exists there: contracts/checks/ticketing-hardening/_shared.mjs writes
+  sentinel tickets into the live `tickets` collection behind cleanup-only
+  protection (sweepSentinels/assertNoResidue), contracts/checks/m2-next16-upgrade/
+  check-routes.mjs POSTs a real ITN probe into `m_payment_id`, and four real
+  `tickets` documents plus two `contactSubmissions` documents from manual
+  2026-08-12 PayFast diagnostic testing are sitting in the live database right
+  now. Ship scripts/scan-firestore-residue.ts — a read-only, recursive scanner
+  mirroring scripts/scan-dataset-residue.ts's proven design — and wire it into
+  CI as its own job. Full design: contracts/golden/firestore-residue-guard/README.md.
+  Marker catalogue (5 regex families + 1 literal known-residue-ID allowlist,
+  each traced to file/line): contracts/golden/firestore-residue-guard/marker-catalogue.md.
+  Deletion of the known residue is explicitly OUT OF SCOPE — detect and report
+  only; deletion is Brad's call.
+created_at: '2026-08-16'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      scripts/scan-firestore-residue.ts: live mode (default) uses the Firebase
+      Admin SDK, credentials read directly from .env.local exactly as
+      scripts/admin-grant.ts does it (FIREBASE_ADMIN_PROJECT_ID /
+      _CLIENT_EMAIL / _PRIVATE_KEY, no `dotenv` package), discovers every
+      collection dynamically via db.listCollections() (never a hardcoded
+      collection array), and fixture mode (--fixture <path>) reads a local
+      JSON array of {collection, id, data} records with zero network/credential
+      access. Recursively walks every leaf of `data` at any depth (objects,
+      arrays — no Portable Text span-joining needed, Firestore has no
+      comparable rich-text model), coercing numbers to strings before testing
+      (closes the Sanity guard's QA gap #2 on day one). Exports a
+      `toPlainValue()` normalizer that converts duck-typed Timestamp/GeoPoint/
+      DocumentReference-shaped values to plain strings before the walk, run
+      only in live mode. Tests every leaf against the 5-pattern regex
+      catalogue AND the literal known-residue booking-ref allowlist. Prints
+      hits as "<collection>/<docId> . <fieldPath> = <value>", exits non-zero
+      on any hit / zero on none, never calls a Firestore write method (.set/
+      .update/.delete/.add/.create/.batch/.runTransaction), and hard-fails
+      loudly (not silently) if live-mode credentials are missing.
+    status: pending
+  - id: F2
+    name: >-
+      .github/workflows/ci.yml: new standalone job `firestore-residue-guard`
+      (not a step inside the existing `ci:` job, same reasoning as the sibling
+      Sanity guard). Because no FIREBASE_ADMIN_* secret exists in this repo
+      today (verified via `gh secret list` on 2026-08-16 — only
+      NEXT_PUBLIC_SANITY_PROJECT_ID and SANITY_API_TOKEN exist), the job must
+      check for FIREBASE_ADMIN_PROJECT_ID's presence and VISIBLY SKIP the scan
+      step with an explicit ::warning:: annotation when absent — never a
+      silent green pass, never a hard failure on every run either (see
+      "honest behaviour" requirement in the golden README). Also add a
+      schedule/cron trigger to the top-level `on:` block if one is not already
+      present (the concurrently-edited dataset-residue-guard contract may add
+      one first — coordinate, do not duplicate or remove it).
+    status: pending
+
+goldens:
+  - contracts/golden/firestore-residue-guard/README.md
+  - contracts/golden/firestore-residue-guard/marker-catalogue.md
+  - contracts/golden/firestore-residue-guard/fixture-clean.json
+  - contracts/golden/firestore-residue-guard/fixture-dirty-nested.json
+  - contracts/golden/firestore-residue-guard/fixture-all-patterns.json
+  - contracts/golden/firestore-residue-guard/fixture-nonstring-leaf.json
+  - contracts/golden/firestore-residue-guard/fixture-known-residue.json
+  - contracts/golden/firestore-residue-guard/fixture-lowercase-residue.json
+  - contracts/checks/firestore-residue-guard/check_invocation_parity.py
+  - contracts/checks/firestore-residue-guard/check_special_value_normalization.mjs
+  - contracts/checks/firestore-residue-guard/check_env_local_crlf_parsing.mjs
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        Scanner REJECTS a fixture whose ONLY residue is nested 5 levels deep
+        (data.meta.auditTrail.createdBy.probe.lastTouchedBy), while every
+        top-level field in the same fixture (including a second, unrelated
+        contactSubmissions doc) is clean. Rejects the broken variant "scanner
+        only checks top-level fields of `data`." Also proves fixture mode
+        needs no live credentials by running with FIREBASE_ADMIN_PROJECT_ID,
+        FIREBASE_ADMIN_CLIENT_EMAIL and FIREBASE_ADMIN_PRIVATE_KEY explicitly
+        unset — rejects "fixture mode still initializes a Firebase Admin app."
+        Also proves the output format is exact, not approximate.
+      command: >-
+        out=$(mktemp); env -u FIREBASE_ADMIN_PROJECT_ID -u
+        FIREBASE_ADMIN_CLIENT_EMAIL -u FIREBASE_ADMIN_PRIVATE_KEY pnpm exec
+        tsx scripts/scan-firestore-residue.ts --fixture
+        contracts/golden/firestore-residue-guard/fixture-dirty-nested.json >
+        "$out" 2>&1; code=$?; grep -q
+        "tickets/tkt-nested-clean-looking . meta.auditTrail.createdBy.probe.lastTouchedBy = filler-run-a-3@harden-check.invalid"
+        "$out" && test "$code" -ne 0
+
+    - id: A2
+      description: >-
+        Scanner exits 0 and prints an unambiguous all-clear on a fixture with
+        no residue anywhere across three different collections (tickets,
+        contactSubmissions, societies), including nested arrays/objects.
+        Rejects "scanner always exits non-zero" and "scanner false-positives
+        on ordinary nested content." Credentials unset, same as A1.
+      command: >-
+        out=$(mktemp); env -u FIREBASE_ADMIN_PROJECT_ID -u
+        FIREBASE_ADMIN_CLIENT_EMAIL -u FIREBASE_ADMIN_PRIVATE_KEY pnpm exec
+        tsx scripts/scan-firestore-residue.ts --fixture
+        contracts/golden/firestore-residue-guard/fixture-clean.json > "$out"
+        2>&1; code=$?; grep -qi "ALL CLEAR" "$out" && test "$code" -eq 0
+
+    - id: A3
+      description: >-
+        Scanner source never calls a Firestore write method. Rejects "scanner
+        is implemented with a write-capable client / accidentally calls
+        .update() or .delete() while building the report."
+      command: >-
+        ! grep -E
+        "\.set\(|\.update\(|\.delete\(|\.add\(|\.create\(|\.batch\(|\.runTransaction\("
+        scripts/scan-firestore-residue.ts
+
+    - id: A4
+      description: >-
+        Marker catalogue coverage — FUNCTIONAL, not textual. Drives all 5
+        regex pattern families (SENTINEL-EMAIL-DOMAIN, HARDEN-BOOKING-REF,
+        HARDEN-ATTENDEE-NAME, M2-CHECK-ITN-PROBE, EPOCH-MS-NONCE) plus the
+        literal KNOWN-RESIDUE-BOOKING-REF allowlist through the scanner via
+        fixture-all-patterns.json (one isolated field per mechanism, 6 docs)
+        and requires exactly 6 hits, exit non-zero. Rejects "scanner source
+        merely mentions each pattern name in a comment while the regex
+        catalogue silently drops one or more of them."
+      command: >-
+        out=$(env -u FIREBASE_ADMIN_PROJECT_ID -u FIREBASE_ADMIN_CLIENT_EMAIL
+        -u FIREBASE_ADMIN_PRIVATE_KEY pnpm exec tsx
+        scripts/scan-firestore-residue.ts --fixture
+        contracts/golden/firestore-residue-guard/fixture-all-patterns.json);
+        code=$?; echo "$out" | grep -q "found 6 residue hit(s)" && test
+        "$code" -ne 0
+
+    - id: A5
+      description: >-
+        Live-mode missing-credentials path is a loud, distinct hard failure,
+        not a silent skip and not an uncaught stack trace. Rejects "CI job
+        with no credentials configured either crashes unreadably or exits 0
+        having scanned nothing."
+      command: >-
+        grep -q "missing FIREBASE_ADMIN_PROJECT_ID"
+        scripts/scan-firestore-residue.ts
+
+    - id: A6
+      description: >-
+        CI wiring exists as its own job (not folded into `ci:`), references
+        the scanner, and implements the honest-skip-when-no-secrets behaviour
+        from the golden README (a `creds` step gating the scan step, plus a
+        visible ::warning:: when FIREBASE_ADMIN_PROJECT_ID is absent) rather
+        than either a silent pass or a hard fail on every run. Rejects
+        "scanner ships but nothing in CI ever calls it", "wired as a step
+        inside `ci:`", and "CI job fails red on every push because no
+        Firebase Admin secret is configured."
+      command: >-
+        grep -q "firestore-residue-guard:" .github/workflows/ci.yml && grep
+        -q "scan-firestore-residue" .github/workflows/ci.yml && grep -q
+        "FIREBASE_ADMIN_PROJECT_ID" .github/workflows/ci.yml && grep -qi
+        "SKIPPED" .github/workflows/ci.yml
+
+    - id: A7
+      description: >-
+        Fixture golden files are well-formed JSON arrays (guards against a
+        broken golden making A1/A2/A4 meaningless for the wrong reason).
+      command: >-
+        node -e
+        "JSON.parse(require('fs').readFileSync('contracts/golden/firestore-residue-guard/fixture-clean.json','utf8'))"
+        && node -e
+        "JSON.parse(require('fs').readFileSync('contracts/golden/firestore-residue-guard/fixture-dirty-nested.json','utf8'))"
+        && node -e
+        "JSON.parse(require('fs').readFileSync('contracts/golden/firestore-residue-guard/fixture-all-patterns.json','utf8'))"
+
+    - id: A8
+      description: >-
+        Collections are discovered dynamically, never hardcoded. Rejects
+        "scanner hardcodes an array like ['tickets','contactSubmissions'] and
+        silently never scans a future collection." Source-level architectural
+        invariant, same justification as A3/A5's grep-based enforcement.
+      command: grep -q "listCollections" scripts/scan-firestore-residue.ts
+
+    - id: A9
+      description: >-
+        Non-string leaf residue — a genuine JSON number leaf (probeEpoch,
+        13-digit millisecond epoch, exactly the shape a numeric residue probe
+        would take) must be coerced through the same pattern tests as string
+        leaves, alongside ordinary clean numeric ticket fields (amount,
+        capacity) that must NOT false-positive. Rejects "walk() only branches
+        on typeof value === 'string' and silently drops every non-string
+        primitive leaf" — the confirmed QA gap #2 from the sibling Sanity
+        guard, closed here before an incident forces it.
+      command: >-
+        out=$(env -u FIREBASE_ADMIN_PROJECT_ID -u FIREBASE_ADMIN_CLIENT_EMAIL
+        -u FIREBASE_ADMIN_PRIVATE_KEY pnpm exec tsx
+        scripts/scan-firestore-residue.ts --fixture
+        contracts/golden/firestore-residue-guard/fixture-nonstring-leaf.json);
+        code=$?; echo "$out" | grep -q "probeEpoch = 1786560879358" && test
+        "$code" -ne 0
+
+    - id: A10
+      description: >-
+        Literal known-residue-ID allowlist mechanism works independently of
+        the regex patterns. fixture-known-residue.json contains one of the
+        four real stray booking refs (SAOC-2027-JG6Q598FG0QD) on an otherwise
+        generic-looking, real-shaped ticket document (no sentinel email, no
+        HARDEN- prefix, no probe id) — a document that every regex pattern
+        would pass as clean. Rejects "scanner only checks regex patterns and
+        has no literal-known-ID allowlist, so a manually-injected diagnostic
+        document that doesn't match any generic pattern goes undetected" —
+        this is precisely the shape of the real, currently-live residue this
+        guard exists to find.
+      command: >-
+        out=$(env -u FIREBASE_ADMIN_PROJECT_ID -u FIREBASE_ADMIN_CLIENT_EMAIL
+        -u FIREBASE_ADMIN_PRIVATE_KEY pnpm exec tsx
+        scripts/scan-firestore-residue.ts --fixture
+        contracts/golden/firestore-residue-guard/fixture-known-residue.json);
+        code=$?; echo "$out" | grep -q "SAOC-2027-JG6Q598FG0QD" && test
+        "$code" -ne 0
+
+    - id: A11
+      description: >-
+        CI cadence — a schedule/cron trigger exists somewhere in the
+        top-level `on:` block of .github/workflows/ci.yml (main has no branch
+        protection — same reasoning as the sibling guard's own cadence
+        assertion — so a red job on a PR blocks nothing, and residue written
+        outside a PR is invisible until someone happens to open one). Parsed
+        structurally (YAML), not grepped for a literal, and deliberately
+        collection-agnostic: satisfied whether this contract's own F2 adds the
+        trigger or the concurrently-edited dataset-residue-guard contract adds
+        it first — either way, one schedule/cron trigger on the shared
+        workflow file satisfies both guards' cadence requirement.
+      command: >-
+        python3 -c "import sys,yaml; d=yaml.safe_load(open('.github/workflows/ci.yml'));
+        on=d.get(True) or d.get('on'); sys.exit(0 if isinstance(on, dict) and
+        'schedule' in on and on['schedule'] and 'cron' in on['schedule'][0]
+        else 1)"
+
+    - id: A12
+      description: >-
+        Case-insensitive matching for the alphabetic pattern families
+        (SENTINEL-EMAIL-DOMAIN, HARDEN-BOOKING-REF, HARDEN-ATTENDEE-NAME,
+        M2-CHECK-ITN-PROBE). fixture-lowercase-residue.json has
+        attendeeEmail "test@HARDEN-CHECK.INVALID" (uppercase domain) with
+        every other field clean. Rejects "the email-domain pattern stays
+        case-sensitive, so an uppercased or manually-typed variant of the
+        sentinel domain slips through silently."
+      command: >-
+        out=$(env -u FIREBASE_ADMIN_PROJECT_ID -u FIREBASE_ADMIN_CLIENT_EMAIL
+        -u FIREBASE_ADMIN_PRIVATE_KEY pnpm exec tsx
+        scripts/scan-firestore-residue.ts --fixture
+        contracts/golden/firestore-residue-guard/fixture-lowercase-residue.json);
+        code=$?; echo "$out" | grep -qi "HARDEN-CHECK.INVALID" && test
+        "$code" -ne 0
+
+    - id: A13
+      description: >-
+        Firestore-native value normalization (Timestamp/GeoPoint/
+        DocumentReference) — cannot be exercised through --fixture (JSON has
+        no function values), so this imports the scanner's exported
+        `toPlainValue()` directly and exercises it against duck-typed fake
+        Timestamp/GeoPoint/DocumentReference objects plus a plain-object
+        identity case. Rejects "live-mode Timestamp/GeoPoint/DocumentReference
+        fields silently fall through Object.entries() recursion and are never
+        tested" (the QA gap #2 failure mode in a Firestore-specific shape) and
+        "the normalizer is over-broad and mangles ordinary nested objects."
+      command: >-
+        pnpm exec tsx
+        contracts/checks/firestore-residue-guard/check_special_value_normalization.mjs
+
+    - id: A14
+      description: >-
+        Invocation-form parity between the firestore-residue-guard CI job and
+        this contract's own assertions, parsed structurally (YAML) by
+        contracts/checks/firestore-residue-guard/check_invocation_parity.py —
+        same defence as the sibling Sanity guard's own parity check, added
+        proactively here rather than after a repeat of that incident. WHAT
+        THIS PROVES: the interpreter + flags + script path the CI job's
+        `firestore-residue-guard` scan step runs is identical to at least one
+        invocation form exercised by this contract's assertions (`pnpm exec
+        tsx scripts/scan-firestore-residue.ts`, never `node --import
+        tsx/esm ...` — that form is what broke the sibling guard's CI job on
+        GitHub's Node 22). WHAT THIS DOES NOT PROVE: that the matched
+        invocation succeeds on the CI runner's Node version, or that the
+        credential-presence gating step is itself correct.
+      command: >-
+        python3 contracts/checks/firestore-residue-guard/check_invocation_parity.py
+
+    - id: A15
+      description: >-
+        readEnvLocal() CRLF blind spot. Every fixture-mode assertion in this
+        contract (A1, A2, A4, A9, A10, A12) runs with FIREBASE_ADMIN_PROJECT_ID
+        / _CLIENT_EMAIL / _PRIVATE_KEY explicitly unset and reads no
+        .env.local by design — so nothing in this gate has ever called
+        readEnvLocal(), the one code path that ever touches a real credential,
+        in a project with four prior secret-corruption incidents. Under CRLF
+        line endings the multi-line-quoted-value continuation loop compared
+        the closing line against its RAW form (e.g. `-----END PRIVATE
+        KEY-----"\r`, which does not end in `"`), so the closing quote was
+        never recognized: the loop swallowed every remaining line in the file
+        into the credential value and silently dropped every variable
+        declared after it. This assertion builds a temp .env.local with REAL
+        \r\n bytes (via `printf`, not a YAML/JS template literal that could
+        get normalized to LF in transit — see the golden README's
+        "credential-path coverage" note) containing a PEM-SHAPED DUMMY
+        multi-line quoted value (no real key material) followed by two more
+        variables, imports readEnvLocal() directly via
+        contracts/checks/firestore-residue-guard/check_env_local_crlf_parsing.mjs,
+        and requires (1) the quoted value is captured with no `\r` retained
+        and no following lines absorbed into it, and (2) both variables
+        declared after the multi-line value are still present with their
+        exact values. readEnvLocal() must be exported (`export function
+        readEnvLocal()`) for this check to import it — @dev: add exactly that
+        export if not already present; do not export anything with a
+        different name or shape. Rejects "the parser silently truncates or
+        corrupts credentials under CRLF and nothing in the gate would ever
+        know."
+      command: >-
+        tmp=$(mktemp -d); printf
+        'FIREBASE_ADMIN_PROJECT_ID="dummy-project"\r\nFIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN
+        PRIVATE
+        KEY-----\r\nMIIFAKEDUMMYKEYMATERIALNOTREALxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\r\n-----END
+        PRIVATE
+        KEY-----\r\n"\r\nFIREBASE_ADMIN_CLIENT_EMAIL="dummy@dummy-project.iam.gserviceaccount.com"\r\nRESEND_API_KEY="dummy-resend-key-value"\r\n'
+        > "$tmp/.env.local"; pnpm exec tsx
+        contracts/checks/firestore-residue-guard/check_env_local_crlf_parsing.mjs
+        "$tmp"

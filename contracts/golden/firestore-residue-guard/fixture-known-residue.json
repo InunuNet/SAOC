@@ -1,0 +1,15 @@
+[
+  {
+    "collection": "tickets",
+    "id": "tkt-real-shape-residue",
+    "data": {
+      "showId": "nationalShow",
+      "ticketType": "day-visitor",
+      "attendeeName": "Diagnostic Probe",
+      "attendeeEmail": "notasentinel@example.co.za",
+      "status": "reserved",
+      "amount": 150,
+      "bookingRef": "SAOC-2027-JG6Q598FG0QD"
+    }
+  }
+]

@@ -1,0 +1,45 @@
+[
+  {
+    "collection": "tickets",
+    "id": "tkt-clean-1",
+    "data": {
+      "showId": "nationalShow",
+      "ticketType": "exhibitor",
+      "attendeeName": "Jane Grower",
+      "attendeeEmail": "jane@example.co.za",
+      "status": "paid",
+      "amount": 150,
+      "bookingRef": "SAOC-2027-A1B2C3D4E5",
+      "meta": {
+        "source": "web",
+        "history": [
+          { "event": "reserved", "at": "2026-08-01T10:00:00.000Z" },
+          { "event": "paid", "at": "2026-08-01T10:05:00.000Z" }
+        ]
+      }
+    }
+  },
+  {
+    "collection": "contactSubmissions",
+    "id": "contact-clean-1",
+    "data": {
+      "name": "Peter Botha",
+      "email": "peter@example.co.za",
+      "message": "Loved the show last year, when does 2027 open?",
+      "createdAt": "2026-08-01T09:00:00.000Z"
+    }
+  },
+  {
+    "collection": "societies",
+    "id": "orchid-society-of-pretoria",
+    "data": {
+      "name": "Orchid Society of Pretoria",
+      "province": "Gauteng",
+      "city": "Pretoria",
+      "venue": "Pretoria Botanical Garden",
+      "meetingDay": "Tuesday",
+      "meetingTime": "19:00",
+      "email": "info@osp.example.co.za"
+    }
+  }
+]

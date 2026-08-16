@@ -88,3 +88,33 @@ jobs:
           NEXT_PUBLIC_SANITY_DATASET: production
           SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
         run: pnpm exec tsx scripts/scan-dataset-residue.ts
+
+  firestore-residue-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check Firestore admin secrets are configured
+        id: creds
+        run: |
+          if [ -n "${{ secrets.FIREBASE_ADMIN_PROJECT_ID }}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Scan live Firestore for test residue
+        if: steps.creds.outputs.present == 'true'
+        env:
+          FIREBASE_ADMIN_PROJECT_ID: ${{ secrets.FIREBASE_ADMIN_PROJECT_ID }}
+          FIREBASE_ADMIN_CLIENT_EMAIL: ${{ secrets.FIREBASE_ADMIN_CLIENT_EMAIL }}
+          FIREBASE_ADMIN_PRIVATE_KEY: ${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}
+        run: pnpm exec tsx scripts/scan-firestore-residue.ts
+      - name: No Firestore admin secrets — scan not run
+        if: steps.creds.outputs.present == 'false'
+        run: |
+          echo "::warning::firestore-residue-guard SKIPPED — FIREBASE_ADMIN_PROJECT_ID/_CLIENT_EMAIL/_PRIVATE_KEY are not configured as repo secrets (verified via 'gh secret list' 2026-08-16). This is NOT a clean scan result. Add these three secrets to enable live Firestore residue detection in CI. See contracts/golden/firestore-residue-guard/README.md."

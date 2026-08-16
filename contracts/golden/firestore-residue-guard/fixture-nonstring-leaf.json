@@ -1,0 +1,15 @@
+[
+  {
+    "collection": "tickets",
+    "id": "tkt-numeric-probe",
+    "data": {
+      "attendeeName": "Real Attendee",
+      "attendeeEmail": "real3@example.co.za",
+      "bookingRef": "SAOC-2027-Q1W2E3R4T5",
+      "status": "reserved",
+      "amount": 150,
+      "capacity": 50,
+      "probeEpoch": 1786560879358
+    }
+  }
+]

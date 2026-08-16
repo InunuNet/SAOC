@@ -1,0 +1,8 @@
+[
+  { "collection": "tickets", "id": "pat-1-sentinel-domain", "data": { "attendeeEmail": "filler-b-9@harden-check.invalid", "status": "reserved" } },
+  { "collection": "tickets", "id": "pat-2-harden-bookingref", "data": { "bookingRef": "HARDEN-b-9", "status": "reserved" } },
+  { "collection": "tickets", "id": "pat-3-harden-name", "data": { "attendeeName": "Harden Filler", "status": "reserved" } },
+  { "collection": "tickets", "id": "pat-4-m2-probe", "data": { "m_payment_id": "m2-check-itn-1786560879358-a1b2c3" } },
+  { "collection": "tickets", "id": "pat-5-epoch-nonce", "data": { "probeEpoch": 1786560879358 } },
+  { "collection": "tickets", "id": "pat-6-known-residue-ref", "data": { "bookingRef": "SAOC-2027-JG6Q598FG0QD", "status": "reserved", "attendeeEmail": "notasentinel@example.co.za" } }
+]

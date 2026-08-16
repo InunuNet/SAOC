@@ -1,0 +1,40 @@
+[
+  {
+    "collection": "tickets",
+    "id": "tkt-nested-clean-looking",
+    "data": {
+      "showId": "nationalShow",
+      "ticketType": "exhibitor",
+      "attendeeName": "Real Attendee",
+      "attendeeEmail": "real@example.co.za",
+      "status": "reserved",
+      "amount": 0,
+      "bookingRef": "SAOC-2027-F9G8H7J6K5",
+      "meta": {
+        "source": "web",
+        "tags": [
+          "early-bird",
+          { "note": "ordinary tag object", "detail": "no residue here" }
+        ],
+        "auditTrail": {
+          "createdBy": {
+            "system": "checkout-route",
+            "probe": {
+              "lastTouchedBy": "filler-run-a-3@harden-check.invalid"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "contactSubmissions",
+    "id": "contact-nested-clean",
+    "data": {
+      "name": "Real Enquirer",
+      "email": "real2@example.co.za",
+      "message": "When is early-bird pricing?",
+      "createdAt": "2026-08-02T09:00:00.000Z"
+    }
+  }
+]
