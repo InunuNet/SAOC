@@ -80,23 +80,85 @@ assertions:
       kind: shell
       cmd: "grep -Eq \"from '(@/)?lib/firebase-admin'\" app/api/admin/checkin/route.ts"
 
-  - id: D6-11
-    description: checkin route enforces admin auth — session cookie + verifySessionCookie + admin/role claim
+  # D6-11/D6-12/D6-13/D6-16 REPLACED 2026-08-16 (post-audit hardening). The originals
+  # were grep-only and would not notice a regression: D6-11's "admin|role" grep was
+  # satisfied by the import path '@/lib/firebase-admin' alone (no admin-claim check
+  # required); D6-12 matched the digits 401/403 anywhere, including on an unrelated
+  # validation error; D6-13/D6-16 checked that unrelated literals merely co-occurred in
+  # the file rather than that Firestore was actually wired together or actually mutated.
+  # Verified NOT a live vulnerability before this rewrite: app/api/admin/checkin/route.ts
+  # calls getAdminSession() (lib/admin-auth.ts) before any Firestore access, and
+  # isAdminToken() there enforces admin===true, email_verified===true, and live
+  # allowlist membership — this is a detection-gap fix, not an incident response.
+  #
+  # Replacements below run REAL round trips: a real Firebase session cookie (in D6-11's
+  # case, minted directly via Admin SDK createSessionCookie, bypassing the app's own
+  # /api/admin/session mint route on purpose so the checkin route's OWN claim check is
+  # proved independently of that route's separate enforcement of the same rule), a real
+  # HTTP POST to /api/admin/checkin, and a real Firestore read-back of the ticket
+  # document. Each was proven 2026-08-16 to catch a deliberately broken variant (claim
+  # check stripped from a scratch copy of the route, built and run on a separate port) —
+  # see contracts/golden/d6-door-checkin/README.md "Broken-variant evidence". Mirrors
+  # the pattern contract-admin-auth-f3-provisioning.yaml's A-REVOKE-01 established:
+  # scripts/checks run as real processes/HTTP against a real isolated built server via
+  # contracts/checks/admin-auth-hardening/server-ctl.sh (reused, not duplicated).
+  #
+  # CI vs LOCAL: same precondition shape as contract-admin-auth-f3-provisioning.yaml —
+  # these need FIREBASE_ADMIN_PROJECT_ID / FIREBASE_ADMIN_CLIENT_EMAIL /
+  # FIREBASE_ADMIN_PRIVATE_KEY / NEXT_PUBLIC_FIREBASE_API_KEY / ADMIN_EMAIL_ALLOWLIST
+  # (containing admin-auth-check-allowlisted@saoc.co.za) in .env.local at the repo root.
+  # LOCAL-ONLY unless CI's secret store provisions the same values — see "Outstanding
+  # human action" in the README. If .env.local (or the equivalent CI secrets) is
+  # missing, each check below exits non-zero with a PreconditionError message
+  # ("FAIL: <KEY> is not set in .env.local") rather than reporting a silent green;
+  # server startup itself (D6-SERVER-START) is the first thing to fail loudly in that
+  # case, before any assertion runs, and is never treated as a passing check by the gate.
+  - id: D6-SERVER-START
+    description: >-
+      Starts (or confirms already running) the isolated locally-built production server
+      the checks below test against. Reuses admin-auth-hardening's server-ctl.sh
+      directly rather than duplicating it — same script, same port 3400, same
+      rsync'd-working-tree build. LOCAL-ONLY (or CI with the same .env.local-equivalent
+      secrets provisioned) — see note above.
     verify:
       kind: shell
-      cmd: "grep -q \"get('session')\" app/api/admin/checkin/route.ts && grep -q \"verifySessionCookie\" app/api/admin/checkin/route.ts && grep -Eqi \"admin|role\" app/api/admin/checkin/route.ts"
+      cmd: bash contracts/checks/admin-auth-hardening/server-ctl.sh start
+
+  - id: D6-11
+    description: >-
+      A real, valid session cookie for an authenticated NON-admin user (no admin
+      claim) is refused 403 by POST /api/admin/checkin, and the targeted real ticket is
+      left unmutated. The cookie is minted directly via Admin SDK createSessionCookie,
+      bypassing the app's own session-mint route's admin gate, so this proves the
+      checkin route's OWN admin-claim check specifically — the exact regression the
+      audit flagged (a route that verifies a session cookie but never checks the admin
+      claim would previously still satisfy the old grep). LOCAL-ONLY / CI-with-secrets.
+    verify:
+      kind: shell
+      cmd: node contracts/checks/d6-door-checkin/check-nonadmin-refused.mjs
 
   - id: D6-12
-    description: checkin route returns 401/403 for unauthorized requests
+    description: >-
+      No session cookie, and a syntactically invalid session cookie, are both refused
+      401 by POST /api/admin/checkin against a real ticket, with a real Firestore
+      read-back proving no mutation occurred. LOCAL-ONLY / CI-with-secrets.
     verify:
       kind: shell
-      cmd: 'grep -Eq "401|403" app/api/admin/checkin/route.ts'
+      cmd: node contracts/checks/d6-door-checkin/check-noauth-refused.mjs
 
   - id: D6-13
-    description: checkin route reads the tickets Firestore collection by bookingRef
+    description: >-
+      A genuine admin session succeeds (200, success:true) against a real paid ticket,
+      and the REAL Firestore document is read back afterward to confirm status flips to
+      'checked-in' with a real checkedInAt timestamp — not merely that the literals
+      'tickets' and 'bookingRef' co-occur in the source. Also the required positive
+      control for D6-11/D6-12: without it, a route refusing every caller unconditionally
+      would satisfy both of those checks by accident. A second check-in of the same
+      ticket is then refused 409, proving the first write was real persisted state, not
+      a stateless success response. LOCAL-ONLY / CI-with-secrets.
     verify:
       kind: shell
-      cmd: "grep -Eq \"collection.['\\\"]tickets['\\\"]\" app/api/admin/checkin/route.ts && grep -Eq \"where.['\\\"]bookingRef['\\\"]\" app/api/admin/checkin/route.ts"
+      cmd: node contracts/checks/d6-door-checkin/check-admin-succeeds.mjs
 
   - id: D6-14
     description: checkin route sets the checkedInAt field on the ticket
@@ -110,11 +172,23 @@ assertions:
       kind: shell
       cmd: "grep -Eq \"Timestamp\\.now\\(\\)|FieldValue\\.serverTimestamp\\(\\)\" app/api/admin/checkin/route.ts"
 
+  # D6-16 (real outcome) is now covered by D6-13's Firestore read-back above (status
+  # actually flips to 'checked-in'). Kept here too as a cheap structural sanity check —
+  # this one is NOT load-bearing on its own since D6-13 already proves the real effect.
   - id: D6-16
-    description: checkin route sets status to 'checked-in'
+    description: checkin route sets status to 'checked-in' (structural sanity only — D6-13 proves the real effect)
     verify:
       kind: shell
       cmd: "grep -Eq \"checked-in\" app/api/admin/checkin/route.ts && grep -q \"status\" app/api/admin/checkin/route.ts"
+
+  - id: D6-STOP-SERVER
+    description: >-
+      Stops the isolated production server and removes its scratch build tree,
+      whether the checks above passed or failed. If another contract in this session
+      started the same server, server-ctl.sh's own lock/refcount handling governs.
+    verify:
+      kind: shell
+      cmd: bash contracts/checks/admin-auth-hardening/server-ctl.sh stop
 
   - id: D6-17
     description: checkin route returns a structured success response (success + ticket)
@@ -157,6 +231,7 @@ phases:
       - D6-08
       - D6-09
       - D6-10
+      - D6-SERVER-START
       - D6-11
       - D6-12
       - D6-13
@@ -165,5 +240,6 @@ phases:
       - D6-16
       - D6-17
       - D6-18
+      - D6-STOP-SERVER
       - D6-GATE-01
       - D6-GATE-02
