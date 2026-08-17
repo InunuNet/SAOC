@@ -7,7 +7,7 @@ goal: 'Build the scalable ticketing foundation from docs/ticketing-system-founda
   admin capability, and an end-to-end human-proven purchase-to-door-scan flow'
 created_at: '2026-08-17T14:39:52.125721+00:00'
 started_at: '2026-08-17T16:35:26.642255+00:00'
-last_active_at: '2026-08-17T20:54:02.515792+00:00'
+last_active_at: '2026-08-17T21:46:01.944160+00:00'
 status: in_progress
 cost_estimate:
   features: 14
@@ -15,8 +15,8 @@ cost_estimate:
   total_calls: 0
 last_checkpoint:
   milestone: M2
-  feature: F10
-  ts: '2026-08-17T20:54:02.515792+00:00'
+  feature: F11
+  ts: '2026-08-17T21:46:01.944160+00:00'
 features:
 - id: F1
   title: 'Resolve `show` document collision: extend archive type for sales fields,
@@ -129,8 +129,9 @@ features:
     email template compiles and formats correctly, the recovery link is present and
     includes the signed token, the Resend mock logs every sent email, and fixture
     tests pass without a real Resend account.'
-  status: pending
+  status: done
   milestone: M2
+  completed_at: '2026-08-17T21:26:07.206476+00:00'
 - id: F12
   title: Human purchase-and-scan proof on deployed host, venue door-connectivity observation
     recorded
@@ -222,6 +223,8 @@ milestones:
   - F14
   status: pending
 ---
+
+
 
 
 

@@ -231,7 +231,7 @@ assertions:
         payment followed by a real email failure) is out of reach offline, and what the sha256
         pin substitutes as proof of the call-site ordering.
       command: >-
-        node --import tsx/esm contracts/checks/ticketing-f10-itn-repin/check-email-failure-does-not-block.mjs
+        npx tsx contracts/checks/ticketing-f10-itn-repin/check-email-failure-does-not-block.mjs
 
     - id: A8
       description: >-

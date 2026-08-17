@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/checkout-reservation.ts",
+    "../../../lib/orders.ts",
+    "../../../lib/recovery-token.ts",
+    "../../../types/index.ts",
+    "fixtures/checkout-orders-typecheck.ts"
+  ],
+  "exclude": []
+}

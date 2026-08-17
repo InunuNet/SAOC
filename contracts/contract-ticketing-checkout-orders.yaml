@@ -1,0 +1,202 @@
+schema: athanor.contract/v1
+slug: ticketing-checkout-orders
+goal: >-
+  Mission ticketing-foundation, checkout/orders wiring gap (spec §4.2/§4.4, §8.2). Today
+  app/api/tickets/checkout/route.ts writes ONLY a flat `tickets` document
+  (`transaction.create(tickets.doc(bookingRef), {...})`) and never creates an `orders`
+  document — confirmed by grep: no `createOrderWithPosition`, no `ORDERS_COLLECTION`, no
+  `'orders'`, no `orderId` anywhere in the file. This breaks F10's
+  `markOrderAndPositionPaidByPaymentId()` (always resolves `order-not-found` for a real
+  purchase), which breaks F11's confirmation-email hookup (never fires for a real ITN),
+  which breaks F6's recovery-token flow (`recoveryToken` stays null on every real order).
+  This contract wires checkout to write an `orders/{orderId}` document and its
+  `tickets/{bookingRef}` position TOGETHER, atomically, inside the SAME already-open
+  reservation transaction that already does capacity-check and idempotency-duplicate-probe
+  work (contracts/golden/ticketing-hardening/capacity-transaction.golden.md) — extending
+  that transaction, not replacing it. It also mints the F6 recovery token at
+  order-creation time, the deferred step both F6's and F10's own goldens explicitly left
+  open. Full decision record, every judgement call, every assertion's named defeating
+  mutation, and what this contract does NOT prove:
+  contracts/golden/ticketing-checkout-orders/README.md
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      New file lib/checkout-reservation.ts (pure construction + a narrow transactional
+      writer, mirroring lib/comp-tickets.ts's split of "build the docs" from "write the
+      docs" — see README "Why a new lib/checkout-reservation.ts, and why lib/orders.ts is
+      NOT touched"):
+
+      (1) `export interface BuildReservationDocsInput { orderId: string; bookingRef:
+      string; showId: string; attendeeName: string; attendeeEmail: string; ticketType:
+      TicketType; amount: number; idempotencyKey: string; expiresAt: Timestamp;
+      recoveryToken: string; recoveryTokenExpiresAt: Timestamp; now: Timestamp; }`.
+      `export interface ReservationDocs { order: Omit<Order, 'id'>; position:
+      Omit<Ticket, 'id'> & { idempotencyKey: string } }`. `export function
+      buildReservationDocs(input: BuildReservationDocsInput): ReservationDocs` — PURE,
+      no Firestore import, no Date.now()/new Date() call anywhere in this function (time
+      is always the caller-supplied `now`, exactly like lib/recovery-token.ts's own
+      pattern). Builds the order body (`showId`, `buyerName`/`buyerEmail` both set to
+      `input.attendeeName`/`input.attendeeEmail` — see README "buyerName/buyerEmail ==
+      attendeeName/attendeeEmail for now", `amount`, `status: 'reserved'`, `expiresAt`,
+      `idempotencyKey`, `purchasedAt: null`, `gateway: PAYFAST_GATEWAY`,
+      `gatewayPaymentId: null`, `m_payment_id: input.bookingRef`, `pf_payment_id: null`,
+      `recoveryToken: input.recoveryToken`, `recoveryTokenExpiresAt:
+      input.recoveryTokenExpiresAt`) and the position body (`bookingRef`, `showId`,
+      `attendeeName`, `attendeeEmail`, `ticketType`, `status: 'reserved'`, `amount`,
+      `purchasedAt: null`, `checkedInAt: null`, `m_payment_id: input.bookingRef`,
+      `pf_payment_id: null`, `orderId: input.orderId`, `compedBy: null`,
+      `idempotencyKey: input.idempotencyKey` — additive, checkout-only field, see README
+      "Position idempotencyKey stays"). `export const PAYFAST_GATEWAY = 'payfast';`.
+      MUST NOT put `gateway`/`gatewayPaymentId`/`recoveryToken`/`recoveryTokenExpiresAt`
+      on the position (order-only, matching F2's existing gateway/gatewayPaymentId
+      posture, extended here to the two new recovery-token fields for the same reason —
+      see README).
+
+      (2) `export interface CreateCapableTransactionLike { create(ref: { id: string },
+      data: Record<string, unknown>): unknown; }` — deliberately narrow, matching ONLY
+      `transaction.create(ref, data)`, the one method this module calls; NOT an
+      extension of lib/orders.ts's `OrdersTransactionLike`/`OrdersTransactionRwLike`
+      families (neither has `create`) — a new sibling, same reasoning as F10's own "why
+      two interface families, not one widened one"
+      (contracts/golden/ticketing-f10-itn-repin/README.md). `export function
+      writeReservationPair(transaction: CreateCapableTransactionLike, refs: { orderRef:
+      { id: string }; positionRef: { id: string } }, docs: ReservationDocs): void` —
+      calls `transaction.create(refs.orderRef, docs.order)` THEN
+      `transaction.create(refs.positionRef, docs.position)`, nothing else. Takes an
+      ALREADY-OPEN transaction as a parameter — does NOT open its own via
+      `db.runTransaction(...)` — because Firestore transactions cannot be nested and
+      this function must run inside checkout's existing capacity-and-duplicate-guarded
+      transaction (see README "Why writeReservationPair takes an already-open
+      transaction, not its own").
+
+      lib/orders.ts, lib/comp-tickets.ts, lib/recovery-token.ts, types/index.ts: NOT
+      MODIFIED by this feature. createOrderWithPosition()'s existing behaviour, call
+      shape, and every F2/F8/F10 assertion against it are untouched — see README "Why
+      lib/orders.ts is NOT touched".
+    status: pending
+
+  - id: F2
+    name: >-
+      app/api/tickets/checkout/route.ts (edited, not re-pinned — this file carries no
+      sha256 pin; only app/api/tickets/itn/route.ts does, and it is untouched by this
+      contract):
+
+      Add `const recoveryTokenSecret = process.env.RECOVERY_TOKEN_SECRET;` alongside the
+      existing `merchantId`/`merchantKey`/`passphrase` reads, and `if
+      (!recoveryTokenSecret) { console.error(...); return NextResponse.json({ error:
+      'Ticket recovery is not configured. Please try again later.' }, { status: 500 });
+      }` in the SAME shape and BEFORE the same point as the existing
+      `!merchantId || !merchantKey` guard — see README "recoveryToken minting: fail
+      closed, same posture as the PayFast credential guards".
+
+      Inside `reserveTicket()`'s `db.runTransaction(...)` callback: resolve `const
+      orders = db.collection(ORDERS_COLLECTION);` (import `ORDERS_COLLECTION` from
+      `@/lib/orders`) alongside the existing `tickets` collection reference. In the
+      'created' branch (after the existing over-capacity and duplicate checks, replacing
+      today's bare `transaction.create(tickets.doc(bookingRef), {...})`): resolve `const
+      orderRef = orders.doc();`, keep `const bookingRef = generateBookingRef();`, resolve
+      `const positionRef = tickets.doc(bookingRef);`, mint the recovery token via
+      `mintRecoveryToken({ orderId: orderRef.id, secret: recoveryTokenSecret, now:
+      <the same Date used for expiresAt below> })` (import from `@/lib/recovery-token`),
+      build the docs via `buildReservationDocs(...)` (import from
+      `@/lib/checkout-reservation`), and call `writeReservationPair(transaction, {
+      orderRef, positionRef }, docs)`. Return `{ kind: 'created', bookingRef, amount:
+      input.amount }` exactly as today — `ReservationOutcome`'s shape is UNCHANGED, no
+      client-facing response field changes (orderId is never returned to the client).
+
+      The idempotency-duplicate-probe branch (`if (!duplicate.empty)`), the
+      key-payload-mismatch branch, and the key-not-payable branch are ALL UNCHANGED —
+      still query `tickets.where('idempotencyKey', '==', input.idempotencyKey)` exactly
+      as today (see README "Duplicate detection stays on tickets, unchanged"), still
+      return before any write. No order is ever written on a replay — the order already
+      exists from the original request that created the duplicate position.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-checkout-orders/README.md
+  - contracts/checks/ticketing-checkout-orders/tsconfig.typecheck.json
+  - contracts/checks/ticketing-checkout-orders/fixtures/checkout-orders-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        lib/checkout-reservation.ts is added and app/api/tickets/checkout/route.ts is
+        edited.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven (not source-grep) proof of lib/checkout-reservation.ts's
+        exported shapes: buildReservationDocs()'s return is assignable to {
+        order: Omit<Order,'id'>; position: Omit<Ticket,'id'> & { idempotencyKey: string
+        } }; a position literal that omits idempotencyKey is rejected via
+        @ts-expect-error; the REAL firebase-admin Transaction class structurally
+        satisfies the new, narrow CreateCapableTransactionLike interface with zero
+        adapter code; and a minimal create-only fake also satisfies it, proving the
+        interface is deliberately narrow.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-checkout-orders/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        Order/position pair-write atomicity for a FRESH reservation, proven against a
+        fake in-memory Firestore-shaped store by calling the REAL writeReservationPair()
+        and buildReservationDocs(). Cases: (1) success — both documents committed,
+        correctly linked (position.orderId equals the order ref's id), correctly shaped
+        (gateway='payfast' and recoveryToken present on the order only, never the
+        position; idempotencyKey present on both; m_payment_id equal to bookingRef on
+        both); (2) the position write is forced to fail — NEITHER document is committed,
+        not even the order whose write is issued first; (3) negative control — forcing
+        the ORDER write to fail instead also leaves both collections empty, proving the
+        rollback isn't an artefact of write ordering. Named defeating mutation: writing
+        the order via an independent, non-transactional call outside the shared
+        transaction.
+      command: >-
+        npx tsx contracts/checks/ticketing-checkout-orders/check-pair-write-atomicity.mjs
+
+    - id: A4
+      description: >-
+        Structural (source-level) proof that writeReservationPair() is called exactly
+        once in app/api/tickets/checkout/route.ts, textually inside the existing
+        capacity-and-duplicate-guarded db.runTransaction(...) callback, and after the
+        idempotency duplicate-key early-return guard — so the new write participates in
+        the same atomic, idempotency-guarded transaction the existing reservation logic
+        already uses and is unreachable from the replay branch. Named defeating
+        mutations: (a) pulling the write out of the transaction; (b) adding a second call
+        site reachable from the replay branch, which would mint a duplicate order for one
+        retried checkout.
+      command: >-
+        bash contracts/checks/ticketing-checkout-orders/check-transaction-scope-structural.sh
+
+    - id: A5
+      description: >-
+        Structural proof that a missing RECOVERY_TOKEN_SECRET fails closed: the route
+        reads the env var, and an `if (!recoveryTokenSecret)` guard exists textually
+        before the writeReservationPair() call site, mirroring the existing
+        merchantId/merchantKey guard shape in the same file. Named defeating mutation: a
+        real implementation that reads the env var and passes it straight to
+        mintRecoveryToken() with no preceding guard, silently minting a
+        never-verifiable-again token on every cold start with the secret unset instead of
+        refusing the purchase.
+      command: >-
+        bash contracts/checks/ticketing-checkout-orders/check-fail-closed-secret-guard.sh
+
+    - id: A6
+      description: >-
+        No console.* call in app/api/tickets/checkout/route.ts or
+        lib/checkout-reservation.ts references the recoveryToken or
+        recoveryTokenSecret variables by name — no credential or token value may reach
+        gate output on pass or fail. Named defeating mutation: a debug
+        console.log(..., token) left in from development.
+      command: >-
+        bash contracts/checks/ticketing-checkout-orders/check-no-token-logging.sh
+
+    - id: A7
+      description: pnpm lint passes with zero errors after all changes.
+      command: pnpm lint

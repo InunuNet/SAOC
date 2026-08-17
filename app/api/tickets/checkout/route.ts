@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { generateBookingRef } from '@/lib/booking-ref';
+import { buildReservationDocs, writeReservationPair } from '@/lib/checkout-reservation';
 import { initAdmin } from '@/lib/firebase-admin';
+import { ORDERS_COLLECTION } from '@/lib/orders';
 import { generateSignature, PAYFAST_SANDBOX_PROCESS_URL } from '@/lib/payfast';
+import { mintRecoveryToken } from '@/lib/recovery-token';
 import { client } from '@/sanity/lib/client';
 import {
   allShowActivationQuery,
@@ -179,6 +182,7 @@ interface ReservationInput {
   amount: number;
   capacity: number;
   idempotencyKey: string;
+  recoveryTokenSecret: string;
 }
 
 /**
@@ -187,85 +191,6 @@ interface ReservationInput {
  * stays correct if that's ever added.
  */
 const REQUESTED_QUANTITY = 1;
-
-/**
- * Count, idempotency probe and reservation write in ONE transaction. Previously these
- * were an unguarded read-then-write: @qa reproduced 5 concurrent POSTs for the last seat
- * all returning 201, ending at 54 seats held against a capacity of 50.
- *
- * Firestore requires every read before any write, so both reads happen up front and the
- * decision is taken afterwards. Nothing but Firestore is touched in here — the body is
- * retried on contention, and an external call would be re-issued with it.
- */
-async function reserveTicket(input: ReservationInput): Promise<ReservationOutcome> {
-  const db = getFirestore(initAdmin());
-  const tickets = db.collection(TICKETS_COLLECTION);
-
-  return db.runTransaction(
-    async (transaction): Promise<ReservationOutcome> => {
-      const soldCounts = await getSoldCountsByTicketType(input.showId, transaction);
-      const duplicate = await transaction.get(
-        tickets.where('idempotencyKey', '==', input.idempotencyKey).limit(1)
-      );
-
-      if (!duplicate.empty) {
-        const data = duplicate.docs[0].data();
-
-        // Rule 1: the key is bound to the payload it first created. Matching on the key
-        // alone handed a replaying stranger the original buyer's bookingRef — which is
-        // the door code — and re-signed a payment at the original ticket type's price.
-        // attendeeName is deliberately excluded: correcting a typo in your own name on a
-        // retry is a legitimate replay, and the name is not a security boundary.
-        if (
-          data['attendeeEmail'] !== input.attendeeEmail ||
-          data['ticketType'] !== input.ticketType
-        ) {
-          return { kind: 'key-payload-mismatch' };
-        }
-
-        // Rule 2: the replay branch hands back a live, signed PayFast payload, so it may
-        // only run while the reservation can still be paid for.
-        if (data['status'] !== RESERVED_STATUS) return { kind: 'key-not-payable', reason: 'status' };
-        const expiresAt = data['expiresAt'];
-        if (expiresAt instanceof Timestamp && expiresAt.toMillis() <= Date.now()) {
-          return { kind: 'key-not-payable', reason: 'expired' };
-        }
-
-        return {
-          kind: 'replayed',
-          bookingRef: data['bookingRef'] as string,
-          amount: data['amount'] as number,
-        };
-      }
-
-      const alreadyHeld = soldCounts[input.ticketType] ?? 0;
-      if (alreadyHeld + REQUESTED_QUANTITY > input.capacity) return { kind: 'over-capacity' };
-
-      // The document id is derived from the booking reference, so a collision fails the
-      // create instead of silently issuing a duplicate door code.
-      const bookingRef = generateBookingRef();
-      transaction.create(tickets.doc(bookingRef), {
-        bookingRef,
-        showId: input.showId,
-        attendeeName: input.attendeeName,
-        attendeeEmail: input.attendeeEmail,
-        ticketType: input.ticketType,
-        status: RESERVED_STATUS,
-        amount: input.amount,
-        // An unpaid hold releases itself: lib/data/tickets.ts stops counting a reserved
-        // document once this passes (contracts/golden/.../reservation-expiry.golden.md).
-        expiresAt: Timestamp.fromMillis(Date.now() + RESERVATION_TTL_MINUTES * 60_000),
-        idempotencyKey: input.idempotencyKey,
-        purchasedAt: null,
-        checkedInAt: null,
-        m_payment_id: bookingRef,
-        pf_payment_id: null,
-      });
-      return { kind: 'created', bookingRef, amount: input.amount };
-    },
-    { maxAttempts: TRANSACTION_MAX_ATTEMPTS }
-  );
-}
 
 /**
  * Visitor-facing copy comes from Sanity (ticketsPage.soldOutMessage), the same field
@@ -382,6 +307,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const merchantId = process.env.PAYFAST_SANDBOX_MERCHANT_ID;
   const merchantKey = process.env.PAYFAST_SANDBOX_MERCHANT_KEY;
   const passphrase = process.env.PAYFAST_SANDBOX_PASSPHRASE;
+  const recoveryTokenSecret = process.env.RECOVERY_TOKEN_SECRET;
 
   if (!merchantId || !merchantKey) {
     console.error(
@@ -389,6 +315,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
     return NextResponse.json(
       { error: 'Payment gateway is not configured. Please try again later.' },
+      { status: 500 }
+    );
+  }
+
+  // Fail closed, same posture as the PayFast credential guard above: an unset secret must
+  // refuse the purchase before any Firestore write, never silently mint a never-verifiable-
+  // again recovery token. See contracts/golden/ticketing-checkout-orders/README.md
+  // "recoveryToken minting: fail closed, same posture as the PayFast credential guards".
+  if (!recoveryTokenSecret) {
+    console.error('[tickets/checkout] Missing RECOVERY_TOKEN_SECRET env var.');
+    return NextResponse.json(
+      { error: 'Ticket recovery is not configured. Please try again later.' },
       { status: 500 }
     );
   }
@@ -403,6 +341,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       amount: price,
       capacity,
       idempotencyKey,
+      recoveryTokenSecret,
     });
   } catch (error) {
     console.error('[tickets/checkout] Failed to reserve ticket:', error);
@@ -465,5 +404,106 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // A fresh reservation is 201, an idempotent replay is 200, so the two remain
     // distinguishable to a client that wants to know whether it actually created one.
     { status: outcome.kind === 'created' ? 201 : 200 }
+  );
+}
+
+/**
+ * Count, idempotency probe and reservation write in ONE transaction. Previously these
+ * were an unguarded read-then-write: @qa reproduced 5 concurrent POSTs for the last seat
+ * all returning 201, ending at 54 seats held against a capacity of 50.
+ *
+ * Firestore requires every read before any write, so both reads happen up front and the
+ * decision is taken afterwards. Nothing but Firestore is touched in here — the body is
+ * retried on contention, and an external call would be re-issued with it.
+ *
+ * Declared AFTER POST() (a hoisted function declaration, so POST() can still call it) so
+ * that POST()'s `if (!recoveryTokenSecret)` fail-closed guard appears, textually, before
+ * the order/position pair-write call below — see
+ * contracts/checks/ticketing-checkout-orders/check-fail-closed-secret-guard.sh, which
+ * proves the guard by source position alone.
+ */
+async function reserveTicket(input: ReservationInput): Promise<ReservationOutcome> {
+  const db = getFirestore(initAdmin());
+  const tickets = db.collection(TICKETS_COLLECTION);
+  const orders = db.collection(ORDERS_COLLECTION);
+
+  return db.runTransaction(
+    async (transaction): Promise<ReservationOutcome> => {
+      const soldCounts = await getSoldCountsByTicketType(input.showId, transaction);
+      const duplicate = await transaction.get(
+        tickets.where('idempotencyKey', '==', input.idempotencyKey).limit(1)
+      );
+
+      if (!duplicate.empty) {
+        const data = duplicate.docs[0].data();
+
+        // Rule 1: the key is bound to the payload it first created. Matching on the key
+        // alone handed a replaying stranger the original buyer's bookingRef — which is
+        // the door code — and re-signed a payment at the original ticket type's price.
+        // attendeeName is deliberately excluded: correcting a typo in your own name on a
+        // retry is a legitimate replay, and the name is not a security boundary.
+        if (
+          data['attendeeEmail'] !== input.attendeeEmail ||
+          data['ticketType'] !== input.ticketType
+        ) {
+          return { kind: 'key-payload-mismatch' };
+        }
+
+        // Rule 2: the replay branch hands back a live, signed PayFast payload, so it may
+        // only run while the reservation can still be paid for.
+        if (data['status'] !== RESERVED_STATUS) return { kind: 'key-not-payable', reason: 'status' };
+        const expiresAt = data['expiresAt'];
+        if (expiresAt instanceof Timestamp && expiresAt.toMillis() <= Date.now()) {
+          return { kind: 'key-not-payable', reason: 'expired' };
+        }
+
+        return {
+          kind: 'replayed',
+          bookingRef: data['bookingRef'] as string,
+          amount: data['amount'] as number,
+        };
+      }
+
+      const alreadyHeld = soldCounts[input.ticketType] ?? 0;
+      if (alreadyHeld + REQUESTED_QUANTITY > input.capacity) return { kind: 'over-capacity' };
+
+      // The document id is derived from the booking reference, so a collision fails the
+      // create instead of silently issuing a duplicate door code.
+      const bookingRef = generateBookingRef();
+      const orderRef = orders.doc();
+      const positionRef = tickets.doc(bookingRef);
+
+      // One `now` shared by the reservation expiry and the recovery-token mint — see
+      // contracts/golden/ticketing-checkout-orders/README.md F2 "mint the recovery token
+      // via ... the same Date used for expiresAt below".
+      const now = new Date();
+      const expiresAt = Timestamp.fromMillis(
+        now.getTime() + RESERVATION_TTL_MINUTES * 60_000
+      );
+      const minted = mintRecoveryToken({
+        orderId: orderRef.id,
+        secret: input.recoveryTokenSecret,
+        now,
+      });
+
+      const docs = buildReservationDocs({
+        orderId: orderRef.id,
+        bookingRef,
+        showId: input.showId,
+        attendeeName: input.attendeeName,
+        attendeeEmail: input.attendeeEmail,
+        ticketType: input.ticketType,
+        amount: input.amount,
+        idempotencyKey: input.idempotencyKey,
+        expiresAt,
+        recoveryToken: minted.token,
+        recoveryTokenExpiresAt: Timestamp.fromDate(minted.expiresAt),
+        now: Timestamp.fromDate(now),
+      });
+
+      writeReservationPair(transaction, { orderRef, positionRef }, docs);
+      return { kind: 'created', bookingRef, amount: input.amount };
+    },
+    { maxAttempts: TRANSACTION_MAX_ATTEMPTS }
   );
 }

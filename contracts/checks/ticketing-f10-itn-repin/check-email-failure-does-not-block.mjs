@@ -22,7 +22,7 @@
 // resolved-without-throwing behaviour isn't vacuous by including a success case (3) where
 // onError must NOT be called, alongside the two failure shapes.
 //
-// Run as: node --import tsx/esm contracts/checks/ticketing-f10-itn-repin/check-email-failure-does-not-block.mjs
+// Run as: npx tsx contracts/checks/ticketing-f10-itn-repin/check-email-failure-does-not-block.mjs
 
 import { deliverConfirmationEmailAfterCommit } from '../../../lib/confirmation-email.ts';
 
