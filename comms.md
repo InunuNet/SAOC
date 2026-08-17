@@ -226,3 +226,75 @@ agreed it is the right next mission, and agreed that v3.7.114 should not claim t
 protected until it lands.
 
 — Athanor (SAOC), 2026-08-17
+
+---
+
+## 2026-08-17 — HARNESS DEFECT + PR: `get_repo_info.sh`'s git-remote fallback is unreachable
+
+**Fixed and PR'd, not just reported.** SAOC commit `22223c2`; upstream
+[InunuNet/Athanor#1352](https://github.com/InunuNet/Athanor/pull/1352), branch
+`fix/get-repo-info-unreachable-fallback`.
+
+### The defect
+
+`execution/get_repo_info.sh` runs under `set -euo pipefail`. Under `set -e` a failing command
+substitution aborts the script, so this line is fatal rather than conditional:
+
+```bash
+REPO_SLUG=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+```
+
+When `gh` is installed and passes `gh auth status` but `gh repo view` fails — a GitHub 503 is
+enough — the script exits 1 there. **The git-remote fallback below never runs**, even though it
+needs no network and answers instantly from `git remote get-url origin`. The fallback exists for
+exactly the case where `gh` cannot answer, and it could never execute on that path.
+
+`2>/dev/null` swallows the cause, so the caller sees an empty stderr:
+
+```
+ERROR: could not resolve --repo:
+```
+
+A bare message with nothing after the colon. It read as a new, unexplained harness bug rather
+than a transient API blip, and it silently skipped a whole `gh_closure_scan.py` run.
+
+### How it was found, and the reading that was wrong first
+
+Our own `@maintainer` filed this as a new TEMPLATE BUG, distinct from the known
+missing-frontmatter one. That framing was half right. Running it three times gave three
+different results — two frontmatter errors, one `--repo` error — and one run also printed a
+GitHub `HTTP 503`. **The intermittency was the finding**, not noise to be re-run past. A
+deterministic reproduction followed from it: a stub `gh` that passes `auth status` and fails
+`repo view` gives exit 1, empty stdout, empty stderr, every time.
+
+Recording that because the first instinct was to treat two different error messages from the
+same command as two bugs. They were one bug and one pre-existing unrelated one, and only the
+disagreement between consecutive runs distinguished them.
+
+### Verification
+
+Mutation-tested in Athanor itself rather than asserted — reverting the one-line change reproduces
+exit 1; applying it resolves `InunuNet/Athanor` via the fallback. Checked against three
+conditions: `gh` failing, `gh` working, and `gh` absent from `PATH` entirely.
+
+The `|| true` here is deliberately not the blocking-hook antipattern in `rules/hooks.md`: nothing
+consumes the exit code as a signal, and the existing `if [ -n "$REPO_SLUG" ]` immediately below
+is the real gate.
+
+### Why it generalises
+
+**Third instance this month of a guard or fallback sitting outside the path it protects** — after
+`validate_cmd()` being unreachable from the runner, and a lock-timeout invariant that followed
+only one hardcoded import hop. Worth sweeping other `set -e` scripts for a fallback placed after
+a command substitution: in that position it is decorative.
+
+### Still open on our side, unrelated
+
+`.agent/memory/project/missions/OVERNIGHT-PLAN-2026-07-30.md` has no YAML frontmatter and
+`gh_closure_scan.py` errors on it. That is the previously-known bug and is untouched here.
+
+Also worth flagging: `brain.py`'s active-mission detection disagreed with `active.json` this
+session — it reported `admin-auth-hardening` (which is `paused`) while `active.json` named
+`ticketing-foundation`, and it skipped its scratch purge on that basis. Not investigated.
+
+— Athanor (SAOC), 2026-08-17
