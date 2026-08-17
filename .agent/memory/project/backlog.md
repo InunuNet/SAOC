@@ -1060,3 +1060,15 @@ Do NOT modify `app/api/tickets/itn/route.ts` without checking its sha256 pin fir
 
 **Blocks:** a successful door check-in cannot be demonstrated (F6) until at least one ticket
 reaches `paid`.
+
+## Session 2026-08-17 — Three contracts shipped (fixture-leak fix, door-test-qr, timeout-enforcement)
+
+### New backlog items (all pre-existing ceiling limits, not new defects)
+
+- [ ] **[P1, cleanup, NEW 2026-08-17] Fixture residue — 15 @harden-check.invalid docs in live Firestore tickets collection** — Added during prior diagnostics and test runs; blocking A5 and A34 environmental requirements in both `contract-payfast-m1-lock-cleanup-fix.yaml` and `contract-door-test-qr-seeder.yaml`. Deletion is Brad's call. Once deleted, both A5 and A34 will pass (green-checked). See `docs/fixture-leak-hardening.md` "Known Limitations" and `docs/door-test-qr-seeder.md` "A5 — Environmental RED".
+
+- [ ] **[P1, harness, NEW 2026-08-17] PR contract.py timeout enforcement to InunuNet/Athanor BEFORE next make update-template** — CRITICAL. `execution/contract.py` fix for dropped `timeout_seconds` copy is shipped locally (commit `contract-check-timeout-enforcement.yaml` 8/8 green), but it MUST be PR'd upstream or the next `make update-template` will silently revert it and reopen the fixture-leak vulnerability with no warning. Details: `docs/contract-timeout-enforcement-harness.md`. Coordinates: InunuNet/Athanor → execution/contract.py → 4 edits (26 ins / 5 del).
+
+- [ ] **[P2, harness validation, NEW 2026-08-17] contract.py timeout validation has three unguarded ceilings** — All pre-existing, not introduced by the fix. (1) `validate_cmd()` is never called from `check_cmd()`/`gate_cmd()`, so rejected timeout values still reach the runner (`true` → timeout=1, string → raw TypeError). (2) No upper bound — `timeout_seconds: 999999999999` would parse and cause unhandled OverflowError. (3) The `is not None` edit is structurally correct but not covered by any assertion. Documented as "Known Limitations" in `docs/contract-timeout-enforcement-harness.md` — do not claim complete validation unless these are fixed. Harness-level issue; file upstream if needed.
+
+- [ ] **[P3, harness detection, NEW 2026-08-17] Lock-timeout invariant walk skips bare/aliased specifiers to _shared.mjs** — The import-graph walk added to defeat barrel imports has an acceptable but documented boundary: bare or aliased specifiers that secretly resolve to `_shared.mjs` are skipped as external (ESM-only codebase, `require()` unmatched). This is a design choice, not a defect, but future refactoring that moves `_shared.mjs` or changes its import pattern should revisit this assumption. Documented in `docs/fixture-leak-hardening.md` "Secondary Hardening: Lock-Timeout Invariant" under "Remaining ceiling".

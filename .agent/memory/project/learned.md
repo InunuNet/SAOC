@@ -850,3 +850,62 @@ human") remains on this mission, and it is inherently a human task — see `back
    milestone-gate runs) — this one is about the contract never being registered against the
    feature at all. **If a milestone gate ever reports "no contract found" for a feature whose own
    contract is visibly green, check `attach-spec` status before assuming the contract is broken.**
+
+## Timeout enforcement + door-scanner QR seeder — shipped 2026-08-17
+
+Three contracts landed: `contract-payfast-m1-lock-cleanup-fix.yaml` (24/24),
+`contract-check-timeout-enforcement.yaml` (8/8), `contract-door-test-qr-seeder.yaml` (6/7 — A5
+fails on live-dataset residue, environmental, not code; see `backlog.md`).
+
+1. **A fix can be green and inert — declaration vs. effect.** Raising `timeout_seconds` on 7
+   assertions in `contract-*.yaml` passed 24/24 and got a prior @qa PASS while changing nothing,
+   because `execution/contract.py` silently dropped the field when normalizing the
+   `{phase, checks}` schema — the yaml said 120s, the subprocess still got the old default. Every
+   assertion that session verified the DECLARATION, none verified the EFFECT. **Rule: when a
+   fix's mechanism is a config value, at least one assertion must prove the value reaches the
+   thing it configures**, not just that the yaml contains it. This is the general form of the
+   "unchanged detector reading" lesson above (2026-08-16) — there, an unchanged count was trusted
+   as evidence of no new residue; here, an unchanged runtime behaviour was trusted as evidence a
+   config change took effect. Same failure: trusting a proxy signal instead of measuring the
+   actual mechanism. The eventual proof-shape that worked: monkeypatch `subprocess.run` and
+   capture the actual `timeout=` kwarg passed at call time.
+2. **An anomaly matching the bug being fixed is a root-cause candidate, not a distraction, even
+   in someone else's file.** @dev saw an assertion killed at 60s while its own yaml declared
+   180s, correctly diagnosed the mechanism, and filed it as an out-of-scope pre-existing quirk —
+   it was in fact the root cause of the very contract being implemented. When what you're
+   observing has the same shape as what you're fixing, stop and check before filing it away.
+3. **Blast radius: every contract using the `{phase, checks}` schema in `execution/contract.py`
+   has had unenforceable `timeout_seconds` all along**, not just the ones touched this session.
+   Suspect this in any past flake attributed to "environmental" or "flaky test" causes.
+4. **Guards that live outside the path they guard — three separate instances found in one
+   session.** `validate_cmd` in `execution/contract.py` is never actually called from
+   `check_cmd`/`gate_cmd`. A lock-timeout invariant walked only one hardcoded import hop and was
+   defeated by @qa with a barrel import one hop further. A34 (the residue-leak regression guard,
+   `f4a37bd`) measured a count *delta* instead of set membership, so it's blind to
+   same-count-different-membership swaps. **Rule: for any guard, trace the actual call path that
+   reaches it, and ask whether it can observe the specific failure it exists to catch** — a guard
+   that is merely defined near the danger, but never invoked on the dangerous path, is inert.
+5. **Mutation-test per edit, not per feature.** @qa reverted each of the 4 `contract.py` edits
+   individually; edit 2 (tightening `is not None`) changed no assertion outcome anywhere —
+   correct code, but unproven by the contract as written. Feature-level mutation testing would
+   have missed this; only per-edit reversion caught it.
+6. **PayFast's ITN pin was never actually blocking the door scanner.** The door-scanner QR
+   payload is the plain booking-reference string; `app/admin/door/page.tsx` passes decoded text
+   straight to `/api/admin/checkin`, and test fixtures seed directly via the Admin SDK — no
+   PayFast code in that path at all. A prior claim that F6 was blocked on the PayFast ITN pin
+   (see the BLOCKER item in `backlog.md`) was over-broad: the pin blocks proving *payment→paid*,
+   not *scan→admit*. Those are separate paths; don't conflate a blocker on one feature's proof
+   with a blocker on a different feature that merely shares a collection.
+7. **Harness-level fixes need an upstream PR, not just a local commit.** `execution/contract.py`
+   is shared template code (see `scope.md`) — a local fix to the timeout-normalization bug above
+   will be silently reverted by the next `make update-template` with no warning, reopening the
+   exact defect this session fixed, unless it is also PR'd to `InunuNet/Athanor`. See
+   `feedback_harness_issues_pr_upstream` in global memory for the standing rule.
+
+**Mission state:** `admin-auth-hardening` stands at 5/6 (milestone M3). F6 is NOT done — Brad has
+the door scanner running with camera live and admin auth working end to end on both Android and
+desktop, which proves auth + camera + rendering, but the scan→admit path itself has not yet been
+exercised and offline/aeroplane-mode behaviour is completely unknown. Two questions still open
+with Brad: whether his door-scanner screenshots were of the deployed host or `dev.saoc.co.za`,
+and what ticket `SAOC-2027-ZNYT37Z88MSH` ("ITN Test", 2026-08-15) is — an uncatalogued
+real-looking ticket, flagged and explicitly barred from allowlisting or deletion by any agent.
