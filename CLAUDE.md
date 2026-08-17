@@ -19,7 +19,7 @@ The **South African Orchid Council (SAOC)** is a non-profit national body coordi
 | Hosting | Firebase App Hosting | Native Next.js SSR, same ecosystem as Firestore |
 | CMS | Sanity (Studio at `/studio`) | Structured content editing (events, national show, media kit, etc.) via `next-sanity` |
 | Database | Firestore | Contact submissions, ticket sales/check-in, event submissions |
-| Auth | Firebase Auth | Email/password login for `/admin`, session cookies via `firebase-admin/auth` |
+| Auth | Firebase Auth | Email/password, Google, Microsoft, and Apple sign-in for `/admin`; session cookies via `firebase-admin/auth` |
 | Forms | API route → Firestore + Resend | Contact and event submissions written to Firestore; confirmation email sent via Resend |
 | Payments | PayFast (sandbox) | Ticket checkout + ITN webhook verification (`lib/payfast.ts`) |
 | Package manager | pnpm | Faster, stricter hoisting |
@@ -79,7 +79,7 @@ types/
 
 1. Create a Firebase project at console.firebase.google.com
 2. Enable Firestore (production mode)
-3. Enable Firebase Auth (email/password + Google — for future phase)
+3. Enable Firebase Auth (email/password sign-in is enabled by default; Google, Microsoft, and Apple sign-in require additional provider configuration in the Firebase Console — see `docs/admin-access.md`)
 4. Enable Firebase App Hosting
 
 ### Environment variables

@@ -5,7 +5,7 @@ goal: >-
   sign-in to /admin/login as a THIN addition on top of F4's provider-agnostic plumbing — the
   gate (lib/admin-auth.ts), the session route, and the account-linking defence [NOTE: this
   parenthetical names F4's WITHDRAWN --uid design; F4's CURRENT, FINAL defence is claim-first
-  provisioning + a squatter-shape warning, with no --uid — see the PARKED/HISTORICAL note below
+  provisioning + a squatter-shape warning, with no --uid — see the HISTORICAL note below
   and contracts/contract-admin-auth-f4-google.yaml] (scripts/admin-grant.ts's --uid
   disambiguation) are all already provider-agnostic by design
   (F4 A-STRUCT-01 proves it) and are NOT re-tested here; this contract asserts only what is
@@ -19,17 +19,18 @@ created_at: '2026-08-15'
 autonomy: high
 
 # ---------------------------------------------------------------------------
-# PARKED / HISTORICAL NOTE (added after F4's design settled on claim-first, not touched
-# further per architect constraints while F5 itself is parked — see
-# contracts/golden/admin-auth-f5-federated/README.md's PARKED banner for the two open
-# questions blocking resumption): the two paragraphs immediately below still describe an
+# HISTORICAL NOTE (added after F4's design settled on claim-first, left uncorrected
+# through the PARKED period per architect constraints at the
+# time — see contracts/golden/admin-auth-f5-federated/README.md's UNPARKED banner
+# (2026-08-17) for how the two former open questions were resolved on resumption): the two
+# paragraphs immediately below still describe an
 # EARLIER, WITHDRAWN F4 design ("--uid disambiguation," "A-GRANT-04/A-GRANT-05" plural,
 # "Multiple accounts per email address" as "F4's decision"). F4's ACTUAL, FINAL, CURRENT
 # design is claim-first provisioning on the UNCHANGED DEFAULT account-linking setting, with a
 # single A-GRANT-04 (squatter-shape warning) — see contracts/contract-admin-auth-f4-google.yaml
 # and its README's "Decision history". None of the text below is a live requirement of this
 # (F5) contract's own assertions, which do not reference --uid or multiple-accounts anywhere —
-# it is left unedited only because F5 is parked and this project's convention is to label stale
+# it is left unedited only because this project's convention is to label stale
 # context rather than silently rewrite parked work; a resumer must re-derive F5's premises from
 # F4's CURRENT state, not from this paragraph.
 # ---------------------------------------------------------------------------
@@ -45,10 +46,11 @@ autonomy: high
 #
 # What IS new and asserted here: the login UI must actually offer these two providers (a
 # structural fact, same class as F4's A-STRUCT-02), and the Apple path must request the
-# 'email' scope explicitly — without it, once "Multiple accounts per email address" is enabled
-# (F4's decision), Firebase stops auto-requesting email/name scopes from Apple and a sign-in
-# can come back with no email at all, which the allowlist check cannot evaluate (fails closed,
-# but for the wrong, undiagnosable reason). ZERO agent_review assertions.
+# 'email' scope explicitly — defensive explicitness, not a workaround for a broken default: an
+# Apple sign-in that comes back with no email at all cannot be evaluated by the email-based
+# allowlist (it fails closed, but for the wrong, undiagnosable reason), and the auto-requested
+# scopes are a Firebase default that is not ours to depend on. See the golden README's "Apple's
+# `email` scope" section. ZERO agent_review assertions.
 #
 # EXTERNAL PREREQUISITES THIS GATE CANNOT SATISFY OR VERIFY (documented only, per
 # docs-admin-access-f5-additions.golden.md and check-docs-complete.sh):

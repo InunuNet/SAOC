@@ -1,19 +1,31 @@
 # admin-auth-f5-federated — F5 (milestone M2)
 
-> **PARKED 2026-08-15 — not abandoned.** User scope decision: Google sign-in (F4) is a
-> must-have and proceeds now; Microsoft and Apple are not wanted yet. This contract and its
-> goldens are left on disk as-is — the provider research below (Apple's cost, the private-email-
-> relay/allowlist collision, the Microsoft tenant question) remains good and is not being
-> re-verified or polished further right now. **Before this resumes, two open questions need an
-> answer from the user, not rediscovery from scratch:**
-> 1. Does SAOC want an Apple sign-in that depends on an **individual's personal** Apple
->    Developer Program membership (Brad's, per the mission notes) rather than the Council's own
->    membership? The cost and setup steps below assume whoever holds the membership is willing to
->    be the long-term owner of the Apple Services ID/key/Team ID this integration depends on.
-> 2. How should the `privaterelay.appleid.com` collision with the email-based allowlist be
->    handled operationally — ask members to disable Apple's "Hide My Email," or capture and
->    allowlist the opaque relay address after a first refused attempt? See "Decision: Apple
->    private email relay" below for the tradeoff; nobody has picked one yet.
+> **UNPARKED 2026-08-17.** Both open questions below now have a decision, made by the
+> architect on resumption, autonomously, per this project's standing policy that a
+> resumed session does not defer decisions back to the user mid-chain. Neither answer
+> changes any check-script text or golden-file requirement already on disk.
+>
+> **Decision 1 — Apple Developer Program ownership (asked 2026-08-15, answered 2026-08-17):**
+> proceed now on Brad's personal paid membership as a documented, temporary bridge — it is a
+> fact about a person, not a property of the system, and could stop being true at any time
+> (membership lapse, Brad's departure from the project). **Recommendation, logged as a
+> needs-human item (not a launch blocker for this contract):** SAOC should obtain its own
+> Apple Developer Program membership (or confirm the nonprofit fee-waiver applies to it)
+> before the National Show 2027 launch, and re-point the Services ID/key/Team ID at the
+> Council's own account at that time — a config-only change in Firebase Console, no code
+> impact. Logged to `.agent/memory/project/needs-human.md`:
+> `Apple Developer Program membership currently personal (Brad's) — SAOC needs its own before
+> launch; Firebase Console Apple provider config swap only, no code change. — architect,
+> 2026-08-17`. This does not block F5's code or docs work today.
+>
+> **Decision 2 — `privaterelay.appleid.com` vs. the email allowlist (asked 2026-08-15, answered
+> 2026-08-17):** **Policy is option 1 — ask enrolling members to disable "Hide My Email"** at
+> Apple sign-in, sharing their real address, so it behaves like any other address for
+> allowlisting. This is the simpler default and matches what `docs/admin-access.md` must now
+> state as the primary instruction. **Option 2 (capture the relay address from a refused first
+> attempt, visible in `getAdminSession()`'s `not-allowlisted` log path) is documented as the
+> fallback** for a member who declines to disable relay — not a coequal option, a fallback.
+> Both remain safely refused-by-default until an operator acts either way.
 >
 > **F4's decision, for reference:** F4 settled on claim-first provisioning on the unchanged
 > default account-linking setting — the body text below already reflects this and needed no
@@ -115,16 +127,17 @@ first attempt. Two operationally viable paths, both documented (neither scripted
 asserted — this is a policy/process decision for the committee, not a code fix):
 
 1. **Ask committee members enrolling via Apple to disable "Hide My Email"** at sign-in, sharing
-   their real address, so it behaves like any other email for allowlisting purposes. Simpler,
-   recommended default.
+   their real address, so it behaves like any other email for allowlisting purposes. **Decided
+   policy, 2026-08-17** — see UNPARKED banner, Decision 2.
 2. **Capture the relay address from a refused first attempt** (visible in `getAdminSession()`'s
    `reason: 'not-allowlisted'` server log path) and add that literal relay address to the
-   allowlist. Works if a member declines to disable relay, but ties the allowlist entry to a
-   value the member does not control and could rotate.
+   allowlist. **Documented fallback** for a member who declines to disable relay — ties the
+   allowlist entry to a value the member does not control and could rotate, so it is not the
+   default.
 
-`docs/admin-access.md`'s Apple section states this tradeoff plainly; this contract does not pick
-one for the committee, because it is an operational/UX decision, not a security correctness one
-— either path is safely refused-by-default (`not-allowlisted`) until an operator acts.
+`docs/admin-access.md`'s Apple section states option 1 as the primary instruction and option 2
+as the fallback — either path is safely refused-by-default (`not-allowlisted`) until an operator
+acts.
 
 ## Apple's `email` scope — defensive explicitness, not a workaround for a broken default
 

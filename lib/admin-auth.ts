@@ -60,10 +60,29 @@ export function isAdminToken(decoded: DecodedIdToken | null | undefined): boolea
   return true;
 }
 
-function classifyRefusal(decoded: DecodedIdToken): AdminAuthResult {
-  if (decoded.admin !== true) return { ok: false, reason: 'no-claim' };
-  if (decoded.email_verified !== true) return { ok: false, reason: 'email-unverified' };
-  return { ok: false, reason: 'not-allowlisted' };
+/**
+ * Classifies why a decoded token failed `isAdminToken()`, and logs that refusal
+ * server-side — WARNING level, `reason` and the attempted `email` only, never the ID
+ * token or any other claim. This is the log the "Reading the reason field" and
+ * `docs/admin-access.md` "Apple sign-in" (privaterelay.appleid.com capture fallback)
+ * sections both depend on; it must never travel to the browser (see `mintSession()` in
+ * `app/admin/login/page.tsx`, which reads only `response.status`, never the body).
+ */
+export function classifyRefusal(decoded: DecodedIdToken): Extract<AdminAuthResult, { ok: false }> {
+  const result: Extract<AdminAuthResult, { ok: false }> =
+    decoded.admin !== true
+      ? { ok: false, reason: 'no-claim' }
+      : decoded.email_verified !== true
+        ? { ok: false, reason: 'email-unverified' }
+        : { ok: false, reason: 'not-allowlisted' };
+
+  console.warn('[admin-auth] refused', {
+    operation: 'admin authorisation check',
+    reason: result.reason,
+    email: decoded.email,
+  });
+
+  return result;
 }
 
 export async function getAdminSession(): Promise<AdminAuthResult> {

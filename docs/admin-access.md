@@ -67,8 +67,25 @@ does nothing privileged by itself — it only calls Firebase client-side sign-in
 
 `no-session` / `invalid-session` map to HTTP 401 on the API routes; the other three map
 to 403. All five look like an undifferentiated "you can't in" from outside — the `reason`
-is what actually tells you which precondition failed, so check it (server logs / debugger)
-before assuming the allowlist or the claim is wrong.
+is what actually tells you which precondition failed.
+
+**Pre-existing gap, fixed 2026-08-17:** this section previously told readers to "check
+server logs" for the `reason`, but nothing logged it — the only log anywhere in the auth
+path was `parseAllowlist()`'s allowlist-length count. That is now fixed: `no-claim`,
+`email-unverified`, and `not-allowlisted` are logged server-side, WARNING level, by
+`classifyRefusal()` in `lib/admin-auth.ts` — one `console.warn('[admin-auth] refused', {
+operation, reason, email })` call, invoked both from `getAdminSession()` (any already-signed-in
+surface re-checking the session cookie) and from `POST /api/admin/session`'s 403 path (the
+sign-in-time refusal — see "Apple sign-in" below for why this specific path matters). The
+attempted email is logged deliberately, unredacted — it is the whole point of the log — but
+nothing else from the decoded token is. This log is server-side only; it never reaches the
+browser, which still only ever learns "sign-in failed" or an undifferentiated 403 (see
+`mintSession()` in `app/admin/login/page.tsx`, which reads only `response.status`).
+`no-session` and `invalid-session` are NOT logged with a reason this way — by definition
+there is no decoded token to log an email against at that point (no cookie, or a cookie
+that failed verification outright); if you need to debug one of those two, you're looking
+for the absence of any `[admin-auth]` log line for that request, not a line with that
+reason string in it.
 
 ## Traps that will cost you a day if you don't know about them
 
@@ -281,6 +298,112 @@ Example workflow:
 
 This is an operator-discipline control, not a technical barrier. It sharpens the warning from F3's existing refusal path and makes the dangerous shape explicit at the moment it matters.
 
+## Microsoft sign-in
+
+Admins can also sign in with a Microsoft account. Like Google, this converges through the
+same `/api/admin/session` route and the same authorisation gate — signing in with Microsoft
+confers nothing by itself; the allowlist plus the `admin` custom claim still decide access.
+
+### Prerequisites — Entra app registration (human step, not scripted)
+
+Enabling Microsoft sign-in requires registering an app with Microsoft **Entra** ID (Azure
+AD), following Microsoft's own `Quickstart: Register an app with the Azure Active Directory
+v2.0 endpoint`:
+
+1. Register a new app in the Entra admin center.
+2. Set the **Redirect URI** to Firebase's hosted OAuth handler:
+   `https://<PROJECT_ID>.firebaseapp.com/__/auth/handler`.
+3. Generate a **Client Secret** for the app registration.
+4. Enter the registration's **Client ID** and **Client Secret** into Firebase Console →
+   Authentication → Sign-in method → Microsoft — never into this repo's `.env.local` or any
+   app env var (same rule as Google's support email; see above).
+
+### Tenant decision — any account, not a restricted tenant
+
+The app is registered for **"Accounts in any organizational directory and personal
+Microsoft accounts"** — the multi-tenant + personal option, reached via the `common` OAuth
+endpoint. Firebase's own `tenant` custom parameter defaults to `'common'`, so no value needs
+to be set for this choice. **Rationale:** this project has no evidence of possessing a
+dedicated Azure/Entra tenant of its own, and restricting sign-in to a single tenant would
+require creating and administering one solely for this purpose. The allowlist
+(`ADMIN_EMAIL_ALLOWLIST`) remains the actual authorisation boundary regardless of tenant
+restriction — a valid Microsoft sign-in from any tenant that is not on the allowlist is
+refused identically to any other unrecognised identity. Restricting to a specific tenant
+later, if SAOC ever provisions its own Entra tenant, is a config-only change (the `tenant`
+custom parameter) with no code impact — deferred, not precluded.
+
+**A green contract gate does NOT prove this console step was performed.** The gate verifies
+this documentation mentions it and the code is structured correctly, not that a human
+actually registered the Entra app or enabled Microsoft in the Firebase Console. After
+enabling it, test by attempting to sign in via the "Sign in with Microsoft" button on
+`/admin/login`.
+
+## Apple sign-in
+
+Admins can also sign in with Sign In with Apple. Like Google and Microsoft, this converges
+through the same `/api/admin/session` route and the same authorisation gate.
+
+### Prerequisites — paid Apple Developer Program membership
+
+Configuring Sign In with Apple requires enrolment in the **Apple Developer Program**, which
+costs **99 USD per membership year** (or local-currency equivalent) — there is no free tier
+that includes it. A nonprofit fee waiver exists; whether SAOC specifically qualifies and has
+applied is unconfirmed. Sign In with Apple is currently configured against **Brad's personal
+paid Apple Developer Program membership**, not a Council-owned one — this is a fact about a
+person, not a property of the system, and could stop being true at any time (membership
+lapse, Brad's departure from the project). SAOC should obtain its own Apple Developer
+Program membership (or confirm the nonprofit fee waiver applies) before the National Show
+2027 launch and re-point the Services ID / private key / Team ID at the Council's own
+account at that time — this is a **Firebase Console-only change, with no code impact**.
+
+### Required Apple developer-site configuration
+
+From Apple's developer site (`developer.apple.com`), configure:
+
+- A **Services ID**, with the site associated to the app, and the Firebase auth handler
+  registered as its **Return URL**: `https://<PROJECT_ID>.firebaseapp.com/__/auth/handler`.
+- A **Sign In with Apple private key**, generated in the same portal — note the **Key ID**.
+- The account's **Team ID**, found on the membership page.
+- Optionally, if this project ever sends Firebase Auth emails (verification, password
+  reset — which F3's grant flow for fresh accounts already does) to an Apple-relayed
+  address, register `noreply@<PROJECT_ID>.firebaseapp.com` with Apple's private email relay
+  service so those emails actually reach the user.
+
+All four values (Services ID, private key, Key ID, Team ID) are entered into **Firebase
+Console → Authentication → Sign-in method → Apple → OAuth code flow configuration**, never
+into this repo's `.env.local` or any app env var.
+
+### Private email relay vs. the email-based allowlist
+
+Apple's Sign In with Apple lets a user choose to share an anonymised relay address
+(`<opaque>@privaterelay.appleid.com`) instead of their real email. This interacts directly
+with this project's email-based allowlist: the relay address is opaque and per-user,
+generated only at first sign-in, so it cannot be pre-populated into
+`ADMIN_EMAIL_ALLOWLIST` before that first attempt.
+
+**Primary instruction: ask committee members enrolling via Apple to disable "Hide My
+Email"** at Apple sign-in, sharing their real address, so it behaves like any other address
+for allowlisting purposes.
+
+**Documented fallback**, for a member who declines to disable relay: capture the relay
+address from a refused first attempt. A first Apple sign-in attempt is refused at
+`POST /api/admin/session` (the account isn't allowlisted yet), which logs
+`console.warn('[admin-auth] refused', { operation, reason: 'not-allowlisted', email })`
+server-side via `classifyRefusal()` in `lib/admin-auth.ts` — see "Reading the `reason`
+field when debugging" above. The `email` field in that log line is the
+`<opaque>@privaterelay.appleid.com` address to add. Add that literal address to the
+allowlist. This ties the allowlist entry to a value the member does not control and could
+rotate, so it is not the default; use the primary instruction whenever
+possible. Either path is safely refused-by-default until an operator acts.
+
+**A green contract gate does NOT prove the console steps above were performed.** The gate
+verifies this documentation mentions them and the code is structured correctly (including
+the explicit `email` scope request — see `app/admin/login/page.tsx`), not that a human
+actually completed Apple Developer Program enrolment or Firebase Console configuration.
+After enabling it, test by attempting to sign in via the "Sign in with Apple" button on
+`/admin/login`.
+
 ## Out of scope here (F4 / M2)
 
-Microsoft and Apple sign-in providers and the human end-to-end door-scanner proof are later work (mission `admin-auth-hardening`, features F5 and beyond).
+The human end-to-end door-scanner proof is later work (mission `admin-auth-hardening`,
+feature F6). Microsoft and Apple sign-in are covered above under their own sections.

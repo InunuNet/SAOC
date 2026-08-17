@@ -460,3 +460,10 @@ the oldest external dependency on this project. Remaining go-live work is engine
    whether exhibitors may attend judging, ownership-duration rule, sales terms, insurance and
    overnight security, and the entry-form PDF. The exhibitor guide currently presents researched
    international convention, clearly marked as not-yet-SAOC-policy.
+
+7. **Apple Developer Program membership is currently personal (Brad's), not SAOC's.** Sign In with
+   Apple (mission `admin-auth-hardening` F5) depends on it for the Services ID, private key and
+   Team ID. SAOC should obtain its own membership — or confirm Apple's nonprofit fee waiver
+   applies — before the National Show 2027 launch. Re-pointing the integration at a Council-owned
+   account is a Firebase Console → Authentication → Apple config swap only; no code change.
+   Non-blocking for F5's code and docs. — architect, 2026-08-17

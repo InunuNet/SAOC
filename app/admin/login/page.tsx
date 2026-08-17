@@ -7,21 +7,23 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
+  OAuthProvider,
+  type AuthProvider,
 } from 'firebase/auth';
 
 import { getFirebaseApp } from '@/lib/firebase';
-import { GoogleSignInButton } from './GoogleSignInButton';
+import { FederatedSignInButtons } from './FederatedSignInButtons';
 import { LoginFormFields } from './LoginFormFields';
 
 const SESSION_ERROR_MESSAGE = 'Session creation failed';
 const GENERIC_SIGN_IN_ERROR = 'Sign-in failed. Please try again.';
 
+export type FederatedProviderId = 'google.com' | 'microsoft.com' | 'apple.com';
+
 /**
- * The one function both the password path and the Google path converge on — takes an
- * idToken and POSTs it to the existing /api/admin/session route. No second, parallel
- * session-mint path (see F4 A-STRUCT-02). The gate's reason for a 403 stays server-side
- * (see docs/admin-access.md "Reading the reason field") — the browser only ever learns
- * that sign-in failed.
+ * The one function every sign-in path converges on — POSTs an idToken to the existing
+ * /api/admin/session route. No second, parallel session-mint path (F4 A-STRUCT-02 / F5
+ * A-STRUCT-01). The refusal reason stays server-side (docs/admin-access.md).
  */
 async function mintSession(idToken: string): Promise<void> {
   const response = await fetch('/api/admin/session', {
@@ -31,8 +33,7 @@ async function mintSession(idToken: string): Promise<void> {
   });
 
   if (!response.ok) {
-    // Status only — never the response body, which may carry the gate's refusal reason
-    // (no-claim / email-unverified / not-allowlisted). That reason must stay server-side.
+    // Status only — the body may carry the gate's refusal reason; keep it server-side.
     console.error('mintSession failed', { status: response.status });
     throw new Error(SESSION_ERROR_MESSAGE);
   }
@@ -44,7 +45,35 @@ function firebaseErrorCode(err: unknown): string | undefined {
     : undefined;
 }
 
-function googleSignInErrorMessage(err: unknown): string {
+/**
+ * This file intentionally exceeds the project's 150-line component cap. Below this point
+ * are module-level auth helpers, not JSX — `contracts/checks/admin-auth-f5-federated/
+ * check-login-microsoft-apple-structural.sh` (A-STRUCT-01) greps THIS FILE specifically for
+ * the OAuthProvider literals and the /api/admin/session call; moving them into an imported
+ * helper module would let the check pass against an import that is never actually invoked
+ * on the sign-in path, which is exactly the failure the file-scoped grep exists to catch. A
+ * strong assertion beats a tidy line count here. Decided 2026-08-17, orchestrator.
+ *
+ * Explicit literal branch per provider — not a parametrised `new OAuthProvider(id)` — so
+ * each provider's requirements (Apple's explicit scopes) stay grep-able in source (F5
+ * A-STRUCT-01).
+ */
+function createFederatedProvider(id: FederatedProviderId): AuthProvider {
+  switch (id) {
+    case 'google.com':
+      return new GoogleAuthProvider();
+    case 'microsoft.com':
+      return new OAuthProvider('microsoft.com');
+    case 'apple.com': {
+      const provider = new OAuthProvider('apple.com');
+      provider.addScope('email');
+      provider.addScope('name');
+      return provider;
+    }
+  }
+}
+
+function federatedSignInErrorMessage(err: unknown): string {
   switch (firebaseErrorCode(err)) {
     case 'auth/popup-closed-by-user':
       return 'Sign-in was cancelled before it completed. Please try again.';
@@ -57,7 +86,7 @@ function googleSignInErrorMessage(err: unknown): string {
     case 'auth/account-exists-with-different-credential':
       return 'An account already exists for this email with a different sign-in method.';
     case 'auth/operation-not-allowed':
-      return 'Google sign-in is not enabled for this project. Contact an administrator.';
+      return 'This sign-in method is not enabled for this project. Contact an administrator.';
     case 'auth/network-request-failed':
       return 'Network error — check your connection and try again.';
     case 'auth/cancelled-popup-request':
@@ -73,7 +102,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [federatedLoading, setFederatedLoading] = useState<FederatedProviderId | null>(null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -95,26 +124,27 @@ export default function AdminLoginPage() {
     }
   }
 
-  async function handleGoogleSignIn() {
+  async function handleFederatedSignIn(id: FederatedProviderId) {
     setError('');
-    setGoogleLoading(true);
+    setFederatedLoading(id);
 
     try {
       const auth = getAuth(getFirebaseApp());
-      const provider = new GoogleAuthProvider();
+      const provider = createFederatedProvider(id);
       const userCredential = await signInWithPopup(auth, provider);
       const idToken = await userCredential.user.getIdToken();
       await mintSession(idToken);
       router.push('/admin');
     } catch (err: unknown) {
-      console.error('Google sign-in failed', { code: firebaseErrorCode(err), error: err });
-      setError(googleSignInErrorMessage(err));
+      const code = firebaseErrorCode(err);
+      console.error('Federated sign-in failed', { provider: id, code, error: err });
+      setError(federatedSignInErrorMessage(err));
     } finally {
-      setGoogleLoading(false);
+      setFederatedLoading(null);
     }
   }
 
-  const disabled = loading || googleLoading;
+  const disabled = loading || federatedLoading !== null;
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center bg-parchment px-4 py-16">
@@ -135,10 +165,10 @@ export default function AdminLoginPage() {
           onSubmit={handleSubmit}
         />
 
-        <GoogleSignInButton
-          onClick={handleGoogleSignIn}
+        <FederatedSignInButtons
+          onSignIn={handleFederatedSignIn}
           disabled={disabled}
-          loading={googleLoading}
+          federatedLoading={federatedLoading}
         />
       </div>
     </div>

@@ -787,3 +787,21 @@ trivially satisfies.
   body), not against a summary of the artifact. Countervailing note: twice in the same session
   "phantom work" was wrongly called on agents whose files simply hadn't been written yet —
   over-correcting into false negatives is the same failure mode in the other direction.
+
+## F5 admin-auth-hardening — Residual Risks (2026-08-17, @qa non-blocking findings)
+
+- **Logging side effect not enforced — `app/api/admin/session/route.ts:29`.** The route calls
+  `classifyRefusal(decodedIdToken)` purely for its `console.warn()` logging side effect (see
+  `lib/admin-auth.ts:79`), but discards the return value and never reads or asserts on it. Nothing
+  in the codebase enforces that `classifyRefusal()` was actually called at that call site — the
+  log that `docs/admin-access.md` documents as the "Reading the reason field when debugging" path
+  could be silently removed by a future refactor (moving the call to a different file, deleting the
+  call, or commenting it out) without any mechanical check catching the loss. This is the same
+  defect class this feature was built to fix (missing logging affordance leaving the documented
+  debugging path non-functional). **Recommendation for next session:** wire a contract assertion
+  that exercises the non-allowlisted path end-to-end, capturing and validating the presence of
+  the expected `[admin-auth] refused` log line — not a grep for the string "classifyRefusal" or
+  "console.warn", but a real refusal-path round trip that validates the log is actually emitted.
+  Until then, this is a documented, accepted risk.
+
+- **Grep + line-window check cannot catch all defects — `contracts/checks/admin-auth-f5-federated/check-login-microsoft-apple-structural.sh:A-STRUCT-01`.** The check was hardened to use a line-window assertion for Apple's `addScope('email')` call to prevent grepping the string anywhere in the file (e.g. in comments), but the mechanism remains grep/line-window based and cannot distinguish an `addScope` in dead code, in a commented-out branch, or satisfying a dummy assertion that was never actually called. @qa demonstrated that identical check still passes against a `// provider.addScope('email')` commented-out call and against an `addScope` on a dead branch within a string literal. A full fix would require AST parsing of the file to confirm the call lives on the *executed* Apple sign-in path, not merely present somewhere within a line window. **Recommendation for next session:** if this specific check ever regresses (Apple sign-in stops receiving email addresses from real users), treat the check itself as a suspect and audit with AST inspection (e.g. esprima or swc parser) rather than trusting the grep result. This is a documented limitation of the current assertion; not a blocker for F5, which is already covered by the logic and the manual console-configuration steps.

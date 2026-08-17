@@ -5,7 +5,7 @@ goal: Close the proven /admin authentication hole, then add Google, Microsoft an
   Apple sign-in safely on top of a working authorisation gate
 created_at: '2026-08-14T13:50:58.639386+00:00'
 started_at: '2026-08-14T22:20:13.696373+00:00'
-last_active_at: '2026-08-15T11:15:38.161455+00:00'
+last_active_at: '2026-08-17T04:42:31.187601+00:00'
 status: paused
 cost_estimate:
   features: 6
@@ -13,8 +13,8 @@ cost_estimate:
   total_calls: 0
 last_checkpoint:
   milestone: M2
-  feature: F4
-  ts: '2026-08-15T11:15:38.161455+00:00'
+  feature: F5
+  ts: '2026-08-17T04:42:31.187601+00:00'
 features:
 - id: F1
   title: Authorisation gate — allowlist or custom claim, enforced server-side, failing
@@ -70,8 +70,9 @@ features:
 
     Both are more configuration than code. Neither is required for the door scanner
     to work, so if either stalls, record it as blocked and ship the rest.'
-  status: pending
+  status: in_progress
   milestone: M2
+  started_at: '2026-08-17T04:42:31.187386+00:00'
 - id: F6
   title: Door scanner and admin proven working end to end, by a human
   inline_brief: 'The payoff. The scanner and check-in logic have been gate-green but
@@ -116,6 +117,7 @@ milestones:
   - F6
   status: pending
 ---
+
 
 
 
