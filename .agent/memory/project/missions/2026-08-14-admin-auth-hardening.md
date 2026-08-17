@@ -5,7 +5,7 @@ goal: Close the proven /admin authentication hole, then add Google, Microsoft an
   Apple sign-in safely on top of a working authorisation gate
 created_at: '2026-08-14T13:50:58.639386+00:00'
 started_at: '2026-08-14T22:20:13.696373+00:00'
-last_active_at: '2026-08-17T04:42:31.187601+00:00'
+last_active_at: '2026-08-17T05:10:16.166066+00:00'
 status: paused
 cost_estimate:
   features: 6
@@ -14,7 +14,7 @@ cost_estimate:
 last_checkpoint:
   milestone: M2
   feature: F5
-  ts: '2026-08-17T04:42:31.187601+00:00'
+  ts: '2026-08-17T05:10:16.166066+00:00'
 features:
 - id: F1
   title: Authorisation gate — allowlist or custom claim, enforced server-side, failing
@@ -53,26 +53,13 @@ features:
   contract: contracts/contract-admin-auth-f4-google.yaml
 - id: F5
   title: Microsoft and Apple sign-in
-  inline_brief: 'Brad CONFIRMED on 2026-08-14 that he holds a paid Apple Developer
-    Program membership, so the usual blocker (~$99/yr) is already paid and Apple is
-    viable.
-
-    Apple needs: a Services ID, a private key for Sign in with Apple, the Team ID,
-    and the return URL registered against the Firebase auth domain. Apple also enforces
-    private email relay — users may present a relay address rather than a real one,
-    which interacts directly with an email-based allowlist. Decide how allowlisting
-    works for relayed addresses BEFORE building, or committee members will lock themselves
-    out.
-
-    Microsoft needs an Azure/Entra app registration (tenant, client ID, client secret)
-    plus the redirect URI. Decide whether to restrict to a specific tenant or allow
-    any Microsoft account.
-
-    Both are more configuration than code. Neither is required for the door scanner
-    to work, so if either stalls, record it as blocked and ship the rest.'
-  status: in_progress
+  inline_brief: null
+  status: done
   milestone: M2
   started_at: '2026-08-17T04:42:31.187386+00:00'
+  completed_at: '2026-08-17T05:10:16.165874+00:00'
+  spec: docs/admin-access.md
+  contract: contracts/contract-admin-auth-f5-federated.yaml
 - id: F6
   title: Door scanner and admin proven working end to end, by a human
   inline_brief: 'The payoff. The scanner and check-in logic have been gate-green but
@@ -110,13 +97,19 @@ milestones:
   features:
   - F4
   - F5
-  status: pending
+  status: done
+  gate_ran_at: '2026-08-17T05:11:17.327898+00:00'
+  gate_result: pass
 - id: M3
   title: A human logs in and the door scanner runs
   features:
   - F6
   status: pending
 ---
+
+
+
+
 
 
 

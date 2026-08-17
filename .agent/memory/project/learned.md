@@ -805,3 +805,48 @@ trivially satisfies.
   Until then, this is a documented, accepted risk.
 
 - **Grep + line-window check cannot catch all defects — `contracts/checks/admin-auth-f5-federated/check-login-microsoft-apple-structural.sh:A-STRUCT-01`.** The check was hardened to use a line-window assertion for Apple's `addScope('email')` call to prevent grepping the string anywhere in the file (e.g. in comments), but the mechanism remains grep/line-window based and cannot distinguish an `addScope` in dead code, in a commented-out branch, or satisfying a dummy assertion that was never actually called. @qa demonstrated that identical check still passes against a `// provider.addScope('email')` commented-out call and against an `addScope` on a dead branch within a string literal. A full fix would require AST parsing of the file to confirm the call lives on the *executed* Apple sign-in path, not merely present somewhere within a line window. **Recommendation for next session:** if this specific check ever regresses (Apple sign-in stops receiving email addresses from real users), treat the check itself as a suspect and audit with AST inspection (e.g. esprima or swc parser) rather than trusting the grep result. This is a documented limitation of the current assertion; not a blocker for F5, which is already covered by the logic and the manual console-configuration steps.
+
+## F5 admin-auth-hardening — shipped 2026-08-17, mission stands at 5/6, F6 (human-only) remains
+
+Resumed from PARKED (F4's `learned.md` entry above listed the two blocking questions — both were
+resolved by Brad before this chain ran). Shipped `3ffc36a`: three federated providers on
+`/admin/login` collapsed into one `handleFederatedSignIn()` path, all funnelling through the
+existing `mintSession()` -> `POST /api/admin/session` call; new Microsoft/Apple button
+components; Apple requests the `email` scope explicitly. Chain: @architect (unparked contract) ->
+@dev -> @qa (FAIL) -> @dev (fixes) -> @qa (PASS) -> contract gate 4/4 -> @docs -> commit.
+Milestone M2 now gates 2/2. Only F6 ("door scanner and admin proven working end to end, by a
+human") remains on this mission, and it is inherently a human task — see `backlog.md`.
+
+1. **A green contract gate did not see a broken logo — second confirmed instance of the
+   "Visual work is not done until a browser has seen it" rule (see F4's entry above, the
+   2026-08-15 invisible-input-fields incident, which is what produced that standing rule).** All
+   four F5 assertions passed while the Apple mark rendered as a malformed blob — a path whose real
+   geometry ran outside its declared `viewBox`, clipping the leaf and body. Caught only because
+   the rule forced a real browser check at 1440/375/320px. The rule has now paid for itself twice
+   on this mission alone; treat any future federated-auth or icon-bearing UI change as requiring
+   the same real-browser pass, not just the structural gate.
+2. **A browser agent reported a real defect and a wrong diagnosis in the same breath — record
+   this as a concrete instance of the general "browser agents render, not cause" caution.** It
+   correctly saw the broken Apple mark (see above), and in the same report recommended
+   "unifying" the three buttons' text/border colours because Microsoft's label read greyer than
+   Google's or Apple's. That recommendation was rejected: those exact values are mandated
+   independently by each vendor's own sign-in branding guidelines, and normalising them would
+   breach all three guidelines at once. The agent correctly rendered what it saw but was wrong
+   about why it looked that way and what should be done about it — verify a browser agent's
+   causal/prescriptive claims against the actual constraint (here, three separate vendor brand
+   guides), not just its visual observation.
+3. **Hardening was proven by mutation, in both directions, and the mutation-proof itself has a
+   known ceiling — see the A-STRUCT-01 entry immediately above for the ceiling.** @dev proved the
+   tightened `addScope('email')` check red-then-green by mutation; @qa independently repeated the
+   experiment rather than trusting the proof, then tried to defeat the new check and partially
+   succeeded (commented-out and dead code still pass, since it's grep-based). Recorded as a
+   residual risk, not papered over — this is the correct QA posture: re-run the author's proof
+   yourself, then attack the check that resulted from it.
+4. **A feature's own contract can be on disk, gate green, and still fail the milestone gate for
+   pure bookkeeping reasons.** F5's contract existed but was never attached to the mission record,
+   so `mission.py gate --milestone M2` reported "no contract found anywhere" and FAILED even
+   though `contracts/contract-*.yaml` itself was 4/4 green. Fixed with `mission.py attach-spec`.
+   This is a distinct failure mode from F3's item 5 above (that one was about cached vs. fresh
+   milestone-gate runs) — this one is about the contract never being registered against the
+   feature at all. **If a milestone gate ever reports "no contract found" for a feature whose own
+   contract is visibly green, check `attach-spec` status before assuming the contract is broken.**

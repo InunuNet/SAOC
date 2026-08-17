@@ -885,7 +885,7 @@ the ticket would sit `reserved` forever. Use the deployed host for payment testi
   expose a Refunds API (GET/POST /refunds/:pf_payment_id, same MD5+passphrase auth as the ITN),
   so this is buildable — see docs/payment-gateway-research-2026-08.md.
 
-## admin-auth-hardening — M1 done, F4 done and proven end-to-end, F5 parked (2026-08-15)
+## admin-auth-hardening — M1 done, F4 proven end-to-end, F5 shipped, only F6 remains (2026-08-17)
 
 F1 (authorisation gate), F2 (adversarial refusal proof), F3 (account provisioning) all `done`,
 milestone M1 gated (F1/F2 contract 12/12, F3's own contract 11/11). New scripts:
@@ -924,13 +924,43 @@ client-side auth errors now log real Firebase codes. **F4 is now proven end to e
 throughout (`NhSVXoMlT2bl6h4gDoyr5NZ1VW52`), admin claim intact, no second account — this
 closes F6's admin half; the door-scanner half of F6 is still open.
 
-**F5 (Microsoft + Apple sign-in) PARKED by user decision 2026-08-15** — see mission file
-`missions/2026-08-14-admin-auth-hardening.md` (still shows `status: pending`, not edited here
-per hand-editing restriction; team-lead/orchestrator owns updating it). Two open questions
-blocking F5, unresolved: (1) whether Apple sign-in should depend on an individual's personal
-Apple Developer membership rather than SAOC's own; (2) how Apple's `privaterelay.appleid.com`
-opaque relay addresses reconcile with an email-based allowlist. F6 (door scanner/admin proven
-working end to end, by a human) remains `pending`, milestone M3.
+**F5 (Microsoft + Apple sign-in) DONE 2026-08-17** — resumed from the 2026-08-15 PARKED state
+(the two open questions logged below were resolved by Brad before this chain ran), shipped
+`3ffc36a`. Chain: @architect (unparked contract) -> @dev -> @qa (FAIL) -> @dev (fixes) -> @qa
+(PASS) -> contract gate 4/4 -> @docs -> commit. Milestone M2 now gates 2/2. Mission file
+`missions/2026-08-14-admin-auth-hardening.md` shows F5 `status: done`, mission `status: paused`
+(F6 still open). Shipped: three provider handlers on `/admin/login` collapsed into one
+`handleFederatedSignIn()`, all funnelling through the existing `mintSession()` ->
+`POST /api/admin/session` call; new Microsoft/Apple button components; Apple requests the
+`email` scope explicitly; Apple's SVG mark replaced (the original path's geometry ran outside
+its declared `viewBox`, rendering as a malformed blob — caught only by the real-browser check,
+see `learned.md`). Also fixed a pre-existing documentation defect: `docs/admin-access.md` told
+operators they could recover a refused sign-in's email from a `getAdminSession()` server log
+that did not exist; `classifyRefusal()` now actually logs (reason + attempted email,
+server-side only) so the claim is true. **F6 (door scanner/admin proven working end to end, by
+a human) is now the ONLY feature remaining on this mission**, `status: pending`, milestone M3 —
+inherently a human task, not dispatchable to an agent chain.
+
+- [ ] **[P1, residual risk, NEW 2026-08-17] F5's new debug-log claim is not mechanically
+  enforced.** `app/api/admin/session/route.ts:29` calls `classifyRefusal()` purely for its
+  logging side effect and discards the return value — nothing asserts the call site still exists
+  or that the log actually fires on a refusal. A future refactor could silently delete it without
+  any check catching the loss, reintroducing the exact "documented but non-functional debugging
+  path" defect this feature just fixed. See `learned.md` "F5 admin-auth-hardening — Residual
+  Risks" for the recommended fix (a contract assertion that exercises a real refusal round trip
+  and validates the log line, not a grep for the function name).
+- [ ] **[P2, residual risk, NEW 2026-08-17] `A-STRUCT-01`'s Apple `addScope('email')` check is
+  grep/line-window based and provably defeatable** — @qa showed it still passes against a
+  commented-out call and against an `addScope` on a dead branch. Not a blocker (the real code
+  path is correct and manually console-verified), but if Apple sign-in ever stops receiving
+  emails from real users, treat this check itself as a suspect before anything else. See
+  `learned.md` for full detail; a real fix needs AST parsing, not a bigger grep.
+- [ ] **[P0, human, required for F5 to function in any deployed environment] Enable Microsoft
+  and Apple sign-in providers.** Mirrors the still-open Google item below, done separately per
+  provider: Microsoft needs an Azure/Entra app registration (tenant, client id, secret) enabled
+  in Firebase Auth; Apple needs the Services ID + signing key (Brad confirmed he holds a paid
+  Apple Developer Program membership) configured in Firebase Auth. A green gate proves the code
+  path, not that either provider is actually turned on for `saoc-webapp`.
 
 - [ ] **[P0, human, required for F4 to function] Enable Google sign-in in Firebase Auth.**
   A green gate does NOT prove this was done — go to
@@ -970,13 +1000,10 @@ working end to end, by a human) remains `pending`, milestone M3.
   [[learned.md]] "Weak-assertion defect class — 4th confirmed instance"), starting with the
   already-recorded D5-04 false-green in `contract-d5-admin-dashboard.yaml`.
 
-- [ ] **[P2, NEW 2026-08-14, F5 scope — PARKED, see above] Additional sign-in providers.**
-  Brad wants Google (done, F4), Microsoft and Apple (F5, parked). Effort is very uneven: Google
-  was near-zero config; Microsoft needs an Azure/Entra app registration (tenant, client id,
-  secret); Apple needs a paid Apple Developer Program membership (Brad confirmed he holds one)
-  plus a Services ID and signing key. Scope question to settle before resuming: these providers
-  matter for FUTURE MEMBER login, not for the handful of committee staff who use /admin. Decide
-  which audience before building.
+- [x] ~~**[P2, NEW 2026-08-14, F5 scope — PARKED, see above] Additional sign-in providers.**~~
+  **DONE 2026-08-17 — see "admin-auth-hardening" section above.** Brad wants Google (done, F4),
+  Microsoft and Apple (done, F5). Code is shipped for all three; enabling each provider in the
+  Firebase console for the deployed environment is a separate open human task, tracked above.
 
 - [ ] **[P2, accessibility, NEW 2026-08-15] `ContactForm` and `TicketPurchaseForm` render error
   text as `text-accent`** — 2.94:1 contrast on ivory, fails WCAG AA. Public-facing, affects

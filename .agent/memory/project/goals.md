@@ -55,8 +55,11 @@ mission (bounded-staleness `revalidate = 60` fix, see `learned.md`).
 ### admin-auth-hardening (started 2026-08-14, in progress)
 
 M1 (auth gate closed + proven + provisioning) done and gated. **F4 (Google sign-in) done
-2026-08-15**, gate green 6/6 — claim-first provisioning design, see `learned.md`. **F5
-(Microsoft + Apple sign-in) PARKED by user decision.**
+2026-08-15**, gate green 6/6 — claim-first provisioning design, see `learned.md`. ~~F5
+(Microsoft + Apple sign-in) PARKED by user decision~~ ✅ **F5 done 2026-08-17** — resumed from
+PARKED, shipped `3ffc36a`, milestone M2 gates 2/2. Mission stands at **5/6 features done; only
+F6 remains** ("door scanner and admin proven working end to end, by a human" — inherently a
+human task, milestone M3). See `learned.md` "F5 admin-auth-hardening" and `backlog.md`.
 
 **2026-08-15, post-ship:** F4 met reality and needed three real fixes a green gate could not
 catch — invisible login inputs (and the identical defect on `/admin`/`/admin/door` one click
