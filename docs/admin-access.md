@@ -468,6 +468,32 @@ See [docs/ticketing.md](ticketing.md) § "Role Grants and Capability Checks: The
 (no claim-size guard, throwing lookup propagates unhandled, no live Sanity-backed
 lookup yet).
 
+## The Buyer Boundary: No Authorization from Buyer Accounts (F5)
+
+**Critical:** the mere existence of a `buyers/{uid}` Firestore document (added by F5) grants
+**zero** admin capabilities and **zero** access to any admin surface. A self-registered buyer
+account carries no `admin` claim, no `roles` claim, and is refused by `isAdminToken()` and
+`hasCapability()` identically to any unauthenticated request (see spec §8.4).
+
+This is proven offline by calling the real `hasCapability()` and `resolveRoleCapabilitiesForShow()`
+functions (F4) against a buyer-shaped identity across all seven capabilities. The gate is
+**AND-only composition**: an `admin: true` token with no `roles` claim is refused every
+capability; a token with a matching `roles` claim but `admin: false` is refused every
+capability. Both the `admin` claim itself and the `roles` claim are required; neither alone
+suffices.
+
+A public buyer-facing signup route (F6 onward) must never consult `lib/admin-roles.ts` or
+`lib/admin-auth.ts`'s capability checks. If a future admin route ever reads the `buyers`
+collection for any reason (e.g. an admin tool to look up a buyer's order history), that route
+must not grant access based on the mere existence of a `buyers` document — it must apply the
+same capability checks as any other admin route, re-verified against the current `admin` claim
+and `roles` claim at request time. This property is recorded here as a standing requirement for
+future features; F5 itself adds no route to test against yet.
+
+See [docs/ticketing.md](ticketing.md) § "Buyer Accounts and POPIA Consent: lib/buyers.ts (F5)"
+for the full details, including why the boundary is load-bearing and what is manually verified
+(live HTTP round trip against a real Firebase project).
+
 ## Out of scope here (F4 / M2)
 
 The human end-to-end door-scanner proof is later work (mission `admin-auth-hardening`,

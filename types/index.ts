@@ -183,6 +183,7 @@ export interface Order {
   gatewayPaymentId: string | null;
   m_payment_id: string | null;
   pf_payment_id: string | null;
+  buyerUid?: string | null;
 }
 
 // ---------------------------------------------------------------------------

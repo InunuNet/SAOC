@@ -1,5 +1,29 @@
 # Athanor Issue Backlog
 
+## Session 2026-08-17 (later still still still) — vendor-registration mission drafted, queued
+
+- [ ] **[NEW 2026-08-17] Mission `vendor-registration` drafted and filed, status `queued` (not
+  started) — `.agent/memory/project/missions/2026-08-17-vendor-registration.md`.** Built from
+  Lee-Ann's "South African Exhibitors" Drive doc (11 features, 3 milestones). Queued to start
+  **after** `ticketing-foundation` completes — it reuses that mission's `lib/admin-roles.ts` /
+  `lib/admin-auth.ts` capability system and orders/positions conventions directly. Naming
+  collision resolved in F1: this stream is internally called "vendor" (schema/collection/route),
+  not "exhibitor" — the codebase already has an unrelated shipped feature named "exhibitor"
+  (`showExhibitorInfo`/`showExhibitorStep`, the judged-entry guide behind
+  `/national-show/exhibitors`). CMS/Firestore split made explicitly: the public nursery showcase
+  is Sanity (new `vendorNursery` type, F2), the 31-field registration form is a Firestore
+  submission pipeline (new `vendorSubmissions` collection, F4–F5), linked but not merged — an
+  admin approval step (F6) decides what, if anything, becomes public. Four open questions
+  recorded with recommended defaults (payment path — recommend offline EFT, not PayFast;
+  approval-before-public — recommend yes; booth allocation — recommend manual, tool just records
+  it; public route name). POPIA flag recorded (F11) — this form collects CIPC/VAT numbers, cell
+  numbers, physical addresses, vehicle registrations, and permit numbers, materially more
+  sensitive than ticket-buyer data; POPIA work stays deferred per existing project decision, no
+  conversation opened with Lee-Ann or Brad. CITES/phytosanitary/food-handling permit fields (F9)
+  are collected but explicitly not validated — verification obligation is a show-committee
+  question, not assumed either way. No code, contract, Sanity document, or Firestore document was
+  created — planning and filing only, per instruction.
+
 ## Closure Candidates (needs sign-off)
 _(2026-08-17, F1 wrap-up) `execution/gh_closure_scan.py --format lines` failed again, but back to
 the ORIGINAL known error (`ERROR: .agent/memory/project/missions/OVERNIGHT-PLAN-2026-07-30.md has
@@ -7,6 +31,56 @@ no YAML frontmatter`), not the `--repo` error seen earlier the same day. The two
 failure modes on the same day suggest the `--repo` error was transient/environmental, not a
 regression — the frontmatter bug is the persistent, already-filed one (see TEMPLATE BUG item
 below). No candidates surfaced this session (script still does not run to completion)._
+
+## Session 2026-08-17 (later still still still) — F6 contract written, two more scope gaps surfaced
+
+- [ ] **[P2, open ownership question, NEW 2026-08-17] Minting the recovery token at order-creation
+  time is unowned.** F6 ships only the pure primitives: `lib/recovery-token.ts`'s
+  `mintRecoveryToken()`/`verifyRecoveryToken()`, the rate-limit decision function, and the
+  enumeration-safe response (`contracts/contract-ticketing-f6-recovery-token.yaml`,
+  `contracts/golden/ticketing-f6-recovery-token/README.md`). Something still has to CALL
+  `mintRecoveryToken()` when an order is created and persist the resulting token (or its
+  signature) onto the order document — otherwise there is nothing for a recovery link to verify
+  against, and F14 (lost-ticket recovery proven end-to-end) cannot work. No F-item currently owns
+  that wiring. F10 (ITN re-pin ceremony) and F11 (QR generation + confirmation email) are the
+  plausible homes since both already touch order creation and the confirmation email, but neither
+  names it. Same shape as the F5 guest-order-backfill gap above: real work sitting in the seam
+  between two features, invisible because each one's own scope is complete. Needs Brad to place
+  it against an existing F-item or add a new one — do not self-assign or invent an F-number.
+  Worth settling before milestone M1 closes.
+- [ ] **[P3, placeholder value, NEW 2026-08-17] `RECOVERY_TOKEN_DEFAULT_TTL_MS` is set to 180
+  days as a working placeholder, not a Council-approved value.** It determines how long a
+  lost-ticket recovery link stays valid — a real security/usability tradeoff, not an engineering
+  default: too short and buyers lock themselves out of tickets they paid for; too long and a
+  leaked link stays live for months. Built against a reasonable working number in the meantime,
+  clearly flagged as a placeholder, same treatment as the 2027 Show ticket pricing placeholder
+  (see `needs-human.md` "Real 2027 Show ticket pricing"). Also logged in `needs-human.md`
+  ("Recovery-link expiry (`RECOVERY_TOKEN_DEFAULT_TTL_MS`)") since it needs an actual SAOC/Brad
+  decision, not just an agent's tracking note.
+
+## Session 2026-08-17 (later still still) — F5 contract written, two ownership gaps surfaced
+
+- [ ] **[P1, open ownership question, NEW 2026-08-17] Buyer-account live security proof (spec
+  §8.4) has no owning F-item.** The F5 contract (`buyers/{uid}` collection + hard buyer→admin
+  refusal boundary) proves the boundary offline via real `hasCapability()` calls and via a real
+  HTTP round trip with NO credentials (401 on missing and on garbage session cookies). It cannot
+  prove offline the actual spec §8.4 scenario: a real Firebase-Auth-minted **buyer** session
+  cookie `POST`ing to `/api/admin/checkin` and being refused, paired with a real **admin**-session
+  positive control that succeeds. That needs live credentials, so @architect wrote it as a
+  five-step human-run manual procedure in `contracts/golden/ticketing-f5-buyers/README.md` rather
+  than a contract assertion — logged in `needs-human.md` ("Ticketing foundation F5 — buyer-account
+  live security proof"). **F13 (Lee-Ann's `manager` grant, M3) covers the staff/admin side of live
+  HTTP verification, not the buyer side — do not assume it covers this without a deliberate call.**
+  This is the load-bearing security property of F5 and currently has no live-proof owner; needs
+  Brad (or whoever plans the mission next) to place it against an existing F-item or add a new
+  one. Not to be self-assigned to F13/F14 or given a new F-number without that decision.
+- [ ] **[P2, open ownership question, NEW 2026-08-17] Guest-order-claiming backfill (spec §8.3)
+  has no owning F-item.** When a guest buyer later registers an account, their existing orders'
+  `buyerUid` should be backfilled to the new account. F5 deliberately adds only the field's
+  existence and type (`buyers/{uid}` collection, optional `buyerUid` on orders) — the backfill
+  itself is explicitly out of F5's scope. No other feature in mission `ticketing-foundation` owns
+  it either. Worth placing before milestone M1 closes (M1 = F1–F8, the data-model/security
+  foundation milestone) rather than letting it fall through to M2/M3 unowned.
 
 ## Session 2026-08-17 — ticketing spec extended with buyer accounts (§8), foundation mission planned
 

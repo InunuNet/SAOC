@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/recovery-token.ts",
+    "../../../lib/resend-rate-limit.ts",
+    "../../../lib/resend-response.ts",
+    "fixtures/recovery-token-typecheck.ts"
+  ],
+  "exclude": []
+}

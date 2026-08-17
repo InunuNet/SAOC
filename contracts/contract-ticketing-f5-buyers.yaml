@@ -1,0 +1,129 @@
+schema: athanor.contract/v1
+slug: ticketing-f5-buyers
+goal: >-
+  Mission ticketing-foundation F5 (spec §8.2-§8.4). Add a `buyers/{uid}` Firestore
+  collection (email, optional displayName, newsletterOptIn consent record, createdAt)
+  and an optional `buyerUid` field on `orders`. The load-bearing property is the hard
+  security boundary (spec §8.4): a self-registered buyer account must resolve to the
+  empty capability set under the real hasCapability()/resolveRoleCapabilitiesForShow()
+  decision functions, and a real HTTP round trip to /api/admin/* must refuse that
+  account with the same fail-closed refusal any unauthenticated request gets. Full
+  decision record, every defeating mutation, and the live/manual verification steps
+  this contract cannot run offline: contracts/golden/ticketing-f5-buyers/README.md
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F5
+    name: >-
+      (1) New lib/buyers.ts: BUYERS_COLLECTION = 'buyers'; NewsletterOptIn { optedIn:
+      boolean; optInAt: Date | null; source: string | null }; Buyer { uid, email,
+      displayName?, newsletterOptIn, createdAt }; buildNewsletterOptIn(input?: {
+      optedIn: boolean; source: string; now: Date }): NewsletterOptIn -- no argument or
+      optedIn:false always forces optInAt/source to null regardless of what else is
+      passed; buildBuyerDocument(input): Buyer -- newsletterOptIn defaults to the
+      unticked NewsletterOptIn when omitted. (2) types/index.ts: add optional
+      `buyerUid?: string | null` to the existing Order interface (a pre-F5 Order
+      literal that never mentions the field must still compile). (3) The buyers
+      Firestore collection and the buyerUid field carry ZERO authorization meaning --
+      no code path introduced by this feature (or any future one) may grant a
+      capability, admin surface access, or role based on the mere existence of a
+      buyers document or a buyerUid value. The backfill of buyerUid at account-claim
+      time (spec §8.3) is explicitly OUT of scope for F5 -- only the field's existence
+      and type are required here.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-f5-buyers/README.md
+  - contracts/checks/ticketing-f5-buyers/tsconfig.typecheck.json
+  - contracts/checks/ticketing-f5-buyers/fixtures/buyers-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after lib/buyers.ts
+        and the Order.buyerUid field are added.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof of lib/buyers.ts's exported shapes and of
+        Order.buyerUid's optionality -- not a grep, a real assignment that either
+        compiles or doesn't. Includes a pre-F5-shaped Order literal that omits
+        buyerUid entirely (must still compile) and literals that set it to a real uid
+        string and to null.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-f5-buyers/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        The hard security boundary, spec §8.4(1): a self-registered buyer token (no
+        admin claim, no roles claim -- exactly what Firebase Auth self-signup
+        produces) resolves to the empty capability set under REAL
+        resolveRoleCapabilitiesForShow() and hasCapability() calls (lib/admin-auth.ts,
+        shipped by F4), checked against every one of the seven defined capabilities,
+        against a generous show-window lookup that would grant a live window if a
+        role were present, with admin explicitly false, with the buyer's email
+        coinciding with an allowlisted admin email, and (case 5) with that
+        allowlisted-email token ALSO carrying a real, grantable {'*': ['owner']}
+        roles claim -- proving the admin claim itself, not merely email allowlist
+        status or the accidental absence of a roles claim, is what's missing. Case 5
+        was added after mutation testing found an admin-gate bypass keyed on
+        allowlist status alone survived cases 1-4 (see golden README "Why case (5)
+        exists").
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f5-buyers/check-buyer-empty-capability-set.mjs
+
+    - id: A4
+      description: >-
+        Negative control on A3: the SAME harness and the SAME real
+        resolveRoleCapabilitiesForShow()/hasCapability() functions, given a genuinely
+        admin-shaped token with an owner role grant, resolve to the FULL capability
+        set and grant every one of the seven capabilities. Proves A3's buyer refusal
+        is a real decision, not a hasCapability() that vacuously returns false for
+        everyone.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f5-buyers/check-admin-token-not-vacuous.mjs
+
+    - id: A5
+      description: >-
+        The automated, gate-runnable half of the HTTP round trip demanded by spec
+        §8.4 and the mission brief: a real Next.js server is started on an ephemeral
+        port with every FIREBASE_ADMIN_* and NEXT_PUBLIC_FIREBASE_* variable
+        explicitly scrubbed from its environment. Before the server starts, a "(0)"
+        preflight (check-env-scrub-effective.mjs) calls the REAL loadEnvConfig()
+        Next.js itself uses to load .env.local, with the identical env prefix, and
+        asserts an independently hard-coded list of the nine credential variable
+        names is still empty afterward -- proving the scrub actually holds against
+        this machine's real .env.local credentials, not merely that the scrub
+        mechanism is present in source (added after mutation testing found a
+        deleted scrub-list entry survived undetected; see golden README "Why
+        check-env-scrub-effective.mjs, not a shell-level re-check"). Then real HTTP
+        POST requests are sent to /api/admin/checkin: no session cookie at all
+        refuses with 401; a syntactically-plausible but cryptographically worthless
+        session cookie also refuses with 401, never 200, never 500; and the refusal
+        body is checked to be the route's real JSON error shape, not a generic
+        framework error page, proving the request reached the real route handler.
+        See the golden README for exactly what this does and does NOT prove, and
+        which step is deferred to a human-run manual round trip against a live
+        Firebase project.
+      timeout_seconds: 220
+      command: bash contracts/checks/ticketing-f5-buyers/check-http-checkin-fails-closed.sh
+
+    - id: A6
+      description: >-
+        POPIA consent recording (spec §8.6): buildNewsletterOptIn() with no argument,
+        and buildBuyerDocument() with no newsletterOptIn argument, both default to
+        optedIn:false / optInAt:null / source:null -- unticked, no implied consent. A
+        genuine opt-in records BOTH optInAt and source together. optedIn:false always
+        forces optInAt and source to null even if a caller mistakenly passes them
+        alongside it -- no call shape can produce a silently-subscribed buyer. A
+        built Buyer document carries no roles/admin-flavoured field.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f5-buyers/check-newsletter-consent-defaults.mjs
+
+    - id: A7
+      description: pnpm lint passes with zero errors after lib/buyers.ts and the Order.buyerUid field are added.
+      command: pnpm lint

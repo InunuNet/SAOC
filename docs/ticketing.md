@@ -809,6 +809,216 @@ F4 proves the decision function is correct for any lookup it's given. The real,
 short-TTL-cached show-window lookup (reading `show.startDate`/`show.endDate` from
 Sanity) does not exist yet — it's deferred to the first live caller (F5 onward).
 
+## Buyer Accounts and POPIA Consent: lib/buyers.ts (F5)
+
+**Status:** F5 ships the `buyers` Firestore collection shape and POPIA-compliant consent recording. No buyer-facing signup route, recovery endpoints, or account-claiming logic exists yet — those are F6 and F14. See the decision record: `contracts/golden/ticketing-f5-buyers/README.md`.
+
+F5 introduces a pure, side-effect-free module `lib/buyers.ts` that builds POPIA-compliant buyer documents. Like F3's `lib/admin-roles.ts` and F4's pure helpers, this is a construction module with no Firestore I/O — the actual write (creating a `buyers/{uid}` document on signup) happens wherever the signup flow gets built.
+
+### The Buyers Collection
+
+A `buyers/{uid}` Firestore document represents a self-registered buyer account:
+
+```typescript
+export const BUYERS_COLLECTION = 'buyers';
+
+export interface NewsletterOptIn {
+  optedIn: boolean;
+  optInAt: Date | null;
+  source: string | null;
+}
+
+export interface Buyer {
+  uid: string;
+  email: string;
+  displayName?: string;
+  newsletterOptIn: NewsletterOptIn;
+  createdAt: Date;
+}
+```
+
+**POPIA consent (`newsletterOptIn`):** The `optedIn` field tracks explicit opt-in. When false, **both** `optInAt` and `source` are forced to `null` unconditionally — even if a caller mistakenly passes them alongside `optedIn: false`. This makes it impossible to silently create a document that looks like it carries a consent timestamp without real consent. The field is recorded here because `buildNewsletterOptIn()` requires all three arguments to produce an auditable record; a future signup flow must call it correctly.
+
+### Building Buyer Documents
+
+```typescript
+export function buildNewsletterOptIn(input?: {
+  optedIn: boolean;
+  source: string;
+  now: Date;
+}): NewsletterOptIn;
+
+export function buildBuyerDocument(input: {
+  uid: string;
+  email: string;
+  displayName?: string;
+  newsletterOptIn?: { optedIn: boolean; source: string; now: Date };
+  now: Date;
+}): Buyer;
+```
+
+- `buildNewsletterOptIn()` with no argument defaults to `{ optedIn: false, optInAt: null, source: null }` (unticked, no implied consent).
+- `buildBuyerDocument()` with no `newsletterOptIn` argument defaults to the unticked shape via `buildNewsletterOptIn()`.
+- Only `optedIn: true` with `source` and `now` supplied produces a real consent record with both `optInAt` and `source` set.
+
+### The Hard Security Boundary: Zero Authorization Meaning
+
+Spec §8.4(1) requires: **a self-registered buyer account with a `buyers` document must resolve to the empty capability set.** This is proven by:
+
+1. **Real `hasCapability()` and `resolveRoleCapabilitiesForShow()` calls** (F4 functions, not mocked) against a buyer-shaped identity (no `admin` claim, no `roles` claim — exactly what Firebase Auth self-signup produces).
+2. **All seven live capabilities checked** against a deliberately generous show-window lookup that would grant a live window if any role were present — so a failure can only mean the buyer token itself carries nothing grantable, never an accidentally-closed date window masking the real property.
+3. **Edge case (A3 case 5):** An allowlisted-email buyer token (`email` on `ADMIN_EMAIL_ALLOWLIST`) that **also** carries a live `{'*': ['owner']}` roles claim is still refused every capability. This case was added after mutation testing found that the admin-claim check could be bypassed by checking `email` instead. Without this case, the bypass would survive undetected — the capability set is empty anyway (no roles claim in cases 1–4), so a bypassing gate does nothing visible. Case (5) proves the gate itself, not its output.
+
+**What this does NOT prove, and why it can't:** The real specification scenario — a genuinely authenticated buyer session (real Firebase-Auth-minted session cookie) `POST`ing to `/api/admin/checkin` and being refused with `403` specifically — requires live Firebase Auth credentials. This is a **manual verification procedure** to be run once buyer signup and a `buyers` document exist for a test account (see `contracts/golden/ticketing-f5-buyers/README.md` for the five-step procedure). No F-item currently owns this live proof; it should be run alongside F6 or F14 when a real buyer signup surface exists.
+
+### Field on Orders
+
+An optional `buyerUid?: string | null;` field is added to the `Order` interface in `types/index.ts`. It is nullable, and pre-F5 `Order` literals that never mention the field must still compile (no forced migration). The field exists as a placeholder for the spec §8.3 guest-order-claiming backfill — when a guest buyer later self-registers, their existing orders' `buyerUid` should be backfilled to the new account. **That backfill is explicitly out of F5's scope** — no F-item currently owns it; it is a real scope gap to be placed before milestone M1 closes.
+
+## Order-Access Recovery Tokens: lib/recovery-token.ts, lib/resend-rate-limit.ts, lib/resend-response.ts (F6)
+
+**Status:** F6 ships three pure, offline decision/crypto modules. No Next.js route handlers (`GET /tickets/recover`, `POST /tickets/resend-my-tickets`), no Firestore calls, and no wiring of token minting into order creation exist yet — those are F14 and F10/F11 respectively. See the decision record: `contracts/golden/ticketing-f6-recovery-token/README.md`.
+
+F6 introduces three pure modules that together enable lost-ticket recovery: a signed, single-order-scoped token for authenticating recovery requests; a rate-limit decision function for the resend endpoint; and a response builder that makes email enumeration structurally impossible. Like F5, these are construction/decision modules with no I/O — the route handlers that call them (and actually fetch orders, send emails, persist counters) are built separately.
+
+### Signed Recovery Tokens: lib/recovery-token.ts
+
+A recovery token is a signed, time-boxed, single-order-scoped credential for accessing a lost ticket without knowing the booking reference:
+
+```typescript
+export const RECOVERY_TOKEN_DEFAULT_TTL_MS = 1000 * 60 * 60 * 24 * 180;  // 180 days, placeholder
+
+export type SignatureCompare = (a: Buffer, b: Buffer) => boolean;
+
+export function constantTimeEqual(a: Buffer, b: Buffer): boolean;
+
+export interface MintRecoveryTokenInput {
+  orderId: string;
+  secret: string;
+  now: Date;
+  ttlMs?: number;
+}
+
+export interface MintedRecoveryToken {
+  token: string;
+  expiresAt: Date;
+}
+
+export function mintRecoveryToken(input: MintRecoveryTokenInput): MintedRecoveryToken;
+
+export type RecoveryTokenVerification = 
+  | { ok: true; orderId: string; expiresAt: Date }
+  | { ok: false; reason: 'malformed' | 'bad-signature' | 'expired' };
+
+export interface VerifyRecoveryTokenInput {
+  token: string;
+  secret: string;
+  now: Date;
+  compare?: SignatureCompare;
+}
+
+export function verifyRecoveryToken(input: VerifyRecoveryTokenInput): RecoveryTokenVerification;
+```
+
+#### Token Format and Forgery Resistance
+
+Tokens are HMAC-SHA256 signed, not MD5 (unlike `lib/payfast.ts`'s vendor-dictated scheme). Format: `${base64url(JSON.stringify({o: orderId, e: expiresAtEpochMs}))}.${hmacSha256Hex}`.
+
+The HMAC key is a server-only secret — never derivable from public order fields. Forgery resistance is proven by attempting to verify a token minted with any plausible "derive the secret from public data" strategy (the order id itself, the buyer email, id+amount concatenation, a SHA-256 of every public field, the empty string) against the real, independently-generated random secret. Every guessed value fails verification.
+
+#### Constant-Time Comparison
+
+`constantTimeEqual()` returns `false` immediately (without throwing) if buffer lengths differ, then delegates to `node:crypto`'s `timingSafeEqual`. The function is **injectable** via a `compare` parameter on `VerifyRecoveryTokenInput`, defaulting to `constantTimeEqual`. This proves the verification function genuinely routes its comparison through the injectable hook, not a separate hardcoded check.
+
+**Genuine timing-side-channel measurement is not proven.** Constant-time comparison is structurally guarded (an injectable, constant-time-primitive-backed comparison hook) but real timing equality under measured attack is unproven — statistical benchmarking on a specific machine is exactly the flaky, non-deterministic check this project's rules argue against including in a gate. Proven, not measured, is the doctrine here.
+
+#### Per-Order Scoping and Tamper Resistance
+
+A verified token carries exactly `{ ok: true, orderId: string; expiresAt: Date }` and nothing else — no `roles`, no `admin`, no authorization-relevant fields. Every field of the payload (orderId, expiresAt, and the signature itself) is tamper-resistant: the signature is recomputed and compared against the presented segment using constant-time comparison, and the payload is checked for malformation (bad base64, bad JSON, missing `.` separator, non-numeric expiry, non-string orderId) before any signature check.
+
+#### Injected Time Expiry
+
+Neither `mintRecoveryToken()` nor `verifyRecoveryToken()` calls `Date.now()` or `new Date()` internally — time is always the caller-supplied `now` argument, exactly like F4's `ShowWindowLookup` pattern. The boundary is defined as expired when `now.getTime() >= expiresAt.getTime()` (the exact instant is excluded, not included, because a token's expiry is a precise instant, not a calendar day).
+
+`RECOVERY_TOKEN_DEFAULT_TTL_MS` is set to 180 days as a working placeholder — it is **not** a Council-approved retention/access-window value. This is a business-policy decision, not an engineering default, and should be confirmed with the Council before the demo ships. The parameter is overridable per-call so changing the default later is a single-constant edit.
+
+#### Zero Authorization Meaning
+
+A caller holding nothing but a successfully-verified recovery token (an identity shaped like a recovery-link visitor, carrying the token's `orderId` as a uid-like field but no `admin` or `roles` claim) resolves to the empty capability set under the real `hasCapability()` and `resolveRoleCapabilitiesForShow()` functions, checked against every one of the seven live capabilities. Additionally, the verification result is checked at runtime to carry exactly the keys `ok`, `orderId`, `expiresAt` — no `roles`, `admin`, or `capabilities` key ever present.
+
+### Rate Limiting: lib/resend-rate-limit.ts
+
+The resend-my-tickets endpoint needs rate-limiting on two independent dimensions: per-email (against enumeration) and per-IP (against brute force). A pure decision function keeps the rate-limit logic separate from Firestore I/O:
+
+```typescript
+export const RESEND_RATE_LIMIT_MAX_ATTEMPTS = 5;
+export const RESEND_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;  // 1 hour
+
+export interface RateLimitAttempt {
+  key: string;
+  at: Date;
+}
+
+export interface RateLimitDecision {
+  allowed: boolean;
+  attemptsInWindow: number;
+  retryAfterMs: number | null;
+}
+
+export interface DecideRateLimitInput {
+  key: string;
+  now: Date;
+  priorAttempts: RateLimitAttempt[];
+  maxAttempts?: number;
+  windowMs?: number;
+}
+
+export function decideRateLimit(input: DecideRateLimitInput): RateLimitDecision;
+```
+
+The function filters `priorAttempts` to those whose `key` matches and whose age is strictly less than `windowMs` (a sliding window, not a fixed bucket). Attempts under a different key never affect one another — this is what makes the caller's email-keyed and IP-keyed limits independent when the same function is invoked twice with different keys.
+
+- `allowed` is `attemptsInWindow < maxAttempts`
+- `retryAfterMs` is `null` when allowed, otherwise the milliseconds until the oldest in-window attempt ages out
+
+The counter state is the injected `priorAttempts` array — exactly like the rate-limit-relevant history a real caller would read from Firestore/memory just before calling this function. There is no live counter store or database read inside the function.
+
+### Email Enumeration: lib/resend-response.ts
+
+Making the resend-my-tickets endpoint's response identical regardless of whether an email matched or was rate-limited prevents attackers from enumerating valid buyer emails:
+
+```typescript
+export const RESEND_MY_TICKETS_PUBLIC_RESPONSE = {
+  status: 200,
+  body: { message: 'If that email address matches an order, a recovery link has been sent.' },
+} as const;
+
+export interface ResendDecisionInput {
+  orderMatched: boolean;
+  rateLimited: boolean;
+}
+
+export interface ResendDecisionResult {
+  publicResponse: typeof RESEND_MY_TICKETS_PUBLIC_RESPONSE;
+  shouldSend: boolean;
+  logReason: 'sent' | 'no-match' | 'rate-limited';
+}
+
+export function decideResendOutcome(input: ResendDecisionInput): ResendDecisionResult;
+```
+
+The `publicResponse` is **always the exact same `RESEND_MY_TICKETS_PUBLIC_RESPONSE` reference** (not a freshly-constructed object with matching content) across all four combinations of `orderMatched`/`rateLimited`. The `shouldSend` and `logReason` fields differ correctly based on the input, proving the function isn't a no-op that ignores its arguments, but the caller-facing response is byte-identical regardless.
+
+**Timing-channel equality is explicitly NOT proven.** The function being pure and side-effect-free means the actual timing difference an attacker could measure lives entirely in the route handler's I/O (Firestore lookup, email send). Who performs the lookup first (before or after branching on match), how unconditional it is, and whether the email is actually sent are route-level decisions, not F6's scope. When the real route is built (F14, most likely), the recommended implementation shape is to perform the Firestore lookup unconditionally before branching, specifically to keep the two code paths' wall-clock timing close.
+
+### What F6 Does NOT Build (and Why)
+
+F6 ships the pure primitives; several layers remain unbuilt:
+
+- **Route handlers** (`GET /tickets/recover` for rendering recovery links and QR codes, `POST /tickets/resend-my-tickets` for the resend form) — F14 is where this becomes testable and proves end-to-end. The route composition (two independent rate-limit checks combined, recovery-token verification, Firestore order lookup, email dispatch via F11) is out of F6's scope.
+- **Storing the recovery token on orders.** F6 proves the primitive works; F10 (ITN re-pin ceremony) or F11 (QR generation + confirmation email) must wire `mintRecoveryToken()` into order creation and persist the resulting token onto the order document. No F-item currently owns that wiring — it is a real scope gap worth placing before M1 closes.
+- **Live end-to-end proof.** A human clicking a real recovery link and a real resend form is F14's job, exactly the milestone sequencing the mission file lays out (F6 in M1, F14 in M3).
+
 ## Active Show Resolution: lib/show-resolution.ts (F1)
 
 The `resolveActiveShow()` function determines which `show` document is currently sellable. It is a pure function with no external dependencies, testable against fixtures:

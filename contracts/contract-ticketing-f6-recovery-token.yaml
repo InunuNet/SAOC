@@ -1,0 +1,244 @@
+schema: athanor.contract/v1
+slug: ticketing-f6-recovery-token
+goal: >-
+  Mission ticketing-foundation F6 (spec §8.2). Add a signed, HMAC-based order-access
+  recovery token (mint/verify, pure and offline), a pure rate-limit decision function for
+  the resend-my-tickets endpoint, and a pure response-shape builder that makes email
+  enumeration structurally impossible. The load-bearing properties -- unforgeable from
+  public order data, constant-time signature comparison, single-order scoping, tamper
+  resistance on every field, injected-time expiry, zero authorization meaning, a real
+  rate limit that triggers/keys/rolls, and identical resend-endpoint responses whether or
+  not the email matched -- are all proven behaviourally against real exported functions,
+  never by source-grep. Full decision record, every defeating mutation, and what this
+  contract cannot prove offline: contracts/golden/ticketing-f6-recovery-token/README.md
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F6
+    name: >-
+      Three new pure, side-effect-free modules -- no Firestore, no network, no
+      Date.now() -- mirroring the lib/admin-roles.ts / lib/admin-auth.ts decision-function
+      pattern (F3/F4) and lib/buyers.ts's construction-module pattern (F5).
+
+      (1) lib/recovery-token.ts: `export const RECOVERY_TOKEN_DEFAULT_TTL_MS = 1000 * 60 *
+      60 * 24 * 180;` (180 days -- a placeholder default, not a Council-approved value; see
+      golden README judgement calls). `export type SignatureCompare = (a: Buffer, b: Buffer)
+      => boolean;`. `export function constantTimeEqual(a: Buffer, b: Buffer): boolean` --
+      returns false immediately (no throw) if `a.length !== b.length`, otherwise delegates to
+      `node:crypto`'s `timingSafeEqual`. `export interface MintRecoveryTokenInput { orderId:
+      string; secret: string; now: Date; ttlMs?: number }`. `export interface
+      MintedRecoveryToken { token: string; expiresAt: Date }`. `export function
+      mintRecoveryToken(input: MintRecoveryTokenInput): MintedRecoveryToken` -- token is
+      `${base64url(JSON.stringify({o: orderId, e: expiresAtEpochMs}))}.${hmacSha256Hex}`,
+      where the HMAC-SHA256 digest is computed over the base64url payload segment using
+      `secret` as the HMAC key. `export type RecoveryTokenVerification = { ok: true; orderId:
+      string; expiresAt: Date } | { ok: false; reason: 'malformed' | 'bad-signature' |
+      'expired' }`. `export interface VerifyRecoveryTokenInput { token: string; secret:
+      string; now: Date; compare?: SignatureCompare }` -- `compare` MUST default to
+      `constantTimeEqual` and MUST be the function actually used to compare the recomputed
+      HMAC against the token's signature segment (not a parallel `===`/string-equality check
+      performed anywhere else in the function). `export function verifyRecoveryToken(input:
+      VerifyRecoveryTokenInput): RecoveryTokenVerification` -- rejects with `'malformed'` on
+      any parse failure (bad base64, bad JSON, missing `.` separator, non-numeric expiry);
+      rejects with `'bad-signature'` when the payload parses but the signature comparison
+      (via `compare`) fails; rejects with `'expired'` only once the signature has already
+      verified, when `now.getTime() >= expiresAt.getTime()` (boundary is expired, not valid).
+      Success carries `orderId` and `expiresAt` and NOTHING else -- no `roles`, no
+      `capabilities`, no `admin`, no `buyerUid`. `verifyRecoveryToken` and
+      `mintRecoveryToken` must never call `Date.now()` or `new Date()` internally -- `now` is
+      always the caller-supplied value, exactly like `ShowWindowLookup`'s injected-time
+      pattern in lib/admin-auth.ts.
+
+      (2) lib/resend-rate-limit.ts: `export const RESEND_RATE_LIMIT_MAX_ATTEMPTS = 5;`.
+      `export const RESEND_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;` (1 hour). `export
+      interface RateLimitAttempt { key: string; at: Date }`. `export interface
+      RateLimitDecision { allowed: boolean; attemptsInWindow: number; retryAfterMs: number |
+      null }`. `export interface DecideRateLimitInput { key: string; now: Date;
+      priorAttempts: RateLimitAttempt[]; maxAttempts?: number; windowMs?: number }`. `export
+      function decideRateLimit(input: DecideRateLimitInput): RateLimitDecision` -- filters
+      `priorAttempts` to those whose `key === input.key` AND whose age
+      (`now.getTime() - at.getTime()`) is strictly less than `windowMs` (a sliding window,
+      not a fixed bucket that locks until a clock-aligned boundary); `attemptsInWindow` is
+      that filtered count; `allowed` is `attemptsInWindow < maxAttempts` (this call would be
+      attempt number `attemptsInWindow + 1`); `retryAfterMs` is `null` when allowed, otherwise
+      the milliseconds until the OLDEST in-window attempt for this key ages out of the
+      window. Attempts under a different `key` are never counted, regardless of how many
+      exist in `priorAttempts` -- this is what makes the caller's IP-keyed and email-keyed
+      limits independent when the same function is invoked twice with two different keys.
+      Must never read a live counter store, a database, or `Date.now()` -- the counter state
+      is the injected `priorAttempts` array, exactly like the rate-limit-relevant history a
+      real caller would read from Firestore/memory just before calling this function.
+
+      (3) lib/resend-response.ts: `export const RESEND_MY_TICKETS_PUBLIC_RESPONSE = {
+      status: 200, body: { message: 'If that email address matches an order, a recovery
+      link has been sent.' } } as const;` (an exported, shared, frozen-shape literal --
+      not rebuilt per call). `export interface ResendDecisionInput { orderMatched: boolean;
+      rateLimited: boolean }`. `export interface ResendDecisionResult { publicResponse:
+      typeof RESEND_MY_TICKETS_PUBLIC_RESPONSE; shouldSend: boolean; logReason: 'sent' |
+      'no-match' | 'rate-limited' }`. `export function decideResendOutcome(input:
+      ResendDecisionInput): ResendDecisionResult` -- `publicResponse` MUST be the exact same
+      `RESEND_MY_TICKETS_PUBLIC_RESPONSE` reference (not a freshly-constructed object with
+      matching content) for ALL FOUR combinations of `orderMatched`/`rateLimited`;
+      `shouldSend` is `input.orderMatched && !input.rateLimited`; `logReason` is
+      `'rate-limited'` when `rateLimited`, else `'sent'` when `orderMatched`, else
+      `'no-match'` -- `logReason` is for server-side logging only and must never be
+      serialised into `publicResponse`.
+
+      OUT OF SCOPE for F6 (named explicitly, not silently absorbed): the actual Next.js
+      route handlers `GET /tickets/recover` and `POST /tickets/resend-my-tickets`
+      (Firestore order lookup by token/email, real counter persistence, actual email
+      dispatch via F11's sendConfirmationEmail, and the `/tickets/recover` page rendering
+      QR codes) are NOT built by F6 -- F6 ships the pure decision/crypto primitives those
+      routes will call. The live end-to-end proof of the wired routes is F14's job. Storing
+      `recoveryToken`/its expiry on the order document at order-creation time (wiring
+      mintRecoveryToken into lib/orders.ts / F10's ITN rewrite) is also not F6's job --
+      F6 proves the primitive works; F10/F11 call it.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-f6-recovery-token/README.md
+  - contracts/checks/ticketing-f6-recovery-token/tsconfig.typecheck.json
+  - contracts/checks/ticketing-f6-recovery-token/fixtures/recovery-token-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        lib/recovery-token.ts, lib/resend-rate-limit.ts and lib/resend-response.ts are
+        added.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof of all three modules' exported shapes -- not a grep, real
+        assignments and calls that either compile or don't. Includes: the `compare`
+        parameter on VerifyRecoveryTokenInput accepting a SignatureCompare-shaped
+        function; a RateLimitAttempt[] literal used as priorAttempts; and a
+        ResendDecisionResult literal whose publicResponse is typed exactly as
+        `typeof RESEND_MY_TICKETS_PUBLIC_RESPONSE`.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-f6-recovery-token/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        Forgery resistance (design constraint 1): an attacker holding the FULL public
+        order document (id, buyerEmail, amount, purchasedAt -- everything except the
+        server-only secret) cannot mint a token that verifies against the real secret.
+        Several plausible "derive the secret from public data" strategies are attempted
+        (the orderId itself, the buyer email, a concatenation of id+amount, a SHA-256 of
+        every public field concatenated, and the empty string) and every single one
+        fails verification against the real, independently-generated random secret.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f6-recovery-token/check-forgery-resistance.mjs
+
+    - id: A4
+      description: >-
+        Constant-time comparison (design constraint 2): verifyRecoveryToken() is proven
+        to route its signature comparison through the injectable `compare` parameter,
+        not a hardcoded `===`/string-equality check performed elsewhere in the function.
+        Proven two ways: (a) a spy `compare` that always returns `true` is injected
+        alongside a token whose signature segment has been corrupted -- verification
+        still succeeds, proving the function trusts whatever `compare` decides rather
+        than separately validating the signature itself; (b) the default (omitted)
+        `compare` correctly rejects a corrupted signature, proving the spy result in (a)
+        isn't merely because verification is broken in some other way. `constantTimeEqual`
+        itself is unit-tested directly: equal buffers -> true, unequal-length buffers ->
+        false without throwing, equal-length-but-different buffers -> false. Defeating
+        mutation: replacing the `compare(...)` call inside verifyRecoveryToken with a
+        direct `sigHex === expectedHex` comparison -- test (a) would then fail because
+        the corrupted-signature token would be rejected regardless of what the spy
+        returns.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f6-recovery-token/check-constant-time-compare.mjs
+
+    - id: A5
+      description: >-
+        Single-order scoping (design constraint 3): a token minted for order "order-A"
+        verifies successfully and its returned `orderId` is checked against a would-be
+        route-level authorization decision for TWO different requested orders -- it
+        authorizes access to "order-A" and is REFUSED for "order-B", using the real
+        `verifyRecoveryToken()` return value each time, not a fabricated one.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f6-recovery-token/check-order-scoping.mjs
+
+    - id: A6
+      description: >-
+        Tamper resistance on every field (design constraint 4): starting from one real,
+        valid, minted token, three independent tamper mutations are each applied to a
+        FRESH copy of the token (orderId changed in the decoded payload then
+        re-encoded without recomputing the signature; expiresAt changed the same way;
+        one hex character flipped in the signature segment) and each is verified
+        independently -- all three must be refused with reason 'bad-signature'. A
+        fourth, untampered control token verifies successfully, proving the tamper
+        mutants fail because of the tampering, not because verification is broken.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f6-recovery-token/check-tamper-fields.mjs
+
+    - id: A7
+      description: >-
+        Expiry enforced with injected time, not Date.now() (design constraint 5): a
+        token minted at a fixed `now` with a fixed `ttlMs` verifies successfully when
+        checked at `now`, and again at `now + ttlMs - 1ms` (inside the window); it is
+        refused with reason 'expired' when checked at exactly `now + ttlMs` and again at
+        `now + ttlMs + 1 day` -- proven purely by passing different `now` values to
+        verifyRecoveryToken, with no wall-clock sleep and no Date.now() call anywhere in
+        the test, deterministic and offline. Mirrors the ShowWindowLookup
+        inside-window/lapsed proof pattern established for lib/admin-auth.ts (F4).
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f6-recovery-token/check-expiry-injected-time.mjs
+
+    - id: A8
+      description: >-
+        Zero authorization meaning (design constraint 6): a context representing "a
+        caller who holds nothing but a successfully-verified recovery token" (a
+        DecodedIdToken-shaped object carrying the token's `orderId` as `uid`/`email`-like
+        fields but no `admin` claim and no `roles` claim -- exactly what a recovery-link
+        visitor's identity looks like if a future edit mistakenly tried to bridge it into
+        the admin auth system) resolves to the EMPTY capability set under the REAL
+        `hasCapability()`/`resolveRoleCapabilitiesForShow()` (lib/admin-auth.ts, shipped
+        by F4), checked against every one of the seven live capabilities, against a
+        deliberately generous show-window lookup, the same harness shape F5's A3 uses.
+        Additionally, `verifyRecoveryToken()`'s success shape is checked at runtime to
+        carry exactly the keys `ok`, `orderId`, `expiresAt` -- no `roles`, `admin`, or
+        `capabilities` key ever present on a verification result.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f6-recovery-token/check-zero-authorization-meaning.mjs
+
+    - id: A9
+      description: >-
+        Rate limiting is a real decision that triggers, is correctly keyed, and rolls
+        (design constraint 7): five prior attempts for one key allow a fifth-call check
+        to remain allowed (attemptsInWindow 4 < max 5) but the sixth is refused
+        (attemptsInWindow 5, not allowed) with a non-null retryAfterMs; a DIFFERENT key
+        (simulating a different email, and separately a different IP) with the exact same
+        priorAttempts array remains fully allowed, proving one key's exhaustion never
+        drains another key's budget; attempts older than the window are excluded from
+        the count entirely, and a key whose only prior attempts have aged out of the
+        window is fully allowed again -- proving the window rolls rather than locking
+        out forever once exhausted.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f6-recovery-token/check-rate-limit-trigger-and-keying.mjs
+
+    - id: A10
+      description: >-
+        Email enumeration is structurally impossible (design constraint 8): calling
+        `decideResendOutcome()` across all four combinations of orderMatched/rateLimited
+        returns the exact same `publicResponse` object (checked by reference equality,
+        not merely deep equality, since the module is required to hand back the shared
+        `RESEND_MY_TICKETS_PUBLIC_RESPONSE` constant every time) -- proving the caller
+        cannot construct a response that differs by status code, body, or shape based on
+        whether the email matched a real order or whether the request was rate-limited.
+        `shouldSend`/`logReason` are checked to differ correctly across the four
+        combinations, proving the identical public response isn't because the function
+        is a no-op that ignores its input entirely.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f6-recovery-token/check-resend-response-shape-identity.mjs
+
+    - id: A11
+      description: >-
+        pnpm lint passes with zero errors after lib/recovery-token.ts,
+        lib/resend-rate-limit.ts and lib/resend-response.ts are added.
+      command: pnpm lint

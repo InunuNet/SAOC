@@ -466,4 +466,33 @@ the oldest external dependency on this project. Remaining go-live work is engine
    Team ID. SAOC should obtain its own membership — or confirm Apple's nonprofit fee waiver
    applies — before the National Show 2027 launch. Re-pointing the integration at a Council-owned
    account is a Firebase Console → Authentication → Apple config swap only; no code change.
+
+## Ticketing foundation F5 — buyer-account live security proof, manual procedure needed (2026-08-17, @architect via F5 contract)
+
+The F5 contract (`buyers/{uid}` collection + hard buyer→admin refusal boundary) proves the
+boundary two ways offline/automatically: (1) a real `hasCapability()` call against a freshly
+self-registered buyer resolves to the empty capability set, and (2) a real HTTP round trip with
+NO credentials gets `401` on both a missing session cookie and a garbage one. What it deliberately
+cannot prove offline is the actual spec §8.4 scenario: a real Firebase-Auth-minted **buyer**
+session cookie `POST`ing to `/api/admin/checkin` and being refused, paired with a real
+**admin**-session positive control that succeeds on the same endpoint. That needs live
+credentials (a real buyer sign-up + a real admin session against the deployed/dev host), so
+@architect wrote it as a five-step human-run manual procedure rather than a contract assertion.
+The steps live in `contracts/golden/ticketing-f5-buyers/README.md` — follow that section when
+running the check.
+
+**Open ownership question, not yet decided:** no feature in mission `ticketing-foundation`
+currently owns running this manual procedure. F13 (Lee-Ann's `manager` grant, M3) covers the
+staff/admin side of live HTTP verification, not the buyer side — it should not be assumed to
+cover this without a deliberate call. This needs Brad (or whoever plans the mission next) to
+either fold it into an existing F-item or add a new one; do not self-assign it to F13/F14 or
+invent a new F-number without that decision. See the matching P1 backlog item.
+
+## Recovery-link expiry (`RECOVERY_TOKEN_DEFAULT_TTL_MS`) (2026-08-17, non-blocking)
+F6 (`lib/recovery-token.ts`) sets the lost-ticket recovery link's validity window to 180 days as a
+working placeholder, not a Council-approved value. Building against that number in the meantime,
+clearly flagged as a placeholder. Real tradeoff for SAOC/Brad to set: too short and a buyer who
+paid can lock themselves out of their own tickets; too long and a leaked/forwarded link stays
+live for months. Same class of open item as "Real 2027 Show ticket pricing" above. See the
+matching P3 backlog item.
    Non-blocking for F5's code and docs. — architect, 2026-08-17

@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/admin-auth.ts",
+    "../../../lib/admin-roles.ts",
+    "../../../lib/buyers.ts",
+    "../../../types/index.ts",
+    "fixtures/buyers-typecheck.ts"
+  ],
+  "exclude": []
+}
