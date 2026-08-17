@@ -49,6 +49,15 @@ pnpm format:check    # check only (CI-safe)
 pnpm run type-check
 ```
 
+**Door test-ticket QR seeder**
+
+```bash
+pnpm door:seed      # Create test tickets and QR sheet
+pnpm door:teardown  # Delete test tickets
+```
+
+Output: `scripts/output/door-test-qr/sheet.html` (gitignored). See [docs/door-test-qr-seeder.md](docs/door-test-qr-seeder.md) for details.
+
 **Environment**
 
 Copy the example file and fill in the Firebase values:

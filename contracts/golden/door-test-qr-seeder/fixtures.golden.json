@@ -1,0 +1,121 @@
+{
+  "_comment": "Canonical fixture table for scripts/seed-door-test-tickets.ts. Field values here are exact and MUST be reproduced verbatim — no runId suffixing, no randomisation. Fixed refs make the tool idempotent (re-running `seed` resets state; e.g. it un-does the ADMIT ticket's checked-in flip from a prior test run) which is what a human re-testing at a door needs.",
+
+  "marker": {
+    "attendeeEmail": "fixture@door-qr-check.invalid",
+    "attendeeName": "Door QR Fixture",
+    "bookingRefPrefix": "DOOR-QR-",
+    "wrongShowShowId": "door-qr-check-wrong-show",
+    "_comment": "RFC 2606 .invalid TLD, same convention as SENTINEL_EMAIL_DOMAIN in contracts/checks/ticketing-hardening/_shared.mjs. bookingRefPrefix is chosen to be unmistakable at a glance next to a real 'SAOC-2027-XXXXXXXXXXXX' ref."
+  },
+
+  "ticketType": "exhibitor",
+  "_ticketType_comment": "Reused from contracts/checks/ticketing-hardening/_shared.mjs TARGET_TICKET_TYPE: price 0, so this tool never creates a non-zero-value looking ticket.",
+
+  "fixtures": [
+    {
+      "label": "ADMIT",
+      "bookingRef": "DOOR-QR-ADMIT-01",
+      "seededInFirestore": true,
+      "doc": {
+        "bookingRef": "DOOR-QR-ADMIT-01",
+        "showId": "nationalShow",
+        "attendeeName": "Door QR Fixture",
+        "attendeeEmail": "fixture@door-qr-check.invalid",
+        "ticketType": "exhibitor",
+        "status": "paid",
+        "amount": 0,
+        "purchasedAt": "SERVER_NOW",
+        "checkedInAt": null,
+        "m_payment_id": "DOOR-QR-ADMIT-01",
+        "pf_payment_id": null
+      },
+      "scans": [
+        {
+          "ordinal": 1,
+          "expect": { "ok": true, "resultingStatus": "checked-in" },
+          "qrCardOutcome": "ADMIT",
+          "expectedScreenMessage": "✓ Checked in — Door QR Fixture — exhibitor — DOOR-QR-ADMIT-01"
+        },
+        {
+          "ordinal": 2,
+          "expect": { "ok": false, "code": "already-checked-in", "httpStatus": 409, "error": "Already checked in" },
+          "qrCardOutcome": "already-checked-in (scan the SAME code again)",
+          "expectedScreenMessage": "✕ Not checked in — Already checked in"
+        }
+      ]
+    },
+    {
+      "label": "UNPAID",
+      "bookingRef": "DOOR-QR-UNPAID-01",
+      "seededInFirestore": true,
+      "doc": {
+        "bookingRef": "DOOR-QR-UNPAID-01",
+        "showId": "nationalShow",
+        "attendeeName": "Door QR Fixture",
+        "attendeeEmail": "fixture@door-qr-check.invalid",
+        "ticketType": "exhibitor",
+        "status": "reserved",
+        "amount": 0,
+        "purchasedAt": null,
+        "checkedInAt": null,
+        "m_payment_id": "DOOR-QR-UNPAID-01",
+        "pf_payment_id": null
+      },
+      "scans": [
+        {
+          "ordinal": 1,
+          "expect": { "ok": false, "code": "unpaid", "httpStatus": 403, "error": "This ticket has not been paid for." },
+          "qrCardOutcome": "unpaid",
+          "expectedScreenMessage": "✕ Not checked in — This ticket has not been paid for."
+        }
+      ]
+    },
+    {
+      "label": "WRONGSHOW",
+      "bookingRef": "DOOR-QR-WRONGSHOW-01",
+      "seededInFirestore": true,
+      "doc": {
+        "bookingRef": "DOOR-QR-WRONGSHOW-01",
+        "showId": "door-qr-check-wrong-show",
+        "attendeeName": "Door QR Fixture",
+        "attendeeEmail": "fixture@door-qr-check.invalid",
+        "ticketType": "exhibitor",
+        "status": "paid",
+        "amount": 0,
+        "purchasedAt": "SERVER_NOW",
+        "checkedInAt": null,
+        "m_payment_id": "DOOR-QR-WRONGSHOW-01",
+        "pf_payment_id": null
+      },
+      "scans": [
+        {
+          "ordinal": 1,
+          "expect": { "ok": false, "code": "wrong-show", "httpStatus": 403, "error": "This ticket is not for this show." },
+          "qrCardOutcome": "wrong-show",
+          "expectedScreenMessage": "✕ Not checked in — This ticket is not for this show."
+        }
+      ]
+    },
+    {
+      "label": "MISSING",
+      "bookingRef": "DOOR-QR-MISSING-01",
+      "seededInFirestore": false,
+      "doc": null,
+      "scans": [
+        {
+          "ordinal": 1,
+          "expect": { "ok": false, "code": "not-found", "httpStatus": 404, "error": "Ticket not found" },
+          "qrCardOutcome": "not-found",
+          "expectedScreenMessage": "✕ Not checked in — Ticket not found"
+        }
+      ]
+    }
+  ],
+
+  "notes": {
+    "SERVER_NOW": "Timestamp.now() at seed time — not literal-comparable in JSON; checks assert purchasedAt is non-null for these two docs, not an exact value.",
+    "idempotency": "seed must be safe to run twice in a row: look up each bookingRef first; if the doc exists, overwrite its fields back to this exact shape (this is what resets ADMIT from 'checked-in' back to 'paid' for a repeat test); if it does not exist, create it.",
+    "screenMessage_format": "Documented here as 'label — line1 — line2' for readability; the actual UI (components/admin/DoorResultBanner.tsx) renders these as separate lines/elements, not one concatenated string. Checks must match against the underlying API response fields (result.ok/result.code/result.httpStatus/result.error, or for the success case result.ticket.attendeeName/ticketType/bookingRef), never against rendered DOM text, since no assertion in this contract drives a browser."
+  }
+}

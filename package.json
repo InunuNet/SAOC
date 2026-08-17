@@ -18,6 +18,8 @@
     "seed:exhibitor": "tsx scripts/seed-show-exhibitor-info.ts",
     "seed:visitor": "tsx scripts/seed-show-visitor-info.ts",
     "refresh-llms": "tsx scripts/refresh-llms.ts",
+    "door:seed": "tsx scripts/seed-door-test-tickets.ts seed",
+    "door:teardown": "tsx scripts/seed-door-test-tickets.ts teardown",
     "dev:secure": "next dev --port 3333 --experimental-https --experimental-https-key .certs/dev.saoc.co.za+2-key.pem --experimental-https-cert .certs/dev.saoc.co.za+2.pem"
   },
   "dependencies": {
@@ -42,13 +44,18 @@
     "@sanity/vision": "^5.30.0",
     "@tailwindcss/postcss": "^4.1.8",
     "@types/node": "^22.0.0",
+    "@types/pngjs": "^6.0.5",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.12",
     "eslint-config-prettier": "^9.1.2",
+    "jsqr": "^1.4.0",
     "playwright": "^1.62.0",
+    "pngjs": "^7.0.0",
     "prettier": "^3.8.3",
+    "qrcode": "^1.5.4",
     "tailwindcss": "^4.1.8",
     "tsx": "^4.22.4",
     "typescript": "^5.7.0"
