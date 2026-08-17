@@ -1,0 +1,21 @@
+{
+  "_source": "sanity/schemas/index.ts, read 2026-08-17. These are the shipped, unrelated 'exhibitor' feature (judged-entry guide behind /national-show/exhibitors) that F1 must not collide with or disturb.",
+  "documentTypes": ["showExhibitorInfo", "showExhibitorStep"],
+  "objectTypes": [
+    "exhibitorSection",
+    "showExhibitorDate",
+    "exhibitorQuestion",
+    "exhibitorConfirmationStatuses"
+  ],
+  "allIdentifiers": [
+    "showExhibitorInfo",
+    "showExhibitorStep",
+    "exhibitorSection",
+    "showExhibitorDate",
+    "exhibitorQuestion",
+    "exhibitorConfirmationStatuses"
+  ],
+  "route": "/national-show/exhibitors",
+  "routeSourceFile": "app/(marketing)/national-show/exhibitors/page.tsx",
+  "docsFiles": ["docs/show-exhibitor-info.md", "docs/exhibitor-guide-for-editors.md"]
+}

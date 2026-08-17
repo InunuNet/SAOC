@@ -21,6 +21,7 @@ import { showVisitorInfo } from './documents/showVisitorInfo';
 import { showFaq } from './documents/showFaq';
 import { showExhibitorInfo } from './documents/showExhibitorInfo';
 import { showExhibitorStep } from './documents/showExhibitorStep';
+import { vendorNursery } from './documents/vendorNursery';
 
 import { portableText } from './objects/portableText';
 import { showVenue } from './objects/showVenue';
@@ -60,6 +61,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   province,
   showFaq,
   showExhibitorStep,
+  vendorNursery,
   // Ticketing
   ticketType,
   // Objects

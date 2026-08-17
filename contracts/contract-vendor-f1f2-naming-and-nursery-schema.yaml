@@ -1,0 +1,129 @@
+schema: athanor.contract/v1
+slug: vendor-f1f2-naming-and-nursery-schema
+goal: >-
+  Mission vendor-registration, features F1+F2. F1: adopt "vendor" as the internal
+  (schema/collection/route) name for the 2027 National Show commercial-nursery
+  trade-booth programme, so it never collides with the already-shipped, unrelated
+  "exhibitor" feature (sanity/schemas/documents/showExhibitorInfo.ts /
+  showExhibitorStep.ts — the judged-competition-entry guide behind
+  /national-show/exhibitors). Public marketing copy may still say "Exhibitors"
+  (Lee-Ann's prose is not code); only internal identifiers change. F2: add the
+  `vendorNursery` Sanity document type for the public showcase — one document per
+  nursery (editor-authored, not user-submitted), modelled on
+  sanity/schemas/documents/sponsor.ts's conventions, carrying every field Lee-Ann's
+  source document lists under "Every nursery has" plus the optional "Available at
+  the Show" fixed multi-select. Full decision record, every judgement call, and
+  what this contract does NOT prove: contracts/golden/vendor-f1f2-naming-and-nursery-schema/README.md
+created_at: '2026-08-18'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Naming decision recorded and gated: no new Sanity type, object type, or route
+      introduced by this mission may collide with the existing showExhibitorInfo /
+      showExhibitorStep feature's identifiers, and that existing feature must survive
+      this mission with its types, fields, and route completely unchanged. Internal
+      names use vendor* throughout (vendorNursery in this contract; vendorRegistration,
+      vendorSubmissions, /national-show/vendors, /api/vendors/register in later
+      features of this mission, not built here).
+    status: pending
+
+  - id: F2
+    name: >-
+      Add sanity/schemas/documents/vendorNursery.ts — a document type (not an array on
+      a singleton) with fields name (string, required — added for Studio
+      identification/preview; not itemised in the source doc but implied by it, see
+      README), logo (image), country (string), owner (string), history (text),
+      specialisation (text), plantsBrought (text), website (url), socialMedia (array
+      of {platform, url} objects), and availableAtShow (array of strings with a fixed
+      6-value options.list: Species orchids, Hybrids, Miniatures, South American
+      species, Asian species, Growing supplies). Register it in
+      sanity/schemas/index.ts. preview.select maps title to name and subtitle to
+      country, and prepare() actually surfaces both. No `@/*` import anywhere in the
+      new file (see README's invocation-trap note).
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-f1f2-naming-and-nursery-schema/README.md
+  - contracts/checks/vendor-f1f2-naming-and-nursery-schema/fixtures/expected-availability-tags.json
+  - contracts/checks/vendor-f1f2-naming-and-nursery-schema/fixtures/existing-exhibitor-identifiers.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        vendorNursery is a Sanity document type whose own `.name` is exactly
+        'vendorNursery' (not a grep of the source text — reads the real field Sanity
+        uses to key the type), registered exactly once in sanity/schemas/index.ts's
+        schemaTypes array, with no second definition registered under the same name.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/vendor-f1f2-naming-and-nursery-schema/check-vendornursery-registered-and-named.mjs
+
+    - id: A2
+      description: >-
+        The pre-existing, unrelated exhibitor-entry feature (showExhibitorInfo,
+        showExhibitorStep, their 4 object types, and the /national-show/exhibitors
+        route file) is completely unchanged by this mission — same identifiers, same
+        registration, same field list on showExhibitorStep, route file still present.
+        Invariant check: expected to pass before, during, and after F1/F2 land: a
+        failure at any point is a real regression, not a flip being waited for.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/vendor-f1f2-naming-and-nursery-schema/check-existing-exhibitor-feature-intact.mjs
+
+    - id: A3
+      description: >-
+        No field name, title, or description on the real vendorNursery object
+        contains the substring 'exhibitor' (case-insensitive), deep-scanned across
+        the whole runtime object graph including nested socialMedia/availableAtShow
+        definitions — catches a copy-pasted defineField() block left half-renamed.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/vendor-f1f2-naming-and-nursery-schema/check-no-exhibitor-leak-in-vendornursery.mjs
+
+    - id: A4
+      description: >-
+        vendorNursery.ts exists and the isolated schema-tree type-check (this
+        contract's own tsconfig.typecheck.json, scoped to vendorNursery.ts +
+        sanity/schemas/index.ts — deliberately NOT the whole-project `pnpm
+        type-check`, to stay isolated from unrelated in-flight feature work
+        elsewhere in this shared repo) passes with zero errors. `test -f` first
+        because tsc silently SKIPS a missing file named in `include` rather than
+        erroring — confirmed live on 2026-08-17 (tsc exits 0 even when
+        vendorNursery.ts does not exist yet) — so the bare tsc command alone would
+        be a vacuous pass before @dev writes anything.
+      command: >-
+        test -f sanity/schemas/documents/vendorNursery.ts && npx tsc --noEmit -p
+        contracts/checks/vendor-f1f2-naming-and-nursery-schema/tsconfig.typecheck.json
+
+    - id: A5
+      description: >-
+        Field-by-field schema shape: every field from the source document (name,
+        logo, country, owner, history, specialisation, plantsBrought, website,
+        socialMedia, availableAtShow) exists with the correct Sanity field type;
+        socialMedia's array member is an object with platform+url subfields;
+        availableAtShow's options.list is exactly the 6-tag set extracted from Lee-Ann's
+        .docx, in source order, not free text.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/vendor-f1f2-naming-and-nursery-schema/check-schema-shape.mjs
+
+    - id: A6
+      description: >-
+        preview.select maps title->name and subtitle->country, and preview.prepare()
+        — executed against a fixture document, the same way Studio would resolve it —
+        actually returns the nursery's name and country, not a hardcoded or ignored
+        value; also confirms prepare() does not throw on a document with no fields
+        set yet (a freshly created draft).
+      command: >-
+        node --import tsx/esm
+        contracts/checks/vendor-f1f2-naming-and-nursery-schema/check-preview-shows-name-and-country.mjs
+
+    - id: A7
+      description: >-
+        eslint passes with zero errors on the two files this feature touches,
+        scoped rather than project-wide for the same isolation reason as A4.
+      command: npx eslint sanity/schemas/documents/vendorNursery.ts sanity/schemas/index.ts
