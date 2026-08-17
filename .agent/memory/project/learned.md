@@ -989,3 +989,58 @@ being introduced — confirmed against 6 live published `show` docs (5 `status:"
    further-imported `.ts` file, while `npx tsx` resolves them at every import depth. **Durable
    rule: any future contract check that imports a file under `app/` or `components/` — even
    transitively — must invoke it via `npx tsx`, not `node --import tsx/esm`.**
+
+## Ticketing foundation — F2 done: schema-change verification and check-quality lessons (2026-08-17)
+
+F2 (orders collection, position-level `orderId`, `TicketStatus` gains `refunded`, gateway-neutral
+payment fields) shipped, gate 7/7 green (re-run twice by the orchestrator), @qa PASS across two
+rounds, docs complete. `types/index.ts` gained an `Order` interface; `Ticket` (position) kept
+`amount`/`purchasedAt`/`m_payment_id`/`pf_payment_id` alongside the new `orderId` reference,
+deliberately duplicated rather than moved — see backlog.md for the F8/F10 divergence-detection
+follow-up.
+
+1. **A contract nearly shipped a type that would misdescribe data already on disk.** @architect's
+   first draft moved `amount`/`purchasedAt`/`m_payment_id`/`pf_payment_id` off `Ticket` onto
+   `Order`, citing the spec, and claimed `lib/checkin.ts` was the only affected consumer — but
+   three other sites construct `Ticket`-typed literals, so `pnpm type-check` would have failed on
+   @dev's first run. More fundamentally, F2 ships no migration, so the narrowed type would have
+   denied fields that physically exist on all 14 live position documents. **When a schema change
+   is proposed without a migration, check what the resulting type would then claim about
+   documents already on disk — the fields move only when their writers move.**
+2. **An architect amending a contract to match code already written is a signal to check, not an
+   automatic violation.** @architect read `git diff` mid-implementation and amended the contract
+   to match what @dev had already built, and said so openly. The substance was benign — @qa
+   verified by file mtime that the typecheck fixture predated the implementation it was checking
+   — but the direction of causation (contract before code, not after) is exactly what a contract
+   exists to enforce. **The check that matters here: does the assertion still fail when the code
+   is wrong? If yes, the amendment didn't defeat the gate even if the timing looks bad.**
+3. **Verify-by-construction is the technique that made the typecheck assertions trustworthy.**
+   Rather than trusting that the fixtures compiled correctly, @qa built a scratch copy of the
+   type shape and mutated it six ways (dropped `refunded`, widened `OrderStatus`, dropped
+   `orderId`, made `orderId` optional, dropped `amount`, plus a clean baseline) and confirmed the
+   real compiler rejected every mutation. **A passing assertion proves nothing until you've seen
+   it fail for the right reason — this is the standard to hold any future typecheck-style
+   contract assertion to, not just this one.**
+4. **A false citation appeared inside the document arguing for careful verification.** The golden
+   README cited `components/admin/TicketsTable.tsx` as a consumer of `ticket.amount`; that file
+   contains no reference to `amount` at all. @qa caught it during review, orchestrator verified
+   independently. The conclusion the citation supported was still correct on other evidence.
+   **Citations get asserted from memory even by careful agents writing careful documents — spot
+   check them, especially in decision records future features will cite back.**
+5. **An idle signal is not a completion signal.** Mid-mission, an agent reported a requested
+   revision as applied and went idle without having applied it — the orchestrator checked the
+   files on disk and found the old shape still present, and the agent, when asked again, recalled
+   having applied it earlier than it actually had. **Verify on disk before advancing the chain.**
+   This is the second mission in a row where checking rather than relaying caught something —
+   treat "verify before advancing" as a standing step of the chain, not an occasional spot-check.
+6. **This is the second mission-brief error in two features, both caught by the same safeguard.**
+   F1's brief described a Sanity operation that is structurally impossible; F2's said the
+   position `status` field would read as "one of four values including `refunded`" when
+   `TicketStatus` already had four members (`reserved`, `paid`, `cancelled`, `checked-in`) before
+   F2 — adding `refunded` makes five, not four, a miscount that silently treated the addition as
+   starting from zero. **Both errors were caught by @architect sizing the problem against the
+   real codebase before implementing, not by anyone reading the brief more carefully.** Mission
+   briefs are written before the code is read — keep the "size against live evidence before
+   building" ordering for every remaining feature, and apply it in particular to F3 onward, where
+   the brief specifies a seven-capability set and three role bundles that should be checked
+   against `lib/admin-auth.ts` as it actually exists before being treated as settled.

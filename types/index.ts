@@ -125,7 +125,7 @@ export type ContactSubmission = {
   status: 'new' | 'read' | 'replied';
 };
 
-export type TicketStatus = 'reserved' | 'paid' | 'cancelled' | 'checked-in';
+export type TicketStatus = 'reserved' | 'paid' | 'cancelled' | 'checked-in' | 'refunded';
 
 // Ticket types are no longer a hardcoded union — the council's real categories
 // (adult, pensioner, child, SAOC member, exhibitor) live as `ticketType` Sanity
@@ -147,6 +147,40 @@ export interface Ticket {
   amount: number;
   purchasedAt: Timestamp | null;
   checkedInAt: Timestamp | null;
+  m_payment_id: string | null;
+  pf_payment_id: string | null;
+  // F2 (ticketing-foundation) — nullable because the pre-F2 legacy positions predate this
+  // field and F2 ships no backfill/migration; null is the honest value for "no parent
+  // order". See contracts/golden/ticketing-f2-orders-model/README.md "Field-move
+  // decision, revised" for why this is additive, not a replacement of the four payment
+  // fields above.
+  orderId: string | null;
+}
+
+// F2 (ticketing-foundation) — an order is never itself "checked-in" (only a position is
+// scanned at the door) or "refunded" (§4.3: a refund targets one position, never the
+// whole order). Deliberately its own 3-member union, not TicketStatus — see
+// contracts/golden/ticketing-f2-orders-model/README.md.
+export type OrderStatus = 'reserved' | 'paid' | 'cancelled';
+
+// F2 (ticketing-foundation) — sits between `show` and `tickets` (positions); §4.2/§4.4.
+// `m_payment_id`/`pf_payment_id`/`gateway`/`gatewayPaymentId` are order-level payment
+// concepts: once group orders exist (deferred, §9) an order can have several positions
+// but only one PayFast payment. See golden/README.md "Order (new type)" for the full
+// field-by-field rationale, including why `m_payment_id` is included despite being
+// omitted from the mission-brief dispatch's field list.
+export interface Order {
+  id: string;
+  showId: string;
+  buyerName: string;
+  buyerEmail: string;
+  amount: number;
+  status: OrderStatus;
+  expiresAt: Timestamp | null;
+  idempotencyKey: string;
+  purchasedAt: Timestamp | null;
+  gateway: string | null;
+  gatewayPaymentId: string | null;
   m_payment_id: string | null;
   pf_payment_id: string | null;
 }

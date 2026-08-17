@@ -340,42 +340,95 @@ This is a **functional gate, not just UI**. Posting directly to `/api/tickets/ch
 
 ## Data Models
 
-### Firestore `tickets` Collection
+### Firestore `orders` Collection (F2)
 
-Each purchase attempt creates (or reserves) a document:
+F2 introduces an `orders` collection that sits between the `show` (Sanity) and `tickets` (positions). Each order represents a purchase or reservation, and may eventually contain multiple positions (in F9, when group orders are deferred in). An order is created via `lib/orders.ts`'s `createOrderWithPosition()` when F8 (comp tickets) and F10 (checkout rewrite) build their features on top of this primitive.
 
 ```typescript
-interface Ticket {
-  bookingRef: string;       // "SAOC-2027-" + 12-char Crockford base32 (60-bit random)
-  showId: string;           // Always "nationalShow" for now
-  attendeeName: string;     // Buyer's entered name
-  attendeeEmail: string;    // Buyer's entered email (lowercase)
-  ticketType: string;       // Slug: "adult", "pensioner", etc.
-  status: "reserved" | "paid" | "cancelled" | "checked-in";
-  amount: number;           // ZAR (derived from Sanity)
-  expiresAt: Timestamp | null;    // Reservation TTL (lib/tickets-constants.ts); a
-                                   // `reserved` doc past this no longer counts toward
-                                   // capacity. Never checked once status is 'paid'.
-  idempotencyKey: string;   // From the Idempotency-Key header; bound to attendeeEmail
-                             // + ticketType, not matched on the key alone
-  purchasedAt: Timestamp | null;  // Set by ITN webhook
-  checkedInAt: Timestamp | null;  // Set by door scanner
-  m_payment_id: string;     // Matches bookingRef (for PayFast signature)
-  pf_payment_id: string | null;   // PayFast's internal ID (set by ITN)
+export type OrderStatus = 'reserved' | 'paid' | 'cancelled';
+
+interface Order {
+  id: string;              // Firestore auto-generated doc id (or fixed for test fixtures)
+  showId: string;          // Always "nationalShow" for now
+  buyerName: string;       // Purchaser's name
+  buyerEmail: string;      // Purchaser's email
+  amount: number;          // ZAR (total for this order)
+  status: OrderStatus;     // One of the three order statuses (see below)
+  expiresAt: Timestamp | null;    // Reservation TTL for 'reserved' orders
+  idempotencyKey: string;  // Deduplication key
+  purchasedAt: Timestamp | null;  // Set when payment confirmed
+  gateway: string | null;  // Payment provider (e.g., 'payfast')
+  gatewayPaymentId: string | null;  // Payment processor's transaction ID
+  m_payment_id: string | null;  // PayFast's own payment reference
+  pf_payment_id: string | null;  // PayFast's internal ID (set by webhook)
 }
 ```
 
-**Statuses:**
+**OrderStatus values:**
+
+- `reserved` — order created, waiting for payment confirmation
+- `paid` — payment confirmed via webhook
+- `cancelled` — buyer cancelled payment (or explicitly cancelled by support)
+
+**CRITICAL: Order-Position Field Duplication (F2 Additive Design)**
+
+Until F10 (Folded ITN rewrite), `amount`, `purchasedAt`, `m_payment_id`, and `pf_payment_id` are **duplicated onto both the order AND the position**. This is deliberate and temporary:
+
+- **Why duplicated:** The position (`tickets` document) must keep these four fields because three live consumers read them directly from the position document today: `lib/checkin.ts`'s `toTicket()`, `app/admin/page.tsx`'s `fetchTickets()`, and `app/api/admin/tickets/route.ts`'s JSON endpoint. Removing them from the position before these consumers are rewritten would break the admin dashboard and door scanner.
+- **When it resolves:** F10's checkout rewrite migrates checkout and the ITN webhook to write orders instead of flat positions, and runs a backfill operation. After that, the order becomes the sole source of truth for these fields, and the position documents are cleaned up.
+- **For F8/F10 authors:** When these fields are eventually removed from the position layer, ensure the backfill is comprehensive (all 14+ existing positions must be patched) and coordinate with every consumer of the `Ticket` type.
+
+**Why `gateway` and `gatewayPaymentId` are NOT on positions:** These are order-level payment concepts — once group orders exist (deferred feature), an order can have several positions but only one payment. They are genuinely new fields with no legacy reader on the position side, so they stay order-only.
+
+### Firestore `tickets` Collection (Positions)
+
+Each purchase attempt creates (or reserves) a position document. F2 adds the `orderId` field to link positions back to their parent order.
+
+```typescript
+interface Ticket {
+  id: string;               // Firestore doc id (same as bookingRef)
+  bookingRef: string;       // "SAOC-2027-" + 12-char Crockford base32 (60-bit random)
+  showId: string;           // Always "nationalShow" for now
+  attendeeName: string;     // Attendee's name
+  attendeeEmail: string;    // Attendee's email (lowercase)
+  ticketType: string;       // Slug: "adult", "pensioner", etc.
+  status: TicketStatus;     // One of five statuses (see below)
+  amount: number;           // ZAR (derived from Sanity; also on order, see above)
+  expiresAt: Timestamp | null;    // Reservation TTL (lib/tickets-constants.ts)
+  idempotencyKey: string;   // From Idempotency-Key header
+  purchasedAt: Timestamp | null;  // Set by ITN webhook (also on order, see above)
+  checkedInAt: Timestamp | null;  // Set by door scanner
+  m_payment_id: string | null;  // PayFast reference (also on order, see above)
+  pf_payment_id: string | null;  // PayFast's internal ID (also on order, see above)
+  orderId: string | null;   // F2: Reference to parent order. Nullable because pre-F2
+                             // legacy positions have no orderId; see "No Migration" below.
+}
+```
+
+**TicketStatus values (5 total, including F2's `refunded`):**
 
 - `reserved` — created by checkout, not yet paid (ITN pending). Releases its seat
-  automatically once `expiresAt` passes (see docs/ticketing-hardening.md, F5) — no
-  status write happens, it simply stops being counted.
+  automatically once `expiresAt` passes (see docs/ticketing-hardening.md, F5).
 - `paid` — ITN webhook confirmed; purchasedAt is set. A `paid` ticket's seat is held
   forever regardless of `expiresAt`.
 - `cancelled` — buyer clicked PayFast cancel (reserved doc left untouched; this status
   is not currently written by any route)
 - `checked-in` — door scanner scanned the QR code. The ITN write guard cannot move a
   `checked-in` ticket back to `paid` (docs/ticketing-hardening.md, F8).
+- `refunded` — position explicitly refunded by support (F3 feature, not yet built).
+
+**CRITICAL: No Migration, No Backfill (F2)**
+
+The 14 existing legacy position documents **do NOT have an `orderId` field**, and F2 ships no migration or backfill. When reading a position:
+- If `orderId` is absent from Firestore, it coalesces to `null` (e.g., `(data['orderId'] as string) ?? null`)
+- This is the correct behavior — `null` honestly means "this position was created before F2 and has no parent order"
+- Every existing consumer must handle `orderId: null` for legacy positions
+
+Contrast this with F10: when checkout is rewritten to create orders, F10 will run a comprehensive backfill to add `orderId` to every existing position, linking them retroactively to the order that paid for them. After that backfill, `orderId` will still be nullable (for positions created before the backfill completed), but 100% of live positions will have it set. F2 itself does not run any such backfill — just the schema change.
+
+### The `refunded` Status: Cosmetic Gap (Known Issue)
+
+The `refunded` status was added to `TicketStatus` in F2, but no `StatusPill` style component was built for it. It renders as literal text through the neutral fallback in UI, visually indistinguishable from an unrecognised value. This is cosmetic and non-blocking for F2, but should be addressed before /admin surfaces display refunded positions to support staff (currently, no route creates or displays `refunded` tickets).
 
 ### Sanity `nationalShow` Additions
 
@@ -385,6 +438,63 @@ interface NationalShow {
   salesOpen?: boolean;  // Default false; when true, checkout accepts POSTs
 }
 ```
+
+## Orders Creation Primitive: lib/orders.ts (F2)
+
+F2 introduces a new module `lib/orders.ts` that provides the foundation for creating orders paired with positions. This is **additive only** — checkout and the ITN route are not modified in F2 (that happens in F10); this primitive is used by F8 (comp tickets) and F10 (checkout rewrite) when those features land.
+
+```typescript
+export const ORDERS_COLLECTION = 'orders';
+
+export interface CreateOrderPositionInput {
+  orderId?: string;           // Omit to auto-generate; supply only for test fixtures
+  bookingRef: string;         // Position doc id (always caller-supplied)
+  showId: string;
+  buyerName: string;
+  buyerEmail: string;
+  attendeeName: string;
+  attendeeEmail: string;
+  ticketType: TicketType;
+  amount: number;
+  orderStatus: OrderStatus;   // Order status ('reserved' | 'paid' | 'cancelled')
+  positionStatus: TicketStatus;  // Position status (one of five values)
+  idempotencyKey: string;
+  expiresAt: Timestamp | null;
+  purchasedAt: Timestamp | null;
+  gateway: string | null;
+  gatewayPaymentId: string | null;
+  m_payment_id: string | null;
+  pf_payment_id: string | null;
+}
+
+export async function createOrderWithPosition(
+  input: CreateOrderPositionInput
+): Promise<{ orderId: string; ticketId: string }>;
+```
+
+**What `createOrderWithPosition()` does:**
+
+1. Creates one `orders/{orderId}` document with the order fields
+2. Creates one `tickets/{bookingRef}` document with the position fields
+3. Ensures the position's `orderId` points to the order's `id`
+4. Both writes happen atomically inside a Firestore transaction
+
+**CRITICAL: Idempotent `transaction.set()`, Not `transaction.create()` (F2)**
+
+This function uses **`transaction.set()`** (idempotent upsert), NOT `transaction.create()` (fail on collision). This is **deliberately different** from checkout's existing behavior and must be understood by F8/F10 authors:
+
+- **Current use (F2 only):** Contract checks deliberately reuse fixed fixture ids across repeated runs, so idempotent semantics are required to avoid orphaned documents.
+- **Production safety:** Real callers (F8 comp route, F10 checkout rewrite) always pass a fresh `bookingRef` from `generateBookingRef()` (60-bit CSPRNG entropy), so a collision in production would require the RNG itself to repeat — a failure mode checkout already assumes cannot happen.
+- **Future risk (F8/F10):** If a caller ever passes a non-random, predictable, or reused `bookingRef`, this idempotent behavior will silently overwrite the previous order/position pair instead of failing. This is safe *today* because no caller does that, but **document this assumption in your code when you add F8 and F10.**
+
+**Field Distribution (Additive Only):**
+
+The position document receives:
+- Standard position fields: `bookingRef`, `showId`, `attendeeName`, `attendeeEmail`, `ticketType`, `status` (from `positionStatus`), `checkedInAt: null`, `orderId`
+- Duplicated from the order (temporary, until F10): `amount`, `purchasedAt`, `m_payment_id`, `pf_payment_id`
+- NOT duplicated (order-only): `gateway`, `gatewayPaymentId`
+
+The order document receives all order fields.
 
 ## Active Show Resolution: lib/show-resolution.ts (F1)
 
@@ -502,6 +612,12 @@ unreleased abandoned reservations — were all closed by the security hardening 
 see [docs/ticketing-hardening.md](ticketing-hardening.md) for what changed and how each
 is verified. What remains open:
 
+### `refunded` Status Missing Style Pill (F2, Cosmetic)
+
+The `refunded` status was added to `TicketStatus` in F2, but the admin UI does not yet have a styled status pill for it. When a position has `status: 'refunded'`, it renders as plain text, visually indistinguishable from an unrecognised value. This is cosmetic and non-blocking for F2 (no route currently creates refunded positions), but should be addressed before refund workflows are built (F3 and beyond).
+
+**Where to fix:** Look for `StatusPill` component or similar in `components/admin/` (or wherever position status is displayed). Add a `refunded` case with appropriate styling (likely a muted or greyed-out appearance to distinguish it from active statuses).
+
 ### Emailed QR Ticket Not Yet Built (F5, ticketing-pages mission)
 
 The door scanner (`app/admin/door`) is wired and waiting, but see the standing blocker
@@ -603,6 +719,8 @@ All defined in `sanity/queries.ts`.
 
 ### Firestore Queries
 
+**Positions (tickets collection — primary for F1/F2):**
+
 - `getSoldCountsByTicketType()` (`lib/data/tickets.ts`) — the single counting path for
   both `/tickets` sold-out badges and the checkout route's capacity check. Queries
   `where('showId', '==', showId)` for both `status == 'reserved'` and `status == 'paid'`,
@@ -610,6 +728,12 @@ All defined in `sanity/queries.ts`.
   optional Firestore `Transaction` so the checkout route's read is part of its
   reservation transaction.
 - `db.collection('tickets').where('bookingRef', '==', ref)` — look up a single ticket by ref (used by status endpoint and `lib/checkin.ts`)
+
+**Orders (F2 and beyond):**
+
+- Direct queries on the `orders` collection are not yet used by checkout or other production routes (F10 is the integration point). F2 provides `createOrderWithPosition()` in `lib/orders.ts` as the creation primitive; queries will be added as F8 (comp tickets) and F10 (checkout rewrite) land.
+- To find orders by `showId`: `db.collection('orders').where('showId', '==', showId)`
+- To find orders by buyer email: `db.collection('orders').where('buyerEmail', '==', email)`
 
 ### REST Endpoints
 
@@ -627,7 +751,8 @@ All defined in `sanity/queries.ts`.
 - **Routes**: `app/api/tickets/{checkout,status,itn}/route.ts`
 - **Components**: `components/tickets/`
 - **Constants**: `lib/tickets-constants.ts`
-- **Helpers**: `lib/data/tickets.ts`
+- **Helpers**: `lib/data/tickets.ts`, `lib/orders.ts` (F2 orders/positions creation primitive)
+- **Check-in logic**: `lib/checkin.ts` (door admission rules; calls `checkInByBookingRef()`)
 - **Payment lib**: `lib/payfast.ts` (never import Sanity)
 
 ## FAQ

@@ -7,7 +7,7 @@ goal: 'Build the scalable ticketing foundation from docs/ticketing-system-founda
   admin capability, and an end-to-end human-proven purchase-to-door-scan flow'
 created_at: '2026-08-17T14:39:52.125721+00:00'
 started_at: '2026-08-17T16:35:26.642255+00:00'
-last_active_at: '2026-08-17T17:02:22.088849+00:00'
+last_active_at: '2026-08-17T18:00:00.000000+00:00'
 status: in_progress
 cost_estimate:
   features: 14
@@ -15,8 +15,8 @@ cost_estimate:
   total_calls: 0
 last_checkpoint:
   milestone: M1
-  feature: F1
-  ts: '2026-08-17T17:02:22.088849+00:00'
+  feature: F2
+  ts: '2026-08-17T18:00:00.000000+00:00'
 features:
 - id: F1
   title: 'Resolve `show` document collision: extend archive type for sales fields,
@@ -76,10 +76,17 @@ features:
     by `bookingRef` with no joins, and that read shape is untouched. **Done:** Firestore
     schema compiles, orders collection exists, a test order with one position can
     be created, position document has `orderId` reference, `status` field on position
-    correctly reads as one of four values including `refunded`, and a position can
-    still be fetched by `bookingRef` with all fields intact.'
-  status: pending
+    correctly reads as one of five values including `refunded` (**CORRECTED 2026-08-17,
+    caught by @architect during contract design — the brief originally said ''four
+    values.'' `TicketStatus` already had four members before F2** (`''reserved''`,
+    `''paid''`, `''cancelled''`, `''checked-in''`) **so adding `''refunded''` makes
+    five, not four. The miscount treated F2''s addition as if it started from zero
+    instead of from the pre-existing union.**), and a position can still be fetched
+    by `bookingRef` with all fields intact.'
+  status: done
   milestone: M1
+  started_at: '2026-08-17T17:02:22.088849+00:00'
+  completed_at: '2026-08-17T17:35:54.000000+00:00'
 - id: F3
   title: Fixed capability set and `lib/admin-roles.ts` role→capability mapping with
     behavioural contract assertions

@@ -1,0 +1,124 @@
+schema: athanor.contract/v1
+slug: ticketing-f2-orders-model
+goal: >-
+  Mission ticketing-foundation F2 (§4.2-§4.4). Add the `orders` Firestore collection
+  sitting between `show` and `tickets` (positions): showId, buyerName, buyerEmail,
+  amount, status (reserved/paid/cancelled), expiresAt, idempotencyKey, purchasedAt,
+  gateway, gatewayPaymentId, m_payment_id, pf_payment_id. F2 is ADDITIVE-ONLY on the
+  `tickets` position document: `amount`, `purchasedAt`, `m_payment_id`, and
+  `pf_payment_id` stay exactly as they are (three live consumers still read them
+  directly off `tickets` — see README's "Field-move decision, revised"); the position
+  gains one new field, `orderId: string | null`. Extend `TicketStatus` from four
+  values to five, adding 'refunded'. Add a new `lib/orders.ts` module
+  (createOrderWithPosition()) as the shared creation primitive later features (F8 comp
+  tickets, F10 checkout/ITN rewrite) build on — it writes the four payment fields onto
+  BOTH the order and the position (duplicated, temporarily, until F10's backfill makes
+  the order the sole source of truth). This contract does NOT touch
+  app/api/tickets/checkout/route.ts or app/api/tickets/itn/route.ts; that rewiring
+  (including finally removing the position-level duplication) is F10's explicitly
+  authorised, single reopening of the pinned ITN file. Full decision record, field
+  tables, and the four-vs-five-values correction to the mission brief's Done criteria:
+  contracts/golden/ticketing-f2-orders-model/README.md
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F2
+    name: >-
+      Extend types/index.ts: TicketStatus gains 'refunded' (five values total); Ticket
+      (position) interface is UNCHANGED except it gains orderId: string | null (all
+      existing fields, including amount/purchasedAt/m_payment_id/pf_payment_id, stay —
+      see README's "Field-move decision, revised" for why); add new OrderStatus
+      ('reserved'|'paid'|'cancelled') and Order interface. Add lib/orders.ts exporting
+      ORDERS_COLLECTION and createOrderWithPosition() (transactional, idempotent
+      transaction.set() on both the order and position documents, writing
+      amount/purchasedAt/m_payment_id/pf_payment_id onto BOTH — see README's
+      "lib/orders.ts" section for the exact field lists and the idempotent-vs-create
+      rationale). `orderId` is a non-optional (required-key, nullable-value) field on
+      Ticket, so every existing site that constructs a Ticket object literal off a raw
+      Firestore doc needs the same one-line addition, `orderId: data['orderId'] ??
+      null` (or the equivalent cast): lib/checkin.ts's toTicket(),
+      app/admin/page.tsx's fetchTickets(), and app/api/admin/tickets/route.ts's GET
+      handler — three sites total, all one line, no other line in any of the three
+      changes. app/api/tickets/checkout/route.ts and app/api/tickets/itn/route.ts are
+      NOT touched.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-f2-orders-model/README.md
+  - contracts/checks/ticketing-f2-orders-model/tsconfig.typecheck.json
+  - contracts/checks/ticketing-f2-orders-model/fixtures/ticket-status-typecheck.ts
+  - contracts/checks/ticketing-f2-orders-model/fixtures/order-position-shape-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after the
+        types/index.ts, lib/orders.ts, and lib/checkin.ts changes.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        TicketStatus is exactly the five-member union (the four pre-existing values
+        plus 'refunded'), proved by the real TypeScript compiler assigning each valid
+        literal and rejecting a sixth invalid one via @ts-expect-error — not a grep for
+        the word "refunded". See the golden fixture's header for the correction to the
+        mission brief's "four values" Done criterion (it should read five).
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-f2-orders-model/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        Ticket (position) gains orderId: string | null ADDITIONALLY to every
+        pre-existing field, including amount/purchasedAt/m_payment_id/pf_payment_id
+        (all positively asserted present, not @ts-expect-error'd away — F2 is
+        additive-only, see README's "Field-move decision, revised"); Order exists with
+        the full §4.2/§4.4 field set; Order['status'] is the 3-member OrderStatus,
+        provably rejecting TicketStatus-only values ('checked-in', 'refunded'). Same
+        tsc invocation as A2 (both fixtures share one tsconfig).
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-f2-orders-model/tsconfig.typecheck.json
+
+    - id: A4
+      description: >-
+        createOrderWithPosition() writes a linked orders/{id} + tickets/{bookingRef}
+        pair against live Firestore: the order document carries the given
+        showId/buyerEmail/amount/status/gateway/idempotencyKey; the position carries
+        orderId pointing at the order PLUS amount/m_payment_id/pf_payment_id
+        duplicated from the input (but NOT gateway/gatewayPaymentId, which are
+        order-only); and the position is still findable by the same bookingRef query
+        lib/checkin.ts uses, with every field present. Uses a fixed, never-deleted
+        fixture id pair (idempotent set(), not create()) — see README's "Fixture
+        lifecycle".
+      command: >-
+        npx tsx contracts/checks/ticketing-f2-orders-model/check-create-order-with-position.mjs
+
+    - id: A5
+      description: >-
+        A position written with status 'refunded' round-trips correctly through
+        Firestore, and a live call to the real, UNMODIFIED checkInByBookingRef()
+        against it is refused (code 'unpaid', httpStatus 403) and leaves the
+        position's status untouched at 'refunded' — proving lib/checkin.ts's existing
+        decision table needs no new refusal code to stay fail-closed against the new
+        status value. This check shares NATIONAL_SHOW_ID with production data (the
+        only way to actually exercise checkInByBookingRef()'s real gate) and
+        self-verifies its own fixture bookingRef contains an unmistakable
+        'CONTRACT-F2-FIXTURE' marker before running, refusing to execute otherwise —
+        so it can never be silently repointed at a real booking reference.
+      command: >-
+        npx tsx contracts/checks/ticketing-f2-orders-model/check-refunded-status-and-checkin-refusal.mjs
+
+    - id: A6
+      description: >-
+        The 14 pre-existing, real nationalShow Firestore tickets documents remain
+        readable and undiminished after F2's schema changes, and none of them were
+        backfilled with an orderId (F2 ships no migration) — proving F2's schema and
+        lib/orders.ts changes never touch or mutate legacy positions.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f2-orders-model/check-national-show-tickets-unchanged.mjs
+
+    - id: A7
+      description: pnpm lint passes with zero errors after all F2 changes.
+      command: pnpm lint

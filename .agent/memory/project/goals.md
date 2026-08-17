@@ -115,6 +115,16 @@ that basis — its detection disagrees with `active.json`, which is authoritativ
 §8 buyer accounts" for full detail, including the F1 schema-collision decision and the DNS/Resend
 sequencing note (nameservers still point at the old host; Resend DNS must wait for the switch).
 
+### 2026-08-17 (later still) — F2 done
+
+~~F2 (orders collection, position-level `orderId`, `TicketStatus` gains `refunded`,
+gateway-neutral payment fields)~~ ✅ **DONE**, gate 7/7 (re-run twice), @qa PASS across two
+rounds, docs complete. Checkpoint now M1/F2, 2 of 14 features shipped. See `learned.md`
+"Ticketing foundation — F2 done" for the schema-verification catch (a proposed type move would
+have denied fields present on all 14 live position documents with no migration in scope) and the
+check-quality lessons (verify-by-construction for typecheck assertions, a false citation caught
+in a decision-record doc, an idle-but-not-actually-done report caught by checking disk state).
+
 ### 2026-08-17 (later) — F1 done, `ticketing-foundation` now the active in-progress mission
 
 ~~F1 (resolve the `show` schema collision)~~ ✅ **DONE**, @qa PASS, gate 9/9 (re-run twice by the

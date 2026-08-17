@@ -67,6 +67,7 @@ function toTicket(id: string, data: FirebaseFirestore.DocumentData): Ticket {
     checkedInAt: (data['checkedInAt'] as Timestamp) ?? null,
     m_payment_id: (data['m_payment_id'] as string) ?? null,
     pf_payment_id: (data['pf_payment_id'] as string) ?? null,
+    orderId: (data['orderId'] as string) ?? null,
   };
 }
 

@@ -1,0 +1,9 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../types/index.ts",
+    "fixtures/ticket-status-typecheck.ts",
+    "fixtures/order-position-shape-typecheck.ts"
+  ],
+  "exclude": []
+}

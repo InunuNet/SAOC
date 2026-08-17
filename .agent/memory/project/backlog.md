@@ -1193,3 +1193,15 @@ reaches `paid`.
   moved to 60-bit Crockford base32 references, both already covered correctly in
   `docs/ticketing.md` and `docs/ticketing-hardening.md`. Flagged while writing
   `docs/ticketing-system-foundation-spec.md` — fix the doc in place (not in scope of that spec).
+
+- [P3] `refunded` TicketStatus has no `StatusPill` style — renders its literal text through the
+  neutral fallback, visually indistinguishable from an unrecognised status and from nothing in
+  particular. Found by @qa during F2 (2026-08-17), non-blocking. Natural home is F8 (comp/refund
+  route) or a dashboard-polish pass. `components/admin/StatusPill.tsx` `STATUS_STYLES`.
+- [P2] `createOrderWithPosition()` in `lib/orders.ts` uses idempotent `transaction.set()`, not
+  `.create()` — a colliding `bookingRef` silently overwrites instead of failing. Inert today (no
+  live caller; ~60 bits of CSPRNG entropy per ref) but F8/F10 must confirm collision-detection is
+  not load-bearing in their flows before reusing this primitive.
+- [P2] `amount`/`purchasedAt`/`m_payment_id`/`pf_payment_id` are duplicated on both `Order` and
+  `Ticket` after F2, deliberately. F10 must remove the position copies together with a backfill
+  when checkout/ITN stop writing them. Until then nothing detects divergence between the copies.

@@ -74,6 +74,7 @@ async function fetchTickets(): Promise<Ticket[]> {
       checkedInAt: data['checkedInAt'] ?? null,
       m_payment_id: data['m_payment_id'] ?? null,
       pf_payment_id: data['pf_payment_id'] ?? null,
+      orderId: data['orderId'] ?? null,
     };
   });
 }
