@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers';
 import { getAuth, type DecodedIdToken } from 'firebase-admin/auth';
 
-import { initAdmin } from '@/lib/firebase-admin';
+import { initAdmin } from './firebase-admin';
+import { resolve, type Capability } from './admin-roles';
 
 /**
  * Single home for the admin authorisation decision. See
@@ -109,4 +110,97 @@ export async function getAdminSession(): Promise<AdminAuthResult> {
     // Never throw — a caller that forgets a try/catch must still fail closed.
     return { ok: false, reason: 'invalid-session' };
   }
+}
+
+// ---------------------------------------------------------------------------------------------
+// F4 — the `roles` custom claim, AND-only composition with `admin:true`. See
+// contracts/golden/ticketing-f4-roles-claim/README.md for the full decision record (spec
+// §5.4-§5.6). Builds on F3's lib/admin-roles.ts (CAPABILITIES, ROLE_NAMES,
+// ROLE_TO_CAPABILITIES, resolve()), unmodified.
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * A show ID maps to the list of role names held for that scope. `'*'` is the org-wide scope —
+ * never date-limited. Untrusted, mutable-by-a-future-editor data at runtime (a Firebase custom
+ * claim), not a compile-time-checked literal — role-name resolution within each array delegates
+ * to lib/admin-roles.ts's `resolve()`, which already fails closed on unrecognised names.
+ */
+export type RolesClaim = Record<string, string[]>;
+
+/** The live date window a specific show's role grants are honoured within. */
+export interface ShowWindow {
+  startDate: Date;
+  endDate: Date;
+}
+
+/**
+ * A pure function from `showId` to that show's date window, or `null` if the show can't be
+ * found. Injected, not read live from Sanity inside `resolveRoleCapabilitiesForShow` — see the
+ * golden README's "Why the date-window lookup is injected" for the hot-path reasoning (spec
+ * §5.4, §5.6). A `null` result means the per-show grant is refused, not defaulted open.
+ */
+export type ShowWindowLookup = (showId: string) => ShowWindow | null;
+
+function isWithinWindow(now: Date, window: ShowWindow): boolean {
+  return now >= window.startDate && now <= window.endDate;
+}
+
+/**
+ * Unions `roles['*']` (never date-limited) with `roles[showId]` (honoured only while `now`
+ * falls within `showId`'s date window, as returned by `lookupShowWindow`). A `null` lookup
+ * result means the per-show grant is not honoured, not defaulted open. Unknown role names
+ * inside either array resolve via `resolve()` — they contribute nothing, exactly as F3 already
+ * proved for that function in isolation.
+ */
+export function resolveRoleCapabilitiesForShow(
+  roles: RolesClaim | null | undefined,
+  showId: string,
+  opts: { now: Date; lookupShowWindow: ShowWindowLookup },
+): Set<Capability> {
+  const result = new Set<Capability>();
+  if (!roles) return result;
+
+  const orgWideRoleNames = roles['*'];
+  if (orgWideRoleNames) {
+    for (const capability of resolve(orgWideRoleNames)) result.add(capability);
+  }
+
+  const perShowRoleNames = roles[showId];
+  if (perShowRoleNames) {
+    const window = opts.lookupShowWindow(showId);
+    if (window && isWithinWindow(opts.now, window)) {
+      for (const capability of resolve(perShowRoleNames)) result.add(capability);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * The single entry point route code calls. Gates on `isAdminToken(decoded)` FIRST — a role
+ * never substitutes for `admin:true` — and only then checks whether the role-derived capability
+ * set contains `capability`. `admin:true` alone never satisfies a capability requirement. This
+ * one `if`-then-check is the entire AND-only composition; there is no third code path. See the
+ * golden README's "Why hasCapability reuses isAdminToken" for why this delegates rather than
+ * re-implements the admin/verified/allowlisted gate.
+ */
+export function hasCapability(
+  decoded: DecodedIdToken | null | undefined,
+  showId: string,
+  capability: Capability,
+  opts?: { now?: Date; lookupShowWindow?: ShowWindowLookup },
+): boolean {
+  // The explicit `!decoded` check (redundant with isAdminToken's own null check) is what lets
+  // TypeScript narrow `decoded` to non-null below — isAdminToken() returns a plain boolean, not
+  // a type predicate, so calling it alone doesn't narrow across the function-call boundary.
+  if (!decoded || !isAdminToken(decoded)) return false;
+
+  const now = opts?.now ?? new Date();
+  const lookupShowWindow = opts?.lookupShowWindow ?? (() => null);
+
+  // DecodedIdToken carries an index signature (`[key: string]: any`) for custom claims, so
+  // `.roles` is accessible without a cast beyond narrowing its type to RolesClaim.
+  const roles = decoded.roles as RolesClaim | undefined;
+
+  return resolveRoleCapabilitiesForShow(roles, showId, { now, lookupShowWindow }).has(capability);
 }

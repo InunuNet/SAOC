@@ -18,7 +18,15 @@
  * This script does NOT touch ADMIN_EMAIL_ALLOWLIST — that is a live env var on the deployed
  * server process, a separate manual step, printed as a reminder below.
  *
+ * F4 (ticketing-foundation) extends this script with role-scoped grants (spec §5.6): passing
+ * `--role <name>` (repeatable) and `--show <showId>` grants that role, scoped to that show, in
+ * addition to `admin: true` (a role never does anything on its own — see
+ * lib/admin-auth.ts's hasCapability()). Validated by lib/admin-grant-validation.ts's
+ * validateGrantArgs() — this script's real validation path, not a re-implementation.
+ *
  * Run with: pnpm exec tsx scripts/admin-grant.ts <email> [--existing]
+ *       or: pnpm exec tsx scripts/admin-grant.ts <email> --role <role> [--role <role>...] \
+ *             --show <showId> [--existing]
  *
  * Required env (from .env.local):
  *   FIREBASE_ADMIN_PROJECT_ID
@@ -31,6 +39,9 @@ import { randomBytes } from 'node:crypto';
 import { config } from 'dotenv';
 import { initializeApp, cert, type App } from 'firebase-admin/app';
 import { getAuth, type UserRecord } from 'firebase-admin/auth';
+
+import { validateGrantArgs } from '@/lib/admin-grant-validation';
+import type { RolesClaim } from '@/lib/admin-auth';
 
 config({ path: '.env.local', quiet: true });
 
@@ -87,6 +98,20 @@ function printProvenance(user: UserRecord): void {
   );
 }
 
+interface RoleGrant {
+  roles: string[];
+  show: string;
+}
+
+/** Adds `roleNames` to `show`'s array in `existing`, deduplicated. Preserves every other entry. */
+function mergeRolesClaim(existing: RolesClaim | undefined, show: string, roleNames: string[]): RolesClaim {
+  const merged: RolesClaim = { ...existing };
+  const current = new Set(merged[show] ?? []);
+  for (const name of roleNames) current.add(name);
+  merged[show] = [...current];
+  return merged;
+}
+
 /**
  * True for the exact shape a self-registered squatter necessarily has: no federated
  * provider (password only) and never verified by anyone (federated providers set
@@ -112,12 +137,20 @@ function printSquatterShapeWarning(): void {
 async function createAndGrantFreshUser(
   auth: ReturnType<typeof getAuth>,
   email: string,
+  roleGrant?: RoleGrant,
 ): Promise<void> {
   const { uid } = await auth.createUser({ email, password: generateRandomPassword() });
-  await auth.setCustomUserClaims(uid, { admin: true });
+  const claims: { admin: true; roles?: RolesClaim } = { admin: true };
+  if (roleGrant) {
+    claims.roles = mergeRolesClaim(undefined, roleGrant.show, roleGrant.roles);
+  }
+  await auth.setCustomUserClaims(uid, claims);
   await auth.updateUser(uid, { emailVerified: true });
 
   console.log(`Granted admin access to ${email} (uid ${uid}, newly created).`);
+  if (roleGrant) {
+    console.log(`Granted role(s) ${roleGrant.roles.join(', ')} scoped to '${roleGrant.show}'.`);
+  }
 
   const resetLink = await auth.generatePasswordResetLink(email);
   console.log(
@@ -135,6 +168,7 @@ async function grantExistingUser(
   auth: ReturnType<typeof getAuth>,
   user: UserRecord,
   allowExisting: boolean,
+  roleGrant?: RoleGrant,
 ): Promise<boolean> {
   printProvenance(user);
 
@@ -152,9 +186,20 @@ async function grantExistingUser(
     return false;
   }
 
+  // Custom claims are replaced wholesale by setCustomUserClaims, not merged — any existing
+  // roles claim not touched by this grant must be carried forward explicitly, or it is
+  // silently wiped.
+  const existingRoles = user.customClaims?.roles as RolesClaim | undefined;
+  const claims: { admin: true; roles?: RolesClaim } = { admin: true };
+  if (roleGrant) {
+    claims.roles = mergeRolesClaim(existingRoles, roleGrant.show, roleGrant.roles);
+  } else if (existingRoles) {
+    claims.roles = existingRoles;
+  }
+
   // Load-bearing: never call updateUser(uid, { emailVerified: true }) on this branch. The
   // account's emailVerified value is left exactly as found, whatever it is.
-  await auth.setCustomUserClaims(user.uid, { admin: true });
+  await auth.setCustomUserClaims(user.uid, claims);
 
   console.log(
     `\nGranted admin access to ${user.email ?? '(unknown email)'} (uid ${user.uid}) —\n` +
@@ -162,17 +207,69 @@ async function grantExistingUser(
       `(currently ${user.emailVerified}). No credential material was generated for this account\n` +
       'on this branch — its password and verification state remain whatever they already were.',
   );
+  if (roleGrant) {
+    console.log(`Granted role(s) ${roleGrant.roles.join(', ')} scoped to '${roleGrant.show}'.`);
+  }
   return true;
 }
 
+interface ParsedArgs {
+  email?: string;
+  existing: boolean;
+  roles: string[];
+  show?: string;
+}
+
+function parseArgs(argv: string[]): ParsedArgs {
+  let email: string | undefined;
+  let existing = false;
+  const roles: string[] = [];
+  let show: string | undefined;
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--existing') {
+      existing = true;
+    } else if (arg === '--role') {
+      i += 1;
+      const value = argv[i];
+      if (value) roles.push(value);
+    } else if (arg === '--show') {
+      i += 1;
+      show = argv[i];
+    } else if (!arg.startsWith('--') && !email) {
+      email = arg;
+    }
+  }
+
+  return { email, existing, roles, show };
+}
+
 async function main(): Promise<void> {
-  const args = process.argv.slice(2);
-  const allowExisting = args.includes('--existing');
-  const email = args.find((a) => !a.startsWith('--'));
+  const { email, existing: allowExisting, roles, show } = parseArgs(process.argv.slice(2));
   if (!email) {
-    console.log('Usage: pnpm exec tsx scripts/admin-grant.ts <email> [--existing]');
+    console.log(
+      'Usage: pnpm exec tsx scripts/admin-grant.ts <email> [--existing]\n' +
+        '   or: pnpm exec tsx scripts/admin-grant.ts <email> --role <role> [--role <role>...] ' +
+        '--show <showId> [--existing]',
+    );
     process.exitCode = 1;
     return;
+  }
+
+  let roleGrant: RoleGrant | undefined;
+  const requestingRoleGrant = roles.length > 0 || show !== undefined;
+  if (requestingRoleGrant) {
+    const validation = validateGrantArgs({ roles, show: show ?? '' });
+    if (!validation.ok) {
+      console.error(`REFUSED — ${validation.reason}`);
+      process.exitCode = 1;
+      return;
+    }
+    // validateGrantArgs refuses an empty show (show ?? ''), so ok:true here guarantees `show`
+    // was actually provided — TypeScript can't narrow that through the function call, hence
+    // the assertion.
+    roleGrant = { roles, show: show as string };
   }
 
   const auth = getAuth(initAdminApp());
@@ -188,12 +285,12 @@ async function main(): Promise<void> {
   }
 
   if (!existingUser) {
-    await createAndGrantFreshUser(auth, email);
+    await createAndGrantFreshUser(auth, email, roleGrant);
     printAllowlistReminder(email);
     return;
   }
 
-  const mutated = await grantExistingUser(auth, existingUser, allowExisting);
+  const mutated = await grantExistingUser(auth, existingUser, allowExisting, roleGrant);
   if (!mutated) {
     process.exitCode = 1;
     return;

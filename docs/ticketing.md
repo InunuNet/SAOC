@@ -560,6 +560,255 @@ This is **fail-closed by construction**. If a custom claim holds `roles: {"*": [
 
 A reader seeing `lib/admin-roles.ts` for the first time might reasonably ask: "OK, so if I have this mapping, what capability grants do I actually hold?" The honest answer today is: **"Nothing yet — F4 hasn't hooked this into any check."** The capabilities are real in the code; their enforcement is deferred. This is intentional — F3 establishes the concepts and the structure; F4 makes them load-bearing.
 
+## Role Grants and Capability Checks: The `roles` Custom Claim (F4)
+
+**Status:** F4 ships the decision functions and CLI tooling. No route calls `hasCapability()` yet
+— route wiring happens in F5 and beyond as each protected surface is built. See the
+decision record: `contracts/golden/ticketing-f4-roles-claim/README.md`.
+
+F4 introduces the `roles` custom claim to Firebase Auth custom claims, extending
+`lib/admin-auth.ts` with AND-only composition (a role never substitutes for `admin:true`)
+and date-window-aware capability resolution. It adds four new pure decision modules that
+the admin CLI scripts (`admin-grant.ts`, `admin-revoke.ts`, `admin-list.ts`) and a
+one-time migration script (`admin-migrate-roles.ts`) wire into the live Firebase Admin SDK.
+
+### The `roles` Custom Claim Shape
+
+A `roles` claim is a record from show scope to role-name arrays:
+
+```typescript
+export type RolesClaim = Record<string, string[]>;
+```
+
+Example:
+
+```json
+{
+  "*": ["owner"],
+  "nationalShow": ["manager", "door-staff"]
+}
+```
+
+The `"*"` scope grants a role **organisation-wide**, never subject to date limits.
+A show-specific scope (e.g. `"nationalShow"`) grants a role only to that show,
+honoured only while the show's start/end dates straddle the current moment.
+
+An unrecognised role name anywhere in a claim contributes no capabilities (fail-closed).
+
+### The AND-Only Composition Rule
+
+A token grants a capability if, and only if, **all three** hold:
+
+1. `decoded.admin === true` (the existing admin custom claim from F3)
+2. `decoded.roles` (a RolesClaim) resolves to the requested capability for the `showId`
+3. If the grant is per-show-scoped, the current time falls within the show's window
+
+Notably: a role alone (with `admin: false`) grants **nothing**. An `admin: true` claim
+with no `roles` claim grants **nothing**. Both must be present and the role must
+resolve to a matching capability. See `lib/admin-auth.ts:187–206` (`hasCapability()`)
+for the implementation.
+
+### Date-Window Lapse and Injection
+
+Per-show-scoped grants are honoured only within a show's date window. This is implemented
+as a pure function with an **injected** show-window lookup (lines 142–177), not a live
+read from Sanity inside the decision function:
+
+```typescript
+export interface ShowWindow {
+  startDate: Date;
+  endDate: Date;
+}
+
+export type ShowWindowLookup = (showId: string) => ShowWindow | null;
+
+export function resolveRoleCapabilitiesForShow(
+  roles: RolesClaim | null | undefined,
+  showId: string,
+  opts: { now: Date; lookupShowWindow: ShowWindowLookup },
+): Set<Capability>
+```
+
+**The lookup is injected, not read live**, because adding a network read to every
+capability check (on the door scanner hot path, or every admin API call) is the wrong
+tradeoff for reliability. A `null` lookup result means the grant is **not** honoured
+(never defaulted open). When a route calls `hasCapability()` for the first time (F5
+onward), it will pass a default lookup; that default **does not yet exist** — F4
+proves the decision logic is correct regardless of the lookup implementation. See
+"Known gaps" below.
+
+### Four New Decision Modules
+
+#### lib/admin-grant-validation.ts (lines 1–62)
+
+Validates role-scoped grant arguments:
+
+```typescript
+export function validateGrantArgs(args: {
+  roles: string[];
+  show: string;
+}): { ok: true } | { ok: false; reason: string };
+```
+
+Refuses:
+- Empty `roles` (no defaults)
+- Empty `show` (no defaults)
+- Any role name not in `ROLE_NAMES`
+- `door-staff` or `manager` scoped to `'*'` (organisation-wide)
+
+A mixed role list is **refused as a whole** if any one role violates the scope
+restriction — no partial grants.
+
+#### lib/admin-revoke-plan.ts (lines 1–50)
+
+Plans role-scoped revokes:
+
+```typescript
+export function computeRevokePlan(
+  existingRoles: RolesClaim | undefined,
+  target?: { role: string; show: string },
+): { newRoles: RolesClaim; revokeRefreshTokens: true; fullRevoke: boolean };
+```
+
+- No `target` → full revoke (`newRoles: {}`)
+- A `target` → removes that role from that show, pruning the key if empty
+- **Every path** returns `revokeRefreshTokens: true` — spec §5.5 treats revokes as
+  security-critical, applied immediately regardless of whether the claim actually
+  changed
+
+#### lib/admin-orphan-roles.ts (lines 1–28)
+
+Detects stale role names after a rename:
+
+```typescript
+export function findOrphanRoles(
+  roles: RolesClaim | undefined,
+): string[];
+```
+
+Returns the deduplicated list of role names held in the claim that no longer exist
+in `lib/admin-roles.ts`'s `ROLE_NAMES`. Checked live against `ROLE_NAMES`, not a
+static copy, so a future rename is caught here without editing this file.
+
+#### lib/admin-migrate-roles-plan.ts (lines 1–62)
+
+Plans the one-time migration for existing admin accounts:
+
+```typescript
+export function computeMigrationPlan(
+  accounts: { uid: string; admin?: boolean; roles?: RolesClaim }[],
+): ({ uid: string; action: 'grant'; newRoles: RolesClaim }
+  | { uid: string; action: 'skip'; reason: string })[];
+
+export function parseMigrationArgs(argv: string[]): { apply: boolean };
+```
+
+- Grants `{ '*': ['owner'] }` only to `admin: true` accounts with no existing
+  non-empty `roles` claim (idempotent, never overwrites)
+- `apply: true` only when `'--apply'` is literally in `argv`; dry-run is the default
+- The `'grant'` action carries **no `revokeRefreshTokens` field**, enforced at the
+  TypeScript level (not a runtime check) — the migration is additive-only and must
+  never revoke sessions
+
+### CLI Usage: Four Scripts (Extended from F3)
+
+All four scripts read `.env.local` for Firebase Admin SDK credentials:
+`FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_ADMIN_CLIENT_EMAIL`,
+`FIREBASE_ADMIN_PRIVATE_KEY`.
+
+#### Grant a role with a scope
+
+```bash
+pnpm exec tsx scripts/admin-grant.ts alice@example.com \
+  --role door-staff --show nationalShow
+```
+
+Grants the `door-staff` role scoped to `nationalShow` to `alice@example.com`.
+Also grants the account `admin: true` if not already granted. Merges with any
+existing per-show grants without overwriting them.
+
+For an organisation-wide grant (F3 legacy, or granting `owner`):
+
+```bash
+pnpm exec tsx scripts/admin-grant.ts bob@example.com
+```
+
+Grants only `admin: true` (no role). If instead you want to grant `owner` org-wide
+(which is scoped-to-`'*'` in the `roles` claim):
+
+```bash
+pnpm exec tsx scripts/admin-grant.ts bob@example.com --role owner --show '*'
+```
+
+#### Revoke a role from a specific show
+
+```bash
+pnpm exec tsx scripts/admin-revoke.ts alice@example.com \
+  --role door-staff --show nationalShow
+```
+
+Removes `door-staff` from `nationalShow` only. Other roles and other scopes
+are untouched. Revokes refresh tokens immediately (spec §5.5), so any open
+session fails at the next `/admin` request.
+
+For a full revoke (clears `admin` and all roles):
+
+```bash
+pnpm exec tsx scripts/admin-revoke.ts alice@example.com
+```
+
+#### List admins and flag orphaned roles
+
+```bash
+pnpm exec tsx scripts/admin-list.ts
+```
+
+Lists every `admin: true` account, showing email, uid, `emailVerified` status,
+`tokensValidAfterTime`, and any roles claim. Flags any role name that no longer
+exists in `lib/admin-roles.ts:9` (orphan roles — remnants of a rename).
+
+#### One-time migration (dry-run by default)
+
+```bash
+pnpm exec tsx scripts/admin-migrate-roles.ts
+```
+
+Reads the live Firebase Auth user pool and prints a dry-run plan. Shows which
+accounts will be granted `{ '*': ['owner'] }` and which will be skipped (and why).
+
+To apply the plan:
+
+```bash
+pnpm exec tsx scripts/admin-migrate-roles.ts --apply
+```
+
+The migration is idempotent — re-running is safe. An account already holding
+a `roles` claim (whether from a prior run or a previous manual grant) is
+always skipped, never overwritten.
+
+### Known Gaps
+
+**1. No claim-size guard**
+
+Firebase caps custom claims at approximately 1000 bytes. A single account holding
+`manager` across roughly 24 concurrent shows, or single-role grants across roughly
+36 shows, exceeds the cap. Nothing checks claim size before `setCustomUserClaims()`,
+so an operator sees a raw `auth/claims-too-large` error with no advance warning.
+Batched grant work (F13) will add a size check.
+
+**2. Throwing lookup propagates unhandled**
+
+If `lookupShowWindow()` throws, the exception propagates out of `hasCapability()` and
+500s the request instead of cleanly 403ing (fail-loud, not fail-open, so not a security
+defect). Whoever wires F5's default Sanity-backed lookup should decide whether to
+wrap it in a try/catch.
+
+**3. No cached Sanity-backed lookup yet**
+
+F4 proves the decision function is correct for any lookup it's given. The real,
+short-TTL-cached show-window lookup (reading `show.startDate`/`show.endDate` from
+Sanity) does not exist yet — it's deferred to the first live caller (F5 onward).
+
 ## Active Show Resolution: lib/show-resolution.ts (F1)
 
 The `resolveActiveShow()` function determines which `show` document is currently sellable. It is a pure function with no external dependencies, testable against fixtures:

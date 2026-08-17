@@ -409,6 +409,65 @@ Feature F3 of the ticketing mission establishes a fixed set of seven capabilitie
 
 See [docs/ticketing.md](ticketing.md) § "Admin Roles and Capabilities" for the full rationale, including why `owner` is derived from the fixed set, why the lookup capability is split into two for POPIA, and what remains for F4 to complete.
 
+## Capability Checks (F4): When Routes Will Call hasCapability()
+
+**Status:** F4 ships the `hasCapability()` decision function (`lib/admin-auth.ts:187–206`) and proves it offline. No route calls it yet. Route wiring happens in F5 and beyond as each protected surface is built.
+
+When a route **does** check a capability, it will call:
+
+```typescript
+export function hasCapability(
+  decoded: DecodedIdToken | null | undefined,
+  showId: string,
+  capability: Capability,
+  opts?: { now?: Date; lookupShowWindow?: ShowWindowLookup },
+): boolean;
+```
+
+This is an **additive gate on top of** `isAdminToken()`, not a replacement for it:
+
+- **First**, `hasCapability()` reuses `isAdminToken()` — it does not duplicate the
+  `admin: true`, `email_verified: true`, and allowlist checks.
+- **Then**, if the token is admin, `hasCapability()` checks whether the token's
+  `roles` custom claim resolves to the requested capability for that `showId`.
+- An `admin: true` token with no `roles` claim is refused every capability.
+- A token with a matching `roles` claim but `admin: false` is refused every
+  capability.
+
+For example, a route protecting `issue-comp` capability would do:
+
+```typescript
+import { NextResponse } from 'next/server';
+
+const session = await getAdminSession();
+if (!session.ok) {
+  const status = session.reason === 'no-session' || session.reason ===
+    'invalid-session' ? 401 : 403;
+  return NextResponse.json(
+    { error: status === 401 ? 'Unauthorized' : 'Forbidden' },
+    { status }
+  );
+}
+
+if (!hasCapability(session.decodedToken, showId, 'issue-comp', {
+  // F5 must replace this placeholder with a real cached Sanity-backed lookup.
+  lookupShowWindow: (id: string) => null,
+})) {
+  return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+}
+```
+
+**Important:** a caller that omits the `lookupShowWindow` option (passing only
+`showId` and `capability`) will silently honour only `'*'`-scoped grants — every
+per-show-scoped grant defaults to `null` lookup and is refused. When F5 wires this
+gate, a route protecting a per-show capability **must** pass a real lookup function
+(the live Sanity-backed one, once it exists in F5). This is the footgun to watch.
+
+See [docs/ticketing.md](ticketing.md) § "Role Grants and Capability Checks: The
+`roles` Custom Claim (F4)" for the full specification, including the three known gaps
+(no claim-size guard, throwing lookup propagates unhandled, no live Sanity-backed
+lookup yet).
+
 ## Out of scope here (F4 / M2)
 
 The human end-to-end door-scanner proof is later work (mission `admin-auth-hardening`,

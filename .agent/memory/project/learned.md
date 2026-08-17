@@ -1080,3 +1080,46 @@ cross-reference in `docs/admin-access.md`.
    real documentation prose, including enforcement described in the present tense for code that
    enforces nothing yet. Sonnet 5 remains the default for cheap/fast subagent work here.
    against `lib/admin-auth.ts` as it actually exists before being treated as settled.
+
+## Ticketing foundation — F4 done: verify agent reports against disk, every time (2026-08-17)
+
+F4 (`roles` custom claim per-show map, AND-only composition, revoke-on-mutate tooling, batch-grant
+tooling, date-window lapse, one-time admin migration) shipped, gate 12/12 (verified twice
+independently by @maintainer), F3's gate re-run and still 8/8 (no regression from F4's extension
+of `lib/admin-auth.ts`), @qa PASS (8 mutants attempted, 7 died). This is the second session
+running where the same root-cause pattern from F3's item 1 above cost real work, generalised here:
+
+1. **An agent's "done" and the file's contents are two separate claims — verify every one.**
+   @docs reported the same three fixes as applied twice while the file was unchanged both times,
+   and separately reported a fix while re-sending a snippet that still contained the defect. Every
+   agent report on this feature was checked against disk before being accepted; at least two
+   would have shipped defects otherwise. Treat a completion report as a hypothesis to check, not a
+   fact to record.
+2. **A stale idle notification is not a completion signal.** @docs went idle *before* receiving a
+   correction, and the idle notification then arrived after the correction was sent — reading the
+   notification as "finished the corrections" would have been wrong. Check the artifact itself,
+   not the order notifications happen to arrive in.
+3. **Documentation fabricates plausible symbols — sweep every named symbol against disk.**
+   `createShowWindowLookup()` was documented as a callable import; it exists nowhere in the
+   codebase. A symbol name that *sounds* right survives self-review, because self-review checks
+   prose against intent, not prose against the filesystem. Fix that worked: require the agent to
+   grep every function/type/path it named and confirm each exists before the doc is accepted.
+4. **Don't spawn a replacement agent without standing down the original first.** A second @docs
+   was spawned on the same one-line fix while the first was still live; both edited the same code
+   block. Harmless this time (the second made no edit), but it could have half-overwritten the
+   snippet. Stand an agent down explicitly before replacing it on the same file.
+5. **Assertion coverage gaps hide behind shared fixtures.** F3's A3 had four cases all using one
+   allowlisted email, so a mutant dropping the allowlist check passed all four — invisible until
+   @qa varied the input the fixtures held constant. Where several cases share a `BASE` fixture,
+   ask which field none of them varies — that field is unasserted. (Same lesson as F3's golden
+   README overstating what an assertion proves, caught early again this round.)
+
+Two real gaps found and deliberately deferred rather than fixed inline (both in `backlog.md`): no
+claim-size guard on the grant path (Firebase caps custom claims at ~1000 bytes, roughly 24
+per-show `manager` grants exceeds it — target F13's batch-grant work), and a throwing
+`lookupShowWindow` that would propagate out of `hasCapability()` as a raw 500 instead of a clean
+403 (not a security defect — fail-loud, not fail-open — but F5 must decide whether to wrap it when
+wiring the real Sanity-backed lookup). The live one-time migration
+(`scripts/admin-migrate-roles.ts`) has **NOT** been run against the live project — it is dry-run
+by default; no account, including `brad@inunu.net` (the sole admin), currently holds a `roles`
+claim. Running it with `--apply` is human-gated, Brad's call.

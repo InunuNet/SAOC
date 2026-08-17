@@ -1,0 +1,13 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/admin-auth.ts",
+    "../../../lib/admin-roles.ts",
+    "../../../lib/admin-grant-validation.ts",
+    "../../../lib/admin-revoke-plan.ts",
+    "../../../lib/admin-orphan-roles.ts",
+    "../../../lib/admin-migrate-roles-plan.ts",
+    "fixtures/roles-claim-typecheck.ts"
+  ],
+  "exclude": []
+}

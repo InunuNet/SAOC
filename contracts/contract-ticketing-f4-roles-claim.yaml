@@ -1,0 +1,207 @@
+schema: athanor.contract/v1
+slug: ticketing-f4-roles-claim
+goal: >-
+  Mission ticketing-foundation F4 (spec §5.4-§5.6). Add the `roles` custom-claim
+  composition to lib/admin-auth.ts (AND-only with admin:true, fail-closed on
+  unknown role names, date-window lapse for per-show grants via an injectable
+  show-window lookup), plus four new pure, offline-testable decision modules
+  that scripts/admin-grant.ts, scripts/admin-revoke.ts, scripts/admin-list.ts,
+  and a new scripts/admin-migrate-roles.ts wire up to the live Firebase Admin
+  SDK. Full decision record, exact module shapes, defeating mutations for
+  every assertion, and the four live-migration-safety decisions:
+  contracts/golden/ticketing-f4-roles-claim/README.md
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F4
+    name: >-
+      (1) Extend lib/admin-auth.ts: export RolesClaim, ShowWindow,
+      ShowWindowLookup types; resolveRoleCapabilitiesForShow(roles, showId,
+      {now, lookupShowWindow}): Set<Capability> unions roles['*'] (never
+      date-limited) with roles[showId] (honoured only while `now` is inside
+      the show's startDate/endDate, as returned by lookupShowWindow(showId);
+      a null lookup result means the per-show grant is not honoured); unknown
+      role names inside either array resolve via lib/admin-roles.ts's
+      resolve(), i.e. contribute nothing. hasCapability(decoded, showId,
+      capability, opts?): boolean gates on isAdminToken(decoded) FIRST (a role
+      never substitutes for admin:true) and only then checks
+      resolveRoleCapabilitiesForShow(...).has(capability) (admin:true alone
+      never satisfies a capability requirement). (2) New
+      lib/admin-grant-validation.ts: validateGrantArgs({roles, show}) — no
+      roles is an error, no show is an error (no defaults for either), any
+      role name not in ROLE_NAMES is an error, and door-staff/manager may
+      never be validated against show === '*'. (3) New
+      lib/admin-revoke-plan.ts: computeRevokePlan(existingRoles, target?) —
+      always returns revokeRefreshTokens: true, on both the full-revoke path
+      (no target) and the partial path (target = {role, show}), which removes
+      exactly that role from that show's array and prunes the key if the
+      array becomes empty. (4) New lib/admin-orphan-roles.ts:
+      findOrphanRoles(roles) returns the deduplicated list of role-name
+      strings held anywhere in the claim that are not in
+      lib/admin-roles.ts's ROLE_NAMES. (5) New
+      lib/admin-migrate-roles-plan.ts: computeMigrationPlan(accounts) — grant
+      {'*': ['owner']} only to admin:true accounts with no existing non-empty
+      roles claim (idempotent, never overwrites); skip everyone else with a
+      reason; the 'grant' action type carries no revokeRefreshTokens field, at
+      the TypeScript level, not only at runtime. parseMigrationArgs(argv) —
+      apply is true only when '--apply' is present; dry-run is the default.
+      (6) scripts/admin-grant.ts, scripts/admin-revoke.ts,
+      scripts/admin-list.ts are wired to import and use (1)-(4) instead of
+      re-implementing validation/planning inline. (7) New
+      scripts/admin-migrate-roles.ts wires (5) to the live Admin SDK: dry-run
+      by default, mutates only 'grant' actions when --apply is passed, and
+      never calls revokeRefreshTokens() anywhere in the file.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-f4-roles-claim/README.md
+  - contracts/checks/ticketing-f4-roles-claim/tsconfig.typecheck.json
+  - contracts/checks/ticketing-f4-roles-claim/fixtures/roles-claim-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after all
+        F4 modules are added.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof of the exported type shapes (RolesClaim,
+        ShowWindowLookup, hasCapability's signature) AND that the migration
+        plan's 'grant' action variant carries no revokeRefreshTokens field at
+        the type level — not a grep, a real @ts-expect-error against the
+        compiled union.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-f4-roles-claim/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        AND-only composition, proven by real hasCapability() calls against
+        fabricated DecodedIdToken-shaped objects (no live Firebase): (a)
+        admin:true + verified + allowlisted + roles {'*': ['owner']} grants
+        export-buyer-data; (b) admin:false with the SAME roles claim is
+        refused every capability — a role never substitutes for admin:true;
+        (c) admin:true + verified + allowlisted with NO roles claim at all is
+        refused every capability — admin:true alone never satisfies a
+        capability requirement; (d) admin:true but email_verified:false
+        (with the same owner roles claim) is still refused — hasCapability
+        reuses isAdminToken's full gate, not a weakened admin-only check that
+        tests only admin and email_verified; (e) admin:true + verified + an
+        owner roles claim but an email NOT on ADMIN_EMAIL_ALLOWLIST is still
+        refused — the allowlist half of isAdminToken's gate is genuinely
+        consulted, not merely satisfied by coincidence because (a)-(d) all
+        share one allowlisted email. (e) is required because a mutant
+        hasCapability checking only `admin === true && email_verified ===
+        true` (silently dropping isAdminToken and its allowlist check) passes
+        (a)-(d) unchanged — none of those four varies the email.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f4-roles-claim/check-and-only-composition.mjs
+
+    - id: A4
+      description: >-
+        Fail-closed on unknown role names inside the roles claim, proven by
+        real resolveRoleCapabilitiesForShow() and hasCapability() calls: a
+        sole unrecognised role name resolves to the empty set; an unrecognised
+        name alongside a real one does not disturb resolution of the real
+        one; and hasCapability() with only an unrecognised role held refuses
+        every one of the seven capabilities.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f4-roles-claim/check-unknown-role-fail-closed.mjs
+
+    - id: A5
+      description: >-
+        Date-window lapse, proven with injected time and an injected show
+        lookup (no Date.now(), no network): a per-show grant is honoured
+        inside the show's window and refused both before and after it; a
+        per-show grant against a showId the lookup returns null for (show not
+        found) is refused, not defaulted open; and a '*'-scoped grant is
+        honoured regardless of the window or of the lookup returning null for
+        an unrelated showId — '*' grants are never date-limited.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f4-roles-claim/check-date-window-lapse.mjs
+
+    - id: A6
+      description: >-
+        admin-grant.ts's role-name validation, proven by real
+        validateGrantArgs() calls (the script's actual validation path, not a
+        grep of admin-grant.ts): empty roles is refused, empty show is
+        refused (no defaults for either, per spec §5.6), an unrecognised role
+        name is refused with that name identifiable in the reason, and a
+        request naming only real roles with a real show scope is accepted.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f4-roles-claim/check-grant-role-validation.mjs
+
+    - id: A7
+      description: >-
+        The door-staff/manager-never-'*' scoping rule, proven by invoking
+        validateGrantArgs() (the grant script's real validation path), not by
+        grepping for the string '*': door-staff scoped to '*' is refused,
+        manager scoped to '*' is refused, owner scoped to '*' is accepted
+        (owner is the one role permitted org-wide), door-staff scoped to a
+        real showId is accepted, and a mixed role list containing door-staff
+        alongside owner is refused as a whole when show is '*' — one
+        scope-restricted role in the batch is enough to refuse the batch.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f4-roles-claim/check-grant-scope-restriction.mjs
+
+    - id: A8
+      description: >-
+        Every revoke path calls revokeRefreshTokens(), proven by real
+        computeRevokePlan() calls covering both paths: a full revoke (no
+        target) and a partial revoke (role+show target) both return
+        revokeRefreshTokens: true; a partial revoke that removes the only
+        role held at a show prunes that show's key from the map entirely
+        (keeps the ~1000-byte claim budget from accumulating empty entries,
+        per spec §5.4); and a partial revoke targeting a role/show pairing
+        the account never held still returns revokeRefreshTokens: true (the
+        plan always instructs a revoke, independent of whether anything
+        actually changed).
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f4-roles-claim/check-revoke-always-revokes-tokens.mjs
+
+    - id: A9
+      description: >-
+        admin-list.ts's orphan-role flagging, proven by real
+        findOrphanRoles() calls against lib/admin-roles.ts's live ROLE_NAMES:
+        an account holding only recognised role names is flagged with zero
+        orphans; an account holding a role name absent from ROLE_NAMES (the
+        exact post-rename scenario spec §5.6's rename procedure describes) is
+        flagged with that name; and the same orphan name held under two
+        different show keys is reported once, not twice.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f4-roles-claim/check-list-orphan-roles.mjs
+
+    - id: A10
+      description: >-
+        The migration script is dry-run by default, proven by real
+        parseMigrationArgs() calls: no flags at all yields apply:false; a
+        positional email-like argument alone (mistakenly typed instead of the
+        flag) still yields apply:false, not a silent mutate; only the
+        explicit '--apply' flag yields apply:true.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f4-roles-claim/check-migration-dry-run-default.mjs
+
+    - id: A11
+      description: >-
+        The migration is idempotent and never overwrites an existing richer
+        roles claim, proven by real computeMigrationPlan() calls against a
+        fabricated in-memory account list (never live Firebase): an
+        admin:true account with no roles claim gets a 'grant' action to
+        {'*': ['owner']}; an admin:true account that already holds
+        {'*': ['owner']} (simulating a second run) gets 'skip', not a
+        re-grant; an admin:true account holding a different, richer claim
+        (e.g. a per-show manager grant) gets 'skip', never overwritten; a
+        non-admin account gets 'skip' with a reason that says so; and no
+        returned action of either kind carries a revokeRefreshTokens key —
+        the migration path cannot express a revoke, matching A2's
+        compile-time proof of the same property.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f4-roles-claim/check-migration-idempotent-no-overwrite.mjs
+
+    - id: A12
+      description: pnpm lint passes with zero errors after all F4 modules are added.
+      command: pnpm lint

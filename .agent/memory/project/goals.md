@@ -148,3 +148,21 @@ foundation — F1 done" for the full correction and the two check-quality defect
 way (A7 population mismatch, A6 `node --import tsx/esm` alias-resolution gap). `admin-auth-hardening`
 remains **paused** at 5/6 (F6, door-scanner human proof, outstanding) — not blocking, largely
 superseded by this mission's later F12.
+
+### 2026-08-17 (later still) — F4 done
+
+~~F4 (`roles` custom claim per-show map, AND-only composition, revoke-on-mutate tooling,
+batch-grant tooling, date-window lapse, one-time admin migration)~~ ✅ **DONE**, gate 12/12
+(verified twice by the orchestrator), F3's gate re-run and still 8/8 (no regression), @qa PASS
+(8 mutants attempted, 7 died). `lib/admin-auth.ts` extended; new `lib/admin-grant-validation.ts`,
+`lib/admin-revoke-plan.ts`, `lib/admin-orphan-roles.ts`, `lib/admin-migrate-roles-plan.ts`, new
+`scripts/admin-migrate-roles.ts`, extended `scripts/admin-grant.ts` / `admin-revoke.ts` /
+`admin-list.ts`. Docs in `docs/ticketing.md` (F4 section) and `docs/admin-access.md`. Checkpoint
+now M1/F5, **4 of 14 features shipped, M1 at 4/8**. Two real gaps found and deferred to their
+natural owners rather than fixed inline: no claim-size guard on the grant path (Firebase's
+~1000-byte custom-claim cap, targeted at F13's batch-grant work) and a throwing
+`lookupShowWindow` that would propagate out of `hasCapability()` as a 500 instead of a clean 403
+(F5 to decide when wiring the real lookup). The live one-time migration has **NOT** been run —
+`scripts/admin-migrate-roles.ts` is dry-run by default; no account, including `brad@inunu.net`,
+currently holds a `roles` claim. Running it with `--apply` needs Brad's explicit authorisation.
+See `learned.md` "Ticketing foundation — F4 done" and `backlog.md`.

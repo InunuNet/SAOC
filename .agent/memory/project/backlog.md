@@ -46,6 +46,33 @@ below). No candidates surfaced this session (script still does not run to comple
   Recommended: verify the subdomain `tickets.saoc.co.za` (not the root, so records can't disturb
   `@saoc.co.za` mail routing mid-migration), European region.
 
+## Session 2026-08-17 (later still) — F4 (roles custom claim + tooling) DONE, four follow-ups scoped
+
+- [x] **F4 — `roles` custom claim (per-show map), AND-only composition, revoke-on-mutate tooling,
+  batch-grant tooling, date-window lapse, one-time admin migration — gate 12/12 (verified twice),
+  F3 re-gate still 8/8, @qa PASS (8 mutants, 7 died).** Full detail in `learned.md` "Ticketing
+  foundation — F4 done". `lib/admin-auth.ts` extended; new `lib/admin-grant-validation.ts`,
+  `lib/admin-revoke-plan.ts`, `lib/admin-orphan-roles.ts`, `lib/admin-migrate-roles-plan.ts`, new
+  `scripts/admin-migrate-roles.ts`, extended `scripts/admin-grant.ts` / `admin-revoke.ts` /
+  `admin-list.ts`. Docs in `docs/ticketing.md` (F4 section) and `docs/admin-access.md`.
+- [ ] **[P2, NEW] No claim-size guard on the grant path.** Firebase caps custom claims at ~1000
+  bytes; roughly 24 per-show `manager` grants (or ~36 single-role grants) exceed it. Nothing
+  checks size before `setCustomUserClaims`; the operator gets a raw `auth/claims-too-large` error
+  with no advance warning. Target F13's batch-grant work. Measured by @qa.
+- [ ] **[P2, NEW] A throwing `lookupShowWindow` propagates out of `hasCapability()`** rather than
+  returning false. Fail-loud not fail-open, so not a security defect, but it 500s a request
+  instead of cleanly 403ing. F5 must decide whether to wrap it when wiring the default lookup.
+- [ ] **[P3, NEW] No live cached Sanity-backed `ShowWindowLookup` exists.** F4 proves the decision
+  function against any injected lookup; the real one is deferred to the first live caller (F5).
+- [ ] **[P3, NEW] Pre-existing American spellings** at `docs/ticketing.md:424, 484, 488, 820`
+  (from the F2 docs pass). Deliberately left alone to keep the F4 commit scoped. The
+  Microsoft/Entra proper nouns in `docs/admin-access.md` are correct as-is and must NOT be
+  "fixed".
+- [ ] **[STANDING, carried forward] The live `roles`-claim migration has NOT been run.**
+  `scripts/admin-migrate-roles.ts` exists, is dry-run by default, and has never executed against
+  the live project. No account currently holds a `roles` claim, including `brad@inunu.net` (the
+  sole admin). Running it with `--apply` is a human-gated step Brad must authorise.
+
 ## Session 2026-08-17 (later) — F1 (show schema collision) DONE, three follow-ups scoped ahead of F9
 
 - [x] **F1 — `show` schema collision resolved, gate 9/9, @qa PASS.** Full detail in `learned.md`

@@ -3,6 +3,12 @@
  * claim. Read-only audit helper — makes no mutation of any kind. Lets an operator answer "who
  * currently holds admin" without a console click-through.
  *
+ * F4 (ticketing-foundation) additionally flags orphan role names (spec §5.6): a role name held
+ * in an account's `roles` claim that no longer exists in lib/admin-roles.ts's mapping — the
+ * shape a role rename leaves behind on any account still holding the old name. Flagged by
+ * lib/admin-orphan-roles.ts's findOrphanRoles() — this script's real check path, not a
+ * re-implementation, checked live against ROLE_NAMES.
+ *
  * Run with: pnpm exec tsx scripts/admin-list.ts
  *
  * Required env (from .env.local):
@@ -14,6 +20,9 @@
 import { config } from 'dotenv';
 import { initializeApp, cert, type App } from 'firebase-admin/app';
 import { getAuth, type Auth, type UserRecord } from 'firebase-admin/auth';
+
+import { findOrphanRoles } from '@/lib/admin-orphan-roles';
+import type { RolesClaim } from '@/lib/admin-auth';
 
 config({ path: '.env.local', quiet: true });
 
@@ -57,9 +66,19 @@ async function main(): Promise<void> {
 
   console.log(`${admins.length} account(s) currently hold admin access:\n`);
   for (const admin of admins) {
+    const roles = admin.customClaims?.roles as RolesClaim | undefined;
     console.log(`- ${admin.email} (uid ${admin.uid})`);
     console.log(`  emailVerified: ${admin.emailVerified}`);
     console.log(`  tokensValidAfterTime: ${admin.tokensValidAfterTime ?? '(not set)'}`);
+    console.log(`  roles: ${roles ? JSON.stringify(roles) : '(none)'}`);
+
+    const orphans = findOrphanRoles(roles);
+    if (orphans.length > 0) {
+      console.warn(
+        `  ORPHAN ROLE(S): ${orphans.join(', ')} — held in this account's claim but absent ` +
+          'from lib/admin-roles.ts\'s current ROLE_NAMES (likely a stale name from a rename).',
+      );
+    }
   }
 }
 

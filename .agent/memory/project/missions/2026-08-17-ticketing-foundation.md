@@ -15,8 +15,8 @@ cost_estimate:
   total_calls: 0
 last_checkpoint:
   milestone: M1
-  feature: F3
-  ts: '2026-08-17T18:22:39.892348+00:00'
+  feature: F5
+  ts: '2026-08-17T19:03:32+00:00'
 features:
 - id: F1
   title: 'Resolve `show` document collision: extend archive type for sales fields,
@@ -134,8 +134,10 @@ features:
     and verified to hold it, a test account can be revoked the same role and verified
     to lose it, the one-time migration script runs without error, and date-window
     evaluation returns false for a grant outside the show''s dates.'
-  status: pending
+  status: done
   milestone: M1
+  started_at: '2026-08-17T18:22:39.892348+00:00'
+  completed_at: '2026-08-17T19:03:32+00:00'
 - id: F5
   title: '`buyers/{uid}` collection with consent record, hard security boundary proven
     by HTTP assertion'
