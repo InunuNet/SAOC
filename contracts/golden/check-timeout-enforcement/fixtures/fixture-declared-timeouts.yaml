@@ -1,0 +1,32 @@
+schema: athanor.contract/v1
+slug: check-timeout-enforcement-fixture-declared
+goal: >-
+  Fixture used by contract-check-timeout-enforcement.yaml assertions A1-A3 to prove
+  a per-check declared timeout_seconds actually governs the subprocess kill ceiling
+  in execution/contract.py, not merely the yaml declaration. Not a production
+  contract — lives under contracts/golden/, never gated on its own.
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F1
+    name: Paired survive/kill checks bracketing their declared timeout_seconds
+    status: pending
+
+assertions:
+  phase: 1
+  checks:
+    - id: FIX-SURVIVE
+      description: >-
+        Sleeps 3s under a declared timeout_seconds of 8 — must complete and exit 0.
+        Paired with FIX-KILL below as the positive half of the proof.
+      command: sleep 3 && exit 0
+      timeout_seconds: 8
+
+    - id: FIX-KILL
+      description: >-
+        Sleeps 6s under a declared timeout_seconds of 2 — must be killed by
+        subprocess.run's timeout= before it can complete, well before the CLI's
+        60s default would ever intervene. Negative control for FIX-SURVIVE.
+      command: sleep 6 && exit 0
+      timeout_seconds: 2

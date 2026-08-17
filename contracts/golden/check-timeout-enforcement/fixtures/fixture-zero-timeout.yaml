@@ -1,0 +1,26 @@
+schema: athanor.contract/v1
+slug: check-timeout-enforcement-fixture-zero
+goal: >-
+  Fixture proving `contract.py validate` rejects a non-positive declared
+  timeout_seconds instead of silently falling back to the CLI/default value —
+  closes the `verify.get("timeout_seconds") or getattr(args, "timeout_seconds",
+  60)` truthiness trap at execution/contract.py:275, where a declared 0 was
+  indistinguishable from "unset" and silently discarded.
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F1
+    name: Reject non-positive timeout_seconds at validate time
+    status: pending
+
+assertions:
+  phase: 1
+  checks:
+    - id: FIX-ZERO-TIMEOUT
+      description: >-
+        Declares timeout_seconds: 0, which is invalid and must fail
+        `contract.py validate` with a clear error rather than being silently
+        reinterpreted as "unset".
+      command: exit 0
+      timeout_seconds: 0

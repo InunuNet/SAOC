@@ -1,0 +1,25 @@
+schema: athanor.contract/v1
+slug: check-timeout-enforcement-fixture-fallback
+goal: >-
+  Isolated single-check fixture (its own file so `gate --phase all` sees exactly
+  one phase and its exit code is unambiguous) proving gate_cmd's `--phase all`
+  loop threads --timeout-seconds into each phase's Namespace instead of silently
+  reverting to a hardcoded 60s default (execution/contract.py:522-528, prior to
+  fix, which omitted timeout_seconds from the Namespace it builds).
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F1
+    name: Single CLI-fallback check with no declared timeout_seconds
+    status: pending
+
+assertions:
+  phase: 1
+  checks:
+    - id: FIX-CLI-FALLBACK
+      description: >-
+        Sleeps 5s and declares no timeout_seconds at all — relies entirely on
+        whatever --timeout-seconds the operator passes on the gate CLI
+        invocation, reached via the --phase all loop specifically.
+      command: sleep 5 && exit 0

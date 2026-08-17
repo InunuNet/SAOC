@@ -1,0 +1,151 @@
+schema: athanor.contract/v1
+slug: check-timeout-enforcement
+goal: >-
+  ROOT-CAUSE fix: execution/contract.py's {phase, checks} normalizer
+  (normalize_contract(), lines 128-144) converts each @architect-format check
+  into the internal verify block but never copies check["timeout_seconds"] into
+  it. Every contract in this project uses the {phase, checks} schema, so every
+  declared per-check timeout_seconds has always been silently ignored — every
+  shell assertion has always run under a hardcoded 60s kill ceiling regardless
+  of what it declares. This is what made contract-payfast-m1-lock-cleanup-fix's
+  A18-A21/A30/A31/A34 timeout raises (to 120s/150s/180s, closing a 60s-kill-
+  ceiling < 90s-LOCK_WAIT_MS inversion) inert: the raised numbers were never
+  enforced. A second, independent bug in gate_cmd's `--phase all` loop
+  (lines 522-528) makes the same mistake one level up — it builds each phase's
+  Namespace without a timeout_seconds field, so even a correctly-threaded CLI
+  --timeout-seconds is dropped back to the 60s default when gating "all"
+  phases specifically (not "max" or a single numeric phase, which pass args
+  through directly). A third, narrower bug is a truthiness trap at line 275
+  (`verify.get("timeout_seconds") or ...`): a declared timeout_seconds: 0 is
+  falsy and silently discarded rather than honoured or rejected. Full
+  file:line evidence, the runtime-effect proof design, the bootstrap-order
+  argument, and the upstream-PR/revert-risk note are in
+  contracts/golden/check-timeout-enforcement/README.md.
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F1
+    name: Make declared per-check timeout_seconds actually govern the subprocess kill ceiling, in both the direct check path and the gate --run-checks / --phase all paths
+    status: pending
+
+goldens:
+  - contracts/golden/check-timeout-enforcement/README.md
+  - contracts/golden/check-timeout-enforcement/fixtures/fixture-declared-timeouts.yaml
+  - contracts/golden/check-timeout-enforcement/fixtures/fixture-cli-fallback.yaml
+  - contracts/golden/check-timeout-enforcement/fixtures/fixture-list-format.yaml
+  - contracts/golden/check-timeout-enforcement/fixtures/fixture-zero-timeout.yaml
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        RUNTIME PROOF (positive half) — fixture-declared-timeouts.yaml's
+        FIX-SURVIVE declares timeout_seconds: 8 for a 3s-sleeping command.
+        `contract.py check` (direct path, no --timeout-seconds passed — CLI
+        default is 60s) must exit 0: the declared per-check ceiling governs
+        and does not falsely kill a command that finishes within it.
+      command: python3 execution/contract.py check contracts/golden/check-timeout-enforcement/fixtures/fixture-declared-timeouts.yaml --assertion FIX-SURVIVE
+      timeout_seconds: 15
+
+    - id: A2
+      description: >-
+        RUNTIME PROOF (negative control for A1, the core proof of the whole
+        fix) — FIX-KILL declares timeout_seconds: 2 for a 6s-sleeping
+        command, invoked WITHOUT --timeout-seconds so the CLI default is
+        60s. Pre-fix, the declared 2s is silently dropped
+        (execution/contract.py:128-144 never copies timeout_seconds into
+        the verify block) and the 6s sleep survives comfortably under the
+        60s default, so `contract.py check` wrongly exits 0. Post-fix it
+        must exit 1, and its captured stdout+stderr must contain the literal
+        string "timed out after 2s" — proving the kill fired at the
+        DECLARED 2s ceiling, not the 60s default. A grep on the yaml alone
+        cannot distinguish these two worlds; only this exit-code+evidence
+        check can.
+      command: python3 execution/contract.py check contracts/golden/check-timeout-enforcement/fixtures/fixture-declared-timeouts.yaml --assertion FIX-KILL 2>&1 | grep -q "timed out after 2s"
+      timeout_seconds: 15
+
+    - id: A3
+      description: >-
+        RUNTIME PROOF — the `gate --run-checks` path (not just direct
+        `check`) honours declared timeout_seconds. Phase 1 of
+        fixture-declared-timeouts.yaml holds FIX-SURVIVE (pass) and FIX-KILL
+        (must be killed at 2s and fail). `gate --phase 1 --run-checks`
+        always re-executes both fresh (never reads a stale result file) and
+        must exit 2 (phase FAILED) because FIX-KILL fails.
+      command: python3 execution/contract.py gate contracts/golden/check-timeout-enforcement/fixtures/fixture-declared-timeouts.yaml --phase 1 --run-checks; test $? -eq 2
+      timeout_seconds: 30
+
+    - id: A4
+      description: >-
+        RUNTIME PROOF — second, independent bug: gate_cmd's `--phase all`
+        loop (execution/contract.py:522-528) builds each per-phase Namespace
+        WITHOUT a timeout_seconds field, so `getattr(args, "timeout_seconds",
+        60)` inside _gate_single_phase (line 443) silently falls back to the
+        hardcoded 60s default and drops whatever --timeout-seconds the
+        operator passed — even after A1-A3's bug is fixed. This is distinct
+        from the "max" and single-numeric-phase paths, which pass args
+        straight through and are not affected by this second bug.
+        fixture-cli-fallback.yaml's one check declares no timeout_seconds at
+        all (relies purely on the CLI value) and sleeps 5s. Run via
+        `gate --phase all --run-checks --timeout-seconds 2`, it must be
+        killed at 2s and the phase must FAIL (exit 2) — proving the CLI
+        value survives the `all` loop's Namespace construction specifically.
+      command: python3 execution/contract.py gate contracts/golden/check-timeout-enforcement/fixtures/fixture-cli-fallback.yaml --phase all --run-checks --timeout-seconds 2; test $? -eq 2
+      timeout_seconds: 20
+
+    - id: A5
+      description: >-
+        REGRESSION CONTROL — the internal list-format (assertions: as a list
+        of {id, verify: {kind, cmd, timeout_seconds}}, not the {phase,
+        checks} dict format) already carried timeout_seconds straight
+        through before this fix, since it bypasses the normalize_contract()
+        checks-conversion branch entirely (that branch only fires when
+        assertions is a dict with a "checks" key). This fix must not touch
+        that path. fixture-list-format.yaml declares timeout_seconds: 5 for
+        a 1s sleep; must exit 0.
+      command: python3 execution/contract.py check contracts/golden/check-timeout-enforcement/fixtures/fixture-list-format.yaml --assertion FIX-LIST-FORMAT
+      timeout_seconds: 15
+
+    - id: A6
+      description: >-
+        SEMANTICS FIX — execution/contract.py:275 used
+        `verify.get("timeout_seconds") or getattr(args, "timeout_seconds",
+        60)`. A declared timeout_seconds: 0 is falsy, so the `or` silently
+        discards it and falls back to the default/CLI value instead of
+        erroring or honouring the (nonsensical but explicit) 0 — a declared
+        0 was indistinguishable from "unset". The fix must (a) switch the
+        runtime check to an explicit `is not None` test and (b) reject a
+        non-positive declared timeout_seconds at `validate` time with a
+        clear error, rather than silently reinterpreting it.
+        fixture-zero-timeout.yaml declares timeout_seconds: 0; `validate`
+        must reject it (exit 1).
+      command: python3 execution/contract.py validate contracts/golden/check-timeout-enforcement/fixtures/fixture-zero-timeout.yaml; test $? -eq 1
+      timeout_seconds: 15
+
+    - id: A7
+      description: >-
+        HARD CONSTRAINT — app/api/tickets/itn/route.ts (sha256-pinned) must
+        be byte-for-byte unchanged by this fix; it has nothing to do with
+        contract.py's timeout handling.
+      command: git diff --quiet -- app/api/tickets/itn/route.ts
+      timeout_seconds: 10
+
+    - id: A8
+      description: >-
+        CONSTRAINT 5 RE-VALIDATION — closes the loop on the original P1:
+        once A1-A4 above prove declared timeout_seconds is genuinely
+        enforced, contract-payfast-m1.yaml's A18, A19, A20, A21, A30, A31,
+        A34 (each already declaring timeout_seconds >= 120 — confirmed at
+        contract-payfast-m1.yaml:102,112,122,133,163,176,215 — i.e. above
+        LOCK_WAIT_MS = 90_000ms in
+        contracts/checks/ticketing-hardening/_shared.mjs:484) stop being an
+        inert, unenforced kill ceiling and start being a real one that
+        genuinely exceeds the lock wait. Re-runs the already-shipped
+        check-known-ids-timeouts.mjs (built for
+        contract-payfast-m1-lock-cleanup-fix.yaml's A4) to reconfirm those
+        seven IDs still declare >=120s, without executing the live,
+        credentialed payfast-m1 suite itself.
+      command: pnpm exec tsx contracts/checks/payfast-m1/check-known-ids-timeouts.mjs
+      timeout_seconds: 30

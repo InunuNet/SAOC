@@ -133,13 +133,16 @@ def normalize_contract(contract: dict) -> dict:
             cid = check.get("id", "")
             desc = check.get("description", "")
             cmd = check.get("command", "")
+            verify = {
+                "kind": "shell",
+                "cmd": cmd,
+            }
+            if "timeout_seconds" in check:
+                verify["timeout_seconds"] = check["timeout_seconds"]
             assertion_list.append({
                 "id": cid,
                 "description": desc,
-                "verify": {
-                    "kind": "shell",
-                    "cmd": cmd,
-                },
+                "verify": verify,
                 "required": check.get("required", False),
             })
             assertion_ids.append(cid)
@@ -230,6 +233,18 @@ def validate_cmd(args):
         elif a["verify"].get("kind") in binary_kinds:
             binary_count += 1
 
+        # A declared timeout_seconds must be a positive integer. 0 or negative
+        # is invalid -- not "unlimited" and not "use the default" -- so it is
+        # rejected here rather than silently reinterpreted at check time.
+        verify_block = a.get("verify", {})
+        if "timeout_seconds" in verify_block:
+            declared = verify_block["timeout_seconds"]
+            if not isinstance(declared, int) or isinstance(declared, bool) or declared <= 0:
+                errors.append(
+                    f"Assertion {aid}: timeout_seconds must be a positive integer, "
+                    f"got {declared!r}"
+                )
+
         # Detect prohibited multiline python3 -c pattern
         verify = a.get("verify", {})
         cmd = verify.get("cmd", "")
@@ -272,7 +287,12 @@ def check_cmd(args):
     if kind == "shell":
         cmd = verify.get("cmd", "")
         expected_exit = verify.get("expect_exit", 0)
-        timeout = verify.get("timeout_seconds") or getattr(args, "timeout_seconds", 60)
+        # Explicit `is not None` (not `or`): a declared timeout_seconds of 0 is
+        # falsy but must not be silently swallowed in favour of the CLI/default
+        # value. validate_cmd() rejects non-positive declared values outright, so
+        # by the time a check runs, any declared value here is already known-valid.
+        declared_timeout = verify.get("timeout_seconds")
+        timeout = declared_timeout if declared_timeout is not None else getattr(args, "timeout_seconds", 60)
         tf_name = None
         try:
             import tempfile
@@ -525,6 +545,7 @@ def gate_cmd(args):
                 run_checks=getattr(args, "run_checks", False),
                 handoff=getattr(args, "handoff", None),
                 allow_skips=getattr(args, "allow_skips", False),
+                timeout_seconds=getattr(args, "timeout_seconds", 60),
             )
             if not _gate_single_phase(contract, single_phase_args):
                 print(f"\nFAIL: Phase {phase_id} failed. Stopping all-phase gate.")

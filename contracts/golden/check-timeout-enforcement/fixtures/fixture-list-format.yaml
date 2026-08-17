@@ -1,0 +1,28 @@
+schema: athanor.contract/v1
+slug: check-timeout-enforcement-fixture-listformat
+goal: >-
+  Regression fixture in the internal list-format (assertions: as a list of
+  {id, verify: {kind, cmd, timeout_seconds}}), which normalize_contract() passes
+  through untouched — this fix only edits the {phase, checks} dict-format
+  conversion branch (lines 128-144). Must keep working exactly as before.
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F1
+    name: List-format timeout passthrough, unaffected by this fix
+    status: pending
+
+assertions:
+  - id: FIX-LIST-FORMAT
+    description: >-
+      List-format assertion declaring timeout_seconds directly on verify —
+      already worked before this fix and must be unaffected by it.
+    verify:
+      kind: shell
+      cmd: sleep 1 && exit 0
+      timeout_seconds: 5
+
+phases:
+  - id: 1
+    assertions: [FIX-LIST-FORMAT]
