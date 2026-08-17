@@ -1,5 +1,5 @@
 ---
-model_tier: flash
+model_tier: apex
 description: System design and structural decisions
 tools: [read, shell, grep]
 tools_denied: [write, edit]
