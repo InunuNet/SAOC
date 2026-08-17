@@ -125,6 +125,17 @@ have denied fields present on all 14 live position documents with no migration i
 check-quality lessons (verify-by-construction for typecheck assertions, a false citation caught
 in a decision-record doc, an idle-but-not-actually-done report caught by checking disk state).
 
+### 2026-08-17 (later still) — F3 done
+
+~~F3 (admin roles/capabilities — `lib/admin-roles.ts`, seven-capability set, three role bundles
+`door-staff`/`manager`/`owner`, `resolve()`)~~ ✅ **DONE**, gate 8/8 (re-run twice), zero
+`agent_review` assertions, docs in `docs/ticketing.md` + `docs/admin-access.md`. Checkpoint now
+M1/F3, 3 of 14 features shipped. See `learned.md` "Ticketing foundation — F3 done" for a golden
+README that contradicted its own prose (and which half @dev followed), the
+authorship-vs-behaviour assertion-design lesson, an agent that deleted @dev's untracked
+implementation during its own temp-file cleanup, and a Haiku 4.5 documentation-prose reliability
+finding (six factual errors) that keeps Sonnet 5 as the project default for subagent prose/code.
+
 ### 2026-08-17 (later) — F1 done, `ticketing-foundation` now the active in-progress mission
 
 ~~F1 (resolve the `show` schema collision)~~ ✅ **DONE**, @qa PASS, gate 9/9 (re-run twice by the

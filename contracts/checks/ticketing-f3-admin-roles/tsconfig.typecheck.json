@@ -1,0 +1,8 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/admin-roles.ts",
+    "fixtures/capability-typecheck.ts"
+  ],
+  "exclude": []
+}

@@ -1,0 +1,137 @@
+schema: athanor.contract/v1
+slug: ticketing-f3-admin-roles
+goal: >-
+  Mission ticketing-foundation F3 (§5.2-§5.3). Create lib/admin-roles.ts as a
+  server-side TypeScript constant module: the fixed seven-member Capability union
+  (view-admin-dashboard, scan-checkin, lookup-booking-ref, search-buyers,
+  issue-comp, issue-refund, export-buyer-data), the three-role
+  ROLE_TO_CAPABILITIES map (door-staff, manager, owner per spec §5.3's defaults),
+  and a resolve(roleNames: readonly string[]): Set<Capability> function that
+  unions the capabilities of the given role names, ignoring (not erroring on)
+  any name that isn't a recognised role. This is the ONLY production file F3
+  touches — no changes to lib/admin-auth.ts, no route wiring, no custom-claim
+  handling, no scripts. All of that is F4. Full decision record, the exact
+  module shape to implement, and the evidence behind every assertion:
+  contracts/golden/ticketing-f3-admin-roles/README.md
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F3
+    name: >-
+      Add lib/admin-roles.ts exporting: CAPABILITIES (const array, 7 members,
+      spec §5.2 order), Capability (derived union type), ROLE_NAMES (const array,
+      3 members: door-staff, manager, owner), RoleName (derived union type),
+      ROLE_TO_CAPABILITIES (Record<RoleName, ReadonlySet<Capability>> —
+      door-staff = {scan-checkin, lookup-booking-ref} HAND-LISTED; manager = all
+      seven capability strings HAND-LISTED as their own literal array (NOT
+      `new Set(CAPABILITIES)`, NOT derived, NOT aliased to owner — see A8 and
+      README's "Contradiction found and resolved" for why this exact mistake
+      shipped once already and must not recur); owner = all seven, DERIVED from
+      CAPABILITIES by construction, e.g. `new Set(CAPABILITIES)` — see README's
+      "Why owner must be derived, not hand-listed"), and
+      resolve(roleNames: readonly string[]): Set<Capability> (unions each named
+      role's bundle; a name not present in ROLE_TO_CAPABILITIES contributes
+      nothing — no throw, no error). No other file changes.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-f3-admin-roles/README.md
+  - contracts/checks/ticketing-f3-admin-roles/tsconfig.typecheck.json
+  - contracts/checks/ticketing-f3-admin-roles/fixtures/capability-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        lib/admin-roles.ts is added.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Capability is EXACTLY the seven-member closed union spec §5.2 defines,
+        proved by the real TypeScript compiler assigning each of the seven real
+        capability literals and rejecting an eighth, typo'd one via
+        @ts-expect-error — not a grep for capability names in the source file.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-f3-admin-roles/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        Behavioural coverage proof via real resolve() calls (not source-grep):
+        the union of resolve() over every role in ROLE_NAMES equals the full
+        seven-member CAPABILITIES set (no capability is dead / ungranted by any
+        role), AND no role's resolved Set contains a capability outside the
+        fixed set (guards against a hand-typo'd string smuggled past the type
+        checker via an `as Capability` cast — only a live call proves the
+        runtime Set contents). Verified live: fails with 7 "dead capability"
+        errors when role bundles are emptied, and fails to even load (module not
+        found) if lib/admin-roles.ts is deleted — see README's "Evidence: the
+        harness actually catches deletion and an emptied map."
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f3-admin-roles/check-fixed-set-coverage.mjs
+
+    - id: A4
+      description: >-
+        Fail-closed proof via real resolve() calls: resolve(['unknown-role'])
+        and resolve([]) both return the empty Set, and
+        resolve(['unknown-role', 'manager']) equals resolve(['manager']) exactly
+        — an unrecognised role name contributes nothing and does not disturb
+        resolution of real roles listed alongside it. Not a grep; the actual
+        function is invoked three times and its real return values are
+        inspected.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f3-admin-roles/check-unknown-role-empty.mjs
+
+    - id: A5
+      description: >-
+        The critical negative control (mission brief's item 3): a real call to
+        resolve(['door-staff']) returns EXACTLY {scan-checkin,
+        lookup-booking-ref} — positively confirmed to hold those two, and
+        positively confirmed to hold NONE of the other five capabilities,
+        including the two POPIA-sensitive ones (search-buyers,
+        export-buyer-data) named in the brief. Checked against all five withheld
+        capabilities, not only the two named, and against the actual Set size.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f3-admin-roles/check-door-staff-negative-control.mjs
+
+    - id: A6
+      description: >-
+        owner's CONTENTS equal the full fixed capability set exactly right now,
+        and will keep doing so as CAPABILITIES grows: a real call to
+        resolve(['owner']) equals the full seven-member CAPABILITIES set exactly
+        (same size, same members both directions). NOTE — this does NOT prove
+        owner is derived (a hand-listed owner that currently, coincidentally,
+        lists all seven would pass identically); it proves current output plus
+        catches future drift. See README's "Narrowed claim" under "Why owner
+        must be derived, not hand-listed" for the full distinction. Deliberately
+        does NOT assert owner != manager; today they are equal by design and
+        that is not a bug (see README).
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f3-admin-roles/check-owner-derived-from-fixed-set.mjs
+
+    - id: A7
+      description: pnpm lint passes with zero errors after lib/admin-roles.ts is added.
+      command: pnpm lint
+
+    - id: A8
+      description: >-
+        The ONE deliberate source-level exception in this contract (justified in
+        README's "Can this be asserted at all"): manager's ROLE_TO_CAPABILITIES
+        entry in lib/admin-roles.ts's source text is a hand-listed literal array
+        of exactly the seven real capability strings — NOT
+        `new Set(CAPABILITIES)`, not a spread, not aliased to owner's bundle.
+        This is an authorship/construction property A3/A5/A6 cannot see
+        behaviourally (both `new Set([...seven literals])` and
+        `new Set(CAPABILITIES)` currently resolve identically at runtime — @qa
+        proved this live). Exists specifically because this exact regression
+        shipped once already (see README's "Contradiction found and resolved"):
+        a derived manager silently auto-grants Lee-Ann's role every future
+        capability, including anything as sensitive as export-buyer-data, the
+        instant it's added to CAPABILITIES, with no review step. Verified live
+        to fail against the exact regression that shipped and pass against the
+        correct hand-listed form.
+      command: >-
+        node contracts/checks/ticketing-f3-admin-roles/check-manager-hand-listed-source.mjs

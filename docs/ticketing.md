@@ -496,6 +496,70 @@ The position document receives:
 
 The order document receives all order fields.
 
+## Admin Roles and Capabilities: lib/admin-roles.ts (F3)
+
+F3 introduces a fixed capability set and a role→capability mapping in `lib/admin-roles.ts`, providing the foundation for role-based access control to ticketing admin surfaces. **F3 defines the abstract capability system; F4 wires capabilities into actual routes and custom claims.** Nothing in F3 is enforced yet — it establishes the concepts that F4 will use.
+
+### Seven Capabilities (Fixed Set)
+
+The system recognises exactly seven capabilities, each corresponding to a protected admin action:
+
+| Capability | Guards which surface(s) | Purpose |
+|---|---|---|
+| `view-admin-dashboard` | `app/admin/page.tsx` | Access the admin dashboard home page |
+| `scan-checkin` | `app/admin/door/layout.tsx`, `POST /api/admin/checkin` | Scan QR codes at the door and admit tickets |
+| `lookup-booking-ref` | `GET /api/admin/tickets` (exact-ref mode) | Look up a single ticket by booking reference (safe, no enumeration) |
+| `search-buyers` | `GET /api/admin/tickets` (name/email search mode) | Search for tickets by buyer name or email (POPIA-sensitive; see below) |
+| `issue-comp` | `POST /api/admin/tickets/comp` (F8, not yet built) | Issue complimentary tickets, bypassing PayFast |
+| `issue-refund` | Refund route (§9, deferred) | Refund a ticket and reverse its admission |
+| `export-buyer-data` | `GET /api/admin/export-csv` | Export buyer names and email addresses as CSV |
+
+**Critical:** this list is **fixed by code**, not editable by operators or database configuration. Adding a new capability requires a code change and review, exactly like changing what a route does. See `lib/admin-roles.ts:9-17` for the actual list.
+
+### Why the Lookup Capability is Split
+
+A single `lookup` capability would allow both exact-ref lookup and name/email search, hiding the POPIA-relevant distinction. An exact lookup (`bookingRef=SAOC-2027-ABC123`) cannot enumerate buyers — you must know the reference already. A name/email search can enumerate every buyer in the system by surname. Rather than coupling these together, `lookup-booking-ref` (safe, exact match) and `search-buyers` (POPIA-sensitive) are separate capabilities. **In F4**, the `GET /api/admin/tickets` route will check which mode the request actually uses and validate against the matching capability.
+
+### Three Roles and Their Bundles
+
+Roles bundle capabilities into named sets, designed around operational staff tiers. The three roles ship with F3:
+
+| Role | Capabilities | Purpose |
+|---|---|---|
+| `door-staff` | `scan-checkin`, `lookup-booking-ref` | Volunteers and door operators at a show. Can admit tickets and look up a lost QR by reference (without browsing the full attendee list). |
+| `manager` | All seven capabilities | Lee-Ann and ticketing staff. Full access to ticketing admin surfaces. |
+| `owner` | All seven capabilities | SAOC committee lead (e.g., Brad). Full access to all ticketing admin surfaces. |
+
+**Why `manager` and `owner` are identical in their capability bundle:** Both hold every ticketing capability today. The distinction between them is not in what they can *do* within the ticketing system, but in **scope** — see below. Within ticketing, both are capable of every action.
+
+**Why `manager` is hand-listed, not derived:** The code hand-lists `manager` as its own seven-string literal array (`lib/admin-roles.ts:33-41`), deliberately not `new Set(CAPABILITIES)`. `manager` is a config choice about one person's job — Lee-Ann's — not a structural guarantee: `manager` already holds `export-buyer-data`, the most POPIA-sensitive capability in the set, and a future capability may reasonably need to be withheld from `manager` while still belonging to `owner`. Derived, `manager` would silently gain any capability added to `CAPABILITIES`, with no change to its own line for a reviewer to see. This exact mistake — `manager` written as `new Set(CAPABILITIES)` — shipped once during F3's own development and was caught before merge. It is now guarded permanently: contract assertion **A8** is a source-level check that fails if `manager`'s bundle is ever changed back to a derived form (or aliased to `owner`), specifically because the property it protects — how the bundle was *constructed* — is invisible to any behavioural test; a hand-listed `manager` and a derived one currently return the identical `Set` at runtime. A8 is the durable reason a future editor should not "simplify" this back to `new Set(CAPABILITIES)`.
+
+**Why `owner` is derived from `CAPABILITIES`, not hand-listed:** The code shows `owner: new Set(CAPABILITIES)` (`lib/admin-roles.ts:46`). This is deliberate and critical. The spec defines `owner` semantically as *"every currently-defined capability, full stop"* — a structural guarantee, not a config choice like `manager`'s. If a new capability is added to support a future route, `owner` must automatically gain it. If `owner` were hand-listed, the new capability would go silently ungranted to the owner tier. Deriving it from `CAPABILITIES` makes `owner` mechanically track the fixed set: whenever `CAPABILITIES` grows, `owner` grows too, with no chance of a stale, hand-listed copy drifting out of sync.
+
+**Scope difference (F4 behaviour, not F3):** **In F4**, when the `roles` custom claim is wired into routes, `owner` will be grantable globally (`roles: {"*": ["owner"]}`) while `manager` will be restricted to per-show grants only (`roles: {"nationalShow": ["manager"]}`). This is not an F3 concept — F3 has no notion of shows or scopes; F4 adds that. But the hand-listed vs. derived distinction above is load-bearing for the later per-show design: it ensures the right role can express the right access model.
+
+### Unknown Role Names Fail Closed
+
+The `resolve()` function in `lib/admin-roles.ts` (lines 57-67) takes a list of role names (strings) and returns the union of their capabilities. A role name that is not in the mapping contributes nothing:
+
+```typescript
+const bundle = (ROLE_TO_CAPABILITIES as Record<string, ReadonlySet<Capability> | undefined>)[name];
+if (!bundle) continue;  // Unrecognised name: contributes empty set, not an error
+```
+
+This is **fail-closed by construction**. If a custom claim holds `roles: {"*": ["door-staff"]}` and someone later renames `door-staff` to `door-volunteer` without updating the claim, the old name `door-staff` resolves to nothing. Every check against that token immediately fails because the resolved capability set is empty. There is no fallback, no default, no special case for "oh, this is probably a renamed role" — it simply fails.
+
+### What F3 Does NOT Do (F4's Job)
+
+**F3 is purely definitional.** It exports data and one pure function. It does not:
+
+- **Wire capabilities into any route** — no route checks `resolve()` yet. F4 adds that wiring.
+- **Touch `lib/admin-auth.ts`** — F3 does not modify the existing authentication gate. F4 extends it.
+- **Create or read the `roles` custom claim** — F3 does not wire claims into Firebase Auth. F4 adds the claim system and the custom-claim resolution pipeline.
+- **Modify `scripts/admin-grant.ts`, `admin-revoke.ts`, or `admin-list.ts`** — F3 adds no new command-line tools. F4 extends those scripts to accept `--role` and `--show` arguments.
+
+A reader seeing `lib/admin-roles.ts` for the first time might reasonably ask: "OK, so if I have this mapping, what capability grants do I actually hold?" The honest answer today is: **"Nothing yet — F4 hasn't hooked this into any check."** The capabilities are real in the code; their enforcement is deferred. This is intentional — F3 establishes the concepts and the structure; F4 makes them load-bearing.
+
 ## Active Show Resolution: lib/show-resolution.ts (F1)
 
 The `resolveActiveShow()` function determines which `show` document is currently sellable. It is a pure function with no external dependencies, testable against fixtures:

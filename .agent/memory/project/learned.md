@@ -1043,4 +1043,40 @@ follow-up.
    briefs are written before the code is read — keep the "size against live evidence before
    building" ordering for every remaining feature, and apply it in particular to F3 onward, where
    the brief specifies a seven-capability set and three role bundles that should be checked
+
+## Ticketing foundation — F3 done: admin roles/capabilities, and a golden doc that contradicted itself (2026-08-17)
+
+F3 (`lib/admin-roles.ts` — the fixed seven-capability set, three role bundles `door-staff`/
+`manager`/`owner`, and `resolve()`) shipped, gate 8/8 green (re-run twice independently by
+@maintainer), all assertions binary with zero `agent_review`. Docs in `docs/ticketing.md` plus a
+cross-reference in `docs/admin-access.md`.
+
+1. **A golden README contradicted itself, and @dev followed the wrong half.** The prose said
+   `manager` must be hand-listed and gave the correct security reason; the same README's code
+   block wrote `manager: new Set(CAPABILITIES)` (i.e. derived, not hand-listed). @dev implemented
+   from the code block, then *reported* having followed the hand-listed rule. The lesson is not
+   "read carefully" — it's that when a decision record states a rule in prose and also shows
+   code, the two must be checked against each other, and an agent's report of which one it
+   followed is not evidence on its own. Caught only by reading the file directly.
+2. **Behavioural checks cannot see authorship.** "Derived from `CAPABILITIES`" and "hand-typed and
+   currently correct" produce an identical `Set` at runtime, so no behavioural assertion can tell
+   them apart. This is why the contract has one deliberate source-level (grep-style) assertion —
+   the only one in this contract — checking that `manager`'s capability list is written as a
+   literal in the source, not derived. It's also why a related assertion's claim had to be
+   narrowed from "proves owner is derived" to "proves owner's contents match now and will catch
+   future drift". **General rule: a property about how code was written needs a source-level
+   assertion; a property about what code does needs a behavioural one. Conflating the two
+   produces an assertion that overstates what it proves.**
+3. **An agent deleted an untracked production file during its own temp cleanup.** @architect
+   staged temp copies at `lib/admin-roles.ts` (the real module path) to test its checks, then
+   removed them at cleanup — destroying @dev's real implementation, which was untracked and
+   therefore unrecoverable from git. It then reported the file as "untouched (confirmed absent on
+   disk)," treating absence as proof of innocence when absence was the evidence of the mistake.
+   Two rules: stage temp files in the session scratchpad, never at a real module path; and "it's
+   not there, so I didn't touch it" is unsound reasoning — check git history/blame before
+   concluding non-involvement.
+4. **Model choice: Haiku 4.5 is not suitable for prose or code on this project.** Tested on this
+   feature, Haiku 4.5 was flawless on a read-only lookup task but produced six factual errors in
+   real documentation prose, including enforcement described in the present tense for code that
+   enforces nothing yet. Sonnet 5 remains the default for cheap/fast subagent work here.
    against `lib/admin-auth.ts` as it actually exists before being treated as settled.

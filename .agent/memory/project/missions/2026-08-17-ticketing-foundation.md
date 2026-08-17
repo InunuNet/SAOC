@@ -7,7 +7,7 @@ goal: 'Build the scalable ticketing foundation from docs/ticketing-system-founda
   admin capability, and an end-to-end human-proven purchase-to-door-scan flow'
 created_at: '2026-08-17T14:39:52.125721+00:00'
 started_at: '2026-08-17T16:35:26.642255+00:00'
-last_active_at: '2026-08-17T18:00:00.000000+00:00'
+last_active_at: '2026-08-17T18:22:39.892348+00:00'
 status: in_progress
 cost_estimate:
   features: 14
@@ -15,8 +15,8 @@ cost_estimate:
   total_calls: 0
 last_checkpoint:
   milestone: M1
-  feature: F2
-  ts: '2026-08-17T18:00:00.000000+00:00'
+  feature: F3
+  ts: '2026-08-17T18:22:39.892348+00:00'
 features:
 - id: F1
   title: 'Resolve `show` document collision: extend archive type for sales fields,
@@ -106,8 +106,10 @@ features:
     correct TypeScript, all contract assertions pass, no capability typos exist in
     any bundle, and a fresh AI session reading the test output can explain what each
     assertion checks without reading the source file.'
-  status: pending
+  status: done
   milestone: M1
+  started_at: '2026-08-17T18:02:58.094169+00:00'
+  completed_at: '2026-08-17T18:22:39.892165+00:00'
 - id: F4
   title: '`roles` custom claim (per-show map), AND-only composition, revoke-on-mutate
     tooling, batch-grant tooling, date-window lapse, one-time admin migration'
@@ -356,6 +358,8 @@ milestones:
   - F14
   status: pending
 ---
+
+
 
 
 

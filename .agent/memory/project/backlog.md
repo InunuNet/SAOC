@@ -1205,3 +1205,27 @@ reaches `paid`.
 - [P2] `amount`/`purchasedAt`/`m_payment_id`/`pf_payment_id` are duplicated on both `Order` and
   `Ticket` after F2, deliberately. F10 must remove the position copies together with a backfill
   when checkout/ITN stop writing them. Until then nothing detects divergence between the copies.
+
+## Ticketing foundation — F3 done: admin roles/capabilities (2026-08-17)
+
+F3 shipped — `lib/admin-roles.ts`, contract `contracts/contract-ticketing-f3-admin-roles.yaml`
+(8/8, zero `agent_review`), docs in `docs/ticketing.md` + `docs/admin-access.md`. See
+`learned.md` "Ticketing foundation — F3 done" for the golden-doc self-contradiction, the
+authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
+
+- [P3] A3's own description says it catches a "dead capability" (one no role grants), but in
+  @qa's mutation test it actually fired via its `CAPABILITIES.size !== 7` branch. Cosmetic
+  wording mismatch — the check itself is correct, just mis-described.
+- [P3] The golden README claims `fixtures/capability-typecheck.ts` is the *only* independent
+  check against a whole-set capability rename. That's now stale — @qa proved the source-level
+  check (`check-manager-hand-listed-source.mjs`) also catches it, since it carries its own
+  hard-coded capability array. Update the README's claim so it doesn't overstate the fixture's
+  uniqueness.
+- [P2] `resolve()` returning an array instead of a `Set` is caught by A1 (type error), but a
+  `const result: any = []` bypass slips A1 and is only caught by A7 (lint's `no-explicit-any`).
+  Two-layer catch — keep A7 in the gate; don't drop it as cosmetic.
+- [P2, carry forward to F13, not F4] Admin self-signup is still open at the Identity Toolkit
+  level (`client.permissions` empty, verified live 2026-08-17). It does not grant admin —
+  `admin: true` is only ever set by `scripts/admin-grant.ts`, which already refuses
+  pre-existing accounts without `--existing` and warns on the squatter shape. Residual risk:
+  email pre-registration ahead of Lee-Ann's onboarding in F13.

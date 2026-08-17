@@ -403,6 +403,12 @@ actually completed Apple Developer Program enrolment or Firebase Console configu
 After enabling it, test by attempting to sign in via the "Sign in with Apple" button on
 `/admin/login`.
 
+## Roles and Capabilities (F3, see docs/ticketing.md for full details)
+
+Feature F3 of the ticketing mission establishes a fixed set of seven capabilities (`view-admin-dashboard`, `scan-checkin`, `lookup-booking-ref`, `search-buyers`, `issue-comp`, `issue-refund`, `export-buyer-data`) and bundles them into three roles (`door-staff`, `manager`, `owner`). The role→capability mapping lives in `lib/admin-roles.ts` and is purely definitional — F3 does not wire these capabilities into any route or custom claim yet; that is F4's job.
+
+See [docs/ticketing.md](ticketing.md) § "Admin Roles and Capabilities" for the full rationale, including why `owner` is derived from the fixed set, why the lookup capability is split into two for POPIA, and what remains for F4 to complete.
+
 ## Out of scope here (F4 / M2)
 
 The human end-to-end door-scanner proof is later work (mission `admin-auth-hardening`,
