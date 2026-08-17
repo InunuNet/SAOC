@@ -31,22 +31,32 @@ detect_platform() {
 
 PLATFORM=$(detect_platform)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
-# ── template/ — Harness seed overlay ────────────────────────────────────────
-# template/ is the canonical seed directory used when initialising new workspaces.
-# It contains the minimal harness structure copied to a fresh project:
-#   - template/.agent/        — profile.json seed (filled during /onboard)
-#   - template/AGENTS.md      — generic agent instructions (project-specific ones differ)
-#   - template/execution/     — core harness scripts (brain.py, hooks/, etc.)
-#   - template/GITHUB.md      — GitHub integration reference
+# ── template/ — harness identity/config seed overlay ────────────────────────
+# template/ is NOT what init.sh copies core harness scripts from. It seeds a
+# small set of per-workspace identity/config defaults that only make sense
+# pre-onboarding:
+#   - template/.agent/profile.json        — profile seed (filled during /onboard)
+#   - template/.agent/memory/project/*.md — default goals/learned/backlog/rules.md
+#     (used as a fallback when this repo's own copies are missing)
+#   - template/.agent/identity/           — default identity docs
+#   - template/AGENTS.md                  — generic agent instructions fallback
+#   - template/GITHUB.md                  — GitHub integration reference
 #
-# What reads from template/:
-#   - This script (init.sh) — copies template files to the target workspace
-#   - make update-template / execution/update_template.py — propagates harness updates
+# init.sh's actual executable scripts (brain.py, mission.py, execution/hooks/*.sh,
+# etc.) are copied from $SCRIPT_DIR/execution — this repo's own LIVE execution/
+# directory — NOT from template/execution/. See the `cp "$SCRIPT_DIR/execution/...`
+# calls below. template/execution/ exists purely as the harness's own
+# self-mirror: it is read ONLY by update_template.py (make update-template),
+# never by init.sh. Keeping template/execution/ byte-identical to execution/ is
+# enforced by execution/checks/verify_mirror_sync.py — init.sh plays no part in
+# that sync and must not be assumed to.
 #
 # When to update template/:
-#   - When adding a new core harness script that all workspaces should get
-#   - When updating the generic AGENTS.md template
-#   - NOT for project-specific customisations (those live in .agent/identity/)
+#   - When changing a default identity/config seed that new workspaces should
+#     start with pre-onboarding
+#   - NOT for core harness script changes (those belong in execution/, and
+#     must be mirrored to template/execution/ separately — see
+#     verify_mirror_sync.py)
 # ────────────────────────────────────────────────────────────────────────────
 TEMPLATE_DIR="$SCRIPT_DIR/template"
 

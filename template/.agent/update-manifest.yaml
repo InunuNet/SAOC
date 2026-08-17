@@ -158,4 +158,16 @@ paths:
 - category: HARNESS
   comment: autonomy policy directory
   path: .gemini/policies/
+retractions:
+- path: .claude/settings.json
+  key_path: env.ANTHROPIC_DEFAULT_HAIKU_MODEL
+  bad_value: "$ANTHROPIC_DEFAULT_HAIKU_MODEL"
+  action: remove
+  replacement: null
+  reason: >
+    delivered by 3.7.100-3.7.103 via json_deep_merge; Claude Code does not
+    shell-expand settings env values, so this unexpanded self-referencing
+    literal became the haiku-tier model id and broke Agent-tool dispatch
+    for model:haiku agents
+  issue: "InunuNet/Athanor#delivered-value-retraction-F1"
 schema: athanor.manifest/v1

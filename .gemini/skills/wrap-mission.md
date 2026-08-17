@@ -34,7 +34,7 @@ bash execution/skills/wrap_mission.sh "what was accomplished" "tag1,tag2"
    active mission's frontmatter has `status: done`. Paused/pending missions, or a
    dangling pointer, leave `active.json` intact.
 
-See [docs/wrap-mission-hardening.md](../../docs/wrap-mission-hardening.md) for the full
+See [docs/wrap-mission-hardening.md](docs/wrap-mission-hardening.md) for the full
 reference (GH #1290).
 
 ## Token cost

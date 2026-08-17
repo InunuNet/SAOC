@@ -77,8 +77,9 @@ for proj in "${PROJECTS[@]}"; do
 
         # 4. Audit
         echo "  🔄 Running make audit..."
-        make audit > /dev/null 2>&1
+        AUDIT_OUTPUT="$(make audit 2>&1)"
         AUDIT_STATUS=$?
+        echo "$AUDIT_OUTPUT" | grep -E "SKIP \[|check\(s\) skipped" || true
 
         # 5. Boot Validation
         echo "  🔄 Running boot validation..."

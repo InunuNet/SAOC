@@ -202,8 +202,53 @@ def emit_compaction_hint(trigger: str, reason: str) -> None:
 
 # ── Subcommands ────────────────────────────────────────────────────────────────
 
+TERMINAL_MISSION_STATUS = {"done", "abandoned"}
+
+
 def cmd_new(args):
     MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
+
+    active = read_active()
+    if active and active.get("mission"):
+        prior_path = Path(active["mission"])
+        if prior_path.exists():
+            try:
+                prior_fm, _ = parse_mission_file(str(prior_path))
+            except SystemExit:
+                if not getattr(args, "force", False):
+                    print(
+                        f"ERROR: active mission file exists but could not be read (unreadable/corrupt/malformed): "
+                        f"{prior_path}",
+                        file=sys.stderr,
+                    )
+                    print(
+                        "Repair or delete the file, or pass --force to switch anyway (this orphans it unread).",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+                print(
+                    f"WARNING: --force overriding — orphaning unreadable/corrupt active mission file: "
+                    f"{prior_path}",
+                    file=sys.stderr,
+                )
+                prior_fm = None
+            if prior_fm and prior_fm.get("status") not in TERMINAL_MISSION_STATUS:
+                if not getattr(args, "force", False):
+                    print(
+                        f"ERROR: active mission is unresolved (status={prior_fm.get('status')!r}): "
+                        f"{prior_path}",
+                        file=sys.stderr,
+                    )
+                    print(
+                        "Resume, close out, or abandon it first, or pass --force to switch anyway.",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+                print(
+                    f"WARNING: --force overriding — orphaning unresolved mission "
+                    f"(status={prior_fm.get('status')!r}): {prior_path}",
+                    file=sys.stderr,
+                )
 
     goal = args.goal
     slug = args.slug if args.slug else re.sub(r"[^a-z0-9]+", "-", goal.lower()).strip("-")[:40]
@@ -1007,6 +1052,8 @@ def main():
     p_new = sub.add_parser("new", help="Create a new mission")
     p_new.add_argument("goal", help="Goal string for this mission")
     p_new.add_argument("--slug", help="Override auto-generated slug")
+    p_new.add_argument("--force", action="store_true",
+                        help="Override the unresolved-active-mission refusal (still warns)")
 
     # validate
     p_val = sub.add_parser("validate", help="Validate mission schema")

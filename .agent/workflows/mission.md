@@ -213,3 +213,19 @@ When a feature brief says "use /spec":
      --contract .agent/memory/project/specs/YYYY-MM-DD-<slug>-contract.yaml
    ```
 3. The mission gate will use this contract when evaluating the milestone.
+
+---
+
+## ⚠️ Gate-Discovery Trap (Critical)
+
+`mission.py gate` discovers contracts by matching the mission's **slug** against the **specs directory name**. A mismatch causes a silent NO-OP: all features gate as "no contract found" while assertions still pass when run by hand.
+
+**Always use explicit `attach-spec`** for every feature that has a contract:
+```bash
+python3 execution/mission.py attach-spec mission.md \
+  --feature F<N> --spec <dir> --contract <contract.yaml>
+```
+
+This applies even to contracts NOT created via `/spec`. Do NOT assume slug-based auto-discovery will work — explicit attachment is the only safe pattern.
+
+See `docs/harness/assertion-shape.md` "The Gate-Discovery Trap — Mission Contract Wiring" for full context.

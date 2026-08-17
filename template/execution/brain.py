@@ -202,10 +202,62 @@ def stats():
     print(f"   Path: {brain_path.resolve()}")
 
 
-def wrap_up(summary: str, tags: str = "", blockers: str = ""):
+def write_reboot(summary: str, next_items: list = None, facts: list = None, do_not_touch: list = None,
+                  closure_candidates: list = None, path=None):
+    """Write a lightweight reboot.md so the next session has instant context (<20 lines)."""
+    path = Path(path) if path else Path(".agent/memory/project/reboot.md")
+    lines = [
+        "# Reboot Context",
+        f"_Generated: {__import__('datetime').datetime.now(__import__('datetime').timezone.utc).strftime('%Y-%m-%dT%H:%M')}Z_",
+        "",
+        "## What happened last session",
+        summary,
+        "",
+    ]
+    if next_items:
+        lines += ["## Top priorities", *[f"- {item}" for item in next_items[:5]], ""]
+    if facts:
+        lines += ["## Critical facts", *[f"- {fact}" for fact in facts[:5]], ""]
+    if do_not_touch:
+        lines += ["## Do NOT touch", *[f"- {item}" for item in do_not_touch[:5]], ""]
+    if closure_candidates:
+        lines += ["## Closure candidates (needs sign-off)",
+                   *[f"- {item}" for item in closure_candidates[:5]], ""]
+    path.write_text("\n".join(lines))
+    print(f"📝 Reboot context written to {path}")
+
+
+def wrap_up(summary: str, tags: str = "", blockers: str = "", force: bool = False,
+            next_items: list = None, facts: list = None, do_not_touch: list = None,
+            closure_candidates: list = None):
     """End-of-session wrap-up: store summary + clear scratch."""
+    # Write lightweight reboot context for next session
+    write_reboot(summary, next_items=next_items, facts=facts, do_not_touch=do_not_touch,
+                 closure_candidates=closure_candidates)
     # Store the session summary
     mem_id = remember(summary, tags=tags or "session,wrap-up", source="wrap-up", blockers=blockers)
+
+    # Guard: skip scratch purge if an active in-progress mission exists
+    if not force:
+        import re as _re
+        import json as _json
+        active_path = Path(".agent/memory/project/missions/active.json")
+        if active_path.exists():
+            try:
+                active_data = _json.loads(active_path.read_text())
+                mission_path = active_data.get("mission", "")
+                if mission_path and Path(mission_path).exists():
+                    mission_text = Path(mission_path).read_text()
+                    # Extract status from YAML frontmatter
+                    m = _re.search(r'^status:\s*(\S+)', mission_text, _re.MULTILINE)
+                    if m and m.group(1) in ("in_progress", "pending"):
+                        print(
+                            "Warning:  Active mission detected — skipping scratch purge. "
+                            "Run brain.py wrap-up after mission close-out."
+                        )
+                        return mem_id
+            except Exception:
+                pass  # if we can't read active.json, proceed normally
 
     # Clear scratch files
     scratch_dir = Path(".agent/memory/scratch")
@@ -224,6 +276,26 @@ def wrap_up(summary: str, tags: str = "", blockers: str = ""):
     return mem_id
 
 
+def latest_wrapup_timestamp() -> str | None:
+    """Return the ISO timestamp of the most recent wrap-up memory, or None if none exist."""
+    collection = get_collection()
+    if collection.count() == 0:
+        return None
+
+    all_data = collection.get(
+        where={"source": "wrap-up"},
+    )
+    if not all_data["ids"]:
+        return None
+
+    latest_ts = ""
+    for meta in all_data["metadatas"]:
+        ts = meta.get("timestamp", "")
+        if ts > latest_ts:
+            latest_ts = ts
+    return latest_ts or None
+
+
 def last_session(quiet: bool = False):
     """Show the most recent wrap-up memory."""
     collection = get_collection()
@@ -234,25 +306,23 @@ def last_session(quiet: bool = False):
             print("🧠 No sessions recorded yet.")
         return None
 
-    # Get all wrap-up memories, sorted by timestamp
-    all_data = collection.get(
-        where={"source": "wrap-up"},
-    )
-    if not all_data["ids"]:
+    latest_ts = latest_wrapup_timestamp()
+    if latest_ts is None:
         if quiet:
             print("No prior sessions.")
         else:
             print("🧠 No wrap-up memories found.")
         return None
 
-    # Find the most recent by timestamp
+    # Get all wrap-up memories, find the one matching the latest timestamp
+    all_data = collection.get(
+        where={"source": "wrap-up"},
+    )
     latest_idx = 0
-    latest_ts = ""
     for i, meta in enumerate(all_data["metadatas"]):
-        ts = meta.get("timestamp", "")
-        if ts > latest_ts:
-            latest_ts = ts
+        if meta.get("timestamp", "") == latest_ts:
             latest_idx = i
+            break
 
     doc = all_data["documents"][latest_idx]
     meta = all_data["metadatas"][latest_idx]
@@ -465,6 +535,16 @@ def main():
     p_wrap.add_argument("--summary", "-s", required=True, help="Session summary")
     p_wrap.add_argument("--tags", "-t", default="", help="Comma-separated tags")
     p_wrap.add_argument("--blockers", "-b", default="", help="Comma-separated blocker tags")
+    p_wrap.add_argument("--force", action="store_true",
+                        help="Bypass active-mission guard and purge scratch unconditionally")
+    p_wrap.add_argument("--next", nargs="*", metavar="ITEM", dest="next_items",
+                        help="Top priority items for next session (written to reboot.md)")
+    p_wrap.add_argument("--facts", nargs="*", metavar="FACT",
+                        help="Critical facts to preserve across compact")
+    p_wrap.add_argument("--do-not-touch", nargs="*", metavar="PATH", dest="do_not_touch",
+                        help="Files/dirs that must not be modified next session")
+    p_wrap.add_argument("--closure-candidates", nargs="*", metavar="ITEM", dest="closure_candidates",
+                        help="GitHub issue closure candidates for the user to sign off on (written to reboot.md)")
 
     # last-session
     p_last = sub.add_parser("last-session", help="Show the most recent wrap-up memory")
@@ -505,7 +585,11 @@ def main():
     elif args.action == "stats":
         stats()
     elif args.action == "wrap-up":
-        wrap_up(args.summary, args.tags, args.blockers)
+        wrap_up(args.summary, args.tags, args.blockers, force=args.force,
+                next_items=getattr(args, "next_items", None),
+                facts=getattr(args, "facts", None),
+                do_not_touch=getattr(args, "do_not_touch", None),
+                closure_candidates=getattr(args, "closure_candidates", None))
     elif args.action == "last-session":
         last_session(args.quiet)
     elif args.action == "export":

@@ -8,11 +8,30 @@ CANONICAL_DIR=".agent/skills"
 CLAUDE_DIR=".claude/skills"
 GEMINI_DIR=".gemini/skills"
 
+# Self-heal: if a platform skill dir is a symlink pointing at the same real
+# directory as the canonical dir (old init.sh convention), replace it with a
+# real directory BEFORE any delete step. Deleting through such a symlink
+# would destroy the canonical files instead of the platform copy.
+mkdir -p "$CANONICAL_DIR"
+CANONICAL_REAL=$(cd "$CANONICAL_DIR" && pwd -P)
+for dir in "$CLAUDE_DIR" "$GEMINI_DIR"; do
+  if [ -L "$dir" ]; then
+    DIR_REAL=$(cd "$dir" && pwd -P 2>/dev/null || echo "")
+    if [ "$DIR_REAL" = "$CANONICAL_REAL" ]; then
+      echo "WARN: $dir is a symlink to the canonical skills dir — self-healing to a real directory"
+      rm -f "$dir"
+      mkdir -p "$dir"
+    fi
+  fi
+done
+
 mkdir -p "$CLAUDE_DIR" "$GEMINI_DIR"
 
-# Delete existing skills to ensure a clean sync (avoids orphan/hidden files being parsed as tools)
-find "$CLAUDE_DIR/" -type f -delete
-find "$GEMINI_DIR/" -type f -delete
+# Delete existing skills (except .keep) to ensure a clean sync. Use a
+# non-dereferencing glob delete (not `find "$DIR/" ... -delete`, which
+# dereferences a symlinked directory argument and walks into its target).
+rm -f "$CLAUDE_DIR"/*.md
+rm -f "$GEMINI_DIR"/*.md
 
 synced=0
 for skill in "$CANONICAL_DIR"/*.md; do

@@ -1,4 +1,5 @@
 VERSION := $(shell cat .agent/version 2>/dev/null || echo "UNKNOWN")
+AUDIT_SKIP_LOG := .agent/memory/scratch/.audit-skips.tmp
 
 # Athanor v$(VERSION) Makefile
 
@@ -203,6 +204,7 @@ verify-agents:
 
 audit:
 	@echo "Running audit..."
+	@rm -f $(AUDIT_SKIP_LOG)
 	@python3 -c "import json; json.load(open('.claude/settings.json')); print('✅ .claude/settings.json')"
 	@python3 -c "import json; json.load(open('.gemini/settings.json')); print('✅ .gemini/settings.json')"
 	@test -L CLAUDE.md && echo "✅ CLAUDE.md symlink" || echo "❌ CLAUDE.md"
@@ -214,6 +216,17 @@ audit:
 	@echo "  OK: manifest coverage complete"
 	@python3 execution/audit_gates.py
 	@python3 execution/checks/verify_version_fields_match.py && echo "✅ version fields match" || (echo "❌ version fields diverged"; exit 1)
+	@echo "  [alembic-propagation, F2] installed skill vs. canonical (intra-project only)..."
+	@python3 execution/checks/verify_skill_propagation.py
+	@echo "  [alembic-drift, F3] skill's alembic_version vs. running proxy (SKIPs if proxy down)..."
+	@python3 execution/checks/verify_skill_drift.py; rc=$$?; if [ $$rc -eq 77 ]; then echo "  SKIP [alembic-drift, F3]: not verified — see message above; does not count as pass or fail"; echo "alembic-drift" >> $(AUDIT_SKIP_LOG); elif [ $$rc -ne 0 ]; then exit $$rc; fi
+	@echo "  [free-model-catalog-shape, F4] .agent/config/free_models.json shape + cross-vendor..."
+	@python3 execution/checks/verify_free_model_catalog.py config_shape
+	@python3 execution/checks/verify_free_model_catalog.py vendor_distinct
+	@echo "  [free-model-catalog-live, F4] live OpenRouter catalog re-verification (SKIPs if Alembic proxy down)..."
+	@python3 execution/checks/verify_free_model_catalog.py catalog_live; rc=$$?; if [ $$rc -eq 77 ]; then echo "  SKIP [free-model-catalog-live, F4]: not verified — see message above; does not count as pass or fail"; echo "free-model-catalog-live" >> $(AUDIT_SKIP_LOG); elif [ $$rc -ne 0 ]; then exit $$rc; fi
+	@if [ -s $(AUDIT_SKIP_LOG) ]; then n=$$(wc -l < $(AUDIT_SKIP_LOG) | tr -d ' '); echo "⚠️  $$n check(s) skipped (not verified this run) — see SKIP lines above"; fi
+	@rm -f $(AUDIT_SKIP_LOG)
 
 backlog-audit:
 	@bash execution/backlog_audit.sh
@@ -314,16 +327,18 @@ pulse-register: install-pulse
 
 install-pulse:
 	@echo "Installing Athanor Pulse launchd agent..."
+	@bash "$(CURDIR)/execution/check_pulse_label_collision.sh" "$(CURDIR)"
+	@bash "$(CURDIR)/execution/check_pulse_label_collision.sh" "$(CURDIR)" --heartbeat
 	@mkdir -p ~/Library/LaunchAgents
-	@sed "s|{{PROJECT_ROOT}}|$(CURDIR)|g" "$(CURDIR)/execution/com.athanor.pulse.plist" > ~/Library/LaunchAgents/com.athanor.pulse.plist
-	@launchctl unload -F ~/Library/LaunchAgents/com.athanor.pulse.plist 2>/dev/null || true
-	@launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.plist
-	@sed "s|{{PROJECT_ROOT}}|$(CURDIR)|g" "$(CURDIR)/.agent/pulse/registry/com.athanor.pulse.heartbeat.plist" > ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.plist
-	@launchctl unload -F ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.plist 2>/dev/null || true
-	@launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.heartbeat.plist
-	@echo "✅ Athanor Pulse launchd agent installed and loaded. It will run every 5 minutes."
-	@echo "To unload: launchctl unload ~/Library/LaunchAgents/com.athanor.pulse.plist"
-	@echo "To remove: rm ~/Library/LaunchAgents/com.athanor.pulse.plist"
+	@sed "s|{{PROJECT_ROOT}}|$(CURDIR)|g; s|<string>com\.athanor\.pulse</string>|<string>$$(bash "$(CURDIR)/execution/derive_pulse_label.sh" "$(CURDIR)")</string>|g" "$(CURDIR)/execution/com.athanor.pulse.plist" > ~/Library/LaunchAgents/$$(bash "$(CURDIR)/execution/derive_pulse_label.sh" "$(CURDIR)").plist
+	@launchctl unload -F ~/Library/LaunchAgents/$$(bash "$(CURDIR)/execution/derive_pulse_label.sh" "$(CURDIR)").plist 2>/dev/null || true
+	@launchctl load -w ~/Library/LaunchAgents/$$(bash "$(CURDIR)/execution/derive_pulse_label.sh" "$(CURDIR)").plist
+	@sed "s|{{PROJECT_ROOT}}|$(CURDIR)|g; s|<string>com\.athanor\.pulse\.heartbeat</string>|<string>$$(bash "$(CURDIR)/execution/derive_pulse_label.sh" "$(CURDIR)" --heartbeat)</string>|g" "$(CURDIR)/.agent/pulse/registry/com.athanor.pulse.heartbeat.plist" > ~/Library/LaunchAgents/$$(bash "$(CURDIR)/execution/derive_pulse_label.sh" "$(CURDIR)" --heartbeat).plist
+	@launchctl unload -F ~/Library/LaunchAgents/$$(bash "$(CURDIR)/execution/derive_pulse_label.sh" "$(CURDIR)" --heartbeat).plist 2>/dev/null || true
+	@launchctl load -w ~/Library/LaunchAgents/$$(bash "$(CURDIR)/execution/derive_pulse_label.sh" "$(CURDIR)" --heartbeat).plist
+	@echo "✅ Athanor Pulse launchd agent installed and loaded (label scoped to this project). It will run every 5 minutes."
+	@echo "To find the installed plist filenames: ls ~/Library/LaunchAgents/ | grep com.athanor.pulse"
+	@echo "To unload: launchctl unload ~/Library/LaunchAgents/<label>.plist"
 
 fleet-install-pulse:
 	@echo "Installing independent Pulse + heartbeat for all fleet projects..."

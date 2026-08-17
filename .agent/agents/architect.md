@@ -26,6 +26,7 @@ MUST use `slug:` field (NOT `spec:`). Assertions use `command:` (NOT `verify.cmd
 **ASSERTION COMMAND RULES — non-negotiable:**
 - NEVER emit multiline python3 -c commands — they FAIL at contract.py gate execution time even when the implementation is correct (subprocess shell parsing breaks on embedded newlines).
 - Use single-line grep/test commands. For complex Python logic, write a helper script and call it.
+- **CRITICAL: Assertions must OBSERVE the mechanism, not mention the words.** Ask: "what does this assertion actually observe?" If the answer is "source text that happens to correlate with the mechanism," the assertion is not ready. See `docs/harness/assertion-shape.md` for the rule, the four buckets, and repair recipes. Every assertion must be negatively verified: run it against a deliberately broken temp copy and confirm it FAILS for the right reason. An assertion never seen to fail is not yet known to observe anything.
 
 ```yaml
 # PROHIBITED — multiline python3 -c breaks gate execution:

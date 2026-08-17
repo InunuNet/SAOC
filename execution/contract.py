@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 RESULTS_DIR = Path(".agent/memory/scratch/contract-results")
+MAX_TIMEOUT_SECONDS = 86400  # 24h ceiling -- generous for CI, still finite
 
 
 def load_contract(path: str) -> dict:
@@ -133,10 +134,7 @@ def normalize_contract(contract: dict) -> dict:
             cid = check.get("id", "")
             desc = check.get("description", "")
             cmd = check.get("command", "")
-            verify = {
-                "kind": "shell",
-                "cmd": cmd,
-            }
+            verify = {"kind": "shell", "cmd": cmd}
             if "timeout_seconds" in check:
                 verify["timeout_seconds"] = check["timeout_seconds"]
             assertion_list.append({
@@ -201,6 +199,18 @@ def write_result(contract: dict, assertion_id: str, verdict: str, evidence: str)
     }, indent=2))
 
 
+def _timeout_seconds_error(ts) -> str | None:
+    """Same rule validate_cmd already enforces at file-scan time; now also
+    callable at the point check_cmd is about to consume the value."""
+    if isinstance(ts, bool) or not isinstance(ts, int):
+        return f"must be an int, got {type(ts).__name__}"
+    if ts <= 0:
+        return f"must be positive, got {ts}"
+    if ts > MAX_TIMEOUT_SECONDS:
+        return f"exceeds max {MAX_TIMEOUT_SECONDS}s, got {ts}"
+    return None
+
+
 def validate_cmd(args):
     contract = load_contract(args.contract)
     errors = []
@@ -233,17 +243,11 @@ def validate_cmd(args):
         elif a["verify"].get("kind") in binary_kinds:
             binary_count += 1
 
-        # A declared timeout_seconds must be a positive integer. 0 or negative
-        # is invalid -- not "unlimited" and not "use the default" -- so it is
-        # rejected here rather than silently reinterpreted at check time.
-        verify_block = a.get("verify", {})
-        if "timeout_seconds" in verify_block:
-            declared = verify_block["timeout_seconds"]
-            if not isinstance(declared, int) or isinstance(declared, bool) or declared <= 0:
-                errors.append(
-                    f"Assertion {aid}: timeout_seconds must be a positive integer, "
-                    f"got {declared!r}"
-                )
+        ts = a.get("verify", {}).get("timeout_seconds")
+        if ts is not None:
+            ts_error = _timeout_seconds_error(ts)
+            if ts_error:
+                errors.append(f"Assertion {aid}: timeout_seconds {ts_error}")
 
         # Detect prohibited multiline python3 -c pattern
         verify = a.get("verify", {})
@@ -287,12 +291,17 @@ def check_cmd(args):
     if kind == "shell":
         cmd = verify.get("cmd", "")
         expected_exit = verify.get("expect_exit", 0)
-        # Explicit `is not None` (not `or`): a declared timeout_seconds of 0 is
-        # falsy but must not be silently swallowed in favour of the CLI/default
-        # value. validate_cmd() rejects non-positive declared values outright, so
-        # by the time a check runs, any declared value here is already known-valid.
-        declared_timeout = verify.get("timeout_seconds")
-        timeout = declared_timeout if declared_timeout is not None else getattr(args, "timeout_seconds", 60)
+        timeout = verify.get("timeout_seconds")
+        if timeout is not None:
+            ts_error = _timeout_seconds_error(timeout)
+            if ts_error:
+                evidence = f"Invalid timeout_seconds: {ts_error}"
+                write_result(contract, assertion_id, "fail", evidence)
+                print(f"FAIL {assertion_id} ({kind}): FAIL")
+                print(f"   {evidence[:200]}")
+                sys.exit(1)
+        if timeout is None:
+            timeout = getattr(args, "timeout_seconds", 60)
         tf_name = None
         try:
             import tempfile

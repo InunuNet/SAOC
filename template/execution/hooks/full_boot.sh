@@ -11,22 +11,79 @@ echo "════ BOOT CONTEXT (Athanor Harness) ════"
 echo "Core Mandates: Specialized agents, Tiered memory, Autonomous self-improvement, Alembic (URL distilling)."
 echo ""
 
-# Auto-update check: compare local template_version to upstream
-# SKIP if active mission in flight — overwriting hooks mid-session breaks everything
-CURRENT_VER=$(python3 -c "import json; print(json.load(open('.agent/profile.json')).get('template_version','0'))" 2>/dev/null || echo "0")
-LATEST_VER=$(gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' 2>/dev/null | base64 -d 2>/dev/null | tr -d '\n' || echo "")
-ACTIVE_MISSION=$(python3 -c "import json,pathlib; d=json.loads(pathlib.Path('.agent/memory/project/missions/active.json').read_text()); print(d.get('mission') or '')" 2>/dev/null || echo "")
-if [[ -n "$LATEST_VER" && "$CURRENT_VER" != "$LATEST_VER" ]]; then
-  if [[ -n "$ACTIVE_MISSION" ]]; then
-    echo "⬆️  UPDATE AVAILABLE ($CURRENT_VER → $LATEST_VER) — skipped: mission '$ACTIVE_MISSION' in progress."
-    echo "   Run 'make update-template' after mission completes."
-  else
-    echo "⬆️  HARNESS UPDATE: template $CURRENT_VER → $LATEST_VER — applying..."
-    python3 execution/update_template.py --apply 2>/dev/null && \
-      echo "✅ Harness updated to $LATEST_VER. New hooks and rules are now active." || \
-      echo "⚠️  Auto-update failed — run: make update-template"
-  fi
+# HARNESS-completeness check (issue #1311): a partially-propagated project can be
+# missing the harness's own executables entirely. Detect that up front with a loud,
+# actionable message instead of letting downstream steps misreport it (e.g. as a
+# stale mission pointer). Non-fatal — boot must never abort on this.
+_HARNESS_MISSING=""
+for _critical_file in execution/mission.py execution/contract.py; do
+  [ -f "$_critical_file" ] || _HARNESS_MISSING="$_HARNESS_MISSING $_critical_file"
+done
+if [ -n "$_HARNESS_MISSING" ]; then
+  echo "⛔ HARNESS INCOMPLETE — missing:$_HARNESS_MISSING"
+  echo "   Propagation failed. Run: python3 execution/update_template.py --apply"
+  echo ""
 fi
+unset _HARNESS_MISSING _critical_file
+
+# Auto-update check: compare local template_version to upstream
+# Prefer .agent/.template_state (updater-owned, written on every fully
+# successful --apply run) over profile.json, which can lag or never move if
+# a prior run bailed early — falls back to profile.json when state file is
+# missing or unparsable (issue #1295/#1312).
+CURRENT_VER=$(python3 -c "import json; print(json.load(open('.agent/.template_state')).get('template_version','0'))" 2>/dev/null || python3 -c "import json; print(json.load(open('.agent/profile.json')).get('template_version','0'))" 2>/dev/null || echo "0")
+_UPDATE_CHECK_ERR=$(mktemp)
+_UPDATE_CHECK_OUT=$(mktemp)
+# Bound the `gh api` call so a blackholed call can never hang boot. `timeout`/
+# `gtimeout` (Homebrew coreutils) aren't present on stock macOS, so this must
+# not hard-depend on either — falling back to `timeout` unconditionally would
+# silently disable the update check (not just the bound) on any clean Mac.
+# When neither binary is on PATH, background the call and poll-and-kill it
+# ourselves: the check still actually runs, it's just bounded by hand.
+# Resolved once, here, and reused (not re-derived) by the GITHUB AUTH section
+# below (~line 380+) for the same reason — nothing unsets it in between.
+_GH_TIMEOUT_BIN="$(command -v timeout 2>/dev/null || command -v gtimeout 2>/dev/null || echo "")"
+if [ -n "$_GH_TIMEOUT_BIN" ]; then
+  LATEST_VER=$("$_GH_TIMEOUT_BIN" 3 gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' 2>"$_UPDATE_CHECK_ERR" | base64 -d 2>>"$_UPDATE_CHECK_ERR" | tr -d '\n' || echo "")
+else
+  gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' >"$_UPDATE_CHECK_OUT" 2>"$_UPDATE_CHECK_ERR" &
+  _GH_PID=$!
+  _WAITED=0
+  while kill -0 "$_GH_PID" 2>/dev/null && [ "$_WAITED" -lt 3 ]; do
+    sleep 1
+    _WAITED=$((_WAITED + 1))
+  done
+  if kill -0 "$_GH_PID" 2>/dev/null; then
+    kill -9 "$_GH_PID" 2>/dev/null
+    wait "$_GH_PID" 2>/dev/null
+    echo "gh api timed out after ${_WAITED}s (no timeout/gtimeout on PATH — bounded via background poll-kill fallback)" >> "$_UPDATE_CHECK_ERR"
+    LATEST_VER=""
+  else
+    wait "$_GH_PID" 2>/dev/null
+    LATEST_VER=$(base64 -d <"$_UPDATE_CHECK_OUT" 2>>"$_UPDATE_CHECK_ERR" | tr -d '\n')
+  fi
+  unset _GH_PID _WAITED
+fi
+if [ -z "$LATEST_VER" ] && [ -s "$_UPDATE_CHECK_ERR" ]; then
+  # Redact token-shaped substrings and cap length before echoing gh's raw
+  # stderr into boot output — an unbounded/unredacted blob must never reach
+  # session output verbatim.
+  _ERR_MSG=$(tail -c 500 "$_UPDATE_CHECK_ERR" 2>/dev/null | tr -d '\n' | sed -E 's/[A-Za-z0-9_]{20,}/[redacted]/g' | cut -c1-100)
+  echo "⚠️  update check failed: $_ERR_MSG"
+  unset _ERR_MSG
+fi
+rm -f "$_UPDATE_CHECK_ERR" "$_UPDATE_CHECK_OUT"
+unset _UPDATE_CHECK_ERR _UPDATE_CHECK_OUT _GH_TIMEOUT_BIN
+ACTIVE_MISSION=$(python3 -c "import json,pathlib; d=json.loads(pathlib.Path('.agent/memory/project/missions/active.json').read_text()); print(d.get('mission') or '')" 2>/dev/null || echo "")
+# Detect-and-prompt only — boot never applies template updates itself, in either
+# the mission-active or no-mission case. See .claude/rules/behavior.md "Ask
+# Before Destructive Actions" and mission harness-integrity-hardening F5.
+if [[ -n "$LATEST_VER" && "$CURRENT_VER" != "$LATEST_VER" ]]; then
+  echo "⬆️  HARNESS UPDATE AVAILABLE: template $CURRENT_VER → $LATEST_VER"
+  echo "   Run 'make update-template' to review and apply it (boot never applies updates automatically)."
+fi
+
+python3 execution/checks/verify_model_env_boot.py boot_report || true  # Model-env boot guard (#1332), non-fatal
 
 # Step 0.5: Quota-death warm restart — one-shot checkpoint left by quota_death_checkpoint.sh (StopFailure)
 QUOTA_CP=".agent/memory/scratch/.quota_death_checkpoint.json"
@@ -41,25 +98,22 @@ if [ -f "$QUOTA_CP" ]; then
   echo ""
 fi
 
-# Step X: Platform Capabilities
-echo "--- PLATFORM CAPABILITIES ---"
-echo "Skills Available:"
-echo "  - alembic (Access external web content via @search)"
-echo "  - onboard (Athanor onboarding workflow)"
-echo ""
-
-# Step Y: Service Mapping
-echo "--- SERVICE MAPPING ---"
-echo "Alembic: https://github.com/AthanorProject/Alembic"
-echo ""
-echo "🛡️ Alembic Active: Use @search for web queries."
-echo ""
-
-
 echo "--- ACTIVE MISSION ---"
+# wrap_mission.sh's own clear step (post close-out) writes active.json as
+# {"mission": null, ...} rather than unlinking it -- so gate on the "mission"
+# field being non-null/non-empty, not merely on the file existing, or a
+# freshly-closed mission misreports as a stale pointer here (issue: F3 QA).
+ACTIVE_MISSION_SLUG=""
 if [ -f .agent/memory/project/missions/active.json ]; then
-  python3 execution/mission.py status "$(python3 -c 'import json; print(json.load(open(".agent/memory/project/missions/active.json"))["mission"])' 2>/dev/null)" 2>/dev/null || echo "(stale mission pointer — run: python3 execution/mission.py list)"
   ACTIVE_MISSION_SLUG=$(python3 -c "import json,pathlib; d=json.loads(pathlib.Path('.agent/memory/project/missions/active.json').read_text()); print(d.get('mission') or '')" 2>/dev/null || echo "")
+fi
+if [ -n "$ACTIVE_MISSION_SLUG" ]; then
+  if [ -f execution/mission.py ]; then
+    python3 execution/mission.py status "$ACTIVE_MISSION_SLUG" 2>/dev/null || echo "(stale mission pointer — run: python3 execution/mission.py list)"
+  else
+    echo "⛔ HARNESS INCOMPLETE — missing: execution/mission.py"
+    echo "   Propagation failed. Run: python3 execution/update_template.py --apply"
+  fi
   MISSION_STATUS=""
   if [ -n "$ACTIVE_MISSION_SLUG" ]; then
     MISSION_FILE=$(find .agent/memory/project/missions -maxdepth 1 -name "${ACTIVE_MISSION_SLUG}" 2>/dev/null | head -1)
@@ -154,18 +208,6 @@ if [ -f "$COMMS_FILE" ]; then
   fi
 fi
 
-# Workflow Reminder — injected between mission state and identity so the
-# chain is fresh in the agent's working memory at the start of every turn.
-echo "--- WORKFLOW REMINDER (mandatory chain) ---"
-echo "1. Active mission? → python3 execution/mission.py resume → follow it"
-echo "2. New multi-session goal? → /mission new (locks autonomy=off)"
-echo "3. 3+ files OR design decision? → /spec (locks autonomy=off)"
-echo "4. Smaller substantive task? → @architect writes contract.yaml + golden files FIRST"
-echo "5. Chain: contract → @dev → @qa (adversarial) → @docs → contract.py gate → @maintainer"
-echo "6. DONE = contract gated green + docs verified + brain wrapped. Nothing less."
-echo "NEVER skip to implementation. NEVER let @dev author the contract or the QA inputs."
-echo ""
-
 # Step 0: System Identity
 echo "--- SYSTEM IDENTITY ---"
 python3 -c "
@@ -230,12 +272,10 @@ echo ""
 echo "--- PROJECT RULES ---"
 if [ -f ".agent/memory/project/rules.md" ]; then
   RULES_LINES=$(wc -l < ".agent/memory/project/rules.md")
-  if [ "$RULES_LINES" -gt 30 ]; then
-    echo "[Note: rules.md has $RULES_LINES lines — showing last 30. Run \`cat .agent/memory/project/rules.md\` for full history.]"
-    tail -30 .agent/memory/project/rules.md
-  else
-    cat .agent/memory/project/rules.md
+  if [ "$RULES_LINES" -gt 400 ]; then
+    echo "[WARNING: rules.md has $RULES_LINES lines — grown past its intended size. Injecting in full below, but this file should be compacted.]"
   fi
+  cat .agent/memory/project/rules.md
 else
   echo "(no rules.md)"
 fi
@@ -341,16 +381,56 @@ echo ""
 
 # Step 8: GitHub Auth
 echo "--- GITHUB AUTH ---"
+# `gh auth status` and `gh api user -q .login` are both network calls that
+# must never be allowed to hang boot indefinitely. Bound each with the same
+# timeout/gtimeout-or-poll-kill-fallback pattern as the update-check call
+# above, reusing the already-resolved $_GH_TIMEOUT_BIN (nothing unsets it
+# between there and here). A bare unconditional `timeout` would silently
+# disable this check on stock macOS (no timeout/gtimeout on PATH) instead of
+# merely bounding it, so the poll-kill fallback must actually run the call.
+_gh_bounded_run() {
+  # $1 = file to capture stdout into, remaining args = command to run.
+  # Returns the command's exit code (124 if it had to be killed).
+  local _out_file="$1"; shift
+  if [ -n "$_GH_TIMEOUT_BIN" ]; then
+    "$_GH_TIMEOUT_BIN" 3 "$@" >"$_out_file" 2>/dev/null
+    return $?
+  fi
+  "$@" >"$_out_file" 2>/dev/null &
+  local _pid=$!
+  local _waited=0
+  while kill -0 "$_pid" 2>/dev/null && [ "$_waited" -lt 3 ]; do
+    sleep 1
+    _waited=$((_waited + 1))
+  done
+  if kill -0 "$_pid" 2>/dev/null; then
+    kill -9 "$_pid" 2>/dev/null
+    wait "$_pid" 2>/dev/null
+    return 124
+  fi
+  wait "$_pid" 2>/dev/null
+}
 if [ -f ./.env ] && grep -q "GITHUB_TOKEN" ./.env; then
     echo "✅ GitHub Auth: Active (Token found in .env)"
 elif [ -n "$GITHUB_TOKEN" ]; then
     echo "✅ GitHub Auth: Active (Token found in environment)"
-elif command -v gh &>/dev/null && gh auth status &>/dev/null; then
-    GH_USER=$(gh api user -q .login 2>/dev/null || echo "authenticated")
-    echo "✅ GitHub Auth: Active (gh logged in as $GH_USER via System CLI)"
+elif command -v gh &>/dev/null; then
+    _gh_bounded_run /dev/null gh auth status
+    if [ $? -eq 0 ]; then
+        _GH_API_OUT=$(mktemp)
+        _gh_bounded_run "$_GH_API_OUT" gh api user -q .login
+        GH_USER=$(tr -d '\n' <"$_GH_API_OUT" 2>/dev/null)
+        rm -f "$_GH_API_OUT"
+        [ -z "$GH_USER" ] && GH_USER="authenticated"
+        echo "✅ GitHub Auth: Active (gh logged in as $GH_USER via System CLI)"
+        unset _GH_API_OUT
+    else
+        echo "❌ GitHub Auth: Inactive"
+    fi
 else
     echo "❌ GitHub Auth: Inactive"
 fi
+unset -f _gh_bounded_run
 echo ""
 
 # Step 9: Git remotes

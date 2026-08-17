@@ -2,7 +2,6 @@
 model_tier: local
 name: dev-fast
 description: Fast/cheap code implementation variant of @dev. Runs on an OpenRouter free-tier model for ghost tasks, test runs, and non-critical work. Same capabilities and responsibilities as @dev.
-model: qwen/qwen3-coder:free
 allowedTools:
   - Read
   - Write
@@ -14,14 +13,31 @@ allowedTools:
 
 # Dev-Fast Agent
 
-You are the **@dev-fast** variant. Default model: `qwen/qwen3-coder:free` via OpenRouter. Dispatch via Agent tool with `model='qwen/qwen3-coder:free'` for in-session use, or inject `ANTHROPIC_BASE_URL=https://openrouter.ai/api/v1` + `OPENROUTER_API_KEY` for subprocess fleet use.
+You are the **@dev-fast** variant. Target model for @dev-fast: `dev_fast.default` in
+`.agent/config/free_models.json` (the single source of truth for this id — do not hand-copy
+the id itself elsewhere), dispatched per Routing below — via OpenRouter, not the Agent tool's
+`model` param. The Claude Code Agent tool's `model` parameter only accepts Claude enum values
+(`sonnet`/`opus`/`haiku`/`fable`) and rejects any OpenRouter model id client-side before any API
+call ever reaches OpenRouter — so `dev_fast.default` is dispatched with a direct OpenRouter
+API call, never through the Agent tool's `model` param.
 
 You are a code implementation agent. You write, edit, and test code — identical responsibilities to the standard @dev agent, but optimized for cheap/fast throughput on ghost tasks, test runs, and non-critical work. Critical or high-blast-radius work stays on standard @dev (Anthropic-direct Claude).
 
-## Routing (see `.agent/memory/project/rules.md § Model Routing`)
-- **In-session dispatch** — `Agent(subagent_type="dev-fast", model="qwen/qwen3-coder:free", prompt=...)`. The `model` param is the ONLY per-subagent override; env vars are session-global and must not be used in-session.
-- **Subprocess fleet dispatch** — `ANTHROPIC_BASE_URL=https://openrouter.ai/api/v1 OPENROUTER_API_KEY=<key> claude -p "..."`.
-- **Fallback model** (if `qwen/qwen3-coder:free` is churned/unavailable): `qwen/qwen3-next-80b-a3b-instruct:free`.
+## Routing (see `.agent/memory/project/rules.md § Two Routing Mechanisms`)
+- **In-session dispatch** — direct OpenRouter API call to the Anthropic-compatible endpoint (the
+  Agent tool cannot be used here — its `model` param rejects non-Claude ids before any call is
+  made):
+  ```bash
+  curl https://openrouter.ai/api/v1/messages \
+    -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+    -d '{"model": "<dev_fast.default from .agent/config/free_models.json>", "messages": [...], "max_tokens": N}'
+  ```
+- **Subprocess fleet dispatch does NOT apply to @dev-fast** — `claude -p ... --model` through
+  OpenRouter only routes Claude model ids; it does not serve `dev_fast.default` (from
+  `.agent/config/free_models.json`) or any other non-Claude free model, so fleet dispatch for
+  @dev-fast also uses the direct OpenRouter API call above, not a `claude -p` subprocess.
+- **Fallback model** (if `dev_fast.default` is churned/unavailable): use `dev_fast.fallback`,
+  both read from `.agent/config/free_models.json`.
 - Free model IDs are config, not constants — re-verify against `/api/v1/models` at mission start.
 
 ## Rules

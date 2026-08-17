@@ -31,6 +31,17 @@ INBOX_DIR="$PROJECT_ROOT/.agent/memory/project/inbox"
 
 mkdir -p "$INBOX_DIR" # Ensure inbox exists
 
+# F5: startup dependency stop condition — refuse autonomous runs with missing critical deps.
+REQUIRED_DEPS=(${ATHANOR_REQUIRED_DEPS:-bun python3 git})
+MISSING_DEPS=()
+for dep in "${REQUIRED_DEPS[@]}"; do
+  command -v "$dep" >/dev/null 2>&1 || MISSING_DEPS+=("$dep")
+done
+if [ ${#MISSING_DEPS[@]} -gt 0 ] && [ ! -t 0 ]; then
+  echo "${PROJECT_PREFIX}FATAL: missing required dep(s): ${MISSING_DEPS[*]} — autonomous (no-TTY) run aborted." | tee -a "$LOG_FILE" >&2
+  exit 1
+fi
+
 echo "${PROJECT_PREFIX}Starting Pulse runner..."
 
 # Loop through each file in the registry directory

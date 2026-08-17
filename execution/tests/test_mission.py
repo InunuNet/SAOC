@@ -234,6 +234,13 @@ def main():
        f"stdout: {r.stdout[:300]}")
     print()
 
+    # Test 8 left active.json pointing at a close_out mission (by design,
+    # mission.py:840-844). Test 9 below tests an unrelated slug-collision
+    # scenario, not F3's close_out guard, so clear the leftover pointer
+    # here rather than have Test 9 depend on --force (see mission-state-
+    # integrity SPEC.md "Addendum: Test 8/9 collision" for why).
+    (MISSIONS_DIR / "active.json").unlink(missing_ok=True)
+
     # ── Test 9: done-slug collision continues (regression for sys.exit(0) fix) ──
     print("Test 9: mission.py new with done-slug collision exits 0 and creates file")
     import datetime

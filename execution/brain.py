@@ -223,8 +223,16 @@ def write_reboot(summary: str, next_items: list = None, facts: list = None, do_n
     if closure_candidates:
         lines += ["## Closure candidates (needs sign-off)",
                    *[f"- {item}" for item in closure_candidates[:5]], ""]
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines))
     print(f"📝 Reboot context written to {path}")
+
+
+# Explicit filename allowlist for durable system state that other
+# subsystems are designed to keep in .agent/memory/scratch/. Exempt from
+# wrap_up()'s scratch purge unconditionally (including under --force).
+# Fixed filename set only — never a substring/regex match.
+SCRATCH_PURGE_EXEMPT = {"template_baselines.json", "compaction-hint.json"}
 
 
 def wrap_up(summary: str, tags: str = "", blockers: str = "", force: bool = False,
@@ -259,12 +267,23 @@ def wrap_up(summary: str, tags: str = "", blockers: str = "", force: bool = Fals
             except Exception:
                 pass  # if we can't read active.json, proceed normally
 
-    # Clear scratch files
+    # Clear scratch files. SCRATCH_PURGE_EXEMPT is an explicit filename
+    # allowlist for durable system state that legitimately lives in scratch
+    # by another subsystem's design (e.g. the template-updater's baseline
+    # store, docs/template-update.md:332). This exemption is unconditional —
+    # it applies even under --force. It is a fixed filename set, never a
+    # name/content pattern match.
+    #
+    # DURABLE SESSION HANDOFF NOTES (RESUME.md, relay drafts, etc.) DO NOT
+    # LIVE IN SCRATCH. They are written directly to .agent/memory/project/handoff/,
+    # which is a committed directory outside scratch entirely and therefore
+    # untouched by this purge. See .agent/memory/project/handoff/ and
+    # .agent/skills/write-handoff.md (Durable class) for the convention.
     scratch_dir = Path(".agent/memory/scratch")
     if scratch_dir.exists():
         cleared = 0
         for f in scratch_dir.iterdir():
-            if f.name != ".keep":
+            if f.name != ".keep" and f.name not in SCRATCH_PURGE_EXEMPT:
                 if f.is_dir():
                     shutil.rmtree(f)
                 else:

@@ -33,12 +33,47 @@ unset _HARNESS_MISSING _critical_file
 # missing or unparsable (issue #1295/#1312).
 CURRENT_VER=$(python3 -c "import json; print(json.load(open('.agent/.template_state')).get('template_version','0'))" 2>/dev/null || python3 -c "import json; print(json.load(open('.agent/profile.json')).get('template_version','0'))" 2>/dev/null || echo "0")
 _UPDATE_CHECK_ERR=$(mktemp)
-LATEST_VER=$(gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' 2>"$_UPDATE_CHECK_ERR" | base64 -d 2>>"$_UPDATE_CHECK_ERR" | tr -d '\n' || echo "")
-if [ -z "$LATEST_VER" ] && [ -s "$_UPDATE_CHECK_ERR" ]; then
-  echo "⚠️  update check failed: $(tail -1 "$_UPDATE_CHECK_ERR")"
+_UPDATE_CHECK_OUT=$(mktemp)
+# Bound the `gh api` call so a blackholed call can never hang boot. `timeout`/
+# `gtimeout` (Homebrew coreutils) aren't present on stock macOS, so this must
+# not hard-depend on either — falling back to `timeout` unconditionally would
+# silently disable the update check (not just the bound) on any clean Mac.
+# When neither binary is on PATH, background the call and poll-and-kill it
+# ourselves: the check still actually runs, it's just bounded by hand.
+# Resolved once, here, and reused (not re-derived) by the GITHUB AUTH section
+# below (~line 380+) for the same reason — nothing unsets it in between.
+_GH_TIMEOUT_BIN="$(command -v timeout 2>/dev/null || command -v gtimeout 2>/dev/null || echo "")"
+if [ -n "$_GH_TIMEOUT_BIN" ]; then
+  LATEST_VER=$("$_GH_TIMEOUT_BIN" 3 gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' 2>"$_UPDATE_CHECK_ERR" | base64 -d 2>>"$_UPDATE_CHECK_ERR" | tr -d '\n' || echo "")
+else
+  gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' >"$_UPDATE_CHECK_OUT" 2>"$_UPDATE_CHECK_ERR" &
+  _GH_PID=$!
+  _WAITED=0
+  while kill -0 "$_GH_PID" 2>/dev/null && [ "$_WAITED" -lt 3 ]; do
+    sleep 1
+    _WAITED=$((_WAITED + 1))
+  done
+  if kill -0 "$_GH_PID" 2>/dev/null; then
+    kill -9 "$_GH_PID" 2>/dev/null
+    wait "$_GH_PID" 2>/dev/null
+    echo "gh api timed out after ${_WAITED}s (no timeout/gtimeout on PATH — bounded via background poll-kill fallback)" >> "$_UPDATE_CHECK_ERR"
+    LATEST_VER=""
+  else
+    wait "$_GH_PID" 2>/dev/null
+    LATEST_VER=$(base64 -d <"$_UPDATE_CHECK_OUT" 2>>"$_UPDATE_CHECK_ERR" | tr -d '\n')
+  fi
+  unset _GH_PID _WAITED
 fi
-rm -f "$_UPDATE_CHECK_ERR"
-unset _UPDATE_CHECK_ERR
+if [ -z "$LATEST_VER" ] && [ -s "$_UPDATE_CHECK_ERR" ]; then
+  # Redact token-shaped substrings and cap length before echoing gh's raw
+  # stderr into boot output — an unbounded/unredacted blob must never reach
+  # session output verbatim.
+  _ERR_MSG=$(tail -c 500 "$_UPDATE_CHECK_ERR" 2>/dev/null | tr -d '\n' | sed -E 's/[A-Za-z0-9_]{20,}/[redacted]/g' | cut -c1-100)
+  echo "⚠️  update check failed: $_ERR_MSG"
+  unset _ERR_MSG
+fi
+rm -f "$_UPDATE_CHECK_ERR" "$_UPDATE_CHECK_OUT"
+unset _UPDATE_CHECK_ERR _UPDATE_CHECK_OUT _GH_TIMEOUT_BIN
 ACTIVE_MISSION=$(python3 -c "import json,pathlib; d=json.loads(pathlib.Path('.agent/memory/project/missions/active.json').read_text()); print(d.get('mission') or '')" 2>/dev/null || echo "")
 # Detect-and-prompt only — boot never applies template updates itself, in either
 # the mission-active or no-mission case. See .claude/rules/behavior.md "Ask
@@ -47,6 +82,9 @@ if [[ -n "$LATEST_VER" && "$CURRENT_VER" != "$LATEST_VER" ]]; then
   echo "⬆️  HARNESS UPDATE AVAILABLE: template $CURRENT_VER → $LATEST_VER"
   echo "   Run 'make update-template' to review and apply it (boot never applies updates automatically)."
 fi
+
+python3 execution/checks/verify_model_env_boot.py boot_report || true  # Model-env boot guard (#1332), non-fatal
+python3 execution/checks/verify_all_contracts_parse.py || true  # Contract-parse boot canary (assertion-shape-sweep F4), non-fatal
 
 # Step 0.5: Quota-death warm restart — one-shot checkpoint left by quota_death_checkpoint.sh (StopFailure)
 QUOTA_CP=".agent/memory/scratch/.quota_death_checkpoint.json"
@@ -344,16 +382,56 @@ echo ""
 
 # Step 8: GitHub Auth
 echo "--- GITHUB AUTH ---"
+# `gh auth status` and `gh api user -q .login` are both network calls that
+# must never be allowed to hang boot indefinitely. Bound each with the same
+# timeout/gtimeout-or-poll-kill-fallback pattern as the update-check call
+# above, reusing the already-resolved $_GH_TIMEOUT_BIN (nothing unsets it
+# between there and here). A bare unconditional `timeout` would silently
+# disable this check on stock macOS (no timeout/gtimeout on PATH) instead of
+# merely bounding it, so the poll-kill fallback must actually run the call.
+_gh_bounded_run() {
+  # $1 = file to capture stdout into, remaining args = command to run.
+  # Returns the command's exit code (124 if it had to be killed).
+  local _out_file="$1"; shift
+  if [ -n "$_GH_TIMEOUT_BIN" ]; then
+    "$_GH_TIMEOUT_BIN" 3 "$@" >"$_out_file" 2>/dev/null
+    return $?
+  fi
+  "$@" >"$_out_file" 2>/dev/null &
+  local _pid=$!
+  local _waited=0
+  while kill -0 "$_pid" 2>/dev/null && [ "$_waited" -lt 3 ]; do
+    sleep 1
+    _waited=$((_waited + 1))
+  done
+  if kill -0 "$_pid" 2>/dev/null; then
+    kill -9 "$_pid" 2>/dev/null
+    wait "$_pid" 2>/dev/null
+    return 124
+  fi
+  wait "$_pid" 2>/dev/null
+}
 if [ -f ./.env ] && grep -q "GITHUB_TOKEN" ./.env; then
     echo "✅ GitHub Auth: Active (Token found in .env)"
 elif [ -n "$GITHUB_TOKEN" ]; then
     echo "✅ GitHub Auth: Active (Token found in environment)"
-elif command -v gh &>/dev/null && gh auth status &>/dev/null; then
-    GH_USER=$(gh api user -q .login 2>/dev/null || echo "authenticated")
-    echo "✅ GitHub Auth: Active (gh logged in as $GH_USER via System CLI)"
+elif command -v gh &>/dev/null; then
+    _gh_bounded_run /dev/null gh auth status
+    if [ $? -eq 0 ]; then
+        _GH_API_OUT=$(mktemp)
+        _gh_bounded_run "$_GH_API_OUT" gh api user -q .login
+        GH_USER=$(tr -d '\n' <"$_GH_API_OUT" 2>/dev/null)
+        rm -f "$_GH_API_OUT"
+        [ -z "$GH_USER" ] && GH_USER="authenticated"
+        echo "✅ GitHub Auth: Active (gh logged in as $GH_USER via System CLI)"
+        unset _GH_API_OUT
+    else
+        echo "❌ GitHub Auth: Inactive"
+    fi
 else
     echo "❌ GitHub Auth: Inactive"
 fi
+unset -f _gh_bounded_run
 echo ""
 
 # Step 9: Git remotes

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # verify_mission_state_integrity.sh -- sandboxed behavioral scenarios for
-# mission mission-state-integrity F1 (clear_active() ownership check) and F2
-# (test_mission.py hermeticity).
+# mission mission-state-integrity F1 (clear_active() ownership check), F2
+# (test_mission.py hermeticity), and F3 (cmd_new() must not silently orphan
+# an unresolved active mission).
 #
 # Bugs under test (GH #1333, backlog 2026-08-07):
 #   F1 -- execution/mission.py:clear_active() unlinks the module-level
@@ -255,6 +256,560 @@ EOF
     fi
 
     echo "PASS: pause_stdout_truthful"
+    ;;
+
+  # --- F3: cmd_new() must not silently orphan an unresolved active mission ---
+  #
+  # Bug (backlog 2026-08-07, found alongside GH #1333): execution/mission.py
+  # cmd_new() (mission.py:205-271) calls write_active(str(out_path))
+  # unconditionally at the end, regardless of what active.json currently
+  # points to. If a prior mission is active and unresolved (most sharply:
+  # status == close_out, meaning mission.py gate already flipped its status
+  # and wrap_mission.sh needs a retry -- losing the active pointer means the
+  # retry path is gone), `mission.py new <goal>` silently overwrites
+  # active.json with the brand-new mission's pointer and prints nothing
+  # about what it just orphaned. Confirmed live: exit 0, no warning, old
+  # mission's active.json entry gone (probed against the real,
+  # unmodified cmd_new in a disposable sandbox).
+
+  new_refuses_when_active_mission_close_out)
+    # RED now: cmd_new proceeds unconditionally. FIXED behavior: refuse
+    # (exit 1), leave active.json untouched, create no new mission file,
+    # and say why on stderr -- unless --force is passed (see sibling case).
+    SANDBOX="$(mktemp -d)"
+    trap 'rm -rf "$SANDBOX"' EXIT
+    mkdir -p "$SANDBOX/.agent/memory/project/missions"
+    MISSIONS_DIR="$SANDBOX/.agent/memory/project/missions"
+    OLD="$MISSIONS_DIR/2026-08-01-old-mission.md"
+    minimal_mission_file "$OLD" "old-mission" "close_out"
+    cat > "$MISSIONS_DIR/active.json" <<EOF
+{"mission": "$OLD", "checkpoint": {"milestone": null, "feature": null}, "activated_at": "2026-08-01T00:00:00+00:00"}
+EOF
+    BEFORE="$(cat "$MISSIONS_DIR/active.json")"
+    BEFORE_COUNT="$(find "$MISSIONS_DIR" -name '*.md' | wc -l | tr -d ' ')"
+
+    set +e
+    OUT="$(cd "$SANDBOX" && python3 "$MISSION_PY" new "brand new goal" --slug new-goal 2>&1)"
+    RC=$?
+    set -e
+
+    if [ "$RC" -eq 0 ]; then
+        echo "FAIL: mission.py new exited 0 while an unresolved (close_out) mission was active -- must refuse without --force"
+        echo "$OUT"
+        exit 1
+    fi
+    AFTER="$(cat "$MISSIONS_DIR/active.json" 2>/dev/null || echo MISSING)"
+    if [ "$AFTER" != "$BEFORE" ]; then
+        echo "FAIL: active.json was altered even though cmd_new refused (exit $RC) -- refusal must happen before any write"
+        echo "  before: $BEFORE"
+        echo "  after:  $AFTER"
+        exit 1
+    fi
+    AFTER_COUNT="$(find "$MISSIONS_DIR" -name '*.md' | wc -l | tr -d ' ')"
+    if [ "$AFTER_COUNT" != "$BEFORE_COUNT" ]; then
+        echo "FAIL: a new mission .md file was created even though cmd_new refused to activate it (orphan-in-waiting)"
+        exit 1
+    fi
+    echo "$OUT" | grep -qiE "close_out|unresolved|active" || {
+        echo "FAIL: refusal produced no explanatory message on stderr/stdout mentioning the blocked/active mission"
+        echo "$OUT"
+        exit 1
+    }
+    echo "PASS: new_refuses_when_active_mission_close_out"
+    ;;
+
+  new_refuses_when_active_mission_in_progress)
+    # RED now, same mechanism as above but with status=in_progress instead
+    # of close_out -- proves the guard is a general "is the active mission
+    # unresolved" check (membership in a small non-terminal set), not a
+    # literal `if status == "close_out"` string match that would leave
+    # every other non-terminal status (in_progress, pending, blocked)
+    # exposed to the same silent-overwrite bug.
+    SANDBOX="$(mktemp -d)"
+    trap 'rm -rf "$SANDBOX"' EXIT
+    mkdir -p "$SANDBOX/.agent/memory/project/missions"
+    MISSIONS_DIR="$SANDBOX/.agent/memory/project/missions"
+    OLD="$MISSIONS_DIR/2026-08-01-old-mission.md"
+    minimal_mission_file "$OLD" "old-mission" "in_progress"
+    cat > "$MISSIONS_DIR/active.json" <<EOF
+{"mission": "$OLD", "checkpoint": {"milestone": null, "feature": null}, "activated_at": "2026-08-01T00:00:00+00:00"}
+EOF
+    BEFORE="$(cat "$MISSIONS_DIR/active.json")"
+
+    set +e
+    OUT="$(cd "$SANDBOX" && python3 "$MISSION_PY" new "brand new goal" --slug new-goal-2 2>&1)"
+    RC=$?
+    set -e
+
+    if [ "$RC" -eq 0 ]; then
+        echo "FAIL: mission.py new exited 0 while an in_progress mission was active -- must refuse without --force"
+        echo "$OUT"
+        exit 1
+    fi
+    AFTER="$(cat "$MISSIONS_DIR/active.json" 2>/dev/null || echo MISSING)"
+    if [ "$AFTER" != "$BEFORE" ]; then
+        echo "FAIL: active.json was altered even though cmd_new refused"
+        exit 1
+    fi
+    echo "PASS: new_refuses_when_active_mission_in_progress"
+    ;;
+
+  new_force_flag_overwrites_with_warning)
+    # RED now: --force does not exist as a flag at all (argparse rejects it,
+    # exit 2), so this is RED for a different reason than the two cases
+    # above -- it proves the fix ships an explicit override, not just a
+    # hard refusal with no escape hatch. FIXED behavior: --force proceeds
+    # (exit 0, active.json now points at the new mission) but still prints
+    # a warning naming what got orphaned -- the fix must not silently drop
+    # the warning once --force is given.
+    SANDBOX="$(mktemp -d)"
+    trap 'rm -rf "$SANDBOX"' EXIT
+    mkdir -p "$SANDBOX/.agent/memory/project/missions"
+    MISSIONS_DIR="$SANDBOX/.agent/memory/project/missions"
+    OLD="$MISSIONS_DIR/2026-08-01-old-mission.md"
+    minimal_mission_file "$OLD" "old-mission" "close_out"
+    cat > "$MISSIONS_DIR/active.json" <<EOF
+{"mission": "$OLD", "checkpoint": {"milestone": null, "feature": null}, "activated_at": "2026-08-01T00:00:00+00:00"}
+EOF
+
+    set +e
+    OUT="$(cd "$SANDBOX" && python3 "$MISSION_PY" new "brand new goal" --slug new-goal-3 --force 2>&1)"
+    RC=$?
+    set -e
+
+    if [ "$RC" -ne 0 ]; then
+        echo "FAIL: mission.py new --force exited $RC -- --force must override the refusal"
+        echo "$OUT"
+        exit 1
+    fi
+    grep -q "new-goal-3" "$MISSIONS_DIR/active.json" || {
+        echo "FAIL: --force did not actually switch active.json to the new mission"
+        cat "$MISSIONS_DIR/active.json" 2>/dev/null || echo "  (active.json missing)"
+        exit 1
+    }
+    echo "$OUT" | grep -qiE "old-mission|orphan|warn" || {
+        echo "FAIL: --force overwrote the active pointer silently -- must still warn about what got orphaned"
+        echo "$OUT"
+        exit 1
+    }
+    echo "PASS: new_force_flag_overwrites_with_warning"
+    ;;
+
+  new_proceeds_when_active_mission_terminal)
+    # Regression guard (naturally passing today -- the bug is missing
+    # refusal, not spurious refusal): if the active mission already reached
+    # a terminal status (done), there is nothing to orphan, so cmd_new must
+    # proceed exactly as before with no --force needed. This is what keeps
+    # the guard from becoming a "can never start a new mission" trap.
+    SANDBOX="$(mktemp -d)"
+    trap 'rm -rf "$SANDBOX"' EXIT
+    mkdir -p "$SANDBOX/.agent/memory/project/missions"
+    MISSIONS_DIR="$SANDBOX/.agent/memory/project/missions"
+    OLD="$MISSIONS_DIR/2026-08-01-old-mission.md"
+    minimal_mission_file "$OLD" "old-mission" "done"
+    cat > "$MISSIONS_DIR/active.json" <<EOF
+{"mission": "$OLD", "checkpoint": {"milestone": null, "feature": null}, "activated_at": "2026-08-01T00:00:00+00:00"}
+EOF
+
+    set +e
+    OUT="$(cd "$SANDBOX" && python3 "$MISSION_PY" new "brand new goal" --slug new-goal-4 2>&1)"
+    RC=$?
+    set -e
+
+    if [ "$RC" -ne 0 ]; then
+        echo "FAIL: mission.py new refused even though the active mission was already done -- overcorrection"
+        echo "$OUT"
+        exit 1
+    fi
+    grep -q "new-goal-4" "$MISSIONS_DIR/active.json" || {
+        echo "FAIL: active.json was not switched to the new mission despite the old one being done"
+        exit 1
+    }
+    echo "PASS: new_proceeds_when_active_mission_terminal"
+    ;;
+
+  new_proceeds_when_active_pointer_dangling)
+    # Regression guard: active.json points at a mission file that no
+    # longer exists on disk (deleted out from under the pointer). There is
+    # nothing readable to orphan, so cmd_new must proceed without demanding
+    # --force -- an over-broad guard that blocks on "can't read the
+    # pointed-to file's status" would create a permanent lockout with no
+    # escape short of manually deleting active.json.
+    SANDBOX="$(mktemp -d)"
+    trap 'rm -rf "$SANDBOX"' EXIT
+    mkdir -p "$SANDBOX/.agent/memory/project/missions"
+    MISSIONS_DIR="$SANDBOX/.agent/memory/project/missions"
+    cat > "$MISSIONS_DIR/active.json" <<EOF
+{"mission": "$MISSIONS_DIR/2026-08-01-deleted-mission.md", "checkpoint": {"milestone": null, "feature": null}, "activated_at": "2026-08-01T00:00:00+00:00"}
+EOF
+
+    set +e
+    OUT="$(cd "$SANDBOX" && python3 "$MISSION_PY" new "brand new goal" --slug new-goal-5 2>&1)"
+    RC=$?
+    set -e
+
+    if [ "$RC" -ne 0 ]; then
+        echo "FAIL: mission.py new refused even though the active pointer referenced a mission file that no longer exists"
+        echo "$OUT"
+        exit 1
+    fi
+    grep -q "new-goal-5" "$MISSIONS_DIR/active.json" || {
+        echo "FAIL: active.json was not switched to the new mission despite the old pointer being dangling"
+        exit 1
+    }
+    echo "PASS: new_proceeds_when_active_pointer_dangling"
+    ;;
+
+  # --- F4: cmd_new() must fail CLOSED on a present-but-corrupt active mission ---
+  #
+  # Spec correction to F3 (found by @qa 2026-08-15, live against the shipped
+  # F3 code): cmd_new()'s `except SystemExit: prior_fm = None` (mission.py
+  # ~216-218) collapses "mission file absent" (A10, correctly permissive)
+  # and "mission file present but parse_mission_file() can't read it" onto
+  # the same fall-through-and-proceed path. A present-but-corrupt file is
+  # the case where the user most likely HAS unresolved state; F4 requires
+  # cmd_new() to refuse (fail closed) on this branch instead, distinct from
+  # A10. See goldens/cmd_new_corrupt_mission_fail_closed.md.
+
+  new_refuses_when_active_mission_malformed_yaml)
+    # RED now: cmd_new proceeds unconditionally (same bug as A6/A7, but the
+    # mechanism here is a caught SystemExit from a YAML parse error, not a
+    # readable non-terminal status).
+    SANDBOX="$(mktemp -d)"
+    trap 'rm -rf "$SANDBOX"' EXIT
+    mkdir -p "$SANDBOX/.agent/memory/project/missions"
+    MISSIONS_DIR="$SANDBOX/.agent/memory/project/missions"
+    OLD="$MISSIONS_DIR/2026-08-01-corrupt-mission.md"
+    cat > "$OLD" <<'EOF'
+---
+schema: athanor.mission/v1
+slug: corrupt-mission
+goal: [unterminated list
+status: in_progress
+---
+
+# Corrupt fixture mission
+EOF
+    cat > "$MISSIONS_DIR/active.json" <<EOF
+{"mission": "$OLD", "checkpoint": {"milestone": null, "feature": null}, "activated_at": "2026-08-01T00:00:00+00:00"}
+EOF
+    BEFORE="$(cat "$MISSIONS_DIR/active.json")"
+    BEFORE_COUNT="$(find "$MISSIONS_DIR" -name '*.md' | wc -l | tr -d ' ')"
+
+    set +e
+    OUT="$(cd "$SANDBOX" && python3 "$MISSION_PY" new "brand new goal" --slug new-goal-6 2>&1)"
+    RC=$?
+    set -e
+
+    if [ "$RC" -eq 0 ]; then
+        echo "FAIL: mission.py new exited 0 while active.json pointed at a mission file with malformed YAML -- must refuse without --force"
+        echo "$OUT"
+        exit 1
+    fi
+    AFTER="$(cat "$MISSIONS_DIR/active.json" 2>/dev/null || echo MISSING)"
+    if [ "$AFTER" != "$BEFORE" ]; then
+        echo "FAIL: active.json was altered even though cmd_new refused (exit $RC) on a corrupt active mission file"
+        echo "  before: $BEFORE"
+        echo "  after:  $AFTER"
+        exit 1
+    fi
+    AFTER_COUNT="$(find "$MISSIONS_DIR" -name '*.md' | wc -l | tr -d ' ')"
+    if [ "$AFTER_COUNT" != "$BEFORE_COUNT" ]; then
+        echo "FAIL: a new mission .md file was created even though cmd_new refused to activate it"
+        exit 1
+    fi
+    echo "$OUT" | grep -qiE "unread|corrupt|parse|malformed" || {
+        echo "FAIL: refusal produced no explanatory message mentioning the file could not be read/parsed"
+        echo "$OUT"
+        exit 1
+    }
+    echo "$OUT" | grep -q "corrupt-mission" || {
+        echo "FAIL: refusal message did not name the corrupt file"
+        echo "$OUT"
+        exit 1
+    }
+    echo "PASS: new_refuses_when_active_mission_malformed_yaml"
+    ;;
+
+  new_refuses_when_active_mission_missing_frontmatter_delimiters)
+    # RED now, same mechanism as malformed-YAML but the fixture never has
+    # --- delimiters at all -- parse_mission_file fails its earlier
+    # content.startswith("---") check, proving the fix isn't scoped
+    # narrowly to YAML-syntax errors.
+    SANDBOX="$(mktemp -d)"
+    trap 'rm -rf "$SANDBOX"' EXIT
+    mkdir -p "$SANDBOX/.agent/memory/project/missions"
+    MISSIONS_DIR="$SANDBOX/.agent/memory/project/missions"
+    OLD="$MISSIONS_DIR/2026-08-01-no-delimiters-mission.md"
+    cat > "$OLD" <<'EOF'
+This mission file has no YAML frontmatter delimiters at all.
+Just plain markdown body text.
+EOF
+    cat > "$MISSIONS_DIR/active.json" <<EOF
+{"mission": "$OLD", "checkpoint": {"milestone": null, "feature": null}, "activated_at": "2026-08-01T00:00:00+00:00"}
+EOF
+    BEFORE="$(cat "$MISSIONS_DIR/active.json")"
+
+    set +e
+    OUT="$(cd "$SANDBOX" && python3 "$MISSION_PY" new "brand new goal" --slug new-goal-7 2>&1)"
+    RC=$?
+    set -e
+
+    if [ "$RC" -eq 0 ]; then
+        echo "FAIL: mission.py new exited 0 while active.json pointed at a mission file with no frontmatter delimiters -- must refuse without --force"
+        echo "$OUT"
+        exit 1
+    fi
+    AFTER="$(cat "$MISSIONS_DIR/active.json" 2>/dev/null || echo MISSING)"
+    if [ "$AFTER" != "$BEFORE" ]; then
+        echo "FAIL: active.json was altered even though cmd_new refused on a delimiter-less active mission file"
+        exit 1
+    fi
+    echo "$OUT" | grep -qiE "unread|corrupt|parse|malformed" || {
+        echo "FAIL: refusal produced no explanatory message mentioning the file could not be read/parsed"
+        echo "$OUT"
+        exit 1
+    }
+    echo "PASS: new_refuses_when_active_mission_missing_frontmatter_delimiters"
+    ;;
+
+  new_refuses_when_active_mission_empty_file)
+    # RED now, same mechanism but a zero-byte fixture -- hits the same
+    # startswith("---") branch as the missing-delimiters case via an
+    # empty-string route, proving an "if not content: treat as absent"
+    # shortcut wasn't accidentally introduced (that would wrongly conflate
+    # this with A10's dangling-pointer case).
+    SANDBOX="$(mktemp -d)"
+    trap 'rm -rf "$SANDBOX"' EXIT
+    mkdir -p "$SANDBOX/.agent/memory/project/missions"
+    MISSIONS_DIR="$SANDBOX/.agent/memory/project/missions"
+    OLD="$MISSIONS_DIR/2026-08-01-empty-mission.md"
+    : > "$OLD"
+    cat > "$MISSIONS_DIR/active.json" <<EOF
+{"mission": "$OLD", "checkpoint": {"milestone": null, "feature": null}, "activated_at": "2026-08-01T00:00:00+00:00"}
+EOF
+    BEFORE="$(cat "$MISSIONS_DIR/active.json")"
+
+    set +e
+    OUT="$(cd "$SANDBOX" && python3 "$MISSION_PY" new "brand new goal" --slug new-goal-8 2>&1)"
+    RC=$?
+    set -e
+
+    if [ "$RC" -eq 0 ]; then
+        echo "FAIL: mission.py new exited 0 while active.json pointed at a zero-byte mission file -- must refuse without --force"
+        echo "$OUT"
+        exit 1
+    fi
+    AFTER="$(cat "$MISSIONS_DIR/active.json" 2>/dev/null || echo MISSING)"
+    if [ "$AFTER" != "$BEFORE" ]; then
+        echo "FAIL: active.json was altered even though cmd_new refused on an empty active mission file"
+        exit 1
+    fi
+    echo "PASS: new_refuses_when_active_mission_empty_file"
+    ;;
+
+  new_force_flag_overwrites_corrupt_mission_with_warning)
+    # RED now: the unforced case doesn't even refuse yet, so there is
+    # nothing meaningful for --force to override; once A11-A13 are fixed,
+    # this proves the F3 --force escape hatch was extended to the
+    # corrupt-file branch too, with the warning surviving.
+    # NOTE: the fixture filename deliberately avoids the substrings
+    # "corrupt"/"unread"/"orphan"/"warn" -- parse_mission_file() prints its
+    # OWN diagnostic to stderr before cmd_new() ever catches the
+    # SystemExit (see parse_mission_file, mission.py:122-124), and that
+    # diagnostic includes the file's path. If the fixture's own filename
+    # contained one of those words, a lenient grep against stdout+stderr
+    # could pass by accident on parse_mission_file's leaked message alone,
+    # without cmd_new() having ever emitted an intentional WARNING -- this
+    # bit an earlier draft of this assertion (false PASS at RED time).
+    SANDBOX="$(mktemp -d)"
+    trap 'rm -rf "$SANDBOX"' EXIT
+    mkdir -p "$SANDBOX/.agent/memory/project/missions"
+    MISSIONS_DIR="$SANDBOX/.agent/memory/project/missions"
+    OLD="$MISSIONS_DIR/2026-08-01-active-force-fixture.md"
+    cat > "$OLD" <<'EOF'
+---
+schema: athanor.mission/v1
+slug: active-force-fixture
+goal: [unterminated list
+status: in_progress
+---
+
+# Fixture mission with malformed YAML (force case)
+EOF
+    cat > "$MISSIONS_DIR/active.json" <<EOF
+{"mission": "$OLD", "checkpoint": {"milestone": null, "feature": null}, "activated_at": "2026-08-01T00:00:00+00:00"}
+EOF
+
+    set +e
+    OUT="$(cd "$SANDBOX" && python3 "$MISSION_PY" new "brand new goal" --slug new-goal-9 --force 2>&1)"
+    RC=$?
+    set -e
+
+    if [ "$RC" -ne 0 ]; then
+        echo "FAIL: mission.py new --force exited $RC on a corrupt active mission file -- --force must override the refusal here too"
+        echo "$OUT"
+        exit 1
+    fi
+    grep -q "new-goal-9" "$MISSIONS_DIR/active.json" || {
+        echo "FAIL: --force did not actually switch active.json to the new mission"
+        cat "$MISSIONS_DIR/active.json" 2>/dev/null || echo "  (active.json missing)"
+        exit 1
+    }
+    # Deliberately strict: only "WARNING" counts as an intentional
+    # cmd_new()-authored disclosure. A loose "unread|corrupt|orphan|warn"
+    # alternation would accept parse_mission_file's own "ERROR: YAML parse
+    # error in ..." diagnostic as a false pass, since it's printed to
+    # stderr regardless of what cmd_new() does with the SystemExit.
+    echo "$OUT" | grep -q "WARNING" || {
+        echo "FAIL: --force overwrote the corrupt-active-mission pointer without an intentional WARNING -- a leaked parse-error message from parse_mission_file does not count as disclosure"
+        echo "$OUT"
+        exit 1
+    }
+    echo "$OUT" | grep -q "active-force-fixture" || {
+        echo "FAIL: warning did not name the orphaned corrupt file"
+        echo "$OUT"
+        exit 1
+    }
+    echo "PASS: new_force_flag_overwrites_corrupt_mission_with_warning"
+    ;;
+
+  new_refuses_when_active_mission_unreadable_permissions)
+    # Best-effort: chmod 000 the active mission file so Path.read_text()
+    # raises PermissionError -- a route that never reaches
+    # parse_mission_file's own clean SystemExit(1), since read_text() is
+    # called outside its try block (mission.py:106). Only requires exit
+    # non-zero and active.json/mission-count untouched, either via a clean
+    # refusal or an uncaught traceback -- both satisfy "did not silently
+    # orphan the corrupt mission". Skipped (PASS) when running as root,
+    # since root ignores POSIX permission bits and the fixture can't be
+    # constructed.
+    #
+    # REGRESSION-GUARD NOTE (verified at RED time, 2026-08-15): this case
+    # is NATURALLY PASSING against today's unmodified mission.py, same as
+    # F3's A9/A10 -- not because cmd_new() handles it correctly by design,
+    # but because the uncaught PermissionError crashes the process (exit 1
+    # via Python traceback) BEFORE write_active() is ever reached, so
+    # active.json happens to survive untouched by accident. It exists here
+    # to catch an over-broad fix -- e.g. wrapping the whole
+    # `if prior_path.exists():` block in `except Exception: prior_fm =
+    # None` to "fix" A11-A13 -- that would swallow this PermissionError too
+    # and start silently orphaning permission-denied mission files, which
+    # is strictly worse than today's accidental crash-and-preserve.
+    if [ "$(id -u)" = "0" ]; then
+        echo "PASS: new_refuses_when_active_mission_unreadable_permissions (skipped -- running as root, permission fixture not constructible)"
+        exit 0
+    fi
+
+    SANDBOX="$(mktemp -d)"
+    trap 'rm -rf "$SANDBOX"' EXIT
+    mkdir -p "$SANDBOX/.agent/memory/project/missions"
+    MISSIONS_DIR="$SANDBOX/.agent/memory/project/missions"
+    OLD="$MISSIONS_DIR/2026-08-01-unreadable-mission.md"
+    minimal_mission_file "$OLD" "unreadable-mission" "in_progress"
+    chmod 000 "$OLD"
+    cat > "$MISSIONS_DIR/active.json" <<EOF
+{"mission": "$OLD", "checkpoint": {"milestone": null, "feature": null}, "activated_at": "2026-08-01T00:00:00+00:00"}
+EOF
+    BEFORE="$(cat "$MISSIONS_DIR/active.json")"
+    BEFORE_COUNT="$(find "$MISSIONS_DIR" -name '*.md' | wc -l | tr -d ' ')"
+
+    set +e
+    OUT="$(cd "$SANDBOX" && python3 "$MISSION_PY" new "brand new goal" --slug new-goal-10 2>&1)"
+    RC=$?
+    set -e
+    chmod 644 "$OLD" 2>/dev/null || true
+
+    if [ "$RC" -eq 0 ]; then
+        echo "FAIL: mission.py new exited 0 while active.json pointed at a permission-denied mission file -- must not silently orphan it"
+        echo "$OUT"
+        exit 1
+    fi
+    AFTER="$(cat "$MISSIONS_DIR/active.json" 2>/dev/null || echo MISSING)"
+    if [ "$AFTER" != "$BEFORE" ]; then
+        echo "FAIL: active.json was altered even though cmd_new failed on a permission-denied active mission file"
+        echo "  before: $BEFORE"
+        echo "  after:  $AFTER"
+        exit 1
+    fi
+    AFTER_COUNT="$(find "$MISSIONS_DIR" -name '*.md' 2>/dev/null | wc -l | tr -d ' ')"
+    if [ "$AFTER_COUNT" != "$BEFORE_COUNT" ]; then
+        echo "FAIL: a new mission .md file was created even though cmd_new failed to activate it"
+        exit 1
+    fi
+    echo "PASS: new_refuses_when_active_mission_unreadable_permissions"
+    ;;
+
+  new_force_does_not_override_unreadable_permissions)
+    # A15's unforced case and this --force case are NOT interchangeable:
+    # PermissionError is not SystemExit, so it is never caught by cmd_new's
+    # `except SystemExit:` arm at all, in either the forced or unforced
+    # invocation -- the crash happens inside parse_mission_file() itself,
+    # before cmd_new ever reaches its `getattr(args, "force", False)`
+    # check. That means A15 (unforced) provides ZERO coverage for a
+    # mutation that widens `except SystemExit:` to `except Exception:` --
+    # under that mutation, the unforced case still refuses (matches A15),
+    # but the FORCED case would newly succeed (exit 0, WARNING, active.json
+    # repointed) because the widened except now swallows the
+    # PermissionError and falls into the same forced-proceed branch as
+    # A14's corrupt-YAML case. This case is what actually detects that
+    # mutation. Skipped (PASS) when running as root, same as A15.
+    #
+    # Position (adjudicated 2026-08-15, per @qa's finding and team-lead's
+    # proposed resolution, evaluated and adopted by @architect): --force
+    # must NOT override a permission-denied file. --force means "I
+    # understand what I am orphaning and choose to" -- a file we cannot
+    # read at all gives the user nothing to base that understanding on.
+    # This is consistent with (not a new restriction beyond) cmd_abandon/
+    # cmd_close_out, which have ZERO override for ANY corrupt file, not
+    # just permission-denied ones -- a user hitting this needs the same
+    # manual-repair fallback (chmod +r, or delete/re-point active.json by
+    # hand) that already applies to every other unrecoverable-file case in
+    # this spec family. Verified today's unforced AND forced behavior are
+    # already identical (both crash uncaught, active.json untouched) --
+    # this is a naturally-passing regression guard, not a RED assertion.
+    if [ "$(id -u)" = "0" ]; then
+        echo "PASS: new_force_does_not_override_unreadable_permissions (skipped -- running as root, permission fixture not constructible)"
+        exit 0
+    fi
+
+    SANDBOX="$(mktemp -d)"
+    trap 'rm -rf "$SANDBOX"' EXIT
+    mkdir -p "$SANDBOX/.agent/memory/project/missions"
+    MISSIONS_DIR="$SANDBOX/.agent/memory/project/missions"
+    OLD="$MISSIONS_DIR/2026-08-01-unreadable-force-mission.md"
+    minimal_mission_file "$OLD" "unreadable-force-mission" "in_progress"
+    chmod 000 "$OLD"
+    cat > "$MISSIONS_DIR/active.json" <<EOF
+{"mission": "$OLD", "checkpoint": {"milestone": null, "feature": null}, "activated_at": "2026-08-01T00:00:00+00:00"}
+EOF
+    BEFORE="$(cat "$MISSIONS_DIR/active.json")"
+    BEFORE_COUNT="$(find "$MISSIONS_DIR" -name '*.md' | wc -l | tr -d ' ')"
+
+    set +e
+    OUT="$(cd "$SANDBOX" && python3 "$MISSION_PY" new "brand new goal" --slug new-goal-16 --force 2>&1)"
+    RC=$?
+    set -e
+    chmod 644 "$OLD" 2>/dev/null || true
+
+    if [ "$RC" -eq 0 ]; then
+        echo "FAIL: mission.py new --force exited 0 while active.json pointed at a permission-denied mission file -- --force must not be able to override state that was never read (only readable-but-inconvenient state)"
+        echo "$OUT"
+        exit 1
+    fi
+    AFTER="$(cat "$MISSIONS_DIR/active.json" 2>/dev/null || echo MISSING)"
+    if [ "$AFTER" != "$BEFORE" ]; then
+        echo "FAIL: active.json was altered by --force even though the active mission file was permission-denied and never actually read"
+        echo "  before: $BEFORE"
+        echo "  after:  $AFTER"
+        exit 1
+    fi
+    AFTER_COUNT="$(find "$MISSIONS_DIR" -name '*.md' 2>/dev/null | wc -l | tr -d ' ')"
+    if [ "$AFTER_COUNT" != "$BEFORE_COUNT" ]; then
+        echo "FAIL: a new mission .md file was created despite --force being refused on a permission-denied active mission"
+        exit 1
+    fi
+    echo "PASS: new_force_does_not_override_unreadable_permissions"
     ;;
 
   *)

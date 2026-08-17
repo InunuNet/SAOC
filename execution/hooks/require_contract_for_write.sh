@@ -98,13 +98,29 @@ fi
 # not-active and fail open instead of blocking every write. Handles both
 # unquoted (status: complete) and quoted (status: "complete") frontmatter.
 if [ -f "$MISSION_PATH" ]; then
+  # Capture the FULL status token (letters/digits/_/-), not just its leading
+  # word — a narrower class here would truncate a hyphenated value like
+  # "abandoned-superseded" down to "abandoned" and false-match the terminal
+  # case below, fail-opening a write that should instead hit the contract
+  # gate. GH #1300 follow-up.
   MISSION_STATUS=$(grep -m1 '^status:' "$MISSION_PATH" 2>/dev/null \
-    | sed -E 's/^status:[[:space:]]*"?([A-Za-z_]+)"?.*/\1/')
+    | sed -E 's/^status:[[:space:]]*"?([A-Za-z0-9_-]+)"?.*/\1/')
   case "$MISSION_STATUS" in
     complete|"done"|abandoned)
       exit 0 ;;
   esac
 fi
+
+# ── KNOWN LIMITATION: this guard only fires on Write/Edit tool_input ─────────
+# .claude/settings.json wires this hook only under the PreToolUse "Write" and
+# "Edit" matchers — there is no Bash matcher entry for it. A Bash command that
+# writes to disk via a redirect or file-mutating utility (>, >>, tee, sed -i,
+# cp, mv, git checkout -- <path>, etc.) reaches the filesystem with zero
+# contract-gate involvement. This is a real structural gap, not a deliberate
+# scope boundary, but closing it safely requires a new hook that can detect
+# file-mutating Bash command forms without false-positiving on the vast
+# majority of read-only/non-file Bash calls — that is its own mission with
+# its own adversarial QA, not a rider on this fix. See backlog.md.
 
 # ── Check contract exists ─────────────────────────────────────────────────────
 CONTRACT_PATH=$(find ".agent/memory/project/specs/${SLUG}" -name "contract*.yaml" 2>/dev/null | head -1 || echo "")

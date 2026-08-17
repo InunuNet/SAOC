@@ -415,8 +415,98 @@ case "$CASE" in
     echo "PASS: fail_safe_unknown_quota_state_no_crash"
     ;;
 
+  # --- F1 hardening #1: future-dated checkpoint must be rejected, loudly ---
+
+  future_dated_checkpoint_no_ticket)
+    # A checkpoint timestamped AHEAD of now (clock skew, corrupted state) is
+    # impossible state, not "extra fresh". checkpoint_age = now - ts goes
+    # NEGATIVE; the pre-hardening staleness check only tests `-gt MAX_AGE`,
+    # so a negative age slips through as maximally fresh -- the exact bug
+    # this case pins. Fixed script must reject it AND say so on stderr (a
+    # human-noticeable WARN), not just silently no-op like every other
+    # fail-safe path -- impossible state is a genuine error, distinct from
+    # "unknown"/"missing", and must be visible in logs even though the
+    # script still exits 0 to preserve the never-break-the-Pulse-cycle
+    # invariant every other branch in this script already relies on.
+    tmpdir="$(mktemp -d)"
+    trap 'rm -rf "$tmpdir"' EXIT
+    # checkpoint_age_seconds = -3600 -> checkpoint timestamped 1h in the
+    # FUTURE (build_common_fixtures computes ckpt_epoch = now - age).
+    # resets_at 60s in the past, so the only reason this must not fire is
+    # the future-dated checkpoint itself.
+    build_common_fixtures "$tmpdir" -3600 -60
+
+    set +e
+    ATHANOR_PULSE_QUOTA_RESUME=1 run_f4 2>"$tmpdir/stderr"
+    exit_code=$?
+    set -e
+
+    fail=0
+    [ "$exit_code" -eq 0 ] || { echo "FAIL: script exited $exit_code on a future-dated checkpoint -- must still exit 0 (never break the Pulse cycle), just with no ticket"; fail=1; }
+    n="$(count_queue_files)"
+    [ "$n" -eq 0 ] || { echo "FAIL: $n ticket(s) written from a checkpoint timestamped 1h in the FUTURE -- a future timestamp is impossible/untrustworthy state (clock skew, corruption), not extra freshness, and must never enqueue"; fail=1; }
+    grep -qi traceback "$tmpdir/stderr" && { echo "FAIL: crash trace on a future-dated checkpoint"; fail=1; }
+    grep -Eiq 'future|skew|impossible' "$tmpdir/stderr" \
+        || { echo "FAIL: no visible warning on stderr for a future-dated checkpoint -- rejecting impossible state must be noticeable in logs, not silently indistinguishable from an ordinary missing/malformed no-op"; fail=1; }
+
+    [ "$fail" -eq 1 ] && exit 1
+    echo "PASS: future_dated_checkpoint_no_ticket"
+    ;;
+
+  # --- F1 hardening #2: flag parser is a fail-closed ALLOWLIST -------------
+
+  flag_generalized_malformed_values_are_off)
+    # SHAPE assertion, not an enumeration of the one reported instance
+    # (" 0 "): the pre-hardening parser is a BLOCKLIST (exact-match ""/0/
+    # false -> off, anything else falls through to ON), so ANY value it
+    # doesn't recognise -- whitespace padding, tabs/newlines, or a plain
+    # unrecognised word -- is currently ON. A guard on an autonomous
+    # background process must fail CLOSED: only a short allowlist of
+    # unambiguous affirmative values ("1", "true", case/whitespace-
+    # insensitive) may enable it; every other string, including ones this
+    # exact list has never seen, must be OFF. This case asserts both
+    # directions so an allowlist fix can't accidentally reject "1"/"true".
+    tmpdir="$(mktemp -d)"
+    trap 'rm -rf "$tmpdir"' EXIT
+    build_common_fixtures "$tmpdir" 0 -60
+
+    fail=0
+
+    # Must be OFF: the two originally-reported bugs' variants, PLUS
+    # generically unrecognised/malformed values a blocklist would never
+    # anticipate -- proves the fix is an allowlist, not a longer blocklist.
+    off_values=(" 0 " " false " "$(printf ' false \t\n')" "no" "off" "xyz" "2" "yes-please" "  ")
+    for flagval in "${off_values[@]}"; do
+        set +e
+        ATHANOR_PULSE_QUOTA_RESUME="$flagval" run_f4
+        exit_code=$?
+        set -e
+        [ "$exit_code" -eq 0 ] || { echo "FAIL: script exited $exit_code with ATHANOR_PULSE_QUOTA_RESUME=$(printf '%q' "$flagval")"; fail=1; }
+        n="$(count_queue_files)"
+        [ "$n" -eq 0 ] || { echo "FAIL: $n ticket(s) written with ATHANOR_PULSE_QUOTA_RESUME=$(printf '%q' "$flagval") -- a malformed/whitespace-padded/unrecognised value must be OFF (fail-closed allowlist), not fall through to ON"; fail=1; }
+    done
+
+    # Must remain ON: unambiguous affirmative values, including
+    # whitespace/case variants of them -- the allowlist fix must not
+    # over-correct into rejecting legitimate enablement.
+    on_values=("1" "true" " 1 " " true " "TRUE" "True")
+    for flagval in "${on_values[@]}"; do
+        rm -f "$QUEUE"/*.json 2>/dev/null || true
+        set +e
+        ATHANOR_PULSE_QUOTA_RESUME="$flagval" run_f4
+        exit_code=$?
+        set -e
+        [ "$exit_code" -eq 0 ] || { echo "FAIL: script exited $exit_code with ATHANOR_PULSE_QUOTA_RESUME=$(printf '%q' "$flagval")"; fail=1; }
+        n="$(count_queue_files)"
+        [ "$n" -eq 1 ] || { echo "FAIL: expected exactly 1 ticket with ATHANOR_PULSE_QUOTA_RESUME=$(printf '%q' "$flagval") (unambiguous affirmative value), found $n -- the allowlist fix must not also break legitimate enablement"; fail=1; }
+    done
+
+    [ "$fail" -eq 1 ] && exit 1
+    echo "PASS: flag_generalized_malformed_values_are_off"
+    ;;
+
   *)
-    echo "ERROR: unknown case '$CASE'. Valid: static_flag_env_var_gates_script, static_uses_quota_py_oracle, static_uses_pulse_ticket_enqueue, static_never_touches_service_lifecycle, flag_off_is_inert_even_with_perfect_trigger, flag_on_fresh_checkpoint_reset_passed_enqueues_ticket, boundary_resets_at_not_yet_passed_no_ticket, stale_checkpoint_no_ticket, dedupe_key_stable_across_repeated_ticks, budget_cap_still_applies_to_resume_ticket, provider_backoff_still_applies_to_resume_ticket, fail_safe_malformed_checkpoint_no_crash, fail_safe_unknown_quota_state_no_crash" >&2
+    echo "ERROR: unknown case '$CASE'. Valid: static_flag_env_var_gates_script, static_uses_quota_py_oracle, static_uses_pulse_ticket_enqueue, static_never_touches_service_lifecycle, flag_off_is_inert_even_with_perfect_trigger, flag_on_fresh_checkpoint_reset_passed_enqueues_ticket, boundary_resets_at_not_yet_passed_no_ticket, stale_checkpoint_no_ticket, dedupe_key_stable_across_repeated_ticks, budget_cap_still_applies_to_resume_ticket, provider_backoff_still_applies_to_resume_ticket, fail_safe_malformed_checkpoint_no_crash, fail_safe_unknown_quota_state_no_crash, future_dated_checkpoint_no_ticket, flag_generalized_malformed_values_are_off" >&2
     exit 1
     ;;
 esac

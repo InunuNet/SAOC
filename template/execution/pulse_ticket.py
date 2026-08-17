@@ -54,7 +54,11 @@ def read_prompt(args: argparse.Namespace) -> str:
 
 
 def make_dedupe_key(source: str, kind: str, project_path: str, prompt: str) -> str:
-    digest = hashlib.sha256(f"{source}\0{kind}\0{project_path}\0{prompt}".encode("utf-8")).hexdigest()
+    payload = json.dumps(
+        {"source": source, "kind": kind, "project_path": project_path, "prompt": prompt},
+        sort_keys=True, separators=(",", ":"),
+    )
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
     return f"{source}:{kind}:{digest[:24]}"
 
 

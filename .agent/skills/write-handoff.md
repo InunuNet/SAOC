@@ -8,7 +8,9 @@ usage: Invoke this skill when finishing an agent step that must hand off to the 
 
 Canonical writer for the four chain handoff artifacts. Section headers and min-sizes are enforced by `execution/handoff_check.py` against `.agent/handoffs.yaml`. Wrong header → next agent gate blocks → mission stalls.
 
-## The four artifact patterns
+## The artifact patterns
+
+### Intra-mission handoff artifacts (purgeable)
 
 | From agent | Artifact path | Required section | Min bytes |
 |------------|---------------|------------------|-----------|
@@ -17,7 +19,16 @@ Canonical writer for the four chain handoff artifacts. Section headers and min-s
 | qa         | `.agent/memory/scratch/qa-report-<slug>.md` | `## Adversarial` | 128 |
 | docs       | `docs/<feature>.md` | (any content) | 64 |
 
-`<slug>` from the `active-mission` skill (no date prefix, no `.md`).
+These are short-lived gate artifacts scoped to a single mission and must be purgeable when the mission ends. `<slug>` from the `active-mission` skill (no date prefix, no `.md`).
+
+### Durable session handoff notes (permanent)
+
+| Artifact | Path | Purpose |
+|----------|------|---------|
+| RESUME.md | `.agent/memory/project/handoff/RESUME.md` | Cross-session pickup note (durable: survives `wrap-up --force`) |
+| Relay drafts / notes | `.agent/memory/project/handoff/<name>.md` | Any irreplaceable multi-session note — saved to committed dir by construction |
+
+These files are written straight to `.agent/memory/project/handoff/`, which is a committed directory (tracked by git, outside `.agent/memory/scratch/`). The `wrap-up` routine never touches this directory, so durable notes survive session end by construction — no allowlist needed, no pattern-matching guessing required. If you write a session-spanning note, this is where it lives.
 
 ## Templates
 
