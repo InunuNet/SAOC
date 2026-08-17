@@ -1,9 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-08-14-admin-auth-hardening.md",
+  "mission": ".agent/memory/project/missions/2026-08-17-ticket-flow-end-to-end.md",
   "checkpoint": {
-    "milestone": "M2",
-    "feature": "F5",
-    "ts": "2026-08-17T05:10:16.166066+00:00"
+    "milestone": null,
+    "feature": null
   },
-  "activated_at": "2026-08-17T05:10:16.166186+00:00"
+  "activated_at": "2026-08-17T13:09:30.685259+00:00"
 }

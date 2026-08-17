@@ -1072,3 +1072,43 @@ reaches `paid`.
 - [ ] **[P2, harness validation, NEW 2026-08-17] contract.py timeout validation has three unguarded ceilings** — All pre-existing, not introduced by the fix. (1) `validate_cmd()` is never called from `check_cmd()`/`gate_cmd()`, so rejected timeout values still reach the runner (`true` → timeout=1, string → raw TypeError). (2) No upper bound — `timeout_seconds: 999999999999` would parse and cause unhandled OverflowError. (3) The `is not None` edit is structurally correct but not covered by any assertion. Documented as "Known Limitations" in `docs/contract-timeout-enforcement-harness.md` — do not claim complete validation unless these are fixed. Harness-level issue; file upstream if needed.
 
 - [ ] **[P3, harness detection, NEW 2026-08-17] Lock-timeout invariant walk skips bare/aliased specifiers to _shared.mjs** — The import-graph walk added to defeat barrel imports has an acceptable but documented boundary: bare or aliased specifiers that secretly resolve to `_shared.mjs` are skipped as external (ESM-only codebase, `require()` unmatched). This is a design choice, not a defect, but future refactoring that moves `_shared.mjs` or changes its import pattern should revisit this assumption. Documented in `docs/fixture-leak-hardening.md` "Secondary Hardening: Lock-Timeout Invariant" under "Remaining ceiling".
+
+- [ ] **[P1, UI, observed on a real device] `/admin/door` "Check In" button is clipped off the
+  bottom of the viewport on mobile.** Observed 2026-08-17 on Android Chrome at
+  `beta.saoc.co.za/admin/door` (screenshot from Brad): the camera viewport + manual-entry field
+  push the primary action below the fold, leaving only the top ~8px of the button visible above
+  the system nav bar. The button is reachable by scrolling, but the door scanner is a
+  one-handed, at-speed surface at a show entrance — the primary action must be visible without
+  scrolling. Likely fixes: constrain the camera viewport height (e.g. `max-height` in `dvh`, not
+  `vh` — mobile browser chrome makes `vh` wrong), and/or pin the manual-entry row to the bottom.
+  Must be verified on a REAL device at 320/375px, not just a desktop resize — this is exactly
+  the class of defect the "visual work is not done until a browser has seen it" rule exists for.
+  Note `dvh`/`svh` handle the collapsing-URL-bar case that `vh` does not.
+
+- [ ] **[P1] Door check-in refusals are never logged server-side.**
+  `app/api/admin/checkin/route.ts` logs only on a malformed body (`console.error`) or an
+  unhandled exception. Every admission verdict — `not-found`, `unpaid`, `wrong-show`,
+  `already-checked-in`, and successful admits — returns to the client and leaves no server
+  record. At a show entrance this makes "the scanner didn't work for someone at 10am"
+  unfalsifiable. Observed live 2026-08-17: Brad scanned four codes at `beta.saoc.co.za`, all
+  returned `Ticket not found`, and there was no server-side evidence of any of it. Want:
+  structured log per attempt (bookingRef, verdict, httpStatus, timestamp) per
+  `.claude/rules/coding.md` logging standards — and consider a Firestore audit collection, not
+  just stdout, since door staff run on phones and nobody reads Cloud Logging at a gate.
+
+- [ ] **[P2, process trap] Running the door-test-qr-seeder gate DESTROYS live human test
+  fixtures.** A4 (`check-teardown-scoped.mjs`) deletes the three seeded `DOOR-QR-*` docs to prove
+  teardown is exactly scoped, and never re-seeds. On 2026-08-17 the orchestrator ran the full
+  gate ~10 min before Brad scanned; every code correctly returned `not-found` because the tickets
+  were genuinely gone, costing a live testing session and reading as a scanner failure. Fix:
+  A4 should re-seed after asserting teardown, or the gate should print a loud "fixtures torn
+  down — run `pnpm door:seed` before human testing" notice. Same class as the fixture-leak
+  lesson: a check's side effects on shared live state are part of its contract.
+
+- [ ] **[P2, doc drift, NEW 2026-08-17] `docs/firestore-ticket-schema.md` is stale on `TicketType`.**
+  It still documents the retired hardcoded union (`'general' | 'member' | 'vip'`) and a 6-digit
+  `bookingRef` example. `types/index.ts` moved `TicketType` to a free-form `string` (ticket
+  categories now live as `ticketType` Sanity documents, keyed by slug) and `lib/booking-ref.ts`
+  moved to 60-bit Crockford base32 references, both already covered correctly in
+  `docs/ticketing.md` and `docs/ticketing-hardening.md`. Flagged while writing
+  `docs/ticketing-system-foundation-spec.md` — fix the doc in place (not in scope of that spec).
