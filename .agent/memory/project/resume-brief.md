@@ -1,8 +1,44 @@
-# Resume Brief — ticketing-foundation
+# Resume Brief — ACTIVE MISSION: vendor-registration
 
-_Updated 2026-08-17 ~23:55 SAST, at a usage-limit checkpoint. This file is the authoritative
-hand-off. The 02:22 pulse job and the session cron both point here; if neither fired, start
-from this file._
+_Updated 2026-08-18 ~00:20 SAST._
+
+## Read this first
+
+The active mission is now **vendor-registration** (11 features, 3 milestones), not
+ticketing-foundation. `mission.py resume` will point at it correctly.
+
+**ticketing-foundation is finished as far as it can go autonomously: 11/14 done, M1 passed,
+and F12/F13/F14 are marked `blocked` because they need Brad in person** — a real sandbox card
+payment, a physical scanner at The Hangar, and `scripts/admin-migrate-roles.ts --apply`.
+Brad has explicitly deferred those; do not attempt them and do not un-block them. The
+step-by-step runbook is in `needs-human.md`.
+
+## vendor-registration — where it stands
+
+F1's naming decision is already made, by Brad's standing delegation: internal names are
+`vendor*` (`vendorNursery`, `vendorSubmissions`, `/national-show/vendors`,
+`/api/vendors/register`), while **public marketing copy keeps Lee-Ann's "Exhibitors" wording
+verbatim**. The repo already ships an unrelated `exhibitor` feature for judged competition
+entries — two meanings of that word in one repo is the trap being avoided. Do not re-open this.
+
+Source of truth for the content is Lee-Ann's Google Doc, id
+`1UKUdzZ9NAJHsqWHSV0mN9tnTrp6NE8I4`. **Read it with the `gws` CLI, never curl or Alembic** —
+those mangle Drive content. Verify field lists against the document itself; the mission's
+inline briefs were written from it but have not been re-checked.
+
+In flight when this was written: `arch-vendor-f1f2` producing the contract and goldens for
+F1+F2. Check whether `contracts/contract-vendor-f1f2-naming-and-nursery-schema.yaml` exists
+before re-dispatching.
+
+## Scope boundary — enforced on every feature
+
+SAOC is orchids **in cultivation**: growing, showing, hybridising, judging, community. It is
+**not** wild orchid conservation — that belongs to WOSA, a separate partner organisation.
+Never produce wild-conservation content; link to WOSA instead.
+
+---
+
+# Reference — ticketing-foundation (completed portion)
 
 ## State
 
@@ -95,3 +131,14 @@ reads the deliberately-broken file and the result looks like a real failure.
   limit; fails `ticketing-m1-m2` A35. Pre-existing. Needs sub-component extraction plus
   BrowserAgent verification at 1440/375/320px.
 - `/tickets` still has no show-scoping. TTL 180d and the R10 demo price remain placeholders.
+
+## Orchestrator economy rules (Brad, 2026-08-18 00:10)
+
+- Fable 5 is the orchestrator. Its weekly quota is the scarce resource — be SUPER lean.
+- Orchestrator: dispatch, verify gates, commit. No long prose, no re-reading what agents
+  already read, minimal status updates.
+- Agent prompts: brief and pointed — name the contract/goldens and constraints, don't
+  restate file contents. Agents read the repo themselves.
+- Prefer one agent with a complete brief over several overlapping ones. No speculative
+  dispatches.
+- Keep verification cheap: grep/gate summaries, not full-file reads.
