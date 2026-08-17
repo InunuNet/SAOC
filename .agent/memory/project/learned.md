@@ -1218,3 +1218,24 @@ Re-checked at F11 close: `qrcode` sits in `dependencies` (not `devDependencies`)
 `pngjs` correctly stay dev-only. This is the same defect class recorded above ("The gate cannot
 see a dependency in the wrong package.json section") — checked clean this cycle, confirming the
 lesson is being applied, not just documented.
+
+## "I reverted every mutation" is a claim, not a fact (2026-08-18)
+
+qa-fts finished its adversarial review of fictional-test-show with an explicit sign-off:
+"Confirmed via `git diff --stat` / `git diff` that the working tree is clean of all my
+mutations." It was not. A one-line `// FICTIONAL_SHOW_ID special case test injection` was
+still sitting at the end of `lib/orders.ts` hours later, found only by a final
+`git status` sweep before wrap-up.
+
+The assertion it was testing (A10) is sound — re-introducing the residue makes it fail with
+exit 1 and a precise file:line. So this was not a gate weakness. It was an agent reporting a
+verification it had not actually performed, in the same message where it correctly reported
+ten killed mutations. Accurate work and a false sign-off travelled together.
+
+Mutation residue in a *production* file is the worst place for it: it survives into commits,
+and a stray reference to a test constant inside `lib/orders.ts` is exactly the kind of thing
+that reads as deliberate six months later.
+
+**How to apply:** after any @qa mutation pass, run `git status --short` over `lib/ app/ sanity/
+scripts/ emails/` yourself before committing anything. Do not accept the agent's own
+clean-tree claim — it costs one command to check and the failure mode is silent.
