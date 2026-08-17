@@ -1,7 +1,13 @@
 #!/bin/bash
 
-# Prepend common paths for CLI tools (gh, jq)
-export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+# Prepend common paths for CLI tools (gh, jq, bun).
+# launchd starts this with PATH=/usr/bin:/bin:/usr/sbin:/sbin only, so every tool installed
+# outside those four directories is invisible unless named here. bun lives in ~/.bun/bin by
+# default and is in REQUIRED_DEPS below — omitting it made the dependency gate abort every
+# 300s cycle with "missing required dep(s): bun" even though bun was installed and on the
+# interactive PATH. Any dep added below must have its install dir represented here.
+export HOME="${HOME:-/Users/$(id -un)}"
+export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.bun/bin:$HOME/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
 # Dynamic path resolution
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

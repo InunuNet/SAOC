@@ -1149,3 +1149,72 @@ file, which would make the assertion tautological.
 
 `contract-payfast-m1-lock-cleanup-fix.yaml` is the counter-example worth copying: it compares
 against `git show HEAD:` and re-bases itself, so it can never go stale.
+
+## The gate cannot see a dependency in the wrong package.json section (2026-08-17)
+
+F11 shipped `lib/qr.ts` — production code, reachable from the ITN route via
+`lib/confirmation-email.ts` — importing `qrcode`, which was declared in **devDependencies**.
+Every gate passed 9/9, twice, because the gate runs in a dev tree where all dependencies are
+installed. Firebase App Hosting prunes dev dependencies, so QR generation would have failed
+at runtime in production and nowhere earlier.
+
+`jsqr` and `pngjs` are correctly devDependencies — only the check scripts use them. The tell
+is not "is it a test-ish package" but **"is it reachable from a file the server runs."**
+
+**How to apply:** whenever a feature adds a runtime import, confirm the package sits in
+`dependencies`, not `devDependencies`, and confirm it with
+`pnpm ls --prod --depth 0 | grep <pkg>` rather than by reading package.json — the lockfile is
+the thing that ships. `pnpm add <pkg>` will NOT move an already-satisfied package between
+sections; it reports "Already up to date" and changes nothing. Move it explicitly and re-run
+`pnpm install` to sync the lockfile importer section.
+
+This is the same shape as the untested-seam class already recorded: the thing that breaks in
+production is the thing no assertion exercises, because assertions run where it always works.
+
+## Never run a gate while @qa is mutation-testing (2026-08-17)
+
+F11's gate went from 9/9 to 8/9 with A6 failing, immediately after an unrelated package.json
+change. The change was innocent: @qa was mid-mutation on `lib/recovery-url.ts`, and the gate
+read the file in its deliberately-broken state. Re-running A6 alone seconds later passed, and
+the file on disk was intact.
+
+Two false conclusions were one step away — that the dependency move had broken F11, or that
+A6 was flaky. Both would have been wrong, and the second is the more dangerous, because
+"flaky assertion" is how a real failure gets waved through later.
+
+**How to apply:** mutation testing and gate runs both operate on the same working tree, so
+they cannot overlap. Wait for @qa's verdict before running the confirming gate. If a gate
+result changes without a corresponding source change, suspect a concurrent agent before
+suspecting the assertion — check `git status` and re-run the single failing check in
+isolation before drawing any conclusion.
+
+## F11 mutation review — a negative control can pass for the wrong reason (2026-08-17)
+
+@qa's A3 assertion (empty `bookingRef` must be rejected) still passed with `lib/qr.ts`'s own
+guard removed, because the `qrcode` library independently throws on `''`. Only the `.trim()`
+half of the guard is actually exercised by that test case — a whitespace-only `bookingRef`
+would still encode silently, since the library only rejects the empty string, not whitespace.
+
+**Lesson:** when a guard's test input is also rejected by an underlying library the code calls
+into, the assertion proves the library's behaviour, not the guard's. Pick a test input that
+only YOUR guard rejects (here: a whitespace-only string) to get a real negative control.
+Backlog item already filed for the `.trim()` gap.
+
+## F11 mutation review — a no-op mutant is not evidence of a weak check (2026-08-17)
+
+A second F11 mutant moved the zero-position guard to after a loop that runs zero times when
+there are zero positions — this changes nothing observable, because the loop body never
+executes either way. Reading that as "the check failed to kill the mutant" would have produced
+a false defect report.
+
+**Lesson:** before recording a mutation survivor as a finding, confirm the mutation actually
+changes behaviour along some code path. A mutant that is behaviourally identical to the
+original is invalid, not a survivor — distinguish "assertion is weak" from "mutation is a
+no-op" before writing either up.
+
+## F11 closeout — dependency-placement lesson held (2026-08-17)
+
+Re-checked at F11 close: `qrcode` sits in `dependencies` (not `devDependencies`), and `jsqr`/
+`pngjs` correctly stay dev-only. This is the same defect class recorded above ("The gate cannot
+see a dependency in the wrong package.json section") — checked clean this cycle, confirming the
+lesson is being applied, not just documented.
