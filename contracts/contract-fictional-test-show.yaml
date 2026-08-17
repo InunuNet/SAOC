@@ -1,0 +1,391 @@
+schema: athanor.contract/v1
+slug: fictional-test-show
+goal: >-
+  A fictional, never-active National Show (spec-adjacent, not a spec'd F-number — requested
+  directly by Brad to isolate F12's and F14's human end-to-end ticket-purchase-and-check-in
+  proofs away from the real 2027 show, after F9's dry-run resolved its demo ticket type
+  against the real active show `show-19-2027`). Adds exactly one new Sanity `show` document,
+  one new `ticketType` document scoped to it, the pure marker/seed/recoverability modules that
+  make both genuinely find-and-removable later, and a generic (not fictional-show-specific)
+  active-show-swap planner for the one human step this design cannot avoid: the real checkout
+  gate (`ticketTypeMatchesActiveShow()`, F1) requires the fictional show to be the SOLE
+  Sanity `show` with `active:true` before a real purchase can be made against it, which
+  necessarily means briefly deactivating the real 2027 show for that window. See golden
+  README "The central design problem" for the full trap this is built against — the fictional
+  show must NEVER surface on saoc.co.za, NEVER become active by accident, and NEVER collide
+  with F9's already-shipped demo ticket type on Sanity's non-show-scoped
+  `ticketTypeBySlugQuery` lookup — and "Every assertion and its defeating mutation" for how
+  each of those three failure modes is proven, offline, against real shipped code
+  (`resolveActiveShow()`, `ticketTypeMatchesActiveShow()`, `filterPubliclyListableTicketTypes()`)
+  wherever real code already exists, and against new pure modules built to the exact same
+  fixture-proof pattern where it doesn't.
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Contract and golden files ONLY — no implementation. Six new/changed surfaces, all
+      additive, mirroring F9's established pure-module/seed-script/unasserted-I/O-script
+      pattern. NO code path outside these new files may reference any fictional-show
+      constant (A10 proves this by grep) — the fictional show is ordinary Sanity/Firestore
+      data flowing through checkout, the ITN webhook, and check-in entirely unmodified.
+
+      (1) lib/fictional-test-show.ts (new, pure): `export const FICTIONAL_SHOW_ID =
+      'show-fictional-test'` (deterministic, reserved Sanity `show` `_id`). `export const
+      FICTIONAL_SHOW_SLUG = 'fictional-test-show'`. `export const FICTIONAL_SHOW_TITLE =
+      'Fictional Test Show (Do Not Use For Real Sales)'`. `export const
+      FICTIONAL_SHOW_TICKET_TYPE_ID = 'ticketType-fictional-test-show-general-admission'`
+      (deterministic — the fictional show's own `_id` is itself fixed, so no
+      `${activeShowId}` interpolation is needed the way F9's demo ticket type `_id` needed
+      one). `export const FICTIONAL_SHOW_TICKET_TYPE_SLUG =
+      'fictional-test-show-general-admission'` — DELIBERATELY DISTINCT from F9's
+      `DEMO_TICKET_TYPE_SLUG` ('demo-general-admission'); see golden README "Why a
+      different slug from F9's demo ticket type, not a reuse" for the collision this
+      avoids. `export const FICTIONAL_SHOW_TICKET_TYPE_NAME = 'General Admission
+      (Fictional Test Show)'`. `export const FICTIONAL_SHOW_TICKET_TYPE_PRICE_ZAR = 10`
+      (nonzero — same PayFast comp-bypass reasoning as F9's README "Price and capacity";
+      this contract does not re-litigate it, only reuses the constraint). `export const
+      FICTIONAL_SHOW_TICKET_TYPE_CAPACITY = 50`. `export interface
+      FictionalShowMarkerFields { _id?: string | null; slug?: string | null;
+      fictionalTestData?: boolean | null }`. `export function isFictionalTestShowDoc(s:
+      FictionalShowMarkerFields): boolean` — OR across all three fields (`_id ===
+      FICTIONAL_SHOW_ID`, `slug === FICTIONAL_SHOW_SLUG`, `fictionalTestData === true`).
+      `export interface FictionalShowTicketTypeMarkerFields { slug?: string | null; show?:
+      { _ref: string } | null }` — deliberately does NOT include `demo` as a
+      classification input (see golden README "Why classification keys off `show._ref`,
+      not the shared `demo` boolean" — F9's real demo ticket type for the real active show
+      also carries `demo: true`; using it here would misclassify F9's own artefacts as
+      fictional-show artefacts in a cleanup report). `export function
+      isFictionalTestShowTicketTypeDoc(t: FictionalShowTicketTypeMarkerFields): boolean` —
+      OR(`slug === FICTIONAL_SHOW_TICKET_TYPE_SLUG`, `show?._ref === FICTIONAL_SHOW_ID`).
+      `export function isFictionalTestShowTicketTypeSlug(slug: string | null | undefined):
+      boolean` — EXACT match only against `FICTIONAL_SHOW_TICKET_TYPE_SLUG`, no
+      prefix/substring matching — the sole channel that survives onto a Firestore
+      position's bare-string `ticketType` field (identical reasoning to F9's
+      `isDemoTicketTypeSlug()`, applied to this feature's own reserved slug).
+
+      (2) lib/fictional-test-show-seed-plan.ts (new, pure, mirrors
+      lib/demo-ticket-type-seed-plan.ts's shape exactly): `export interface
+      ExistingShowDoc { _id: string; slug: string | null }`. `export type
+      FictionalShowSeedPlan = { action: 'create'; document: { _id: string; _type: 'show';
+      title: string; slug: { _type: 'slug'; current: string }; status: 'cancelled';
+      active: false; fictionalTestData: true } } | { action: 'skip-exists'; existingId:
+      string }`. `export function planFictionalTestShowDocument(existingShows:
+      ExistingShowDoc[]): FictionalShowSeedPlan` — looks for an existing doc whose `_id
+      === FICTIONAL_SHOW_ID`; if found, `{action:'skip-exists', existingId}`; otherwise
+      `{action:'create', document}`. **`document.active` is the type literal `false` —
+      not a parameter, not derived from any input — this is the load-bearing safety
+      invariant A4 proves: nothing this function is ever called with can make it plan an
+      active fictional show.** `document.status` is the type literal `'cancelled'` for the
+      same reason — see golden README "Judgement call: `status: 'cancelled'`, not
+      `'upcoming'`" for why, though (unlike `active`) this one is not load-bearing (no
+      query anywhere selects on `status === 'cancelled'` or excludes it — see the same
+      README section for the grep that confirms it).
+
+      `export interface ExistingTicketTypeDoc { _id: string; slug: string | null; show?: {
+      _ref: string } | null }` (identical shape to F9's, kept as a separate local type
+      rather than importing F9's — see golden README "Why separate modules, not an edit to
+      F9's files"). `export type FictionalShowTicketTypeSeedPlan = { action: 'create';
+      document: { _id: string; _type: 'ticketType'; name: string; slug: { _type: 'slug';
+      current: string }; price: number; capacity: number; active: true; order: 999; demo:
+      true; show: { _type: 'reference'; _ref: string }; description: string } } | {
+      action: 'skip-exists'; existingId: string }`. `export function
+      planFictionalTestShowTicketTypeSeed(existingTicketTypes: ExistingTicketTypeDoc[]):
+      FictionalShowTicketTypeSeedPlan` — `_id` is always
+      `FICTIONAL_SHOW_TICKET_TYPE_ID` (fixed, no interpolation, per (1) above); looks for
+      an existing entry whose `slug === FICTIONAL_SHOW_TICKET_TYPE_SLUG` AND whose `show?.
+      _ref === FICTIONAL_SHOW_ID` (per-show dedup, same reasoning as F9's A5 case 3,
+      though for this feature there is only ever one show it could be scoped to — kept
+      for shape-parity with F9, proven by A5 anyway); otherwise plans a create with
+      `price === FICTIONAL_SHOW_TICKET_TYPE_PRICE_ZAR`, `capacity ===
+      FICTIONAL_SHOW_TICKET_TYPE_CAPACITY`, `active: true` (Sanity ticketType-level
+      "sellable" flag — distinct from the show's own `active` flag, see golden README
+      "Two `active` flags, two different meanings" for why this is not a contradiction of
+      (1)'s `active: false` on the show document), `demo: true` (reuses F9's already-
+      shipped, already-proven public-listing exclusion — see golden README "Reusing F9's
+      `demo` field and `filterPubliclyListableTicketTypes()` unmodified"), `show._ref ===
+      FICTIONAL_SHOW_ID`.
+
+      (3) lib/fictional-test-show-active-swap-plan.ts (new, pure, GENERIC — not
+      fictional-show-specific, by design, see golden README "Why the swap planner is
+      generic, not fictional-show-specific" and A10's grep): `export interface
+      ShowActivationRecord { _id: string; active?: boolean | null }`. `export type
+      ActiveShowSwapPlan = { safe: true; deactivate: string[]; activate: string } | {
+      safe: false; reason: string }`. `export function planActiveShowSwap(shows:
+      ShowActivationRecord[], targetShowId: string): ActiveShowSwapPlan` — refuses
+      (`safe:false`) if `targetShowId` is not present in `shows` at all (reason names the
+      missing id); otherwise plans `deactivate` as every OTHER show currently `active ===
+      true` (order-independent — sorted by `_id` in the output so the plan is
+      deterministic and diffable) and `activate` as `targetShowId`, with `safe: true` **if
+      and only if** applying the plan would leave EXACTLY one show active afterwards —
+      proven by A9 across: zero currently active (plan still activates exactly the
+      target), one different show active (plan deactivates it and activates the target),
+      the target itself already the sole active show (plan is a no-op-shaped but still
+      `safe:true` result — `deactivate: []`), and two shows simultaneously active
+      already (an already-ambiguous starting state — the plan still resolves to exactly
+      one active afterward, deactivating every other active show, not just one of them).
+      This function computes the plan only — it performs no write; a human/deploy script
+      (out of this contract's scope, named in "What this contract does NOT prove") applies
+      it.
+
+      (4) lib/fictional-test-show-recoverability.ts (new, pure): `export interface
+      RecoverablePosition { bookingRef: string; ticketType: string | null; orderId: string
+      | null }`. `export interface RecoverableOrder { id: string }`. `export interface
+      RecoverableCheckinAttempt { bookingRef: string | null; orderId: string | null }`.
+      `export interface FictionalTestShowArtifactReport { positions: RecoverablePosition[];
+      orders: RecoverableOrder[]; checkinAttempts: RecoverableCheckinAttempt[] }`. `export
+      function classifyFictionalTestShowArtifacts(input: { positions:
+      RecoverablePosition[]; orders: RecoverableOrder[]; checkinAttempts:
+      RecoverableCheckinAttempt[] }): FictionalTestShowArtifactReport` — (a) positions:
+      every position where `isFictionalTestShowTicketTypeSlug(p.ticketType)` is true — the
+      SOLE Firestore-level recoverability channel, identical reasoning to F9's README "The
+      marker mechanism" (Firestore positions never carry any boolean marker, `Order` has
+      no `ticketType` field at all per `types/index.ts`); (b) orders: every order whose
+      `id` appears as the `orderId` of at least one matched position (the join channel —
+      collects non-null `orderId`s off the matched positions, matches `RecoverableOrder.id`
+      against that set); (c) checkinAttempts: every checkin-attempt record whose
+      `bookingRef` matches a matched position's `bookingRef` OR whose `orderId` matches a
+      matched order's `id` (dual join, because a `CheckinAttemptRecord`
+      (`lib/checkin-audit.ts`) carries both fields but neither a `ticketType` nor any
+      marker boolean — see golden README "The recoverability chain, three hops"). Pure,
+      no Firestore/Sanity client import — this is the classification logic
+      `scripts/report-fictional-test-show-artifacts.ts` (below) calls after doing its own
+      real reads; it is what A8 proves offline against a MIXED fixture containing real
+      2027-show artefacts, F9 demo-ticket-type artefacts, and fictional-show artefacts
+      together, so a false-positive sweep of F9's own test data is provably ruled out, not
+      merely assumed.
+
+      (5) sanity/schemas/documents/show.ts (edit, additive): add one field, after the
+      existing `active` field: `defineField({ name: 'fictionalTestData', title:
+      'Fictional Test Data (never a real show)', type: 'boolean', initialValue: false,
+      description: 'Marks this show document as fictional test data used to exercise the
+      ticketing pipeline end-to-end in isolation from the real show. Never set active:true
+      except for a brief, human-supervised test window — see
+      contracts/golden/fictional-test-show/README.md.' })`. Optional/defaulted, so every
+      pre-existing published `show` document (including `show-19-2027`) remains valid
+      without a migration — identical additive posture to F9's `demo` field on
+      `ticketType.ts`.
+
+      (6) scripts/seed-fictional-test-show.ts (new, I/O-performing, mirrors
+      scripts/seed-demo-ticket-type.ts's exact shape: reads `.env.local` directly, a real
+      `@sanity/client`, `--dry-run` default / `--apply` to mutate, `createIfNotExists`
+      only, never `set()`/`createOrReplace()`, never deletes). Fetches existing `show` and
+      `ticketType` documents, calls `planFictionalTestShowDocument()` then
+      `planFictionalTestShowTicketTypeSeed()`, prints or commits each plan in turn (the
+      ticket type's `create` plan is only ever attempted after the show document is
+      confirmed to exist — either freshly created or already present — since the ticket
+      type's `show._ref` must resolve). NOT gated by any assertion (hard constraint: no
+      check may create any document anywhere) — a human/deploy step, exactly F9's
+      "Why the real seed script is unasserted" reasoning, applied here.
+
+      (7) scripts/swap-active-show.ts (new, I/O-performing, thin wrapper around
+      `planActiveShowSwap()`): reads all `show` documents, calls
+      `planActiveShowSwap(shows, targetShowId)` where `targetShowId` is a required CLI
+      positional argument (no default — an operator must name the target explicitly, so a
+      bare invocation cannot accidentally swap anything), prints the plan, and only
+      applies it (patching every planned `deactivate` id's `active` to `false` and the
+      `activate` id's `active` to `true`, in that order, each as its own Sanity `patch()`
+      call — never a single multi-document transaction Sanity's API doesn't offer) behind
+      `--apply`, dry-run by default. Refuses to apply a `safe:false` plan under any flag.
+      This is the one script a human runs twice around an F12/F14-style live purchase
+      test against the fictional show: once to make the fictional show the sole active
+      show, once afterward to restore `show-19-2027`. NOT gated by any assertion — same
+      reasoning as (6); `planActiveShowSwap()`'s safety invariants are what A9 gates, not
+      this script's live Sanity writes.
+
+      (8) scripts/report-fictional-test-show-artifacts.ts (new, I/O-performing,
+      READ-ONLY — no `--apply` flag exists on this script; it has no code path capable of
+      writing or deleting anything, ever, in either Sanity or Firestore). Fetches the
+      fictional show's Sanity documents (by `FICTIONAL_SHOW_ID` / `isFictionalTestShowDoc`
+      / `isFictionalTestShowTicketTypeDoc`), every Firestore `tickets` (position),
+      `orders`, and `checkinAttempts` document, feeds them to
+      `classifyFictionalTestShowArtifacts()`, and prints a report: every matched
+      document's collection, id, and one or two identifying fields (bookingRef/orderId),
+      plus a total count per collection. This is the CLEANUP-REPORTING mechanism the brief
+      requires — it enumerates what Brad could choose to delete; it never deletes anything
+      itself, and per the hard constraint that deletion of any Firestore or Sanity
+      document is Brad's decision alone, no future edit to this script may add one. NOT
+      gated by any assertion (it performs real, credentialed reads — the offline/
+      credential-free hard constraint excludes it from the gate exactly as it excludes (6)
+      and (7)); its pure classification core is what A8 gates instead.
+
+      OUT OF SCOPE for this contract (named explicitly): actually running any of (6), (7),
+      or (8) against the live Sanity/Firestore data (human/deploy steps, not gate checks);
+      any change to app/api/tickets/checkout/route.ts, app/api/tickets/itn/route.ts
+      (untouched per the architect brief's hard constraint — F10's sole authorised
+      reopening), lib/checkin.ts, or lib/orders.ts — this feature adds no new code path to
+      any of these, it only adds ordinary Sanity/Firestore documents that flow through the
+      ALREADY-SHIPPED code paths those files provide, proven by A10's grep; deleting
+      anything, ever, in Firestore or Sanity (forbidden to every agent on this project, not
+      merely out of scope); resolving the pre-existing P1 blockers on F13 (the
+      never-run roles migration, the missing production `ShowWindowLookup`) — noted in the
+      golden README "Sequencing with F12/F13/F14" but not this contract's job to fix; any
+      change to branding/ or to app/api/tickets/itn/route.ts.
+    status: pending
+
+goldens:
+  - contracts/golden/fictional-test-show/README.md
+  - contracts/checks/fictional-test-show/tsconfig.typecheck.json
+  - contracts/checks/fictional-test-show/fixtures/fictional-test-show-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        lib/fictional-test-show.ts, lib/fictional-test-show-seed-plan.ts,
+        lib/fictional-test-show-active-swap-plan.ts,
+        lib/fictional-test-show-recoverability.ts, and the show.ts schema edit are added.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof of all four new lib modules' exported shapes -- not a grep,
+        real assignments and calls that either compile or don't. Includes:
+        FictionalShowSeedPlan's and FictionalShowTicketTypeSeedPlan's discriminated unions
+        narrowing correctly by `action`; the seed document literal types (`active: false`
+        on the show plan, `active: true` / `demo: true` on the ticket type plan) being
+        real literal types, not widened to `boolean`; ActiveShowSwapPlan narrowing
+        correctly by `safe`; every exported constant's literal type; and that
+        FICTIONAL_SHOW_TICKET_TYPE_SLUG and (F9's, imported for this one comparison only)
+        DEMO_TICKET_TYPE_SLUG are two textually distinct string literal types, not the
+        same literal re-exported.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/fictional-test-show/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        Marker recoverability on the two new Sanity document classifiers
+        (isFictionalTestShowDoc for the show, isFictionalTestShowTicketTypeDoc for the
+        ticket type), mirroring F9's A3 exactly: each survives either one of its two
+        independent channels being stripped alone (case pairs), is not vacuously true for
+        everything (both channels stripped -> false), and does NOT classify F9's own real
+        demo-ticket-type document (scoped to the real active show, `demo:true`, F9's own
+        slug) as fictional-show data -- proving isFictionalTestShowTicketTypeDoc's
+        deliberate choice not to key off the shared `demo` boolean is real, not a
+        documentation claim. Separately proves isFictionalTestShowTicketTypeSlug() is an
+        exact match only (no prefix/substring collision with F9's slug or a real ticket
+        type's slug).
+      command: >-
+        node --import tsx/esm
+        contracts/checks/fictional-test-show/check-marker-recoverability.mjs
+
+    - id: A4
+      description: >-
+        The fictional show can never become active by accident. Proves, offline: (1)
+        planFictionalTestShowDocument() ALWAYS plans `active: false` and `status:
+        'cancelled'` regardless of what existing-shows fixture it's fed (including a
+        fixture where a same-slug or same-id show is already active, and a fixture that is
+        empty) -- the safety invariant is a type literal, not a runtime branch, and this
+        proves no fixture can talk it into anything else; (2) the REAL, already-shipped
+        resolveActiveShow() (lib/show-resolution.ts) correctly excludes the fictional show
+        from the sellable set when it carries `active: false` even while a real show is
+        active, and correctly fails closed to `null` (no active show at all) if a mutation
+        ever flipped the fictional show's `active` to `true` ALONGSIDE the real show's
+        (ambiguous two-active state -- mirrors F9's A4 case 3, applied to this pairing
+        specifically); (3) the REAL, already-shipped ticketTypeMatchesActiveShow()
+        (app/api/tickets/checkout/route.ts) correctly refuses a purchase against the
+        fictional ticket type while the real show is the sole active one -- this is the
+        proof that seeding the fictional show changes nothing purchasable by default.
+      command: npx tsx contracts/checks/fictional-test-show/check-active-show-safety.mjs
+
+    - id: A5
+      description: >-
+        planFictionalTestShowDocument() and planFictionalTestShowTicketTypeSeed() are
+        pure, offline, idempotent decision functions, mirroring F9's A5: (1) with nothing
+        existing, both plan a create, the ticket type plan scoped to
+        FICTIONAL_SHOW_ID with NONZERO price and capacity and `active: true`/`demo: true`;
+        (2) fed each plan's own output back in as "already-existing" state, a second call
+        is an idempotent skip for both, not a duplicate create; (3) an existing ticket
+        type document sharing FICTIONAL_SHOW_TICKET_TYPE_SLUG but scoped to a DIFFERENT
+        show's `_ref` does not block seeding the fictional show's own copy -- proving the
+        dedup is genuinely per-show, matching F9's A5 case 3 exactly.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/fictional-test-show/check-seed-plan-idempotent.mjs
+
+    - id: A6
+      description: >-
+        The fictional ticket type is excluded from the public /tickets listing via F9's
+        REAL, UNMODIFIED filterPubliclyListableTicketTypes() -- no new filtering code is
+        introduced by this feature. Proves: a mixed fixture of real ticket types, F9's
+        demo ticket type, and the fictional show's ticket type (the latter two both
+        carrying `demo: true`, per "Reusing F9's demo field" above) has BOTH demo-marked
+        entries removed and every real entry untouched, confirming the reuse is genuine
+        (the fictional ticket type is filtered out for the exact same reason F9's is, not
+        by some coincidental separate mechanism) and not vacuous (real entries survive).
+      command: >-
+        node --import tsx/esm
+        contracts/checks/fictional-test-show/check-public-listing-excludes-fictional.mjs
+
+    - id: A7
+      description: >-
+        Slug-collision safety against F9's already-shipped demo ticket type. Proves:
+        FICTIONAL_SHOW_TICKET_TYPE_SLUG !== DEMO_TICKET_TYPE_SLUG (imported from both
+        modules, compared as values, not merely asserted in prose); a fixture simulating
+        Sanity's real ticketTypeBySlugQuery behaviour (first match in array order, since
+        Sanity enforces no slug uniqueness and the query takes `[0]`) resolves each of the
+        two slugs to its own, correct document even when both a real-show demo ticket type
+        and the fictional-show ticket type exist in the same dataset simultaneously --
+        proving the two features' reserved slugs cannot be confused for one another at the
+        one query this contract deliberately leaves unscoped (matching F9's own choice to
+        leave ticketTypeBySlugQuery unchanged).
+      command: >-
+        node --import tsx/esm
+        contracts/checks/fictional-test-show/check-slug-collision-safety.mjs
+
+    - id: A8
+      description: >-
+        classifyFictionalTestShowArtifacts() correctly walks the three-hop recoverability
+        chain (position ticketType-slug match -> orderId join -> order match; position
+        bookingRef/orderId join -> checkinAttempt match) against a MIXED fixture
+        containing real 2027-show positions/orders/checkinAttempts, F9 demo-ticket-type
+        positions/orders/checkinAttempts, AND fictional-show positions/orders/
+        checkinAttempts together. Proves the result set contains EXACTLY the
+        fictional-show artefacts in all three collections -- not the real show's (would
+        prove the classifier over-matches), not F9's demo artefacts (would prove the
+        `demo`-boolean-adjacent confusion this contract's README warns about is real), and
+        not empty (would prove the classifier is vacuously strict and finds nothing ever).
+        Also proves a checkin-attempt record whose bookingRef is null but whose orderId
+        matches is still found (the orderId-only join path), and one whose bookingRef
+        matches a REAL position but whose (absent) orderId doesn't is correctly excluded.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/fictional-test-show/check-artifact-recoverability-join.mjs
+
+    - id: A9
+      description: >-
+        planActiveShowSwap() is a GENERIC safety-invariant function, proven across
+        fixtures using arbitrary show ids (not exclusively FICTIONAL_SHOW_ID, to prove
+        genericity) plus one case using FICTIONAL_SHOW_ID as an ordinary input alongside
+        the others: zero shows currently active -> plans to activate only the target,
+        deactivate empty; one different show active -> plans to deactivate exactly that
+        one and activate the target; the target itself already the sole active show ->
+        `safe:true`, `deactivate: []` (no-op-shaped, not misreported as unsafe or as a
+        deactivate-then-reactivate churn); two shows simultaneously active already
+        (pre-existing ambiguous state) -> plans to deactivate BOTH, not just one,
+        leaving exactly the target active; and a target id absent from the input shows
+        array entirely -> `safe: false` with a reason naming the missing id, never a plan
+        that silently activates a show the caller never confirmed exists.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/fictional-test-show/check-active-swap-plan-safety.mjs
+
+    - id: A10
+      description: >-
+        STRUCTURAL, not behavioural (mirrors F9's A8's own labelling). Confirms none of
+        app/api/tickets/checkout/route.ts, app/api/tickets/itn/route.ts, lib/checkin.ts,
+        or lib/orders.ts contains any reference to FICTIONAL_SHOW_ID,
+        FICTIONAL_SHOW_SLUG, FICTIONAL_SHOW_TICKET_TYPE_SLUG, or
+        FICTIONAL_SHOW_TICKET_TYPE_ID -- a best-effort static guard proving the fictional
+        show is exercised entirely through the real, unmodified checkout/ITN/check-in code
+        paths as ordinary data, with no source-level special case introduced for it
+        anywhere those paths live.
+      command: bash contracts/checks/fictional-test-show/check-no-special-case.sh
+
+    - id: A11
+      description: >-
+        pnpm lint passes with zero errors after every new/changed file in this feature.
+      command: pnpm lint

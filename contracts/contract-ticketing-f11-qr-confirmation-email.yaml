@@ -1,0 +1,203 @@
+schema: athanor.contract/v1
+slug: ticketing-f11-qr-confirmation-email
+goal: >-
+  Mission ticketing-foundation F11 (spec §6, §11) — F11 replaces the F10-shipped stub body of
+  sendConfirmationEmail() (lib/confirmation-email.ts) with real content: one inline data-URI PNG
+  QR per position (encoding the position's bookingRef — the exact field lib/checkin.ts looks a
+  ticket up by), a multi-position-aware email template (emails/OrderConfirmation.tsx) addressed
+  to the order's buyer, and the F6 recovery-token deep link when a token is present. Ships via
+  three new pure/near-pure modules (lib/qr.ts, lib/recovery-url.ts, and the extended
+  lib/confirmation-email.ts) plus one new email component — no change to the pinned
+  app/api/tickets/itn/route.ts, whose call site and SendConfirmationEmailInput shape F10 already
+  authored to match. Full decision record, every defeating mutation, and what this contract does
+  NOT prove: contracts/golden/ticketing-f11-qr-confirmation-email/README.md
+created_at: '2026-08-17'
+autonomy: high
+
+# This contract does NOT touch app/api/tickets/itn/route.ts (sha256-pinned, F10's sole
+# authorised reopening) or app/api/tickets/checkout/route.ts. See the golden README's
+# "Blocker this contract surfaces but does not fix" for why checkout not creating an `orders`
+# document at all means sendConfirmationEmail() is never actually reached by a real ITN today,
+# independent of F11's own correctness — flagged, not silently worked around.
+
+features:
+  - id: F11
+    name: >-
+      Three new/extended modules, no change to any pinned or checkout file:
+
+      (1) lib/qr.ts (new, pure aside from the `qrcode` library call — no Firestore, no `@/`
+      imports): `export async function generateBookingRefQrDataUri(bookingRef: string):
+      Promise<string>` — returns a `data:image/png;base64,...` PNG data URI encoding
+      `bookingRef` VERBATIM (the plain, unsigned booking reference — spec §7.1/§6 confirm this
+      is correct as designed, not a placeholder pending a signed secret). Throws (does not
+      silently encode) when `bookingRef` is empty/whitespace-only. Uses the already-declared
+      `qrcode` package's `toDataURL()`.
+
+      (2) lib/recovery-url.ts (new, pure, zero imports beyond the language itself): `export
+      function buildRecoveryUrl(recoveryToken: string | null, siteUrl: string): string | null`
+      — returns `${siteUrl (trailing slash stripped)}/tickets/recover?token=${encodeURIComponent(recoveryToken)}`
+      when `recoveryToken` is non-null, and `null` (never a string, never a "?token=null" URL)
+      when it is null. This is deliberately its own file, not inlined into
+      lib/confirmation-email.ts, so it can be exercised by a check with zero `@/`-aliased VALUE
+      imports in its dependency graph (see the golden README's `npx tsx` vs `node --import
+      tsx/esm` section).
+
+      (3) lib/confirmation-email.ts (EXTENDED, not rewritten from scratch — F10's
+      `ConfirmationEmailPosition`, `SendConfirmationEmailInput`, and
+      `deliverConfirmationEmailAfterCommit` are UNTOUCHED; only `sendConfirmationEmail`'s body
+      and exported surface change):
+
+        `export interface ConfirmationEmailMailer { send(args: { to: string; subject: string;
+        react: import('react').ReactElement }): Promise<void> }` — deliberately narrow, matching
+        only what `lib/email.ts`'s real `sendEmail` already satisfies structurally (same
+        injectable-fake pattern as F8/F10's `deps.db`), so a fixture mailer needs zero adapter
+        code and never touches Resend.
+
+        `export interface SendConfirmationEmailDeps { mailer?: ConfirmationEmailMailer;
+        generateQrDataUri?: (bookingRef: string) => Promise<string>; siteUrl?: string }` — all
+        three optional, each independently overridable; omitted entirely, the function must
+        default to `{ send: sendEmail }` (lib/email.ts, real Resend), `generateBookingRefQrDataUri`
+        (lib/qr.ts), and `process.env.SITE_URL` (falling back to `'https://saoc.co.za'`,
+        matching checkout/route.ts's own `DEFAULT_SITE_URL` fallback convention — do not import
+        checkout's private `resolveSiteUrl`, duplicate the same three-line fallback locally).
+
+        `export async function sendConfirmationEmail(input: SendConfirmationEmailInput, deps:
+        SendConfirmationEmailDeps = {}): Promise<void>` — the pinned ITN route calls this with
+        ONLY the first argument (`sendConfirmationEmail({...})`, see
+        contracts/golden/ticketing-f10-itn-repin/itn-route.expected.ts.txt line ~269), which
+        MUST still compile and behave correctly against the real defaults; the second parameter
+        exists solely for fixture injection. Behaviour, in order:
+          - Refuses SYNCHRONOUSLY BEFORE any QR generation or mailer call when
+            `input.positions.length === 0` (throws a real `Error`) — see golden README/A5 for
+            why this is asserted even though it is not reachable via F10's real call site today.
+          - For every position, generates its QR data URI via `deps.generateQrDataUri ??
+            generateBookingRefQrDataUri`, keyed on that position's OWN `bookingRef` (never the
+            first position's, never the order id).
+          - Resolves the recovery URL via `buildRecoveryUrl(input.recoveryToken, siteUrl)`.
+          - Calls `(deps.mailer ?? { send: sendEmail }).send({ to: input.buyerEmail, subject,
+            react: <OrderConfirmation buyerName=... positions=... recoveryUrl=... /> })` exactly
+            ONCE per call (one email per ORDER, not per position — spec §6).
+          - Does NOT catch/swallow a failure from either `generateQrDataUri` or `mailer.send` —
+            propagates the original error to its own caller unchanged (isolation from the
+            payment path is exclusively `deliverConfirmationEmailAfterCommit`'s job, already
+            proven by F10's A7 — see golden README A8 for why this is a genuinely different
+            property, not a re-assertion under a new number).
+          - Never writes `input.recoveryToken`'s value (or any position's `bookingRef`/PII) to
+            `console.*` on any path, success or failure, and never interpolates it into a thrown
+            Error's message.
+
+      (4) emails/OrderConfirmation.tsx (new `@react-email/components`-based template,
+      SEPARATE from the existing, unused, single-position `emails/TicketConfirmation.tsx` — that
+      file is left untouched, not deleted, not imported by this feature):
+
+        `export interface OrderConfirmationPosition { bookingRef: string; attendeeName: string;
+        ticketType: string; qrDataUri: string }`. `export interface OrderConfirmationProps {
+        buyerName: string; positions: OrderConfirmationPosition[]; recoveryUrl: string | null }`.
+        Default-exported component renders: a salutation using `buyerName` (exactly once, not
+        once per position); for EACH position, its `attendeeName`, `ticketType`, `bookingRef`
+        (as visible text — the fallback for "a door volunteer can look up by name" per
+        docs/ticketing.md line 305, and for a QR-scan failure at the door) and an `<Img
+        src={qrDataUri} .../>` rendering the QR data URI INLINE, verbatim, as-is — NOT converted
+        to an attachment, NOT re-hosted, matching spec §6's explicit "as an inline data-URI
+        image, not a hosted ticket page" instruction (see golden README "Inline data-URI vs.
+        attachment" for the deliverability tradeoff this accepts and how A4 gates the
+        consequence); when `recoveryUrl` is non-null, a visible link/CTA whose `href` is exactly
+        `recoveryUrl` ("Lost your ticket? Click here" or equivalent, Brad's copy call, not
+        contract-pinned text) — when `recoveryUrl` is null, NO recovery section renders at all
+        (not a broken link, not empty text).
+
+goldens:
+  - contracts/golden/ticketing-f11-qr-confirmation-email/README.md
+  - contracts/checks/ticketing-f11-qr-confirmation-email/tsconfig.typecheck.json
+  - contracts/checks/ticketing-f11-qr-confirmation-email/fixtures/qr-confirmation-email-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after lib/qr.ts,
+        lib/recovery-url.ts, the extended lib/confirmation-email.ts, and
+        emails/OrderConfirmation.tsx are added.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof (not a grep) of every new/extended exported shape: generateBookingRefQrDataUri's
+        signature, SendConfirmationEmailDeps' three independently-overridable members (including
+        a ConfirmationEmailMailer-shaped fake object satisfying deps.mailer with zero lib/email.ts
+        involvement), sendConfirmationEmail compiling both with and without the deps argument
+        (the pinned route's own call shape), buildRecoveryUrl's (string|null, string) -> string|null
+        signature, and OrderConfirmationProps requiring qrDataUri on every position (a template
+        that forgot to plumb the QR through would fail to compile here, before any runtime check
+        renders it).
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-f11-qr-confirmation-email/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        QR generation produces a genuinely decodable code (mission Done criterion), proven by
+        decoding real output with jsQR (a real, independent QR decoder) rather than checking PNG
+        byte presence. Defeating mutation: encoding a different/truncated/wrapped string than the
+        exact input bookingRef.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f11-qr-confirmation-email/check-qr-roundtrip.mjs
+
+    - id: A4
+      description: >-
+        Full pipeline (position -> QR -> rendered inline <img> -> decodable text) proven end to
+        end for both the exactly-one-position shape F10's real call site produces today and a
+        3-position order: exactly one email per order, addressed to the buyer, every position's
+        QR present, DISTINCT, correctly ORDERED, and fully inline (never externalised); every
+        attendee name present. Defeating mutations: same QR reused across positions, shuffled/off-by-one
+        QR-to-position mapping, a dropped attendee, or the QR silently becoming a remote/CID
+        reference instead of staying inline.
+      command: >-
+        npx tsx contracts/checks/ticketing-f11-qr-confirmation-email/check-multi-position-fanout.mjs
+
+    - id: A5
+      description: >-
+        Zero-position edge case (mission brief, explicit): sendConfirmationEmail refuses BEFORE
+        any QR generation or mailer call when given an empty positions array, rejecting with a
+        real Error rather than silently sending a broken confirmation. Not reachable via F10's
+        real call site today (asserted anyway per the mission brief and spec §6's forward-compatible
+        multi-position design).
+      command: >-
+        npx tsx contracts/checks/ticketing-f11-qr-confirmation-email/check-zero-position-refusal.mjs
+
+    - id: A6
+      description: >-
+        buildRecoveryUrl produces the documented "<siteUrl>/tickets/recover?token=<token>" deep
+        link with the token round-tripping exactly through URL encoding; returns null (never a
+        broken "?token=null" URL) for a null token; normalises a trailing-slash siteUrl; is
+        non-vacuously sensitive to its token argument. Defeating mutation: interpolating a
+        possibly-null token directly into the URL template instead of branching on null first.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f11-qr-confirmation-email/check-recovery-link-presence.mjs
+
+    - id: A7
+      description: >-
+        Credential safety (dispatch instruction, non-negotiable): sendConfirmationEmail never
+        writes the recoveryToken's value to console output or into a thrown error's message/stack,
+        on either the success path or a QR-generation-failure path. Scoped precisely to logs/thrown-error
+        text, not the email content itself (the token legitimately reaching the buyer's own inbox
+        via the recovery link is the feature, proven separately by A4/A6).
+      command: >-
+        npx tsx contracts/checks/ticketing-f11-qr-confirmation-email/check-credential-safety.mjs
+
+    - id: A8
+      description: >-
+        sendConfirmationEmail faithfully PROPAGATES a failure from either generateQrDataUri or
+        mailer.send (the same error instance, not swallowed or replaced), and resolves cleanly
+        when both succeed. A genuinely different property from F10's A7, which proves the
+        WRAPPER (deliverConfirmationEmailAfterCommit) swallows whatever this function throws —
+        this check proves THIS function does not swallow its own failures first, or onError would
+        never fire and a real send failure would be invisible to Cloud Logging.
+      command: >-
+        npx tsx contracts/checks/ticketing-f11-qr-confirmation-email/check-error-propagation.mjs
+
+    - id: A9
+      description: >-
+        pnpm lint passes with zero errors after lib/qr.ts, lib/recovery-url.ts, the extended
+        lib/confirmation-email.ts, and emails/OrderConfirmation.tsx are added.
+      command: pnpm lint

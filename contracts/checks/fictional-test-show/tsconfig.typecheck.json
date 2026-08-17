@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/fictional-test-show.ts",
+    "../../../lib/fictional-test-show-seed-plan.ts",
+    "../../../lib/fictional-test-show-active-swap-plan.ts",
+    "../../../lib/fictional-test-show-recoverability.ts",
+    "../../../lib/demo-ticket-type.ts",
+    "fixtures/fictional-test-show-typecheck.ts"
+  ],
+  "exclude": []
+}

@@ -1,3 +1,9 @@
+import type { ReactElement } from 'react';
+
+import { generateBookingRefQrDataUri } from '@/lib/qr';
+import { buildRecoveryUrl } from '@/lib/recovery-url';
+import { sendEmail } from '@/lib/email';
+import OrderConfirmation, { type OrderConfirmationPosition } from '@/emails/OrderConfirmation';
 import type { TicketType } from '@/types/index';
 
 /**
@@ -14,6 +20,16 @@ import type { TicketType } from '@/types/index';
  * boundary".
  */
 
+/** Site URL fallback, matching app/api/tickets/checkout/route.ts's own DEFAULT_SITE_URL
+ *  convention — duplicated locally rather than imported (that fallback is private to a route
+ *  handler module, and SITE_URL is only available at Firebase App Hosting runtime, not build
+ *  time, so it must be read inside the function body, not hoisted to module scope). */
+const DEFAULT_SITE_URL = 'https://saoc.co.za';
+
+function resolveSiteUrl(): string {
+  return process.env['SITE_URL'] ?? DEFAULT_SITE_URL;
+}
+
 export interface ConfirmationEmailPosition {
   bookingRef: string;
   attendeeName: string;
@@ -28,20 +44,64 @@ export interface SendConfirmationEmailInput {
   recoveryToken: string | null;
 }
 
+/** Deliberately narrow — matches only what lib/email.ts's real `sendEmail` already satisfies
+ *  structurally, same injectable-fake pattern as F8/F10's `deps.db`, so a fixture mailer needs
+ *  zero adapter code and never touches Resend. */
+export interface ConfirmationEmailMailer {
+  send(args: { to: string; subject: string; react: ReactElement }): Promise<void>;
+}
+
+export interface SendConfirmationEmailDeps {
+  mailer?: ConfirmationEmailMailer;
+  generateQrDataUri?: (bookingRef: string) => Promise<string>;
+  siteUrl?: string;
+}
+
 /**
- * MINIMAL STUB (F10) — logs the payload's shape only (order id, buyer email, position count,
- * and WHETHER a recovery token is present, never its value) and does not send a real email.
- * F11 replaces this body with real Resend delivery and QR generation.
+ * F11 — generates one QR per position (keyed on that position's OWN bookingRef), resolves the
+ * F6 recovery deep link, and sends exactly ONE email per order to the buyer.
+ *
+ * Refuses synchronously, before any QR generation or mailer call, when `positions` is empty —
+ * a defensive guard for spec §6's forward-compatible multi-position design, not reachable via
+ * F10's real call site today (see the golden README's A5 section).
+ *
+ * Does NOT catch/swallow a failure from `generateQrDataUri` or `mailer.send` — propagates the
+ * original error unchanged. Isolation from the payment path is exclusively
+ * `deliverConfirmationEmailAfterCommit`'s job (already proven by F10's A7).
  *
  * NEVER log recoveryToken's value, a signature, a passphrase, or any credential — this project
- * has an absolute rule against credential exposure in logs.
+ * has an absolute rule against credential exposure in logs. This function contains no
+ * `console.*` call anywhere in its body for exactly that reason.
  */
-export async function sendConfirmationEmail(input: SendConfirmationEmailInput): Promise<void> {
-  console.log('[confirmation-email] stub send — F11 will replace this with real Resend delivery', {
-    orderId: input.orderId,
-    buyerEmail: input.buyerEmail,
-    positionCount: input.positions.length,
-    hasRecoveryToken: input.recoveryToken !== null,
+export async function sendConfirmationEmail(
+  input: SendConfirmationEmailInput,
+  deps: SendConfirmationEmailDeps = {}
+): Promise<void> {
+  if (input.positions.length === 0) {
+    throw new Error('sendConfirmationEmail: an order must have at least one position');
+  }
+
+  const mailer = deps.mailer ?? { send: sendEmail };
+  const generateQrDataUri = deps.generateQrDataUri ?? generateBookingRefQrDataUri;
+  const siteUrl = deps.siteUrl ?? resolveSiteUrl();
+
+  const positions: OrderConfirmationPosition[] = [];
+  for (const position of input.positions) {
+    const qrDataUri = await generateQrDataUri(position.bookingRef);
+    positions.push({
+      bookingRef: position.bookingRef,
+      attendeeName: position.attendeeName,
+      ticketType: position.ticketType,
+      qrDataUri,
+    });
+  }
+
+  const recoveryUrl = buildRecoveryUrl(input.recoveryToken, siteUrl);
+
+  await mailer.send({
+    to: input.buyerEmail,
+    subject: 'Your SAOC National Show order is confirmed',
+    react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl }),
   });
 }
 

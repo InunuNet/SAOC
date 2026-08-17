@@ -67,10 +67,14 @@ today** — Firebase Auth is not provisioned on `saoc-webapp`; see that document
     - Displays booking ref
     - Displays ticketIncludesNote
     ↓
-13. (F5, not yet implemented) Resend emails ticket with QR code
-    - QR encodes the booking ref
+13. (F11) Confirmation email sent with QR code(s) per position
+    - One inline data-URI QR per position, encoding the booking ref
+    - Visible booking ref text (fallback for clients that strip data-URIs)
+    - Recovery link when recovery token is present (F6 primitive)
     - Email send is isolated from ITN — cannot break payment
-    - Door scanner (app/admin/door) will read QR for check-in
+    - Door scanner (app/admin/door) reads QR for check-in
+    - **KNOWN BLOCKER:** Checkout does not create orders, so this email
+      is never reached by real ITN today (queued for ownership decision)
 ```
 
 ### The ITN Race (F3 Correctness Trap)
@@ -1181,6 +1185,301 @@ node --import tsx/esm scripts/seed-demo-ticket-type.ts --apply
 - **Running `scripts/seed-demo-ticket-type.ts` for real.** This contract proves the *decision logic* (`planDemoTicketTypeSeed()`) the real script will call; actually invoking it against the live Sanity dataset is a human/deploy step, deliberately out of gate scope.
 - **That the public `/tickets` page correctly excludes ticket types from a genuinely different, past show** (as opposed to demo-marked ones). That gap pre-dates F9, is a real and separate finding, and is not this feature's job to fix. This section closes only the demo-exclusion gap; a future feature should address the show-scoping gap for all ticket types.
 
+## Confirmation Email with QR Codes: lib/qr.ts, lib/recovery-url.ts, lib/confirmation-email.ts, emails/OrderConfirmation.tsx (F11)
+
+**Status:** F11 passes gate. Ships four new/extended modules that implement the real confirmation email pipeline with QR codes, recovery links, and deliverability safeguards. See the decision record: `contracts/golden/ticketing-f11-qr-confirmation-email/README.md`.
+
+F11 extends F10's stub body of `sendConfirmationEmail()` with real content: one inline data-URI PNG QR code per position (encoding that position's booking reference — the exact field `lib/checkin.ts` looks up by), a multi-position-aware email template addressed to the buyer, and the F6 recovery-token deep link when present.
+
+### QR Payload: Why the Booking Reference, Not a Signature
+
+```typescript
+export async function generateBookingRefQrDataUri(bookingRef: string): Promise<string>;
+```
+
+Generates a data-URI PNG encoding the booking reference **verbatim** — plain text, no JSON wrapper, no signature. Spec §7.1 and §6 confirm this unsigned, random-reference QR is correct as designed (not a placeholder). **Why this specific choice:** `lib/checkin.ts`'s `admit()` function looks a ticket up by exactly this field: `db.collection('tickets').where('bookingRef', '==', bookingRef)`. The booking reference is a **door code** (think "ask the volunteer at the door for the reference"), not a wallet key, so it does not need cryptographic signing.
+
+- Throws (does not silently encode) when `bookingRef` is empty or whitespace-only
+- Returns `data:image/png;base64,...` suitable for inlining in HTML email
+
+### Recovery Link Building: lib/recovery-url.ts
+
+```typescript
+export function buildRecoveryUrl(recoveryToken: string | null, siteUrl: string): string | null;
+```
+
+Builds the deep link: `${siteUrl}/tickets/recover?token=${encodeURIComponent(recoveryToken)}` when `recoveryToken` is non-null, and `null` (never a broken `?token=null`) when it is null. The recovery token is a **bearer credential** — it belongs in the email body and nowhere else: never logged to console, never interpolated into error messages. Implements F6's recovery-token primitive by constructing the URL; the route handler (`GET /tickets/recover`) is F14's job.
+
+### Confirmation Email Pipeline: lib/confirmation-email.ts (Extended)
+
+The F10 stub is replaced with real logic:
+
+```typescript
+export async function sendConfirmationEmail(
+  input: SendConfirmationEmailInput,
+  deps: SendConfirmationEmailDeps = {},
+): Promise<void>;
+```
+
+**Behavior:**
+
+1. Refuses synchronously when `input.positions.length === 0` (throws before any side effects)
+2. Generates one QR per position, keyed on **that position's own `bookingRef`** (never reusing one QR across positions)
+3. Resolves the recovery URL via `buildRecoveryUrl(input.recoveryToken, siteUrl)`
+4. Calls `mailer.send()` **exactly once**, addressed to `input.buyerEmail` (one email per order, not per position) with the `OrderConfirmation` component
+5. **Propagates errors** from QR generation or mailer failure unchanged (does not swallow exceptions)
+6. Never writes recovery tokens or booking refs to console output or error messages
+
+**Dependency Injection (for testing):**
+
+```typescript
+export interface SendConfirmationEmailDeps {
+  mailer?: ConfirmationEmailMailer;           // Defaults to lib/email.ts sendEmail (Resend)
+  generateQrDataUri?: (ref: string) => Promise<string>;  // Defaults to lib/qr.ts
+  siteUrl?: string;                           // Defaults to process.env.SITE_URL
+}
+```
+
+All three are optional. When omitted, the function uses real Resend, real QR generation, and the environment's `SITE_URL`.
+
+### Email Template: emails/OrderConfirmation.tsx
+
+Renders a multi-position order confirmation:
+
+- **Salutation:** Uses `buyerName` exactly once
+- **Per position:** Displays `attendeeName`, `ticketType`, `bookingRef` as **visible text** (for door fallback), and an inline `<Img src={qrDataUri}>`
+- **Recovery section:** When `recoveryUrl` is non-null, renders a visible link/CTA; when null, renders nothing (not a broken link)
+
+### Deliverability Tradeoff: Inline Data-URI vs. Attachment
+
+Spec §6 mandates "inline data-URI image, not a hosted ticket page" and explicitly rejects attachments. This carries a real tradeoff:
+
+**The Risk:** Several email clients (notably Outlook desktop historically) strip `data:` URIs in HTML email, showing a broken-image placeholder.
+
+**The Safeguard:** The `bookingRef` renders as **visible text** on every position, deliberately not mere image alt-text. A client that drops the QR still leaves the buyer or door volunteer able to look up and use the booking reference directly.
+
+**Why Attachments Were Rejected:**
+- Multi-attachment transactional email triggers stricter spam scoring
+- Forwarded/screenshot-shared attachments don't improve functionality (booking refs are shareable by design per spec §7.1)
+- Spec already decided inline; this is recorded for completeness, not re-decision
+
+**Gated by Contract Assertion A4:** The multi-position rendering check asserts every position's QR retains the full `data:image/png;base64,` prefix in rendered HTML, proving the render step doesn't silently externalise it (e.g., `@react-email/components` converting to `cid:` or `https://` references).
+
+### SITE_URL Environment: Runtime Reading, Fallback, and Recovery URL Construction
+
+The recovery URL cannot be built without the site origin. `sendConfirmationEmail()` reads:
+
+```typescript
+const siteUrl = deps.siteUrl ?? process.env.SITE_URL ?? 'https://saoc.co.za';
+```
+
+**Why `SITE_URL` is runtime-only:** Firebase App Hosting provides `SITE_URL` at request time only, not build time, so it must be read inside the function body. The fallback (`https://saoc.co.za`, currently the old Joomla site) ensures the code never throws; production deployments must set `SITE_URL` explicitly via `apphosting.yaml`.
+
+This mirrors checkout's own pattern (`app/api/tickets/checkout/route.ts`). The fallback is duplicated locally (not imported) per "Minimal Scope" — it is not the moment to introduce a shared module for two call sites that already agree on the value.
+
+### Door-Scan Fallback
+
+When a door volunteer scans a QR and the scanner fails, or when a buyer's email client stripped the QR image:
+
+1. The attendee's name is visible in the email (rendered by `OrderConfirmation.tsx`)
+2. The volunteer can look up the order by name in the admin dashboard (`GET /api/admin/tickets` with name search — a future feature, F14 or later)
+3. Find the corresponding position's booking reference in the order
+4. Rescan that reference or manually admit the attendee
+
+The email's visible `bookingRef` text on every position enables this chain.
+
+### Known Issue: qrcode Was Shipped in devDependencies
+
+**Status:** Fixed.
+
+The `qrcode` package (^1.5.4) is a **production** dependency — it must be present at runtime when F11's code runs inside Firebase App Hosting. It is correctly declared in `package.json`'s `dependencies` section (not `devDependencies`). Firebase App Hosting prunes `devDependencies` when deploying, so had the package shipped in the wrong section, it would not be available at runtime and `lib/qr.ts` would throw `Cannot find module 'qrcode'` the moment a confirmation email was sent.
+
+### KNOWN BLOCKER: Checkout Does Not Create Orders — F11 Surfaces but Does Not Fix
+
+**Critical:** This contract proves `sendConfirmationEmail()` works exactly as designed when called with a real order. It does **not** prove F12's human end-to-end success, because the order that email would describe is **never created by checkout today**.
+
+`app/api/tickets/checkout/route.ts` writes directly to the `tickets` collection and never calls `createOrderWithPosition()` or creates an `orders` document at all. Consequence:
+
+1. `markOrderAndPositionPaidByPaymentId()` (F10) queries `orders.where('m_payment_id', '==', ...)` and finds nothing
+2. The ITN route's `deliverConfirmationEmailAfterCommit(...)` call is never reached
+3. **`sendConfirmationEmail()` is never invoked for a real purchase** regardless of F11's correctness
+4. Recovery tokens stay `null` forever (minting lives on the non-existent order document)
+
+**Why F11 doesn't fix this:**
+
+- F11's scope is "QR generation at email-send time, confirmation email with all positions' QRs and recovery link, tested in isolation with fixture data"
+- Wiring checkout to create orders is materially different: the entire reservation transaction's write shape, idempotency-replay branch, and interaction with capacity counting
+- It's the same class of gap as the other known blockers: roles migration never run with `--apply`, no production `ShowWindowLookup` implementation
+- **Queued to `.agent/memory/project/needs-human.md`** for an ownership decision (not assigned to any feature)
+
+**What this means for F11's own scope:** F11 ships a correct, fully-tested `sendConfirmationEmail()` that will work exactly as designed the moment a caller supplies a real order with real positions. The moment order-wiring lands (in a new feature or in F10/F12 if ownership is assigned), F11 becomes functional end-to-end. Until then, F11 is proven in isolation with fixture data, matching the contract's own scope and the mission brief's stated timeline ("M2 proof will be a logged payload inspection").
+
+## Fictional Test Show: lib/fictional-test-show.ts, lib/fictional-test-show-seed-plan.ts, lib/fictional-test-show-active-swap-plan.ts, lib/fictional-test-show-recoverability.ts (Fictional-Show Feature)
+
+**Status:** Passes gate. A fictional, never-active National Show added to isolate F12's and F14's human end-to-end ticket-purchase-and-check-in proofs away from the real 2027 show. Requested directly by Brad after F9's dry-run resolved its demo ticket type against the real active show. See the decision record: `contracts/golden/fictional-test-show/README.md`.
+
+The fictional show must NEVER surface on saoc.co.za, NEVER become active by accident, and NEVER collide with F9's already-shipped demo ticket type on lookups.
+
+### What Appears on saoc.co.za If Seeded?
+
+**The honest answer: nothing.**
+
+Two independent mechanisms prevent the fictional show from ever appearing to buyers:
+
+1. **The demo flag (F9's already-shipped mechanism):** The fictional show's ticket type carries `demo: true`, just like F9's own demo ticket type. F9's `filterPubliclyListableTicketTypes()` filters both out of the public `/tickets` listing.
+2. **The inactive gate (F1's show resolution):** The fictional show document is permanently marked `active: false`. Even if a buyer somehow knew the ticket type slug and tried to purchase it, the checkout route's `ticketTypeMatchesActiveShow()` gate would refuse the request because the fictional show is not the active show.
+
+**Both must be present for safety.** A single accidental un-tag (either removing the `demo` flag OR making the fictional show active in Studio) would not surface the fictional show to buyers — the remaining guard still protects them.
+
+### Core Marker Constants: lib/fictional-test-show.ts
+
+The fictional show is identified by exactly two independent markers per feature:
+
+**Show document:**
+- `FICTIONAL_SHOW_ID = 'show-fictional-test'` (Sanity `_id`)
+- `FICTIONAL_SHOW_SLUG = 'fictional-test-show'` (URL-safe slug)
+- `FICTIONAL_SHOW_TITLE = 'Fictional Test Show (Do Not Use For Real Sales)'`
+
+**Ticket type (deliberately distinct from F9's demo ticket type):**
+- `FICTIONAL_SHOW_TICKET_TYPE_ID = 'ticketType-fictional-test-show-general-admission'`
+- `FICTIONAL_SHOW_TICKET_TYPE_SLUG = 'fictional-test-show-general-admission'` ← **deliberately different** from F9's `demo-general-admission` slug
+- `FICTIONAL_SHOW_TICKET_TYPE_NAME = 'General Admission (Fictional Test Show)'`
+
+**Why a different slug from F9?** Both the fictional ticket type and F9's real demo ticket type are marked with `demo: true` and are filtered out of the public listing by the same filter. If they shared the same slug, a Sanity query would return the wrong one (Sanity enforces no slug uniqueness; the first match wins). Each reserved slug ensures its own ticket type can be looked up correctly.
+
+**Pricing and capacity:** R10 nonzero price and capacity of 50 (both placeholder values pending council confirmation, matching F9's own reasoning — the price must be nonzero to exercise the real checkout/ITN path, not the R0 comp bypass).
+
+### Seed Plan Decisions: lib/fictional-test-show-seed-plan.ts
+
+Two pure, offline, idempotent decisions:
+
+#### planFictionalTestShowDocument()
+
+Plans creation of the fictional show, or skips if it already exists (by `_id`):
+
+```typescript
+export type FictionalShowSeedPlan =
+  | { action: 'create'; document: { ... } }
+  | { action: 'skip-exists'; existingId: string };
+```
+
+**Load-bearing safety invariant:** `document.active` is a **type literal `false`** — not a parameter, not derived from input. Nothing this function is ever called with can talk it into planning an active fictional show. Same for `status: 'cancelled'`, though that's less load-bearing (no query anywhere selects on or excludes `status === 'cancelled'`).
+
+#### planFictionalTestShowTicketTypeSeed()
+
+Plans creation of the fictional show's ticket type, or skips if already exists (by slug AND show._ref):
+
+```typescript
+export type FictionalShowTicketTypeSeedPlan =
+  | { action: 'create'; document: { ... } }
+  | { action: 'skip-exists'; existingId: string };
+```
+
+Deduplicates by both `slug === FICTIONAL_SHOW_TICKET_TYPE_SLUG` AND `show?._ref === FICTIONAL_SHOW_ID` together (per-show uniqueness, not global). An existing ticket type sharing the slug but scoped to a different show (e.g., archived) never blocks seeding the fictional show's own copy.
+
+The planned document carries:
+- `active: true` (Sanity ticketType-level "sellable" flag — distinct from the show's own `active` flag; this is not a contradiction)
+- `demo: true` (reuses F9's public-listing exclusion mechanism)
+- `show._ref === FICTIONAL_SHOW_ID` (scopes the ticket type to the fictional show)
+
+### The Unavoidable Human Step: scripts/swap-active-show.ts
+
+The fictional show must be the **sole active show** in Sanity before a real purchase can be made against it. `resolveActiveShow()` (lib/show-resolution.ts) fails closed: if zero or more than one show is marked active, nothing is sellable.
+
+Testing a real purchase end-to-end therefore requires:
+
+1. **Before testing:** Run `scripts/swap-active-show.ts show-fictional-test --apply` to deactivate the real 2027 show and activate the fictional show
+2. **Run F12/F14 test:** Human makes a real PayFast sandbox purchase against the fictional show
+3. **After testing:** Run `scripts/swap-active-show.ts show-19-2027 --apply` to restore the real show's active state
+
+**Critical:** The script requires an explicit target show ID as a positional argument (`show-fictional-test`), never a default. A bare invocation cannot accidentally swap anything. The `planActiveShowSwap()` function (lib/fictional-test-show-active-swap-plan.ts) is **generic** — it knows nothing about fictional shows; it simply plans which shows to deactivate and which to activate, ensuring exactly one show ends up active afterward. Its safety invariant (A9) is proven across arbitrary show IDs, with one case using the fictional show.
+
+**Why this cannot be automated:** Making the fictional show active for a test window is a human decision involving risk (real ticket sales would go against the test show during that window). Scripting it would be tempting a future developer to "just run it to test locally," accidentally leaving the real show inactive and breaking production. Requiring explicit `--apply` and an explicit target keeps it under human control.
+
+### Cleanup Reporting: scripts/report-fictional-test-show-artifacts.ts
+
+This read-only script enumerates test artefacts across Firestore and Sanity, but **never deletes anything**. Deletion is Brad's decision alone:
+
+```bash
+node --import tsx/esm scripts/report-fictional-test-show-artifacts.ts
+```
+
+Reports:
+- Sanity `show` documents marked with the fictional-show marker
+- Sanity `ticketType` documents scoped to the fictional show
+- Firestore `tickets` (positions) with the fictional-show ticket type slug
+- Firestore `orders` linked to those positions (by `orderId`)
+- Firestore `checkinAttempts` records linked by booking reference or order ID
+
+The script has no code path capable of writing or deleting. It cannot gain such a path in future edits (that would require an architect-level decision, not a code change).
+
+### Recoverability Chain: Three Hops
+
+When cleaning up test artefacts, the classifier walks three joins:
+
+1. **Positions (Firestore `tickets`):** Matched by `isFictionalTestShowTicketTypeSlug(position.ticketType)` — the ONLY field that survives from the catalogue onto a Firestore position. The booking reference is a bare string; there is no marker boolean.
+2. **Orders (Firestore `orders`):** Matched by collecting non-null `orderId`s from matched positions, then filtering the `orders` collection by those IDs. The `Order` interface has no `ticketType` field; it cannot be matched directly.
+3. **Checkin Attempts (Firestore `checkinAttempts`):** Matched by `bookingRef` OR `orderId` (dual join). A `CheckinAttemptRecord` carries neither a `ticketType` field nor a marker boolean. However, a checkin attempt whose order document is missing can still be found via its `bookingRef`.
+
+**Known blind spot:** A `checkinAttempt` record whose order document has been deleted cannot be found via the order-ID join. It can only be recovered by its own `bookingRef` — a documented edge case but not a safety problem because the recoverability chain uses OR logic (find by either field).
+
+### Important: showId Always Literal
+
+**Every purchase, whether real or fictional, carries `showId: 'nationalShow'` in Firestore.** This literal string is an immutable backward-compatibility constraint (14 existing pre-F1 tickets carry it). It gives **zero signal** for telling test data from real sales. The actual differentiator is the ticket type's reserved slug on positions and the `demo` flag + `show._ref` on orders.
+
+### Seeding the Fictional Show: scripts/seed-fictional-test-show.ts
+
+Creates the fictional show and its ticket type if they don't exist, using `createIfNotExists` (never overwrites). Dry-run by default:
+
+```bash
+node --import tsx/esm scripts/seed-fictional-test-show.ts                # Dry-run
+node --import tsx/esm scripts/seed-fictional-test-show.ts --apply       # Mutate
+```
+
+The script is idempotent. Re-running after already seeding is a safe no-op. The ticket type's `show._ref` is only written once the show document exists (either freshly created or already present), respecting referential integrity.
+
+### Operator Runbook: End-to-End Test
+
+A complete end-to-end test of the ticketing pipeline against the fictional show (for F12 or F14 human proof):
+
+1. **Seed the fictional show:**
+   ```bash
+   node --import tsx/esm scripts/seed-fictional-test-show.ts --apply
+   ```
+   Creates `show-fictional-test` and its `fictional-test-show-general-admission` ticket type in Sanity.
+
+2. **Swap shows to make fictional active:**
+   ```bash
+   node --import tsx/esm scripts/swap-active-show.ts show-fictional-test --apply
+   ```
+   Deactivates `show-19-2027` and activates the fictional show. Checkout gate now accepts purchases against the fictional ticket type.
+
+3. **Complete a real purchase:**
+   - Navigate to `/tickets` (now lists only the fictional ticket type)
+   - Purchase a ticket through checkout
+   - Complete PayFast sandbox payment
+   - Verify `/tickets/confirmation` confirms the booking
+   - Verify Firestore: `tickets` document created with status `paid`, order written (if F10 checkout wiring lands)
+   - Verify Resend: confirmation email sent with QR codes (if F11 is functional; currently blocked by missing order-creation in checkout)
+
+4. **Check in the ticket:**
+   - Navigate to `/admin/door` and scan the QR code
+   - Verify admission succeeds (status updates to `checked-in`)
+
+5. **Report test artefacts:**
+   ```bash
+   node --import tsx/esm scripts/report-fictional-test-show-artifacts.ts
+   ```
+   Enumerates all test-show positions, orders, and checkin attempts for audit.
+
+6. **Restore the real show:**
+   ```bash
+   node --import tsx/esm scripts/swap-active-show.ts show-19-2027 --apply
+   ```
+   Deactivates the fictional show and reactivates the real 2027 show. Checkout resumes normal operation against the real show.
+
+**Important:** Step 3 (purchase) currently cannot reach step 3's email assertion because `app/api/tickets/checkout/route.ts` does not create `orders` documents. Once F10's order-wiring lands, the full pipeline (checkout → ITN → confirmation email with QR) becomes testable. F11's code is ready and proven; it awaits that upstream fix.
+
 ## Active Show Resolution: lib/show-resolution.ts (F1)
 
 The `resolveActiveShow()` function determines which `show` document is currently sellable. It is a pure function with no external dependencies, testable against fixtures:
@@ -1303,11 +1602,14 @@ The `refunded` status was added to `TicketStatus` in F2, but the admin UI does n
 
 **Where to fix:** Look for `StatusPill` component or similar in `components/admin/` (or wherever position status is displayed). Add a `refunded` case with appropriate styling (likely a muted or greyed-out appearance to distinguish it from active statuses).
 
-### Emailed QR Ticket Not Yet Built (F5, ticketing-pages mission)
+### Email Confirmation with QR Codes (F11 Built, Upstream Blocker)
 
-The door scanner (`app/admin/door`) is wired and waiting, but see the standing blocker
-below. It reads QR codes containing the booking reference. Emailing a ticket with a
-scannable QR code to `attendeeEmail` on confirmed payment is not yet built.
+F11 ships the complete email pipeline with QR codes per position, recovery links, and
+deliverability safeguards. The email is generated correctly and tested in isolation with
+fixture data. **However, it never reaches production today** because checkout does not
+create `orders` documents — see "KNOWN BLOCKER: Checkout Does Not Create Orders" in the
+F11 section above. The door scanner (`app/admin/door`) is wired and ready to read QR codes
+once real orders exist and emails are delivered.
 
 ### Standing blocker: Firebase Auth not provisioned
 

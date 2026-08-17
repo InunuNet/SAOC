@@ -70,5 +70,18 @@ export const show = defineType({
         '(lib/show-resolution.ts), which fails closed to "no active show" if zero or ' +
         'more than one show is marked active.',
     }),
+    // fictional-test-show: additive marker field. Optional/defaulted so every pre-existing
+    // published show document (including show-19-2027) remains valid without a migration.
+    defineField({
+      name: 'fictionalTestData',
+      title: 'Fictional Test Data (never a real show)',
+      type: 'boolean',
+      initialValue: false,
+      description:
+        'Marks this show document as fictional test data used to exercise the ticketing ' +
+        'pipeline end-to-end in isolation from the real show. Never set active:true except ' +
+        'for a brief, human-supervised test window — see ' +
+        'contracts/golden/fictional-test-show/README.md.',
+    }),
   ],
 });

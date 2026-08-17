@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/qr.ts",
+    "../../../lib/recovery-url.ts",
+    "../../../lib/confirmation-email.ts",
+    "../../../emails/OrderConfirmation.tsx",
+    "../../../types/index.ts",
+    "fixtures/qr-confirmation-email-typecheck.ts"
+  ],
+  "exclude": []
+}
