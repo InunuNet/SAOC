@@ -1,0 +1,120 @@
+schema: athanor.contract/v1
+slug: ticketing-f1-show-collision
+goal: >-
+  Mission ticketing-foundation F1 (§4.1). Resolve the `show` document collision the
+  mission brief only half-diagnosed: `sanity/schemas/documents/show.ts` is an existing
+  6-published-document archive type (Option A, extend it, is confirmed correct by
+  evidence — see README), but the brief's plan for backward compatibility
+  ("`nationalShow` singleton becomes the first `show` document, `_id` stays
+  `nationalShow`") is impossible as written — `nationalShow` is a separate, heavily-used
+  Sanity schema type (3 queries, 8+ consuming pages/components) and Sanity `_id` is
+  unique per dataset regardless of `_type`, so a `show`-typed document can never also be
+  `_id: "nationalShow"`. This contract implements the corrected design: `show` gains six
+  optional-or-defaulted sales fields, `ticketType` gains a required `show` reference,
+  the already-existing `show-19-2027` document becomes the first sales-capable show via
+  a one-time idempotent migration, and `NATIONAL_SHOW_ID` (Firestore showId scoping,
+  unrelated to any Sanity document `_id`) is left completely untouched. Full decision
+  record, evidence, and field tables: contracts/golden/ticketing-f1-show-collision/README.md
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Extend sanity/schemas/documents/show.ts with six optional fields (edition,
+      startDate, endDate, venue [reusing the existing showVenue object type],
+      salesOpen, active — none Rule.required()); add a required `show` reference field
+      to sanity/schemas/documents/ticketType.ts; add lib/show-resolution.ts exporting
+      resolveActiveShow() (fails closed to null on zero or multiple active shows,
+      never guesses); add scripts/migrate-show-sales-fields.ts, a one-time idempotent
+      migration patching show-19-2027 (active: true + sales fields) and backfilling
+      `show` onto all 5 existing ticketType documents; add a small, additive,
+      exported ticketTypeMatchesActiveShow() gate to app/api/tickets/checkout/route.ts
+      (same failure shape as the existing capacity/price checks at route.ts:327-329) —
+      app/api/tickets/itn/route.ts is NOT touched. lib/tickets-constants.ts's
+      NATIONAL_SHOW_ID is NOT modified.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-f1-show-collision/README.md
+  - contracts/golden/ticketing-f1-show-collision/expected-past-show-ids.json
+  - contracts/golden/ticketing-f1-show-collision/active-show-fixtures/positive-single-active.json
+  - contracts/golden/ticketing-f1-show-collision/active-show-fixtures/negative-none-active.json
+  - contracts/golden/ticketing-f1-show-collision/active-show-fixtures/negative-two-active.json
+  - contracts/golden/ticketing-f1-show-collision/itn-route.golden.sha256
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        Sanity schema compiles and the whole project still type-checks under strict
+        TypeScript after the schema + resolver + checkout changes.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        show.ts gains exactly the 6 new fields with the right types and none marked
+        Rule.required() (proved by executing each field's real validation callback
+        against a tracking mock Rule, not by grepping for the word "required");
+        ticketType.ts gains a `show` reference field to `[{type:'show'}]` that IS
+        Rule.required(), proved the same way.
+      command: node --import tsx/esm contracts/checks/ticketing-f1-show-collision/check-schema-shape.mjs
+
+    - id: A3
+      description: >-
+        lib/show-resolution.ts's resolveActiveShow() resolves the single active show
+        from fixture data, and fails closed (returns null, never a guess) on both
+        negative controls: zero shows marked active (today's real pre-migration
+        shape), and two shows both marked active (an editor mistake).
+      command: node --import tsx/esm contracts/checks/ticketing-f1-show-collision/check-active-show-resolver.mjs
+
+    - id: A4
+      description: >-
+        Backward compatibility, per enumerated query surface (one assertion per
+        surface, not one blanket claim): sanity/queries.ts's pastShowsQuery AND
+        scripts/refresh-llms.ts's inline query — the only two surfaces anywhere in
+        app/, lib/, sanity/, scripts/, components/ that fetch `_type == "show"` — each
+        still return exactly the 5 pre-existing `status == "past"` documents, read
+        live off the real dataset, after the schema extension.
+      command: node --import tsx/esm contracts/checks/ticketing-f1-show-collision/check-backward-compat-past-shows.mjs
+
+    - id: A5
+      description: >-
+        The first sales-capable show document (show-19-2027) exists, resolves live
+        with active === true and edition/startDate/endDate all set; at least one
+        ticketType document is queryable by show._ref == 'show-19-2027'; and, as a
+        negative control run against LIVE data (not a fixture), resolveActiveShow()
+        over the 5 legacy show documents alone (none carrying an `active` field)
+        returns null rather than selecting one of them.
+      command: node --import tsx/esm contracts/checks/ticketing-f1-show-collision/check-active-show-and-tickettype-reference.mjs
+
+    - id: A6
+      description: >-
+        Checkout's new active-show gate (ticketTypeMatchesActiveShow), exercised
+        against fixture data per the brief's own wording — no live HTTP round trip, no
+        Firestore reservation written: accepts a ticketType whose show reference
+        matches the active show, rejects one pointing at a different (stale) show,
+        rejects one with no show reference at all, and rejects every ticketType when
+        the active show id itself is null.
+      command: npx tsx contracts/checks/ticketing-f1-show-collision/check-checkout-active-show-gate.mjs
+
+    - id: A7
+      description: >-
+        NATIONAL_SHOW_ID is unchanged (still the literal string 'nationalShow') and
+        the pre-existing 15 Firestore `tickets` documents keyed to that showId are
+        still readable and undiminished — proving the Firestore-side backward
+        compatibility the mission brief actually cared about, independent of any
+        Sanity `show` document's `_id`.
+      command: node --import tsx/esm contracts/checks/ticketing-f1-show-collision/check-national-show-id-unchanged.mjs
+
+    - id: A8
+      description: >-
+        app/api/tickets/itn/route.ts is byte-for-byte unchanged — F1 does not reopen
+        the pinned payment-security boundary.
+      command: >-
+        echo "$(cat contracts/golden/ticketing-f1-show-collision/itn-route.golden.sha256)  app/api/tickets/itn/route.ts" | shasum -a 256 -c -
+
+    - id: A9
+      description: pnpm lint passes with zero errors after all F1 changes.
+      command: pnpm lint

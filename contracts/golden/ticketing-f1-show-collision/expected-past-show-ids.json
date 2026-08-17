@@ -1,0 +1,10 @@
+{
+  "_comment": "The 5 published 'show' documents with status == 'past', as read live 2026-08-17. Both backward-compat query surfaces (pastShowsQuery, scripts/refresh-llms.ts) filter on status == 'past' and must still return exactly these after F1's schema extension.",
+  "ids": [
+    "show-14-2012",
+    "show-15-2015",
+    "show-16-2018",
+    "show-17-2021",
+    "show-18-2024"
+  ]
+}

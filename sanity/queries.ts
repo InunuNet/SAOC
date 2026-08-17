@@ -121,7 +121,18 @@ export const ticketTypeBySlugQuery = defineQuery(`
     _id,
     name,
     price,
-    capacity
+    capacity,
+    show
+  }
+`);
+
+// F1 (ticketing-foundation): every show document's activation flag, fed to
+// resolveActiveShow() (lib/show-resolution.ts) — checkout never guesses which show is
+// sellable from request data. See contracts/golden/ticketing-f1-show-collision/README.md.
+export const allShowActivationQuery = defineQuery(`
+  *[_type == "show"]{
+    _id,
+    active
   }
 `);
 

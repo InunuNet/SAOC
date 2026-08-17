@@ -5,8 +5,14 @@ import { generateBookingRef } from '@/lib/booking-ref';
 import { initAdmin } from '@/lib/firebase-admin';
 import { generateSignature, PAYFAST_SANDBOX_PROCESS_URL } from '@/lib/payfast';
 import { client } from '@/sanity/lib/client';
-import { nationalShowSalesQuery, ticketTypeBySlugQuery, ticketsPageQuery } from '@/sanity/queries';
+import {
+  allShowActivationQuery,
+  nationalShowSalesQuery,
+  ticketTypeBySlugQuery,
+  ticketsPageQuery,
+} from '@/sanity/queries';
 import { getSoldCountsByTicketType } from '@/lib/data/tickets';
+import { resolveActiveShow } from '@/lib/show-resolution';
 import { NATIONAL_SHOW_ID, RESERVATION_TTL_MINUTES } from '@/lib/tickets-constants';
 
 /**
@@ -68,6 +74,30 @@ interface SanityTicketType {
   name: string;
   price: unknown;
   capacity: unknown;
+  show: { _ref: string } | null | undefined;
+}
+
+// F1 (ticketing-foundation): the currently sellable `show`, per resolveActiveShow()'s
+// fail-closed contract — never a guess. Kept minimal (matches
+// lib/show-resolution.ts's ShowActivationFields) rather than reusing SanityTicketType.
+interface TicketTypeShowRef {
+  _id: string;
+  show?: { _ref: string } | null;
+}
+
+/**
+ * Additive gate sitting next to the existing capacity/price validity checks below
+ * (same shape, same failure mode, no change to the reservation transaction). Rejects
+ * whenever the ticket type's `show` reference doesn't match the currently active show
+ * — including "no active show at all" (`activeShowId === null`) and "ticket type
+ * predates the `show` reference field" (no `show` at all).
+ */
+export function ticketTypeMatchesActiveShow(
+  ticketType: TicketTypeShowRef,
+  activeShowId: string | null
+): boolean {
+  if (activeShowId === null) return false;
+  return ticketType.show?._ref === activeShowId;
 }
 
 // Sanity `validation:` is a Studio-authoring guard, not a read-time guarantee — the seed
@@ -88,7 +118,7 @@ function isUsableAmount(value: unknown): value is number {
  * 500, not 400: the request was well-formed and the CMS document is misconfigured, so a
  * 4xx would tell the buyer to fix something they cannot see.
  */
-function unusableTicketType(slug: string, field: 'capacity' | 'price'): NextResponse {
+function unusableTicketType(slug: string, field: 'capacity' | 'price' | 'show'): NextResponse {
   console.error(
     `[tickets/checkout] ticketType '${slug}' has an unusable ${field}; refusing before any Firestore write.`
   );
@@ -327,6 +357,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const { capacity, price } = ticketTypeDoc;
   if (!isUsableAmount(capacity)) return unusableTicketType(ticketType, 'capacity');
   if (!isUsableAmount(price)) return unusableTicketType(ticketType, 'price');
+
+  // F1 (ticketing-foundation): additive active-show gate, same failure shape as the
+  // capacity/price checks above. resolveActiveShow() fails closed to null, so a stale
+  // ticket type (or a ticket type predating the `show` reference field) is refused
+  // rather than silently sold against the wrong show.
+  let allShows: { _id: string; active: boolean | null }[];
+  try {
+    allShows = (await client.fetch<{ _id: string; active: boolean | null }[]>(
+      allShowActivationQuery
+    )) ?? [];
+  } catch (error) {
+    console.error('[tickets/checkout] Failed to fetch show activation state:', error);
+    return NextResponse.json(
+      { error: 'Unable to verify ticket sales state. Please try again.' },
+      { status: 500 }
+    );
+  }
+  const activeShowId = resolveActiveShow(allShows);
+  if (!ticketTypeMatchesActiveShow(ticketTypeDoc, activeShowId)) {
+    return unusableTicketType(ticketType, 'show');
+  }
 
   const merchantId = process.env.PAYFAST_SANDBOX_MERCHANT_ID;
   const merchantKey = process.env.PAYFAST_SANDBOX_MERCHANT_KEY;

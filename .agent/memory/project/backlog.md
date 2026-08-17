@@ -1,11 +1,12 @@
 # Athanor Issue Backlog
 
 ## Closure Candidates (needs sign-off)
-_(2026-08-17) `execution/gh_closure_scan.py --format lines` now fails with a DIFFERENT error than
-the 2026-08-16 runs: `ERROR: could not resolve --repo:` (empty value) instead of the
-missing-frontmatter error. This looks like a `gh`/repo-detection config issue rather than the
-known frontmatter bug — not yet triaged, see new TEMPLATE BUG item below. No candidates surfaced
-this session (script did not run to completion)._
+_(2026-08-17, F1 wrap-up) `execution/gh_closure_scan.py --format lines` failed again, but back to
+the ORIGINAL known error (`ERROR: .agent/memory/project/missions/OVERNIGHT-PLAN-2026-07-30.md has
+no YAML frontmatter`), not the `--repo` error seen earlier the same day. The two different
+failure modes on the same day suggest the `--repo` error was transient/environmental, not a
+regression — the frontmatter bug is the persistent, already-filed one (see TEMPLATE BUG item
+below). No candidates surfaced this session (script still does not run to completion)._
 
 ## Session 2026-08-17 — ticketing spec extended with buyer accounts (§8), foundation mission planned
 
@@ -44,6 +45,45 @@ this session (script did not run to completion)._
   them now and they are lost silently with no code change to blame when email stops sending.
   Recommended: verify the subdomain `tickets.saoc.co.za` (not the root, so records can't disturb
   `@saoc.co.za` mail routing mid-migration), European region.
+
+## Session 2026-08-17 (later) — F1 (show schema collision) DONE, three follow-ups scoped ahead of F9
+
+- [x] **F1 — `show` schema collision resolved, gate 9/9, @qa PASS.** Full detail in `learned.md`
+  "Ticketing foundation — F1 done". `sanity/schemas/documents/{show,ticketType}.ts`,
+  `lib/show-resolution.ts` (new), `scripts/migrate-show-sales-fields.ts` (new),
+  `sanity/queries.ts`, `app/api/tickets/checkout/route.ts`, contract + 6 checks + goldens under
+  `contracts/`, docs in `docs/ticketing.md` + `docs/ticketing-for-editors.md`.
+- [ ] **[P2, NEW] Studio guard against a second active show.** @qa finding, MEDIUM severity. The
+  `active` checkbox on the `show` schema sits alongside the archive fields with no fieldset,
+  `hidden`, or `readOnly` condition, and `sanity/structure.ts` lists `show` as a plain document
+  type list — nothing in Studio warns an editor before they tick it. If an editor ticks "Active"
+  on a past archive doc (so two docs are both `active: true`), `resolveActiveShow()` correctly
+  fails closed to `null` — but `ticketTypeMatchesActiveShow()` then rejects EVERY ticket type for
+  EVERY buyer with a generic 500. A sitewide sales outage from one mis-click, with no Studio
+  warning and no alerting. Lee-Ann is the person who would hit this. Scope as its own feature with
+  its own behavioural assertions (a Studio-side guard/validation, not just a code-side fail-close)
+  — do not fold into another feature without dedicated tests. Slot ahead of F9 (demo ticket type).
+- [ ] **[P3, NEW] `ticketType.show` reference picker is unfiltered.** `to: [{type:'show'}]` with
+  no `options.filter`, so an editor can point a ticket type at e.g. a 2012 archived show.
+  Checkout fails closed (the mismatch is caught server-side), so this is wasted-editor-effort
+  cosmetic risk only, not a security or sales-outage issue. Add an `options.filter` scoping the
+  reference to `active == true` shows.
+- [ ] **[P2, NEW] `show-19-2027` edition/dates/venue are a COPY of the `nationalShow` singleton,
+  not a live reference.** @dev sourced the real values rather than inventing a placeholder
+  (correct — there is prior form on this project of an invented CTICC venue leaking into six-plus
+  fields), and the two documents match exactly today, verified. But because it's a copy, a future
+  edit to either document will silently make them diverge in front of buyers. Documented as a
+  known limitation in both `docs/ticketing.md` and `docs/ticketing-for-editors.md`; needs a real
+  resolution (e.g. one document is authoritative and the other reads from it) before shipping
+  further ticketing-facing UI that displays both.
+- [ ] **[P2, unresolved, re-measured] Firestore fixture-leak count: 15 docs today (14
+  `nationalShow` + 1 `door-qr-check-wrong-show`), NOT a clean monotonic climb.** Earlier sessions
+  recorded 5 → 12 → 17 → (now) 15. The trend line going down as well as up means the prior
+  "ongoing leak" narrative may be wrong, or measurement conditions differ session to session (see
+  `learned.md` "unchanged detector reading" for the general caution against inferring a story from
+  an unverified count). Record the number, don't re-narrate a trend from it — next session should
+  measure under controlled conditions (immediately before/after a known check run) before drawing
+  any conclusion. Deletion of leaked docs remains Brad's call, not an agent's.
 
 ## Session 2026-08-16 (afternoon) — P1 weak-assertion audit complete, no live vulnerability
 

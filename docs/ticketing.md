@@ -122,7 +122,82 @@ Clicking PayFast's "Cancel" button redirects to `/tickets/cancelled?ref=<booking
 
 Violation of any of these would be a payment security issue — fixed at commit time, not runtime.
 
-## Sanity Schema: ticketType
+## Identifier Spaces: Sanity `show._id` vs. Firestore `showId` (F1 Critical Distinction)
+
+**Do not conflate these two identifier spaces — they serve different purposes and live in different databases.**
+
+### The Two Spaces
+
+| Space | Value | Used by | Purpose |
+|-------|-------|---------|---------|
+| **Sanity `show._id`** | `show-19-2027`, `show-18-2024`, etc. | Sanity document lookup; checkout's new `ticketTypeMatchesActiveShow()` gate | Identifies which `show` document is currently sellable (references ticketType documents) |
+| **Firestore `showId`** | Always `'nationalShow'` (literal string) | `tickets` collection's `showId` field; capacity ledger scoping | Scopes which tickets "belong to" the active sales period (backward-compatible with 14 existing tickets from pre-F1 sales) |
+
+### Why the Separation
+
+- `nationalShow` is a separate Sanity schema type (_type: "nationalShow", _id: "nationalShow") that already describes the 2027 show. It cannot be retyped or assigned a new _id without breaking the 3 queries and 8 pages that consume it — so it stays as-is.
+- The already-existing 6-document `show` archive type was extended with sales fields instead, and `show-19-2027` (the upcoming archive entry) became the first sales-capable `show` document.
+- 14 real Firestore `tickets` documents already carry `showId: 'nationalShow'`. This literal string value is **immutable** — it is the backward-compatibility constraint and has nothing to do with which Sanity `show` document is sellable.
+- `resolveActiveShow()` answers "which `show` document is currently active?", a genuinely new question. It is separate from the Firestore `showId` scoping.
+
+### Evidence
+
+Live dataset read (2026-08-17):
+
+```
+Sanity show documents: 6 published
+  show-14-2012 (past)
+  show-15-2015 (past)
+  show-16-2018 (past)
+  show-17-2021 (past)
+  show-18-2024 (past)
+  show-19-2027 (upcoming, first sales-capable)
+
+Firestore tickets: 15 documents total
+  14 docs: showId='nationalShow' (real/fixture bookings)
+  1 doc:  showId='door-qr-check-wrong-show' (QA negative-control fixture)
+```
+
+## Sanity Schema: Show (F1 Extension)
+
+The existing `show` document type (archive of past shows) was extended with six **optional** sales fields:
+
+```typescript
+interface Show {
+  // Pre-existing archive fields (unchanged)
+  _id: string;         // e.g., "show-19-2027"
+  title: string;
+  year: number;
+  status: 'past' | 'upcoming' | 'cancelled';
+  location: string;
+  gallery: Image[];
+  // ... (entries, exhibitors, awards, results, classes, etc.)
+
+  // F1 additions — all optional/defaulted (no published archive doc is invalidated)
+  edition?: number;           // e.g., 19
+  startDate?: datetime;       // Show start
+  endDate?: datetime;         // Show end
+  venue?: ShowVenue;          // Same type used by nationalShow.venue (reused, not new)
+  salesOpen?: boolean;        // Default false; NOT yet wired into checkout (see below)
+  active?: boolean;           // Default false; consumed by resolveActiveShow()
+}
+```
+
+**Critical: `salesOpen` is NOT wired into checkout in F1.** The functional gate still reads `nationalShow.salesOpen` (see "Sales-Open Gate" below). Migrating the gate itself off the singleton is a deferred, larger migration (F2 or later) that touches every checkout request.
+
+The `active` field is consumed by `resolveActiveShow()` (lib/show-resolution.ts), which fails closed to `null` if zero or more than one show is marked active — it never guesses.
+
+### Creating/Editing Shows
+
+Shows are rarely edited after publication. To patch `show-19-2027` with sales fields:
+
+1. Open Sanity Studio (`/studio`)
+2. Search for "show-19-2027" in the document list
+3. Fill in the new optional fields (`edition`, `startDate`, `endDate`, `venue`, `active`)
+4. **Critical:** Set `active: true` only on ONE show document at a time (see editor guide below)
+5. Publish
+
+## Sanity Schema: ticketType (F1 Extended)
 
 ```typescript
 interface TicketType {
@@ -135,8 +210,26 @@ interface TicketType {
   capacity: number; // Total available for this type
   active: boolean;  // Only active=true types are shown on /tickets
   order: number;    // Display order (1–5)
+  // F1 addition
+  show: { _ref: string };  // Reference to the sales-capable show (e.g., { _ref: "show-19-2027" })
 }
 ```
+
+The `show` reference field is **required for new documents**. The 5 pre-existing published ticketType documents predate this field and are backfilled by the one-time migration script (`scripts/migrate-show-sales-fields.ts`) without editor action — they simply appear to have the field populated in Studio once the migration runs.
+
+### Checkout Validation
+
+The checkout route now validates that a ticket type's `show` reference matches the currently active show:
+
+```typescript
+// Pseudocode from app/api/tickets/checkout/route.ts
+const activeShowId = resolveActiveShow(allShows);
+if (!ticketTypeMatchesActiveShow(ticketTypeDoc, activeShowId)) {
+  return unusableTicketType(ticketType, 'show');  // 500
+}
+```
+
+If a ticket type's `show` reference is missing or points to an inactive show, checkout rejects the request with a 500 (misconfigured CMS, not a client error).
 
 ### Creating / Editing Ticket Types
 
@@ -232,16 +325,18 @@ document — reservations are no longer held forever by an abandoned checkout).
 
 ### Sales-Open Gate
 
-Before any of the above, the route checks the `nationalShow.salesOpen` boolean:
+Before any of the above, the route checks the `nationalShow.salesOpen` boolean (not the `show.salesOpen` field added in F1):
 
 ```typescript
-// lines 99–111
+// app/api/tickets/checkout/route.ts, lines 325–337
 if (salesOpen?.salesOpen !== true) {
   return NextResponse.json({ error: 'Ticket sales are currently closed.' }, { status: 403 });
 }
 ```
 
 This is a **functional gate, not just UI**. Posting directly to `/api/tickets/checkout` when sales are closed returns 403, even if `/tickets` is hidden.
+
+**Note (F1):** The `show.salesOpen` field exists in the schema but is deliberately not wired into checkout. The gate still reads from `nationalShow` to maintain backward compatibility. Migrating to per-show sales control is a deferred feature (F2 or later).
 
 ## Data Models
 
@@ -290,6 +385,42 @@ interface NationalShow {
   salesOpen?: boolean;  // Default false; when true, checkout accepts POSTs
 }
 ```
+
+## Active Show Resolution: lib/show-resolution.ts (F1)
+
+The `resolveActiveShow()` function determines which `show` document is currently sellable. It is a pure function with no external dependencies, testable against fixtures:
+
+```typescript
+export function resolveActiveShow(shows: ShowActivationFields[]): string | null;
+```
+
+**Behavior:**
+
+- **Exactly one show marked `active: true`**: Returns that show's `_id` (e.g., `"show-19-2027"`)
+- **Zero shows marked `active`**: Returns `null` (not a guess; no active show yet)
+- **Two or more shows marked `active`**: Returns `null` (malformed data; never picks one)
+
+This is called from the checkout route (`app/api/tickets/checkout/route.ts:377`), which queries all shows' activation flags via `allShowActivationQuery` and passes the result to `resolveActiveShow()`. If the result is `null`, checkout rejects the request (500).
+
+**Why fail-closed?** An empty or ambiguous active-show state is a real error condition that must not silently pick a default. Buyers must never have their tickets sold against the wrong show.
+
+## One-Time Migration: scripts/migrate-show-sales-fields.ts (F1)
+
+This script patches `show-19-2027` with sales data copied from the `nationalShow` singleton, and backfills the new required `show` reference onto the 5 pre-existing `ticketType` documents. It is **additive and non-destructive**:
+
+- Uses `setIfMissing` on every patch, so editor changes and re-runs never conflict
+- Reads live values from `nationalShow` (`edition`, `showDate`, `showEndDate`, `venue`) instead of inventing placeholders
+- Supports `--dry-run` for inspection before writing
+
+**To run:**
+
+```bash
+node --import tsx/esm scripts/migrate-show-sales-fields.ts
+```
+
+It reads `.env.local` for `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`, and `SANITY_API_TOKEN` (write-enabled Editor token).
+
+**Safe to re-run.** The script is idempotent — running it multiple times or after editor changes is a no-op. This is deliberate, following the project's incident history with destructive seed scripts (see `seed-ticketing.ts` pattern).
 
 ## Seeding: scripts/seed-ticketing.ts
 

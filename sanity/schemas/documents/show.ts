@@ -44,5 +44,31 @@ export const show = defineType({
       type: 'array',
       of: [{ type: 'reference', to: [{ type: 'showClass' }] }],
     }),
+    // F1 (ticketing-foundation): sales-facing fields, all optional/defaulted so no
+    // published archive document (6 existing) is invalidated. See
+    // contracts/golden/ticketing-f1-show-collision/README.md — "Field additions".
+    defineField({ name: 'edition', title: 'Edition', type: 'number' }),
+    defineField({ name: 'startDate', title: 'Start Date', type: 'datetime' }),
+    defineField({ name: 'endDate', title: 'End Date', type: 'datetime' }),
+    defineField({ name: 'venue', title: 'Venue', type: 'showVenue' }),
+    defineField({
+      name: 'salesOpen',
+      title: 'Sales Open',
+      type: 'boolean',
+      initialValue: false,
+      description:
+        'Not yet wired into checkout as of F1 — nationalShowSalesQuery still gates ' +
+        'purchases off the nationalShow singleton. See README for the deferred migration.',
+    }),
+    defineField({
+      name: 'active',
+      title: 'Active (sellable) show',
+      type: 'boolean',
+      initialValue: false,
+      description:
+        'Exactly one show should be active at a time. Consumed by resolveActiveShow() ' +
+        '(lib/show-resolution.ts), which fails closed to "no active show" if zero or ' +
+        'more than one show is marked active.',
+    }),
   ],
 });

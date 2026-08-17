@@ -92,6 +92,41 @@ If a visitor clicks "Cancel" on the PayFast payment page, they land here:
 
 **Edit any of these fields, then click "Publish" at the top right. Changes appear within 1 minute.**
 
+## Critical Safety Rules for Ticket Sales (F1)
+
+Before you tick anything as "Active" or make any changes to the show dates/venue, read these two rules. Breaking either one will completely stop ticket sales for every buyer, with no warning shown in Studio.
+
+### Rule 1: Only ONE Show Can Be Active at a Time
+
+**Only one show document may have the "Active" checkbox ticked at any time.** If you accidentally tick a second show as active — even an old archived show — ticket sales will **immediately stop for every buyer**. All buyers will see an error saying their ticket type is not available, but Studio will show nothing wrong.
+
+**How to fix it:**
+
+1. Click "Show" in the left sidebar
+2. Search for the wrong show document (the one you accidentally ticked)
+3. **Uncheck** the "Active" checkbox
+4. Click **"Publish"**
+
+Sales will resume within 1 minute.
+
+**Why this matters:** The system prevents selling tickets against the wrong show. If multiple shows are active, the system cannot decide which one to sell against, so it refuses all sales.
+
+### Rule 2: Show Dates and Venue Are Copied, Not Linked
+
+The dates and venue on `show-19-2027` were **copied from** the `National Show` document. They are **not automatically linked** — editing one does not update the other.
+
+**If the show dates or venue change:**
+
+1. Update the `National Show` document (as you already do)
+2. **Also edit `show-19-2027`** and manually update the same fields there
+3. Publish both
+
+If you don't update both, the dates and venue will be different in two places, which is confusing to visitors.
+
+**Example:** If the venue changes from "The Hangar" to "Elsewhere", you must:
+1. Update `National Show` venue ✓
+2. Update `show-19-2027` venue ✓ (do not forget this)
+
 ## What Does "Provisional Price" Mean?
 
 All the prices are currently invented by the development team, not confirmed by the council. Every ticket type's description says *"Provisional price — pending council confirmation."* to make this clear.
@@ -118,7 +153,26 @@ Most pages on the website check for new content every 60 seconds. So if you publ
 - It appears on the **ticket pages** within 1 minute
 - It appears on other pages within 1 minute
 
-### Tickets Sold Out
+### Show Status: Active vs. Archived
+
+The website can have many shows in its archive (2012, 2015, 2018, 2021, 2024, 2027, etc.), but only **one show can be "Active" at a time** — that is the show people can currently buy tickets for.
+
+When you tick a show as "Active":
+
+1. The system displays that show's ticket types on /tickets
+2. Visitors can buy tickets only for that show
+3. All tickets sold are tagged with that show in the database
+
+**Important:** See "Critical Safety Rules" above — only one show should ever be active.
+
+When a show is finished:
+
+1. Uncheck its "Active" checkbox
+2. Publish
+3. That show moves to the archive; `/national-show/archive/[year]` displays it
+4. Visitors can no longer buy tickets for it
+
+### Ticket Type: Hide vs. Sold Out
 
 When all tickets of a type have been purchased:
 
@@ -126,14 +180,16 @@ When all tickets of a type have been purchased:
 2. They can't buy that type anymore
 3. You don't have to do anything — the system tracks this automatically
 
-If you want to hide a type completely (without letting people buy it):
+If you want to hide a type completely **for a currently active show** (without letting people buy it):
 
 1. Click **"Ticket Type"** in the sidebar
 2. Click the type you want to hide
-3. **Uncheck** the **"Active"** checkbox
+3. **Uncheck** the **"Active"** checkbox (the ticket-type-level active, not the show-level active — confusing, sorry)
 4. Click **"Publish"**
 
 The type disappears from /tickets immediately. (You can turn it back on anytime.)
+
+**Note:** Each ticket type references one show. If you change which show is active, the types linked to the old show automatically become unavailable, even if their "Active" checkbox is still ticked.
 
 ### Real Money
 

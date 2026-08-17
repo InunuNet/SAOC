@@ -6,86 +6,317 @@ goal: 'Build the scalable ticketing foundation from docs/ticketing-system-founda
   role system, a public buyer-account and lost-ticket-recovery layer that grants zero
   admin capability, and an end-to-end human-proven purchase-to-door-scan flow'
 created_at: '2026-08-17T14:39:52.125721+00:00'
-started_at: null
-last_active_at: null
-status: pending
+started_at: '2026-08-17T16:35:26.642255+00:00'
+last_active_at: '2026-08-17T17:02:22.088849+00:00'
+status: in_progress
 cost_estimate:
   features: 14
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M1
+  feature: F1
+  ts: '2026-08-17T17:02:22.088849+00:00'
 features:
 - id: F1
-  title: 'Resolve `show` document collision: extend archive type for sales fields, proving backward compatibility'
-  inline_brief: '§4.1. **COLLISION DETECTED:** `sanity/schemas/documents/show.ts` already exists as the *past-show archive* type with fields `title`, `slug`, `year`, `date`, `location`, `status`, `heroImage`, `entries`, `exhibitors`, `awards`, `summary`, `gallery`, `results` (PDF), and `classes` array. The spec was written without noticing this. F1''s first deliverable is resolving the collision by choosing between two candidates: **(Recommended) Extend the existing `show` document** by adding sales-facing fields (`edition`, `startDate`, `endDate`, `venue`, `salesOpen`, `active` boolean) to the archive type. This unifies the concept — one `show` type, all sessions and queries have one answer to "which show type do I mean." Cost: any new required field must be optional-or-defaulted to avoid invalidating published archive documents. **(Alternative) Introduce `sellableShow`** (or distinct type name) for the ticket entity, leaving archive `show` unchanged. Cost: two similar names forever, but no published-document impact. **@architect sizes the archive-document impact (how many published docs exist, whether new fields break existing queries/views) and makes the decision on that evidence.** Then, add a required `show` reference field to `ticketType`. The existing `nationalShow` singleton becomes the first `show` document — its `_id` stays `nationalShow` for backward compatibility with existing booking refs. Update `lib/tickets-constants.ts` to resolve `NATIONAL_SHOW_ID` by querying for `show` where `active === true`, with `nationalShow` as the seeded default. **Done (behavioral, not grep):** Sanity schema compiles, the first `show` document exists (either extended or new type per decision), `ticketType` documents can be queried by their `show` reference, checkout route still resolves the active show correctly against fixture data, and a test contract verifies that every existing published `show` document (if any) still passes validation and appears in every existing query that fetched it before the change.'
-  status: pending
+  title: 'Resolve `show` document collision: extend archive type for sales fields,
+    proving backward compatibility'
+  inline_brief: '§4.1. **COLLISION DETECTED:** `sanity/schemas/documents/show.ts`
+    already exists as the *past-show archive* type with fields `title`, `slug`, `year`,
+    `date`, `location`, `status`, `heroImage`, `entries`, `exhibitors`, `awards`,
+    `summary`, `gallery`, `results` (PDF), and `classes` array. The spec was written
+    without noticing this. F1''s first deliverable is resolving the collision by choosing
+    between two candidates: **(Recommended) Extend the existing `show` document**
+    by adding sales-facing fields (`edition`, `startDate`, `endDate`, `venue`, `salesOpen`,
+    `active` boolean) to the archive type. This unifies the concept — one `show` type,
+    all sessions and queries have one answer to "which show type do I mean." Cost:
+    any new required field must be optional-or-defaulted to avoid invalidating published
+    archive documents. **(Alternative) Introduce `sellableShow`** (or distinct type
+    name) for the ticket entity, leaving archive `show` unchanged. Cost: two similar
+    names forever, but no published-document impact. **@architect sizes the archive-document
+    impact (how many published docs exist, whether new fields break existing queries/views)
+    and makes the decision on that evidence.** Then, add a required `show` reference
+    field to `ticketType`. **CORRECTED 2026-08-17 (as built, gate 9/9, @qa PASS) —
+    the two sentences that stood here were factually impossible and must not be re-derived:**
+    they said the `nationalShow` singleton would become the first `show` document
+    keeping `_id: nationalShow`, and that `NATIONAL_SHOW_ID` would resolve dynamically
+    by querying `show` where `active === true`. Sanity `_id`s are unique per dataset
+    regardless of `_type`, so a `show`-typed doc cannot take the singleton''s `_id`
+    without retyping the singleton (which breaks 3 queries and 8+ surfaces, not additive).
+    And `NATIONAL_SHOW_ID` is a pure **Firestore** showId scoping string — it never
+    fetches a Sanity document, so making it dynamic would have put the 14 existing
+    Firestore tickets at risk for no gain. The brief conflated two unrelated identifier
+    spaces. **As actually built:** `NATIONAL_SHOW_ID` stays the literal `''nationalShow''`,
+    untouched; the already-existing `show-19-2027` archive doc became the first sales-capable
+    show via a one-time idempotent `setIfMissing` migration; and active-show selection
+    is a separate concept — `show.active` + `lib/show-resolution.ts`''s `resolveActiveShow()`,
+    failing closed to `null` on both zero and 2+ active shows. Decision record: `contracts/golden/ticketing-f1-show-collision/README.md`.
+    **Done (behavioral, not grep):** Sanity schema compiles, the first `show` document
+    exists (either extended or new type per decision), `ticketType` documents can
+    be queried by their `show` reference, checkout route still resolves the active
+    show correctly against fixture data, and a test contract verifies that every existing
+    published `show` document (if any) still passes validation and appears in every
+    existing query that fetched it before the change.'
+  status: done
   milestone: M1
+  started_at: '2026-08-17T16:35:26.642072+00:00'
+  completed_at: '2026-08-17T17:02:22.088622+00:00'
 - id: F2
-  title: 'Orders collection, position-level `orderId`, `TicketStatus` gains `refunded`, gateway-neutral payment fields'
-  inline_brief: '§4.2–§4.3. Add an `orders` Firestore collection sitting between `show` and `tickets` (positions): `showId`, `buyerName`, `buyerEmail`, `amount` (ZAR), `status: ''reserved'' | ''paid'' | ''cancelled''`, `expiresAt`, `idempotencyKey`, `purchasedAt`, `gateway`, `gatewayPaymentId`, `pf_payment_id`. Move all current payment-facing fields from `tickets` to orders. Add `orderId` field to ticket documents (position), linking to the parent order. Add `''refunded''` to `TicketStatus` union in `types/index.ts`. Update `types/index.ts` Order interface. The position-level fields (`bookingRef`, `attendeeName`, `attendeeEmail`, `ticketType`, `status`, `checkedInAt`, `showId`) remain unchanged — `lib/checkin.ts` reads one position by `bookingRef` with no joins, and that read shape is untouched. **Done:** Firestore schema compiles, orders collection exists, a test order with one position can be created, position document has `orderId` reference, `status` field on position correctly reads as one of four values including `refunded`, and a position can still be fetched by `bookingRef` with all fields intact.'
+  title: Orders collection, position-level `orderId`, `TicketStatus` gains `refunded`,
+    gateway-neutral payment fields
+  inline_brief: '§4.2–§4.3. Add an `orders` Firestore collection sitting between `show`
+    and `tickets` (positions): `showId`, `buyerName`, `buyerEmail`, `amount` (ZAR),
+    `status: ''reserved'' | ''paid'' | ''cancelled''`, `expiresAt`, `idempotencyKey`,
+    `purchasedAt`, `gateway`, `gatewayPaymentId`, `pf_payment_id`. Move all current
+    payment-facing fields from `tickets` to orders. Add `orderId` field to ticket
+    documents (position), linking to the parent order. Add `''refunded''` to `TicketStatus`
+    union in `types/index.ts`. Update `types/index.ts` Order interface. The position-level
+    fields (`bookingRef`, `attendeeName`, `attendeeEmail`, `ticketType`, `status`,
+    `checkedInAt`, `showId`) remain unchanged — `lib/checkin.ts` reads one position
+    by `bookingRef` with no joins, and that read shape is untouched. **Done:** Firestore
+    schema compiles, orders collection exists, a test order with one position can
+    be created, position document has `orderId` reference, `status` field on position
+    correctly reads as one of four values including `refunded`, and a position can
+    still be fetched by `bookingRef` with all fields intact.'
   status: pending
   milestone: M1
 - id: F3
-  title: 'Fixed capability set and `lib/admin-roles.ts` role→capability mapping with behavioural contract assertions'
-  inline_brief: '§5.2–§5.3. Define the seven core capabilities: `view-admin-dashboard`, `scan-checkin`, `lookup-booking-ref`, `search-buyers`, `issue-comp`, `issue-refund`, `export-buyer-data`. Create `lib/admin-roles.ts` as a server-side TypeScript constant module containing a `ROLE_TO_CAPABILITIES` map: `door-staff = {scan-checkin, lookup-booking-ref}`, `manager = {view-admin-dashboard, scan-checkin, lookup-booking-ref, search-buyers, issue-comp, issue-refund, export-buyer-data}`, `owner = {all seven}`. **Contract must include BEHAVIOURAL assertions (real function calls, not source-greps):** (1) every capability in the fixed set is granted by at least one role, and no role bundle references a non-existent capability; (2) resolving an unrecognised role name (e.g. `''unknown-role''`) against the mapping returns the empty capability set via an actual `resolve()` call; (3) the critical negative control: resolving `door-staff` must NOT include `export-buyer-data` or `search-buyers`, tested by actually invoking the resolution function. **Done:** `lib/admin-roles.ts` is syntactically correct TypeScript, all contract assertions pass, no capability typos exist in any bundle, and a fresh AI session reading the test output can explain what each assertion checks without reading the source file.'
+  title: Fixed capability set and `lib/admin-roles.ts` role→capability mapping with
+    behavioural contract assertions
+  inline_brief: '§5.2–§5.3. Define the seven core capabilities: `view-admin-dashboard`,
+    `scan-checkin`, `lookup-booking-ref`, `search-buyers`, `issue-comp`, `issue-refund`,
+    `export-buyer-data`. Create `lib/admin-roles.ts` as a server-side TypeScript constant
+    module containing a `ROLE_TO_CAPABILITIES` map: `door-staff = {scan-checkin, lookup-booking-ref}`,
+    `manager = {view-admin-dashboard, scan-checkin, lookup-booking-ref, search-buyers,
+    issue-comp, issue-refund, export-buyer-data}`, `owner = {all seven}`. **Contract
+    must include BEHAVIOURAL assertions (real function calls, not source-greps):**
+    (1) every capability in the fixed set is granted by at least one role, and no
+    role bundle references a non-existent capability; (2) resolving an unrecognised
+    role name (e.g. `''unknown-role''`) against the mapping returns the empty capability
+    set via an actual `resolve()` call; (3) the critical negative control: resolving
+    `door-staff` must NOT include `export-buyer-data` or `search-buyers`, tested by
+    actually invoking the resolution function. **Done:** `lib/admin-roles.ts` is syntactically
+    correct TypeScript, all contract assertions pass, no capability typos exist in
+    any bundle, and a fresh AI session reading the test output can explain what each
+    assertion checks without reading the source file.'
   status: pending
   milestone: M1
 - id: F4
-  title: '`roles` custom claim (per-show map), AND-only composition, revoke-on-mutate tooling, batch-grant tooling, date-window lapse, one-time admin migration'
-  inline_brief: '§5.4–§5.6. Add a `roles` custom claim shape: `{showId: [role1, role2...], ''*'': [role3...]}`. Extend `lib/admin-auth.ts` to check: `admin:true AND capability(resolve(roles, S)) ⊇ {required capability}`, where `resolve()` looks up each role name in `lib/admin-roles.ts` and returns the union of their capabilities. Unknown role names resolve to empty set — fail-closed by construction. Extend `scripts/admin-grant.ts` with `--role <name>` (repeatable, validated against `lib/admin-roles.ts`) and `--show <showId|*>` (no defaults); `door-staff` and `manager` may only be granted scoped to a show, never `*`. Extend `scripts/admin-revoke.ts` with optional `--role <name> --show <showId|*>` for partial revocation, calling `revokeRefreshTokens()` on all revokes. Extend `scripts/admin-list.ts` to print full `roles` map per account and flag any held role names no longer present in `lib/admin-roles.ts`. Add date-window lapse evaluation to `lib/admin-auth.ts`: a per-show role grant is only honoured while `now` falls within that show''s `startDate`/`endDate` window, read via a short-TTL cached show lookup. One-time migration: every existing account holding `admin:true` is re-granted `roles: {''*'': [''owner'']}` in a single script run. **Done:** `admin-grant.ts` validates role names, `admin-revoke.ts` can revoke a single role at a single scope and calls `revokeRefreshTokens()`, `admin-list.ts` flags orphaned role names, a test account can be granted `manager` scoped to `nationalShow` and verified to hold it, a test account can be revoked the same role and verified to lose it, the one-time migration script runs without error, and date-window evaluation returns false for a grant outside the show''s dates.'
+  title: '`roles` custom claim (per-show map), AND-only composition, revoke-on-mutate
+    tooling, batch-grant tooling, date-window lapse, one-time admin migration'
+  inline_brief: '§5.4–§5.6. Add a `roles` custom claim shape: `{showId: [role1, role2...],
+    ''*'': [role3...]}`. Extend `lib/admin-auth.ts` to check: `admin:true AND capability(resolve(roles,
+    S)) ⊇ {required capability}`, where `resolve()` looks up each role name in `lib/admin-roles.ts`
+    and returns the union of their capabilities. Unknown role names resolve to empty
+    set — fail-closed by construction. Extend `scripts/admin-grant.ts` with `--role
+    <name>` (repeatable, validated against `lib/admin-roles.ts`) and `--show <showId|*>`
+    (no defaults); `door-staff` and `manager` may only be granted scoped to a show,
+    never `*`. Extend `scripts/admin-revoke.ts` with optional `--role <name> --show
+    <showId|*>` for partial revocation, calling `revokeRefreshTokens()` on all revokes.
+    Extend `scripts/admin-list.ts` to print full `roles` map per account and flag
+    any held role names no longer present in `lib/admin-roles.ts`. Add date-window
+    lapse evaluation to `lib/admin-auth.ts`: a per-show role grant is only honoured
+    while `now` falls within that show''s `startDate`/`endDate` window, read via a
+    short-TTL cached show lookup. One-time migration: every existing account holding
+    `admin:true` is re-granted `roles: {''*'': [''owner'']}` in a single script run.
+    **Done:** `admin-grant.ts` validates role names, `admin-revoke.ts` can revoke
+    a single role at a single scope and calls `revokeRefreshTokens()`, `admin-list.ts`
+    flags orphaned role names, a test account can be granted `manager` scoped to `nationalShow`
+    and verified to hold it, a test account can be revoked the same role and verified
+    to lose it, the one-time migration script runs without error, and date-window
+    evaluation returns false for a grant outside the show''s dates.'
   status: pending
   milestone: M1
 - id: F5
-  title: '`buyers/{uid}` collection with consent record, hard security boundary proven by HTTP assertion'
-  inline_brief: '§8.2–§8.4. Add a Firestore `buyers` collection keyed by Firebase Auth `uid`, with fields: `email`, `displayName` (optional), `newsletterOptIn: {optedIn: boolean, optInAt: timestamp|null, source: string}`, `createdAt`. Add optional `buyerUid` field to orders (backfilled at account claim time). **The hard security boundary is load-bearing and must be proven by contract assertion, not a source-grep.** A freshly self-registered Firebase Auth account with a `buyers` document must resolve to the empty capability set when checked against `lib/admin-roles.ts`, and a real HTTP round trip to any `/api/admin/*` or `/admin/*` surface must refuse that account with the same `403 missing-capability` that any unauthenticated request receives. The assertion is: sign up as a public buyer, create a `buyers` document for that `uid`, then attempt `POST /api/admin/checkin` with that account''s session — must fail with `403`, not succeed, not return a different error code. **Done:** `buyers` collection exists, a test account can be created and a `buyers` doc written for it, the HTTP round trip against a running server with explicit `timeout_seconds` proves the account is refused everywhere, and no code path accidentally grants admin access based on `buyers` document existence.'
+  title: '`buyers/{uid}` collection with consent record, hard security boundary proven
+    by HTTP assertion'
+  inline_brief: '§8.2–§8.4. Add a Firestore `buyers` collection keyed by Firebase
+    Auth `uid`, with fields: `email`, `displayName` (optional), `newsletterOptIn:
+    {optedIn: boolean, optInAt: timestamp|null, source: string}`, `createdAt`. Add
+    optional `buyerUid` field to orders (backfilled at account claim time). **The
+    hard security boundary is load-bearing and must be proven by contract assertion,
+    not a source-grep.** A freshly self-registered Firebase Auth account with a `buyers`
+    document must resolve to the empty capability set when checked against `lib/admin-roles.ts`,
+    and a real HTTP round trip to any `/api/admin/*` or `/admin/*` surface must refuse
+    that account with the same `403 missing-capability` that any unauthenticated request
+    receives. The assertion is: sign up as a public buyer, create a `buyers` document
+    for that `uid`, then attempt `POST /api/admin/checkin` with that account''s session
+    — must fail with `403`, not succeed, not return a different error code. **Done:**
+    `buyers` collection exists, a test account can be created and a `buyers` doc written
+    for it, the HTTP round trip against a running server with explicit `timeout_seconds`
+    proves the account is refused everywhere, and no code path accidentally grants
+    admin access based on `buyers` document existence.'
   status: pending
   milestone: M1
 - id: F6
-  title: 'Signed order-access recovery token on orders, rate-limited resend-my-tickets endpoint'
-  inline_brief: '§8.2. Add `recoveryToken` field (60-bit, HMAC-signed) to every order at creation time, stored server-side. It scopes to exactly one order and its buyer. In the confirmation email (built in F11), include a deep link: `https://saoc.co.za/tickets/recover?token=<signed>`. Unauthenticated `GET /tickets/recover?token=<signed>` resolves the token to the order document, displays all positions'' QR codes inline, and allows re-sending the full email. Add `POST /tickets/resend-my-tickets` (public, rate-limited 5/email/hour at IP and email level, no account required): takes an email address and re-sends the order-access link to that address. Both mechanisms respond identically whether the email matched an order or not — no enumeration oracle. Rate-limit hits are logged but don''t expose an error message; the response is always "check your email." **Done:** `recoveryToken` is generated and stored on orders, the token verifies correctly and resolves to the right order, unauthenticated GET to the recovery URL returns the order''s positions with QR codes, rate-limiting is enforced (sixth attempt in one hour is refused identically to others), and resend requests with non-existent emails return the same "check your email" response as real matches.'
+  title: Signed order-access recovery token on orders, rate-limited resend-my-tickets
+    endpoint
+  inline_brief: '§8.2. Add `recoveryToken` field (60-bit, HMAC-signed) to every order
+    at creation time, stored server-side. It scopes to exactly one order and its buyer.
+    In the confirmation email (built in F11), include a deep link: `https://saoc.co.za/tickets/recover?token=<signed>`.
+    Unauthenticated `GET /tickets/recover?token=<signed>` resolves the token to the
+    order document, displays all positions'' QR codes inline, and allows re-sending
+    the full email. Add `POST /tickets/resend-my-tickets` (public, rate-limited 5/email/hour
+    at IP and email level, no account required): takes an email address and re-sends
+    the order-access link to that address. Both mechanisms respond identically whether
+    the email matched an order or not — no enumeration oracle. Rate-limit hits are
+    logged but don''t expose an error message; the response is always "check your
+    email." **Done:** `recoveryToken` is generated and stored on orders, the token
+    verifies correctly and resolves to the right order, unauthenticated GET to the
+    recovery URL returns the order''s positions with QR codes, rate-limiting is enforced
+    (sixth attempt in one hour is refused identically to others), and resend requests
+    with non-existent emails return the same "check your email" response as real matches.'
   status: pending
   milestone: M1
 - id: F7
-  title: 'Check-in audit trail — `checkinAttempts` collection capturing every scan outcome'
-  inline_brief: '§7.3. Add a `checkinAttempts` Firestore collection, written on every scan attempt (admits and refusals alike): `bookingRef`, `showId`, `deviceId`, `outcome` (''admit'' / ''not-found'' / ''wrong-show'' / ''unpaid'' / ''already-checked-in''), `scannedAt`, `source` (''online'' / ''offline-queued''), `syncedAt` (null until offline entry is reconciled). Write happens on the same transaction as the admission decision in `lib/checkin.ts`, adding no new abort surface. The `source` and `syncedAt` fields preserve the correct shape for future offline reconciliation, even though offline mode itself ships later. **Done:** every scan (success or refusal) writes one `checkinAttempts` document, the outcome field correctly reflects what happened (not-found for missing booking ref, wrong-show for mismatched showId, etc.), and a test contract can query the collection and count outcomes by type.'
+  title: Check-in audit trail — `checkinAttempts` collection capturing every scan
+    outcome
+  inline_brief: '§7.3. Add a `checkinAttempts` Firestore collection, written on every
+    scan attempt (admits and refusals alike): `bookingRef`, `showId`, `deviceId`,
+    `outcome` (''admit'' / ''not-found'' / ''wrong-show'' / ''unpaid'' / ''already-checked-in''),
+    `scannedAt`, `source` (''online'' / ''offline-queued''), `syncedAt` (null until
+    offline entry is reconciled). Write happens on the same transaction as the admission
+    decision in `lib/checkin.ts`, adding no new abort surface. The `source` and `syncedAt`
+    fields preserve the correct shape for future offline reconciliation, even though
+    offline mode itself ships later. **Done:** every scan (success or refusal) writes
+    one `checkinAttempts` document, the outcome field correctly reflects what happened
+    (not-found for missing booking ref, wrong-show for mismatched showId, etc.), and
+    a test contract can query the collection and count outcomes by type.'
   status: pending
   milestone: M1
 - id: F8
-  title: 'Comp-ticket route bypassing PayFast, writing order/position pair with `gateway: ''comp''`'
-  inline_brief: '§4.5. Add `POST /api/admin/tickets/comp` (gated on `issue-comp` capability). Route takes `showId`, `attendeeName`, `attendeeEmail`, `ticketType` in the request body. Writes one order (`status: ''paid''`, `amount: 0`, `gateway: ''comp''`, `gatewayPaymentId: null`, no `pf_payment_id`) and one position (`status: ''paid''`). Adds `compedBy: string` field to position recording the admin''s email for audit. Comps use the same order/position shape as paid purchases, not a separate differently-shaped document — the `gateway` field distinguishes them. The ITN route is NOT modified — amount-0 never enters it. **Done:** route requires `issue-comp` capability (verified by testing with and without it), comp orders can be created, a comp position correctly has `status: ''paid''` without ever touching PayFast, and the `compedBy` field records who issued it.'
+  title: 'Comp-ticket route bypassing PayFast, writing order/position pair with `gateway:
+    ''comp''`'
+  inline_brief: '§4.5. Add `POST /api/admin/tickets/comp` (gated on `issue-comp` capability).
+    Route takes `showId`, `attendeeName`, `attendeeEmail`, `ticketType` in the request
+    body. Writes one order (`status: ''paid''`, `amount: 0`, `gateway: ''comp''`,
+    `gatewayPaymentId: null`, no `pf_payment_id`) and one position (`status: ''paid''`).
+    Adds `compedBy: string` field to position recording the admin''s email for audit.
+    Comps use the same order/position shape as paid purchases, not a separate differently-shaped
+    document — the `gateway` field distinguishes them. The ITN route is NOT modified
+    — amount-0 never enters it. **Done:** route requires `issue-comp` capability (verified
+    by testing with and without it), comp orders can be created, a comp position correctly
+    has `status: ''paid''` without ever touching PayFast, and the `compedBy` field
+    records who issued it.'
   status: pending
   milestone: M1
 - id: F9
-  title: 'Demo ticket type (single general show admission) scoped to active show, marker-tagged'
-  inline_brief: '§6, §11. Create one `ticketType` document scoped to the real active `show`: `name: ''General Admission''` (or similar, Brad''s call) with a placeholder price (explicitly noted as not final, pending Council decision). Must be marker-tagged (e.g. a `demo: true` flag or naming convention like `[demo]` prefix) to prevent accidental presentation as real pricing to visitors. The demo data must be created in Sanity so it appears in the same `ticketType.show` reference query that checkout will use. **Rationale:** proving one ticket type end to end is the goal of the first run; additional tiers are seeded data against an unchanged schema, so introducing them later is a content change, not a migration. The single type must NOT be hardcoded in any code path — checkout already resolves by slug against a `GROQ` queried list, and that must stay true, so the one-type run is a data choice that leaves the multi-type code path exercised. A contract assertion verifies the demo type is present, has the demo marker, and fixture checkout can select it without error. **Done:** the ticket type exists and is queryable by show, the marker tag is present and machine-readable, fixture checkout correctly selects it by querying the list (not by hardcoded slug), and the one-type data choice leaves the multi-type code path exercised.'
+  title: Demo ticket type (single general show admission) scoped to active show, marker-tagged
+  inline_brief: '§6, §11. Create one `ticketType` document scoped to the real active
+    `show`: `name: ''General Admission''` (or similar, Brad''s call) with a placeholder
+    price (explicitly noted as not final, pending Council decision). Must be marker-tagged
+    (e.g. a `demo: true` flag or naming convention like `[demo]` prefix) to prevent
+    accidental presentation as real pricing to visitors. The demo data must be created
+    in Sanity so it appears in the same `ticketType.show` reference query that checkout
+    will use. **Rationale:** proving one ticket type end to end is the goal of the
+    first run; additional tiers are seeded data against an unchanged schema, so introducing
+    them later is a content change, not a migration. The single type must NOT be hardcoded
+    in any code path — checkout already resolves by slug against a `GROQ` queried
+    list, and that must stay true, so the one-type run is a data choice that leaves
+    the multi-type code path exercised. A contract assertion verifies the demo type
+    is present, has the demo marker, and fixture checkout can select it without error.
+    **Done:** the ticket type exists and is queryable by show, the marker tag is present
+    and machine-readable, fixture checkout correctly selects it by querying the list
+    (not by hardcoded slug), and the one-type data choice leaves the multi-type code
+    path exercised.'
   status: pending
   milestone: M2
 - id: F10
-  title: 'Folded ITN re-pin ceremony: signature fix, `break` fix, order/position two-write, email hookup'
-  inline_brief: '§6, §11. This is the single authorized reopening of the sha256-pinned `app/api/tickets/itn/route.ts`. Four changes fold into one ceremony: (1) unwire the inbound-signature algorithm — `generateNotifySignature` / `buildPayfastNotifyParamString` already exist in `lib/payfast.ts` but are not called; (2) fix the `parseOrderedFields` `continue`-vs-`break` divergence; (3) add order/position two-write transaction — instead of flipping one ticket document, read the order, and if `reserved`, transactionally flip the order to `paid` AND flip its one child position to `paid`; (4) after successful transaction commit, make a try/catch-isolated call to a new `sendConfirmationEmail()` helper. Re-pin the file after commit using the documented ceremony. The route''s existing capacity check, idempotency, and booking-ref logic are untouched. **Done:** the signature verification passes with real ITN payloads from PayFast sandbox, both order and position documents transition to `paid` in one transaction, the confirmation email helper is called without blocking the payment response, and the new file hash is re-pinned.'
+  title: 'Folded ITN re-pin ceremony: signature fix, `break` fix, order/position two-write,
+    email hookup'
+  inline_brief: '§6, §11. This is the single authorized reopening of the sha256-pinned
+    `app/api/tickets/itn/route.ts`. Four changes fold into one ceremony: (1) unwire
+    the inbound-signature algorithm — `generateNotifySignature` / `buildPayfastNotifyParamString`
+    already exist in `lib/payfast.ts` but are not called; (2) fix the `parseOrderedFields`
+    `continue`-vs-`break` divergence; (3) add order/position two-write transaction
+    — instead of flipping one ticket document, read the order, and if `reserved`,
+    transactionally flip the order to `paid` AND flip its one child position to `paid`;
+    (4) after successful transaction commit, make a try/catch-isolated call to a new
+    `sendConfirmationEmail()` helper. Re-pin the file after commit using the documented
+    ceremony. The route''s existing capacity check, idempotency, and booking-ref logic
+    are untouched. **Done:** the signature verification passes with real ITN payloads
+    from PayFast sandbox, both order and position documents transition to `paid` in
+    one transaction, the confirmation email helper is called without blocking the
+    payment response, and the new file hash is re-pinned.'
   status: pending
   milestone: M2
 - id: F11
-  title: 'QR generation at email-send time, confirmation email with all positions'' QRs and recovery link'
-  inline_brief: '§6, §11. Create a `sendConfirmationEmail()` function (called from F10''s ITN route) that: (1) generates a 2D QR code for each position''s `bookingRef` as an inline data-URI PNG (not a hosted ticket page — avoids guessable-URL problem); (2) builds one confirmation email addressed to the order''s `buyerEmail`, listing all positions'' attendee names and embedding all positions'' QR codes inline; (3) includes the recovery URL from F6 as a clickable deep link ("Lose your ticket? Click here"); (4) sends the email via Resend (if configured). The `sendConfirmationEmail()` function is tested in isolation with fixture data. For now, Resend account does not exist — fixture test use a mock Resend client that logs the email payload instead. A real human receives a real email only after Brad configures Resend; until then, M2 proof will be a logged payload inspection. **Done:** QR generation produces valid 2D codes decodable by a standard barcode scanner, the confirmation email template compiles and formats correctly, the recovery link is present and includes the signed token, the Resend mock logs every sent email, and fixture tests pass without a real Resend account.'
+  title: QR generation at email-send time, confirmation email with all positions'
+    QRs and recovery link
+  inline_brief: '§6, §11. Create a `sendConfirmationEmail()` function (called from
+    F10''s ITN route) that: (1) generates a 2D QR code for each position''s `bookingRef`
+    as an inline data-URI PNG (not a hosted ticket page — avoids guessable-URL problem);
+    (2) builds one confirmation email addressed to the order''s `buyerEmail`, listing
+    all positions'' attendee names and embedding all positions'' QR codes inline;
+    (3) includes the recovery URL from F6 as a clickable deep link ("Lose your ticket?
+    Click here"); (4) sends the email via Resend (if configured). The `sendConfirmationEmail()`
+    function is tested in isolation with fixture data. For now, Resend account does
+    not exist — fixture test use a mock Resend client that logs the email payload
+    instead. A real human receives a real email only after Brad configures Resend;
+    until then, M2 proof will be a logged payload inspection. **Done:** QR generation
+    produces valid 2D codes decodable by a standard barcode scanner, the confirmation
+    email template compiles and formats correctly, the recovery link is present and
+    includes the signed token, the Resend mock logs every sent email, and fixture
+    tests pass without a real Resend account.'
   status: pending
   milestone: M2
 - id: F12
-  title: 'Human purchase-and-scan proof on deployed host, venue door-connectivity observation recorded'
-  inline_brief: '§6, §7.4, §11. A real human makes a sandbox ticket purchase on the deployed host using demo ticket types from F9, receives the confirmation email from F11 (via logged mock if Resend is not configured), extracts the QR code, and scans it at the door using the admin door scanner. The scanner admits the ticket. Verify that `checkedInAt` is written to the position document and an entry appears in `checkinAttempts` with `outcome: ''admit''`. A second scan is refused with `already-checked-in`. **Required exit criterion:** this milestone must explicitly observe and record door connectivity at the venue (The Hangar, Stellenbosch Flying Club). Have the tester load the venue''s actual network on a phone, attempt a scan online (must work), then enable aeroplane mode and attempt a scan (record what happens). Whatever the outcome, document it as an explicit deliverable — Cloud Logging entries showing the scan attempts, Firestore checkinAttempts collection showing attempt outcomes, and a human-written note on what connectivity was observed. This observation gates whether the full offline PWA will be built or whether the audit trail alone is sufficient. **Done:** a real order exists on the deployed host, a real scan admits one ticket and refuses a second, `checkedInAt` is written, audit trail entry is created, and the door connectivity observation is recorded.'
+  title: Human purchase-and-scan proof on deployed host, venue door-connectivity observation
+    recorded
+  inline_brief: '§6, §7.4, §11. A real human makes a sandbox ticket purchase on the
+    deployed host using demo ticket types from F9, receives the confirmation email
+    from F11 (via logged mock if Resend is not configured), extracts the QR code,
+    and scans it at the door using the admin door scanner. The scanner admits the
+    ticket. Verify that `checkedInAt` is written to the position document and an entry
+    appears in `checkinAttempts` with `outcome: ''admit''`. A second scan is refused
+    with `already-checked-in`. **Required exit criterion:** this milestone must explicitly
+    observe and record door connectivity at the venue (The Hangar, Stellenbosch Flying
+    Club). Have the tester load the venue''s actual network on a phone, attempt a
+    scan online (must work), then enable aeroplane mode and attempt a scan (record
+    what happens). Whatever the outcome, document it as an explicit deliverable —
+    Cloud Logging entries showing the scan attempts, Firestore checkinAttempts collection
+    showing attempt outcomes, and a human-written note on what connectivity was observed.
+    This observation gates whether the full offline PWA will be built or whether the
+    audit trail alone is sufficient. **Done:** a real order exists on the deployed
+    host, a real scan admits one ticket and refuses a second, `checkedInAt` is written,
+    audit trail entry is created, and the door connectivity observation is recorded.'
   status: pending
   milestone: M2
 - id: F13
-  title: 'Lee-Ann granted real per-show `manager` role, verified by HTTP round trips including negative control'
-  inline_brief: '§5.8, §11. Onboard Lee-Ann as a real `manager` for the 2027 show using the tooling from F4. Run `pnpm exec tsx scripts/admin-grant.ts leeann@example.com --role manager --show nationalShow`, verify the account is created and the claim is set. Add her email to `ADMIN_EMAIL_ALLOWLIST` in Firebase Secret Manager. Have her sign in via Google on the deployed host''s `/admin/login`. **Verification is real HTTP round trips:** (1) positive control: confirm she reaches `/admin/door` and can check a ticket in using F12''s admitted position; (2) positive control: confirm `GET /api/admin/export-csv?showId=nationalShow` succeeds; (3) negative control (scope, not capability): confirm a request for a different show id is refused with `wrong-show` or equivalent scope refusal. Both positive and negative outcomes must be asserted. This proves her grant is genuinely per-show. **Done:** Lee-Ann''s account exists in Firebase, she holds `admin:true` and `roles: {nationalShow: [''manager'']}`, she can perform manager-level actions on the 2027 show, and she is refused access to a different show, with both HTTP outcomes verified.'
+  title: Lee-Ann granted real per-show `manager` role, verified by HTTP round trips
+    including negative control
+  inline_brief: '§5.8, §11. Onboard Lee-Ann as a real `manager` for the 2027 show
+    using the tooling from F4. Run `pnpm exec tsx scripts/admin-grant.ts leeann@example.com
+    --role manager --show nationalShow`, verify the account is created and the claim
+    is set. Add her email to `ADMIN_EMAIL_ALLOWLIST` in Firebase Secret Manager. Have
+    her sign in via Google on the deployed host''s `/admin/login`. **Verification
+    is real HTTP round trips:** (1) positive control: confirm she reaches `/admin/door`
+    and can check a ticket in using F12''s admitted position; (2) positive control:
+    confirm `GET /api/admin/export-csv?showId=nationalShow` succeeds; (3) negative
+    control (scope, not capability): confirm a request for a different show id is
+    refused with `wrong-show` or equivalent scope refusal. Both positive and negative
+    outcomes must be asserted. This proves her grant is genuinely per-show. **Done:**
+    Lee-Ann''s account exists in Firebase, she holds `admin:true` and `roles: {nationalShow:
+    [''manager'']}`, she can perform manager-level actions on the 2027 show, and she
+    is refused access to a different show, with both HTTP outcomes verified.'
   status: pending
   milestone: M3
 - id: F14
-  title: 'Lost-ticket recovery proven end-to-end by a human — test buyer recovers via resend form and signed link'
-  inline_brief: '§8.2, §11. A test buyer makes a sandbox ticket purchase on the deployed host, receiving a confirmation email with the recovery link and resend form availability. Simulate loss of that email (delete it). Using the public `/tickets` page, find the "I lost my ticket" link or resend form, enter the buyer''s email address, and receive a resend of the recovery email with the recovery link. Click the recovery link without logging in (unauthenticated access) and verify the page displays all positions'' QR codes and attendee names. Re-send the email again from the recovery page and verify it arrives. **Done:** the resend form accepts an email address that matches an order and re-sends the recovery email within 2 minutes, the recovery page displays correct data without authentication, the signed token is valid, and re-send from the recovery page succeeds. This closes the gap that existed in the prior mission — loss of a ticket email is now recoverable by the buyer without contacting support.'
+  title: Lost-ticket recovery proven end-to-end by a human — test buyer recovers via
+    resend form and signed link
+  inline_brief: §8.2, §11. A test buyer makes a sandbox ticket purchase on the deployed
+    host, receiving a confirmation email with the recovery link and resend form availability.
+    Simulate loss of that email (delete it). Using the public `/tickets` page, find
+    the "I lost my ticket" link or resend form, enter the buyer's email address, and
+    receive a resend of the recovery email with the recovery link. Click the recovery
+    link without logging in (unauthenticated access) and verify the page displays
+    all positions' QR codes and attendee names. Re-send the email again from the recovery
+    page and verify it arrives. **Done:** the resend form accepts an email address
+    that matches an order and re-sends the recovery email within 2 minutes, the recovery
+    page displays correct data without authentication, the signed token is valid,
+    and re-send from the recovery page succeeds. This closes the gap that existed
+    in the prior mission — loss of a ticket email is now recoverable by the buyer
+    without contacting support.
   status: pending
   milestone: M3
 milestones:
@@ -102,7 +333,8 @@ milestones:
   - F8
   status: pending
 - id: M2
-  title: 'A real ticket bought, emailed, and scanned at the door, with venue connectivity recorded'
+  title: A real ticket bought, emailed, and scanned at the door, with venue connectivity
+    recorded
   features:
   - F9
   - F10
@@ -110,12 +342,15 @@ milestones:
   - F12
   status: pending
 - id: M3
-  title: 'Real staff onboarded with scoped access, and a real buyer recovers a lost ticket'
+  title: Real staff onboarded with scoped access, and a real buyer recovers a lost
+    ticket
   features:
   - F13
   - F14
   status: pending
 ---
+
+
 
 # Mission: Ticketing Foundation — Data Model, Roles, and End-to-End Proof
 

@@ -35,5 +35,16 @@ export const ticketType = defineType({
     }),
     defineField({ name: 'active', title: 'Active', type: 'boolean', initialValue: true }),
     defineField({ name: 'order', title: 'Display Order', type: 'number' }),
+    // F1 (ticketing-foundation): which sales-capable `show` this ticket type belongs
+    // to. Required for new documents; the 5 pre-existing published documents predate
+    // this field and are backfilled by scripts/migrate-show-sales-fields.ts. See
+    // contracts/golden/ticketing-f1-show-collision/README.md.
+    defineField({
+      name: 'show',
+      title: 'Show',
+      type: 'reference',
+      to: [{ type: 'show' }],
+      validation: (Rule) => Rule.required(),
+    }),
   ],
 });

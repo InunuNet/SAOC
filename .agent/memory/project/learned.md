@@ -955,3 +955,37 @@ milestones, status `pending` (not yet started). The prior `2026-08-17-ticket-flo
 stub is closed — it had zero milestones defined, which is why `mission.py resume` found nothing
 to resume from it. `admin-auth-hardening` remains the active in-progress mission at 5/6; this new
 mission is queued behind it, not a replacement.
+
+## Ticketing foundation — F1 done: schema collision resolved, two check-quality lessons (2026-08-17)
+
+F1 (resolve the `show` schema collision) shipped, @qa PASS, gate 9/9, re-run twice by the
+orchestrator including after the docs pass. `sanity/schemas/documents/show.ts` (the pre-existing
+past-show archive type) was extended with 6 optional sales fields rather than a competing type
+being introduced — confirmed against 6 live published `show` docs (5 `status:"past"`, plus
+`show-19-2027` `upcoming`) via GROQ, not assumed from the spec.
+
+1. **The mission brief itself was wrong, and specifically so: it described an operation Sanity
+   cannot perform.** It claimed the `nationalShow` singleton could "become" a `show` document
+   while keeping `_id: nationalShow`, and that `NATIONAL_SHOW_ID` should resolve dynamically.
+   Sanity `_id`s are unique per dataset regardless of `_type` — two unrelated identifier spaces
+   (a Sanity document ID vs. a pure Firestore `showId` scoping string that never touches Sanity)
+   got conflated in one sentence. As built: `NATIONAL_SHOW_ID` stays the literal string
+   `'nationalShow'` (this is what protects the 14 existing Firestore tickets from becoming
+   orphaned), `show-19-2027` became the first sales-capable show via a one-time idempotent
+   `setIfMissing` migration (`scripts/migrate-show-sales-fields.ts`), and active-show selection is
+   a separate mechanism — `show.active` + `lib/show-resolution.ts`'s `resolveActiveShow()`, which
+   fails closed to `null` on both zero and 2+ active shows. **The safeguard that caught the wrong
+   brief was requiring @architect to size the problem against live Sanity evidence before
+   implementing, not after — keep that ordering for any future feature that touches an existing
+   schema.** A mission brief can be confidently, specifically wrong even when it reads as
+   internally consistent.
+2. **Two gate failures were defects in the CHECKS, not the code — @dev correctly refused to tune
+   the code to pass them.** A7 asserted `>= 15` tickets against a query filtered to
+   `showId=='nationalShow'`, but the true filtered count is 14; the baseline had actually been
+   taken from the *total* unfiltered doc count (15), where the 15th document is the documented
+   `door-qr-check-wrong-show` QA fixture — two different populations conflated in one number, and
+   the same wrong number had propagated into the golden README too, not just the check. A6 failed
+   only because `node --import tsx/esm` cannot resolve `@/` tsconfig path aliases nested inside a
+   further-imported `.ts` file, while `npx tsx` resolves them at every import depth. **Durable
+   rule: any future contract check that imports a file under `app/` or `components/` — even
+   transitively — must invoke it via `npx tsx`, not `node --import tsx/esm`.**

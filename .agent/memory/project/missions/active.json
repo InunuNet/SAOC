@@ -1,8 +1,9 @@
 {
   "mission": ".agent/memory/project/missions/2026-08-17-ticketing-foundation.md",
   "checkpoint": {
-    "milestone": null,
-    "feature": null
+    "milestone": "M1",
+    "feature": "F1",
+    "ts": "2026-08-17T17:02:22.088849+00:00"
   },
-  "activated_at": "2026-08-17T14:39:52.133752+00:00"
+  "activated_at": "2026-08-17T17:02:22.088981+00:00"
 }

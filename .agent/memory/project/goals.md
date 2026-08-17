@@ -114,3 +114,16 @@ Note: `brain.py` still reports `admin-auth-hardening` as active and skipped its 
 that basis — its detection disagrees with `active.json`, which is authoritative. See `backlog.md` "Session 2026-08-17" and `learned.md` "Ticketing foundation spec —
 §8 buyer accounts" for full detail, including the F1 schema-collision decision and the DNS/Resend
 sequencing note (nameservers still point at the old host; Resend DNS must wait for the switch).
+
+### 2026-08-17 (later) — F1 done, `ticketing-foundation` now the active in-progress mission
+
+~~F1 (resolve the `show` schema collision)~~ ✅ **DONE**, @qa PASS, gate 9/9 (re-run twice by the
+orchestrator, including after docs). `show.ts` extended with 6 optional sales fields rather than a
+competing type; `NATIONAL_SHOW_ID` unchanged; `show-19-2027` is now the first sales-capable show;
+active-show selection via `show.active` + `resolveActiveShow()`, fails closed. Mission checkpoint
+now M1/F1 done, 1 of 14 features shipped. The mission brief's proposed identifier-merging approach
+was wrong and has been corrected in the mission file itself — see `learned.md` "Ticketing
+foundation — F1 done" for the full correction and the two check-quality defects found along the
+way (A7 population mismatch, A6 `node --import tsx/esm` alias-resolution gap). `admin-auth-hardening`
+remains **paused** at 5/6 (F6, door-scanner human proof, outstanding) — not blocking, largely
+superseded by this mission's later F12.
