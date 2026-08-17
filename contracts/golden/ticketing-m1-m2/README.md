@@ -127,3 +127,17 @@ requests* stayed on `nationalShow.salesOpen` (state/logic).
 `app/api/tickets/itn/route.ts` is a verified security boundary. Its SHA-256 at contract-authoring
 time is recorded in `itn-route.golden.sha256` — assertion `A43` fails the gate if this file is
 touched at all during F1–F4 implementation.
+
+## The ITN pin baseline was re-based on F10 (2026-08-17)
+
+This contract's `itn-route.golden.sha256` held `6dcde6d5…`, the file as it stood at commit
+`e7de1e0` (PayFast M1, 2026-07-28). It was orphaned twice over: first by `a9586d1`
+(ticketing hardening) and then by `ab4237b` (F10, the sole authorised reopening of the
+pinned file). The assertion had been failing against a two-generations-old baseline.
+
+Re-based onto `253c15c4…`, the current authorised content. The assertion's meaning is
+unchanged — it still proves this feature does not reopen the payment-security boundary.
+
+**Every pin of this file must be re-based together.** There are four:
+`ticketing-f1-show-collision`, `ticketing-f10-itn-repin`, `ticketing-hardening`, and
+`ticketing-m1-m2`.

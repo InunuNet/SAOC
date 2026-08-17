@@ -1123,3 +1123,29 @@ wiring the real Sanity-backed lookup). The live one-time migration
 (`scripts/admin-migrate-roles.ts`) has **NOT** been run against the live project — it is dry-run
 by default; no account, including `brad@inunu.net` (the sole admin), currently holds a `roles`
 claim. Running it with `--apply` is human-gated, Brad's call.
+
+## A re-pin ceremony must re-base every pin of the file, not just its own (2026-08-17)
+
+`app/api/tickets/itn/route.ts` is guarded in five places, not one: sha256 pins in
+`ticketing-f1-show-collision`, `ticketing-f10-itn-repin`, `ticketing-hardening` and
+`ticketing-m1-m2`, plus a full-content golden diff (`itn-route.expected.ts.txt`) in
+`ticketing-hardening`. Each was authored correctly and each froze the file as it stood that
+day.
+
+F10 was the authorised reopening. It updated two of the five. The other three silently went
+red — and stayed red, because nobody runs those older contracts' gates during feature work.
+`ticketing-m1-m2`'s pin was two generations stale: it still held the file as of `e7de1e0`
+(2026-07-28), orphaned first by the hardening commit `a9586d1` and again by F10.
+
+**Why it matters:** these are the payment-security guards. A guard that has been failing for
+weeks is indistinguishable from a guard that just caught a real tamper — so the one time it
+matters, the failure gets waved through as "oh, that one's always red."
+
+**How to apply:** before re-pinning a guarded file, run
+`grep -rn '<path>' contracts/*.yaml | grep -i 'sha\|shasum\|diff'` and enumerate every guard
+first. Re-base all of them in the same commit. When re-basing a full-content golden, copy the
+*architect-authored* expected file from the authorising contract — never the shipped source
+file, which would make the assertion tautological.
+
+`contract-payfast-m1-lock-cleanup-fix.yaml` is the counter-example worth copying: it compares
+against `git show HEAD:` and re-bases itself, so it can never go stale.

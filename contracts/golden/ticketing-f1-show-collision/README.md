@@ -203,3 +203,27 @@ pointing at `route.ts`. The `npx tsx` CLI resolves tsconfig paths at every impor
 depth and needs no other change to the check. **If a future contract needs to import
 anything under `app/` or `components/` (both use `@/` imports pervasively) from a
 check script, use `npx tsx <file>`, not `node --import tsx/esm <file>`.**
+
+## A8's pin baseline was re-based on F10 (2026-08-17)
+
+A8 asserts that `app/api/tickets/itn/route.ts` is byte-for-byte unchanged — F1 does not
+reopen the pinned payment-security boundary. That claim is still exactly what A8 proves.
+What changed is the baseline it proves it against.
+
+F1's pin held `7c96726a…`, the file as it stood at commit `a9586d1`. F10
+(`contracts/contract-ticketing-f10-itn-repin.yaml`) was the sole authorised reopening of
+that file and landed a real change at commit `ab4237b`: inbound verification moved to
+`generateNotifySignature`, `parseOrderedFields` stops at `signature` per PayFast's reference
+algorithm, and the order/position pair-write became atomic and idempotent. The file's
+authorised content is now `253c15c4…`.
+
+F10's ceremony updated its own pin and `ticketing-hardening`'s, but not this one or
+`ticketing-m1-m2`'s — both were left holding historical baselines and both gates failed
+against the current file. Re-basing them onto `253c15c4…` completes that ceremony; it is not
+a new reopening, and no assertion's meaning changed.
+
+**Every pin of this file must be re-based together.** There are four:
+`ticketing-f1-show-collision`, `ticketing-f10-itn-repin`, `ticketing-hardening`, and
+`ticketing-m1-m2`. A future ceremony that updates only its own will orphan the rest exactly
+as this one did. `contract-payfast-m1-lock-cleanup-fix.yaml` compares against `git show HEAD:`
+instead and re-bases itself, so it is not in the list.

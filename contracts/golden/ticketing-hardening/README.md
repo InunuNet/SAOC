@@ -37,3 +37,24 @@ authenticated HTTP round-trip. They are instead proved by calling the extracted
 real concurrency) — the full decision and persistence path, with only the cookie-parsing
 layer skipped. That layer is separately covered by an unauthenticated HTTP check
 (401, and no ticket mutated), which needs no credentials and runs today.
+
+## A33's expected file was re-based on F10 (2026-08-17)
+
+A33 diffs `app/api/tickets/itn/route.ts` against this contract's architect-authored expected
+file. That expected file held the pre-F10 content and went stale the moment F10 —
+`contracts/contract-ticketing-f10-itn-repin.yaml`, the sole authorised reopening of the
+pinned file — shipped at commit `ab4237b`.
+
+The replacement content is **copied from F10's own architect-authored golden**,
+`contracts/golden/ticketing-f10-itn-repin/itn-route.expected.ts.txt`, not from the shipped
+route file. That distinction is what keeps A33 non-tautological: the expected content still
+originates from an architect's authored golden, so a later unauthorised edit to the route
+still fails the diff. Copying the shipped file into this slot instead would have made the
+assertion prove nothing.
+
+**Both of this file's guards must be re-based together.** A15 pins it by sha256, A33 by full
+content diff. F10's ceremony updated A15's pin and left A33's expected file behind, which is
+why A33 was failing while A15 passed. Alongside them sit two more sha256 pins in other
+contracts — `ticketing-f1-show-collision` and `ticketing-m1-m2` — both also orphaned and
+since re-based. Four pins and one full-content golden, five artefacts in total; a ceremony
+that updates only its own leaves the rest broken.

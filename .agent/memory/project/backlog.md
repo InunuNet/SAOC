@@ -1350,3 +1350,19 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
   `admin: true` is only ever set by `scripts/admin-grant.ts`, which already refuses
   pre-existing accounts without `--existing` and warns on the squatter shape. Residual risk:
   email pre-registration ahead of Lee-Ann's onboarding in F13.
+
+- **P1 — checkout never creates an `orders` document.** `app/api/tickets/checkout/route.ts`
+  writes only to `TICKETS_COLLECTION` (`transaction.create(tickets.doc(bookingRef), …)`,
+  line 247); it contains no reference to `createOrderWithPosition`, `ORDERS_COLLECTION`,
+  `'orders'` or `orderId`. Verified directly 2026-08-17. Consequences: F10's
+  `markOrderAndPositionPaidByPaymentId()` always resolves `order-not-found` for a real
+  purchase, so a real ITN never commits paid state; F11's confirmation email never fires;
+  every real order's `recoveryToken` stays null, so F6 recovery and F14 cannot work. The
+  spec claims checkout is order-aware (§ around lines 177/251) — the code does not match.
+  Contract in progress: `contracts/contract-ticketing-checkout-orders.yaml`.
+
+- **P3 — `components/tickets/TicketPurchaseForm.tsx` is 155 lines, over the project's own
+  150-line component limit.** Fails `ticketing-m1-m2` A35. Pre-existing since 2026-08-12,
+  untouched by the ticketing-foundation work. Needs a sub-component extraction, and because
+  it changes rendering it needs BrowserAgent verification at 1440/375/320px before it can be
+  called done — not a blind refactor.

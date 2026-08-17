@@ -7,252 +7,110 @@ goal: 'Build the scalable ticketing foundation from docs/ticketing-system-founda
   admin capability, and an end-to-end human-proven purchase-to-door-scan flow'
 created_at: '2026-08-17T14:39:52.125721+00:00'
 started_at: '2026-08-17T16:35:26.642255+00:00'
-last_active_at: '2026-08-17T20:12:20.744913+00:00'
+last_active_at: '2026-08-17T20:54:02.515792+00:00'
 status: in_progress
 cost_estimate:
   features: 14
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: M1
-  feature: F6
-  ts: '2026-08-17T20:12:20.744913+00:00'
+  milestone: M2
+  feature: F10
+  ts: '2026-08-17T20:54:02.515792+00:00'
 features:
 - id: F1
   title: 'Resolve `show` document collision: extend archive type for sales fields,
     proving backward compatibility'
-  inline_brief: '§4.1. **COLLISION DETECTED:** `sanity/schemas/documents/show.ts`
-    already exists as the *past-show archive* type with fields `title`, `slug`, `year`,
-    `date`, `location`, `status`, `heroImage`, `entries`, `exhibitors`, `awards`,
-    `summary`, `gallery`, `results` (PDF), and `classes` array. The spec was written
-    without noticing this. F1''s first deliverable is resolving the collision by choosing
-    between two candidates: **(Recommended) Extend the existing `show` document**
-    by adding sales-facing fields (`edition`, `startDate`, `endDate`, `venue`, `salesOpen`,
-    `active` boolean) to the archive type. This unifies the concept — one `show` type,
-    all sessions and queries have one answer to "which show type do I mean." Cost:
-    any new required field must be optional-or-defaulted to avoid invalidating published
-    archive documents. **(Alternative) Introduce `sellableShow`** (or distinct type
-    name) for the ticket entity, leaving archive `show` unchanged. Cost: two similar
-    names forever, but no published-document impact. **@architect sizes the archive-document
-    impact (how many published docs exist, whether new fields break existing queries/views)
-    and makes the decision on that evidence.** Then, add a required `show` reference
-    field to `ticketType`. **CORRECTED 2026-08-17 (as built, gate 9/9, @qa PASS) —
-    the two sentences that stood here were factually impossible and must not be re-derived:**
-    they said the `nationalShow` singleton would become the first `show` document
-    keeping `_id: nationalShow`, and that `NATIONAL_SHOW_ID` would resolve dynamically
-    by querying `show` where `active === true`. Sanity `_id`s are unique per dataset
-    regardless of `_type`, so a `show`-typed doc cannot take the singleton''s `_id`
-    without retyping the singleton (which breaks 3 queries and 8+ surfaces, not additive).
-    And `NATIONAL_SHOW_ID` is a pure **Firestore** showId scoping string — it never
-    fetches a Sanity document, so making it dynamic would have put the 14 existing
-    Firestore tickets at risk for no gain. The brief conflated two unrelated identifier
-    spaces. **As actually built:** `NATIONAL_SHOW_ID` stays the literal `''nationalShow''`,
-    untouched; the already-existing `show-19-2027` archive doc became the first sales-capable
-    show via a one-time idempotent `setIfMissing` migration; and active-show selection
-    is a separate concept — `show.active` + `lib/show-resolution.ts`''s `resolveActiveShow()`,
-    failing closed to `null` on both zero and 2+ active shows. Decision record: `contracts/golden/ticketing-f1-show-collision/README.md`.
-    **Done (behavioral, not grep):** Sanity schema compiles, the first `show` document
-    exists (either extended or new type per decision), `ticketType` documents can
-    be queried by their `show` reference, checkout route still resolves the active
-    show correctly against fixture data, and a test contract verifies that every existing
-    published `show` document (if any) still passes validation and appears in every
-    existing query that fetched it before the change.'
+  inline_brief: null
   status: done
   milestone: M1
   started_at: '2026-08-17T16:35:26.642072+00:00'
   completed_at: '2026-08-17T17:02:22.088622+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-ticketing-f1-show-collision.yaml
 - id: F2
   title: Orders collection, position-level `orderId`, `TicketStatus` gains `refunded`,
     gateway-neutral payment fields
-  inline_brief: '§4.2–§4.3. Add an `orders` Firestore collection sitting between `show`
-    and `tickets` (positions): `showId`, `buyerName`, `buyerEmail`, `amount` (ZAR),
-    `status: ''reserved'' | ''paid'' | ''cancelled''`, `expiresAt`, `idempotencyKey`,
-    `purchasedAt`, `gateway`, `gatewayPaymentId`, `pf_payment_id`. Move all current
-    payment-facing fields from `tickets` to orders. Add `orderId` field to ticket
-    documents (position), linking to the parent order. Add `''refunded''` to `TicketStatus`
-    union in `types/index.ts`. Update `types/index.ts` Order interface. The position-level
-    fields (`bookingRef`, `attendeeName`, `attendeeEmail`, `ticketType`, `status`,
-    `checkedInAt`, `showId`) remain unchanged — `lib/checkin.ts` reads one position
-    by `bookingRef` with no joins, and that read shape is untouched. **Done:** Firestore
-    schema compiles, orders collection exists, a test order with one position can
-    be created, position document has `orderId` reference, `status` field on position
-    correctly reads as one of five values including `refunded` (**CORRECTED 2026-08-17,
-    caught by @architect during contract design — the brief originally said ''four
-    values.'' `TicketStatus` already had four members before F2** (`''reserved''`,
-    `''paid''`, `''cancelled''`, `''checked-in''`) **so adding `''refunded''` makes
-    five, not four. The miscount treated F2''s addition as if it started from zero
-    instead of from the pre-existing union.**), and a position can still be fetched
-    by `bookingRef` with all fields intact.'
+  inline_brief: null
   status: done
   milestone: M1
   started_at: '2026-08-17T17:02:22.088849+00:00'
   completed_at: '2026-08-17T17:35:54.000000+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-ticketing-f2-orders-model.yaml
 - id: F3
   title: Fixed capability set and `lib/admin-roles.ts` role→capability mapping with
     behavioural contract assertions
-  inline_brief: '§5.2–§5.3. Define the seven core capabilities: `view-admin-dashboard`,
-    `scan-checkin`, `lookup-booking-ref`, `search-buyers`, `issue-comp`, `issue-refund`,
-    `export-buyer-data`. Create `lib/admin-roles.ts` as a server-side TypeScript constant
-    module containing a `ROLE_TO_CAPABILITIES` map: `door-staff = {scan-checkin, lookup-booking-ref}`,
-    `manager = {view-admin-dashboard, scan-checkin, lookup-booking-ref, search-buyers,
-    issue-comp, issue-refund, export-buyer-data}`, `owner = {all seven}`. **Contract
-    must include BEHAVIOURAL assertions (real function calls, not source-greps):**
-    (1) every capability in the fixed set is granted by at least one role, and no
-    role bundle references a non-existent capability; (2) resolving an unrecognised
-    role name (e.g. `''unknown-role''`) against the mapping returns the empty capability
-    set via an actual `resolve()` call; (3) the critical negative control: resolving
-    `door-staff` must NOT include `export-buyer-data` or `search-buyers`, tested by
-    actually invoking the resolution function. **Done:** `lib/admin-roles.ts` is syntactically
-    correct TypeScript, all contract assertions pass, no capability typos exist in
-    any bundle, and a fresh AI session reading the test output can explain what each
-    assertion checks without reading the source file.'
+  inline_brief: null
   status: done
   milestone: M1
   started_at: '2026-08-17T18:02:58.094169+00:00'
   completed_at: '2026-08-17T18:22:39.892165+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-ticketing-f3-admin-roles.yaml
 - id: F4
   title: '`roles` custom claim (per-show map), AND-only composition, revoke-on-mutate
     tooling, batch-grant tooling, date-window lapse, one-time admin migration'
-  inline_brief: '§5.4–§5.6. Add a `roles` custom claim shape: `{showId: [role1, role2...],
-    ''*'': [role3...]}`. Extend `lib/admin-auth.ts` to check: `admin:true AND capability(resolve(roles,
-    S)) ⊇ {required capability}`, where `resolve()` looks up each role name in `lib/admin-roles.ts`
-    and returns the union of their capabilities. Unknown role names resolve to empty
-    set — fail-closed by construction. Extend `scripts/admin-grant.ts` with `--role
-    <name>` (repeatable, validated against `lib/admin-roles.ts`) and `--show <showId|*>`
-    (no defaults); `door-staff` and `manager` may only be granted scoped to a show,
-    never `*`. Extend `scripts/admin-revoke.ts` with optional `--role <name> --show
-    <showId|*>` for partial revocation, calling `revokeRefreshTokens()` on all revokes.
-    Extend `scripts/admin-list.ts` to print full `roles` map per account and flag
-    any held role names no longer present in `lib/admin-roles.ts`. Add date-window
-    lapse evaluation to `lib/admin-auth.ts`: a per-show role grant is only honoured
-    while `now` falls within that show''s `startDate`/`endDate` window, read via a
-    short-TTL cached show lookup. One-time migration: every existing account holding
-    `admin:true` is re-granted `roles: {''*'': [''owner'']}` in a single script run.
-    **Done:** `admin-grant.ts` validates role names, `admin-revoke.ts` can revoke
-    a single role at a single scope and calls `revokeRefreshTokens()`, `admin-list.ts`
-    flags orphaned role names, a test account can be granted `manager` scoped to `nationalShow`
-    and verified to hold it, a test account can be revoked the same role and verified
-    to lose it, the one-time migration script runs without error, and date-window
-    evaluation returns false for a grant outside the show''s dates.'
+  inline_brief: null
   status: done
   milestone: M1
   started_at: '2026-08-17T18:22:39.892348+00:00'
   completed_at: '2026-08-17T19:03:32+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-ticketing-f4-roles-claim.yaml
 - id: F5
   title: '`buyers/{uid}` collection with consent record, hard security boundary proven
     by HTTP assertion'
-  inline_brief: '§8.2–§8.4. Add a Firestore `buyers` collection keyed by Firebase
-    Auth `uid`, with fields: `email`, `displayName` (optional), `newsletterOptIn:
-    {optedIn: boolean, optInAt: timestamp|null, source: string}`, `createdAt`. Add
-    optional `buyerUid` field to orders (backfilled at account claim time). **The
-    hard security boundary is load-bearing and must be proven by contract assertion,
-    not a source-grep.** A freshly self-registered Firebase Auth account with a `buyers`
-    document must resolve to the empty capability set when checked against `lib/admin-roles.ts`,
-    and a real HTTP round trip to any `/api/admin/*` or `/admin/*` surface must refuse
-    that account with the same `403 missing-capability` that any unauthenticated request
-    receives. The assertion is: sign up as a public buyer, create a `buyers` document
-    for that `uid`, then attempt `POST /api/admin/checkin` with that account''s session
-    — must fail with `403`, not succeed, not return a different error code. **Done:**
-    `buyers` collection exists, a test account can be created and a `buyers` doc written
-    for it, the HTTP round trip against a running server with explicit `timeout_seconds`
-    proves the account is refused everywhere, and no code path accidentally grants
-    admin access based on `buyers` document existence.'
+  inline_brief: null
   status: done
   milestone: M1
   completed_at: '2026-08-17T20:12:20.534271+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-ticketing-f5-buyers.yaml
 - id: F6
   title: Signed order-access recovery token on orders, rate-limited resend-my-tickets
     endpoint
-  inline_brief: '§8.2. Add `recoveryToken` field (60-bit, HMAC-signed) to every order
-    at creation time, stored server-side. It scopes to exactly one order and its buyer.
-    In the confirmation email (built in F11), include a deep link: `https://saoc.co.za/tickets/recover?token=<signed>`.
-    Unauthenticated `GET /tickets/recover?token=<signed>` resolves the token to the
-    order document, displays all positions'' QR codes inline, and allows re-sending
-    the full email. Add `POST /tickets/resend-my-tickets` (public, rate-limited 5/email/hour
-    at IP and email level, no account required): takes an email address and re-sends
-    the order-access link to that address. Both mechanisms respond identically whether
-    the email matched an order or not — no enumeration oracle. Rate-limit hits are
-    logged but don''t expose an error message; the response is always "check your
-    email." **Done:** `recoveryToken` is generated and stored on orders, the token
-    verifies correctly and resolves to the right order, unauthenticated GET to the
-    recovery URL returns the order''s positions with QR codes, rate-limiting is enforced
-    (sixth attempt in one hour is refused identically to others), and resend requests
-    with non-existent emails return the same "check your email" response as real matches.'
+  inline_brief: null
   status: done
   milestone: M1
   completed_at: '2026-08-17T20:12:20.744706+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-ticketing-f6-recovery-token.yaml
 - id: F7
   title: Check-in audit trail — `checkinAttempts` collection capturing every scan
     outcome
-  inline_brief: '§7.3. Add a `checkinAttempts` Firestore collection, written on every
-    scan attempt (admits and refusals alike): `bookingRef`, `showId`, `deviceId`,
-    `outcome` (''admit'' / ''not-found'' / ''wrong-show'' / ''unpaid'' / ''already-checked-in''),
-    `scannedAt`, `source` (''online'' / ''offline-queued''), `syncedAt` (null until
-    offline entry is reconciled). Write happens on the same transaction as the admission
-    decision in `lib/checkin.ts`, adding no new abort surface. The `source` and `syncedAt`
-    fields preserve the correct shape for future offline reconciliation, even though
-    offline mode itself ships later. **Done:** every scan (success or refusal) writes
-    one `checkinAttempts` document, the outcome field correctly reflects what happened
-    (not-found for missing booking ref, wrong-show for mismatched showId, etc.), and
-    a test contract can query the collection and count outcomes by type.'
-  status: pending
+  inline_brief: null
+  status: done
   milestone: M1
+  completed_at: '2026-08-17T20:54:01.877976+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-ticketing-f7-checkin-audit.yaml
 - id: F8
   title: 'Comp-ticket route bypassing PayFast, writing order/position pair with `gateway:
     ''comp''`'
-  inline_brief: '§4.5. Add `POST /api/admin/tickets/comp` (gated on `issue-comp` capability).
-    Route takes `showId`, `attendeeName`, `attendeeEmail`, `ticketType` in the request
-    body. Writes one order (`status: ''paid''`, `amount: 0`, `gateway: ''comp''`,
-    `gatewayPaymentId: null`, no `pf_payment_id`) and one position (`status: ''paid''`).
-    Adds `compedBy: string` field to position recording the admin''s email for audit.
-    Comps use the same order/position shape as paid purchases, not a separate differently-shaped
-    document — the `gateway` field distinguishes them. The ITN route is NOT modified
-    — amount-0 never enters it. **Done:** route requires `issue-comp` capability (verified
-    by testing with and without it), comp orders can be created, a comp position correctly
-    has `status: ''paid''` without ever touching PayFast, and the `compedBy` field
-    records who issued it.'
-  status: pending
+  inline_brief: null
+  status: done
   milestone: M1
+  completed_at: '2026-08-17T20:54:02.097684+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-ticketing-f8-comp-tickets.yaml
 - id: F9
   title: Demo ticket type (single general show admission) scoped to active show, marker-tagged
-  inline_brief: '§6, §11. Create one `ticketType` document scoped to the real active
-    `show`: `name: ''General Admission''` (or similar, Brad''s call) with a placeholder
-    price (explicitly noted as not final, pending Council decision). Must be marker-tagged
-    (e.g. a `demo: true` flag or naming convention like `[demo]` prefix) to prevent
-    accidental presentation as real pricing to visitors. The demo data must be created
-    in Sanity so it appears in the same `ticketType.show` reference query that checkout
-    will use. **Rationale:** proving one ticket type end to end is the goal of the
-    first run; additional tiers are seeded data against an unchanged schema, so introducing
-    them later is a content change, not a migration. The single type must NOT be hardcoded
-    in any code path — checkout already resolves by slug against a `GROQ` queried
-    list, and that must stay true, so the one-type run is a data choice that leaves
-    the multi-type code path exercised. A contract assertion verifies the demo type
-    is present, has the demo marker, and fixture checkout can select it without error.
-    **Done:** the ticket type exists and is queryable by show, the marker tag is present
-    and machine-readable, fixture checkout correctly selects it by querying the list
-    (not by hardcoded slug), and the one-type data choice leaves the multi-type code
-    path exercised.'
-  status: pending
+  inline_brief: null
+  status: done
   milestone: M2
+  completed_at: '2026-08-17T20:54:02.311314+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-ticketing-f9-demo-ticket.yaml
 - id: F10
   title: 'Folded ITN re-pin ceremony: signature fix, `break` fix, order/position two-write,
     email hookup'
-  inline_brief: '§6, §11. This is the single authorized reopening of the sha256-pinned
-    `app/api/tickets/itn/route.ts`. Four changes fold into one ceremony: (1) unwire
-    the inbound-signature algorithm — `generateNotifySignature` / `buildPayfastNotifyParamString`
-    already exist in `lib/payfast.ts` but are not called; (2) fix the `parseOrderedFields`
-    `continue`-vs-`break` divergence; (3) add order/position two-write transaction
-    — instead of flipping one ticket document, read the order, and if `reserved`,
-    transactionally flip the order to `paid` AND flip its one child position to `paid`;
-    (4) after successful transaction commit, make a try/catch-isolated call to a new
-    `sendConfirmationEmail()` helper. Re-pin the file after commit using the documented
-    ceremony. The route''s existing capacity check, idempotency, and booking-ref logic
-    are untouched. **Done:** the signature verification passes with real ITN payloads
-    from PayFast sandbox, both order and position documents transition to `paid` in
-    one transaction, the confirmation email helper is called without blocking the
-    payment response, and the new file hash is re-pinned.'
-  status: pending
+  inline_brief: null
+  status: done
   milestone: M2
+  completed_at: '2026-08-17T20:54:02.515611+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-ticketing-f10-itn-repin.yaml
 - id: F11
   title: QR generation at email-send time, confirmation email with all positions'
     QRs and recovery link
@@ -344,7 +202,9 @@ milestones:
   - F6
   - F7
   - F8
-  status: pending
+  status: done
+  gate_ran_at: '2026-08-17T21:06:52.876095+00:00'
+  gate_result: pass
 - id: M2
   title: A real ticket bought, emailed, and scanned at the door, with venue connectivity
     recorded
@@ -362,6 +222,24 @@ milestones:
   - F14
   status: pending
 ---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
