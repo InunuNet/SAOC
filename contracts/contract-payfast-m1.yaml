@@ -99,6 +99,7 @@ assertions:
         FIREBASE_ADMIN_* from .env.local, absent from CI; emits a distinct
         ::warning::...skipping A18 (exit 0, NOT a pass) when those creds are unavailable.
       command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-source-ip-validation.mts'
+      timeout_seconds: 120
     - id: A19
       description: >-
         F3 - BEHAVIOURAL: the server-confirm response is genuinely consumed, not
@@ -108,6 +109,7 @@ assertions:
         contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts (also
         covers A21). LOCAL-ONLY, same credential/skip convention as A18.
       command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts'
+      timeout_seconds: 120
     - id: A20
       description: >-
         F3 - BEHAVIOURAL: amount_gross is COMPARED to the reserved ticket's stored
@@ -117,6 +119,7 @@ assertions:
         contracts/checks/payfast-m1/check-itn-amount-tamper-rejected.mts. LOCAL-ONLY,
         same credential/skip convention as A18.
       command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-amount-tamper-rejected.mts'
+      timeout_seconds: 120
     - id: A21
       description: >-
         F3 - BEHAVIOURAL: only payment_status COMPLETE (with a VALID server-confirm)
@@ -127,6 +130,7 @@ assertions:
         assertion ID because it is a distinct claim from the audit. LOCAL-ONLY, same
         credential/skip convention as A18.
       command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts'
+      timeout_seconds: 120
     - id: A22
       description: F3 - logs on failure paths (fail-closed, no silent swallow)
       command: 'grep -Eq "console.error|logger\." app/api/tickets/itn/route.ts'
@@ -156,6 +160,7 @@ assertions:
         lexical descendant of the db.runTransaction callback. The behavioural half is
         LOCAL-ONLY, same credential/skip convention as A18.
       command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts && pnpm exec tsx contracts/checks/payfast-m1/check-paid-write-inside-transaction-scope.mjs'
+      timeout_seconds: 150
     - id: A31
       description: >-
         F3 - the transactional re-read (transaction.get(docRef) before
@@ -168,6 +173,7 @@ assertions:
         never separable claims once tested behaviourally, since disabling either half of
         the guard breaks the same race and resurrection scenarios.
       command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts && pnpm exec tsx contracts/checks/payfast-m1/check-paid-write-inside-transaction-scope.mjs'
+      timeout_seconds: 150
     - id: A32
       description: >-
         F3 - AST/scope proof (TypeScript compiler API, not line-number comparison) that
@@ -206,3 +212,4 @@ assertions:
         half is LOCAL-ONLY, same credential/skip convention as A18. See
         contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs.
       command: 'pnpm exec tsx contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs'
+      timeout_seconds: 180

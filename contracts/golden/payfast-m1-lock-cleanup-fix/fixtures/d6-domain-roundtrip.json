@@ -1,0 +1,12 @@
+[
+  {
+    "collection": "tickets",
+    "id": "roundtrip-fixture-doc-1",
+    "data": {
+      "attendeeEmail": "roundtrip-check@d6-door-checkin-check.invalid",
+      "attendeeName": "Roundtrip Fixture Guest",
+      "bookingRef": "ROUNDTRIP-NOT-A-REAL-BOOKING",
+      "status": "reserved"
+    }
+  }
+]

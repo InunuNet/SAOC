@@ -1,0 +1,7 @@
+{
+  "_comment": "Canonical sentinel-domain list for contracts/checks/_shared/sentinel-domains.mjs. Both ticketing-hardening/_shared.mjs and d6-door-checkin/_shared.mjs must derive their SENTINEL_EMAIL_DOMAIN constant from this array (import + lookup by index or name, not a retyped literal). scripts/scan-firestore-residue.ts must build its SENTINEL-EMAIL-DOMAIN and D6-SENTINEL-EMAIL-DOMAIN regex patterns from this same array via a small sentinelDomainPattern(domain) helper. Do not add a third domain here speculatively -- only when a real suite introduces one, exactly as harden-check.invalid and d6-door-checkin-check.invalid were each introduced by a real suite.",
+  "domains": [
+    "harden-check.invalid",
+    "d6-door-checkin-check.invalid"
+  ]
+}

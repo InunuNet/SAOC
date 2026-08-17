@@ -1,0 +1,297 @@
+schema: athanor.contract/v1
+slug: payfast-m1-lock-cleanup-fix
+goal: >-
+  P1 fix for Firestore `tickets` fixture residue in the payfast-m1 behavioural
+  check suite. Two independent leak paths were diagnosed by @analyst: (1) a
+  structurally invisible sentinel domain — DORMANT, already cataloged, closed
+  here by unifying sentinel detection so it cannot silently reopen; (2) a
+  timeout/lock-wait inversion (contract.py's 60s subprocess kill ceiling vs.
+  _shared.mjs's 90s suite-lock wait) that SIGKILLs a check mid-run, releasing
+  the lock (process.on('exit') is synchronous) but skipping the awaited
+  finally-block Firestore cleanup — ACTIVE, closed here by raising the
+  affected assertions' timeout_seconds above the lock ceiling, asserting that
+  invariant mechanically so it cannot silently invert again, and making
+  cleanup itself resilient to a hard kill via a synchronous fixture manifest
+  + always-run preflight sweep. The existing regression guard (A34) is
+  rewritten from a count-delta comparator (provably blind to a same-count
+  leak-and-unrelated-cleanup swap) to an identity-set comparator with its own
+  imposed timeout and a deliberate kill-and-recover proof against a decoy
+  fixture. Full diagnosis, the decision on point 1, what is proven vs.
+  circumstantial, and the flagged SAOC-2027-ZNYT37Z88MSH ticket are recorded
+  in contracts/golden/payfast-m1-lock-cleanup-fix/README.md. Hard constraints
+  carried from the task brief: never touch app/api/tickets/itn/route.ts
+  (sha256-pinned); never delete any Firestore document (including the 22 live
+  docs already in the collection, and never add SAOC-2027-ZNYT37Z88MSH to any
+  allowlist).
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F1
+    name: Raise assertion timeouts above the lock-wait ceiling; assert the invariant mechanically
+    status: pending
+  - id: F2
+    name: Crash-resilient cleanup via synchronous fixture manifest + always-run preflight sweep
+    status: pending
+  - id: F3
+    name: Unify sentinel-domain detection behind one shared source of truth
+    status: pending
+  - id: F4
+    name: Replace A34's count-delta comparator with an identity-set comparator that can actually catch the leak
+    status: pending
+  - id: F5
+    name: Document and flag SAOC-2027-ZNYT37Z88MSH without allowlisting or deleting it
+    status: pending
+
+goldens:
+  - contracts/golden/payfast-m1-lock-cleanup-fix/README.md
+  - contracts/golden/payfast-m1-lock-cleanup-fix/lock-timeout-invariant.golden.md
+  - contracts/golden/payfast-m1-lock-cleanup-fix/manifest-cleanup.golden.md
+  - contracts/golden/payfast-m1-lock-cleanup-fix/decoy-lock-holder.golden.md
+  - contracts/golden/payfast-m1-lock-cleanup-fix/sentinel-domains.golden.json
+  - contracts/golden/payfast-m1-lock-cleanup-fix/a34-replacement-spec.golden.md
+  - contracts/golden/payfast-m1-lock-cleanup-fix/fixtures/low-timeout.yaml
+  - contracts/golden/payfast-m1-lock-cleanup-fix/fixtures/stand-in-lock-waiting-script.mjs
+  - contracts/golden/payfast-m1-lock-cleanup-fix/fixtures/d6-domain-roundtrip.json
+  - contracts/golden/payfast-m1-lock-cleanup-fix/fixtures/barrel-import-evasion.yaml
+  - contracts/golden/payfast-m1-lock-cleanup-fix/fixtures/stand-in-barrel-entry.mjs
+  - contracts/golden/payfast-m1-lock-cleanup-fix/fixtures/stand-in-barrel-intermediate.mjs
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- Hard constraints (checked first, gate the rest) ----------
+    - id: A0-ITN-UNTOUCHED
+      description: >-
+        Hard constraint - app/api/tickets/itn/route.ts is byte-for-byte unchanged (sha256
+        matches the value recorded at contract-authoring time). Fails loudly and names the
+        file if this ever trips, rather than silently accepting a re-pin.
+      command: 'test "$(shasum -a 256 app/api/tickets/itn/route.ts | cut -d" " -f1)" = "$(git show HEAD:app/api/tickets/itn/route.ts | shasum -a 256 | cut -d" " -f1)"'
+      timeout_seconds: 15
+
+    - id: A0-NO-ALLOWLIST-ZNYT
+      description: >-
+        Hard constraint - SAOC-2027-ZNYT37Z88MSH must never be added to scan-firestore-residue.ts's
+        allowlists (KNOWN_RESIDUE_BOOKING_REFS / KNOWN_RESIDUE_DOC_IDS or any future one) - it
+        stays visible as a scanner hit until Brad identifies it. See README "Flagged" section.
+      command: 'if grep -q "ZNYT37Z88MSH" scripts/scan-firestore-residue.ts; then exit 1; fi'
+      timeout_seconds: 15
+
+    - id: A0-FLAGGED-DOCUMENTED
+      description: F5 - the flagged ticket is documented in this contract's golden README
+      command: 'grep -q "SAOC-2027-ZNYT37Z88MSH" contracts/golden/payfast-m1-lock-cleanup-fix/README.md'
+      timeout_seconds: 15
+
+    # ---------- F1: timeout/lock invariant ----------
+    - id: A1-CONSTANTS-EXPORTED
+      description: >-
+        F1 - ticketing-hardening/_shared.mjs exports LOCK_WAIT_MS,
+        ASSERTION_TIMEOUT_SAFETY_MARGIN_MS, and MIN_ASSERTION_TIMEOUT_MS (grep ceiling:
+        proves the identifiers exist, not their values or that anything imports them - see
+        A2 for the real behavioural proof).
+      command: >-
+        grep -q "export const LOCK_WAIT_MS" contracts/checks/ticketing-hardening/_shared.mjs &&
+        grep -q "export const ASSERTION_TIMEOUT_SAFETY_MARGIN_MS" contracts/checks/ticketing-hardening/_shared.mjs &&
+        grep -q "export const MIN_ASSERTION_TIMEOUT_MS" contracts/checks/ticketing-hardening/_shared.mjs
+      timeout_seconds: 15
+
+    - id: A2-INVARIANT-CHECK
+      description: >-
+        F1 - BEHAVIOURAL + self-tested: contracts/checks/payfast-m1/check-lock-timeout-invariant.mjs's
+        pure comparator (checkTimeoutCovers) self-tests against synthetic values (must accept a
+        covering timeout, reject a timeout below LOCK_WAIT_MS+margin, and reject a timeout that
+        covers LOCK_WAIT_MS with zero margin), then runs for real: imports LOCK_WAIT_MS /
+        MIN_ASSERTION_TIMEOUT_MS from _shared.mjs, discovers every contract-payfast-m1.yaml
+        assertion whose command transitively imports _shared.mjs by following the import graph
+        (not a hand-maintained ID list), and fails if any such assertion's timeout_seconds is
+        below MIN_ASSERTION_TIMEOUT_MS. No credentials needed (pure file/AST reads).
+      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-lock-timeout-invariant.mjs'
+      timeout_seconds: 60
+
+    - id: A3-FIXTURE-NEGATIVE-CONTROL
+      description: >-
+        F1 - negative control: check-lock-timeout-invariant.mjs run with --fixture against a
+        stand-in yaml whose one assertion declares timeout_seconds: 10 for a script that
+        imports _shared.mjs must FAIL (nonzero exit). Proves the check can actually reject a
+        real violation, not just pass by construction.
+      command: 'if pnpm exec tsx contracts/checks/payfast-m1/check-lock-timeout-invariant.mjs --fixture contracts/golden/payfast-m1-lock-cleanup-fix/fixtures/low-timeout.yaml; then exit 1; fi'
+      timeout_seconds: 30
+
+    - id: A21-BARREL-IMPORT-EVASION-CONTROL
+      description: >-
+        F1 - regression control for @qa's barrel-import evasion finding: the original
+        check followed only one hardcoded re-export hop (through _itn-harness.mts) and
+        false-passed a fixture that reached _shared.mjs through a DIFFERENT re-export
+        chain (an `export * from` barrel file). check-lock-timeout-invariant.mjs run with
+        --fixture against barrel-import-evasion.yaml (whose entry script imports
+        _shared.mjs only via stand-in-barrel-intermediate.mjs) must FAIL (nonzero exit),
+        proving the walk is genuinely recursive/generic, not one hardcoded hop.
+      command: 'if pnpm exec tsx contracts/checks/payfast-m1/check-lock-timeout-invariant.mjs --fixture contracts/golden/payfast-m1-lock-cleanup-fix/fixtures/barrel-import-evasion.yaml; then exit 1; fi'
+      timeout_seconds: 30
+
+    - id: A4-TIMEOUTS-RAISED
+      description: >-
+        F1 - contract-payfast-m1.yaml's A18, A19, A20, A21, A30, A31, and A34 each declare
+        timeout_seconds: 120 or higher (direct check on the known-affected IDs as of this
+        contract's authoring, via a small helper script - A2's mechanical check is the real,
+        self-updating guarantee that this stays true as the suite changes; this assertion is a
+        fast, cheap early signal, not the sole proof). See
+        contracts/golden/payfast-m1-lock-cleanup-fix/lock-timeout-invariant.golden.md for the
+        helper's exact spec (dev writes contracts/checks/payfast-m1/check-known-ids-timeouts.mjs).
+      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-known-ids-timeouts.mjs'
+      timeout_seconds: 15
+
+    # ---------- F2: crash-resilient cleanup manifest ----------
+    - id: A5-MANIFEST-EXPORTS
+      description: >-
+        F2 - _shared.mjs exports recordFixtureCreated, sweepManifestFromPriorRun,
+        clearManifestEntries (grep ceiling - see A6/A7 for behavioural proof).
+      command: >-
+        grep -q "export function recordFixtureCreated\|export async function recordFixtureCreated" contracts/checks/ticketing-hardening/_shared.mjs &&
+        grep -q "export async function sweepManifestFromPriorRun" contracts/checks/ticketing-hardening/_shared.mjs &&
+        grep -q "export function clearManifestEntries\|export async function clearManifestEntries" contracts/checks/ticketing-hardening/_shared.mjs
+      timeout_seconds: 15
+
+    - id: A6-MANIFEST-SYNC-WRITE
+      description: >-
+        F2 - the manifest write path uses synchronous fs APIs (writeSync/appendFileSync), not
+        the promise-based fs.promises API - a write that has not returned before a kill cannot
+        be trusted, only a synchronous one that has returned can (see README point 2).
+      command: >-
+        if grep -Eq "fs\.promises\.(writeFile|appendFile).*manifest|import.*promises.*from .node:fs/promises." contracts/checks/ticketing-hardening/_shared.mjs; then exit 1; fi &&
+        grep -Eq "writeSync|appendFileSync" contracts/checks/ticketing-hardening/_shared.mjs
+      timeout_seconds: 15
+
+    - id: A7-PREFLIGHT-BEFORE-LOCK
+      description: >-
+        F2 - withCleanup() calls sweepManifestFromPriorRun() before acquireSuiteLock() (line
+        order within the function body - a prior run's orphans must be cleaned even if this
+        run never takes the lock). See manifest-cleanup.golden.md; dev writes
+        contracts/checks/ticketing-hardening/check-withcleanup-ordering.mjs.
+      command: 'node contracts/checks/ticketing-hardening/check-withcleanup-ordering.mjs preflight-before-lock'
+      timeout_seconds: 15
+
+    - id: A8-CLEAR-AFTER-RESIDUE-CHECK
+      description: >-
+        F2 - clearManifestEntries() is called only AFTER assertNoResidue() within withCleanup()'s
+        finally block (a kill between sweep and clear must be a safe no-op on next preflight,
+        never a premature clear of unconfirmed cleanup). Same ordering-check script as A7, second
+        mode.
+      command: 'node contracts/checks/ticketing-hardening/check-withcleanup-ordering.mjs clear-after-residue'
+      timeout_seconds: 15
+
+    - id: A9-DECOY-FIXTURE-EXISTS
+      description: >-
+        F2/F4 support - decoy fixture script exists and never calls withCleanup, sweepSentinels,
+        or acquireSuiteLock (it must behave like a killed process, not a well-behaved one).
+      command: >-
+        test -f contracts/checks/payfast-m1/_fixtures/decoy-lock-holder.mjs &&
+        if grep -Eq "withCleanup|sweepSentinels|acquireSuiteLock" contracts/checks/payfast-m1/_fixtures/decoy-lock-holder.mjs; then exit 1; fi
+      timeout_seconds: 15
+
+    - id: A10-KILL-AND-RECOVER
+      description: >-
+        F2 - BEHAVIOURAL, LOCAL-ONLY (credentialsAvailable()/skipForMissingCredentials()
+        convention, same as A18): spawns the decoy fixture, SIGKILLs it after it confirms its
+        write completed, confirms the orphaned sentinel ticket IS present in Firestore (proves
+        the leak really happened), calls sweepManifestFromPriorRun() and confirms the orphan is
+        gone, then confirms sweepManifestFromPriorRun() against an empty manifest issues zero
+        Firestore delete calls (negative control - can't false-positive-delete on a clean
+        manifest). See contracts/golden/payfast-m1-lock-cleanup-fix/manifest-cleanup.golden.md.
+      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-manifest-survives-kill.mjs'
+      timeout_seconds: 60
+
+    # ---------- F3: unified sentinel detection ----------
+    - id: A11-SENTINEL-MODULE-EXISTS
+      description: >-
+        F3 - contracts/checks/_shared/sentinel-domains.mjs exports SENTINEL_DOMAINS (array,
+        matching contracts/golden/payfast-m1-lock-cleanup-fix/sentinel-domains.golden.json) and
+        isKnownSentinelDomain(email, domains = SENTINEL_DOMAINS).
+      command: >-
+        test -f contracts/checks/_shared/sentinel-domains.mjs &&
+        grep -q "export const SENTINEL_DOMAINS" contracts/checks/_shared/sentinel-domains.mjs &&
+        grep -q "export function isKnownSentinelDomain" contracts/checks/_shared/sentinel-domains.mjs
+      timeout_seconds: 15
+
+    - id: A12-BOTH-SUITES-IMPORT
+      description: >-
+        F3 - both ticketing-hardening/_shared.mjs and d6-door-checkin/_shared.mjs import the
+        shared sentinel-domains module (no longer retype the literal domain string).
+      command: >-
+        grep -q "sentinel-domains" contracts/checks/ticketing-hardening/_shared.mjs &&
+        grep -q "sentinel-domains" contracts/checks/d6-door-checkin/_shared.mjs
+      timeout_seconds: 15
+
+    - id: A13-SCANNER-DERIVES-PATTERNS
+      description: >-
+        F3 - scripts/scan-firestore-residue.ts builds its SENTINEL-EMAIL-DOMAIN and
+        D6-SENTINEL-EMAIL-DOMAIN regex entries from the shared SENTINEL_DOMAINS array (imports
+        the module; the old independently-retyped literal regexes for these two entries are
+        gone from the file - other, genuinely distinct patterns like HARDEN-BOOKING-REF are
+        untouched).
+      command: 'grep -q "sentinel-domains" scripts/scan-firestore-residue.ts && if grep -F "@harden-check" scripts/scan-firestore-residue.ts; then exit 1; fi && if grep -F "@d6-door-checkin-check" scripts/scan-firestore-residue.ts; then exit 1; fi'
+      timeout_seconds: 15
+
+    - id: A14-PARAMETERIZED-NEGATIVE-CONTROL
+      description: >-
+        F3 - BEHAVIOURAL: isKnownSentinelDomain() is genuinely generic, not hardcoded to
+        today's two domains - called with a domains list including a THIRD, not-yet-real
+        domain, it recognises an email at that domain; called with the default (no override)
+        it does not. Proves the parameterization is real, not decorative.
+      command: 'pnpm exec tsx contracts/checks/_shared/check-sentinel-domains-generic.mjs'
+      timeout_seconds: 30
+
+    - id: A15-SCANNER-WIRING-ROUNDTRIP
+      description: >-
+        F3 - BEHAVIOURAL end-to-end: scan-firestore-residue.ts --fixture against a JSON fixture
+        containing one doc with an email at SENTINEL_DOMAINS[1] (d6-door-checkin-check.invalid)
+        reports it as a hit - proves the real regex-construction wiring works, not just the
+        pure helper in isolation.
+      command: 'pnpm exec tsx scripts/scan-firestore-residue.ts --fixture contracts/golden/payfast-m1-lock-cleanup-fix/fixtures/d6-domain-roundtrip.json | grep -q "D6-SENTINEL-EMAIL-DOMAIN\|d6-door-checkin-check.invalid"'
+      timeout_seconds: 30
+
+    # ---------- F4: A34 replacement ----------
+    - id: A16-COMPARATOR-REPLACED
+      description: >-
+        F4 - check-suite-leaves-no-ticket-residue.mjs no longer exports/uses the old count-only
+        judgeResidue(before, after) signature - judgeResidueBySets(beforeIds, afterIds,
+        knownResidueIds) is the only comparator present.
+      command: >-
+        grep -q "judgeResidueBySets" contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs &&
+        if grep -Eq "function judgeResidue\(before, after\)" contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs; then exit 1; fi
+      timeout_seconds: 15
+
+    - id: A17-COMPARATOR-SELF-TEST
+      description: >-
+        F4 - judgeResidueBySets' self-test explicitly covers the same-count-different-membership
+        case (one new unaccounted ID, one pre-existing ID missing, net count unchanged) - the
+        exact blind spot the old comparator had. Always runs, no credentials.
+      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs --self-test-only'
+      timeout_seconds: 30
+
+    - id: A18-A34-IMPOSES-OWN-TIMEOUT
+      description: >-
+        F4 - the rewritten check spawns its child scripts with its own imposed timeout (does
+        not rely solely on contract.py's outer timeout) - grep ceiling for a timeout/kill
+        mechanism (setTimeout + kill, or an AbortController) wrapping the spawn calls.
+      command: 'grep -Eq "setTimeout.*kill|AbortController|execTimeout" contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs'
+      timeout_seconds: 15
+
+    - id: A19-A34-CAPABILITY-PROOF
+      description: >-
+        F4 - BEHAVIOURAL, LOCAL-ONLY, same credential/skip convention as A18 (original numbering):
+        the rewritten check, run for real, (1) completes a normal full-suite run clean under the
+        new timeouts, (2) deliberately kills the decoy fixture and confirms judgeResidueBySets
+        FLAGS the resulting orphan (the detector demonstrably CAN fail), then (3) sweeps it via
+        F2's sweepManifestFromPriorRun() and confirms a second comparison is clean - proving F2
+        and F4 compose correctly. See a34-replacement-spec.golden.md.
+      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs'
+      timeout_seconds: 180
+
+    - id: A20-A34-NEVER-DELETES-DIRECTLY
+      description: >-
+        F4 - the rewritten check itself never calls a Firestore delete/remove method directly
+        (cleanup stays delegated to sweepManifestFromPriorRun() / the sub-scripts' own
+        withCleanup()).
+      command: 'if grep -Eq "\.delete\(|\.remove\(" contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs; then exit 1; fi'
+      timeout_seconds: 15

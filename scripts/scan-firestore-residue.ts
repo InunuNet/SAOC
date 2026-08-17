@@ -34,7 +34,21 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { SENTINEL_DOMAINS } from '../contracts/checks/_shared/sentinel-domains.mjs';
+
 const FIXTURE_FLAG = '--fixture';
+
+/**
+ * Builds a case-insensitive `@<domain>` regex from a SENTINEL_DOMAINS entry, escaping
+ * regex-special characters (the domain's literal dots) rather than retyping the pattern
+ * by hand. See contracts/golden/payfast-m1-lock-cleanup-fix/README.md ("Point 3") — this
+ * is the single place these two marker patterns are derived; a renamed or added
+ * sentinel domain then requires no change here at all.
+ */
+function sentinelDomainPattern(domain: string): RegExp {
+  const escaped = domain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`@${escaped}\\b`, 'i');
+}
 
 // ---------------------------------------------------------------------------
 // Marker catalogue — see contracts/golden/firestore-residue-guard/marker-catalogue.md
@@ -48,12 +62,12 @@ interface MarkerPattern {
 }
 
 const MARKER_PATTERNS: readonly MarkerPattern[] = [
-  { name: 'SENTINEL-EMAIL-DOMAIN', regex: /@harden-check\.invalid\b/i },
+  { name: 'SENTINEL-EMAIL-DOMAIN', regex: sentinelDomainPattern(SENTINEL_DOMAINS[0]) },
   { name: 'HARDEN-BOOKING-REF', regex: /^HARDEN-/i },
   { name: 'HARDEN-ATTENDEE-NAME', regex: /^Harden (Check|Filler)$/i },
   { name: 'M2-CHECK-ITN-PROBE', regex: /^m2-check-itn-\d+-[a-z0-9]+$/i },
   { name: 'EPOCH-MS-NONCE (catch-all, heuristic)', regex: /(?<!\d)\d{13}(?!\d)/ },
-  { name: 'D6-SENTINEL-EMAIL-DOMAIN', regex: /@d6-door-checkin-check\.invalid\b/i },
+  { name: 'D6-SENTINEL-EMAIL-DOMAIN', regex: sentinelDomainPattern(SENTINEL_DOMAINS[1]) },
   { name: 'D6-BOOKING-REF', regex: /^D6-(NOAUTH|ADMIN|NONADMIN)-/i },
   { name: 'D6-ATTENDEE-NAME', regex: /^D6 Door Checkin Check$/i },
 ];
@@ -76,7 +90,10 @@ const KNOWN_RESIDUE_BOOKING_REFS: ReadonlySet<string> = new Set([
 // literally against the Firestore document ID itself, not a field value, since no regex
 // can distinguish a bare 'Proof' attendeeName from a real one. Deletion is out of scope
 // here — awaiting Brad's decision, not made in this contract.
-const KNOWN_RESIDUE_DOC_IDS: ReadonlySet<string> = new Set([
+// Exported so contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs's
+// identity-set comparator can import this catalogue directly rather than retyping it
+// (see contracts/golden/payfast-m1-lock-cleanup-fix/a34-replacement-spec.golden.md).
+export const KNOWN_RESIDUE_DOC_IDS: ReadonlySet<string> = new Set([
   'CrF2gcbRQCMPGRKSn8Da',
   'MbnMi9tAL7WiFXTMKufc',
   'HorxzPqpPWfo7sw1w3Hx',
@@ -84,6 +101,24 @@ const KNOWN_RESIDUE_DOC_IDS: ReadonlySet<string> = new Set([
   'kPxuUXcKF8jTw0IczYI4',
   'OXauVpRMw6CX2bPeYjrY',
   'W7yyX5eB63WYKxspuR5I',
+]);
+
+// Deliberately-live fixtures written by scripts/seed-door-test-tickets.ts (F6 door-
+// scanner QR seeder). Unlike KNOWN_RESIDUE_*, these are NOT accidental leftovers —
+// they persist on purpose until `pnpm door:teardown` runs, so finding them mid-test
+// is correct, not a leak. Reported as INFO, never counted toward the exit code.
+// Exact match only (not a prefix/regex) so a mistyped future 'DOOR-QR-*' value from
+// an unrelated bug is still caught as a real alarm. Keep in sync by hand with
+// contracts/golden/door-test-qr-seeder/fixtures.golden.json — do not derive
+// programmatically from it (this file must have zero import-time dependency on
+// application code, per its own file-header "read-only scanner" contract).
+const EXPECTED_LIVE_DOOR_QR_FIXTURES: ReadonlySet<string> = new Set([
+  'DOOR-QR-ADMIT-01',
+  'DOOR-QR-UNPAID-01',
+  'DOOR-QR-WRONGSHOW-01',
+  'fixture@door-qr-check.invalid',
+  'Door QR Fixture',
+  'door-qr-check-wrong-show',
 ]);
 
 // ---------------------------------------------------------------------------
@@ -95,13 +130,15 @@ interface Hit {
   readonly docId: string;
   readonly fieldPath: string;
   readonly value: string;
+  readonly expected: boolean;
 }
 
 function matchesAnyPattern(value: string): boolean {
   return (
     MARKER_PATTERNS.some((pattern) => pattern.regex.test(value)) ||
     KNOWN_RESIDUE_BOOKING_REFS.has(value) ||
-    KNOWN_RESIDUE_DOC_IDS.has(value)
+    KNOWN_RESIDUE_DOC_IDS.has(value) ||
+    EXPECTED_LIVE_DOOR_QR_FIXTURES.has(value)
   );
 }
 
@@ -115,14 +152,20 @@ function walk(
 ): void {
   if (typeof value === 'string') {
     if (matchesAnyPattern(value)) {
-      hits.push({ collection, docId, fieldPath: path_, value });
+      hits.push({ collection, docId, fieldPath: path_, value, expected: EXPECTED_LIVE_DOOR_QR_FIXTURES.has(value) });
     }
     return;
   }
   if (typeof value === 'number') {
     const asString = String(value);
     if (matchesAnyPattern(asString)) {
-      hits.push({ collection, docId, fieldPath: path_, value: asString });
+      hits.push({
+        collection,
+        docId,
+        fieldPath: path_,
+        value: asString,
+        expected: EXPECTED_LIVE_DOOR_QR_FIXTURES.has(asString),
+      });
     }
     return;
   }
@@ -372,17 +415,26 @@ function formatHitLine(hit: Hit): string {
 
 function report(documents: ScannableDocument[]): number {
   const allHits = documents.flatMap((doc) => scanDocument(doc.collection, doc.id, doc.data));
+  const infoHits = allHits.filter((hit) => hit.expected);
+  const alarmHits = allHits.filter((hit) => !hit.expected);
 
-  if (allHits.length === 0) {
-    console.log(`ALL CLEAR — scanned ${documents.length} document(s), no residue found.`);
+  for (const hit of infoHits) {
+    console.log(`INFO (expected live door-test fixture, not residue): ${formatHitLine(hit)}`);
+  }
+
+  if (alarmHits.length === 0) {
+    const leafWord = infoHits.length === 1 ? 'leaf' : 'leaves';
+    const suffix =
+      infoHits.length > 0 ? ` (${infoHits.length} expected live test fixture ${leafWord} ignored).` : '.';
+    console.log(`ALL CLEAR — scanned ${documents.length} document(s), no residue found${suffix}`);
     return 0;
   }
 
-  for (const hit of allHits) {
+  for (const hit of alarmHits) {
     console.log(formatHitLine(hit));
   }
   console.log(
-    `FAIL: found ${allHits.length} residue hit(s) across ${documents.length} document(s).`,
+    `FAIL: found ${alarmHits.length} residue hit(s) across ${documents.length} document(s).`,
   );
   return 1;
 }

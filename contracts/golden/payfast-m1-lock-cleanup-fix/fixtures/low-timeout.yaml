@@ -1,0 +1,17 @@
+# Negative-control fixture for check-lock-timeout-invariant.mjs --fixture.
+# One assertion whose command points at a stand-in script that imports
+# ticketing-hardening/_shared.mjs, with a deliberately inadequate
+# timeout_seconds (10s -- well below LOCK_WAIT_MS + margin). Running the
+# real check against this fixture must FAIL (see A3 in
+# contract-payfast-m1-lock-cleanup-fix.yaml). This file is never a real
+# contract and must never be picked up by contract.py itself.
+schema: athanor.contract/v1
+slug: fixture-low-timeout
+goal: Negative-control fixture only -- not a real contract.
+assertions:
+  phase: 4
+  checks:
+    - id: FIXTURE-LOW-TIMEOUT
+      description: Stand-in assertion whose script imports _shared.mjs but whose timeout is too low.
+      command: 'pnpm exec tsx contracts/golden/payfast-m1-lock-cleanup-fix/fixtures/stand-in-lock-waiting-script.mjs'
+      timeout_seconds: 10

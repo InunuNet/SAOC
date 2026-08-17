@@ -19,7 +19,16 @@
 // NEVER PRINT SECRETS. .env.local holds real credentials. Nothing here logs
 // process.env, tokens, cookies, id tokens or PayFast keys — only booleans about them.
 
-import { closeSync, openSync, readFileSync, unlinkSync, writeSync } from 'node:fs';
+import {
+  appendFileSync,
+  closeSync,
+  existsSync,
+  openSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+  writeSync,
+} from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -28,6 +37,8 @@ import { config } from 'dotenv';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+
+import { SENTINEL_DOMAINS } from '../_shared/sentinel-domains.mjs';
 
 config({ path: new URL('../../../.env.local', import.meta.url).pathname, quiet: true });
 
@@ -48,7 +59,7 @@ export const TARGET_TICKET_TYPE = 'exhibitor';
  * `.invalid` is reserved by RFC 2606 and can never be a real attendee address, so the
  * sweep can delete on this marker alone with no risk of touching real data.
  */
-export const SENTINEL_EMAIL_DOMAIN = 'harden-check.invalid';
+export const SENTINEL_EMAIL_DOMAIN = SENTINEL_DOMAINS[0];
 export const ADMIN_TEST_UID = 'harden-check-admin';
 export const ADMIN_TEST_EMAIL = `admin@${SENTINEL_EMAIL_DOMAIN}`;
 
@@ -96,20 +107,23 @@ export async function createTicketDoc(fields) {
   if (!isSentinelEmail(fields.attendeeEmail)) {
     throw new Error('Refusing to create a ticket without the sentinel email marker.');
   }
-  const ref = await db()
-    .collection(TICKETS_COLLECTION)
-    .add({
-      showId: NATIONAL_SHOW_ID,
-      ticketType: TARGET_TICKET_TYPE,
-      attendeeName: 'Harden Check',
-      status: 'reserved',
-      amount: 0,
-      purchasedAt: null,
-      checkedInAt: null,
-      pf_payment_id: null,
-      ...fields,
-      m_payment_id: fields.m_payment_id ?? fields.bookingRef ?? null,
-    });
+  const ref = db().collection(TICKETS_COLLECTION).doc();
+  // Manifest write happens BEFORE the Firestore write itself (see README "Point 2") —
+  // a kill between the two just means the preflight sweep issues a harmless delete
+  // against a document that was never created.
+  recordFixtureCreated(TICKETS_COLLECTION, ref.id);
+  await ref.set({
+    showId: NATIONAL_SHOW_ID,
+    ticketType: TARGET_TICKET_TYPE,
+    attendeeName: 'Harden Check',
+    status: 'reserved',
+    amount: 0,
+    purchasedAt: null,
+    checkedInAt: null,
+    pf_payment_id: null,
+    ...fields,
+    m_payment_id: fields.m_payment_id ?? fields.bookingRef ?? null,
+  });
   return ref;
 }
 
@@ -120,10 +134,17 @@ export async function fillReservedSeats(count, label) {
   while (created < count) {
     const batch = database.batch();
     const size = Math.min(400, count - created);
+    const refs = [];
     for (let i = 0; i < size; i += 1) {
       const ref = database.collection(TICKETS_COLLECTION).doc();
+      refs.push(ref);
+      // Manifest entries for the whole batch are recorded before the batch commit —
+      // same "record before write" ordering as createTicketDoc, applied per-doc.
+      recordFixtureCreated(TICKETS_COLLECTION, ref.id);
+    }
+    for (let i = 0; i < size; i += 1) {
       const bookingRef = `HARDEN-${label}-${created + i}`;
-      batch.set(ref, {
+      batch.set(refs[i], {
         bookingRef,
         showId: NATIONAL_SHOW_ID,
         ticketType: TARGET_TICKET_TYPE,
@@ -210,6 +231,93 @@ export async function assertNoResidue({ attempts = 8, delayMs = 750 } = {}) {
     return false;
   }
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Crash-resilient cleanup manifest (F2 — see README "Point 2")
+// ---------------------------------------------------------------------------
+//
+// WHY A MANIFEST, NOT JUST THE F1 TIMEOUT FIX
+// F1 removes the *routine* trigger for a kill during normal operation, but does not make
+// cleanup itself resilient to a kill from any OTHER cause (CI runner OOM, a future
+// assertion's own bug, a manual Ctrl-C that races the signal handlers). Every doc a
+// fixture write creates is recorded to this manifest SYNCHRONOUSLY, before the Firestore
+// write is attempted — a write that has not returned before a kill cannot be trusted,
+// only a synchronous one that has returned, can (same "helpers throw, never
+// process.exit" discipline this file already documents, applied to disk I/O).
+const MANIFEST_PATH = join(tmpdir(), 'saoc-ticketing-hardening-manifest.ndjson');
+
+/** IDs recorded by THIS process during its current withCleanup() body — tracked in
+ * memory so withCleanup() knows exactly which manifest entries are its own to clear once
+ * assertNoResidue() confirms clean, without clearing entries a differently-timed
+ * concurrent process may have just written. Reset at the start of each withCleanup() call. */
+let currentRunRecordedIds = [];
+
+/**
+ * Append one NDJSON line recording a fixture doc this process is about to write, via
+ * synchronous fs APIs (appendFileSync — NOT the promise-based fs.promises API). Call
+ * this BEFORE the corresponding Firestore write, not after.
+ */
+export function recordFixtureCreated(collection, id) {
+  const line = `${JSON.stringify({ collection, id, ts: Date.now() })}\n`;
+  appendFileSync(MANIFEST_PATH, line, { encoding: 'utf8' });
+  currentRunRecordedIds.push(id);
+}
+
+function readManifestEntries() {
+  if (!existsSync(MANIFEST_PATH)) return [];
+  const raw = readFileSync(MANIFEST_PATH, 'utf8');
+  const entries = [];
+  for (const line of raw.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    try {
+      entries.push(JSON.parse(trimmed));
+    } catch {
+      // A partial/torn line from a write that raced a kill mid-append — skip it rather
+      // than fail the whole sweep over one unrecoverable entry.
+    }
+  }
+  return entries;
+}
+
+/**
+ * Preflight sweep: deletes every doc a PRIOR run recorded but never confirmed cleaned,
+ * then clears exactly those entries from the manifest (a run that got killed never got
+ * to call clearManifestEntries() for its own IDs, so this sweep does it on that run's
+ * behalf — otherwise the manifest would grow unboundedly across every future run
+ * instead of ever going back to empty). Safe to call with an empty or missing manifest —
+ * issues zero Firestore calls in that case (see the negative control in
+ * check-manifest-survives-kill.mjs). Fine to no-op on a doc that no longer exists (the
+ * manifest entry may predate the actual Firestore write completing). Returns the number
+ * of entries swept.
+ */
+export async function sweepManifestFromPriorRun() {
+  const entries = readManifestEntries();
+  if (entries.length === 0) return 0;
+  const database = db();
+  const batch = database.batch();
+  for (const entry of entries) {
+    batch.delete(database.collection(entry.collection).doc(entry.id));
+  }
+  await batch.commit();
+  clearManifestEntries(entries.map((entry) => entry.id));
+  return entries.length;
+}
+
+/**
+ * Removes only the given IDs from the manifest (rewrite, not raw truncate — an ID-scoped
+ * interface stays correct even if a concurrent-but-lock-losing process's manifest write
+ * ever landed mid-sweep, though under the existing suite lock this should not occur in
+ * practice). Called only AFTER assertNoResidue() has confirmed clean — a kill between the
+ * sweep and the clear just means the next preflight repeats a sweep on already-clean IDs,
+ * a safe no-op, not a new failure mode.
+ */
+export function clearManifestEntries(ids) {
+  const idSet = new Set(ids);
+  const remaining = readManifestEntries().filter((entry) => !idSet.has(entry.id));
+  const body = remaining.map((entry) => `${JSON.stringify(entry)}\n`).join('');
+  writeFileSync(MANIFEST_PATH, body, { encoding: 'utf8' });
 }
 
 // ---------------------------------------------------------------------------
@@ -373,8 +481,16 @@ export function readRepoFile(relativePath) {
 // kill can never wedge the gate.
 const LOCK_PATH = join(tmpdir(), 'saoc-ticketing-hardening.lock');
 const LOCK_POLL_MS = 250;
-const LOCK_WAIT_MS = 90_000;
+export const LOCK_WAIT_MS = 90_000; // was already a module-private const; now exported
 const LOCK_STALE_MS = 600_000;
+
+// See contracts/golden/payfast-m1-lock-cleanup-fix/README.md ("Decision on point 1") —
+// any contract assertion whose command transitively imports this module must declare
+// timeout_seconds >= MIN_ASSERTION_TIMEOUT_MS, so a full LOCK_WAIT_MS wait can complete
+// and the script still has real network slack afterward. Do not shrink the margin to
+// make an existing timeout_seconds value "just barely" pass — raise the timeout instead.
+export const ASSERTION_TIMEOUT_SAFETY_MARGIN_MS = 30_000;
+export const MIN_ASSERTION_TIMEOUT_MS = LOCK_WAIT_MS + ASSERTION_TIMEOUT_SAFETY_MARGIN_MS;
 
 /** True once this process has run without exclusive ownership — failures then say so. */
 let lockContended = false;
@@ -469,6 +585,14 @@ async function acquireSuiteLock() {
  */
 export async function withCleanup(name, body, { deleteUser = false, afterCleanup } = {}) {
   let failure = null;
+  // Preflight: sweep any orphans a PRIOR run's kill left behind, before this run even
+  // tries to take the lock — see README "Point 2" (a prior run's orphans must be
+  // cleaned even if this run never manages to take the lock).
+  const preflightSwept = await sweepManifestFromPriorRun();
+  if (preflightSwept > 0) {
+    console.log(`preflight: swept ${preflightSwept} manifest entr${preflightSwept === 1 ? 'y' : 'ies'} from a prior run`);
+  }
+  currentRunRecordedIds = [];
   await acquireSuiteLock();
   try {
     await body();
@@ -480,6 +604,10 @@ export async function withCleanup(name, body, { deleteUser = false, afterCleanup
       if (removed > 0) console.log(`cleanup: removed ${removed} sentinel ticket(s)`);
       if (deleteUser) await deleteAdminUser();
       await assertNoResidue();
+      // Manifest entries are cleared only AFTER assertNoResidue() confirms clean — a
+      // kill between the sweep and the clear just means the next preflight repeats a
+      // sweep on already-clean IDs, a safe no-op, not a new failure mode.
+      if (currentRunRecordedIds.length > 0) clearManifestEntries(currentRunRecordedIds);
       if (afterCleanup) await afterCleanup();
     } catch (cleanupError) {
       console.error(`!!! CLEANUP FAILED for ${name}:`, cleanupError.message);

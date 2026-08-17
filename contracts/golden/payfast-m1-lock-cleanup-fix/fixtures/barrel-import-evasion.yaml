@@ -1,0 +1,23 @@
+# Negative-control fixture for check-lock-timeout-invariant.mjs --fixture. Regression
+# control for @qa's barrel-import evasion finding: a check that follows only one
+# hardcoded hop (through payfast-m1/_itn-harness.mts specifically) misses an assertion
+# that reaches ticketing-hardening/_shared.mjs through a DIFFERENT re-export chain --
+# stand-in-barrel-entry.mjs -> stand-in-barrel-intermediate.mjs (`export * from`) ->
+# _shared.mjs. One assertion whose command points at that entry script, with a
+# deliberately inadequate timeout_seconds (10s -- well below LOCK_WAIT_MS + margin).
+# Running the real check against this fixture must FAIL (see
+# A21-BARREL-IMPORT-EVASION-CONTROL in contract-payfast-m1-lock-cleanup-fix.yaml). This
+# file is never a real contract and must never be picked up by contract.py itself.
+schema: athanor.contract/v1
+slug: fixture-barrel-import-evasion
+goal: Negative-control fixture only -- not a real contract.
+assertions:
+  phase: 4
+  checks:
+    - id: FIXTURE-BARREL-EVASION
+      description: >-
+        Stand-in assertion whose script reaches _shared.mjs only through a
+        `export * from` barrel/intermediate file, not a direct import and not via
+        _itn-harness.mts, and whose timeout is too low.
+      command: 'pnpm exec tsx contracts/golden/payfast-m1-lock-cleanup-fix/fixtures/stand-in-barrel-entry.mjs'
+      timeout_seconds: 10

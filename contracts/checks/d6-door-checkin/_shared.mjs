@@ -14,6 +14,8 @@
 
 import { randomBytes } from 'node:crypto';
 
+import { SENTINEL_DOMAINS, isKnownSentinelDomain as isKnownSentinelDomainGeneric } from '../_shared/sentinel-domains.mjs';
+
 export {
   BASE_URL,
   loadEnvOrFail,
@@ -28,7 +30,7 @@ export {
   PreconditionError,
 } from '../admin-auth-hardening/_shared.mjs';
 
-const SENTINEL_EMAIL_DOMAIN = 'd6-door-checkin-check.invalid';
+const SENTINEL_EMAIL_DOMAIN = SENTINEL_DOMAINS[1];
 export const NATIONAL_SHOW_ID = 'nationalShow';
 export const TICKETS_COLLECTION = 'tickets';
 
@@ -41,7 +43,7 @@ export function sentinelEmail(label) {
 }
 
 function isSentinelEmail(value) {
-  return typeof value === 'string' && value.toLowerCase().endsWith(`@${SENTINEL_EMAIL_DOMAIN}`);
+  return isKnownSentinelDomainGeneric(value, [SENTINEL_EMAIL_DOMAIN]);
 }
 
 let adminAppPromise;
