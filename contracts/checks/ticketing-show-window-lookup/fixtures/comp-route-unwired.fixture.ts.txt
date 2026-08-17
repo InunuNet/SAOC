@@ -4,7 +4,6 @@ import { getAdminSession, hasCapability } from '@/lib/admin-auth';
 import { generateBookingRef } from '@/lib/booking-ref';
 import { buildCompOrderInput } from '@/lib/comp-tickets';
 import { createOrderWithPosition } from '@/lib/orders';
-import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 
 /**
@@ -15,13 +14,6 @@ import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
  * validity, not collapsed into it. On success: `buildCompOrderInput()` then
  * `createOrderWithPosition()`, with no `deps` override — production always uses the real
  * Firestore default. See contracts/golden/ticketing-f8-comp-tickets/README.md.
- *
- * ticketing-show-window-lookup — `hasCapability()` now receives a REAL `lookupShowWindow`,
- * sourced from `resolveShowWindowLookup()` (lib/show-window-lookup.ts). Omitting `opts`
- * here (as this route did before this contract) silently refuses every per-show capability
- * grant regardless of what the token's `roles` claim actually holds — only an org-wide `'*'`
- * grant would ever work. See contracts/golden/ticketing-show-window-lookup/README.md for the
- * full decision record.
  *
  * Body validation (showId/attendeeName/attendeeEmail/ticketType) is this route's own
  * responsibility, mirroring checkout's `isValidCheckoutBody` discipline
@@ -80,13 +72,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   // A missing capability is checked as a distinct step from session validity, not
   // collapsed into it — a signed-in admin with no 'issue-comp' grant is refused here,
-  // never earlier. lookupShowWindow is the real, cache-backed, Sanity-derived show-window
-  // lookup (lib/show-window-lookup.ts) — omitting it would silently refuse every per-show
-  // capability grant regardless of the token's roles claim (see
-  // contracts/golden/ticketing-show-window-lookup/README.md).
-  const now = new Date();
-  const lookupShowWindow = await resolveShowWindowLookup(body.showId, now);
-  if (!hasCapability(session.decodedToken, body.showId, 'issue-comp', { now, lookupShowWindow })) {
+  // never earlier.
+  if (!hasCapability(session.decodedToken, body.showId, 'issue-comp')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

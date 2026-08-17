@@ -1,0 +1,208 @@
+schema: athanor.contract/v1
+slug: ticketing-show-window-lookup
+goal: >-
+  Mission ticketing-foundation, blocking F13 (P1, escalated 2026-08-17). No production
+  ShowWindowLookup exists anywhere: lib/admin-auth.ts:199 defaults it to `() => null`, and
+  the one real call site (app/api/admin/tickets/comp/route.ts:76) passes no lookup at all —
+  so every per-show role grant (e.g. Lee-Ann's manager role, F13) is refused unconditionally,
+  always, even inside its date window, while an org-wide '*' grant works fine. This contract
+  specifies a new, cache-backed, fail-closed, offline-testable lib/show-window-lookup.ts and
+  its wiring into the one existing call site. Full decision record, every judgement call
+  (caching posture, timezone posture, the showId-vs-Sanity-_id identifier-space distinction),
+  and named defeating mutation for every assertion:
+  contracts/golden/ticketing-show-window-lookup/README.md
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F13-show-window-lookup
+    name: >-
+      (1) New lib/show-window-lookup.ts, pure and offline-testable except for one thin,
+      un-contract-tested production data source: exports ShowWindowSource (`() =>
+      Promise<ShowWindow | null>`, no args — showId scoping happens one level up),
+      SHOW_WINDOW_CACHE_TTL_MS (const, 60000), ShowWindowCache (class; constructor(source:
+      ShowWindowSource, ttlMs?: number) — source is REQUIRED, no default; ensureFresh(now:
+      Date): Promise<void> fetches from source only when no entry exists or the existing
+      entry is >= ttlMs old, catching and swallowing any thrown error from source
+      (logged, never propagated) and treating it identically to a null result; read(now:
+      Date): ShowWindow | null returns the cached window ONLY if an entry exists and is
+      strictly younger than ttlMs at `now` — at or beyond the bound it returns null, never
+      the stale entry, independent of whether ensureFresh was called first),
+      parseUtcDatetime(value: unknown): Date | null (accepts ONLY a string carrying an
+      explicit UTC offset designator — `Z` or `±HH:MM` — parses it and returns the Date;
+      rejects to null: non-strings, date-only strings with no time component, any datetime
+      string with no offset designator at all, and anything that fails to parse to a valid
+      instant), buildShowWindow(fields: {startDate?: unknown; endDate?: unknown} | null |
+      undefined): ShowWindow | null (null on a null/undefined fields object, a missing
+      startDate, a missing endDate, or either field failing parseUtcDatetime; otherwise a
+      real ShowWindow with both instants), fetchActiveShowWindow: ShowWindowSource (the
+      production data source — queries every `show` document's `_id`/`active`/`startDate`/
+      `endDate` via a new `activeShowWindowQuery` in sanity/queries.ts, resolves the active
+      one via the EXISTING lib/show-resolution.ts's resolveActiveShow() (reused, not
+      reimplemented — the same fail-closed-on-zero-or-multiple-active behaviour that
+      function already has), then buildShowWindow()s that document's date fields; must
+      never throw — any Sanity fetch error is caught, logged, and treated as null),
+      getProductionShowWindowCache(): ShowWindowCache (module-level singleton, backed by
+      fetchActiveShowWindow — the TTL bound must apply ACROSS requests in one server
+      process, not reset per request), and resolveShowWindowLookup(showId: string, now:
+      Date, deps?: {cache?: ShowWindowCache}): Promise<ShowWindowLookup> — the one function
+      route code calls: awaits deps?.cache?.ensureFresh(now) ?? the production singleton's
+      ensureFresh(now), then returns a SYNCHRONOUS closure (satisfying lib/admin-auth.ts's
+      existing ShowWindowLookup type exactly, imported and reused, never redeclared) that,
+      called with any showId string OTHER than the `showId` resolveShowWindowLookup was
+      given, returns null regardless of what the cache holds — even a populated, fresh
+      window for the scoped showId must never leak to a different showId argument.
+      CRITICAL IDENTIFIER-SPACE NOTE (see README "Why showId is not a Sanity _id"): the
+      `showId` parameter is the Firestore role-scoping value
+      (lib/tickets-constants.ts's NATIONAL_SHOW_ID, e.g. 'nationalShow'), NEVER a Sanity
+      document `_id` (e.g. 'show-19-2027') — fetchActiveShowWindow must resolve the active
+      SANITY show document independently of the showId string entirely (there is exactly
+      one active show at a time by construction, per resolveActiveShow's existing
+      fail-closed contract), not attempt to look up a Sanity document BY the showId
+      argument.
+      (2) sanity/queries.ts: additive new `activeShowWindowQuery` (`*[_type == "show"]{
+      _id, active, startDate, endDate }`) — does not modify any existing query, in
+      particular not `allShowActivationQuery` (F1, still consumed by checkout's
+      resolveActiveShow() call, untouched).
+      (3) app/api/admin/tickets/comp/route.ts: the ONLY wiring change this contract
+      requires. Byte-for-byte per
+      contracts/golden/ticketing-show-window-lookup/comp-route-wired.expected.ts.txt: add
+      `import { resolveShowWindowLookup } from '@/lib/show-window-lookup';`; before the
+      existing `hasCapability(...)` call, add `const now = new Date();` and `const
+      lookupShowWindow = await resolveShowWindowLookup(body.showId, now);`; change the
+      `hasCapability(session.decodedToken, body.showId, 'issue-comp')` call to
+      `hasCapability(session.decodedToken, body.showId, 'issue-comp', { now,
+      lookupShowWindow })`. No other file changes anywhere — in particular, do NOT wire
+      hasCapability() into app/api/admin/checkin/route.ts (deliberately deferred by F7's
+      own judgement call pending the live roles migration — see README), and do NOT add
+      capability checks to app/api/admin/tickets/route.ts or
+      app/api/admin/export-csv/route.ts (neither calls hasCapability() today at all; that
+      is a separate, larger gap — no showId scoping exists on either route yet — out of
+      this contract's scope, flagged in README).
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-show-window-lookup/README.md
+  - contracts/golden/ticketing-show-window-lookup/comp-route-wired.expected.ts.txt
+  - contracts/checks/ticketing-show-window-lookup/tsconfig.typecheck.json
+  - contracts/checks/ticketing-show-window-lookup/fixtures/show-window-lookup-typecheck.ts
+  - contracts/checks/ticketing-show-window-lookup/fixtures/comp-route-unwired.fixture.ts.txt
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        lib/show-window-lookup.ts is added and app/api/admin/tickets/comp/route.ts is
+        wired.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof (not source-grep) of the exported type shapes:
+        ShowWindowSource, SHOW_WINDOW_CACHE_TTL_MS, ShowWindowCache's constructor and
+        method signatures (including that its constructor REQUIRES a source — no
+        zero-arg construction, via @ts-expect-error), parseUtcDatetime, buildShowWindow,
+        and that resolveShowWindowLookup's return type is lib/admin-auth.ts's OWN
+        ShowWindowLookup type, reused — not a structurally-similar but separately
+        declared type.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-show-window-lookup/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        buildShowWindow() fail-closed matrix via real calls, no network: a missing show
+        (null/undefined fields), a missing startDate, a missing endDate, a garbage
+        startDate string, an empty-string endDate, and a wrongly-typed (number) startDate
+        all resolve to null; a well-formed pair of ISO 8601 UTC datetimes resolves to a
+        real window with the exact instants preserved (positive control — without it, an
+        implementation that always returns null would pass every negative case
+        trivially).
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-show-window-lookup/check-build-window-fail-closed.mjs
+
+    - id: A4
+      description: >-
+        ShowWindowCache fail-closed + TTL-boundary proof via real calls with an injected
+        ShowWindowSource and injected `now` — no Date.now(), no network: a source
+        resolving null yields a null read; a source that THROWS is caught (ensureFresh
+        does not propagate the exception) and also yields a null read; a real source
+        yields the real window when freshly populated (positive control); a cache that
+        was never ensureFresh()'d at all yields null; and TTL boundary — served 1ms
+        before the bound, refused AT the exact bound instant (not just after it), and
+        refused well past it.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-show-window-lookup/check-cache-fail-closed-and-ttl.mjs
+
+    - id: A5
+      description: >-
+        ShowWindowCache.ensureFresh() fetches at most once per TTL window (proven by
+        counting real source invocations across repeated calls within the window — not
+        fetching on every call, which would defeat the entire hot-path caching
+        justification) AND genuinely refetches once the TTL has elapsed (not merely
+        going stale forever — a cache that never refetches would look identical to A4's
+        TTL-refusal case while never picking up a real Sanity update).
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-show-window-lookup/check-refetch-on-stale.mjs
+
+    - id: A6
+      description: >-
+        resolveShowWindowLookup(showId, now)'s returned closure is scoped to exactly the
+        showId it was built for: proven by real calls against an injected cache — the
+        scoped showId returns the real, populated window; a different showId string
+        returns null even though the cache holds a fresh window; and a showId string
+        shaped like a real Sanity document `_id` (e.g. 'show-19-2027', a real id from
+        this project's dataset per ticketing-f1-show-collision) is refused identically
+        when it isn't the scoped value — proving the function never treats the showId
+        argument as a Sanity `_id` lookup key.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-show-window-lookup/check-showid-scoping.mjs
+
+    - id: A7
+      description: >-
+        Timezone posture, gated under TZ=Africa/Johannesburg (this project's real server
+        timezone, SAST/UTC+2) to deterministically reproduce the defect regardless of the
+        gate machine's own timezone: parseUtcDatetime() correctly resolves an explicit
+        `Z`-suffixed datetime and an explicit `+02:00`-offset datetime to the SAME true
+        UTC instant; and REJECTS (returns null) a datetime string with no timezone
+        designator at all, a date-only string, and a garbage string — never silently
+        parsing an offset-less string in the process's local timezone, which would
+        silently shift a real show-window boundary by exactly 2 hours.
+      command: >-
+        TZ=Africa/Johannesburg node --import tsx/esm contracts/checks/ticketing-show-window-lookup/check-utc-parsing.mjs
+
+    - id: A8
+      description: >-
+        End-to-end boundary inclusivity, composing this module's date parsing with
+        lib/admin-auth.ts's ALREADY-PROVEN (F4/A5) isWithinWindow()/
+        resolveRoleCapabilitiesForShow() — not re-proving that function's own
+        inclusivity, but proving buildShowWindow()'s parsed Date instants introduce no
+        off-by-one-ms/off-by-one-second/timezone shift before reaching it: `now` set to
+        exactly the parsed startDate instant is GRANTED (inclusive lower bound), 1ms
+        before is refused, `now` set to exactly the parsed endDate instant is GRANTED
+        (inclusive upper bound), 1ms after is refused, and a comfortably-inside instant
+        is granted (non-vacuous positive control).
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-show-window-lookup/check-boundary-inclusivity-e2e.mjs
+
+    - id: A9
+      description: >-
+        app/api/admin/tickets/comp/route.ts — the one existing production call site of
+        hasCapability() — actually imports resolveShowWindowLookup, awaits a real call to
+        it assigned to `lookupShowWindow`, and threads that exact identifier into
+        hasCapability()'s third (opts) argument alongside `now`. The one deliberate
+        source-level exception in this contract (same justification as
+        ticketing-f3-admin-roles's A8): this is a call-site wiring property, not a
+        runtime one, and invoking the real route handler would require mocking
+        next/headers, Firebase session verification, and Firestore, which this
+        contract's offline/credential-free constraint forbids. The check does not trust
+        its own regex by assertion — it first self-tests against the frozen pre-contract
+        unwired fixture (must reject) and this contract's own wired golden (must accept),
+        and refuses to run against the real file at all unless both self-tests pass.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-show-window-lookup/check-comp-route-wiring.mjs
+
+    - id: A10
+      description: pnpm lint passes with zero errors after all files in this contract are added.
+      command: pnpm lint

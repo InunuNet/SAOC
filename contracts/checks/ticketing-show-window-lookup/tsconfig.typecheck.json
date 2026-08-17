@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/admin-auth.ts",
+    "../../../lib/show-resolution.ts",
+    "../../../lib/show-window-lookup.ts",
+    "fixtures/show-window-lookup-typecheck.ts"
+  ],
+  "exclude": []
+}

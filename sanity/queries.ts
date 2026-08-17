@@ -143,6 +143,21 @@ export const allShowActivationQuery = defineQuery(`
   }
 `);
 
+// ticketing-show-window-lookup: every show document's activation flag AND date fields,
+// fed to resolveActiveShow() (lib/show-resolution.ts) + buildShowWindow()
+// (lib/show-window-lookup.ts). Additive alongside allShowActivationQuery (F1, still
+// consumed by checkout's resolveActiveShow() call, untouched) — this query exists
+// because that one omits startDate/endDate, which checkout never needed but this
+// lookup does.
+export const activeShowWindowQuery = defineQuery(`
+  *[_type == "show"]{
+    _id,
+    active,
+    startDate,
+    endDate
+  }
+`);
+
 export const ticketsPageQuery = defineQuery(`
   *[_type == "ticketsPage"][0]{
     title,

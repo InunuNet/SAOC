@@ -16,12 +16,12 @@ import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
  * `createOrderWithPosition()`, with no `deps` override — production always uses the real
  * Firestore default. See contracts/golden/ticketing-f8-comp-tickets/README.md.
  *
- * ticketing-show-window-lookup — `hasCapability()` now receives a REAL `lookupShowWindow`,
- * sourced from `resolveShowWindowLookup()` (lib/show-window-lookup.ts). Omitting `opts`
- * here (as this route did before this contract) silently refuses every per-show capability
- * grant regardless of what the token's `roles` claim actually holds — only an org-wide `'*'`
- * grant would ever work. See contracts/golden/ticketing-show-window-lookup/README.md for the
- * full decision record.
+ * ticketing-show-window-lookup (this contract) — `hasCapability()` now receives a REAL
+ * `lookupShowWindow`, sourced from `resolveShowWindowLookup()` (lib/show-window-lookup.ts).
+ * Omitting `opts` here (as this route did before this contract) silently refuses every
+ * per-show capability grant regardless of what the token's `roles` claim actually holds —
+ * only an org-wide `'*'` grant would ever work. See
+ * contracts/golden/ticketing-show-window-lookup/README.md for the full decision record.
  *
  * Body validation (showId/attendeeName/attendeeEmail/ticketType) is this route's own
  * responsibility, mirroring checkout's `isValidCheckoutBody` discipline
