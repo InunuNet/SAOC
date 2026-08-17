@@ -1,9 +1,49 @@
 # Athanor Issue Backlog
 
 ## Closure Candidates (needs sign-off)
-_(2026-08-16, repeated later same day) `execution/gh_closure_scan.py --format lines` still errors
-on the same `OVERNIGHT-PLAN-2026-07-30.md` missing-frontmatter bug (see Harness Upstream below)
-and returns zero candidates both runs today. No GitHub issue closures to surface this session._
+_(2026-08-17) `execution/gh_closure_scan.py --format lines` now fails with a DIFFERENT error than
+the 2026-08-16 runs: `ERROR: could not resolve --repo:` (empty value) instead of the
+missing-frontmatter error. This looks like a `gh`/repo-detection config issue rather than the
+known frontmatter bug — not yet triaged, see new TEMPLATE BUG item below. No candidates surfaced
+this session (script did not run to completion)._
+
+## Session 2026-08-17 — ticketing spec extended with buyer accounts (§8), foundation mission planned
+
+- [x] **Ticketing spec §8 (public buyer accounts + lost-ticket recovery) — DONE, commit
+  `2e81ca2`.** Added in response to Brad noticing the spec had no answer for a lost ticket. Key
+  decision: recovery uses a signed `recoveryToken` on the order (not the booking ref, which is
+  spoken aloud/printed) plus a rate-limited no-enumeration resend form; the optional
+  `buyers/{uid}` layer is additive only and grants zero admin capability (self-signup is still
+  open — see `learned.md` "Ticketing foundation spec — §8 buyer accounts"). Old §8–§10 renumbered
+  to §9–§11. Brad approved without a thorough read, standing condition: "we're dealing with
+  people's data here, so security is top priority all the time."
+- [x] **Mission `ticketing-foundation` planned and committed — `aff6c2f`.** 14 features, 3
+  milestones, `.agent/memory/project/missions/2026-08-17-ticketing-foundation.md`, status
+  `pending` (not started). Old zero-milestone stub `2026-08-17-ticket-flow-end-to-end.md` closed.
+  Six decisions recorded in the mission body: door-staff gets `lookup-booking-ref` but not
+  `search-buyers`/`export-buyer-data`; comps bypass PayFast entirely; Resend is an external
+  blocker off the critical path; demo prices are marker-tagged placeholders; the `show` schema
+  collision (F1) is resolved by extending the archive type rather than adding a second name; one
+  ticket type for the first run.
+- [ ] **[F1 prerequisite] Size the `show` archive-document impact before extending the schema.**
+  @architect must count published `show` documents in Sanity and confirm no existing query/Studio
+  view breaks when sales fields (`edition`, `startDate`, `endDate`, `venue`, `salesOpen`,
+  `active`) are added to the archive type. Flagged explicitly in the mission F1 brief.
+- [ ] **[F10 flag] `DEFAULT_SITE_URL = 'https://saoc.co.za'` in the checkout route will become
+  stale-in-a-new-direction once the nameserver switch happens.** Its comment currently says that
+  host resolves to the old Joomla site — true today, false after cutover. Handle inside the
+  single authorised ITN re-pin ceremony (see the go-live PayFast item below), not as a second
+  reopening of that route.
+- [ ] **[F11 note] Resend email work does not need to wait on DNS.** `lib/email.ts` is already
+  complete (client, `sendEmail({to, subject, react})`, from-address via `RESEND_FROM_ADDRESS`) —
+  no API key, no ticket caller yet. Resend's `delivered@resend.dev` / `bounced@resend.dev` test
+  recipients let F11 be built and proven, including hard-bounce handling, with no verified domain.
+- [ ] **[domain/DNS sequencing, NEW 2026-08-17] saoc.co.za has transferred to SAOC control;
+  nameservers deliberately still point at the OLD cPanel host** (mailboxes get pulled first, then
+  nameservers switch). **Resend DNS records must be added only AFTER the nameserver switch** — add
+  them now and they are lost silently with no code change to blame when email stops sending.
+  Recommended: verify the subdomain `tickets.saoc.co.za` (not the root, so records can't disturb
+  `@saoc.co.za` mail routing mid-migration), European region.
 
 ## Session 2026-08-16 (afternoon) — P1 weak-assertion audit complete, no live vulnerability
 
@@ -239,6 +279,7 @@ Research complete: `documents/hosting-research-2026-06-20.md`. Key findings: (1)
 - [ ] **[athanor-upstream] sync-autonomy v2** — `set-autonomy LEVEL=high` should propagate to `.claude/settings.json` permissionMode. Filed 2026-06-16.
 - [ ] **[athanor-upstream] mission.py slug fix** — cross-date slug scan fix needs upstreaming via `make update-template`. Filed 2026-06-16.
 - [ ] TEMPLATE BUG: `execution/gh_closure_scan.py` throws `ERROR: <file> has no YAML frontmatter` and returns zero candidates (silently, exit 0) if ANY file under `.agent/memory/project/missions/` lacks frontmatter — e.g. a plain planning note like `OVERNIGHT-PLAN-2026-07-30.md`. It should skip/warn on the one bad file and keep scanning the rest of the directory, not abort the whole scan. Found 2026-07-30 during mission close on `cms-activation-deploy`; user should run /report-bug.
+- [ ] TEMPLATE BUG (NEW 2026-08-17, different symptom than above): `execution/gh_closure_scan.py --format lines` now fails immediately with `ERROR: could not resolve --repo:` (empty value) — no missing-frontmatter message this time, script appears to not even reach the mission-scan step. Not yet triaged (repo-detection / `gh` config vs. a regression in the script itself); user should run /report-bug.
 
 ## Deferred (auto-tracked)
 - [ ] [dev 2026-06-18] Factory loop script needs error handling — Out of scope for this task _(priority: low, handoff: 20260618T075409-dev.json)_

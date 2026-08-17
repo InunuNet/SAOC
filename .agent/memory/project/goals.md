@@ -96,3 +96,21 @@ contracts that go red because the code improved. **New open finding, not yet exp
 Firestore `tickets` fixture-leak count is climbing session over session (5→12→17 docs) despite
 checks calling `withCleanup()` — root cause unmeasured, tracked in `backlog.md`. The PayFast
 sha256-pin lift (Brad's call) remains the single blocker on F6/go-live; untouched this session.
+
+### 2026-08-17 — ticketing spec extended (§8 buyer accounts), `ticketing-foundation` mission planned
+
+Brad flagged that a lost ticket is currently unrecoverable — nothing emails a ticket, no
+buyer-facing lookup exists. Spec extended with §8 (`docs/ticketing-system-foundation-spec.md`,
+commit `2e81ca2`): recovery via a signed `recoveryToken` on the order plus a rate-limited
+resend-my-tickets form, no account required; an optional `buyers/{uid}` layer adds newsletter
+consent + purchase history but grants zero admin capability (self-signup is still open). Brad
+approved the spec. New mission `ticketing-foundation` planned and committed (`aff6c2f`): 14
+features, 3 milestones, status `pending` — not yet started. The old zero-milestone
+`2026-08-17-ticket-flow-end-to-end.md` stub is closed. `ticketing-foundation` is now the ACTIVE
+mission (`active.json`, activated 2026-08-17T14:39Z); `admin-auth-hardening` is `paused` at 5/6
+with F6 (door-scanner proof, needs a human) outstanding — it is not blocking, and F6 is largely
+superseded by this mission's F12, which proves the same scan path against a real purchase.
+Note: `brain.py` still reports `admin-auth-hardening` as active and skipped its scratch purge on
+that basis — its detection disagrees with `active.json`, which is authoritative. See `backlog.md` "Session 2026-08-17" and `learned.md` "Ticketing foundation spec —
+§8 buyer accounts" for full detail, including the F1 schema-collision decision and the DNS/Resend
+sequencing note (nameservers still point at the old host; Resend DNS must wait for the switch).

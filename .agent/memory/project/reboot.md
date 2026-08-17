@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-08-17T11:58Z_
+_Generated: 2026-08-17T15:00Z_
 
 ## What happened last session
-Shipped 3 contracts: fixture-leak timeout fix (24/24), timeout-enforcement harness (8/8), door-scanner QR seeder (6/7, A5 environmental). Found declaration-vs-effect gap in contract.py timeout normalization; guards-outside-their-path pattern found 3x; PayFast ITN pin never actually blocked door scanner. Mission admin-auth-hardening stands 5/6, F6 pending human verification of scan->admit path.
+Extended ticketing spec with §8 public buyer accounts and lost-ticket recovery (recoveryToken, not booking ref; zero admin capability from buyers docs); Brad approved. Planned and committed ticketing-foundation mission (14 features/3 milestones, aff6c2f), closing the empty ticket-flow-end-to-end stub. gh_closure_scan now fails with a new --repo error, no closure candidates surfaced.

@@ -909,3 +909,49 @@ exercised and offline/aeroplane-mode behaviour is completely unknown. Two questi
 with Brad: whether his door-scanner screenshots were of the deployed host or `dev.saoc.co.za`,
 and what ticket `SAOC-2027-ZNYT37Z88MSH` ("ITN Test", 2026-08-15) is — an uncatalogued
 real-looking ticket, flagged and explicitly barred from allowlisting or deletion by any agent.
+
+## Ticketing foundation spec — §8 buyer accounts (2026-08-17)
+
+1. **A spec can be complete on its own terms and still miss a whole actor.** The
+   ~1000-line `docs/ticketing-system-foundation-spec.md` covered the data model, the staff role
+   system, the door, and offline strategy thoroughly — and had nothing at all about the person
+   buying the ticket. It was written entirely from the operator's side; a lost ticket was
+   unrecoverable by design, not by oversight. Brad found the gap by asking an ordinary question
+   ("what happens if someone loses their ticket?"), not by any review pass. When a spec covers a
+   system thoroughly, check whether it has covered every *party* to that system, not just every
+   component.
+2. **A pre-existing schema name is a collision the spec author will not see.** §4.1 said
+   "introduce a Sanity `show` document type" — but `sanity/schemas/documents/show.ts` already
+   existed as the past-show *archive* type (year, entries, awards, gallery, results PDF). Nobody
+   noticed until the name was about to be reused for the sellable-show entity. Before a spec
+   proposes a new named entity, grep for the name first; a near-homonym already in a schema is a
+   permanent tax on every future session's comprehension. Resolved by extending the existing
+   `show` type rather than introducing a second name (mission F1, evidence-based decision left to
+   @architect).
+3. **"Do we need this for the first run?" is worth asking of every foundational item, but the
+   answer has to come from the code, not the spec's description of the code.** Brad asked why the
+   first run needs multiple ticket types. Multiple types already exist and already work in
+   `ticketType.ts` / `seed-ticketing.ts` / the checkout route, so narrowing to one for the first
+   run removes seeded *data*, not machinery, and costs nothing to reverse. The answer was only
+   trustworthy because those three files were read before answering — a scope question answered
+   from memory of the spec would have been a guess.
+4. **Lost-ticket recovery must not be gated behind an account (§8.4 decision).** The recovery
+   mechanism is a signed high-entropy `recoveryToken` on the order, deliberately NOT the booking
+   ref (spoken aloud at the door, printed on tickets, therefore not a secret) — plus a
+   rate-limited resend-my-tickets form with no enumeration oracle (identical response whether the
+   email matched an order or not). The optional `buyers/{uid}` layer is additive (newsletter
+   consent, purchase history via verified-email claim of guest orders), never load-bearing for
+   recovery.
+5. **A `buyers` document must grant zero admin capability, and self-signup is still open on this
+   project.** Since self-registered Firebase Auth accounts can create a `buyers` doc for
+   themselves, no public route may consult `lib/admin-roles.ts` off a `buyers` document, and no
+   admin route may key off `buyers` document existence at all. The mission (F5) requires this
+   proven by a real HTTP round trip (self-register → create `buyers` doc → hit `/api/admin/*` →
+   must get the same `403` as an unauthenticated request), not a source grep — same lesson as the
+   P1 weak-assertion audit above, applied before the bug can be written rather than after.
+
+**Mission state:** `ticketing-foundation` planned and committed (`aff6c2f`), 14 features / 3
+milestones, status `pending` (not yet started). The prior `2026-08-17-ticket-flow-end-to-end.md`
+stub is closed — it had zero milestones defined, which is why `mission.py resume` found nothing
+to resume from it. `admin-auth-hardening` remains the active in-progress mission at 5/6; this new
+mission is queued behind it, not a replacement.
