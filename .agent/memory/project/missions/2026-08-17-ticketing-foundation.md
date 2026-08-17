@@ -7,16 +7,16 @@ goal: 'Build the scalable ticketing foundation from docs/ticketing-system-founda
   admin capability, and an end-to-end human-proven purchase-to-door-scan flow'
 created_at: '2026-08-17T14:39:52.125721+00:00'
 started_at: '2026-08-17T16:35:26.642255+00:00'
-last_active_at: '2026-08-17T21:46:01.944160+00:00'
+last_active_at: '2026-08-17T21:52:34.547085+00:00'
 status: in_progress
 cost_estimate:
   features: 14
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: M2
-  feature: F11
-  ts: '2026-08-17T21:46:01.944160+00:00'
+  milestone: M3
+  feature: F14
+  ts: '2026-08-17T21:52:34.547085+00:00'
 features:
 - id: F1
   title: 'Resolve `show` document collision: extend archive type for sales fields,
@@ -152,7 +152,7 @@ features:
     audit trail alone is sufficient. **Done:** a real order exists on the deployed
     host, a real scan admits one ticket and refuses a second, `checkedInAt` is written,
     audit trail entry is created, and the door connectivity observation is recorded.'
-  status: pending
+  status: blocked
   milestone: M2
 - id: F13
   title: Lee-Ann granted real per-show `manager` role, verified by HTTP round trips
@@ -171,7 +171,7 @@ features:
     Lee-Ann''s account exists in Firebase, she holds `admin:true` and `roles: {nationalShow:
     [''manager'']}`, she can perform manager-level actions on the 2027 show, and she
     is refused access to a different show, with both HTTP outcomes verified.'
-  status: pending
+  status: blocked
   milestone: M3
 - id: F14
   title: Lost-ticket recovery proven end-to-end by a human — test buyer recovers via
@@ -189,7 +189,7 @@ features:
     and re-send from the recovery page succeeds. This closes the gap that existed
     in the prior mission — loss of a ticket email is now recoverable by the buyer
     without contacting support.
-  status: pending
+  status: blocked
   milestone: M3
 milestones:
 - id: M1
@@ -223,6 +223,9 @@ milestones:
   - F14
   status: pending
 ---
+
+
+
 
 
 

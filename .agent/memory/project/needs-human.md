@@ -515,3 +515,106 @@ the F7 capability-enforcement change to a real door device. F13 is the natural p
 first get created and proven end-to-end, which suggests enforcement should not precede it — but
 that sequencing decision is explicitly left for Brad, not self-assigned to F13. Full reasoning:
 `contracts/golden/ticketing-f7-checkin-audit/README.md`, "Judgement call 3."
+
+## Ticketing foundation F11 — checkout never creates an `orders` document; F10's ITN handler can never find one for a real purchase (2026-08-17, @architect via F11 contract)
+
+Found while designing F11's contract (QR generation + confirmation email content), tracing the
+real caller chain, not previously written down anywhere: `app/api/tickets/checkout/route.ts`'s
+`reserveTicket()` writes directly to the `tickets` collection (`transaction.create(tickets.doc(bookingRef),
+{...})`) and never calls `createOrderWithPosition()` (`lib/orders.ts`, F2/F8's shared primitive) or
+writes anything to the `orders` collection. `docs/ticketing-system-foundation-spec.md` lines
+177/251 both assert "the checkout route becomes order-aware (§4.2)" as if this were already true —
+it is not, verified against the actual current source (`grep -c createOrderWithPosition
+app/api/tickets/checkout/route.ts` → `0`).
+
+**Consequence, traced precisely:** F10's `markOrderAndPositionPaidByPaymentId()` resolves an order
+by querying `orders.where('m_payment_id', '==', ...)`. Since checkout never creates that document,
+the query is always empty for a real reservation, the function returns `{ committed: false, reason:
+'order-not-found' }`, and the pinned ITN route never reaches its `deliverConfirmationEmailAfterCommit(...)`
+call. **`sendConfirmationEmail()` (F10/F11) is never invoked for a real purchase today, regardless
+of how correctly F11 implements it.** The same gap is also why every real order's `recoveryToken`
+stays `null` forever — the order document that would hold it doesn't exist.
+
+**Who notices:** F12 (human purchase-and-scan proof) will fail at "receives the confirmation
+email" the moment someone tries it for real, with no contract gate able to catch it first (F11's
+own checks are offline/fixture-only per its dispatch scope and correctly do not touch checkout).
+
+**Why this is not F11's fix:** `app/api/tickets/checkout/route.ts` is not the sha256-pinned file,
+so nothing here is blocked by the re-pin ceremony — but wiring it to create an `orders` document is
+an order-of-magnitude larger change (the whole reservation transaction's write shape, its
+idempotency-replay branch, its interaction with `lib/data/tickets.ts`'s capacity counting) than
+"QR generation + confirmation email content," and no numbered feature in the mission currently
+names it as in scope. Same class of gap as the roles-migration and `ShowWindowLookup` blockers
+above: known, load-bearing, not self-assigned to an existing F-number. **Needs Brad (or whoever
+plans the mission next) to either fold "wire checkout to createOrderWithPosition" into an existing
+feature (F12 is the natural candidate, since it's the first feature that needs a real order to
+exist) or add a new F-item before F12 is attempted for real.** Full reasoning:
+`contracts/golden/ticketing-f11-qr-confirmation-email/README.md`, "Blocker this contract surfaces
+but does not fix."
+
+**Status (2026-08-17, F11 closeout):** F11 has now shipped correctly (QR generation +
+confirmation email content, gate 9/9 twice, @qa PASS) and is waiting behind this exact blocker —
+`sendConfirmationEmail()` is fully built and correct but remains unreachable from any real ITN
+until checkout is wired to `createOrderWithPosition()`. F12 (human purchase-and-scan proof) will
+hit this the moment it is attempted for real. Mission `ticketing-foundation` has no remaining
+autonomous feature work in M2/M3 — F12, F13, F14 all require human action (see mission file,
+features status `pending`) and the mission is now blocked on Brad.
+
+---
+
+# F12 / F13 / F14 — operator runbook (written 2026-08-18, ticketing-foundation)
+
+All code these three depend on is shipped and gated. What remains genuinely needs a human:
+a real card payment, a physical scanner, and a decision only Brad can make. Nothing below can
+be faked by an agent, and no agent should try.
+
+## Prerequisite for all three — run once
+
+```
+npx tsx scripts/admin-migrate-roles.ts            # dry-run first, ALWAYS
+npx tsx scripts/admin-migrate-roles.ts --apply    # Brad only
+```
+Today **zero accounts hold a `roles` claim**. Until this runs, every per-show grant refuses,
+so F13 cannot pass and any capability-gated surface refuses everyone. The production
+`ShowWindowLookup` now exists (commit 699b227), so the moment this migration runs, per-show
+grants resolve properly.
+
+## F12 — purchase-and-scan proof on the deployed host
+
+1. Seed the fictional show (never touches the real 2027 show):
+   `npx tsx scripts/seed-fictional-test-show.ts` then `--apply`.
+2. Make it the sole active show — **this briefly deactivates the real 2027 show**:
+   `npx tsx scripts/swap-active-show.ts show-fictional-test` then `--apply`.
+3. Buy a ticket through the deployed site with a PayFast **sandbox** card.
+4. Confirm the confirmation email arrives with one QR per position and a recovery link.
+5. Scan the QR at `/admin` door check-in. Confirm admit, then confirm a second scan of the
+   same ticket is refused as already-checked-in.
+6. **Swap back — do not skip this:**
+   `npx tsx scripts/swap-active-show.ts show-19-2027 --apply`
+   Forgetting this leaves the real show inactive and the public site unable to sell.
+7. Observe and record venue door connectivity at The Hangar, Stellenbosch Flying Club.
+   This is the one step with no software substitute.
+8. Report artefacts afterwards: `npx tsx scripts/report-fictional-test-show-artifacts.ts`
+   (read-only; it enumerates test data, it cannot delete). Deletion is Brad's call alone.
+
+**Deploy-transition trap:** any `reserved` position written by the OLD checkout and paid
+after commit 056e536 deploys has no order for the ITN to find. Check for in-flight reserved
+positions before deploying, or accept that they will not commit.
+
+## F13 — Lee-Ann's per-show manager grant
+
+After the migration above:
+1. Grant the per-show `manager` role via the batch-grant tooling from F4.
+2. Verify by HTTP round trip that she can reach the manager-gated surface.
+3. **Run the negative control** — an account without the grant must be refused. A grant that
+   works but refuses nobody proves nothing.
+
+## F14 — lost-ticket recovery, end to end
+
+Using the F12 test buyer: request a resend from the recovery form, then follow the signed link
+from the email and confirm the tickets come back. The recovery token is a bearer credential —
+it belongs in the email and the URL, never in a log or a screenshot shared onward.
+
+## Standing constraint
+
+Never delete any Firestore or Sanity document. Deletion is Brad's decision alone.
