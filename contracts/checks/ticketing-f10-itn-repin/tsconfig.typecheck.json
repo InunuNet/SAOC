@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../app/api/tickets/itn/route.ts",
+    "../../../lib/orders.ts",
+    "../../../lib/confirmation-email.ts",
+    "../../../lib/payfast.ts",
+    "../../../types/index.ts",
+    "fixtures/itn-repin-typecheck.ts"
+  ],
+  "exclude": []
+}

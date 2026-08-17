@@ -46,5 +46,17 @@ export const ticketType = defineType({
       to: [{ type: 'show' }],
       validation: (Rule) => Rule.required(),
     }),
+    // F9 (ticketing-foundation): additive marker field. Optional/defaulted so the 5
+    // pre-existing published ticketType documents remain valid without a migration.
+    defineField({
+      name: 'demo',
+      title: 'Demo / Test Ticket Type',
+      type: 'boolean',
+      initialValue: false,
+      description:
+        'Marks this as test data — never real pricing. Excluded from the public /tickets ' +
+        'listing and identifiable in Firestore purchase records via its reserved slug. See ' +
+        'contracts/golden/ticketing-f9-demo-ticket/README.md.',
+    }),
   ],
 });

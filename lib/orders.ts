@@ -45,11 +45,40 @@ export interface CreateOrderPositionInput {
   gatewayPaymentId: string | null;
   m_payment_id: string | null;
   pf_payment_id: string | null;
+  /** F8 (ticketing-foundation) — the issuing staff member's email for a comp position,
+   *  threaded onto the written position as `compedBy: input.compedBy ?? null`. Additive:
+   *  omitting it (every pre-F8 call shape) still compiles and still writes `null`. */
+  compedBy?: string | null;
 }
 
 export interface CreateOrderPositionResult {
   orderId: string;
   ticketId: string;
+}
+
+// ---------------------------------------------------------------------------------------------
+// F8 (ticketing-foundation) — deliberately narrow structural interfaces matching only the
+// surface createOrderWithPosition() actually calls, so the real `Firestore`/`Transaction`
+// classes from firebase-admin already satisfy them with zero adapter code. This is what makes
+// A4's in-memory fake-store proof possible without ever touching live Firestore — see
+// contracts/golden/ticketing-f8-comp-tickets/README.md.
+// ---------------------------------------------------------------------------------------------
+
+export interface OrdersDocRefLike {
+  id: string;
+}
+
+export interface OrdersCollectionLike {
+  doc(id?: string): OrdersDocRefLike;
+}
+
+export interface OrdersTransactionLike {
+  set(ref: OrdersDocRefLike, data: Record<string, unknown>): unknown;
+}
+
+export interface OrdersFirestoreLike {
+  collection(name: string): OrdersCollectionLike;
+  runTransaction<T>(fn: (transaction: OrdersTransactionLike) => Promise<T> | T): Promise<T>;
 }
 
 /**
@@ -72,11 +101,17 @@ export interface CreateOrderPositionResult {
  * and the position so every live `Ticket`-typed consumer keeps working unmodified until
  * F10's backfill makes the order the sole source of truth. `gateway`/`gatewayPaymentId`
  * are genuinely new, order-only concepts and are NOT duplicated onto the position.
+ *
+ * `deps.db` (F8) — optional, defaults to the real `getFirestore(initAdmin())` when omitted,
+ * so every existing call shape (no second argument) keeps compiling and behaving identically.
+ * Passing an `OrdersFirestoreLike`-shaped fake store is what lets F8's A4 prove the
+ * order/position pair-write is genuinely atomic without ever touching live Firestore.
  */
 export async function createOrderWithPosition(
-  input: CreateOrderPositionInput
+  input: CreateOrderPositionInput,
+  deps: { db?: OrdersFirestoreLike } = {}
 ): Promise<CreateOrderPositionResult> {
-  const db = getFirestore(initAdmin());
+  const db: OrdersFirestoreLike = deps.db ?? getFirestore(initAdmin());
   const orders = db.collection(ORDERS_COLLECTION);
   const tickets = db.collection(TICKETS_COLLECTION);
 
@@ -114,9 +149,175 @@ export async function createOrderWithPosition(
       m_payment_id: input.m_payment_id,
       pf_payment_id: input.pf_payment_id,
       orderId,
+      compedBy: input.compedBy ?? null,
     };
     transaction.set(positionRef, position);
   });
 
   return { orderId, ticketId: positionRef.id };
+}
+
+// ---------------------------------------------------------------------------------------------
+// F10 (ticketing-foundation) — the ITN update path: resolve an existing 'reserved' order/
+// position pair by m_payment_id and flip both to 'paid' atomically. Deliberately SIBLING
+// interfaces to the F8 ones above, not a widening of them — see
+// contracts/golden/ticketing-f10-itn-repin/README.md "Why two interface families, not one
+// widened one" for why OrdersTransactionLike/OrdersFirestoreLike/OrdersCollectionLike (F8,
+// already shipped) are left untouched rather than extended in place.
+// ---------------------------------------------------------------------------------------------
+
+export interface OrdersDocSnapshotLike {
+  readonly id: string;
+  exists: boolean;
+  data(): Record<string, unknown> | undefined;
+}
+
+export interface OrdersQuerySnapshotLike {
+  empty: boolean;
+  docs: OrdersDocSnapshotLike[];
+}
+
+export interface OrdersLimitedQueryLike {
+  get(): Promise<OrdersQuerySnapshotLike>;
+}
+
+export interface OrdersQueryLike {
+  limit(n: number): OrdersLimitedQueryLike;
+  get(): Promise<OrdersQuerySnapshotLike>;
+}
+
+export interface OrdersCollectionRwLike extends OrdersCollectionLike {
+  where(field: string, op: '==', value: unknown): OrdersQueryLike;
+}
+
+export interface OrdersTransactionRwLike extends OrdersTransactionLike {
+  get(ref: OrdersDocRefLike): Promise<OrdersDocSnapshotLike>;
+  update(ref: OrdersDocRefLike, data: Record<string, unknown>): unknown;
+}
+
+export interface OrdersFirestoreRwLike {
+  collection(name: string): OrdersCollectionRwLike;
+  runTransaction<T>(fn: (transaction: OrdersTransactionRwLike) => Promise<T> | T): Promise<T>;
+}
+
+export type FindReservedOrderResult =
+  | { status: 'not-found' }
+  | { status: 'already-settled'; orderStatus: OrderStatus }
+  | { status: 'reserved'; amount: number };
+
+/**
+ * Read-only, NOT transactional — an optimisation and amount-check path only, mirroring the
+ * pre-F10 route's own initial ticket lookup. The authoritative status check and write happen
+ * inside markOrderAndPositionPaidByPaymentId's own transaction below; this function's result
+ * can be stale under concurrent ITN delivery and must never be relied on for the write
+ * decision itself.
+ */
+export async function findReservedOrderByPaymentId(
+  mPaymentId: string,
+  deps: { db?: OrdersFirestoreRwLike } = {}
+): Promise<FindReservedOrderResult> {
+  const db: OrdersFirestoreRwLike = deps.db ?? (getFirestore(initAdmin()) as unknown as OrdersFirestoreRwLike);
+  const orders = db.collection(ORDERS_COLLECTION);
+  const snapshot = await orders.where('m_payment_id', '==', mPaymentId).limit(1).get();
+
+  if (snapshot.empty) {
+    return { status: 'not-found' };
+  }
+
+  const order = snapshot.docs[0].data() as Partial<Order> | undefined;
+  const orderStatus = order?.status;
+  if (orderStatus !== 'reserved') {
+    return { status: 'already-settled', orderStatus: orderStatus as OrderStatus };
+  }
+
+  return { status: 'reserved', amount: Number(order?.amount) };
+}
+
+export type MarkOrderPaidOutcome =
+  | {
+      committed: true;
+      orderId: string;
+      buyerEmail: string;
+      buyerName: string;
+      recoveryToken: string | null;
+      position: { bookingRef: string; attendeeName: string; ticketType: TicketType };
+    }
+  | { committed: false; reason: 'order-not-found' | 'order-not-reserved' | 'position-not-found' };
+
+export interface MarkOrderAndPositionPaidInput {
+  m_payment_id: string;
+  gatewayPaymentId: string | null;
+  now: Timestamp;
+}
+
+/**
+ * Flips an existing 'reserved' order and its one child position to 'paid' together, inside a
+ * single Firestore transaction. Order and position refs are resolved by query BEFORE the
+ * transaction (ref-resolution only, mirroring the pre-F10 route's own pattern); the
+ * authoritative re-read, idempotency check, and write all happen inside the transaction, so
+ * whichever concurrent/duplicate delivery commits first wins and every other one observes the
+ * now-'paid' order and no-ops. See the golden README's "Idempotency" section.
+ *
+ * `deps.db` — optional, defaults to the real `getFirestore(initAdmin())` when omitted, same
+ * convention as `createOrderWithPosition`'s `deps.db` above.
+ */
+export async function markOrderAndPositionPaidByPaymentId(
+  input: MarkOrderAndPositionPaidInput,
+  deps: { db?: OrdersFirestoreRwLike } = {}
+): Promise<MarkOrderPaidOutcome> {
+  const db: OrdersFirestoreRwLike = deps.db ?? (getFirestore(initAdmin()) as unknown as OrdersFirestoreRwLike);
+  const orders = db.collection(ORDERS_COLLECTION);
+  const tickets = db.collection(TICKETS_COLLECTION);
+
+  const orderSnapshot = await orders.where('m_payment_id', '==', input.m_payment_id).limit(1).get();
+  if (orderSnapshot.empty) {
+    return { committed: false, reason: 'order-not-found' };
+  }
+  const orderRef = orders.doc(orderSnapshot.docs[0].id);
+
+  const positionSnapshot = await tickets.where('orderId', '==', orderRef.id).limit(1).get();
+
+  return db.runTransaction(async (transaction) => {
+    const orderDoc = await transaction.get(orderRef);
+    if (!orderDoc.exists) {
+      return { committed: false, reason: 'order-not-found' };
+    }
+    const order = orderDoc.data() as Partial<Order> | undefined;
+    if (order?.status !== 'reserved') {
+      return { committed: false, reason: 'order-not-reserved' };
+    }
+
+    if (positionSnapshot.empty) {
+      return { committed: false, reason: 'position-not-found' };
+    }
+    const positionRef = tickets.doc(positionSnapshot.docs[0].id);
+    const positionDoc = await transaction.get(positionRef);
+    if (!positionDoc.exists) {
+      return { committed: false, reason: 'position-not-found' };
+    }
+    const position = positionDoc.data() as Partial<Ticket> | undefined;
+
+    transaction.update(orderRef, {
+      status: 'paid',
+      gatewayPaymentId: input.gatewayPaymentId,
+      purchasedAt: input.now,
+    });
+    transaction.update(positionRef, {
+      status: 'paid',
+      purchasedAt: input.now,
+    });
+
+    return {
+      committed: true,
+      orderId: orderRef.id,
+      buyerEmail: order?.buyerEmail ?? '',
+      buyerName: order?.buyerName ?? '',
+      recoveryToken: (order?.recoveryToken as string | null | undefined) ?? null,
+      position: {
+        bookingRef: (position?.bookingRef as string | undefined) ?? positionRef.id,
+        attendeeName: (position?.attendeeName as string | undefined) ?? '',
+        ticketType: position?.ticketType as TicketType,
+      },
+    };
+  });
 }

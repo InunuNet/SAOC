@@ -1,0 +1,230 @@
+schema: athanor.contract/v1
+slug: ticketing-f8-comp-tickets
+goal: >-
+  Mission ticketing-foundation F8 (spec §4.5). Add a comp-ticket construction primitive
+  and extend F2's already-shipped lib/orders.ts (createOrderWithPosition) with an
+  injectable Firestore dependency and a compedBy field, so that POST
+  /api/admin/tickets/comp (dev-built, not a golden) can issue free, PayFast-bypassing
+  tickets that are gated on the real issue-comp capability, written as an atomic
+  order/position pair, unambiguously distinguishable from revenue on reconciliation, and
+  carry zero authorization meaning of their own. The load-bearing properties -- capability
+  genuinely required (not "any admin"), pair-write atomicity proven against an in-memory
+  fake store, comp-vs-revenue shape, staff attribution with injected time, and zero
+  privilege escalation -- are all proven behaviourally against real exported functions,
+  never by source-grep, and never against live Firestore. Full decision record, every
+  defeating mutation, and what this contract cannot prove offline:
+  contracts/golden/ticketing-f8-comp-tickets/README.md
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F8
+    name: >-
+      Comp-ticket construction and a shared-primitive extension, plus the capability
+      gate and pair-write atomicity proofs the mission brief calls out (spec §4.5).
+      Builds on F2's already-shipped lib/orders.ts (createOrderWithPosition -- that
+      file's own docstring already names "F8 comp tickets" as an intended caller)
+      rather than duplicating it.
+
+      (1) types/index.ts: add `compedBy?: string | null;` to the existing Ticket
+      interface. Optional -- a pre-F8-shaped Ticket literal that never mentions the
+      field must still compile (A2 proves this).
+
+      (2) lib/orders.ts (extended, additive only -- no existing call site's behaviour
+      changes, and F2 shipped the function unused so there are none yet): add
+      `compedBy?: string | null;` to CreateOrderPositionInput, threaded onto the
+      written position as `compedBy: input.compedBy ?? null`. Add two new exported
+      structural interfaces, `OrdersFirestoreLike` and `OrdersTransactionLike`,
+      matching only the surface createOrderWithPosition actually calls
+      (`collection(name).doc(id?): {id: string}`, `runTransaction(fn)`, and the
+      transaction's `set(ref, data)`) -- deliberately narrow so the REAL `Firestore`
+      and `Transaction` classes already satisfy them structurally with zero adapter
+      code, the same trick F1's ShowWindowLookup and F4's injected-time pattern use.
+      Add an optional second parameter to `createOrderWithPosition`: `deps: { db?:
+      OrdersFirestoreLike } = {}`, defaulting to `getFirestore(initAdmin())` when
+      omitted -- this is what makes A4's in-memory fake-store proof possible without
+      ever touching live Firestore, and it is the ONLY behavioural change to F2's
+      function; every existing call shape keeps compiling and behaving identically.
+
+      (3) lib/comp-tickets.ts (new): `export const COMP_GATEWAY = 'comp';`. `export
+      interface BuildCompOrderInput { showId: string; attendeeName: string;
+      attendeeEmail: string; ticketType: TicketType; issuedByEmail: string;
+      bookingRef: string; orderId?: string; now: Date; }` -- `bookingRef` is
+      caller-generated via the existing `generateBookingRef()` (lib/booking-ref.ts),
+      never minted inside this pure module, matching how every other construction
+      module in this mission (buildBuyerDocument, mintRecoveryToken) takes its
+      identifiers as input rather than generating them. `export type
+      CompOrderPositionInput = CreateOrderPositionInput & { compedBy: string };`.
+      `export function buildCompOrderInput(input: BuildCompOrderInput):
+      CompOrderPositionInput` -- returns `{ orderId: input.orderId, bookingRef:
+      input.bookingRef, showId: input.showId, buyerName: input.attendeeName,
+      buyerEmail: input.attendeeEmail, attendeeName: input.attendeeName,
+      attendeeEmail: input.attendeeEmail, ticketType: input.ticketType, amount: 0,
+      orderStatus: 'paid', positionStatus: 'paid', idempotencyKey: `comp:${bookingRef}`,
+      expiresAt: null, purchasedAt: Timestamp.fromDate(input.now), gateway:
+      COMP_GATEWAY, gatewayPaymentId: null, m_payment_id: null, pf_payment_id: null,
+      compedBy: input.issuedByEmail }`. Must never call `Date.now()` or `new Date()`
+      internally -- `now` is always the caller-supplied value (A6 proves this
+      behaviourally, mirroring F4's ShowWindowLookup / F6's mint/verify injected-time
+      pattern). `buyerName`/`buyerEmail` are set to the attendee's own name/email -- a
+      comp has no separate "buyer" concept distinct from the person being admitted
+      (see golden README judgement call).
+
+      (4) app/api/admin/tickets/comp/route.ts (new -- NOT a golden, dev builds this
+      from the shape above): `POST` handler, gated on `getAdminSession()` (401/403 on
+      session failure, identical shape to the existing checkin route) THEN
+      `hasCapability(decoded, showId, 'issue-comp', opts)` (403 on capability failure
+      -- a missing capability is checked as a distinct step from session validity, not
+      collapsed into it). On success: `buildCompOrderInput(...)` then
+      `createOrderWithPosition(built)` (no `deps` override -- production always uses
+      the real Firestore default). Request-body validation
+      (showId/attendeeName/attendeeEmail/ticketType) is dev's responsibility, mirroring
+      checkout's existing `isValidCheckoutBody` discipline; it is not separately
+      contract-tested beyond A8's fail-closed HTTP round trip. The ITN route
+      (app/api/tickets/itn/route.ts) is not imported, called, or modified by any of
+      the above -- amount-0 never enters it, exactly as spec §4.5 and the mission's
+      Decision 2 require.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-f8-comp-tickets/README.md
+  - contracts/checks/ticketing-f8-comp-tickets/tsconfig.typecheck.json
+  - contracts/checks/ticketing-f8-comp-tickets/fixtures/comp-tickets-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        lib/comp-tickets.ts is added and lib/orders.ts / types/index.ts are extended.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof of the new and extended exported shapes -- not a grep,
+        real assignments and calls that either compile or don't. Includes:
+        buildCompOrderInput()'s return value assignable to CreateOrderPositionInput;
+        a pre-F8-shaped CreateOrderPositionInput literal that omits compedBy (must
+        still compile); createOrderWithPosition() called with no second argument at
+        all (F2's original call shape, must still compile) and separately with an
+        OrdersFirestoreLike-shaped fake object injected as deps.db; and a pre-F8-shaped
+        Ticket literal that omits compedBy alongside one that sets it to a real string
+        and one that sets it to null.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-f8-comp-tickets/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        The capability requirement is genuinely required, not incidentally satisfied
+        (mission brief, third warning about this exact defect shape after F4's A3 and
+        F5's A3): every case is a real call to hasCapability()/
+        resolveRoleCapabilitiesForShow() (lib/admin-auth.ts, F4) for the 'issue-comp'
+        capability specifically. Cases: (1) a door-staff token (scan-checkin,
+        lookup-booking-ref only) is refused issue-comp, and the SAME token IS granted
+        scan-checkin (not-vacuous positive control on the same harness); (2) a manager
+        token scoped to the show IS granted issue-comp; (3) an org-wide owner token IS
+        granted issue-comp, including for a show id with no date-window lookup entry at
+        all (org-wide grants are never date-limited); (4) THE critical case -- a token
+        with admin:true and NO roles claim whatsoever is refused issue-comp, catching
+        the exact "any admin can comp" mutation named in the brief (a mutant that
+        checks isAdminToken(decoded) alone, without consulting the role-derived
+        capability set, would pass every other case here unchanged but grant this one
+        incorrectly); (5) a manager role held for a DIFFERENT show than the one being
+        requested is refused (per-show scoping is real, not "any capability held
+        anywhere"); (6) a manager role held for the correct show but outside that
+        show's date window (a closed/lapsed grant) is refused.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f8-comp-tickets/check-capability-required-for-comp.mjs
+
+    - id: A4
+      description: >-
+        The order and its position are written as an atomic pair (mission brief: "A
+        mutation that writes the order but not the positions -- or vice versa -- must
+        DIE"), proven against a FAKE, in-memory Firestore-shaped store -- never live
+        Firestore -- by calling the REAL createOrderWithPosition() with its new
+        injectable deps.db. The fake models Firestore's own documented
+        stage-then-commit-or-discard transaction contract. Cases: (1) success path --
+        both documents land in the store, correctly linked (position.orderId equals
+        the order's resolved id), with the comp-specific fields (gateway, amount,
+        status, compedBy) correct; (2) the position write is forced to fail --
+        NEITHER document is committed, not even the order whose write was issued
+        first, catching a mutation that performs two independent non-transactional
+        writes instead of one shared transaction; (3) negative control -- forcing the
+        ORDER write to fail instead also leaves both collections empty, proving the
+        rollback isn't an artefact of write ordering.
+      command: >-
+        npx tsx contracts/checks/ticketing-f8-comp-tickets/check-pair-write-atomicity.mjs
+
+    - id: A5
+      description: >-
+        A comp order is unambiguously distinguishable from a paid one on
+        reconciliation (mission brief: "a comp must never look like a payment that
+        failed to settle"). Proven against the real buildCompOrderInput():
+        gateway:'comp' as the sole reconciliation discriminator (never amount alone,
+        since a future genuinely-free real ticket tier could also be amount 0);
+        amount 0; status 'paid' on both order and position (a comp genuinely admits
+        immediately); every PayFast-specific identifier field
+        (gatewayPaymentId/pf_payment_id/m_payment_id) null; expiresAt null (never a
+        reservable-then-expiring hold); a deterministic, bookingRef-derived
+        idempotencyKey that never collides with checkout's forbidden sentinel values
+        and differs across two different comps.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f8-comp-tickets/check-comp-shape-not-revenue.mjs
+
+    - id: A6
+      description: >-
+        Comp issuance is attributable (mission brief: "which staff uid issued it, and
+        when"), with injected time, not Date.now() -- mirrors F4's ShowWindowLookup,
+        F5's builders, F6's mint/verify. Proven against the real
+        buildCompOrderInput(): compedBy records the issuing staff member's email
+        verbatim, and differs correctly when a different issuer is supplied;
+        purchasedAt is derived exclusively from the caller-supplied `now` -- two calls
+        with an IDENTICAL explicit `now`, several milliseconds apart in real
+        wall-clock time, produce IDENTICAL purchasedAt values (a Date.now()-reading
+        mutation would make them disagree), while two calls with genuinely different
+        `now` values produce different purchasedAt values (proving the equality above
+        isn't because `now` is ignored entirely).
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f8-comp-tickets/check-attribution-injected-time.mjs
+
+    - id: A7
+      description: >-
+        Zero privilege escalation (mission brief: "holding or issuing a comp ticket
+        must never grant a capability"), mirroring F6's A8 and F5's A3/A4 against the
+        real hasCapability()/resolveRoleCapabilitiesForShow(). Cases: (1) an identity
+        shaped like the comp's attendee (no admin/roles claim of their own) resolves
+        to the empty capability set across all seven capabilities; (2) an identity
+        whose email matches the position's compedBy field, but which itself carries no
+        admin/roles claim, is likewise refused every capability -- proving the
+        compedBy string is inert data, never itself consulted by the authorization
+        decision; (3) negative control -- the identical harness, given a genuinely
+        admin+owner-role-shaped token, IS granted every capability, proving (1)/(2)
+        aren't vacuous refusals from a broken hasCapability().
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f8-comp-tickets/check-zero-privilege-escalation.mjs
+
+    - id: A8
+      description: >-
+        The automated, gate-runnable half of the auth round trip for POST
+        /api/admin/tickets/comp: a real Next.js server is started on an ephemeral
+        port with every FIREBASE_ADMIN_* and NEXT_PUBLIC_FIREBASE_* variable
+        explicitly scrubbed from its environment (self-verified against the real
+        loadEnvConfig() before the server starts, same "(0)" pattern as F5's A5).
+        No session cookie at all refuses with 401; a syntactically-plausible but
+        cryptographically worthless session cookie also refuses (401 or 403, never
+        200, never 500); the refusal body is the route's real JSON error shape, not a
+        generic framework error page. Both cases are refused BEFORE the route can
+        reach createOrderWithPosition(), so this never touches Firestore. See the
+        golden README for exactly what this does and does NOT prove, and which
+        capability-specific step is deferred to a human-run manual round trip against
+        a live Firebase project (mirroring F5's own deferred step).
+      timeout_seconds: 220
+      command: bash contracts/checks/ticketing-f8-comp-tickets/check-http-comp-fails-closed.sh
+
+    - id: A9
+      description: >-
+        pnpm lint passes with zero errors after lib/comp-tickets.ts is added and
+        lib/orders.ts / types/index.ts / app/api/admin/tickets/comp/route.ts are
+        added or extended.
+      command: pnpm lint

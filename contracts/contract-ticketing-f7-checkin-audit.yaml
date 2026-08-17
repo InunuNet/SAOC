@@ -1,0 +1,283 @@
+schema: athanor.contract/v1
+slug: ticketing-f7-checkin-audit
+goal: >-
+  Mission ticketing-foundation F7 (spec §7.3). Add a `checkinAttempts` audit-trail shape and
+  the pure, offline-testable decision/construction logic that produces one append-only record
+  for EVERY scan outcome -- admits and every refusal reason alike, including two outcomes the
+  spec's literal §7.3 enum omits but the mission brief demands (a malformed/missing booking
+  reference, and a scan refused for lacking the `scan-checkin` capability). The load-bearing
+  properties -- every outcome writes exactly one record with the right fields, the write path
+  can express no update or delete, a failed audit write never blocks a genuine admission and is
+  logged loudly instead of swallowed, a checkinAttempts record carries zero authorization
+  meaning, and no record can ever carry a raw QR payload or a signed token -- are all proven
+  behaviourally against real exported functions and a fabricated in-memory store, never a
+  source-grep and never live Firestore. Full decision record, every defeating mutation, and what
+  this contract cannot prove offline: contracts/golden/ticketing-f7-checkin-audit/README.md
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F7
+    name: >-
+      One new pure module, `lib/checkin-audit.ts` -- no Firestore, no network, no
+      Date.now()/new Date() call anywhere in the file -- mirroring the construction-module
+      pattern F5's lib/buyers.ts and F6's lib/recovery-token.ts already established. It ships
+      the record shape, the construction rules, the append-only write contract, and the loud
+      non-blocking failure path. Wiring it into `app/api/admin/checkin/route.ts` and
+      `lib/checkin.ts` is @dev's job per the integration notes below; a thin Firestore adapter
+      implementing the store interface via `.add()` only is the ONLY Firestore-touching code
+      this feature introduces, and it is exempt from this contract's offline assertions for the
+      same reason F5's live HTTP round trip was -- see golden README "What this contract does
+      NOT prove."
+
+      `export const CHECKIN_ATTEMPTS_COLLECTION = 'checkinAttempts';`
+
+      `export type CheckinAttemptOutcome = 'admit' | 'not-found' | 'wrong-show' | 'unpaid' |
+      'already-checked-in' | 'malformed' | 'not-authorized' | 'infra-error';` -- a deliberate,
+      documented widening of spec §7.3's literal five-member enum (`admit`/`not-found`/
+      `wrong-show`/`unpaid`/`already-checked-in`) by THREE members, matching the mission
+      brief's explicit design intent that a malformed payload and a capability-denied scan must
+      ALSO produce a record, plus an eighth member (`'infra-error'`, added post-@qa-FAIL against
+      the shipped `app/api/admin/checkin/route.ts`) covering the case where
+      `checkInByBookingRef()` throws for a reason unrelated to any admission decision -- a
+      Firestore outage mid-transaction, say. `'infra-error'` is deliberately NOT folded into
+      `'malformed'` (which means "the request itself was never valid") or any refusal code (all
+      of which mean "a real admission decision was reached and it was no") -- it means neither:
+      the admission decision was never reached at all. Folding it into an existing member would
+      corrupt the "count outcomes by type" query the mission's own Done criteria for F7 requires,
+      exactly the reasoning that already justified the five-to-seven widening. See golden
+      README "Why the outcome enum is wider than spec §7.3's literal text" for the full
+      three-member accounting.
+
+      `export type CheckinAttemptSource = 'online' | 'offline-queued';`
+
+      `export interface CheckinAttemptRecord { bookingRef: string | null; showId: string | null;
+      orderId: string | null; outcome: CheckinAttemptOutcome; refusalReason: string | null;
+      scannedByUid: string | null; deviceId: string | null; scannedAt: Date; source:
+      CheckinAttemptSource; syncedAt: Date | null; }` -- this is the ENTIRE field set. No
+      `attendeeName`, `attendeeEmail`, `buyerEmail`, raw QR payload, or signed token field
+      exists anywhere on this type -- see golden README "PII minimisation and why the QR
+      payload is never stored" for why `bookingRef` alone is the right and sufficient
+      dispute-reconstruction key.
+
+      `export interface BuildCheckinAttemptInput { bookingRef: string | null; showId: string |
+      null; orderId: string | null; outcome: CheckinAttemptOutcome; refusalReason: string |
+      null; scannedByUid: string | null; deviceId?: string | null; now: Date; source?:
+      CheckinAttemptSource; }`
+
+      `export function buildCheckinAttemptRecord(input: BuildCheckinAttemptInput):
+      CheckinAttemptRecord` -- pure construction, no I/O. Three unconditional, fail-closed-by-
+      construction rules (same instinct as `buildNewsletterOptIn`'s unconditional zeroing, F5):
+      (1) when `input.outcome === 'admit'`, `refusalReason` is ALWAYS forced to `null` in the
+      output regardless of what the caller passed -- an admit record can never carry a refusal
+      reason; (2) `syncedAt` is ALWAYS `null` in the output -- this module never accepts a
+      caller-supplied `syncedAt`, because reconciling an offline-queued entry is a future
+      feature's job (spec §7.4), not F7's; (3) `source` defaults to `'online'` when the caller
+      omits it. The returned object's key set is EXACTLY the ten `CheckinAttemptRecord` fields,
+      even if the caller's input object carries extra, unexpected properties (e.g. a smuggled
+      `attendeeEmail` or `qrPayload` field on a loosely-typed caller) -- the function only ever
+      reads the named input fields and only ever returns the named output fields.
+
+      `export interface AppendOnlyCheckinAttemptsStore { addCheckinAttempt: (record:
+      CheckinAttemptRecord) => Promise<{ id: string }>; }` -- this interface has exactly ONE
+      method. No update/delete/set method is ever named on it, anywhere in this module or any
+      module that imports it -- the append-only guarantee is structural, not a convention a
+      future edit could quietly break.
+
+      `export type RecordCheckinAttemptResult = { recorded: true; id: string } | { recorded:
+      false; error: unknown };`
+
+      `export async function recordCheckinAttempt(store: AppendOnlyCheckinAttemptsStore, input:
+      BuildCheckinAttemptInput): Promise<RecordCheckinAttemptResult>` -- builds the record via
+      `buildCheckinAttemptRecord(input)`, calls `store.addCheckinAttempt(record)`, and NEVER
+      throws itself: a rejection from `addCheckinAttempt` is caught and returned as `{recorded:
+      false, error}`, never rethrown and never left as an unhandled rejection. This is what
+      makes "a failed audit write must not silently succeed OR abort the check-in" true by
+      construction -- the caller (the route/checkin integration) gets a value back either way
+      and decides what to do with the admission result independently; `recordCheckinAttempt`
+      itself has no opinion on admission at all.
+
+      `export interface AuditWriteFailureContext { bookingRef: string | null; showId: string |
+      null; outcome: CheckinAttemptOutcome; error: unknown; }`
+
+      `export function logAuditWriteFailure(context: AuditWriteFailureContext): void` -- the
+      "surface loudly" half. Logs via `console.error` (never `console.log`/`console.warn`,
+      matching this project's ERROR-level convention for failures that don't abort the caller,
+      per .claude/rules/coding.md), with structured fields (`bookingRef`, `showId`, `outcome`,
+      and the error), and never throws. Called by the route/checkin integration whenever
+      `recordCheckinAttempt()` returns `{recorded: false}`.
+
+      INTEGRATION NOTES for @dev (not proven by this contract's offline assertions -- see golden
+      README "What this contract does NOT prove"): the audit write happens OUTSIDE the Firestore
+      transaction that flips a position to `checked-in` in `lib/checkin.ts`, immediately after
+      that transaction settles (success or refusal) or, for the `'malformed'` and
+      `'not-authorized'` outcomes, before any Firestore transaction is ever opened at all
+      (neither of those outcomes reads or writes a ticket document today). **The route's
+      `catch` block around `checkInByBookingRef()` -- which handles the case where the call
+      throws for a reason unrelated to any admission decision, e.g. a Firestore outage
+      mid-transaction -- MUST ALSO call `recordCheckinAttempt()`, with `outcome:
+      'infra-error'`, before returning its 500 response.** Every other branch of the route
+      (capability failure -> `'not-authorized'`, JSON-parse failure -> `'malformed'`, each
+      decision-table refusal, admit, and now the `catch` block -> `'infra-error'`) must audit;
+      the ONLY branch that is correctly UNaudited by design is session failure (no session
+      cookie / an invalid session cookie), because no authenticated identity exists yet at that
+      point -- there is nothing to set `scannedByUid` to.
+      This is a deliberate DEVIATION from spec §7.3's literal text ("same transaction as the
+      admission decision") --
+      see golden README "Why the write is NOT in the same transaction" for the full reasoning;
+      the short version is that the architect brief's own steer (a scan whose audit write fails
+      must still admit the ticket-holder) is incompatible with folding the write into the same
+      atomic transaction as the admission decision, because a transaction failure rolls back
+      EVERYTHING in it, including the position flip that must not be blocked by a logging fault.
+      `app/api/admin/checkin/route.ts` gains a `scan-checkin` capability check via the real
+      `hasCapability()` (lib/admin-auth.ts, F4) immediately after the existing session check --
+      today this route checks `admin:true` only, never a specific capability, which is the gap
+      that makes the `'not-authorized'` outcome currently unreachable. This is a genuinely NEW
+      enforcement point, not merely new logging -- flagged explicitly for a human sanity pass
+      before ship, not silently absorbed as "just audit trail." A thin Firestore adapter
+      (`db.collection(CHECKIN_ATTEMPTS_COLLECTION).add(record)`, and NOTHING else -- no `.doc(
+      id).set()`, `.update()`, or `.delete()` anywhere in that adapter or elsewhere in this
+      feature) implements `AppendOnlyCheckinAttemptsStore` for the route to pass into
+      `recordCheckinAttempt()`.
+
+      OUT OF SCOPE for F7 (named explicitly, not silently absorbed): the offline sync/reconcile
+      machinery of spec §7.2/§7.4 (service worker, IndexedDB cache, `syncedAt` reconciliation) --
+      F7 only reserves the `source`/`syncedAt` shape, exactly as the mission brief specifies.
+      Live-HTTP proof that the wired route actually calls `recordCheckinAttempt` on every real
+      code path is deferred to a human/QA manual step (or a later live-Firestore contract),
+      mirroring F5's precedent for the parts of its own brief that needed a live Firebase Auth
+      project this machine doesn't have.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-f7-checkin-audit/README.md
+  - contracts/checks/ticketing-f7-checkin-audit/tsconfig.typecheck.json
+  - contracts/checks/ticketing-f7-checkin-audit/fixtures/checkin-audit-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        lib/checkin-audit.ts is added.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof of the exported shapes -- not a grep. Includes a real
+        AppendOnlyCheckinAttemptsStore-typed object literal with only `addCheckinAttempt`
+        (compiles), a `@ts-expect-error`-guarded literal that ALSO declares an
+        `updateCheckinAttempt` method on the same typed target (must fail to compile, proving
+        the interface is closed and TypeScript's excess-property check would reject any
+        implementation trying to smuggle a mutating method onto it at the point of
+        declaration), and every exported function/type used with real argument shapes.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-f7-checkin-audit/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        Outcome coverage (design constraint 1, the P1-defeating property this whole feature
+        exists to prove): calling recordCheckinAttempt() once per EACH of the eight
+        CheckinAttemptOutcome values, against a fresh fabricated in-memory store (a plain
+        array, `addCheckinAttempt` pushes and resolves), asserts the store holds EXACTLY one
+        record per call (never zero, never more than one) with every field checked against
+        what was passed in for that specific outcome -- refusalReason present and matching for
+        all seven non-'admit' outcomes (including the new 'infra-error' case, whose reason text
+        is the route's actual generic failure message, distinct in wording from every
+        decision-table refusal), forced to null for 'admit' even when a non-null refusalReason
+        is deliberately passed alongside it, orderId null for the four outcomes where it is
+        never resolvable ('not-found', 'malformed', 'not-authorized', 'infra-error') and
+        non-null for the four where a position/order was found, source defaulting to 'online'
+        when omitted and 'offline-queued' when supplied, and syncedAt always null regardless of
+        input. scannedByUid is non-null in all eight cases -- deliberately, not an oversight:
+        every current caller of recordCheckinAttempt() in this design (including the
+        'infra-error' catch path) is authenticated before it is ever invoked, so there is no
+        real code path where scannedByUid is null at this call site; see golden README
+        "Self-audit" for why this one dimension is the exception to "no dimension held
+        constant." outcome, refusalReason content, and orderId resolvability all vary
+        case-to-case, specifically to defeat a mutation that instruments only 'admit' (or only
+        a subset of the eight-member enum) and silently no-ops for the rest. Defeating
+        mutation: gating the `store.addCheckinAttempt()` call behind `if (outcome === 'admit')`
+        (or behind any narrower allow-list omitting 'malformed'/'not-authorized'/'infra-error')
+        -- the skipped cases would then see zero records instead of one.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f7-checkin-audit/check-outcome-coverage-fake-store.mjs
+
+    - id: A4
+      description: >-
+        Record shape and PII minimisation (design constraint 2): buildCheckinAttemptRecord()'s
+        returned object's key set is checked, by exact set comparison, against the ten named
+        CheckinAttemptRecord fields and NOTHING else -- even when the input object (cast
+        through a documented type assertion simulating a careless or future caller bypassing
+        type safety) carries extra properties named `qrPayload`, `rawToken`, `signedToken`,
+        `attendeeEmail`, and `buyerEmail`. None of those five names appear anywhere in the
+        output. Separately, the 'admit'-forces-refusalReason-null and
+        'syncedAt'-is-always-null-regardless-of-input rules are each proven with a case that
+        deliberately supplies a non-null value for the forced field, so the assertion fails if
+        the forcing logic is ever removed rather than merely never being exercised by a
+        caller that happens not to supply those fields. Defeating mutation: removing the
+        unconditional force on either field, or widening the return statement to a shallow
+        spread of the input object (`{...input, ...computedFields}`) instead of an explicit
+        field list -- the smuggled PII-shaped keys would then appear in the output.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f7-checkin-audit/check-record-shape-and-pii-minimization.mjs
+
+    - id: A5
+      description: >-
+        Append-only usage (design constraint 3): a Proxy-wrapped fake store whose only real
+        property is `addCheckinAttempt` throws synchronously if recordCheckinAttempt() reads
+        or calls ANY other property on it (a runtime trap, not merely a static type check) --
+        proving recordCheckinAttempt() genuinely touches nothing but the one append method at
+        the call site, not merely that the interface's declared type happens to be narrow.
+        Paired with A2's compile-time closed-shape proof so both the declared interface AND
+        the actual call-site usage are covered. Defeating mutation: a rewrite of
+        recordCheckinAttempt() that additionally calls a same-named `updateCheckinAttempt` or
+        reads a `.docs`/`.collection` property off the passed store before or after the append
+        call -- the Proxy trap fires and the check fails with a clear "accessed unexpected
+        property" message.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f7-checkin-audit/check-append-only-usage.mjs
+
+    - id: A6
+      description: >-
+        Write-failure-does-not-block-admission, and the loud non-swallowed failure path
+        (design constraint 4, the architect brief's explicit steer): a fake store whose
+        addCheckinAttempt always rejects is passed to recordCheckinAttempt() for EACH of an
+        'admit' case and a representative refusal case -- both calls resolve normally (proven
+        by awaiting with no surrounding try/catch in the test itself and inspecting the
+        resolved value) to `{recorded: false, error}`, never throwing and never producing an
+        unhandled rejection. logAuditWriteFailure() is then called with the returned error and
+        a spied `console.error`/`console.warn`/`console.log`: console.error is called exactly
+        once with a payload containing bookingRef/showId/outcome/error, console.warn and
+        console.log are never called, and the function's return value is void (checked at
+        runtime to be `undefined`, so nothing about it could be mistaken by a caller for an
+        admission decision). Defeating mutation: removing the try/catch inside
+        recordCheckinAttempt() so the store's rejection propagates -- the resolve-normally
+        assertion fails, catching the exact regression the brief's steer exists to prevent (an
+        admission that would otherwise succeed now throws through the audit path instead).
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f7-checkin-audit/check-write-failure-does-not-block-admission.mjs
+
+    - id: A7
+      description: >-
+        Zero authorization meaning (design constraint 5, same rule F5's A3 and F6's A8
+        established): a CheckinAttemptRecord's own key set is checked to carry no
+        `roles`/`admin`/`capabilities` field. Separately, a DecodedIdToken-shaped object built
+        from ONLY what a checkinAttempts record's `scannedByUid` could plausibly seed (a
+        uid-like field, no admin claim, no roles claim -- exactly what a future edit
+        mistakenly bridging audit-log identity into the admin auth system would produce)
+        resolves to the EMPTY capability set under the REAL
+        hasCapability()/resolveRoleCapabilitiesForShow() (lib/admin-auth.ts, F4), across all
+        seven live capabilities, against a deliberately generous show-window lookup -- the
+        same harness shape F5's A3 and F6's A8 use, including the case(5)-style combo (admin
+        absent, an allowlisted email, a live `{'*': ['owner']}` roles claim) that F5/F6 needed
+        to add to actually exercise an admin-gate-bypass mutation rather than merely leaving
+        the roles claim with nothing to grant.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f7-checkin-audit/check-zero-authorization-meaning.mjs
+
+    - id: A8
+      description: >-
+        pnpm lint passes with zero errors after lib/checkin-audit.ts is added.
+      command: pnpm lint

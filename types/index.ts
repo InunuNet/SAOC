@@ -155,6 +155,10 @@ export interface Ticket {
   // decision, revised" for why this is additive, not a replacement of the four payment
   // fields above.
   orderId: string | null;
+  // F8 (ticketing-foundation) — the issuing staff member's email for a comp position, null
+  // for every paid position. Optional and nullable: pre-F8 Ticket literals never mention it
+  // and must still compile. See contracts/golden/ticketing-f8-comp-tickets/README.md.
+  compedBy?: string | null;
 }
 
 // F2 (ticketing-foundation) — an order is never itself "checked-in" (only a position is
@@ -184,6 +188,11 @@ export interface Order {
   m_payment_id: string | null;
   pf_payment_id: string | null;
   buyerUid?: string | null;
+  /** F10 (ticketing-foundation) — optional/nullable, read defensively. Not yet generated at
+   *  checkout time (checkout is outside F10's authorised scope); see
+   *  contracts/golden/ticketing-f10-itn-repin/README.md "Judgement calls". */
+  recoveryToken?: string | null;
+  recoveryTokenExpiresAt?: Timestamp | null;
 }
 
 // ---------------------------------------------------------------------------

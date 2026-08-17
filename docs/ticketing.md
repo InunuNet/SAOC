@@ -1019,6 +1019,168 @@ F6 ships the pure primitives; several layers remain unbuilt:
 - **Storing the recovery token on orders.** F6 proves the primitive works; F10 (ITN re-pin ceremony) or F11 (QR generation + confirmation email) must wire `mintRecoveryToken()` into order creation and persist the resulting token onto the order document. No F-item currently owns that wiring — it is a real scope gap worth placing before M1 closes.
 - **Live end-to-end proof.** A human clicking a real recovery link and a real resend form is F14's job, exactly the milestone sequencing the mission file lays out (F6 in M1, F14 in M3).
 
+## Complementary Tickets: lib/comp-tickets.ts (F8)
+
+**Status:** F8 ships the comp-ticket construction primitive and extends F2's already-shipped `lib/orders.ts` with an injectable Firestore dependency and a `compedBy` field. The `POST /api/admin/tickets/comp` route handler is dev-built, not a golden file. See the decision record: `contracts/golden/ticketing-f8-comp-tickets/README.md`.
+
+**Critical:** The `'issue-comp'` capability gate is **live and fail-closed, but currently non-functional.** `scripts/admin-migrate-roles.ts` has never been run with `--apply`, so zero accounts in the live project hold a `roles` claim — not Lee-Ann, not Brad, nobody. This means `hasCapability()` returns false for everyone, so every comp request is refused with 403 today. This is correct fail-closed behaviour on a new staff-only surface, not a bug — but comps cannot be issued until the roles migration runs and staff accounts receive their capability claims. See `.agent/memory/project/needs-human.md` for the roles-migration item and its authorisation status.
+
+F8 adds free, PayFast-bypassing tickets issued by authorised staff — "comps" — issued at zero cost, written atomically as an order/position pair, and unambiguously distinguishable from paid orders on reconciliation. The load-bearing properties — capability genuinely required (not "any admin"), pair-write atomicity proven against an in-memory fake store, comp-vs-revenue shape, staff attribution with injected time, and zero privilege escalation — are all proven behaviourally against real exported functions, never by source-grep, and never against live Firestore.
+
+### The Comp Construction Primitive
+
+`lib/comp-tickets.ts` exports a pure construction module:
+
+```typescript
+export const COMP_GATEWAY = 'comp';
+
+export interface BuildCompOrderInput {
+  showId: string;
+  attendeeName: string;
+  attendeeEmail: string;
+  ticketType: TicketType;
+  issuedByEmail: string;  // Issuing staff member, recorded verbatim
+  bookingRef: string;     // Caller-generated via generateBookingRef()
+  orderId?: string;       // Omit to auto-generate
+  now: Date;              // Injected, never Date.now() internally
+}
+
+export function buildCompOrderInput(input: BuildCompOrderInput): CompOrderPositionInput;
+```
+
+The function returns an order/position construction input with these reconciliation-critical fields:
+
+- `gateway: 'comp'` — the **only safe discriminator** for a comp on reconciliation (never `amount === 0` alone, since a future genuinely-free ticket tier would also be zero)
+- `amount: 0`
+- `status: 'paid'` — a comp is admitted immediately, exactly like a paid ticket
+- `gatewayPaymentId: null`, `pf_payment_id: null`, `m_payment_id: null` — all null, never empty strings, so a reconciliation join against PayFast settlement records cannot accidentally match
+- `idempotencyKey: comp:${bookingRef}` — derived from the server-generated booking reference, traceable and non-colliding
+- `compedBy: input.issuedByEmail` — records the staff member's email verbatim for audit attribution
+
+**Important:** `buyerName` and `buyerEmail` are set to the attendee's own name/email, not an invented placeholder or the issuing staff member. This keeps a comp order fully compatible with F6's recovery-token flow — the attendee can recover their own comp ticket the same way a paying buyer recovers theirs.
+
+### Extending lib/orders.ts
+
+F8 extends `lib/orders.ts`'s `createOrderWithPosition()` function (F2, already shipped) with two additive changes, so every existing call site keeps compiling unchanged:
+
+1. **New field on `CreateOrderPositionInput`:** `compedBy?: string | null;` — optional, threads onto the written position as `compedBy: input.compedBy ?? null`
+2. **Injected Firestore dependency:** An optional second parameter `deps: { db?: OrdersFirestoreLike } = {}`, defaulting to `getFirestore(initAdmin())` when omitted
+
+The `OrdersFirestoreLike` and `OrdersTransactionLike` interfaces are deliberately narrow — only `collection(name).doc(id?): {id}`, `runTransaction(fn)`, and the transaction's `set(ref, data)` — so the real `Firestore` and `Transaction` classes already satisfy them with zero adapter code. This is what makes F8's A4 in-memory fake-store proof possible without ever touching live Firestore.
+
+### The Comp Issuance Route
+
+`app/api/admin/tickets/comp/route.ts` is a `POST` handler, dev-built per the contract. It:
+
+1. Calls `getAdminSession()` first (401/403 on session failure, identical shape to the existing checkin route)
+2. Checks `hasCapability(decoded, showId, 'issue-comp', ...)` — a missing capability is a distinct 403, never collapsed into session validity
+3. On success: `buildCompOrderInput()` then `createOrderWithPosition()` with no `deps` override (production always uses real Firestore)
+4. Validates the request body (showId must be the active show, attendeeName/attendeeEmail/ticketType must be present and well-formed)
+
+**Important:** The route never imports, calls, or modifies `app/api/tickets/itn/route.ts` — amount-0 never enters the webhook, exactly as spec §4.5 and the mission Decision 2 require.
+
+### Type Addition
+
+`types/index.ts` adds an optional, nullable field to the existing `Ticket` interface:
+
+```typescript
+compedBy?: string | null;
+```
+
+Pre-F8 `Ticket` literals that never mention this field must still compile (verified by A2).
+
+### What F8 Does NOT Prove (and Why)
+
+- **That a genuine admin session lacking `issue-comp` is refused with HTTP 403 specifically.** A8 proves the route fails closed on session validity (no cookie / garbage cookie → 401/403, never 200), which never gets far enough to reach the capability check at all. The capability-specific refusal requires a real, cryptographically valid Firebase session cookie for an account with `admin:true` but no `issue-comp` capability — impossible without a live Firebase Auth project. Deferred to a human-run manual round trip, the same posture F5 took for `/api/admin/checkin`.
+- **That a genuine manager/owner session WITH `issue-comp` succeeds and actually writes.** Same live-Firebase requirement as above.
+- **Door indistinguishability, behaviourally.** Reading `lib/checkin.ts`'s `admit()` function directly: the admission decision branches only on `showId` (wrong-show refusal) and `status` (already-checked-in / unpaid refusal). It reads `ticketType` exactly once inside `toTicket()`, purely to populate the returned display object, never as a branch condition. A comp position built by F8 (`status: 'paid'`, `showId: 'nationalShow'`) therefore takes the identical code path a paid position takes. This is a source-reading finding, not a contract assertion — `admit()` takes a live Firestore `Transaction` with no injected dependency, refactoring that is out of F8's scope. F12 is where this becomes a live, human-verified claim: when a comp-issued ticket is scanned at the door, it should admit identically to a paid one, with no distinguishing behaviour.
+
+## Demo Ticket Type: lib/demo-ticket-type.ts and lib/demo-ticket-type-seed-plan.ts (F9)
+
+**Status:** F9 ships the pure, offline modules (`lib/demo-ticket-type.ts`, `lib/demo-ticket-type-seed-plan.ts`), a schema field addition to `sanity/schemas/documents/ticketType.ts`, additive edits to `sanity/queries.ts` and `app/(marketing)/tickets/page.tsx`, and a seed script. The live seed-script execution against the real Sanity dataset is deliberately out of gate scope — a human/deploy step. The live, human purchase-and-scan proof is F12's job. See the decision record: `contracts/golden/ticketing-f9-demo-ticket/README.md`.
+
+F9 adds exactly one new sellable `ticketType` document — "General Admission (Demo)" — scoped to the real active show, that F12's and F14's human end-to-end proofs will purchase against a real PayFast SANDBOX gateway on a deployed host. The marker-tagging is load-bearing: every artefact this demo ticket type produces (the Sanity catalogue document, and every Firestore order/position derived from it) must be unambiguously, machine-queryably identifiable as test data, surviving a single accidental un-tag on either of its two channels.
+
+### The Demo Marker Mechanism
+
+The demo ticket type uses a **dual-channel marker** because Firestore order and position documents never store the catalogue-level `demo` boolean at all — `app/api/tickets/checkout/route.ts` writes only `ticketType: input.ticketType` (the slug, a bare string per `types/index.ts`) onto a position. The only thing that ever survives from a Firestore purchase record is the **slug string itself**. That is why `DEMO_TICKET_TYPE_SLUG = 'demo-general-admission'` is a reserved, fixed constant — it is the sole recoverability channel for every Firestore position ever purchased against this ticket type, and (via a `positions.orderId -> order.id` join) for every order derived from it.
+
+The catalogue document gets a second channel (`demo: true`) for defence in depth — a human or migration accidentally renaming the Sanity slug without realising it was load-bearing would still leave the boolean intact. Two independent, separately-stored fields mean a single accidental edit to either survives the other's loss.
+
+`lib/demo-ticket-type.ts` exports the marker functions:
+
+```typescript
+export const DEMO_TICKET_TYPE_SLUG = 'demo-general-admission';
+export const DEMO_TICKET_TYPE_NAME = 'General Admission (Demo)';
+
+export function isDemoTicketTypeDoc(t: TicketTypeCatalogueMarkerFields): boolean;
+export function isDemoTicketTypeSlug(slug: string | null | undefined): boolean;
+export function filterPubliclyListableTicketTypes<T extends TicketTypeCatalogueMarkerFields>(types: T[]): T[];
+```
+
+- `isDemoTicketTypeDoc()` returns `true` if EITHER `demo === true` OR `slug === DEMO_TICKET_TYPE_SLUG` (OR, not AND — a false negative missing a real demo document is the dangerous failure)
+- `isDemoTicketTypeSlug()` returns `true` for EXACT match against the reserved slug only — no prefix/substring matching
+- `filterPubliclyListableTicketTypes()` removes every demo-marked entry, preserving order for the rest
+
+### The Seed Plan Decision
+
+`lib/demo-ticket-type-seed-plan.ts` exports a pure, offline, idempotent seed decision function:
+
+```typescript
+export function planDemoTicketTypeSeed(input: DemoTicketTypeSeedInput): DemoTicketTypeSeedPlan;
+```
+
+The function returns either `{ action: 'create'; document: DemoTicketTypeSeedDocument }` or `{ action: 'skip-exists'; existingId: string }`. It deduplicates on both `slug === DEMO_TICKET_TYPE_SLUG` AND `show?._ref === activeShowId` together — **per-show, not global, uniqueness**. An existing demo document for a different (e.g., archived) show never blocks seeding this show's own copy. The deterministic Sanity `_id` is `` `ticketType-demo-${activeShowId}` ``.
+
+### Schema and Query Changes
+
+`sanity/schemas/documents/ticketType.ts` adds a single new field:
+
+```typescript
+defineField({
+  name: 'demo',
+  title: 'Demo / Test Ticket Type',
+  type: 'boolean',
+  initialValue: false,
+  description: 'Marks this as test data — never real pricing. Excluded from the public /tickets listing and identifiable in Firestore purchase records via its reserved slug.'
+})
+```
+
+Optional/defaulted, so the 5 pre-existing published ticketType documents remain valid without a migration.
+
+`sanity/queries.ts` adds `demo,` to the `activeTicketTypesQuery` projection (additive — every other selected field is unchanged). This ensures the public `/tickets` page receives the information its filter depends on.
+
+### Public Listing Exclusion
+
+`app/(marketing)/tickets/page.tsx` filters the Sanity results through `filterPubliclyListableTicketTypes()` **before** building the card data for rendering. This closes a real, pre-existing gap: before F9, the page would render every `active: true` ticketType with no exclusion whatsoever. **F9 closes the demo-exclusion gap only** — the demo ticket type is now excluded from the public listing, as intended. However, the page still renders ticket types from every show (past, present, or future), with no show-scoping filter; that remains a separate, open gap.
+
+**Important:** `ticketTypeBySlugQuery` (used by checkout itself) is deliberately left unchanged — F12's human tester still needs to purchase the demo type by its known slug, directly. Only the *public listing* is gated, not purchasability.
+
+### Demo Ticket Pricing
+
+`DEMO_TICKET_TYPE_PLACEHOLDER_PRICE_ZAR = 10` and `DEMO_TICKET_TYPE_PLACEHOLDER_CAPACITY = 50` are **not Council-approved** — this is a real, filed open item tracked in `.agent/memory/project/needs-human.md`.
+
+**Why the price must be nonzero, though:** Spec §4.5 states that a R0 ticket type should not go through PayFast checkout — it takes the comp-bypass path around the ITN webhook entirely. F12's stated purpose is "a real human makes a sandbox ticket purchase... using demo ticket types from F9" and proves the real gateway path (checkout → PayFast sandbox → ITN webhook → order/position transition). A R0 demo ticket would make that proof exercise the wrong code path entirely. R10 is chosen because PayFast is in SANDBOX for this project (no real money moves), it is small, round, and nonzero. The seed plan's A5 check asserts the planned price is `> 0`, not `=== 10` — so a future edit changing the concrete figure doesn't accidentally regress this property.
+
+Capacity (`50`) has no equivalent spec constraint forcing a specific number — it only needs to be `> 0` (enforced pre-write by checkout's `isUsableAmount()` gate). The figure is chosen as a round number comfortably larger than any plausible number of test purchases across F12/F14's human proofs.
+
+### The Seed Script
+
+`scripts/seed-demo-ticket-type.ts` performs real Sanity writes, mirrors `scripts/migrate-show-sales-fields.ts`'s shape (reads `.env.local` directly, a real `@sanity/client`, `--dry-run` support, `createIfNotExists` semantics). Dry-run is the **default** — mutating requires an explicit `--apply` flag.
+
+**Status:** The script has **NOT been run against live Sanity**. It is a human/deploy step, out of gate scope for the contract. When the demo show is actually ready to be seeded, a human or CI step calls:
+
+```bash
+node --import tsx/esm scripts/seed-demo-ticket-type.ts --apply
+```
+
+### What F9 Does NOT Prove (and Why)
+
+- **Door-scan behavioural parity, live.** A8 encodes a structural guard — grepping `admit()`'s function body for any reference to `ticketType` outside its known display-only read — but this is explicitly STRUCTURAL, not BEHAVIOURAL. `admit()` takes a live Firestore `Transaction` with no injected dependency; faking it in-memory would require reimplementing a meaningful slice of the Firestore SDK's query-builder chain, and this repo pins no local Firestore emulator. F12 is where this becomes a real, live, human-verified claim: when a demo ticket is scanned at the door, it should admit identically to a paid one. If F12's proof shows different behaviour, that is real information this contract's structural check cannot see.
+- **The live end-to-end purchase itself** — a real human completing PayFast sandbox checkout, receiving a confirmation email, and having the position/order actually transition to `paid`. That requires F10 (the ITN re-pin, unbuilt) and F11 (the confirmation email, unbuilt), and is F12's job to prove live.
+- **Running `scripts/seed-demo-ticket-type.ts` for real.** This contract proves the *decision logic* (`planDemoTicketTypeSeed()`) the real script will call; actually invoking it against the live Sanity dataset is a human/deploy step, deliberately out of gate scope.
+- **That the public `/tickets` page correctly excludes ticket types from a genuinely different, past show** (as opposed to demo-marked ones). That gap pre-dates F9, is a real and separate finding, and is not this feature's job to fix. This section closes only the demo-exclusion gap; a future feature should address the show-scoping gap for all ticket types.
+
 ## Active Show Resolution: lib/show-resolution.ts (F1)
 
 The `resolveActiveShow()` function determines which `show` document is currently sellable. It is a pure function with no external dependencies, testable against fixtures:

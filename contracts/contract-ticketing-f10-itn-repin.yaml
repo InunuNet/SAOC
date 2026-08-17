@@ -1,0 +1,254 @@
+schema: athanor.contract/v1
+slug: ticketing-f10-itn-repin
+goal: >-
+  Mission ticketing-foundation F10 (spec §6, §11) — the single authorised reopening of the
+  sha256-pinned app/api/tickets/itn/route.ts, folding four changes into one ceremony: (1) wire
+  the already-built inbound signature algorithm (generateNotifySignature /
+  buildPayfastNotifyParamString, lib/payfast.ts) in place of the outbound-only functions this
+  route was wrongly reusing; (2) fix the parseOrderedFields continue-vs-break divergence
+  against PayFast's own documented reference algorithm; (3) replace the single-document ticket
+  write with an atomic order+position two-write transaction (lib/orders.ts, building on F2/F8's
+  createOrderWithPosition primitive rather than a parallel one); (4) add a post-commit,
+  try/catch-isolated confirmation-email hookup that can never roll back or block a committed
+  payment. The route is then re-pinned to a NEW architect-authored expected file, following the
+  exact ceremony precedent contracts/golden/ticketing-hardening/itn-route.expected.ts.txt
+  established: @dev makes the source byte-identical to a file @dev did not author; @dev never
+  computes or chooses the new pin value. Full decision record, every defeating mutation, the
+  idempotency finding, the F10/F11 boundary, and what this contract cannot prove offline:
+  contracts/golden/ticketing-f10-itn-repin/README.md
+created_at: '2026-08-17'
+autonomy: high
+
+# ⚠️ This is the SOLE authorised reopening of app/api/tickets/itn/route.ts for this mission.
+# The file is currently pinned to 7c96726ab4bba28ec8ef027dd7747c39358d23bb27ca1dcac4328201df3b4d0f
+# (contracts/golden/ticketing-hardening/itn-route.golden.sha256). @dev's job is to make the real
+# file byte-identical to contracts/golden/ticketing-f10-itn-repin/itn-route.expected.ts.txt
+# (architect-authored, sha256 253c15c4dc56bdf32bb7391d610d75c4e2b9ab5f5531914bd640af20f096fd8b —
+# contracts/golden/ticketing-f10-itn-repin/itn-route.golden.sha256), and to update
+# contracts/golden/ticketing-hardening/itn-route.golden.sha256 to the SAME new value so the
+# ticketing-hardening contract's own A15 stays green rather than silently going stale. See the
+# golden README's "The re-pin mechanism" for exactly how a future legitimate edit re-pins this
+# file versus how an unauthorised edit is caught.
+
+features:
+  - id: F10
+    name: >-
+      Folded ITN re-pin ceremony (spec §6): inbound signature fix, continue-to-break fix,
+      order/position two-write, and the confirmation-email hookup.
+
+      (1) app/api/tickets/itn/route.ts (PINNED — see the warning above): becomes
+      byte-identical to contracts/golden/ticketing-f10-itn-repin/itn-route.expected.ts.txt.
+      Guard 1 (signature) calls generateNotifySignature instead of generateSignature; guard 4
+      (server-confirm body) calls buildPayfastNotifyParamString instead of
+      buildPayfastParamString. parseOrderedFields is exported (only change to its signature)
+      and its `continue` at the `signature` key becomes `break`, matching PayFast's documented
+      reference implementation exactly (see the golden README "Defect 2" for why this is
+      dormant today but still a genuine divergence worth fixing under this ceremony rather than
+      leaving in the pinned file). Guard 3 (amount match) now reads the amount from the
+      resolved ORDER (via findReservedOrderByPaymentId), not from a `tickets` document — the
+      order is F2's payment source of truth. Step 5 replaces the old single-document
+      transactional update with one call to markOrderAndPositionPaidByPaymentId
+      (lib/orders.ts); on `outcome.committed === true`, a strictly-after-commit call to
+      deliverConfirmationEmailAfterCommit(() => sendConfirmationEmail(...), onError)
+      (lib/confirmation-email.ts) fires the F11 hookup, never affecting the HTTP response.
+
+      (2) lib/orders.ts (extended, additive only — F8's OrdersFirestoreLike/
+      OrdersTransactionLike/OrdersCollectionLike interfaces and createOrderWithPosition are
+      UNTOUCHED; F10 adds new, separate, wider interfaces rather than widening F8's narrower
+      ones — see the golden README "Why two interface families, not one widened one"):
+
+        `export interface OrdersDocSnapshotLike { readonly id: string; exists: boolean; data():
+        Record<string, unknown> | undefined; }`
+
+        `export interface OrdersQuerySnapshotLike { empty: boolean; docs:
+        OrdersDocSnapshotLike[]; }`
+
+        `export interface OrdersQueryLike { limit(n: number): OrdersQueryLike; get():
+        Promise<OrdersQuerySnapshotLike>; }`
+
+        `export interface OrdersCollectionRwLike extends OrdersCollectionLike { where(field:
+        string, op: '==', value: unknown): OrdersQueryLike; }`
+
+        `export interface OrdersTransactionRwLike extends OrdersTransactionLike { get(ref:
+        OrdersDocRefLike): Promise<OrdersDocSnapshotLike>; update(ref: OrdersDocRefLike, data:
+        Record<string, unknown>): unknown; }`
+
+        `export interface OrdersFirestoreRwLike { collection(name: string):
+        OrdersCollectionRwLike; runTransaction<T>(fn: (transaction: OrdersTransactionRwLike) =>
+        Promise<T> | T): Promise<T>; }`
+
+        `export type FindReservedOrderResult = { status: 'not-found' } | { status:
+        'already-settled'; orderStatus: OrderStatus } | { status: 'reserved'; amount: number
+        };`
+
+        `export async function findReservedOrderByPaymentId(mPaymentId: string, deps: { db?:
+        OrdersFirestoreRwLike } = {}): Promise<FindReservedOrderResult>` — queries `orders`
+        where `m_payment_id === mPaymentId`, limit 1, NOT inside a transaction (read-only,
+        optimisation/amount-check path only — the same "not the correctness guarantee" role the
+        pre-F10 route's initial ticket lookup played). Empty result -> `{status:'not-found'}`;
+        `status !== 'reserved'` -> `{status:'already-settled', orderStatus}`; else
+        `{status:'reserved', amount: order.amount}`.
+
+        `export type MarkOrderPaidOutcome = { committed: true; orderId: string; buyerEmail:
+        string; buyerName: string; recoveryToken: string | null; position: { bookingRef:
+        string; attendeeName: string; ticketType: TicketType } } | { committed: false; reason:
+        'order-not-found' | 'order-not-reserved' | 'position-not-found' };`
+
+        `export interface MarkOrderAndPositionPaidInput { m_payment_id: string;
+        gatewayPaymentId: string | null; now: Timestamp; }`
+
+        `export async function markOrderAndPositionPaidByPaymentId(input:
+        MarkOrderAndPositionPaidInput, deps: { db?: OrdersFirestoreRwLike } = {}):
+        Promise<MarkOrderPaidOutcome>` — resolves the order ref by `m_payment_id` query and the
+        position ref by `orderId` query (both pre-transaction, ref-resolution only, mirroring
+        the pre-F10 route's own pattern), then inside ONE `runTransaction`: re-reads the order
+        fresh; if missing -> `order-not-found`; if `status !== 'reserved'` -> IDEMPOTENT NO-OP,
+        `order-not-reserved` (positive guard, not `=== 'paid'`, matching the pre-F10 route's own
+        reasoning — see the golden README "Idempotency"); re-reads the position fresh; if
+        missing -> `position-not-found` (an anomaly: an order exists with no position — logged
+        loudly by the route, no write attempted); else `transaction.update(orderRef, {status:
+        'paid', gatewayPaymentId: input.gatewayPaymentId, purchasedAt: input.now})` AND
+        `transaction.update(positionRef, {status: 'paid', purchasedAt: input.now})`, both in the
+        SAME transaction, then returns the committed outcome carrying exactly the fields the
+        F10/F11 email hookup needs (buyerEmail/buyerName/recoveryToken/position), read from the
+        SAME transactional snapshot that just committed — no second read, no TOCTOU gap.
+        `deps.db` defaults to the real `getFirestore(initAdmin())` (cast through
+        OrdersFirestoreRwLike) when omitted, identical convention to F8's `deps.db`.
+
+      (3) types/index.ts: add `recoveryToken?: string | null;` and `recoveryTokenExpiresAt?:
+      Timestamp | null;` to the Order interface — additive/optional, so no existing Order
+      literal breaks. F10 reads this field (defensively, as possibly absent) when building the
+      email hookup's input; F10 does NOT wire recoveryToken generation into order CREATION
+      (checkout/route.ts) — that is outside this ceremony's authorised scope (checkout is not
+      the pinned file) and is a pre-existing gap this contract flags rather than silently fixes
+      or silently assumes is already done. See the golden README "Judgement calls — recoveryToken
+      is not yet generated at checkout time".
+
+      (4) lib/confirmation-email.ts (new — the F10/F11 boundary, drawn explicitly so the two
+      features do not collide): `export interface ConfirmationEmailPosition { bookingRef:
+      string; attendeeName: string; ticketType: TicketType }`. `export interface
+      SendConfirmationEmailInput { orderId: string; buyerEmail: string; buyerName: string;
+      positions: ConfirmationEmailPosition[]; recoveryToken: string | null }`. `export async
+      function sendConfirmationEmail(input: SendConfirmationEmailInput): Promise<void>` — F10
+      ships a MINIMAL STUB that only logs the payload shape (never the recoveryToken's value,
+      only whether it is present) and does not call Resend; F11 fully owns QR generation and
+      the email's real content/template and replaces this function's body without needing to
+      touch the pinned route again. `export async function deliverConfirmationEmailAfterCommit(
+      send: () => Promise<void>, onError: (error: unknown) => void): Promise<void>` — the
+      isolation wrapper the pinned route calls: awaits `send()`, and on ANY failure
+      (synchronous throw or async rejection) calls `onError(error)` and resolves normally,
+      NEVER rethrowing. This is the load-bearing "email failure cannot roll back or lose a
+      legitimate payment" property, proven behaviourally in A7.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-f10-itn-repin/README.md
+  - contracts/golden/ticketing-f10-itn-repin/itn-route.expected.ts.txt
+  - contracts/golden/ticketing-f10-itn-repin/itn-route.golden.sha256
+  - contracts/checks/ticketing-f10-itn-repin/tsconfig.typecheck.json
+  - contracts/checks/ticketing-f10-itn-repin/fixtures/itn-repin-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after the pinned route,
+        lib/orders.ts, lib/confirmation-email.ts (new) and types/index.ts are changed.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof of the new and extended exported shapes (not a grep) — see
+        fixtures/itn-repin-typecheck.ts for exactly which five properties this checks and why
+        each is non-vacuous, including that markOrderAndPositionPaidByPaymentId's committed/
+        not-committed union arms do not leak each other's fields at the type level, and that a
+        minimal OrdersFirestoreRwLike-shaped fake object (collection().where().limit().get(),
+        transaction get()+update()) is accepted as deps.db by both new lib/orders.ts functions.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-f10-itn-repin/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        THE payment-security assertion: a genuine ITN is accepted and eight distinct forged/
+        tampered/malformed variants are rejected — tampered amount, tampered payment id,
+        swapped field order (same fields, reversed insertion order, original signature
+        replayed), missing signature, empty signature, a signature computed with a different
+        merchant's passphrase, and a regression guard that the inbound/outbound builder split
+        has not been silently re-merged — all run through the exact parse+recompute+compare
+        pipeline guard 1 uses (parseOrderedFields + generateNotifySignature). Case 1 is the
+        non-vacuous positive control: see the script header for why it is checked first and
+        what its failure would mean about every other case.
+      command: >-
+        npx tsx contracts/checks/ticketing-f10-itn-repin/check-signature-brutal.mjs
+
+    - id: A4
+      description: >-
+        The parseOrderedFields continue-vs-break fix. CORRECTION recorded here rather than
+        re-derived: reading app/api/tickets/itn/route.ts:69 during architect design confirmed
+        the pre-F10 file already uses `continue`, not `break` — this is a genuine divergence
+        from PayFast's own documented reference algorithm (dormant today because PayFast always
+        posts `signature` last) rather than a live signature-forgery bug. Case 1 proves the
+        ordinary shape (signature last) still captures every field, including blanks, with
+        exact values — a regression guard. Case 2 is the ONLY case that distinguishes `break`
+        from `continue` (a field posted AFTER `signature`) and is the defeating mutation this
+        check exists to catch: see the golden README "Defect 2" for the full reasoning.
+      command: >-
+        npx tsx contracts/checks/ticketing-f10-itn-repin/check-break-fix-field-order.mjs
+
+    - id: A5
+      description: >-
+        A paid ITN writes the order and its position atomically, proven against an in-memory
+        fake Firestore store by calling the real markOrderAndPositionPaidByPaymentId() with its
+        injected deps.db — the same technique F8's A4 used for the create path, applied here to
+        the update path an existing reserved order/position pair takes. Case 1 is the success
+        path; case 2 forces the position write to fail and proves the order is NOT flipped
+        either; case 3 (negative control) forces the order write to fail instead, proving the
+        rollback isn't an artefact of write ordering.
+      command: >-
+        npx tsx contracts/checks/ticketing-f10-itn-repin/check-order-position-atomicity.mjs
+
+    - id: A6
+      description: >-
+        IDEMPOTENCY FINDING (reported per the dispatch instructions, not silently fixed): a
+        second, duplicate ITN delivery for an already-paid order performs zero additional
+        Firestore writes (both collections' update counts stay at exactly 1 after two identical
+        deliveries), purchasedAt/gatewayPaymentId are unchanged by the second delivery (proving
+        a genuine no-op, not a coincidentally-identical second write), and because this path is
+        UPDATE-only (never create), no second order or position document can exist under any
+        circumstance — a structural guarantee this update-based design gives that a create-based
+        path would not, asserted rather than assumed via the final document-count check.
+      command: >-
+        npx tsx contracts/checks/ticketing-f10-itn-repin/check-idempotent-duplicate-itn.mjs
+
+    - id: A7
+      description: >-
+        "Money is more important than a delivery receipt": deliverConfirmationEmailAfterCommit
+        never propagates a send failure (synchronous throw or async rejection), always reports
+        the real error to onError exactly once, and — the non-vacuous positive control — does
+        NOT call onError when send() genuinely succeeds. See the script header and the golden
+        README "What this does NOT prove" for why the full HTTP round trip (a real committed
+        payment followed by a real email failure) is out of reach offline, and what the sha256
+        pin substitutes as proof of the call-site ordering.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f10-itn-repin/check-email-failure-does-not-block.mjs
+
+    - id: A8
+      description: >-
+        app/api/tickets/itn/route.ts is byte-identical to its NEWLY re-pinned state. RE-PINNED
+        for F10, from 7c96726ab4bba28ec8ef027dd7747c39358d23bb27ca1dcac4328201df3b4d0f to
+        253c15c4dc56bdf32bb7391d610d75c4e2b9ab5f5531914bd640af20f096fd8b — the sha256 of
+        contracts/golden/ticketing-f10-itn-repin/itn-route.expected.ts.txt, an architect-authored
+        expected file written BEFORE any code was changed. @dev never re-pins; the only way to a
+        green A8 is to make the source byte-identical to a file @dev did not author. @dev must
+        ALSO update contracts/golden/ticketing-hardening/itn-route.golden.sha256 to this same new
+        value, or that contract's own A15 goes red. See the golden README "The re-pin mechanism"
+        for the legitimate-edit-versus-unauthorised-edit distinction this enforces.
+      command: >-
+        echo "$(cat contracts/golden/ticketing-f10-itn-repin/itn-route.golden.sha256)  app/api/tickets/itn/route.ts" | shasum -a 256 -c -
+
+    - id: A9
+      description: >-
+        pnpm lint passes with zero errors after the pinned route, lib/orders.ts,
+        lib/confirmation-email.ts (new) and types/index.ts are added or extended.
+      command: pnpm lint

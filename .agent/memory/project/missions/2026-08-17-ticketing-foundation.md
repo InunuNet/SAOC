@@ -7,7 +7,7 @@ goal: 'Build the scalable ticketing foundation from docs/ticketing-system-founda
   admin capability, and an end-to-end human-proven purchase-to-door-scan flow'
 created_at: '2026-08-17T14:39:52.125721+00:00'
 started_at: '2026-08-17T16:35:26.642255+00:00'
-last_active_at: '2026-08-17T18:22:39.892348+00:00'
+last_active_at: '2026-08-17T20:12:20.744913+00:00'
 status: in_progress
 cost_estimate:
   features: 14
@@ -15,8 +15,8 @@ cost_estimate:
   total_calls: 0
 last_checkpoint:
   milestone: M1
-  feature: F5
-  ts: '2026-08-17T19:03:32+00:00'
+  feature: F6
+  ts: '2026-08-17T20:12:20.744913+00:00'
 features:
 - id: F1
   title: 'Resolve `show` document collision: extend archive type for sales fields,
@@ -157,8 +157,9 @@ features:
     for it, the HTTP round trip against a running server with explicit `timeout_seconds`
     proves the account is refused everywhere, and no code path accidentally grants
     admin access based on `buyers` document existence.'
-  status: pending
+  status: done
   milestone: M1
+  completed_at: '2026-08-17T20:12:20.534271+00:00'
 - id: F6
   title: Signed order-access recovery token on orders, rate-limited resend-my-tickets
     endpoint
@@ -177,8 +178,9 @@ features:
     recovery URL returns the order''s positions with QR codes, rate-limiting is enforced
     (sixth attempt in one hour is refused identically to others), and resend requests
     with non-existent emails return the same "check your email" response as real matches.'
-  status: pending
+  status: done
   milestone: M1
+  completed_at: '2026-08-17T20:12:20.744706+00:00'
 - id: F7
   title: Check-in audit trail — `checkinAttempts` collection capturing every scan
     outcome
@@ -360,6 +362,8 @@ milestones:
   - F14
   status: pending
 ---
+
+
 
 
 

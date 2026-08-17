@@ -1,0 +1,9 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/demo-ticket-type.ts",
+    "../../../lib/demo-ticket-type-seed-plan.ts",
+    "fixtures/demo-ticket-type-typecheck.ts"
+  ],
+  "exclude": []
+}

@@ -1,0 +1,222 @@
+schema: athanor.contract/v1
+slug: ticketing-f9-demo-ticket
+goal: >-
+  Mission ticketing-foundation F9 (spec §6, §11). Introduce exactly one demo ticket type
+  ("General Admission (Demo)") scoped to the real active show, that F12's and F14's human
+  end-to-end proofs will actually purchase against a real PayFast SANDBOX gateway on a
+  deployed host. Marker-tagging is the load-bearing property: every artefact this demo ticket
+  type produces (the Sanity catalogue document, and every Firestore order/position derived
+  from it) must be unambiguously, machine-queryably identifiable as test data, surviving a
+  single accidental un-tag on either of its two channels. Active-show scoping is proven real,
+  offline, against the already-shipped resolveActiveShow()/ticketTypeMatchesActiveShow()
+  functions (F1). Zero authorization meaning is proven against the real
+  hasCapability()/resolveRoleCapabilitiesForShow() (F4), mirroring F6's A8. A genuine,
+  pre-existing gap in the public /tickets page (no show-scoping, no demo exclusion) is closed
+  so the marker's stated purpose -- "prevent accidental presentation as real pricing to
+  visitors" -- is actually true, not merely a schema field nobody reads. Full decision record,
+  every defeating mutation, the price/capacity judgement call, and what this contract cannot
+  prove offline (door-scan parity, the live end-to-end purchase): see
+  contracts/golden/ticketing-f9-demo-ticket/README.md
+created_at: '2026-08-17'
+autonomy: high
+
+features:
+  - id: F9
+    name: >-
+      Four new/changed surfaces, all additive, mirroring this mission's established
+      decision-function/pure-module pattern (F1/F3/F4/F5/F6) -- no Firestore writes, no
+      network, no Date.now() inside any of the new pure modules.
+
+      (1) lib/demo-ticket-type.ts (new, pure): `export const DEMO_TICKET_TYPE_SLUG =
+      'demo-general-admission';`. `export const DEMO_TICKET_TYPE_NAME = 'General Admission
+      (Demo)';`. `export const DEMO_TICKET_TYPE_PLACEHOLDER_PRICE_ZAR = 10;` (a placeholder,
+      NOT a Council-approved price -- see golden README "Price and capacity" for why it must
+      be nonzero). `export const DEMO_TICKET_TYPE_PLACEHOLDER_CAPACITY = 50;`. `export
+      interface TicketTypeCatalogueMarkerFields { slug?: string | null; demo?: boolean | null
+      }`. `export function isDemoTicketTypeDoc(t: TicketTypeCatalogueMarkerFields): boolean`
+      -- returns true if EITHER `t.demo === true` OR `t.slug === DEMO_TICKET_TYPE_SLUG` (OR,
+      not AND -- see golden README "Why OR, not AND"). `export function isDemoTicketTypeSlug(
+      slug: string | null | undefined): boolean` -- EXACT match against
+      `DEMO_TICKET_TYPE_SLUG` only (no prefix/substring matching) -- this is the function a
+      future cleanup query calls against a Firestore POSITION's `ticketType` string field,
+      since positions never carry the `demo` boolean at all. `export function
+      filterPubliclyListableTicketTypes<T extends TicketTypeCatalogueMarkerFields>(types:
+      T[]): T[]` -- returns `types` with every entry where `isDemoTicketTypeDoc(t)` is true
+      removed, order preserved for the rest.
+
+      (2) lib/demo-ticket-type-seed-plan.ts (new, pure): `export interface
+      ExistingTicketTypeDoc { _id: string; slug: string | null; show?: { _ref: string } |
+      null }`. `export interface DemoTicketTypeSeedInput { activeShowId: string;
+      existingTicketTypes: ExistingTicketTypeDoc[] }`. `export interface
+      DemoTicketTypeSeedDocument { _id: string; _type: 'ticketType'; name: string; slug: {
+      _type: 'slug'; current: string }; price: number; capacity: number; active: boolean;
+      order: number; demo: true; show: { _type: 'reference'; _ref: string }; description:
+      string }`. `export type DemoTicketTypeSeedPlan = { action: 'create'; document:
+      DemoTicketTypeSeedDocument } | { action: 'skip-exists'; existingId: string }`. `export
+      function planDemoTicketTypeSeed(input: DemoTicketTypeSeedInput): DemoTicketTypeSeedPlan`
+      -- deterministic `_id` of `` `ticketType-demo-${activeShowId}` ``; looks for an existing
+      entry in `existingTicketTypes` whose `slug === DEMO_TICKET_TYPE_SLUG` AND whose
+      `show?._ref === activeShowId` (per-show, not global, uniqueness -- an existing demo doc
+      for a DIFFERENT/archived show must never block seeding this show's own copy); if found,
+      returns `{action:'skip-exists', existingId}`; otherwise returns `{action:'create',
+      document}` where `document.price === DEMO_TICKET_TYPE_PLACEHOLDER_PRICE_ZAR`,
+      `document.capacity === DEMO_TICKET_TYPE_PLACEHOLDER_CAPACITY`, `document.active ===
+      true`, `document.demo === true`, `document.slug.current === DEMO_TICKET_TYPE_SLUG`,
+      `document.show._ref === input.activeShowId`. Pure, no `@sanity/client` import, no I/O --
+      mirrors F4's `parseMigrationArgs()` dry-run-decision pattern, not
+      scripts/migrate-show-sales-fields.ts's own I/O-performing shape.
+
+      (3) sanity/schemas/documents/ticketType.ts (edit, additive): add one field, after the
+      existing `show` reference field: `defineField({ name: 'demo', title: 'Demo / Test Ticket
+      Type', type: 'boolean', initialValue: false, description: 'Marks this as test data --
+      never real pricing. Excluded from the public /tickets listing and identifiable in
+      Firestore purchase records via its reserved slug. See
+      contracts/golden/ticketing-f9-demo-ticket/README.md.' })`. Optional/defaulted, so the 5
+      pre-existing published ticketType documents (none of which are demo types) remain valid
+      without a migration, matching the additive-field precedent F1 set for `show.ts`'s own
+      new fields.
+
+      (4) sanity/queries.ts + app/(marketing)/tickets/page.tsx (edit): add `demo,` to
+      `activeTicketTypesQuery`'s projection (additive -- every other selected field is
+      unchanged). In `page.tsx`, add `demo?: boolean | null` to the local
+      `SanityTicketType` interface, and filter `ticketTypes` through
+      `filterPubliclyListableTicketTypes()` (imported from `lib/demo-ticket-type.ts`) BEFORE
+      building `cardData` -- closing the real, pre-existing gap where the public page renders
+      every `active: true` ticketType with no show-scoping and no demo exclusion at all (see
+      golden README "A real, pre-existing gap this contract closes"). `ticketTypeBySlugQuery`
+      (used by the checkout route) is deliberately UNCHANGED -- a direct, known-slug purchase
+      of the demo type must still succeed for F12's human tester; only the PUBLIC LISTING is
+      gated.
+
+      (5) scripts/seed-demo-ticket-type.ts (new, I/O-performing, mirrors
+      scripts/migrate-show-sales-fields.ts's shape: reads `.env.local` directly, a real
+      `@sanity/client`, `--dry-run` support, `setIfMissing`/`createIfNotExists` semantics,
+      never `set()`/`createOrReplace()`). Fetches the real active show via
+      `allShowActivationQuery` + `resolveActiveShow()`, fetches existing ticketType documents,
+      calls `planDemoTicketTypeSeed()` for the actual write/no-write decision, and either
+      prints the plan (`--dry-run`) or commits it. NOT gated by any assertion in this contract
+      -- see "Hard constraints" below and golden README "Why the real seed script is
+      unasserted" -- this is the script a human/CI step runs ONCE, out-of-band, against the
+      real dataset, when the demo show is actually ready to be seeded; it is out of scope for
+      any contract check to execute it for real.
+
+      OUT OF SCOPE for F9 (named explicitly): actually running scripts/seed-demo-ticket-type.ts
+      against the real Sanity dataset (a human/deploy step, not a gate check); any change to
+      app/api/tickets/checkout/route.ts, app/api/tickets/itn/route.ts (sha256-pinned, F10's
+      sole authorised reopening), lib/checkin.ts, or lib/orders.ts -- F9 adds no new code path
+      to any of these, it only adds a new, ordinary ticketType document that flows through the
+      ALREADY-SHIPPED code paths those files provide; the live, human, purchase-and-scan proof
+      (F12) and the door-connectivity observation (F12) and Lee-Ann's real per-show grant
+      (F13) and the recovery-link human proof (F14).
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-f9-demo-ticket/README.md
+  - contracts/checks/ticketing-f9-demo-ticket/tsconfig.typecheck.json
+  - contracts/checks/ticketing-f9-demo-ticket/fixtures/demo-ticket-type-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        lib/demo-ticket-type.ts, lib/demo-ticket-type-seed-plan.ts, the ticketType.ts schema
+        edit, and the sanity/queries.ts + page.tsx edits are added.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof of lib/demo-ticket-type.ts's and
+        lib/demo-ticket-type-seed-plan.ts's exported shapes -- not a grep, real assignments
+        and calls that either compile or don't. Includes: the DemoTicketTypeSeedPlan
+        discriminated union narrowing correctly by `action`, filterPubliclyListableTicketTypes
+        being genuinely generic (accepts a fixture type wider than
+        TicketTypeCatalogueMarkerFields and returns that same wider type), and every exported
+        constant's literal type.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-f9-demo-ticket/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        Marker recoverability (design intent: "a query can find every artefact of every test
+        purchase later"). Proves the dual-channel marker survives either channel alone being
+        accidentally stripped (the catalogue doc's `demo` boolean unset with the slug intact,
+        and separately the slug renamed with `demo:true` intact both still classify as demo),
+        is not vacuously true (both channels stripped together correctly classifies as NOT
+        demo), and separately proves the ONLY channel that survives onto a Firestore position
+        document -- the exact `ticketType` slug string -- correctly separates a demo position
+        from real ones in a mixed fixture and does not near-miss-match a similar slug or the
+        demo type's display name.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/ticketing-f9-demo-ticket/check-marker-recoverability.mjs
+
+    - id: A4
+      description: >-
+        Active-show scoping is real (design constraint: "a demo ticket type belonging to show
+        A must not be purchasable against show B"), proven against the REAL, already-shipped
+        resolveActiveShow() (lib/show-resolution.ts) and ticketTypeMatchesActiveShow()
+        (app/api/tickets/checkout/route.ts) -- entirely injected fixture show-activation
+        arrays, no live Sanity read, no Date.now(). Covers: the demo type's own show being the
+        sole active show (purchasable), a different show being active instead (refused), and
+        ambiguous activation data -- two shows simultaneously active -- correctly failing
+        closed rather than defaulting to "assume it's fine".
+      command: npx tsx contracts/checks/ticketing-f9-demo-ticket/check-active-show-scoping.mjs
+
+    - id: A5
+      description: >-
+        planDemoTicketTypeSeed() is a pure, offline, idempotent decision function. Proves: (1)
+        with no existing demo doc for the active show, it plans to create one, scoped
+        correctly, with a NONZERO price and capacity (spec §4.5: a R0 ticket type takes the
+        comp-bypass path around PayFast entirely, which would make F12's real-gateway proof
+        hollow) and `active: true`; (2) fed its own first plan's output back in as
+        "already-existing" state, a second call is an idempotent skip, not a duplicate create;
+        (3) an existing demo document belonging to a DIFFERENT (e.g. archived) show does not
+        block seeding a fresh demo document for the current active show -- proving the dedup
+        is genuinely per-show, not a global slug lookup.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/ticketing-f9-demo-ticket/check-seed-plan-idempotent.mjs
+
+    - id: A6
+      description: >-
+        The public /tickets page never presents the demo ticket type to real visitors as if it
+        were real pricing. Proves two things together, because either alone is insufficient:
+        (a) the actual exported activeTicketTypesQuery GROQ string selects the `demo` field
+        (so the real page receives the information the filter depends on, not
+        `demo: undefined` for everything); (b) filterPubliclyListableTicketTypes() removes
+        exactly the demo-marked entry from a mixed real/demo fixture and leaves every real
+        entry untouched (not vacuously filtering everything or nothing).
+      command: >-
+        node --import tsx/esm
+        contracts/checks/ticketing-f9-demo-ticket/check-public-listing-excludes-demo.mjs
+
+    - id: A7
+      description: >-
+        Zero authorization meaning (mirrors F6's A8 exactly, against the real
+        hasCapability()/resolveRoleCapabilitiesForShow() from lib/admin-auth.ts). A buyer
+        token shaped like someone who purchased a demo ticket -- no admin claim, no roles
+        claim -- resolves to the empty capability set across all seven live capabilities.
+        Additionally, a defensive mutation guard: a token a hypothetical future bug
+        mistakenly bridged stray `demo`/`ticketType` fields onto directly (simulating "someone
+        tried to grant door-staff to demo-ticket holders for testing convenience") still
+        resolves empty, proving those fields are never read by the authorization decision at
+        all.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/ticketing-f9-demo-ticket/check-zero-authorization-meaning.mjs
+
+    - id: A8
+      description: >-
+        STRUCTURAL, not behavioural (see golden README "Door admission parity — what this
+        contract does NOT prove" for why a full behavioural proof is not possible offline).
+        Confirms lib/checkin.ts's admit() decision-function body never branches on
+        `ticketType` -- a best-effort static guard against an accidental future special-case
+        that would make a demo ticket scan differently from a real one at the door.
+      command: bash contracts/checks/ticketing-f9-demo-ticket/check-door-admission-no-special-case.sh
+
+    - id: A9
+      description: >-
+        pnpm lint passes with zero errors after every new/changed file in this feature.
+      command: pnpm lint

@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/comp-tickets.ts",
+    "../../../lib/orders.ts",
+    "../../../types/index.ts",
+    "fixtures/comp-tickets-typecheck.ts"
+  ],
+  "exclude": []
+}

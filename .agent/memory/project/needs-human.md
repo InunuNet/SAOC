@@ -496,3 +496,22 @@ paid can lock themselves out of their own tickets; too long and a leaked/forward
 live for months. Same class of open item as "Real 2027 Show ticket pricing" above. See the
 matching P3 backlog item.
    Non-blocking for F5's code and docs. — architect, 2026-08-17
+
+## Ticketing foundation F7 — check-in route capability enforcement must not precede the roles migration (2026-08-17, @architect via F7 contract, correcting an earlier false claim in the same review)
+
+F7 (`checkinAttempts` audit trail) requires `app/api/admin/checkin/route.ts` to gain a real
+`hasCapability(decodedToken, showId, 'scan-checkin')` check so a capability-denied scan is
+reachable and loggable. **What breaks:** `scripts/admin-migrate-roles.ts --apply` has never been
+run against the live Firebase project (dry-run only, standing backlog item) — zero accounts,
+including `brad@inunu.net`, currently hold a `roles` claim. If the new capability check ships to
+a live door device before the migration is applied, `hasCapability()` returns `false` for every
+account and every door scanner is refused for everyone, with no contract gate able to catch it
+(the offline checks construct their own fabricated `roles` claims and never touch the live
+project's actual, currently-empty claim state). **Who notices:** door staff and the queue behind
+them, at a real show, with no way to self-fix. **Order of operations that prevents it:** (1) dry
+run `scripts/admin-migrate-roles.ts`, (2) Brad authorises and runs it with `--apply`, (3) verify
+with `scripts/admin-list.ts` that the target accounts show a `roles` claim, (4) only then deploy
+the F7 capability-enforcement change to a real door device. F13 is the natural place live roles
+first get created and proven end-to-end, which suggests enforcement should not precede it — but
+that sequencing decision is explicitly left for Brad, not self-assigned to F13. Full reasoning:
+`contracts/golden/ticketing-f7-checkin-audit/README.md`, "Judgement call 3."

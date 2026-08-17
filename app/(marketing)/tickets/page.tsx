@@ -7,6 +7,7 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { activeTicketTypesQuery, nationalShowSalesQuery, ticketsPageQuery } from '@/sanity/queries';
 import { getSoldCountsByTicketType } from '@/lib/data/tickets';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
+import { filterPubliclyListableTicketTypes } from '@/lib/demo-ticket-type';
 
 // This page calls getSoldCountsByTicketType() (lib/data/tickets.ts), which uses the
 // Firebase Admin SDK — and FIREBASE_ADMIN_PROJECT_ID/CLIENT_EMAIL/PRIVATE_KEY are
@@ -38,6 +39,7 @@ interface SanityTicketType {
   description: string;
   capacity: number;
   order: number;
+  demo?: boolean | null;
 }
 
 interface SalesState {
@@ -70,7 +72,11 @@ export default async function TicketsPage() {
   const salesClosedMessage = pageData?.salesClosedMessage ?? FALLBACK_SALES_CLOSED;
   const termsNote = pageData?.termsNote ?? '';
 
-  const types = ticketTypes ?? [];
+  // F9 (ticketing-foundation): the demo ticket type must never present to a visitor as real
+  // pricing — see contracts/golden/ticketing-f9-demo-ticket/README.md, "A real, pre-existing
+  // gap this contract closes". ticketTypeBySlugQuery (checkout's own lookup) is deliberately
+  // left unfiltered so a direct, known-slug purchase of the demo type still succeeds.
+  const types = filterPubliclyListableTicketTypes(ticketTypes ?? []);
   const soldCounts = salesOpen ? await getSoldCountsByTicketType(NATIONAL_SHOW_ID) : {};
 
   const cardData: TicketTypeCardData[] = types.map((t) => ({

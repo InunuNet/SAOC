@@ -136,8 +136,28 @@ below). No candidates surfaced this session (script still does not run to comple
 - [ ] **[P2, NEW] A throwing `lookupShowWindow` propagates out of `hasCapability()`** rather than
   returning false. Fail-loud not fail-open, so not a security defect, but it 500s a request
   instead of cleanly 403ing. F5 must decide whether to wrap it when wiring the default lookup.
-- [ ] **[P3, NEW] No live cached Sanity-backed `ShowWindowLookup` exists.** F4 proves the decision
-  function against any injected lookup; the real one is deferred to the first live caller (F5).
+- [ ] **[P1, ESCALATED from P3 2026-08-17, BLOCKS F13] No live Sanity-backed `ShowWindowLookup`
+  implementation exists anywhere — per-show role grants are ALWAYS refused in production, even
+  inside their date window.** Verified this session: `lib/admin-auth.ts:199` defaults
+  `lookupShowWindow` to `() => null` whenever a caller passes no opts; no production
+  implementation of a `ShowWindowLookup` exists in `app/`, `lib/`, `sanity/`, or `scripts/` —
+  every reference lives inside `lib/admin-auth.ts`'s own type/function definitions; the new comp
+  route (`app/api/admin/tickets/comp/route.ts:76`) calls `hasCapability()` with no opts, and every
+  future route that follows this pattern will too. Net effect: any per-show grant (e.g. `manager`
+  scoped to one show) is refused in every real request, squarely inside its date window — only an
+  org-wide `'*': ['owner']` grant works, because that path skips the window check entirely. F4's
+  contract doesn't catch this because it injects its own lookup, proving the FUNCTION honours a
+  window when given one, while no route ever gives it one. **Fails closed, so this is not a
+  security hole — it's a functionality hole**, but it directly **blocks F13** ("Lee-Ann granted a
+  real per-show `manager` role, verified by HTTP round trips including negative control") — as
+  wired, that verification cannot pass, and Lee-Ann would appear to hold a role that silently does
+  nothing, with no error explaining why. Implementing this is a real correctness question, not
+  just plumbing: which Sanity date fields actually define the window (`show.startDate`/`endDate`?
+  `salesOpen`?), and how timezone is handled — SAOC operates SAST (+2) while Firestore/Cloud
+  Logging timestamps are UTC, and this project has already shipped one false published correction
+  from exactly that confusion (see `learned.md` "Firestore `createTime` and Cloud Logging
+  timestamps are UTC; SAOC operates SAST (+2)"). Whoever builds the real `ShowWindowLookup` should
+  treat the timezone handling as a decision, not a detail.
 - [ ] **[P3, NEW] Pre-existing American spellings** at `docs/ticketing.md:424, 484, 488, 820`
   (from the F2 docs pass). Deliberately left alone to keep the F4 commit scoped. The
   Microsoft/Entra proper nouns in `docs/admin-access.md` are correct as-is and must NOT be
