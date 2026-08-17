@@ -193,7 +193,7 @@ is small and well-understood: instead of flipping one document, it reads the ord
 `paid` — two writes in one transaction instead of one, not a redesign. This is folded into the same
 ITN re-pin ceremony already planned (§6) — it does not add a second reopening of the pinned file.
 Full multi-position fan-out (flipping every position in a group order) is only exercised once group
-booking actually ships (§8, deferred), but the schema is ready for it without a second migration.
+booking actually ships (§9, deferred), but the schema is ready for it without a second migration.
 
 **Why this belongs in Milestone 1, not deferred with group-booking UX itself:** retrofitting an
 `orders` collection and an `orderId` foreign key onto tickets that already exist — with real
@@ -205,7 +205,7 @@ that UI will write into cannot.
 
 Add `'refunded'` to the `TicketStatus` union in `types/index.ts` in this milestone, even though the
 refund *workflow* (calling a gateway's refund API, an admin UI to trigger it) is explicitly
-deferred (see §8). With §4.2 adopted, a refund's natural target is now a single **position**, not
+deferred (see §9). With §4.2 adopted, a refund's natural target is now a single **position**, not
 an order or a whole purchase — pretix's design point exactly: "you cancel one position, not a whole
 order." The enum is baked into every stored ticket document forever; adding a value later is free,
 but every ticket sold between now and "later" would need a status migration to represent a refund
@@ -254,7 +254,7 @@ receive R0.
   multiple ticket documents could simply be created from one form submission with no linking
   entity. That was wrong — without an `orderId`, a group purchase has no natural anchor for a
   single PayFast payment covering several attendees, and no natural target for a partial refund.
-  §4.2 is the correction; group-booking *UX* is still deferred (§8), but the schema it will write
+  §4.2 is the correction; group-booking *UX* is still deferred (§9), but the schema it will write
   into is decided here, not later.
 
 ---
@@ -297,7 +297,7 @@ editable by anyone without a code change and review. Enumerated by walking every
 | `GET /api/admin/tickets`, name/email search mode | `search-buyers` |
 | `GET /api/admin/export-csv` | `export-buyer-data` |
 | `POST /api/admin/tickets/comp` (§4.5) | `issue-comp` |
-| A future refund route (§8, deferred) | `issue-refund` |
+| A future refund route (§9, deferred) | `issue-refund` |
 | `POST /api/admin/tickets/sync` (§7.2's offline pre-sync, if built) | `scan-checkin` — reuses the door capability rather than inventing a new one, since only door staff need to prepare a device for offline scanning |
 
 **The lookup capability is split in two, not one — this is a direct answer to an open capability
@@ -316,7 +316,7 @@ would let `lookup-booking-ref` silently unlock searching too.
 
 Seven capabilities in total: `view-admin-dashboard`, `scan-checkin`, `lookup-booking-ref`,
 `search-buyers`, `issue-comp`, `issue-refund`, `export-buyer-data`. This list is what's foundational
-(§8) — it is the thing genuinely expensive to get wrong, because every route's fail-closed check is
+(§9) — it is the thing genuinely expensive to get wrong, because every route's fail-closed check is
 written against it directly. Adding a wholly new capability later (as opposed to re-bundling
 existing ones into different roles) is still a code change in two places: the fixed set itself, and
 whichever role bundles in §5.3 should include it — re-bundling *existing* capabilities among roles
@@ -566,7 +566,7 @@ things were weighed:
    covering the whole batch. This reduces thirty manual runs and thirty separate secret edits to
    one of each, without touching the allowlist's role as a real, independently-checked gate — it's a
    batching of existing manual work, not a new mechanism.
-4. **Reconsidering automatic per-show expiry — the deferral in §8 needs revisiting for `door-staff`
+4. **Reconsidering automatic per-show expiry — the deferral in §9 needs revisiting for `door-staff`
    specifically, and this changes the call.** With three staff, "an operator forgets to revoke" was
    a small, occasional risk. With thirty volunteers turning over every show, forgetting to revoke
    thirty accounts individually after every event is closer to a certainty than an edge case — this
@@ -579,7 +579,9 @@ things were weighed:
    evaluated against a short-TTL cached value rather than a live read on every scan, preserving the
    hot-path/offline property §5.4 already argues for. Explicit early revocation (a volunteer removed
    mid-show for cause) still goes through `admin-revoke.ts` as normal — the date window is the safety
-   net for the ordinary "just let it lapse" case, not a replacement for deliberate revocation.
+   net for the ordinary "just let it lapse" case, not a replacement for deliberate revocation. With
+   Brad's "tons of door operators" operating model confirmed, this recommended default is now
+   foundational (§9), not deferred.
 
 **The `manager` tier spans two separate identity systems — document both halves as one onboarding
 and offboarding procedure, don't try to unify them.** Ticketing access is this project's Firebase
@@ -625,7 +627,7 @@ own description confirms "tons of door operators" turning over every show: §5.6
 date-window lapse (checked against the `show` document's own dates, no new claim shape) is the
 recommended default safety net for that tier specifically, with manual revocation staying available
 for early/for-cause removal. Full automatic time-boxed claim expiry as a general-purpose mechanism
-(independent of a show's own dates) remains deferred (§8) as unnecessary added complexity once the
+(independent of a show's own dates) remains deferred (§9) as unnecessary added complexity once the
 date-window approach covers the actual scale problem.
 
 ### 5.8 Concrete onboarding and offboarding: Lee-Ann (`manager`)
@@ -803,7 +805,7 @@ is someone standing at the venue with a phone.
 
 Sequencing: Milestone 2's human proof at the venue explicitly observes connectivity and offline
 behaviour (already recommended in the first draft's risk table, and made a required, recorded
-output of that milestone in §10 below — this project has already deferred this exact observation
+output of that milestone in §11 below — this project has already deferred this exact observation
 twice, in `admin-auth-hardening` F6's brief and again since). If it surfaces a real problem, §7.2 is
 already designed and gets built next, rather than improvised from scratch under deadline pressure
 at that point. If The Hangar's connectivity turns out fine, §7.2 stays specified but unbuilt, and
@@ -817,7 +819,106 @@ given the current browser-based scanner already works online (verified live 2026
 
 ---
 
-## 8. Foundational now vs. safe to defer
+## 8. Public buyer accounts and ticket self-service
+
+### 8.1 The gap and Brad's requirement
+
+"If a visitor buys a ticket from the website, they're going to have to have a basic account, otherwise we don't have any way of looking up a lost ticket. We need a basic user subscription account system as well — register, subscribe to newsletters, view purchased tickets. We will have to keep some user data."
+
+The problem this addresses is real: today, a buyer who loses a ticket confirmation email (or the QR within it) has no way to recover it. The ITN webhook sends exactly one email per order (§6), and that's the only source the ticket exists in. Loss of that email is loss of the ticket.
+
+The solution this section specifies is two-part, and it reverses an implicit assumption in the earlier draft that account-gating was necessary. **Lost-ticket recovery must not require an account.** Forcing registration before payment costs conversion at the worst moment — the checkout flow — and makes SAOC custodian of personal data beyond what the sale actually requires. The POPIA data-minimisation principle §5.1 already applies to staff access; it applies equally to the public side.
+
+An *optional* buyer account layer addresses the rest of Brad's requirement — newsletter subscription, viewing purchase history across multiple shows, updating contact details — genuinely useful features that do require persistence beyond one order. The account design keeps it separate from the administrative model entirely, removing a privilege-escalation path that open Firebase Auth self-signup would otherwise create.
+
+### 8.2 Lost-ticket recovery without an account — two mechanisms
+
+**Mechanism (a): Signed, high-entropy order-access URL**
+
+Every confirmation email (§6) includes a recovery URL that resolves the order and its positions without requiring authentication. The URL contains a signed, high-entropy token — the same entropy standard as `lib/booking-ref.ts`'s 60-bit booking references — scoped to exactly one order and its buyer. The token itself is **not** the booking reference — booking refs are spoken aloud at the door and printed on tickets, so they're not suitable as long-term secrets. Instead, generate a new 60-bit secret at order creation time, store it server-side on the order document (field: `recoveryToken`), and sign it with the same HMAC used elsewhere in this system (or introduce a dedicated signing key, per the ITN re-pin ceremony; the choice is a deployment detail). Clients cannot forge or guess the token — attempting a brute-force attack has exactly the same cost as attacking a booking ref.
+
+Include the signed token in the confirmation email as a full-URL deep link, e.g. `https://saoc.co.za/tickets/recover?token=<signed>`. An unauthenticated GET resolves the token to the order document, displays every position's QR code inline, and allows the buyer to re-send the full email.
+
+**Mechanism (b): Resend-my-tickets form**
+
+A public form on the `/tickets` page (or reachable from an "I lost my ticket" link) takes an email address and re-sends the order-access link to that address. The form responds identically whether or not the email matched any order — no account-enumeration oracle (timing or text difference) — and is rate-limited at the IP and email level (e.g. 5 attempts per email per hour) to prevent abuse. Rate-limit hits are logged but don't expose an error message to the attacker; the response is the same "check your email" message in all cases.
+
+This form itself doesn't require an account and doesn't create one. It's pure recovery — the same operation §6's email contains as a clickable link, but discoverable by email address when the email itself is lost.
+
+**Why guest checkout stays the default path.** Neither mechanism above requires creating an account. The default flow is checkout as a guest — no registration screen, no password, no email verification beyond the ITN webhook sending the confirmation to the address provided at checkout. Account creation is presented as optional, not mandatory.
+
+### 8.3 Optional buyer account layer — design and constraints
+
+**The problem an account layer solves, narrowly defined:**
+
+- Newsletter subscription (opt-in, not implied by purchase, and requires explicit consent with an `optInAt` timestamp per POPIA §5.1)
+- Viewing purchase history across multiple orders and years
+- Updating one's own contact details (e.g., phone number for venue coordination)
+
+**The design:**
+
+A new `buyers` Firestore collection, keyed by Firebase Auth `uid`. Each document holds:
+- `email` (string) — the email used to register or claimed from a guest order
+- `displayName` (string, optional) — the buyer's name, editable by themselves
+- `newsletterOptIn` (object) — `{ optedIn: boolean, optInAt: timestamp | null, source: string }`, where `optInAt` is null if not opted in, and `source` records where the opt-in came from (e.g. `'signup-form'`, `'admin-granted'`) for auditability per POPIA
+- `createdAt` (timestamp) — when the account was created
+
+A **new, optional field on the `orders` document:** `buyerUid` (string | null). This field is null for every guest order created before an account exists for that email. When a buyer creates an account or claims an existing guest order by email match, `buyerUid` is backfilled on every existing order with matching `buyerEmail`.
+
+**Claiming guest orders by email match (the linking mechanism):**
+
+When a buyer self-registers or logs in for the first time, a background task (or an on-login hook) searches the `orders` collection for any document with `buyerEmail` matching the verified account email, and backfills `buyerUid` on all matches. This is the key design point: **an account owner doesn't manually "link" their past purchases — the system does it automatically by email.**
+
+Rationale: forcing a buyer to explicitly claim orders would require a UI ("you have 3 past orders, link them now?") and would fail silently if skipped, leaving the buyer thinking they have no purchase history when they do. Automatic linking is simpler and more reliable.
+
+**Email verification is load-bearing.** A buyer account is a self-registered Firebase Auth account. The email must be `email_verified === true` before any claim occurs — otherwise anyone could register as someone else's email address and inherit their purchase history (an account-takeover vector). This matches the same requirement `lib/admin-auth.ts` enforces for the admin side.
+
+### 8.4 The hard security boundary — buyer accounts are NOT staff accounts
+
+**This is the most critical part of this section.** A `buyers` document and the existence of a buyer account grant zero capabilities from §5.2's fixed set. A buyer account is a public self-registered Firebase Auth account, distinct from the staff authentication and role model.
+
+**Negative control, enforced by contract:**
+
+1. A freshly self-registered account with a `buyers` document must resolve to the empty capability set when checked against `lib/admin-roles.ts`. An attempt to access any admin surface (any route in `/api/admin/*` or `/admin/*`) must fail with the same authorization check every other unauthenticated or under-provisioned request fails with — specifically, `missing-capability` or equivalent, not a silent denial that masks the attack.
+
+2. No public buyer-facing route (`/tickets/recover`, `/my-tickets`, `/my-account`, etc.) may ever consult `lib/admin-roles.ts` or check any admin capability. A buyer's access to their own data is authorized **only** on `buyerUid` match (or verified-email match for the recovery URL) server-side per request — never based on a custom claim.
+
+3. No admin route may ever grant access or escalate privileges based on the mere existence of a `buyers` document. An admin checking a buyer's status at the door is an admin because of their `admin: true` claim and their role in the `roles` map — not because they happen to have an account in `buyers` too.
+
+**Why this boundary exists.** Open Firebase Auth self-signup is already live (documented in the `admin-auth-hardening` mission). Without this boundary, creating a public buyer account becomes a foothold attack against the admin panel — self-register as a buyer, then try to escalate via a misconfigured capability check or a route that forgets to gate on admin claims. The fail-closed default in §5.4 protects *new* admin routes automatically — but says nothing about *new public routes* that might accidentally consult the admin role model by mistake. This section's hard boundary — buyer accounts and admin accounts are separate systems, full stop — is the thing that prevents a bridge attack ever existing.
+
+### 8.5 Ownership check on the buyer's own data
+
+A route like `GET /api/tickets/my-orders` (returns the authenticated buyer's own orders) must authorize on `buyerUid` match **per request**. Concretely:
+
+```
+if (req.user.uid !== order.buyerUid) { throw 403; }
+```
+
+The `buyerUid` is server-side state on the order document; the auth token provides `req.user.uid`. Compare them before returning the order.
+
+For **unauthenticated access** — the recovery URL case — this is the only exception: an unauthenticated GET to `/tickets/recover?token=<signed>` is allowed *because* the token itself is the scope. The token resolves to one specific order, and any token-holder (including someone who found or stole the email) sees only that one order's positions and QR. Leaking the full order details to an unauthenticated token-holder is a deliberate, scoped exception — it's what the recovery flow requires. The token is not reusable for anything else; it's a one-off, read-only, time-limited (or at minimum, revocable) credential.
+
+### 8.6 Newsletter: consent-recorded, not implied
+
+The design in §8.3 includes `newsletterOptIn` as an object, not a boolean, specifically because consent is a record. An opt-in event has a timestamp and a source, and that's what POPIA requires: not just "is this person subscribed" but "when did they consent, and how."
+
+**Opt-in is explicit, unticked by default:**
+
+- At signup, a checkbox for "Subscribe me to SAOC news and event updates" is presented, **unchecked by default**. Checking it sets `optedIn: true`, `optInAt: <now>`, `source: 'signup-form'`.
+- On the buyer's account page (if/when that UI exists), a toggle to manage newsletter subscription, with the same audit trail (updating `optInAt` if toggled on, clearing it if toggled off).
+- An unsubscribe link in every newsletter email (if newsletters are sent), clicking it sets `optedIn: false` and logs `optInAt: null`.
+
+**What newsletters do not do:**
+
+- A purchase does not automatically subscribe anyone. Guest orders created without an account have no `newsletterOptIn` field.
+- Creating a buyer account does not automatically opt the account into the newsletter, even if they're migrating past guest orders that had email addresses. The account starts `optedIn: false` — they must explicitly opt in.
+
+**Dependency on Resend.** Newsletter *sending* is blocked on the same Resend provisioning that §6 already flags as a hard blocker — no Resend account exists. Newsletter *consent capture* is not blocked by it; the `newsletterOptIn` structure ships in M1 alongside the rest of the buyer-account shape, ready to store consents. When Resend is eventually configured, the consent records are already there.
+
+---
+
+## 9. Foundational now vs. safe to defer
 
 **Foundational — change later is a real migration or a security redesign, do it in Milestone 1:**
 
@@ -874,6 +975,20 @@ given the current browser-based scanner already works online (verified live 2026
   worth getting right before real staff start generating scan history in it.
 - Preserving the one-ticket-one-admission invariant on the position document (no `quantity`
   field) — this is a foundational *constraint* (a thing NOT to build), not a feature.
+- **The signed order-access URL (§8.2(a))**, because it ships as part of §6's confirmation email
+  — the email is being built anyway in Milestone 2, and adding the recovery link later means
+  either re-sending all emails already issued or stranding every order created before the link
+  existed. Ship it with M1's email infrastructure decision.
+- The `buyers` Firestore collection shape (§8.3) — `email`, `displayName`, `newsletterOptIn` with
+  consent record, `createdAt` — and the optional `buyerUid` field on orders, backfilled at claim
+  time.
+- **The hard separation between buyer and admin account systems, enforced by contract assertion
+  (§8.4).** A freshly self-registered account with a `buyers` document must resolve to the empty
+  capability set when checked against `lib/admin-roles.ts`, and must be refused by every admin
+  surface. This is a negative control on the privilege-escalation path that open Firebase
+  self-signup introduces — foundational because retrofitting it later (trying to "untangle" mixed
+  buyer/admin accounts) is a security redesign, not a feature addition. Contract assertion that
+  must go red if the boundary ever blurs.
 
 **Incremental — safe to add later without redesigning anything above:**
 
@@ -905,10 +1020,19 @@ given the current browser-based scanner already works online (verified live 2026
   already tracked as a separate legal item in the backlog.
 - Microsoft/Apple sign-in console enablement — code-complete per `admin-auth-hardening` F4/F5,
   purely a console step, unrelated to this spec.
+- **Buyer account UI and self-service (§8)** — registration and login screens, "my tickets" page,
+  "my account" settings page, newsletter preference toggle. The data shape and hard security
+  boundary (§8.3–§8.4) ship in M1; the user-facing UI is incremental.
+- The "resend my tickets" form (§8.2(b)) — falls out of M2's email infrastructure build, but the
+  form UI itself is a small incremental addition to `/tickets`.
+- Newsletter *sending* (§8.6) — blocked on Resend account configuration (same blocker as §6).
+  Consent capture is M1; actual newsletter delivery waits.
+- Social sign-in for buyers (Google, Microsoft, Apple) — code-complete per `admin-auth-hardening`
+  but not yet wired to public signup flows; incremental once buyer account UI exists.
 
 ---
 
-## 9. Risks
+## 10. Risks
 
 | Risk | Mitigation in this spec |
 |---|---|
@@ -920,11 +1044,12 @@ given the current browser-based scanner already works online (verified live 2026
 | A role gets renamed and existing claims silently keep whatever access the old name granted | Explicitly rejected: an unrecognised role name resolves to zero capabilities by construction (§5.4), so a rename fails closed automatically; `admin-list.ts` flags every account holding an orphaned name so the rename procedure (§5.6) can re-grant them deliberately |
 | Anyone with Sanity/CMS access could grant themselves export or comp capability if the role→capability mapping lived in content | Rejected outright — the mapping lives in a server-side constant module, never Sanity, per design principle 2 (§5.3) |
 | Thirty volunteer `door-staff` accounts per show make manual, one-at-a-time provisioning and revocation unworkable, and dropping the allowlist to compensate would remove a fail-closed layer exactly where headcount and turnover are both highest | Batch/bulk grant tooling recommended (§5.6) rather than weakening the allowlist; the allowlist requirement is explicitly kept for every tier, `door-staff` included |
-| Thirty `door-staff` accounts left un-revoked after a show because an operator forgot, or didn't have time, to run thirty individual revoke commands | Lightweight date-window lapse tied to the `show` document's own dates, recommended as foundational (§5.6, §8) — the safety net for the ordinary case; explicit revocation via `admin-revoke.ts` remains available for early/for-cause removal |
+| Thirty `door-staff` accounts left un-revoked after a show because an operator forgot, or didn't have time, to run thirty individual revoke commands | Lightweight date-window lapse tied to the `show` document's own dates, recommended as foundational (§5.6, §9) — the safety net for the ordinary case; explicit revocation via `admin-revoke.ts` remains available for early/for-cause removal |
 | Offboarding a `manager` who leaves the Council only revokes their ticketing claim, leaving Sanity content access live (or vice versa), because the two systems are governed separately | Documented explicitly as a single two-system onboarding/offboarding checklist (§5.6, §5.8) rather than left to be discovered when someone leaves |
 | A visitor-lookup-by-name capability, if granted broadly, lets every `door-staff` account browse the full buyer list (name + email) — the exact POPIA exposure this role model exists to prevent | Lookup split into `lookup-booking-ref` (exact match, safe) and `search-buyers` (browsing, sensitive) specifically so either answer to the still-open "can door-staff look up by name" question is a role-bundle change, not a capability redesign (§5.2, §5.3) |
 | ITN route reopened more than once, each time re-triggering the full ceremony | All four known changes (signature algorithm, `break` fix, order/position two-write, email hookup) folded into one ceremony (§6) |
 | R0 comp tickets forced through PayFast, requiring amount-0 special-casing inside the payment security boundary | Comps bypass PayFast entirely via a dedicated authenticated route, using the same order/position shape as a real purchase (§4.5) |
+| Public buyer self-registration becomes a foothold for privilege escalation into admin surfaces — a public account with `buyerUid` match accidentally grants access to admin paths, or an admin route consults the buyer account to make authorization decisions | Hard separation enforced by contract: a `buyers` document grants zero capabilities from §5.2, any new admin route automatically defaults to the strictest capability (§5.4), public buyer routes never consult `lib/admin-roles.ts`, and an admin route never escalates based on `buyers` document existence (§8.4). The negative control in the contract assertion is non-negotiable: a self-registered account with `buyers` must be refused by every admin surface with no exception path. |
 | A later multi-show migration has to touch live purchase records | `show` document type and `ticketType.show` reference introduced now, against zero real transactions (§4.1) |
 | A later group-booking feature has to touch live purchase records to add a linking entity | `orders` collection and `orderId` introduced now, against zero real transactions (§4.2) |
 | No Resend account configured — blocks real email delivery | Already flagged to Brad (`needs-human.md` item 5); Milestone 2 builds and fixture-tests the send path regardless, and records the gap explicitly if unresolved by the time of the human proof |
@@ -934,7 +1059,7 @@ given the current browser-based scanner already works online (verified live 2026
 
 ---
 
-## 10. Proposed milestone sequencing
+## 11. Proposed milestone sequencing
 
 Mission breakdown is deliberately left light here — it gets derived from this spec once approved,
 per this project's workflow rules. This section exists to show the dependency order the sequencing
@@ -947,14 +1072,16 @@ must respect.
   mapping with `door-staff`/`manager`/`owner` as Brad's own starting, renameable tiers (§5.3),
   behavioural contract coverage of that mapping — every capability granted by some role, no bundle
   referencing a non-existent capability, unknown names resolving to nothing, and `door-staff` never
-  resolving to `export-buyer-data` or `search-buyers` (§8) — the `roles` custom claim (per-show map
+  resolving to `export-buyer-data` or `search-buyers` (§9) — the `roles` custom claim (per-show map
   shape) shipped with
   revoke-on-mutate tooling, the batch-grant tooling and date-window lapse for `door-staff`-scale
   provisioning (§5.6), and the one-time migration of existing admin accounts to
   `roles: {"*": ["owner"]}` (§5.4–§5.6), the check-in audit trail (§7.3), comp-ticket route design
-  (route can ship now or in M2 — no hard dependency either way). No user-visible change to
-  `/tickets` yet. Fully contract-verifiable, no human required except the
-  deliberate `salesOpen` decision already noted for any content flip.
+  (route can ship now or in M2 — no hard dependency either way), the `buyers` Firestore collection
+  shape and optional `buyerUid` field on orders (§8.3), the hard security boundary enforced by
+  contract assertion (§8.4), and the signed order-access URL (§8.2(a)) production-ready to ship in
+  M2's email. No user-visible change to `/tickets` yet. Fully contract-verifiable, no human
+  required except the deliberate `salesOpen` decision already noted for any content flip.
 - **M2 — The end-to-end demo proof**, built on the M1 model instead of the old hardcoded singleton:
   demo tiers (day-visitor, full-show) as `ticketType` docs scoped to the real active `show`,
   the folded ITN re-pin (signature fix + `break` fix + order/position two-write + email hookup),
@@ -966,12 +1093,15 @@ must respect.
   on. "We forgot to check" is not an acceptable M2 outcome: this exact observation has already been
   deferred twice (it was in `admin-auth-hardening` F6's brief and still hasn't been done), and a
   third silent deferral would mean §7.4's offline-PWA decision never actually gets made.
-- **M3 — Role-based onboarding proven.** Lee-Ann's real account, granted a real per-show `manager`
-  role via the extended tooling, verified against real HTTP round trips including a required
-  negative control — per §5.8, that control is scope (a different show id refused), not a missing
-  capability, since `manager` and `owner` are capability-identical within this system today. Also
-  proves the batch-grant path for `door-staff` at a small scale (a handful of test accounts, not
-  yet thirty) before the first real show relies on it for volunteers.
+- **M3 — Role-based onboarding proven, buyer self-recovery functional.** Lee-Ann's real account,
+  granted a real per-show `manager` role via the extended tooling, verified against real HTTP round
+  trips including a required negative control — per §5.8, that control is scope (a different show
+  id refused), not a missing capability, since `manager` and `owner` are capability-identical
+  within this system today. Also proves the batch-grant path for `door-staff` at a small scale (a
+  handful of test accounts, not yet thirty) before the first real show relies on it for volunteers.
+  Additionally, M3 operationally proves the lost-ticket recovery path (§8.2): a test buyer loses
+  their ticket email and successfully recovers it via the "resend my tickets" form, demonstrating
+  both mechanisms (signed recovery URL and email-based form) work end-to-end.
 - **M4+ — Incremental features**, each its own mission, none blocking the above: `manager`-facing UI,
   group booking (writing into the M1 order/position shape), day-pass gating, the offline PWA (only
   if M2 shows it's needed), refund workflow (gated on the gateway decision and Council policy), a
