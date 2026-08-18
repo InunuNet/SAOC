@@ -44,6 +44,7 @@ export const ticketType = defineType({
       title: 'Show',
       type: 'reference',
       to: [{ type: 'show' }],
+      options: { filter: 'active == true' },
       validation: (Rule) => Rule.required(),
     }),
     // F9 (ticketing-foundation): additive marker field. Optional/defaulted so the 5

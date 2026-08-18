@@ -201,6 +201,27 @@ Shows are rarely edited after publication. To patch `show-19-2027` with sales fi
 4. **Critical:** Set `active: true` only on ONE show document at a time (see editor guide below)
 5. Publish
 
+### Studio Guard Against Multiple Active Shows (F3)
+
+Sanity's `active` field validation now prevents the most common editor mistake: ticking a second show as active without realising another one already is.
+
+When an editor tries to publish a show with `active: true` whilst another show is already marked active, Studio blocks Publish and displays an inline error:
+
+> A show is already marked Active: "title" (year). Only one show can be Active at a time — untick Active on "title" before ticking it here, or contact the site developer if you're not sure which show should be active.
+
+If more than one other show is wrongly active (data corruption, not a normal editing flow), the message appends "(and N other shows)" so the count is never silently omitted.
+
+**How the guard works:**
+
+- It runs in Studio before Publish (authoring-time, not write-time)
+- It queries the dataset to find all active shows and names any conflict
+- It is a second, independent layer — the code-side fail-closed check (`resolveActiveShow()`, `ticketTypeMatchesActiveShow()`) remains the real safety net
+- It is bypassable via direct API mutations (script, direct client call, etc.), which is why the fail-closed backstop is deliberately left untouched
+
+**The reference picker filter:**
+
+The `ticketType.show` field now filters its reference picker to show only active shows, preventing new ticket types from accidentally being linked to archived shows. Existing ticket types retain their current references regardless of filter changes.
+
 ## Sanity Schema: ticketType (F1 Extended)
 
 ```typescript

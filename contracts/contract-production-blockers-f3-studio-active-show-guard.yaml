@@ -1,0 +1,200 @@
+schema: athanor.contract/v1
+slug: production-blockers-f3-studio-active-show-guard
+goal: >-
+  Studio-side guard against a second Sanity `show` document being marked `active` (@qa
+  finding, MEDIUM severity, backlog.md lines 208-217). Today the `active` checkbox on
+  `sanity/schemas/documents/show.ts` sits alongside the archive fields with no fieldset,
+  no `hidden`, and no `readOnly` condition, and `sanity/structure.ts` lists `show` as a
+  plain document-type list — nothing warns an editor before they tick it. If Lee-Ann (the
+  non-technical Council secretary who edits content) ticks "Active" on a past archive
+  doc, two docs become `active: true`; `resolveActiveShow()` (lib/show-resolution.ts)
+  correctly fails closed to `null`, but `ticketTypeMatchesActiveShow()`
+  (app/api/tickets/checkout/route.ts) then rejects EVERY ticket type for EVERY buyer with
+  a generic 500 — a sitewide ticket-sales outage from one mis-click. This feature adds a
+  new pure module, `lib/active-show-guard.ts`, wired into `show.ts`'s `active` field via
+  Sanity's `Rule.custom()`, so Studio blocks the publish and names the other active show
+  by title/year, while leaving `resolveActiveShow()` and
+  `ticketTypeMatchesActiveShow()` completely unmodified as the code-side fail-closed
+  backstop. See golden README "Why Rule.custom(), not hidden/readOnly or a desk-structure
+  change" for the guard-shape decision, and "Studio validation is bypassable — why the
+  guard is still worth building" for why this does not replace the code-side fail-close.
+  Folds in one adjacent P3 (`ticketType.show`'s unfiltered reference picker) at near-zero
+  cost — see README "The P3 fold-in".
+created_at: '2026-08-18'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Contract and golden files ONLY — no implementation. Two new/changed files, no
+      migration required (both are additive to schema fields that already exist).
+
+      (1) lib/active-show-guard.ts (new, pure — no Sanity client import, no
+      firebase-admin import; testable against fixtures with zero network access, same
+      pattern as lib/show-resolution.ts):
+
+      `export interface ActiveShowCandidate { _id: string; title?: string | null; year?:
+      number | null }`
+
+      `export interface ActiveShowConflict { conflict: ActiveShowCandidate;
+      additionalCount: number }`
+
+      `export function findConflictingActiveShow(otherActiveShows:
+      ActiveShowCandidate[]): ActiveShowConflict | null` — returns `null` when
+      `otherActiveShows` is empty (nothing else is active; ticking Active here is fine).
+      Otherwise returns `{ conflict: otherActiveShows[0], additionalCount:
+      otherActiveShows.length - 1 }` — names the first conflicting show found and counts
+      any remainder rather than silently dropping it when more than one other show is
+      already (wrongly) active.
+
+      `export function formatActiveShowConflictMessage(result: ActiveShowConflict):
+      string` — the editor-facing wording (Lee-Ann reads this). MUST include: the
+      conflicting show's title in quotes and its year in parentheses when both are set
+      (e.g. `"19th SAOC National Show" (2027)`); a fallback to the bare `_id` (e.g.
+      `show-14-2012`) when title/year are unset, WITHOUT ever rendering the literal
+      string `null` or `undefined`; the fixed phrase `Only one show can be Active at a
+      time`; and, only when `additionalCount > 0`, a mention of `"N other show(s)"` (exact
+      singular/plural per count) — never silently omitted. Suggested full wording (verbatim
+      text is @dev's to finalise, but must satisfy every substring assertion in
+      check-conflict-detection-and-message.mjs): `Another show is already marked Active:
+      "{title}" ({year}). Only one show can be Active at a time — untick Active on
+      "{title}" before ticking it here, or contact the site developer if you're not sure
+      which show should be active.` — with `(and N other shows)` appended before the
+      final period when `additionalCount > 0`.
+
+      `export function getPublishedId(id: string): string` — strips a leading `drafts.`
+      prefix; returns the input unchanged if absent.
+
+      `export function isSameDocument(idA: string, idB: string): boolean` —
+      `getPublishedId(idA) === getPublishedId(idB)`. Used by the Studio wiring below to
+      exclude the document's own draft/published pair from the "other active shows"
+      query result, so a document is never reported as conflicting with itself.
+
+      (2) Wire the guard into `sanity/schemas/documents/show.ts`'s existing `active`
+      field (do not add a new field; do not change the field's `name`, `title`,
+      `initialValue`, or existing `description` — only add `validation`):
+      ```
+      validation: (Rule) =>
+        Rule.custom(async (activeValue, context) => {
+          if (activeValue !== true) return true;
+          const documentId = context.document?._id;
+          if (!documentId) return true;
+          const client = context.getClient({ apiVersion: '2024-01-01' });
+          const publishedId = getPublishedId(documentId as string);
+          const others = await client.fetch(
+            `*[_type == "show" && active == true && !(_id in [$id, $draftId])]{ _id, title, year }`,
+            { id: publishedId, draftId: `drafts.${publishedId}` }
+          );
+          const conflict = findConflictingActiveShow(others);
+          return conflict ? formatActiveShowConflictMessage(conflict) : true;
+        }),
+      ```
+      Import `findConflictingActiveShow`, `formatActiveShowConflictMessage`, and
+      `getPublishedId` from `@/lib/active-show-guard` (or a relative import — @dev's
+      choice, so long as check-schema-wiring.sh's grep for `active-show-guard` in the
+      import line still matches). The validator only runs (and only queries Sanity) when
+      the editor is actually setting `active` to `true` — unticking, or editing any other
+      field, costs nothing extra.
+
+      (3) P3 fold-in (see README "The P3 fold-in" for why this belongs here): in
+      `sanity/schemas/documents/ticketType.ts`, add `options: { filter: 'active ==
+      true' }` to the existing `show` reference field (currently `to: [{ type: 'show'
+      }]`, `validation: (Rule) => Rule.required()` — keep both unchanged, only add
+      `options`). This only narrows the picker's search results; it does not invalidate
+      any of the 5 pre-existing published `ticketType` documents whose referenced show
+      may not currently be active.
+
+      (4) Explicitly OUT of scope, and why: no change to `lib/show-resolution.ts`'s
+      `resolveActiveShow()` or `app/api/tickets/checkout/route.ts`'s
+      `ticketTypeMatchesActiveShow()` — both must remain byte-for-byte the code-side
+      fail-closed backstop this guard is reducing the odds of ever needing (README
+      "Studio validation is bypassable"). No change to the buyer-facing 500 response or
+      its status code for the "zero shows resolve active" case — README "Zero active
+      shows: the 500 is deliberately unchanged" records why. No `hidden`/`readOnly`
+      condition added to the `active` field, and no `sanity/structure.ts` change — README
+      "Why Rule.custom(), not hidden/readOnly or a desk-structure change" records why
+      those were rejected.
+
+goldens:
+  - contracts/golden/production-blockers-f3-studio-active-show-guard/README.md
+  - contracts/golden/production-blockers-f3-studio-active-show-guard/fixtures/no-other-active.json
+  - contracts/golden/production-blockers-f3-studio-active-show-guard/fixtures/one-other-active.json
+  - contracts/golden/production-blockers-f3-studio-active-show-guard/fixtures/two-others-active.json
+  - contracts/golden/production-blockers-f3-studio-active-show-guard/fixtures/one-other-active-no-title.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        findConflictingActiveShow() and formatActiveShowConflictMessage() behave
+        correctly across four fixtures: no other active show -> null (nothing blocks the
+        edit); exactly one other active show -> names it by title/year, no spurious "N
+        other shows" mention; two other shows already active (a pre-existing ambiguous
+        state) -> names the first and correctly reports "1 other show", not silently
+        dropped; a conflicting show with no title/year set -> falls back to its `_id`
+        without ever rendering the literal string "null" or "undefined". Real function
+        calls against fixture JSON — no source grep.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/production-blockers-f3-studio-active-show-guard/check-conflict-detection-and-message.mjs
+
+    - id: A2
+      description: >-
+        getPublishedId() and isSameDocument() correctly dedupe a document's own
+        draft/published id pair (`drafts.show-19-2027` vs `show-19-2027`, both
+        directions, and the degenerate identical-id cases) as the SAME document, while
+        still correctly distinguishing two genuinely different shows (draft or
+        published) as NOT the same document. This is the id-normalisation the Studio
+        query's exclusion list depends on to avoid a document conflicting with itself.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/production-blockers-f3-studio-active-show-guard/check-published-draft-dedup.mjs
+
+    - id: A3
+      description: >-
+        STRUCTURAL, not behavioural (mirrors A10 in contract-fictional-test-show.yaml).
+        The behavioural correctness of the guard's logic is proven in isolation by A1/A2;
+        this closes the gap between "the pure module works" and "Studio actually calls
+        it": proves sanity/schemas/documents/show.ts's `active` field's own
+        defineField block (not merely somewhere else in the file) contains a
+        Rule.custom() call to findConflictingActiveShow() and
+        formatActiveShowConflictMessage(), and that sanity/schemas/documents/ticketType.ts's
+        `show` reference field carries the P3 fold-in's `options: { filter: 'active ==
+        true' }`.
+      command: bash contracts/checks/production-blockers-f3-studio-active-show-guard/check-schema-wiring.sh
+
+    - id: A4
+      description: >-
+        Regression proof: lib/show-resolution.ts's resolveActiveShow() fail-closed
+        behaviour (zero active -> null; one active -> that id; two active, the exact
+        editor mistake this Studio guard exists to make less likely -> null, never a
+        guess) is unchanged by this feature, which adds no code to that file. Reasserted
+        directly here rather than depending on another feature's check script, so a
+        future edit to show-resolution.ts cannot silently regress this contract's
+        invariant.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/production-blockers-f3-studio-active-show-guard/check-resolve-active-show-unchanged.mjs
+
+    - id: A5
+      description: >-
+        Regression proof: app/api/tickets/checkout/route.ts's
+        ticketTypeMatchesActiveShow() is byte-for-byte unmodified by this feature — still
+        rejects every ticket type when activeShowId is null, still rejects a ticket type
+        with no show reference at all, and still accepts the one case where the ticket
+        type's show matches the resolved active show id. Imports the real exported
+        function from route.ts (not a source grep) via the `npx tsx` CLI, which resolves
+        the file's own `@/` tsconfig-path imports at every depth (see the check's header
+        comment and contracts/checks/ticketing-f1-show-collision/check-checkout-active-show-gate.mjs,
+        which hit and documented this exact loader requirement first). Never invokes the
+        route's POST handler, so no Firestore write, no PayFast env var, and no live
+        Sanity read occurs.
+      command: >-
+        npx tsx
+        contracts/checks/production-blockers-f3-studio-active-show-guard/check-checkout-gate-unchanged.mjs
+
+    - id: A6
+      description: >-
+        pnpm lint passes with zero errors after every new/changed file in this feature.
+      command: pnpm lint

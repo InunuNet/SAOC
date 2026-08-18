@@ -1,5 +1,11 @@
 import { defineField, defineType } from 'sanity';
 
+import {
+  findConflictingActiveShow,
+  formatActiveShowConflictMessage,
+  getPublishedId,
+} from '../../../lib/active-show-guard';
+
 export const show = defineType({
   name: 'show',
   title: 'Show',
@@ -69,6 +75,24 @@ export const show = defineType({
         'Exactly one show should be active at a time. Consumed by resolveActiveShow() ' +
         '(lib/show-resolution.ts), which fails closed to "no active show" if zero or ' +
         'more than one show is marked active.',
+      // F3 (production-blockers): Studio-side guard against a second show becoming
+      // active. Queries other `show` documents at publish time and blocks the edit
+      // with an editor-facing message if one is already active. See
+      // contracts/golden/production-blockers-f3-studio-active-show-guard/README.md.
+      validation: (Rule) =>
+        Rule.custom(async (activeValue, context) => {
+          if (activeValue !== true) return true;
+          const documentId = context.document?._id;
+          if (!documentId) return true;
+          const client = context.getClient({ apiVersion: '2024-01-01' });
+          const publishedId = getPublishedId(documentId as string);
+          const others = await client.fetch(
+            `*[_type == "show" && active == true && !(_id in [$id, $draftId])]{ _id, title, year }`,
+            { id: publishedId, draftId: `drafts.${publishedId}` }
+          );
+          const conflict = findConflictingActiveShow(others);
+          return conflict ? formatActiveShowConflictMessage(conflict) : true;
+        }),
     }),
     // fictional-test-show: additive marker field. Optional/defaulted so every pre-existing
     // published show document (including show-19-2027) remains valid without a migration.

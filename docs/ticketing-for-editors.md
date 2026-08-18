@@ -98,14 +98,24 @@ Before you tick anything as "Active" or make any changes to the show dates/venue
 
 ### Rule 1: Only ONE Show Can Be Active at a Time
 
-**Only one show document may have the "Active" checkbox ticked at any time.** If you accidentally tick a second show as active — even an old archived show — ticket sales will **immediately stop for every buyer**. All buyers will see an error saying their ticket type is not available, but Studio will show nothing wrong.
+**Only one show document may have the "Active" checkbox ticked at any time.** If you accidentally try to tick a second show as active — even an old archived show — **Studio will stop you.**
+
+**What you will see:**
+
+When you try to Publish a show with "Active" ticked while another show is already active, Studio shows an error message like this:
+
+> A show is already marked Active: "19th SAOC National Show" (2027). Only one show can be Active at a time — untick Active on "19th SAOC National Show" before ticking it here, or contact the site developer if you're not sure which show should be active.
+
+This error message tells you exactly which show is currently active and what to do to fix it.
 
 **How to fix it:**
 
-1. Click "Show" in the left sidebar
-2. Search for the wrong show document (the one you accidentally ticked)
-3. **Uncheck** the "Active" checkbox
-4. Click **"Publish"**
+If you see this error:
+
+1. Read which show is already active (it will be named in the error message)
+2. Go to that show document and **uncheck** its "Active" checkbox
+3. **Publish** that change
+4. Go back to the show you were trying to activate and click **"Publish"** again
 
 Sales will resume within 1 minute.
 
