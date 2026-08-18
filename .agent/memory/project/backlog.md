@@ -1517,3 +1517,8 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 - [P2] F8 check A4 blind to both bare-JSX interpolation of undefined (renders blank) AND template-literal coercion of null (renders "null" — this exact regression shipped in bcbbc03, fixed in cd0308d). Architect: widen A4 to grep "null" as well as "undefined", plus a bare-`{boothNumber}`-as-JSX-child guard. (2026-08-18)
 
 - [P3] app/(marketing)/events/submit/page.tsx calls initAdmin() at page scope without force-dynamic — same cloud-prerender trap class as /admin/vendors (fixed); has built OK so far, but verify before it bites. (2026-08-18)
+
+
+
+
+
