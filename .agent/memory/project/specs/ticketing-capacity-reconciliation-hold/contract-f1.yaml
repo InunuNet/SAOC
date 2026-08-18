@@ -1,0 +1,94 @@
+schema: athanor.contract/v1
+slug: ticketing-capacity-reconciliation-hold
+goal: >
+  Brad asked for capacity tracking ("tickets for a show need to be counted down off the
+  capacity the show can handle"). That system already ships, per-ticket-type, and is
+  proven race-safe under real concurrency (contracts/contract-ticketing-hardening.yaml
+  F2 / check-capacity-no-oversell.mjs) — this contract does not rebuild it. It closes
+  the one real gap: a `reserved` order past its expiry silently releases its seat even
+  when order-reconciliation (lib/reconciliation.ts) has just alerted a human that the
+  order may actually be paid (ITN failure, e.g. orders 5KYDSBMT38KX, R06HZ12P06EY,
+  G08QJQK278NY). Without this fix, that seat can be resold to a second buyer while the
+  first buyer may already hold a paid ticket for it — a real oversell, distinct from the
+  concurrency-race kind already solved. See goldens/README.md for the full analysis of
+  why the other five hard problems in the dispatch brief are already correctly solved
+  and need no new work.
+created_at: '2026-08-18'
+autonomy: high
+features:
+  - id: F1
+    name: >
+      A reservation flagged by order-reconciliation (Order/Ticket.reconciliationAlertedAt
+      set) continues to hold its capacity seat past expiresAt, until a human resolves it.
+      Three small additive changes: (1) types/index.ts — add
+      reconciliationAlertedAt?: Timestamp | null to the Ticket interface, mirroring
+      Order's existing field; (2) lib/reconciliation.ts markOrdersAlerted — in addition
+      to its existing orders/{orderId} write, also write reconciliationAlertedAt onto
+      every tickets/{id} position where orderId matches (looked up via
+      .where('orderId', '==', orderId)), same value, same Promise.all, no other fields
+      touched on either collection; (3) lib/data/tickets.ts stillHoldsSeat — export it
+      (currently module-private) and add `if (data['reconciliationAlertedAt']) return
+      true;` before the existing expiry check. Nothing else changes — checkout, the ITN
+      route, and /tickets already call this function indirectly and inherit the new
+      behaviour for free. See goldens/README.md "Required changes" for exact code
+      locations and reasoning, and "Explicitly out of scope" for what NOT to build
+      (auto-settling, auto-cancelling, clearing the hold, or any change to the
+      already-correct boolean sold-out UI).
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/README.md
+  - .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/check-stillholdsseat-truth-table.mjs
+  - .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/check-markordersalerted-writes-positions.mjs
+  - .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/check-live-reconciliation-holds-seat.mjs
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        The app still compiles/builds with the exported stillHoldsSeat, the widened
+        markOrdersAlerted, and the new Ticket field in place. False-pass risk: none
+        realistic — a real `next build` failure is a hard compiler error; this only
+        proves "compiles", not "correct", which is why A2-A4 exist.
+      command: pnpm exec next build
+    - id: A2
+      description: >
+        stillHoldsSeat's full 5-case truth table holds against the REAL exported
+        function (lib/data/tickets.ts) — not a reimplementation. Case 3 (reserved,
+        expired, NOT alerted -> must still release) is the negative control that
+        catches a lazy "always hold" implementation; case 4 (reserved, expired,
+        alerted -> must now hold) is the actual new behaviour this contract adds; cases
+        1, 2, 5 are regression guards on existing behaviour. See goldens/README.md "A2"
+        for the full false-pass-risk table.
+      command: npx tsx .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/check-stillholdsseat-truth-table.mjs
+    - id: A3
+      description: >
+        markOrdersAlerted (lib/reconciliation.ts), against a fake in-memory
+        Firestore-shaped store (deps.db injected, no live Firestore): stamps
+        reconciliationAlertedAt onto BOTH positions sharing the alerted order's orderId
+        (proving multi-position orders are handled, not just the single-position case);
+        leaves a position with a DIFFERENT orderId untouched (negative control); leaves
+        status/amount on the order, and status on the positions, unchanged (re-proves
+        the function's existing "writes ONLY reconciliationAlertedAt" boundary after
+        the edit). False-pass risk: a field-name mixup (e.g. querying tickets by
+        bookingRef instead of orderId) is caught by the matching-positions check
+        failing; a version that also flips status is caught by the unchanged-fields
+        check.
+      command: npx tsx .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/check-markordersalerted-writes-positions.mjs
+    - id: A4
+      description: >
+        The real end-to-end proof against LIVE Firestore and the REAL, unmodified
+        getSoldCountsByTicketType (lib/data/tickets.ts) — not a fake, not a
+        reimplementation. Writes one sentinel-tagged reserved+expired order/position
+        pair for the 'exhibitor' fixture ticket type (same fixture already used safely
+        by contracts/checks/ticketing-hardening); proves it does NOT count before
+        alerting (negative control — an ordinary stranded reservation must still
+        release); calls the REAL markOrdersAlerted (the one live write, exactly the
+        field it's documented to write); proves it DOES count after alerting (the new
+        behaviour, through the real production capacity-counting path). Sweeps
+        sentinels and polls the held count back to baseline in a finally, so the next
+        check never inherits a held seat from this one. False-pass risk: an
+        implementation that holds every 'reserved' document unconditionally would pass
+        the post-alert check but is caught by the pre-alert negative control never
+        releasing; a no-op markOrdersAlerted is caught by the post-alert count staying
+        at baseline instead of baseline+1.
+      command: npx tsx .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/check-live-reconciliation-holds-seat.mjs

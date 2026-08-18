@@ -2221,3 +2221,37 @@ already use. Single token/utility change; audit all buttons afterward with a bro
 it is on the ticket-buying path.
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818234643.txt
+
+## P2 — PROCESS: two live contract locations caused duplicate work tonight
+
+**Found:** 2026-08-18. Codex (not the gate, not @qa) discovered an orphaned contract breaking on
+an import.
+
+This repo has TWO places contracts live:
+- `contracts/` — git-tracked, legacy, holds the vendor F1-F9 series, ticketing-hardening, etc.
+- `.agent/memory/project/specs/<slug>/` — where recent missions write contract + goldens.
+
+**What it cost:** an earlier session wrote `contracts/contract-vendor-form-submit-visibility-fix.yaml`
+(never committed) for the boothCount + invisible-banner bug. Tonight @architect independently
+designed `vendor-page-fixes` for the SAME two defects, having no idea the first existed — it
+scoped from the backlog and source, and nothing pointed at `contracts/`. Two designs, same
+destination, divergent APIs (`validateBoothCount()` vs `validateVendorRegisterFormClientSide()`).
+The older one's check script then broke against the shipped code, which is how it was found.
+
+Nothing caught this: the gate only runs the contract it's pointed at, @qa reviewed within scope,
+and the duplicate was invisible to both. Codex found it only because it reviews a diff rather
+than a contract.
+
+**Also note:** an untracked contract has no git history — deleting it is unrecoverable. The
+decision record here was archived deliberately to
+`.agent/memory/project/specs/vendor-page-fixes/superseded/`, but that was a judgement call, not a
+guarantee the process provides.
+
+**Suggested:** decide on ONE canonical location and migrate, or document clearly which is for what
+and have @architect check both before scoping. At minimum, contracts should be committed when
+written — an untracked contract is invisible to every tool and every future agent.
+
+**Minor, same investigation:** `SecurityValidator.hook.ts` false-positives on `rm -rf` with
+multiple ABSOLUTE paths (reads plain `/Users/...` as "recursive force-delete from filesystem
+root"). Worked around with one relative path per command; no override needed. Worth tightening if
+it recurs.

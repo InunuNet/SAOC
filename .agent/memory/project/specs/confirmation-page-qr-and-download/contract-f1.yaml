@@ -61,7 +61,8 @@ assertions:
     - id: A6
       description: >-
         a Playwright-driven run against a real built-and-served instance of the app,
-        using one real paid booking ref and one bogus/nonexistent ref, proving in one script -- (1)
+        using one real paid booking ref, one bogus/nonexistent ref, and one real ref for a
+        document that genuinely exists but is still 'reserved', proving in one script -- (1)
         the paid page's rendered <img> QR, decoded with jsqr+pngjs, yields EXACTLY the paid ref's
         bookingRef string (not merely that an <img> tag with a data: src exists -- an img
         pointing at a decorative placeholder or the wrong field would fail this); (2) the paid
@@ -72,12 +73,25 @@ assertions:
         decoded, ALSO equals the exact bookingRef -- proving the download artifact is not a
         decorative screenshot but a genuinely re-scannable ticket; (4) the bogus-ref page renders
         no QR image and no buyer-detail text (the not-found/pending state only) -- proving the
-        server-side lookup fails closed rather than leaking a stale/placeholder QR. False state
-        that still passes -- none of the above if implemented as specified; the weakest link is
-        the script itself silently skipping a sub-case on an unrelated setup error instead of
-        failing loudly, so the script must exit non-zero and name the failing case exactly like
-        execution/checks/verify_reply_to.ts does, never swallow a sub-case.
-      command: node_modules/.bin/tsx execution/checks/verify_confirmation_page.ts --paid-ref SAOC-2027-X8ZPQNYCVWGY --bad-ref SAOC-2027-NOTAREALREF00Q
+        server-side lookup fails closed on an ABSENT document rather than leaking a stale/
+        placeholder QR; (5) the reserved-ref page ALSO renders no QR image and no buyer-detail
+        text -- proving the server-side lookup fails closed on the STATUS of a document that
+        genuinely EXISTS with real attendeeName/ticketType/amount already on it, not merely on
+        the document's presence/absence. (4) and (5) are deliberately both required: a status-gate
+        regression (e.g. getConfirmedTicketForDisplay loosened to key off field presence instead
+        of status in {'paid','checked-in'}) would still pass (4) -- there is no document at all
+        for the bogus ref -- while failing exactly the property (5) checks, leaking a paid page
+        and buyer PII for an unpaid reservation. The reserved-ref fixture is re-verified live
+        (not hardcoded blindly) and, if none can be confirmed reserved, the script SKIPs case (5)
+        with an explicit, named message rather than passing it by default -- a check that quietly
+        passes because it found nothing to test is worthless, so a silent SKIP is exactly as
+        disallowed as a silent pass. False state that still passes -- none of the above if
+        implemented as specified; the weakest link is the script itself silently skipping a
+        sub-case on an unrelated setup error instead of failing loudly (or, per the previous
+        sentence, skipping case (5) without saying so), so the script must exit non-zero and name
+        the failing case exactly like execution/checks/verify_reply_to.ts does, never swallow a
+        sub-case.
+      command: node_modules/.bin/tsx execution/checks/verify_confirmation_page.ts --paid-ref SAOC-2027-X8ZPQNYCVWGY --bad-ref SAOC-2027-NOTAREALREF00Q --reserved-ref CrF2gcbRQCMPGRKSn8Da
     # --- Regression guard: this project has shipped a broken `next build` behind a green gate before ---
     - id: A7
       description: the real Next.js production build succeeds with every new file (page.tsx
