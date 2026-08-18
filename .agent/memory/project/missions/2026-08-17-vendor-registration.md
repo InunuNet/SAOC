@@ -6,7 +6,7 @@ goal: 'Build the 2027 National Show vendor/exhibitor-nursery programme from Lee-
   and a 31-field vendor registration submission pipeline in Firestore reusing the
   ticketing foundation''s roles and orders/positions patterns'
 created_at: '2026-08-17T20:00:00.000000+00:00'
-status: close_out
+status: done
 queued_after: ticketing-foundation
 cost_estimate:
   features: 11
@@ -199,8 +199,10 @@ milestones:
   status: done
   gate_ran_at: '2026-08-18T07:46:22.531543+00:00'
   gate_result: pass
-last_active_at: '2026-08-18T07:46:16.015268+00:00'
+last_active_at: '2026-08-18T07:47:32.896644+00:00'
+completed_at: '2026-08-18T07:47:32.896398+00:00'
 ---
+
 
 
 
