@@ -2189,3 +2189,33 @@ diagnoses imprecisely. Verify against source before scoping work from them.
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818233604.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818234125.txt
+
+## P2 — Site-wide: button focus ring is invisible on cream backgrounds (WCAG 2.4.7)
+
+**Found:** 2026-08-18 by BrowserAgent visual review (verified via computed styles + 3x zoom
+screenshot, not inferred from source).
+
+Buttons on the cream body background render their focus outline as `rgb(244,243,236)` — the SAME
+colour as the background — with a 2px offset, so the ring sits invisibly in cream-on-cream. The
+element IS focusable and keyboard-operable (Enter works); the problem is purely that a keyboard
+user cannot SEE where focus is.
+
+Confirmed affected:
+- "Download ticket" on `/tickets/confirmation` (new, but inherits the site-wide pattern)
+- "Buy Ticket" on `/tickets` — the site's primary purchase CTA
+- Likely every button on a cream surface; not audited exhaustively.
+
+NOT a regression from the QR feature — pre-existing. Header/footer nav links already do this
+correctly with a near-black outline, so the correct pattern exists in the codebase; it just was
+never applied to buttons on cream.
+
+**Why it matters:** WCAG 2.4.7 (Focus Visible) failure on the purchase path, and this project's
+own `.claude/rules/coding.md` requires "every interactive element needs a label, role, and
+keyboard handler" with visible focus. A sighted keyboard user tabbing to buy a ticket cannot tell
+what is selected.
+
+**Fix:** give buttons on cream backgrounds a dark focus outline matching what the nav links
+already use. Single token/utility change; audit all buttons afterward with a browser, not a grep.
+
+**Suggested:** fold into the next UI pass rather than a standalone mission — but do not lose it,
+it is on the ticket-buying path.
