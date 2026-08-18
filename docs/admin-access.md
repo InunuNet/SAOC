@@ -547,10 +547,15 @@ for the full details, including why the boundary is load-bearing and what is man
 Every `/admin/*` surface now has a persistent navigation menu with a real Sign out control —
 see [docs/admin-nav-menu.md](admin-nav-menu.md) for the full account. Sign-out clears the
 `session` cookie server-side (`DELETE /api/admin/session`) and the Firebase client SDK's local
-auth state, but does **not** call `revokeRefreshTokens()` — a session cookie captured before
-sign-out stays valid until its natural ~5-day expiry regardless. Use
-`pnpm exec tsx scripts/admin-revoke.ts <email>` (above) when a session actually needs to be
-invalidated immediately, not just signed out of through the UI.
+auth state, and also calls `revokeRefreshTokens(uid)` for the uid resolved from the caller's
+own verified session cookie. **Signing out ends your session everywhere, not just this
+device** — every other tab, browser, and device that was signed in as you is signed out too,
+the same as running `pnpm exec tsx scripts/admin-revoke.ts <email>` (above). This is
+deliberate: it's what actually remediates a session cookie captured before sign-out (XSS, a
+shared machine, a copied devtools value), which previously stayed valid for its full ~5-day
+life regardless of clicking Sign out. Resolving the uid and revoking is best-effort and never
+blocks sign-out — an already-broken cookie (absent, expired, malformed) still clears and still
+returns success, it just has nothing to revoke.
 
 The navigation menu itself is presentation only and grants nothing — see
 [docs/admin-nav-menu.md](admin-nav-menu.md)'s "The nav is never the access boundary" section.

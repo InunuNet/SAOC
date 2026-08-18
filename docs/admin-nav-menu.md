@@ -96,15 +96,38 @@ two things, in `try`/`finally` so the second always runs even if the first throw
 
 Both then redirect to `/admin/login` regardless of whether the Firebase call succeeded.
 
-### Known limitation — not a solved problem
+### Sign-out revokes refresh tokens, not just the cookie (hardened by `admin-signout-revocation` F1)
 
-Sign-out clears the session cookie but does **not** call `revokeRefreshTokens()`. If a session
-cookie was exfiltrated before sign-out (XSS, a shared/compromised device), that cookie remains
-valid server-side until its natural expiry — up to 5 days
-(`SESSION_DURATION_MS` in `app/api/admin/session/route.ts`) — even after the legitimate user
-signs out through the UI. This is a known follow-up, not something this feature closes. Compare
-`scripts/admin-revoke.ts`, which does call `revokeRefreshTokens()` for an operator-initiated
-revoke — sign-out and revoke are different operations with different guarantees today.
+The `DELETE` handler does more than clear the cookie. It first resolves a `uid` from the
+request's own `session` cookie (never from a body, query string, or header — revocation is
+global per-user, so honouring a client-supplied uid would let an unauthenticated caller
+force-sign-out any admin by naming their uid), then calls
+`getAuth(initAdmin()).revokeRefreshTokens(uid)` before clearing the cookie. This is what makes
+sign-out actually bite everywhere, not just in the browser that clicked it:
+`lib/admin-auth.ts`'s `getAdminSession()` calls `verifySessionCookie(sessionCookie, true)` —
+the `true` enables `checkRevoked`, so a session cookie that outlives its own revocation stamp is
+refused on its very next use, from any browser or device holding it.
+
+**Revocation is per-user and global, deliberately.** `revokeRefreshTokens(uid)` invalidates
+every refresh token for that account, not only the session that clicked Sign out. Signing out on
+one device ends that admin's sessions on every other device too. This is the intended, correct
+behaviour for a security-motivated sign-out — it's also what actually remediates a cookie
+exfiltrated before sign-out — but it does mean an admin can't use "sign out here" as a way to
+end just one session while staying signed in elsewhere.
+
+**The cookie clear is unconditional.** Resolving the uid and calling `revokeRefreshTokens` are
+both wrapped so that a missing, malformed, or already-expired cookie, or an unreachable Admin
+SDK, never blocks the clear — the handler always reaches step 3 and always returns `200`. A user
+with an already-broken session is never trapped signed in.
+
+**Relationship to `scripts/admin-revoke.ts`:** both now call `revokeRefreshTokens()`, but they
+are not the same operation. Sign-out (this feature) only ends the current session(s) — it never
+touches the `admin` custom claim, so the account remains admin and can sign in again
+immediately. `admin-revoke.ts` is the operator-initiated, permanent action: it clears the
+`admin` claim itself (or, with `--role`/`--show`, removes one scoped role grant) in addition to
+revoking tokens, and recommends removing the email from `ADMIN_EMAIL_ALLOWLIST` as a second,
+defence-in-depth step. Use sign-out to end a session; use `admin-revoke.ts` to actually take
+admin access away from someone.
 
 CSRF is not a live concern for the `DELETE` handler as shipped: the cookie is
 `sameSite: 'strict'`, the request uses a non-simple method, and there is no CORS middleware in

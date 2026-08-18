@@ -1,0 +1,89 @@
+schema: athanor.contract/v1
+slug: admin-signout-revocation
+goal: >-
+  Sign-out (DELETE /api/admin/session) must revoke the signed-out user's Firebase
+  refresh tokens server-side, not just clear the cookie in the calling browser, while
+  never trapping a user with an already-broken session and never letting a caller name
+  an arbitrary victim uid.
+created_at: '2026-08-19'
+autonomy: high
+features:
+  - id: F1
+    name: DELETE /api/admin/session revokes refresh tokens for the caller's own verified uid, unconditionally still clears the cookie
+    status: pending
+goldens:
+  - .agent/memory/project/specs/admin-signout-revocation/goldens/README.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        CORE proof: sign-out actually revokes the session server-side, not just the
+        local cookie. A grep for `revokeRefreshTokens` in the route source would still
+        pass on dead code, a call in an unreachable branch, or a call whose thrown
+        error is swallowed such that revocation never actually happens. This script
+        rules out all three by minting a real cookie, confirming it works, calling
+        DELETE, then re-presenting that SAME captured cookie value on a fresh request
+        and proving it is now refused on /admin and /api/admin/tickets.
+      command: node contracts/checks/admin-signout-revocation/check-signout-revokes-session.mjs
+    - id: A2
+      description: >-
+        Sign-out must ALWAYS return 200 and clear the cookie, even when no uid can be
+        resolved (absent cookie, syntactic garbage, or a well-formed-but-fake JWT).
+        Would still pass a naive implementation that folds revoke-attempt and
+        cookie-clear into one try block (clears on success, silently 500s or skips
+        the clear on failure) ONLY if that implementation is never exercised with a
+        cookie it can't resolve — every sub-case here deliberately presents one, so a
+        clear that's conditional on successful uid resolution WILL show up as a
+        failure (non-200 or a Set-Cookie missing max-age=0).
+      command: node contracts/checks/admin-signout-revocation/check-signout-clears-cookie-unconditionally.mjs
+    - id: A3
+      description: >-
+        The revoked uid must come only from the caller's own verified session cookie,
+        never a client-supplied body/query field — revocation is global-per-user, so
+        an attacker naming an arbitrary victim uid would be an unauthenticated
+        force-sign-out-anyone primitive. Authenticates as fixture A, sends a DELETE
+        whose body/query all name fixture B's uid, then proves B's SEPARATELY
+        captured cookie still works afterward. A grep for absence of `req.json()` in
+        the handler would pass even if a future refactor read the uid from a header,
+        a cookie OTHER than 'session', or any other client-controlled channel — only
+        a real cross-user behavioural probe rules all of those out at once.
+      command: node contracts/checks/admin-signout-revocation/check-signout-ignores-crafted-uid.mjs
+    - id: A4
+      description: >-
+        Documentation-only, deliberately weak (source presence, not behaviour) — the
+        deliberate "revocation is global, kills other devices too" design choice must
+        be recorded as a code comment at the revokeRefreshTokens call site, not left
+        to be discovered later by a committee member confused about being logged out
+        elsewhere. Satisfiable by any comment mentioning revocation scope near the
+        call — that's acceptable here because the behavioural fact itself (that it IS
+        global) is Firebase's own documented API contract, not something this project
+        controls or could get subtly wrong at the implementation level; only the
+        DOCUMENTING of that fact is this assertion's job.
+      command: grep -qi "revokeRefreshTokens" app/api/admin/session/route.ts && grep -qiE "(all|every|other) (session|device)" app/api/admin/session/route.ts
+    - id: A5
+      description: >-
+        Supplementary structural belt-check, NOT load-bearing on its own (A3 above is
+        the real proof) — the DELETE handler must not read `request.json()`, a URL
+        query param, or any request body at all when resolving who to revoke. This
+        alone is satisfiable by an implementation that reads client input under an
+        unexpected name A3 didn't happen to probe, which is exactly why A3's
+        behavioural cross-user proof exists and must never be dropped in favour of
+        this check alone.
+      command: python3 contracts/checks/admin-signout-revocation/check_no_body_read.py app/api/admin/session/route.ts
+    - id: A6
+      description: >-
+        Codex GPT-5.5 finding (2026-08-19): verifySessionCookie in the DELETE handler
+        must pass checkRevoked=true. Without it, an already-revoked cookie still
+        resolves a uid and still triggers a SECOND real revokeRefreshTokens(uid) on
+        replay — turning an exfiltrated cookie into a repeatable force-sign-out
+        weapon against the admin it was stolen from, surviving even a fresh sign-in.
+        A HTTP-status-only check cannot catch this: both the buggy and fixed code
+        return 200 on the replayed DELETE (constraint #1 requires that of both). The
+        only proof that distinguishes "200 and did nothing" from "200 and revoked
+        again" is Firebase's own tokensValidAfterTime on the user record, observed
+        via a second, independent Admin SDK path — compared before and after the
+        replayed call. This assertion was run and OBSERVED FAILING against the
+        pre-fix implementation before being added here, per this project's
+        "assertion must be proven to actually catch the defect" rule.
+      command: node contracts/checks/admin-signout-revocation/check-signout-replay-cannot-rerevoke.mjs
