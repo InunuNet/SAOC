@@ -2040,3 +2040,23 @@ Two separate defects:
    or have the scanner skip non-mission files deliberately rather than erroring on them.
 
 Fixing only (2) would hide (1) again — the exit-code bug is the item that matters.
+
+## P2 — Ticket confirmation emails have no reply_to; replies vanish
+
+**Found:** 2026-08-18, while confirming Resend domain setup.
+
+`lib/email.ts:17-18` sends ticket confirmations from
+`SAOC Tickets <tickets@tickets.saoc.co.za>` and no `reply_to` is set anywhere in
+`lib/email.ts` or `lib/confirmation-email.ts`.
+
+`tickets@tickets.saoc.co.za` READS like a monitored mailbox, so buyers will reply to it
+("change my booking", "I didn't get my QR"). Resend "Enable Receiving" is deliberately OFF
+(correct — we send only, and inbound MX on that subdomain would serve a pipeline that doesn't
+exist), which means those replies go nowhere and the sender may not even get a clear bounce.
+
+**Fix:** set `reply_to: council@saoc.co.za` on ticket confirmations (and review whether forms
+mail should do the same — it at least uses an honest `noreply@` sender). Do NOT fix this by
+enabling inbound receiving.
+
+**Priority:** not blocking F3/F4, but should land before public ticket sales — a buyer with a
+payment problem replying into a void is a support failure at the worst moment.
