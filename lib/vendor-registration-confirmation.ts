@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { sendEmail } from '@/lib/email';
+import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
 import VendorRegistrationConfirmation from '@/emails/VendorRegistrationConfirmation';
 
 /**
@@ -45,5 +45,6 @@ export async function sendVendorRegistrationConfirmationEmail(
       businessName: input.businessName,
       contactPersonName: input.contactPersonName,
     }),
+    from: FORMS_FROM_ADDRESS,
   });
 }

@@ -2,7 +2,7 @@ import React from 'react';
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initAdmin } from '@/lib/firebase-admin';
-import { sendEmail } from '@/lib/email';
+import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
 import ContactConfirmation from '@/emails/ContactConfirmation';
 
 export async function POST(request: NextRequest) {
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
           name: String(name).trim(),
           subject: String(subject).trim(),
         }),
+        from: FORMS_FROM_ADDRESS,
       });
     } catch (emailErr) {
       console.error('[contact/route] Email send failed (non-fatal):', emailErr);

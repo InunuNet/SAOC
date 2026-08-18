@@ -112,7 +112,13 @@ env:
     secret: RESEND_API_KEY
     availability:
       - RUNTIME
-  - variable: RESEND_FROM_ADDRESS
-    value: "SAOC <noreply@mail.saoc.co.za>"
+  # Sending domains are segregated by category, not shared -- see lib/email.ts. Each needs its
+  # own DNS verification in Resend before it can send (tickets.saoc.co.za, forms.saoc.co.za).
+  - variable: RESEND_FROM_TICKETS
+    value: "SAOC Tickets <tickets@tickets.saoc.co.za>"
+    availability:
+      - RUNTIME
+  - variable: RESEND_FROM_FORMS
+    value: "SAOC <noreply@forms.saoc.co.za>"
     availability:
       - RUNTIME

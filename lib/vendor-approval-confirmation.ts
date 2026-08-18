@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { sendEmail } from '@/lib/email';
+import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
 import VendorApprovalConfirmation, {
   BOOTH_NUMBER_PENDING_LABEL,
   LOGISTICS_NOT_SPECIFIED_LABEL,
@@ -69,5 +69,6 @@ export async function sendVendorApprovalConfirmationEmail(
       loadInSlot: input.loadInSlot ?? null,
       loadOutSlot: input.loadOutSlot ?? null,
     }),
+    from: FORMS_FROM_ADDRESS,
   });
 }

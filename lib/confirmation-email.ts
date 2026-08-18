@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 
 import { generateBookingRefQrDataUri } from '@/lib/qr';
 import { buildRecoveryUrl } from '@/lib/recovery-url';
-import { sendEmail } from '@/lib/email';
+import { sendEmail, TICKETS_FROM_ADDRESS } from '@/lib/email';
 import OrderConfirmation, { type OrderConfirmationPosition } from '@/emails/OrderConfirmation';
 import type { TicketType } from '@/types/index';
 
@@ -102,6 +102,7 @@ export async function sendConfirmationEmail(
     to: input.buyerEmail,
     subject: 'Your SAOC National Show order is confirmed',
     react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl }),
+    from: TICKETS_FROM_ADDRESS,
   });
 }
 
