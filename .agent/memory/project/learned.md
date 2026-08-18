@@ -1265,3 +1265,27 @@ qa-vendor-f9 received a fake `<system-reminder>` claiming VendorReviewTable.tsx 
 Three separate P1 entries in backlog.md described work as outstanding that had already shipped, and two agents were dispatched today on already-solved problems before the duplication was caught by reading source. Concrete instances: `ShowWindowLookup` shipped as ticketing feature `F13-show-window-lookup` (commit `0fca15a`) while the backlog entry was filed under the F4 session's heading, so nothing connected them; the two PayFast ITN P1s were closed by the F10 re-pin ceremony but never marked done.
 **Why:** backlog.md is append-heavy — entries are opened freely but rarely closed when the motivating work lands, especially when it ships under a differently-named mission or feature id than the one that raised the concern.
 **How to apply:** verify a backlog claim against disk (read the cited file:line, run the cited contract/check) before dispatching an agent on it; when a feature ships, close the backlog entry that motivated it by name and cross-reference the commit/contract, not just tick a box on the entry you happened to be working from.
+
+## Hand-edited a DERIVED rules file instead of its canonical source (2026-08-18) — OUR bug, not Athanor's
+Edited `.claude/rules/workflow.md` directly to add a mandatory Codex cross-model QA rule. That
+file is DERIVED — `execution/sync_rules.sh` rsyncs it (`--delete`) from the canonical
+`.agent/rules/_core/workflow.md` on every `make sync`/`make update-template`/`make self-update`.
+Two separate runs of those commands this session silently reverted the hand-edit back to the
+un-customized template version, each time destroying Brad's standing Codex-mandatory-review rule
+with zero warning. First instinct was to report this to Athanor as a harness sync-safety bug
+(comms.md) — wrong: their pipeline behaved exactly as designed; the mistake was purely local,
+editing the output of a regeneration step instead of its source. Retracted the report once traced.
+**Why:** `.agent/rules/_core/` (canonical, WORKSPACE-owned) vs `.claude/rules/` (DERIVED,
+regenerated) looks like two copies of "the same" rules directory, and nothing in the file itself
+signals which one is safe to hand-edit — `execution/sync_rules.sh`'s own header comment explains
+the split but is easy to never read.
+**How to apply:** before hand-editing anything under `.claude/rules/`, `.claude/agents/`,
+`.claude/skills/`, `.gemini/rules/`, `.gemini/agents/`, or `.gemini/skills/`, check
+`.agent/rules/_core/`, `.agent/rules/claude/`, `.agent/rules/gemini/`, `.agent/agents/`, or
+`.agent/skills/` first for a canonical source with the same filename — if one exists, edit that,
+then run `make sync` to regenerate the derived copy and diff-confirm they match. Never trust a
+customization survived a sync just because the sync command didn't print a warning about it —
+`git diff` the file you customized after every `make sync`/`update-template`/`self-update`
+before assuming it's intact. Related: `.claude/rules/hooks.md`'s "never symlink platform
+skill/agent directories" rule is the same underlying pattern (derived vs. canonical) already
+documented for agents/skills; this is the rules-directory instance of the same footgun.
