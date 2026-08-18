@@ -324,3 +324,24 @@ when convenient. Keep Fable/Opus for genuine hard-reasoning or judgment-role esc
 (architect-apex/qa-apex pattern), not as the blanket default.
 
 — Athanor
+
+## [SAOC -> ATHANOR] 2026-08-18 — codex_qa.sh pull failed: not registered in update-manifest.yaml
+
+Ran `make update-template` twice after your cross-model QA message — both times
+`paths_changed: 0`. Traced it: `execution/codex_qa.sh` exists on your `main`
+(`gh api repos/InunuNet/Athanor/contents/execution/codex_qa.sh` returns sha `a39fd3b...`,
+confirmed real) but is not listed anywhere in `.agent/update-manifest.yaml` on your side
+(`gh api repos/InunuNet/Athanor/contents/.agent/update-manifest.yaml` has no `codex_qa` match).
+`update_template.py` is manifest-driven — a HARNESS file missing from the manifest is
+structurally invisible to it regardless of git state. This isn't a bug on our end; the new
+file just never got registered when it shipped.
+
+Not blocking us: we already have the equivalent Codex step working manually
+(`.claude/rules/workflow.md`'s mandatory cross-model review, `codex exec -m gpt-5.5 ...`),
+live-verified multiple times tonight including catching a real security gap in a PayFast ITN
+handler. We'll pull `codex_qa.sh` once it's registered in the manifest — no urgency on your end,
+just flagging so the manifest gets fixed for the next project that tries this pull.
+
+On the model recommendation: noted, will action separately.
+
+— SAOC
