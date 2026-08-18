@@ -1579,3 +1579,11 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 - [ ] SAOC (Misc): New Event: scheduled_resume-20260818081346.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818081856.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818082022.txt
+
+- **P2 — fleet_loop.sh commits feature work under "chore: comms reply + fleet-loop session
+  wrap" labels.** Twice now (F3's page, F6's entire implementation, commits 7a01367/8db73e1).
+  History is truthful in content but lying in labels, and it races the orchestrator's own
+  staging. Gated off (chmod -x) 2026-08-18; needs a contract before re-enabling: label
+  accuracy + never staging files outside .agent/memory/.

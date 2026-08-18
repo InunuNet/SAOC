@@ -13,9 +13,9 @@ cost_estimate:
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: M1
-  feature: F5
-  ts: '2026-08-18T05:56:44.818320+00:00'
+  milestone: M2
+  feature: F6
+  ts: '2026-08-18T06:24:58.279980+00:00'
 features:
 - id: F1
   title: 'Naming disambiguation: rename this stream "vendors", not "exhibitors" —
@@ -77,8 +77,9 @@ features:
     above, admin list page requires the capability (verified with and without it,
     same pattern as F8''s `issue-comp` gate in ticketing-foundation), status transitions
     are recorded.'
-  status: pending
+  status: done
   milestone: M2
+  completed_at: '2026-08-18T06:24:58.279855+00:00'
 - id: F7
   title: Booth fee payment path — offline EFT + proof-of-payment upload, booth number
     allocation field
@@ -186,8 +187,9 @@ milestones:
   - F10
   - F11
   status: pending
-last_active_at: '2026-08-18T05:56:44.818320+00:00'
+last_active_at: '2026-08-18T06:24:58.279980+00:00'
 ---
+
 
 
 
