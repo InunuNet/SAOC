@@ -43,15 +43,17 @@ app/
 │   ├── privacy/           # Privacy policy
 │   ├── terms/             # Terms
 │   └── contact/           # Contact form
-├── admin/                # Firebase Auth-gated admin (login, door check-in scanner)
+├── admin/                # Firebase Auth-gated admin (login, door check-in scanner, vendor review)
+│   └── vendors/           # Vendor application review workflow (capability-gated: review-vendor-applications)
 ├── studio/               # Sanity Studio, mounted at /studio (see sanity.config.ts)
 ├── api/
 │   ├── contact/           # Contact form POST handler → Firestore + Resend
 │   ├── events/             # Event submission + per-event .ics export
 │   ├── events.ics/         # Combined events feed
 │   ├── tickets/            # PayFast checkout + ITN webhook → Firestore `tickets`
-│   ├── vendors/            # Vendor registration submission → Firestore `vendorSubmissions`
-│   ├── admin/               # Session (Firebase Auth), check-in, CSV export
+│   ├── vendors/            # Vendor registration submission → Firestore `vendorSubmissions` (F5); proof-of-payment upload (F7)
+│   ├── admin/               # Session (Firebase Auth), check-in, CSV export; vendor review and payment routes
+│   │   └── vendors/        # Vendor review workflow (F6) and payment/booth allocation (F7)
 │   ├── draft/ + disable-draft/  # Sanity draft-mode preview toggles
 │   └── revalidate/          # Sanity webhook → on-demand ISR revalidation
 ├── layout.tsx             # Root layout (html/body/fonts/globals)

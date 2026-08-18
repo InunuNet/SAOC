@@ -217,17 +217,74 @@ Content-Type: application/json
 
 **Rate-limit constants are placeholders:** The 3/hour and 1-hour window were chosen as reasonable defaults but are not Council-approved. These can be tuned by changing constants in `lib/vendor-registration-rate-limit.ts`.
 
-## What is NOT yet built (F6-F11)
+## Admin review workflow — F6
 
-**F6 — Admin review workflow:** UI for listing, approving, and rejecting submissions. Creates the `review-vendor-applications` capability and status transitions.
+**Capability-gated:** All `/admin/vendors` pages and `/api/admin/vendors/*` routes require the `review-vendor-applications` capability (granted to manager and owner roles, not door-staff — back-office triage, not door operations).
 
-**F7-F8 — Booth allocation & EFT payment:** How the booth fee is paid, how booth numbers are assigned, and the allocation-confirmation email.
+**List route:** `GET /api/admin/vendors` returns a JSON array of all `vendorSubmissions` documents with their full data, sorted by `submittedAt` descending. The response shape is `{ submissions: [...] }`.
 
-**F9 — Regulatory permits:** Adds a non-verification notice to the confirmation copy and the admin review UI explaining what SAOC does (and does not) do with permit numbers. Whether SAOC is obliged to verify permit and certificate numbers is a decision for the show committee, not an engineering default.
+**Review page:** `app/admin/vendors/page.tsx` (Server Component, gated in a subtree-scoped `layout.tsx`) displays submissions in a table with columns for business name, contact person, category, current status, and action buttons.
+
+**Status transitions:** F6 establishes a closed state machine:
+- `submitted` → `under-review` (via `start-review` action)
+- `under-review` → `approved` or `rejected` (via `approve` or `reject` action)
+- Any other transition (e.g. direct `submitted` → `approved`, or any action on `approved`/`rejected`) is refused with a 409 conflict
+
+Each transition records two timestamps: `reviewedBy` (the reviewer's email) and `reviewedAt` (UTC timestamp).
+
+**Review API:** `POST /api/admin/vendors/[id]/review` accepts a JSON body `{ action: 'start-review' | 'approve' | 'reject' }` and updates the submission's status. Returns 409 if the transition is invalid (e.g. already approved), 404 if the submission does not exist.
+
+---
+
+## Booth fee payment path — F7
+
+**Offline EFT workflow:** The booth fee uses offline electronic funds transfer, not a gateway checkout. A vendor uploads proof of EFT payment to their own submission, and a committee member records the receipt and allocates a booth number.
+
+**Vendor upload:** `POST /api/vendors/[id]/proof-of-payment` is public and unauthenticated. Accepts a file upload (PDF, JPG, or PNG; max 5 MB) and is rate-limited to 5 uploads per day per IP address. A second upload against the same submission ID overwrites the first, not refusal or versioning.
+
+**Response:** Always returns HTTP 202 `{ accepted: true }` whether the submission ID exists or not — an attacker cannot distinguish real from made-up submission IDs by response shape.
+
+**Office-use fields:** An admin with `review-vendor-applications` capability uses `POST /api/admin/vendors/[id]/payment` to record four office-use fields:
+- `boothNumber: string | null` — booth number allocated, must be unique across all approved submissions
+- `paymentReceived: boolean` — whether payment has been confirmed
+- `paymentConfirmedBy: string` — the admin's email who confirmed payment
+- `paymentConfirmedAt: Date` — timestamp of confirmation (UTC)
+
+These four fields are additive-only patches to an already-`approved` submission and are never settable by the public vendor.
+
+**Rate limit:** 5 uploads per day per IP; `Retry-After` header (in seconds) is returned on 429 rate-limit refusal.
+
+---
+
+## Approval and logistics confirmation email — F8
+
+**Send trigger:** Sent from the F6 admin approval action (POST `/api/admin/vendors/[id]/review` with `action='approve'`), never from the F5 public submission route and never on a `reject` or `start-review` action.
+
+**Email content:** Confirms the allocated booth number and restates the vendor's own submitted logistics (staff per day, power/water requirements, load-in/out slots) so the vendor can verify data accuracy before the show.
+
+**Fallback labels:** If a booth number is not yet allocated, displays 'To be confirmed'. If optional logistics fields are missing, displays 'Not specified'. The literal string "undefined" never appears in the rendered email.
+
+**Email failure:** If the Resend send fails, the approval is not rolled back. The status transition to `approved` commits regardless of email delivery.
+
+---
+
+## Regulatory permit fields — F9
+
+**Collected, not validated:** The three permit fields (phytosanitary/import permit number, CITES permit number, food handling certificate number) are collected as free-text optional fields on the vendor submission form but carry zero external validation, lookup, or registry checks.
+
+**Admin UI note:** The admin review page displays these three fields alongside a visible note: "Permit and certificate numbers are recorded as submitted and have not been verified by SAOC."
+
+**Vendor-facing copy:** The confirmation email (F8) includes a statement that permit and certificate numbers are recorded as submitted but not verified by SAOC, and that ensuring their legal validity remains the vendor's own responsibility.
+
+**Committee decision:** Whether SAOC is obliged to verify these numbers is a decision for the show committee, not an engineering default.
+
+---
+
+## What is NOT yet built (F10-F11)
 
 **F10 — Human end-to-end proof:** Full round trip from submission through approval, with real Firestore and real email delivery.
 
-**F11 — POPIA flag & audit log:** Any additional privacy/compliance tracking as required pre-launch.
+**F11 — POPIA / compliance flag:** Record the sensitive-data exposure in codebase documentation as a pre-launch checklist item.
 
 ## Named unproven seams (deferred to F10)
 
@@ -254,6 +311,22 @@ These three implementation details are placeholders; F10 owns proving them:
 
 ---
 
+## Data sensitivity and POPIA considerations
+
+This form collects materially more sensitive data than the ticket-buyer flow already in use on this site. The vendor submission includes:
+- CIPC (business registration) numbers
+- VAT numbers
+- Cell phone numbers
+- Physical business addresses
+- Vehicle registration numbers
+- Permit and certificate numbers
+
+All submission data is stored in Firestore with platform-level encryption at rest only; no field-level encryption is applied to these business-sensitive fields.
+
+**Pre-launch requirement:** POPIA compliance work on this project is currently deferred. However, this vendor registration mission represents a concrete reason to revisit the deferred POPIA backlog item before go-live. The additional sensitive-data collection introduces concrete exposure that should be addressed through a formal privacy-impact assessment and appropriate data-handling controls before the site launches.
+
+---
+
 ## Integration checklist for QA/verification
 
 - [ ] **Sanity schema** — `vendorNursery` renders correctly in Studio; name + country appear in document list preview.
@@ -263,3 +336,9 @@ These three implementation details are placeholders; F10 owns proving them:
 - [ ] **Rate limiting** — Four rapid requests from the same IP receive 429 on the fourth; `Retry-After` header is present.
 - [ ] **Confirmation email** — Valid submission triggers a confirmation email to the registered address (requires real Resend key for F10).
 - [ ] **Write-before-email** — If Firestore write succeeds but email fails, response is still 201 and submission is stored.
+- [ ] **Admin review page** — `/admin/vendors` displays a gated list of submissions with status and action buttons; access is refused without `review-vendor-applications` capability.
+- [ ] **Status transitions** — Admin can move submissions from `submitted` → `under-review` → `approved` or `rejected`; invalid transitions (e.g. direct approve, or actions on terminal states) return 409.
+- [ ] **Proof of payment upload** — POST `/api/vendors/[id]/proof-of-payment` accepts PDF/JPG/PNG files up to 5 MB and rate-limits to 5 per day; a second upload overwrites the first.
+- [ ] **Payment recording** — Admin can allocate a booth number and confirm payment via `POST /api/admin/vendors/[id]/payment`; booth numbers must be unique across approved submissions.
+- [ ] **Approval email** — Sent only on approval action; confirms booth number and restates vendor logistics for verification.
+- [ ] **Permit non-verification note** — Admin review page and approval email both carry notes that permit/certificate numbers are unverified by SAOC.
