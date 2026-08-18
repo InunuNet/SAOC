@@ -1,0 +1,200 @@
+schema: athanor.contract/v1
+slug: vendor-form-ui
+goal: >-
+  Follow-up to the closed vendor-registration mission: the PUBLIC vendor registration form UI at
+  /national-show/vendors/register, which F5's contract-locked POST /api/vendors/register route
+  was built for but no earlier feature ever specified a client. All 31 fields, correct
+  required/optional per the real F4 validator, success/error/loading states, accessible and
+  keyboard-operable, mobile-first from 320px, no invented brand styling, British English, a
+  cross-link from the existing /national-show/vendors showcase page. Full decision record, every
+  defeating mutation, and what this contract cannot prove offline (real viewport rendering at
+  1440/375/320px, real keyboard-navigation behaviour, real network round trips against the live
+  route): contracts/golden/vendor-form-ui/README.md
+created_at: '2026-08-18'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Two new pure lib modules and eight new/changed presentational + orchestrator components,
+      wired into a new route. (1) lib/vendor-register-form-payload.ts (new) -- exports
+      `VendorRegisterFormState` (all 31 fields as controlled-input-friendly primitives: string
+      for every text/number/select-like field, string[] for vendorCategory/paymentMethodsAccepted,
+      boolean for termsAccepted, string 'true'|'false'|'' for powerRequired/waterRequired -- never
+      `number`, coercion happens only inside the builder) and
+      `buildVendorRegistrationPayload(state): unknown`, which coerces boothCount/tableCount/
+      chairCount/staffPerDay to number, powerRequired/waterRequired to boolean, and omits (does
+      not send as `""`) any optional text field the submitter left blank -- output must validate
+      true against the REAL, unmodified `validateVendorSubmissionInput` (lib/vendor-submissions.ts,
+      F4) for both a fully-populated and a minimal-required-only state. (2)
+      lib/vendor-register-response.ts (new) -- exports `VendorRegisterResponseDescription`, a
+      four-member discriminated union (`{kind:'success',id,message}`,
+      `{kind:'validation-error',message,fieldErrors}`, `{kind:'rate-limited',message,
+      retryAfterMs,retryAfterLabel}`, `{kind:'error',message}`), `describeVendorRegistrationResponse
+      (status, body): VendorRegisterResponseDescription` mapping every real
+      VendorRegistrationHandlerResult shape (F5) plus a network-failure case (status 0), and
+      `formatRetryAfter(ms): string` producing a legible minute/hour label -- never a raw
+      millisecond count. (3) components/vendors/VendorFormField.tsx, VendorCheckboxGroupField.tsx,
+      VendorBooleanRadioField.tsx, VendorRadioGroupField.tsx, VendorCheckboxField.tsx (new,
+      generic leaf inputs, mirroring components/tickets/TicketFormField.tsx's existing
+      convention) -- id contract: single controls get `id="vendor-register-<key>"` with a
+      `<label htmlFor>`; group controls (checkbox-group/boolean-radio/select-radio) get an outer
+      `<fieldset id="vendor-register-<key>">` with a `<legend>` and `aria-required="true"` when
+      required, each option `<input id="vendor-register-<key>-<optionValue>">` with its own
+      `<label htmlFor>`. (4) components/vendors/VendorContactFieldset.tsx,
+      VendorCategoryFieldset.tsx, VendorBoothFieldset.tsx, VendorMarketingFieldset.tsx,
+      VendorPaymentFieldset.tsx (new, presentational, each ≤150 lines, one per Lee-Ann's five
+      form sections, composed from the leaf inputs above) -- each takes
+      `{ state: VendorRegisterFormState; onFieldChange: (key, value) => void; disabled: boolean }`
+      and renders every field in contracts/golden/vendor-form-ui/field-spec.golden.json whose
+      `section` matches, in the golden's order, with the exact label text and required marking
+      the golden specifies. (5) components/vendors/VendorRegisterStatusBanner.tsx (new,
+      presentational, `{descriptor}` prop, `role="alert"`, renders validation-error/rate-limited/
+      error kinds legibly -- returns null for kind 'success') and VendorRegisterSuccess.tsx (new,
+      presentational, `{descriptor}` prop where descriptor.kind === 'success', `role="status"`,
+      displays the returned `id` as a reference/confirmation number). (6)
+      components/vendors/VendorRegisterForm.tsx (new, 'use client', ≤150 lines, orchestrator
+      only) -- owns `VendorRegisterFormState` via useState, a status state machine
+      (idle/submitting/success/error), a honeypot field excluded from tab order (mirrors
+      ContactForm.tsx's own pattern) POSTs to /api/vendors/register via
+      buildVendorRegistrationPayload, and on a non-2xx or thrown fetch calls
+      describeVendorRegistrationResponse and renders VendorRegisterStatusBanner above the
+      fieldsets (never blocking further edits/resubmission); on 201 renders VendorRegisterSuccess
+      in place of the fieldsets. (7) app/(marketing)/national-show/vendors/register/page.tsx (new)
+      -- Server Component, PageHero + VendorRegisterForm, metadata title "Vendor Registration —
+      National Show" (Lee-Ann's own form heading, verbatim -- see README "Naming"), no Sanity
+      fetch (this route has no CMS-authored content, only the static form). (8)
+      app/(marketing)/national-show/vendors/page.tsx (existing, F3) -- add exactly one
+      `<Link href="/national-show/vendors/register">` cross-link into the existing showcase page,
+      without touching any of F3's own gated behaviour (query, grid, empty state, intro prose,
+      revalidate). components/vendors/index.ts barrel updated to export every new component.
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-form-ui/README.md
+  - contracts/golden/vendor-form-ui/field-spec.golden.json
+  - contracts/checks/vendor-form-ui/tsconfig.typecheck.json
+  - contracts/checks/vendor-form-ui/fixtures/vendor-form-ui-typecheck.ts
+  - contracts/checks/vendor-form-ui/fixtures/form-state-full.fixture.json
+  - contracts/checks/vendor-form-ui/fixtures/form-state-minimal.fixture.json
+  - contracts/checks/vendor-form-ui/fixtures/api-response-success.fixture.json
+  - contracts/checks/vendor-form-ui/fixtures/api-response-validation.fixture.json
+  - contracts/checks/vendor-form-ui/fixtures/api-response-ratelimit.fixture.json
+  - contracts/checks/vendor-form-ui/fixtures/api-response-servererror.fixture.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        buildVendorRegistrationPayload() output validates true against the REAL, unmodified
+        validateVendorSubmissionInput() (F4) for both a fully-populated and a minimal-required-only
+        form state; numeric/boolean coercion is real (not string pass-through); blank optional
+        text fields are omitted, not sent as "". Defeating mutation: boothCount left as the
+        string "2" (real validator's typeof check rejects it); powerRequired left as the string
+        "true" instead of coerced boolean.
+      command: npx tsx contracts/checks/vendor-form-ui/check-payload-against-real-validator.mjs
+
+    - id: A2
+      description: >-
+        field-spec.golden.json's 31 field keys, in order, are deep-equal to the property names
+        mechanically extracted from lib/vendor-submissions.ts's buildVendorSubmission() real
+        return-object-literal source -- not hand-typed, and not VendorSubmissionDraft's full key
+        set (which structurally also carries 8 admin-only F6/F7 fields a public form must never
+        collect). Defeating mutation: a stray input for one of the 8 admin-only fields; a missing
+        real field.
+      command: node contracts/checks/vendor-form-ui/check-field-spec-key-completeness.mjs
+
+    - id: A3
+      description: >-
+        field-spec.golden.json's required-field set (9 fields) is proven against the REAL
+        validateVendorSubmissionInput() by repeated function calls -- omitting each claimed-required
+        key breaks validation, the required-only payload alone validates true, and the golden's
+        two internal representations (fields[].required and requiredKeys) agree with each other.
+        Defeating mutation: marking a field required in the golden that the real validator does
+        not actually require, or the reverse.
+      command: >-
+        npx tsx
+        contracts/checks/vendor-form-ui/check-required-fields-against-real-validator.mjs
+
+    - id: A4
+      description: >-
+        Real react-dom/server output of all 5 fieldset components: every one of the 31 fields
+        renders a labelled control (single input/textarea/select via id+htmlFor, or a
+        fieldset+legend+per-option labelled inputs for group types), label text matches the
+        golden verbatim, and required/aria-required marking matches the golden exactly.
+        Defeating mutation: a field silently missing from JSX; a label not connected via
+        htmlFor/id; required marking inverted.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/vendor-form-ui/check-fieldset-render-completeness.mjs
+
+    - id: A5
+      description: >-
+        describeVendorRegistrationResponse() correctly discriminates all four real
+        VendorRegistrationHandlerResult shapes plus a network-failure case, fed real fixture
+        bodies (the 400 fixture's fieldErrors captured verbatim from a live call to the real F4
+        validator). formatRetryAfter() produces a legible minute/hour label for a range of
+        durations. Defeating mutation: collapsing 429 and 500 into the same generic kind; a
+        retryAfterLabel that never names a time unit.
+      command: npx tsx contracts/checks/vendor-form-ui/check-response-descriptor.mjs
+
+    - id: A6
+      description: >-
+        VendorRegisterStatusBanner and VendorRegisterSuccess render legible, real content for
+        every response shape, fed descriptors produced by a live call to the real
+        describeVendorRegistrationResponse() (proves the wiring, not just each half in
+        isolation): role="alert"/role="status" present, real fieldErrors messages appear in the
+        validation-error banner, a legible retry label appears in the rate-limited banner, the
+        real confirmation id appears in the success state. Defeating mutation: a banner that
+        renders the same generic message regardless of descriptor kind; a success state that
+        never displays the id.
+      command: node --import tsx/esm contracts/checks/vendor-form-ui/check-status-banner-render.mjs
+
+    - id: A7
+      description: >-
+        Keyboard operability + visible-focus structural proxy (real render, not a viewport
+        check -- see README): every interactive control across all 5 fieldsets is a native
+        input/textarea/select, none carry tabindex="-1", every one declares a "focus:" Tailwind
+        class (reusing the project's existing focus-visible convention, not inventing one).
+        Defeating mutation: a non-native clickable div standing in for a checkbox; tabindex="-1"
+        on a real field.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/vendor-form-ui/check-keyboard-focus-structural.mjs
+
+    - id: A8
+      description: >-
+        Mobile-first responsive structural proxy (static source check, same pattern as F3's A7):
+        the register page and VendorRegisterForm declare an sm:/md:/lg: breakpoint prefix
+        somewhere, and no unconditional fixed pixel width wider than 320px. Defeating mutation:
+        a fixed desktop-only width with no responsive override.
+      command: node contracts/checks/vendor-form-ui/check-responsive-classes.mjs
+
+    - id: A9
+      description: >-
+        The existing showcase page links to the new registration route, AND every one of F3's own
+        assertion commands (contract-vendor-f3-showcase-page.yaml) still passes against the
+        current repo state -- a real regression re-run of F3's shipped checks, not a re-derivation
+        of F3's logic. Defeating mutation: a missing/broken cross-link; any edit that regresses
+        F3's query, grid, empty state, intro prose, or revalidate behaviour.
+      command: >-
+        bash contracts/checks/vendor-form-ui/check-showcase-link-and-f3-regression.sh
+
+    - id: A10
+      description: >-
+        pnpm lint passes with zero errors on the whole project after every new/changed file
+        lands, AND this contract's own TypeScript fixtures contain zero uses of `any`.
+      command: >-
+        pnpm lint && bash contracts/checks/vendor-form-ui/check-no-any-in-fixtures.sh
+
+    - id: A11
+      description: >-
+        The whole project still type-checks under strict TypeScript (pnpm type-check), AND a
+        scoped compiler-driven proof (not source-grep) of VendorRegisterFormState,
+        buildVendorRegistrationPayload's `unknown`-typed return feeding the real validator, and
+        an exhaustive switch over VendorRegisterResponseDescription's four members with no
+        `default` case.
+      command: >-
+        pnpm type-check && npx tsc --noEmit -p
+        contracts/checks/vendor-form-ui/tsconfig.typecheck.json

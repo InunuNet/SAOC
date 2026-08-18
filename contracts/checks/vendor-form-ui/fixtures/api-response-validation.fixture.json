@@ -1,0 +1,15 @@
+{
+  "_comment": "The REAL 400 response body from handleVendorRegistration()'s validation-failure branch, produced by feeding the REAL validateVendorSubmissionInput() a payload with 6 distinct violations (empty businessName, empty contactCellPhone, empty vendorCategory array, negative boothCount, non-boolean powerRequired, termsAccepted !== true) -- errors array captured verbatim from the real function, not hand-typed. Regenerate via the inline npx tsx snippet in this contract's README if lib/vendor-submissions.ts's validator ever changes its error wording.",
+  "status": 400,
+  "body": {
+    "error": "Invalid vendor registration submission.",
+    "fieldErrors": [
+      "businessName is required and must be a non-empty string",
+      "contactCellPhone is required and must be a non-empty string",
+      "vendorCategory is required and must be a non-empty array",
+      "boothCount is required and must be a positive integer",
+      "powerRequired is required and must be a boolean",
+      "termsAccepted must be true"
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "_comment": "The REAL 500 response body shape from handleVendorRegistration()'s deps.write() rejection branch.",
+  "status": 500,
+  "body": { "error": "Failed to save vendor registration. Please try again." }
+}

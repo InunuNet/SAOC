@@ -1,0 +1,99 @@
+{
+  "_comment": "The 31 public form fields for /national-show/vendors/register, one entry per key in VendorSubmissionDraft's PUBLIC subset (excludes F6/F7 admin-only additive fields: reviewedBy, reviewedAt, proofOfPaymentPath, proofOfPaymentUploadedAt, boothNumber, paymentReceived, paymentConfirmedBy, paymentConfirmedAt -- those are structurally present on VendorSubmissionDraft but never submitter-supplied). Keys and order are mechanically derived from lib/vendor-submissions.ts's buildVendorSubmission() return-object-literal source, not hand-typed -- see check-field-spec-key-completeness.mjs. required flags are proven against the REAL validateVendorSubmissionInput(), not eyeballed -- see check-required-fields-against-real-validator.mjs. Labels are Lee-Ann's source form (exhibitors.txt) numbered items 1-31, verbatim, with only the leading number/asterisk/checkbox-glyph stripped.",
+  "fields": [
+    { "key": "businessName", "section": "contact", "label": "Vendor / business name", "htmlType": "text", "required": true },
+    { "key": "tradingName", "section": "contact", "label": "Trading name (if different)", "htmlType": "text", "required": false },
+    { "key": "contactPersonName", "section": "contact", "label": "Contact person full name", "htmlType": "text", "required": true },
+    { "key": "contactCellPhone", "section": "contact", "label": "Cell phone contact number", "htmlType": "tel", "required": true },
+    { "key": "contactEmail", "section": "contact", "label": "Monitored email address", "htmlType": "email", "required": true },
+    { "key": "physicalAddress", "section": "contact", "label": "Physical business address", "htmlType": "textarea", "required": false },
+    { "key": "cipcNumber", "section": "contact", "label": "Business registration (CIPC) number", "htmlType": "text", "required": false },
+    { "key": "vatNumber", "section": "contact", "label": "VAT number (if applicable)", "htmlType": "text", "required": false },
+    { "key": "website", "section": "contact", "label": "Website", "htmlType": "url", "required": false },
+    { "key": "socialMediaHandle", "section": "contact", "label": "Social media handle(s)", "htmlType": "text", "required": false },
+    {
+      "key": "vendorCategory",
+      "section": "category",
+      "label": "Vendor category (select all that apply)",
+      "htmlType": "checkbox-group",
+      "required": true,
+      "options": [
+        { "value": "plant-sales", "label": "Orchid plant sales" },
+        { "value": "product-sales", "label": "Orchid product sales" },
+        { "value": "rare-exotic-plants", "label": "Rare or exotic plants" },
+        { "value": "food-retailer", "label": "Food retailer" },
+        { "value": "hardware", "label": "Hardware sales — e.g. greenhouse infrastructure" },
+        { "value": "books", "label": "Books" },
+        { "value": "art", "label": "Art" },
+        { "value": "other", "label": "Other (please specify below)" }
+      ]
+    },
+    { "key": "productDescription", "section": "category", "label": "Brief description of products/plants to be sold", "htmlType": "textarea", "required": true },
+    { "key": "phytosanitaryPermitNumber", "section": "category", "label": "Phytosanitary certificate / import permit number (rare, exotic or imported plants)", "htmlType": "text", "required": false },
+    { "key": "citesPermitNumber", "section": "category", "label": "CITES permit number (if selling CITES-listed/protected species)", "htmlType": "text", "required": false },
+    { "key": "foodHandlingCertificateNumber", "section": "category", "label": "Food handling / health certificate number (food retailers only)", "htmlType": "text", "required": false },
+    { "key": "foodItemList", "section": "category", "label": "List of food items to be sold (food retailers only)", "htmlType": "textarea", "required": false },
+    { "key": "boothCount", "section": "booth", "label": "Number of booths required", "htmlType": "number", "required": true, "min": 1, "step": 1 },
+    {
+      "key": "boothType",
+      "section": "booth",
+      "label": "Booth size / type preference",
+      "htmlType": "select-radio",
+      "required": false,
+      "options": [
+        { "value": "standard", "label": "Standard" },
+        { "value": "corner", "label": "Corner" },
+        { "value": "end-of-row", "label": "End-of-row" }
+      ]
+    },
+    { "key": "tableCount", "section": "booth", "label": "Number of tables required", "htmlType": "number", "required": false, "min": 0, "step": 1 },
+    { "key": "chairCount", "section": "booth", "label": "Number of chairs required", "htmlType": "number", "required": false, "min": 0, "step": 1 },
+    {
+      "key": "powerRequired",
+      "section": "booth",
+      "label": "Power required?",
+      "htmlType": "boolean-radio",
+      "required": true,
+      "options": [ { "value": "true", "label": "Yes" }, { "value": "false", "label": "No" } ]
+    },
+    { "key": "electricalLoad", "section": "booth", "label": "Electrical load required (watts/amps)", "htmlType": "text", "required": false },
+    {
+      "key": "waterRequired",
+      "section": "booth",
+      "label": "Water access required?",
+      "htmlType": "boolean-radio",
+      "required": false,
+      "options": [ { "value": "true", "label": "Yes" }, { "value": "false", "label": "No" } ]
+    },
+    { "key": "staffPerDay", "section": "booth", "label": "Number of staff attending per day", "htmlType": "number", "required": false, "min": 0, "step": 1 },
+    { "key": "vehicleRegistrations", "section": "booth", "label": "Vehicle registration number(s)", "htmlType": "text", "required": false },
+    { "key": "loadInSlot", "section": "booth", "label": "Preferred load-in time slot", "htmlType": "text", "required": false },
+    { "key": "loadOutSlot", "section": "booth", "label": "Preferred load-out time slot", "htmlType": "text", "required": false },
+    { "key": "bio", "section": "marketing", "label": "Short vendor bio/description for the website and show programme (50–100 words)", "htmlType": "textarea", "required": false },
+    {
+      "key": "paymentMethodsAccepted",
+      "section": "payment",
+      "label": "On-site payment methods you will accept from customers",
+      "htmlType": "checkbox-group",
+      "required": false,
+      "options": [
+        { "value": "cash", "label": "Cash" },
+        { "value": "card", "label": "Card" },
+        { "value": "eft", "label": "EFT / Instant payment" },
+        { "value": "not-applicable", "label": "Not applicable" }
+      ]
+    },
+    { "key": "paymentReference", "section": "payment", "label": "Booth fee payment reference / proof of payment", "htmlType": "text", "required": false },
+    {
+      "key": "termsAccepted",
+      "section": "payment",
+      "label": "I confirm I have read and agree to the Vendor Terms & Conditions of the 2027 SAOC National Show.",
+      "htmlType": "checkbox",
+      "required": true
+    }
+  ],
+  "requiredKeys": [
+    "businessName", "contactPersonName", "contactCellPhone", "contactEmail",
+    "productDescription", "vendorCategory", "boothCount", "powerRequired", "termsAccepted"
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "_comment": "The REAL 429 response body shape from handleVendorRegistration()'s rate-limit branch -- error plus retryAfterMs (VENDOR_REGISTER_RATE_LIMIT_WINDOW_MS = 1 hour, so a fresh block reports close to 3600000ms).",
+  "status": 429,
+  "body": { "error": "Too many vendor registration attempts. Please try again later.", "retryAfterMs": 3421000 }
+}

@@ -1,0 +1,5 @@
+{
+  "_comment": "The REAL 201 response body shape from lib/vendor-registration-handler.ts's handleVendorRegistration() success branch -- see contracts/contract-vendor-f5-register-route.yaml A8, body is exactly { success: true, id }.",
+  "status": 201,
+  "body": { "success": true, "id": "vSub_9f8a2c1e" }
+}
