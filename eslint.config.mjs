@@ -12,7 +12,7 @@ import prettierConfig from 'eslint-config-prettier';
 
 const config = [
   {
-    ignores: ['.next/**', '**/.next/**', 'node_modules/**', 'public/**', 'next-env.d.ts', 'design/**', '.claude/**', '.claude/worktrees/**', '.firebase/**', 'Old SAOC Website Backup/**', '.agent/**', '.golden/**'],
+    ignores: ['.next/**', '**/.next/**', 'node_modules/**', 'public/**', 'next-env.d.ts', 'design/**', '.claude/**', '.claude/worktrees/**', '.firebase/**', 'Old SAOC Website Backup/**', '.agent/**', '.golden/**', 'functions/lib/**', 'functions/node_modules/**'],
   },
   ...nextCoreWebVitals,
   ...nextTypescript,

@@ -1,5 +1,41 @@
 # Athanor Issue Backlog
 
+## Session 2026-08-18 — Production-blockers F5 (self-signup guard) DONE, two QA fast-follows
+
+- [x] **Production-blockers F5 — self-signup guard via `functions.auth.user().onCreate()`,
+  DONE.** New `functions/` Cloud Functions package (`functions/src/index.ts`,
+  `guardSelfSignup`), deletes any newly-created Firebase Auth account that doesn't pick up the
+  `admin` custom claim within a 90s grace window — the same signal `scripts/admin-grant.ts`
+  sets, so legitimate admin provisioning survives and self-signup doesn't. No Identity Platform
+  upgrade, no Secret Manager/allowlist dependency. `firebase.json` gained additive
+  `functions`/`emulators` entries (`hosting` untouched, diff-verified). `docs/admin-access.md`'s
+  stale Identity-Platform-toggle section fully replaced. Gate 11/11, independently re-run by
+  both @dev and @qa against the real Firebase emulator (`demo-saoc-webapp`) — not a stub. QA
+  verdict PASS.
+- [ ] **[P2, NEW 2026-08-18, from F5 QA] `A-STRUCT-01`'s structural check is satisfiable by a
+  comment, not the executable code.** It greps the whole file for the literal substring
+  `functions.auth.user().onCreate(` on one physical line; the real chain in `index.ts:105-108`
+  is split across multiple lines (`.runWith(...)` interposed), so only the JSDoc comment on
+  line 92 actually matches. QA proved this by mutation: swapped the entire exported trigger for
+  a no-op `functions.https.onRequest()` HTTP handler with the comment left untouched — all four
+  structural checks, including A-STRUCT-04 (no-sweep), still passed. Not exploitable today
+  (A-BEHAV-01/02 genuinely exercise the emulator and prove the *current* code correct
+  operationally), but a future regression that changes the trigger type while the comment
+  survives would pass silently, with only the slower behavioural checks as a backstop — same
+  weak-assertion-satisfied-by-comment class as this project's earlier P1 audit. Fix: tighten the
+  regex to strip comments before matching, or match the actual multi-line chain shape.
+- [ ] **[P3, NEW 2026-08-18, from F5 QA] `functions/src/index.ts` uses plain `console.*` instead
+  of `firebase-functions`'s `logger.*`, losing structured/queryable Cloud Logging fields on a
+  security-relevant deletion audit trail.** QA read `firebase-functions` v7.3.2 source directly:
+  `logger.*` writes a structured `LogEntry` as JSON; this function imports `firebase-functions/v1`,
+  which never pulls in the `console.*`-patching compat shim used by v2 providers, so
+  `console.error('msg', {uid, email})` here is genuine plain Node output — severity tagging
+  (ERROR/WARNING via GCF's stream mapping) works, but `{uid, email, reason}` just flattens into
+  the text payload instead of becoming queryable structured fields. Not a functional bug, a real
+  (if minor) deviation from this project's "structured logging mandatory... context_dict" rule.
+  Fix: switch to `functions.logger.*` (already available via the existing `firebase-functions/v1`
+  import) — low-cost follow-up, not a blocker.
+
 ## Session 2026-08-18 — Brad's live-testing notes on the vendor/exhibitor registration form
 
 - [ ] **[P1, NEW 2026-08-18, DEFERRED — do not start until Brad asks, do not disturb the
@@ -1772,3 +1808,9 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818192749.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818193302.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818193818.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818194338.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818194853.txt

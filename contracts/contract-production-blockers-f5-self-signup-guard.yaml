@@ -1,0 +1,170 @@
+schema: athanor.contract/v1
+slug: production-blockers-f5-self-signup-guard
+goal: >-
+  Mission production-blockers, feature F5. Close open self-signup on saoc-webapp
+  (accounts:signUp still returns WEAK_PASSWORD, not auth/admin-restricted-operation — verified
+  live 2026-08-15, backlog.md P1 item "Close self-signup via a functions.auth.user().onCreate()
+  Cloud Function"). Ship a first-generation Cloud Functions trigger,
+  functions.auth.user().onCreate(), that deletes any newly-created Firebase Auth account UNLESS
+  it was legitimately provisioned by scripts/admin-grant.ts. Explicitly NOT the Identity
+  Platform "Disable user actions" console toggle and NOT Blocking Functions — both require the
+  one-way GCIP upgrade, which Brad has declined for a feature set (MFA/SAML/OIDC/multi-tenancy/
+  IAP) this project will never use at its scale. functions.auth.user().onCreate() is documented
+  separately from, and does not require, that upgrade
+  (firebase.google.com/docs/functions/auth-events vs. .../docs/auth/extend-with-blocking-
+  functions "Before you begin").
+
+  DECISION THAT DIVERGES FROM THE ORIGINAL BRIEF: the brief assumed the deletion condition
+  would be "delete unless email is in ADMIN_EMAIL_ALLOWLIST". Reading backlog.md's F4 record
+  (the "claim-first" decision, already shipped) shows this is wrong and would actively break
+  production admin provisioning: an email is deliberately added to ADMIN_EMAIL_ALLOWLIST AFTER
+  scripts/admin-grant.ts creates the account, never before (backlog.md ~line 1167-1173, "an
+  email must go through admin-grant.ts BEFORE it is added to ADMIN_EMAIL_ALLOWLIST"). A naive
+  allowlist check would delete every legitimately-provisioned admin account seconds after
+  admin-grant.ts creates it. This contract instead keys deletion on the actual signal that
+  distinguishes the two paths: whether the `admin:true` custom claim appears on the new uid
+  within a bounded grace window (admin-grant.ts sets it via a second, separate
+  setCustomUserClaims call, sequentially after createUser — scripts/admin-grant.ts:143-149). No
+  claim after the grace window -> delete. This has the side effect of removing any dependency
+  on ADMIN_EMAIL_ALLOWLIST (and its documented secret-corruption failure mode, backlog.md P2
+  "Empty-allowlist scenario") from this function entirely. Full decision record, including the
+  us-central1 region-forcing constraint discovered for 1st-gen auth triggers and the fail-open-
+  on-uncertainty deletion policy, in
+  contracts/golden/production-blockers-f5-self-signup-guard/README.md.
+created_at: '2026-08-18'
+autonomy: high
+
+# ---------------------------------------------------------------------------
+# HOW THIS CONTRACT IS VERIFIED
+# ---------------------------------------------------------------------------
+# All behavioural checks run against the Firebase Auth + Functions EMULATOR
+# (firebase emulators:start --only auth,functions), never the live saoc-webapp project. This
+# satisfies "contract checks must not mutate deployed site's real content or the real
+# ADMIN_EMAIL_ALLOWLIST" structurally (the emulator's Auth store is a separate, disposable
+# in-memory instance) rather than by discipline alone, and needs no live Admin SDK credentials.
+# Every account created by a check is deleted unconditionally in a shell trap / try-finally,
+# even on assertion failure, mirroring this project's withCleanup() discipline elsewhere. No
+# check ever creates or deletes a real Firebase Auth account against saoc-webapp. ZERO
+# agent_review assertions.
+#
+# PRECONDITIONS: firebase-tools available locally (confirmed: v15.15.0 at /opt/homebrew/bin/
+# firebase). functions/ does not yet exist — A-STRUCT-01/02 are RED until @dev creates it.
+features:
+  - id: F5
+    name: Self-signup guard — functions.auth.user().onCreate() deletes unclaimed new accounts
+    status: pending
+goldens:
+  - contracts/golden/production-blockers-f5-self-signup-guard/README.md
+assertions:
+  phase: 4
+  checks:
+    # ---------- structural: deploy topology exists and is wired correctly ----------
+    - id: A-STRUCT-01
+      description: >-
+        functions/ is a real Cloud Functions package: functions/package.json declares
+        firebase-functions and firebase-admin as dependencies and "engines".node === "22";
+        functions/src/index.ts exports a function built from functions.auth.user().onCreate();
+        firebase.json has a top-level "functions" entry with source: "functions". No reference
+        anywhere under functions/ or firebase.json to Identity Platform, blocking functions,
+        beforeCreate, beforeSignIn, or any GCIP-upgrade API — this is a hard boundary, not a
+        style preference.
+      command: bash contracts/checks/production-blockers-f5-self-signup-guard/check-deploy-topology-structural.sh
+      timeout_seconds: 30
+
+    - id: A-STRUCT-02
+      description: >-
+        The trigger's deletion condition reads a custom-claim check (customClaims?.admin), not
+        ADMIN_EMAIL_ALLOWLIST or process.env.ADMIN_EMAIL_ALLOWLIST anywhere in functions/src/.
+        Regression guard against reintroducing the allowlist-ordering bug this contract's goal
+        section documents. Also asserts functions/src/ contains no functions.runWith call naming
+        ADMIN_EMAIL_ALLOWLIST as a secret (this function must not bind that secret at all).
+      command: bash contracts/checks/production-blockers-f5-self-signup-guard/check-no-allowlist-dependency-structural.sh
+      timeout_seconds: 30
+
+    - id: A-STRUCT-03
+      description: >-
+        The trigger is deployed with an explicit region call resolving to us-central1 (or no
+        .region() call, which defaults there) — 1st-gen Auth triggers cannot deploy to any other
+        region (confirmed live: firebase/firebase-functions issue reports and Stack Overflow
+        79761627, "Firebase User Auth Triggers Are Forcefully Deployed On us-central1 region").
+        Fails if functions/src/index.ts calls .region() with any non-us-central1 value for the
+        auth trigger.
+      command: bash contracts/checks/production-blockers-f5-self-signup-guard/check-region-structural.sh
+      timeout_seconds: 30
+
+    # ---------- behavioural: the two real paths, against the emulator ----------
+    - id: A-BEHAV-01
+      description: >-
+        Negative path. Emulator: create a fixture account via the client Auth REST API
+        (accounts:signUp equivalent — a bare createUser with password, no custom claim ever
+        set), matching what an anonymous self-signup produces. Poll the emulator's Admin SDK
+        getUser(uid) until it throws auth/user-not-found or a bounded timeout elapses. Assert
+        deletion happened within the grace window plus a generous margin, and that a
+        function-log line naming the deleted uid/email and "no admin claim within grace window"
+        (or equivalent) appears in the emulator's function logs. Unconditional cleanup: if the
+        account unexpectedly survives, delete it in the test's finally block before exiting.
+      command: bash contracts/checks/production-blockers-f5-self-signup-guard/check-behav-self-signup-deleted.sh
+      timeout_seconds: 180
+
+    - id: A-BEHAV-02
+      description: >-
+        Positive path. Emulator: reproduce admin-grant.ts's createAndGrantFreshUser sequence
+        exactly (createUser, then setCustomUserClaims({admin: true}) as a SEPARATE subsequent
+        call, matching scripts/admin-grant.ts:143-149's ordering and timing shape) with a
+        fixture email. Wait past the full grace window plus margin, then assert via getUser(uid)
+        that the account still exists and its email is unchanged. Unconditional cleanup: delete
+        the fixture account in the test's finally block regardless of outcome.
+      command: bash contracts/checks/production-blockers-f5-self-signup-guard/check-behav-admin-grant-survives.sh
+      timeout_seconds: 180
+
+    - id: A-BEHAV-03
+      description: >-
+        Fail-open on uncertainty. Emulator: simulate the deleteUser() Admin SDK call throwing
+        (e.g. by revoking the emulator function's ability to reach the Auth emulator mid-call, or
+        by asserting directly against the trigger's source that the delete path is wrapped in a
+        try/catch that logs and returns rather than rethrowing/crashing the invocation). Must not
+        assert on a real network partition (not reproducible deterministically) — a structural
+        assertion that the delete call is never unguarded, plus a log-line assertion that a
+        caught failure logs ERROR with uid and does not silently succeed, is sufficient and is
+        what this check performs.
+      command: bash contracts/checks/production-blockers-f5-self-signup-guard/check-behav-delete-failure-fails-open.sh
+      timeout_seconds: 60
+
+    - id: A-STRUCT-04
+      description: >-
+        Existing accounts are never at risk from this deploy: functions.auth.user().onCreate()
+        only fires on account CREATION events (grep of Firebase's own doc excerpt captured in
+        README.md, plus absence of any onUpdate/onWrite/scheduled sweep trigger in functions/src/
+        that could re-evaluate an already-existing uid such as brad@inunu.net's). Fails if any
+        scheduled function, onUpdate trigger, or periodic sweep touching Auth users exists
+        anywhere under functions/.
+      command: bash contracts/checks/production-blockers-f5-self-signup-guard/check-no-sweep-structural.sh
+      timeout_seconds: 30
+
+    # ---------- docs ----------
+    - id: A-DOCS-01
+      description: >-
+        docs/admin-access.md (or a new docs/self-signup-guard.md linked from it) documents (a)
+        the deletion condition (admin claim within grace window, not allowlist membership) and
+        why, (b) that this is orthogonal to and does not touch ADMIN_EMAIL_ALLOWLIST, (c) the
+        residual gap (a self-created account holds a valid ID token for up to the grace window
+        before deletion, judged acceptable because lib/admin-auth.ts's isAdminToken() grants zero
+        capability without the admin claim regardless), and (d) that a manual admin-grant.ts run
+        for a brand-new email must complete (including its setCustomUserClaims call) before the
+        grace window elapses, or the fresh account will be deleted and must be re-created.
+      command: bash contracts/checks/production-blockers-f5-self-signup-guard/check-docs-complete.sh
+      timeout_seconds: 30
+
+    # ---------- gates ----------
+    - id: A-GATE-01
+      description: strict TypeScript type-check passes (root project)
+      command: pnpm type-check
+      timeout_seconds: 300
+    - id: A-GATE-02
+      description: lint passes with zero errors (root project)
+      command: pnpm lint
+      timeout_seconds: 300
+    - id: A-GATE-03
+      description: functions/ package builds/type-checks cleanly on its own (separate tsconfig)
+      command: bash -c 'cd functions && npm run build'
+      timeout_seconds: 180

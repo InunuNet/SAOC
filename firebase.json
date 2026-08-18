@@ -5,5 +5,19 @@
     "frameworksBackend": {
       "region": "europe-west4"
     }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default"
+    }
+  ],
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "functions": {
+      "port": 5001
+    }
   }
 }

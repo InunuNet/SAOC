@@ -227,24 +227,72 @@ This read-only command lists every Firebase Auth account currently holding `admi
 
 The definitive verification, however, is always the same as for the allowlist: **actually sign in as the account and attempt to reach `/admin`.** For a grant, `/admin` should load. For a revoke, you should see "You can't in" — the gate is working. Trusting a script's exit code alone is not sufficient, because the gate has three independent preconditions (claim, email verification, and allowlist membership), and a script lists only what it was designed to report.
 
-## Disabling self-signup (defence in depth, console-only)
+## Disabling self-signup (`functions/src/index.ts`, a Cloud Function, not a console step)
 
 This is a defence-in-depth measure, **not** a substitute for the allowlist and custom claim gate (`lib/admin-auth.ts` already refuses a freshly self-registered account with no claim, proven by the contract check `contracts/checks/admin-auth-hardening/check-probe-refused-everywhere.mjs`).
 
-Disabling open self-signup on `/admin/login` cannot be done via a script in this repository, because:
+An earlier version of this document pointed at a manual Google Cloud Identity Platform console
+toggle ("restrict account creation") for this. That approach was rejected: it requires the
+one-way Identity Platform (GCIP) upgrade, which this project has declined for a feature set
+(MFA/SAML/OIDC/multi-tenancy/IAP) it will never use at its scale. The shipped mechanism instead
+uses a plain 1st-generation Cloud Function, deployed independently of the Next.js app on App
+Hosting.
 
-- The classic Firebase Authentication console toggle for the "Email/Password" provider disables both sign-up and sign-in together, which would also break the admin login page itself.
-- The correct control — the "restrict account creation" setting — lives one level up in the **Google Cloud Identity Platform console**, not the Firebase Authentication panel. It separates sign-up from sign-in, allowing existing accounts to log in while preventing new self-registered accounts.
-- Neither `firebase-admin` nor `firebase-tools` expose a documented, stable API for this setting as of this project's pinned dependency versions. Scripting against an under-documented surface risks a silent no-op — this project has direct history of exactly that failure shape (see `docs/secret-corruption-incidents.md`) — so this remains a manual console step.
+**Mechanism**: `functions/src/index.ts` exports `guardSelfSignup`, built from
+`functions.auth.user().onCreate()`. This fires for every account-creation path (password sign-up,
+federated sign-in, anonymous auth, or an Admin SDK `createUser()` call). On each firing, it polls
+`getUser(uid)` roughly every 5 seconds for a bounded grace window (~90 seconds) waiting for the
+`admin: true` custom claim to appear. If the claim never appears within the window, the function
+deletes the account (one bounded retry with a ~3 second backoff if the delete call itself fails,
+then it gives up and logs an ERROR for manual cleanup — no infinite retry).
 
-To disable self-signup:
+**Why the admin claim, not the admin email allowlist**: the obvious-looking design — delete unless
+the new account's email is on the admin allowlist — is wrong for this project and would break
+production admin provisioning. Under the "Claim before allowlist" ordering rule documented below,
+`scripts/admin-grant.ts` deliberately creates the account and sets the claim *before* an operator
+adds the email to the allowlist as a separate manual step. A naive allowlist-based check would
+therefore delete every legitimately-provisioned admin account within moments of `admin-grant.ts`
+creating it. The `admin` custom claim is the only signal in this repo that actually distinguishes
+"an operator just ran `admin-grant.ts`" from "a stranger self-registered" — `admin-grant.ts` sets
+it via a second, separate `setCustomUserClaims()` call, sequentially after `createUser()`, and no
+other code path in this repo ever sets it. This function reads no Secret Manager value and has
+**no dependency on the admin allowlist at all** — an empty or corrupted allowlist cannot cause it
+to delete a legitimate account, because it never reads that value.
 
-1. Navigate to the Identity Platform Settings page directly: https://console.cloud.google.com/customer-identity/settings?project=saoc-webapp
-2. Find the "Disable user actions" setting (also labelled "Restrict account creation" in some versions of the console).
-3. Enable it to prevent new self-registered accounts while keeping existing sign-in functional.
-4. Optionally, review the Email/Password provider configuration: https://console.cloud.google.com/customer-identity/providers?project=saoc-webapp
+**Fail-open on ambiguity**: if a polling `getUser()` call itself errors, that is treated as
+inconclusive, not as "no claim" — the function logs an ERROR with the uid/email and the caught
+error, skips deletion for that invocation, and stops. It never deletes on an ambiguous read. A
+self-signup account surviving an extra cycle costs nothing (see the residual gap below); a
+wrongly-deleted legitimate account is a real incident, since Firebase's email-uniqueness
+enforcement means it cannot simply be recreated with the same address.
 
-**A green contract gate does NOT prove this console step was performed.** The gate verifies the documentation mentions it, not that the console setting is actually enabled. After enabling it, test by attempting to self-register a new account on `/admin/login` — you should see an error with code `auth/admin-restricted-operation`. Confirm that existing admin accounts can still sign in normally. Note: the login page should handle the `auth/admin-restricted-operation` error gracefully (log the error or show a message); if it does not, that's a follow-up for the `/admin/login` page owner.
+**The residual gap**: for the length of the grace window, a freshly self-created account exists
+and can obtain a valid Firebase ID token. That token is nonetheless useless — `lib/admin-auth.ts`
+requires all three of the `admin` claim, `email_verified === true`, and live allowlist membership
+before granting access, and a self-signup account satisfies **zero** of the three (no claim ever
+set; `emailVerified: false` by default for a password account; not allowlisted, since claim-first
+provisioning means the operator has not yet added it). A token with zero of the three conditions
+has exactly the same capability as no token at all. Accepted as a known, documented, zero-capability
+gap — not solved further here.
+
+**Operational consequence — the grace window is a hard deadline for `admin-grant.ts` runs**: when
+provisioning a **brand-new** email (no `--existing` flag), the script's `createUser()` +
+`setCustomUserClaims()` sequence must both complete before the grace window elapses, or this
+function will delete the account it just created, and the operator will need to re-run
+`admin-grant.ts` from scratch. In practice both Admin SDK calls complete in well under a second,
+so this is not a real operational concern — but it's the reason the window is bounded rather than
+indefinite.
+
+**Region note**: this guard is a 1st-generation Firebase Auth trigger; those are forced to deploy
+to `us-central1` regardless of any `.region()` call, independent of the App Hosting backend's
+`europe-west4`. This is normal, documented Firebase behaviour for this trigger type, not a
+misconfiguration.
+
+**Deploying**: `firebase deploy --only functions`, independent of the App Hosting rollout that
+deploys the Next.js app. Verification is via the Firebase Auth + Functions emulator
+(`firebase emulators:start --only auth,functions`), never against the live `saoc-webapp` project —
+see `contracts/golden/production-blockers-f5-self-signup-guard/README.md` for the full decision
+record and verification method.
 
 ## Claim before allowlist
 

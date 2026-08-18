@@ -34,6 +34,10 @@ ui-debug.log*
 # Emulator data exports
 firebase-export-*/
 
+# ---- Cloud Functions build output ----
+functions/lib/
+functions/node_modules/
+
 # ---- Secrets / keys ----
 *.pem
 *-firebase-adminsdk-*.json
