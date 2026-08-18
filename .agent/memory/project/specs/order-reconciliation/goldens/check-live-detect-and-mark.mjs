@@ -60,6 +60,12 @@ import {
   markOrdersAlerted,
 } from '../../../../../../lib/reconciliation.ts';
 import { initAdmin } from '../../../../../../lib/firebase-admin.ts';
+// Pure helper only (no Firestore app init as a side effect of calling it) — same
+// SENTINEL_EMAIL_DOMAIN marker contracts/checks/ticketing-hardening uses, so a fresh
+// write-path sentinel this script creates (see "FORCED WRITE-PATH SENTINEL" below) is
+// recognized by scripts/scan-firestore-residue.ts's org-wide residue scanner as a backstop,
+// even though this script also deletes it directly in its own try/finally.
+import { sentinelEmail } from '../../../../../../contracts/checks/ticketing-hardening/_shared.mjs';
 
 const envLocal = readEnvLocal();
 for (const key of ['FIREBASE_ADMIN_PROJECT_ID', 'FIREBASE_ADMIN_CLIENT_EMAIL', 'FIREBASE_ADMIN_PRIVATE_KEY']) {
@@ -294,6 +300,131 @@ for (const positionId of knownPositionIds) {
   }
 }
 
+// --- FORCED WRITE-PATH SENTINEL --------------------------------------------------------------
+// Everything above can go fully green while never actually calling markOrdersAlerted() in
+// anger: if the four known orders were already alerted by an earlier run within
+// RE_ALERT_WINDOW_MS, `needingAlertIds1` above is empty and Run 1 takes the "verify
+// already-alerted state" branch — a documented-valid outcome, but one where the before/after
+// money-state comparisons above are trivially true because nothing was written THIS run. On a
+// machine where this gate is re-run more often than the 6-hour window elapses (exactly what a
+// CI-style re-run does), the write path — including the atomic per-order WriteBatch this
+// contract's sibling ticketing-capacity-reconciliation-hold extended to cover the `tickets`
+// position doc, and the exact silent-oversell class Codex's review caught — could go
+// unexercised by this gate indefinitely. So: create one fresh, never-before-alerted sentinel
+// order+position pair, guaranteed to need an alert, on EVERY run, independent of the four known
+// orders' current state. Cleaned up in its own try/finally regardless of outcome — an assertion
+// failure here must never leave residue, matching this project's sentinel-cleanup convention
+// (see scripts/scan-firestore-residue.ts).
+const sentinelSuffix = `recon-write-path-${Date.now()}`;
+const sentinelOrderId = `sentinel-order-${sentinelSuffix}`;
+const sentinelPositionId = `sentinel-pos-${sentinelSuffix}`;
+const sentinelBuyerEmail = sentinelEmail(sentinelSuffix);
+// 24h ago — well clear of RE_ALERT_WINDOW_MS (6h), so there is no ambiguity about whether this
+// fresh reservation "needs" an alert.
+const sentinelExpiry = Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000);
+
+try {
+  await db.collection('orders').doc(sentinelOrderId).set({
+    showId: 'nationalShow',
+    buyerName: 'Recon A4 Write-Path Sentinel',
+    buyerEmail: sentinelBuyerEmail,
+    amount: 0,
+    status: 'reserved',
+    expiresAt: sentinelExpiry,
+    idempotencyKey: `sentinel-${sentinelSuffix}`,
+    purchasedAt: null,
+    gateway: 'payfast',
+    gatewayPaymentId: null,
+    m_payment_id: null,
+    pf_payment_id: null,
+  });
+  await db.collection('tickets').doc(sentinelPositionId).set({
+    bookingRef: sentinelPositionId,
+    showId: 'nationalShow',
+    attendeeName: 'Recon A4 Write-Path Sentinel',
+    attendeeEmail: sentinelBuyerEmail,
+    ticketType: 'exhibitor',
+    status: 'reserved',
+    amount: 0,
+    purchasedAt: null,
+    checkedInAt: null,
+    m_payment_id: null,
+    pf_payment_id: null,
+    orderId: sentinelOrderId,
+  });
+
+  const nowForSentinel = Timestamp.now();
+  const strandedSentinel = await findStrandedOrders(nowForSentinel);
+  const sentinelStrandedIds = strandedSentinel.map((o) => o.orderId);
+  if (!sentinelStrandedIds.includes(sentinelOrderId)) {
+    failures.push(
+      `findStrandedOrders() (live) did not detect the fresh write-path sentinel order ` +
+        `${sentinelOrderId} — it was created reserved+expired and must always be stranded.`
+    );
+  }
+
+  const needingAlertSentinelIds = filterOrdersNeedingAlert(strandedSentinel, nowForSentinel).map(
+    (o) => o.orderId
+  );
+  if (!needingAlertSentinelIds.includes(sentinelOrderId)) {
+    failures.push(
+      `filterOrdersNeedingAlert() did not include the fresh sentinel order ${sentinelOrderId} ` +
+        '— it has never been alerted and must always need one, regardless of the four known ' +
+        "orders' current alert state."
+    );
+  } else {
+    await markOrdersAlerted([sentinelOrderId], nowForSentinel);
+
+    const orderAfter = (await db.collection('orders').doc(sentinelOrderId).get()).data();
+    const positionAfter = (await db.collection('tickets').doc(sentinelPositionId).get()).data();
+
+    if (!orderAfter.reconciliationAlertedAt) {
+      failures.push(
+        `sentinel order ${sentinelOrderId}.reconciliationAlertedAt was NOT set by ` +
+          'markOrdersAlerted() — the write path did not actually execute this run.'
+      );
+    }
+    if (!positionAfter.reconciliationAlertedAt) {
+      failures.push(
+        `sentinel position ${sentinelPositionId}.reconciliationAlertedAt was NOT set by ` +
+          'markOrdersAlerted() — the position-write half of the write path did not execute ' +
+          'this run.'
+      );
+    }
+    if (orderAfter.status !== 'reserved' || orderAfter.amount !== 0) {
+      failures.push(
+        `sentinel order ${sentinelOrderId} money-state fields changed after a real, ` +
+          `this-run write-path execution (status='${orderAfter.status}', amount=${orderAfter.amount}).`
+      );
+    }
+    if (positionAfter.status !== 'reserved' || positionAfter.amount !== 0) {
+      failures.push(
+        `sentinel position ${sentinelPositionId} money-state fields changed after a real, ` +
+          `this-run write-path execution (status='${positionAfter.status}', amount=${positionAfter.amount}).`
+      );
+    }
+
+    // Idempotency, proven on THIS run's own fresh write rather than inherited from an earlier
+    // run's state.
+    const nowAfterSentinel = Timestamp.now();
+    const strandedAfterSentinel = await findStrandedOrders(nowAfterSentinel);
+    const needingAfterSentinelIds = filterOrdersNeedingAlert(
+      strandedAfterSentinel,
+      nowAfterSentinel
+    ).map((o) => o.orderId);
+    if (needingAfterSentinelIds.includes(sentinelOrderId)) {
+      failures.push(
+        `filterOrdersNeedingAlert() still included the sentinel order ${sentinelOrderId} ` +
+          'immediately after markOrdersAlerted() ran on it — idempotency did not hold on a ' +
+          'run that genuinely executed the write path.'
+      );
+    }
+  }
+} finally {
+  await db.collection('orders').doc(sentinelOrderId).delete().catch(() => {});
+  await db.collection('tickets').doc(sentinelPositionId).delete().catch(() => {});
+}
+
 if (failures.length > 0) {
   failures.forEach((f) => console.error(`FAIL: ${f}`));
   console.error(`\n${failures.length} assertion(s) failed.`);
@@ -305,6 +436,9 @@ console.log(
     'orders, markOrdersAlerted() wrote reconciliationAlertedAt on both the order docs and their ' +
     'tickets position docs, an immediate second run correctly excluded them (idempotency), and ' +
     'status/amount/gatewayPaymentId(/m_payment_id, pf_payment_id on positions)/purchasedAt were ' +
-    'left completely untouched on every one of them — reconciliation flags, it never auto-settles.'
+    'left completely untouched on every one of them — reconciliation flags, it never ' +
+    'auto-settles. A fresh, never-before-alerted sentinel order+position also proved the write ' +
+    'path itself (not just its no-op branch) on THIS run, independent of the four known ' +
+    "orders' current alert state, and was cleaned up afterwards."
 );
 process.exit(0);

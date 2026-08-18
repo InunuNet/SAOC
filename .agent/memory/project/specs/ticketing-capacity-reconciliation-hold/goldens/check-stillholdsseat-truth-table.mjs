@@ -1,4 +1,14 @@
 #!/usr/bin/env node
+// ============================================================================================
+// WITHDRAWN 2026-08-19 — this contract's F1 was reverted before shipping (@qa found the
+// premise false; no field this system records can distinguish a genuinely-paid order from an
+// abandoned cart). lib/data/tickets.ts's stillHoldsSeat is no longer exported and no longer has
+// the reconciliation-hold branch this script tests — RUNNING THIS WILL FAIL ON THE IMPORT, not
+// because the code under test regressed. Kept unexecuted, as historical record, per
+// .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/WITHDRAWN.md — read that
+// file before touching this one. Do not "fix" the import to make this pass again without first
+// reading WITHDRAWN.md's "For the next reader".
+// ============================================================================================
 // ticketing-capacity-reconciliation-hold F1, A2 — proves stillHoldsSeat() (lib/data/tickets.ts)
 // against its full truth table, importing the REAL exported function — no reimplementation.
 //
@@ -11,7 +21,14 @@
 import { stillHoldsSeat } from '../../../../../../lib/data/tickets.ts';
 import { Timestamp } from 'firebase-admin/firestore';
 
-const NOW_MS = Date.parse('2026-08-19T12:00:00Z');
+// stillHoldsSeat calls Date.now() internally (it is not clock-injectable — deliberately
+// kept simple, see lib/data/tickets.ts) — so PAST/FUTURE MUST be derived from the real
+// Date.now() at run time, not a hardcoded calendar date. A hardcoded date drifts into the
+// past or future as real wall-clock time moves past it, silently flipping which branch
+// each case actually exercises (this is exactly what happened here originally: a fixture
+// "PAST" that was still in the future by the time this check ran, making case 3 fail on
+// the fixture, not on the code under test).
+const NOW_MS = Date.now();
 const PAST = Timestamp.fromMillis(NOW_MS - 60 * 60 * 1000); // 1h ago
 const FUTURE = Timestamp.fromMillis(NOW_MS + 60 * 60 * 1000); // 1h from now
 

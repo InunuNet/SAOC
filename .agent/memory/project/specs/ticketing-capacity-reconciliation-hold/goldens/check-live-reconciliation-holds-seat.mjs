@@ -1,4 +1,14 @@
 #!/usr/bin/env node
+// ============================================================================================
+// WITHDRAWN 2026-08-19 — this contract's F1 was reverted before shipping (@qa found the
+// premise false; no field this system records can distinguish a genuinely-paid order from an
+// abandoned cart — see
+// .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/WITHDRAWN.md). RUNNING
+// THIS WILL NOW FAIL: lib/data/tickets.ts's stillHoldsSeat no longer holds a seat on
+// reconciliationAlertedAt, so step 5 below ("alerted expired reservation should be held") will
+// correctly report the seat as released. That is the withdrawal working as intended, not a
+// regression. Kept unexecuted, as historical record — read WITHDRAWN.md before touching this.
+// ============================================================================================
 // ticketing-capacity-reconciliation-hold F1, A4 — the "does it actually do the right thing"
 // proof against LIVE Firestore and the REAL production capacity-counting path
 // (getSoldCountsByTicketType, lib/data/tickets.ts) — not a fake store, not a reimplementation.
@@ -88,6 +98,12 @@ await withCleanup('A4 reconciliation-alerted reservation holds its seat past exp
       ticketType: TARGET_TICKET_TYPE,
       status: 'reserved',
       amount: 0,
+      // ticketing-position-expiry-write F1 — stillHoldsSeat (lib/data/tickets.ts) reads
+      // expiresAt off the POSITION document, not the order; without this field it fails
+      // closed ("no expiresAt -> hold forever"), which masks the exact property this
+      // script's negative control (step 3) exists to prove. Same Timestamp as the order
+      // doc's expiresAt above — order and position always expire at the same instant.
+      expiresAt: pastExpiry,
       purchasedAt: null,
       checkedInAt: null,
       m_payment_id: null,

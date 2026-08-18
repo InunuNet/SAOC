@@ -1,4 +1,15 @@
 #!/usr/bin/env node
+// ============================================================================================
+// WITHDRAWN 2026-08-19 — this contract's F1 (the seat-hold feature this proof was written for)
+// was reverted before shipping (@qa found the premise false — see
+// .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/WITHDRAWN.md). The
+// markOrdersAlerted position-write this script exercises was itself KEPT (see WITHDRAWN.md
+// "What was kept"), so this script will likely still technically pass if run — but it no
+// longer proves anything meaningful about capacity-hold, because nothing in this codebase
+// holds a seat on reconciliationAlertedAt anymore. Kept unexecuted, as historical record. Do
+// not treat a pass here as evidence this feature is safe to re-enable — read WITHDRAWN.md
+// first.
+// ============================================================================================
 // ticketing-capacity-reconciliation-hold F1, A3 — proves markOrdersAlerted (lib/reconciliation.ts)
 // now ALSO stamps reconciliationAlertedAt onto every position sharing the order's orderId,
 // against a FAKE, in-memory Firestore-shaped store — never live Firestore. Same technique as
@@ -24,7 +35,17 @@ const NOW = Timestamp.fromMillis(Date.parse('2026-08-19T12:00:00Z'));
 const ORDER_ID = 'order-alerted-1';
 const OTHER_ORDER_ID = 'order-unrelated-1';
 
-// --- minimal fake Firestore-shaped store: two collections, chained equality where(), get(), doc().update() ---
+// --- minimal fake Firestore-shaped store: two collections, chained equality where(), get(),
+// and a batch() modeling real WriteBatch semantics (update() buffers, commit() applies all-or-
+// nothing) — lib/reconciliation.ts's markOrdersAlerted now commits each order's order-doc and
+// position-doc stamps as ONE atomic db.batch() (closing a Codex-confirmed silent-oversell
+// defect: see lib/reconciliation.ts's markOrdersAlerted header "PER-ORDER ATOMICITY"), so a fake
+// exposing only doc().update() no longer satisfies its call surface. Same fake pattern as
+// order-reconciliation's check-partial-failure-atomicity.mjs (which exhaustively proves the
+// atomic-failure property itself) — kept consistent with that dialect rather than inventing a
+// second one. This golden's own scenarios are all-success; the batch fake still buffers+applies
+// atomically here for structural consistency with the real WriteBatch contract, not because any
+// assertion below exercises a failure path. ---
 
 const orders = new Map([
   [ORDER_ID, { status: 'reserved', amount: 250, buyerEmail: 'buyer@example.invalid' }],
@@ -35,15 +56,13 @@ const tickets = new Map([
   ['pos-c', { orderId: OTHER_ORDER_ID, status: 'reserved' }], // negative control
 ]);
 
-function makeCollection(store) {
+const stores = { orders, tickets };
+
+function makeCollection(collectionName) {
+  const store = stores[collectionName];
   return {
     doc(id) {
-      return {
-        update(data) {
-          if (!store.has(id)) throw new Error(`doc ${id} does not exist`);
-          Object.assign(store.get(id), data);
-        },
-      };
+      return { id, collectionName };
     },
     where(field, op, value) {
       if (op !== '==') throw new Error(`unsupported op ${op}`);
@@ -67,9 +86,28 @@ function makeCollection(store) {
 
 const fakeDb = {
   collection(name) {
-    if (name === 'orders') return makeCollection(orders);
-    if (name === 'tickets') return makeCollection(tickets);
+    if (name === 'orders' || name === 'tickets') return makeCollection(name);
     throw new Error(`unexpected collection ${name}`);
+  },
+  batch() {
+    const pending = [];
+    return {
+      update(ref, data) {
+        if (!stores[ref.collectionName]?.has(ref.id)) {
+          throw new Error(`doc ${ref.collectionName}/${ref.id} does not exist`);
+        }
+        pending.push({ ref, data });
+      },
+      // Models the real all-or-nothing guarantee: every buffered write is applied only once
+      // every one of them is known to be applicable — a rejected commit must leave NONE of
+      // this batch's writes observable. No scenario in this golden makes commit() reject, but
+      // the semantics are real, not a stub that always succeeds by construction.
+      async commit() {
+        for (const { ref, data } of pending) {
+          Object.assign(stores[ref.collectionName].get(ref.id), data);
+        }
+      },
+    };
   },
 };
 

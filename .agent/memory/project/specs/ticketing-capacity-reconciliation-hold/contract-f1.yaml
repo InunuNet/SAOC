@@ -1,6 +1,20 @@
 schema: athanor.contract/v1
 slug: ticketing-capacity-reconciliation-hold
+status: withdrawn
 goal: >
+  WITHDRAWN 2026-08-19 — see WITHDRAWN.md in this directory before reading anything below.
+  @qa found the premise false: the three/four "known stranded" order ids cited below as
+  ITN-failure evidence are E2E test fixtures (buyerEmail e2e-test@example.com), not real
+  near-misses, and no field this system records can distinguish a genuinely-paid,
+  ITN-failed order from an ordinary abandoned cart on a `reserved` document —
+  gatewayPaymentId/pf_payment_id are only ever written in the same transaction that flips
+  status to 'paid', so a reserved doc structurally cannot carry one either way. F1 below
+  was implemented, gated fully green, then reverted before shipping (lib/data/tickets.ts's
+  stillHoldsSeat branch is reverted; git diff against pre-contract HEAD is empty). The
+  reconciliationAlertedAt position-write in lib/reconciliation.ts was kept (see
+  WITHDRAWN.md "What was kept") — everything else described below did not ship.
+  ---
+  ORIGINAL GOAL (superseded, kept for the historical record only — do not act on this):
   Brad asked for capacity tracking ("tickets for a show need to be counted down off the
   capacity the show can handle"). That system already ships, per-ticket-type, and is
   proven race-safe under real concurrency (contracts/contract-ticketing-hardening.yaml
@@ -34,7 +48,7 @@ features:
       locations and reasoning, and "Explicitly out of scope" for what NOT to build
       (auto-settling, auto-cancelling, clearing the hold, or any change to the
       already-correct boolean sold-out UI).
-    status: pending
+    status: withdrawn
 goldens:
   - .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/README.md
   - .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/check-stillholdsseat-truth-table.mjs

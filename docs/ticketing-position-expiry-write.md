@@ -99,9 +99,12 @@ which documents the same guarantee from the other direction (F5/F23).
 
 **This fix is forward-looking only.** It makes every *new* reservation write `expiresAt` onto
 its position correctly. It does **not** touch any position already sitting in Firestore. Four
-real, live positions written before this fix still have no `expiresAt` on their position
-document and, under `stillHoldsSeat`'s existing fail-closed rule, still hold their seats
-indefinitely:
+positions written before this fix still have no `expiresAt` on their position document and,
+under `stillHoldsSeat`'s existing fail-closed rule, still hold their seats indefinitely — the
+bug and its effect on these specific documents are real, but the four documents themselves are
+E2E test fixtures (`buyerEmail: e2e-test@example.com`), not real customer orders; see
+`.agent/memory/project/specs/ticketing-capacity-reconciliation-hold/WITHDRAWN.md` for the
+2026-08-19 correction and why it mattered for a sibling feature's design:
 
 - `SAOC-2027-5KYDSBMT38KX`
 - `SAOC-2027-7HHE9QN51RH4`

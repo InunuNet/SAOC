@@ -19,11 +19,16 @@ first, since this feature depends on it (see [Sequencing](#sequencing-depends-on
 
 An order can get stuck `status: 'reserved'` forever if the PayFast ITN that's supposed to settle
 it never arrives — a deploy window, a PayFast outage, a signature/passphrase change, or a 500 on
-our own side. Nothing in this codebase previously noticed. Three real production orders
-(`SAOC-2027-5KYDSBMT38KX`, `SAOC-2027-R06HZ12P06EY`, `SAOC-2027-G08QJQK278NY`) were found stuck
-this way only because a human happened to stumble onto them — see the P1 backlog entry "Stranded
-'reserved' orders after a failed ITN". A fourth (`SAOC-2027-7HHE9QN51RH4`) turned up during this
-feature's own live verification.
+our own side. Nothing in this codebase previously noticed. This risk is real and this feature's
+detection/alert mechanism is real and correctly shipped — but the four order ids originally cited
+as evidence of it (`SAOC-2027-5KYDSBMT38KX`, `SAOC-2027-R06HZ12P06EY`, `SAOC-2027-G08QJQK278NY`,
+`SAOC-2027-7HHE9QN51RH4`) are **E2E test fixtures** (`buyerEmail: e2e-test@example.com`),
+confirmed directly in live Firestore 2026-08-19, not real customer orders — the original P1
+backlog entry ("Stranded 'reserved' orders after a failed ITN") overstated this as a confirmed
+live-customer incident, and has been corrected. See
+`.agent/memory/project/specs/ticketing-capacity-reconciliation-hold/WITHDRAWN.md` for the full
+correction and why it matters: the sibling seat-hold feature that assumed these were real
+paid-but-stranded orders was withdrawn as a result.
 
 ## What this feature does — and deliberately does not do
 
@@ -158,15 +163,39 @@ Wiring the actual Cloud Scheduler job (target URL, cadence — e.g. hourly, the 
 header with the cron secret) is an infra step for whoever deploys this; it isn't something a
 contract assertion can observe from inside this repo.
 
+## reconciliationAlertedAt on positions
+
+`markOrdersAlerted` writes `reconciliationAlertedAt` onto every `tickets/{id}` position sharing
+an alerted order's `orderId`, not just the order document — added for, and gated by, this
+contract's own A3/A4 (per-order atomic `WriteBatch`, see
+[above](#why-the-alert-stamp-is-one-atomic-writebatch-per-order)). **DELIBERATELY WRITTEN BUT
+CURRENTLY UNREAD.** It was originally the substrate for a companion feature
+(`ticketing-capacity-reconciliation-hold`) that would have made `stillHoldsSeat`
+(`lib/data/tickets.ts`) hold a seat once its position carried this stamp. That feature was
+withdrawn 2026-08-19 before shipping — @qa found no field this system records can distinguish a
+genuinely-paid, ITN-failed order from an ordinary abandoned cart (`gatewayPaymentId`/
+`pf_payment_id` are only ever written in the same transaction that flips `status` to `'paid'`,
+so a `reserved` document structurally cannot carry one either way), so using this stamp as a
+seat-hold trigger would have permanently stranded a seat for every abandoned cart, not just the
+rare genuine ITN failure. See
+`.agent/memory/project/specs/ticketing-capacity-reconciliation-hold/WITHDRAWN.md` for the full
+reasoning. **`stillHoldsSeat` does not read this field.** The write itself was kept — it remains
+a legitimate, disclosed, atomically-correct per-position record that a human was alerted about
+that seat, and is the natural substrate for a future, human-gated manual-settle admin action
+(proposed to Brad, not built). If you are reading this because you're about to remove the write
+as apparently-dead code: it isn't — read WITHDRAWN.md's "For the next reader" first.
+
 ## Known open items
 
 - **Four stranded positions predate this feature and are not resolved by it.** This feature
   alerts on `SAOC-2027-5KYDSBMT38KX`, `SAOC-2027-7HHE9QN51RH4`, `SAOC-2027-G08QJQK278NY`, and
-  `SAOC-2027-R06HZ12P06EY` — the same four positions
+  `SAOC-2027-R06HZ12P06EY` — E2E test fixtures (see "The problem this solves" above), not real
+  customer orders, but the same four positions
   [docs/ticketing-position-expiry-write.md](ticketing-position-expiry-write.md#known-open-item-four-stranded-positions-still-need-a-backfill)
-  documents as still holding their seats indefinitely. Alerting is not backfilling: these four
-  need a separate, deliberate resolution (backfill `expiresAt`, or another decision) by a human,
-  not an automated write from either feature.
+  documents as still holding their seats indefinitely under the real mechanism this bug class
+  describes. Alerting is not backfilling: these four need a separate, deliberate resolution
+  (backfill `expiresAt`, delete the fixtures, or another decision) by a human, not an automated
+  write from either feature.
 - **`app/api/admin/reconcile-orders/route.ts` reports all attempted order ids in `alertedNow`
   even when the bookkeeping write partially failed.** The route sends the alert email first,
   then calls `markOrdersAlerted`. If that write throws (logged, not fatal — see the route's own

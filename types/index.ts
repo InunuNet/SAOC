@@ -159,13 +159,15 @@ export interface Ticket {
   // for every paid position. Optional and nullable: pre-F8 Ticket literals never mention it
   // and must still compile. See contracts/golden/ticketing-f8-comp-tickets/README.md.
   compedBy?: string | null;
-  /** ticketing-capacity-reconciliation-hold F1 — duplicated from Order.reconciliationAlertedAt
-   *  onto the position, because capacity counting (lib/data/tickets.ts
-   *  getSoldCountsByTicketType) reads the `tickets` collection, not `orders`; same
-   *  duplicate-onto-both precedent lib/orders.ts already uses for `amount`/`purchasedAt`. Set
+  /** Duplicated from Order.reconciliationAlertedAt onto the position (same
+   *  duplicate-onto-both precedent lib/orders.ts already uses for `amount`/`purchasedAt`). Set
    *  only by lib/reconciliation.ts's markOrdersAlerted, only AFTER a real alert email has
-   *  successfully sent — never read as a signal of payment status. See
-   *  .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/README.md. */
+   *  successfully sent. DELIBERATELY WRITTEN BUT CURRENTLY UNREAD: it was added as the
+   *  substrate for a capacity-hold feature (ticketing-capacity-reconciliation-hold) that was
+   *  withdrawn before shipping — see .agent/memory/project/specs/
+   *  ticketing-capacity-reconciliation-hold/WITHDRAWN.md and docs/order-reconciliation.md
+   *  "reconciliationAlertedAt on positions" for why. Nothing reads this field today; it is not
+   *  dead code, it is a real per-position record that a human was alerted about that seat. */
   reconciliationAlertedAt?: Timestamp | null;
   // ticketing-position-expiry-write F1 — mirrors Order.expiresAt onto the position, because
   // capacity counting (lib/data/tickets.ts getSoldCountsByTicketType/stillHoldsSeat) reads the

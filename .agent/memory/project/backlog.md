@@ -2018,6 +2018,24 @@ expiry and settling/flagging them; (b) alert on any order `reserved` beyond expi
 
 **Blocking?** Not for this mission. SHOULD be resolved before public ticket sales open.
 
+**CORRECTED 2026-08-19:** the detection/alert half of the "suggested" fix above
+(order-reconciliation) shipped and is correct. A follow-on seat-hold feature
+(ticketing-capacity-reconciliation-hold) was then built on the assumption that these four
+orders (and any future ones like them) could be safely held pending manual review — but @qa
+found that assumption false and it was withdrawn before shipping. These four remain sandbox
+test orders, as already noted above ("nothing is owed") — not real customers, and this entry's
+"in production this is a real customer" framing was hypothetical, not a claim that these four
+specifically were real customers. The finding that changes the recommendation: even for R06/G08,
+where Cloud Logging correlation showed a genuine sandbox PayFast payment was collected and its
+ITN wrongly rejected by the source-IP bug, Firestore itself records NOTHING that distinguishes
+that case from an ordinary abandoned checkout (`gatewayPaymentId`/`pf_payment_id` are only ever
+written in the same transaction that flips `status` to `'paid'`, so a still-`reserved` order
+structurally cannot carry either field regardless of what actually happened at the gateway). The
+distinguishing evidence for R06/G08 came entirely from manual Cloud Logging archaeology, not
+from any field an automated process could read. See
+`.agent/memory/project/specs/ticketing-capacity-reconciliation-hold/WITHDRAWN.md` for the full
+reasoning and the proposed real fix (a human-gated manual-settle admin action, not automatic).
+
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818225339.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818225856.txt
@@ -2292,3 +2310,19 @@ two changes should land together or in the right order, not independently.
 **Also worth noting:** the concurrency/no-oversell property is genuinely well proven (5 concurrent
 requests at the last seat, real server, real Firestore). That rigour is real — but it verified the
 WRITE path while nothing verified the RELEASE path, which is where the defect sat.
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818235743.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819000313.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819000851.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819001414.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819001943.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819002504.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819003025.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819003558.txt

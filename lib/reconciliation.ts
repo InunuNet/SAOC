@@ -131,22 +131,31 @@ export function filterOrdersNeedingAlert(
 
 /**
  * Writes ONLY `reconciliationAlertedAt` — on `orders/{orderId}` for every given order id, and
- * (ticketing-capacity-reconciliation-hold F1) on every `tickets/{id}` position whose `orderId`
- * matches — never `status`, `amount`, `gatewayPaymentId`, or `purchasedAt` on either
- * collection. The position write is what lets lib/data/tickets.ts's `stillHoldsSeat` (which
- * reads the `tickets` collection, not `orders`) keep holding a reconciliation-alerted seat past
- * its `expiresAt`; see check-live-detect-and-mark.mjs (A4) for the live proof that money-state
- * fields are left untouched across a real run.
+ * on every `tickets/{id}` position whose `orderId` matches — never `status`, `amount`,
+ * `gatewayPaymentId`, or `purchasedAt` on either collection.
+ *
+ * DELIBERATELY WRITTEN BUT CURRENTLY UNREAD: the position write was originally the substrate
+ * for a capacity-hold feature (ticketing-capacity-reconciliation-hold — `stillHoldsSeat` in
+ * lib/data/tickets.ts would have held a reconciliation-alerted seat past its `expiresAt`). That
+ * feature was withdrawn before shipping: no field this codebase records can actually
+ * distinguish "genuinely paid, ITN failed" from "an ordinary abandoned cart" (a `reserved`
+ * document's `gatewayPaymentId`/`pf_payment_id` are only ever written in the SAME transaction
+ * that flips `status` to `'paid'`, so a reserved doc can never carry one either way — see
+ * docs/order-reconciliation.md "reconciliationAlertedAt on positions" for the full reasoning
+ * and .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/WITHDRAWN.md). This is
+ * not dead code to rip out — it is a real, disclosed per-position record that a human was
+ * alerted about that seat, and the natural substrate for any future manual-settle action.
+ * `stillHoldsSeat` does NOT read it today.
  *
  * PER-ORDER ATOMICITY (added after Codex GPT-5.5 cross-model review flagged the original
  * two-independent-Promise.all version): the order's own stamp and every one of its positions'
  * stamps commit as a single `WriteBatch`, so either all of them land or none do. Without this,
  * a partial failure (order write succeeds, a position write throws) leaves
  * `orders/{orderId}.reconciliationAlertedAt` set — which suppresses re-alerting for
- * `RE_ALERT_WINDOW_MS` — while the position never got its matching stamp, so
- * `stillHoldsSeat` (lib/data/tickets.ts) releases that seat anyway: a paid-but-stranded buyer's
- * seat gets resold, and the alert that would have surfaced it is suppressed. Batching, not a
- * transaction, is deliberate here: the position query result is read once, up front, outside
+ * `RE_ALERT_WINDOW_MS` — while the position never got its matching stamp, an inconsistent
+ * record independent of whether anything currently reads it: the order claims a human was
+ * alerted about every one of its positions, and that would be false for this one. Batching, not
+ * a transaction, is deliberate here: the position query result is read once, up front, outside
  * the atomic unit (a position created between that read and the commit is a race the next
  * reconciliation run picks up, not a partial-write hazard); nothing inside the batch depends on
  * a read happening inside it.

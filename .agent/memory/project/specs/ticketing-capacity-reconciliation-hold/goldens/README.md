@@ -1,5 +1,33 @@
 # Golden — capacity tracking already exists; this contract closes one interaction gap
 
+## WITHDRAWN 2026-08-19 — read WITHDRAWN.md (one directory up) FIRST
+
+This contract's F1 was implemented, gated fully green, then withdrawn before shipping —
+@qa found the premise false (the "known stranded" orders cited below are E2E test
+fixtures, not real ITN failures) and no field this system records can distinguish a
+genuinely-paid order from an abandoned cart. `lib/data/tickets.ts`'s `stillHoldsSeat`
+change has been reverted. Everything below this point, including the "Dependency"
+section, describes the pre-withdrawal state and is kept for the historical record only
+— see `../WITHDRAWN.md` for the full reasoning before acting on anything below.
+
+## Dependency — read this first (added 2026-08-19, after implementation)
+
+@dev's A4 run found a P1 production defect blocking this contract, tracked separately as
+`ticketing-position-expiry-write`: reserved `tickets` position documents never carry
+`expiresAt` at all (`lib/checkout-reservation.ts` / `lib/orders.ts` write it onto the
+Order only), so `stillHoldsSeat`'s existing "no expiresAt -> hold" fail-closed rule fires
+for EVERY reserved position, unconditionally, in production today. Lazy TTL release
+never fires; abandoned carts hold seats forever. This is a live bug independent of
+`reconciliationAlertedAt`, decided to be a separate contract rather than folded into this
+one (see that contract's goldens/README.md "Scope decision" for the full reasoning).
+
+**Consequence for this contract's own A4:** its "negative control" (an
+expired-but-unalerted reservation must still release) cannot pass, and this feature has
+no observable production effect, until `ticketing-position-expiry-write` ships first.
+That contract's own A4 IS this contract's A4 negative control, lifted out to run
+standalone. Ship `ticketing-position-expiry-write` before, or as a co-requisite of, this
+one; do not treat this contract's A4 as a valid signal on its own until then.
+
 ## What Brad actually asked for, and what's already true
 
 Brad: "we need to be tracking capacity. So tickets for a show need to be counted down
