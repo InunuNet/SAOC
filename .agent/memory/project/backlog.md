@@ -2054,9 +2054,43 @@ Fixing only (2) would hide (1) again — the exit-code bug is the item that matt
 (correct — we send only, and inbound MX on that subdomain would serve a pipeline that doesn't
 exist), which means those replies go nowhere and the sender may not even get a clear bounce.
 
-**Fix:** set `reply_to: council@saoc.co.za` on ticket confirmations (and review whether forms
+**Fix:** set `reply_to: info@saoc.co.za` on ticket confirmations (Brad's instruction 2026-08-18) (and review whether forms
 mail should do the same — it at least uses an honest `noreply@` sender). Do NOT fix this by
 enabling inbound receiving.
 
 **Priority:** not blocking F3/F4, but should land before public ticket sales — a buyer with a
 payment problem replying into a void is a support failure at the worst moment.
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818230414.txt
+
+## P1 — QR exists only in the confirmation email; page has none
+
+**Found:** 2026-08-18, F3/F4 verification.
+
+QR generation is REAL and functional — `lib/qr.ts:generateBookingRefQrDataUri()` (qrcode pkg,
+PNG data URI of the booking ref), rendered per ticket by `emails/OrderConfirmation.tsx`. The
+door scanner (`app/admin/door/page.tsx`, html5-qrcode) decodes plain text and
+`lib/checkin.ts:admit()` looks up `tickets` by that exact string — chain is correctly wired.
+
+**The gap:** `app/(marketing)/tickets/confirmation/page.tsx` renders NO image/svg/canvas (154
+lines, verified) — the booking ref appears as plain text only. There is no PDF, no wallet pass,
+no downloadable ticket. So the attendee's only scannable artifact is the EMAIL, putting email
+deliverability on the critical path for the primary (scan) check-in method.
+
+Mitigation that already exists: the door page has a `manualRef` input, so staff can type the ref.
+That works but is slow at a queue and depends on the attendee having the ref to hand.
+
+**Suggested:** render the QR on the confirmation page too (same helper, no new dependency) so the
+attendee always has a scannable artifact regardless of email delivery. Cheap fix, removes a
+single point of failure on show day.
+
+## P3 — Dead file: emails/TicketConfirmation.tsx
+
+Not imported anywhere (repo-wide grep; only false positive was the confirmation page's own
+`TicketConfirmationPage` function name). Superseded by `emails/OrderConfirmation.tsx`. Contains
+stale copy claiming "A PDF ticket with QR code will be available in a future update", which
+contradicts current behaviour. Delete.
+
+Related: header comments in `lib/confirmation-email.ts` are stale — they still describe an
+earlier "minimal stub, doesn't call Resend" state. The code genuinely calls Resend and generates
+real QR images now. Comments should be corrected; they actively mislead a reader.
