@@ -1,0 +1,164 @@
+schema: athanor.contract/v1
+slug: vendor-page-fixes
+goal: >
+  Fix the vendor/exhibitor registration form defects Brad found in live testing on 2026-08-18:
+  boothCount silently accepting malformed input (the root cause of "submit did nothing"),
+  three fields that render/submit regardless of a gating condition that should hide them, no
+  client-side validation backstop at all, and missing format placeholders on ambiguous fields.
+created_at: '2026-08-18'
+autonomy: high
+features:
+  - id: F1
+    name: >
+      Client-side pre-submit validation (mirroring server vocabulary), fix the shared
+      conditional-render/payload bug affecting electricalLoad + the two food-only fields, and
+      add format placeholders on 9 ambiguous fields.
+    status: pending
+goldens:
+  - .agent/memory/project/specs/vendor-page-fixes/goldens/field-validation.golden.json
+assertions:
+  phase: 4
+  checks:
+    # --- New client-side validator module exists with the exact exported signature ---
+    - id: A1
+      description: >
+        lib/vendor-register-form-validation.ts exports validateVendorRegisterFormClientSide
+        with the exact signature the golden specifies. False-pass risk: a function with this
+        name but a different return type (e.g. returning a boolean or an object instead of
+        string[]) would still match this grep -- A5 (the behavioural check) is what actually
+        proves the return shape and content are correct, this is only proving the entry point
+        exists at all.
+      command: grep -q "export function validateVendorRegisterFormClientSide(state: VendorRegisterFormState): string\[\]" lib/vendor-register-form-validation.ts
+
+    - id: A2
+      description: >
+        The validator does not use Number.parseInt or parseInt anywhere -- the exact mechanism
+        that let "1.5" and "1e3" through as valid integers in the original boothCount bug and
+        in Codex's review of the first abandoned fix attempt. False-pass risk: none realistic --
+        this is a pure textual absence check, tight enough that only literal avoidance of
+        parseInt satisfies it; the real proof of correctness is the regex-driven behavioural
+        matrix in A5.
+      command: '! grep -qE "[^.]parseInt\(" lib/vendor-register-form-validation.ts'
+
+    - id: A3
+      description: >
+        VendorRegisterForm.tsx calls the validator inside handleSubmit BEFORE the fetch() call
+        to /api/vendors/register -- checked by comparing line numbers, not mere co-occurrence.
+        False-pass risk: a call placed AFTER fetch (dead code, since the request already fired)
+        would satisfy a plain grep for both strings but not this ordering check.
+      command: '[ $(grep -n "validateVendorRegisterFormClientSide(state)" components/vendors/VendorRegisterForm.tsx | head -1 | cut -d: -f1) -lt $(grep -n "fetch(.\+api/vendors/register" components/vendors/VendorRegisterForm.tsx | head -1 | cut -d: -f1) ]'
+
+    - id: A4
+      description: >
+        A non-empty validator result must produce a 'validation-error' descriptor and must NOT
+        proceed to fetch. Structural proxy: the function call and an early `return` both appear
+        inside handleSubmit before the fetch() call, matching the wiring contract in the golden.
+        False-pass risk: a `return` present but gated on an unrelated always-false condition
+        would satisfy a looser check; this pattern requires the return to be inside the same
+        `if` block as the validator call.
+      command: grep -Pzo "const clientErrors = validateVendorRegisterFormClientSide\(state\);\s*\n\s*if \(clientErrors\.length > 0\) \{[\s\S]{0,400}?return;" components/vendors/VendorRegisterForm.tsx
+
+    # --- Behavioural proof of the validator's actual logic (real module, real inputs) ---
+    - id: A5
+      description: >
+        Behavioural matrix against the REAL compiled module (not a hand-copied reimplementation
+        in the check script) -- covers the exact Brad repro ("e1"), the two Codex-identified
+        false-valid cases ("1.5", "1e3"), blank/zero/negative boothCount, a genuinely valid
+        boothCount, optional-numeric-field blank-is-fine / malformed-is-not, and the four other
+        required-field/termsAccepted/powerRequired/vendorCategory checks. False-pass risk: this
+        is the check that closes the false-pass gap every structural check above leaves open --
+        a validator that is wired correctly (A1-A4 pass) but uses a loose regex would fail here.
+      command: npx tsx .agent/memory/project/specs/vendor-page-fixes/checks/check-strict-integer-validation.mjs
+
+    # --- Conditional render + payload exclusion: the shared bug across 3 fields ---
+    - id: A6
+      description: >
+        lib/vendor-register-form-payload.ts exports both guard functions with the exact bodies
+        specified in the golden. False-pass risk: an export with a different body (e.g. always
+        returning true) would still match a name-only grep -- kept deliberately literal on the
+        full expression, not just the function name, to close that gap.
+      command: grep -Pzo "export function isElectricalLoadApplicable\(state: VendorRegisterFormState\): boolean \{\s*\n\s*return state\.powerRequired === 'true';\s*\n\s*\}" lib/vendor-register-form-payload.ts
+
+    - id: A7
+      description: Same literal-body check for isFoodRetailer.
+      command: grep -Pzo "export function isFoodRetailer\(state: VendorRegisterFormState\): boolean \{\s*\n\s*return state\.vendorCategory\.includes\('food-retailer'\);\s*\n\s*\}" lib/vendor-register-form-payload.ts
+
+    - id: A8
+      description: >
+        Payload builder excludes electricalLoad from the wire payload unless
+        isElectricalLoadApplicable(state) is true -- so a hidden field can never leak a stale
+        value into the submitted document even if state still holds one.
+      command: grep -Pzo "electricalLoad: isElectricalLoadApplicable\(state\) \? omitBlank\(state\.electricalLoad\) : undefined" lib/vendor-register-form-payload.ts
+
+    - id: A9
+      description: Same payload-exclusion check for foodHandlingCertificateNumber.
+      command: grep -Pzo "foodHandlingCertificateNumber: isFoodRetailer\(state\) \? omitBlank\(state\.foodHandlingCertificateNumber\) : undefined" lib/vendor-register-form-payload.ts
+
+    - id: A10
+      description: Same payload-exclusion check for foodItemList.
+      command: grep -Pzo "foodItemList: isFoodRetailer\(state\) \? omitBlank\(state\.foodItemList\) : undefined" lib/vendor-register-form-payload.ts
+
+    - id: A11
+      description: >
+        electricalLoad is only RENDERED when isElectricalLoadApplicable(state) is true, using
+        the ordering-aware check (not mere co-occurrence in the file) -- guards against a
+        component that calls the guard function but ignores its result.
+      command: node .agent/memory/project/specs/vendor-page-fixes/checks/check-conditional-render.mjs components/vendors/VendorBoothFieldset.tsx "isElectricalLoadApplicable(state)" electricalLoad
+
+    - id: A12
+      description: foodHandlingCertificateNumber is only rendered when isFoodRetailer(state) is true.
+      command: node .agent/memory/project/specs/vendor-page-fixes/checks/check-conditional-render.mjs components/vendors/VendorCategoryFieldset.tsx "isFoodRetailer(state)" foodHandlingCertificateNumber
+
+    - id: A13
+      description: foodItemList is only rendered when isFoodRetailer(state) is true.
+      command: node .agent/memory/project/specs/vendor-page-fixes/checks/check-conditional-render.mjs components/vendors/VendorCategoryFieldset.tsx "isFoodRetailer(state)" foodItemList
+
+    # --- Placeholders ---
+    - id: A14
+      description: >
+        VendorFormField gained an optional placeholder prop threaded to BOTH the <input> and
+        <textarea> branches (bio uses the textarea branch; none of the 9 placeholder fields do
+        today, but the prop must work on both since VendorFormField is shared).
+      command: grep -q "placeholder?: string" components/vendors/VendorFormField.tsx
+
+    - id: A15
+      description: placeholder prop reaches the rendered <input> element.
+      command: grep -Pzo "<input\b[\s\S]{0,300}?placeholder=\{placeholder\}" components/vendors/VendorFormField.tsx
+
+    - id: A16
+      description: placeholder prop reaches the rendered <textarea> element.
+      command: grep -Pzo "<textarea\b[\s\S]{0,300}?placeholder=\{placeholder\}" components/vendors/VendorFormField.tsx
+
+    - id: A17
+      description: >
+        All 9 placeholder-bearing fields in the golden actually pass a placeholder prop at
+        their call sites, checked in one pass across both fieldset files.
+      command: '[ $(grep -c "placeholder=" components/vendors/VendorBoothFieldset.tsx components/vendors/VendorCategoryFieldset.tsx | awk -F: "{sum+=\$2} END {print sum}") -ge 9 ]'
+
+    # --- Regression guards: known-fragile behaviour this fix must not disturb ---
+    - id: A18
+      description: >
+        The bannerRef scroll-into-view + focus fix (VendorRegisterForm.tsx, committed
+        2026-08-18 after Brad's live-testing report) must still be present and must still fire
+        for a client-side validation failure, since A4's new early-return path also sets
+        descriptor to a non-success kind. Regression this catches: a rewrite of handleSubmit
+        that removes or bypasses the existing useEffect for the new validation-error path.
+      command: grep -Pzo "useEffect\(\(\) => \{\s*\n\s*if \(descriptor && descriptor\.kind !== 'success'\) \{[\s\S]{0,200}?scrollIntoView" components/vendors/VendorRegisterForm.tsx
+
+    - id: A19
+      description: >
+        toOptionalInt in lib/vendor-register-form-payload.ts must still exist unchanged
+        (tableCount/chairCount/staffPerDay's NaN-surfacing behaviour was deliberately kept, per
+        Brad's earlier reversion of a silent-coercion "fix" -- this feature must not re-touch
+        that history).
+      command: grep -q "function toOptionalInt(value: string): number | undefined" lib/vendor-register-form-payload.ts
+
+    - id: A20
+      description: A full production build succeeds with these changes in place (precedent -- A8 on the reply-to-header-fix mission caught a 7/7-green-gate broken build).
+      command: pnpm build
+
+    - id: A21
+      description: >
+        No residue: none of the check scripts' test fixtures or literal strings leaked into
+        production source outside the two files this feature is scoped to touch.
+      command: '! grep -rn "FICTIONAL\|__TEST_INJECTION__\|check-strict-integer-validation" lib/ components/ app/ --include=*.ts --include=*.tsx'

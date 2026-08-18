@@ -7,17 +7,16 @@ import OrderConfirmation, { type OrderConfirmationPosition } from '@/emails/Orde
 import type { TicketType } from '@/types/index';
 
 /**
- * F10 (ticketing-foundation) — the F10/F11 boundary for the post-purchase confirmation email.
+ * F10/F11 (ticketing-foundation) — the post-purchase confirmation email.
  *
  * F10 owns the hookup call site (strictly after the order/position transaction commits, see
- * app/api/tickets/itn/route.ts step 5), the input shape below, and a MINIMAL STUB
- * implementation of sendConfirmationEmail() that logs the payload's shape only — never a
- * recovery token's value, never a full attendee dump — and does not call Resend.
- *
- * F11 owns QR generation, the real email template/content, and swapping Resend in for real
- * delivery. F11 replaces sendConfirmationEmail's body only; it does not need to touch the
- * pinned ITN route again. See contracts/golden/ticketing-f10-itn-repin/README.md "The F10/F11
- * boundary".
+ * app/api/tickets/itn/route.ts step 5) and the input shape below. F11 replaced F10's original
+ * minimal stub (which only logged the payload's shape and never called Resend) with the real
+ * implementation: sendConfirmationEmail() below generates one QR per position via
+ * `lib/qr.ts:generateBookingRefQrDataUri`, resolves the F6 recovery deep link, and sends one
+ * real email per order through `lib/email.ts`'s `sendEmail` (Resend), rendering
+ * `emails/OrderConfirmation.tsx`. See contracts/golden/ticketing-f10-itn-repin/README.md "The
+ * F10/F11 boundary" for why the call site and input shape are pinned separately from the body.
  */
 
 /** Site URL fallback, matching app/api/tickets/checkout/route.ts's own DEFAULT_SITE_URL

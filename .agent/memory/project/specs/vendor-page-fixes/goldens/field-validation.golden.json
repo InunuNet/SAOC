@@ -1,0 +1,131 @@
+{
+  "_comment": "Ground truth for F1 client-side pre-submit validation. Every message string must be BYTE-IDENTICAL to what lib/vendor-submissions.ts (server) already produces for the same violation, so the existing humaniseFieldError() mapping in lib/vendor-register-response.ts keeps working unmodified -- this is a new client-side check that reuses the server's own vocabulary, not a second vocabulary.",
+  "module": "lib/vendor-register-form-validation.ts",
+  "exportedFunction": {
+    "name": "validateVendorRegisterFormClientSide",
+    "signature": "export function validateVendorRegisterFormClientSide(state: VendorRegisterFormState): string[]",
+    "returns": "Array of raw error message strings, same shape/vocabulary as validateVendorSubmissionInput()'s errors array. Empty array means the form is submittable.",
+    "purity": "Pure function of state only. No DOM access, no fetch, no side effects -- must be callable and assertable in isolation."
+  },
+  "strictIntegerRule": {
+    "description": "Number.parseInt('1.5', 10) === 1 and Number.parseInt('1e3', 10) === 1 -- both silently accept malformed input as valid integers. The client validator must NOT use Number.parseInt to decide validity. Use a strict whole-number regex against the raw string instead.",
+    "regex": "^\\d+$",
+    "appliesTo": ["boothCount", "tableCount", "chairCount", "staffPerDay"],
+    "onBlankOptionalField": "tableCount/chairCount/staffPerDay are optional -- an empty string is NOT a violation for these three. Only validate format when the string is non-empty.",
+    "onBlankBoothCount": "boothCount is required -- an empty string IS a violation (falls through to the 'is required' message below)."
+  },
+  "checks": [
+    {
+      "field": "businessName",
+      "rule": "state.businessName.trim() === ''",
+      "message": "businessName is required and must be a non-empty string"
+    },
+    {
+      "field": "contactPersonName",
+      "rule": "state.contactPersonName.trim() === ''",
+      "message": "contactPersonName is required and must be a non-empty string"
+    },
+    {
+      "field": "contactCellPhone",
+      "rule": "state.contactCellPhone.trim() === ''",
+      "message": "contactCellPhone is required and must be a non-empty string"
+    },
+    {
+      "field": "contactEmail",
+      "rule": "state.contactEmail.trim() === ''",
+      "message": "contactEmail is required and must be a non-empty string"
+    },
+    {
+      "field": "productDescription",
+      "rule": "state.productDescription.trim() === ''",
+      "message": "productDescription is required and must be a non-empty string"
+    },
+    {
+      "field": "vendorCategory",
+      "rule": "state.vendorCategory.length === 0",
+      "message": "vendorCategory is required and must be a non-empty array",
+      "note": "Fixes the P2 backlog item: vendorCategory fieldset claims aria-required but nothing enforced it. This is now the enforcement."
+    },
+    {
+      "field": "boothCount",
+      "rule": "state.boothCount.trim() === '' OR !/^\\d+$/.test(state.boothCount.trim()) OR Number(state.boothCount) <= 0",
+      "message": "boothCount is required and must be a positive integer",
+      "note": "This is the root-cause fix for Brad's 'submit did nothing' report. '1.5', '1e3', 'e1', '', '0', '-1' must ALL fail this check and produce this exact message -- none may silently become NaN/null/1."
+    },
+    {
+      "field": "tableCount",
+      "rule": "state.tableCount.trim() !== '' AND !/^\\d+$/.test(state.tableCount.trim())",
+      "message": "tableCount must be a non-negative integer"
+    },
+    {
+      "field": "chairCount",
+      "rule": "state.chairCount.trim() !== '' AND !/^\\d+$/.test(state.chairCount.trim())",
+      "message": "chairCount must be a non-negative integer"
+    },
+    {
+      "field": "staffPerDay",
+      "rule": "state.staffPerDay.trim() !== '' AND !/^\\d+$/.test(state.staffPerDay.trim())",
+      "message": "staffPerDay must be a non-negative integer"
+    },
+    {
+      "field": "powerRequired",
+      "rule": "state.powerRequired === ''",
+      "message": "powerRequired is required and must be a boolean"
+    },
+    {
+      "field": "termsAccepted",
+      "rule": "state.termsAccepted !== true",
+      "message": "termsAccepted must be true"
+    }
+  ],
+  "wiring": {
+    "description": "VendorRegisterForm.tsx's handleSubmit must call validateVendorRegisterFormClientSide(state) BEFORE the fetch() call. If the returned array is non-empty: set descriptor to { kind: 'validation-error', message: 'Please check the highlighted fields.', fieldErrors: <the array> } via the EXISTING setDescriptor/setStatus('error') path, and return WITHOUT calling fetch. Do not add a second banner component or a second scroll/focus mechanism -- the existing bannerRef useEffect (VendorRegisterForm.tsx lines ~68-74) already scrolls/focuses on any non-success descriptor change, and humaniseFieldError already turns each raw message into copy. Reuse both unchanged.",
+    "mustNotFetch": "A network request (fetch to /api/vendors/register) must NOT be observed when validateVendorRegisterFormClientSide returns a non-empty array."
+  },
+  "conditionalFields": {
+    "_comment": "Verified directly against source 2026-08-18 by @architect -- the backlog's claim that the food fields already gate correctly on category was WRONG. As of components/vendors/VendorCategoryFieldset.tsx and VendorBoothFieldset.tsx today, NONE of the three fields below have any conditional render or payload exclusion. All three share one bug, fixed with two shared guard functions.",
+    "guardFunctions": {
+      "location": "lib/vendor-register-form-payload.ts",
+      "isElectricalLoadApplicable": "export function isElectricalLoadApplicable(state: VendorRegisterFormState): boolean { return state.powerRequired === 'true'; }",
+      "isFoodRetailer": "export function isFoodRetailer(state: VendorRegisterFormState): boolean { return state.vendorCategory.includes('food-retailer'); }"
+    },
+    "fields": [
+      {
+        "fieldKey": "electricalLoad",
+        "component": "components/vendors/VendorBoothFieldset.tsx",
+        "guard": "isElectricalLoadApplicable(state)",
+        "renderRule": "Only render the VendorFormField for electricalLoad when isElectricalLoadApplicable(state) is true. Use a JSX ternary: {isElectricalLoadApplicable(state) ? (<VendorFormField fieldKey=\"electricalLoad\" .../>) : null}",
+        "payloadRule": "electricalLoad: isElectricalLoadApplicable(state) ? omitBlank(state.electricalLoad) : undefined"
+      },
+      {
+        "fieldKey": "foodHandlingCertificateNumber",
+        "component": "components/vendors/VendorCategoryFieldset.tsx",
+        "guard": "isFoodRetailer(state)",
+        "renderRule": "{isFoodRetailer(state) ? (<VendorFormField fieldKey=\"foodHandlingCertificateNumber\" .../>) : null}",
+        "payloadRule": "foodHandlingCertificateNumber: isFoodRetailer(state) ? omitBlank(state.foodHandlingCertificateNumber) : undefined"
+      },
+      {
+        "fieldKey": "foodItemList",
+        "component": "components/vendors/VendorCategoryFieldset.tsx",
+        "guard": "isFoodRetailer(state)",
+        "renderRule": "{isFoodRetailer(state) ? (<VendorFormField fieldKey=\"foodItemList\" .../>) : null}",
+        "payloadRule": "foodItemList: isFoodRetailer(state) ? omitBlank(state.foodItemList) : undefined"
+      }
+    ]
+  },
+  "placeholders": {
+    "_comment": "VendorFormField currently has no placeholder prop at all. Add one optional prop, threaded to both the <input> and <textarea> branches. Placeholders are format/example hints only -- never a prefilled default value in form state (a prefilled value could be silently submitted if the user never touches the field; a placeholder cannot, since it is never part of `value`).",
+    "propAddition": "placeholder?: string on VendorFormFieldProps, passed to both <input placeholder={placeholder}> and <textarea placeholder={placeholder}>",
+    "fieldsRequiringAPlaceholder": {
+      "electricalLoad": "e.g. 15A / 3.5kW",
+      "loadInSlot": "e.g. Friday 14:00–16:00",
+      "loadOutSlot": "e.g. Sunday 16:00–18:00",
+      "cipcNumber": "e.g. 2019/123456/07",
+      "vatNumber": "e.g. 4123456789",
+      "vehicleRegistrations": "e.g. CA 123-456",
+      "phytosanitaryPermitNumber": "Permit reference number, if issued",
+      "citesPermitNumber": "Permit reference number, if issued",
+      "foodHandlingCertificateNumber": "Certificate reference number"
+    }
+  }
+}

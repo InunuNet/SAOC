@@ -1,0 +1,142 @@
+schema: athanor.contract/v1
+slug: admin-nav-menu
+goal: Give every /admin/* surface a persistent, capability-aware navigation menu (Dashboard,
+  Door Scanner, Vendors-if-permitted, Sign out) with current-page indication, plus a real
+  sign-out that did not exist before -- without the nav becoming the access-control decision
+  and without obstructing the door scanner's camera viewport on a phone.
+created_at: '2026-08-18'
+autonomy: high
+features:
+  - id: F1
+    name: Add AdminNav (bar + minimal variants), wire it into dashboard/vendors/door, add DELETE
+      /api/admin/session for sign-out
+    status: pending
+goldens:
+  - .agent/memory/project/specs/admin-nav-menu/goldens/f1-admin-nav-menu.golden.md
+assertions:
+  phase: 4
+  checks:
+    # --- Shape: the single nav component exists with the right prop surface ---
+    - id: A1
+      description: components/admin/AdminNav.tsx exists, is a client component, and exposes a
+        variant prop distinguishing the persistent bar from the door page's minimal trigger.
+        False state that still passes -- a component with these tokens present as dead code,
+        never actually rendered anywhere (A4/A5/A9 are what prove it's wired in for real).
+      command: grep -q "'use client'" components/admin/AdminNav.tsx && grep -q "variant" components/admin/AdminNav.tsx
+    - id: A2
+      description: AdminNav takes a canReviewVendors boolean prop rather than computing
+        capabilities itself -- it must never import getAdminSession or hasCapability, keeping
+        the authorization decision entirely in the server-component callers per the golden's
+        "core design decision". False state that still passes -- a prop named canReviewVendors
+        that is silently ignored in the render (A6 covers behavioral proof).
+      command: grep -q "canReviewVendors" components/admin/AdminNav.tsx
+    - id: A3
+      description: AdminNav never imports getAdminSession or hasCapability -- it is presentation
+        only, consuming a boolean its caller already derived. This is the structural half of the
+        "nav is not the access boundary" guarantee; A9's negative-capability browser check is
+        the behavioral half.
+      command: '! grep -qE "getAdminSession|hasCapability" components/admin/AdminNav.tsx'
+    - id: A4
+      description: AdminNav derives current-page highlighting from usePathname() itself rather
+        than a threaded current prop, matching components/chrome/Header.tsx's own pattern.
+      command: grep -q "usePathname" components/admin/AdminNav.tsx
+    # --- Wired into all three real pages, each deriving its own capability boolean ---
+    - id: A5
+      description: app/admin/page.tsx (dashboard) and app/admin/vendors/page.tsx each
+        independently call hasCapability(...'review-vendor-applications'...) and render
+        AdminNav -- not a hardcoded true/false literal passed as canReviewVendors. False state
+        that still passes -- grep alone can't tell a real call from a call whose result is
+        discarded in favour of a literal; A9's browser check with two different fixture
+        identities is the load-bearing proof this actually toggles the rendered link.
+      command: grep -q "hasCapability" app/admin/page.tsx && grep -q "AdminNav" app/admin/page.tsx && grep -q "hasCapability" app/admin/vendors/page.tsx && grep -q "AdminNav" app/admin/vendors/page.tsx
+    - id: A6
+      description: app/admin/page.tsx and app/admin/vendors/page.tsx render AdminNav with
+        variant="bar" -- the persistent-bar variant, not the door page's minimal trigger.
+      command: grep -c 'variant="bar"' app/admin/page.tsx app/admin/vendors/page.tsx | grep -qv ":0"
+    - id: A7
+      description: the door page's scanner implementation was extracted into a new
+        components/admin/DoorScannerClient.tsx client component, and app/admin/door/page.tsx is
+        no longer itself a 'use client' file (it becomes the async Server Component that
+        computes canReviewVendors and renders AdminNav variant="minimal" + DoorScannerClient).
+        False state that still passes -- deleting 'use client' from door/page.tsx while leaving
+        it non-async and non-Firestore-reading would pass this grep but not actually compute a
+        real capability; A9's browser check against the real /admin/door route is what proves
+        the minimal nav's vendors-link visibility is real, not just structurally present.
+      command: '! grep -q "^.use client.$" app/admin/door/page.tsx'
+    - id: A7b
+      description: the extracted door scanner client component exists and kept its 'use client'
+        directive and camera-lifecycle logic (spot-checked via the classifyCameraError helper
+        name, which must survive the extraction unchanged).
+      command: grep -q "'use client'" components/admin/DoorScannerClient.tsx && grep -q "classifyCameraError" components/admin/DoorScannerClient.tsx
+    - id: A8
+      description: app/admin/door/page.tsx renders AdminNav with variant="minimal", never
+        variant="bar" -- the persistent-bar variant must never appear on the door route (the
+        obstruction concern the golden documents).
+      command: grep -q 'variant="minimal"' app/admin/door/page.tsx && ! grep -q 'variant="bar"' app/admin/door/page.tsx
+    # --- No invented capability gate on dashboard/door (the mismatch bug this golden warns against) ---
+    - id: A8b
+      description: AdminNav itself never references the two capabilities that exist in
+        lib/admin-roles.ts but are not wired into any route yet (view-admin-dashboard,
+        scan-checkin) -- gating nav links on capabilities their destination routes don't
+        actually check would hide links from admins who could reach the page by URL, the exact
+        mismatch bug the golden's "core design decision" rules out.
+      command: '! grep -qE "view-admin-dashboard|scan-checkin" components/admin/AdminNav.tsx'
+    # --- Sign-out: new DELETE handler, client calls it plus Firebase signOut, fail-safe ordering ---
+    - id: A9s
+      description: app/api/admin/session/route.ts exports a DELETE handler alongside the
+        existing POST, in the same file (one choke point for session lifecycle, not a new route).
+      command: grep -q "export async function DELETE" app/api/admin/session/route.ts
+    - id: A10
+      description: the DELETE handler actually expires the session cookie (maxAge 0, or an
+        explicit cookie delete call) rather than merely returning ok with no Set-Cookie effect.
+        False state that still passes -- a DELETE handler that returns 200 without touching the
+        cookie store at all would pass A9s but not this; the live HTTP check in the verify
+        script (A13) is the behavioral proof this actually clears a real cookie.
+      command: 'grep -qE "maxAge: 0|cookieStore\.delete\(.session.\)" app/api/admin/session/route.ts'
+    - id: A11
+      description: AdminNav's sign-out control calls both the Firebase client signOut and the
+        new DELETE /api/admin/session endpoint, and wraps the Firebase call so the server-side
+        cookie clear still runs even if it throws (try/finally, not a bare sequential await with
+        no error handling).
+      command: 'grep -q "signOut" components/admin/AdminNav.tsx && grep -qE "method:\s*.DELETE." components/admin/AdminNav.tsx && grep -q "finally" components/admin/AdminNav.tsx'
+    - id: A12
+      description: the sign-out control is a real <button>, not an <a> or a div with an onClick
+        -- native keyboard/role semantics for free, per the project's accessibility rule.
+      command: grep -q "<button" components/admin/AdminNav.tsx
+    # --- The load-bearing behavioral proof: a real browser, a real server, real fixture identities ---
+    - id: A13
+      description: a Playwright-driven run against a real built-and-served instance (reusing
+        contracts/checks/admin-auth-hardening's server-ctl.sh start/stop pattern on port 3400,
+        and its _shared.mjs helpers -- createAllowlistedFixtureUser, mintIdTokenForUid,
+        setCustomClaims, postSession -- to mint two real session cookies, not fakes) proves, in
+        one script -- (1) at 1440px, 375px, and 320px viewports, an admin WITHOUT the
+        review-vendor-applications capability sees Dashboard/Door Scanner/Sign-out links on
+        /admin and /admin/vendors's bar but never a Vendors link, and CAN still reach
+        /admin/vendors by direct navigation despite the link being hidden (proves nav visibility
+        and route access are independent, per the golden's "nav is not the access boundary");
+        (2) a second admin WITH the capability (roles claim including a role that resolves to
+        review-vendor-applications, e.g. manager) sees the Vendors link render on both pages;
+        (3) on /admin/door at 375px and 320px, no persistent full-height nav bar element is
+        present, the minimal trigger occupies less than 56px of vertical space, and the scanner
+        video/camera container element is not covered or resized by any nav element's bounding
+        box; (4) tabbing through every interactive element on /admin's bar (including the
+        minimal trigger's open state on /admin/door) produces a visible focus outline on each,
+        and Escape closes the minimal variant's open overlay; (5) the browser console has zero
+        errors on all three pages at all three viewports; (6) clicking Sign out on /admin
+        redirects to /admin/login and a subsequent direct navigation to /admin redirects back to
+        /admin/login (session actually cleared, not just a client-side route change). Structural
+        greps (A1-A12) are not sufficient on their own per this project's own hard-won rule
+        (docs/admin-access.md precedent + this project's rules/coding.md) -- this is the check
+        that actually proves the rendered result. The script must exit non-zero and name the
+        exact failing sub-case, never swallow one silently, matching execution/checks/
+        verify_reply_to.ts and verify_confirmation_page.ts's existing pattern.
+      command: node_modules/.bin/tsx execution/checks/verify_admin_nav.ts
+    # --- Regression guard: this project has shipped a broken `next build` behind a green gate before ---
+    - id: A14
+      description: the real Next.js production build succeeds with every new/changed file
+        (AdminNav.tsx, DoorScannerClient.tsx, the door page rewrite, the DELETE handler, the
+        new execution/checks script) present in the tree. Same precedent as reply-to-header-
+        fix's A8 and confirmation-page-qr-and-download's A7 -- A1-A12 all stay green under a
+        build-breaking mistake (a client/server boundary violation, e.g. importing
+        firebase-admin into a 'use client' file) that only a real build catches.
+      command: node_modules/.bin/next build

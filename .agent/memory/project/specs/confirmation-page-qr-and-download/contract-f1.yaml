@@ -59,7 +59,8 @@ assertions:
       command: python3 execution/checks/verify_confirmation_fields.py --booking-refs SAOC-2027-X8ZPQNYCVWGY,SAOC-2027-EM1BPQJTAN7Y,SAOC-2027-5DEFEKCF6S1R
     # --- The load-bearing behavioral proof: the real rendered page, driven by a real browser ---
     - id: A6
-      description: a Playwright-driven run against a real built-and-served instance of the app,
+      description: >-
+        a Playwright-driven run against a real built-and-served instance of the app,
         using one real paid booking ref and one bogus/nonexistent ref, proving in one script -- (1)
         the paid page's rendered <img> QR, decoded with jsqr+pngjs, yields EXACTLY the paid ref's
         bookingRef string (not merely that an <img> tag with a data: src exists -- an img
@@ -89,7 +90,8 @@ assertions:
       command: node_modules/.bin/next build
     # --- Soft structural guard on the download-format decision (see golden "Download format decision") ---
     - id: A8
-      description: no new PDF-generation dependency was added to satisfy the download requirement
+      description: >-
+        no new PDF-generation dependency was added to satisfy the download requirement
         -- the download decision (golden) is a canvas-composited PNG using the browser's native
         Canvas API plus the QR data URI already produced by lib/qr.ts, not a new heavy dependency.
         This is a SOFT guard, not load-bearing: a PDF or other heavy dependency added under a name

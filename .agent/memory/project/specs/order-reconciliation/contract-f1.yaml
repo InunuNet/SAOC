@@ -1,0 +1,96 @@
+schema: athanor.contract/v1
+slug: order-reconciliation
+goal: >
+  Detect orders stranded 'reserved' past their expiry and alert a human by real email —
+  never auto-settle a money-state field — so a future ITN failure (deploy window, PayFast
+  outage, signature/passphrase change, our own 500) is caught by a process instead of
+  depending on a human happening to notice, as it did for orders 5KYDSBMT38KX,
+  R06HZ12P06EY, G08QJQK278NY (see backlog.md "P1 — Stranded 'reserved' orders after a
+  failed ITN").
+created_at: '2026-08-19'
+autonomy: high
+features:
+  - id: F1
+    name: >
+      Stranded-order detection (findStrandedOrders / filterOrdersNeedingAlert), an
+      idempotent alert-bookkeeping write (markOrdersAlerted), a real Resend email alert
+      (sendReconciliationAlert), and a bearer-secret-gated Next.js API route
+      (POST /api/admin/reconcile-orders) that wires them together. Auto-settling a
+      gateway-confirmed order is explicitly OUT of scope for this feature — see the
+      goldens README "Recovery — deliberately NOT built in this contract" for the
+      reasoning and the follow-on-feature recommendation to Brad.
+    status: pending
+goldens:
+  - .agent/memory/project/specs/order-reconciliation/goldens/README.md
+  - .agent/memory/project/specs/order-reconciliation/goldens/check-detects-stranded-orders.mjs
+  - .agent/memory/project/specs/order-reconciliation/goldens/verify_stranded_orders_live.py
+  - .agent/memory/project/specs/order-reconciliation/goldens/check-live-detect-and-mark.mjs
+  - .agent/memory/project/specs/order-reconciliation/goldens/check-route-auth-fails-closed.sh
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        The whole app still compiles/builds with the new lib/reconciliation.ts and
+        app/api/admin/reconcile-orders/route.ts in place. False-pass risk: none realistic
+        — a real `next build` failure is a hard compiler error; this only proves
+        "compiles", not "correct", which is why A2-A5 exist.
+      command: pnpm exec next build
+    - id: A2
+      description: >
+        Detection logic (findStrandedOrders) and the idempotent re-alert filter
+        (filterOrdersNeedingAlert) are correct against a fake, in-memory Firestore-shaped
+        store: a reserved+expired order is detected; a reserved-but-not-yet-expired order
+        (abandoned-checkout negative control) is NOT detected; a paid order with a stale
+        old expiresAt is NOT detected; an order alerted moments ago is excluded from
+        needing a new alert; an order alerted long ago (past RE_ALERT_WINDOW_MS) is
+        re-included. False-pass risk: a stub that returns a hardcoded order list would
+        fail every negative-control case here (this is not merely "the function exists"
+        — see check-detects-stranded-orders.mjs's own header for the full defeating-
+        mutation table).
+      command: npx tsx .agent/memory/project/specs/order-reconciliation/goldens/check-detects-stranded-orders.mjs
+    - id: A3
+      description: >
+        The exact WHERE conditions the detection query relies on (status == 'reserved',
+        expiresAt < now) hold against REAL, production-shaped Firestore data for the
+        three orders proven stranded live (5KYDSBMT38KX, R06HZ12P06EY, G08QJQK278NY).
+        Read-only. False-pass risk: a check that only asserted "these order documents
+        exist" would pass even if status/expiresAt were the wrong type or value — this
+        one asserts both fields' actual values, and fails loudly (not silently) if a
+        human has since hand-fixed one of the three, which is itself worth surfacing.
+      command: python3 .agent/memory/project/specs/order-reconciliation/goldens/verify_stranded_orders_live.py
+    - id: A4
+      description: >
+        Against LIVE Firestore and the three known stranded orders: findStrandedOrders
+        detects all three (run with the real, unrestricted query — that's what proves
+        the query itself is correct); markOrdersAlerted writes reconciliationAlertedAt;
+        an immediate second run correctly excludes them (idempotency — no double-alert
+        bookkeeping); and status/amount/gatewayPaymentId/purchasedAt are proven
+        UNCHANGED across the whole run. This is the assertion that directly proves the
+        "never auto-settle" scope decision, not just states it. The WRITE half is
+        leashed to a hardcoded 3-order allowlist (ALLOWED_ORDER_IDS, resolved only from
+        the hardcoded booking refs, never from the query's own output) enforced by
+        assertAllowlistedForWrite(), which hard-fails the whole check rather than
+        writing to any id outside it — see this project's
+        contract_checks_mutate_live_content incident memory for why a gate that writes
+        live data needs a leash, not just a correct implementation, before it's trusted
+        to run in any environment. False-pass risk: a version that flipped status to
+        'paid' as a "helpful" side effect would only be caught by the explicit
+        before/after field comparison here — an assertion that only checked "the
+        function ran without throwing" would miss it entirely. A version whose
+        filtering logic accidentally widened past the three known orders would be
+        caught by the allowlist guard throwing, not by silently writing further.
+      command: npx tsx .agent/memory/project/specs/order-reconciliation/goldens/check-live-detect-and-mark.mjs
+    - id: A5
+      description: >
+        POST /api/admin/reconcile-orders fails closed (401) with no Authorization header
+        and with a wrong bearer secret, over real HTTP against a real, running Next.js
+        server with FIREBASE_ADMIN_*, NEXT_PUBLIC_FIREBASE_*, RESEND_API_KEY, and
+        RECONCILIATION_CRON_SECRET all scrubbed from its environment — so a 401 here is
+        proof the route never reached Firestore or Resend, not just a status-code check.
+        Also asserts the 401 body is the route's real JSON refusal (not a framework
+        fallback page), proving the request reached the real handler. False-pass risk: a
+        route that crashed with 500 on a missing secret (rather than deliberately
+        refusing with 401) would be caught by the explicit `!= "401"` checks, not
+        conflated with a pass.
+      command: bash .agent/memory/project/specs/order-reconciliation/goldens/check-route-auth-fails-closed.sh

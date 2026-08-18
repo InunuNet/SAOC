@@ -2185,3 +2185,7 @@ trusting the logged text:
 
 Lesson worth keeping: backlog entries written during live testing captured symptoms accurately but
 diagnoses imprecisely. Verify against source before scoping work from them.
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818233604.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818234125.txt

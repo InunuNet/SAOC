@@ -62,11 +62,23 @@ def _commit_evidence(since: str) -> dict:
     return evidence
 
 
-def _mission_evidence(missions_dir: Path, since: str) -> dict:
-    """Evidence B: issue numbers referenced in the goal of completed missions since `since`."""
+def _mission_evidence(missions_dir: Path, since: str) -> tuple[dict, list[str]]:
+    """Evidence B: issue numbers referenced in the goal of completed missions since `since`.
+
+    Returns (evidence, parse_failures). `mission.parse_mission_file` is written for CLI use and
+    calls sys.exit(1) (after printing "ERROR: ..." to stderr) on a genuine parse failure — e.g. a
+    file in missions_dir with no YAML frontmatter, or frontmatter that fails to parse. That is
+    NOT the same thing as "this .md file just isn't shaped like a mission and should be skipped
+    silently" (there is no such case here — every *.md file in missions_dir is expected to be a
+    mission). Swallowing that SystemExit and moving on, as this function used to do, let a real
+    parse error print its ERROR line and then vanish into an overall exit code of 0 — the same
+    silent-green defect class flagged elsewhere this session. Every genuine failure is now
+    collected and returned so the caller can make the process exit non-zero.
+    """
     evidence = {}
+    failures: list[str] = []
     if not missions_dir.exists():
-        return evidence
+        return evidence, failures
     sys.path.insert(0, str(REPO_ROOT / "execution"))
     import mission
 
@@ -74,6 +86,7 @@ def _mission_evidence(missions_dir: Path, since: str) -> dict:
         try:
             fm, _ = mission.parse_mission_file(str(path))
         except SystemExit:
+            failures.append(str(path))
             continue
         if fm.get("status") != "done":
             continue
@@ -85,7 +98,7 @@ def _mission_evidence(missions_dir: Path, since: str) -> dict:
             number = int(m.group(1))
             if number not in evidence:
                 evidence[number] = {"source": f"mission {path.name}", "evidence": goal}
-    return evidence
+    return evidence, failures
 
 
 def _open_issue_numbers(repo: str, open_issues_json: str | None) -> set:
@@ -113,9 +126,10 @@ def _open_issue_numbers(repo: str, open_issues_json: str | None) -> set:
     return {item["number"] for item in data}
 
 
-def scan(since: str, repo: str, missions_dir: Path, open_issues_json: str | None) -> list:
+def scan(since: str, repo: str, missions_dir: Path, open_issues_json: str | None) -> tuple[list, list[str]]:
     merged = _commit_evidence(since)
-    for number, ev in _mission_evidence(missions_dir, since).items():
+    mission_evidence, failures = _mission_evidence(missions_dir, since)
+    for number, ev in mission_evidence.items():
         merged.setdefault(number, ev)
 
     open_numbers = _open_issue_numbers(repo, open_issues_json)
@@ -126,7 +140,7 @@ def scan(since: str, repo: str, missions_dir: Path, open_issues_json: str | None
         if number in open_numbers
     ]
     candidates.sort(key=lambda c: c["number"])
-    return candidates
+    return candidates, failures
 
 
 def main():
@@ -148,13 +162,21 @@ def main():
 
     repo = _resolve_repo(args.repo)
     missions_dir = Path(args.missions_dir)
-    candidates = scan(since, repo, missions_dir, args.open_issues_json)
+    candidates, failures = scan(since, repo, missions_dir, args.open_issues_json)
 
     if args.format == "lines":
         for c in candidates:
             print(f"GH #{c['number']} — {c['evidence']} ({c['source']})")
     else:
         print(json.dumps(candidates))
+
+    if failures:
+        print(
+            f"ERROR: {len(failures)} mission file(s) in {missions_dir} failed to parse — "
+            f"results above are incomplete: {', '.join(failures)}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     sys.exit(0)
 

@@ -1,0 +1,101 @@
+schema: athanor.contract/v1
+slug: vendor-page-fixes
+goal: >
+  Prove -- not assume -- that forms.saoc.co.za (added to Resend tonight, Pending at ~21:00,
+  DNS confirmed live now) can actually deliver mail, since vendor confirmation/approval email
+  has never been verified to land anywhere. sendEmail() has no success-path logging by design,
+  and the Resend API key 401s on GET /emails -- there is no server-side corroboration route.
+  Delivery can only be proven by a human checking a real inbox; this contract builds the tool
+  to send that test and states plainly where automation stops.
+created_at: '2026-08-18'
+autonomy: high
+features:
+  - id: F2
+    name: >
+      DNS-verification assertions for forms.saoc.co.za, a standalone script to send a real
+      vendor-confirmation-shaped test email to an operator-supplied address, and a
+      needs-human.md entry for the one step only Brad can perform (checking the inbox).
+    status: pending
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    # --- What CAN be automated: the DNS side of "is this domain even capable of sending" ---
+    - id: A1
+      description: >
+        resend._domainkey.forms.saoc.co.za has a live DKIM TXT record. False-pass risk: a TXT
+        record existing proves DNS propagation, NOT that Resend's dashboard has flipped the
+        domain to "Verified" -- Resend re-checks these records on its own schedule/webhook, and
+        a record can be live in DNS for minutes before Resend's own status catches up. This
+        check proves necessary DNS state, not sufficient delivery capability.
+      command: '[ -n "$(dig +short TXT resend._domainkey.forms.saoc.co.za)" ]'
+
+    - id: A2
+      description: >
+        send.forms.saoc.co.za has a live MX record pointing at Amazon SES (Resend's sending
+        infrastructure) and a live SPF TXT record authorising it. Same false-pass caveat as A1
+        -- DNS presence, not a Resend-dashboard verification confirmation.
+      command: '[ -n "$(dig +short send.forms.saoc.co.za MX)" ] && [ -n "$(dig +short send.forms.saoc.co.za TXT | grep amazonses)" ]'
+
+    # --- The test-send tool (automatable: does it exist, is it wired correctly, is it safe) ---
+    - id: A3
+      description: >
+        scripts/send-test-vendor-confirmation-email.ts exists and takes the recipient address
+        as a CLI argument -- never a hardcoded email address in source. False-pass risk: a
+        script that exists and takes an argument but ignores it (always sends to a baked-in
+        address) would still pass a bare existence+argv-presence check -- A5 closes that gap.
+      command: test -f scripts/send-test-vendor-confirmation-email.ts
+
+    - id: A4
+      description: >
+        The script sends through the REAL production path -- sendVendorRegistrationConfirmationEmail
+        (lib/vendor-registration-confirmation.ts) -- not a hand-rolled Resend call, so a pass
+        here proves the same code path vendors actually hit, including FORMS_FROM_ADDRESS and
+        the real email template.
+      command: grep -q "sendVendorRegistrationConfirmationEmail" scripts/send-test-vendor-confirmation-email.ts
+
+    - id: A5
+      description: >
+        The recipient address actually used in the call comes from process.argv, not a literal
+        string -- checked by requiring the argv-derived variable name appear as the `contactEmail`
+        argument, and requiring NO literal `@` inside a string literal elsewhere in the file
+        (which would indicate a hardcoded fallback address slipped in).
+      command: grep -Pzo "contactEmail:\s*\w+" scripts/send-test-vendor-confirmation-email.ts
+
+    - id: A6
+      description: >
+        No secret is printed or logged by the script -- RESEND_API_KEY must never appear in a
+        console.log/console.error call. False-pass risk: this only catches the literal env var
+        name being logged; it does not catch a differently-named variable holding the same
+        value being logged. Acceptable given the script is a thin, reviewable wrapper around an
+        existing tested code path, not new credential-handling logic.
+      command: '! grep -n "console\.\(log\|error\).*RESEND_API_KEY" scripts/send-test-vendor-confirmation-email.ts'
+
+    - id: A7
+      description: >
+        A full production build succeeds with the new script in place (it must not be picked
+        up by the Next.js app build in a way that breaks it -- scripts/ is precedented as
+        build-excluded elsewhere in this repo, confirm that holds here too).
+      command: pnpm build
+
+  agent_review:
+    - id: H1
+      description: >
+        THE ONE STEP THAT CANNOT BE AUTOMATED, per this project's coding.md ("agent_review only
+        when physical human action is genuinely irreplaceable"). sendEmail() logs nothing on
+        success by design (to avoid ever logging a recovery token elsewhere in this codebase),
+        and the Resend API key 401s on GET /emails -- there is no read-side API to corroborate
+        delivery. The ONLY way to prove forms.saoc.co.za actually delivers is a human looking at
+        a real inbox. Do NOT write this as a shell assertion that treats "no failure line in
+        Cloud Logging" as proof of success -- that is provably false: sendEmail() is equally
+        silent whether Resend delivered the mail, silently dropped it, or the message is sitting
+        in spam. State this plainly rather than inventing a passing check for it.
+      instruction: >
+        After @dev implements F2, log an entry to .agent/memory/project/needs-human.md (do not
+        mark F2 done until Brad completes it) asking Brad to run:
+        `npx tsx scripts/send-test-vendor-confirmation-email.ts brad@inunu.net`
+        and confirm within a few minutes whether the email lands in his inbox (or spam) at
+        brad@inunu.net, sent from noreply@forms.saoc.co.za. Record his answer verbatim in the
+        needs-human.md entry's outcome, whichever way it goes -- a negative result (spam,
+        non-delivery, delayed >15 min) is exactly the finding this feature exists to surface,
+        not a failure of the contract.
