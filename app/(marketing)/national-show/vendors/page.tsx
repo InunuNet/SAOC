@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { PageHero } from '@/components/ui/PageHero';
 import { VendorEmptyState, VendorGrid, VendorIntro } from '@/components/vendors';
@@ -32,6 +33,14 @@ export default async function VendorsPage() {
         <VendorIntro />
 
         {list.length > 0 ? <VendorGrid nurseries={list} /> : <VendorEmptyState />}
+
+        <p className="font-sans text-[15px] text-ink/80">
+          Interested in exhibiting at the 2027 SAOC National Show?{' '}
+          <Link href="/national-show/vendors/register" className="underline hover:text-accent">
+            Register as a vendor
+          </Link>
+          .
+        </p>
       </div>
     </>
   );

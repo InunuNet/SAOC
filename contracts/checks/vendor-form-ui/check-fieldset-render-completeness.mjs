@@ -67,7 +67,18 @@ const html = sections
   .map(([, Component]) => renderToStaticMarkup(React.createElement(Component, commonProps)))
   .join('\n');
 
-const stripTags = (s) => s.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+// renderToStaticMarkup correctly HTML-entity-encodes text content (e.g. "&" -> "&amp;"), so
+// the termsAccepted golden label ("...Vendor Terms & Conditions...") can only be matched
+// against rendered output after decoding entities back out -- otherwise a correct render is
+// indistinguishable from a mislabelled one to this check.
+const decodeEntities = (s) =>
+  s
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;|&#39;/g, "'");
+const stripTags = (s) => decodeEntities(s.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
 const normalize = (s) => s.replace(/\s+/g, ' ').trim();
 
 const failures = [];

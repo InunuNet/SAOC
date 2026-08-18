@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CJS stub loaded via require() by design */
 // Shared @/ alias resolution patch for checks that import real .tsx component files under
 // `npx tsx` (CJS hook — this repo has no "type": "module" in package.json, so .tsx files load
 // via require(), whose resolver does not read tsconfig.json's `paths` map the way tsx's ESM
