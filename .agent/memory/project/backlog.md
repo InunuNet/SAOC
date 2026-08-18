@@ -2,6 +2,39 @@
 
 ## Session 2026-08-18 — Brad's live-testing notes on the vendor/exhibitor registration form
 
+- [ ] **[P2, NEW 2026-08-18, from Brad's live testing, agent-actionable] All-caps field labels
+  are hard to read.** Every field label/legend on the vendor form uses
+  `font-mono text-[11px] uppercase tracking-[0.16em] text-muted` (or the `[0.18em]`/`[0.14em]`
+  variants) — a shared pattern across `VendorFormField.tsx:16`, `VendorRadioGroupField.tsx:19`,
+  `VendorBooleanRadioField.tsx:20`, `VendorCheckboxGroupField.tsx:19`, and two spots in
+  `VendorGrid.tsx` (lines 52, 81). This is a deliberate editorial choice (mono/uppercase/
+  letter-spaced), not a bug, but Brad — testing the live form — found it genuinely difficult to
+  read at length, which is a real usability finding regardless of stylistic intent. Before
+  touching it: (a) check whether this `uppercase` treatment is scoped to the vendor form's own
+  component set or is a shared design token used elsewhere on the site (`grep -rn uppercase`
+  more broadly) — a fix here should not silently diverge the vendor form's typography from the
+  rest of the site if the pattern is shared; (b) this touches visual typography, which the
+  project's own coding rules reserve for Claude Design handoffs — but Brad is the actual decision
+  -maker giving this feedback directly, so treat it as authorised, not as inventing a brand
+  choice. Recommend keeping the mono/letter-spacing character (it's load-bearing for the form's
+  visual identity) while dropping `uppercase` in favour of sentence case, or reducing tracking —
+  a judgement call for whoever picks this up, several options, not a single obvious fix.
+
+- [ ] **[P2, NEW 2026-08-18, from Brad's live testing, split ownership] Vendor Terms &
+  Conditions checkbox references a document that doesn't exist.** `VendorPaymentFieldset.tsx:49`
+  ships the label "I confirm I have read and agree to the Vendor Terms & Conditions of the 2027
+  SAOC National Show" as plain text with no link, and no Vendor Terms & Conditions document or
+  page exists anywhere in the repo (`grep -rn "Vendor Terms\|vendor-terms\|VendorTerms"` returns
+  only this one label). A vendor ticking this box today is confirming agreement to nothing —
+  worth being direct about this with whoever owns legal risk: an agreement checkbox with no
+  actual terms behind it is not meaningfully binding, so this is closer to a compliance gap than
+  a cosmetic one, even though Brad flagged it without urgency. **Split ownership**: the content
+  itself — the actual Vendor Terms & Conditions text — is Lee-Ann's to write (per Brad, "Item for
+  Lee-Ann to do"), not an agent's to invent (no invented brand/legal content — matches this
+  project's standing "no invented brand assets" posture extended to legal text). Once she
+  supplies it, the engineering side (a terms page/route, the checkbox label linking to it) is
+  ordinary agent-actionable work. Do not draft placeholder legal text in the meantime.
+
 - [ ] **[P2, NEW 2026-08-18, from Brad's live testing] Regulatory permit fields ask for a
   number but should collect the actual document.** Brad tested the live form
   (`/national-show/vendors/register`) and flagged that "when we ask for a document it needs to
@@ -1670,3 +1703,5 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818191652.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818192223.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818192749.txt
