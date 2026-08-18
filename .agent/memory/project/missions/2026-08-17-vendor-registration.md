@@ -14,111 +14,52 @@ cost_estimate:
   total_calls: 0
 last_checkpoint:
   milestone: M1
-  feature: F2
-  ts: '2026-08-17T22:09:42.210799+00:00'
+  feature: F5
+  ts: '2026-08-18T05:56:44.818320+00:00'
 features:
 - id: F1
   title: 'Naming disambiguation: rename this stream "vendors", not "exhibitors" —
     resolve collision with the existing judged-entry exhibitor content'
-  inline_brief: 'The codebase already has a fully-shipped, unrelated feature called
-    "exhibitor": `sanity/schemas/documents/showExhibitorInfo.ts` and `showExhibitorStep.ts`
-    (singleton + steps behind `/national-show/exhibitors`, docs in `docs/show-exhibitor-info.md`
-    and `docs/exhibitor-guide-for-editors.md`). That feature is the entry guide for
-    SAOC members submitting *judged competition plants* — deadlines, staging, judging,
-    eligibility. Lee-Ann''s doc uses "Exhibitors" for something entirely different:
-    commercial nurseries selling plants from a trade booth. The source document''s
-    own registration form calls them **"vendors"** ("2027 SAOC NATIONAL SHOW VENDOR
-    REGISTRATION FORM"), which this mission adopts as the code-level name throughout
-    — new Sanity types `vendorNursery` / `vendorRegistration` (or similar), new route
-    `/national-show/vendors` (or `/national-show/exhibitors-showcase` if "vendors"
-    reads wrong to Lee-Ann — her call, ask in F1), new Firestore collection `vendorSubmissions`.
-    **The public marketing copy can still say "Exhibitors"** (Lee-Ann''s prose, verbatim,
-    is not code) — only the internal schema/collection/route names change to avoid
-    a second, colliding meaning of "exhibitor" in the same repo. **Done:** naming
-    decision recorded (confirm with Lee-Ann/Brad whether the public-facing URL segment
-    says "vendors" or something else), no new Sanity type or Firestore collection
-    shares a name with the existing exhibitor-entry feature.'
+  inline_brief: null
   status: done
   milestone: M1
   completed_at: '2026-08-17T22:09:42.007497+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-vendor-f1f2-naming-and-nursery-schema.yaml
 - id: F2
   title: 'Sanity schema: `vendorNursery` document type for the public showcase listing'
-  inline_brief: 'Editorial content, authored by Lee-Ann/committee, not user-submitted
-    — belongs in Sanity, following the pattern of `sanity/schemas/documents/sponsor.ts`
-    (closest existing analogue: a logo + name + external links document rendered in
-    a grid). Fields per the source doc''s "Every nursery has" list: nursery logo (image),
-    country (string), owner (string), short history (text), specialisation (text),
-    plants they will bring (text or array of strings), website (url), social media
-    (array of {platform, url} or free-text handles — match `sponsor.ts`''s existing
-    link-object pattern if one exists). Optional "Available at the Show" tag set exactly
-    as listed: species orchids, hybrids, miniatures, South American species, Asian
-    species, growing supplies — a fixed `options.list` multi-select, not free text,
-    so the future showcase page can filter/badge consistently. A document type (not
-    one big array on a singleton), for the same reason `showExhibitorStep.ts`''s comment
-    gives: the number of nurseries is exactly what changes most often, and each gets
-    its own Studio URL and edit history. **Done:** schema compiles, a test document
-    can be created with every field including the tag multi-select, preview shows
-    nursery name + country.'
+  inline_brief: null
   status: done
   milestone: M1
   completed_at: '2026-08-17T22:09:42.210605+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-vendor-f1f2-naming-and-nursery-schema.yaml
 - id: F3
   title: Public showcase page `/national-show/vendors` rendering Lee-Ann's intro prose
     and the nursery grid
-  inline_brief: 'Server Component, GROQ query against `vendorNursery`, following the
-    existing marketing-page pattern (`app/(marketing)/national-show/exhibitors/page.tsx`
-    for structure only — different content, different Sanity type). Renders Lee-Ann''s
-    three intro paragraphs (transcribed verbatim from the source `.docx` — this is
-    her copy, not to be rewritten, paraphrased, or "improved") followed by a grid/list
-    of nurseries, each showing logo, country, owner, short history, specialisation,
-    plants they will bring, website link, social links, and the "Available at the
-    Show" tags if set. No brand colours/typography invented — plain structure only
-    until a design handoff arrives (project rule: "No invented brand assets"). Loading
-    and empty states required (zero nurseries seeded yet is the normal starting state,
-    not an error). **Done:** page renders with zero, one, and several seeded nurseries;
-    Lee-Ann''s prose appears unedited; mobile-first responsive per `.claude/rules/coding.md`.'
-  status: pending
+  inline_brief: null
+  status: done
   milestone: M1
+  completed_at: '2026-08-18T05:04:36.428466+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-vendor-f3-showcase-page.yaml
 - id: F4
   title: 'Firestore `vendorSubmissions` collection: 31-field registration form data
     model'
-  inline_brief: 'Submission pipeline, not editorial content — belongs in Firestore,
-    following `app/api/contact/route.ts`''s pattern (validate → `db.collection(...).add()`
-    → confirmation email, non-fatal on email failure). Model the five form sections
-    as a typed interface in `types/index.ts` (mirroring how `Order`/`Ticket` are defined
-    there): vendor & contact details (business name*, trading name, contact person*,
-    cell*, monitored email*, physical address, CIPC number, VAT number, website, social
-    handle), vendor category & products (category multi-select* — plant sales / product
-    sales / rare-exotic plants / food retailer / hardware / books / art / other, product
-    description*, phytosanitary/import permit number, CITES permit number, food handling
-    certificate number, food item list), booth & logistics (booth count*, booth type,
-    table count, chair count, power required* + electrical load, water required, staff
-    per day, vehicle registration(s), load-in slot, load-out slot), marketing & programme
-    (50-100 word bio — logo is emailed separately per the form, NOT a form upload
-    field, do not add a file-upload field the source form does not have), payment
-    & agreement (accepted on-site payment methods, booth fee payment reference, T&Cs
-    checkbox*, signature, date). Add a `status` field (`submitted` | `under-review`
-    | `approved` | `rejected` — see F6 for whether this is used) and a `submittedAt`
-    Timestamp. Fields marked `*` in the source form are required at validation time;
-    the rest are optional. **Done:** type compiles, a test submission with only required
-    fields succeeds, a test submission with a missing required field is rejected with
-    a clear error, all 31 fields round-trip through Firestore correctly.'
-  status: pending
+  inline_brief: null
+  status: done
   milestone: M1
+  completed_at: '2026-08-18T05:19:17.001670+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-vendor-f4-submissions-model.yaml
 - id: F5
   title: POST `/api/vendors/register` — public submission route, confirmation email
-  inline_brief: 'Direct structural copy of `app/api/contact/route.ts`: validate required
-    fields, reject with 400 on missing/malformed data, `initAdmin()` + `getFirestore()`,
-    write to `vendorSubmissions`, then a try/catch-isolated `sendEmail()` call (new
-    template, e.g. `emails/VendorRegistrationConfirmation.tsx`, modelled on `emails/ContactConfirmation.tsx`)
-    acknowledging receipt — email failure must not fail the submission, exactly as
-    the contact route already does it. No PayFast integration in this route (see F6/F9
-    for the payment question). **Done:** route accepts a valid payload and returns
-    201, rejects invalid payloads with 400, writes exactly one `vendorSubmissions`
-    document per valid request, confirmation email send failure does not affect the
-    HTTP response.'
-  status: pending
+  inline_brief: null
+  status: done
   milestone: M1
+  completed_at: '2026-08-18T05:56:44.818149+00:00'
+  spec: docs/ticketing-system-foundation-spec.md
+  contract: contracts/contract-vendor-f5-register-route.yaml
 - id: F6
   title: 'Vendor application review workflow: new `review-vendor-applications` capability,
     admin list/approve/reject UI'
@@ -228,7 +169,9 @@ milestones:
   - F3
   - F4
   - F5
-  status: pending
+  status: done
+  gate_ran_at: '2026-08-18T05:58:10.561710+00:00'
+  gate_result: pass
 - id: M2
   title: Review workflow, payment path, and regulatory-field handling
   features:
@@ -243,8 +186,17 @@ milestones:
   - F10
   - F11
   status: pending
-last_active_at: '2026-08-17T22:09:42.210799+00:00'
+last_active_at: '2026-08-18T05:56:44.818320+00:00'
 ---
+
+
+
+
+
+
+
+
+
 
 
 
