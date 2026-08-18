@@ -1,0 +1,95 @@
+schema: athanor.contract/v1
+slug: admin-nav-active-state
+goal: Give AdminNav's already-computed active-page state (usePathname()-derived, shipped in
+  commit 51973a9) an actual VISIBLE indicator -- font-weight + background-chip, not color alone
+  -- and make the two stacked mobile hamburgers (site header's vs AdminNav's) visually
+  distinguishable, without regressing AdminNav's presentation-only boundary or /admin/door's
+  no-persistent-bar guarantee.
+created_at: '2026-08-19'
+autonomy: high
+features:
+  - id: F1
+    name: Visible active-link indicator (weight + background chip) and hamburger disambiguation
+      (visible "Admin" text label) in components/admin/AdminNav.tsx
+    status: pending
+goldens:
+  - .agent/memory/project/specs/admin-nav-active-state/goldens/f1-admin-nav-active-state.golden.md
+assertions:
+  phase: 4
+  checks:
+    # --- Structural: the two visual signals and the label are actually in the source, not just
+    # asserted by the behavioral check (cheap to grep, cheap to regress if someone edits the
+    # component and forgets one -- these are necessary but never sufficient on their own, per
+    # the golden's "concrete false state" analysis; A6 is what actually proves visibility). ---
+    - id: A1
+      description: AdminNav's active-link branch adds a background-chip class using the
+        existing --color-primary-100 token (bg-primary-100) -- not a newly invented color.
+        False state that still passes -- the class present in source but never actually
+        rendered with a different computed background than an inactive sibling (A6 catches
+        that; a class name matching a string is not proof of a rendered visual difference).
+      command: grep -q "bg-primary-100" components/admin/AdminNav.tsx
+    - id: A2
+      description: AdminNav's active-link branch adds font-semibold (weight 600) -- a >=200
+        step up from the sans body default (400), matching the golden's stated threshold.
+        Same false-state caveat as A1 -- string presence is not the same as a rendered
+        computed-style delta, which is why A6 exists.
+      command: grep -q "font-semibold" components/admin/AdminNav.tsx
+    - id: A3
+      description: aria-current="page" is still present on the active link -- this feature
+        must not remove the correct accessibility semantic while adding the visual one.
+        Per the dispatch brief, this attribute is NECESSARY (screen readers need it) but never
+        SUFFICIENT proof of the fix -- A6 is the assertion that actually proves a sighted user
+        can see the difference.
+      command: grep -q "aria-current" components/admin/AdminNav.tsx
+    - id: A4
+      description: the mobile/minimal trigger button renders a visible text label containing
+        "Admin" next to its icon -- the hamburger-disambiguation fix. False state that still
+        passes -- an aria-label string change alone (already true today; aria-label already
+        differs between the two triggers) would pass a grep for "Admin" without this actually
+        changing what's rendered on screen. This grep only proves a string containing "Admin"
+        exists somewhere in the file (which was already true via aria-label="Admin menu"
+        before this feature) -- A6's visible-textContent + bounding-box-width check is the
+        real proof, not this one.
+      command: grep -c "Admin" components/admin/AdminNav.tsx | grep -qv "^0$"
+    - id: A5
+      description: AdminNav is still presentation-only -- no import of getAdminSession or
+        hasCapability was introduced while making this visual change. Regression guard for
+        admin-nav-menu's A3 / "the nav is not the access boundary" guarantee, which this
+        feature must not weaken while touching the same file.
+      command: '! grep -qE "getAdminSession|hasCapability" components/admin/AdminNav.tsx'
+    # --- The load-bearing behavioral proof: real browser, real computed style, real server ---
+    - id: A6
+      description: a Playwright-driven run against a real built-and-served instance (same
+        server-ctl.sh + _shared.mjs real-session-cookie pattern as admin-nav-menu's A13) proves,
+        by READING COMPUTED STYLE (never by grepping class names or aria-current) -- (1) on
+        /admin, /admin/vendors, and /admin/door's opened minimal overlay, at 1440px, 375px, and
+        320px, exactly one nav link carries aria-current="page" and it is the CORRECT link for
+        that route; (2) that link's computed font-weight is at least 200 heavier than every
+        inactive sibling's; (3) that link's computed background-color is visibly painted
+        (non-transparent) and differs from every inactive sibling's background-color; (4) BOTH
+        (2) and (3) hold together, not just one -- today's shipped code (color-only) must fail
+        this combined check, proving the assertion actually rejects the pre-fix state; (5) at
+        375px and 320px on /admin, the site header's hamburger ("Open menu") and AdminNav's
+        mobile trigger ("Admin menu") both render, the admin trigger's visible text content
+        contains "Admin", the header trigger's visible text content does not, and the admin
+        trigger's rendered width is at least 20px wider than the header trigger's -- proving the
+        two are visually distinguishable by a sighted user, not merely by accessible name. Every
+        sub-case is checked and reported independently; a failure in one never suppresses
+        others, matching verify_admin_nav.ts's existing convention.
+      command: node_modules/.bin/tsx execution/checks/verify_admin_nav_active_state.ts
+      timeout_seconds: 600
+    # --- Regression guards: properties this feature must not break while editing the same file ---
+    - id: A7
+      description: admin-nav-menu's own load-bearing behavioral suite (link visibility per
+        capability, direct-URL reachability, /admin/door's no-persistent-bar + minimal-trigger
+        under 56px, tab focus rings, console errors, sign-out session clearing) still passes
+        unmodified after this feature's changes to the same component file. This feature only
+        adds classes and a text label to existing elements -- it must not touch link
+        visibility logic, the minimal-trigger's height budget, or focus-ring classes.
+      command: node_modules/.bin/tsx execution/checks/verify_admin_nav.ts
+      timeout_seconds: 600
+    - id: A8
+      description: the real Next.js production build succeeds with the changed AdminNav.tsx
+        in the tree. Same precedent as admin-nav-menu's A14 -- A1-A5 all stay green under a
+        build-breaking mistake that only a real build catches.
+      command: node_modules/.bin/next build

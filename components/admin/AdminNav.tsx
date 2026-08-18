@@ -105,7 +105,7 @@ export function AdminNav({ variant, canReviewVendors }: AdminNavProps) {
                 onClick={onNavigate}
                 className={[
                   'block rounded-sm px-3 py-2 font-sans text-[14px] text-ink transition-colors duration-150 hover:text-primary min-[1240px]:px-0 min-[1240px]:py-0',
-                  active ? 'text-primary' : '',
+                  active ? 'bg-primary-100 font-semibold text-primary' : '',
                   FOCUS_RING,
                 ].join(' ')}
               >
@@ -146,11 +146,12 @@ export function AdminNav({ variant, canReviewVendors }: AdminNavProps) {
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
             className={[
-              'flex h-10 w-10 items-center justify-center rounded-sm border border-rule bg-ivory text-ink transition-colors hover:bg-bone',
+              'flex h-10 w-auto items-center justify-center gap-1.5 rounded-sm border border-rule bg-ivory px-3 text-ink transition-colors hover:bg-bone',
               FOCUS_RING,
             ].join(' ')}
           >
             {open ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
+            <span className="font-sans text-[14px]">Admin</span>
           </button>
         </div>
 
@@ -188,11 +189,12 @@ export function AdminNav({ variant, canReviewVendors }: AdminNavProps) {
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
           className={[
-            'flex h-10 w-10 items-center justify-center rounded-sm border border-rule bg-ivory text-ink transition-colors hover:bg-bone min-[1240px]:hidden',
+            'flex h-10 w-auto items-center justify-center gap-1.5 rounded-sm border border-rule bg-ivory px-3 text-ink transition-colors hover:bg-bone min-[1240px]:hidden',
             FOCUS_RING,
           ].join(' ')}
         >
           {open ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
+          <span className="font-sans text-[14px]">Admin</span>
         </button>
       </div>
 

@@ -7,6 +7,12 @@
 **Contract:** `.agent/memory/project/specs/admin-nav-menu/contract-f1.yaml`, feature F1.
 Golden spec: [`.agent/memory/project/specs/admin-nav-menu/goldens/f1-admin-nav-menu.golden.md`](../.agent/memory/project/specs/admin-nav-menu/goldens/f1-admin-nav-menu.golden.md).
 
+The visible active-page indicator and the trigger's "Admin" label (both described below) were
+added afterwards by a separate feature, `admin-nav-active-state`. **Contract:**
+`.agent/memory/project/specs/admin-nav-active-state/contract-f1.yaml`, feature F1. Golden spec:
+[`.agent/memory/project/specs/admin-nav-active-state/goldens/f1-admin-nav-active-state.golden.md`](../.agent/memory/project/specs/admin-nav-active-state/goldens/f1-admin-nav-active-state.golden.md).
+Check: [`execution/checks/verify_admin_nav_active_state.ts`](../execution/checks/verify_admin_nav_active_state.ts).
+
 ## What this is
 
 Before this feature, `/admin` (ticket dashboard), `/admin/door` (check-in scanner), and
@@ -52,16 +58,59 @@ list:
 
 - **`bar`** — a persistent horizontal bar, used on `/admin` and `/admin/vendors`. Collapses to a
   hamburger below the same 1240px breakpoint `components/chrome/Header.tsx` already uses.
-- **`minimal`** — used on `/admin/door` **only**. A single fixed-position ~40×40px icon trigger
+- **`minimal`** — used on `/admin/door` **only**. A single fixed-position, 40px-tall trigger
   that opens an overlay with the same links. This is a constraint, not a preference: a
   persistent bar would obstruct one-handed camera scanning at a show entrance in bright
   daylight (see `DoorScannerClient.tsx`'s own header comment). If you're tempted to switch the
   door page to `variant="bar"` for visual consistency, don't — that's the exact regression this
-  golden exists to prevent.
+  golden exists to prevent. The trigger is `h-10 w-auto` (was a fixed 40×40px square before
+  `admin-nav-active-state`; see below) — height stays exactly 40px, only the width grew, because
+  a taller trigger would encroach on the camera viewport.
 
 Current-page highlighting (`aria-current="page"`) comes from `usePathname()` inside `AdminNav`
 itself, not a threaded `current` prop — same pattern `components/chrome/Header.tsx` already
 uses.
+
+## Visible active-page indicator and hamburger disambiguation
+
+`AdminNav` shipped (commit 51973a9) computing the right `active` boolean but rendering it as a
+colour-only difference (`text-primary` vs `text-ink`) that was imperceptible at 14px — every
+link looked the same weight, size, and (to the eye) colour on every `/admin*` page. Fifty-five
+automated browser sub-cases in `verify_admin_nav.ts` were green throughout, because every one
+of them asked "is the right link present/reachable/tabbable", and none asked "can a human see
+which one is current". A browser review at 5x zoom is what actually found it. See
+`.agent/memory/project/specs/admin-nav-active-state/goldens/f1-admin-nav-active-state.golden.md`
+for the full defect writeup — it's this project's own named "assertion satisfiable by something
+that isn't the real property" defect class, showing up as a visual bug instead of a logic bug.
+
+The fix, in `renderLinkList()`'s active branch, is **two independent, redundant visual
+signals**, both required together:
+
+- **Background chip** — `bg-primary-100` (an existing `app/globals.css` token, not a new
+  colour), same `rounded-sm` radius as the link's existing box, so there's no layout shift
+  between active and inactive states.
+- **Font weight** — `font-semibold` (600), a 200-unit step up from the sans body default (400).
+
+The pre-existing `text-primary` colour swap is kept as a third, lower-weight signal, and
+`aria-current="page"` is kept unchanged for screen readers. **This redundancy is deliberate,
+not overkill** — a colour-only signal is what failed the first time, and the contract assertion
+(`execution/checks/verify_admin_nav_active_state.ts`, A6) enforces the background-colour delta
+and the font-weight delta together: a change that drops either one fails the gate, because
+either one alone is exactly the kind of regression a future edit could make without anyone
+noticing visually. The load-bearing proof reads real computed style in a real browser at
+1440px/375px/320px — never `aria-current`, a class-name grep, or any other structural stand-in
+that a change could satisfy without actually changing what's painted on screen.
+
+Separately, at 375px and 320px, `Header.tsx`'s own hamburger and `AdminNav`'s mobile/minimal
+trigger stacked directly on top of each other, both icon-only, same icon, same border and
+background treatment, near-identical size — distinguishable by accessible name only, not by
+sight. The fix adds a visible text label, **"Admin"**, next to the trigger's `<Menu>`/`<X>`
+icon (same `font-sans text-[14px]` vocabulary the sign-out button and link list already use).
+This must genuinely render — an `aria-label` alone does not satisfy the fix, and the check
+proves it by measuring rendered visible text content and a bounding-box width delta against the
+header's hamburger, precisely so an invisible or `sr-only` label can't pass. `Header.tsx` itself
+is untouched; only the admin trigger explains itself, since it's the newer, less-expected
+element on the page.
 
 ## The door page became an async Server Component
 
@@ -141,6 +190,16 @@ real Playwright browser against a real built-and-served instance, reusing
 
 ```bash
 node_modules/.bin/tsx execution/checks/verify_admin_nav.ts
+```
+
+The active-page indicator and hamburger-disambiguation proof
+(`execution/checks/verify_admin_nav_active_state.ts`, `admin-nav-active-state`'s A6) reuses the
+same real-server + real-fixture-cookie pattern, and does not re-prove anything `verify_admin_nav.ts`
+already covers — it's the one script that reads computed style to check whether a sighted user
+can actually see which link is active and tell the two mobile triggers apart:
+
+```bash
+node_modules/.bin/tsx execution/checks/verify_admin_nav_active_state.ts
 ```
 
 **Port collision hazard:** both this check and
