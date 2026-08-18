@@ -127,6 +127,35 @@
   submission failure, scroll the banner (or first invalid field, if per-field errors get added)
   into view and move focus to it. Check whether any other required numeric field has the same
   unguarded-`Number.parseInt` gap as `boothCount` before calling this fixed.
+  **Codex GPT-5.5 cross-model review ran against the abandoned architect's scratch contract/
+  checks (`contracts/contract-vendor-form-submit-visibility-fix.yaml` and
+  `contracts/checks/vendor-form-submit-visibility-fix/`, still uncommitted on disk) and found
+  four real defects in that unbuilt design — whoever picks this up must read these before
+  reusing any of that scratch work:**
+  1. `contract-vendor-form-submit-visibility-fix.yaml:55` — the spec's `useEffect(..., [])`
+     approach assumes `setDescriptor(null)` then `setDescriptor(error)` always unmounts/remounts
+     the banner. React batches same-event state updates, so if the banner is already visible and
+     a second invalid submission happens, both `setDescriptor` calls can collapse into one
+     render — banner stays mounted, the empty-deps effect never reruns, second failure is
+     invisible again. High confidence.
+  2. `check-boothcount-client-validation.mjs:50` — the scratch design explicitly treats `"1.5"`
+     and `"1e3"` as *valid* booth counts. `Number.parseInt` silently coerces both to `1`; with
+     `noValidate` on the form (`VendorRegisterForm.tsx:103`), nothing stops this reaching the
+     server as a single booth. High confidence.
+  3. `check-handlesubmit-wiring.mjs:61` — the wiring check only proves *some* return/error-state
+     exists between the validator call and `fetch()`, not that the return is conditional on the
+     validation result actually failing — a broken `if (someOtherGuard) return;` unrelated to
+     the real validation would pass this check while still submitting invalid data. High
+     confidence — same weak-assertion-satisfiable-by-adjacent-code-not-the-real-property class
+     as this project's own P1 audit.
+  4. `check-banner-focusable-and-message.mjs:58` — the `tabindex="-1"` check regex-scans the
+     whole rendered HTML rather than the specific root element the ref targets; `tabIndex={-1}`
+     landing on a child instead of the root would still pass while `focusAndScrollToBanner()`'s
+     `.focus()` call silently fails on the actual (non-focusable) target. Medium confidence.
+  This is also the first real-world proof this project's new mandatory Codex-QA rule
+  (`.claude/rules/workflow.md`) catches things Claude's own chain misses — both #2 and #3 are
+  exactly the kind of defect an architect+dev+qa pass driven entirely by Claude did not surface
+  on the *first* boothCount bug either.
 
 - [ ] **[P2, NEW 2026-08-18, DEFERRED, same testing pass] No field has a placeholder showing
   expected format.** Confirmed: no `placeholder` prop usage found in
@@ -1878,3 +1907,9 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818194853.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818195406.txt
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-06-28-cross-model-qa-codex.md
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818195918.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818200444.txt
