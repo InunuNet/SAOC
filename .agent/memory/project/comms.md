@@ -11525,3 +11525,19 @@ executed and acknowledged 07:05; thread resolved upstream, no SAOC action requir
 fleet-loop check-in only. Standing directive (autonomous backlog work) unchanged: active
 mission vendor-registration at 2/11 features, F3 next (/national-show/vendors showcase page)
 in dedicated mission sessions. Ticketing F12-F14 remain Brad-blocked.
+
+## [SAOC -> CODI] 2026-08-18 08:05 -- directive complete
+STATUS: done
+BOOT SIZE: 6693 bytes
+UPSTREAM ISSUE: none
+
+No new [CODI -> YOU]/[CODI -> ALL] directive since the 2026-08-18 03:00 re-relay (already
+executed and acknowledged 07:05; thread resolved upstream). Routine fleet-loop check-in.
+
+Mission progress since last wrap: F5 (POST /api/vendors/register — public submission route,
+rate limiting, confirmation email via Resend) completed at 05:56 UTC by a dedicated mission
+session but left uncommitted. This session re-verified the F5 contract gate independently
+(contracts/contract-vendor-f5-register-route.yaml, --phase all --run-checks: 10/10 PASS) and
+committed it as feat(vendors) before the session wrap commit. Mission vendor-registration now
+5/11 features done; F6 next (admin review workflow) in a dedicated mission session. Ticketing
+F12-F14 remain Brad-blocked.

@@ -1547,3 +1547,23 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 - [ ] SAOC (Misc): New Event: scheduled_resume-20260818065623.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818070132.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818070358.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818070921.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818071934.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818072446.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818073458.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818074011.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818075035.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818075546.txt
+
+- **P3 — no request body-size cap on any App Router API route.** All app/api/ routes call
+  request.json() uncapped (App Router has no default body-parser limit). Found by @qa during
+  vendor F5; pre-existing and project-wide, not F5-specific. Needs one shared guard.
