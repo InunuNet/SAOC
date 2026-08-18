@@ -122,16 +122,25 @@ A honeypot field (mirrors `ContactForm.tsx`'s own `_hp` pattern exactly: visuall
 `VendorRegisterForm.tsx` itself, not in any fieldset — it is anti-spam plumbing, not one of the
 31 real fields, and deliberately outside A4/A7's scope (which only render the 5 fieldsets).
 
-**400 field errors are not mapped per-input.** `fieldErrors` from the real validator is a flat
-array of human-readable strings (e.g. `"businessName is required and must be a non-empty
-string"`), not a `{field: message}` object the way `TicketPurchaseForm`'s hand-written
-client-side errors are. Parsing a field name back out of that prose string to highlight one
-specific input would be fragile (the message wording is F4's to change, not this contract's to
-freeze) — `VendorRegisterStatusBanner` renders the full list as a legible summary above the
-fieldsets instead. A client-side pre-submit check mirroring the 9 required fields (cheap UX only,
-same "API is still source of truth" comment `ContactForm.tsx` already carries) is recommended but
-not itemised as its own assertion — the server-side round trip via A1/A5/A6 is what's actually
-gated.
+**400 field errors are not mapped per-input, and must never reach the submitter raw.**
+`fieldErrors` from the real validator is a flat array of schema-flavoured, camelCase strings
+(e.g. `"businessName is required and must be a non-empty string"`) — internal validator
+language, not copy meant for a public visitor, and not a `{field: message}` object the way
+`TicketPurchaseForm`'s hand-written client-side errors are. Parsing a field name back out of
+that prose to highlight one specific input would be fragile (the message wording is F4's to
+change, not this contract's to freeze), so `VendorRegisterStatusBanner` renders the full list as
+a legible summary above the fieldsets instead — but **humanised**, via `lib/vendor-register-
+response.ts`'s `humaniseFieldError()` + `VENDOR_FIELD_LABELS`, never the raw string. This was
+tightened after an earlier pass: BrowserAgent's real-browser check caught the literal camelCase
+validator strings (`businessName`, `vendorCategory`, `termsAccepted`, …) being shown to the
+public, which A6 originally didn't catch because it only asserted the raw fixture string
+appeared in the rendered output — the exact leak it should have been gating against. A6 now
+computes the expected humanised text by calling the real `humaniseFieldError()` (same
+real-function-round-trip technique A1 uses) and separately asserts none of the 31 raw camelCase
+field keys appear anywhere in the rendered banner. A client-side pre-submit check mirroring the
+9 required fields (cheap UX only, same "API is still source of truth" comment `ContactForm.tsx`
+already carries) is recommended but not itemised as its own assertion — the server-side round
+trip via A1/A5/A6 is what's actually gated.
 
 ---
 

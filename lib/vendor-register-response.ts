@@ -82,6 +82,83 @@ export function formatRetryAfter(ms: number): string {
 }
 
 /**
+ * Human-facing field labels for every key validateVendorSubmissionInput() (lib/vendor-
+ * submissions.ts, F4) can name in a fieldErrors string -- short British-English phrases, not
+ * the full form-copy label from field-spec.golden.json (e.g. "Business name", not "Vendor /
+ * business name"), since these are read inline in a sentence like "Business name is required."
+ * Keys are checked longest-first so no field key can be shadowed by a shorter one that happens
+ * to be a prefix of it.
+ */
+const VENDOR_FIELD_LABELS: Record<string, string> = {
+  businessName: 'Business name',
+  tradingName: 'Trading name',
+  contactPersonName: 'Contact person name',
+  contactCellPhone: 'Cell phone number',
+  contactEmail: 'Email address',
+  physicalAddress: 'Physical address',
+  cipcNumber: 'CIPC number',
+  vatNumber: 'VAT number',
+  website: 'Website',
+  socialMediaHandle: 'Social media handle',
+  vendorCategory: 'Vendor category',
+  productDescription: 'Product description',
+  phytosanitaryPermitNumber: 'Phytosanitary permit number',
+  citesPermitNumber: 'CITES permit number',
+  foodHandlingCertificateNumber: 'Food handling certificate number',
+  foodItemList: 'Food item list',
+  boothCount: 'Number of booths',
+  boothType: 'Booth type',
+  tableCount: 'Number of tables',
+  chairCount: 'Number of chairs',
+  powerRequired: 'Power required',
+  electricalLoad: 'Electrical load',
+  waterRequired: 'Water access required',
+  staffPerDay: 'Staff per day',
+  vehicleRegistrations: 'Vehicle registration number(s)',
+  loadInSlot: 'Load-in time slot',
+  loadOutSlot: 'Load-out time slot',
+  bio: 'Vendor bio',
+  paymentMethodsAccepted: 'Payment methods accepted',
+  paymentReference: 'Payment reference',
+  // "and", not "&" -- renderToStaticMarkup HTML-escapes a literal "&" to "&amp;" in serialized
+  // text output, which would break a literal substring match against this label elsewhere.
+  termsAccepted: 'Terms and Conditions',
+};
+
+const VENDOR_FIELD_KEYS_LONGEST_FIRST = Object.keys(VENDOR_FIELD_LABELS).sort(
+  (a, b) => b.length - a.length,
+);
+
+/**
+ * Turns one raw validateVendorSubmissionInput() error string (schema-flavoured, camelCase --
+ * e.g. "businessName is required and must be a non-empty string") into a short, legible
+ * British-English sentence keyed on the field name prefix of the message -- e.g. "Business name
+ * is required." An error whose field prefix is not one of the 31 known keys (or whose wording
+ * this function does not recognise) falls through to a generic instruction rather than
+ * fabricating a guess.
+ */
+export function humaniseFieldError(rawMessage: string): string {
+  const key = VENDOR_FIELD_KEYS_LONGEST_FIRST.find((candidate) =>
+    rawMessage.startsWith(`${candidate} `),
+  );
+  if (!key) {
+    return 'Please check the highlighted fields.';
+  }
+  const label = VENDOR_FIELD_LABELS[key];
+
+  if (rawMessage.includes('must be true')) {
+    return `${label} must be accepted.`;
+  }
+  if (rawMessage.includes('is required')) {
+    return `${label} is required.`;
+  }
+  if (rawMessage.includes('invalid value')) {
+    return `${label} contains an invalid value.`;
+  }
+  return `${label} is invalid.`;
+}
+
+/**
  * Maps an HTTP status + response body from POST /api/vendors/register into UI-legible copy.
  * `status` 0 with `body` undefined is this module's convention for a thrown fetch (no response
  * reached at all), mirroring TicketPurchaseForm's own catch-block treatment of a network

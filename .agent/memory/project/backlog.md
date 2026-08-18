@@ -1404,183 +1404,91 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-17-agent-tier-split.md
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260817234735.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260817235248.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818000320.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818000836.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818001851.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818002403.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818003547.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818004059.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818004233.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818004745.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818004915.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818005441.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818005516.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818010028.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818010126.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818010639.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818010827.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818011349.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818011520.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818012030.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818012054.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818012605.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818012632.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818013142.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818013205.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818013715.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818013739.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818014249.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818014314.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818014824.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818014850.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818015359.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818015419.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818015928.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818015951.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818020459.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818020518.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818021026.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818021045.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818021553.txt
-
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818021613.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818022121.txt
 
 - [ ] SAOC (Misc): [scheduled-resume] Reached 2026-08-18 02:22:00 — handing off to pulse_mission_loop.sh (one shot).
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818023639.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818024648.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818025155.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818025341.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818030633.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818032509.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818033046.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818034920.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818040334.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818042210.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818042747.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818044613.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818045150.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818051024.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818051601.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818053430.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818054007.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818055839.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818060416.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818062248.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818062825.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818063702.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818064210.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818064324.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818064832.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818065001.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818065513.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818065623.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818070132.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818070358.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818070921.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818071934.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818072446.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818073458.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818074011.txt
-
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818075035.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818075546.txt
 
 - **P3 — no request body-size cap on any App Router API route.** All app/api/ routes call
   request.json() uncapped (App Router has no default body-parser limit). Found by @qa during
   vendor F5; pre-existing and project-wide, not F5-specific. Needs one shared guard.
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818080012.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818080522.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818080647.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818081157.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818081346.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818081856.txt
-
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818082022.txt
 
 - **P2 — fleet_loop.sh commits feature work under "chore: comms reply + fleet-loop session
   wrap" labels.** Twice now (F3's page, F6's entire implementation, commits 7a01367/8db73e1).
@@ -1588,68 +1496,121 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
   staging. Gated off (chmod -x) 2026-08-18; needs a contract before re-enabling: label
   accuracy + never staging files outside .agent/memory/.
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818082533.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818082533.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818083043.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818083042.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818083551.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818083551.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818084059.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818084100.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818084608.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818084608.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818085116.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818085116.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818085626.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818085626.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818090135.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818090134.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818090643.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818090643.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818091153.txt
-
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818091156.txt
 
 - [P2] F8 check A4 blind to both bare-JSX interpolation of undefined (renders blank) AND template-literal coercion of null (renders "null" — this exact regression shipped in bcbbc03, fixed in cd0308d). Architect: widen A4 to grep "null" as well as "undefined", plus a bare-`{boothNumber}`-as-JSX-child guard. (2026-08-18)
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818091720.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818091718.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818092232.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818092232.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818092755.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818092754.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818093307.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818093306.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818093820.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818093829.txt
 
-- [ ] SAOC (Misc): New Event: scheduled_resume-20260818094359.txt
 
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818094358.txt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

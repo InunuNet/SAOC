@@ -144,11 +144,16 @@ assertions:
         VendorRegisterStatusBanner and VendorRegisterSuccess render legible, real content for
         every response shape, fed descriptors produced by a live call to the real
         describeVendorRegistrationResponse() (proves the wiring, not just each half in
-        isolation): role="alert"/role="status" present, real fieldErrors messages appear in the
-        validation-error banner, a legible retry label appears in the rate-limited banner, the
-        real confirmation id appears in the success state. Defeating mutation: a banner that
-        renders the same generic message regardless of descriptor kind; a success state that
-        never displays the id.
+        isolation): role="alert"/role="status" present, a legible retry label appears in the
+        rate-limited banner, the real confirmation id appears in the success state. For the
+        validation-error case: each real fixture fieldError, run through the real
+        humaniseFieldError() (lib/vendor-register-response.ts), must appear in its HUMANISED
+        form in the rendered banner, AND none of the 31 raw camelCase field keys (businessName,
+        vendorCategory, termsAccepted, etc.) may appear anywhere in the rendered text. Defeating
+        mutation: a banner that renders the same generic message regardless of descriptor kind;
+        a success state that never displays the id; a banner that renders F4's raw
+        schema-flavoured fieldErrors strings instead of their humanised form (the internal
+        camelCase field-naming leak BrowserAgent's real-browser check caught).
       command: node --import tsx/esm contracts/checks/vendor-form-ui/check-status-banner-render.mjs
 
     - id: A7

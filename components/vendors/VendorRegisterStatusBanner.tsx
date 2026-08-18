@@ -1,4 +1,4 @@
-import type { VendorRegisterResponseDescription } from '@/lib/vendor-register-response';
+import { humaniseFieldError, type VendorRegisterResponseDescription } from '@/lib/vendor-register-response';
 
 // Renders validation-error/rate-limited/error descriptor kinds above the fieldsets. Returns
 // null for kind 'success' -- VendorRegisterSuccess replaces the whole form in that case.
@@ -22,7 +22,7 @@ export function VendorRegisterStatusBanner({ descriptor }: VendorRegisterStatusB
       {descriptor.kind === 'validation-error' ? (
         <ul className={listClass}>
           {descriptor.fieldErrors.map((message) => (
-            <li key={message}>{message}</li>
+            <li key={message}>{humaniseFieldError(message)}</li>
           ))}
         </ul>
       ) : null}
