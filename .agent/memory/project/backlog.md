@@ -1,5 +1,23 @@
 # Athanor Issue Backlog
 
+## Session 2026-08-18 — Admin panel has no cross-navigation at all (Brad, live)
+
+- [ ] **[P1, NEW 2026-08-18, from Brad] `/admin` has no menu system — confirmed there is no
+  navigation between admin surfaces at all, not a broken link.** Brad tried to reach vendor
+  review from the admin dashboard and it didn't work; checked the source — `app/admin/page.tsx`
+  has zero `href="/admin/vendors"` (or any `/admin/*`) links, and neither does
+  `app/admin/vendors/page.tsx` or `app/admin/door/page.tsx` link back to anything else. Every
+  admin surface (`/admin`, `/admin/vendors`, `/admin/door`) is a silo reachable only by typing
+  the exact URL — no shared chrome, no sidebar/top nav, nothing standard-admin-panel about it.
+  Brad's ask, direct: build a real admin navigation menu, the way every standard admin panel
+  has one — a persistent nav (sidebar or top bar) across all `/admin/*` pages linking dashboard/
+  tickets/vendors/door-scanner/whatever else lands there, with the current page indicated. Scope
+  question for whoever architects this: should it live in a shared `app/admin/layout.tsx` (there
+  isn't one currently covering all three pages — `/admin/login` and `/admin/door` deliberately
+  do NOT inherit shared admin chrome per `app/admin/page.tsx:15-16`'s own comment, so check
+  whether that exclusion is still correct once a real nav exists, or whether login/door need
+  their own lighter nav for a different reason).
+
 ## Session 2026-08-18 — BrowserAgent adversarial sweeps: ticketing checkout is fully broken; 9 new vendor-form findings
 
 - [ ] **[P0, NEW 2026-08-18, from BrowserAgent, DEFERRED pending Brad's go] Ticket checkout is
@@ -1913,3 +1931,5 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818195918.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818200444.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818201009.txt
