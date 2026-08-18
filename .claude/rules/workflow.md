@@ -35,7 +35,19 @@ not reliably catch that class of bug; an independent model with no shared blind 
 **Brad's standing instruction: every QA pass, no exceptions, runs this after Claude's @qa and
 before @docs.**
 
-Run from the repo root once changes are staged/committed:
+Preferred (2026-08-18, pulled from Athanor's `execution/codex_qa.sh`): a structured wrapper
+with a bounded timeout and a parseable exit code, so it can be a real gate, not just advisory.
+
+```
+execution/codex_qa.sh <file_path>          # review one file
+git diff | execution/codex_qa.sh           # review the current diff via stdin
+```
+
+Exit 0 = PASS, exit 1 = FAIL (findings printed after line 1), exit 2 = wrapper usage error
+(missing `codex` binary, empty prompt) — never silently swallowed. 180s timeout, `-m gpt-5.5
+-c model_reasoning_effort=high -s read-only` under the hood, same as before.
+
+Fallback (if `execution/codex_qa.sh` is ever missing):
 
 ```
 codex exec -m gpt-5.5 -c model_reasoning_effort=high -s read-only "Adversarially review the current git diff (or, if no diff, the most recently changed files) for real bugs, security issues, and correctness risks — not style. For each finding: cite exact file:line, state the concrete failure scenario (what input/state breaks it), and rate confidence. Do not flag anything you can't point to a specific line for. If nothing real is wrong, say so plainly instead of inventing findings."
@@ -48,9 +60,9 @@ codex exec -m gpt-5.5 -c model_reasoning_effort=high -s read-only "Adversarially
   auto-apply. If a finding is wrong, say so and move on; don't silently discard it either.
 - The orchestrator runs this directly via Bash (it's a review command, not application code) —
   it is not a chain-dispatched subagent.
-- A harness-level feature request to build this into Athanor itself as a real stage (not a
-  manually-run command) is filed upstream: InunuNet/Athanor#1357. This project-level rule is the
-  standing practice until/unless that lands.
+- Athanor's harness-level version of this (InunuNet/Athanor#1357) has shipped as
+  `execution/codex_qa.sh` + a `type: codex_qa` contract assertion kind — this project has pulled
+  the script but not yet wired the contract-assertion side in.
 
 ## Hard Rules
 
@@ -63,3 +75,8 @@ codex exec -m gpt-5.5 -c model_reasoning_effort=high -s read-only "Adversarially
 - **Trivial = read, status, single command. Everything else uses the chain.**
 - **Chain Continuous** — Never pause between chain steps waiting for user confirmation. Once a mission is active, proceed @architect→@dev→@qa→Codex→@docs→gate→@maintainer without stopping. Only pause at mission boundaries or on BLOCKED verdict.
 - **Already-agreed follow-through doesn't need re-asking.** If a decision was made and approved earlier in a conversation (e.g. "build X, then deploy it"), completing it later is execution, not a new decision — don't pause to re-confirm something already settled.
+- **Orchestrator never implements, reviews, or deploys directly — dispatch @architect/@dev/@qa
+  always, even for urgent P0s.** Read-only investigation (grep, curl, log queries, browser
+  tests) is fine; the first Edit/Write to project source is where dispatch must happen instead.
+  Established 2026-08-18 after repeated direct implementation without the chain nearly cost the
+  session. See project memory feedback_orchestrator_only_hard_rule.
