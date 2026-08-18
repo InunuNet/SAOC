@@ -91,7 +91,7 @@ export default function VendorApprovalConfirmation({
             SAOC National Show has been approved.
           </Text>
           <Text style={{ fontSize: '16px', color: '#333' }}>
-            Your booth number: <strong>{`${boothNumber}`}</strong>
+            Your booth number: <strong>{formatBoothNumber(boothNumber)}</strong>
           </Text>
           <Hr />
           <Heading as="h2" style={{ fontSize: '18px', color: '#1a1a1a' }}>
