@@ -108,3 +108,11 @@ env:
     secret: RECOVERY_TOKEN_SECRET
     availability:
       - RUNTIME
+  - variable: RESEND_API_KEY
+    secret: RESEND_API_KEY
+    availability:
+      - RUNTIME
+  - variable: RESEND_FROM_ADDRESS
+    value: "SAOC <noreply@saoc.co.za>"
+    availability:
+      - RUNTIME
