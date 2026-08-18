@@ -4,7 +4,7 @@ slug: design-verify
 goal: Verify live site matches Claude Design reference; fix remaining visual gaps
   after chrome-wiring landed
 created_at: '2026-06-23T00:00:00Z'
-status: done
+status: close_out
 autonomy: high
 features:
 - id: F1
@@ -49,9 +49,10 @@ last_checkpoint:
   milestone: M2
   feature: F5
   ts: '2026-06-23T20:27:30.722513+00:00'
-last_active_at: '2026-06-23T20:27:41.372545+00:00'
+last_active_at: '2026-08-17T21:31:01.801496+00:00'
 completed_at: '2026-06-23T20:27:41.372335+00:00'
 ---
+
 
 
 

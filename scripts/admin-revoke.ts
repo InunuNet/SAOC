@@ -39,6 +39,7 @@ import { getAuth } from 'firebase-admin/auth';
 
 import { computeRevokePlan } from '@/lib/admin-revoke-plan';
 import type { RolesClaim } from '@/lib/admin-auth';
+import { assertClaimSizeOrThrow } from '@/lib/claim-size-guard';
 
 config({ path: '.env.local', quiet: true });
 

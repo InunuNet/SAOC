@@ -42,6 +42,7 @@ import { getAuth, type UserRecord } from 'firebase-admin/auth';
 
 import { validateGrantArgs } from '@/lib/admin-grant-validation';
 import type { RolesClaim } from '@/lib/admin-auth';
+import { assertClaimSizeOrThrow } from '@/lib/claim-size-guard';
 
 config({ path: '.env.local', quiet: true });
 
@@ -144,6 +145,7 @@ async function createAndGrantFreshUser(
   if (roleGrant) {
     claims.roles = mergeRolesClaim(undefined, roleGrant.show, roleGrant.roles);
   }
+  assertClaimSizeOrThrow(claims, `admin-grant (new user) for ${email}`);
   await auth.setCustomUserClaims(uid, claims);
   await auth.updateUser(uid, { emailVerified: true });
 
@@ -199,6 +201,7 @@ async function grantExistingUser(
 
   // Load-bearing: never call updateUser(uid, { emailVerified: true }) on this branch. The
   // account's emailVerified value is left exactly as found, whatever it is.
+  assertClaimSizeOrThrow(claims, `admin-grant (existing user) for ${user.email ?? user.uid}`);
   await auth.setCustomUserClaims(user.uid, claims);
 
   console.log(

@@ -1,0 +1,125 @@
+schema: athanor.contract/v1
+slug: vendor-f3-showcase-page
+goal: >-
+  Mission vendor-registration, feature F3 only. Public showcase page
+  /national-show/vendors: a Server Component that fetches vendorNursery documents
+  (F2's Sanity schema) via a new vendorNurseriesQuery, renders Lee-Ann's verbatim
+  intro prose, and renders a responsive grid of nurseries (or a sane empty-state
+  message when zero nurseries are seeded — the normal starting state, not an
+  error). No brand colours/typography invented; plain structure using only
+  existing site conventions (sponsors/ page + SponsorGrid as the closest
+  analogue) until a design handoff arrives. Full decision record, judgement
+  calls, and what this contract does NOT prove:
+  contracts/golden/vendor-f3-showcase-page/README.md
+created_at: '2026-08-18'
+autonomy: high
+
+features:
+  - id: F3
+    name: >-
+      Add sanity/queries.ts:vendorNurseriesQuery (projects _id + every
+      vendorNursery schema field, ordered by name); components/vendors/VendorIntro.tsx
+      (static, verbatim Lee-Ann copy, no props); components/vendors/VendorGrid.tsx
+      (nurseries: SanityVendorNursery[] -> responsive card grid, returns null on
+      empty list, mirrors SponsorGrid's card/link conventions); components/vendors/VendorEmptyState.tsx
+      (static "no nurseries yet" message, no props); components/vendors/index.ts
+      barrel; app/(marketing)/national-show/vendors/page.tsx (Server Component,
+      revalidate = 60, PageHero + VendorIntro + nurseries.length ? VendorGrid :
+      VendorEmptyState); app/(marketing)/national-show/vendors/loading.tsx. Does
+      not touch app/api/tickets/itn/route.ts, branding/, or the existing
+      app/(marketing)/national-show/exhibitors/ route.
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-f3-showcase-page/README.md
+  - contracts/checks/vendor-f3-showcase-page/fixtures/nurseries.fixture.json
+  - contracts/checks/vendor-f3-showcase-page/fixtures/intro-prose.golden.json
+  - contracts/checks/vendor-f3-showcase-page/fixtures/untouched-files.baseline.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        vendorNurseriesQuery exists in sanity/queries.ts, filters on
+        _type == "vendorNursery", and projects _id plus every field the real,
+        imported vendorNursery schema object declares (derived dynamically from
+        the schema, not a hardcoded field list in the check).
+      command: >-
+        node --import tsx/esm
+        contracts/checks/vendor-f3-showcase-page/check-query-projects-every-field.mjs
+
+    - id: A2
+      description: >-
+        VendorGrid renders real fixture nursery data via react-dom/server
+        (renderToStaticMarkup): renders nothing for an empty array; renders every
+        field (name, country, owner, history, specialisation, plantsBrought,
+        availableAtShow tags, website href, social hrefs, logo image) for a
+        fully-populated nursery, with target="_blank" rel="noopener noreferrer"
+        on external links; renders three nurseries — one nearly all-null — without
+        leaking the literal words "null"/"undefined" into visible text, and
+        without re-sorting the prop array.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/vendor-f3-showcase-page/check-grid-renders-fixture-data.mjs
+
+    - id: A3
+      description: >-
+        VendorEmptyState renders a real, on-topic, non-empty message with no
+        props (react-dom/server render, not a source grep) — proves the
+        zero-nurseries starting state is not a blank page.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/vendor-f3-showcase-page/check-empty-state-renders.mjs
+
+    - id: A4
+      description: >-
+        app/(marketing)/national-show/vendors/page.tsx and loading.tsx exist;
+        page.tsx is not 'use client'; calls sanityFetch with vendorNurseriesQuery;
+        exports revalidate = 60; references VendorIntro, VendorGrid, and
+        VendorEmptyState; branches on nurseries.length rather than always
+        rendering both. Static source inspection — see README for why this
+        feature's page.tsx cannot be executed live in this contract.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/vendor-f3-showcase-page/check-page-wiring.mjs
+
+    - id: A5
+      description: >-
+        VendorIntro renders Lee-Ann's heading and all four source paragraphs
+        verbatim (whitespace-normalized, word-for-word), in source order — a real
+        react-dom/server render checked against fixtures/intro-prose.golden.json,
+        independently re-extracted from the source .docx for this contract.
+      command: >-
+        node --import tsx/esm
+        contracts/checks/vendor-f3-showcase-page/check-intro-prose-renders.mjs
+
+    - id: A6
+      description: >-
+        app/api/tickets/itn/route.ts and the existing
+        app/(marketing)/national-show/exhibitors/page.tsx route are byte-identical
+        (SHA-256) to the pre-F3 baseline — both are explicitly out of this
+        feature's scope.
+      command: >-
+        node
+        contracts/checks/vendor-f3-showcase-page/check-untouched-scope.mjs
+
+    - id: A7
+      description: >-
+        VendorGrid's outer grid container declares a mobile-first responsive
+        class set (unprefixed grid-cols-1, plus an sm:/md: and an lg: breakpoint),
+        matching the project's existing SponsorGrid convention. Structural proxy,
+        not a viewport render — see README.
+      command: >-
+        node
+        contracts/checks/vendor-f3-showcase-page/check-responsive-grid-classes.mjs
+
+    - id: A8
+      description: >-
+        eslint passes with zero errors on every file this feature touches.
+      command: >-
+        npx eslint sanity/queries.ts components/vendors/VendorIntro.tsx
+        components/vendors/VendorGrid.tsx components/vendors/VendorEmptyState.tsx
+        components/vendors/index.ts
+        "app/(marketing)/national-show/vendors/page.tsx"
+        "app/(marketing)/national-show/vendors/loading.tsx"

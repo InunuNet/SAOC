@@ -1,5 +1,36 @@
 # Athanor Issue Backlog
 
+## Session 2026-08-17 (latest) — F11 (QR generation + confirmation email) DONE; mission now blocked on Brad
+
+- [x] **F11 — QR generation at email-send time + real multi-position confirmation email with
+  recovery link, DONE.** New `lib/qr.ts`, `lib/recovery-url.ts`, `emails/OrderConfirmation.tsx`;
+  extended `lib/confirmation-email.ts` (F10's `ConfirmationEmailPosition` /
+  `SendConfirmationEmailInput` / `deliverConfirmationEmailAfterCommit` untouched, pinned ITN
+  route's single-arg call site still matches). Gate
+  `contracts/contract-ticketing-f11-qr-confirmation-email.yaml` A1-A9, 9/9, run twice (before and
+  after @qa's mutation pass), green both times. @qa verdict PASS — 10 mutations against real
+  source, 8 killed cleanly, 1 no-op (not a weak-check finding, see `learned.md`), 1 partial
+  survivor (the `.trim()` half of the empty-`bookingRef` guard, see `learned.md` and the P3 item
+  below). All four files restored byte-identical, sha256-verified by @qa and independently by the
+  orchestrator. Docs: `docs/ticketing.md` (+144 lines, F11 section + flow diagram + Known Gaps),
+  `README.md:99`, `.env.local.example` `SITE_URL` comment.
+- [ ] **[P3, NEW 2026-08-17, from F11 mutation review] `lib/qr.ts`'s whitespace-only
+  `bookingRef` case is unexercised.** The empty-string branch of the guard is actually proven by
+  the underlying `qrcode` library throwing on `''`, not by the guard's own `.trim()` check — a
+  mutant that removed the guard still failed A3 for the wrong reason. A whitespace-only
+  `bookingRef` (e.g. `'   '`) would encode silently today. Add a dedicated test case using a
+  whitespace-only string, which only the guard (not the library) rejects. Full detail in
+  `learned.md` "F11 mutation review — a negative control can pass for the wrong reason".
+- [x] **[STATUS] Mission `ticketing-foundation` M1 and M2's F9-F11 are DONE. No autonomous
+  feature work remains — F12, F13, F14 all require human action** (deployed-host
+  purchase-and-scan proof at The Hangar with venue connectivity observation; Lee-Ann's real
+  per-show `manager` grant verified by live HTTP round trips; a human buyer proving lost-ticket
+  recovery end-to-end). The mission is now blocked on Brad, not on any agent. F11 also surfaced
+  (not fixed, out of its own scope) that checkout never creates an `orders` document, so F12 will
+  hit that blocker first when attempted — see `needs-human.md` "Ticketing foundation F11 —
+  checkout never creates an `orders` document" for the standing detail and its 2026-08-17 status
+  update.
+
 ## Session 2026-08-17 (later still still still) — vendor-registration mission drafted, queued
 
 - [ ] **[NEW 2026-08-17] Mission `vendor-registration` drafted and filed, status `queued` (not
@@ -1366,3 +1397,101 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
   untouched by the ticketing-foundation work. Needs a sub-component extraction, and because
   it changes rendering it needs BrowserAgent verification at 1440/375/320px before it can be
   called done — not a blind refactor.
+
+- [ ] F11 hardening (QA finding, 2026-08-17): `check-qr-roundtrip.mjs` (A3) negative control relies on the `qrcode` library's own empty-string rejection. Dropping only the `.trim()` from `lib/qr.ts`'s guard lets a whitespace-only bookingRef encode silently and A3 still passes. Add an explicit whitespace-only case to the A3 negative control. Not a live defect — guard is present and correct in shipped code.
+
+
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-17-agent-tier-split.md
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260817234735.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260817235248.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818000320.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818000836.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818001851.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818002403.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818003547.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818004059.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818004233.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818004745.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818004915.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818005441.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818005516.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818010028.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818010126.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818010639.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818010827.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818011349.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818011520.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818012030.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818012054.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818012605.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818012632.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818013142.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818013205.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818013715.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818013739.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818014249.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818014314.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818014824.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818014850.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818015359.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818015419.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818015928.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818015951.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818020459.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818020518.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818021026.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818021045.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818021553.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818021613.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818022121.txt
+
+- [ ] SAOC (Misc): [scheduled-resume] Reached 2026-08-18 02:22:00 — handing off to pulse_mission_loop.sh (one shot).
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818023639.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818024648.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818025155.txt

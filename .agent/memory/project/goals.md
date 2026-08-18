@@ -166,3 +166,23 @@ natural owners rather than fixed inline: no claim-size guard on the grant path (
 `scripts/admin-migrate-roles.ts` is dry-run by default; no account, including `brad@inunu.net`,
 currently holds a `roles` claim. Running it with `--apply` needs Brad's explicit authorisation.
 See `learned.md` "Ticketing foundation — F4 done" and `backlog.md`.
+
+### 2026-08-17 (latest) — F11 done; mission `ticketing-foundation` now blocked on Brad, no autonomous work left
+
+~~F11 (QR generation at email-send time + real multi-position confirmation email + recovery
+link)~~ ✅ **DONE**, gate `contract-ticketing-f11-qr-confirmation-email.yaml` 9/9, run twice
+(before and after @qa's mutation pass), green both times. @qa PASS — 10 mutations against real
+source, 8 killed, 1 no-op (not a finding), 1 partial survivor (`.trim()` half of the empty-
+`bookingRef` guard, filed as a P3 backlog item). New `lib/qr.ts`, `lib/recovery-url.ts`,
+`emails/OrderConfirmation.tsx`; F10's `lib/confirmation-email.ts` surface and the pinned ITN
+route's call site untouched. Docs updated (`docs/ticketing.md` +144 lines, `README.md:99`,
+`.env.local.example`). M2 is now F9/F10/F11 done, F12 pending.
+
+**Mission status: no autonomous feature work remains in `ticketing-foundation`.** F12 (human
+purchase-and-scan proof at The Hangar, incl. venue connectivity observation), F13 (Lee-Ann's real
+per-show `manager` grant verified by live HTTP round trips), and F14 (a human buyer proving
+lost-ticket recovery end-to-end) all require human/live action that no agent can perform. F12
+will also hit the pre-existing, already-logged blocker that checkout never creates an `orders`
+document (see `needs-human.md` "Ticketing foundation F11 — checkout never creates an `orders`
+document", now updated with F11's completion status). The mission is blocked on Brad until he
+acts on F12/F13's prerequisites.

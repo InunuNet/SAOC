@@ -2,9 +2,9 @@
 schema: athanor.mission/v1
 slug: vendor-registration
 goal: 'Build the 2027 National Show vendor/exhibitor-nursery programme from Lee-Ann''s
-  "South African Exhibitors" brief: a public nursery showcase authored in Sanity, and
-  a 31-field vendor registration submission pipeline in Firestore reusing the ticketing
-  foundation''s roles and orders/positions patterns'
+  "South African Exhibitors" brief: a public nursery showcase authored in Sanity,
+  and a 31-field vendor registration submission pipeline in Firestore reusing the
+  ticketing foundation''s roles and orders/positions patterns'
 created_at: '2026-08-17T20:00:00.000000+00:00'
 status: queued
 queued_after: ticketing-foundation
@@ -12,55 +12,59 @@ cost_estimate:
   features: 11
   milestones: 3
   total_calls: 0
-last_checkpoint: null
+last_checkpoint:
+  milestone: M1
+  feature: F2
+  ts: '2026-08-17T22:09:42.210799+00:00'
 features:
 - id: F1
   title: 'Naming disambiguation: rename this stream "vendors", not "exhibitors" —
     resolve collision with the existing judged-entry exhibitor content'
   inline_brief: 'The codebase already has a fully-shipped, unrelated feature called
     "exhibitor": `sanity/schemas/documents/showExhibitorInfo.ts` and `showExhibitorStep.ts`
-    (singleton + steps behind `/national-show/exhibitors`, docs in
-    `docs/show-exhibitor-info.md` and `docs/exhibitor-guide-for-editors.md`). That
-    feature is the entry guide for SAOC members submitting *judged competition
-    plants* — deadlines, staging, judging, eligibility. Lee-Ann''s doc uses
-    "Exhibitors" for something entirely different: commercial nurseries selling
-    plants from a trade booth. The source document''s own registration form calls
-    them **"vendors"** ("2027 SAOC NATIONAL SHOW VENDOR REGISTRATION FORM"), which
-    this mission adopts as the code-level name throughout — new Sanity types
-    `vendorNursery` / `vendorRegistration` (or similar), new route
+    (singleton + steps behind `/national-show/exhibitors`, docs in `docs/show-exhibitor-info.md`
+    and `docs/exhibitor-guide-for-editors.md`). That feature is the entry guide for
+    SAOC members submitting *judged competition plants* — deadlines, staging, judging,
+    eligibility. Lee-Ann''s doc uses "Exhibitors" for something entirely different:
+    commercial nurseries selling plants from a trade booth. The source document''s
+    own registration form calls them **"vendors"** ("2027 SAOC NATIONAL SHOW VENDOR
+    REGISTRATION FORM"), which this mission adopts as the code-level name throughout
+    — new Sanity types `vendorNursery` / `vendorRegistration` (or similar), new route
     `/national-show/vendors` (or `/national-show/exhibitors-showcase` if "vendors"
-    reads wrong to Lee-Ann — her call, ask in F1), new Firestore collection
-    `vendorSubmissions`. **The public marketing copy can still say "Exhibitors"**
-    (Lee-Ann''s prose, verbatim, is not code) — only the internal schema/collection/route
-    names change to avoid a second, colliding meaning of "exhibitor" in the same
-    repo. **Done:** naming decision recorded (confirm with Lee-Ann/Brad whether the
-    public-facing URL segment says "vendors" or something else), no new Sanity type
-    or Firestore collection shares a name with the existing exhibitor-entry feature.'
-  status: pending
+    reads wrong to Lee-Ann — her call, ask in F1), new Firestore collection `vendorSubmissions`.
+    **The public marketing copy can still say "Exhibitors"** (Lee-Ann''s prose, verbatim,
+    is not code) — only the internal schema/collection/route names change to avoid
+    a second, colliding meaning of "exhibitor" in the same repo. **Done:** naming
+    decision recorded (confirm with Lee-Ann/Brad whether the public-facing URL segment
+    says "vendors" or something else), no new Sanity type or Firestore collection
+    shares a name with the existing exhibitor-entry feature.'
+  status: done
   milestone: M1
+  completed_at: '2026-08-17T22:09:42.007497+00:00'
 - id: F2
   title: 'Sanity schema: `vendorNursery` document type for the public showcase listing'
   inline_brief: 'Editorial content, authored by Lee-Ann/committee, not user-submitted
     — belongs in Sanity, following the pattern of `sanity/schemas/documents/sponsor.ts`
     (closest existing analogue: a logo + name + external links document rendered in
-    a grid). Fields per the source doc''s "Every nursery has" list: nursery logo
-    (image), country (string), owner (string), short history (text), specialisation
-    (text), plants they will bring (text or array of strings), website (url), social
-    media (array of {platform, url} or free-text handles — match `sponsor.ts`''s
-    existing link-object pattern if one exists). Optional "Available at the Show"
-    tag set exactly as listed: species orchids, hybrids, miniatures, South American
-    species, Asian species, growing supplies — a fixed `options.list` multi-select,
-    not free text, so the future showcase page can filter/badge consistently. A
-    document type (not one big array on a singleton), for the same reason
-    `showExhibitorStep.ts`''s comment gives: the number of nurseries is exactly what
-    changes most often, and each gets its own Studio URL and edit history. **Done:**
-    schema compiles, a test document can be created with every field including the
-    tag multi-select, preview shows nursery name + country.'
-  status: pending
+    a grid). Fields per the source doc''s "Every nursery has" list: nursery logo (image),
+    country (string), owner (string), short history (text), specialisation (text),
+    plants they will bring (text or array of strings), website (url), social media
+    (array of {platform, url} or free-text handles — match `sponsor.ts`''s existing
+    link-object pattern if one exists). Optional "Available at the Show" tag set exactly
+    as listed: species orchids, hybrids, miniatures, South American species, Asian
+    species, growing supplies — a fixed `options.list` multi-select, not free text,
+    so the future showcase page can filter/badge consistently. A document type (not
+    one big array on a singleton), for the same reason `showExhibitorStep.ts`''s comment
+    gives: the number of nurseries is exactly what changes most often, and each gets
+    its own Studio URL and edit history. **Done:** schema compiles, a test document
+    can be created with every field including the tag multi-select, preview shows
+    nursery name + country.'
+  status: done
   milestone: M1
+  completed_at: '2026-08-17T22:09:42.210605+00:00'
 - id: F3
-  title: Public showcase page `/national-show/vendors` rendering Lee-Ann's intro
-    prose and the nursery grid
+  title: Public showcase page `/national-show/vendors` rendering Lee-Ann's intro prose
+    and the nursery grid
   inline_brief: 'Server Component, GROQ query against `vendorNursery`, following the
     existing marketing-page pattern (`app/(marketing)/national-show/exhibitors/page.tsx`
     for structure only — different content, different Sanity type). Renders Lee-Ann''s
@@ -70,10 +74,9 @@ features:
     plants they will bring, website link, social links, and the "Available at the
     Show" tags if set. No brand colours/typography invented — plain structure only
     until a design handoff arrives (project rule: "No invented brand assets"). Loading
-    and empty states required (zero nurseries seeded yet is the normal starting
-    state, not an error). **Done:** page renders with zero, one, and several seeded
-    nurseries; Lee-Ann''s prose appears unedited; mobile-first responsive per
-    `.claude/rules/coding.md`.'
+    and empty states required (zero nurseries seeded yet is the normal starting state,
+    not an error). **Done:** page renders with zero, one, and several seeded nurseries;
+    Lee-Ann''s prose appears unedited; mobile-first responsive per `.claude/rules/coding.md`.'
   status: pending
   milestone: M1
 - id: F4
@@ -82,126 +85,120 @@ features:
   inline_brief: 'Submission pipeline, not editorial content — belongs in Firestore,
     following `app/api/contact/route.ts`''s pattern (validate → `db.collection(...).add()`
     → confirmation email, non-fatal on email failure). Model the five form sections
-    as a typed interface in `types/index.ts` (mirroring how `Order`/`Ticket` are
-    defined there): vendor & contact details (business name*, trading name,
-    contact person*, cell*, monitored email*, physical address, CIPC number, VAT
-    number, website, social handle), vendor category & products (category
-    multi-select* — plant sales / product sales / rare-exotic plants / food retailer
-    / hardware / books / art / other, product description*, phytosanitary/import
-    permit number, CITES permit number, food handling certificate number, food item
-    list), booth & logistics (booth count*, booth type, table count, chair count,
-    power required* + electrical load, water required, staff per day, vehicle
-    registration(s), load-in slot, load-out slot), marketing & programme (50-100
-    word bio — logo is emailed separately per the form, NOT a form upload field,
-    do not add a file-upload field the source form does not have), payment &
-    agreement (accepted on-site payment methods, booth fee payment reference, T&Cs
+    as a typed interface in `types/index.ts` (mirroring how `Order`/`Ticket` are defined
+    there): vendor & contact details (business name*, trading name, contact person*,
+    cell*, monitored email*, physical address, CIPC number, VAT number, website, social
+    handle), vendor category & products (category multi-select* — plant sales / product
+    sales / rare-exotic plants / food retailer / hardware / books / art / other, product
+    description*, phytosanitary/import permit number, CITES permit number, food handling
+    certificate number, food item list), booth & logistics (booth count*, booth type,
+    table count, chair count, power required* + electrical load, water required, staff
+    per day, vehicle registration(s), load-in slot, load-out slot), marketing & programme
+    (50-100 word bio — logo is emailed separately per the form, NOT a form upload
+    field, do not add a file-upload field the source form does not have), payment
+    & agreement (accepted on-site payment methods, booth fee payment reference, T&Cs
     checkbox*, signature, date). Add a `status` field (`submitted` | `under-review`
-    | `approved` | `rejected` — see F6 for whether this is used) and a
-    `submittedAt` Timestamp. Fields marked `*` in the source form are required at
-    validation time; the rest are optional. **Done:** type compiles, a test
-    submission with only required fields succeeds, a test submission with a missing
-    required field is rejected with a clear error, all 31 fields round-trip through
-    Firestore correctly.'
+    | `approved` | `rejected` — see F6 for whether this is used) and a `submittedAt`
+    Timestamp. Fields marked `*` in the source form are required at validation time;
+    the rest are optional. **Done:** type compiles, a test submission with only required
+    fields succeeds, a test submission with a missing required field is rejected with
+    a clear error, all 31 fields round-trip through Firestore correctly.'
   status: pending
   milestone: M1
 - id: F5
-  title: 'POST `/api/vendors/register` — public submission route, confirmation email'
-  inline_brief: 'Direct structural copy of `app/api/contact/route.ts`: validate
-    required fields, reject with 400 on missing/malformed data, `initAdmin()` +
-    `getFirestore()`, write to `vendorSubmissions`, then a try/catch-isolated
-    `sendEmail()` call (new template, e.g. `emails/VendorRegistrationConfirmation.tsx`,
-    modelled on `emails/ContactConfirmation.tsx`) acknowledging receipt — email
-    failure must not fail the submission, exactly as the contact route already
-    does it. No PayFast integration in this route (see F6/F9 for the payment
-    question). **Done:** route accepts a valid payload and returns 201, rejects
-    invalid payloads with 400, writes exactly one `vendorSubmissions` document per
-    valid request, confirmation email send failure does not affect the HTTP
-    response.'
+  title: POST `/api/vendors/register` — public submission route, confirmation email
+  inline_brief: 'Direct structural copy of `app/api/contact/route.ts`: validate required
+    fields, reject with 400 on missing/malformed data, `initAdmin()` + `getFirestore()`,
+    write to `vendorSubmissions`, then a try/catch-isolated `sendEmail()` call (new
+    template, e.g. `emails/VendorRegistrationConfirmation.tsx`, modelled on `emails/ContactConfirmation.tsx`)
+    acknowledging receipt — email failure must not fail the submission, exactly as
+    the contact route already does it. No PayFast integration in this route (see F6/F9
+    for the payment question). **Done:** route accepts a valid payload and returns
+    201, rejects invalid payloads with 400, writes exactly one `vendorSubmissions`
+    document per valid request, confirmation email send failure does not affect the
+    HTTP response.'
   status: pending
   milestone: M1
 - id: F6
-  title: 'Vendor application review workflow: new `review-vendor-applications`
-    capability, admin list/approve/reject UI'
+  title: 'Vendor application review workflow: new `review-vendor-applications` capability,
+    admin list/approve/reject UI'
   inline_brief: 'Reuses the F3/F4 capability system from the ticketing-foundation
-    mission wholesale — no new auth mechanism. Add one capability to
-    `lib/admin-roles.ts`''s `CAPABILITIES` array: `review-vendor-applications`.
-    Decide which role(s) hold it (recommend: `manager` and `owner`, not `door-staff`
-    — this is back-office triage, not door operations; mirrors why `door-staff`
-    is barred from `search-buyers`). New admin page (under `/admin`, gated via
-    `lib/admin-auth.ts` + the new capability) listing `vendorSubmissions`
-    documents with status, allowing an admin to move a submission to
-    `approved`/`rejected` and, on approval, optionally create the corresponding
+    mission wholesale — no new auth mechanism. Add one capability to `lib/admin-roles.ts`''s
+    `CAPABILITIES` array: `review-vendor-applications`. Decide which role(s) hold
+    it (recommend: `manager` and `owner`, not `door-staff` — this is back-office triage,
+    not door operations; mirrors why `door-staff` is barred from `search-buyers`).
+    New admin page (under `/admin`, gated via `lib/admin-auth.ts` + the new capability)
+    listing `vendorSubmissions` documents with status, allowing an admin to move a
+    submission to `approved`/`rejected` and, on approval, optionally create the corresponding
     public `vendorNursery` Sanity document (or leave that as a manual Studio step
-    for Lee-Ann — **this is one of the open questions below, not a decision made
-    here**). **Done:** capability exists in the fixed set, role bundle grants it
-    per the decision above, admin list page requires the capability (verified with
-    and without it, same pattern as F8''s `issue-comp` gate in ticketing-foundation),
-    status transitions are recorded.'
+    for Lee-Ann — **this is one of the open questions below, not a decision made here**).
+    **Done:** capability exists in the fixed set, role bundle grants it per the decision
+    above, admin list page requires the capability (verified with and without it,
+    same pattern as F8''s `issue-comp` gate in ticketing-foundation), status transitions
+    are recorded.'
   status: pending
   milestone: M2
 - id: F7
   title: Booth fee payment path — offline EFT + proof-of-payment upload, booth number
     allocation field
-  inline_brief: 'Depends on the open payment-path question below. Default
-    recommendation (see Open Questions): offline EFT, not PayFast — the source
-    form''s field 30 ("Booth fee payment reference / proof of payment") reads as a
-    reference-number/receipt text field, not a payment-initiation flow, and the
-    office-use block ("Payment received [Yes/No], Confirmed by ____") describes a
-    human reconciling a bank statement, not a gateway webhook. If confirmed:
-    `vendorSubmissions` gets a `paymentReference` string field (already covered by
-    F4) plus an optional proof-of-payment file upload (Firebase Storage, not
-    Firestore) attached to the submission; an admin manually flags
-    `paymentReceived: boolean` and `boothNumber: string | null` in the F6 review
+  inline_brief: 'Depends on the open payment-path question below. Default recommendation
+    (see Open Questions): offline EFT, not PayFast — the source form''s field 30 ("Booth
+    fee payment reference / proof of payment") reads as a reference-number/receipt
+    text field, not a payment-initiation flow, and the office-use block ("Payment
+    received [Yes/No], Confirmed by ____") describes a human reconciling a bank statement,
+    not a gateway webhook. If confirmed: `vendorSubmissions` gets a `paymentReference`
+    string field (already covered by F4) plus an optional proof-of-payment file upload
+    (Firebase Storage, not Firestore) attached to the submission; an admin manually
+    flags `paymentReceived: boolean` and `boothNumber: string | null` in the F6 review
     UI, matching the form''s own office-use fields exactly. **This entire feature
-    is gated on Brad/Lee-Ann answering the payment-path question — do not build
-    against the PayFast assumption without that answer.** **Done:** payment
-    reference and proof-of-payment fields exist per the confirmed path, office-use
-    fields (booth number, payment received, confirmed by) are editable only by
-    a capability-gated admin, never by the public submitter.'
+    is gated on Brad/Lee-Ann answering the payment-path question — do not build against
+    the PayFast assumption without that answer.** **Done:** payment reference and
+    proof-of-payment fields exist per the confirmed path, office-use fields (booth
+    number, payment received, confirmed by) are editable only by a capability-gated
+    admin, never by the public submitter.'
   status: pending
   milestone: M2
 - id: F8
   title: Vendor confirmation and booth-allocation email, sent on F6 approval
-  inline_brief: 'Second email in this mission, sent from the F6 admin approval
-    action (not from F5''s public route) via the same `lib/email.ts` `sendEmail()`
-    helper. Confirms booth number (once allocated), booth type, and restates the
-    vendor''s submitted logistics (staff count, power/water, load-in/out slots)
-    so they can catch a data-entry error before show day. **Done:** email sends on
-    approval, contains the allocated booth number and the vendor''s own submitted
-    logistics for verification, uses the mocked-Resend fixture pattern from
-    ticketing-foundation F11 if Resend is still unconfigured at build time.'
+  inline_brief: Second email in this mission, sent from the F6 admin approval action
+    (not from F5's public route) via the same `lib/email.ts` `sendEmail()` helper.
+    Confirms booth number (once allocated), booth type, and restates the vendor's
+    submitted logistics (staff count, power/water, load-in/out slots) so they can
+    catch a data-entry error before show day. **Done:** email sends on approval, contains
+    the allocated booth number and the vendor's own submitted logistics for verification,
+    uses the mocked-Resend fixture pattern from ticketing-foundation F11 if Resend
+    is still unconfigured at build time.
   status: pending
   milestone: M2
 - id: F9
   title: Regulatory permit fields — collected, not validated; explicit non-verification
     note surfaced to the show committee
-  inline_brief: 'The form collects a phytosanitary/import permit number, a CITES
-    permit number, and a food handling certificate number as free-text fields
-    (already covered by F4). This feature is scoped to make sure nobody
-    downstream mistakes "the field exists" for "the number was checked": add a
-    visible note on the F6 admin review UI next to these three fields stating
-    they are unverified as submitted, and a corresponding note in the vendor-facing
-    confirmation copy that permits remain the vendor''s legal responsibility. Do
-    NOT build any verification/lookup integration — whether SAOC is even obliged
-    to verify these is a show-committee question, not an engineering default (see
-    Regulatory Note below). **Done:** admin UI and vendor-facing copy both carry
-    the non-verification note; no verification logic exists anywhere in the
-    codebase for these three fields.'
+  inline_brief: 'The form collects a phytosanitary/import permit number, a CITES permit
+    number, and a food handling certificate number as free-text fields (already covered
+    by F4). This feature is scoped to make sure nobody downstream mistakes "the field
+    exists" for "the number was checked": add a visible note on the F6 admin review
+    UI next to these three fields stating they are unverified as submitted, and a
+    corresponding note in the vendor-facing confirmation copy that permits remain
+    the vendor''s legal responsibility. Do NOT build any verification/lookup integration
+    — whether SAOC is even obliged to verify these is a show-committee question, not
+    an engineering default (see Regulatory Note below). **Done:** admin UI and vendor-facing
+    copy both carry the non-verification note; no verification logic exists anywhere
+    in the codebase for these three fields.'
   status: pending
   milestone: M2
 - id: F10
-  title: Human proof — a real vendor submission end to end, from public form to
-    admin approval to confirmation email
-  inline_brief: 'A human (Brad or a tester) fills the public `/vendors/register`
-    (or wherever F1 lands the route) form with realistic fixture data, submits it,
-    confirms the `vendorSubmissions` document and confirmation email (F5), then
-    logs in to `/admin` with a `review-vendor-applications` capability and moves
-    the submission through approve → booth allocation → confirmation email (F6-F8).
-    Mirrors the human-proof pattern used for ticketing (`ticketing-foundation` F12).
-    **Done:** one real submission exists end to end, both emails were sent
-    (or logged via mock if Resend is unconfigured), the admin approval path was
-    exercised with a real capability-gated account, and a negative control confirms
-    an account without `review-vendor-applications` is refused the review page.'
+  title: Human proof — a real vendor submission end to end, from public form to admin
+    approval to confirmation email
+  inline_brief: A human (Brad or a tester) fills the public `/vendors/register` (or
+    wherever F1 lands the route) form with realistic fixture data, submits it, confirms
+    the `vendorSubmissions` document and confirmation email (F5), then logs in to
+    `/admin` with a `review-vendor-applications` capability and moves the submission
+    through approve → booth allocation → confirmation email (F6-F8). Mirrors the human-proof
+    pattern used for ticketing (`ticketing-foundation` F12). **Done:** one real submission
+    exists end to end, both emails were sent (or logged via mock if Resend is unconfigured),
+    the admin approval path was exercised with a real capability-gated account, and
+    a negative control confirms an account without `review-vendor-applications` is
+    refused the review page.
   status: pending
   milestone: M3
 - id: F11
@@ -209,17 +206,16 @@ features:
   inline_brief: 'This form collects materially more sensitive data than the ticket
     buyer flow it sits beside: CIPC and VAT numbers, cell phone numbers, physical
     business addresses, vehicle registration numbers, and multiple permit numbers.
-    POPIA work on this project is currently deferred (see
-    `.agent/memory/project/project_popia_deferred.md`) — this feature does NOT
-    reopen that conversation with Lee-Ann or the committee. It exists to make the
-    exposure legible before launch: record in `docs/` (a short compliance note,
-    not a policy document) exactly which vendor-submission fields are
-    business-registration/PII-sensitive, that they are stored in Firestore with
-    no field-level encryption beyond Firestore''s platform-level encryption at
-    rest, and that this mission is itself a reason to revisit the POPIA backlog
-    item before go-live rather than after. **Done:** the note exists and is
-    linked from the mission brief; no message is sent to Lee-Ann or Brad raising
-    POPIA as a new topic — this is filing, not initiating.'
+    POPIA work on this project is currently deferred (see `.agent/memory/project/project_popia_deferred.md`)
+    — this feature does NOT reopen that conversation with Lee-Ann or the committee.
+    It exists to make the exposure legible before launch: record in `docs/` (a short
+    compliance note, not a policy document) exactly which vendor-submission fields
+    are business-registration/PII-sensitive, that they are stored in Firestore with
+    no field-level encryption beyond Firestore''s platform-level encryption at rest,
+    and that this mission is itself a reason to revisit the POPIA backlog item before
+    go-live rather than after. **Done:** the note exists and is linked from the mission
+    brief; no message is sent to Lee-Ann or Brad raising POPIA as a new topic — this
+    is filing, not initiating.'
   status: pending
   milestone: M3
 milestones:
@@ -247,7 +243,10 @@ milestones:
   - F10
   - F11
   status: pending
+last_active_at: '2026-08-17T22:09:42.210799+00:00'
 ---
+
+
 
 # Mission: Vendor Registration — 2027 National Show Exhibitor Showcase and Booth Booking
 

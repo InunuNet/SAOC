@@ -1,0 +1,17 @@
+{
+  "_source": "Field list is the vendorNursery Sanity schema (sanity/schemas/documents/vendorNursery.ts) shipped by F2 of this same mission — every field the showcase page must display per F3's inline_brief ('each showing logo, country, owner, short history, specialisation, plants they will bring, website link, social links, and the Available at the Show tags if set').",
+  "type": "vendorNursery",
+  "fields": [
+    "_id",
+    "name",
+    "logo",
+    "country",
+    "owner",
+    "history",
+    "specialisation",
+    "plantsBrought",
+    "website",
+    "socialMedia",
+    "availableAtShow"
+  ]
+}

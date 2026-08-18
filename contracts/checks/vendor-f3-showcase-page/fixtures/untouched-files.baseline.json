@@ -1,0 +1,7 @@
+{
+  "_source": "SHA-256 of file bytes, captured 2026-08-18 before any F3 code exists. These two files are explicitly out of this feature's scope (dispatch: 'don't touch itn route/branding/'; the exhibitor-entry route is the F1 collision boundary) and share no code path with the vendor showcase page, so a hash drift here is always a scope violation, never an incidental side effect of implementing F3 correctly.",
+  "files": {
+    "app/(marketing)/national-show/exhibitors/page.tsx": "11ce3d80a0eca56a51584e08f2ab81c60370e4479f9190ae01606de00da00509",
+    "app/api/tickets/itn/route.ts": "253c15c4dc56bdf32bb7391d610d75c4e2b9ab5f5531914bd640af20f096fd8b"
+  }
+}

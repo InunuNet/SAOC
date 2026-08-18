@@ -1,6 +1,13 @@
 {
-  "date": "2026-06-15",
-  "last_launch_at": "2026-06-15T22:15:36Z",
-  "launches": 2,
-  "tokens": 40000
+  "date": "2026-08-17",
+  "last_launch_at": null,
+  "launches": 0,
+  "project_launches": {},
+  "provider_backoff": {
+    "claude-code:/Users/vetus/ai/SAOC": "2026-08-18T01:31:03.391989+00:00"
+  },
+  "provider_failures": {
+    "claude-code:/Users/vetus/ai/SAOC": 3
+  },
+  "tokens": 0
 }

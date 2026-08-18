@@ -397,3 +397,24 @@ export const showExhibitorStepsQuery = defineQuery(`
     status
   }
 `);
+
+// F3 (vendor-registration): the /national-show/vendors showcase. Projects EVERY field on
+// the vendorNursery schema (F1/F2, contract vendor-f1f2-naming-and-nursery-schema) — a field
+// the schema declares but the query drops renders as nothing, the project's recurring
+// false-green class (see showExhibitorInfoQuery's comment above). Ordered by name: nurseries
+// have no curated show order, so alphabetical is the deterministic, non-arbitrary default.
+export const vendorNurseriesQuery = defineQuery(`
+  *[_type == "vendorNursery"] | order(name asc){
+    _id,
+    name,
+    logo,
+    country,
+    owner,
+    history,
+    specialisation,
+    plantsBrought,
+    website,
+    socialMedia[]{ _key, platform, url },
+    availableAtShow
+  }
+`);

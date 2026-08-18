@@ -1,0 +1,71 @@
+[
+  {
+    "_id": "vendorNursery-fixture-1",
+    "name": "Cape Orchid Nursery",
+    "logo": {
+      "_type": "image",
+      "asset": {
+        "_type": "reference",
+        "_ref": "image-fixture1-800x600-jpg"
+      }
+    },
+    "country": "South Africa",
+    "owner": "Elmarie du Toit",
+    "history": "Founded in 1994, Cape Orchid Nursery has bred Cymbidium and Cattleya hybrids across three generations of the du Toit family.",
+    "specialisation": "Cymbidium and Cattleya hybrids for the Western Cape climate",
+    "plantsBrought": "Award-winning Cymbidium hybrids, potted Cattleya divisions, and a small run of species Laelia",
+    "website": "https://capeorchidnursery.example.co.za",
+    "socialMedia": [
+      {
+        "_key": "fb1",
+        "platform": "Facebook",
+        "url": "https://facebook.com/capeorchidnursery"
+      },
+      {
+        "_key": "ig1",
+        "platform": "Instagram",
+        "url": "https://instagram.com/capeorchidnursery"
+      }
+    ],
+    "availableAtShow": [
+      "Hybrids",
+      "Species orchids",
+      "Growing supplies"
+    ]
+  },
+  {
+    "_id": "vendorNursery-fixture-2",
+    "name": "KwaZulu Species Growers",
+    "logo": null,
+    "country": null,
+    "owner": null,
+    "history": null,
+    "specialisation": null,
+    "plantsBrought": null,
+    "website": null,
+    "socialMedia": null,
+    "availableAtShow": null
+  },
+  {
+    "_id": "vendorNursery-fixture-3",
+    "name": "Highveld Hybrids",
+    "logo": null,
+    "country": "South Africa",
+    "owner": "Johan Pretorius",
+    "history": null,
+    "specialisation": "Miniature Paphiopedilum hybrids bred for Highveld frost tolerance",
+    "plantsBrought": "Miniature Paphiopedilum, seedling flasks, and community-pot divisions",
+    "website": null,
+    "socialMedia": [
+      {
+        "_key": "fb2",
+        "platform": "Facebook",
+        "url": "https://facebook.com/highveldhybrids"
+      }
+    ],
+    "availableAtShow": [
+      "Miniatures",
+      "Growing supplies"
+    ]
+  }
+]
