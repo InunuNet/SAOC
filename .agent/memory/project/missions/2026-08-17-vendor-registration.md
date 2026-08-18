@@ -6,16 +6,16 @@ goal: 'Build the 2027 National Show vendor/exhibitor-nursery programme from Lee-
   and a 31-field vendor registration submission pipeline in Firestore reusing the
   ticketing foundation''s roles and orders/positions patterns'
 created_at: '2026-08-17T20:00:00.000000+00:00'
-status: queued
+status: close_out
 queued_after: ticketing-foundation
 cost_estimate:
   features: 11
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: M2
-  feature: F9
-  ts: '2026-08-18T07:34:12.536764+00:00'
+  milestone: M3
+  feature: F10
+  ts: '2026-08-18T07:46:16.015268+00:00'
 features:
 - id: F1
   title: 'Naming disambiguation: rename this stream "vendors", not "exhibitors" —
@@ -148,7 +148,7 @@ features:
     the admin approval path was exercised with a real capability-gated account, and
     a negative control confirms an account without `review-vendor-applications` is
     refused the review page.
-  status: pending
+  status: blocked
   milestone: M3
 - id: F11
   title: POPIA/compliance flag recorded against this mission — no conversation opened
@@ -165,8 +165,9 @@ features:
     go-live rather than after. **Done:** the note exists and is linked from the mission
     brief; no message is sent to Lee-Ann or Brad raising POPIA as a new topic — this
     is filing, not initiating.'
-  status: pending
+  status: done
   milestone: M3
+  completed_at: '2026-08-18T07:46:15.816078+00:00'
 milestones:
 - id: M1
   title: Data model and public showcase — editorial content live, submission pipeline
@@ -195,9 +196,15 @@ milestones:
   features:
   - F10
   - F11
-  status: pending
-last_active_at: '2026-08-18T07:34:12.536764+00:00'
+  status: done
+  gate_ran_at: '2026-08-18T07:46:22.531543+00:00'
+  gate_result: pass
+last_active_at: '2026-08-18T07:46:16.015268+00:00'
 ---
+
+
+
+
 
 
 

@@ -1,9 +1,9 @@
 {
   "mission": ".agent/memory/project/missions/2026-08-17-vendor-registration.md",
   "checkpoint": {
-    "milestone": "M2",
-    "feature": "F9",
-    "ts": "2026-08-18T07:34:12.536764+00:00"
+    "milestone": "M3",
+    "feature": "F10",
+    "ts": "2026-08-18T07:46:16.015268+00:00"
   },
-  "activated_at": "2026-08-18T07:34:12.536907+00:00"
+  "activated_at": "2026-08-18T07:46:16.015657+00:00"
 }
