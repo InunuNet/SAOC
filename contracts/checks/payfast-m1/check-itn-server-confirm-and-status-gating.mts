@@ -24,6 +24,7 @@ import {
   confirmStub,
   itnFields,
   signAndEncode,
+  createOrderAndPosition,
 } from './_itn-harness.mts';
 import { PAYFAST_SANDBOX_VALIDATE_URL } from '@/lib/payfast';
 
@@ -43,9 +44,8 @@ await shared.withCleanup(
 
     async function freshTicket(label) {
       const bookingRef = `PFM1-A1921-${label}-${id}`;
-      const ref = await shared.createTicketDoc({
+      const ref = await createOrderAndPosition({
         bookingRef,
-        m_payment_id: bookingRef,
         attendeeEmail: shared.sentinelEmail(`a1921-${label.toLowerCase()}-${id}`),
         amount: 250,
       });
@@ -103,9 +103,16 @@ await shared.withCleanup(
       await withFetchStub(confirmStub('VALID'), () => POST(request));
       const after = await shared.readTicketById(ref.id);
       shared.assert(after?.status === 'paid', `COMPLETE + VALID did not mark the ticket paid: '${after?.status}'`);
+      // F10/F4: gatewayPaymentId (the pf_payment_id equivalent) is written onto the
+      // ORDER by markOrderAndPositionPaidByPaymentId, not onto the position — the order
+      // is the payment source of truth post-F10 (lib/orders.ts:302), and the position's
+      // own pf_payment_id field is not duplicated by that write. See the golden README's
+      // fixture-strategy note on buildReservationDocs/lib/orders.ts's field ownership.
+      const orderDoc = await shared.db().collection('orders').doc(after?.orderId).get();
+      shared.assert(orderDoc.exists, `no order document found at orderId '${after?.orderId}'`);
       shared.assert(
-        after?.pf_payment_id === pfPaymentId,
-        `pf_payment_id was not persisted as posted: expected '${pfPaymentId}', got '${after?.pf_payment_id}'`
+        orderDoc.data()?.['gatewayPaymentId'] === pfPaymentId,
+        `order.gatewayPaymentId was not persisted as posted: expected '${pfPaymentId}', got '${orderDoc.data()?.['gatewayPaymentId']}'`
       );
     }
 

@@ -65,6 +65,17 @@ export const ADMIN_TEST_EMAIL = `admin@${SENTINEL_EMAIL_DOMAIN}`;
 
 export const TICKETS_COLLECTION = 'tickets';
 
+/**
+ * F4 (production-blockers) — post-F10, `createOrderAndPosition`
+ * (contracts/checks/payfast-m1/_itn-harness.mts) writes an `orders` sibling doc
+ * alongside every `tickets` position, carrying the sentinel marker on `buyerEmail` (per
+ * `buildReservationDocs`'s own field mapping), not `attendeeEmail`. sweepSentinels() and
+ * assertNoResidue() must know about this collection too, or those order documents are
+ * invisible to both and become permanently untracked residue — see the golden README's
+ * "Residue gap this feature would otherwise reopen".
+ */
+export const ORDERS_COLLECTION = 'orders';
+
 export function runId() {
   return randomBytes(4).toString('hex');
 }
@@ -188,10 +199,10 @@ export async function countHeldSeats(ticketType = TARGET_TICKET_TYPE) {
 }
 
 /** Delete every ticket carrying the sentinel marker. Returns how many were removed. */
-export async function sweepSentinels() {
+async function sweepCollectionByField(collection, field) {
   const database = db();
-  const snap = await database.collection(TICKETS_COLLECTION).get();
-  const doomed = snap.docs.filter((d) => isSentinelEmail(d.data()['attendeeEmail']));
+  const snap = await database.collection(collection).get();
+  const doomed = snap.docs.filter((d) => isSentinelEmail(d.data()[field]));
   let removed = 0;
   while (removed < doomed.length) {
     const batch = database.batch();
@@ -203,6 +214,14 @@ export async function sweepSentinels() {
   return removed;
 }
 
+/** Delete every ticket and order carrying the sentinel marker. Returns how many were
+ * removed in total across both collections. */
+export async function sweepSentinels() {
+  const tickets = await sweepCollectionByField(TICKETS_COLLECTION, 'attendeeEmail');
+  const orders = await sweepCollectionByField(ORDERS_COLLECTION, 'buyerEmail');
+  return tickets + orders;
+}
+
 /**
  * Prove the sweep worked, and re-sweep what arrives late. Loud and distinctly
  * exit-coded if residue survives — residue in a real Firestore collection must never
@@ -211,21 +230,34 @@ export async function sweepSentinels() {
  * first sweep has already run, leaving residue that the original single-pass sweep
  * reported as clean. Poll for a few seconds, deleting anything that lands.
  */
+/** Sentinel-marked docs currently left in tickets (by attendeeEmail) and orders (by
+ * buyerEmail), combined into one flat list. */
+async function residueLeft() {
+  const database = db();
+  const [ticketsSnap, ordersSnap] = await Promise.all([
+    database.collection(TICKETS_COLLECTION).get(),
+    database.collection(ORDERS_COLLECTION).get(),
+  ]);
+  const tickets = ticketsSnap.docs.filter((d) => isSentinelEmail(d.data()['attendeeEmail']));
+  const orders = ordersSnap.docs.filter((d) => isSentinelEmail(d.data()['buyerEmail']));
+  return [...tickets, ...orders];
+}
+
 export async function assertNoResidue({ attempts = 8, delayMs = 750 } = {}) {
+  // residueLeft() checks BOTH TICKETS_COLLECTION (by attendeeEmail) and
+  // ORDERS_COLLECTION (by buyerEmail) — see its definition above.
   let left = [];
   for (let i = 0; i < attempts; i += 1) {
-    const snap = await db().collection(TICKETS_COLLECTION).get();
-    left = snap.docs.filter((d) => isSentinelEmail(d.data()['attendeeEmail']));
+    left = await residueLeft();
     if (left.length === 0 && i > 0) return true;
     if (left.length > 0) await sweepSentinels();
     await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
-  const finalSnap = await db().collection(TICKETS_COLLECTION).get();
-  left = finalSnap.docs.filter((d) => isSentinelEmail(d.data()['attendeeEmail']));
+  left = await residueLeft();
   if (left.length > 0) {
     console.error(
-      `\n!!! CLEANUP RESIDUE: ${left.length} sentinel ticket(s) remain in Firestore.` +
-        `\n!!! Delete every tickets/* doc whose attendeeEmail ends @${SENTINEL_EMAIL_DOMAIN}.\n`
+      `\n!!! CLEANUP RESIDUE: ${left.length} sentinel doc(s) remain in Firestore.` +
+        `\n!!! Delete every tickets/* doc whose attendeeEmail, or orders/* doc whose buyerEmail, ends @${SENTINEL_EMAIL_DOMAIN}.\n`
     );
     process.exitCode = 9;
     return false;

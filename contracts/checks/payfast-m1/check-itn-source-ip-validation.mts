@@ -29,6 +29,7 @@ import {
   confirmStub,
   itnFields,
   signAndEncode,
+  createOrderAndPosition,
   BOGUS_SOURCE_IP,
 } from './_itn-harness.mts';
 
@@ -46,9 +47,8 @@ await shared.withCleanup(
 
     async function freshTicket(label) {
       const bookingRef = `PFM1-A18-${label}-${id}`;
-      const ref = await shared.createTicketDoc({
+      const ref = await createOrderAndPosition({
         bookingRef,
-        m_payment_id: bookingRef,
         attendeeEmail: shared.sentinelEmail(`a18-${label.toLowerCase()}-${id}`),
         amount: 250,
       });

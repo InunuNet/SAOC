@@ -317,6 +317,54 @@ are added to `.env.local`:
 
 ---
 
+## Production-blockers F4 — repointing the stale payfast-m1 contract checks
+
+**Status:** Seven assertions in `contract-payfast-m1.yaml` (A18, A19, A20, A21, A30, A31, A32) were red after F10 moved the ITN payment lookup and atomic write out of the route into `lib/orders.ts`. This is **not a production defect** — checkout was already writing the `orders` documents and the ITN route was already reading and writing them correctly. Only the test infrastructure was stale.
+
+### Why the checks went red after F10
+
+F10 refactored the payment architecture from a single `tickets` collection to a two-collection `orders` + `positions` model:
+
+- **Before F10:** `app/api/tickets/itn/route.ts` handled the full ITN path: reading a `reserved` ticket from `tickets`, validating payment, and writing it to `paid` in a single transaction inside the route.
+- **After F10:** The route now imports and calls `findReservedOrderByPaymentId` and `markOrderAndPositionPaidByPaymentId` from `lib/orders.ts`. The transaction moved entirely into `lib/orders.ts:280` inside `markOrderAndPositionPaidByPaymentId`; the route holds only validation and delegation.
+
+The seven checks still modelled the pre-F10 schema:
+
+- **Behavioural checks** (A18–A21, A30) built fixtures as a single `tickets` document with no `orders` sibling, then drove ITN payloads through the route. The route tried to call `markOrderAndPositionPaidByPaymentId` with a non-existent order ID and logged "No order found"; the ticket stayed `reserved`.
+- **Structural checks** (A30–A31's AST counterpart and A32) searched the wrong file (`route.ts`) for transaction proof when the real transaction moved to `lib/orders.ts`. Since `lib/orders.ts` contains *two* `db.runTransaction()` calls (`createOrderWithPosition` and `markOrderAndPositionPaidByPaymentId`), a naive repoint would have silently validated the first one instead of the correct one.
+
+### The fix: production-shaped fixtures and function-scoped AST targeting
+
+**Behavioural half:** A new fixture helper `createOrderAndPosition()` (in `contracts/checks/payfast-m1/_itn-harness.mts`) calls the actual production function `buildReservationDocs` from `lib/checkout-reservation.ts`, ensuring fixtures always match what checkout actually writes. This replaces the old `createTicketDoc` function that had drifted out of sync.
+
+**Structural half:** A new AST helper `findFunctionDeclarationBody()` (added to `_ast-shared.mjs`) locates a named function's body before searching inside it. The two structural checks now scope their search to `markOrderAndPositionPaidByPaymentId`'s body specifically, never to the whole file. This prevents silently validating the wrong transaction in `lib/orders.ts`.
+
+**Residue safety:** The shared sentinel sweep in `_shared.mjs` was extended to also cover the `orders` collection filtered by `buyerEmail`, closing a gap where F4's new fixture's order documents would otherwise be invisible to cleanup checks.
+
+### New sha256 pin on `lib/orders.ts`
+
+The ITN route is already sha256-pinned in five other contracts because it is a payment security boundary. When F10 moved the atomic paid-write from `route.ts` into `lib/orders.ts`, the security-relevant code moved but the pin stayed behind.
+
+This feature adds **the first sha256 pin on `lib/orders.ts`** (assertion A12 in `contract-production-blockers-f4-itn-check-repoint.yaml`), using the same `shasum -a 256 -c` mechanism as the route's pin. The golden hash is:
+
+```
+47c2e83c920a00b12953657c667250690a595049537188728ef9a5588301002b
+```
+
+**File:** `contracts/golden/production-blockers-f4-itn-check-repoint/orders-lib.golden.sha256`
+
+**Rationale:** Both `createOrderWithPosition` (F8's comp-ticket write) and `markOrderAndPositionPaidByPaymentId` (the paid-write idempotency guard) are in this file. An unguarded edit to either could silently reintroduce the double-write or resurrection bugs that the route's pin was meant to prevent. The route's pin now covers only half the boundary; `lib/orders.ts` must carry its own.
+
+**Follow-up recommendation (not part of F4):** The five existing contracts that pin `route.ts` should also gain a `lib/orders.ts` pin in a future session, so a legitimate edit to either security-relevant file goes through one paired ceremony instead of two drifting apart. For now, this contract's own pin is sufficient.
+
+### Anti-drift recommendation
+
+The two credential-free structural checks (`check-paid-write-inside-transaction-scope.mjs`, `check-server-confirm-fetch-outside-transaction-scope.mjs`) could have caught this staleness the day F10 merged if they had been wired into CI with a path-trigger for `app/api/tickets/itn/route.ts` or `lib/orders.ts` changes. Instead, the staleness went unnoticed for months.
+
+**Recommendation:** Wire the credential-free structural checks into a CI job that triggers only on diffs touching either of these two files, independent of whether the full behavioural test suite can run (it usually cannot in CI due to missing credentials). These checks require no secrets and cost nothing to run; they would have caught this architectural divergence on the F10 PR itself rather than months later via audit. This is a CI configuration task, documented as a recommendation in the F4 golden README but not built as part of the feature.
+
+---
+
 ## Related
 
 - ITN signature defect: [docs/payfast-itn-signature.md](payfast-itn-signature.md) — root cause, fix status, and verification

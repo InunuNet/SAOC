@@ -21,6 +21,7 @@ import {
   confirmStub,
   itnFields,
   signAndEncode,
+  createOrderAndPosition,
 } from './_itn-harness.mts';
 
 const ASSERTION_ID = 'A20';
@@ -40,9 +41,8 @@ await shared.withCleanup(
 
     async function freshTicket(label, amount = TICKET_AMOUNT) {
       const bookingRef = `PFM1-A20-${label}-${id}`;
-      const ref = await shared.createTicketDoc({
+      const ref = await createOrderAndPosition({
         bookingRef,
-        m_payment_id: bookingRef,
         attendeeEmail: shared.sentinelEmail(`a20-${label.toLowerCase()}-${id}`),
         amount,
       });

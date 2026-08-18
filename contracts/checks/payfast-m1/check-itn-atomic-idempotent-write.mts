@@ -47,8 +47,10 @@ import {
   buildItnRequest,
   loadItnPost,
   withFetchStub,
+  confirmStub,
   itnFields,
   signAndEncode,
+  createOrderAndPosition,
 } from './_itn-harness.mts';
 
 const ASSERTION_ID = 'A30/A31';
@@ -67,9 +69,8 @@ await shared.withCleanup(
 
     // --- Scenario 1: two concurrent, otherwise-identical ITNs race for the same ticket
     const bookingRef1 = `PFM1-A3031-RACE-${id}`;
-    const ticketRef1 = await shared.createTicketDoc({
+    const ticketRef1 = await createOrderAndPosition({
       bookingRef: bookingRef1,
-      m_payment_id: bookingRef1,
       attendeeEmail: shared.sentinelEmail(`a3031-race-${id}`),
       amount: 250,
     });
@@ -139,18 +140,58 @@ await shared.withCleanup(
       `the loser's transaction re-stamped purchasedAt after the winner had already committed (${purchasedAtAfterWinner} -> ${afterRace?.purchasedAt?.toMillis?.()}) — the write is not idempotent under concurrency`
     );
 
-    // --- Scenario 2: a ticket transitions to 'checked-in' WHILE a valid ITN is
-    // mid-flight (strictly after the outer fast-path read saw 'reserved', strictly
-    // before the transaction's re-read) — proves the transactional guard specifically,
-    // not only the fast path a request arriving after check-in would hit anyway.
+    // --- Scenario 2: a duplicate/racing valid ITN arrives for an order that is ALREADY
+    // 'paid' and whose one position has already been checked in at the door.
+    //
+    // F4 (production-blockers) — restated for the post-F10 model. Pre-F10 the flat
+    // 'tickets' doc was itself the authoritative payment record, so a resurrection race
+    // could be modelled by flipping THAT doc to 'checked-in' while an order stayed
+    // 'reserved'. Post-F10 that combination is UNREACHABLE in production:
+    // app/api/admin/checkin/route.ts rejects a check-in with 'unpaid' unless the
+    // position's status is already 'paid', and the only write path that ever sets a
+    // position to 'paid' is this same markOrderAndPositionPaidByPaymentId transaction,
+    // which flips the order to 'paid' in the SAME commit. A position can never be
+    // 'checked-in' while its order is still 'reserved' — modelling that state would
+    // test a fixture-only, not a real, condition.
+    //
+    // The real analogous resurrection risk here is a genuine PayFast retry (or a
+    // maliciously replayed valid ITN) arriving AFTER the order has already been paid and
+    // its position checked in: the transaction's authoritative re-read is of the ORDER's
+    // status (lib/orders.ts:296, `order?.status !== 'reserved'`), so it must no-op
+    // without re-writing purchasedAt, overwriting gatewayPaymentId with a different
+    // pf_payment_id, or disturbing the position's checked-in audit trail.
     const bookingRef2 = `PFM1-A3031-RESURRECT-${id}`;
-    const ticketRef2 = await shared.createTicketDoc({
+    const ticketRef2 = await createOrderAndPosition({
       bookingRef: bookingRef2,
-      m_payment_id: bookingRef2,
       attendeeEmail: shared.sentinelEmail(`a3031-resurrect-${id}`),
       amount: 250,
     });
+    const positionBefore = await shared.readTicketById(ticketRef2.id);
+    shared.assert(
+      typeof positionBefore?.orderId === 'string' && positionBefore.orderId.length > 0,
+      'PRECONDITION: fixture position has no orderId — cannot locate its sibling order'
+    );
+    const orderRef2 = shared.db().collection('orders').doc(positionBefore.orderId);
 
+    // Fixture setup only (bypasses the HTTP routes on purpose, same convention as every
+    // other fixture helper in this suite): simulate an order already paid via a FIRST,
+    // genuine pf_payment_id, and its position already checked in at the door.
+    const firstPfPaymentId = `pfm1-resurrect-original-${id}`;
+    const originalPurchasedAt = Timestamp.now();
+    const checkedInAtStamp = Timestamp.now();
+    await orderRef2.update({
+      status: 'paid',
+      gatewayPaymentId: firstPfPaymentId,
+      purchasedAt: originalPurchasedAt,
+    });
+    await shared.db().collection('tickets').doc(ticketRef2.id).update({
+      status: 'checked-in',
+      purchasedAt: originalPurchasedAt,
+      checkedInAt: checkedInAtStamp,
+    });
+
+    // A second, duplicate/racing valid ITN for the SAME m_payment_id with a DIFFERENT
+    // pf_payment_id — exactly what a genuine PayFast retry or a replayed ITN looks like.
     const fields2 = itnFields({
       mPaymentId: bookingRef2,
       amountGross: '250.00',
@@ -159,30 +200,26 @@ await shared.withCleanup(
     const body2 = await signAndEncode(fields2);
     const req2 = buildItnRequest({ body: body2, xff });
 
-    let checkedInAtStamp: FirebaseFirestore.Timestamp | null = null;
-    const flipToCheckedInStub = async () => {
-      checkedInAtStamp = Timestamp.now();
-      await shared.db().collection('tickets').doc(ticketRef2.id).update({
-        status: 'checked-in',
-        checkedInAt: checkedInAtStamp,
-      });
-      return { status: 200, text: async () => 'VALID' };
-    };
+    await withFetchStub(confirmStub('VALID'), () => POST(req2));
 
-    await withFetchStub(flipToCheckedInStub, () => POST(req2));
-
+    const orderAfter = await orderRef2.get();
     const afterResurrectAttempt = await shared.readTicketById(ticketRef2.id);
+
+    shared.assert(
+      orderAfter.data()?.['status'] === 'paid',
+      `a duplicate valid ITN against an already-paid order changed its status to '${orderAfter.data()?.['status']}'`
+    );
+    shared.assert(
+      orderAfter.data()?.['gatewayPaymentId'] === firstPfPaymentId,
+      `a duplicate valid ITN overwrote order.gatewayPaymentId: expected the original '${firstPfPaymentId}', got '${orderAfter.data()?.['gatewayPaymentId']}'`
+    );
     shared.assert(
       afterResurrectAttempt?.status === 'checked-in',
-      `a valid ITN that arrived while the ticket transitioned to 'checked-in' mid-flight changed its status to '${afterResurrectAttempt?.status}' — this resurrects an admitted ticket, letting the same booking reference open the door twice`
+      `a duplicate valid ITN against an already checked-in position changed its status to '${afterResurrectAttempt?.status}' — this resurrects an admitted ticket, letting the same booking reference open the door twice`
     );
     shared.assert(
-      (afterResurrectAttempt?.checkedInAt?.toMillis?.() ?? null) === checkedInAtStamp?.toMillis(),
-      'a valid ITN racing a check-in overwrote the checkedInAt audit timestamp'
-    );
-    shared.assert(
-      afterResurrectAttempt?.pf_payment_id == null,
-      `a valid ITN racing a check-in still wrote pf_payment_id ('${afterResurrectAttempt?.pf_payment_id}') onto a ticket that must stay untouched`
+      (afterResurrectAttempt?.checkedInAt?.toMillis?.() ?? null) === checkedInAtStamp.toMillis(),
+      'a duplicate valid ITN overwrote the checkedInAt audit timestamp on an already checked-in position'
     );
   }
 );

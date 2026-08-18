@@ -29,13 +29,65 @@ goldens:
   - contracts/golden/payfast-m1/itn-sample.golden.json
   - contracts/golden/payfast-m1/payfast-hosts.golden.json
 
+# ---------------------------------------------------------------------------
+# CORRECTION NOTE — 2026-08-18
+# ---------------------------------------------------------------------------
+# A1 and A6 were the same stale/self-defeating grep-family defect already retired
+# elsewhere in the P1 weak-assertion audit (commits 808ca7b, 0b5f0ea, f4a37bd;
+# .agent/memory/project/learned.md "P1 weak-assertion audit"). Both were red for
+# reasons unrelated to the property they claim to protect, and both are corrected
+# in place rather than retired via SUPERSEDED/exit 77, because the underlying
+# property still holds and is still checkable by grep-on-source.
+#
+# A1 originally forbade `stripePaymentIntentId` under types/app/docs/lib. docs/
+# is dropped from scope: it legitimately contains the string in migration-history
+# prose that explains the field was removed (docs/payfast-integration.md:16,
+# docs/sprint-2026-08-16.md:87), not in a live field reference. types/app/lib —
+# where the string is actually load-bearing — are unchanged; a real reintroduction
+# of a Stripe-shaped field still fails this check exactly as before.
+#
+# A6 originally required the literal `m_payment_id` inside both
+# app/api/admin/tickets/route.ts and app/api/admin/checkin/route.ts. The latter
+# went stale when ticketing-hardening F1 (2026-08-11, predates this correction)
+# extracted all check-in admission/read logic out of that route into
+# lib/checkin.ts — the route now only authenticates and delegates. Retargeted to
+# the three facts that now jointly prove "admin ticket read paths still read the
+# current field set": the tickets route (unchanged), lib/checkin.ts (where the
+# delegated read now lives, matched against its actual read-access shape
+# `data['m_payment_id'] as string` per QA mutation testing — see TIGHTENED note
+# below), and that the checkin route still imports from '@/lib/checkin'.
+#
+# TIGHTENED 2026-08-18 (post-QA): A6's lib/checkin.ts leg was first written as a
+# bare substring grep for "m_payment_id", which QA's mutation testing showed goes
+# green even when the real read is deleted and replaced by a comment merely
+# containing that word. Tightened to require the actual read-access shape present
+# in the file today, following A2/A3's existing precedent in this same contract
+# of matching a full field-declaration pattern rather than a bare substring.
+#
+# Full per-assertion decision record with file:line citations:
+# contracts/golden/production-blockers-f2-payfast-assertions/README.md
+#
+# No other assertion in this contract is touched by this correction.
+#
 assertions:
   phase: 4
   checks:
     # ---------- F1: schema rework ----------
     - id: A1
-      description: F1 - stripePaymentIntentId fully removed from types, app, docs, lib
-      command: 'if grep -rq "stripePaymentIntentId" types app docs lib; then exit 1; fi'
+      description: >-
+        [CORRECTED 2026-08-18, was: "stripePaymentIntentId fully removed from types,
+        app, docs, lib"] stripePaymentIntentId fully removed from the data model and
+        application code (types, app, lib). docs/ dropped from scope: the old grep
+        tripped on legitimate migration-history prose that explains the field was
+        removed rather than reintroducing it (docs/payfast-integration.md:16,
+        docs/sprint-2026-08-16.md:87 — both verified, neither is a live field
+        reference). A real reintroduction of a Stripe-shaped field anywhere in
+        types/app/lib still fails this check. See
+        contracts/golden/production-blockers-f2-payfast-assertions/README.md for the
+        full decision record; contract-d3-ticket-model.yaml D3-16 separately confirms
+        the Ticket type declares m_payment_id/pf_payment_id in place of the removed
+        field.
+      command: 'if grep -rq "stripePaymentIntentId" types app lib; then exit 1; fi'
     - id: A2
       description: F1 - Ticket declares nullable m_payment_id field
       command: 'grep -Eq "m_payment_id: string \| null" types/index.ts'
@@ -49,8 +101,27 @@ assertions:
       description: F1 - schema doc updated to PayFast fields (no Stripe leftover)
       command: 'grep -q "m_payment_id" docs/firestore-ticket-schema.md && grep -q "pf_payment_id" docs/firestore-ticket-schema.md'
     - id: A6
-      description: F1 - admin ticket read routes still compile against the new field set
-      command: 'grep -q "m_payment_id" app/api/admin/tickets/route.ts && grep -q "m_payment_id" app/api/admin/checkin/route.ts'
+      description: >-
+        [CORRECTED 2026-08-18, was: required the literal "m_payment_id" inside
+        app/api/admin/checkin/route.ts itself] admin ticket read routes still read
+        against the new field set. Original went stale when ticketing-hardening F1
+        (2026-08-11) extracted all check-in admission/read logic out of
+        app/api/admin/checkin/route.ts into lib/checkin.ts — the route now only
+        authenticates and delegates, so the literal legitimately stopped appearing
+        there. Rewritten to check the field where it actually lives now:
+        app/api/admin/tickets/route.ts (unchanged, direct read, still true),
+        lib/checkin.ts (the delegated read for the check-in path), and that the route
+        genuinely delegates to lib/checkin.ts rather than reimplementing the read
+        inline. See
+        contracts/golden/production-blockers-f2-payfast-assertions/README.md for the
+        full decision record. TIGHTENED 2026-08-18 (QA mutation-8 finding): the
+        lib/checkin.ts leg was a bare substring grep for "m_payment_id" and went
+        green when the real read was deleted and replaced by a comment merely
+        containing that word. Now requires the actual read-access shape
+        (data['m_payment_id'] as string) present in the file today, matching the
+        field-declaration-pattern precedent A2/A3 already use in this contract rather
+        than a bare substring.
+      command: 'grep -q "m_payment_id" app/api/admin/tickets/route.ts && grep -Eq "data\[.m_payment_id.\] as string" lib/checkin.ts && grep -q "from ''@/lib/checkin''" app/api/admin/checkin/route.ts'
 
     # ---------- F2: checkout initiation + signing lib ----------
     - id: A7

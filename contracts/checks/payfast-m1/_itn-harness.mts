@@ -33,9 +33,14 @@
 // Firestore, sentinel-email marked) via contracts/checks/ticketing-hardening/_shared.mjs
 // and reads the result back the same way — reused, not reinvented, per the task brief.
 
+import { randomBytes } from 'node:crypto';
 import { promises as dns } from 'node:dns';
 
 import { config } from 'dotenv';
+import { Timestamp } from 'firebase-admin/firestore';
+
+import { buildReservationDocs } from '@/lib/checkout-reservation';
+import type { TicketType } from '@/types/index';
 
 config({ path: new URL('../../../.env.local', import.meta.url).pathname, quiet: true });
 
@@ -175,4 +180,63 @@ export async function signAndEncode(fields: Record<string, string>): Promise<str
   const { generateSignature } = await import('@/lib/payfast');
   const signature = generateSignature(fields, process.env.PAYFAST_SANDBOX_PASSPHRASE);
   return new URLSearchParams({ ...fields, signature }).toString();
+}
+
+export interface CreateOrderAndPositionFields {
+  bookingRef: string;
+  attendeeEmail: string;
+  amount?: number;
+  showId?: string;
+  ticketType?: TicketType;
+  attendeeName?: string;
+}
+
+/**
+ * Post-F10 fixture helper (F4 — see contracts/golden/production-blockers-f4-itn-check-repoint/
+ * README.md "Fixture strategy") — replaces the pre-F10 `createTicketDoc` shape (a bare
+ * `tickets` doc with no `orders` sibling) for every payfast-m1 behavioural check. Builds the
+ * order+position pair via `buildReservationDocs` (lib/checkout-reservation.ts), the SAME pure
+ * doc-builder checkout itself calls, then writes both plainly (fixture setup is allowed to
+ * bypass the atomicity `writeReservationPair`'s transaction enforces in production, exactly
+ * as `createTicketDoc` already bypassed the HTTP route on purpose).
+ *
+ * Returns the position DocumentReference — same return shape `createTicketDoc` had, so
+ * `readTicketById(ref.id)` keeps working unmodified at every call site.
+ */
+export async function createOrderAndPosition(fields: CreateOrderAndPositionFields) {
+  const shared = await import('../ticketing-hardening/_shared.mjs');
+  if (!shared.isSentinelEmail(fields.attendeeEmail)) {
+    throw new Error('Refusing to create an order/position without the sentinel email marker.');
+  }
+  const database = shared.db();
+  const orderRef = database.collection('orders').doc();
+  const positionRef = database.collection('tickets').doc(fields.bookingRef);
+
+  const now = Timestamp.now();
+  const expiresAt = Timestamp.fromMillis(now.toMillis() + 30 * 60 * 1000);
+
+  const { order, position } = buildReservationDocs({
+    orderId: orderRef.id,
+    bookingRef: fields.bookingRef,
+    showId: fields.showId ?? shared.NATIONAL_SHOW_ID,
+    attendeeName: fields.attendeeName ?? 'Harden Check',
+    attendeeEmail: fields.attendeeEmail,
+    ticketType: fields.ticketType ?? shared.TARGET_TICKET_TYPE,
+    amount: fields.amount ?? 0,
+    idempotencyKey: randomBytes(16).toString('hex'),
+    expiresAt,
+    recoveryToken: randomBytes(16).toString('hex'),
+    recoveryTokenExpiresAt: expiresAt,
+    now,
+  });
+
+  // Manifest write happens BEFORE each corresponding Firestore write — same "manifest
+  // before write" ordering createTicketDoc already follows, so a kill mid-fixture is
+  // still crash-recoverable.
+  shared.recordFixtureCreated('orders', orderRef.id);
+  await orderRef.set(order);
+  shared.recordFixtureCreated('tickets', positionRef.id);
+  await positionRef.set(position);
+
+  return positionRef;
 }

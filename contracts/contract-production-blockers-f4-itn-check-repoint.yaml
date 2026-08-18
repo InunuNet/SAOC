@@ -1,0 +1,188 @@
+schema: athanor.contract/v1
+slug: production-blockers-f4-itn-check-repoint
+goal: >-
+  Mission production-blockers F4 — repoint the seven stale payfast-m1 ITN checks
+  (A18, A19, A20, A21, A30, A31, A32; contracts/contract-payfast-m1.yaml:116-210) at the
+  post-F10 architecture. These are stale checks, not a live production defect: checkout
+  already writes a matching `orders` document today (app/api/tickets/checkout/route.ts:473,
+  lib/checkout-reservation.ts:61,77), and the ITN route already reads/writes it correctly
+  (app/api/tickets/itn/route.ts:13,147-260 -> lib/orders.ts:215-234,264-323). The behavioural
+  four fail only because their fixtures still model the pre-F10 schema (a bare `tickets` doc
+  with no `orders` sibling); the structural two (A30/31's AST companion, A32) fail only
+  because they parse the wrong file for the transaction, which F10 moved into lib/orders.ts.
+  Full decision record, the fixture-strategy rationale, the AST-scoping bug this design
+  catches (findRunTransactionCallback returns the FIRST db.runTransaction() in a file — lib/
+  orders.ts now has two, and the wrong one is the one that currently appears first), the
+  lib/orders.ts pinning judgement, and the anti-drift recommendation:
+  contracts/golden/production-blockers-f4-itn-check-repoint/README.md
+created_at: '2026-08-18'
+autonomy: high
+
+# SCOPE: check scripts and fixtures ONLY. Do not open or edit:
+#   - app/api/tickets/itn/route.ts (read-only reference; sha256-pinned in 5 other contracts)
+#   - app/api/tickets/checkout/route.ts, lib/checkout-reservation.ts (read-only reference)
+#   - lib/orders.ts (read-only reference; THIS feature adds its FIRST sha256 pin on it —
+#     see A11 below and the golden README "Pinning judgement" — but the pin only asserts
+#     the file's current sha256 unchanged, it must not be edited to satisfy it)
+# If satisfying any assertion below seems to require a production code change, STOP and
+# report back rather than making one.
+
+features:
+  - id: F4
+    name: >-
+      Repoint the seven stale payfast-m1 checks at the post-F10 architecture: a
+      production-shaped orders+position fixture helper for the behavioural four, and
+      function-scoped (not first-in-file) AST targeting of lib/orders.ts's
+      markOrderAndPositionPaidByPaymentId for the structural two, plus a new sha256 pin on
+      lib/orders.ts and orders-collection coverage in the shared sentinel sweep.
+    status: pending
+
+goldens:
+  - contracts/golden/production-blockers-f4-itn-check-repoint/README.md
+  - contracts/golden/production-blockers-f4-itn-check-repoint/orders-lib.golden.sha256
+
+assertions:
+  phase: 4
+  checks:
+    # ---------- Fixture strategy: reuse buildReservationDocs, don't hand-roll a shape ----------
+    - id: A1
+      description: >-
+        The new fixture helper reuses lib/checkout-reservation.ts's buildReservationDocs
+        (the actual production doc-shape function checkout writes) rather than hand-rolling
+        a second orders+position shape that can drift from production again. Lives in
+        contracts/checks/payfast-m1/_itn-harness.mts (payfast-m1-local, NOT the
+        cross-suite contracts/checks/ticketing-hardening/_shared.mjs, which other check
+        suites run under plain node without tsx's path-alias/TS-loader support — adding a
+        TS import there would risk breaking them).
+      command: >-
+        grep -q "buildReservationDocs" contracts/checks/payfast-m1/_itn-harness.mts &&
+        grep -q "from '@/lib/checkout-reservation'" contracts/checks/payfast-m1/_itn-harness.mts &&
+        grep -q "export async function createOrderAndPosition" contracts/checks/payfast-m1/_itn-harness.mts
+
+    - id: A2
+      description: >-
+        createOrderAndPosition returns the position DocumentReference as its primary
+        return value (same return shape as the createTicketDoc it replaces at these call
+        sites), so readTicketById(ref.id) keeps working unmodified at every call site.
+      command: 'grep -q "return positionRef" contracts/checks/payfast-m1/_itn-harness.mts'
+
+    - id: A3
+      description: >-
+        All four behavioural check scripts (A18, A19/A21, A20, A30) call
+        createOrderAndPosition, not the old createTicketDoc, to build their fixture.
+      command: >-
+        for f in check-itn-source-ip-validation.mts check-itn-server-confirm-and-status-gating.mts check-itn-amount-tamper-rejected.mts check-itn-atomic-idempotent-write.mts; do
+          grep -q "createOrderAndPosition" "contracts/checks/payfast-m1/$f" || { echo "missing in $f"; exit 1; }
+          grep -q "createTicketDoc" "contracts/checks/payfast-m1/$f" && { echo "stale createTicketDoc call remains in $f"; exit 1; }
+        done; exit 0
+
+    # ---------- Cleanup coverage: the sweep must know about the orders collection ----------
+    - id: A4
+      description: >-
+        sweepSentinels() and assertNoResidue() in the SHARED _shared.mjs now also sweep
+        and verify the `orders` collection by buyerEmail, not only `tickets` by
+        attendeeEmail — otherwise createOrderAndPosition's order documents are invisible
+        to both, and clearManifestEntries() would still remove their crash-recovery
+        manifest entries even though the doc was never actually deleted (see golden
+        README "Residue gap this feature would otherwise reopen").
+      command: >-
+        grep -A3 "export async function sweepSentinels" contracts/checks/ticketing-hardening/_shared.mjs | grep -q "orders\|ORDERS_COLLECTION" &&
+        grep -A5 "export async function assertNoResidue" contracts/checks/ticketing-hardening/_shared.mjs | grep -q "orders\|ORDERS_COLLECTION" &&
+        grep -q "buyerEmail" contracts/checks/ticketing-hardening/_shared.mjs
+
+    # ---------- Structural: function-scoped AST targeting, not first-in-file ----------
+    - id: A5
+      description: >-
+        New _ast-shared.mjs helper locates a NAMED function declaration's body before
+        searching it for db.runTransaction(...) — lib/orders.ts has TWO runTransaction
+        calls (createOrderWithPosition's and markOrderAndPositionPaidByPaymentId's);
+        without this, findRunTransactionCallback's existing "first match in the given
+        root" behaviour silently targets the wrong one (createOrderWithPosition's, which
+        appears earlier in the file).
+      command: 'grep -q "findFunctionDeclarationBody" contracts/checks/payfast-m1/_ast-shared.mjs'
+
+    - id: A6
+      description: >-
+        The updated AST helper's self-test proves the scoping actually discriminates: a
+        fixture with two sibling functions, each containing its own db.runTransaction
+        call, must resolve to the NAMED one, not the first one in source order.
+      command: >-
+        grep -q "createOrderWithPosition" contracts/checks/payfast-m1/_ast-shared.mjs &&
+        grep -qi "decoy\|sibling" contracts/checks/payfast-m1/_ast-shared.mjs
+
+    - id: A7
+      description: >-
+        A30/A31's structural companion now parses lib/orders.ts, scoped to
+        markOrderAndPositionPaidByPaymentId's body, not app/api/tickets/itn/route.ts.
+        get-before-update is checked per-identifier (orderRef, positionRef), not only for
+        a single hardcoded 'docRef' name, since orders.ts updates two distinct refs.
+      command: >-
+        grep -q "ORDERS_LIB_PATH" contracts/checks/payfast-m1/check-paid-write-inside-transaction-scope.mjs &&
+        grep -q "markOrderAndPositionPaidByPaymentId" contracts/checks/payfast-m1/check-paid-write-inside-transaction-scope.mjs &&
+        if grep -Eq "firstArgIsIdentifier\(node, 'docRef'\)" contracts/checks/payfast-m1/_ast-shared.mjs; then exit 1; fi
+
+    - id: A8
+      description: >-
+        check-paid-write-inside-transaction-scope.mjs runs clean against the real
+        lib/orders.ts (CI-runnable, no credentials needed — same convention as before).
+      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-paid-write-inside-transaction-scope.mjs'
+
+    - id: A9
+      description: >-
+        A32 is now a two-file structural check: the real
+        fetch(PAYFAST_SANDBOX_VALIDATE_URL, ...) call lives in route.ts and is proved to
+        occur BEFORE the markOrderAndPositionPaidByPaymentId(...) call site in source
+        order (i.e. the paid-write only runs after server-confirm succeeds); separately,
+        markOrderAndPositionPaidByPaymentId's own transaction body in lib/orders.ts is
+        proved to contain NO fetch(PAYFAST_SANDBOX_VALIDATE_URL, ...) call (defends
+        against someone moving the validate round-trip into the Firestore transaction).
+      command: >-
+        grep -q "ORDERS_LIB_PATH" contracts/checks/payfast-m1/check-server-confirm-fetch-outside-transaction-scope.mjs &&
+        grep -q "markOrderAndPositionPaidByPaymentId" contracts/checks/payfast-m1/check-server-confirm-fetch-outside-transaction-scope.mjs
+
+    - id: A10
+      description: >-
+        A32's rebuilt check runs clean against the real route.ts + lib/orders.ts pair
+        (CI-runnable, no credentials needed).
+      command: 'pnpm exec tsx contracts/checks/payfast-m1/check-server-confirm-fetch-outside-transaction-scope.mjs'
+
+    # ---------- Behavioural four re-verified against the new fixture (LOCAL-ONLY) ----------
+    - id: A11
+      description: >-
+        The four behavioural checks pass against the corrected orders+position fixture.
+        LOCAL-ONLY: needs PAYFAST_SANDBOX_* and FIREBASE_ADMIN_* from .env.local, absent
+        from CI; each script emits a distinct ::warning::...skipping (exit 0, NOT a pass)
+        when those creds are unavailable — same convention as A18-A21/A30 always had.
+      command: >-
+        pnpm exec tsx contracts/checks/payfast-m1/check-itn-source-ip-validation.mts &&
+        pnpm exec tsx contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts &&
+        pnpm exec tsx contracts/checks/payfast-m1/check-itn-amount-tamper-rejected.mts &&
+        pnpm exec tsx contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts
+      timeout_seconds: 300
+
+    # ---------- Pinning judgement: lib/orders.ts gets its first sha256 pin ----------
+    - id: A12
+      description: >-
+        lib/orders.ts (the transactional paid-write's new home, markOrderAndPositionPaidByPaymentId
+        at lib/orders.ts:264, transaction at lib/orders.ts:280) is now sha256-pinned by
+        THIS contract, matching the same shasum -c mechanism the ITN route itself carries
+        in 5 other contracts (e.g. contracts/contract-ticketing-f10-itn-repin.yaml:248).
+        This assertion only proves the file is UNCHANGED by this feature (see the SCOPE
+        note above) — it is the forward-looking pin for future features, not a claim this
+        feature edited the file. See golden README "Pinning judgement" for why the whole
+        file is pinned rather than just the one function, and why this is added here
+        rather than retrofitted onto the 5 existing route.ts-pinning contracts.
+      command: >-
+        echo "$(cat contracts/golden/production-blockers-f4-itn-check-repoint/orders-lib.golden.sha256)  lib/orders.ts" | shasum -a 256 -c -
+
+    # ---------- No production code touched ----------
+    - id: A13
+      description: >-
+        Confirms the hard constraint: no production application file changed. Every path
+        this contract's own checks read from production is verified unchanged via git
+        diff against the branch point, restricted to the app/ and lib/ (excluding
+        contracts/) trees relevant to ticketing/payments.
+      command: >-
+        if git diff --name-only HEAD -- app/api/tickets lib/orders.ts lib/checkout-reservation.ts lib/payfast.ts | grep -q .; then
+          echo "production file changed — out of scope for F4"; exit 1;
+        fi; exit 0

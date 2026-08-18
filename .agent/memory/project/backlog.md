@@ -1,5 +1,32 @@
 # Athanor Issue Backlog
 
+## Session 2026-08-18 — Production-blockers F4 (payfast-m1 stale checks repoint) DONE
+
+- [x] **Production-blockers F4 — repoint seven stale payfast-m1 ITN checks (A18–A21, A30–A32), DONE.**
+  Seven assertions failed after F10 moved the ITN payment lookup and atomic write from the route into
+  `lib/orders.ts`. Not a production defect (checkout already writing `orders`, route already reading
+  them correctly) — only test infrastructure was stale. Fix: new fixture helper `createOrderAndPosition()`
+  built from the actual production `buildReservationDocs` function (no more drift-prone hand-rolling);
+  new AST helper `findFunctionDeclarationBody()` to scope checks to the correct function when a file has
+  multiple transactions; extended shared `_shared.mjs` residue sweep to cover `orders` collection.
+  **New sha256 pin on `lib/orders.ts`** with golden hash
+  `47c2e83c920a00b12953657c667250690a595049537188728ef9a5588301002b`
+  (`contracts/golden/production-blockers-f4-itn-check-repoint/orders-lib.golden.sha256`) — the atomic
+  paid-write logic moved here from the route and must be guarded. Docs: `docs/payfast-integration.md`
+  (+240 lines, "Production-blockers F4" section documenting why checks went stale, what changed, the new
+  pin, and anti-drift recommendation). Gate `contract-production-blockers-f4-itn-check-repoint.yaml`
+  A1–A12, 12/12, verified both gates 13/13 and 34/34. @qa verdict PASS — all seven adversarial claims
+  independently confirmed against real source.
+- [ ] **[P2, NEW 2026-08-18, CI configuration task] Wire credential-free structural ITN checks into
+  CI with path-trigger.** Two checks (`check-paid-write-inside-transaction-scope.mjs`,
+  `check-server-confirm-fetch-outside-transaction-scope.mjs`) need no secrets and cost nothing to run.
+  Currently run only as part of the credential-gated `contract-payfast-m1.yaml` suite (rarely runs in
+  CI due to missing PAYFAST_SANDBOX_* environment). Recommend: create a CI job triggered on diffs
+  touching `app/api/tickets/itn/route.ts` or `lib/orders.ts` specifically, running these two checks
+  independently. Would have caught F4's entire staleness the day F10 merged instead of months later
+  via audit. This is `.github/workflows/` configuration, not a code/contract task. Full rationale in
+  `contracts/golden/production-blockers-f4-itn-check-repoint/README.md` and `docs/payfast-integration.md`.
+
 ## Session 2026-08-17 (latest) — F11 (QR generation + confirmation email) DONE; mission now blocked on Brad
 
 - [x] **F11 — QR generation at email-send time + real multi-position confirmation email with
@@ -1237,15 +1264,36 @@ inherently a human task, not dispatchable to an agent chain.
 - [ ] **[P0, human] Add `brad@inunu.net` to the DEPLOYED `ADMIN_EMAIL_ALLOWLIST`** in Secret
   Manager — only `.env.local` (local) has been updated. The two `saoc.co.za` entries in
   `.env.local` are contract fixtures and must NOT go into Secret Manager.
-- [ ] **[P1, human action, highest value] Disable self-signup on `saoc-webapp`.** Verified still
-  live 2026-08-15 (`accounts:signUp` returns `WEAK_PASSWORD`, not
-  `auth/admin-restricted-operation`). This is the actual fix for the account pre-hijacking risk
-  `--existing` only guards against —
-  `console.cloud.google.com/customer-identity/settings?project=saoc-webapp` → "Disable user
-  actions". **Closing this requires the irreversible Identity Platform upgrade (no downgrade
-  path per Google support) — deliberately deferred, do not enable Identity Platform without a
-  explicit go-ahead.** Confirm via `auth/admin-restricted-operation` on a subsequent
-  `accounts:signUp` probe once done.
+- [ ] **[P1, REASSIGNED to agent work 2026-08-18, no longer a Brad task] Close self-signup via a
+  `functions.auth.user().onCreate()` Cloud Function, not the Identity Platform toggle.** Verified
+  still live 2026-08-15 (`accounts:signUp` returns `WEAK_PASSWORD`, not
+  `auth/admin-restricted-operation`) — this is the actual fix for the account pre-hijacking risk
+  `--existing` only guards against. The Identity Platform "Disable user actions" toggle
+  (`console.cloud.google.com/customer-identity/settings?project=saoc-webapp`) remains
+  deliberately NOT used — Google confirms in-product it is a one-way upgrade with no downgrade
+  path, and an adversarial cost/benefit check found zero features SAOC would ever use in the full
+  GCIP tier (MFA/SAML/OIDC/multi-tenancy/IAP all irrelevant at this project's scale; the free MAU
+  allowance is identical with or without the upgrade). Blocking Functions were considered as an
+  alternative and ruled out — Firebase's own docs require the same GCIP upgrade to use them
+  (`firebase.google.com/docs/auth/extend-with-blocking-functions`, "Before you begin").
+  **Real path: `functions.auth.user().onCreate()`**, a first-generation Cloud Functions trigger
+  that does NOT require the Identity Platform upgrade — confirmed against
+  `firebase.google.com/docs/functions/auth-events`, which documents it as a plain Firebase
+  Authentication trigger, separate from and prior to the page's own "Trigger blocking functions"
+  section. Deploy a function that deletes any newly-created user unless their email is on
+  `ADMIN_EMAIL_ALLOWLIST`, using the Admin SDK (`admin.auth().deleteUser()`), matching this
+  project's existing claim-first/allowlist provisioning model (see F4 above). Requires the
+  project on the Blaze plan — **already true**, verified live via
+  `npx firebase apphosting:backends:list --project saoc-webapp` (App Hosting is Blaze-only), so
+  this needs no new billing action from Brad. Residual, disclosed gap: this fires after account
+  creation, not before like a blocking function, so there is a brief window where a self-created
+  account holds a valid ID token before deletion — acceptable because `lib/admin-auth.ts`'s
+  claim-first authorisation model already grants zero capability to any account without the
+  `admin` claim, so an unclaimed account mid-deletion has no more access than one that never
+  existed. Confirm the fix the same way the old entry did: `auth/admin-restricted-operation` (or
+  equivalent — a self-registered account existing only briefly, then gone) on a subsequent
+  `accounts:signUp` probe. Do not enable Identity Platform for this or any other reason without a
+  fresh explicit go-ahead from Brad — that constraint stands regardless of which feature wants it.
 - [x] ~~**[P2, design input for F4/F5] Federated sign-in auto-verifies email.**~~ **RESOLVED by
   F4's claim-first design (see above)** — the squatting race is closed by Firebase's
   unconditional email-uniqueness enforcement, not by the `--existing` guard alone. @qa traced
@@ -1573,3 +1621,17 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818183907.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818184431.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818185007.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818185520.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818190038.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818190559.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818191120.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818191652.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818192223.txt
