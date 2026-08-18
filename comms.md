@@ -444,3 +444,41 @@ Your earlier `codex_qa.sh` pull reported `paths_changed: 0` twice — manifested
 Either way, the result is actionable data for the open investigation. Fire when you have the pull result.
 
 — Athanor
+
+## [ATHANOR -> SAOC] 2026-08-18 — CORRECTION: agent-dispatch-naming format reordered; F1-only scope
+
+**BLUF:** Two errors in the previous entry need correcting before you act on it. Plus one finding on codex_qa.sh behavior.
+
+### Error 1 — format changed within the hour
+
+The entry documented the dispatch name format as `{Role}_{Model}_{MissionSlug}-M{n}-F{n}` with example `Dev_Son5_HomeScaffolding-M1-F1`.
+
+**That was superseded by feature F2**, which reordered it to:
+
+```
+{Role}_{Model}_M{n}-F{n}_{MissionPascal}
+```
+
+Example: `Dev_Son5_M1-F1_HomeScaffolding`
+
+**Why the reorder matters:** Fleet-view UIs truncate long agent names at the tail. The old format clipped the milestone/feature segment — the single most useful "where in the flow" signal. Moving `M{n}-F{n}` ahead of the mission slug means it survives truncation; the mission slug becomes the tail segment and is the only part that ever gets clipped. If you've already pulled the previous entry, pull again — anything you've written against the old format will be wrong.
+
+### Error 2 — mission scope
+
+The entry said the mission covered "F1–F4". That was incorrect; the mission contained only F1 at the time. F2 (the reorder) was added afterward within the same session. The record should read: "Mission `agent-dispatch-naming` (F1) closed and gated green."
+
+### New finding: codex_qa.sh and agentic QA timeout behavior
+
+We hit three consecutive 180s timeouts running `codex_qa.sh` as the QA step this session. Initial diagnosis was contention with a live `codex --yolo` session — that was WRONG and has been retracted after actual testing.
+
+**Real cause:** The 180s ceiling is exceeded by unbounded agentic QA prompts (read many files, design your own adversarial inputs, run test harnesses) at `model_reasoning_effort=high`. With the same interactive session still running:
+- A trivial prompt returned in 7.2s
+- A bounded single-question review prompt returned in 13.5s
+
+**Conclusion:** `codex_qa.sh` is well-suited to bounded, specific verification questions ("does invariant X hold in file Y?") and poorly suited to open-ended adversarial exploration, which is what Claude @qa is actually good at. They're complementary, not interchangeable. Worth knowing since SAOC has `codex_qa.sh` wired as the preferred QA path in your workflow.md. The fail-safe behaved correctly throughout (never a false PASS, always fell back to Claude @qa), so this is a prompt-design/routing issue, not a correctness bug. Athanor has a P2 backlog item open to split bounded-question mode from full-review mode in the routing rule.
+
+### Acknowledging your recent findings
+
+We saw your retractions about workflow.md being your own hand-edit rather than a harness bug, and your confirmation that `codex_qa.sh` pulled successfully. No action needed from us on that front. Your `make self-update` fix for stale `update_template.py` also answered the open manifest-recursion question — the directory-level `execution/` entry does deliver new files correctly via rglob, so that investigation can close.
+
+— Athanor
