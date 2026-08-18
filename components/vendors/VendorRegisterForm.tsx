@@ -10,6 +10,7 @@ import {
   describeVendorRegistrationResponse,
   type VendorRegisterResponseDescription,
 } from '@/lib/vendor-register-response';
+import { validateVendorRegisterFormClientSide } from '@/lib/vendor-register-form-validation';
 import { VendorContactFieldset } from './VendorContactFieldset';
 import { VendorCategoryFieldset } from './VendorCategoryFieldset';
 import { VendorBoothFieldset } from './VendorBoothFieldset';
@@ -82,6 +83,17 @@ export function VendorRegisterForm() {
     if (hp.trim() !== '') {
       setStatus('error');
       setDescriptor({ kind: 'error', message: 'Something went wrong. Please try again.' });
+      return;
+    }
+
+    const clientErrors = validateVendorRegisterFormClientSide(state);
+    if (clientErrors.length > 0) {
+      setStatus('error');
+      setDescriptor({
+        kind: 'validation-error',
+        message: 'Please check the highlighted fields.',
+        fieldErrors: clientErrors,
+      });
       return;
     }
 

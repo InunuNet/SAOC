@@ -98,6 +98,14 @@ BUILD_PATHS=(
   package.json pnpm-lock.yaml pnpm-workspace.yaml
   next.config.ts next-env.d.ts tsconfig.json postcss.config.mjs
   sanity.config.ts sanity.cli.ts
+  # scripts/scan-firestore-residue.ts imports SENTINEL_DOMAINS from this one shared
+  # module (contracts/checks/_shared/sentinel-domains.mjs), and next build's TypeScript
+  # pass fails without it — measured 2026-08-18 while adding this contract's own A13
+  # check (execution/checks/verify_admin_nav.ts). Only this one small shared directory
+  # is added, not all of contracts/, to avoid the concurrent-write race with other
+  # agents that the "None of it needs to be in the build tree" note above documents for
+  # the rest of contracts/.
+  contracts/checks/_shared
 )
 
 start() {
@@ -125,7 +133,18 @@ start() {
   echo "syncing build-relevant paths (including uncommitted changes) into $SCRATCH_DIR ..."
   for p in "${BUILD_PATHS[@]}"; do
     [ -e "$REPO_ROOT/$p" ] || continue
-    rsync -a --delete "$REPO_ROOT/$p" "$SCRATCH_DIR/"
+    # Top-level entries (app, components, ...) land directly under $SCRATCH_DIR as
+    # before. Nested entries (e.g. contracts/checks/_shared) must keep their relative
+    # path intact -- rsync'ing straight into "$SCRATCH_DIR/" would otherwise drop their
+    # parent directories and break relative imports (e.g. scripts/*.ts importing
+    # '../contracts/checks/_shared/...').
+    parent="$(dirname "$p")"
+    if [ "$parent" = "." ]; then
+      rsync -a --delete "$REPO_ROOT/$p" "$SCRATCH_DIR/"
+    else
+      mkdir -p "$SCRATCH_DIR/$parent"
+      rsync -a --delete "$REPO_ROOT/$p" "$SCRATCH_DIR/$parent/"
+    fi
   done
   cp "$REPO_ROOT/.env.local" "$SCRATCH_DIR/.env.local"
 

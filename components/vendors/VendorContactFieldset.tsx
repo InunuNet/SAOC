@@ -79,6 +79,7 @@ export function VendorContactFieldset({ state, onFieldChange, disabled }: Vendor
         onChange={(v) => onFieldChange('cipcNumber', v)}
         disabled={disabled}
         required={false}
+        placeholder="e.g. 2019/123456/07"
       />
       <VendorFormField
         fieldKey="vatNumber"
@@ -88,6 +89,7 @@ export function VendorContactFieldset({ state, onFieldChange, disabled }: Vendor
         onChange={(v) => onFieldChange('vatNumber', v)}
         disabled={disabled}
         required={false}
+        placeholder="e.g. 4123456789"
       />
       <VendorFormField
         fieldKey="website"

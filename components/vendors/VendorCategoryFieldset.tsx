@@ -1,6 +1,7 @@
-import type {
-  VendorRegisterFieldChangeHandler,
-  VendorRegisterFormState,
+import {
+  isFoodRetailer,
+  type VendorRegisterFieldChangeHandler,
+  type VendorRegisterFormState,
 } from '@/lib/vendor-register-form-payload';
 import { VendorFormField } from './VendorFormField';
 import { VendorCheckboxGroupField } from './VendorCheckboxGroupField';
@@ -55,6 +56,7 @@ export function VendorCategoryFieldset({ state, onFieldChange, disabled }: Vendo
         onChange={(v) => onFieldChange('phytosanitaryPermitNumber', v)}
         disabled={disabled}
         required={false}
+        placeholder="Permit reference number, if issued"
       />
       <VendorFormField
         fieldKey="citesPermitNumber"
@@ -64,25 +66,31 @@ export function VendorCategoryFieldset({ state, onFieldChange, disabled }: Vendo
         onChange={(v) => onFieldChange('citesPermitNumber', v)}
         disabled={disabled}
         required={false}
+        placeholder="Permit reference number, if issued"
       />
-      <VendorFormField
-        fieldKey="foodHandlingCertificateNumber"
-        label="Food handling / health certificate number (food retailers only)"
-        htmlType="text"
-        value={state.foodHandlingCertificateNumber}
-        onChange={(v) => onFieldChange('foodHandlingCertificateNumber', v)}
-        disabled={disabled}
-        required={false}
-      />
-      <VendorFormField
-        fieldKey="foodItemList"
-        label="List of food items to be sold (food retailers only)"
-        htmlType="textarea"
-        value={state.foodItemList}
-        onChange={(v) => onFieldChange('foodItemList', v)}
-        disabled={disabled}
-        required={false}
-      />
+      {isFoodRetailer(state) ? (
+        <VendorFormField
+          fieldKey="foodHandlingCertificateNumber"
+          label="Food handling / health certificate number (food retailers only)"
+          htmlType="text"
+          value={state.foodHandlingCertificateNumber}
+          onChange={(v) => onFieldChange('foodHandlingCertificateNumber', v)}
+          disabled={disabled}
+          required={false}
+          placeholder="Certificate reference number"
+        />
+      ) : null}
+      {isFoodRetailer(state) ? (
+        <VendorFormField
+          fieldKey="foodItemList"
+          label="List of food items to be sold (food retailers only)"
+          htmlType="textarea"
+          value={state.foodItemList}
+          onChange={(v) => onFieldChange('foodItemList', v)}
+          disabled={disabled}
+          required={false}
+        />
+      ) : null}
     </div>
   );
 }

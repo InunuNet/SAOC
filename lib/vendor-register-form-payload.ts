@@ -71,6 +71,24 @@ function toOptionalBoolean(value: '' | 'true' | 'false'): boolean | undefined {
 }
 
 /**
+ * Shared render-gate + payload-exclusion guard for electricalLoad. A hidden field can never
+ * leak a stale value into the submitted document: both VendorBoothFieldset (render) and
+ * buildVendorRegistrationPayload (payload) call this same function.
+ */
+export function isElectricalLoadApplicable(state: VendorRegisterFormState): boolean {
+  return state.powerRequired === 'true';
+}
+
+/**
+ * Shared render-gate + payload-exclusion guard for the two food-retailer-only fields
+ * (foodHandlingCertificateNumber, foodItemList). Same leak-proofing rationale as
+ * isElectricalLoadApplicable above.
+ */
+export function isFoodRetailer(state: VendorRegisterFormState): boolean {
+  return state.vendorCategory.includes('food-retailer');
+}
+
+/**
  * Coerces a VendorRegisterFormState into the wire payload the real
  * validateVendorSubmissionInput() (lib/vendor-submissions.ts, F4) expects: string form values
  * become number/boolean where the API requires it, and every optional field left blank by the
@@ -94,14 +112,14 @@ export function buildVendorRegistrationPayload(state: VendorRegisterFormState): 
     productDescription: state.productDescription,
     phytosanitaryPermitNumber: omitBlank(state.phytosanitaryPermitNumber),
     citesPermitNumber: omitBlank(state.citesPermitNumber),
-    foodHandlingCertificateNumber: omitBlank(state.foodHandlingCertificateNumber),
-    foodItemList: omitBlank(state.foodItemList),
+    foodHandlingCertificateNumber: isFoodRetailer(state) ? omitBlank(state.foodHandlingCertificateNumber) : undefined,
+    foodItemList: isFoodRetailer(state) ? omitBlank(state.foodItemList) : undefined,
     boothCount: Number.parseInt(state.boothCount, 10),
     boothType: omitBlank(state.boothType) as VendorBoothType | undefined,
     tableCount: toOptionalInt(state.tableCount),
     chairCount: toOptionalInt(state.chairCount),
     powerRequired: toOptionalBoolean(state.powerRequired),
-    electricalLoad: omitBlank(state.electricalLoad),
+    electricalLoad: isElectricalLoadApplicable(state) ? omitBlank(state.electricalLoad) : undefined,
     waterRequired: toOptionalBoolean(state.waterRequired),
     staffPerDay: toOptionalInt(state.staffPerDay),
     vehicleRegistrations: omitBlank(state.vehicleRegistrations),

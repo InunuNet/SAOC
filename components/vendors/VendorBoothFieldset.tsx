@@ -1,6 +1,7 @@
-import type {
-  VendorRegisterFieldChangeHandler,
-  VendorRegisterFormState,
+import {
+  isElectricalLoadApplicable,
+  type VendorRegisterFieldChangeHandler,
+  type VendorRegisterFormState,
 } from '@/lib/vendor-register-form-payload';
 import { VendorFormField } from './VendorFormField';
 import { VendorRadioGroupField } from './VendorRadioGroupField';
@@ -81,15 +82,18 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
         disabled={disabled}
         required
       />
-      <VendorFormField
-        fieldKey="electricalLoad"
-        label="Electrical load required (watts/amps)"
-        htmlType="text"
-        value={state.electricalLoad}
-        onChange={(v) => onFieldChange('electricalLoad', v)}
-        disabled={disabled}
-        required={false}
-      />
+      {isElectricalLoadApplicable(state) ? (
+        <VendorFormField
+          fieldKey="electricalLoad"
+          label="Electrical load required (watts/amps)"
+          htmlType="text"
+          value={state.electricalLoad}
+          onChange={(v) => onFieldChange('electricalLoad', v)}
+          disabled={disabled}
+          required={false}
+          placeholder="e.g. 15A / 3.5kW"
+        />
+      ) : null}
       <VendorBooleanRadioField
         fieldKey="waterRequired"
         label="Water access required?"
@@ -118,6 +122,7 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
         onChange={(v) => onFieldChange('vehicleRegistrations', v)}
         disabled={disabled}
         required={false}
+        placeholder="e.g. CA 123-456"
       />
       <VendorFormField
         fieldKey="loadInSlot"
@@ -127,6 +132,7 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
         onChange={(v) => onFieldChange('loadInSlot', v)}
         disabled={disabled}
         required={false}
+        placeholder="e.g. Friday 14:00–16:00"
       />
       <VendorFormField
         fieldKey="loadOutSlot"
@@ -136,6 +142,7 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
         onChange={(v) => onFieldChange('loadOutSlot', v)}
         disabled={disabled}
         required={false}
+        placeholder="e.g. Sunday 16:00–18:00"
       />
     </div>
   );

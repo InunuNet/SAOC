@@ -52,15 +52,19 @@ assertions:
         (lib/vendor-registration-confirmation.ts) -- not a hand-rolled Resend call, so a pass
         here proves the same code path vendors actually hit, including FORMS_FROM_ADDRESS and
         the real email template.
-      command: grep -q "sendVendorRegistrationConfirmationEmail" scripts/send-test-vendor-confirmation-email.ts
+      command: 'grep -q "sendVendorRegistrationConfirmationEmail" scripts/send-test-vendor-confirmation-email.ts'
 
     - id: A5
-      description: >
+      description: >-
         The recipient address actually used in the call comes from process.argv, not a literal
         string -- checked by requiring the argv-derived variable name appear as the `contactEmail`
-        argument, and requiring NO literal `@` inside a string literal elsewhere in the file
-        (which would indicate a hardcoded fallback address slipped in).
-      command: grep -Pzo "contactEmail:\s*\w+" scripts/send-test-vendor-confirmation-email.ts
+        argument. Portable via check_regex.py (Python stdlib re) rather than grep -Pzo -- this
+        machine's grep is ugrep, which supports -P (PCRE) fine on its own, but overloads -z for
+        DECOMPRESS mode rather than GNU grep's null-data/multiline mode, so -Pzo exits 2 with no
+        PCRE problem involved at all. Confirmed 2026-08-18 during F1's gate run (see
+        check_regex.py's own header for the full repro); the same constraint applies to every
+        multiline-regex check in this repo, not just F1's.
+      command: 'python3 .agent/memory/project/specs/vendor-page-fixes/checks/check_regex.py scripts/send-test-vendor-confirmation-email.ts "contactEmail:\s*\w+"'
 
     - id: A6
       description: >
