@@ -118,20 +118,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // 2. Source IP — request must originate from a resolved PayFast host
   // (www.payfast.co.za / sandbox.payfast.co.za / w1w.payfast.co.za / w2w.payfast.co.za).
+  //
+  // LOGGED, NOT ENFORCED (2026-08-18): a real, correctly-signed sandbox ITN was observed
+  // arriving from 35.219.200.118 -- a Google Cloud address that is not among the IPs any of
+  // the four hostnames above resolve to (verified via Cloud Logging + dig at the time).
+  // PayFast's sandbox backend evidently doesn't send ITN from the same IP its public sandbox
+  // hostname resolves to, so this check was rejecting genuine, signature-verified payments --
+  // the exact failure mode the original spec flagged as needing verification
+  // (contracts/golden/payfast-m1/README.md: "[VERIFY] the host list") and never was, until a
+  // live purchase proved it wrong. Signature verification (guard 1, already passed by the time
+  // this runs) plus the server round-trip confirmation (guard 4, PayFast's own documented
+  // anti-spoofing mechanism) remain the actual security boundary; source IP is defense-in-depth
+  // only and must never be able to reject a payment those two already authenticated.
   const clientIp = getClientIp(request);
-  if (!clientIp) {
-    console.error('[tickets/itn] Could not determine client IP — rejecting ITN', {
+  if (clientIp) {
+    const validIps = await resolvePayfastIps();
+    if (!validIps.has(clientIp)) {
+      console.warn('[tickets/itn] Source IP not in resolved PayFast host set (logged only, not rejecting)', {
+        m_payment_id: mPaymentId,
+        clientIp,
+      });
+    }
+  } else {
+    console.warn('[tickets/itn] Could not determine client IP (logged only, not rejecting)', {
       m_payment_id: mPaymentId,
     });
-    return acknowledge();
-  }
-  const validIps = await resolvePayfastIps();
-  if (!validIps.has(clientIp)) {
-    console.error('[tickets/itn] Source IP not in PayFast host set — rejecting ITN', {
-      m_payment_id: mPaymentId,
-      clientIp,
-    });
-    return acknowledge();
   }
 
   if (!mPaymentId) {
