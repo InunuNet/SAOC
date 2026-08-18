@@ -35,7 +35,13 @@
 //
 //
 //
-function PermitDetails({ row }: { row: any }) {
+interface PermitFixtureRow {
+  phytosanitaryPermitNumber?: string;
+  citesPermitNumber?: string;
+  foodHandlingCertificateNumber?: string;
+}
+
+function PermitDetails({ row }: { row: PermitFixtureRow }) {
   return (
     <dl>
       <dt>Phytosanitary / import permit</dt>

@@ -14,8 +14,8 @@ cost_estimate:
   total_calls: 0
 last_checkpoint:
   milestone: M2
-  feature: F6
-  ts: '2026-08-18T06:24:58.279980+00:00'
+  feature: F9
+  ts: '2026-08-18T07:34:12.536764+00:00'
 features:
 - id: F1
   title: 'Naming disambiguation: rename this stream "vendors", not "exhibitors" —
@@ -61,6 +61,7 @@ features:
   spec: docs/ticketing-system-foundation-spec.md
   contract: contracts/contract-vendor-f5-register-route.yaml
 - id: F6
+  contract: contracts/contract-vendor-f6-review-workflow.yaml
   title: 'Vendor application review workflow: new `review-vendor-applications` capability,
     admin list/approve/reject UI'
   inline_brief: 'Reuses the F3/F4 capability system from the ticketing-foundation
@@ -81,6 +82,7 @@ features:
   milestone: M2
   completed_at: '2026-08-18T06:24:58.279855+00:00'
 - id: F7
+  contract: contracts/contract-vendor-f7-payment-path.yaml
   title: Booth fee payment path — offline EFT + proof-of-payment upload, booth number
     allocation field
   inline_brief: 'Depends on the open payment-path question below. Default recommendation
@@ -98,9 +100,11 @@ features:
     proof-of-payment fields exist per the confirmed path, office-use fields (booth
     number, payment received, confirmed by) are editable only by a capability-gated
     admin, never by the public submitter.'
-  status: pending
+  status: done
   milestone: M2
+  completed_at: '2026-08-18T06:54:29.866157+00:00'
 - id: F8
+  contract: contracts/contract-vendor-f8-approval-email.yaml
   title: Vendor confirmation and booth-allocation email, sent on F6 approval
   inline_brief: Second email in this mission, sent from the F6 admin approval action
     (not from F5's public route) via the same `lib/email.ts` `sendEmail()` helper.
@@ -110,9 +114,11 @@ features:
     the allocated booth number and the vendor's own submitted logistics for verification,
     uses the mocked-Resend fixture pattern from ticketing-foundation F11 if Resend
     is still unconfigured at build time.
-  status: pending
+  status: done
   milestone: M2
+  completed_at: '2026-08-18T07:14:30.890078+00:00'
 - id: F9
+  contract: contracts/contract-vendor-f9-permit-posture.yaml
   title: Regulatory permit fields — collected, not validated; explicit non-verification
     note surfaced to the show committee
   inline_brief: 'The form collects a phytosanitary/import permit number, a CITES permit
@@ -126,8 +132,9 @@ features:
     an engineering default (see Regulatory Note below). **Done:** admin UI and vendor-facing
     copy both carry the non-verification note; no verification logic exists anywhere
     in the codebase for these three fields.'
-  status: pending
+  status: done
   milestone: M2
+  completed_at: '2026-08-18T07:34:12.536532+00:00'
 - id: F10
   title: Human proof — a real vendor submission end to end, from public form to admin
     approval to confirmation email
@@ -180,15 +187,24 @@ milestones:
   - F7
   - F8
   - F9
-  status: pending
+  status: done
+  gate_ran_at: '2026-08-18T07:42:46.909480+00:00'
+  gate_result: pass
 - id: M3
   title: Human-proven end to end, compliance exposure recorded
   features:
   - F10
   - F11
   status: pending
-last_active_at: '2026-08-18T06:24:58.279980+00:00'
+last_active_at: '2026-08-18T07:34:12.536764+00:00'
 ---
+
+
+
+
+
+
+
 
 
 

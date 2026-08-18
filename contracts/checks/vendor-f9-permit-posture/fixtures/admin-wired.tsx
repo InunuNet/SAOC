@@ -1,6 +1,12 @@
 // FIXTURE — WIRED. Self-test golden for check-admin-permit-fields-rendered.mjs and
 // check-admin-non-verification-note-adjacent.mjs. Must PASS both checks.
-function PermitDetails({ row }: { row: any }) {
+interface PermitFixtureRow {
+  phytosanitaryPermitNumber?: string;
+  citesPermitNumber?: string;
+  foodHandlingCertificateNumber?: string;
+}
+
+function PermitDetails({ row }: { row: PermitFixtureRow }) {
   return (
     <div className="permit-block">
       <dl>
