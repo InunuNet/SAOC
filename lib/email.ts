@@ -19,7 +19,7 @@ export async function sendEmail({
   subject: string;
   react: JSX.Element;
 }): Promise<void> {
-  const from = process.env.RESEND_FROM_ADDRESS ?? 'SAOC <noreply@saoc.co.za>';
+  const from = process.env.RESEND_FROM_ADDRESS ?? 'SAOC <noreply@mail.saoc.co.za>';
   const { error } = await getResend().emails.send({ from, to, subject, react });
   if (error) throw new Error(`Resend send failed: ${error.message}`);
 }

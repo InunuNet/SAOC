@@ -113,6 +113,6 @@ env:
     availability:
       - RUNTIME
   - variable: RESEND_FROM_ADDRESS
-    value: "SAOC <noreply@saoc.co.za>"
+    value: "SAOC <noreply@mail.saoc.co.za>"
     availability:
       - RUNTIME
