@@ -88,8 +88,13 @@ assertions:
 
     - id: A6
       description: >-
-        Regression — every executable check script from F5 (register route) and F6 (review
+        Regression — every top-level check script from F5 (register route) and F6 (review
         workflow) still passes unchanged after F9's edits to the shared email/admin-UI files.
         Each script is invoked exactly per its own declared "Run as:" comment.
+        check-env-scrub-effective.mjs is deliberately excluded from standalone invocation: it
+        is not an independent F5 assertion but an internal helper check-http-rate-limit-per-ip.sh
+        (A9) invokes itself with a scrub env prefix; running it directly with no prefix reads a
+        real .env.local and false-positives on any machine with real credentials. A9's own run
+        already exercises it correctly.
       kind: shell
       command: bash contracts/checks/vendor-f9-permit-posture/check-regression-f5-f6.sh

@@ -223,7 +223,7 @@ Content-Type: application/json
 
 **F7-F8 — Booth allocation & EFT payment:** How the booth fee is paid, how booth numbers are assigned, and the allocation-confirmation email.
 
-**F9 — Regulatory permits:** Adds a non-verification notice to the confirmation copy explaining what SAOC does (and does not) do with permit numbers.
+**F9 — Regulatory permits:** Adds a non-verification notice to the confirmation copy and the admin review UI explaining what SAOC does (and does not) do with permit numbers. Whether SAOC is obliged to verify permit and certificate numbers is a decision for the show committee, not an engineering default.
 
 **F10 — Human end-to-end proof:** Full round trip from submission through approval, with real Firestore and real email delivery.
 

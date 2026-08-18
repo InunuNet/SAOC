@@ -55,24 +55,27 @@ not a gap this contract silently ignores: it is why F9's own feature description
 (`contract-vendor-f9-permit-posture.yaml`) states the same prohibition in narrative form for a
 human/QA reviewer, not just in A5's regex list.
 
-## A6 regression — one pre-existing, unrelated failure observed
+## A6 regression — all 6 unchanged F5/F6 checks pass, one file deliberately excluded
 
-Run 2026-08-18, against the repository baseline (before any F9 edits):
+Run 2026-08-18: all 7 of F6's check scripts pass unchanged
+(`check-additive-patch-injected-time.mjs`, `check-capability-added-and-role-bundles.mjs`,
+`check-closed-transition-machine.mjs`, `check-no-pii-in-logs.mjs`, `check-route-wiring.mjs`,
+`check-zero-authorization-carrythrough.mjs`, `check-http-fails-closed.sh`), and all of F5's
+top-level checks pass unchanged, including A9 (`check-http-rate-limit-per-ip.sh`).
 
-- All 7 of F6's check scripts pass unchanged (`check-additive-patch-injected-time.mjs`,
-  `check-capability-added-and-role-bundles.mjs`, `check-closed-transition-machine.mjs`,
-  `check-no-pii-in-logs.mjs`, `check-route-wiring.mjs`,
-  `check-zero-authorization-carrythrough.mjs`, `check-http-fails-closed.sh`).
-- 7 of F5's 8 check scripts pass unchanged. **`check-env-scrub-effective.mjs` fails in this
-  sandbox** — it asserts that `FIREBASE_ADMIN_*`/`NEXT_PUBLIC_FIREBASE_*` are empty after the
-  real Next.js env-loading path runs, and fails because this development environment has a real
-  `.env.local` with live-looking values loaded. This failure is **present on the unmodified
-  baseline, before any F9 file is touched** — it is an environment condition of this sandbox
-  (a populated `.env.local`), not a regression F9 introduces. A6/the regression runner will
-  faithfully report this failure if run in the same conditions; that is correct behaviour, not
-  a bug in A6. It is not F9's place to alter F5's own check script or its pass/fail semantics.
-  If A6 is red only on `check-env-scrub-effective.mjs`, re-verify F9's own edits (A1-A5) did not
-  touch anything email/env-related before treating it as a real F9 regression.
+`check-env-scrub-effective.mjs`, which lives in F5's checks directory, is deliberately **not**
+invoked standalone by A6's regression runner. It is not an independent assertion in F5's own
+contract (`contract-vendor-f5-register-route.yaml` has no A-id for it) — it is an internal
+helper that `check-http-rate-limit-per-ip.sh` (A9) invokes itself, WITH the identical
+scrub-env prefix it is about to launch the real dev server with (see that script's own "(0)
+Self-verifying scrub" comment and this .mjs's own header comment: "invoked by
+check-http-rate-limit-per-ip.sh with the identical env prefix it uses to launch the real
+server"). An earlier version of A6's regression runner invoked it directly with no scrub
+prefix applied, which made it read a real `.env.local` and false-positive as a "regression" on
+any machine with real credentials configured — that was a bug in the regression runner, not a
+real F5 regression, and not a pre-existing baseline condition. It is fixed: A9 already
+exercises `check-env-scrub-effective.mjs` correctly as part of its own run, and the regression
+runner now skips it explicitly rather than re-invoking it without the prefix it requires.
 
 ## British English / scope note
 

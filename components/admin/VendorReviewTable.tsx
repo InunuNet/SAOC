@@ -99,6 +99,9 @@ export function VendorReviewTable({ submissions }: VendorReviewTableProps) {
                 Category
               </th>
               <th scope="col" className={HEADER_CELL_CLASS}>
+                Permits &amp; Certificates
+              </th>
+              <th scope="col" className={HEADER_CELL_CLASS}>
                 Status
               </th>
               <th scope="col" className={HEADER_CELL_CLASS}>
@@ -122,6 +125,25 @@ export function VendorReviewTable({ submissions }: VendorReviewTableProps) {
                     <span className="text-muted">{row.contactEmail}</span>
                   </td>
                   <td className={BODY_CELL_CLASS}>{row.vendorCategory.join(', ')}</td>
+                  <td className={`${BODY_CELL_CLASS} whitespace-normal align-top`}>
+                    <dl className="space-y-1">
+                      <div>
+                        <dt className="inline text-muted">Phytosanitary/import permit: </dt>
+                        <dd className="inline">{row.phytosanitaryPermitNumber || '—'}</dd>
+                      </div>
+                      <div>
+                        <dt className="inline text-muted">CITES permit: </dt>
+                        <dd className="inline">{row.citesPermitNumber || '—'}</dd>
+                      </div>
+                      <div>
+                        <dt className="inline text-muted">Food-handling certificate: </dt>
+                        <dd className="inline">{row.foodHandlingCertificateNumber || '—'}</dd>
+                      </div>
+                    </dl>
+                    <p className="mt-1 text-[11px] text-muted">
+                      Permit and certificate numbers are recorded as submitted and have not been verified by SAOC.
+                    </p>
+                  </td>
                   <td className={BODY_CELL_CLASS}>
                     <span
                       className={`inline-flex items-center rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${style}`}

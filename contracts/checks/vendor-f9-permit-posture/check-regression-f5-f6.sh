@@ -25,6 +25,17 @@ run_checks() {
     [ -e "$script" ] || continue
     case "$script" in
       *tsconfig*) continue ;;
+      # check-env-scrub-effective.mjs is NOT an independent top-level assertion in F5's own
+      # contract (contract-vendor-f5-register-route.yaml has no A-id for it) -- it is an
+      # internal helper that check-http-rate-limit-per-ip.sh (A9) invokes itself, WITH the
+      # identical scrub env prefix it is about to launch the real dev server with (see that
+      # script's own "(0) Self-verifying scrub" comment and this .mjs's own header: "invoked by
+      # check-http-rate-limit-per-ip.sh with the identical env prefix it uses to launch the
+      # real server"). Running it standalone here, with no scrub prefix applied, makes it read
+      # a real .env.local and false-positive on every machine that has real credentials --
+      # exactly what happened during this contract's own development. A9 below already
+      # exercises it correctly as part of check-http-rate-limit-per-ip.sh's own run.
+      *check-env-scrub-effective.mjs) continue ;;
     esac
 
     # Each check script declares its own required invocation in a "// Run as: ..."
