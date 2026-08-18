@@ -1,0 +1,95 @@
+schema: athanor.contract/v1
+slug: vendor-f9-permit-posture
+goal: >-
+  Mission vendor-registration F9 — the three regulatory permit/certificate fields
+  (phytosanitaryPermitNumber, citesPermitNumber, foodHandlingCertificateNumber; F4) are
+  collected but never validated. F9 does not add validation. It makes the unverified status
+  visible in three places: the admin review UI (F6), the vendor-facing confirmation email
+  (F5), and docs/vendor-registration.md's committee-facing note. It also proves no
+  verification/lookup logic was quietly added anywhere, and that F5/F6's own check scripts
+  still pass unchanged. Full decision record and defeating-mutation catalogue:
+  contracts/golden/vendor-f9-permit-posture/README.md
+created_at: '2026-08-18'
+autonomy: high
+
+features:
+  - id: F9
+    name: >-
+      Two source edits, one doc edit, zero new logic. (1)
+      emails/VendorRegistrationConfirmation.tsx (F5) — add vendor-facing copy stating permit
+      and certificate numbers are recorded as submitted, not verified by SAOC (wording must
+      satisfy /not verifi|does not verify/i), and that ensuring their validity remains the
+      vendor's own responsibility (wording must satisfy /legal responsibility/i). No prop
+      signature change — this is static copy, not data-driven. (2) The admin review surface
+      (components/admin/VendorReviewTable.tsx and/or a file under app/admin/vendors/) — render
+      all three permit/certificate fields (phytosanitaryPermitNumber, citesPermitNumber,
+      foodHandlingCertificateNumber) from the existing VendorSubmission data already passed
+      in, with the exact adjacent note "Permit and certificate numbers are recorded as
+      submitted and have not been verified by SAOC." within ~20 lines of at least one of the
+      three field references in the same file. No prop signature change — the fields already
+      exist on VendorSubmission (types/index.ts). (3) docs/vendor-registration.md — add one
+      sentence, in the same sentence, naming "show committee", a verification-related term,
+      and a decision/default framing (e.g. "Whether SAOC is obliged to verify permit and
+      certificate numbers is a decision for the show committee, not an engineering default."),
+      replacing or supplementing the existing F9 placeholder line. **Explicitly prohibited**:
+      any verification, lookup, or external-registry-check logic for these three fields,
+      anywhere in lib/, app/, or components/ — this is a hard negative (A5). British English.
+      No wild-orchid-conservation content; CITES wording stays about permit numbers for
+      cultivated plant sales.
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-f9-permit-posture/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        Admin review UI renders all three permit/certificate fields (positive discriminator:
+        fails pre-F9, since VendorReviewTable.tsx currently shows only business name, contact,
+        category, status, actions).
+      kind: shell
+      command: node contracts/checks/vendor-f9-permit-posture/check-admin-permit-fields-rendered.mjs
+
+    - id: A2
+      description: >-
+        A specific non-verification note is co-located (within 20 lines) with the permit
+        fields in the admin UI, not merely present anywhere in the file. Self-tested against a
+        no-note fixture and a note-present-but-far-away fixture — each must fail naming its own
+        distinct failure.
+      kind: shell
+      command: node contracts/checks/vendor-f9-permit-posture/check-admin-non-verification-note-adjacent.mjs
+
+    - id: A3
+      description: >-
+        Vendor-facing confirmation email states both that permits are unverified and that
+        validity remains the vendor's legal responsibility (both phrases required
+        independently; self-tested against a fixture missing both).
+      kind: shell
+      command: node contracts/checks/vendor-f9-permit-posture/check-email-non-verification-note.mjs
+
+    - id: A4
+      description: >-
+        docs/vendor-registration.md states, in one sentence, that permit verification is a
+        show-committee decision, not an engineering default. Sentence-level proximity required
+        — self-tested against a fixture where the three terms appear in the same file but
+        different, unrelated sentences (the real pre-F9 doc's own shape), which must fail.
+      kind: shell
+      command: node contracts/checks/vendor-f9-permit-posture/check-docs-committee-note.mjs
+
+    - id: A5
+      description: >-
+        No verification/lookup logic exists anywhere under lib/, app/, components/ for the
+        three permit fields (negative assertion). Self-tested against an injected violation
+        fixture (must be flagged) and a clean fixture (must not be flagged).
+      kind: shell
+      command: node contracts/checks/vendor-f9-permit-posture/check-no-verification-logic-exists.mjs
+
+    - id: A6
+      description: >-
+        Regression — every executable check script from F5 (register route) and F6 (review
+        workflow) still passes unchanged after F9's edits to the shared email/admin-UI files.
+        Each script is invoked exactly per its own declared "Run as:" comment.
+      kind: shell
+      command: bash contracts/checks/vendor-f9-permit-posture/check-regression-f5-f6.sh
