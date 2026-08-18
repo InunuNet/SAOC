@@ -1,0 +1,245 @@
+schema: athanor.contract/v1
+slug: vendor-f8-approval-email
+goal: >-
+  Mission vendor-registration F8 -- the vendor approval confirmation email, sent ONLY from
+  the F6 admin approval action (POST /api/admin/vendors/[id]/review with action='approve'),
+  never from F5's public route and never on a 'reject'/'start-review' action. Two new files
+  (lib/vendor-approval-confirmation.ts -- the injectable-mailer send function, mirroring F5's
+  lib/vendor-registration-confirmation.ts exactly; emails/VendorApprovalConfirmation.tsx --
+  the template, exporting two pure formatting helpers so a missing boothNumber or a missing
+  optional logistics field NEVER renders the literal string "undefined") and one edit
+  (app/api/admin/vendors/[id]/review/route.ts -- wires the send, strictly after
+  ref.update(decision.patch) commits, through the REAL deliverConfirmationEmailAfterCommit()
+  already shipped by ticketing-foundation F10/F11, so an email failure can never roll back or
+  block the status transition). No new capability, no new VendorSubmission field, no change to
+  lib/vendor-review.ts's closed transition machine or lib/vendor-payment.ts. Full decision
+  record, every judgement call, and every defeating mutation:
+  contracts/golden/vendor-f8-approval-email/README.md
+created_at: '2026-08-18'
+autonomy: high
+
+features:
+  - id: F8
+    name: >-
+      Two new files, one edit, zero new VendorSubmission fields, zero changes to
+      lib/vendor-review.ts or lib/vendor-payment.ts.
+      (1) lib/vendor-approval-confirmation.ts (new) -- exports BOOTH_NUMBER_PENDING_LABEL
+      ('To be confirmed') and LOGISTICS_NOT_SPECIFIED_LABEL ('Not specified') as top-level
+      named constants (re-exported from emails/VendorApprovalConfirmation.tsx, not
+      re-declared); VendorApprovalConfirmationInput { businessName: string;
+      contactPersonName: string; contactEmail: string; boothNumber?: string | null;
+      boothType?: VendorBoothType | null; staffPerDay?: number | null; powerRequired: boolean;
+      waterRequired?: boolean | null; loadInSlot?: string | null; loadOutSlot?: string | null };
+      VendorApprovalConfirmationMailer { send(args: { to: string; subject: string; react:
+      ReactElement }): Promise<void> } -- deliberately narrow, matches only what
+      lib/email.ts's real sendEmail already satisfies structurally, same pattern as F5's
+      VendorRegistrationConfirmationMailer; SendVendorApprovalConfirmationDeps { mailer?:
+      VendorApprovalConfirmationMailer }; sendVendorApprovalConfirmationEmail(input, deps):
+      Promise<void> -- deps.mailer defaults to { send: sendEmail } (the REAL lib/email.ts
+      export, the project's one real Resend touchpoint), renders
+      emails/VendorApprovalConfirmation.tsx with every field copied through verbatim (no
+      defaulting/formatting happens in this file -- that is the template's job, so the same
+      formatting logic is exercised whether the caller is this function or a direct render()
+      call in a test). Subject: 'Your SAOC vendor registration has been approved'. Contains NO
+      console.* call anywhere in its body -- businessName/contactEmail/contactPersonName are
+      POPIA-relevant submitter PII, same rule F5's lib/vendor-registration-confirmation.ts
+      already follows.
+      (2) emails/VendorApprovalConfirmation.tsx (new) -- modelled on
+      emails/VendorRegistrationConfirmation.tsx (no invented brand colours/typography per
+      project CLAUDE.md), no permit non-verification note (that's F9's later edit, same
+      boundary F5's own template already documents for its own copy). Exports
+      BOOTH_NUMBER_PENDING_LABEL, LOGISTICS_NOT_SPECIFIED_LABEL, formatBoothNumber(value:
+      string | null | undefined): string (trims, falls back to BOOTH_NUMBER_PENDING_LABEL on
+      empty/null/undefined -- NEVER template-literal-interpolates the raw value), and
+      formatOptionalField(value: string | number | boolean | null | undefined): string
+      (null/undefined/empty-string -> LOGISTICS_NOT_SPECIFIED_LABEL; boolean -> 'Yes'/'No';
+      otherwise String(value) -- NEVER a bare `${value}` interpolation of a possibly-undefined
+      field). The component body calls these two helpers for every one of: boothNumber,
+      boothType, staffPerDay, powerRequired, waterRequired, loadInSlot, loadOutSlot -- no field
+      is interpolated directly into JSX text without going through one of them first. Renders
+      confirmation copy plus a distinct 'Your submitted logistics (please verify)' section
+      listing all seven fields above, so the vendor can catch a data-entry error before show
+      day (mission brief's own wording).
+      (3) app/api/admin/vendors/[id]/review/route.ts (edit) -- imports
+      sendVendorApprovalConfirmationEmail from '@/lib/vendor-approval-confirmation' and
+      deliverConfirmationEmailAfterCommit from '@/lib/confirmation-email' (the REAL, already-
+      shipped ticketing-foundation F10/F11 generic wrapper -- never reimplemented). Strictly
+      AFTER `await ref.update(decision.patch)` succeeds, gated on `body.action === 'approve'`
+      (not on decision.patch.status, for call-site clarity -- these are equivalent under F6's
+      closed machine since only 'approve' produces 'approved', but the action-string gate
+      reads unambiguously at the call site and is what the discriminator checks), reads the
+      submission's OWN current data from the snapshot already fetched earlier in this same
+      handler (never a second Firestore read) and calls
+      `await deliverConfirmationEmailAfterCommit(() => sendVendorApprovalConfirmationEmail({
+      ...fields from snapshot.data()... }), onError)` where onError logs only a generic
+      message plus `error instanceof Error ? error.message : 'unknown error'` -- never a
+      business/contact field. The 'reject' and 'start-review' actions call this ZERO times.
+      The existing 200/409/404/500 response shapes and status codes are UNCHANGED -- this
+      feature adds a side effect only, never a new response branch.
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-f8-approval-email/README.md
+  - contracts/golden/vendor-f8-approval-email/vendors-review-route-wired.expected.ts.txt
+  - contracts/checks/vendor-f8-approval-email/tsconfig.typecheck.json
+  - contracts/checks/vendor-f8-approval-email/fixtures/vendor-f8-approval-email-typecheck.ts
+  - contracts/checks/vendor-f8-approval-email/fixtures/vendors-review-route-unwired-no-email.fixture.ts.txt
+  - contracts/checks/vendor-f8-approval-email/fixtures/vendors-review-route-unwired-both-actions.fixture.ts.txt
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The whole project still type-checks under strict TypeScript after both new files and the route edit.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof (not source-grep) of lib/vendor-approval-confirmation.ts's and
+        emails/VendorApprovalConfirmation.tsx's exported shapes: a fully-typed
+        VendorApprovalConfirmationInput literal with every optional field both present and
+        omitted, formatBoothNumber/formatOptionalField's parameter and return types, and the
+        two named label constants typing as string. Defeating mutation: a signature drift
+        (e.g. VendorApprovalConfirmationInput losing a field, or formatOptionalField's
+        parameter type narrowing to exclude boolean) that a runtime-only check wouldn't catch
+        until it crashed.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/vendor-f8-approval-email/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        Behavioural, full-data proof via a real @react-email/components render() call on
+        VendorApprovalConfirmation: given every field populated (a real boothNumber, boothType,
+        staffPerDay, powerRequired=true, waterRequired=true, loadInSlot, loadOutSlot), the
+        rendered HTML contains every one of those seven values as legible text. Defeating
+        mutation: dropping a field from the rendered template entirely, or rendering it only
+        into a non-visible attribute.
+      command: >-
+        npx tsx contracts/checks/vendor-f8-approval-email/check-full-logistics-render.mjs
+
+    - id: A4
+      description: >-
+        THE "undefined" GATE -- a COMBINED-FAILURE case: boothNumber, boothType, staffPerDay,
+        waterRequired, loadInSlot, and loadOutSlot are ALL undefined in the same render call
+        (powerRequired stays a real boolean, since it is non-optional on VendorSubmission).
+        Proves the rendered HTML string contains the substring "undefined" ZERO times and
+        contains BOOTH_NUMBER_PENDING_LABEL ('To be confirmed') at least once and
+        LOGISTICS_NOT_SPECIFIED_LABEL ('Not specified') at least five times (once per missing
+        logistics field). A second, independent case proves boothNumber alone missing (every
+        other field populated) still renders correctly, and a third proves an empty-string
+        boothNumber ('' or '   ') is treated as missing, not as a literal empty booth number --
+        so this assertion names three failure modes, not one, and the combined case proves
+        neither missing-boothNumber nor missing-logistics masks the other. Defeating mutation:
+        `Booth: ${boothNumber}` or `Staff: ${staffPerDay} per day` used as a bare template
+        literal anywhere in the component instead of routing through
+        formatBoothNumber/formatOptionalField first.
+      command: >-
+        npx tsx contracts/checks/vendor-f8-approval-email/check-undefined-gate.mjs
+
+    - id: A5
+      description: >-
+        ROUTE-WIRING DISCRIMINATOR, both directions, on app/api/admin/vendors/[id]/review/
+        route.ts. Same technique as F6's A8/F7's A9: a source-level discriminator, self-tested
+        against TWO frozen KNOWN-UNWIRED fixtures (must reject both) and this contract's own
+        architect-authored WIRED golden (must accept), before it is ever trusted against the
+        real repository file. Proves: (a) the file imports sendVendorApprovalConfirmationEmail
+        from '@/lib/vendor-approval-confirmation' and deliverConfirmationEmailAfterCommit from
+        '@/lib/confirmation-email'; (b) exactly ONE call site of
+        sendVendorApprovalConfirmationEmail( exists in the whole file; (c) that call site is
+        wrapped inside deliverConfirmationEmailAfterCommit(() => ...) -- never a bare
+        `await sendVendorApprovalConfirmationEmail(...)`; (d) that call site sits lexically
+        inside an `if (body.action === 'approve')` block (brace-matched, not merely "appears
+        after the string 'approve' somewhere"), so it can never fire for 'reject' or
+        'start-review'; (e) that call site's source offset is strictly AFTER
+        `ref.update(decision.patch)`'s offset, so the write commits before any email attempt
+        is made. DEFEATING MUTATION: deleting the email call entirely (fixture 1: KNOWN-
+        UNWIRED-NO-EMAIL); moving the call outside the approve guard so it also fires for
+        reject (fixture 2: KNOWN-UNWIRED-BOTH-ACTIONS); calling
+        sendVendorApprovalConfirmationEmail directly without the deliverConfirmationEmail
+        AfterCommit wrapper (a throw would then propagate and turn a successful approval into
+        a 500); or moving the call before ref.update.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f8-approval-email/check-route-wiring.mjs
+
+    - id: A6
+      description: >-
+        EMAIL-FAILURE-NEVER-BLOCKS proof -- a behavioural test against the REAL,
+        already-shipped deliverConfirmationEmailAfterCommit (lib/confirmation-email.ts,
+        ticketing-foundation F10/F11) composed with the REAL
+        sendVendorApprovalConfirmationEmail and a fixture mailer that rejects: the composed
+        call resolves (does not throw) and onError is invoked exactly once with the real
+        rejection reason. A second case with a resolving fixture mailer proves the composed
+        call resolves and onError is invoked exactly zero times. This does not re-derive
+        deliverConfirmationEmailAfterCommit's own generic contract (already proven by F10/F11's
+        own tests) -- it proves THIS feature's specific composition doesn't reintroduce a
+        second, unwrapped call path or a swallowing try/catch that changes the arity/timing of
+        onError. Defeating mutation: an inner try/catch around sendVendorApprovalConfirmation
+        Email's own render/send call that silently resolves instead of letting the rejection
+        reach deliverConfirmationEmailAfterCommit's own catch.
+      command: >-
+        npx tsx contracts/checks/vendor-f8-approval-email/check-email-failure-isolation.mjs
+
+    - id: A7
+      description: >-
+        NO-PII-IN-LOGS -- lib/vendor-approval-confirmation.ts contains ZERO console.* calls of
+        any kind (matching F5's lib/vendor-registration-confirmation.ts rule exactly, for the
+        same reason: businessName/contactEmail/contactPersonName are POPIA-relevant submitter
+        PII). app/api/admin/vendors/[id]/review/route.ts's onError callback for the new email
+        call logs only a generic message plus error.message -- never businessName,
+        contactEmail, contactPersonName, boothNumber, boothType, staffPerDay, waterRequired,
+        loadInSlot, or loadOutSlot as a real expression. Extends F6's own
+        check-no-pii-in-logs.mjs discipline to the new call site rather than re-deriving it.
+      command: >-
+        node contracts/checks/vendor-f8-approval-email/check-no-pii-in-logs.mjs
+
+    - id: A8
+      description: >-
+        NO-MAGIC-STRINGS proof: BOOTH_NUMBER_PENDING_LABEL and LOGISTICS_NOT_SPECIFIED_LABEL
+        are exported top-level named constants from emails/VendorApprovalConfirmation.tsx (and
+        re-exported, not re-declared, from lib/vendor-approval-confirmation.ts), and
+        formatBoothNumber/formatOptionalField reference the named identifiers -- not a
+        re-inlined literal 'To be confirmed'/'Not specified' string duplicated elsewhere in
+        either file. Defeating mutation: hardcoding a second, independently-spelled fallback
+        string inside the component's JSX instead of calling the exported helper.
+      command: >-
+        node contracts/checks/vendor-f8-approval-email/check-named-constants.mjs
+
+    - id: A9
+      description: >-
+        CREDENTIAL-FREE MAILER proof -- lib/vendor-approval-confirmation.ts imports neither
+        'resend' nor reads process.env.RESEND_API_KEY/RESEND_FROM_ADDRESS anywhere in its own
+        body; its only real-delivery touchpoint is `{ send: sendEmail }` imported from
+        '@/lib/email' (the project's single real Resend client), exactly mirroring F5's
+        lib/vendor-registration-confirmation.ts. Every other check in this contract (A2-A6)
+        uses a fixture VendorApprovalConfirmationMailer exclusively, never the real sendEmail
+        export -- offline and credential-free throughout. A real Resend send is explicitly
+        UNPROVEN by this contract; see the golden README's "What this contract does NOT
+        prove."
+      command: >-
+        node contracts/checks/vendor-f8-approval-email/check-credential-free-mailer.mjs
+
+    - id: A10
+      description: >-
+        F6 REGRESSION GATE -- re-runs F6's own real check scripts (check-closed-transition-
+        machine.mjs, check-additive-patch-injected-time.mjs, check-zero-authorization-
+        carrythrough.mjs, check-route-wiring.mjs, check-no-pii-in-logs.mjs), completely
+        unchanged, against the post-F8 repository, proving F8's edit to
+        app/api/admin/vendors/[id]/review/route.ts does not alter F6's closed status-
+        transition machine, its additive-only patch shape, its capability-gate wiring, or its
+        zero-authorization carry-through. A red result here means F8 broke F6 -- no edit to any
+        F6 check script is expected or acceptable.
+      command: >-
+        node contracts/checks/vendor-f8-approval-email/check-f6-regression.mjs
+
+    - id: A11
+      description: >-
+        F7 REGRESSION GATE -- re-runs F7's own check-f6-regression.mjs (which itself re-runs
+        F6's suite) and check-admin-payment-route-wiring.mjs unchanged, proving F8 (which
+        touches only the review route, never app/api/admin/vendors/[id]/payment/route.ts or
+        lib/vendor-payment.ts) leaves F7's booth-allocation/payment path fully intact.
+      command: >-
+        node contracts/checks/vendor-f8-approval-email/check-f7-regression.mjs
+
+    - id: A12
+      description: pnpm lint passes with zero errors after both new files and the route edit.
+      command: pnpm lint

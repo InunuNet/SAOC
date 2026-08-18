@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/vendor-approval-confirmation.ts",
+    "../../../emails/VendorApprovalConfirmation.tsx",
+    "../../../lib/confirmation-email.ts",
+    "../../../lib/email.ts",
+    "../../../types/index.ts",
+    "fixtures/vendor-f8-approval-email-typecheck.ts"
+  ],
+  "exclude": []
+}

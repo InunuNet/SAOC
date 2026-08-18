@@ -12,16 +12,11 @@ import { sendVendorApprovalConfirmationEmail } from '@/lib/vendor-approval-confi
 import type { VendorSubmissionStatus } from '@/types/index';
 
 /**
- * POST /api/admin/vendors/[id]/review -- admin-only status-transition action (mission
- * vendor-registration F6), extended by F8 to send the vendor approval confirmation email
- * strictly after the status-transition write commits, ONLY for the 'approve' action. Same
- * getAdminSession-then-hasCapability gate as app/api/admin/vendors/route.ts, wired
- * identically. The REAL decideVendorStatusTransition() (lib/vendor-review.ts, F6) is the ONLY
- * place the submitted/under-review/approved/rejected machine is evaluated -- never
- * reimplemented here. ref.update(decision.patch) is used -- a full-document overwrite is
- * never used -- so the 3-key patch can only ever ADD to the document, never wipe the other 31
- * submitted fields. See contracts/golden/vendor-f6-review-workflow/README.md and
- * contracts/golden/vendor-f8-approval-email/README.md.
+ * KNOWN-UNWIRED fixture #2 (F8 A5 self-test) -- the email call exists and IS wrapped in
+ * deliverConfirmationEmailAfterCommit, but it sits OUTSIDE the `if (body.action === 'approve')`
+ * guard: it fires unconditionally after every successful transition, including 'reject' and
+ * 'start-review'. This is the direct encoding of "no email on reject" being violated. The
+ * discriminator MUST reject this.
  */
 const VALID_ACTIONS: readonly VendorReviewAction[] = ['start-review', 'approve', 'reject'];
 
@@ -60,8 +55,6 @@ export async function POST(
 
   const reviewerEmail = session.decodedToken.email;
   if (!reviewerEmail) {
-    // Every real admin session already requires a verified email (isAdminToken) -- fail
-    // closed rather than attribute a review decision to nobody.
     console.error('[admin/vendors/review] Admin session has no email; refusing to attribute a review.');
     return NextResponse.json({ error: 'Unable to attribute this review.' }, { status: 500 });
   }
@@ -88,30 +81,28 @@ export async function POST(
   try {
     await ref.update(decision.patch);
 
-    if (body.action === 'approve') {
-      const data = snapshot.data() ?? {};
-      await deliverConfirmationEmailAfterCommit(
-        () =>
-          sendVendorApprovalConfirmationEmail({
-            businessName: data.businessName,
-            contactPersonName: data.contactPersonName,
-            contactEmail: data.contactEmail,
-            boothNumber: data.boothNumber ?? null,
-            boothType: data.boothType ?? null,
-            staffPerDay: data.staffPerDay ?? null,
-            powerRequired: data.powerRequired,
-            waterRequired: data.waterRequired ?? null,
-            loadInSlot: data.loadInSlot ?? null,
-            loadOutSlot: data.loadOutSlot ?? null,
-          }),
-        (error) => {
-          console.error(
-            '[admin/vendors/review] Failed to send approval confirmation email:',
-            error instanceof Error ? error.message : 'unknown error',
-          );
-        },
-      );
-    }
+    const data = snapshot.data() ?? {};
+    await deliverConfirmationEmailAfterCommit(
+      () =>
+        sendVendorApprovalConfirmationEmail({
+          businessName: data.businessName,
+          contactPersonName: data.contactPersonName,
+          contactEmail: data.contactEmail,
+          boothNumber: data.boothNumber ?? null,
+          boothType: data.boothType ?? null,
+          staffPerDay: data.staffPerDay ?? null,
+          powerRequired: data.powerRequired,
+          waterRequired: data.waterRequired ?? null,
+          loadInSlot: data.loadInSlot ?? null,
+          loadOutSlot: data.loadOutSlot ?? null,
+        }),
+      (error) => {
+        console.error(
+          '[admin/vendors/review] Failed to send approval confirmation email:',
+          error instanceof Error ? error.message : 'unknown error',
+        );
+      },
+    );
 
     return NextResponse.json({ success: true, status: decision.patch.status });
   } catch (error) {

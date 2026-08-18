@@ -1587,3 +1587,45 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
   History is truthful in content but lying in labels, and it races the orchestrator's own
   staging. Gated off (chmod -x) 2026-08-18; needs a contract before re-enabling: label
   accuracy + never staging files outside .agent/memory/.
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818082533.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818082533.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818083043.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818083042.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818083551.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818083551.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818084059.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818084100.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818084608.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818084608.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818085116.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818085116.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818085626.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818085626.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818090135.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818090134.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818090643.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818090643.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818091153.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818091156.txt
+
+- [P3] F8 check A4 blind to bare-JSX interpolation of undefined (renders blank, not "undefined"); strengthen with a raw-`{boothNumber}`-as-JSX-child grep or non-empty-recap-line assertion. QA verdict PASS, non-blocking. (2026-08-18)
