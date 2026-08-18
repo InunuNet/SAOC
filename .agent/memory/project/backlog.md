@@ -2094,3 +2094,45 @@ contradicts current behaviour. Delete.
 Related: header comments in `lib/confirmation-email.ts` are stale — they still describe an
 earlier "minimal stub, doesn't call Resend" state. The code genuinely calls Resend and generates
 real QR images now. Comments should be corrected; they actively mislead a reader.
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818230936.txt
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-18-model-env-integrity.md
+
+## P1 — Ticket delivery: QR on the paid page + buyer details + download + email from info@saoc.co.za
+
+**Brad's instruction, 2026-08-18.** Supersedes/absorbs the earlier "QR is email-only" P1 above.
+
+Required end state for a paid ticket:
+1. **QR rendered on the confirmation (paid) page** — not email-only. `lib/qr.ts:generateBookingRefQrDataUri()`
+   already exists and works; the page (`app/(marketing)/tickets/confirmation/page.tsx`) currently
+   renders no image at all, just the ref as text.
+2. **Buyer details shown on that page** alongside the QR (attendee name, ticket type, amount,
+   booking ref — decide the exact set against what the order/position docs actually hold).
+   NOTE: the status endpoint currently returns `{ status }` ONLY and its own comment says that
+   minimalism is a deliberate security mitigation — booking refs are 60-bit and unguessable, but
+   anyone holding a ref (e.g. a photo of a ticket) can already see its state. Widening that
+   endpoint to include buyer PII needs a deliberate decision, not a quiet change — see
+   `app/api/tickets/status/route.ts` comments. Likely correct approach: render details
+   server-side on the page from the Admin SDK rather than widening the public JSON endpoint.
+3. **Download option** — attendee can save the ticket (PDF or image). None exists today; there is
+   no PDF generation anywhere in the codebase.
+4. **Emailed from `info@saoc.co.za`.**
+
+**BLOCKER on item 4 — must be resolved before it can work:** email currently sends FROM
+`tickets@tickets.saoc.co.za` (`lib/email.ts:TICKETS_FROM_ADDRESS`). `info@saoc.co.za` is on the
+APEX domain, and only the `tickets.` and `forms.` SUBDOMAINS are verified at Resend. The apex
+`saoc.co.za` is NOT a verified Resend sending domain — its DNS still carries legacy cPanel mail
+config (SPF `v=spf1 ip4:164.160.89.117 +a +mx ~all`, MX `0 saoc.co.za`). Sending from
+`info@saoc.co.za` will FAIL exactly as `tickets.saoc.co.za` did before verification.
+
+To send from the apex, `saoc.co.za` must be added and verified at Resend — and its DNS is the
+LIVE mail domain for the council's existing mailboxes, so adding Resend SPF/DKIM there must not
+break inbound/existing mail. That is a materially riskier change than the subdomain setup and
+needs care. Related in-flight work: the reply-to feature (spec `reply-to-header-fix`) sets
+`reply_to: info@saoc.co.za`, which achieves "replies reach info@" WITHOUT touching the apex
+sending domain — worth confirming with Brad whether reply-to satisfies the intent, or whether he
+specifically wants the visible FROM to read info@saoc.co.za.
+
+**Priority:** P1, before public ticket sales. Item 1 (QR on page) is the cheapest and removes
+email deliverability from the critical path of door check-in.
