@@ -615,6 +615,15 @@ Using the F12 test buyer: request a resend from the recovery form, then follow t
 from the email and confirm the tickets come back. The recovery token is a bearer credential —
 it belongs in the email and the URL, never in a log or a screenshot shared onward.
 
+## Vendor registration F10 — human proof (Brad, ~10 min)
+
+One real end-to-end vendor submission on the deployed dev site:
+1. Submit the public form at /national-show/vendors (register) with realistic test data — note the reference from the confirmation email.
+2. In /admin/vendors, approve the submission and set a booth number.
+3. Confirm the approval email arrives with the booth number rendered (not "To be confirmed", not "null").
+4. Optionally upload a proof-of-payment file and flag payment received in the review UI.
+Mark F10 done with: python3 execution/mission.py checkpoint --feature F10 --status done
+
 ## Standing constraint
 
 Never delete any Firestore or Sanity document. Deletion is Brad's decision alone.
