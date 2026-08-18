@@ -1,0 +1,57 @@
+schema: athanor.contract/v1
+slug: comms-relay-truncation
+goal: "watch_eve_comms.sh relays the FULL latest message block, not just its header line"
+created_at: '2026-08-18'
+autonomy: high
+architect: "orchestrator (single-file fix, decision-tree step 4)"
+
+description: |
+  Bug (reported downstream as UPSTREAM ISSUE): .agent/pulse/registry/watch_eve_comms.sh:48
+  builds the relayed message with `grep -i "\[${AGENT}" "$COMMS" | tail -1`, which captures
+  ONLY the last matching LINE — i.e. the message header. The body is never relayed. The
+  2026-08-17 23:29 relay of the Alembic→Athanor message therefore delivered a title with
+  no trace and no "two things".
+
+  Fix (surgical, one file):
+  1. Add a function `extract_latest_block <comms_file> <agent>` to the script:
+     - find the LAST line matching `\[<agent>` case-insensitively (same match semantics
+       as today: `grep -in "\[${AGENT}"` | tail -1 | cut -d: -f1)
+     - print from that line through end-of-file, stopping BEFORE the next line starting
+       with `## [` (a new message header)
+     - cap output at 200 lines (safety against runaway blocks)
+     - trim trailing blank lines for deterministic output
+     - if no line matches, print exactly: (new message)
+     - bash 3.2 / BSD awk compatible (macOS); no associative arrays, no GNU-only flags
+  2. Replace the line-48 single-line grep with `LATEST=$(extract_latest_block "$COMMS" "$AGENT")`
+  3. Wrap the existing top-level loop in a `main()` function invoked only when the script
+     is executed directly (`[ "${BASH_SOURCE[0]}" = "$0" ] && main`), so the function is
+     testable via `source` without side effects (no mkdir, no curl, no file writes).
+  Nothing else in the script changes.
+
+features:
+  - id: F1
+    name: "Full-block extraction in watch_eve_comms.sh relay"
+    status: done
+
+goldens:
+  - .agent/memory/project/specs/comms-relay-truncation/goldens/sample_comms.md
+  - .agent/memory/project/specs/comms-relay-truncation/goldens/expected_block.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "Script passes bash syntax check"
+      command: "bash -n .agent/pulse/registry/watch_eve_comms.sh && echo ok"
+    - id: A2
+      description: "Sourcing the script is side-effect free and defines extract_latest_block"
+      command: "OUT=$(bash -c 'set +e; source .agent/pulse/registry/watch_eve_comms.sh; declare -f extract_latest_block >/dev/null && echo sourced-ok'); [ \"$OUT\" = \"sourced-ok\" ] && echo ok"
+    - id: A3
+      description: "Extraction of latest AL block matches golden expected_block.md exactly"
+      command: "bash -c 'source .agent/pulse/registry/watch_eve_comms.sh; extract_latest_block .agent/memory/project/specs/comms-relay-truncation/goldens/sample_comms.md AL' | diff - .agent/memory/project/specs/comms-relay-truncation/goldens/expected_block.md && echo ok"
+    - id: A4
+      description: "No-match agent falls back to literal '(new message)'"
+      command: "OUT=$(bash -c 'source .agent/pulse/registry/watch_eve_comms.sh; extract_latest_block .agent/memory/project/specs/comms-relay-truncation/goldens/sample_comms.md ZZZQ'); [ \"$OUT\" = \"(new message)\" ] && echo ok"
+    - id: A5
+      description: "The old header-only extraction pattern is gone"
+      command: "! grep -q 'grep -i \"\\\\\\[\\${AGENT}\" \"\\$COMMS\" 2>/dev/null | tail -1' .agent/pulse/registry/watch_eve_comms.sh && echo ok"

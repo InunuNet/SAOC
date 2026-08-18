@@ -1239,3 +1239,11 @@ that reads as deliberate six months later.
 **How to apply:** after any @qa mutation pass, run `git status --short` over `lib/ app/ sanity/
 scripts/ emails/` yourself before committing anything. Do not accept the agent's own
 clean-tree claim — it costs one command to check and the failure mode is silent.
+
+## Comms relay must extract blocks, not lines (2026-08-18)
+watch_eve_comms.sh relayed inter-agent messages with `grep | tail -1` — every relayed
+message was silently truncated to its header line. Downstream agents received titles
+promising content that never arrived. Lesson: any "relay the latest message" mechanism
+must extract the full block (header → next header/EOF), and a relay that can only ever
+emit one line is a truncation bug waiting to be noticed. Fixed via
+contract comms-relay-truncation (extract_latest_block, source-safe main() wrapper).
