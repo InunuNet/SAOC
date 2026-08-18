@@ -16,6 +16,15 @@ reconciliation, no alert" (`.agent/memory/project/backlog.md`). See
    (A2) proves both halves of that filter independently, with a paid-order-with-stale-expiry
    negative control too.
 
+   **Infra dependency**: this is a composite (`status ==` + `expiresAt <`) Firestore query,
+   which requires a composite index on `orders(status, expiresAt)`. `firebase.json` had no
+   `firestore` key at all before F1, so no index was ever deployed — @dev added
+   `firestore.indexes.json`, wired it into `firebase.json`, and deployed it to `saoc-webapp`
+   under the standing deploy authorization. Without that index, A3/A4 fail with
+   `FAILED_PRECONDITION`, which is an infra-not-provisioned failure, not a defect in
+   `findStrandedOrders()` itself — noted here so it isn't rediscovered from scratch later if
+   this feature is ever redeployed to a fresh project.
+
 2. **Recovery — deliberately NOT built in this contract.** The mission brief asks whether
    reconciliation should ask PayFast about each stranded order rather than guessing from local
    state, and whether to auto-settle a gateway-confirmed order. Investigated and rejected for
@@ -24,8 +33,8 @@ reconciliation, no alert" (`.agent/memory/project/backlog.md`). See
      `app/api/tickets/itn/route.ts` step 4) requires the **exact ITN field set PayFast itself
      posted**, replayed back with a matching signature. It cannot be used to ask "was
      `m_payment_id X` ever paid?" for an order that never received an ITN at all —
-     `G08QJQK278NY`, one of the three real stranded orders, is exactly that case. There is no
-     `pf_payment_id` on file to query with either.
+     `SAOC-2027-G08QJQK278NY`, one of the real stranded orders, is exactly that case. There is
+     no `pf_payment_id` on file to query with either.
    - PayFast does publish a separate merchant "Transaction Query" API
      (`api.payfast.co.za`, header-based `merchant-id`/`version`/`timestamp`/`signature` auth —
      a genuinely different signing scheme from the passphrase-in-body one this codebase already
@@ -44,7 +53,7 @@ reconciliation, no alert" (`.agent/memory/project/backlog.md`). See
      never imports `markOrderAndPositionPaidByPaymentId` (the only function in this codebase
      that can flip `status` to `'paid'`) or `pf_payment_id`/PayFast HTTP calls of any kind.
      `check-live-detect-and-mark.mjs` (A4) asserts `status`/`amount`/`gatewayPaymentId`/
-     `purchasedAt` are unchanged after a real live run against the three known stranded orders.
+     `purchasedAt` are unchanged after a real live run against the known stranded orders.
 
 3. **Alerting**: `sendReconciliationAlert()` (new, reuses `lib/email.ts`'s `sendEmail` +
    `resolveReplyTo()`) sends ONE real email, to a real recipient
@@ -77,47 +86,63 @@ reconciliation, no alert" (`.agent/memory/project/backlog.md`). See
    re-inclusion halves against a fake store; `check-live-detect-and-mark.mjs` (A4) proves the
    exclusion half against real Firestore with a real write.
 
-## A4 mutates live Firestore — on purpose, on a leash
+## A3 is dynamic; A4's write leash is not (on purpose)
 
-`check-live-detect-and-mark.mjs` (A4) is the one script in this contract permitted to write to
-live Firestore. That is a deliberate, disclosed exception, not an oversight — reviewed against
-this project's own `contract_checks_mutate_live_content` incident memory (a prior contract
-check's sentinel corruption sat on the deployed site for three days before anyone noticed,
-because the write wasn't leashed and the residue alert went to a log nobody read).
+Both A3 and A4 originally hardcoded three booking refs transcribed from the P1 backlog entry.
+That transcription dropped the real `SAOC-2027-` prefix (see `lib/booking-ref.ts`'s
+`BOOKING_REF_PREFIX`), so the hardcoded refs never resolved against a real
+`tickets/{bookingRef}` document and both checks failed on a stale fixture, not a real defect —
+caught during @dev's implementation review. A live query also turned up a fourth genuinely
+stranded E2E test order the original three-item list never accounted for. Fixed by treating the
+two checks differently, deliberately:
 
-The design that makes this acceptable:
+- **A3 (`verify_stranded_orders_live.py`) is now fully dynamic.** It runs the real composite
+  query itself, asserts the result is non-empty, and asserts every returned document's
+  `status`/`expiresAt` are individually correct. It has no hardcoded ID list left to go stale —
+  this is strictly better for a read-only check, so there was no reason not to make it dynamic.
+- **A4 (`check-live-detect-and-mark.mjs`) keeps its write leash hardcoded, on purpose.** A4 is
+  the one script in this contract permitted to write to live Firestore — reviewed against this
+  project's own `contract_checks_mutate_live_content` incident memory (a prior contract check's
+  sentinel corruption sat on the deployed site for three days before anyone noticed, because the
+  write wasn't leashed and the residue alert went to a log nobody read). Unlike A3's read-only
+  discovery, the WRITE must never silently expand just because the live dataset changed —
+  that's what a leash means. So:
+  - **Detection still runs the real, unrestricted query** (`findStrandedOrders()`, no
+    filtering) — this is the only way to prove the query itself is correct against whatever the
+    live dataset actually contains. If it surfaces stranded orders beyond the allowlist (it has:
+    a residue-fixture document from an unrelated contract's checks has shown up in this same
+    query before), that's logged as informational only; nothing is done with them.
+  - **The write is leashed to a hardcoded, 4-order allowlist.** `ALLOWED_ORDER_IDS` is built
+    solely from resolving the hardcoded, correctly-prefixed `KNOWN_BOOKING_REFS`
+    (`SAOC-2027-5KYDSBMT38KX`, `SAOC-2027-R06HZ12P06EY`, `SAOC-2027-G08QJQK278NY`,
+    `SAOC-2027-7HHE9QN51RH4`) — never from `findStrandedOrders()`'s own output.
+    `assertAllowlistedForWrite()` runs immediately before the one `markOrdersAlerted()` call and
+    HARD-FAILS the entire script (a real assertion failure, not a warning) if it is ever asked
+    to write an id outside that list. This means a future edit to the filtering logic upstream
+    of the write — a bug, a refactor, an accidental loosening — cannot silently widen the blast
+    radius; the guard sits between "computed what to write" and "actually writing" regardless of
+    how that computation changed.
+  - **The field itself is additive and disclosed.** `reconciliationAlertedAt` is exactly the
+    field this feature is supposed to write in production once shipped, on exactly the kind of
+    order it's supposed to write it on — this is not fixture data leaking into a field a real
+    page trusts, which is what made the prior incident dangerous.
+  - **The four target orders are real known sandbox test data** (`e2e-test@example.com`,
+    buyer names "Thabo E2E Test" / "Test E2E" — see backlog.md), not live customer records, and
+    money-state fields are asserted unchanged in the same run.
 
-- **Detection runs the real, unrestricted query.** `findStrandedOrders()` is called with no
-  filtering — this is the only way to actually prove the query's WHERE conditions are correct
-  against whatever the live dataset contains. If it surfaces stranded orders beyond the three
-  known ones, that's logged as informational only; nothing is done with them.
-- **The write is leashed to a hardcoded, 3-order allowlist.** `ALLOWED_ORDER_IDS` is built
-  solely from resolving the hardcoded `KNOWN_BOOKING_REFS` (`5KYDSBMT38KX`, `R06HZ12P06EY`,
-  `G08QJQK278NY`) — never from `findStrandedOrders()`'s own output. `assertAllowlistedForWrite()`
-  runs immediately before the one `markOrdersAlerted()` call and HARD-FAILS the entire script
-  (a real assertion failure, not a warning) if it is ever asked to write an id outside that
-  list. This means a future edit to the filtering logic upstream of the write — a bug, a
-  refactor, an accidental loosening — cannot silently widen the blast radius; the guard sits
-  between "computed what to write" and "actually writing" regardless of how that computation
-  changed.
-- **The field itself is additive and disclosed.** `reconciliationAlertedAt` is exactly the field
-  this feature is supposed to write in production once shipped, on exactly the kind of order
-  it's supposed to write it on — this is not fixture data leaking into a field a real page
-  trusts, which is what made the prior incident dangerous.
-- **The three target orders are real known sandbox test data** ("Thabo E2E Test" — see
-  backlog.md), not live customer records, and money-state fields are asserted unchanged in the
-  same run.
-
-**Do not widen `ALLOWED_ORDER_IDS` or remove `assertAllowlistedForWrite()` without re-reading
-this section.** If this contract is ever extended to run against a dataset where the three
-known refs no longer exist, the correct fix is to update `KNOWN_BOOKING_REFS` /
-`ALLOWED_ORDER_IDS` explicitly and deliberately — never to relax the guard itself.
+**This is expected to need updating again.** A hardcoded write-allowlist going stale isn't a
+design flaw to be engineered away — it's the leash doing its job: it fails loudly (A4 correctly
+exits **2, SETUP FAILURE**, not a false defect report, when its premise doesn't hold) rather
+than silently mutating whatever the query happens to find. If the known E2E test fixture set is
+ever cleaned up or regenerated, update `KNOWN_BOOKING_REFS` deliberately, by hand, after
+verifying the new refs live against Firestore — never relax `assertAllowlistedForWrite()` itself
+to work around a staleness failure.
 
 ## Why the automated gate never sends a real email
 
 `check-live-detect-and-mark.mjs` (A4) calls `findStrandedOrders` / `filterOrdersNeedingAlert` /
 `markOrdersAlerted` directly against live Firestore (proving detection and the idempotent
-bookkeeping write against the three real stranded orders), but never calls
+bookkeeping write against the four known real stranded test orders), but never calls
 `sendReconciliationAlert` / `lib/email.ts` / Resend. An automated contract gate that can be
 re-run at any time must never have a side effect whose correctness depends on how many times it
 happened to run — a live email landing in a real inbox on every gate re-run would either spam
@@ -133,23 +158,23 @@ because it's unimportant, but because only a human can judge "yes, send this rea
    see project memory).
 2. Set `RECONCILIATION_CRON_SECRET` in the deployed environment's secrets.
 3. `curl -X POST -H "Authorization: Bearer $RECONCILIATION_CRON_SECRET" https://<dev-host>/api/admin/reconcile-orders`
-4. Confirm one email arrives at the configured recipient, listing the three known stranded
+4. Confirm one email arrives at the configured recipient, listing the four known stranded
    orders (or fewer, if `reconciliationAlertedAt` was already set by A4's most recent run and
    the re-alert window hasn't elapsed — check the response JSON's `skippedRecentlyAlerted`).
 5. Run the same `curl` again immediately — confirm the response JSON shows `alertedNow: []` and
    the just-alerted order IDs in `skippedRecentlyAlerted` (no second email).
-6. Re-run `verify_stranded_orders_live.py` (A3) — the three orders must still show
+6. Re-run `verify_stranded_orders_live.py` (A3) — the orders must still show
    `status == 'reserved'` (never auto-settled).
 
 ## Files in this directory
 
 - `check-detects-stranded-orders.mjs` (A2) — fake-store unit proof of the detection + re-alert
   filter logic.
-- `verify_stranded_orders_live.py` (A3) — read-only, confirms the three real stranded orders
+- `verify_stranded_orders_live.py` (A3) — read-only, discovers stranded orders dynamically and confirms every returned order
   match the query's exact WHERE conditions against live, production-shaped Firestore data.
 - `check-live-detect-and-mark.mjs` (A4) — the one script permitted to write to live Firestore;
   writes only `reconciliationAlertedAt`; proves idempotency and the no-money-state-mutation
-  guarantee against the three real orders.
+  guarantee against the four known real test orders.
 - `check-route-auth-fails-closed.sh` (A5) — real HTTP against a real, credential-scrubbed
   Next.js server; proves the route fails closed with 401 before it could reach Firestore or
   Resend.

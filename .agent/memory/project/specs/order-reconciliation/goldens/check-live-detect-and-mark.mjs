@@ -1,8 +1,21 @@
 #!/usr/bin/env node
 // order-reconciliation F1, A4 — the "does it actually do the right thing with real data"
-// proof the mission brief asks for, run against LIVE Firestore and the three orders proven
-// stranded during mission prove-ticket-purchase-works-end-to-end-b (booking refs
-// 5KYDSBMT38KX, R06HZ12P06EY, G08QJQK278NY; see .agent/memory/project/backlog.md).
+// proof the mission brief asks for, run against LIVE Firestore and the four orders proven
+// stranded during mission prove-ticket-purchase-works-end-to-end-b + this contract's own
+// review pass (booking refs SAOC-2027-5KYDSBMT38KX, SAOC-2027-R06HZ12P06EY,
+// SAOC-2027-G08QJQK278NY, SAOC-2027-7HHE9QN51RH4; see .agent/memory/project/backlog.md).
+//
+// CORRECTED (2026-08-19): the original KNOWN_BOOKING_REFS were transcribed from the P1
+// backlog entry as bare suffixes with the SAOC-2027- prefix dropped (a backlog transcription
+// error, not a code defect — real docs always carried the prefix per lib/booking-ref.ts's
+// BOOKING_REF_PREFIX). A live query against orders(status, expiresAt) also surfaced a FOURTH
+// stranded E2E test order not in the original three; verified live (buyerEmail
+// 'e2e-test@example.com', same test-fixture origin as the other three) and added to the
+// allowlist below. A5th, unrelated document ('sentinel-order-recon-hold-...', a different
+// contract's residue fixture, no m_payment_id) also matches the broad query — it is
+// deliberately NOT in ALLOWED_ORDER_IDS and is exactly the case the write leash exists to
+// protect against; see the "LEASHED WRITE" note below and this golden directory's README "A3
+// is dynamic; A4's write leash is not (on purpose)".
 //
 // Calls the REAL lib/reconciliation.ts functions with NO injected fake store (deps.db
 // omitted -> real getFirestore(initAdmin())) — this is the one script in this contract that is
@@ -62,14 +75,24 @@ for (const key of ['FIREBASE_ADMIN_PROJECT_ID', 'FIREBASE_ADMIN_CLIENT_EMAIL', '
 const failures = [];
 const now = Timestamp.now();
 
-// --- Resolve the three known stranded orders' Firestore order IDs via the same two-hop
-// (tickets/{bookingRef} -> orderId) path verify_stranded_orders_live.py (A3) already proved.
-// Re-implemented minimally here (read-only get, no import of Python) since this file needs the
-// order IDs to check post-run state, not just booking refs.
+// --- Resolve the four known stranded orders' Firestore order IDs via the same two-hop
+// (tickets/{bookingRef} -> orderId) path A3 exercises dynamically. Booking refs carry the real
+// BOOKING_REF_PREFIX (lib/booking-ref.ts) — tickets/{bookingRef}'s document id IS the full,
+// prefixed booking ref (createOrderWithPosition writes tickets.doc(input.bookingRef)), so a
+// bare suffix here would never resolve, which is exactly the bug this correction fixes.
 const db = getFirestore(initAdmin());
-const KNOWN_BOOKING_REFS = ['5KYDSBMT38KX', 'R06HZ12P06EY', 'G08QJQK278NY'];
+const KNOWN_BOOKING_REFS = [
+  'SAOC-2027-5KYDSBMT38KX',
+  'SAOC-2027-R06HZ12P06EY',
+  'SAOC-2027-G08QJQK278NY',
+  'SAOC-2027-7HHE9QN51RH4',
+];
 
 const knownOrderIds = [];
+// tickets/{bookingRef}'s document id IS the full, prefixed booking ref (see header) — so the
+// position doc id for each known order is simply its KNOWN_BOOKING_REFS entry, in lockstep with
+// knownOrderIds below.
+const knownPositionIds = [];
 for (const bookingRef of KNOWN_BOOKING_REFS) {
   const positionSnap = await db.collection('tickets').doc(bookingRef).get();
   if (!positionSnap.exists) {
@@ -82,6 +105,7 @@ for (const bookingRef of KNOWN_BOOKING_REFS) {
     process.exit(2);
   }
   knownOrderIds.push(orderId);
+  knownPositionIds.push(bookingRef);
 }
 
 // The ONLY ids this script is ever permitted to write to. Deliberately built solely from the
@@ -120,6 +144,26 @@ for (const orderId of knownOrderIds) {
   };
 }
 
+// ticketing-capacity-reconciliation-hold F1 — markOrdersAlerted also writes
+// reconciliationAlertedAt onto every tickets/{id} position sharing the order's orderId (see
+// lib/reconciliation.ts's markOrdersAlerted header). The "reconciliation never mutates
+// money state" guarantee this script proves is only actually proven against the collection
+// this write touches if the position docs are snapshotted too, not just the order docs — a
+// version that "helpfully" flipped a position's status/amount alongside the order-doc write
+// would otherwise pass this whole script undetected.
+const beforePositionStates = {};
+for (const positionId of knownPositionIds) {
+  const snap = await db.collection('tickets').doc(positionId).get();
+  const data = snap.data();
+  beforePositionStates[positionId] = {
+    status: data.status,
+    amount: data.amount,
+    m_payment_id: data.m_payment_id,
+    pf_payment_id: data.pf_payment_id,
+    purchasedAt: data.purchasedAt ? data.purchasedAt.toMillis() : null,
+  };
+}
+
 // --- Run 1: detect + mark. ---
 // Detection is run against the REAL, unrestricted query — this is what proves the query
 // itself is correct against whatever the live dataset actually contains.
@@ -147,14 +191,35 @@ const needingAlert1 = filterOrdersNeedingAlert(stranded1, now);
 // step; this second, allowlist-only filter plus the assertAllowlistedForWrite() guard right
 // before the write call is the actual leash.
 const needingAlertIds1 = needingAlert1.map((o) => o.orderId).filter((id) => ALLOWED_ORDER_IDS.includes(id));
-if (needingAlertIds1.length === 0) {
-  failures.push('filterOrdersNeedingAlert() (live) excluded ALL known stranded orders on run 1 — expected at least one needing an alert.');
-} else {
+
+// This script is expected to be safe to run repeatedly — including twice in a row within
+// RE_ALERT_WINDOW_MS, which is exactly what a gate re-run does. So `needingAlertIds1` being
+// empty (every known order was already alerted by an earlier run, inside the window) is a
+// VALID outcome, not a failure — it's the idempotency guarantee already holding. What must
+// never happen is BOTH "nothing needs alerting" AND "some known order has no
+// reconciliationAlertedAt on record" at the same time — that combination would mean
+// filterOrdersNeedingAlert() is wrongly excluding an order that was never actually marked.
+if (needingAlertIds1.length > 0) {
   try {
     assertAllowlistedForWrite(needingAlertIds1);
     await markOrdersAlerted(needingAlertIds1, now);
   } catch (error) {
     failures.push(`write leash tripped: ${error instanceof Error ? error.message : String(error)}`);
+  }
+} else {
+  console.log(
+    'INFO: all known stranded orders were already alerted within RE_ALERT_WINDOW_MS (likely ' +
+      'by an earlier run of this same check) — verifying the already-alerted state is real ' +
+      'rather than performing a new write.'
+  );
+  for (const orderId of knownOrderIds) {
+    const snap = await db.collection('orders').doc(orderId).get();
+    if (!snap.data().reconciliationAlertedAt) {
+      failures.push(
+        `order ${orderId} was excluded from needing an alert but has NO reconciliationAlertedAt ` +
+          'on record — filterOrdersNeedingAlert() is excluding an order that was never actually marked.'
+      );
+    }
   }
 }
 
@@ -200,6 +265,35 @@ for (const orderId of knownOrderIds) {
   }
 }
 
+// Same no-money-state-mutation guarantee, re-checked on the `tickets` position docs —
+// markOrdersAlerted's other write target. status / amount / m_payment_id / pf_payment_id /
+// purchasedAt must be unchanged even though reconciliationAlertedAt WAS written.
+for (const positionId of knownPositionIds) {
+  const snap = await db.collection('tickets').doc(positionId).get();
+  const data = snap.data();
+  const before = beforePositionStates[positionId];
+
+  if (data.status !== before.status) {
+    failures.push(`tickets/${positionId}.status changed from '${before.status}' to '${data.status}' — reconciliation must NEVER auto-settle a position's status.`);
+  }
+  if (data.amount !== before.amount) {
+    failures.push(`tickets/${positionId}.amount changed from ${before.amount} to ${data.amount}.`);
+  }
+  if (data.m_payment_id !== before.m_payment_id) {
+    failures.push(`tickets/${positionId}.m_payment_id changed from ${before.m_payment_id} to ${data.m_payment_id}.`);
+  }
+  if (data.pf_payment_id !== before.pf_payment_id) {
+    failures.push(`tickets/${positionId}.pf_payment_id changed from ${before.pf_payment_id} to ${data.pf_payment_id}.`);
+  }
+  const afterPurchasedAtMs = data.purchasedAt ? data.purchasedAt.toMillis() : null;
+  if (afterPurchasedAtMs !== before.purchasedAt) {
+    failures.push(`tickets/${positionId}.purchasedAt changed — reconciliation must never set a purchase timestamp.`);
+  }
+  if (!data.reconciliationAlertedAt) {
+    failures.push(`tickets/${positionId}.reconciliationAlertedAt was NOT set by markOrdersAlerted() — the position-write half of the alert-bookkeeping did not land.`);
+  }
+}
+
 if (failures.length > 0) {
   failures.forEach((f) => console.error(`FAIL: ${f}`));
   console.error(`\n${failures.length} assertion(s) failed.`);
@@ -207,9 +301,10 @@ if (failures.length > 0) {
 }
 
 console.log(
-  'PASS: against LIVE Firestore, findStrandedOrders() detected all three known stranded ' +
-    'orders, markOrdersAlerted() wrote reconciliationAlertedAt, an immediate second run correctly ' +
-    'excluded them (idempotency), and status/amount/gatewayPaymentId/purchasedAt were left ' +
-    'completely untouched on every one of them — reconciliation flags, it never auto-settles.'
+  'PASS: against LIVE Firestore, findStrandedOrders() detected all four known stranded ' +
+    'orders, markOrdersAlerted() wrote reconciliationAlertedAt on both the order docs and their ' +
+    'tickets position docs, an immediate second run correctly excluded them (idempotency), and ' +
+    'status/amount/gatewayPaymentId(/m_payment_id, pf_payment_id on positions)/purchasedAt were ' +
+    'left completely untouched on every one of them — reconciliation flags, it never auto-settles.'
 );
 process.exit(0);

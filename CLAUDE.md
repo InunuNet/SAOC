@@ -53,7 +53,8 @@ app/
 │   ├── tickets/            # PayFast checkout + ITN webhook → Firestore `tickets`
 │   ├── vendors/            # Vendor registration submission → Firestore `vendorSubmissions` (F5); proof-of-payment upload (F7)
 │   ├── admin/               # Session (Firebase Auth), check-in, CSV export; vendor review and payment routes
-│   │   └── vendors/        # Vendor review workflow (F6) and payment/booth allocation (F7)
+│   │   ├── vendors/        # Vendor review workflow (F6) and payment/booth allocation (F7)
+│   │   └── reconcile-orders/ # Cloud Scheduler-triggered: alerts on orders stranded `reserved` past expiry (docs/order-reconciliation.md)
 │   ├── draft/ + disable-draft/  # Sanity draft-mode preview toggles
 │   └── revalidate/          # Sanity webhook → on-demand ISR revalidation
 ├── layout.tsx             # Root layout (html/body/fonts/globals)
@@ -103,6 +104,7 @@ The `FIREBASE_PRIVATE_KEY` contains literal `\n` characters in the JSON — past
 | `events` | Society events and shows — add as Firestore docs |
 | `nationalShows` | Past and upcoming national shows — add as Firestore docs |
 | `contactSubmissions` | Written by the `/api/contact` route — do not edit manually |
+| `orders` / `tickets` | Ticket orders and their positions. Requires a deployed Firestore composite index on `orders(status, expiresAt)` (`firestore.indexes.json`) for `POST /api/admin/reconcile-orders` to query stranded orders — see [docs/order-reconciliation.md](docs/order-reconciliation.md) |
 
 ### Admin authorisation
 
