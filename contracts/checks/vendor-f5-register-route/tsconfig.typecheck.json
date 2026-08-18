@@ -1,0 +1,13 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/vendor-registration-handler.ts",
+    "../../../lib/vendor-registration-rate-limit.ts",
+    "../../../lib/vendor-registration-confirmation.ts",
+    "../../../lib/vendor-submissions.ts",
+    "../../../lib/confirmation-email.ts",
+    "../../../types/index.ts",
+    "fixtures/vendor-f5-register-route-typecheck.ts"
+  ],
+  "exclude": []
+}

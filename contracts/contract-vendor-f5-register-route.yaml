@@ -1,0 +1,210 @@
+schema: athanor.contract/v1
+slug: vendor-f5-register-route
+goal: >-
+  Mission vendor-registration F5 — POST /api/vendors/register, the public,
+  unauthenticated submission route for the 2027 National Show vendor programme. A
+  thin Next.js route file wires the REAL F4 validate/build functions
+  (lib/vendor-submissions.ts), a real Firestore write, and a best-effort
+  confirmation email into one pure, fully-injectable orchestrator
+  (lib/vendor-registration-handler.ts) so every load-bearing property -- no
+  parallel validation, commit-before-email with a non-fatal email failure, a real
+  rate limit that blocks a 4th attempt and never blocks a different key, zero
+  authorization meaning, and no PII in logs -- is proven offline, against real
+  exported functions, never by source-grep. Full decision record, every defeating
+  mutation, and what this contract cannot prove offline (a live Firestore write, a
+  live Resend delivery, cross-instance rate-limit consistency):
+  contracts/golden/vendor-f5-register-route/README.md
+created_at: '2026-08-18'
+autonomy: high
+
+features:
+  - id: F5
+    name: >-
+      Four new/changed files. (1) lib/vendor-registration-handler.ts (new) --
+      `handleVendorRegistration(rawInput: unknown, deps: VendorRegistrationHandlerDeps):
+      Promise<VendorRegistrationHandlerResult>`, the pure orchestrator: check the
+      injected rate limiter first (before ANY parsing), record the attempt
+      unconditionally, refuse with 429 if not allowed; otherwise call the REAL
+      `validateVendorSubmissionInput` (lib/vendor-submissions.ts, F4) and reject
+      with 400 + fieldErrors on failure; call the REAL `buildVendorSubmission` on
+      success; `await deps.write(built)` -- on throw, return 500 and NEVER call
+      `deps.sendConfirmationEmail`; on success, call the REAL, already-shipped
+      `deliverConfirmationEmailAfterCommit` (lib/confirmation-email.ts,
+      ticketing-foundation F10/F11) wrapping `deps.sendConfirmationEmail`, whose
+      failure must never change the eventual 201 response; return `{ success:
+      true, id }`. (2) lib/vendor-registration-rate-limit.ts (new) --
+      `VENDOR_REGISTER_RATE_LIMIT_MAX_ATTEMPTS = 3`,
+      `VENDOR_REGISTER_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000`,
+      `decideVendorRegistrationRateLimit(key, now, priorAttempts)` delegating to
+      the REAL `decideRateLimit()` (lib/resend-rate-limit.ts, F6/ticketing-foundation)
+      with these two constants as overrides -- no reimplemented sliding-window
+      arithmetic, no reuse of the RESEND_* constants; `createInMemoryVendorRegistrationRateLimitStore()`
+      returning `{ getPriorAttempts(key), recordAttempt(key, at) }` backed by a
+      module-level array. (3) lib/vendor-registration-confirmation.ts (new) --
+      `sendVendorRegistrationConfirmationEmail(input, deps?)` with an injectable
+      `deps.mailer` defaulting to `{ send: sendEmail }` (the REAL lib/email.ts
+      export), rendering new `emails/VendorRegistrationConfirmation.tsx` (modelled
+      on emails/ContactConfirmation.tsx, plain acknowledgement copy, no invented
+      brand assets, no permit non-verification note -- that is F9's later edit to
+      this file); contains no `console.*` call anywhere in its body (contactEmail/
+      businessName are POPIA-relevant PII). (4) app/api/vendors/register/route.ts
+      (new) -- thin wrapper only: parses JSON (malformed -> 400 before the handler
+      is called), derives a rate-limit key from `x-forwarded-for` (documented
+      best-effort, not a security boundary -- see golden README), wires the real
+      Admin SDK write to the `vendorSubmissions` collection
+      (VENDOR_SUBMISSIONS_COLLECTION, lib/vendor-submissions.ts) and the real
+      confirmation email into `handleVendorRegistration`'s deps, adds a
+      `Retry-After` header only on the 429 branch. Zero authorization meaning
+      throughout: no import of lib/admin-auth.ts or lib/admin-roles.ts anywhere in
+      this feature; a successful response body is exactly `{ success: true, id }`,
+      never the submitted payload echoed back.
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-f5-register-route/README.md
+  - contracts/checks/vendor-f5-register-route/tsconfig.typecheck.json
+  - contracts/checks/vendor-f5-register-route/fixtures/vendor-f5-register-route-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after all four
+        new/changed files are added.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof of the exported shapes of lib/vendor-registration-handler.ts,
+        lib/vendor-registration-rate-limit.ts, and lib/vendor-registration-confirmation.ts
+        -- not a grep, real literal assignments and calls that either compile or don't.
+        Includes a fully-faked VendorRegistrationHandlerDeps object (no firebase-admin
+        import, no resend import) and a fake mailer shaped exactly like lib/email.ts's
+        real sendEmail.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/vendor-f5-register-route/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        No parallel validation (design constraint 1): calling handleVendorRegistration()
+        with a payload missing a required field (e.g. businessName omitted) returns
+        status 400 with a fieldErrors array that is DEEP-EQUAL, entry for entry, to
+        what calling the real validateVendorSubmissionInput() directly on the same
+        payload returns -- proving the handler's rejection path is a direct pass-through
+        of the real F4 validator's error list, not a second, hand-written validation
+        routine that happens to also reject the payload. Repeated for a second payload
+        missing a different combination of required fields (contactEmail AND
+        termsAccepted both omitted) to prove the property holds beyond a single
+        single-field case. Defeating mutation: hardcoding a generic
+        '["Invalid submission."]' fieldErrors array instead of forwarding the real
+        validator's output -- both cases would still return 400 but the deep-equal
+        check against the real validator's actual output would fail.
+      command: >-
+        npx tsx contracts/checks/vendor-f5-register-route/check-no-parallel-validation.mjs
+
+    - id: A4
+      description: >-
+        Commit-before-email, non-fatal email failure (design constraint 2, the F10/F11
+        posture from ticketing-foundation): (a) a deps.write that succeeds and a
+        deps.sendConfirmationEmail that REJECTS -- handleVendorRegistration still
+        returns 201 with the write's real id, and deps.onEmailError is called with the
+        real rejection error (proving deliverConfirmationEmailAfterCommit is genuinely
+        wired in, not merely awaited-and-ignored). (b) a deps.write that REJECTS --
+        handleVendorRegistration returns 500, and deps.sendConfirmationEmail is proven
+        to have been called ZERO times (a call-order array both fakes push into is
+        inspected directly, not inferred from the response) -- a submission that was
+        never actually persisted must never trigger a confirmation email. Defeating
+        mutation: calling sendConfirmationEmail before awaiting write() (or calling it
+        regardless of write's outcome) -- case (b)'s zero-calls assertion would then
+        fail.
+      command: >-
+        npx tsx contracts/checks/vendor-f5-register-route/check-commit-before-email.mjs
+
+    - id: A5
+      description: >-
+        Rate-limit decision wrapper delegates to the real decideRateLimit(), with
+        vendor-specific constants, not the resend-my-tickets constants and not a
+        reimplementation (design constraint 3): three prior attempts for one key allow
+        a fourth call to remain allowed (attemptsInWindow 3 < max 3 is false --
+        confirm the boundary is exactly VENDOR_REGISTER_RATE_LIMIT_MAX_ATTEMPTS, i.e.
+        the 3rd attempt is allowed and the 4th is refused with a non-null
+        retryAfterMs); a DIFFERENT key with the identical priorAttempts array remains
+        fully allowed; an attempt older than VENDOR_REGISTER_RATE_LIMIT_WINDOW_MS is
+        excluded from the count and a key whose only prior attempts have aged out is
+        allowed again. A second run of the same scenario using
+        RESEND_RATE_LIMIT_MAX_ATTEMPTS (5) in place of the vendor constant is checked
+        to produce a DIFFERENT (more permissive) decision at attempt 4, proving this
+        module is not silently re-exporting or aliasing the resend-my-tickets limit.
+      command: >-
+        npx tsx contracts/checks/vendor-f5-register-route/check-rate-limit-decision-wrapper.mjs
+
+    - id: A6
+      description: >-
+        Rate limiting is enforced at the handler level, before Firestore or email are
+        ever touched (design constraint 4): deps.getPriorAttempts is pre-seeded with
+        VENDOR_REGISTER_RATE_LIMIT_MAX_ATTEMPTS prior attempts for a given key;
+        calling handleVendorRegistration with a fully valid payload under that same
+        key returns 429, and deps.write and deps.sendConfirmationEmail are both proven
+        to have been called ZERO times. A second call under a DIFFERENT key with a
+        valid payload succeeds normally (201, write called once) in the same test run,
+        proving the 429 above wasn't a global "nothing works" failure. Defeating
+        mutation: moving the rate-limit check to after the Firestore write -- the
+        zero-calls assertion on deps.write would then fail.
+      command: >-
+        npx tsx contracts/checks/vendor-f5-register-route/check-rate-limit-shields-write.mjs
+
+    - id: A7
+      description: >-
+        No PII or credential value in logs (design constraint 5, POPIA-relevant): a
+        console spy captures every console.* call across (a) a deps.write rejection,
+        (b) a deps.sendConfirmationEmail rejection, and (c) a 429 rate-limit refusal.
+        None of the captured log arguments, stringified, contain the fixture's
+        businessName, contactEmail, contactPersonName, or contactCellPhone values --
+        only field names, generic messages, or error type information are permitted.
+        Separately, sendVendorRegistrationConfirmationEmail's module source is checked
+        to contain zero `console.` call sites at all (a static, source-level check
+        specifically for this one function, since it is the only place contactEmail is
+        held outside the Firestore document itself). Defeating mutation: logging the
+        full built VendorSubmission object (e.g. `console.error('write failed', built)`)
+        on the write-failure path -- the PII-content assertion on capture (a) would
+        then fail.
+      command: >-
+        npx tsx contracts/checks/vendor-f5-register-route/check-no-pii-in-logs.mjs
+
+    - id: A8
+      description: >-
+        Zero authorization meaning (design constraint 6): static source check that
+        neither lib/vendor-registration-handler.ts, lib/vendor-registration-rate-limit.ts,
+        lib/vendor-registration-confirmation.ts, nor app/api/vendors/register/route.ts
+        import lib/admin-auth.ts or lib/admin-roles.ts. Runtime check: a successful
+        handleVendorRegistration() result's body object has exactly the keys `success`
+        and `id` -- no `status`, no `roles`, no echoed submission fields, no admin-
+        flavoured key of any kind.
+      command: >-
+        npx tsx contracts/checks/vendor-f5-register-route/check-zero-authorization-meaning.mjs
+
+    - id: A9
+      description: >-
+        Real HTTP round trip proving the rate limiter is genuinely wired into the
+        live route, per-IP-keyed, over a real Next.js server on an ephemeral port
+        with FIREBASE_ADMIN_*, NEXT_PUBLIC_FIREBASE_*, and RESEND_API_KEY explicitly
+        scrubbed from its environment (mirrors ticketing-f5-buyers' A5 env-scrub +
+        ephemeral-port pattern, bash job control, no setsid on darwin). A "(0)"
+        preflight re-uses the real loadEnvConfig()-based self-verification pattern
+        (adapted to also require RESEND_API_KEY empty) before the server starts. Four
+        rapid POSTs to /api/vendors/register with an identical `x-forwarded-for`
+        header value: the first three each return a non-429 status (whatever the
+        env-scrubbed Firestore/Resend failure produces is acceptable -- the point is
+        they reached validation/write, not that they succeeded), the fourth returns
+        429 with a Retry-After header present. A fifth POST with a DIFFERENT
+        `x-forwarded-for` value in the same run returns a non-429 status, proving the
+        limit is keyed per-IP over real HTTP, not global across the process.
+      timeout_seconds: 220
+      command: >-
+        bash contracts/checks/vendor-f5-register-route/check-http-rate-limit-per-ip.sh
+
+    - id: A10
+      description: >-
+        pnpm lint passes with zero errors after all four new/changed files are added.
+      command: pnpm lint
