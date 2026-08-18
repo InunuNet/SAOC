@@ -130,6 +130,24 @@ export function filterOrdersNeedingAlert(
 }
 
 /**
+ * Thrown by `markOrdersAlerted` on a partial or total batch-commit failure. Same `.message`
+ * text as the plain `Error` it replaces (see that function's throw site) — callers that already
+ * inspect `.message` (e.g. order-reconciliation's check-partial-failure-atomicity.mjs) keep
+ * working unmodified — plus a structured `failedOrderIds`, the same per-order failure list the
+ * message text is built from, so `markOrdersAlertedForResponse` can split attempted ids into
+ * alerted/failed without regex-parsing free text.
+ */
+export class MarkOrdersAlertedError extends Error {
+  readonly failedOrderIds: string[];
+
+  constructor(message: string, failedOrderIds: string[]) {
+    super(message);
+    this.name = 'MarkOrdersAlertedError';
+    this.failedOrderIds = failedOrderIds;
+  }
+}
+
+/**
  * Writes ONLY `reconciliationAlertedAt` — on `orders/{orderId}` for every given order id, and
  * on every `tickets/{id}` position whose `orderId` matches — never `status`, `amount`,
  * `gatewayPaymentId`, or `purchasedAt` on either collection.
@@ -210,11 +228,86 @@ export async function markOrdersAlerted(
   const detail = failures
     .map(({ orderId, result }) => `${orderId}: ${String(result.reason)}`)
     .join('; ');
-  throw new Error(
+  throw new MarkOrdersAlertedError(
     `markOrdersAlerted: ${failures.length}/${orderIds.length} order(s) failed to commit their ` +
       `reconciliationAlertedAt batch (order + position writes are all-or-nothing per order, so ` +
-      `none of these failed orders' docs were partially written) — ${detail}`
+      `none of these failed orders' docs were partially written) — ${detail}`,
+    failures.map((entry) => entry.orderId)
   );
+}
+
+/** The HTTP-response-ready shape of a `markOrdersAlertedForResponse` call — see that
+ *  function's header for what each field means. */
+export interface AlertBookkeepingResult {
+  alertedNow: string[];
+  alertBookkeepingFailed: string[];
+}
+
+/**
+ * Wraps `markOrdersAlerted`, reshaping its outcome into a response-ready
+ * `{ alertedNow, alertBookkeepingFailed }` split so a caller reading the HTTP response can never
+ * mistake an attempted-but-failed bookkeeping write for a real success (see
+ * .agent/memory/project/specs/reconcile-response-accuracy/goldens/README.md for the full design
+ * record).
+ *
+ * - Full success: every attempted id is in `alertedNow`; `alertBookkeepingFailed` is an empty
+ *   array (present, never omitted — an omitted field is itself an ambiguous body).
+ * - `MarkOrdersAlertedError`: split structurally off `error.failedOrderIds`, never by
+ *   regex-parsing `.message` — `alertedNow` is every attempted id NOT in `failedOrderIds`,
+ *   `alertBookkeepingFailed` is `failedOrderIds` itself.
+ * - Any other thrown value (a shape `markOrdersAlerted` is not documented to produce):
+ *   conservative fallback — `alertedNow` is empty, `alertBookkeepingFailed` is every attempted
+ *   id. An unrecognized failure must never be read as "probably fine".
+ */
+export async function markOrdersAlertedForResponse(
+  orderIds: string[],
+  now: Timestamp,
+  deps: { db?: ReconciliationFirestoreLike } = {}
+): Promise<AlertBookkeepingResult> {
+  try {
+    await markOrdersAlerted(orderIds, now, deps);
+    return { alertedNow: [...orderIds], alertBookkeepingFailed: [] };
+  } catch (error) {
+    // Logged HERE, at the point of the catch — this is the only place the real error object
+    // (and, for MarkOrdersAlertedError, its aggregated per-order reason) still exists. The
+    // caller only ever receives failedOrderIds back, never the error itself, so a caller-side
+    // log (e.g. app/api/admin/reconcile-orders/route.ts) could only ever restate WHICH orders
+    // failed, never WHY — a real regression this project shipped once already (a Firestore
+    // permission/quota/network error, or any unexpected exception, silently discarded). See
+    // .agent/memory/project/specs/reconcile-response-accuracy/goldens/README.md "Failure
+    // reason logging" and .claude/rules/coding.md "Every error path logs context... Never log
+    // and swallow silently."
+    if (error instanceof MarkOrdersAlertedError) {
+      const failedOrderIds = error.failedOrderIds;
+      console.error('[reconciliation] markOrdersAlerted failed for some orders', {
+        operation: 'markOrdersAlertedForResponse',
+        failedOrderIds,
+        reason: error.message,
+      });
+      const alertedNow = orderIds.filter((orderId) => !failedOrderIds.includes(orderId));
+      return { alertedNow, alertBookkeepingFailed: [...failedOrderIds] };
+    }
+    // Unrecognized shape — conservative: nothing is proven to have committed. Still logged with
+    // the exception's own type/message, not just the order ids the caller will also see.
+    console.error('[reconciliation] markOrdersAlerted threw an unrecognized error', {
+      operation: 'markOrdersAlertedForResponse',
+      orderIds,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      reason: error instanceof Error ? error.message : String(error),
+    });
+    return { alertedNow: [], alertBookkeepingFailed: [...orderIds] };
+  }
+}
+
+/**
+ * Maps an `AlertBookkeepingResult.alertBookkeepingFailed` to the HTTP status the route should
+ * return: 207 (Multi-Status) when at least one order's bookkeeping write failed to commit — the
+ * primary side effect (the alert email) still went out, but the response is not a clean
+ * success — or 200 when every attempted order's stamp committed. Pure function, independently
+ * testable from the route.
+ */
+export function reconcileStatusFor(alertBookkeepingFailed: string[]): 200 | 207 {
+  return alertBookkeepingFailed.length > 0 ? 207 : 200;
 }
 
 const DEFAULT_RECONCILIATION_ALERT_EMAIL = 'info@saoc.co.za';

@@ -1,0 +1,193 @@
+schema: athanor.contract/v1
+slug: reconcile-response-accuracy
+goal: >
+  POST /api/admin/reconcile-orders must never return a success-shaped body claiming an order
+  was alerted when its reconciliationAlertedAt bookkeeping write actually failed to commit —
+  the response's alertedNow/alertBookkeepingFailed split must be derived from
+  markOrdersAlerted's own aggregated per-order failure data, never assumed from what was
+  merely attempted, so a partial or total bookkeeping-write failure is distinguishable from a
+  real success by any caller (cron, human, monitoring) reading the JSON body alone. Defect
+  shipped and documented as a known-open item in 5738f61
+  (app/api/admin/reconcile-orders/route.ts).
+created_at: '2026-08-19'
+autonomy: high
+features:
+  - id: F1
+    name: >
+      MarkOrdersAlertedError (lib/reconciliation.ts) — markOrdersAlerted's existing thrown
+      Error becomes a subclass carrying a structured failedOrderIds: string[] alongside its
+      unchanged .message text. markOrdersAlertedForResponse (new, lib/reconciliation.ts) —
+      wraps markOrdersAlerted, returns { alertedNow, alertBookkeepingFailed }, conservative
+      ({ alertedNow: [], alertBookkeepingFailed: orderIds }) on any unrecognized thrown
+      value. reconcileStatusFor (new, lib/reconciliation.ts) — pure function, 207 when
+      alertBookkeepingFailed is nonempty, 200 when empty. route.ts is rewired to call both
+      and surface alertBookkeepingFailed in its JSON body. No new write is introduced; the
+      flag-only boundary (never markOrderAndPositionPaidByPaymentId, never a PayFast call)
+      and the fail-closed timing-safe bearer-secret auth guard are both unchanged.
+      markOrdersAlertedForResponse's catch logs the failure REASON (operation, failed order
+      ids, exception type/message) via console.error at the point of the catch — the only
+      place the real error object exists — closing a regression this contract's own first
+      implementation introduced (the reason was silently discarded; only the failed order
+      ids reached the response, and nothing reached any log). route.ts no longer re-logs a
+      reason-less duplicate. See goldens/README.md for the full design record, the
+      deliberately-out-of-scope admin/session/route.ts timeout item, and "Failure reason
+      logging" for the regression and fix.
+    status: pending
+goldens:
+  - .agent/memory/project/specs/reconcile-response-accuracy/goldens/README.md
+  - .agent/memory/project/specs/reconcile-response-accuracy/goldens/check-response-splits-partial-failure.mjs
+  - .agent/memory/project/specs/reconcile-response-accuracy/goldens/check-status-and-wiring.mjs
+  - .agent/memory/project/specs/reconcile-response-accuracy/goldens/check-wrong-secret-rejected-with-real-secret-configured.sh
+  - .agent/memory/project/specs/reconcile-response-accuracy/goldens/check-failure-reason-logged.mjs
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        markOrdersAlertedForResponse(), under an injected partial batch-commit failure
+        (three orders attempted against a FakeFirestore, order-B's commit made to reject —
+        same dialect as order-reconciliation/goldens/check-partial-failure-atomicity.mjs),
+        returns alertedNow == ['order-A', 'order-C'] and alertBookkeepingFailed ==
+        ['order-B'] exactly. False-pass risk this rules out: a version that still returns
+        alertedNow as all three attempted ids (the original shipped bug, reintroduced)
+        would make a caller wrongly conclude order-B was alerted when its stamp never
+        committed — this assertion's exact-match check on alertedNow catches that. A
+        version that over-corrects to alertedNow == [] for everyone would make a caller
+        wrongly conclude order-A/order-C also need re-alerting when they don't — the
+        exact-match (not merely "order-B is somewhere in alertBookkeepingFailed") catches
+        that too.
+      command: npx tsx .agent/memory/project/specs/reconcile-response-accuracy/goldens/check-response-splits-partial-failure.mjs
+    - id: A2
+      description: >
+        Same script (check-response-splits-partial-failure.mjs), full-success and
+        unrecognized-error scenarios. Full success: alertBookkeepingFailed is present as an
+        empty array (never omitted — an omitted field is itself an ambiguous body). False-
+        pass risk ruled out: a version that always reports something as failed regardless
+        of outcome would make a caller wrongly conclude a clean run needs attention.
+        Unrecognized error (deps.db.batch() throws synchronously, a shape
+        markOrdersAlerted's documented contract does not produce): alertedNow must be
+        empty and alertBookkeepingFailed must list every attempted id — the conservative
+        fallback. False-pass risk ruled out: a version that crashes uncaught here, or one
+        that mistakes "something threw" for "must have partially landed" and reports a
+        nonempty alertedNow, would make a caller wrongly conclude partial success when
+        nothing is proven to have committed at all.
+      command: npx tsx .agent/memory/project/specs/reconcile-response-accuracy/goldens/check-response-splits-partial-failure.mjs
+    - id: A3
+      description: >
+        reconcileStatusFor() maps a nonempty alertBookkeepingFailed to HTTP 207 and an
+        empty one to 200 (pure-function proof); route.ts is confirmed, structurally, to
+        actually call markOrdersAlertedForResponse()/reconcileStatusFor() and to include
+        alertBookkeepingFailed in its response body. False-pass risk this rules out: the
+        pure-function half alone would pass even if route.ts never called it (reverting to
+        the original bug's inline try/catch) — the caller would still see the old,
+        inaccurate body despite reconcileStatusFor being correct in isolation; the
+        structural half closes that gap without needing a running Next.js server (none is
+        available this session — port 3400 is held by a BrowserAgent build). The
+        structural half alone would NOT catch a version that called
+        reconcileStatusFor(wrongArgument) — that is why A1/A2's behavioural proof, not
+        this grep, is this contract's actual load-bearing check; see goldens/README.md
+        "Load-bearing assertion note."
+      command: npx tsx .agent/memory/project/specs/reconcile-response-accuracy/goldens/check-status-and-wiring.mjs
+    - id: A4
+      description: >
+        Regression: order-reconciliation F1's existing atomicity proof
+        (check-partial-failure-atomicity.mjs) still passes unmodified against the new
+        MarkOrdersAlertedError subclass — proving MarkOrdersAlertedError.message is
+        byte-identical in content to the plain Error it replaces (the assertion this file
+        makes, String(thrown.message).includes(FAILING_ORDER_ID), is unchanged and must
+        still hold), and that the per-order atomicity property itself (order stamp and its
+        position stamp(s) commit as one WriteBatch) is untouched by this fix. False-pass
+        risk this rules out: a MarkOrdersAlertedError implementation that changed the
+        message format while adding failedOrderIds would silently break this existing,
+        already-trusted golden — re-running it here catches that without needing to
+        duplicate its logic.
+      command: npx tsx .agent/memory/project/specs/order-reconciliation/goldens/check-partial-failure-atomicity.mjs
+    - id: A5
+      description: >
+        route.ts contains no reference to markOrderAndPositionPaidByPaymentId (the only
+        status-flipping write in this codebase) or pf_payment_id (a PayFast-lookup field)
+        — structural, proves this fix introduces no new write surface beyond the existing,
+        already-scoped reconciliationAlertedAt bookkeeping write. False-pass risk: this is
+        a negative/absence check, cheap and low-value on its own, included because "Do not
+        weaken the route's auth" / "must not create any new write" were explicit design
+        constraints on this task — not a substitute for A1/A2's behavioural proof of the
+        response-accuracy property itself.
+      command: npx tsx .agent/memory/project/specs/reconcile-response-accuracy/goldens/check-status-and-wiring.mjs
+    - id: A6
+      description: >
+        LOAD-BEARING, real HTTP, for the missing-secret and no-header cases specifically:
+        reuses order-reconciliation F1's check-route-auth-fails-closed.sh unmodified — a
+        real, running Next.js server, with FIREBASE_ADMIN_*, NEXT_PUBLIC_FIREBASE_*,
+        RESEND_API_KEY, and RECONCILIATION_CRON_SECRET all scrubbed (RECONCILIATION_CRON_SECRET
+        to an EMPTY STRING) from its environment, asserts a real 401 for both
+        no-Authorization-header and wrong-bearer-secret requests, and that the 401 body is
+        the route's real JSON refusal, proving the request reached the real handler and
+        never reached Firestore/Resend. This replaced an earlier structural (grep-on-source)
+        version of A6 that went through three rounds of false security in one session: (1)
+        matched raw source including route.ts's own doc comments, which legitimately NAME the
+        guard's identifiers to describe the property being checked; (2) after stripping
+        comments, still matched a bare IMPORTED identifier, satisfied by an unused import
+        with the entire guard block deleted; (3) after requiring CALL shape, still passed
+        when @qa left the condition text intact and commented out only the
+        `return unauthorized();` inside it. See goldens/check-status-and-wiring.mjs's header
+        for the full three-round history and why that file now asserts NOTHING about auth.
+        NAMED, DISCOVERED LIMIT OF THIS SPECIFIC SCRIPT (found while drilling this contract,
+        2026-08-19, do not re-describe this assertion as closing the whole auth-bypass class
+        — an earlier draft of this description made exactly that overclaim and it was wrong):
+        because RECONCILIATION_CRON_SECRET is blanked for EVERY request this script sends,
+        `if (!expectedSecret)` (the earlier, separate missing-secret guard) intercepts before
+        the comparison branch can ever run — this script's own "wrong secret" case never
+        actually reaches `constantTimeEqual`, and so it could not have caught, and did not
+        catch, @qa's exact commented-out-return mutation (re-verified directly: replaying
+        that mutation against this script alone still reports PASS, for the wrong reason).
+        It remains the correct, load-bearing proof for the missing-secret/no-header paths.
+        The comparison-branch path is covered separately by A6b.
+      command: bash .agent/memory/project/specs/order-reconciliation/goldens/check-route-auth-fails-closed.sh
+    - id: A6b
+      description: >
+        LOAD-BEARING, real HTTP, for the wrong-secret-with-a-real-secret-configured case
+        A6 cannot reach: check-wrong-secret-rejected-with-real-secret-configured.sh (new,
+        this contract) configures a real, non-empty, test-only RECONCILIATION_CRON_SECRET on
+        the server (still scrubbing FIREBASE_ADMIN_*/NEXT_PUBLIC_FIREBASE_*/RESEND_API_KEY,
+        so a bypass still cannot reach live Firestore/Resend) and sends a WRONG bearer token
+        — this genuinely reaches the `constantTimeEqual` comparison, unlike A6's blanked-secret
+        setup. Asserts a real 401 and the route's real JSON refusal body. Verified this
+        actually catches @qa's exact bypass by running the drill directly: mutating
+        `return unauthorized();` to a commented-out no-op inside the intact `if
+        (!constantTimeEqual(...))` block makes this script FAIL with a 500 (the request falls
+        through to findStrandedOrders(), which throws on the scrubbed Firebase credentials) —
+        a concrete, non-401, non-coincidental failure, restoring the line makes it PASS again.
+        False-pass risk this rules out: any control-flow mutation that stops the guard's
+        `return` from firing — comment-out, dead code, a changed condition that's always
+        false, etc. — surfaces as a real HTTP response other than 401 here, because this is
+        the actual runtime outcome, not a proxy for it; no text-pattern refinement is needed
+        or sufficient. Does NOT prove the correct secret succeeds (200) — same reasoning as
+        A6's script: an automated gate must never be the one thing that could reach a real
+        write/email path, so the positive-auth case stays a manual, credentialed step.
+      command: bash .agent/memory/project/specs/reconcile-response-accuracy/goldens/check-wrong-secret-rejected-with-real-secret-configured.sh
+    - id: A7
+      description: >
+        LOAD-BEARING regression check, added after @team-lead found this reading the diff
+        (neither @qa nor Codex caught it, twice): markOrdersAlertedForResponse()'s catch
+        (lib/reconciliation.ts) must log the actual failure REASON, not merely the failed
+        order ids the HTTP response already carries. check-failure-reason-logged.mjs
+        monkey-patches console.error, forces BOTH catch branches against a FakeFirestore (a
+        real MarkOrdersAlertedError from a partial batch-commit failure, and an
+        unrecognized/infra-level throw), and asserts the captured log text contains the
+        underlying reason — this fake's specific commit-failure message for the
+        MarkOrdersAlertedError branch, the exception's own message for the unrecognized
+        branch — not just the order id(s) already present in the return value. Observed
+        FAILING against the pre-fix code first (both branches logged nothing at all) before
+        the fix (console.error calls added at the point of each catch, where the error
+        object still exists) was applied — see goldens/README.md "Failure reason logging"
+        for that observed-failure output. False-pass risk this rules out: a version that
+        logs only `{ failedOrderIds }` or `{ orderIds }` (exactly what the pre-fix route.ts
+        logged, one layer removed from the real error, and exactly what a naive "just log
+        something" fix would produce) would satisfy a check that merely asserted "a
+        console.error call happened" or "the order id appears in the log" — this assertion
+        specifically requires the REASON TEXT, distinct from the order id list, to be
+        present, which a naive fix would still fail. Sanitisation: markOrdersAlertedForResponse
+        only ever receives order ids, a Timestamp, and an optional deps.db — no buyer email,
+        token, or secret is ever in scope of this function, so nothing sensitive can reach
+        this log by construction, not merely by omission.
+      command: npx tsx .agent/memory/project/specs/reconcile-response-accuracy/goldens/check-failure-reason-logged.mjs

@@ -5,7 +5,8 @@ import { constantTimeEqual } from '@/lib/recovery-token';
 import {
   findStrandedOrders,
   filterOrdersNeedingAlert,
-  markOrdersAlerted,
+  markOrdersAlertedForResponse,
+  reconcileStatusFor,
   sendReconciliationAlert,
 } from '@/lib/reconciliation';
 
@@ -81,7 +82,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   if (needingAlert.length === 0) {
     return NextResponse.json(
-      { alertedNow: [], skippedRecentlyAlerted, strandedCount: stranded.length },
+      {
+        alertedNow: [],
+        alertBookkeepingFailed: [],
+        skippedRecentlyAlerted,
+        strandedCount: stranded.length,
+      },
       { status: 200 }
     );
   }
@@ -98,20 +104,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const alertedOrderIds = needingAlert.map((order) => order.orderId);
-  try {
-    await markOrdersAlerted(alertedOrderIds, now);
-  } catch (error) {
-    // The email already sent successfully — a bookkeeping-write failure here means the next
-    // run may re-alert on these orders sooner than RE_ALERT_WINDOW_MS. Logged, not fatal:
-    // a duplicate alert email is far preferable to a silently-dropped one.
-    console.error('[admin/reconcile-orders] markOrdersAlerted failed after a successful send', {
-      error,
-      orderIds: alertedOrderIds,
-    });
-  }
+  const { alertedNow, alertBookkeepingFailed } = await markOrdersAlertedForResponse(
+    alertedOrderIds,
+    now
+  );
+  // The email already sent successfully — a bookkeeping-write failure here means the next run
+  // may re-alert these orders sooner than RE_ALERT_WINDOW_MS. Not fatal: a duplicate alert
+  // email is far preferable to a silently-dropped one. Deliberately NOT re-logged here: the
+  // only useful information at THIS point is `alertBookkeepingFailed` (which order ids), and
+  // the response body below already carries that to the caller. The actual failure REASON
+  // (a Firestore permission/quota/network error, or an unrecognized exception) is logged once,
+  // at its source, by markOrdersAlertedForResponse() itself (lib/reconciliation.ts) — that is
+  // the only place the real error object still exists. A second log here could only ever
+  // restate the order id list already in `alertBookkeepingFailed`, which is exactly the
+  // regression this project shipped once already: two callers each holding half the picture,
+  // with the half that actually explains WHY discarded before either could log it.
 
   return NextResponse.json(
-    { alertedNow: alertedOrderIds, skippedRecentlyAlerted, strandedCount: stranded.length },
-    { status: 200 }
+    { alertedNow, alertBookkeepingFailed, skippedRecentlyAlerted, strandedCount: stranded.length },
+    { status: reconcileStatusFor(alertBookkeepingFailed) }
   );
 }

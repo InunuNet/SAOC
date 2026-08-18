@@ -185,6 +185,90 @@ that seat, and is the natural substrate for a future, human-gated manual-settle 
 (proposed to Brad, not built). If you are reading this because you're about to remove the write
 as apparently-dead code: it isn't — read WITHDRAWN.md's "For the next reader" first.
 
+## Response shape: `alertedNow` vs. `alertBookkeepingFailed`
+
+Fixed by `reconcile-response-accuracy` F1 (`.agent/memory/project/specs/reconcile-response-accuracy/`),
+which closes a defect that shipped with the original feature (see "Known open items, resolved"
+below for what the bug used to be).
+
+The route's success path (`needingAlert.length > 0`) returns:
+
+```json
+{
+  "alertedNow": ["SAOC-2027-..."],
+  "alertBookkeepingFailed": [],
+  "skippedRecentlyAlerted": ["SAOC-2027-..."],
+  "strandedCount": 4
+}
+```
+
+- **`alertedNow`** — order ids whose `reconciliationAlertedAt` stamp is *proven* to have
+  committed (order doc + every one of its position docs, atomically — see
+  [above](#why-the-alert-stamp-is-one-atomic-writebatch-per-order)). It no longer means "the
+  route attempted to alert this order"; it means the write landed.
+- **`alertBookkeepingFailed`** — order ids whose stamp write failed to commit, even though the
+  alert email for them already sent successfully. **Always present in the body, even when
+  empty** (`[]` on full success) — never omitted. This is deliberate: an omitted field is itself
+  an ambiguous response a caller would have to special-case, on top of the field it's meant to
+  disambiguate.
+
+Both fields are computed by `markOrdersAlertedForResponse` (`lib/reconciliation.ts`), which
+wraps `markOrdersAlerted` and splits its outcome structurally off `MarkOrdersAlertedError`'s
+`failedOrderIds` — never by regex-parsing the error's free-text `.message`. Any thrown value
+`markOrdersAlertedForResponse` doesn't recognize (i.e. not a `MarkOrdersAlertedError`) hits a
+**conservative fallback**: `alertedNow` is empty and every attempted id is reported in
+`alertBookkeepingFailed`. An unrecognized failure is never read as "probably fine" — full
+per-scenario proof is in
+`.agent/memory/project/specs/reconcile-response-accuracy/goldens/check-response-splits-partial-failure.mjs`.
+
+`reconcileStatusFor` (`lib/reconciliation.ts`) maps the result to an HTTP status:
+
+| Condition | Status |
+|---|---|
+| `sendReconciliationAlert` itself throws (no alert sent at all) | 502, unchanged from before this fix |
+| Alert sent; every order's stamp committed | 200, `alertBookkeepingFailed: []` |
+| Alert sent; ≥1 order's stamp failed to commit | **207 Multi-Status** |
+
+### MUST READ before wiring this into Cloud Scheduler or any monitoring integration
+
+**JavaScript `fetch`'s `res.ok` is `true` for the entire 200-299 range, which includes 207.**
+Any cron wrapper, on-call check, or dashboard that only checks `res.ok` (or an equivalent
+"2xx = success" shortcut in another HTTP client) will silently treat a 207
+partial-bookkeeping-failure run exactly like a clean 200 — reintroducing the same blindness this
+fix exists to close, just one layer further up the stack. **Any real integration of this
+endpoint MUST parse the response body's `alertBookkeepingFailed` array and treat a nonempty
+array as needing attention, regardless of what the HTTP status class says.** 207 is still the
+correct status to send — it's honest, and it lets stricter monitoring that inspects the exact
+code distinguish this case from 200 — but it is not sufficient on its own for a caller that only
+checks `res.ok`. See "Infra: Cloud Scheduler wiring" below — whoever wires the real job must
+implement the body check, not just alert on non-2xx.
+
+### `MarkOrdersAlertedError.message` is a load-bearing string — do not edit casually
+
+`MarkOrdersAlertedError` (`lib/reconciliation.ts`) is deliberately byte-identical, in its
+`.message` text, to the plain `Error` it replaced. This is not incidental: `order-reconciliation`'s
+own shipped check, `check-partial-failure-atomicity.mjs`, asserts on that exact message text
+(`String(thrown.message).includes(FAILING_ORDER_ID)`). If you edit the wording of that message,
+you will break that check in the sibling `order-reconciliation` contract, not this one — the two
+features share this one string as an accidental interface. Structured data (which order ids
+failed) belongs on `MarkOrdersAlertedError.failedOrderIds`, not parsed from the message; only the
+message *text itself* is the coupling to watch.
+
+### Known inconsistency, decision already made, not yet implemented
+
+The `needingAlert.length === 0` early return in `route.ts` (no stranded orders currently need
+alerting) returns `{ alertedNow: [], skippedRecentlyAlerted, strandedCount }` **without** an
+`alertBookkeepingFailed` field — `markOrdersAlertedForResponse` is never called on that path, so
+there's nothing to report yet. This isn't a contract violation, but it breaks the "always
+present, never omitted" shape the rest of this section establishes, and a caller doing a blind
+`body.alertBookkeepingFailed.length` lookup needs a defensive `?? []` for this one branch only.
+
+**Decision (recorded in `.agent/memory/project/specs/reconcile-response-accuracy/goldens/README.md`
+§3a): add `alertBookkeepingFailed: []` to that branch too**, for response-shape uniformity — this
+is the one branch where "nothing failed" is unambiguously, trivially true (no write was even
+attempted). Not yet applied to `route.ts`; that pass was scoped to "check script and golden
+only." Flagging here for whoever next edits `route.ts`.
+
 ## Known open items
 
 - **Four stranded positions predate this feature and are not resolved by it.** This feature
@@ -196,23 +280,23 @@ as apparently-dead code: it isn't — read WITHDRAWN.md's "For the next reader" 
   describes. Alerting is not backfilling: these four need a separate, deliberate resolution
   (backfill `expiresAt`, delete the fixtures, or another decision) by a human, not an automated
   write from either feature.
-- **`app/api/admin/reconcile-orders/route.ts` reports all attempted order ids in `alertedNow`
-  even when the bookkeeping write partially failed.** The route sends the alert email first,
-  then calls `markOrdersAlerted`. If that write throws (logged, not fatal — see the route's own
-  comment), the response still returns every order id that was *attempted* under `alertedNow`,
-  not only the ones whose `reconciliationAlertedAt` stamp actually landed. The rationale in the
-  code is that a duplicate alert email next run is far preferable to a silently-dropped one — but
-  it means `alertedNow` in the response JSON is not, on its own, proof that the Firestore write
-  succeeded for every id it lists. A caller that needs that guarantee should re-check
-  `reconciliationAlertedAt` directly rather than trusting the response body alone.
+
+### Resolved: `alertedNow` used to report attempted ids, not proven-committed ids
+
+Previously, `app/api/admin/reconcile-orders/route.ts` reported every order id it *attempted* to
+alert in `alertedNow`, regardless of whether the `reconciliationAlertedAt` write actually
+committed — a caller could not distinguish "alerted all four" from "alerted none, all four
+threw," both rendered as a success-shaped body. Fixed by `reconcile-response-accuracy` F1; see
+"Response shape" above for the current behavior and the caller warning that goes with it.
 
 ## Files changed
 
-- `lib/reconciliation.ts` — new; `findStrandedOrders`, `filterOrdersNeedingAlert`,
-  `markOrdersAlerted`, `sendReconciliationAlert`
-- `app/api/admin/reconcile-orders/route.ts` — new; auth, wiring, response shape
-- `emails/ReconciliationAlert.tsx` — new; the alert email template
-- `firestore.indexes.json` — new; composite index on `orders(status, expiresAt)`
+- `lib/reconciliation.ts` — `findStrandedOrders`, `filterOrdersNeedingAlert`,
+  `markOrdersAlerted`, `sendReconciliationAlert`, and (added by `reconcile-response-accuracy` F1)
+  `MarkOrdersAlertedError`, `markOrdersAlertedForResponse`, `reconcileStatusFor`
+- `app/api/admin/reconcile-orders/route.ts` — auth, wiring, response shape
+- `emails/ReconciliationAlert.tsx` — the alert email template
+- `firestore.indexes.json` — composite index on `orders(status, expiresAt)`
 - `firebase.json` — added the `firestore` key pointing at `firestore.indexes.json`
 
 ## Sources
@@ -222,4 +306,9 @@ as apparently-dead code: it isn't — read WITHDRAWN.md's "For the next reader" 
 - `.agent/memory/project/specs/order-reconciliation/goldens/README.md` — full design record,
   the recovery scope decision, the A3/A4 dynamic-vs-leashed distinction, and the manual
   verification steps
+- `.agent/memory/project/specs/reconcile-response-accuracy/contract-f1.yaml` — the response-shape
+  fix contract
+- `.agent/memory/project/specs/reconcile-response-accuracy/goldens/README.md` — full design
+  record for the response-shape fix, including the §3a decided-but-not-yet-implemented item and
+  the Codex/`@qa`-raised caller warning
 - `.agent/memory/project/backlog.md` — "P1 — Stranded 'reserved' orders after a failed ITN"
