@@ -2255,3 +2255,40 @@ written — an untracked contract is invisible to every tool and every future ag
 multiple ABSOLUTE paths (reads plain `/Users/...` as "recursive force-delete from filesystem
 root"). Worked around with one relative path per command; no override needed. Worth tightening if
 it recurs.
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818235206.txt
+
+## P1 — LIVE BUG: reserved seats never release; abandoned carts hold capacity forever
+
+**Found:** 2026-08-18 by a NEGATIVE CONTROL in the capacity-hold contract's truth table (the case
+asserting an expired-but-unalerted seat MUST still release). Traced by @dev reading a real fixture
+back from Firestore.
+
+`lib/checkout-reservation.ts`'s `buildReservationDocs` writes `expiresAt` onto the **Order**
+document only — never onto the **Ticket position** document (~lines 49-70).
+
+But `getSoldCountsByTicketType` / `stillHoldsSeat` (`lib/data/tickets.ts`) read ONLY the `tickets`
+collection. With no `expiresAt` on the position, every reserved position hits the existing
+"no expiresAt -> return true, fail closed" branch UNCONDITIONALLY.
+
+**Therefore lazy expiry-release never fires in production.** `RESERVATION_TTL_MINUTES = 30` is
+inert for capacity counting.
+
+**Impact:** a buyer who opens checkout and walks away holds that seat permanently. A show can sell
+out entirely on abandoned carts that were never paid for. This is live today, and it is the
+OPPOSITE failure from the oversell path the capacity-hold work set out to fix — both are real.
+
+Note the fail-closed branch is individually correct (better to hold a seat than oversell); the bug
+is that the field it needs is never written, so the branch it guards is unreachable.
+
+**Fix:** write `expiresAt` onto the position document in `buildReservationDocs`, matching the
+Order. Then verify the release path actually fires — do not assume, since it has apparently never
+run.
+
+**Caution:** this interacts with the reconciliation hold. Once seats DO release, a paid-but-
+stranded order's seat becomes resellable unless the reconciliation-alerted hold is in place. The
+two changes should land together or in the right order, not independently.
+
+**Also worth noting:** the concurrency/no-oversell property is genuinely well proven (5 concurrent
+requests at the last seat, real server, real Firestore). That rigour is real — but it verified the
+WRITE path while nothing verified the RELEASE path, which is where the defect sat.
