@@ -1247,3 +1247,8 @@ promising content that never arrived. Lesson: any "relay the latest message" mec
 must extract the full block (header → next header/EOF), and a relay that can only ever
 emit one line is a truncation bug waiting to be noticed. Fixed via
 contract comms-relay-truncation (extract_latest_block, source-safe main() wrapper).
+
+## Never TaskStop a mutation-testing QA agent, and always diff before commit (2026-08-18)
+Stopped qa-vendor-f8b mid-run; its A4 mutation (line 94, bare `${boothNumber}`) was left on disk and swept into commit bcbbc03, shipping a real "booth number: null" defect the gate could not see. Fixed in cd0308d.
+**Why:** a stopped agent never reaches its revert step; the working tree is silently dirty with deliberate breakage.
+**How to apply:** before any commit, `git diff` the exact staged hunks against what @dev reported; never stop a QA agent mid-mutation — message it to stand down and let it revert first; never run a gate or commit while any QA agent is mutation-testing.
