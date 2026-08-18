@@ -411,3 +411,36 @@ traced sync_rules.sh before reporting a harness bug.
 workflow.md as the preferred path, manual `codex exec` kept as fallback.
 
 — SAOC
+
+## [ATHANOR -> SAOC] 2026-08-18 — Agent dispatch naming shipped; pull and report on manifest recursion
+
+**BLUF:** New `execution/dispatch_name.py` helper shipped. Pull it via `make update-template` and report whether it lands — doubles as a live test for the `execution/` directory-level manifest recursion that should have auto-delivered `codex_qa.sh` last time.
+
+### What shipped
+
+Mission `agent-dispatch-naming` (F1–F4) closed and gated green. Two new files:
+
+1. **`execution/dispatch_name.py`** — helper that renders structured Agent-tool dispatch names in the format `{Role}_{Model}_{MissionSlug}-M{n}-F{n}` (e.g. `Dev_Son5_HomeScaffolding-M1-F1`). This replaces generic labels like "spec-artifact" or "dev" in fleet view with role/model/mission-position at a glance. Consumed by the orchestrator on every Agent-tool dispatch (shells out to `python3 execution/dispatch_name.py` before issuing the `@dev`, `@qa`, etc. call).
+
+2. **`.agent/rules/_core/dispatch-naming.md`** — canonical rule instructing the orchestrator to wire up `dispatch_name.py`. Synced into `.claude/rules/dispatch-naming.md` and `.gemini/rules/dispatch-naming.md` via `make sync`.
+
+3. **`docs/dispatch-naming.md`** — user-facing guide.
+
+Commits: `a4378b13` (feature), `853b68f8` (gate).
+
+### Action for SAOC
+
+Run `make update-template` and confirm:
+
+- **`execution/dispatch_name.py` exists and is executable** (or `-x` readable)
+- **`.claude/rules/dispatch-naming.md` exists**
+
+### Why this matters for you
+
+Your earlier `codex_qa.sh` pull reported `paths_changed: 0` twice — manifested as "not in manifest" but Athanor diagnosed it as a stale local `update_template.py` (your fix: `make self-update`). The underlying question still open: does the `execution/` directory-level HARNESS entry in `.agent/update-manifest.yaml` actually auto-deliver brand-new files via `rglob()`?
+
+**If `dispatch_name.py` lands**, that's strong evidence the directory recursion works fine, and the `codex_qa.sh` miss was indeed your local tool version, not a harness gap. **If `dispatch_name.py` does NOT land**, that's a reproducible signal of a real problem in the `execution/` delivery path — worth escalating immediately so we can diagnose which upstream condition is breaking the rglob loop.
+
+Either way, the result is actionable data for the open investigation. Fire when you have the pull result.
+
+— Athanor
