@@ -1,0 +1,332 @@
+schema: athanor.contract/v1
+slug: vendor-f7-payment-path
+goal: >-
+  Mission vendor-registration F7 -- the booth fee payment path: offline EFT (no PayFast/gateway
+  integration), a RATE-LIMITED proof-of-payment upload with a non-enumerable existence posture
+  and replace-not-refuse overwrite semantics, and office-use booth-number/payment-received
+  recording. Adds SIX new additive-only optional fields to VendorSubmission
+  (proofOfPaymentPath, proofOfPaymentUploadedAt, boothNumber, paymentReceived,
+  paymentConfirmedBy, paymentConfirmedAt), three new pure modules
+  (lib/vendor-payment.ts -- planProofOfPaymentUpload/decideVendorPaymentUpdate;
+  lib/vendor-payment-rate-limit.ts -- delegates to the real decideRateLimit();
+  lib/vendor-proof-of-payment-handler.ts -- the fully-injectable orchestrator, mirroring F5's
+  lib/vendor-registration-handler.ts), one PUBLIC unauthenticated rate-limited route (POST
+  /api/vendors/[id]/proof-of-payment) for the vendor's own upload, and one capability-gated
+  admin route (POST /api/admin/vendors/[id]/payment, reusing F6's
+  'review-vendor-applications' capability -- no new capability) for the office-use fields.
+  Does NOT touch F6's status-transition machine (lib/vendor-review.ts) at all -- payment/booth
+  recording is orthogonal metadata gated on status==='approved', not a new state in that
+  machine. Full decision record, every defeating mutation, and the source-document wording
+  this contract is built against: contracts/golden/vendor-f7-payment-path/README.md
+created_at: '2026-08-18'
+autonomy: high
+
+features:
+  - id: F7
+    name: >-
+      Seven new/changed files, zero changes to lib/vendor-review.ts. (1) types/index.ts (edit)
+      -- VendorSubmission gains six new OPTIONAL fields, additive-only, alongside the existing
+      31 form fields + status/submittedAt + F6's reviewedBy/reviewedAt: proofOfPaymentPath?:
+      string | null; proofOfPaymentUploadedAt?: Date | null (set by the public upload route);
+      boothNumber?: string | null; paymentReceived?: boolean; paymentConfirmedBy?: string |
+      null; paymentConfirmedAt?: Date | null (the last four are office-use fields, set ONLY by
+      the capability-gated admin payment route -- never by the public submitter or the public
+      upload route). No existing field is renamed, removed, or made non-optional.
+      (2) lib/vendor-payment.ts (new) -- pure, side-effect-free, no Firestore/firebase-admin/
+      Firebase Storage SDK/admin-auth/admin-roles import anywhere. Exports:
+      PROOF_OF_PAYMENT_ALLOWED_MIME_TYPES (['application/pdf', 'image/jpeg', 'image/png'] as
+      const) and PROOF_OF_PAYMENT_MAX_BYTES (5 * 1024 * 1024) as top-level named constants --
+      no magic numbers, and NOTE: the source form names no fee amount anywhere and no ZAR price
+      list exists for booth types in Lee-Ann's document, so none is invented here; these two
+      constants are an engineering default for the upload adapter, not a Council-approved
+      figure. planProofOfPaymentUpload(input: { submissionId, fileName, mimeType, sizeBytes }):
+      { ok: true; plan: { storagePath: string } } | { ok: false; error: string } -- validates
+      submissionId against a safe-id pattern (rejects path separators, '..', empty), rejects an
+      empty/whitespace fileName, rejects any mimeType outside PROOF_OF_PAYMENT_ALLOWED_MIME_TYPES,
+      rejects a non-positive or non-integer sizeBytes, rejects sizeBytes >
+      PROOF_OF_PAYMENT_MAX_BYTES, and on success computes a deterministic storagePath
+      (`vendor-proofs/{submissionId}/proof-of-payment.{ext}`) whose extension is derived SOLELY
+      from the validated mimeType -- NEVER from the caller-supplied fileName, so a spoofed
+      extension cannot influence the stored path. decideVendorPaymentUpdate(input: {
+      currentStatus, boothNumber?, paymentReceived?, confirmedBy, now, allocatedBoothNumbers }):
+      { ok: true; patch: { boothNumber: string | null; paymentReceived: boolean;
+      paymentConfirmedBy: string; paymentConfirmedAt: Date } } | { ok: false; error: string } --
+      refuses unless currentStatus === 'approved' (office-use fields are something the
+      committee records once a vendor is accepted, never before -- this is a JUDGEMENT CALL,
+      not stated explicitly in the source form, justified in the golden README); refuses a
+      non-empty boothNumber that collides with one already present in the caller-injected
+      allocatedBoothNumbers list (booth numbers must be unique across approved submissions --
+      also a JUDGEMENT CALL, see README); on success returns a structurally additive-only
+      4-key patch. `now`/`confirmedBy` are always taken verbatim from the input, never
+      Date.now()/`new Date()` internally -- mirrors F6/F8's injected-time pattern exactly.
+      lib/vendor-review.ts (F6) is NOT modified -- payment/booth recording is orthogonal
+      metadata on an already-'approved' submission, not a new edge in that closed machine.
+      (3) lib/vendor-payment-rate-limit.ts (new) -- pure wrapper mirroring F5's
+      lib/vendor-registration-rate-limit.ts pattern exactly: exports
+      PROOF_OF_PAYMENT_RATE_LIMIT_MAX_ATTEMPTS = 5, PROOF_OF_PAYMENT_RATE_LIMIT_WINDOW_MS = 1
+      day (both placeholders, not Council-approved -- a JUDGEMENT CALL, see README),
+      decideProofOfPaymentRateLimit(key, now, priorAttempts) delegating to the REAL
+      decideRateLimit() (lib/resend-rate-limit.ts) with these overrides -- no sliding-window
+      arithmetic reimplemented, no reuse of RESEND_*/VENDOR_REGISTER_* constants -- and
+      createInMemoryProofOfPaymentRateLimitStore(). (4) lib/vendor-proof-of-payment-handler.ts
+      (new) -- fully-injectable orchestrator, mirroring lib/vendor-registration-handler.ts's
+      shape exactly (no Firebase Admin SDK/Storage/admin-auth/admin-roles import):
+      handleProofOfPaymentUpload(input, deps) where deps supplies now, rateLimitKey,
+      getPriorAttempts/recordAttempt, submissionExists(id): Promise<boolean> (an
+      EXISTENCE-ONLY lookup -- the handler never reads or can leak any other submission
+      field), uploadFile(plan, fileBase64, mimeType), and updateSubmission(id, patch). Order
+      of operations, matching F5's handler exactly: (a) rate limit checked AND the attempt
+      recorded FIRST, before anything else -- a blocked caller reaches NONE of
+      planProofOfPaymentUpload/submissionExists/uploadFile/updateSubmission; on block, 429 with
+      retryAfterMs. (b) the REAL planProofOfPaymentUpload() (never reimplemented) validates
+      upload metadata -- on `ok:false`, 400 with the error, before any Firestore lookup, so
+      this 400 carries no existence signal either. (c) NON-ENUMERABLE EXISTENCE POSTURE (a
+      JUDGEMENT CALL, see README): deps.submissionExists() is checked, but the RESPONSE is
+      byte-for-byte IDENTICAL (202, `{ accepted: true }`) whether or not the submission
+      exists -- only the internal side effects (uploadFile + updateSubmission) differ,
+      happening ONLY when it exists. (d) OVERWRITE SEMANTICS (a JUDGEMENT CALL, see README): a
+      second upload against the same submissionId is NEVER refused or versioned -- it computes
+      the IDENTICAL deterministic storagePath (mime-derived, never filename-derived) and
+      overwrites, with the latest call's `now` as the surviving proofOfPaymentUploadedAt.
+      updateSubmission's patch touches ONLY proofOfPaymentPath/proofOfPaymentUploadedAt --
+      NEVER boothNumber/paymentReceived/paymentConfirmedBy/paymentConfirmedAt (those belong
+      only to the admin route). (5) app/api/vendors/[id]/proof-of-payment/route.ts (new) --
+      POST, PUBLIC and deliberately UNAUTHENTICATED (no getAdminSession/hasCapability call at
+      all, and no import of lib/admin-auth.ts or lib/admin-roles.ts): a vendor who already has
+      their own submission id (from the F5 confirmation email) uploads proof of an EFT payment
+      against it. THIN WRAPPER ONLY -- delegates every load-bearing decision to the REAL
+      handleProofOfPaymentUpload() (mirrors app/api/vendors/register/route.ts's (F5) own
+      thin-wrapper shape and its deriveRateLimitKey()-from-`x-forwarded-for` pattern exactly);
+      the route itself must never branch on submission existence (e.g. no route-level 404 for
+      a missing submission -- that would leak existence even if the handler's own response
+      is non-enumerable). The real upload adapter (Firebase Storage via
+      firebase-admin/storage) is UNPROVEN by this contract, F10 territory per the house rule
+      on live-Storage checks. (6) app/api/admin/vendors/[id]/payment/
+      route.ts (new) -- POST, capability-gated on the SAME 'review-vendor-applications'
+      capability F6 already introduced (no new capability; a JUDGEMENT CALL -- payment/booth
+      recording is the same back-office triage role as application review, see README), wired
+      identically to F6's review route: getAdminSession() -> 401/403 on failure, THEN
+      hasCapability(session.decodedToken, NATIONAL_SHOW_ID, 'review-vendor-applications', {
+      now, lookupShowWindow }) with a REAL, awaited resolveShowWindowLookup(NATIONAL_SHOW_ID,
+      now) -- never an omitted third argument, never an inline `() => null` lookup. Loads the
+      target submission's current status and its own current boothNumber (if any), queries
+      other 'approved' submissions' boothNumber values (EXCLUDING this submission's own
+      document) to build allocatedBoothNumbers, calls the REAL decideVendorPaymentUpdate()
+      (never a second, hand-written status/uniqueness check) with that data plus the request
+      body's boothNumber/paymentReceived and `session.decodedToken.email` as confirmedBy.
+      `decision.ok === false` -> 409 with `decision.error`, no Firestore write attempted.
+      `decision.ok === true` -> `ref.update(decision.patch)` (partial-merge, NEVER `ref.set`,
+      which would wipe the 31 submitted fields + F6's review fields) -> 200. A missing
+      submission -> 404 before the decision is even attempted. Zero authorization meaning
+      carried by data: a VendorSubmission at ANY point in this payment lifecycle -- proof
+      uploaded, booth allocated, payment received -- carries no admin/roles/capability-
+      flavoured key and grants nothing on its own; only a real capability check against a real
+      admin token does.
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-f7-payment-path/README.md
+  - contracts/golden/vendor-f7-payment-path/vendors-payment-route-wired.expected.ts.txt
+  - contracts/golden/vendor-f7-payment-path/proof-of-payment-route-wired.expected.ts.txt
+  - contracts/checks/vendor-f7-payment-path/tsconfig.typecheck.json
+  - contracts/checks/vendor-f7-payment-path/fixtures/vendor-f7-payment-path-typecheck.ts
+  - contracts/checks/vendor-f7-payment-path/fixtures/vendors-payment-route-unwired.fixture.ts.txt
+  - contracts/checks/vendor-f7-payment-path/fixtures/proof-of-payment-route-unwired.fixture.ts.txt
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The whole project still type-checks under strict TypeScript after all seven new/changed files.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof (not source-grep) of lib/vendor-payment.ts's,
+        lib/vendor-payment-rate-limit.ts's, and lib/vendor-proof-of-payment-handler.ts's
+        exported shapes, and types/index.ts's six new VendorSubmission fields: fully-typed
+        ProofOfPaymentUploadInput/VendorPaymentUpdateInput/ProofOfPaymentHandlerDeps literals,
+        every narrowed arm of each discriminated-union result, and all six new fields assigned
+        on a VendorSubmission literal alongside every existing field -- either compiles or
+        doesn't.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/vendor-f7-payment-path/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        Behavioural proof (real planProofOfPaymentUpload() calls) that every allowed mime type
+        under the byte limit is accepted with a deterministic, mime-derived-extension
+        storagePath (never derived from the caller's fileName); a disallowed mime type,
+        anything one byte over PROOF_OF_PAYMENT_MAX_BYTES, a non-positive/non-integer size, an
+        empty/whitespace file name, and a path-traversal-shaped or empty submission id are all
+        refused. A file exactly AT the byte limit is accepted (proves the bound is a real
+        comparison, not an approximate one). Defeating mutation: removing the size-limit
+        comparison, or re-deriving the extension from fileName instead of mimeType.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f7-payment-path/check-proof-of-payment-plan.mjs
+
+    - id: A4
+      description: >-
+        No-magic-numbers proof: lib/vendor-payment.ts exports PROOF_OF_PAYMENT_MAX_BYTES and
+        PROOF_OF_PAYMENT_ALLOWED_MIME_TYPES as top-level named constants, and
+        planProofOfPaymentUpload()'s size check references the named constant identifier, not
+        a re-inlined bare numeric literal. Defeating mutation: replacing the
+        `sizeBytes > PROOF_OF_PAYMENT_MAX_BYTES` comparison with a hardcoded
+        `sizeBytes > 5242880`.
+      command: >-
+        node contracts/checks/vendor-f7-payment-path/check-named-constants.mjs
+
+    - id: A5
+      description: >-
+        decideVendorPaymentUpdate()'s two independent gates, proven by real function calls
+        over all 4 statuses x representative booth-number cases: (status gate) office-use
+        fields are refused against 'submitted', 'under-review', and 'rejected', and accepted
+        against 'approved'; (booth uniqueness) a boothNumber colliding with
+        allocatedBoothNumbers is refused, a non-colliding or omitted boothNumber is accepted,
+        and a submission re-confirming its OWN already-recorded booth number succeeds when the
+        caller has (as required) excluded it from allocatedBoothNumbers. A COMBINED-FAILURE
+        case -- wrong status AND a colliding booth number in the same call -- is refused and
+        names the status-gate reason (the function short-circuits on it first); both reasons
+        are additionally proven to fail independently elsewhere in the same script, so neither
+        failure mode depends on the other to be real. Defeating mutation: allowing the status
+        gate to pass for any status, or removing the booth-uniqueness comparison.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f7-payment-path/check-payment-status-gate-and-booth-uniqueness.mjs
+
+    - id: A6
+      description: >-
+        Additive-patch and injected-time proof, mirroring F6's own A6/F8's compedBy/purchasedAt
+        pattern: every successful patch has EXACTLY the 4 keys {boothNumber, paymentReceived,
+        paymentConfirmedBy, paymentConfirmedAt}; paymentConfirmedBy is the exact injected
+        confirmedBy (two different admins produce two different values); paymentConfirmedAt
+        derives exclusively from the injected `now` (identical explicit `now` values several ms
+        apart in wall-clock time produce identical paymentConfirmedAt; different `now` values
+        produce different ones); every refused decision has EXACTLY the 2 keys {ok, error}.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f7-payment-path/check-additive-patch-injected-time.mjs
+
+    - id: A7
+      description: >-
+        Zero-authorization proof, mirroring F4/F6's own: (a) a VendorSubmission carried through
+        F6's review machine to 'approved' and then through a payment patch, JSON round-tripped,
+        carries no admin/roles/capability-flavoured key; (b) lib/vendor-payment.ts imports
+        neither '@/lib/admin-auth' nor '@/lib/admin-roles' (or any relative-path spelling); (c)
+        planProofOfPaymentUpload() itself has no notion of submission status or authorization
+        at all -- it succeeds identically regardless of the real submission's status, since
+        this pure function has no way to know it.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f7-payment-path/check-zero-authorization.mjs
+
+    - id: A8
+      description: >-
+        F6 REGRESSION GATE -- re-runs F6's own real check scripts (closed-transition-machine,
+        additive-patch-injected-time, zero-authorization-carrythrough, no-pii-in-logs)
+        completely unchanged, proving F7's six additive VendorSubmission fields do not alter
+        F6's closed status-transition machine, its additive-only patch shape, or its
+        zero-authorization carry-through. A red result here means F7 broke F6 -- unlike F6's
+        own A4 (which predicted two REQUIRED edits to F3's hardcoded counts), no F3-style edit
+        is expected or acceptable here: F7 must not touch lib/vendor-review.ts at all.
+      command: >-
+        node contracts/checks/vendor-f7-payment-path/check-f6-regression.mjs
+
+    - id: A9
+      description: >-
+        THE F8-LESSON assertion, applied to the new admin payment route -- proves
+        app/api/admin/vendors/[id]/payment/route.ts actually calls the capability gate (the
+        SAME 'review-vendor-applications' capability F6 introduced, not a new one) and the
+        REAL decideVendorPaymentUpdate(), not merely that the pure function works in isolation.
+        Same technique as F6's A8: a source-level discriminator, self-tested against a frozen
+        KNOWN-UNWIRED fixture (must reject) and this contract's own architect-authored WIRED
+        golden (must accept), before it is ever trusted against the real repository file.
+        DEFEATING MUTATION: deleting the hasCapability call entirely; swapping
+        'review-vendor-applications' for a more widely held capability; omitting the `opts`
+        argument or passing an inline `() => null` lookup; reimplementing the payment decision
+        inline instead of calling decideVendorPaymentUpdate(); or changing `ref.update(` to
+        `ref.set(`.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f7-payment-path/check-admin-payment-route-wiring.mjs
+
+    - id: A10
+      description: >-
+        Route-wiring discriminator for the PUBLIC proof-of-payment route -- proves
+        app/api/vendors/[id]/proof-of-payment/route.ts imports and calls the REAL
+        handleProofOfPaymentUpload() (never reimplementing rate-limiting, upload validation, or
+        the existence check inline in the route itself), does NOT import '@/lib/admin-auth' or
+        '@/lib/admin-roles' at all (the inverse of A9's requirement), staying genuinely public,
+        and never returns a route-level 404 (or any other existence-shaped branch) for a
+        missing submission -- which would leak existence at the route layer even if the
+        handler's own response is non-enumerable. Same self-test-before-trust technique as A9.
+        DEFEATING MUTATION: hand-rolling rate-limit/upload/existence logic inline instead of
+        delegating to handleProofOfPaymentUpload(); importing the admin-auth/admin-roles gate
+        at all; or the route itself branching on submission existence.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f7-payment-path/check-public-proof-of-payment-route-wiring.mjs
+
+    - id: A11
+      description: >-
+        No-PII-in-logs proof for BOTH new routes, extending F6's discipline: no `console.log`
+        call in either file, and no `console.error` call in either file references the
+        submissions array, a Firestore snapshot/docs identifier, any submitted business/contact
+        field (businessName/contactEmail/contactPersonName/contactCellPhone/physicalAddress/
+        cipcNumber/vatNumber), or the raw uploaded file payload (fileBase64) -- a caught error
+        is logged as a generic message plus `error.message` only.
+      command: >-
+        node contracts/checks/vendor-f7-payment-path/check-no-pii-in-logs.mjs
+
+    - id: A13
+      description: >-
+        decideProofOfPaymentRateLimit() delegates to the REAL decideRateLimit()
+        (lib/resend-rate-limit.ts) with PROOF_OF_PAYMENT_RATE_LIMIT_MAX_ATTEMPTS (5) /
+        PROOF_OF_PAYMENT_RATE_LIMIT_WINDOW_MS (1 day) as overrides -- not a reimplementation of
+        the sliding-window arithmetic. Proven by real calls: the boundary is exactly at 5
+        (a 6th attempt within the window is refused with a non-null retryAfterMs, a 5th with
+        only 4 prior recorded is allowed); a different key with an identical-looking
+        priorAttempts array stays allowed; attempts older than the 1-day window are excluded
+        from the count. Mirrors F5's check-rate-limit-decision-wrapper.mjs exactly.
+      command: >-
+        npx tsx contracts/checks/vendor-f7-payment-path/check-rate-limit-decision-wrapper.mjs
+
+    - id: A14
+      description: >-
+        RATE-LIMIT-SHIELDS-EVERYTHING -- a key pre-seeded with exactly
+        PROOF_OF_PAYMENT_RATE_LIMIT_MAX_ATTEMPTS prior attempts, calling
+        handleProofOfPaymentUpload() with an otherwise-fully-valid input against a REAL,
+        EXISTING submission, is refused with 429 BEFORE deps.submissionExists/deps.uploadFile/
+        deps.updateSubmission are ever called (proven to be called exactly ZERO times). A
+        DIFFERENT, unrate-limited key succeeds normally (202, one call each) in the SAME run,
+        proving the 429 wasn't a global failure. Mirrors F5's
+        check-rate-limit-shields-write.mjs exactly. DEFEATING MUTATION: moving the rate-limit
+        check to after the existence check or the upload.
+      command: >-
+        npx tsx contracts/checks/vendor-f7-payment-path/check-rate-limit-shields-handler-calls.mjs
+
+    - id: A15
+      description: >-
+        NON-ENUMERABLE EXISTENCE POSTURE -- proves, via real handleProofOfPaymentUpload()
+        calls, that a rate-limit-clear, validly-shaped request produces a BYTE-FOR-BYTE
+        IDENTICAL response (status 202, `{ accepted: true }`) whether the target submission id
+        exists or not -- an attacker cannot distinguish "real submission id" from "made-up
+        submission id" by response shape or status code. Internal side effects DO differ:
+        uploadFile/updateSubmission are called exactly once when the submission exists, and
+        ZERO times when it does not. DEFEATING MUTATION: returning 404 (or any other
+        status/body distinct from the exists:true case) when the submission does not exist.
+      command: >-
+        npx tsx contracts/checks/vendor-f7-payment-path/check-nonenumerable-existence.mjs
+
+    - id: A16
+      description: >-
+        OVERWRITE SEMANTICS -- proves, via two successive real handleProofOfPaymentUpload()
+        calls against the SAME submissionId (with a deliberately DIFFERENT original file name
+        on the second call), that: both calls succeed (202) and both actually reach
+        updateSubmission exactly once each (a second upload is never refused because a first
+        already exists); both compute the IDENTICAL deterministic storagePath (mime-derived,
+        never filename-derived) -- overwrite, not versioning; and the SECOND call's
+        proofOfPaymentUploadedAt reflects the SECOND call's own injected `now`, not the
+        first's. DEFEATING MUTATION: refusing a second upload for an id that already has
+        proofOfPaymentPath set, or writing the second upload to a distinct, versioned path.
+      command: >-
+        npx tsx contracts/checks/vendor-f7-payment-path/check-overwrite-semantics.mjs
+
+    - id: A17
+      description: pnpm lint passes with zero errors after all seven new/changed files.
+      command: pnpm lint

@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/vendor-payment.ts",
+    "../../../lib/vendor-payment-rate-limit.ts",
+    "../../../lib/vendor-proof-of-payment-handler.ts",
+    "../../../lib/vendor-review.ts",
+    "../../../lib/vendor-submissions.ts",
+    "../../../lib/resend-rate-limit.ts",
+    "../../../types/index.ts",
+    "fixtures/vendor-f7-payment-path-typecheck.ts"
+  ],
+  "exclude": []
+}

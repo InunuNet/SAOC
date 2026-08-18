@@ -514,4 +514,18 @@ export interface VendorSubmission {
   // ref.update() — never present on a freshly-submitted document.
   reviewedBy?: string | null;
   reviewedAt?: Date | null;
+
+  // F7 (vendor-registration) — booth fee payment path, additive-only. proofOfPaymentPath/
+  // proofOfPaymentUploadedAt are set by the PUBLIC proof-of-payment upload route
+  // (app/api/vendors/[id]/proof-of-payment/route.ts) via lib/vendor-proof-of-payment-handler.ts.
+  // boothNumber/paymentReceived/paymentConfirmedBy/paymentConfirmedAt are office-use fields,
+  // set ONLY by the capability-gated admin payment route
+  // (app/api/admin/vendors/[id]/payment/route.ts) via lib/vendor-payment.ts's
+  // decideVendorPaymentUpdate() — never by the public submitter or the public upload route.
+  proofOfPaymentPath?: string | null;
+  proofOfPaymentUploadedAt?: Date | null;
+  boothNumber?: string | null;
+  paymentReceived?: boolean;
+  paymentConfirmedBy?: string | null;
+  paymentConfirmedAt?: Date | null;
 }
