@@ -1,12 +1,15 @@
 import { redirect } from 'next/navigation';
 import { getFirestore } from 'firebase-admin/firestore';
 
-import { getAdminSession } from '@/lib/admin-auth';
+import { getAdminSession, hasCapability } from '@/lib/admin-auth';
 import { initAdmin } from '@/lib/firebase-admin';
+import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
+import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { UtilityBar, Header, Footer } from '@/components/chrome';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
 import { TicketsTable } from '@/components/admin/TicketsTable';
+import { AdminNav } from '@/components/admin/AdminNav';
 import type { ShowIdentity } from '@/types';
 import type { Ticket, TicketType, TicketStatus } from '@/types/index';
 
@@ -21,6 +24,15 @@ export default async function AdminPage() {
     redirect('/admin/login');
   }
 
+  const now = new Date();
+  const lookupShowWindow = await resolveShowWindowLookup(NATIONAL_SHOW_ID, now);
+  const canReviewVendors = hasCapability(
+    session.decodedToken,
+    NATIONAL_SHOW_ID,
+    'review-vendor-applications',
+    { now, lookupShowWindow },
+  );
+
   const [show, tickets] = await Promise.all([
     sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
     fetchTickets(),
@@ -30,6 +42,7 @@ export default async function AdminPage() {
     <>
       <UtilityBar show={show} />
       <Header />
+      <AdminNav variant="bar" canReviewVendors={canReviewVendors} />
       <main>
         <div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-8 sm:py-16">
           <span className="eyebrow">Admin</span>

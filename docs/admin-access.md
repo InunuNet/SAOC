@@ -542,6 +542,20 @@ See [docs/ticketing.md](ticketing.md) § "Buyer Accounts and POPIA Consent: lib/
 for the full details, including why the boundary is load-bearing and what is manually verified
 (live HTTP round trip against a real Firebase project).
 
+## Signing out
+
+Every `/admin/*` surface now has a persistent navigation menu with a real Sign out control —
+see [docs/admin-nav-menu.md](admin-nav-menu.md) for the full account. Sign-out clears the
+`session` cookie server-side (`DELETE /api/admin/session`) and the Firebase client SDK's local
+auth state, but does **not** call `revokeRefreshTokens()` — a session cookie captured before
+sign-out stays valid until its natural ~5-day expiry regardless. Use
+`pnpm exec tsx scripts/admin-revoke.ts <email>` (above) when a session actually needs to be
+invalidated immediately, not just signed out of through the UI.
+
+The navigation menu itself is presentation only and grants nothing — see
+[docs/admin-nav-menu.md](admin-nav-menu.md)'s "The nav is never the access boundary" section.
+Every route gate documented above in this file is unchanged by it.
+
 ## Out of scope here (F4 / M2)
 
 The human end-to-end door-scanner proof is later work (mission `admin-auth-hardening`,

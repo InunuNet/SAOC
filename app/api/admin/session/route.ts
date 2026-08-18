@@ -50,3 +50,20 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ status: 'ok' }, { status: 200 });
 }
+
+// Sign-out (F1 admin-nav-menu). Same file as POST — one choke point for session
+// lifecycle, not a new route. No request body, no auth check: clearing a cookie that
+// may already be absent, expired, or invalid is always safe, and requiring a valid
+// session to sign out would make it impossible to sign out of an already-broken one.
+export async function DELETE() {
+  const cookieStore = await cookies();
+  cookieStore.set('session', '', {
+    httpOnly: true,
+    secure: true,
+    path: '/',
+    sameSite: 'strict',
+    maxAge: 0,
+  });
+
+  return NextResponse.json({ status: 'ok' }, { status: 200 });
+}

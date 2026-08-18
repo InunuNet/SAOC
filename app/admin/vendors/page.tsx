@@ -1,11 +1,15 @@
 import { getFirestore } from 'firebase-admin/firestore';
 
+import { getAdminSession, hasCapability } from '@/lib/admin-auth';
 import { initAdmin } from '@/lib/firebase-admin';
+import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
+import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { UtilityBar, Header, Footer } from '@/components/chrome';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
 import { VendorReviewTable } from '@/components/admin/VendorReviewTable';
+import { AdminNav } from '@/components/admin/AdminNav';
 import type { ShowIdentity } from '@/types';
 import type { VendorSubmission } from '@/types/index';
 
@@ -25,6 +29,24 @@ import type { VendorSubmission } from '@/types/index';
 export const dynamic = 'force-dynamic';
 
 export default async function VendorsAdminPage() {
+  // Re-derives canReviewVendors independently of app/admin/vendors/layout.tsx's own gate
+  // (which already proved it true to reach this page at all) — a few extra lines,
+  // deliberately not a hardcoded `true` literal, so AdminNav stays correct if the
+  // vendors capability criteria ever change without anyone remembering to update a
+  // hardcoded prop (see this feature's golden).
+  const session = await getAdminSession();
+  let canReviewVendors = false;
+  if (session.ok) {
+    const now = new Date();
+    const lookupShowWindow = await resolveShowWindowLookup(NATIONAL_SHOW_ID, now);
+    canReviewVendors = hasCapability(
+      session.decodedToken,
+      NATIONAL_SHOW_ID,
+      'review-vendor-applications',
+      { now, lookupShowWindow },
+    );
+  }
+
   const [show, submissions] = await Promise.all([
     sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
     fetchVendorSubmissions(),
@@ -34,6 +56,7 @@ export default async function VendorsAdminPage() {
     <>
       <UtilityBar show={show} />
       <Header />
+      <AdminNav variant="bar" canReviewVendors={canReviewVendors} />
       <main>
         <div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-8 sm:py-16">
           <span className="eyebrow">Admin</span>

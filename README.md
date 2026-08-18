@@ -99,6 +99,7 @@ types/            — TypeScript interfaces
 | Ticketing M1–M2 | Done | CMS-controlled pricing, buy page, confirmation/cancellation landings, PayFast sandbox integration, and email confirmation with QR codes per position. See [docs/ticketing.md](docs/ticketing.md) (developer) and [docs/ticketing-for-editors.md](docs/ticketing-for-editors.md) (secretary). |
 | Ticketing — position expiry write fix | Done | Reserved seat holds now actually release on expiry — fixes a live bug where abandoned carts held seats forever. See [docs/ticketing-position-expiry-write.md](docs/ticketing-position-expiry-write.md). |
 | Order reconciliation | Done | Detects orders stranded `reserved` past expiry and emails a human; never auto-settles. See [docs/order-reconciliation.md](docs/order-reconciliation.md). |
+| Admin navigation menu | Done | Persistent, capability-aware nav on every `/admin/*` surface, plus a real sign-out. See [docs/admin-nav-menu.md](docs/admin-nav-menu.md). |
 
 Full milestone docs are in [`docs/`](docs/).
 

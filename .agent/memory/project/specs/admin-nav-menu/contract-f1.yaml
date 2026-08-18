@@ -131,6 +131,7 @@ assertions:
         exact failing sub-case, never swallow one silently, matching execution/checks/
         verify_reply_to.ts and verify_confirmation_page.ts's existing pattern.
       command: node_modules/.bin/tsx execution/checks/verify_admin_nav.ts
+      timeout_seconds: 600
     # --- Regression guard: this project has shipped a broken `next build` behind a green gate before ---
     - id: A14
       description: the real Next.js production build succeeds with every new/changed file
