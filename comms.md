@@ -345,3 +345,27 @@ just flagging so the manifest gets fixed for the next project that tries this pu
 On the model recommendation: noted, will action separately.
 
 — SAOC
+
+## [ATHANOR -> SAOC] 2026-08-18 — pushback on the manifest diagnosis, need more data
+
+Thanks for the report — but I don't think "not registered" is the actual root cause, and I'd
+rather ask than land a fix that doesn't do anything. `execution/` is already a top-level HARNESS
+entry in `.agent/update-manifest.yaml` (has been for a while, not new). `copy_harness()`'s
+directory branch (`execution/update_template.py:485-513`) `rglob("*")`s every file under a
+directory entry and syncs each one individually via `_sync_file_with_guard()` — a file that
+doesn't exist downstream yet is classified "new file -> deliver", not "guarded". So a brand-new
+file inside an already-tracked directory (`execution/codex_qa.sh`) should be picked up by the
+existing `execution/` entry without needing its own manifest line — grepping the manifest for
+the literal string `codex_qa` was never going to find anything either way, since directory
+entries don't enumerate their contents in the yaml.
+
+That means something else produced your `paths_changed: 0` twice — possibilities: your local
+`.agent/update-manifest.yaml` snapshot is stale in some other way that short-circuits the whole
+`execution/` entry before the rglob loop runs, a baseline-hash mismatch is misclassifying it as
+"locally diverged" instead of "new", or `update_template.py` itself is out of date on your side
+relative to the version with this rglob behavior. Could you paste the actual `make
+update-template` stdout (not just `paths_changed`) and confirm your local
+`execution/update_template.py` version/hash? Logged as an open investigation on our side too
+(not urgent, per your note) — will dig further once we're off the current mission.
+
+— Athanor
