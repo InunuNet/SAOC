@@ -37,8 +37,8 @@ assertions:
       command: grep -q "PAYFAST_SANDBOX_PASSPHRASE" apphosting.yaml && grep -q "PAYFAST_SANDBOX_MERCHANT_ID" apphosting.yaml && grep -q "PAYFAST_SANDBOX_MERCHANT_KEY" apphosting.yaml
     # F1 — live proof (requires gcloud auth against the saoc-prod project; @qa runs, not @dev)
     - id: A4
-      description: at least one automatic (push-triggered) Cloud Build at or after commit 0c577dc reached SUCCESS
-      command: python3 execution/checks/verify_autodeploy_build.py --since-commit 0c577dc
+      description: commit 0c577dc's own automatic (push-triggered) Cloud Build reached SUCCESS and was served by saoc-prod at some point in rollout history (historical proof of that one commit's journey, not a race against the currently-most-recent build)
+      command: python3 execution/checks/verify_autodeploy_build.py --commit 0c577dc
     # F2 — ITN source-IP check is log-only, not hard-reject (regression guard for fix #3)
     - id: A5
       description: ITN route logs source-IP mismatch as a warning, never rejects on it alone

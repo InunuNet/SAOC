@@ -1973,3 +1973,49 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818220048.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818220607.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818221123.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818221644.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818222157.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818222712.txt
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=None
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818223233.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818223747.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818224306.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818224825.txt
+
+## P1 — Stranded 'reserved' orders after a failed ITN: no reconciliation, no alert
+
+**Found:** 2026-08-18, during mission prove-ticket-purchase-works-end-to-end-b (@qa, live
+Firestore + Cloud Logging evidence).
+
+Three orders from the 19:24-19:28Z pre-fix window are permanently stuck `status='reserved'`:
+`5KYDSBMT38KX`, `R06HZ12P06EY`, `G08QJQK278NY` (all buyer "Thabo E2E Test"). Two of them
+(R06, G08) had their ITNs REJECTED by the source-IP bug — PayFast collected the payment and
+notified us; the handler refused the notification; the order never flipped to `paid`.
+
+**Why it matters beyond the fixed bug:** the source-IP bug is fixed, but the fix does not
+recover orders stranded while it was live, and nothing prevents a recurrence from any FUTURE
+ITN failure (deploy window, PayFast outage, signature/passphrase change, our own 500). The
+failure is SILENT: the buyer is charged at the gateway, holds no ticket, and no process
+notices. These were sandbox tests so nothing is owed — in production this is a real customer
+with a real charge and no ticket.
+
+**Gap:** there is no reconciliation job and no alert on orders left `reserved` past their
+`expiresAt`. Detection today depends on a human noticing.
+
+**Suggested:** (a) scheduled reconciliation querying PayFast for `reserved` orders past
+expiry and settling/flagging them; (b) alert on any order `reserved` beyond expiry;
+(c) decide the recovery path for an order proven paid at the gateway but unpaid in Firestore.
+
+**Blocking?** Not for this mission. SHOULD be resolved before public ticket sales open.
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818225339.txt

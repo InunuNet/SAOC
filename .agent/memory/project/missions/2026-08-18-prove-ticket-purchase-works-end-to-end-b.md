@@ -231,3 +231,50 @@ documented manual protocol rather than an agent-executed step, depending on cred
 availability — that determination belongs to @architect when F4's contract is written, not to
 this stub.
 
+
+### F1 — deploy health (2026-08-18)
+- Proof build: `build-2026-08-18-028` (Cloud Build id `13104e6e-f309-4361-ab90-2deed7429ae4`),
+  commit `ec4406df95a30ea64592853fe395e49088b269c9`, SUCCESS 20:21:49Z.
+- Check `execution/checks/verify_autodeploy_build.py` currently returns exit 1: backend is
+  serving `build-2026-08-18-026` (commit `a9818be4`), not 028.
+- Root cause (@qa, live API evidence): FIFO rollout backlog, NOT broken auto-promotion. App
+  Hosting runs one rollout at a time per backend; six pushes landed 20:09–20:22Z. A rollout
+  WAS auto-created for 028 (`rollout-023`, QUEUED behind `rollout-022` which was PROGRESSING).
+- Codex GPT-5.5 failed this check twice before it was sound; the original PASS (and @qa's
+  first PASS) were artifacts of weak assertions, not real deploy proof. See learned.md.
+
+### F2 — real sandbox purchase (2026-08-18)
+- **Booking ref: `SAOC-2027-X8ZPQNYCVWGY`** — required by F3 and F4.
+- Buyer: "Mission F2 Test" / mission-f2-test@saoc-qa.example.com. Ticket: Adult R150.00.
+- PayFast sandbox payment completed; confirmation page's FIRST poll of
+  `GET /api/tickets/status?ref=...` returned 200 `{"status":"paid"}` — real server-side
+  confirmation, ITN had already landed. Not a redirect-only false positive.
+- Screenshots in session scratchpad (01-tickets-page / 02-payfast-sandbox / 03-confirmation-paid).
+
+### Golden correction needed (F2)
+`goldens/f2-f4-purchase-and-checkin.golden.md` says proof requires the poll to report
+`state === 'confirmed'`. That API shape does not exist: `app/api/tickets/status/route.ts`
+returns `{ status }` carrying the raw Firestore value, which is `'paid'`. The golden text is
+wrong, not the code. Must be corrected before F3/F4 are written against it.
+
+### F2/F3 — live ITN evidence (2026-08-18, verbatim Cloud Logging)
+- A7 verified independently: `verify_order_paid.py --booking-ref SAOC-2027-X8ZPQNYCVWGY` exit 0 —
+  `orders/UGwNpfL4FAu57hJ7F2is` AND `tickets/SAOC-2027-X8ZPQNYCVWGY` both `status='paid'`
+  (two-write transaction completed; partial-commit case explicitly distinguished by the check).
+- ITN request: `20:38:11Z POST /api/tickets/itn → 200`, referer `https://www.payfast.co.za`, 0.97s.
+- **F1 step-3 CLOSED.** New line observed for this purchase:
+  `20:38:11.402973Z [tickets/itn] Source IP not in resolved PayFast host set (logged only, not
+  rejecting) { m_payment_id: 'SAOC-2027-X8ZPQNYCVWGY', clientIp: '35.219.200.118' }`
+  Decisive because 35.219.200.118 is the SAME IP hard-rejected pre-fix at 19:25:58Z / 19:26:55Z.
+  Zero occurrences of the old reject line post-fix across both ITNs in the window.
+- **F3 PASS (failure path).** `[tickets/itn] Confirmation email failed — payment already
+  committed, not rolled back` … `Resend send failed: The tickets.saoc.co.za domain is not
+  verified.` Domain-verification-shaped, NOT a code exception. Order remained paid.
+  Isolation guarantee held under a real failure, not a fixture.
+- CAVEAT (honest scope of the F2 guard claim): individual guard passes (signature match, amount
+  match, validate=VALID, payment_status=COMPLETE) are NOT positively logged on success — the
+  handler logs only on failure. Guard proof is therefore STRUCTURAL: zero reject/mismatch lines
+  in 274 entries + a commit whose orderId matches the confirmed Firestore doc. Do not later
+  restate this as "logs positively confirmed each guard" — they do not exist.
+- Raw log dump: session scratchpad `logs.json`.
+- Note: a second order `EM1BPQJTAN7Y` also delivered an ITN at 20:39:11Z in the same window.

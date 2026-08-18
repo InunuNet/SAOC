@@ -621,9 +621,13 @@ def cmd_checkpoint(args):
         if not fm.get("started_at"):
             fm["started_at"] = ts
 
-    # Update active.json checkpoint
+    # Update active.json checkpoint — only if it still points at a real mission.
+    # A cleared active.json (mission: null, written by wrap_mission.sh at close-out)
+    # is a truthy dict, so a bare `if active:` guard here rewrote the literal
+    # Python None into the string "None" via write_active's str(mission_path).
+    # Guard on the mission value itself, not just the dict's presence.
     active = read_active()
-    if active:
+    if active and active.get("mission"):
         write_active(active["mission"], fm["last_checkpoint"])
 
     write_mission_file(args.mission, fm, body)

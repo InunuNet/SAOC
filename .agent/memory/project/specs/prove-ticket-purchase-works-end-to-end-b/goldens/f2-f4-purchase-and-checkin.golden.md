@@ -7,8 +7,14 @@ is a client-side redirect the buyer's browser controls and it races the server-t
 ITN by design (see `app/(marketing)/tickets/confirmation/page.tsx`'s own comment on this).
 
 Proof requires ALL of:
-- confirmation page's own poll (`GET /api/tickets/status?ref=...`) reports `state ===
-  'confirmed'` before its 20-attempt/60s budget expires.
+- confirmation page's own poll (`GET /api/tickets/status?ref=...`) reports a body of
+  the form `{ status }` — the raw Firestore `status` field, not a derived enum — with
+  `status === 'paid'` before its 20-attempt/60s budget expires. (`status ===
+  'checked-in'` also counts as confirmed per the page's own `CONFIRMED_STATUSES` set,
+  but a fresh purchase should observe `'paid'`.) There is no `state` field and no
+  literal `'confirmed'` value anywhere in this endpoint's real response shape
+  (`app/api/tickets/status/route.ts`) — a genuine passing purchase observed
+  `{"status":"paid"}` for booking ref `SAOC-2027-X8ZPQNYCVWGY`.
 - Firestore: the order document AND its one child position document (in the `tickets`
   collection, keyed by booking ref) both show `status: 'paid'` —
   `markOrderAndPositionPaidByPaymentId` (lib/orders.ts) is a two-write transaction; seeing
