@@ -104,3 +104,7 @@ env:
     secret: PAYFAST_SANDBOX_PASSPHRASE
     availability:
       - RUNTIME
+  - variable: RECOVERY_TOKEN_SECRET
+    secret: RECOVERY_TOKEN_SECRET
+    availability:
+      - RUNTIME
