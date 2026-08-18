@@ -1,5 +1,8 @@
 {
-  "mission": null,
-  "checkpoint": null,
-  "note": "mission complete"
+  "mission": ".agent/memory/project/missions/2026-08-18-production-blockers.md",
+  "checkpoint": {
+    "milestone": null,
+    "feature": null
+  },
+  "activated_at": "2026-08-18T16:41:38.196783+00:00"
 }
