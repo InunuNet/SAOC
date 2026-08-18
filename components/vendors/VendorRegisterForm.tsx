@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   buildVendorRegistrationPayload,
@@ -59,6 +59,17 @@ export function VendorRegisterForm() {
   const [hp, setHp] = useState(''); // honeypot -- never sent to the API
   const [status, setStatus] = useState<Status>('idle');
   const [descriptor, setDescriptor] = useState<VendorRegisterResponseDescription | null>(null);
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  // The form runs to 30+ fields -- long enough that a banner rendered above the fieldsets is
+  // off-screen for anyone submitting from the bottom. Without this, a real validation error
+  // (or network failure) reads as "the button did nothing."
+  useEffect(() => {
+    if (descriptor && descriptor.kind !== 'success') {
+      bannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      bannerRef.current?.focus({ preventScroll: true });
+    }
+  }, [descriptor]);
 
   function handleFieldChange(key: keyof VendorRegisterFormState, value: string | string[] | boolean) {
     setState((prev) => ({ ...prev, [key]: value }));
@@ -101,7 +112,11 @@ export function VendorRegisterForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-10 sm:space-y-12" noValidate>
-      {descriptor ? <VendorRegisterStatusBanner descriptor={descriptor} /> : null}
+      {descriptor ? (
+        <div ref={bannerRef} tabIndex={-1}>
+          <VendorRegisterStatusBanner descriptor={descriptor} />
+        </div>
+      ) : null}
 
       <VendorContactFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
       <VendorCategoryFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />

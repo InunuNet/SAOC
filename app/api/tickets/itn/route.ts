@@ -109,7 +109,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // the posted 'signature' field, using the INBOUND (verification) algorithm — PayFast
   // documents this as genuinely different from the outbound (checkout-signing) algorithm:
   // no blank-skip, no trim. See contracts/golden/payfast-itn-signature/inbound-algorithm.golden.md.
+  //
+  // The passphrase MUST be present: generateNotifySignature only folds it into the digest
+  // when truthy (lib/payfast.ts), so an unset/empty passphrase would silently downgrade
+  // verification to a plain MD5 over PUBLICLY KNOWN fields (m_payment_id, amount, etc. are
+  // all visible to whoever initiated the checkout) -- anyone could then compute a "valid"
+  // signature themselves and POST straight to this route to mark their own unpaid order
+  // paid. Fail closed here (this route's own PAYFAST_SANDBOX_MERCHANT_ID/KEY guard lives in
+  // app/api/tickets/checkout/route.ts, not this file), now that the source-IP check (guard 2)
+  // is log-only rather than a second independent barrier.
   const passphrase = process.env.PAYFAST_SANDBOX_PASSPHRASE;
+  if (!passphrase) {
+    console.error('[tickets/itn] Missing PAYFAST_SANDBOX_PASSPHRASE env var — rejecting ITN', {
+      m_payment_id: mPaymentId,
+    });
+    return acknowledge();
+  }
   const expectedSignature = generateNotifySignature(fields, passphrase);
   if (!receivedSignature || expectedSignature !== receivedSignature) {
     console.error('[tickets/itn] Signature mismatch — rejecting ITN', { m_payment_id: mPaymentId });
