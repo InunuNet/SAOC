@@ -1,0 +1,99 @@
+schema: athanor.contract/v1
+slug: confirmation-page-qr-and-download
+goal: The paid confirmation page (app/(marketing)/tickets/confirmation/page.tsx) renders a real,
+  scannable QR of the booking ref, the buyer's ticket details (attendee name, ticket type,
+  amount, booking ref), and a working "download ticket" action -- all computed server-side via
+  the Admin SDK, with the public /api/tickets/status endpoint left untouched (still {status}
+  only). Item 4 (send FROM info@saoc.co.za) is explicitly OUT OF SCOPE -- Brad chose to keep
+  sending from tickets@tickets.saoc.co.za with reply_to info@ (see reply-to-header-fix).
+created_at: '2026-08-18'
+autonomy: high
+features:
+  - id: F1
+    name: Server-render QR + buyer details + a download action on the ticket confirmation page
+    status: pending
+goldens:
+  - .agent/memory/project/specs/confirmation-page-qr-and-download/goldens/f1-confirmation-qr-details-download.golden.md
+assertions:
+  phase: 4
+  checks:
+    # --- Shape: the page became a Server Component that reads real data server-side ---
+    - id: A1
+      description: page.tsx has no 'use client' directive at file scope -- it is now a Server
+        Component, not the all-client component it is today. False state that still passes -- a
+        'use client' directive placed somewhere other than line 1 (Next requires it to be the
+        first line to take effect, so this is a real, not merely stylistic, check); a file that
+        deletes 'use client' but still does everything client-side via useEffect would ALSO pass
+        this grep, which is why A2/A6 exist as the load-bearing checks, not this one.
+      command: '! grep -q "^.use client.$" "app/(marketing)/tickets/confirmation/page.tsx"'
+    - id: A2
+      description: page.tsx actually calls the new server-only data function rather than fetching
+        via the client-side status endpoint for the paid-details render path. False state that
+        still passes -- the identifier could be imported and called but its return value ignored
+        (dead code); A6 is what proves the data actually reaches the rendered page.
+      command: grep -q "getConfirmedTicketForDisplay" "app/(marketing)/tickets/confirmation/page.tsx"
+    - id: A3
+      description: lib/orders.ts exports the new server-only accessor with the exact name the
+        page is required to call, keeping this a single choke point rather than an ad-hoc query
+        duplicated inline in the page component.
+      command: grep -q "export async function getConfirmedTicketForDisplay" lib/orders.ts
+    # --- The hard security constraint: the public status endpoint must not be widened ---
+    - id: A4
+      description: app/api/tickets/status/route.ts still returns status only -- no buyer/ticket
+        PII field names were added to satisfy this feature by widening the public unauthenticated
+        endpoint instead of doing the server-side page render. False state that still passes --
+        PII returned under a field name not in this list (e.g. a renamed "name" or "type" key)
+        would slip past a plain grep; A4 is a structural regression guard, not exhaustive, and is
+        deliberately paired with A1/A2/A6 which prove the REAL data path is the server-rendered
+        page, not any JSON endpoint.
+      command: '! grep -qE "attendeeName|buyerName|ticketType|amount" app/api/tickets/status/route.ts'
+    # --- Data prerequisite: the real paid Firestore documents actually carry what the page needs ---
+    - id: A5
+      description: for all three real, paid, live booking refs, the tickets/{bookingRef} document
+        has non-empty attendeeName/ticketType/bookingRef, a numeric amount, and status paid or
+        checked-in -- proven against live Firestore via REST (same auth pattern as
+        verify_order_paid.py), not asserted from memory. False state that still passes -- a
+        document that has these fields but under a DIFFERENT status (e.g. 'reserved') would fail
+        this correctly; a script that only checked field PRESENCE and not the paid/checked-in
+        status gate would be a weaker version of this same check and must not be substituted.
+      command: python3 execution/checks/verify_confirmation_fields.py --booking-refs SAOC-2027-X8ZPQNYCVWGY,SAOC-2027-EM1BPQJTAN7Y,SAOC-2027-5DEFEKCF6S1R
+    # --- The load-bearing behavioral proof: the real rendered page, driven by a real browser ---
+    - id: A6
+      description: a Playwright-driven run against a real built-and-served instance of the app,
+        using one real paid booking ref and one bogus/nonexistent ref, proving in one script -- (1)
+        the paid page's rendered <img> QR, decoded with jsqr+pngjs, yields EXACTLY the paid ref's
+        bookingRef string (not merely that an <img> tag with a data: src exists -- an img
+        pointing at a decorative placeholder or the wrong field would fail this); (2) the paid
+        page's rendered text contains that ref's real attendeeName and ticketType (fixture values
+        looked up independently by the script via the same Firestore REST helper as A5, not
+        hardcoded, so this stays correct if the fixture tickets are ever edited); (3) clicking the
+        page's download control produces a downloaded PNG file whose OWN embedded QR, independently
+        decoded, ALSO equals the exact bookingRef -- proving the download artifact is not a
+        decorative screenshot but a genuinely re-scannable ticket; (4) the bogus-ref page renders
+        no QR image and no buyer-detail text (the not-found/pending state only) -- proving the
+        server-side lookup fails closed rather than leaking a stale/placeholder QR. False state
+        that still passes -- none of the above if implemented as specified; the weakest link is
+        the script itself silently skipping a sub-case on an unrelated setup error instead of
+        failing loudly, so the script must exit non-zero and name the failing case exactly like
+        execution/checks/verify_reply_to.ts does, never swallow a sub-case.
+      command: node_modules/.bin/tsx execution/checks/verify_confirmation_page.ts --paid-ref SAOC-2027-X8ZPQNYCVWGY --bad-ref SAOC-2027-NOTAREALREF00Q
+    # --- Regression guard: this project has shipped a broken `next build` behind a green gate before ---
+    - id: A7
+      description: the real Next.js production build succeeds with every new file (page.tsx
+        rewritten as a Server Component, the new lib/orders.ts export, the new client download
+        component, the new execution/checks scripts) present in the tree. Same precedent as
+        reply-to-header-fix's A8 -- A1-A5 all stay green under a build-breaking mistake (a stray
+        .ts-extension import, a client/server boundary violation such as importing
+        firebase-admin into a 'use client' file, an unresolvable type) that only a real build
+        catches.
+      command: node_modules/.bin/next build
+    # --- Soft structural guard on the download-format decision (see golden "Download format decision") ---
+    - id: A8
+      description: no new PDF-generation dependency was added to satisfy the download requirement
+        -- the download decision (golden) is a canvas-composited PNG using the browser's native
+        Canvas API plus the QR data URI already produced by lib/qr.ts, not a new heavy dependency.
+        This is a SOFT guard, not load-bearing: a PDF or other heavy dependency added under a name
+        not in this list would slip past it. A6's download sub-case is what actually proves the
+        download artifact works; A8 only catches the specific scope-creep this golden explicitly
+        argues against.
+      command: '! grep -qE "\"jspdf\"|\"@react-pdf/renderer\"|\"pdfkit\"|\"pdf-lib\"|\"puppeteer\"" package.json'

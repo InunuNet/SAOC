@@ -2119,7 +2119,28 @@ Required end state for a paid ticket:
    no PDF generation anywhere in the codebase.
 4. **Emailed from `info@saoc.co.za`.**
 
-**BLOCKER on item 4 — must be resolved before it can work:** email currently sends FROM
+**DECISION 2026-08-18 (Brad): staying with Option A — FROM stays `tickets@tickets.saoc.co.za`,
+replies routed to info@ via `reply_to`. Item 4 (send FROM info@) is NOT being built for now.**
+
+Correction to an earlier overstatement in this entry: verifying the apex at Resend is LOWER risk
+than first claimed here. Resend's record pattern (observed for tickets.saoc.co.za) puts MX+SPF on
+a `send.<domain>` subdomain and DKIM on `resend._domainkey.<domain>` — so apex verification would
+NOT modify the apex SPF or apex MX at all; the records are purely additive on new names. The
+"must merge into existing SPF or break all council mail" hazard described below does not arise.
+(Inferred from the subdomain pattern, not from Resend's apex instructions — confirm in-dashboard
+before acting on it.)
+
+Reason A was chosen anyway, on the merits rather than difficulty: subdomain sending ISOLATES
+deliverability reputation. If a ticket blast draws spam complaints, damage lands on
+tickets.saoc.co.za and the council's day-to-day saoc.co.za mail is unaffected. Merging ticket
+mail onto the apex would fuse those reputations permanently. Recipients also see the DISPLAY NAME
+("SAOC Tickets"), not the domain, in their inbox list.
+
+Also ruled out: Resend inbound receiving + forward to info@. Resend inbound is WEBHOOK delivery,
+not mail forwarding — it would mean building and operating a mail forwarder that can silently
+drop replies. Strictly worse than a reply_to header, which needs no infrastructure.
+
+**Historical note (superseded by the above):** email currently sends FROM
 `tickets@tickets.saoc.co.za` (`lib/email.ts:TICKETS_FROM_ADDRESS`). `info@saoc.co.za` is on the
 APEX domain, and only the `tickets.` and `forms.` SUBDOMAINS are verified at Resend. The apex
 `saoc.co.za` is NOT a verified Resend sending domain — its DNS still carries legacy cPanel mail
@@ -2136,3 +2157,9 @@ specifically wants the visible FROM to read info@saoc.co.za.
 
 **Priority:** P1, before public ticket sales. Item 1 (QR on page) is the cheapest and removes
 email deliverability from the critical path of door check-in.
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818231449.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818232006.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818232534.txt

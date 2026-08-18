@@ -122,3 +122,10 @@ env:
     value: "SAOC <noreply@forms.saoc.co.za>"
     availability:
       - RUNTIME
+  # Reply-to for every outbound category (tickets + forms alike) -- "Enable Receiving" is OFF
+  # on both sending subdomains, so FROM is a dead end for anyone who hits Reply. Not a secret;
+  # same explicit-default pattern as RESEND_FROM_TICKETS/RESEND_FROM_FORMS above.
+  - variable: RESEND_REPLY_TO
+    value: "info@saoc.co.za"
+    availability:
+      - RUNTIME

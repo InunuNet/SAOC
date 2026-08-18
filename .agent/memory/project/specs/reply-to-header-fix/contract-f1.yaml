@@ -1,0 +1,65 @@
+schema: athanor.contract/v1
+slug: reply-to-header-fix
+goal: Every outbound email (tickets, forms, vendor confirmations, contact receipts) carries a
+  real reply_to of info@saoc.co.za (env-overridable via RESEND_REPLY_TO with a safe default),
+  wired through one choke point in lib/email.ts so no call site can opt out or forget it.
+created_at: '2026-08-18'
+autonomy: high
+features:
+  - id: F1
+    name: Add a real, env-configurable reply-to header to every outbound email via lib/email.ts's sendEmail()
+    status: pending
+goldens:
+  - .agent/memory/project/specs/reply-to-header-fix/goldens/f1-reply-to-header.golden.md
+assertions:
+  phase: 4
+  checks:
+    # Source-level shape: the choke point exists and is not per-call-site.
+    - id: A1
+      description: lib/email.ts exports a pure resolveReplyTo function (not inlined only, not private) so the verify harness can import and call it directly
+      command: grep -q "export function resolveReplyTo" lib/email.ts
+    - id: A2
+      description: lib/email.ts exports a pure buildEmailPayload function separating payload construction from the network call
+      command: grep -q "export function buildEmailPayload" lib/email.ts
+    - id: A3
+      description: sendEmail() itself calls buildEmailPayload rather than constructing the Resend payload inline a second time
+      command: grep -q "buildEmailPayload(" lib/email.ts
+    # Behavioral proof: the real payload-building path actually populates replyTo under every
+    # env state, including the not-satisfiable-by-a-comment case. This is the load-bearing
+    # assertion -- A1-A3 only guard the shape it depends on.
+    - id: A4
+      description: buildEmailPayload/resolveReplyTo resolve a non-empty replyTo under unset/empty/whitespace env (falling back to info@saoc.co.za), under an explicit RESEND_REPLY_TO override, and identically across TICKETS_FROM_ADDRESS and FORMS_FROM_ADDRESS payloads -- proven by executing the real code path, not by grepping for the address string
+      command: node_modules/.bin/tsx execution/checks/verify_reply_to.ts
+    # No call site was touched -- the whole point of a single choke point.
+    - id: A5
+      description: lib/confirmation-email.ts still calls mailer.send with only to/subject/react/from -- no reply-to plumbing was added at the call site
+      command: '! grep -q "replyTo" lib/confirmation-email.ts'
+    - id: A6
+      description: app/api/contact/route.ts still calls sendEmail with only to/subject/react/from -- no reply-to plumbing was added at the call site
+      command: '! grep -q "replyTo" app/api/contact/route.ts'
+    # apphosting.yaml gets the same explicit-default treatment as RESEND_FROM_TICKETS/RESEND_FROM_FORMS,
+    # consistent with this project's existing pattern for these three sibling env vars.
+    - id: A7
+      description: apphosting.yaml declares RESEND_REPLY_TO as a plain (non-secret) RUNTIME value, matching the RESEND_FROM_TICKETS/RESEND_FROM_FORMS pattern
+      command: grep -q "RESEND_REPLY_TO" apphosting.yaml
+    # Regression guard added after @qa caught A4's own harness breaking `next build` (unrelated
+    # .ts-extension import that tsc's whole-project sweep rejected, tsx did not). This is
+    # exactly the defect class ("tsconfig sweeps a file into the Next.js typecheck that was
+    # never meant to ship") that took down every App Hosting auto-deploy earlier in this
+    # session -- see prove-ticket-purchase-works-end-to-end-b/contract-f1.yaml A1. The real
+    # production build is the only check that actually proves this file's presence under
+    # execution/ doesn't break deploy; A1-A3's grep and A4's tsx run both stay green under the
+    # exact bug that broke this the first time, so neither substitutes for this one.
+    - id: A8
+      description: the real Next.js production build succeeds with execution/checks/verify_reply_to.ts present in the tree (proves the whole-project tsc sweep that next build runs is not broken by this new file, not just that tsx can run it)
+      command: node_modules/.bin/next build
+    # Structural fix, not just an instance fix: exclude execution/ from the app's own tsconfig
+    # sweep the same way contracts/ and functions/ already are -- harness/check scripts are not
+    # shipped app code and should never have been in scope for `next build`'s typecheck in the
+    # first place. Specified for @dev to implement in tsconfig.json (app source, not architect's
+    # to edit directly). A8 stays in the contract regardless -- it is the structural fix's own
+    # regression guard, so a future edit that silently removes the exclude is still caught by a
+    # real build rather than by trusting the exclude line's continued presence.
+    - id: A9
+      description: tsconfig.json excludes execution/ from the project-wide typecheck sweep, alongside the existing contracts/ and functions/ exclusions
+      command: grep -q '"execution"' tsconfig.json

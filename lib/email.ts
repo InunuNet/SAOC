@@ -19,6 +19,31 @@ export const TICKETS_FROM_ADDRESS =
 export const FORMS_FROM_ADDRESS =
   process.env.RESEND_FROM_FORMS ?? 'SAOC <noreply@forms.saoc.co.za>';
 
+// "Enable Receiving" is deliberately OFF on both sending subdomains (send-only by design), so
+// FROM is a dead end for anyone who hits Reply. reply_to gives replies a real inbox to land in.
+// Resolved at CALL time (not module-load time like the *_FROM_ADDRESS constants above) so a
+// blank/unset env var always falls back safely instead of baking a stale value in at import.
+const DEFAULT_REPLY_TO = 'info@saoc.co.za';
+
+export function resolveReplyTo(): string {
+  const raw = process.env.RESEND_REPLY_TO?.trim();
+  return raw ? raw : DEFAULT_REPLY_TO;
+}
+
+export function buildEmailPayload({
+  to,
+  subject,
+  react,
+  from,
+}: {
+  to: string;
+  subject: string;
+  react: JSX.Element;
+  from: string;
+}): { to: string; subject: string; react: JSX.Element; from: string; replyTo: string } {
+  return { to, subject, react, from, replyTo: resolveReplyTo() };
+}
+
 export async function sendEmail({
   to,
   subject,
@@ -30,6 +55,6 @@ export async function sendEmail({
   react: JSX.Element;
   from: string;
 }): Promise<void> {
-  const { error } = await getResend().emails.send({ from, to, subject, react });
+  const { error } = await getResend().emails.send(buildEmailPayload({ to, subject, react, from }));
   if (error) throw new Error(`Resend send failed: ${error.message}`);
 }
