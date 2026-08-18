@@ -36,7 +36,7 @@ app/
 │   ├── societies/         # 21 affiliated societies + [slug] individual pages
 │   ├── judging/           # Judging system overview
 │   ├── events/            # Events calendar + [slug] detail
-│   ├── national-show/     # Show overview + upcoming + archive/[year] + vendors showcase
+│   ├── national-show/     # Show overview + upcoming + archive/[year] + vendors showcase + vendors register form
 │   ├── media-kit/         # Media kit
 │   ├── sponsors/          # Sponsors
 │   ├── constitution/      # Constitution

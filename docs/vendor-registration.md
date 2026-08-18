@@ -51,6 +51,56 @@ Fetches all `vendorNursery` documents from Sanity via `vendorNurseriesQuery` and
 
 **Loading state:** `loading.tsx` provides Suspense fallback skeleton matching the page layout.
 
+## Public registration form — `/national-show/vendors/register`
+
+**Route:** `app/(marketing)/national-show/vendors/register/page.tsx` (Server Component, no Sanity fetch — static form only)
+
+The public HTML form that collects all 31 vendor fields. Submitters access it from a link on the showcase page and POST their data to `/api/vendors/register`.
+
+**Form structure:** Five fieldsets organised by section (Contact, Category, Booth, Marketing, Payment), with a honeypot field excluded from the visible form and tab order. All field labels are sourced verbatim from Lee-Ann's source brief.
+
+**Required fields:** Nine fields marked required, validated server-side by the real `validateVendorSubmissionInput()` (F4). Nine of the 31 fields carry the `required` attribute; optional text fields left blank are omitted from the POST body, not sent as empty strings.
+
+### Components
+
+**Leaf inputs** (new, under `components/vendors/`, reusing the pattern from `components/tickets/TicketFormField.tsx`):
+- `VendorFormField.tsx` — single text/tel/email/url/number/textarea input with label
+- `VendorCheckboxField.tsx` — single checkbox with label
+- `VendorCheckboxGroupField.tsx` — group of checkboxes (e.g. vendor category)
+- `VendorBooleanRadioField.tsx` — Yes/No radio pair (e.g. power required)
+- `VendorRadioGroupField.tsx` — single-choice radio group (e.g. booth type)
+
+**Fieldsets** (new, presentational, ≤150 lines each):
+- `VendorContactFieldset.tsx` — Fields 1–10 (business name, contact person, phone, email, address, registration numbers, website, social media)
+- `VendorCategoryFieldset.tsx` — Fields 11–16 (vendor category, product description, permit numbers)
+- `VendorBoothFieldset.tsx` — Fields 17–27 (booth count, type, tables, chairs, power/water, electrical load, staff, vehicle registrations, load-in/out slots)
+- `VendorMarketingFieldset.tsx` — Field 28 (vendor biography)
+- `VendorPaymentFieldset.tsx` — Fields 29–31 (payment methods, reference, terms acceptance)
+
+**Status and success display:**
+- `VendorRegisterStatusBanner.tsx` — Renders validation errors, rate-limit refusals, or server errors with humanised field-error text (never raw camelCase validator strings)
+- `VendorRegisterSuccess.tsx` — Success state; displays the submission ID as a confirmation reference number
+
+**Orchestrator:**
+- `VendorRegisterForm.tsx` — Client component (`'use client'`), ≤150 lines, manages form state via `useState`, handles submission via `fetch`, and wires the fieldsets, banner, and success display together
+
+### Form state management
+
+**`lib/vendor-register-form-payload.ts`** (new, pure) — Converts form state (all fields as strings or string arrays) to the shape the API expects. Coerces `boothCount`, `tableCount`, `chairCount`, `staffPerDay` to number; coerces `powerRequired` and `waterRequired` from string ('true'/'false'/'') to boolean; omits any optional text field left blank. Output is validated server-side by the real `validateVendorSubmissionInput()`.
+
+**`lib/vendor-register-response.ts`** (new, pure) — Discriminated-union response descriptor for all four API outcomes (success, validation error, rate limited, server error) plus network failure. Exports `describeVendorRegistrationResponse()` to map HTTP status and response body to a typed descriptor, and `humaniseFieldError()` to convert raw validator field-error strings into legible user-facing text. Exports `formatRetryAfter()` to produce a human-readable delay label (e.g. "30 minutes") from milliseconds.
+
+### Accessibility and responsiveness
+
+- **Native form controls** — Every input is a native `<input>`, `<textarea>`, or `<select>` (no custom clickable divs or styled buttons).
+- **Label association** — Single inputs carry `id="vendor-register-<fieldKey>"` and a `<label htmlFor>` link; groups carry an outer `<fieldset id="vendor-register-<fieldKey>">` with a `<legend>` and per-option `<label>` elements.
+- **Keyboard focus** — All controls declare a `focus:` Tailwind class for visible focus indication; honeypot field carries `tabindex={-1}` to exclude it from tab order.
+- **Mobile-first design** — Page responds from 320px width upwards; no fixed-pixel widths wider than the viewport.
+
+### Integration
+
+The showcase page (`/national-show/vendors`) includes a link to `/national-show/vendors/register` so visitors can navigate from the nursery grid to the registration form.
+
 ## Vendor Submission Model — 31 fields, F4
 
 `types/index.ts` defines `VendorSubmission` and related types. The model mirrors Lee-Ann's source registration form field-for-field.
