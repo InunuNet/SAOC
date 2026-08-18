@@ -15,69 +15,84 @@ goal: 'Prove ticket purchase works end-to-end: browse -> checkout -> PayFast san
   rule, see project memory feedback_orchestrator_only_hard_rule).'
 created_at: '2026-08-18T20:01:20.444841+00:00'
 started_at: null
-last_active_at: null
+last_active_at: '2026-08-18T20:59:36.208671+00:00'
 status: pending
 cost_estimate:
   features: 0
   milestones: 0
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M2
+  feature: F3
+  ts: '2026-08-18T20:59:36.208671+00:00'
 features:
 - id: F1
   title: Verify App Hosting auto-deploy is actually healthy after the tsconfig fix
-  status: pending
-  inline_brief: 'Prove (via gcloud/firebase CLI + Cloud Logging, not assumption) that a push
-    at or after commit 0c577dc triggered an automatic Cloud Build that succeeded and is what
-    is actually serving saoc-prod today -- the tsconfig fix explains why prior pushes silently
-    failed to deploy but does not itself prove any push since has succeeded. Record the
-    verified build id/revision/timestamp. Verification-only unless the pipeline is found still
-    broken, in which case the specific failure becomes a new dev-fixable item.'
+  status: done
+  inline_brief: Prove (via gcloud/firebase CLI + Cloud Logging, not assumption) that
+    a push at or after commit 0c577dc triggered an automatic Cloud Build that succeeded
+    and is what is actually serving saoc-prod today -- the tsconfig fix explains why
+    prior pushes silently failed to deploy but does not itself prove any push since
+    has succeeded. Record the verified build id/revision/timestamp. Verification-only
+    unless the pipeline is found still broken, in which case the specific failure
+    becomes a new dev-fixable item.
+  completed_at: '2026-08-18T20:59:35.795163+00:00'
 - id: F2
-  title: Fresh browser-driven sandbox purchase reaches a real 'paid' order + confirmation page
-  status: pending
-  inline_brief: 'Run a real browser-driven purchase (/tickets -> checkout -> PayFast sandbox
-    payment -> redirect) and prove the confirmation page''s poll actually reaches
+  title: Fresh browser-driven sandbox purchase reaches a real 'paid' order + confirmation
+    page
+  status: done
+  inline_brief: Run a real browser-driven purchase (/tickets -> checkout -> PayFast
+    sandbox payment -> redirect) and prove the confirmation page's poll actually reaches
     state===confirmed, cross-checked against Firestore (order AND position both status:paid,
-    per markOrderAndPositionPaidByPaymentId''s two-write contract) and Cloud Logging (ITN
-    signature/amount/server-confirm/COMPLETE checks all passed for this m_payment_id). Record
-    the real booking reference -- F4 depends on it. Verification-only unless a guard actually
-    fails, in which case that failure becomes its own dev-fixable feature.'
+    per markOrderAndPositionPaidByPaymentId's two-write contract) and Cloud Logging
+    (ITN signature/amount/server-confirm/COMPLETE checks all passed for this m_payment_id).
+    Record the real booking reference -- F4 depends on it. Verification-only unless
+    a guard actually fails, in which case that failure becomes its own dev-fixable
+    feature.
+  completed_at: '2026-08-18T20:59:36.008623+00:00'
 - id: F3
-  title: Confirmation email/QR delivery attempt is verified (or its failure verified graceful)
-  status: pending
-  inline_brief: 'Using F2''s purchase, check Cloud Logging for the post-commit
-    deliverConfirmationEmailAfterCommit outcome. tickets.saoc.co.za/forms.saoc.co.za DNS is
-    known not yet live (Brad-owned blocker, project_domain_migration_resend_sequencing) so a
-    Resend failure is expected -- confirm it is DNS/domain-verification-shaped, not a code
-    defect, and confirm the isolation held (order stayed paid, no rollback, no thrown error
-    reaching the ITN response) under a REAL failure, not just a unit test. Record whichever
-    outcome actually occurred. Do not attempt to fix DNS under this mission.'
+  title: Confirmation email/QR delivery attempt is verified (or its failure verified
+    graceful)
+  status: done
+  inline_brief: Using F2's purchase, check Cloud Logging for the post-commit deliverConfirmationEmailAfterCommit
+    outcome. tickets.saoc.co.za/forms.saoc.co.za DNS is known not yet live (Brad-owned
+    blocker, project_domain_migration_resend_sequencing) so a Resend failure is expected
+    -- confirm it is DNS/domain-verification-shaped, not a code defect, and confirm
+    the isolation held (order stayed paid, no rollback, no thrown error reaching the
+    ITN response) under a REAL failure, not just a unit test. Record whichever outcome
+    actually occurred. Do not attempt to fix DNS under this mission.
+  completed_at: '2026-08-18T20:59:36.208464+00:00'
 - id: F4
-  title: Real door check-in scan flips the order to 'checked-in' with a correct audit trail
+  title: Real door check-in scan flips the order to 'checked-in' with a correct audit
+    trail
   status: pending
-  inline_brief: 'Provision or confirm a real test-admin identity (scripts/admin-grant.ts for
-    the admin claim, AND live membership of the deployed ADMIN_EMAIL_ALLOWLIST -- the script
-    deliberately does not touch the allowlist, both are required). Sign in at /admin/login,
-    reach /admin/door, submit F2''s real booking reference (manual entry is an acceptable
-    substitute for a camera scan). Confirm POST /api/admin/checkin succeeds, Firestore shows
-    the terminal status from lib/checkin.ts''s real admission-rule naming, a checkinAttempts
-    audit doc is written, and a SECOND submission of the same ref is correctly refused. If no
-    agent can safely obtain interactive Firebase Auth credentials, this resolves to a
-    documented manual protocol Brad runs himself with exact assertions supplied by
-    @architect -- not a silent skip.'
+  inline_brief: Provision or confirm a real test-admin identity (scripts/admin-grant.ts
+    for the admin claim, AND live membership of the deployed ADMIN_EMAIL_ALLOWLIST
+    -- the script deliberately does not touch the allowlist, both are required). Sign
+    in at /admin/login, reach /admin/door, submit F2's real booking reference (manual
+    entry is an acceptable substitute for a camera scan). Confirm POST /api/admin/checkin
+    succeeds, Firestore shows the terminal status from lib/checkin.ts's real admission-rule
+    naming, a checkinAttempts audit doc is written, and a SECOND submission of the
+    same ref is correctly refused. If no agent can safely obtain interactive Firebase
+    Auth credentials, this resolves to a documented manual protocol Brad runs himself
+    with exact assertions supplied by @architect -- not a silent skip.
 milestones:
 - id: M1
   title: Deploy pipeline trusted and a real purchase reaches 'paid'
   status: pending
-  features: [F1, F2]
+  features:
+  - F1
+  - F2
 - id: M2
   title: Confirmation delivery and door check-in verified; mission proven end-to-end
   status: pending
-  features: [F3, F4]
+  features:
+  - F3
+  - F4
 ---
+
+
+
 
 # Mission: Prove ticket purchase works end-to-end: browse -> checkout -> PayFast sandbox payment -> ITN confirmation -> confirmation email/QR -> door check-in. Checkout and ITN were both found broken and fixed this session (missing RECOVERY_TOKEN_SECRET; App Hosting not auto-deploying on push; ITN source-IP allowlist rejecting genuine PayFast notifications; missing-passphrase signature downgrade). A real browser-driven sandbox purchase got as far as PayFast payment success and redirect back to the confirmation page before the ITN bugs were found -- that run needs repeating now that all four fixes are deployed, and the flow needs to continue through to a real door check-in scan. All work must go through the full chain (@architect contract+goldens -> @dev -> @qa -> Codex cross-model review -> @docs -> gate -> @maintainer) -- the orchestrator does not implement, review, or deploy directly for any of this (hard rule, see project memory feedback_orchestrator_only_hard_rule).
 
