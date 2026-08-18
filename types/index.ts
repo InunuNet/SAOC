@@ -431,3 +431,81 @@ export type ShowIdentity = {
   venue?: ShowVenue | null;
   countdownDate?: string | null;
 };
+
+// ---------------------------------------------------------------------------
+// F4 (vendor-registration) — vendorSubmissions data model.
+// Mirrors the 2027 SAOC National Show vendor registration form's 31 fields,
+// grouped by the form's own five sections. See
+// contracts/golden/vendor-f4-submissions-model/README.md for the field-by-field
+// verification against the source document and every judgement call recorded
+// here (booth type as a closed union, boothCount/tableCount/chairCount/
+// staffPerDay as number, why status/submittedAt are system-owned, not
+// submitter-supplied).
+// ---------------------------------------------------------------------------
+
+export type VendorCategory =
+  | 'plant-sales'
+  | 'product-sales'
+  | 'rare-exotic-plants'
+  | 'food-retailer'
+  | 'hardware'
+  | 'books'
+  | 'art'
+  | 'other';
+
+export type VendorBoothType = 'standard' | 'corner' | 'end-of-row';
+
+export type VendorPaymentMethod = 'cash' | 'card' | 'eft' | 'not-applicable';
+
+export type VendorSubmissionStatus = 'submitted' | 'under-review' | 'approved' | 'rejected';
+
+export interface VendorSubmission {
+  id: string;
+
+  // Section 1 — business & contact details (fields 1-10).
+  businessName: string;
+  tradingName?: string;
+  contactPersonName: string;
+  contactCellPhone: string;
+  contactEmail: string;
+  physicalAddress?: string;
+  cipcNumber?: string;
+  vatNumber?: string;
+  website?: string;
+  socialMediaHandle?: string;
+
+  // Section 2 — products & regulatory permits (fields 11-16).
+  vendorCategory: VendorCategory[];
+  productDescription: string;
+  phytosanitaryPermitNumber?: string;
+  citesPermitNumber?: string;
+  foodHandlingCertificateNumber?: string;
+  foodItemList?: string;
+
+  // Section 3 — booth & logistics requirements (fields 17-27).
+  boothCount: number;
+  boothType?: VendorBoothType;
+  tableCount?: number;
+  chairCount?: number;
+  powerRequired: boolean;
+  electricalLoad?: string;
+  waterRequired?: boolean;
+  staffPerDay?: number;
+  vehicleRegistrations?: string;
+  loadInSlot?: string;
+  loadOutSlot?: string;
+
+  // Section 4 — bio & payment (fields 28-30).
+  bio?: string;
+  paymentMethodsAccepted?: VendorPaymentMethod[];
+  paymentReference?: string;
+
+  // Section 5 — terms & conditions (field 31).
+  termsAccepted: boolean;
+
+  // System-owned fields — never submitter-supplied. See
+  // lib/vendor-submissions.ts's buildVendorSubmission() for why these are
+  // structurally excluded from VendorSubmissionDraft, not merely optional.
+  status: VendorSubmissionStatus;
+  submittedAt: Date;
+}

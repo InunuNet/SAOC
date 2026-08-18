@@ -1,0 +1,164 @@
+schema: athanor.contract/v1
+slug: vendor-f4-submissions-model
+goal: >-
+  Mission vendor-registration F4: the Firestore `vendorSubmissions` collection — a pure,
+  side-effect-free data model (types/index.ts + lib/vendor-submissions.ts) for the 2027
+  National Show's 31-field vendor registration form (source: Lee-Ann's "South African
+  Exhibitors.docx", "2027 SAOC NATIONAL SHOW VENDOR REGISTRATION FORM" section, verified
+  field-by-field against the live .docx, not the mission brief's paraphrase — see the golden
+  README's "Field-by-field verification against the source document" for the one place the
+  brief's summary undercounts the form and the two fields deliberately NOT modelled). No
+  Firestore write, no HTTP route, no admin UI — those are F5/F6/F7. Full decision record,
+  every defeating mutation, and judgement calls: contracts/golden/vendor-f4-submissions-model/README.md
+created_at: '2026-08-18'
+autonomy: high
+
+features:
+  - id: F4
+    name: >-
+      (1) types/index.ts: add VendorCategory (closed 8-member union: 'plant-sales' |
+      'product-sales' | 'rare-exotic-plants' | 'food-retailer' | 'hardware' | 'books' |
+      'art' | 'other'), VendorBoothType (closed 3-member union: 'standard' | 'corner' |
+      'end-of-row'), VendorPaymentMethod (closed 4-member union: 'cash' | 'card' | 'eft' |
+      'not-applicable'), VendorSubmissionStatus (closed 4-member union: 'submitted' |
+      'under-review' | 'approved' | 'rejected'), and VendorSubmission (id, the 31 form
+      fields grouped by the form's own five sections, plus status + submittedAt: Date).
+      Required fields (non-optional in the interface, matching the source form's asterisked
+      fields exactly): businessName, contactPersonName, contactCellPhone, contactEmail,
+      vendorCategory (non-empty array), productDescription, boothCount, powerRequired,
+      termsAccepted. Every other form field is optional. (2) lib/vendor-submissions.ts
+      (new, pure — no firebase-admin import, mirroring lib/buyers.ts's pattern exactly):
+      VENDOR_SUBMISSIONS_COLLECTION = 'vendorSubmissions'; VendorSubmissionDraft = the
+      caller-supplied subset of VendorSubmission (everything except id/status/submittedAt);
+      validateVendorSubmissionInput(input: unknown): { valid: boolean; errors: string[] } —
+      fail-fast rejection (not sanitize-and-continue) of missing required fields, a
+      vendorCategory/boothType/paymentMethodsAccepted value outside its closed set, a
+      non-positive or non-integer boothCount, and termsAccepted !== true; every rejection
+      names the offending field in its error message; buildVendorSubmission(input:
+      VendorSubmissionDraft, now: Date): Omit<VendorSubmission, 'id'> — a pure builder
+      (time always injected via `now`, never Date.now() internally) that ALWAYS sets
+      status: 'submitted' and submittedAt: now, ignoring any status/submittedAt/id the
+      caller's raw input might contain (a submitter can never self-approve or backdate a
+      submission by including those keys in the POST body). (3) Regulatory permit fields
+      (phytosanitaryPermitNumber, citesPermitNumber, foodHandlingCertificateNumber) are
+      collected as free-text, optional data with NO format validation and NO cross-field
+      conditional requirement against vendorCategory — a books-only vendor may still submit
+      (or omit) a CITES permit number, and the value is stored verbatim, never checked
+      against any external registry or lookup (F9 scope note). (4) ZERO authorization
+      meaning: lib/vendor-submissions.ts imports neither lib/admin-auth.ts nor
+      lib/admin-roles.ts, and no field on VendorSubmission (including `status`) is ever
+      read by any capability/role/admin-grant decision anywhere in the codebase — the
+      existence of a vendorSubmissions document, at any status, grants nothing.
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-f4-submissions-model/README.md
+  - contracts/checks/vendor-f4-submissions-model/tsconfig.typecheck.json
+  - contracts/checks/vendor-f4-submissions-model/fixtures/vendor-submission-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        types/index.ts's four new unions + VendorSubmission, and lib/vendor-submissions.ts,
+        are added.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof (not source-grep) that VendorSubmission's required fields are
+        genuinely non-optional and its four unions are genuinely closed. Uses
+        `@ts-expect-error` on deliberately-broken literals in the SAME passing tsc run: a
+        VendorSubmission literal omitting a required field, a vendorCategory value outside
+        the closed set, an invalid boothType, an invalid VendorSubmissionStatus. tsc fails
+        the whole run if any `@ts-expect-error` line does NOT actually error (proving the
+        constraint is real) or if any valid literal (a minimal required-fields-only
+        submission, and a full 31-field submission) fails to compile (proving the
+        constraint isn't overly strict). Defeats: widening any of the four unions to
+        `string`, or making any required field optional.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/vendor-f4-submissions-model/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        Real calls to validateVendorSubmissionInput() with malformed payloads: each of the
+        nine required fields missing/wrong-typed one at a time is rejected with an error
+        message naming that specific field; a vendorCategory containing a value outside
+        the closed set is rejected; a boothType or paymentMethodsAccepted value outside its
+        closed set is rejected; boothCount of 0, -1, and 1.5 are each rejected;
+        termsAccepted: false and termsAccepted omitted are each rejected. A minimal payload
+        containing only the nine required fields is accepted (valid: true, errors: []).
+        Defeats: (a) a validator that checks only the first missing field then returns
+        (surfaced by asserting each field's rejection independently, not just "some error
+        occurred"), (b) a boothCount check using `> 0` without an integer check (surfaced by
+        the 1.5 case), (c) a category/boothType/paymentMethod check that only verifies
+        "is an array/string", not membership in the closed set.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f4-submissions-model/check-required-field-rejection.mjs
+
+    - id: A4
+      description: >-
+        A real call to buildVendorSubmission() with all 31 form fields populated with
+        distinct, non-placeholder values round-trips every one of them unchanged (no field
+        silently dropped, renamed, or coerced) into the returned object, AND status is
+        'submitted' and submittedAt equals the injected `now`. Defeats: any field present in
+        VendorSubmissionDraft that the builder forgets to copy into its return value
+        (caught by asserting each of the 31 fields individually against its distinct input
+        value, not a single deep-equal against a pre-baked expected object that could be
+        wrong in the same way as the implementation).
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f4-submissions-model/check-full-round-trip.mjs
+
+    - id: A5
+      description: >-
+        buildVendorSubmission() ALWAYS sets status: 'submitted' and submittedAt: now, even
+        when the raw input object (cast through an `as any` boundary to simulate a
+        maliciously-crafted POST body — the type system alone can't stop this at the HTTP
+        boundary) contains status: 'approved' and an unrelated submittedAt/id value. Proves
+        a submitter cannot self-approve or backdate a submission by including those keys.
+        Defeats: a builder that does `{ ...input, status: input.status ?? 'submitted' }` or
+        otherwise lets a caller-supplied status/submittedAt/id survive into the built
+        document.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f4-submissions-model/check-status-cannot-be-forged.mjs
+
+    - id: A6
+      description: >-
+        Regulatory permit fields carry no validation and no cross-field conditional
+        requirement: (a) a submission with vendorCategory: ['books'] and an arbitrary,
+        non-numeric citesPermitNumber string is accepted unchanged by both
+        validateVendorSubmissionInput() and buildVendorSubmission() — no format check, no
+        "category doesn't need this permit" rejection; (b) a submission omitting all three
+        permit fields entirely, regardless of vendorCategory, is accepted (none of the three
+        is in the required-field set). (c) A static grep of lib/vendor-submissions.ts
+        confirms no function name matching verify/lookup/check paired with
+        phytosanitary/cites/permit exists in the file, and the file makes no `fetch(`/
+        `axios` call — proving no verification integration was added. Defeats: a validator
+        that silently trims/reformats the permit string (sanitize-and-continue, forbidden by
+        project rule), or requires citesPermitNumber whenever a rare-exotic-plants category
+        is selected (an undocumented cross-field rule the source form and mission brief do
+        not specify).
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f4-submissions-model/check-regulatory-fields-unvalidated.mjs
+
+    - id: A7
+      description: >-
+        Zero-authorization proof, mirroring ticketing-f5-buyers's A3/A6 pattern for this
+        module: (a) a built VendorSubmission (via JSON round-trip, the same shape a
+        Firestore document read would produce) has no 'admin'/'roles'/'capability'-named key
+        at any status value including 'approved'; (b) a static import-graph check of
+        lib/vendor-submissions.ts's own source text confirms it contains no `from
+        '@/lib/admin-auth'` and no `from '@/lib/admin-roles'` import (and no relative
+        equivalent) — the same "does this module even have the means to grant a
+        capability" proof ticketing-f5-buyers's golden README describes for lib/buyers.ts.
+        Defeats: adding an `isApprovedVendorAdmin` derived helper to this file that reads
+        `status === 'approved'`, or importing admin-roles.ts to look up a capability keyed
+        on submission status.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f4-submissions-model/check-zero-authorization.mjs
+
+    - id: A8
+      description: pnpm lint passes with zero errors after types/index.ts and lib/vendor-submissions.ts are added.
+      command: pnpm lint
