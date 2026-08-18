@@ -2,6 +2,71 @@
 
 ## Session 2026-08-18 — Brad's live-testing notes on the vendor/exhibitor registration form
 
+- [ ] **[P1, NEW 2026-08-18, DEFERRED — do not start until Brad asks, do not disturb the
+  currently-running mission] Submit appeared to do nothing on real testing — two compounding,
+  confirmed root causes.** Brad hit this live testing the form for F10 sign-off; it is a real
+  defect, not user error, and should have been caught before this was reported ready to test.
+  Verified against source by the orchestrator (not a guess):
+  1. **`boothCount` bypasses this form's own validation pattern.**
+     `lib/vendor-register-form-payload.ts:98`: `boothCount: Number.parseInt(state.boothCount, 10)`
+     — every other numeric field (`tableCount`, `chairCount`, `staffPerDay`) routes through the
+     `toOptionalInt()` helper (lines 60-65), which returns `undefined` on blank/invalid input.
+     `boothCount` has no such guard. Garbage input (Brad's test: `"e1"`) parses to `NaN`, which
+     `JSON.stringify` silently turns into `null` in the request body. The API correctly rejects
+     this — `boothCount` is a required positive integer (`lib/vendor-submissions.ts:77`,
+     `types/index.ts:486`) — so the rejection itself is legitimate.
+  2. **The rejection is invisible.** `VendorRegisterStatusBanner` renders at the very top of the
+     form (`VendorRegisterForm.tsx:104`, immediately inside `<form onSubmit>`, before all five
+     fieldsets: contact, category, booth/logistics, marketing, payment). Zero scroll-into-view or
+     focus management on submission failure. A user at the bottom submit button on this long a
+     form gets an error that renders entirely off-screen — indistinguishable from nothing
+     happening. `role="alert"` exists (helps screen readers) but does nothing for a sighted user
+     scrolled away from the top.
+  **Fix shape** (not yet built — an architect had started scoping a proper fix, contract work
+  deliberately abandoned mid-flight per Brad's instruction to defer): give `boothCount` the same
+  guarded-parse treatment as the other numeric fields, ideally with client-side pre-validation
+  that names the specific field before the network round trip even happens; and on any
+  submission failure, scroll the banner (or first invalid field, if per-field errors get added)
+  into view and move focus to it. Check whether any other required numeric field has the same
+  unguarded-`Number.parseInt` gap as `boothCount` before calling this fixed.
+
+- [ ] **[P2, NEW 2026-08-18, DEFERRED, same testing pass] No field has a placeholder showing
+  expected format.** Confirmed: no `placeholder` prop usage found in
+  `components/vendors/VendorBoothFieldset.tsx`, and the pattern holds across the form generally.
+  Fields like Preferred Load-In/Out Time Slot, Electrical Load (watts/amps), CIPC Number, and VAT
+  Number give the submitter no hint of expected format — directly why Brad's test data came out
+  as "1 million gigawatts" and "Tesd data is it time": nothing told him what format was wanted.
+  Needs placeholder text on every field where format isn't self-evident from the label alone, and
+  a check on whether the shared field components (`VendorFormField.tsx` etc.) even support a
+  `placeholder` prop yet. Placeholder = example/format guidance only, via the HTML `placeholder`
+  attribute — never a real default value prefilled into form state, which could get silently
+  submitted if the user never touches the field.
+
+- [ ] **[P2, NEW 2026-08-18, DEFERRED, same testing pass] Electrical Load field shows even when
+  Power Required is "No".** Confirmed in `components/vendors/VendorBoothFieldset.tsx` (the
+  `electricalLoad` field, ~lines 85-89): no conditional gate on `state.powerRequired`. Brad set
+  Power Required = No and Electrical Load still asked for watts/amps. Needs the same
+  "only-show-when-relevant" pattern this form already appears to use correctly for the two
+  food-only fields (Food Handling Certificate / List of Food Items, gated on vendor category) —
+  verify that gating is real and not coincidental before treating it as the reference pattern.
+  When Electrical Load is hidden, it should also be excluded from the submitted payload, not just
+  visually hidden with a stale value still attached.
+
+- [ ] **[P3, NEW 2026-08-18, informational, no action needed] No CAPTCHA on the vendor
+  registration form.** Confirmed: bot mitigation is a honeypot field (`VendorRegisterForm.tsx:59`,
+  mirrors `ContactForm.tsx`'s existing pattern) plus per-IP rate limiting
+  (`app/api/vendors/register/route.ts`, `lib/vendor-registration-rate-limit.ts`) — no
+  reCAPTCHA/Turnstile/hCaptcha anywhere. Reasonable for a low-volume B2B registration form, not
+  CAPTCHA-strength against a determined bot. Brad asked; answered directly, no fix implied unless
+  he asks for one.
+
+- [x] **[Confirmed, informational, 2026-08-18] Vendor submissions go to Firestore
+  `vendorSubmissions`, and Brad can already view/manage them as admin.** Public route writes via
+  `app/api/vendors/register/route.ts:70` (`VENDOR_SUBMISSIONS_COLLECTION`); `/admin/vendors`
+  reads the same collection directly (`app/admin/vendors/page.tsx:58`,
+  `app/api/admin/vendors/route.ts:33`) and is where approval/booth-number/payment-review already
+  happens. No gap, no action — recorded because Brad asked directly.
+
 - [ ] **[P2, NEW 2026-08-18, from Brad's live testing, agent-actionable] All-caps field labels
   are hard to read.** Every field label/legend on the vendor form uses
   `font-mono text-[11px] uppercase tracking-[0.16em] text-muted` (or the `[0.18em]`/`[0.14em]`
@@ -1705,3 +1770,5 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818192223.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818192749.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818193302.txt
