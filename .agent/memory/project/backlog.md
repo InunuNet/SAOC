@@ -2163,3 +2163,25 @@ email deliverability from the critical path of door check-in.
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818232006.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818232534.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818233051.txt
+
+
+## CORRECTIONS to earlier vendor-form backlog entries (2026-08-18, @architect verified against source)
+
+Two entries were wrong. Verified by reading `VendorBoothFieldset.tsx`, `VendorCategoryFieldset.tsx`,
+`lib/vendor-register-response.ts` and `VendorRegisterStatusBanner.tsx` directly rather than
+trusting the logged text:
+
+1. **Conditional-field bug is WORSE than logged.** An entry claimed the food-only fields already
+   gate correctly on category. They do not gate AT ALL. None of `electricalLoad`,
+   `foodHandlingCertificateNumber`, or `foodItemList` has any conditional render or payload
+   exclusion — every vendor sees food-handling fields regardless of category. Being fixed under
+   spec `vendor-page-fixes` F1.
+
+2. **Rate-limit UX entry is STALE — already fixed.** "No human-readable time shown" was closed by
+   commit f7c5f6f (`formatRetryAfter` / `retryAfterLabel` in lib/vendor-register-response.ts,
+   rendered by VendorRegisterStatusBanner). No action needed; treat as closed.
+
+Lesson worth keeping: backlog entries written during live testing captured symptoms accurately but
+diagnoses imprecisely. Verify against source before scoping work from them.
