@@ -17,6 +17,13 @@ import type { VendorSubmission } from '@/types/index';
  * prove"). Reads vendorSubmissions directly via the Admin SDK, mirroring app/admin/page.tsx's
  * fetchTickets() rather than round-tripping through its own GET /api/admin/vendors.
  */
+// This page never reads cookies/headers itself (the admin-session check lives in
+// app/admin/vendors/layout.tsx), so Next has no signal to treat it as dynamic and will
+// prerender it at build time -- calling initAdmin() during a cloud build then throws
+// ("Missing Firebase Admin credentials"), because FIREBASE_ADMIN_* are runtime-only secrets
+// there. Firestore must only be read at request time, never during the build.
+export const dynamic = 'force-dynamic';
+
 export default async function VendorsAdminPage() {
   const [show, submissions] = await Promise.all([
     sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
