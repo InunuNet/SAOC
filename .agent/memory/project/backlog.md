@@ -164,10 +164,45 @@ below). No candidates surfaced this session (script still does not run to comple
   bytes; roughly 24 per-show `manager` grants (or ~36 single-role grants) exceed it. Nothing
   checks size before `setCustomUserClaims`; the operator gets a raw `auth/claims-too-large` error
   with no advance warning. Target F13's batch-grant work. Measured by @qa.
-- [ ] **[P2, NEW] A throwing `lookupShowWindow` propagates out of `hasCapability()`** rather than
-  returning false. Fail-loud not fail-open, so not a security defect, but it 500s a request
-  instead of cleanly 403ing. F5 must decide whether to wrap it when wiring the default lookup.
-- [ ] **[P1, ESCALATED from P3 2026-08-17, BLOCKS F13] No live Sanity-backed `ShowWindowLookup`
+- [ ] **[P2, NARROWED 2026-08-18] A throwing `lookupShowWindow` closure would still propagate
+  out of `hasCapability()`** rather than returning false — `lib/admin-auth.ts:170,199` does not
+  wrap the call in a try/catch. Not exploitable today: the shipped `resolveShowWindowLookup`
+  closure (`lib/show-window-lookup.ts:64-72,149-155`) catches internally and can never throw, and
+  no route in this codebase constructs a raw closure outside that module. Remains a real
+  type-level boundary — any future capability-gated route that hand-rolls a `ShowWindowLookup`
+  instead of using `resolveShowWindowLookup` must catch internally itself, or wrap the call at
+  the `hasCapability()` boundary.
+- [ ] **[P3, NEW 2026-08-18, standing convention] No central default-injection point for
+  `ShowWindowLookup`.** `hasCapability()`'s default remains `() => null`
+  (`lib/admin-auth.ts:199`); each capability-gated route wires the real lookup itself —
+  `app/api/admin/tickets/comp/route.ts:88-89`, `app/api/admin/vendors/route.ts:26-27`,
+  `app/api/admin/vendors/[id]/payment/route.ts:38-39`,
+  `app/api/admin/vendors/[id]/review/route.ts:43-44`. Each site is independently caught by a
+  wiring check — this contract's A9 (`check-comp-route-wiring.mjs`), vendor F6's
+  `check-route-wiring.mjs`, vendor F7's `check-admin-payment-route-wiring.mjs`. Any future
+  capability-gated route must call `resolveShowWindowLookup` and pass `{ now, lookupShowWindow }`
+  itself, and must land with its own wiring check — same discipline F6/F7 followed. Not an
+  engineering task, just the convention new routes must follow.
+  Separately, noted without inflating it: `app/api/admin/checkin/route.ts`,
+  `app/api/admin/tickets/route.ts`, and `app/api/admin/export-csv/route.ts` call no capability
+  check at all. The checkin one is a deliberate documented deferral
+  (`app/api/admin/checkin/route.ts:19-27` — unsafe to enable before
+  `scripts/admin-migrate-roles.ts --apply` runs live, which it has not; see the STANDING item
+  below). The other two are pre-existing and unrelated to `ShowWindowLookup`.
+- [x] **[P1, ESCALATED from P3 2026-08-17, BLOCKS F13] No live Sanity-backed `ShowWindowLookup`
+  — DONE 2026-08-17/18, commit `0fca15a` ("feat(ticketing): production ShowWindowLookup,
+  unblocking per-show role grants").** Implementation: `lib/show-window-lookup.ts`. Contract:
+  `contracts/contract-ticketing-show-window-lookup.yaml` (feature id `F13-show-window-lookup`,
+  assertions A1-A10), decision record at
+  `contracts/golden/ticketing-show-window-lookup/README.md`, 7 check scripts under
+  `contracts/checks/ticketing-show-window-lookup/`. Re-verified against disk 2026-08-18: all
+  checks pass live. Window fields: `active` (via the existing `resolveActiveShow()`) selects
+  *which* show; `show.startDate`/`endDate` (`sanity/schemas/documents/show.ts:51-52`) define the
+  window. Timezone: `parseUtcDatetime()` (`lib/show-window-lookup.ts:95-101`) accepts only an
+  explicit `Z` or `±HH:MM` offset and rejects date-only/offset-less strings outright — fail-closed,
+  never silently reinterpreted; A7 is gated under `TZ=Africa/Johannesburg` so it reproduces the
+  SAST/UTC defect class regardless of the gate machine's timezone. Cache: `ShowWindowCache`, 60s
+  TTL, staleness re-checked at read as well as write. Superseded text below, kept for history:
   implementation exists anywhere — per-show role grants are ALWAYS refused in production, even
   inside their date window.** Verified this session: `lib/admin-auth.ts:199` defaults
   `lookupShowWindow` to `() => null` whenever a caller passes no opts; no production
@@ -284,18 +319,18 @@ below). No candidates surfaced this session (script still does not run to comple
   countdown target set to 2098-12-31 for ~3 days. Restored `title`/`location`/`countdownDate`
   on the `nationalShow` singleton from `scripts/seed-page-singletons.ts` (~lines 211-216),
   revalidated, verified live, and scanned all 133 dataset docs clean.
-- [ ] **[P1, BLOCKER] PayFast ITN signature helpers shipped but route stays pinned — commit
-  `2828d0a`, QA PASS, contract 6/8, marked BLOCKED.** `lib/payfast.ts` now has the inbound ITN
-  signature helper functions, but `app/api/tickets/itn/route.ts` is sha256-pinned
-  (`itn-route.expected.ts.txt` / `itn-route.golden.sha256`) and the two call sites (lines 89, 193)
-  plus the import were never wired in — needs Brad to authorize the documented re-pin ceremony.
-  Until the pin lifts, assertions A5/A6 stay red and **no ticket can reach `paid`**, which blocks
-  mission feature F6 (door check-in proven end to end) and go-live. Fold in the second item below
-  when doing the re-pin — don't do it twice.
-- [ ] **[P1] `parseOrderedFields` uses `continue` where the ITN spec implies `break` at the
-  signature key — latent divergence inside the same pinned route, found this session, NOT fixed
-  by the pin-lift above on its own.** Needs its own line item in the same re-pin ceremony so it
-  isn't silently reintroduced.
+- [x] **[P1, BLOCKER] PayFast ITN signature helpers shipped but route stays pinned — DONE, F10
+  re-pin ceremony completed.** Verified against disk 2026-08-18: `app/api/tickets/itn/route.ts`
+  imports `buildPayfastNotifyParamString` and `generateNotifySignature` (lines 7-8), calls
+  `generateNotifySignature` at line 113 and `buildPayfastNotifyParamString` at line 212. Both
+  call sites and the import are wired in; assertions A5/A6 are green. Cross-reference:
+  `contracts/golden/ticketing-f10-itn-repin/README.md` — this was the single authorised
+  reopening of the sha256-pinned route for this mission. Do not open, edit, or re-pin
+  `app/api/tickets/itn/route.ts` outside a similarly authorised ceremony.
+- [x] **[P1] `parseOrderedFields` uses `continue` where the ITN spec implies `break` at the
+  signature key — FIXED as part of the same F10 re-pin ceremony above.** Verified against disk
+  2026-08-18: `app/api/tickets/itn/route.ts:91` is now `break;`. Do not re-open to double-check
+  by editing — reading is fine, editing requires its own authorised ceremony per the item above.
 - [ ] **[P2] No branch protection on `main`** (`gh api` → 404 confirmed this session) — the new
   `dataset-residue-guard` CI job (and every other CI check) is advisory only; a broken push still
   merges. Remedy URL + exact `gh` command are recorded in the residue-guard golden README and
@@ -1522,3 +1557,19 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 
 
 
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818181105.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818181704.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818182218.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818182747.txt
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-18-agent-dispatch-naming.md
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818183329.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818183907.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818184431.txt
