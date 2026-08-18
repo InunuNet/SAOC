@@ -20,18 +20,12 @@
 
 ## Session 2026-08-18 — BrowserAgent adversarial sweeps: ticketing checkout is fully broken; 9 new vendor-form findings
 
-- [ ] **[P0, NEW 2026-08-18, from BrowserAgent, DEFERRED pending Brad's go] Ticket checkout is
-  100% broken for every buyer, every ticket type.** `app/api/tickets/checkout/route.ts:326`
-  correctly fails closed when `RECOVERY_TOKEN_SECRET` is unset (deliberate F11 design — never
-  mint an unrecoverable recovery token) — but the secret was never actually provisioned: absent
-  from `apphosting.yaml`, absent from Secret Manager, empty even in local `.env.local`.
-  BrowserAgent confirmed the 500 fires identically across ~7 attempts (all 5 ticket types,
-  clean data and garbage data alike) with the misleading response text "Ticket recovery is not
-  configured. Please try again later." Fix is a generated app-side signing secret (not an
-  external-account value like the PayFast credentials), agent-generatable — but Brad wants an
-  explicit go before any Secret Manager write given this project's four prior secret-corruption
-  incidents. Confirmed checkout never got close to a PayFast redirect in any test (network
-  listener showed only `beta.saoc.co.za` requests).
+- [x] **[P0, FIXED 2026-08-18] Ticket checkout 100% broken — RESOLVED.**
+  `RECOVERY_TOKEN_SECRET` generated, written to Secret Manager (round-trip verified before
+  deploy), wired into `apphosting.yaml`, deployed via `721af3b`. Confirmed live:
+  `POST /api/tickets/checkout` on the deployed backend now returns normal request-validation
+  errors instead of the fail-closed 500. Full purchase→door-checkin path not yet proven
+  end-to-end with real sandbox credentials — that's the current focus.
 - [ ] **[P1, NEW 2026-08-18, from BrowserAgent, DEFERRED] Vendor form has NO client-side
   validation gating submission — everything, including a fully empty form, POSTs to the
   server regardless of native HTML5 `:invalid` state.** `checkValidity()` correctly flags empty
@@ -1933,3 +1927,49 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818200444.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818201009.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818201521.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818202039.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818202602.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818203127.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818203639.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818204200.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818204714.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818205234.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818205748.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818210312.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818210825.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818211336.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818211849.txt
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=none
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818212402.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818212915.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818213428.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818213940.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818214456.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818215016.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818215536.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818220048.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818220607.txt

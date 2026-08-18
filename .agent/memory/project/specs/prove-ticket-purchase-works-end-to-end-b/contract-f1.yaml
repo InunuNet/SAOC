@@ -1,0 +1,63 @@
+schema: athanor.contract/v1
+slug: prove-ticket-purchase-works-end-to-end-b
+goal: Prove App Hosting auto-deploy is healthy, then prove a real sandbox purchase reaches
+  'paid', confirmation email/QR delivery is verified (success or graceful DNS-blocked
+  failure), and a real door check-in scan flips the order to its checked-in terminal state
+  with a correct audit trail — closing the loop the session's four live fixes opened.
+created_at: '2026-08-18'
+autonomy: high
+features:
+  - id: F1
+    name: Verify App Hosting auto-deploy is actually healthy after the tsconfig fix
+    status: pending
+  - id: F2
+    name: Fresh browser-driven sandbox purchase reaches a real 'paid' order + confirmation page
+    status: pending
+  - id: F3
+    name: Confirmation email/QR delivery attempt is verified (or its failure verified graceful)
+    status: pending
+  - id: F4
+    name: Real door check-in scan flips the order to 'checked-in' with a correct audit trail
+    status: pending
+goldens:
+  - .agent/memory/project/specs/prove-ticket-purchase-works-end-to-end-b/goldens/f1-deploy-health.golden.md
+  - .agent/memory/project/specs/prove-ticket-purchase-works-end-to-end-b/goldens/f2-f4-purchase-and-checkin.golden.md
+assertions:
+  phase: 4
+  checks:
+    # F1 — source-level preconditions for deploy health (already true; regression guards)
+    - id: A1
+      description: tsconfig excludes functions/ so Next.js typecheck never sweeps in the Cloud Function package again
+      command: grep -q '"functions"' tsconfig.json
+    - id: A2
+      description: apphosting.yaml wires RECOVERY_TOKEN_SECRET as a Secret Manager-backed variable
+      command: grep -q "RECOVERY_TOKEN_SECRET" apphosting.yaml
+    - id: A3
+      description: apphosting.yaml wires all three PayFast sandbox secrets
+      command: grep -q "PAYFAST_SANDBOX_PASSPHRASE" apphosting.yaml && grep -q "PAYFAST_SANDBOX_MERCHANT_ID" apphosting.yaml && grep -q "PAYFAST_SANDBOX_MERCHANT_KEY" apphosting.yaml
+    # F1 — live proof (requires gcloud auth against the saoc-prod project; @qa runs, not @dev)
+    - id: A4
+      description: at least one automatic (push-triggered) Cloud Build at or after commit 0c577dc reached SUCCESS
+      command: python3 execution/checks/verify_autodeploy_build.py --since-commit 0c577dc
+    # F2 — ITN source-IP check is log-only, not hard-reject (regression guard for fix #3)
+    - id: A5
+      description: ITN route logs source-IP mismatch as a warning, never rejects on it alone
+      command: grep -q "logged only, not rejecting" app/api/tickets/itn/route.ts
+    - id: A6
+      description: ITN route hard-rejects when PAYFAST_SANDBOX_PASSPHRASE is unset, before computing any signature
+      command: grep -q "Missing PAYFAST_SANDBOX_PASSPHRASE env var" app/api/tickets/itn/route.ts
+    # F2 — real purchase proof (requires a live run; @qa records the booking ref + evidence)
+    - id: A7
+      description: a real order+position pair for this mission's test purchase both show status paid in Firestore
+      command: python3 execution/checks/verify_order_paid.py --booking-ref "$MISSION_F2_BOOKING_REF"
+    # F3 — confirmation email isolation held under a real send attempt (success or graceful failure)
+    - id: A8
+      description: confirmation email failure (if any) never rethrows past deliverConfirmationEmailAfterCommit
+      command: grep -q "catch (error) {" lib/confirmation-email.ts
+    # F4 — checkin audit trail exists and duplicate scans are refused
+    - id: A9
+      description: a checkinAttempts audit document exists for this mission's real check-in scan
+      command: python3 execution/checks/verify_checkin_audit.py --booking-ref "$MISSION_F2_BOOKING_REF"
+    - id: A10
+      description: a second submission of the same booking reference is refused, not re-admitted
+      command: python3 execution/checks/verify_checkin_duplicate_refused.py --booking-ref "$MISSION_F2_BOOKING_REF"

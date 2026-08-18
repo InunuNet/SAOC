@@ -7,6 +7,20 @@ Usage:
   contract.py gate <contract.yaml> --phase N [--run-checks]  — exit 0 iff all phase-N assertions pass; --run-checks auto-runs any missing checks first
   contract.py report <contract.yaml>            — print coverage table
   contract.py clear <contract.yaml>             — delete result files for this contract
+
+Exit-code contract for `gate` on a specific phase number (not "all"/"max"):
+  0 = every phase-N assertion passed (allowing skips only via --allow-skips).
+  1 = reserved specifically for "a real codex_qa adversarial finding is among
+      the failing assertions for this phase" — a genuine cross-model QA
+      BLOCKED verdict, never anything else.
+  2 = every other failure shape: plain shell/file_exists/etc assertion
+      failures with no codex_qa assertion involved at all (the pre-existing
+      contract every non-codex_qa mission relies on), a pure codex_qa
+      wrapper/usage error with zero real fail verdicts (auth/network/usage
+      failure, not a finding), or unresolved skips.
+  ("all"/"max" phase gating always exits 2 on any failure and 0 on full
+  success — the 1-vs-2 codex_qa distinction only applies to the specific-
+  phase path above.)
 """
 import argparse
 import json
@@ -134,9 +148,18 @@ def normalize_contract(contract: dict) -> dict:
             cid = check.get("id", "")
             desc = check.get("description", "")
             cmd = check.get("command", "")
-            verify = {"kind": "shell", "cmd": cmd}
-            if "timeout_seconds" in check:
-                verify["timeout_seconds"] = check["timeout_seconds"]
+            check_type = check.get("type", "shell")
+            if check_type == "codex_qa":
+                verify = {
+                    "kind": "codex_qa",
+                    "target": check.get("target", ""),
+                    "script": check.get("script", "execution/codex_qa.sh"),
+                    "timeout_seconds": check.get("timeout_seconds", 200),
+                }
+            else:
+                verify = {"kind": "shell", "cmd": cmd}
+                if "timeout_seconds" in check:
+                    verify["timeout_seconds"] = check["timeout_seconds"]
             assertion_list.append({
                 "id": cid,
                 "description": desc,
@@ -340,6 +363,31 @@ def check_cmd(args):
                 try: os.unlink(tf_name)
                 except: pass
 
+    elif kind == "codex_qa":
+        target = verify.get("target", "")
+        script = verify.get("script", "execution/codex_qa.sh")
+        timeout = verify.get("timeout_seconds", 200)
+        try:
+            result = subprocess.run([script, target], capture_output=True,
+                                     text=True, timeout=timeout)
+            rc = result.returncode
+            if rc == 0:
+                verdict = "pass"
+                evidence = "codex_qa PASS"
+            elif rc == 1:
+                verdict = "fail"
+                evidence = "CODEX_QA_FAIL: " + result.stdout.strip()[:2000]
+            elif rc == 2:
+                verdict = "error"
+                evidence = "CODEX_QA_WRAPPER_ERROR: " + (result.stdout + result.stderr).strip()[:500]
+            else:
+                verdict = "error"
+                evidence = f"codex_qa wrapper exited {rc} (neither 0, 1, nor 2) -- treated as inconclusive, not a QA fail"
+        except subprocess.TimeoutExpired:
+            verdict = "error"
+            evidence = (f"codex_qa wrapper exceeded {timeout}s supervisory timeout "
+                        "(check_cmd level, independent of the wrapper's own internal timeout)")
+
     elif kind == "file_exists":
         path = verify.get("path", "")
         exists = Path(path).exists()
@@ -430,7 +478,8 @@ def check_cmd(args):
         evidence = f"Unknown verify kind: {kind}"
 
     write_result(contract, assertion_id, verdict, evidence)
-    icon = "PASS" if verdict == "pass" else ("SKIP" if verdict == "skip" else "FAIL")
+    icon = "PASS" if verdict == "pass" else ("SKIP" if verdict == "skip" else
+           ("ERROR" if verdict == "error" else "FAIL"))
     print(f"{icon} {assertion_id} ({kind}): {verdict.upper()}")
     if evidence:
         print(f"   {evidence[:200]}")
@@ -447,7 +496,20 @@ def _phase_matches(phase_id, target_str: str) -> bool:
 
 
 def _gate_single_phase(contract: dict, args) -> bool:
-    """Helper function to gate a single phase."""
+    """Helper function to gate a single phase.
+
+    On failure, also sets args.gate_codex_qa_failure (bool): True iff at
+    least one codex_qa-kind assertion is among the failing assertions for
+    this phase (a real cross-model adversarial finding). False for every
+    other failure shape, including plain shell/file_exists/etc assertion
+    failures (no codex_qa involved at all) and pure codex_qa wrapper/usage
+    errors with zero real fail verdicts. Callers that care about
+    distinguishing a genuine codex_qa BLOCKED from every other kind of gate
+    failure (contract.py gate's specific-phase exit code, currently 1 vs 2)
+    read this attribute after the call; callers that don't care simply
+    ignore it.
+    """
+    args.gate_codex_qa_failure = False
     phase_n = args.phase
     run_checks = getattr(args, "run_checks", False)
 
@@ -478,9 +540,12 @@ def _gate_single_phase(contract: dict, args) -> bool:
 
     failing = []
     skipped = []
+    errors = []
     pass_count = 0
     skip_count = 0
     fail_count = 0
+    error_count = 0
+    evidence_by_id = {}
 
     for aid in phase_assertions:
         rf = result_file(contract, aid)
@@ -491,7 +556,9 @@ def _gate_single_phase(contract: dict, args) -> bool:
             continue
         result = json.loads(rf.read_text())
         verdict = result.get("verdict", "fail")
-        icon = "PASS" if verdict == "pass" else ("SKIP" if verdict == "skip" else "FAIL")
+        evidence_by_id[aid] = result.get("evidence", "")
+        icon = "PASS" if verdict == "pass" else ("SKIP" if verdict == "skip" else
+               ("ERROR" if verdict == "error" else "FAIL"))
         print(f"  {icon} {aid}: {verdict}")
         if verdict == "fail":
             failing.append(aid)
@@ -506,14 +573,43 @@ def _gate_single_phase(contract: dict, args) -> bool:
             else:
                 skipped.append(aid)
                 skip_count += 1
+        elif verdict == "error":
+            errors.append(aid)
+            error_count += 1
         else:
             pass_count += 1
 
-    print(f"\nPhase {phase_n} summary: {pass_count} pass, {skip_count} skip, {fail_count} fail")
+    print(f"\nPhase {phase_n} summary: {pass_count} pass, {skip_count} skip, "
+          f"{fail_count} fail, {error_count} error")
 
     if failing:
-        print(f"\nFAIL Phase {phase_n} gate FAILED. Failing: {', '.join(failing)}")
-        print("   Resolve before proceeding to the next phase.")
+        codex_qa_failing = [
+            aid for aid in failing
+            if assertions_by_id.get(aid, {}).get("verify", {}).get("kind") == "codex_qa"
+        ]
+        other_failing = [aid for aid in failing if aid not in codex_qa_failing]
+        if codex_qa_failing:
+            args.gate_codex_qa_failure = True
+            print(f"\nBLOCKED Phase {phase_n} gate BLOCKED -- cross-model QA (GPT-5.5) reported findings.")
+            for aid in codex_qa_failing:
+                print(f"GPT-5.5 findings ({aid}):")
+                print(f"   {evidence_by_id.get(aid, '')}")
+        if other_failing:
+            print(f"\nFAIL Phase {phase_n} gate FAILED. Failing: {', '.join(other_failing)}")
+            print("   Resolve before proceeding to the next phase.")
+        if errors:
+            for aid in errors:
+                print(f"\nGATE ERROR Phase {phase_n}: codex_qa wrapper did not produce a verdict for {aid}")
+                print(f"   (QA inconclusive -- not a QA failure). {evidence_by_id.get(aid, '')}")
+                print("   Fix: ensure the `codex` binary is on PATH and target/prompt is valid.")
+                print("   See docs/codex_qa.md.")
+        return False
+    elif errors:
+        for aid in errors:
+            print(f"\nGATE ERROR Phase {phase_n}: codex_qa wrapper did not produce a verdict for {aid}")
+            print(f"   (QA inconclusive -- not a QA failure). {evidence_by_id.get(aid, '')}")
+            print("   Fix: ensure the `codex` binary is on PATH and target/prompt is valid.")
+            print("   See docs/codex_qa.md.")
         return False
     elif skipped and not allow_skips:
         print(f"\nFAIL Phase {phase_n} gate FAILED. Skipped (use --allow-skips to permit): {', '.join(skipped)}")
@@ -570,7 +666,20 @@ def gate_cmd(args):
         sys.exit(0)
     else: # Specific phase number
         if not _gate_single_phase(contract, args):
-            sys.exit(2)
+            # Exit code contract for the specific-phase gate path:
+            #   1 = reserved specifically for "a real codex_qa adversarial
+            #       finding is among the failing assertions for this phase"
+            #       (args.gate_codex_qa_failure is True). This is the ONLY
+            #       case that exits 1.
+            #   2 = every other failure shape: plain shell/file_exists/etc
+            #       assertion failures with no codex_qa involved at all (the
+            #       pre-existing, widely-relied-on contract for every
+            #       non-codex_qa mission), a pure codex_qa wrapper/usage
+            #       error with zero real fail verdicts, or unresolved skips.
+            # A caller checking the exit code must never mistake a wrapper
+            # crash or a plain assertion failure for an adversarial finding,
+            # or vice versa (see F2's BLOCKED-vs-GATE-ERROR verdict split).
+            sys.exit(1 if getattr(args, "gate_codex_qa_failure", False) else 2)
         sys.exit(0)
 
 
@@ -599,7 +708,8 @@ def report_cmd(args):
         rf = result_file(contract, aid)
         verdict = json.loads(rf.read_text()).get("verdict", "pending") if rf.exists() else "pending"
         desc = a.get("description", "")[:40]
-        icon = {"pass": "PASS", "fail": "FAIL", "skip": "SKIP", "pending": "PEND"}.get(verdict, "?")
+        icon = {"pass": "PASS", "fail": "FAIL", "skip": "SKIP", "error": "ERR",
+                "pending": "PEND"}.get(verdict, "?")
         print(f"{aid:<6} {str(phase_id):<6} {kind:<16} {icon} {verdict:<6} {desc}")
 
 
