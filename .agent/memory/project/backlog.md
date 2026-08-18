@@ -1567,3 +1567,5 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 - **P3 — no request body-size cap on any App Router API route.** All app/api/ routes call
   request.json() uncapped (App Router has no default body-parser limit). Found by @qa during
   vendor F5; pre-existing and project-wide, not F5-specific. Needs one shared guard.
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818080012.txt

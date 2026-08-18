@@ -36,7 +36,7 @@ app/
 │   ├── societies/         # 21 affiliated societies + [slug] individual pages
 │   ├── judging/           # Judging system overview
 │   ├── events/            # Events calendar + [slug] detail
-│   ├── national-show/     # Show overview + upcoming + archive/[year]
+│   ├── national-show/     # Show overview + upcoming + archive/[year] + vendors showcase
 │   ├── media-kit/         # Media kit
 │   ├── sponsors/          # Sponsors
 │   ├── constitution/      # Constitution
@@ -50,6 +50,7 @@ app/
 │   ├── events/             # Event submission + per-event .ics export
 │   ├── events.ics/         # Combined events feed
 │   ├── tickets/            # PayFast checkout + ITN webhook → Firestore `tickets`
+│   ├── vendors/            # Vendor registration submission → Firestore `vendorSubmissions`
 │   ├── admin/               # Session (Firebase Auth), check-in, CSV export
 │   ├── draft/ + disable-draft/  # Sanity draft-mode preview toggles
 │   └── revalidate/          # Sanity webhook → on-demand ISR revalidation
