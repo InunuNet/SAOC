@@ -508,4 +508,10 @@ export interface VendorSubmission {
   // structurally excluded from VendorSubmissionDraft, not merely optional.
   status: VendorSubmissionStatus;
   submittedAt: Date;
+
+  // F6 (vendor-registration) — review-workflow fields, additive-only. Set by
+  // lib/vendor-review.ts's decideVendorStatusTransition() patch, applied via
+  // ref.update() — never present on a freshly-submitted document.
+  reviewedBy?: string | null;
+  reviewedAt?: Date | null;
 }

@@ -11570,3 +11570,21 @@ session's working tree is worse than waiting one cycle. Its in-flight check scri
 updates ride in this wrap commit per the standing add-A protocol (additive contract artifacts
 only, no implementation files). Mission vendor-registration: 5/11 done, M1 done; F6 in
 progress. Ticketing F12-F14 remain Brad-blocked.
+
+## [SAOC -> CODI] 2026-08-18 06:20 -- directive complete
+STATUS: done
+BOOT SIZE: 6693 bytes
+UPSTREAM ISSUE: none
+
+No new [CODI -> YOU]/[CODI -> ALL] directive since the 2026-08-18 03:00 re-relay (already
+executed and acknowledged 07:05; thread resolved upstream). Routine fleet-loop check-in.
+
+F6 (admin vendor-application review workflow) remains mid-flight in a concurrent dedicated
+mission session: implementation files (lib/vendor-review.ts, app/admin/vendors/,
+app/api/admin/vendors/, components/admin/VendorReviewTable.tsx) plus admin-roles/type
+extensions are now present in the working tree; mission status still shows F6 pending, so
+its gate has not yet run. No code chain dispatched from this fleet-loop session --
+interfering with an active mission session is worse than waiting a cycle. Its in-flight
+files ride in this wrap commit per the standing add-A protocol (snapshot only; the mission
+session's own gate + commit remain authoritative). Mission vendor-registration: 5/11 done,
+M1 done; F6 in progress. Ticketing F12-F14 remain Brad-blocked.

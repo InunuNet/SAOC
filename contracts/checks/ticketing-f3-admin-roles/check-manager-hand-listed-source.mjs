@@ -38,6 +38,7 @@ const CAPABILITIES = [
   'issue-comp',
   'issue-refund',
   'export-buyer-data',
+  'review-vendor-applications',
 ];
 
 const failures = [];
@@ -104,7 +105,7 @@ if (failures.length > 0) {
 }
 
 console.log(
-  "PASS: manager is a hand-listed literal array of exactly the seven real capabilities in " +
+  "PASS: manager is a hand-listed literal array of exactly the eight real capabilities in " +
     'lib/admin-roles.ts source — not derived from CAPABILITIES, not aliased to owner.'
 );
 process.exit(0);

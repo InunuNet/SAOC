@@ -14,6 +14,7 @@ export const CAPABILITIES = [
   'issue-comp',
   'issue-refund',
   'export-buyer-data',
+  'review-vendor-applications',
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -38,6 +39,7 @@ export const ROLE_TO_CAPABILITIES: Record<RoleName, ReadonlySet<Capability>> = {
     'issue-comp',
     'issue-refund',
     'export-buyer-data',
+    'review-vendor-applications',
   ]),
   // Derived from CAPABILITIES, not hand-listed: owner is defined semantically as "every
   // currently-defined capability, full stop" (spec §5.3). A hand-typed literal here would go

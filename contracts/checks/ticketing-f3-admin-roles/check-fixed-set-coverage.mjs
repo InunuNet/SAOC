@@ -29,8 +29,8 @@ import { CAPABILITIES, ROLE_NAMES, resolve } from '../../../lib/admin-roles.ts';
 const failures = [];
 
 const fixedSet = new Set(CAPABILITIES);
-if (fixedSet.size !== 7) {
-  failures.push(`CAPABILITIES has ${fixedSet.size} members, expected exactly 7 (spec §5.2).`);
+if (fixedSet.size !== 8) {
+  failures.push(`CAPABILITIES has ${fixedSet.size} members, expected exactly 8 (spec §5.2).`);
 }
 
 const covered = new Set();
