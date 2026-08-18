@@ -1998,7 +1998,7 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 Firestore + Cloud Logging evidence).
 
 Three orders from the 19:24-19:28Z pre-fix window are permanently stuck `status='reserved'`:
-`5KYDSBMT38KX`, `R06HZ12P06EY`, `G08QJQK278NY` (all buyer "Thabo E2E Test"). Two of them
+`SAOC-2027-5KYDSBMT38KX`, `SAOC-2027-R06HZ12P06EY`, `SAOC-2027-G08QJQK278NY` (CORRECTED 2026-08-18: originally logged without the `SAOC-2027-` prefix, which propagated into contract fixtures and broke them) (all buyer "Thabo E2E Test"). Two of them
 (R06, G08) had their ITNs REJECTED by the source-IP bug — PayFast collected the payment and
 notified us; the handler refused the notification; the order never flipped to `paid`.
 
@@ -2219,3 +2219,5 @@ already use. Single token/utility change; audit all buttons afterward with a bro
 
 **Suggested:** fold into the next UI pass rather than a standalone mission — but do not lose it,
 it is on the ticket-buying path.
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818234643.txt
