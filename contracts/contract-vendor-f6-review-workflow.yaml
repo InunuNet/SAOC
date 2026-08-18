@@ -1,0 +1,260 @@
+schema: athanor.contract/v1
+slug: vendor-f6-review-workflow
+goal: >-
+  Mission vendor-registration F6 — the vendor application review workflow. Adds ONE
+  new capability, 'review-vendor-applications', to the existing fixed
+  lib/admin-roles.ts CAPABILITIES set (granted to manager and owner, NOT
+  door-staff — back-office triage, not door operations, mirroring why door-staff
+  is barred from search-buyers), a pure closed-machine status-transition function
+  (lib/vendor-review.ts) mirroring F7 checkin-audit's/F8 comp-tickets' injected-
+  time, additive-only-patch pattern, and two capability-gated admin surfaces
+  (GET /api/admin/vendors, POST /api/admin/vendors/[id]/review, and an
+  /admin/vendors layout gate) wired with the REAL ShowWindowLookup exactly as
+  app/api/admin/tickets/comp/route.ts already does. Reuses F3/F4's capability
+  system and F8's comp route wholesale — no new auth mechanism. Full decision
+  record, every defeating mutation, and the F8 lesson this contract exists to
+  close (an assertion that proves the route itself calls the gate, not just that
+  the pure function works): contracts/golden/vendor-f6-review-workflow/README.md
+created_at: '2026-08-18'
+autonomy: high
+
+features:
+  - id: F6
+    name: >-
+      Six new/changed files. (1) lib/admin-roles.ts (edit) -- append
+      'review-vendor-applications' as the 8th member of CAPABILITIES; add it to
+      manager's HAND-LISTED literal array (NOT derived, matching the existing
+      export-buyer-data precedent and F3's A8 rationale); door-staff's bundle is
+      UNCHANGED (still exactly {scan-checkin, lookup-booking-ref}); owner needs no
+      source edit -- it is already derived from CAPABILITIES. REQUIRED SIDE EDIT:
+      contracts/checks/ticketing-f3-admin-roles/check-manager-hand-listed-source.mjs
+      hardcodes a 7-member CAPABILITIES literal for source comparison -- it must be
+      updated to 8 members including 'review-vendor-applications', or F3's own A8
+      gate (re-run here as this contract's A4) goes red. This is the one existing
+      contract this feature is expected to touch, and only that one line's literal
+      list -- no other ticketing-f3 file changes.
+      (2) types/index.ts (edit) -- VendorSubmission gains
+      `reviewedBy?: string | null` and `reviewedAt?: Date | null`, added as new
+      optional fields alongside the existing 31 form fields and
+      status/submittedAt -- never replacing or renaming any existing field.
+      (3) lib/vendor-review.ts (new) -- pure, side-effect-free, no Firestore/
+      firebase-admin/admin-auth/admin-roles import anywhere: exports
+      `VendorReviewAction = 'start-review' | 'approve' | 'reject'`,
+      `VendorReviewDecisionInput { currentStatus: VendorSubmissionStatus; action:
+      VendorReviewAction; reviewerEmail: string; now: Date }`,
+      `VendorReviewPatch { status: VendorSubmissionStatus; reviewedBy: string;
+      reviewedAt: Date }`, `VendorReviewDecision = { ok: true; patch:
+      VendorReviewPatch } | { ok: false; error: string }`, and
+      `decideVendorStatusTransition(input): VendorReviewDecision`. The closed
+      machine is EXACTLY: submitted --start-review--> under-review;
+      under-review --approve--> approved; under-review --reject--> rejected.
+      Every other (currentStatus, action) pair -- including submitted going
+      straight to approved/rejected, and any action at all from approved or
+      rejected -- returns `{ ok: false, error }` with no `patch` key present.
+      `now` and `reviewerEmail` are always taken verbatim from the input, never
+      from `Date.now()`/`new Date()` internally. The returned `patch` object is
+      structurally additive-only: exactly the three keys
+      {status, reviewedBy, reviewedAt}, nothing else -- so a caller applying it
+      via Firestore's `.update()` can never overwrite any of the 31 submitted
+      fields, regardless of what buggy caller code might otherwise attempt.
+      (4) app/api/admin/vendors/route.ts (new) -- `GET`: gated on
+      `getAdminSession()` first (401/403 on session failure, comp route's exact
+      shape), THEN `hasCapability(session.decodedToken, NATIONAL_SHOW_ID,
+      'review-vendor-applications', { now, lookupShowWindow })` with
+      `lookupShowWindow` sourced from a REAL, awaited
+      `resolveShowWindowLookup(NATIONAL_SHOW_ID, now)` call (comp route's exact
+      wiring, lib/show-window-lookup.ts) -- never an omitted third argument, never
+      an inline `() => null`. On success: lists every `vendorSubmissions` document
+      (VENDOR_SUBMISSIONS_COLLECTION, lib/vendor-submissions.ts) as
+      `{ submissions: [...] }`. Any `console.*` call in this file's catch block
+      logs a generic message and `error.message` only -- never the submissions
+      array, a single submission, or any of businessName/contactEmail/
+      contactPersonName/contactCellPhone/physicalAddress/cipcNumber/vatNumber.
+      (5) app/api/admin/vendors/[id]/review/route.ts (new) -- `POST`: same
+      getAdminSession-then-hasCapability gate as (4), reusing the identical
+      NATIONAL_SHOW_ID + real lookupShowWindow wiring. Body is `{ action:
+      VendorReviewAction }`; an unrecognised or missing `action` -> 400. Loads the
+      target submission's CURRENT status from Firestore, calls the REAL
+      `decideVendorStatusTransition()` (never a second, hand-written transition
+      check) with that status, the parsed action, `session.decodedToken.email` as
+      `reviewerEmail`, and one `now = new Date()` value shared between the
+      capability-gate call and the transition call. `decision.ok === false` ->
+      409 with `decision.error`, no Firestore write attempted. `decision.ok ===
+      true` -> `ref.update(decision.patch)` (Firestore's partial-merge `.update`,
+      NEVER `.set`, which would wipe every field `.patch` doesn't name) -> 200
+      `{ success: true, status }`. A missing submission id -> 404 before the
+      transition is even attempted.
+      (6) app/admin/vendors/layout.tsx (new) -- server-side gate for the
+      `/admin/vendors` subtree only (mirrors app/admin/door/layout.tsx's
+      subtree-scoping rationale exactly): `getAdminSession()` -> redirect to
+      `/admin/login` on failure; then the SAME hasCapability(...,
+      'review-vendor-applications', ...) check as (4)/(5) -> redirect to `/admin`
+      on failure (a signed-in admin without the capability is redirected, not
+      shown a raw 403 page). `app/admin/vendors/page.tsx` (new, listing UI) sits
+      inside this gated subtree and is a UI-only file -- its visual acceptance is
+      @qa/human-proof territory (F10), not a contract assertion here; this
+      contract only proves the gate that wraps it.
+      Zero authorization meaning carried by data: a vendorSubmissions document,
+      at ANY status including 'approved', carries no admin/roles/capability-
+      flavoured key and grants nothing on its own -- only a real capability check
+      against a real admin token does.
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-f6-review-workflow/README.md
+  - contracts/golden/vendor-f6-review-workflow/vendors-list-route-wired.expected.ts.txt
+  - contracts/golden/vendor-f6-review-workflow/vendors-review-route-wired.expected.ts.txt
+  - contracts/golden/vendor-f6-review-workflow/vendors-layout-wired.expected.tsx.txt
+  - contracts/checks/vendor-f6-review-workflow/tsconfig.typecheck.json
+  - contracts/checks/vendor-f6-review-workflow/fixtures/vendor-f6-review-workflow-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The whole project still type-checks under strict TypeScript after all six new/changed files.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof (not source-grep) of lib/vendor-review.ts's exported
+        shapes and types/index.ts's new VendorSubmission fields: a fully-typed
+        VendorReviewDecisionInput literal, both arms of VendorReviewDecision
+        assigned and narrowed, and reviewedBy/reviewedAt assigned on a
+        VendorSubmission literal -- either compiles or doesn't.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/vendor-f6-review-workflow/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        Behavioural proof (real resolve() calls, lib/admin-roles.ts, never a
+        source-grep) that the new capability lands exactly where the brief
+        specifies: resolve(['manager']) and resolve(['owner']) both contain
+        'review-vendor-applications'; resolve(['door-staff']) does NOT (checked
+        against ALL eight capabilities individually, not just the new one, so a
+        mutation that accidentally widens door-staff's bundle elsewhere is also
+        caught); CAPABILITIES itself has exactly 8 members including the new one
+        in last position. Fails if lib/admin-roles.ts doesn't export the new
+        capability, or if door-staff's bundle grows to include it.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f6-review-workflow/check-capability-added-and-role-bundles.mjs
+
+    - id: A4
+      description: >-
+        F3 (ticketing-foundation) regression gate -- re-runs ALL FOUR of F3's own
+        real check scripts (fixed-set-coverage, owner-derived-from-fixed-set,
+        door-staff-negative-control, manager-hand-listed-source) completely
+        unchanged, proving the capability addition does not silently break
+        door-staff's exact two-member set, owner's full-set equality, or fixed-set
+        coverage -- and FORCES the required source edit named in F6.name(1): F3's
+        manager-hand-listed-source check hardcodes a 7-member comparison list, so
+        it goes red the moment manager's real array grows to 8 members unless that
+        hardcoded list is updated in the same commit. A red A4 with a message
+        naming a length mismatch on manager's array is the EXPECTED signal to make
+        that edit, not evidence F6 broke F3.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f3-admin-roles/check-fixed-set-coverage.mjs && node --import tsx/esm contracts/checks/ticketing-f3-admin-roles/check-owner-derived-from-fixed-set.mjs && node --import tsx/esm contracts/checks/ticketing-f3-admin-roles/check-door-staff-negative-control.mjs && node contracts/checks/ticketing-f3-admin-roles/check-manager-hand-listed-source.mjs
+
+    - id: A5
+      description: >-
+        The closed status-transition machine, proven by real
+        decideVendorStatusTransition() calls over ALL 12 (currentStatus, action)
+        combinations across the 4 statuses x 3 actions -- not just the 3 valid
+        paths. Exactly 3 combinations succeed (submitted+start-review,
+        under-review+approve, under-review+reject) with the exact expected next
+        status; all other 9 (including submitted+approve, submitted+reject,
+        approved+anything, rejected+anything, and under-review+start-review) are
+        refused with `ok:false`. Defeating mutation: allowing a direct
+        submitted->approved/rejected shortcut, or allowing any transition out of
+        a terminal state.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f6-review-workflow/check-closed-transition-machine.mjs
+
+    - id: A6
+      description: >-
+        Additive-patch and injected-time proof, mirroring F8's compedBy/purchasedAt
+        pattern: every successful decision's patch object has EXACTLY the 3 keys
+        {status, reviewedBy, reviewedAt} -- never more, never fewer -- across all
+        3 valid transitions; reviewedBy equals the exact injected reviewerEmail
+        (two different reviewers produce two different values, not a placeholder);
+        reviewedAt equals the exact injected `now` (two calls with an IDENTICAL
+        explicit `now`, several ms apart in real wall-clock time, produce
+        IDENTICAL reviewedAt; two calls with genuinely different `now` produce
+        different reviewedAt) -- proving the function never reads Date.now()/`new
+        Date()` internally. Every refused decision's object has EXACTLY the 2 keys
+        {ok, error} -- no stray `patch` key ever appears on a refusal.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f6-review-workflow/check-additive-patch-injected-time.mjs
+
+    - id: A7
+      description: >-
+        Zero-authorization carry-through, mirroring vendor-f4's A(b)/A(a):
+        (a) a VendorSubmission built via buildVendorSubmission() and then patched
+        via decideVendorStatusTransition() at every status including 'approved',
+        JSON round-tripped, carries no admin/roles/capability-flavoured key; (b)
+        lib/vendor-review.ts's source imports neither '@/lib/admin-auth' nor
+        '@/lib/admin-roles' (or any relative-path spelling of either) -- the
+        transition decision is authorization-blind by construction, and the
+        capability check lives only in the route/layout files A8 verifies.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f6-review-workflow/check-zero-authorization-carrythrough.mjs
+
+    - id: A8
+      description: >-
+        THE F8-LESSON assertion -- proves the ROUTE/LAYOUT files actually call the
+        capability gate, not just that hasCapability()/decideVendorStatusTransition()
+        work as pure functions in isolation. Same technique as
+        contracts/checks/ticketing-show-window-lookup/check-comp-route-wiring.mjs:
+        a source-level discriminator that is FIRST self-tested against a
+        known-unwired fixture (must reject) and this contract's own
+        architect-authored wired golden (must accept) for each of the three files
+        (app/api/admin/vendors/route.ts, app/api/admin/vendors/[id]/review/route.ts,
+        app/admin/vendors/layout.tsx) before it is ever trusted against the real
+        repository files. Requires, per file: imports hasCapability from
+        '@/lib/admin-auth', awaits a real `resolveShowWindowLookup(NATIONAL_SHOW_ID,
+        now)` call assigned to `lookupShowWindow`, and passes
+        `hasCapability(session.decodedToken, NATIONAL_SHOW_ID,
+        'review-vendor-applications', { now, lookupShowWindow })` verbatim. The
+        review route additionally requires `decideVendorStatusTransition(` is
+        imported from '@/lib/vendor-review' and called (not reimplemented inline),
+        and that the Firestore write is `ref.update(decision.patch)`, never
+        `ref.set(...)`. DEFEATING MUTATION: deleting the hasCapability call
+        entirely (gating on session only, matching admin/page.tsx's or
+        admin/door/layout.tsx's existing session-only pattern); swapping
+        'review-vendor-applications' for a more widely held capability; omitting
+        the `opts` argument or passing an inline `() => null` lookup; or changing
+        `ref.update(` to `ref.set(` on the review route.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-f6-review-workflow/check-route-wiring.mjs
+
+    - id: A9
+      description: >-
+        HTTP-level fail-closed round trip against a REAL running Next.js server
+        (FIREBASE_ADMIN_*/NEXT_PUBLIC_FIREBASE_* scrubbed, mirroring F8's
+        check-http-comp-fails-closed.sh exactly) for BOTH new API routes: no
+        session cookie -> 401; a syntactically-plausible but cryptographically
+        worthless session cookie -> 401 or 403, never 200/500; the no-cookie
+        response body is a real JSON refusal (proving the request reached the
+        real route handler, not a framework fallback). Writes nothing to
+        Firestore. Does NOT prove a genuine admin session without the capability
+        gets 403 specifically, or that a genuine manager/owner session succeeds --
+        both require a live Firebase Auth project and are deferred to F10's
+        human-proof step, exactly as F8's own README already documents for the
+        comp route.
+      command: >-
+        bash contracts/checks/vendor-f6-review-workflow/check-http-fails-closed.sh
+
+    - id: A10
+      description: >-
+        No-PII-in-logs proof for the list route: app/api/admin/vendors/route.ts's
+        source contains no `console.log` call at all, and its `console.error`
+        call(s) never reference the submissions array, a Firestore snapshot/docs
+        identifier, or any of businessName/contactEmail/contactPersonName/
+        contactCellPhone/physicalAddress/cipcNumber/vatNumber -- a caught error is
+        logged as a generic message plus `error.message` only.
+      command: >-
+        node contracts/checks/vendor-f6-review-workflow/check-no-pii-in-logs.mjs
+
+    - id: A11
+      description: pnpm lint passes with zero errors after all six new/changed files.
+      command: pnpm lint

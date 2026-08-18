@@ -1569,3 +1569,5 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
   vendor F5; pre-existing and project-wide, not F5-specific. Needs one shared guard.
 
 - [ ] SAOC (Misc): New Event: scheduled_resume-20260818080012.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818080522.txt
