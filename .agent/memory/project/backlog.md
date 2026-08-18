@@ -1,5 +1,67 @@
 # Athanor Issue Backlog
 
+## Session 2026-08-18 — BrowserAgent adversarial sweeps: ticketing checkout is fully broken; 9 new vendor-form findings
+
+- [ ] **[P0, NEW 2026-08-18, from BrowserAgent, DEFERRED pending Brad's go] Ticket checkout is
+  100% broken for every buyer, every ticket type.** `app/api/tickets/checkout/route.ts:326`
+  correctly fails closed when `RECOVERY_TOKEN_SECRET` is unset (deliberate F11 design — never
+  mint an unrecoverable recovery token) — but the secret was never actually provisioned: absent
+  from `apphosting.yaml`, absent from Secret Manager, empty even in local `.env.local`.
+  BrowserAgent confirmed the 500 fires identically across ~7 attempts (all 5 ticket types,
+  clean data and garbage data alike) with the misleading response text "Ticket recovery is not
+  configured. Please try again later." Fix is a generated app-side signing secret (not an
+  external-account value like the PayFast credentials), agent-generatable — but Brad wants an
+  explicit go before any Secret Manager write given this project's four prior secret-corruption
+  incidents. Confirmed checkout never got close to a PayFast redirect in any test (network
+  listener showed only `beta.saoc.co.za` requests).
+- [ ] **[P1, NEW 2026-08-18, from BrowserAgent, DEFERRED] Vendor form has NO client-side
+  validation gating submission — everything, including a fully empty form, POSTs to the
+  server regardless of native HTML5 `:invalid` state.** `checkValidity()` correctly flags empty
+  required fields, negative/decimal values in integer-only fields, and whitespace-only text —
+  but nothing in the submit handler checks it before firing the network request. All input
+  rejection is 100% server-side; any gap in server validation is directly reachable with no
+  client-side backstop at all. This is broader and more structural than the single `boothCount`
+  bug already logged above — that fix alone will not address this.
+- [ ] **[P1, NEW 2026-08-18, from BrowserAgent, DEFERRED, corrects earlier assumption]
+  `boothCount` is `type="number"`, so Chromium silently discards non-numeric keystrokes as you
+  type — "e1" never actually reaches state as the literal string "e1", it ends up empty, with
+  zero inline feedback that keystrokes were rejected.** Whoever picks up the boothCount fix
+  should verify against this corrected mechanism, not the original assumption that "e1" is what
+  gets submitted.
+- [ ] **[P1, NEW 2026-08-18, from BrowserAgent, DEFERRED] The Electrical-Load-shows-regardless-
+  of-Power-Required bug is NOT isolated — the same missing-conditional-render pattern also
+  affects Food Handling Certificate Number and List of Food Items, which stay visible
+  regardless of whether "Food retailer" is checked.** Likely one shared bug in however these
+  fieldsets implement conditional visibility, not three separate ones — worth fixing as one.
+- [ ] **[P2, NEW 2026-08-18, from BrowserAgent, DEFERRED] Vendor registration rate-limits after
+  ~4 submit attempts for 45 minutes with no visible countdown** — response is just "Please try
+  again later," no `retryAfterMs`-derived human-readable time shown. A real vendor who fumbles
+  the form 3-4 times while genuinely trying to fix it (plausible given the bugs above) gets
+  locked out for 45 minutes with no indication of how long. This also blocked BrowserAgent from
+  completing two of its planned tests (exact "e1" error-banner text repro; one clean valid test
+  submission) — both still outstanding, resume any time within/after the rate-limit window.
+- [ ] **[P2, NEW 2026-08-18, from BrowserAgent, DEFERRED] `vendorCategory` fieldset claims
+  `aria-required="true"` but enforces nothing** — none of its 8 checkboxes has the native
+  `required` attribute, and per the no-client-validation finding above the client wouldn't block
+  submission on it regardless. A screen-reader user is told the group is required; nothing in
+  actual behaviour backs that up.
+- [ ] **[P2, NEW 2026-08-18, from BrowserAgent, DEFERRED] No visible keyboard focus indicator on
+  ~24 of ~40 interactive elements — every text/number/email/tel/url/textarea input.** Checkboxes
+  and radios get a proper focus ring; text-type inputs rely on a barely-perceptible border-color
+  shift with `outline: none`. Real WCAG 2.4.7 risk for keyboard users. Submit button and nav
+  links get native focus outlines correctly — isolated to text-shaped inputs.
+- [ ] **[P2, NEW 2026-08-18, from BrowserAgent, DEFERRED] No `maxlength` on any of the 25 form
+  fields** (5000-char string accepted into `businessName` with zero truncation/warning) **and no
+  format `pattern` on the phone field** (`type="tel"` accepts `"not a phone number !!"`
+  verbatim — tel inputs don't validate format by default and none was added).
+- [x] **[Confirmed, informational] Vendor form's all-caps label complaint is a legibility issue,
+  not a contrast/accessibility failure.** BrowserAgent measured contrast at 5.24:1 (passes WCAG
+  AA's 4.5:1 requirement) — the slow-to-read effect comes from 11px + full uppercase + 1.76px
+  letter-spacing combined, not color. Precision worth keeping if this goes back to design.
+- [x] **[Confirmed, informational] Honeypot, keyboard tab order, mobile layout (375/320px), and
+  client-side script-injection handling on the vendor form all check out clean** — no action
+  needed on any of these four.
+
 ## Session 2026-08-18 — Production-blockers F5 (self-signup guard) DONE, two QA fast-follows
 
 - [x] **Production-blockers F5 — self-signup guard via `functions.auth.user().onCreate()`,
