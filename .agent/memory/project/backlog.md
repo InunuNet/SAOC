@@ -1628,4 +1628,4 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 
 - [ ] SAOC (Misc): New Event: scheduled_resume-20260818091156.txt
 
-- [P3] F8 check A4 blind to bare-JSX interpolation of undefined (renders blank, not "undefined"); strengthen with a raw-`{boothNumber}`-as-JSX-child grep or non-empty-recap-line assertion. QA verdict PASS, non-blocking. (2026-08-18)
+- [P2] F8 check A4 blind to both bare-JSX interpolation of undefined (renders blank) AND template-literal coercion of null (renders "null" — this exact regression shipped in bcbbc03, fixed in cd0308d). Architect: widen A4 to grep "null" as well as "undefined", plus a bare-`{boothNumber}`-as-JSX-child guard. (2026-08-18)
