@@ -26,13 +26,21 @@ features:
       manager's HAND-LISTED literal array (NOT derived, matching the existing
       export-buyer-data precedent and F3's A8 rationale); door-staff's bundle is
       UNCHANGED (still exactly {scan-checkin, lookup-booking-ref}); owner needs no
-      source edit -- it is already derived from CAPABILITIES. REQUIRED SIDE EDIT:
-      contracts/checks/ticketing-f3-admin-roles/check-manager-hand-listed-source.mjs
-      hardcodes a 7-member CAPABILITIES literal for source comparison -- it must be
-      updated to 8 members including 'review-vendor-applications', or F3's own A8
-      gate (re-run here as this contract's A4) goes red. This is the one existing
-      contract this feature is expected to touch, and only that one line's literal
-      list -- no other ticketing-f3 file changes.
+      source edit -- it is already derived from CAPABILITIES. REQUIRED SIDE EDITS
+      (verified live, 2026-08-18 -- not merely predicted): TWO of F3's own check
+      scripts hardcode a 7-member expectation rather than deriving it from the real
+      CAPABILITIES export, and BOTH must be bumped to 8 in the same commit or F3's
+      own gate (re-run here as this contract's A4) goes red: (i)
+      contracts/checks/ticketing-f3-admin-roles/check-fixed-set-coverage.mjs's
+      `if (fixedSet.size !== 7)` line; (ii)
+      contracts/checks/ticketing-f3-admin-roles/check-manager-hand-listed-source.mjs's
+      hardcoded 7-string CAPABILITIES literal used for source comparison, which
+      also needs 'review-vendor-applications' appended. check-owner-derived-from-
+      fixed-set.mjs and check-door-staff-negative-control.mjs both import the real
+      CAPABILITIES/resolve() and need no edit -- confirmed live by running them
+      against an 8-capability lib/admin-roles.ts, both passed unchanged. These two
+      literal-list edits are the ONLY existing-contract file changes this feature is
+      expected to make -- no other ticketing-f3 file changes.
       (2) types/index.ts (edit) -- VendorSubmission gains
       `reviewedBy?: string | null` and `reviewedAt?: Date | null`, added as new
       optional fields alongside the existing 31 form fields and
@@ -146,12 +154,13 @@ assertions:
         door-staff-negative-control, manager-hand-listed-source) completely
         unchanged, proving the capability addition does not silently break
         door-staff's exact two-member set, owner's full-set equality, or fixed-set
-        coverage -- and FORCES the required source edit named in F6.name(1): F3's
-        manager-hand-listed-source check hardcodes a 7-member comparison list, so
-        it goes red the moment manager's real array grows to 8 members unless that
-        hardcoded list is updated in the same commit. A red A4 with a message
-        naming a length mismatch on manager's array is the EXPECTED signal to make
-        that edit, not evidence F6 broke F3.
+        coverage -- and FORCES both required source edits named in F6.name(1):
+        fixed-set-coverage's hardcoded `size !== 7` and manager-hand-listed-
+        source's hardcoded 7-string comparison list both go red the moment
+        CAPABILITIES/manager's real array grows to 8 members, unless both are
+        updated in the same commit. A red A4 naming a length or count mismatch on
+        CAPABILITIES or manager's array is the EXPECTED signal to make those two
+        edits, not evidence F6 broke F3.
       command: >-
         node --import tsx/esm contracts/checks/ticketing-f3-admin-roles/check-fixed-set-coverage.mjs && node --import tsx/esm contracts/checks/ticketing-f3-admin-roles/check-owner-derived-from-fixed-set.mjs && node --import tsx/esm contracts/checks/ticketing-f3-admin-roles/check-door-staff-negative-control.mjs && node contracts/checks/ticketing-f3-admin-roles/check-manager-hand-listed-source.mjs
 

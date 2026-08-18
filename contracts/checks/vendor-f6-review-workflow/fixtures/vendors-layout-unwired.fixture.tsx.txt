@@ -1,0 +1,14 @@
+import { redirect } from 'next/navigation';
+
+import { getAdminSession } from '@/lib/admin-auth';
+
+// KNOWN-UNWIRED FIXTURE -- a straight copy of app/admin/door/layout.tsx's session-only gate,
+// with no capability check added. Any signed-in admin, including door-staff, would reach the
+// vendor review UI.
+export default async function VendorsAdminLayout({ children }: { children: React.ReactNode }) {
+  const session = await getAdminSession();
+  if (!session.ok) {
+    redirect('/admin/login');
+  }
+  return children;
+}

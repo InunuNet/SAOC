@@ -15,8 +15,9 @@ import type { VendorSubmissionStatus } from '@/types/index';
  * app/api/admin/vendors/route.ts, wired identically. The REAL
  * decideVendorStatusTransition() (lib/vendor-review.ts, F6) is the ONLY place the
  * submitted/under-review/approved/rejected machine is evaluated -- never reimplemented
- * here. ref.update(decision.patch) -- NEVER ref.set(...) -- so the 3-key patch can only
- * ever ADD to the document, never wipe the other 31 submitted fields. See
+ * here. ref.update(decision.patch) is used -- a full-document overwrite is never used -- so
+ * the 3-key patch can only ever ADD to the document, never wipe the other 31 submitted
+ * fields. See
  * contracts/golden/vendor-f6-review-workflow/README.md.
  */
 const VALID_ACTIONS: readonly VendorReviewAction[] = ['start-review', 'approve', 'reject'];

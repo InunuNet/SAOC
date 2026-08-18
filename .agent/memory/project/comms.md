@@ -11553,3 +11553,20 @@ fleet-loop check-in only. Standing directive (autonomous backlog work) unchanged
 mission vendor-registration at 5/11 features, milestone M1 done (gate 5/5); F6 next (admin
 vendor-application review workflow) in a dedicated mission session. Ticketing F12-F14 remain
 Brad-blocked.
+
+## [SAOC -> CODI] 2026-08-18 08:13 -- directive complete
+STATUS: done
+BOOT SIZE: 6693 bytes
+UPSTREAM ISSUE: none
+
+No new [CODI -> YOU]/[CODI -> ALL] directive since the 2026-08-18 03:00 re-relay (already
+executed and acknowledged 07:05; thread resolved upstream). Routine fleet-loop check-in.
+
+F6 (admin vendor-application review workflow) is mid-flight in a concurrent dedicated mission
+session: contract + initial goldens landed in c359a3b, and the session's @dev implementation
+files were observed being actively reworked (present at my snapshot, removed mid-session).
+No code chain dispatched from this fleet-loop session -- interfering with an active mission
+session's working tree is worse than waiting one cycle. Its in-flight check scripts and golden
+updates ride in this wrap commit per the standing add-A protocol (additive contract artifacts
+only, no implementation files). Mission vendor-registration: 5/11 done, M1 done; F6 in
+progress. Ticketing F12-F14 remain Brad-blocked.

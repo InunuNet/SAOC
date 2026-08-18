@@ -1,0 +1,22 @@
+import { NextResponse } from 'next/server';
+import { getFirestore } from 'firebase-admin/firestore';
+
+import { getAdminSession } from '@/lib/admin-auth';
+import { initAdmin } from '@/lib/firebase-admin';
+import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
+
+// KNOWN-UNWIRED FIXTURE -- the regression this contract exists to catch: someone copies
+// admin/page.tsx's session-only gate and never adds the capability check at all. Any admin
+// (door-staff included) could list every vendor submission.
+export async function GET(): Promise<NextResponse> {
+  const session = await getAdminSession();
+  if (!session.ok) {
+    const status = session.reason === 'no-session' || session.reason === 'invalid-session' ? 401 : 403;
+    return NextResponse.json({ error: status === 401 ? 'Unauthorized' : 'Forbidden' }, { status });
+  }
+
+  const db = getFirestore(initAdmin());
+  const snapshot = await db.collection(VENDOR_SUBMISSIONS_COLLECTION).get();
+  const submissions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  return NextResponse.json({ submissions });
+}

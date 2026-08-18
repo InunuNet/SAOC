@@ -1,0 +1,36 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getFirestore } from 'firebase-admin/firestore';
+
+import { getAdminSession } from '@/lib/admin-auth';
+import { initAdmin } from '@/lib/firebase-admin';
+import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
+
+// KNOWN-UNWIRED FIXTURE -- two defeating mutations bundled: (1) no capability gate at all
+// (session-only), and (2) the transition is hand-rolled inline instead of calling the real
+// decideVendorStatusTransition(), and the write uses ref.set() instead of ref.update(),
+// wiping every other field on the document.
+interface ReviewRequestBody {
+  action?: unknown;
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
+  const session = await getAdminSession();
+  if (!session.ok) {
+    const status = session.reason === 'no-session' || session.reason === 'invalid-session' ? 401 : 403;
+    return NextResponse.json({ error: status === 401 ? 'Unauthorized' : 'Forbidden' }, { status });
+  }
+
+  const { id } = await params;
+  const body = (await request.json()) as ReviewRequestBody;
+
+  const db = getFirestore(initAdmin());
+  const ref = db.collection(VENDOR_SUBMISSIONS_COLLECTION).doc(id);
+
+  const nextStatus = body.action === 'approve' ? 'approved' : 'rejected';
+  await ref.set({ status: nextStatus });
+
+  return NextResponse.json({ success: true, status: nextStatus });
+}

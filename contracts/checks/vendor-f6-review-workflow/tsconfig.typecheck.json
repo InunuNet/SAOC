@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/vendor-review.ts",
+    "../../../lib/vendor-submissions.ts",
+    "../../../lib/admin-roles.ts",
+    "../../../types/index.ts",
+    "fixtures/vendor-f6-review-workflow-typecheck.ts"
+  ],
+  "exclude": []
+}
