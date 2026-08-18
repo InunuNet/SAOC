@@ -1,5 +1,40 @@
 # Athanor Issue Backlog
 
+## Session 2026-08-18 — Brad's live-testing notes on the vendor/exhibitor registration form
+
+- [ ] **[P2, NEW 2026-08-18, from Brad's live testing] Regulatory permit fields ask for a
+  number but should collect the actual document.** Brad tested the live form
+  (`/national-show/vendors/register`) and flagged that "when we ask for a document it needs to
+  actually upload a document, save it and email it as an attachment" — not just record a
+  self-reported permit number. Affects the three F9 permit fields:
+  `phytosanitaryPermitNumber`, `citesPermitNumber`, `foodHandlingCertificateNumber`
+  (`types/index.ts:480-482`), currently free-text/unvalidated per F9's deliberate design
+  (`docs/vendor-registration.md:164-166,321-327` — "collected, not validated" was a considered
+  decision, not an oversight, but Brad is now directing a different one: collect the document
+  itself). The mission already has a working file-upload pattern to extend: F7's proof-of-payment
+  path (`app/api/vendors/[id]/proof-of-payment/route.ts`, `lib/vendor-proof-of-payment-handler.ts`,
+  `lib/vendor-payment.ts` — public unauthenticated upload route, base64 in/Storage out, MIME-type
+  allowlist `application/pdf`/`image/jpeg`/`image/png`, size cap, extension derived from
+  `mimeType` never the caller-supplied filename). `lib/email.ts`'s `sendEmail()` currently has no
+  attachment support — Resend's SDK supports `attachments: [{filename, content}]`, so this needs
+  extending, not replacing. Open design questions for whoever architects this: does upload
+  replace the number field or sit alongside it; who receives the emailed attachment (SAOC
+  internal record vs. vendor's own copy — F9's non-verification stance should very likely carry
+  forward to "document recorded as submitted, not verified" regardless of the answer); does this
+  apply to all three permit fields or only the ones vendors are likeliest to actually hold a
+  document for. Not urgent per Brad — queue behind the current production-blockers work.
+
+- [ ] **[P3, NEW 2026-08-18, from Brad's live testing, not urgent] CIPC and VAT number fields
+  accept any data.** Live-tested with `"Test Data CIPC"` and `"Test Data VAT 123456"` — both
+  submitted cleanly. `cipcNumber`/`vatNumber` (`types/index.ts:472-473`,
+  `lib/vendor-register-form-payload.ts:22-23,89-90`) are free-text with zero format validation.
+  A real fix would validate against South Africa's actual CIPC registration-number format and
+  the 10-digit VAT-number format (starts with `4`) — but confirm the exact CIPC format from an
+  authoritative source before building a regex; don't guess a company registration number
+  pattern. Consider whether this should reuse the same "collected, not validated, but at least
+  well-formed" posture as the permit fields above, or go further, since these two are structured
+  identifiers (checkable formats) rather than free-text permit numbers.
+
 ## Session 2026-08-18 — Production-blockers F4 (payfast-m1 stale checks repoint) DONE
 
 - [x] **Production-blockers F4 — repoint seven stale payfast-m1 ITN checks (A18–A21, A30–A32), DONE.**
