@@ -159,6 +159,21 @@ export interface Ticket {
   // for every paid position. Optional and nullable: pre-F8 Ticket literals never mention it
   // and must still compile. See contracts/golden/ticketing-f8-comp-tickets/README.md.
   compedBy?: string | null;
+  /** ticketing-capacity-reconciliation-hold F1 — duplicated from Order.reconciliationAlertedAt
+   *  onto the position, because capacity counting (lib/data/tickets.ts
+   *  getSoldCountsByTicketType) reads the `tickets` collection, not `orders`; same
+   *  duplicate-onto-both precedent lib/orders.ts already uses for `amount`/`purchasedAt`. Set
+   *  only by lib/reconciliation.ts's markOrdersAlerted, only AFTER a real alert email has
+   *  successfully sent — never read as a signal of payment status. See
+   *  .agent/memory/project/specs/ticketing-capacity-reconciliation-hold/goldens/README.md. */
+  reconciliationAlertedAt?: Timestamp | null;
+  // ticketing-position-expiry-write F1 — mirrors Order.expiresAt onto the position, because
+  // capacity counting (lib/data/tickets.ts getSoldCountsByTicketType/stillHoldsSeat) reads the
+  // `tickets` collection, not `orders`. Optional/nullable: pre-fix positions in Firestore, and
+  // every paid/cancelled/checked-in/refunded position this codebase ever writes, legitimately
+  // have none. See
+  // .agent/memory/project/specs/ticketing-position-expiry-write/goldens/README.md.
+  expiresAt?: Timestamp | null;
 }
 
 // F2 (ticketing-foundation) — an order is never itself "checked-in" (only a position is
@@ -193,6 +208,11 @@ export interface Order {
    *  contracts/golden/ticketing-f10-itn-repin/README.md "Judgement calls". */
   recoveryToken?: string | null;
   recoveryTokenExpiresAt?: Timestamp | null;
+  /** order-reconciliation F1 — set only by lib/reconciliation.ts's markOrdersAlerted, only
+   *  AFTER a real alert email has successfully sent. Alert-bookkeeping only — never read as a
+   *  signal of payment status, and never written anywhere else. See
+   *  .agent/memory/project/specs/order-reconciliation/goldens/README.md. */
+  reconciliationAlertedAt?: Timestamp | null;
 }
 
 // ---------------------------------------------------------------------------

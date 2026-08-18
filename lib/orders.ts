@@ -151,6 +151,7 @@ export async function createOrderWithPosition(
       pf_payment_id: input.pf_payment_id,
       orderId,
       compedBy: input.compedBy ?? null,
+      expiresAt: input.expiresAt,
     };
     transaction.set(positionRef, position);
   });

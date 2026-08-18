@@ -78,6 +78,7 @@ export function buildReservationDocs(input: BuildReservationDocsInput): Reservat
     pf_payment_id: null,
     orderId: input.orderId,
     compedBy: null,
+    expiresAt: input.expiresAt,
     idempotencyKey: input.idempotencyKey,
   };
 

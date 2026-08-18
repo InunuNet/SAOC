@@ -1,0 +1,84 @@
+schema: athanor.contract/v1
+slug: ticketing-position-expiry-write
+goal: >
+  P1, live production defect, discovered 2026-08-18/19 by ticketing-capacity-reconciliation-hold's
+  A4 negative control. lib/checkout-reservation.ts's buildReservationDocs and
+  lib/orders.ts's createOrderWithPosition both write `expiresAt` onto the Order document
+  only — never onto the Ticket position document. lib/data/tickets.ts's stillHoldsSeat
+  reads ONLY the `tickets` collection, and its own documented fail-closed rule ("no
+  expiresAt field -> hold the seat") means every reserved position holds its seat
+  forever regardless of RESERVATION_TTL_MINUTES. Abandoned checkouts never release
+  capacity; a show can read as sold out purely from unpaid abandoned carts. This
+  contract is a sequencing prerequisite for ticketing-capacity-reconciliation-hold: that
+  contract's own A4 cannot pass, and its feature has no observable production effect,
+  until this ships first (see that contract's goldens/README.md "Scope decision" and
+  this contract's goldens/README.md for the full analysis of why these are two
+  contracts, not one).
+created_at: '2026-08-19'
+autonomy: high
+features:
+  - id: F1
+    name: >
+      Reserved position documents carry expiresAt. Three additive, mechanical changes:
+      (1) types/index.ts — add expiresAt?: Timestamp | null to the Ticket interface,
+      mirroring Order.expiresAt; (2) lib/checkout-reservation.ts buildReservationDocs —
+      add `expiresAt: input.expiresAt` to the `position` object (the `order` object
+      already sets it from the same input field, no signature change); (3) lib/orders.ts
+      createOrderWithPosition — the identical one-line addition to its `position`
+      object, fixing the same defect class in the sibling primitive before a future
+      feature reserves through it and reproduces the bug a third time. Nothing in
+      lib/data/tickets.ts changes — stillHoldsSeat already reads expiresAt off whatever
+      document it's given; it starts working correctly on positions the instant they
+      carry the field. See goldens/README.md for exact line references and the full
+      false-pass-risk table.
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-position-expiry-write/goldens/README.md
+  - .agent/memory/project/specs/ticketing-position-expiry-write/goldens/check-buildreservationdocs-position-expiry.mjs
+  - .agent/memory/project/specs/ticketing-position-expiry-write/goldens/check-createorderwithposition-expiry.mjs
+  - .agent/memory/project/specs/ticketing-position-expiry-write/goldens/check-live-expired-position-releases.mjs
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        The app still compiles/builds with the new Ticket.expiresAt field and the two
+        one-line position-object additions in place. False-pass risk: none realistic —
+        a real `next build` failure is a hard compiler error; A2-A4 prove correctness.
+      command: pnpm exec next build
+    - id: A2
+      description: >
+        buildReservationDocs (lib/checkout-reservation.ts, the LIVE checkout path's
+        primitive) — the returned position.expiresAt is the EXACT SAME Timestamp
+        instance as input.expiresAt, not undefined and not a freshly minted one.
+        False-pass risk: a version that mints a NEW Timestamp.now() for the position
+        instead of reusing input.expiresAt would pass a bare "field exists" check but is
+        caught by this exact-equality check — order and position must expire at
+        literally the same instant.
+      command: npx tsx .agent/memory/project/specs/ticketing-position-expiry-write/goldens/check-buildreservationdocs-position-expiry.mjs
+    - id: A3
+      description: >
+        createOrderWithPosition (lib/orders.ts, the shared primitive future features
+        build on), against a fake in-memory Firestore-shaped store (deps.db injected, no
+        live Firestore) — same exact-equality proof as A2, run independently against
+        the sibling file. False-pass risk: fixing only checkout-reservation.ts and
+        forgetting orders.ts (the two files are near-duplicates of each other — exactly
+        how the bug happened twice) is caught by this running against orders.ts
+        specifically.
+      command: npx tsx .agent/memory/project/specs/ticketing-position-expiry-write/goldens/check-createorderwithposition-expiry.mjs
+    - id: A4
+      description: >
+        The live regression proof against real Firestore and the REAL, unmodified
+        getSoldCountsByTicketType — this IS
+        ticketing-capacity-reconciliation-hold's own A4 negative control, lifted out to
+        run standalone. Writes one real reservation through the real
+        buildReservationDocs + writeReservationPair with expiresAt a few seconds in the
+        past, reads the position back from Firestore to prove expiresAt survived the
+        round trip as a real Timestamp (not a plain Date, which stillHoldsSeat's
+        `instanceof Timestamp` check would silently reject), then asserts
+        getSoldCountsByTicketType does NOT count it. Reuses the ticketing-hardening
+        sentinel/lock/manifest/sweep infrastructure. False-pass risk: a fix that sets
+        position.expiresAt to a plain JS Date rather than a Firestore Timestamp would
+        pass A2/A3 (which never leave the process) but is caught here specifically by
+        the real Firestore round-trip and the explicit `instanceof Timestamp` check.
+      command: npx tsx .agent/memory/project/specs/ticketing-position-expiry-write/goldens/check-live-expired-position-releases.mjs
