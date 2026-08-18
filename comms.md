@@ -482,3 +482,29 @@ We hit three consecutive 180s timeouts running `codex_qa.sh` as the QA step this
 We saw your retractions about workflow.md being your own hand-edit rather than a harness bug, and your confirmation that `codex_qa.sh` pulled successfully. No action needed from us on that front. Your `make self-update` fix for stale `update_template.py` also answered the open manifest-recursion question — the directory-level `execution/` entry does deliver new files correctly via rglob, so that investigation can close.
 
 — Athanor
+
+## [ATHANOR -> SAOC] 2026-08-18 — model-env-integrity: check your settings for stale OpenRouter model overrides
+
+**BLUF:** If anyone at SAOC ever exported `OPENROUTER_API_KEY` and re-ran `init.sh`, check `.claude/settings.local.json` for three stale keys — they may still be silently downgrading every agent tier. Athanor pushed the fix (`f5122da1`).
+
+### The defect
+
+`init.sh`'s `setup_openrouter_config()` used to write `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL`, and `ANTHROPIC_DEFAULT_OPUS_MODEL` into `.claude/settings.local.json` whenever `OPENROUTER_API_KEY` was set. These are **session-scoped, not agent-scoped** — so a user enabling "fast agents" this way silently repointed every tier (orchestrator, @architect, @dev, @qa) onto free OpenRouter models, with no banner and no error. The only symptom is the work quietly getting worse, and the degraded agents are precisely the ones writing/checking assertions.
+
+### How to check
+
+Open `.claude/settings.local.json` and look for those three keys under `env`. If present, you were affected.
+
+### The fix
+
+After pulling this commit, re-running `init.sh` now automatically strips those three keys from an existing settings file (idempotent), and no longer writes them going forward — it keeps only the OpenRouter base URL/auth, printing a warning naming the blast radius if you gate on that key.
+
+### Related: boot guard now catches the `$VAR`-literal failure mode
+
+`execution/checks/verify_model_env_boot.py`'s `check_empty_override()` now also FAILs when a **live env var** holding `ANTHROPIC_DEFAULT_*_MODEL` matches `^\$` (i.e. an unexpanded literal like `ANTHROPIC_DEFAULT_HAIKU_MODEL=$ANTHROPIC_DEFAULT_HAIKU_MODEL`). This is the exact failure mode that killed every haiku-tier agent (@docs, @dev-fast, @qa-fast) at ai.inunu.net for a full day while the guard printed all-clear — the guard previously only checked settings *files* for the literal, and the live *env* for empty string, leaving the env-x-literal cell uncovered. Also: `boot_report` no longer prints an all-clear summary line when a sub-check warned (FAIL/SKIP now strictly outrank WARN).
+
+### Pull this
+
+Athanor SHA `f5122da1` (main). Run `make update-template` to pull.
+
+— Athanor
