@@ -1,6 +1,7 @@
 import { getFirestore, type Timestamp } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
+import { generateBookingRefQrDataUri } from '@/lib/qr';
 import type { Order, OrderStatus, Ticket, TicketStatus, TicketType } from '@/types/index';
 
 /**
@@ -320,4 +321,68 @@ export async function markOrderAndPositionPaidByPaymentId(
       },
     };
   });
+}
+
+// ---------------------------------------------------------------------------------------------
+// F1 (confirmation-page-qr-and-download) — server-only read used by the confirmation page to
+// render a real, scannable QR and buyer details straight into HTML. Deliberately NOT exposed
+// through app/api/tickets/status/route.ts: that route stays { status }-only forever (see this
+// feature's golden "The hard security constraint"), so this function is only ever called from a
+// Server Component, never imported into a 'use client' file.
+// ---------------------------------------------------------------------------------------------
+
+/** Mirrors the confirmation page's existing CONFIRMED_STATUSES set — a 'reserved' position
+ *  yields null here, same as an absent one, so the page falls back to the poller. */
+const CONFIRMED_TICKET_STATUSES = new Set<TicketStatus>(['paid', 'checked-in']);
+
+export interface ConfirmedTicketDisplay {
+  bookingRef: string;
+  attendeeName: string;
+  ticketType: TicketType;
+  amount: number;
+  qrDataUri: string;
+}
+
+/**
+ * Looks up `tickets/{bookingRef}` directly (the position's document id IS the booking ref, same
+ * convention as `createOrderWithPosition` and `lib/checkin.ts`) and returns the fields the
+ * confirmation page needs to render, plus a freshly generated QR data URI.
+ *
+ * Fail-closed: returns `null` — never a partial object, never a thrown error for a merely
+ * unconfirmed or absent ticket — unless the document exists AND its status is 'paid' or
+ * 'checked-in'.
+ */
+export async function getConfirmedTicketForDisplay(
+  bookingRef: string
+): Promise<ConfirmedTicketDisplay | null> {
+  if (bookingRef.trim().length === 0) {
+    return null;
+  }
+
+  const db = getFirestore(initAdmin());
+  const snapshot = await db.collection(TICKETS_COLLECTION).doc(bookingRef).get();
+  if (!snapshot.exists) {
+    return null;
+  }
+
+  const position = snapshot.data() as Partial<Ticket> | undefined;
+  const status = position?.status;
+  if (!status || !CONFIRMED_TICKET_STATUSES.has(status)) {
+    return null;
+  }
+
+  const attendeeName = position?.attendeeName;
+  const ticketType = position?.ticketType;
+  const amount = position?.amount;
+  if (!attendeeName || !ticketType || typeof amount !== 'number') {
+    return null;
+  }
+
+  return {
+    bookingRef,
+    attendeeName,
+    ticketType,
+    amount,
+    qrDataUri: await generateBookingRefQrDataUri(bookingRef),
+  };
 }
