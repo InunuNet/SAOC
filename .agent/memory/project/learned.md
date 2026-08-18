@@ -1289,3 +1289,41 @@ customization survived a sync just because the sync command didn't print a warni
 before assuming it's intact. Related: `.claude/rules/hooks.md`'s "never symlink platform
 skill/agent directories" rule is the same underlying pattern (derived vs. canonical) already
 documented for agents/skills; this is the rules-directory instance of the same footgun.
+
+## Review layers catch different defect classes — tightening a check isn't the same as pointing it at the right property (2026-08-18)
+`execution/checks/verify_autodeploy_build.py` (F1, deploy-health property) took four review
+passes to become correct, and each layer caught something the others structurally could not.
+- Claude's own @qa passed the file TWICE. Both times it still contained real defects.
+- Codex GPT-5.5 (cross-model) FAILED it three separate times with correctly file:line-cited
+  findings: (a) timestamp ordering standing in for serving identity — a manual rollback of an
+  older artifact would have passed; (b) earliest-SUCCESS selection masking a NEWER failed build;
+  (c) serving proof tied to commit-descendant membership rather than the specific automatic
+  build — a manual rollout of a different descendant passed.
+- @architect then caught what NEITHER reviewer could see from inside the file: all three Codex
+  fixes were individually correct but applied to a "what's true right now" frame, when F1's
+  actual property is historical ("this commit's push reached production at some point"). The
+  accumulated result was a rigorous measurement of the wrong thing — it produced two false
+  negatives on a HEALTHY pipeline because commits land faster than the serial rollout queue
+  drains.
+**Why:** a reviewer working inside a file optimises correctness within the frame it already has
+— it can find and fix a wrong check, but can't notice the check is aimed at the wrong property in
+the first place. That needs someone stepping back to ask what the check is FOR. This is also the
+same "assertion satisfiable by something that isn't the real property" defect class this project
+audited earlier — it recurred three times on ONE file, so treat it as this codebase's
+characteristic failure mode, not an occasional slip.
+**How to apply:** when a check keeps failing cross-model review on the same file, after the
+second Codex fail stop patching in place and ask @architect (or yourself) whether the check is
+even aimed at the right property before writing fix #3. Don't mistake "Codex now passes it" for
+"it measures the right thing."
+
+## Golden files must be verified against the real interface, not assumed (2026-08-18)
+A golden file for the ticketing flow asserted `state === 'confirmed'` for an API that actually
+returns `{ status }` with value `'paid'`. @architect wrote the acceptance criterion without
+reading the endpoint it was constraining. Had F3/F4 been implemented against this golden as
+written, they would have failed on CORRECT behaviour.
+**Why:** goldens are trusted as ground truth downstream (@dev implements against them, @qa
+checks against them) — an unverified golden silently propagates a wrong contract through the
+whole chain instead of catching a bug.
+**How to apply:** before a golden file is accepted, read the actual response shape/interface it
+constrains and confirm the field names and values match. Don't write acceptance criteria from
+memory or assumption about what an endpoint "should" return.

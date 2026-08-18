@@ -2019,3 +2019,24 @@ expiry and settling/flagging them; (b) alert on any order `reserved` beyond expi
 **Blocking?** Not for this mission. SHOULD be resolved before public ticket sales open.
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818225339.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818225856.txt
+
+## P2 — gh_closure_scan.py fails but exits 0 (silent-green defect)
+
+**Found:** 2026-08-18 during mission wrap-up (@maintainer hit it; orchestrator confirmed).
+
+`python3 execution/gh_closure_scan.py --format lines` prints
+`ERROR: .agent/memory/project/missions/OVERNIGHT-PLAN-2026-07-30.md has no YAML frontmatter`
+and then **exits 0**. Any caller gating on the exit code reads a hard failure as success, so
+the GitHub closure scan has been silently non-functional for an unknown period.
+
+Two separate defects:
+1. **Exit-code bug (the real one):** an ERROR path returns 0. Same defect class as this
+   session's F1 findings — a check that reports green while measuring nothing. Should exit
+   non-zero on a parse failure.
+2. **Input:** `OVERNIGHT-PLAN-2026-07-30.md` is a plan note, not a mission, but sits in
+   `missions/` with no frontmatter. Either give it frontmatter, move it out of `missions/`,
+   or have the scanner skip non-mission files deliberately rather than erroring on them.
+
+Fixing only (2) would hide (1) again — the exit-code bug is the item that matters.
