@@ -1543,3 +1543,7 @@ authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
 - [ ] SAOC (Misc): New Event: scheduled_resume-20260818065001.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260818065513.txt
+
+- [ ] SAOC (Misc): New Event: scheduled_resume-20260818065623.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260818070132.txt
