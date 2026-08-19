@@ -2720,3 +2720,5 @@ Questions to settle with Brad when it is discussed:
 - Does it send the confirmation email + QR, exactly as a PayFast payment does?
 - Does it decrement capacity the same way? (It must, or manual sales oversell the show.)
 - Can it be reversed, and if so by whom and with what record?
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819111334.txt

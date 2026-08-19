@@ -84,6 +84,8 @@ milestones:
   features:
   - F1
   - F2
+  gate_ran_at: '2026-08-19T09:15:02.595642+00:00'
+  gate_result: fail
 - id: M2
   title: Confirmation delivery and door check-in verified; mission proven end-to-end
   status: pending
@@ -91,6 +93,7 @@ milestones:
   - F3
   - F4
 ---
+
 
 
 

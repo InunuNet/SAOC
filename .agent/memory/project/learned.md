@@ -1327,3 +1327,78 @@ whole chain instead of catching a bug.
 **How to apply:** before a golden file is accepted, read the actual response shape/interface it
 constrains and confirm the field names and values match. Don't write acceptance criteria from
 memory or assumption about what an endpoint "should" return.
+
+## Presence vs. property — the defect class recurred five more times in one overnight session (2026-08-18/19)
+Every significant defect in the admin-nav / sign-out / capacity-hold work was the same shape as
+the entries above: an assertion tested that something was PRESENT, not that the actual PROPERTY
+held.
+- Active-nav highlighting used `usePathname` correctly, but the highlight rendered invisibly —
+  55 green BrowserAgent sub-cases all asked "is the link present and reachable", none asked "can
+  a human see which one is current".
+- Sign-out revoked refresh tokens but the cookie-verification call omitted `checkRevoked`, so a
+  stolen-then-revoked cookie kept repeatable force-sign-out power over its holder. Every
+  assertion asked "does the revoked credential stop working"; none asked "what can a holder of
+  it still cause".
+- One auth assertion took four attempts before it tested anything real: a grep for the
+  identifier passed on an unused import; requiring a call shape passed with the guard's `return`
+  commented out; substituting the existing behavioural HTTP check ALSO passed, because it
+  scrubs the secret to empty first, so the missing-secret branch intercepted the wrong-secret
+  case and the real comparison never executed even once. Only configuring a genuine secret and
+  running the check against it exercised the comparison.
+- `colorsDiffer` compared each nav link's own background to itself — always transparent on an
+  inactive link — so the alpha branch short-circuited to "differs" for any painted colour,
+  making a newly-added distance threshold on active/inactive contrast dead code that could never
+  fail.
+- A structural grep FAILED on a true property because it matched the doc comment documenting
+  the prohibition, while a sibling check would have PASSED with the real guard deleted.
+**Why:** this is now the project's characteristic failure mode (see the F1 deploy-health entry
+above, and the overnight-four-stream entry from 2026-08-12) — five recurrences in one session
+confirms it's structural, not incidental.
+**How to apply, and what actually caught these:** require every new assertion written for a
+known defect to be OBSERVED FAILING against the unfixed code before the fix is written —
+"verified by construction" (reasoning that an assertion must catch a bug without running it
+against the broken state) was wrong twice this session alone. For a security guard
+specifically, prefer a behavioural check (can the holder of the artifact still DO the forbidden
+thing) over a structural/grep check (does the code contain the right-looking call) — a
+structural check is a proxy, and every proxy has a gap; say explicitly when an assertion is a
+proxy rather than proof.
+
+## Codex GPT-5.5 cross-model review keeps finding what Claude's own @qa passed (2026-08-18/19)
+Three more defects this session were found by the mandatory Codex pass after Claude's own @qa
+had already PASSed the same diff — consistent with the F1 deploy-health entry above. In each
+case the @qa work was thorough on its own terms; the misses were a shared blind spot between
+writer and reviewer, not carelessness. One was a class @qa structurally cannot catch on its own:
+a cross-document contradiction, where each agent verified its own doc against its own code and
+neither agent looked at the OTHER doc that the same change had just falsified.
+**Why:** confirms `[[feedback_codex_mandatory_qa]]` — same-model review shares the same blind
+spots as the code it's reviewing; cross-document consistency is nobody's job unless someone is
+explicitly asked to check it.
+**How to apply:** keep the Codex pass mandatory with no exceptions, per the standing rule in
+`.claude/rules/workflow.md`. When a change touches anything a doc describes, explicitly task
+someone (docs or QA) with re-reading every doc that references the changed behavior, not just
+the doc that was directly edited.
+
+## Two more operational hazards with shared uncommitted work (2026-08-18/19)
+`git checkout -- <path>` and, separately, `git stash`, each silently discarded an agent's
+uncommitted work during a probe this session — the same class as the `git checkout --`
+entry above, now confirmed for `git stash` too.
+**Why:** both commands operate on the working tree without regard for whether the content they
+discard is "my mutation" or "the only copy of unshipped work" — there's no built-in distinction.
+**How to apply:** to inspect or temporarily undo an uncommitted change, use the Edit tool with an
+exact old/new string pair instead of `git checkout --`/`git stash`. Separately: running contract
+gates concurrently produces false reds on this project — two `next build` runs clobber `.next/`,
+and the admin harness binds a fixed port 3400 with a shared lockfile. Never gate two streams at
+once; see the 2026-08-12 "never gate a stream while its own agents are still working" entry for
+the same underlying rule applied to a different resource.
+
+## Correction that must not be lost: "stranded" ticket orders were sandbox fixtures, not affected customers (2026-08-19)
+The four ticket orders found stranded past expiry were E2E sandbox test fixtures, not real
+customers — though two of the four were genuine ITN-rejection near-misses worth keeping as
+evidence. The `expiresAt`-on-position bug and its fix (commit `31ee68c`) were both real and
+correctly diagnosed; only the "real customers affected" framing in the initial alert was wrong.
+**Why:** the underlying defect (reserved seats never released because `expiresAt` was written to
+the wrong object) was real and worth the P1 fix regardless of whose orders triggered it — don't
+let a corrected framing cast doubt on a fix that remains correct.
+**How to apply:** when reporting a defect found via fixture data, state plainly whether the
+triggering records are test fixtures or real customer data before the severity framing goes to
+Brad — the fix's correctness and the incident's real-world impact are two separate claims.
