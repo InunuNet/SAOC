@@ -8,7 +8,7 @@
 | `Header.tsx`         | Sticky parchment header: 3-zone layout (logo / nav / actions), scroll shadow, keyboard shortcuts  |
 | `MobileMenu.tsx`     | Right-slide dialog: 6 nav items, "Soon" chip on Learn, Lucide X close                             |
 | `SearchOverlay.tsx`  | 680px centered search panel: live filter for societies and events, 5-item empty-state suggestions |
-| `Footer.tsx`         | 4-col dark footer: col1 stacked logo lockup, col2 Explore nav, col3 Partners, col4 "Stay in touch" email form + WOSA link; bottom bar: Constitution + Media kit |
+| `Footer.tsx`         | 4-col dark footer: col1 stacked logo lockup, col2 Explore nav, col3 Partners, col4 "Stay in touch" email form + WOSA link; bottom bar: Privacy, Terms, Refunds, Constitution, Media kit |
 | `NewsletterForm.tsx` | Client subcomponent extracted from Footer; owns the newsletter input and submit                   |
 | `Breadcrumb.tsx`     | Mono breadcrumb trail: Home-first, `aria-current` on last item                                    |
 

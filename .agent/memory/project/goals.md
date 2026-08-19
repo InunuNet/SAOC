@@ -188,6 +188,17 @@ document", now updated with F11's completion status). The mission is blocked on 
 acts on F12/F13's prerequisites. **Status unchanged this session: 11/14, F12-F14 still awaiting
 Brad.**
 
+### 2026-08-19 — `policy-pages` (F1) done: merchant-account-blocking legal content shipped
+
+Ozow confirmed (on a trial merchant application) that South African payment gateways require
+Privacy Policy, Terms of Service, and Refund Policy pages before approving a merchant account —
+no merchant account, no ticket sales. F1 shipped all three (`/privacy` rewritten to remove a
+false third-party-sharing denial, `/terms` gained conditions of sale, `/refunds` is new and
+deliberately figure-free pending council input). Gate: 14/14 pass; Codex pass run (one finding,
+attributed to pre-existing repo-wide Prettier drift, not this change). Four follow-ups logged in
+`backlog.md` under "Session 2026-08-19" — two blocked on council (POPIA Information Officer
+designation, refund terms), one repo-hygiene (Prettier), one standing (legal review notice).
+
 ### 2026-08-18 — `vendor-registration` mission reaches `close_out`, 10/11 features done
 
 M1 (F1-F5, naming disambiguation through the public register route), M2 (F6-F9, review

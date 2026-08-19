@@ -1,5 +1,31 @@
 # Athanor Issue Backlog
 
+## Session 2026-08-19 — `policy-pages` (F1) shipped; gateway-approval prerequisite content, four follow-ups
+
+- [x] **[P0, DONE 2026-08-19] Merchant-account-blocking legal pages shipped.** `/privacy`
+  rewritten to remove a false "not shared with third parties" claim, `/terms` gained conditions
+  of sale, `/refunds` is a new route (figure-free by design — council hasn't supplied numbers),
+  and all three are now linked from `components/chrome/Footer.tsx` (`/terms` previously existed
+  but was linked nowhere). Gate: 14/14 pass. See `docs/policy-pages.md`.
+- [ ] **[P2] Prettier fails on 28 files across `app/`**, not just the 4 touched by
+  `policy-pages` — pre-existing, repo-wide, deliberately NOT fixed inside this contract (fixing
+  only 4 of 28 would leave the rest inconsistent). Decide whether to run `pnpm format`
+  repo-wide in one pass and whether to gate it in CI.
+- [ ] **[P1, needs council] SAOC's POPIA Information Officer is undesignated.** `/privacy` names
+  `secretary@saoc.co.za` (a pre-existing project convention, also used in `app/layout.tsx`
+  JSON-LD and the constitution page). Under POPIA the Information Officer defaults to the head
+  of the organisation and must be registered with the Information Regulator; nothing in the repo
+  shows SAOC has designated or registered anyone. Note `info@saoc.co.za` is the project's
+  established single authorised inbox (`docs/email-reply-to.md:18`). Question is with
+  Brad/Lee-Ann.
+- [ ] **[P1, blocked on council] `/refunds` has no refund terms.** Structurally complete,
+  deliberately figure-free. Needs cancellation windows, refund conditions, and any cooling-off
+  period from the council — asked as question 5 of the pricing artifact sent to Lee-Ann. When
+  supplied, POLICY-10 (the digit+unit ban, see `[[learned.md]]` "Ban enforced beats ban
+  requested") must be revisited since it currently bans the very figures that will need adding.
+- [ ] **[P1] All three policy pages carry an "AI-generated draft, not legal advice" notice** and
+  need professional legal review before the council relies on them.
+
 ## Session 2026-08-18 — Admin panel has no cross-navigation at all (Brad, live)
 
 - [ ] **[P1, NEW 2026-08-18, from Brad] `/admin` has no menu system — confirmed there is no
@@ -2722,3 +2748,181 @@ Questions to settle with Brad when it is discussed:
 - Can it be reversed, and if so by whom and with what record?
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260819111334.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819111908.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819112500.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819113028.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819113553.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819114114.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819114640.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819115204.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819115730.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819120308.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819120836.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819121403.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819121929.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819122504.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819123026.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819123541.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819124104.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819124627.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819125141.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819125707.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819130232.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819130752.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819131307.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819131826.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819132336.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819132846.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819133358.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819133908.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819134418.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819134928.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819135438.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819135949.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819140501.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819141012.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819141522.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819142032.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819142543.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819143053.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819143604.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819144114.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819144626.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819145136.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819145647.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819150157.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819150706.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819151216.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819151726.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819152235.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819152744.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819153256.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819153809.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819154332.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819154910.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819155428.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819155940.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819160453.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819170426.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819170942.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819171506.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819172056.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819172612.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819173142.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819173720.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819174245.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819174803.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819175339.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819175924.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819180441.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819181000.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819181529.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819182045.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819182616.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819183159.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819183723.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819184251.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819184820.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819185352.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819185947.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819190515.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819191031.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819191552.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819192109.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819192642.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819193213.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819193813.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819194343.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819194901.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819195423.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819195954.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819200521.txt

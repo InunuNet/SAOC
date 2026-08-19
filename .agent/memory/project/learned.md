@@ -1402,3 +1402,61 @@ let a corrected framing cast doubt on a fix that remains correct.
 **How to apply:** when reporting a defect found via fixture data, state plainly whether the
 triggering records are test fixtures or real customer data before the severity framing goes to
 Brad — the fix's correctness and the incident's real-world impact are two separate claims.
+
+## Content correctness is an uncovered defect class — a page can be a defect (2026-08-19)
+The old `/privacy` page passed every contract check the project had, because no check asked
+whether its claims were TRUE. It stated user data is "not shared with third parties" while four
+separate integrations (PayFast, Firestore, Cloud Storage, Resend) shared it directly. Caught only
+because `policy-pages` (F1) explicitly re-read the page for factual accuracy against the actual
+data flows, not just structural/rendering checks.
+**Why:** every prior contract in this project checked that pages render, link correctly, and
+avoid forbidden patterns — none checked that stated facts matched actual system behavior. A false
+legal claim on a live site is a real defect a green gate would never surface.
+**How to apply:** when a page makes a factual claim about system behavior (data sharing, refund
+policy, retention, etc.), verify the claim against the actual code path/integration list before
+treating the page as done — don't just check it renders and links.
+
+## Ban enforced beats ban requested — negative-control-test the banning assertion itself (2026-08-19)
+`/refunds` had to ship with zero refund windows/percentages (council hadn't supplied any) without
+inventing placeholder figures. Rather than only instructing @dev not to invent numbers, F1's
+POLICY-10 assertion bans any digit+unit pattern on the page and was negative-control-tested
+against a deliberately bad draft containing "14 days" and "50%" to confirm it actually fails
+first. @qa then separately checked the vectors the regex can't catch — spelled-out numbers
+("fourteen days"), vague-but-binding promises ("processed promptly"). Two layers were needed;
+neither alone was sufficient.
+**Why:** an instruction to @dev is not a check; the check has to be adversarially proven to
+reject the exact failure it exists to prevent, per the general residue-guard lesson above.
+**How to apply:** for any "must not contain X" assertion, run it against a fixture that DOES
+contain X before trusting it, and separately ask what X looks like when it isn't in the exact
+pattern form the assertion checks for (spelled out, paraphrased, implied).
+
+## An assertion that passes on a 404 is not testing what it claims (2026-08-19)
+POLICY-10's first draft (see above) would have passed against a page that 404s, because a
+nonexistent page trivially contains no fabricated numbers. @architect caught this before
+dispatch and re-gated the assertion on a 200 response first.
+**Why:** this is the project's dominant defect class — "assertion satisfiable by something that
+isn't the real property" — recurring again, this time caught pre-ship rather than found in
+production. See the residue-guard and weak-assertion-audit entries above for the same pattern.
+**How to apply:** any "page must NOT contain X" assertion needs a paired "page must exist and
+return 200" assertion, or the negative check is vacuously true for a broken route.
+
+## Cross-model findings still need attribution, not just truth-checking (2026-08-19)
+Codex flagged Prettier failing on all four files touched by `policy-pages`. True — but Prettier
+also fails on 28 files across `app/` including pages nobody touched this session (`about`,
+`contact`, `constitution`). Pre-existing repo-wide issue, not introduced by this feature.
+**Why:** `[[feedback_codex_mandatory_qa]]` establishes Codex findings must be verified, not
+auto-applied — this is a concrete case where "is this true?" (yes) and "did we cause it?" (no)
+gave different answers, and only the second one determines whether the feature is blocked.
+**How to apply:** for any cross-model finding framed as caused-by-this-change, check whether the
+same symptom exists on files/paths the change never touched before treating it as a blocker.
+
+## Route existence and route reachability are different properties (2026-08-19)
+`/terms` rendered fine and had for some time, but was linked from nowhere — not the footer, not
+any other page. A payment-gateway reviewer checking for Terms & Conditions navigating the site
+normally would have concluded it didn't exist. Fixed as part of `policy-pages` by linking all
+three policy pages from `components/chrome/Footer.tsx`.
+**Why:** "the page exists in the codebase" and "a visitor can find the page" are both required
+for a compliance-facing page to do its job; only the first is checkable by hitting the URL
+directly, which is what most route-existence checks do.
+**How to apply:** for any page whose purpose is external-facing/compliance-facing, explicitly
+check it's linked from site chrome (nav/footer), not just that the route resolves.

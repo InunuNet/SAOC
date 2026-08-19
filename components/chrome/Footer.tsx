@@ -139,6 +139,18 @@ export function Footer() {
               Privacy
             </Link>
             <Link
+              href="/terms"
+              className="font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
+            >
+              Terms
+            </Link>
+            <Link
+              href="/refunds"
+              className="font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
+            >
+              Refunds
+            </Link>
+            <Link
               href="/constitution"
               className="font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
             >

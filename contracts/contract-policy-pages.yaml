@@ -1,0 +1,163 @@
+schema: athanor.contract/v1
+slug: policy-pages
+goal: >
+  Make /privacy, /terms, and a new /refunds page factually accurate and
+  gateway-reviewable — closing the specific gaps a payment-gateway merchant
+  application (Ozow, 2026-08-19) requires before approval: no merchant
+  account = no ticket sales. Fix the false "not shared with third parties"
+  claim on /privacy, add ticket conditions-of-sale to /terms, create
+  /refunds as a structurally complete but honestly-incomplete-on-numbers
+  policy, link all three from the footer, and carry a mandatory
+  draft-pending-legal-review notice on all three.
+created_at: '2026-08-19'
+autonomy: high
+
+features:
+  - id: F1
+    name: Accurate, gateway-reviewable Privacy / Terms / Refunds pages, linked from the footer
+    status: pending
+
+goldens:
+  - contracts/golden/policy-pages/requirements.golden.md
+  - contracts/golden/policy-pages/negative-control.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    # ---- footer reachability — real red-to-green, see negative-control.golden.md ----
+    - id: POLICY-01
+      description: >
+        footer on /about links to /privacy, /terms, and /refunds with
+        meaningful (non-empty, non-"click here") visible text, AND each
+        destination actually resolves to HTTP 200 — a footer href pointing
+        at a 404 does not count as "a reviewer can find the page". Checks
+        the footer specifically (not the whole page) so a stray link
+        elsewhere in the page body can't make this pass for the wrong
+        reason. Does NOT prove the footer renders on every route site-wide
+        (see POLICY-02/03 for that).
+      command: node contracts/checks/policy-pages/check-footer-legal-links.mjs http://localhost:3333 http://localhost:3333/about
+      timeout_seconds: 30
+
+    - id: POLICY-02
+      description: >
+        same footer-links check run against the home page (/) — a second,
+        different route — as partial evidence the footer is site-wide
+        (shared layout) rather than only present on /about.
+      command: node contracts/checks/policy-pages/check-footer-legal-links.mjs http://localhost:3333 http://localhost:3333/
+      timeout_seconds: 30
+
+    - id: POLICY-03
+      description: >
+        same footer-links check run against /privacy itself — a third
+        route, and one of the three target pages — closing the loop that
+        a visitor already on one policy page can reach the other two.
+      command: node contracts/checks/policy-pages/check-footer-legal-links.mjs http://localhost:3333 http://localhost:3333/privacy
+      timeout_seconds: 30
+
+    # ---- legal-draft notice, all three pages — real red-to-green ----
+    - id: POLICY-04
+      description: >
+        /privacy carries a visible (not sr-only/hidden/aria-hidden) notice
+        stating the page is a draft pending professional legal review and
+        is not legal advice. Does NOT prove real CSS-driven invisibility
+        (e.g. zero-height via an external stylesheet) is absent — only
+        rules out the DOM-level hiding patterns already used in this
+        codebase.
+      command: node contracts/checks/policy-pages/check-legal-draft-notice.mjs http://localhost:3333/privacy
+      timeout_seconds: 30
+
+    - id: POLICY-05
+      description: "same legal-draft-notice check against /terms"
+      command: node contracts/checks/policy-pages/check-legal-draft-notice.mjs http://localhost:3333/terms
+      timeout_seconds: 30
+
+    - id: POLICY-06
+      description: "same legal-draft-notice check against /refunds"
+      command: node contracts/checks/policy-pages/check-legal-draft-notice.mjs http://localhost:3333/refunds
+      timeout_seconds: 30
+
+    # ---- privacy accuracy — real red-to-green ----
+    - id: POLICY-07
+      description: >
+        /privacy no longer contains the false "not shared with third
+        parties" claim, AND names the actual data recipients (payment
+        gateway, Resend, Firebase/Google) plus an Information Officer,
+        retention language, and an Information Regulator complaint route.
+        This is a fact-presence check, not a legal-sufficiency check — it
+        does NOT prove the policy is complete or legally adequate (that is
+        exactly what the mandatory draft-review notice discloses); it
+        proves the specific audited gaps (one false claim, six missing
+        facts) are closed.
+      command: node contracts/checks/policy-pages/check-privacy-content.mjs http://localhost:3333/privacy
+      timeout_seconds: 30
+
+    # ---- terms conditions of sale — real red-to-green ----
+    - id: POLICY-08
+      description: >
+        /terms contains a conditions-of-sale/ticket-terms section, states
+        the 18+ restriction tied specifically to Sunset Cocktails, and
+        states a limited-capacity caveat tied specifically to workshops.
+        Does NOT prove the sale terms are legally complete — only that
+        these two previously-audited-absent facts are present.
+      command: node contracts/checks/policy-pages/check-terms-ticket-conditions.mjs http://localhost:3333/terms
+      timeout_seconds: 30
+
+    # ---- refunds page: exists, structurally complete, no fabricated numbers — real red-to-green ----
+    - id: POLICY-09
+      description: >
+        /refunds returns HTTP 200, contains recognisable refund AND
+        cancellation section topics, and contains a plain-language
+        statement that specific windows/amounts are pending council
+        confirmation. Structural presence only — does not prove the prose
+        is well-written, only that the required topics and the pending-
+        confirmation disclosure both exist.
+      command: node contracts/checks/policy-pages/check-refunds-no-fabrication.mjs http://localhost:3333/refunds
+      timeout_seconds: 30
+
+    - id: POLICY-10
+      description: >
+        negative half of POLICY-09, isolated as its own assertion so a
+        fabrication regression is individually attributable: /refunds
+        contains NO concrete digit-plus-unit refund figure (days, hours,
+        weeks, %) anywhere on the page — the council has not supplied
+        these and this feature must not invent them. Only catches
+        digit-based figures (e.g. "14 days"); a spelled-out number
+        ("fourteen days") would not be caught by this pattern — see the
+        script's header comment.
+      command: '[ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3333/refunds)" = "200" ] && ! curl -s http://localhost:3333/refunds | sed -E "s/<[^>]+>/ /g" | grep -qEi "[0-9]+[[:space:]]*(day|days|hour|hours|week|weeks|%|percent)"'
+      timeout_seconds: 30
+
+    # ---- structural guard: existing pages/footer not restructured ----
+    - id: POLICY-11
+      description: >
+        Footer.tsx bottom-bar link group still contains the three
+        pre-existing links (Privacy, Constitution, Media kit) — additive
+        only, not a rewrite of the footer.
+      command: >-
+        grep -qE "href=\"/privacy\"" components/chrome/Footer.tsx &&
+        grep -qE "href=\"/constitution\"" components/chrome/Footer.tsx &&
+        grep -qE "href=\"/media-kit\"" components/chrome/Footer.tsx
+      timeout_seconds: 15
+
+    - id: POLICY-12
+      description: >
+        /terms still contains its pre-existing site-use sections (Use of
+        this site, Content ownership, Disclaimer) — the rewrite must add
+        ticket-sale terms alongside them, not replace them.
+      command: >-
+        curl -s http://localhost:3333/terms | grep -qi "Use of this site" &&
+        curl -s http://localhost:3333/terms | grep -qi "Content ownership"
+      timeout_seconds: 30
+
+    # ---- build gate ----
+    - id: POLICY-GATE-01
+      description: "TypeScript strict-mode build passes"
+      command: 'pnpm tsc --noEmit 2>&1 | grep -c "error TS" | grep -q "^0$"'
+      timeout_seconds: 120
+
+    - id: POLICY-GATE-02
+      description: "ESLint passes on the touched files"
+      command: >-
+        pnpm eslint "app/(marketing)/privacy/page.tsx" "app/(marketing)/terms/page.tsx"
+        "app/(marketing)/refunds/page.tsx" components/chrome/Footer.tsx --max-warnings=0
+      timeout_seconds: 60

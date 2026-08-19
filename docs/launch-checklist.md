@@ -184,6 +184,9 @@ Run these checks once the site is live at `saoc.co.za`:
 - [ ] `/judging` — Judging page loads
 - [ ] `/contact` — Contact form renders
 - [ ] `/sponsors` — Sponsors page loads
+- [ ] `/privacy` — Privacy Policy page loads and displays draft-pending-legal-review notice
+- [ ] `/terms` — Terms of Use page loads and displays draft-pending-legal-review notice
+- [ ] `/refunds` — Refund & Cancellation Policy page loads and displays draft-pending-legal-review notice
 - [ ] `/studio` — Sanity Studio loads (admin access only)
 
 ### Functional
