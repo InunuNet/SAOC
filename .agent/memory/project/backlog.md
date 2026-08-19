@@ -2591,3 +2591,55 @@ inline styles, and a logo delivered the same CID-attachment way the QR fix will 
 F3 (confirmation email delivery) is now PROVEN end-to-end against a real inbox — sender
 tickets@tickets.saoc.co.za, correct attendee/type/ref, arrived in ~seconds. The only defect is
 the QR image above. F4 (door scan) remains the last unproven step of the mission.
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819094729.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819095246.txt
+
+## Door check-in findings — logged 2026-08-19 from Brad's live mobile test (SAOC-2027-YTKY3E5JF775)
+
+### F4 IS PROVEN — the scan worked; the UI just didn't say so
+Verified live: that ticket's status in Firestore is `checked-in`. Brad's FIRST scan succeeded and
+flipped it; every subsequent scan and manual entry correctly refused it as a duplicate. So the
+camera scan, the QR decode, POST /api/admin/checkin, the status write, and the duplicate-refusal
+guard all work on a real phone against the deployed site.
+
+Brad read it as "doesn't do anything" and hypothesised there was no active show. Both readings
+were wrong, and that is a UI failure, not a user failure — the interface gave a competent
+operator no way to tell success from failure. Do not "fix" a working pipeline on the strength of
+that first impression.
+
+### P1 — UX: the check-in result panel reads as failure when it is actually correct
+The panel renders "X Not checked in / Already checked in". Three different outcomes need to be
+visually distinct at a glance, in bright daylight, at a door, by someone holding a phone in one
+hand and a ticket in the other:
+- ADMITTED (first successful scan) — unmistakably positive, and it must PERSIST long enough to be
+  seen. Brad never saw his, which is why he thought nothing happened.
+- ALREADY ADMITTED (duplicate) — cautionary, not failure. Should say when it was first scanned
+  and by whom; that is the information a door steward actually needs to resolve a dispute.
+  `checkinAttempts` already records scannedByUid and outcome, so the data exists.
+- REFUSED (unpaid / wrong show / unknown ref) — genuinely negative, and must be distinguishable
+  from a duplicate, since the operator's next action is completely different.
+Current copy conflates the last two under one X. Any contract here needs a real-device visual
+check, not a DOM assertion — this is exactly the class of defect the automated suite has twice
+failed to see (see admin-nav-active-state).
+
+### P1 — UX: check-in button is below the fold; not one-handed
+On a real phone the operator must scroll with their thumb, past the camera viewport, to reach
+"Check In". Door scanning is inherently one-handed. The primary action and the result panel need
+to be reachable and visible without scrolling, at 375px and 320px. Note the constraint already
+established in admin-nav-menu: the nav on this page stays `variant="minimal"` precisely so it
+does not obstruct the camera — the same reasoning applies to whatever layout change lands here.
+
+### P2 — Manual entry should take only the unique suffix
+Staff should never type `SAOC-2027-`. Show the prefix as a fixed affix in the UI (inside the
+field on the left, or as a label immediately adjacent) and accept only the suffix.
+Must still accept a full pasted reference and normalise it rather than rejecting it — a scanner
+app, an email copy-paste, or a steward typing the whole thing must all work. Note Brad's own
+input was `SAOC-2027- YTKY3E5JF775` (with a stray space) and still resolved, so some
+normalisation already exists; find it before adding a second, competing one.
+Uppercase-normalise too — a phone keyboard will autocapitalise inconsistently.
+
+### Not a defect
+Brad's "we don't have an active show" theory: unfounded. The check-in resolved the ticket and
+returned a real per-ticket verdict, which it could not do without the show wiring working.

@@ -92,6 +92,10 @@ assertions:
         the failing case exactly like execution/checks/verify_reply_to.ts does, never swallow a
         sub-case.
       command: node_modules/.bin/tsx execution/checks/verify_confirmation_page.ts --paid-ref SAOC-2027-X8ZPQNYCVWGY --bad-ref SAOC-2027-NOTAREALREF00Q --reserved-ref CrF2gcbRQCMPGRKSn8Da
+      # This script runs a real `next build` + `next start` + five Playwright page loads inline
+      # (measured ~60-90s locally) -- comfortably over the gate runner's 60s shell default. 240s
+      # gives headroom without masking a genuine hang.
+      timeout_seconds: 240
     # --- Regression guard: this project has shipped a broken `next build` behind a green gate before ---
     - id: A7
       description: the real Next.js production build succeeds with every new file (page.tsx
