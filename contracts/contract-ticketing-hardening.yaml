@@ -118,7 +118,7 @@ goldens:
   - contracts/golden/ticketing-hardening/idempotency-binding.golden.md
   - contracts/golden/ticketing-hardening/capacity-and-price-validation.golden.md
   - contracts/golden/ticketing-hardening/itn-write-guard.golden.md
-  - contracts/golden/ticketing-hardening/itn-route.expected.ts.txt
+  - contracts/golden/payment-seam-f2/itn-route.expected.ts.txt
   - contracts/golden/ticketing-hardening/comment-accuracy.golden.md
 
 assertions:
@@ -241,12 +241,18 @@ assertions:
         6dcde6d5...18a3cb -> 7c96726a...3b4d0f. S4 (a late ITN resurrects a checked-in
         ticket, so the same booking reference opens the door twice) is IN this file and
         cannot be fixed anywhere else. The new value is the sha256 of
-        contracts/golden/ticketing-hardening/itn-route.expected.ts.txt, computed by
+        the architect-authored expected file for this route, computed by
         @architect from an architect-authored expected file BEFORE any code was written -
         @dev never re-pins, and the only way to a green A15 is to make the source
         byte-identical to a file @dev did not author. Rationale, both hashes and the
         reason the boundary moved are recorded in
-        contracts/golden/ticketing-hardening/itn-write-guard.golden.md. The assertion
+        contracts/golden/ticketing-hardening/itn-write-guard.golden.md. NOTE (2026-08-19,
+        payment-seam-f2): this route's expected file now lives at
+        contracts/golden/payment-seam-f2/itn-route.expected.ts.txt, and both A15's pin and
+        A33's diff resolve against it. The copy that used to sit in this directory was
+        deleted rather than updated - three expected files existed for one route, and that
+        plurality was itself the defect. One current expected file; everything points at it.
+        The assertion
         itself is unchanged: same id, same command, not loosened, still catches all
         future drift.
       command: >-
@@ -402,7 +408,7 @@ assertions:
         env-overridable PAYFAST_SANDBOX_VALIDATE_URL - a test hook inside a payment
         security boundary - explicitly rejected in itn-write-guard.golden.md. Pre-fix RED.
       command: >-
-        diff app/api/tickets/itn/route.ts contracts/golden/ticketing-hardening/itn-route.expected.ts.txt
+        diff app/api/tickets/itn/route.ts contracts/golden/payment-seam-f2/itn-route.expected.ts.txt
     - id: A34
       description: >-
         F8 - BEHAVIOURAL, REGRESSION GUARD ONLY, and honest about it. After a correctly

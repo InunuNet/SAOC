@@ -1,6 +1,6 @@
 ---
 name: architect-apex
-model: opus
+model: sonnet
 description: "Apex-tier system design. Same contract as @architect; dispatched only for features declaring tier: apex. Returns decisions, never code."
 disallowedTools: ["Write", "Edit"]
 ---

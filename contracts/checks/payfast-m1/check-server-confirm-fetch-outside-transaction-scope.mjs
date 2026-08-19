@@ -8,9 +8,20 @@
 // outside the transaction" is no longer a single-file, single-function claim: it now
 // needs BOTH of:
 //
-//   1. In route.ts: the real fetch(PAYFAST_SANDBOX_VALIDATE_URL, ...) call occurs BEFORE
-//      the markOrderAndPositionPaidByPaymentId(...) call site in source order — i.e. the
+//   1. In route.ts: the real server-confirm call occurs BEFORE the
+//      markOrderAndPositionPaidByPaymentId(...) call site in source order — i.e. the
 //      paid-write is provably gated behind a successful server-confirm.
+//
+//      REPOINTED BY F2 (payment-provider-seam), 2026-08-19. This claim used to require a
+//      literal fetch(PAYFAST_SANDBOX_VALIDATE_URL, ...) in the route source, and F2's decisive
+//      assertion forbids exactly that: no gateway symbol may survive in either route. One of the
+//      two had to move. The claim's INTENT is unchanged and is now expressed against the
+//      paymentProvider.confirmNotification(...) call site, which is where the round-trip is
+//      issued from post-F2. The defect class is additionally retired rather than relocated:
+//      contracts/checks/payment-seam-f2/check-downstream-repoints.sh part 3 asserts the adapter
+//      has NO Firestore access at all, so the round-trip now lives in a module that cannot open
+//      a transaction around itself whatever anyone later writes there. Claim 2 below is
+//      untouched.
 //   2. In lib/orders.ts: markOrderAndPositionPaidByPaymentId's own transaction body
 //      (scoped via the same findFunctionDeclarationBody + findRunTransactionCallback
 //      helper as A30/A31) contains ZERO fetch(PAYFAST_SANDBOX_VALIDATE_URL, ...) calls —
@@ -41,6 +52,7 @@ import {
 const ASSERTION_ID = 'A32';
 const TARGET_FUNCTION = 'markOrderAndPositionPaidByPaymentId';
 const CALL_SITE_NAME = 'markOrderAndPositionPaidByPaymentId';
+const CONFIRM_MEMBER_NAME = 'confirmNotification';
 
 // See _itn-harness.mts's loadItnPost() header comment — these overrides exist only for
 // the one-off manual broken/real proof runs, never for normal gate operation.
@@ -51,15 +63,15 @@ const ORDERS_LIB_PATH =
   process.env.ORDERS_LIB_PATH_OVERRIDE ??
   new URL('../../../lib/orders.ts', import.meta.url).pathname;
 
-/** Claim 1: in route.ts, the real server-confirm fetch occurs before the call site that
+/** Claim 1: in route.ts, the server-confirm round-trip is issued before the call site that
  * hands off to the transactional paid-write. */
 function judgeRoute(sourceText) {
   const problems = [];
   const sourceFile = parseSource(sourceText, 'route.ts');
-  const fetchCalls = findValidateFetchCalls(sourceFile);
+  const confirmCall = findFirstCallExpressionByCalleeName(sourceFile, CONFIRM_MEMBER_NAME);
 
-  if (fetchCalls.length === 0) {
-    problems.push('no fetch(PAYFAST_SANDBOX_VALIDATE_URL, ...) call found in route.ts');
+  if (!confirmCall) {
+    problems.push(`no ${CONFIRM_MEMBER_NAME}(...) call found in route.ts`);
     return problems;
   }
 
@@ -69,10 +81,9 @@ function judgeRoute(sourceText) {
     return problems;
   }
 
-  const realFetch = fetchCalls[0];
-  if (!(realFetch.getStart() < callSite.getStart())) {
+  if (!(confirmCall.getStart() < callSite.getStart())) {
     problems.push(
-      `fetch(PAYFAST_SANDBOX_VALIDATE_URL, ...) does not occur before the ${CALL_SITE_NAME}(...) call site in source order`
+      `${CONFIRM_MEMBER_NAME}(...) does not occur before the ${CALL_SITE_NAME}(...) call site in source order`
     );
   }
 
@@ -107,31 +118,30 @@ function judgeOrdersLib(sourceText) {
 // --- detector self-test: route.ts claim ------------------------------------
 const COMPLIANT_ROUTE = `
   export async function POST(request) {
-    const confirmResponse = await fetch(PAYFAST_SANDBOX_VALIDATE_URL, { method: 'POST' });
-    const confirmText = (await confirmResponse.text()).trim();
-    if (confirmText !== 'VALID') return acknowledge();
-    const outcome = await markOrderAndPositionPaidByPaymentId({ m_payment_id: mPaymentId });
+    const confirmation = await paymentProvider.confirmNotification(notification);
+    if (!confirmation.confirmed) return acknowledge();
+    const outcome = await markOrderAndPositionPaidByPaymentId({ m_payment_id: reference });
     return acknowledge();
   }
 `;
 
 const ROUTE_ESCAPES = [
   [
-    'call site occurs before the confirm fetch in source order',
+    'call site occurs before the server confirmation in source order',
     `
     export async function POST(request) {
-      const outcome = await markOrderAndPositionPaidByPaymentId({ m_payment_id: mPaymentId });
-      const confirmResponse = await fetch(PAYFAST_SANDBOX_VALIDATE_URL, { method: 'POST' });
+      const outcome = await markOrderAndPositionPaidByPaymentId({ m_payment_id: reference });
+      const confirmation = await paymentProvider.confirmNotification(notification);
       return acknowledge();
     }
   `,
   ],
   [
-    'decoy fetch elsewhere, no real validate call at all',
+    'decoy provider call elsewhere, no server confirmation at all',
     `
     export async function POST(request) {
-      await fetch('https://example.com/telemetry');
-      const outcome = await markOrderAndPositionPaidByPaymentId({ m_payment_id: mPaymentId });
+      const status = paymentProvider.mapStatus(notification.rawStatus);
+      const outcome = await markOrderAndPositionPaidByPaymentId({ m_payment_id: reference });
       return acknowledge();
     }
   `,
@@ -140,7 +150,7 @@ const ROUTE_ESCAPES = [
     'no call site to the paid-write function at all',
     `
     export async function POST(request) {
-      const confirmResponse = await fetch(PAYFAST_SANDBOX_VALIDATE_URL, { method: 'POST' });
+      const confirmation = await paymentProvider.confirmNotification(notification);
       return acknowledge();
     }
   `,
@@ -219,5 +229,5 @@ if (problems.length > 0) {
   process.exit(1);
 }
 console.log(
-  `PASS: ${ASSERTION_ID} fetch(PAYFAST_SANDBOX_VALIDATE_URL, ...) precedes the ${CALL_SITE_NAME}(...) call site in route.ts, and ${TARGET_FUNCTION}'s transaction body in lib/orders.ts contains no such fetch call`
+  `PASS: ${ASSERTION_ID} ${CONFIRM_MEMBER_NAME}(...) precedes the ${CALL_SITE_NAME}(...) call site in route.ts, and ${TARGET_FUNCTION}'s transaction body in lib/orders.ts contains no fetch(PAYFAST_SANDBOX_VALIDATE_URL, ...) call`
 );

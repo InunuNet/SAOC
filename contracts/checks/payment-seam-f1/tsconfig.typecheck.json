@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/payments/types.ts",
+    "../../../lib/payments/payfast.ts",
+    "../../../lib/payments/index.ts",
+    "../../../lib/payfast.ts",
+    "fixtures/payment-seam-typecheck.ts"
+  ],
+  "exclude": []
+}

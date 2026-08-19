@@ -479,27 +479,77 @@ d = {
         'ANTHROPIC_BASE_URL': 'https://openrouter.ai/api',
         'ANTHROPIC_AUTH_TOKEN': key,
         'ANTHROPIC_API_KEY': '',
-        'ANTHROPIC_DEFAULT_HAIKU_MODEL': 'deepseek/deepseek-chat-v3-0324:free',
-        'ANTHROPIC_DEFAULT_SONNET_MODEL': 'deepseek/deepseek-chat-v3-0324:free',
-        'ANTHROPIC_DEFAULT_OPUS_MODEL': 'qwen/qwen3-235b-a22b:free',
     }
 }
 print(json.dumps(d, indent=2))
 ")
 
+    local warning
+    warning="   ${YELLOW}⚠️  ANTHROPIC_DEFAULT_{HAIKU,SONNET,OPUS}_MODEL were NOT written.${NC}\n   ${YELLOW}   These keys are SESSION-scoped, not agent-scoped -- setting them here\n   would repoint EVERY agent tier (orchestrator, @architect, @dev, @qa --\n   not just @dev-fast/@qa-fast) onto free OpenRouter models. Set model-tier\n   overrides manually per docs/openrouter.md if you want fast-tier agents\n   on OpenRouter without degrading every tier.${NC}\n"
+
     if command -v jq >/dev/null 2>&1 && [ -f "$target" ]; then
+        local stale_keys
+        stale_keys=$(jq -r '(.env // {}) | keys[] | select(test("^ANTHROPIC_DEFAULT_(HAIKU|SONNET|OPUS)_MODEL$"))' "$target" 2>/dev/null)
         local merged
-        merged=$(jq --argjson new "$(echo "$new_keys" | jq '.env')" \
-            '.env = (.env // {}) + $new' "$target") \
-            && printf '%s\n' "$merged" > "$target" \
-            && return 0
+        if merged=$(jq --argjson new "$(echo "$new_keys" | jq '.env')" \
+            '.env = ((.env // {}) + $new | del(.ANTHROPIC_DEFAULT_HAIKU_MODEL, .ANTHROPIC_DEFAULT_SONNET_MODEL, .ANTHROPIC_DEFAULT_OPUS_MODEL))' "$target"); then
+            printf '%s\n' "$merged" > "$target"
+            printf "   🔓 OpenRouter transport config merged into .claude/settings.local.json\n"
+            printf "$warning"
+            if [ -n "$stale_keys" ]; then
+                printf "   ${YELLOW}⚠️  Removed stale ANTHROPIC_DEFAULT_*_MODEL key(s) from .claude/settings.local.json: %s${NC}\n" "$(echo "$stale_keys" | tr '\n' ' ' | sed 's/ *$//')"
+            fi
+            return 0
+        fi
     fi
 
-    # Fallback: write only if absent
-    [ -f "$target" ] && return 0
+    # Fallback (no jq, or jq merge above failed): strip stale model-tier keys
+    # from an existing target in place -- surgical, only those three keys,
+    # every other key (including user-set keys) survives untouched. This is
+    # the branch that used to just `return 0` without even opening the file.
+    if [ -f "$target" ]; then
+        local removed
+        removed=$(python3 - "$target" <<'PYEOF'
+import json
+import sys
+
+target = sys.argv[1]
+STALE = (
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL",
+)
+try:
+    with open(target) as f:
+        data = json.load(f)
+except (OSError, json.JSONDecodeError):
+    sys.exit(0)
+if not isinstance(data, dict):
+    sys.exit(0)
+env = data.get("env")
+if not isinstance(env, dict):
+    sys.exit(0)
+removed = [k for k in STALE if k in env]
+if not removed:
+    sys.exit(0)
+for k in removed:
+    del env[k]
+with open(target, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+print(" ".join(removed))
+PYEOF
+)
+        if [ -n "$removed" ]; then
+            printf "   ${YELLOW}⚠️  Removed stale ANTHROPIC_DEFAULT_*_MODEL key(s) from .claude/settings.local.json: %s${NC}\n" "$removed"
+        fi
+        return 0
+    fi
+
     mkdir -p "$(dirname "$target")"
     printf '%s\n' "$new_keys" > "$target"
     printf "   🔓 OpenRouter config written to .claude/settings.local.json\n"
+    printf "$warning"
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────

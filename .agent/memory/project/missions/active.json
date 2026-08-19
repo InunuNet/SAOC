@@ -1,9 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-08-18-prove-ticket-purchase-works-end-to-end-b.md",
+  "mission": ".agent/memory/project/missions/2026-08-19-payment-provider-seam.md",
   "checkpoint": {
-    "milestone": "M2",
-    "feature": "F4",
-    "ts": "2026-08-19T07:56:06.951942+00:00"
+    "milestone": null,
+    "feature": null
   },
-  "activated_at": "2026-08-19T07:56:06.952048+00:00"
+  "activated_at": "2026-08-19T19:22:28.527595+00:00"
 }

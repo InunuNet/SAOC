@@ -1,0 +1,467 @@
+schema: athanor.contract/v1
+slug: payment-seam-f2
+goal: >-
+  Mission payment-provider-seam F2 — rewire app/api/tickets/checkout/route.ts and
+  app/api/tickets/itn/route.ts to depend only on the PaymentProvider interface, so that no
+  PayFast-specific symbol, env var, URL or wire field name survives anywhere in either route. The
+  decisive assertion is structural and negative (A1) and was OBSERVED FAILING against the
+  pre-rewire code on 2026-08-19 with 18 distinct classes of hit across the two files. F2 also owns
+  the two-step re-pin ceremony for the ITN route and the four downstream artefacts in other
+  contracts that depend on gateway internals living inside it. Full decision record, the
+  observed-failing transcript, the three enumerated ban exceptions and their reasons, and the
+  findings that could not be fixed inside F2:
+  contracts/golden/payment-seam-f2/README.md
+created_at: '2026-08-19'
+autonomy: high
+
+# ⚠️ THE RE-PIN IS A TWO-STEP CEREMONY, DELIBERATELY NOT ONE STEP.
+#   Step 1 (A2) audits the PRE-F2 baseline — the route was a71f9505… on disk while four contracts
+#     pinned 253c15c4… / 553f67d8…. The team lead reviewed that drift on 2026-08-19 and ruled the
+#     on-disk content the INTENDED baseline (the 2026-08-18 source-IP "logged, not enforced"
+#     change, deliberate, documented, never re-pinned). Step 1 proves it against the IMMUTABLE git
+#     blob 8b8a3f71af7f105d41a2929bc573c72eab3a3f05, so the claim stays checkable forever.
+#   Step 2 (A3) re-pins to 893dfeff… — the sha256 of
+#     contracts/golden/payment-seam-f2/itn-route.expected.ts.txt, an architect-authored file
+#     written BEFORE any code changed and verified to compile (tsc exit 0) and lint (eslint exit 0)
+#     against the interface pinned in contracts/golden/payment-seam-f1/interface.golden.md.
+#   @dev NEVER computes a pin value. The only route to a green A3 is to make the source
+#   byte-identical to a file @dev did not author, and to update all four downstream goldens to the
+#   same new value.
+#
+# ⚠️ COUPLING TO F1: the expected route is written against interface.golden.md exactly. If F1 lands
+# with ANY deviation from that interface, @architect re-authors the expected file and the pin
+# BEFORE @dev starts F2. @dev must never patch the expected file to match what F1 actually shipped
+# — that inverts the whole ceremony.
+
+features:
+  - id: F2
+    name: >-
+      Both API routes depend only on the PaymentProvider interface, with no gateway identifier left
+      in route code.
+
+      (1) app/api/tickets/itn/route.ts (PINNED) becomes byte-identical to
+      contracts/golden/payment-seam-f2/itn-route.expected.ts.txt. Every gateway-specific step —
+      parsing the posted body, authenticating it against the shared secret, resolving and judging
+      the source IP, the out-of-band server-confirm round trip, and the gateway's status vocabulary
+      — moves behind paymentProvider. The eleven-step sequence, the amount comparison, the order
+      lookup, the settled short-circuit, the atomic write and the post-commit email all stay
+      exactly where they were.
+
+      (2) app/api/tickets/checkout/route.ts drops its @/lib/payfast import, its three
+      process.env.PAYFAST_* reads and its inline field/signature construction, and instead calls
+      paymentProvider.initiate({ reference, amountFormatted, itemName, returnUrl, cancelUrl,
+      notifyUrl }). An { ok: false, reason: 'not-configured' } result produces the byte-exact 500
+      and message pinned in contracts/golden/payment-seam-f1/fail-closed-guards.golden.md; an ok
+      result supplies processUrl and fields for the existing 201/200 response shape. The route
+      keeps its RECOVERY_TOKEN_SECRET guard IN ITS CURRENT SOURCE POSITION and keeps exporting
+      ticketTypeMatchesActiveShow, which four other contracts' checks import. Checkout is
+      deliberately NOT given a sha256 pin — see the golden README "Why checkout is not pinned".
+
+      (2b) AMENDMENT (2026-08-19, team-lead ruling). F2's first form broke a property F1 pinned:
+      with credentials unset, checkout wrote a reservation and THEN refused, because initiate()
+      needs the booking reference and server-derived amount and both only exist after
+      reserveTicket(). fail-closed-guards.golden.md pins that guard "before any Firestore write".
+      Not accepted as a narrow trade: this seam exists to make gateway swaps cheap, SAOC will swap
+      under deadline against a live show with credentials never exercised in production, so a
+      misconfigured gateway is the MOST likely failure mode of the thing the seam is for and it
+      lands while tickets are selling. Orphaned reservations burning capacity until a TTL expires is
+      the wrong outcome at exactly that moment. The fix is a SIXTH interface member,
+      readiness(operation): ProviderReadiness — synchronous, offline, config read per call, and
+      PER-OPERATION rather than a global isConfigured(), because PayFast needs merchant credentials
+      to initiate but a passphrase to verify a notification (the asymmetry F1 documented), and Ozow
+      and Peach split the same way. A global probe would either demand a passphrase at checkout —
+      refusing purchases that succeed today, a behaviour change under cover of a fix — or let the
+      ITN path claim readiness it does not have. The route calls readiness('initiate') BEFORE
+      reserveTicket() and returns the byte-exact pinned 500 on refusal, without reading gateway env
+      itself, so A4's ownership boundary holds. The post-initiate refusal STAYS as defence in depth:
+      config is read per call and can genuinely change between the probe and the initiate.
+
+      (3) lib/payments/payfast.ts gains an exported parseOrderedFields (same signature the route
+      exported), because that function is the gateway's own inbound body parse and three F10
+      artefacts import it.
+
+      (4) FOUR DOWNSTREAM REPOINTS in other contracts, enumerated so they are done deliberately
+      rather than discovered as red gates: F10's check-signature-brutal.mjs,
+      check-break-fix-field-order.mjs and fixtures/itn-repin-typecheck.ts repoint their
+      parseOrderedFields import to lib/payments/payfast.ts; payfast-m1's
+      check-server-confirm-fetch-outside-transaction-scope.mjs (A32) repoints claim 1 from
+      fetch(PAYFAST_SANDBOX_VALIDATE_URL, ...) — which F2 necessarily removes from the route — to
+      the paymentProvider.confirmNotification call site, keeping its lib/orders.ts claim untouched.
+      THREE FURTHER REPOINTS found by discovery rather than by enumeration, all verified by RUNNING
+      the assertions: contract-ticketing-hardening A33 (diff against a stale expected copy —
+      repoint to payment-seam-f2's, so ONE current expected file exists rather than three);
+      contract-payfast-itn-signature A5 and A6 (grep the route for generateNotifySignature(...) and
+      buildPayfastNotifyParamString(...), both of which move into the adapter); and
+      contract-payfast-m1 A17, which greps the route for the word `signature` and is therefore in
+      DIRECT COLLISION with this contract's own A1, which bans that word from route files including
+      comments. Dispositions and reasoning: contracts/golden/payment-seam-f2/broken-by-rewire.ledger.
+
+      (5) The four ITN route pins in ticketing-f1-show-collision, ticketing-m1-m2,
+      ticketing-f10-itn-repin and ticketing-hardening are updated to 893dfeff….
+    status: pending
+
+goldens:
+  - contracts/golden/payment-seam-f2/README.md
+  - contracts/golden/payment-seam-f2/itn-route.expected.ts.txt
+  - contracts/golden/payment-seam-f2/itn-route.golden.sha256
+  - contracts/golden/payment-seam-f2/itn-route.baseline-2026-08-18.sha256
+  - contracts/golden/payment-seam-f2/itn-route.baseline-2026-08-18.blob
+  - contracts/golden/payment-seam-f2/broken-by-rewire.ledger
+  - contracts/checks/payment-seam-f2/discover_route_pins.py
+  - contracts/golden/payment-seam-f1/interface.golden.md
+  - contracts/golden/payment-seam-f1/fail-closed-guards.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        THE DECISIVE ASSERTION OF THE MISSION — structural and negative. No PayFast-specific symbol,
+        env var name, URL, function or wire field name appears anywhere in either route: not
+        payfast, PAYFAST_*, pf_payment_id, amount_gross/fee/net, merchant_id, merchant_key,
+        passphrase, generateSignature, generateNotifySignature, buildPayfast*ParamString,
+        getClientIp, eng/process, eng/query, item_name, payment_status, notify_url, return_url,
+        cancel_url, md5, the word signature, or the status literal COMPLETE. Three exceptions are
+        enumerated and HARD-COUNTED so they cannot grow: the /api/tickets/itn path literal (our own
+        route path — renaming it breaks in-flight reservations whose notify_url is already
+        registered), the [tickets/itn] log prefix derived from it, and exactly ONE occurrence of
+        m_payment_id in the ITN route as the markOrderAndPositionPaidByPaymentId input key (a
+        Firestore document field name; renaming it is a data migration). Step 0 requires both
+        routes to import @/lib/payments, so a gutted route cannot satisfy the bans; step 6 proves
+        the ban pattern actually fires by running it against the adapter. OBSERVED FAILING on
+        2026-08-19 — 18 hit classes across the two files, transcript in the golden README. FAILS
+        ON: one surviving gateway identifier, which would mean the seam is decorative and the next
+        gateway reopens the routes.
+      command: bash contracts/checks/payment-seam-f2/check-no-gateway-symbols-in-routes.sh
+
+    - id: A2
+      description: >-
+        RE-PIN CEREMONY STEP 1 — THE CATCH-UP AUDIT, kept permanently separate from step 2 because
+        the four pins were stale for a DIFFERENT reason than F2's rewire makes them stale.
+        Collapsing the two would erase that distinction forever. This step proves the reviewed
+        2026-08-18 baseline against the IMMUTABLE git blob 8b8a3f71… rather than against a working
+        tree that F2 is about to change, so it stays re-runnable long after HEAD moves past F2. It
+        also asserts the baseline and the new pin differ, so a "rewire" that changed nothing cannot
+        pass. VERIFIED PASSING on 2026-08-19 (blob hashes to a71f9505…). FAILS ON: the reviewed
+        drift not being the only change in that file — i.e. something else having ridden in
+        alongside the source-IP change the team lead actually reviewed.
+      command: bash contracts/checks/payment-seam-f2/check-repin-ceremony.sh
+
+    - id: A3
+      description: >-
+        RE-PIN CEREMONY STEP 2 — same script, second half. app/api/tickets/itn/route.ts is
+        byte-identical to contracts/golden/payment-seam-f2/itn-route.expected.ts.txt (893dfeff…),
+        the expected file itself still hashes to its recorded pin (so @dev cannot edit the target
+        to match the code), and every downstream pin carries the new value. THE PIN SET IS
+        DISCOVERED, NOT ENUMERATED: this step originally held a hardcoded list of four .sha256
+        goldens; @dev updated all four correctly, the step went green, and
+        contract-ticketing-hardening's A33 — which pins the SAME file by diff against an
+        .expected.ts.txt — stayed red. The step asserted its own completeness while being
+        incomplete, which is this project's dominant defect class (a check satisfied by a proxy
+        rather than by the property) appearing inside the contract written to hunt it. The list is
+        gone; pins now come from discover_route_pins.py, which reads every contract's assertion
+        commands through a YAML parser rather than grepping, so prose cannot register as an
+        assertion. Zero discovered pins is itself a failure — it would mean the target moved or
+        discovery broke, and a green verdict would be meaningless. OBSERVED FAILING on 2026-08-19
+        against the pre-rewire tree, and again after the incomplete re-pin, where it now names A33
+        specifically. FAILS ON: any byte of difference from the architect-authored file; any pin of
+        any form left behind.
+      command: bash contracts/checks/payment-seam-f2/check-repin-ceremony.sh
+
+    - id: A4
+      description: >-
+        THE SECURITY SEQUENCE AND THE OWNERSHIP BOUNDARY SURVIVE — all three F1 findings turned
+        executable. Part 2 asserts the full nine-landmark ITN source order in CODE (comment lines
+        excluded, because several landmarks are also named in the comments that explain later
+        steps): verification, source-IP logging, order lookup, settled short-circuit, amount match,
+        server confirmation, status check, atomic write, post-commit email. Part 3 is FINDING 1 —
+        neither route may read a gateway credential from the environment any more, and the two must
+        still handle the SAME 'not-configured' reason code DIFFERENTLY (checkout refuses with 500;
+        the ITN route acknowledges with no order change and never returns 5xx, or the gateway's
+        retry storm reopens). Part 4 is FINDING 3 — the RECOVERY_TOKEN_SECRET guard must still
+        precede the reserveTicket() call by source position, not merely exist. Part 5 keeps the
+        ticketTypeMatchesActiveShow export four other contracts import. FINDING 2 is covered by
+        part 2: the amount check, order lookup and settled short-circuit are landmarks in the
+        ordered list, so migrating any of them into the provider fails. OBSERVED FAILING on
+        2026-08-19. Verified that the architect-authored expected route SATISFIES the code-order
+        claim (landmarks at lines 50/78/94/123/144/160/171/194/211).
+      command: bash contracts/checks/payment-seam-f2/check-sequence-and-ownership.sh
+
+    - id: A5
+      description: >-
+        THE F10/A32 REPOINTS: parseOrderedFields is exported from lib/payments/payfast.ts, none
+        of F10's three artefacts still import it from the route and all three now import from the
+        adapter, and — the structural fact that retires A32's defect class instead of relocating it
+        — the adapter touches no Firestore at all, so the server-confirm round trip lives in a
+        module that cannot open a transaction around it. Part 4 RE-RUNS all four repointed checks
+        and requires exit 0: not "we think they still work" but run them. OBSERVED FAILING on
+        2026-08-19.
+      command: bash contracts/checks/payment-seam-f2/check-downstream-repoints.sh
+
+    - id: A5b
+      description: >-
+        EVERY assertion in EVERY contract that touches the rewired route still passes — DISCOVERED,
+        NEVER ENUMERATED. Added after the enumeration defect above bit three times in this one
+        contract: A3's four .sha256 goldens, A5's four artefacts, and both missing
+        ticketing-hardening A33, payfast-itn-signature A5/A6 and payfast-m1 A17. Discovery parses
+        every contract's assertion commands with a YAML parser and classifies each as SHA256, DIFF,
+        CONTENT, WORKTREE, GITHASH or UNKNOWN; SHA256/DIFF/CONTENT must all pass, UNKNOWN fails so
+        a novel idiom surfaces rather than being skipped, and zero discovered assertions fails
+        because it would mean the target moved or discovery broke. WORKTREE/GITHASH assertions are
+        reported as DEFERRED and explicitly NOT proven by the run: they are working-tree-clean
+        guards, red for the whole of any feature touching the file and green on commit, so they
+        must be re-verified after committing. Commands are extracted VERBATIM — whitespace is
+        load-bearing (`shasum -a 256 -c -` needs exactly two spaces between digest and path, and an
+        earlier version of this check normalised it and reported four healthy pins as failures).
+        contracts/golden/payment-seam-f2/broken-by-rewire.ledger records the disposition of each
+        deliberately-broken assertion so a red is diagnosable as declared-and-expected rather than
+        a surprise; the ledger is a record, not the gate. CURRENTLY RED on the four declared
+        repoints, which is the correct pre-repoint state.
+      command: bash contracts/checks/payment-seam-f2/check-downstream-assertions.sh
+
+    - id: A6
+      description: >-
+        THE STRONGEST BEHAVIOURAL PROOF SHORT OF A LIVE PURCHASE — re-run the EXISTING payfast-m1
+        ITN suite against the rewired route. These are not new checks written to flatter the
+        rewire: they import the real route, call its exported POST() through _itn-harness.mts with
+        real signed bodies, and assert against real Firestore documents. check-itn-amount-tamper-
+        rejected.mts was verified GREEN against the pre-rewire route on 2026-08-19, so a red result
+        after the rewire is attributable to the rewire and nothing else. ⚠️ REQUIRES LIVE FIRESTORE
+        CREDENTIALS AND NETWORK, and these scripts create and clean up sentinel documents — this is
+        not an offline gate and its cleanup output must be read, not skimmed. FAILS ON: any
+        behavioural change at all to the ITN handler, which is the entire point of a pure rewire.
+        SUITE REDUCED TO THREE ON 2026-08-19: payfast-m1's A18 (check-itn-source-ip-validation.mts)
+        was removed as STALE — it asserts that a bogus source IP leaves the order untouched, which
+        commit 8476c56 (2026-08-18) deliberately stopped being true when source IP became
+        logged-not-enforced, and across five green runs it passed only ever via `order-not-found`,
+        i.e. because the write failed. It was NOT removed for failing. The file survives because
+        four other contracts still execute or grep it; retiring it there is a separate pass. The
+        full reasoning and the downstream-reference list are in the check script's own header, and
+        a hard-counted EXPECTED_SUITE_SIZE now makes any silent re-add or further removal red.
+      command: bash contracts/checks/payment-seam-f2/check-itn-behaviour-unchanged.sh
+
+    - id: A7
+      description: >-
+        HYGIENE GATE, DELIBERATELY NOT A PROPERTY ASSERTION — recorded as such rather than dressed
+        up as evidence, exactly as F1's A12 was. pnpm lint and pnpm type-check pass before and
+        after the rewire, so neither distinguishes rewired from unrewired code and neither may be
+        cited as proof the seam is real. They are here only to catch a broken build. Every claim
+        about the rewire rests on A1-A6.
+      command: pnpm lint && pnpm type-check
+
+    - id: A8
+      description: >-
+        THE READINESS PROBE IS A REAL QUESTION ABOUT CONFIG, NOT A CONSTANT. Case 0 reports cleanly
+        if the member is absent rather than dying in a TypeError. Case 1 is the positive control.
+        Case 2 preserves the asymmetry F1 documented — no passphrase is still ready to 'initiate'
+        (demanding one would refuse purchases that succeed today) but NOT ready to
+        'verify-notification'. Case 3 is the one that kills a hardcoded return or a snapshotted
+        config: ONE instance, mutated env, the verdict must flip. Case 4 requires `missing` to name
+        the absent key and not the present one, so an operator can act on the log line without a
+        debugger. Case 5 requires the probe to be synchronous and to make zero network calls — it
+        sits in front of every checkout, and a promise a caller forgets to await is always truthy,
+        which fails open. Case 6 asserts it discriminates at all. OBSERVED FAILING against the
+        current tree on 2026-08-19: "case 0: PaymentProvider has no readiness() member".
+      command: npx tsx contracts/checks/payment-seam-f2/check-readiness-probe.mjs
+
+    - id: A9
+      description: >-
+        THE READINESS VERDICT GATES THE WRITE — NOT THE POSITION OF A CALL. HARDENED 2026-08-19,
+        because its first form had the exact hole A4 had just been hardened against, and two
+        mutations against copies of the real route left it GREEN: (M1) the probe replaced by a
+        fabricated `{ ready: true }` with the call name left in a TRAILING COMMENT and a real probe
+        appended after the write — the old leading-comment-only filter counted the comment as the
+        call and reported "refuses at line 319" while the genuine call ran after the reservation;
+        (M2) `paymentProvider.readiness('initiate');` with the verdict DISCARDED — no assignment, no
+        branch, no refusal. M2 is the deeper one: a probe whose answer is thrown away is
+        indistinguishable from no probe, and an assertion about the POSITION OF A CALL cannot tell
+        them apart. The property is therefore asserted as a CHAIN, every link against
+        comment-stripped code (code_lines.py, the same instrument A4 now uses): a probe before the
+        write; its verdict CAPTURED in a variable; that variable tested for NOT-ready; that branch
+        returning the pinned 500 — still before the write; a catch leaving the verdict unready when
+        the adapter throws, so a throwing probe means REFUSE and never "assume fine"; no `ready:
+        true` fabricated inside the route; and the post-initiate 'not-configured' refusal surviving
+        as defence in depth (config is read per call and can change between the two). An INSTRUMENT
+        failure exits 3 and is reported as an instrument failure, never as an absent landmark.
+        OBSERVED FAILING on 2026-08-19: "$CHECKOUT never calls readiness()" (pre-fix), and after the
+        hardening, on all four mutations now standing in A10 — R1 "readiness() is first called at
+        line 550, at or after the reservation write at line 354", R2 "its verdict is never assigned
+        to anything", R3 "never tested for NOT-ready", R5 "construct a `ready: true` verdict inside
+        the route", R6 "the not-ready branch at lines 324-326 does not itself return a 500", R7 "does
+        not ask readiness('initiate')". FAILS ON: no readiness() call; a call that does not precede reserveTicket(); a
+        verdict never assigned, never tested, or tested without refusing; the probe asking about an
+        operation other than 'initiate'; a throwing probe falling
+        through as configured; the route minting its own verdict; either refusal deleted.
+      command: bash contracts/checks/payment-seam-f2/check-readiness-precedes-write.sh
+
+    - id: A10
+      description: >-
+        THE ORDERING CHECKS ARE THEMSELVES MUTATION-TESTED, AND THAT NET IS IN THE GATE. This check
+        existed, was green, and called itself A10 — while being referenced by no contract at all, so
+        it ran only when someone remembered to run it. That is this mission's own defect class in
+        its purest form: A4's hardening's regression net sat OUTSIDE the gate that the hardening
+        exists to protect. Wired in 2026-08-19. It runs a CONTROL first (A4 and A9 must both be
+        green on unmutated source, or every "mutation detected" below is vacuous — a check that
+        fails on everything detects nothing), then applies nine mutations to COPIES, never to the
+        real routes: A4's P1/P3/Q1 (the trailing-comment holes) and A9's R1/R2/R3/R5/R6/R7 (fabricated
+        verdict with the real probe moved after the write; verdict discarded; refusal condition
+        neutered to `if (false)`; verdict overwritten with a fabricated `ready: true` between probe
+        and test; refusal branch emptied while the recovery-secret guard's own 500 still sits
+        between the test and the write, which a window-wide search accepted as this branch's
+        refusal; the probe asking the WRONG operation, 'verify-notification' instead of 'initiate',
+        which a check that only looks for a readiness CALL cannot tell apart). It also runs code_lines.py's own self-test, because if the stripper stops
+        discriminating every number above is unreliable even when it looks right. If a mutation's
+        source line cannot be located it REFUSES rather than silently writing unmutated copies and
+        reporting nine clean detections. SELF-VERIFIED 2026-08-19 in both directions against
+        stubs: an always-green A9 produced four "left A9 GREEN" failures, an always-red one tripped
+        the control. FAILS ON: A4 or A9 going green on any mutation (the hole is back); either
+        going red on the control; the mutation sources becoming unlocatable.
+      command: bash contracts/checks/payment-seam-f2/check-ordering-mutations.sh
+
+    - id: A11
+      description: >-
+        THE DARK REJECT PATH — behavioural proof that the notification handler REFUSES. Until this
+        assertion, every scrap of behavioural evidence about verification came from A6's suite,
+        whose harness always signs correctly with the real passphrase: the ACCEPT path was proven
+        and every REJECT path was dark, which is the half of a payment gateway that loses money.
+        Three refusals are driven through the REAL exported POST() with real urlencoded bodies —
+        a bad signature, an absent signature, and an unset shared secret — and each must return
+        200 (so the gateway stops redelivering), emit its OWN exact reason code, make zero
+        outbound calls, and never reach the order lookup. The reason code is pinned to an exact
+        value rather than merely required to exist: an unset secret reported as a signature
+        mismatch sends an operator to debug the gateway for a fault in our own configuration, and
+        an assertion that only checks THAT a refusal happened cannot tell those apart. Evidence is
+        bound to one uniquely-reachable construct — the `[tickets/itn] Order lookup failed` line,
+        emitted from exactly one catch and only past a verified body — rather than to anything
+        found "in the window", because an assertion on this contract has already been satisfied by
+        a neighbouring guard's status code. A fourth case is a POSITIVE CONTROL and is load-bearing:
+        a correctly-signed body must be ACCEPTED and must reach the order lookup, without which an
+        adapter that refused every real payment would pass the first three with three confident
+        greens. NEEDS NO CREDENTIALS, no Firestore and no network — the shared secret is chosen in
+        process (the adapter reads env per call by design) and FIREBASE_ADMIN_* is deliberately
+        unset so any attempt to reach an order throws and is observable. FAILS ON: any rejection
+        path that stops rejecting, rejects for the wrong stated cause, rejects only after touching
+        an order, calls out to the gateway on an unauthenticated body, or on a handler that has
+        started refusing everything.
+      command: npx tsx contracts/checks/payment-seam-f2/check-reject-paths-behavioural.mts
+
+    - id: A12
+      description: >-
+        A11'S OWN REGRESSION NET, WIRED INTO THE GATE RATHER THAN PERFORMED ONCE. Five mutations
+        are GENERATED AT RUN TIME from the current contents of lib/payments/payfast.ts and
+        app/api/tickets/itn/route.ts into a scratch directory — no production file is ever written
+        — and A11 must kill all five: the unset-secret guard deleted (caught only because A11 pins
+        the exact reason code), the absent-signature guard deleted, the signature comparison
+        neutered so every forged body verifies, the route's refusal branch GUTTED so it logs but
+        does not return (the proximity-is-not-attribution shape that already defeated one assertion
+        here), and verifyNotification refusing unconditionally (killed only by A11's positive
+        control). An unmutated copy runs FIRST as a control and must be green, which is what makes
+        the mutant results attributable to the mutations rather than to the scaffolding. If a
+        substitution target cannot be located the run FAILS rather than reporting a clean detection
+        against an unmutated copy — "five mutations, five detections, none of them applied" is how
+        a mutation suite becomes decorative. Self-verified BOTH ways on 2026-08-19: against an
+        always-green stub all five SURVIVED and it exited 1; against a deliberately moved
+        substitution target it exited 1 with "mutation target not found". This exists because A18
+        sat green for a deleted property and because the A4 hardening had to be redone after the
+        hardening itself was never mutation-tested.
+      command: bash contracts/checks/payment-seam-f2/check-reject-path-mutations.sh
+
+    - id: A13
+      description: >-
+        THE lib/orders.ts:274 QUERY-RACE FIX (C+A+D) HAS ITS OWN REGRESSION NET, WIRED IN RATHER
+        THAN LEFT SITTING BESIDE THE GATE. Per
+        .agent/memory/project/specs/payment-provider-seam/orders-query-race-spec.md §4: R2 (MUST be
+        seen red first, per the spec's own words — a fake db reproduces the exact observed
+        condition, orders.where() empty while the document exists by ref; unfixed code returns
+        committed:false/order-not-found, fixed code commits when an orderId is supplied) — the
+        regression proper. R1 asserts the property, not the shape: with an orderId supplied,
+        orders.where() is called ZERO times and the ref is read once, so the redundant index read
+        cannot come back. R3 requires the fixture harness (waitUntilQueryable) to fail LOUDLY — a
+        non-zero exit carrying a message prefixed exactly `PRECONDITION:` — rather than resolving
+        silently against a stub that never becomes queryable, which is how the original defect
+        stayed misattributed for five runs. R4 requires the two `order-not-found` sources (query
+        miss vs. `!orderDoc.exists` inside the transaction, added by D as `order-vanished`) to
+        surface as DIFFERENT reason values, proven behaviourally through the returned outcome, not
+        by grepping for a string. All five checks (R2 has two sub-cases) run OFFLINE against an
+        in-memory `deps.db` fake — no Firestore, no network — and were OBSERVED PASSING by
+        @architect on 2026-08-20 (`npx tsx
+        contracts/checks/payfast-m1/check-orders-query-race-regression.mts`, exit 0, all five
+        PASS lines). R2's own red-then-green (against unfixed code, prior to this assertion's
+        existence) used a HAND-RECONSTRUCTED pre-fix copy of the two touched functions, verified
+        byte-identical on the touched region — not an actual `git revert` — which is weaker
+        evidence than a revert and is recorded here so a future reader does not upgrade it. ⚠️ THIS
+        ASSERTION PROVES THE FIX IS CORRECT (a redundant, potentially-disagreeing index read is
+        removed) — it does NOT prove what caused the original spurious flake. Real-Firestore
+        measurement (5 runs x 0/50/100/250/500/1000/2000/5000ms, 40/40 samples) found ZERO index-
+        staleness misses, so the leading hypothesis (freshness on a just-written document) was
+        DISPROVEN, not confirmed, and the true mechanism of the five spurious A18 greens remains
+        UNKNOWN. Do not read this assertion's green as "cause found" — only as "this redundant read
+        is gone and cannot reintroduce the disagreement it enabled." FAILS ON: the redundant
+        orders.where() read coming back for callers that supply an orderId; R2's fixed-code commit
+        path breaking; the fixture harness resolving silently instead of throwing on a
+        never-queryable stub; the two order-not-found causes collapsing back onto one reason value.
+      command: npx tsx contracts/checks/payfast-m1/check-orders-query-race-regression.mts
+    - id: A14
+      description: >-
+        Codex GPT-5.5 cross-model review (2026-08-20) found a defect A13's own regression net
+        did not cover: when the caller supplies `orderId` (A13's own fix), the function resolves
+        `orders.doc(orderId)` and never revalidates, inside the transaction, that the loaded
+        order's `m_payment_id` matches `input.m_payment_id`. A13's R1/R2 proved the redundant
+        `orders.where()` index read is gone; neither proved the second job that query used to do
+        — validating the resolved document actually belongs to this notification — was replaced
+        by anything. It was not. R5, appended to the same offline check
+        (contracts/checks/payfast-m1/check-orders-query-race-regression.mts), reproduces this
+        with a fake db: orderId resolves to a REAL, still-`reserved` order whose `m_payment_id`
+        disagrees with `input.m_payment_id` (modelling a stale or wrong orderId reaching the
+        write path). OBSERVED RED by @architect on 2026-08-20 against the current unfixed
+        source: `npx tsx contracts/checks/payfast-m1/check-orders-query-race-regression.mts`
+        exits 1, R2/R1/R3/R4 all still PASS (no regression to A13's own net), R5 alone FAILS
+        with `committed=true` — the mismatched order is marked paid. The fix must add an
+        in-transaction check, immediately after `orderDoc.exists` and before the
+        `status !== 'reserved'` check, that compares `order?.m_payment_id === input.m_payment_id`
+        and returns `{ committed: false, reason: <new distinct reason> }` on mismatch — NOT
+        reusing `order-not-found`, `order-vanished`, `order-not-reserved`, or `position-not-found`
+        (R5 asserts the reason is none of those four). FAILS ON: R5 committing; R5 committing
+        with any of the four existing reason values; the order or position being written 'paid'
+        even when the reported outcome says committed:false; any regression to R1-R4.
+      command: npx tsx contracts/checks/payfast-m1/check-orders-query-race-regression.mts
+
+    - id: A15
+      description: >-
+        @architect ruling on the A1 regression the team lead flagged 2026-08-20 (Codex's
+        underpayment fix, `parseAmountToCents`, landed inside app/api/tickets/itn/route.ts with a
+        doc comment reading "PayFast always sends amount_gross in that exact shape" -- real
+        coupling, not a reworded-comment false positive; A1 was doing its job). RULING: parsing a
+        gateway's own decimal-string convention into an integer count of cents is a FORMAT
+        TRANSLATION -- the same category of work `mapStatus` already does for the gateway's status
+        vocabulary -- and belongs in the adapter. Deciding whether the resulting number is close
+        enough to the stored order amount (`AMOUNT_MATCH_TOLERANCE_CENTS`) is a judgement about our
+        own money and stays in the route exactly as F1's original `grossAmount` doc comment always
+        intended ("the provider never decides whether an amount is acceptable") -- that principle is
+        preserved, not weakened, because computing cents is not deciding acceptability, no more than
+        `mapStatus` returning `'paid'` decides acceptability. `ProviderNotification` gains a seventh
+        field, `grossAmountCents: number | null`, computed by the adapter with the SAME parser
+        (moved verbatim, never a `Number(x) * 100` float round-trip), null on anything that is not a
+        plain non-negative decimal with at most two fraction digits -- same fail-closed behaviour as
+        before. `grossAmount` (the raw string) stays for logging. See
+        contracts/golden/payment-seam-f1/interface.golden.md, "`grossAmountCents` -- the seventh
+        field, and why", for the full reasoning including why an interface-wide 2dp-format
+        guarantee was rejected (it would assert Ozow/Peach match PayFast's wire shape before either
+        adapter exists -- the CTICC/18-21-September invented-value defect class). The route's
+        rejection branch is UNCHANGED IN SHAPE: it already treated a null parse as unparseable and
+        refused; it now reads `notification.grossAmountCents` instead of calling a local parser, so
+        the one-cent-underpayment rejection and the `'0.0099'` sub-cent rejection both survive
+        unchanged. The `m_payment_id` comment hit at itn/route.ts:227 (found in the same A1 run) is
+        RULED SEPARATELY AND DIFFERENTLY: it is cosmetic -- E3 exists because `m_payment_id` is OUR
+        Firestore field name, not gateway vocabulary, and that rationale applies equally to a
+        comment mentioning it; @dev should reword the comment to reference "the same payment
+        reference" instead of the literal identifier, since E3's hard count of exactly 1 is meant
+        to bound the CODE occurrence (the object key), not silently double-count an explanatory
+        comment. No contract change was needed for that one. OBSERVED FAILING by @architect on
+        2026-08-20 against the current unfixed route: exit 1, all three sub-checks fire (local
+        parser present, fraction-digit regex present, notification.grossAmountCents never read).
+        FAILS ON: a local amount-string parser (by name or by a fraction-digit-counting regex)
+        reappearing in either route; the route never reading grossAmountCents; the parser vanishing
+        from lib/payments/payfast.ts instead of existing there (non-vacuity -- a green must mean
+        "moved", never "deleted").
+      command: bash contracts/checks/payment-seam-f2/check-amount-normalized-in-adapter.sh

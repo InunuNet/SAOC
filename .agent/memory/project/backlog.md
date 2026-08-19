@@ -1,2928 +1,724 @@
-# Athanor Issue Backlog
-
-## Session 2026-08-19 — `policy-pages` (F1) shipped; gateway-approval prerequisite content, four follow-ups
-
-- [x] **[P0, DONE 2026-08-19] Merchant-account-blocking legal pages shipped.** `/privacy`
-  rewritten to remove a false "not shared with third parties" claim, `/terms` gained conditions
-  of sale, `/refunds` is a new route (figure-free by design — council hasn't supplied numbers),
-  and all three are now linked from `components/chrome/Footer.tsx` (`/terms` previously existed
-  but was linked nowhere). Gate: 14/14 pass. See `docs/policy-pages.md`.
-- [ ] **[P2] Prettier fails on 28 files across `app/`**, not just the 4 touched by
-  `policy-pages` — pre-existing, repo-wide, deliberately NOT fixed inside this contract (fixing
-  only 4 of 28 would leave the rest inconsistent). Decide whether to run `pnpm format`
-  repo-wide in one pass and whether to gate it in CI.
-- [ ] **[P1, needs council] SAOC's POPIA Information Officer is undesignated.** `/privacy` names
-  `secretary@saoc.co.za` (a pre-existing project convention, also used in `app/layout.tsx`
-  JSON-LD and the constitution page). Under POPIA the Information Officer defaults to the head
-  of the organisation and must be registered with the Information Regulator; nothing in the repo
-  shows SAOC has designated or registered anyone. Note `info@saoc.co.za` is the project's
-  established single authorised inbox (`docs/email-reply-to.md:18`). Question is with
-  Brad/Lee-Ann.
-- [ ] **[P1, blocked on council] `/refunds` has no refund terms.** Structurally complete,
-  deliberately figure-free. Needs cancellation windows, refund conditions, and any cooling-off
-  period from the council — asked as question 5 of the pricing artifact sent to Lee-Ann. When
-  supplied, POLICY-10 (the digit+unit ban, see `[[learned.md]]` "Ban enforced beats ban
-  requested") must be revisited since it currently bans the very figures that will need adding.
-- [ ] **[P1] All three policy pages carry an "AI-generated draft, not legal advice" notice** and
-  need professional legal review before the council relies on them.
-
-## Session 2026-08-18 — Admin panel has no cross-navigation at all (Brad, live)
-
-- [ ] **[P1, NEW 2026-08-18, from Brad] `/admin` has no menu system — confirmed there is no
-  navigation between admin surfaces at all, not a broken link.** Brad tried to reach vendor
-  review from the admin dashboard and it didn't work; checked the source — `app/admin/page.tsx`
-  has zero `href="/admin/vendors"` (or any `/admin/*`) links, and neither does
-  `app/admin/vendors/page.tsx` or `app/admin/door/page.tsx` link back to anything else. Every
-  admin surface (`/admin`, `/admin/vendors`, `/admin/door`) is a silo reachable only by typing
-  the exact URL — no shared chrome, no sidebar/top nav, nothing standard-admin-panel about it.
-  Brad's ask, direct: build a real admin navigation menu, the way every standard admin panel
-  has one — a persistent nav (sidebar or top bar) across all `/admin/*` pages linking dashboard/
-  tickets/vendors/door-scanner/whatever else lands there, with the current page indicated. Scope
-  question for whoever architects this: should it live in a shared `app/admin/layout.tsx` (there
-  isn't one currently covering all three pages — `/admin/login` and `/admin/door` deliberately
-  do NOT inherit shared admin chrome per `app/admin/page.tsx:15-16`'s own comment, so check
-  whether that exclusion is still correct once a real nav exists, or whether login/door need
-  their own lighter nav for a different reason).
-
-## Session 2026-08-18 — BrowserAgent adversarial sweeps: ticketing checkout is fully broken; 9 new vendor-form findings
-
-- [x] **[P0, FIXED 2026-08-18] Ticket checkout 100% broken — RESOLVED.**
-  `RECOVERY_TOKEN_SECRET` generated, written to Secret Manager (round-trip verified before
-  deploy), wired into `apphosting.yaml`, deployed via `721af3b`. Confirmed live:
-  `POST /api/tickets/checkout` on the deployed backend now returns normal request-validation
-  errors instead of the fail-closed 500. Full purchase→door-checkin path not yet proven
-  end-to-end with real sandbox credentials — that's the current focus.
-- [ ] **[P1, NEW 2026-08-18, from BrowserAgent, DEFERRED] Vendor form has NO client-side
-  validation gating submission — everything, including a fully empty form, POSTs to the
-  server regardless of native HTML5 `:invalid` state.** `checkValidity()` correctly flags empty
-  required fields, negative/decimal values in integer-only fields, and whitespace-only text —
-  but nothing in the submit handler checks it before firing the network request. All input
-  rejection is 100% server-side; any gap in server validation is directly reachable with no
-  client-side backstop at all. This is broader and more structural than the single `boothCount`
-  bug already logged above — that fix alone will not address this.
-- [ ] **[P1, NEW 2026-08-18, from BrowserAgent, DEFERRED, corrects earlier assumption]
-  `boothCount` is `type="number"`, so Chromium silently discards non-numeric keystrokes as you
-  type — "e1" never actually reaches state as the literal string "e1", it ends up empty, with
-  zero inline feedback that keystrokes were rejected.** Whoever picks up the boothCount fix
-  should verify against this corrected mechanism, not the original assumption that "e1" is what
-  gets submitted.
-- [ ] **[P1, NEW 2026-08-18, from BrowserAgent, DEFERRED] The Electrical-Load-shows-regardless-
-  of-Power-Required bug is NOT isolated — the same missing-conditional-render pattern also
-  affects Food Handling Certificate Number and List of Food Items, which stay visible
-  regardless of whether "Food retailer" is checked.** Likely one shared bug in however these
-  fieldsets implement conditional visibility, not three separate ones — worth fixing as one.
-- [ ] **[P2, NEW 2026-08-18, from BrowserAgent, DEFERRED] Vendor registration rate-limits after
-  ~4 submit attempts for 45 minutes with no visible countdown** — response is just "Please try
-  again later," no `retryAfterMs`-derived human-readable time shown. A real vendor who fumbles
-  the form 3-4 times while genuinely trying to fix it (plausible given the bugs above) gets
-  locked out for 45 minutes with no indication of how long. This also blocked BrowserAgent from
-  completing two of its planned tests (exact "e1" error-banner text repro; one clean valid test
-  submission) — both still outstanding, resume any time within/after the rate-limit window.
-- [ ] **[P2, NEW 2026-08-18, from BrowserAgent, DEFERRED] `vendorCategory` fieldset claims
-  `aria-required="true"` but enforces nothing** — none of its 8 checkboxes has the native
-  `required` attribute, and per the no-client-validation finding above the client wouldn't block
-  submission on it regardless. A screen-reader user is told the group is required; nothing in
-  actual behaviour backs that up.
-- [ ] **[P2, NEW 2026-08-18, from BrowserAgent, DEFERRED] No visible keyboard focus indicator on
-  ~24 of ~40 interactive elements — every text/number/email/tel/url/textarea input.** Checkboxes
-  and radios get a proper focus ring; text-type inputs rely on a barely-perceptible border-color
-  shift with `outline: none`. Real WCAG 2.4.7 risk for keyboard users. Submit button and nav
-  links get native focus outlines correctly — isolated to text-shaped inputs.
-- [ ] **[P2, NEW 2026-08-18, from BrowserAgent, DEFERRED] No `maxlength` on any of the 25 form
-  fields** (5000-char string accepted into `businessName` with zero truncation/warning) **and no
-  format `pattern` on the phone field** (`type="tel"` accepts `"not a phone number !!"`
-  verbatim — tel inputs don't validate format by default and none was added).
-- [x] **[Confirmed, informational] Vendor form's all-caps label complaint is a legibility issue,
-  not a contrast/accessibility failure.** BrowserAgent measured contrast at 5.24:1 (passes WCAG
-  AA's 4.5:1 requirement) — the slow-to-read effect comes from 11px + full uppercase + 1.76px
-  letter-spacing combined, not color. Precision worth keeping if this goes back to design.
-- [x] **[Confirmed, informational] Honeypot, keyboard tab order, mobile layout (375/320px), and
-  client-side script-injection handling on the vendor form all check out clean** — no action
-  needed on any of these four.
-
-## Session 2026-08-18 — Production-blockers F5 (self-signup guard) DONE, two QA fast-follows
-
-- [x] **Production-blockers F5 — self-signup guard via `functions.auth.user().onCreate()`,
-  DONE.** New `functions/` Cloud Functions package (`functions/src/index.ts`,
-  `guardSelfSignup`), deletes any newly-created Firebase Auth account that doesn't pick up the
-  `admin` custom claim within a 90s grace window — the same signal `scripts/admin-grant.ts`
-  sets, so legitimate admin provisioning survives and self-signup doesn't. No Identity Platform
-  upgrade, no Secret Manager/allowlist dependency. `firebase.json` gained additive
-  `functions`/`emulators` entries (`hosting` untouched, diff-verified). `docs/admin-access.md`'s
-  stale Identity-Platform-toggle section fully replaced. Gate 11/11, independently re-run by
-  both @dev and @qa against the real Firebase emulator (`demo-saoc-webapp`) — not a stub. QA
-  verdict PASS.
-- [ ] **[P2, NEW 2026-08-18, from F5 QA] `A-STRUCT-01`'s structural check is satisfiable by a
-  comment, not the executable code.** It greps the whole file for the literal substring
-  `functions.auth.user().onCreate(` on one physical line; the real chain in `index.ts:105-108`
-  is split across multiple lines (`.runWith(...)` interposed), so only the JSDoc comment on
-  line 92 actually matches. QA proved this by mutation: swapped the entire exported trigger for
-  a no-op `functions.https.onRequest()` HTTP handler with the comment left untouched — all four
-  structural checks, including A-STRUCT-04 (no-sweep), still passed. Not exploitable today
-  (A-BEHAV-01/02 genuinely exercise the emulator and prove the *current* code correct
-  operationally), but a future regression that changes the trigger type while the comment
-  survives would pass silently, with only the slower behavioural checks as a backstop — same
-  weak-assertion-satisfied-by-comment class as this project's earlier P1 audit. Fix: tighten the
-  regex to strip comments before matching, or match the actual multi-line chain shape.
-- [ ] **[P3, NEW 2026-08-18, from F5 QA] `functions/src/index.ts` uses plain `console.*` instead
-  of `firebase-functions`'s `logger.*`, losing structured/queryable Cloud Logging fields on a
-  security-relevant deletion audit trail.** QA read `firebase-functions` v7.3.2 source directly:
-  `logger.*` writes a structured `LogEntry` as JSON; this function imports `firebase-functions/v1`,
-  which never pulls in the `console.*`-patching compat shim used by v2 providers, so
-  `console.error('msg', {uid, email})` here is genuine plain Node output — severity tagging
-  (ERROR/WARNING via GCF's stream mapping) works, but `{uid, email, reason}` just flattens into
-  the text payload instead of becoming queryable structured fields. Not a functional bug, a real
-  (if minor) deviation from this project's "structured logging mandatory... context_dict" rule.
-  Fix: switch to `functions.logger.*` (already available via the existing `firebase-functions/v1`
-  import) — low-cost follow-up, not a blocker.
-
-## Session 2026-08-18 — Brad's live-testing notes on the vendor/exhibitor registration form
-
-- [ ] **[P1, NEW 2026-08-18, DEFERRED — do not start until Brad asks, do not disturb the
-  currently-running mission] Submit appeared to do nothing on real testing — two compounding,
-  confirmed root causes.** Brad hit this live testing the form for F10 sign-off; it is a real
-  defect, not user error, and should have been caught before this was reported ready to test.
-  Verified against source by the orchestrator (not a guess):
-  1. **`boothCount` bypasses this form's own validation pattern.**
-     `lib/vendor-register-form-payload.ts:98`: `boothCount: Number.parseInt(state.boothCount, 10)`
-     — every other numeric field (`tableCount`, `chairCount`, `staffPerDay`) routes through the
-     `toOptionalInt()` helper (lines 60-65), which returns `undefined` on blank/invalid input.
-     `boothCount` has no such guard. Garbage input (Brad's test: `"e1"`) parses to `NaN`, which
-     `JSON.stringify` silently turns into `null` in the request body. The API correctly rejects
-     this — `boothCount` is a required positive integer (`lib/vendor-submissions.ts:77`,
-     `types/index.ts:486`) — so the rejection itself is legitimate.
-  2. **The rejection is invisible.** `VendorRegisterStatusBanner` renders at the very top of the
-     form (`VendorRegisterForm.tsx:104`, immediately inside `<form onSubmit>`, before all five
-     fieldsets: contact, category, booth/logistics, marketing, payment). Zero scroll-into-view or
-     focus management on submission failure. A user at the bottom submit button on this long a
-     form gets an error that renders entirely off-screen — indistinguishable from nothing
-     happening. `role="alert"` exists (helps screen readers) but does nothing for a sighted user
-     scrolled away from the top.
-  **Fix shape** (not yet built — an architect had started scoping a proper fix, contract work
-  deliberately abandoned mid-flight per Brad's instruction to defer): give `boothCount` the same
-  guarded-parse treatment as the other numeric fields, ideally with client-side pre-validation
-  that names the specific field before the network round trip even happens; and on any
-  submission failure, scroll the banner (or first invalid field, if per-field errors get added)
-  into view and move focus to it. Check whether any other required numeric field has the same
-  unguarded-`Number.parseInt` gap as `boothCount` before calling this fixed.
-  **Codex GPT-5.5 cross-model review ran against the abandoned architect's scratch contract/
-  checks (`contracts/contract-vendor-form-submit-visibility-fix.yaml` and
-  `contracts/checks/vendor-form-submit-visibility-fix/`, still uncommitted on disk) and found
-  four real defects in that unbuilt design — whoever picks this up must read these before
-  reusing any of that scratch work:**
-  1. `contract-vendor-form-submit-visibility-fix.yaml:55` — the spec's `useEffect(..., [])`
-     approach assumes `setDescriptor(null)` then `setDescriptor(error)` always unmounts/remounts
-     the banner. React batches same-event state updates, so if the banner is already visible and
-     a second invalid submission happens, both `setDescriptor` calls can collapse into one
-     render — banner stays mounted, the empty-deps effect never reruns, second failure is
-     invisible again. High confidence.
-  2. `check-boothcount-client-validation.mjs:50` — the scratch design explicitly treats `"1.5"`
-     and `"1e3"` as *valid* booth counts. `Number.parseInt` silently coerces both to `1`; with
-     `noValidate` on the form (`VendorRegisterForm.tsx:103`), nothing stops this reaching the
-     server as a single booth. High confidence.
-  3. `check-handlesubmit-wiring.mjs:61` — the wiring check only proves *some* return/error-state
-     exists between the validator call and `fetch()`, not that the return is conditional on the
-     validation result actually failing — a broken `if (someOtherGuard) return;` unrelated to
-     the real validation would pass this check while still submitting invalid data. High
-     confidence — same weak-assertion-satisfiable-by-adjacent-code-not-the-real-property class
-     as this project's own P1 audit.
-  4. `check-banner-focusable-and-message.mjs:58` — the `tabindex="-1"` check regex-scans the
-     whole rendered HTML rather than the specific root element the ref targets; `tabIndex={-1}`
-     landing on a child instead of the root would still pass while `focusAndScrollToBanner()`'s
-     `.focus()` call silently fails on the actual (non-focusable) target. Medium confidence.
-  This is also the first real-world proof this project's new mandatory Codex-QA rule
-  (`.claude/rules/workflow.md`) catches things Claude's own chain misses — both #2 and #3 are
-  exactly the kind of defect an architect+dev+qa pass driven entirely by Claude did not surface
-  on the *first* boothCount bug either.
-
-- [ ] **[P2, NEW 2026-08-18, DEFERRED, same testing pass] No field has a placeholder showing
-  expected format.** Confirmed: no `placeholder` prop usage found in
-  `components/vendors/VendorBoothFieldset.tsx`, and the pattern holds across the form generally.
-  Fields like Preferred Load-In/Out Time Slot, Electrical Load (watts/amps), CIPC Number, and VAT
-  Number give the submitter no hint of expected format — directly why Brad's test data came out
-  as "1 million gigawatts" and "Tesd data is it time": nothing told him what format was wanted.
-  Needs placeholder text on every field where format isn't self-evident from the label alone, and
-  a check on whether the shared field components (`VendorFormField.tsx` etc.) even support a
-  `placeholder` prop yet. Placeholder = example/format guidance only, via the HTML `placeholder`
-  attribute — never a real default value prefilled into form state, which could get silently
-  submitted if the user never touches the field.
-
-- [ ] **[P2, NEW 2026-08-18, DEFERRED, same testing pass] Electrical Load field shows even when
-  Power Required is "No".** Confirmed in `components/vendors/VendorBoothFieldset.tsx` (the
-  `electricalLoad` field, ~lines 85-89): no conditional gate on `state.powerRequired`. Brad set
-  Power Required = No and Electrical Load still asked for watts/amps. Needs the same
-  "only-show-when-relevant" pattern this form already appears to use correctly for the two
-  food-only fields (Food Handling Certificate / List of Food Items, gated on vendor category) —
-  verify that gating is real and not coincidental before treating it as the reference pattern.
-  When Electrical Load is hidden, it should also be excluded from the submitted payload, not just
-  visually hidden with a stale value still attached.
-
-- [ ] **[P3, NEW 2026-08-18, informational, no action needed] No CAPTCHA on the vendor
-  registration form.** Confirmed: bot mitigation is a honeypot field (`VendorRegisterForm.tsx:59`,
-  mirrors `ContactForm.tsx`'s existing pattern) plus per-IP rate limiting
-  (`app/api/vendors/register/route.ts`, `lib/vendor-registration-rate-limit.ts`) — no
-  reCAPTCHA/Turnstile/hCaptcha anywhere. Reasonable for a low-volume B2B registration form, not
-  CAPTCHA-strength against a determined bot. Brad asked; answered directly, no fix implied unless
-  he asks for one.
-
-- [x] **[Confirmed, informational, 2026-08-18] Vendor submissions go to Firestore
-  `vendorSubmissions`, and Brad can already view/manage them as admin.** Public route writes via
-  `app/api/vendors/register/route.ts:70` (`VENDOR_SUBMISSIONS_COLLECTION`); `/admin/vendors`
-  reads the same collection directly (`app/admin/vendors/page.tsx:58`,
-  `app/api/admin/vendors/route.ts:33`) and is where approval/booth-number/payment-review already
-  happens. No gap, no action — recorded because Brad asked directly.
-
-- [ ] **[P2, NEW 2026-08-18, from Brad's live testing, agent-actionable] All-caps field labels
-  are hard to read.** Every field label/legend on the vendor form uses
-  `font-mono text-[11px] uppercase tracking-[0.16em] text-muted` (or the `[0.18em]`/`[0.14em]`
-  variants) — a shared pattern across `VendorFormField.tsx:16`, `VendorRadioGroupField.tsx:19`,
-  `VendorBooleanRadioField.tsx:20`, `VendorCheckboxGroupField.tsx:19`, and two spots in
-  `VendorGrid.tsx` (lines 52, 81). This is a deliberate editorial choice (mono/uppercase/
-  letter-spaced), not a bug, but Brad — testing the live form — found it genuinely difficult to
-  read at length, which is a real usability finding regardless of stylistic intent. Before
-  touching it: (a) check whether this `uppercase` treatment is scoped to the vendor form's own
-  component set or is a shared design token used elsewhere on the site (`grep -rn uppercase`
-  more broadly) — a fix here should not silently diverge the vendor form's typography from the
-  rest of the site if the pattern is shared; (b) this touches visual typography, which the
-  project's own coding rules reserve for Claude Design handoffs — but Brad is the actual decision
-  -maker giving this feedback directly, so treat it as authorised, not as inventing a brand
-  choice. Recommend keeping the mono/letter-spacing character (it's load-bearing for the form's
-  visual identity) while dropping `uppercase` in favour of sentence case, or reducing tracking —
-  a judgement call for whoever picks this up, several options, not a single obvious fix.
-
-- [ ] **[P2, NEW 2026-08-18, from Brad's live testing, split ownership] Vendor Terms &
-  Conditions checkbox references a document that doesn't exist.** `VendorPaymentFieldset.tsx:49`
-  ships the label "I confirm I have read and agree to the Vendor Terms & Conditions of the 2027
-  SAOC National Show" as plain text with no link, and no Vendor Terms & Conditions document or
-  page exists anywhere in the repo (`grep -rn "Vendor Terms\|vendor-terms\|VendorTerms"` returns
-  only this one label). A vendor ticking this box today is confirming agreement to nothing —
-  worth being direct about this with whoever owns legal risk: an agreement checkbox with no
-  actual terms behind it is not meaningfully binding, so this is closer to a compliance gap than
-  a cosmetic one, even though Brad flagged it without urgency. **Split ownership**: the content
-  itself — the actual Vendor Terms & Conditions text — is Lee-Ann's to write (per Brad, "Item for
-  Lee-Ann to do"), not an agent's to invent (no invented brand/legal content — matches this
-  project's standing "no invented brand assets" posture extended to legal text). Once she
-  supplies it, the engineering side (a terms page/route, the checkbox label linking to it) is
-  ordinary agent-actionable work. Do not draft placeholder legal text in the meantime.
-
-- [ ] **[P2, NEW 2026-08-18, from Brad's live testing] Regulatory permit fields ask for a
-  number but should collect the actual document.** Brad tested the live form
-  (`/national-show/vendors/register`) and flagged that "when we ask for a document it needs to
-  actually upload a document, save it and email it as an attachment" — not just record a
-  self-reported permit number. Affects the three F9 permit fields:
-  `phytosanitaryPermitNumber`, `citesPermitNumber`, `foodHandlingCertificateNumber`
-  (`types/index.ts:480-482`), currently free-text/unvalidated per F9's deliberate design
-  (`docs/vendor-registration.md:164-166,321-327` — "collected, not validated" was a considered
-  decision, not an oversight, but Brad is now directing a different one: collect the document
-  itself). The mission already has a working file-upload pattern to extend: F7's proof-of-payment
-  path (`app/api/vendors/[id]/proof-of-payment/route.ts`, `lib/vendor-proof-of-payment-handler.ts`,
-  `lib/vendor-payment.ts` — public unauthenticated upload route, base64 in/Storage out, MIME-type
-  allowlist `application/pdf`/`image/jpeg`/`image/png`, size cap, extension derived from
-  `mimeType` never the caller-supplied filename). `lib/email.ts`'s `sendEmail()` currently has no
-  attachment support — Resend's SDK supports `attachments: [{filename, content}]`, so this needs
-  extending, not replacing. Open design questions for whoever architects this: does upload
-  replace the number field or sit alongside it; who receives the emailed attachment (SAOC
-  internal record vs. vendor's own copy — F9's non-verification stance should very likely carry
-  forward to "document recorded as submitted, not verified" regardless of the answer); does this
-  apply to all three permit fields or only the ones vendors are likeliest to actually hold a
-  document for. Not urgent per Brad — queue behind the current production-blockers work.
-
-- [ ] **[P3, NEW 2026-08-18, from Brad's live testing, not urgent] CIPC and VAT number fields
-  accept any data.** Live-tested with `"Test Data CIPC"` and `"Test Data VAT 123456"` — both
-  submitted cleanly. `cipcNumber`/`vatNumber` (`types/index.ts:472-473`,
-  `lib/vendor-register-form-payload.ts:22-23,89-90`) are free-text with zero format validation.
-  A real fix would validate against South Africa's actual CIPC registration-number format and
-  the 10-digit VAT-number format (starts with `4`) — but confirm the exact CIPC format from an
-  authoritative source before building a regex; don't guess a company registration number
-  pattern. Consider whether this should reuse the same "collected, not validated, but at least
-  well-formed" posture as the permit fields above, or go further, since these two are structured
-  identifiers (checkable formats) rather than free-text permit numbers.
-
-## Session 2026-08-18 — Production-blockers F4 (payfast-m1 stale checks repoint) DONE
-
-- [x] **Production-blockers F4 — repoint seven stale payfast-m1 ITN checks (A18–A21, A30–A32), DONE.**
-  Seven assertions failed after F10 moved the ITN payment lookup and atomic write from the route into
-  `lib/orders.ts`. Not a production defect (checkout already writing `orders`, route already reading
-  them correctly) — only test infrastructure was stale. Fix: new fixture helper `createOrderAndPosition()`
-  built from the actual production `buildReservationDocs` function (no more drift-prone hand-rolling);
-  new AST helper `findFunctionDeclarationBody()` to scope checks to the correct function when a file has
-  multiple transactions; extended shared `_shared.mjs` residue sweep to cover `orders` collection.
-  **New sha256 pin on `lib/orders.ts`** with golden hash
-  `47c2e83c920a00b12953657c667250690a595049537188728ef9a5588301002b`
-  (`contracts/golden/production-blockers-f4-itn-check-repoint/orders-lib.golden.sha256`) — the atomic
-  paid-write logic moved here from the route and must be guarded. Docs: `docs/payfast-integration.md`
-  (+240 lines, "Production-blockers F4" section documenting why checks went stale, what changed, the new
-  pin, and anti-drift recommendation). Gate `contract-production-blockers-f4-itn-check-repoint.yaml`
-  A1–A12, 12/12, verified both gates 13/13 and 34/34. @qa verdict PASS — all seven adversarial claims
-  independently confirmed against real source.
-- [ ] **[P2, NEW 2026-08-18, CI configuration task] Wire credential-free structural ITN checks into
-  CI with path-trigger.** Two checks (`check-paid-write-inside-transaction-scope.mjs`,
-  `check-server-confirm-fetch-outside-transaction-scope.mjs`) need no secrets and cost nothing to run.
-  Currently run only as part of the credential-gated `contract-payfast-m1.yaml` suite (rarely runs in
-  CI due to missing PAYFAST_SANDBOX_* environment). Recommend: create a CI job triggered on diffs
-  touching `app/api/tickets/itn/route.ts` or `lib/orders.ts` specifically, running these two checks
-  independently. Would have caught F4's entire staleness the day F10 merged instead of months later
-  via audit. This is `.github/workflows/` configuration, not a code/contract task. Full rationale in
-  `contracts/golden/production-blockers-f4-itn-check-repoint/README.md` and `docs/payfast-integration.md`.
-
-## Session 2026-08-17 (latest) — F11 (QR generation + confirmation email) DONE; mission now blocked on Brad
-
-- [x] **F11 — QR generation at email-send time + real multi-position confirmation email with
-  recovery link, DONE.** New `lib/qr.ts`, `lib/recovery-url.ts`, `emails/OrderConfirmation.tsx`;
-  extended `lib/confirmation-email.ts` (F10's `ConfirmationEmailPosition` /
-  `SendConfirmationEmailInput` / `deliverConfirmationEmailAfterCommit` untouched, pinned ITN
-  route's single-arg call site still matches). Gate
-  `contracts/contract-ticketing-f11-qr-confirmation-email.yaml` A1-A9, 9/9, run twice (before and
-  after @qa's mutation pass), green both times. @qa verdict PASS — 10 mutations against real
-  source, 8 killed cleanly, 1 no-op (not a weak-check finding, see `learned.md`), 1 partial
-  survivor (the `.trim()` half of the empty-`bookingRef` guard, see `learned.md` and the P3 item
-  below). All four files restored byte-identical, sha256-verified by @qa and independently by the
-  orchestrator. Docs: `docs/ticketing.md` (+144 lines, F11 section + flow diagram + Known Gaps),
-  `README.md:99`, `.env.local.example` `SITE_URL` comment.
-- [ ] **[P3, NEW 2026-08-17, from F11 mutation review] `lib/qr.ts`'s whitespace-only
-  `bookingRef` case is unexercised.** The empty-string branch of the guard is actually proven by
-  the underlying `qrcode` library throwing on `''`, not by the guard's own `.trim()` check — a
-  mutant that removed the guard still failed A3 for the wrong reason. A whitespace-only
-  `bookingRef` (e.g. `'   '`) would encode silently today. Add a dedicated test case using a
-  whitespace-only string, which only the guard (not the library) rejects. Full detail in
-  `learned.md` "F11 mutation review — a negative control can pass for the wrong reason".
-- [x] **[STATUS] Mission `ticketing-foundation` M1 and M2's F9-F11 are DONE. No autonomous
-  feature work remains — F12, F13, F14 all require human action** (deployed-host
-  purchase-and-scan proof at The Hangar with venue connectivity observation; Lee-Ann's real
-  per-show `manager` grant verified by live HTTP round trips; a human buyer proving lost-ticket
-  recovery end-to-end). The mission is now blocked on Brad, not on any agent. F11 also surfaced
-  (not fixed, out of its own scope) that checkout never creates an `orders` document, so F12 will
-  hit that blocker first when attempted — see `needs-human.md` "Ticketing foundation F11 —
-  checkout never creates an `orders` document" for the standing detail and its 2026-08-17 status
-  update.
-
-## Session 2026-08-17 (later still still still) — vendor-registration mission drafted, queued
-
-- [ ] **[NEW 2026-08-17] Mission `vendor-registration` drafted and filed, status `queued` (not
-  started) — `.agent/memory/project/missions/2026-08-17-vendor-registration.md`.** Built from
-  Lee-Ann's "South African Exhibitors" Drive doc (11 features, 3 milestones). Queued to start
-  **after** `ticketing-foundation` completes — it reuses that mission's `lib/admin-roles.ts` /
-  `lib/admin-auth.ts` capability system and orders/positions conventions directly. Naming
-  collision resolved in F1: this stream is internally called "vendor" (schema/collection/route),
-  not "exhibitor" — the codebase already has an unrelated shipped feature named "exhibitor"
-  (`showExhibitorInfo`/`showExhibitorStep`, the judged-entry guide behind
-  `/national-show/exhibitors`). CMS/Firestore split made explicitly: the public nursery showcase
-  is Sanity (new `vendorNursery` type, F2), the 31-field registration form is a Firestore
-  submission pipeline (new `vendorSubmissions` collection, F4–F5), linked but not merged — an
-  admin approval step (F6) decides what, if anything, becomes public. Four open questions
-  recorded with recommended defaults (payment path — recommend offline EFT, not PayFast;
-  approval-before-public — recommend yes; booth allocation — recommend manual, tool just records
-  it; public route name). POPIA flag recorded (F11) — this form collects CIPC/VAT numbers, cell
-  numbers, physical addresses, vehicle registrations, and permit numbers, materially more
-  sensitive than ticket-buyer data; POPIA work stays deferred per existing project decision, no
-  conversation opened with Lee-Ann or Brad. CITES/phytosanitary/food-handling permit fields (F9)
-  are collected but explicitly not validated — verification obligation is a show-committee
-  question, not assumed either way. No code, contract, Sanity document, or Firestore document was
-  created — planning and filing only, per instruction.
-
-## Closure Candidates (needs sign-off)
-_(2026-08-17, F1 wrap-up) `execution/gh_closure_scan.py --format lines` failed again, but back to
-the ORIGINAL known error (`ERROR: .agent/memory/project/missions/OVERNIGHT-PLAN-2026-07-30.md has
-no YAML frontmatter`), not the `--repo` error seen earlier the same day. The two different
-failure modes on the same day suggest the `--repo` error was transient/environmental, not a
-regression — the frontmatter bug is the persistent, already-filed one (see TEMPLATE BUG item
-below). No candidates surfaced this session (script still does not run to completion)._
-
-## Session 2026-08-17 (later still still still) — F6 contract written, two more scope gaps surfaced
-
-- [ ] **[P2, open ownership question, NEW 2026-08-17] Minting the recovery token at order-creation
-  time is unowned.** F6 ships only the pure primitives: `lib/recovery-token.ts`'s
-  `mintRecoveryToken()`/`verifyRecoveryToken()`, the rate-limit decision function, and the
-  enumeration-safe response (`contracts/contract-ticketing-f6-recovery-token.yaml`,
-  `contracts/golden/ticketing-f6-recovery-token/README.md`). Something still has to CALL
-  `mintRecoveryToken()` when an order is created and persist the resulting token (or its
-  signature) onto the order document — otherwise there is nothing for a recovery link to verify
-  against, and F14 (lost-ticket recovery proven end-to-end) cannot work. No F-item currently owns
-  that wiring. F10 (ITN re-pin ceremony) and F11 (QR generation + confirmation email) are the
-  plausible homes since both already touch order creation and the confirmation email, but neither
-  names it. Same shape as the F5 guest-order-backfill gap above: real work sitting in the seam
-  between two features, invisible because each one's own scope is complete. Needs Brad to place
-  it against an existing F-item or add a new one — do not self-assign or invent an F-number.
-  Worth settling before milestone M1 closes.
-- [ ] **[P3, placeholder value, NEW 2026-08-17] `RECOVERY_TOKEN_DEFAULT_TTL_MS` is set to 180
-  days as a working placeholder, not a Council-approved value.** It determines how long a
-  lost-ticket recovery link stays valid — a real security/usability tradeoff, not an engineering
-  default: too short and buyers lock themselves out of tickets they paid for; too long and a
-  leaked link stays live for months. Built against a reasonable working number in the meantime,
-  clearly flagged as a placeholder, same treatment as the 2027 Show ticket pricing placeholder
-  (see `needs-human.md` "Real 2027 Show ticket pricing"). Also logged in `needs-human.md`
-  ("Recovery-link expiry (`RECOVERY_TOKEN_DEFAULT_TTL_MS`)") since it needs an actual SAOC/Brad
-  decision, not just an agent's tracking note.
-
-## Session 2026-08-17 (later still still) — F5 contract written, two ownership gaps surfaced
-
-- [ ] **[P1, open ownership question, NEW 2026-08-17] Buyer-account live security proof (spec
-  §8.4) has no owning F-item.** The F5 contract (`buyers/{uid}` collection + hard buyer→admin
-  refusal boundary) proves the boundary offline via real `hasCapability()` calls and via a real
-  HTTP round trip with NO credentials (401 on missing and on garbage session cookies). It cannot
-  prove offline the actual spec §8.4 scenario: a real Firebase-Auth-minted **buyer** session
-  cookie `POST`ing to `/api/admin/checkin` and being refused, paired with a real **admin**-session
-  positive control that succeeds. That needs live credentials, so @architect wrote it as a
-  five-step human-run manual procedure in `contracts/golden/ticketing-f5-buyers/README.md` rather
-  than a contract assertion — logged in `needs-human.md` ("Ticketing foundation F5 — buyer-account
-  live security proof"). **F13 (Lee-Ann's `manager` grant, M3) covers the staff/admin side of live
-  HTTP verification, not the buyer side — do not assume it covers this without a deliberate call.**
-  This is the load-bearing security property of F5 and currently has no live-proof owner; needs
-  Brad (or whoever plans the mission next) to place it against an existing F-item or add a new
-  one. Not to be self-assigned to F13/F14 or given a new F-number without that decision.
-- [ ] **[P2, open ownership question, NEW 2026-08-17] Guest-order-claiming backfill (spec §8.3)
-  has no owning F-item.** When a guest buyer later registers an account, their existing orders'
-  `buyerUid` should be backfilled to the new account. F5 deliberately adds only the field's
-  existence and type (`buyers/{uid}` collection, optional `buyerUid` on orders) — the backfill
-  itself is explicitly out of F5's scope. No other feature in mission `ticketing-foundation` owns
-  it either. Worth placing before milestone M1 closes (M1 = F1–F8, the data-model/security
-  foundation milestone) rather than letting it fall through to M2/M3 unowned.
-
-## Session 2026-08-17 — ticketing spec extended with buyer accounts (§8), foundation mission planned
-
-- [x] **Ticketing spec §8 (public buyer accounts + lost-ticket recovery) — DONE, commit
-  `2e81ca2`.** Added in response to Brad noticing the spec had no answer for a lost ticket. Key
-  decision: recovery uses a signed `recoveryToken` on the order (not the booking ref, which is
-  spoken aloud/printed) plus a rate-limited no-enumeration resend form; the optional
-  `buyers/{uid}` layer is additive only and grants zero admin capability (self-signup is still
-  open — see `learned.md` "Ticketing foundation spec — §8 buyer accounts"). Old §8–§10 renumbered
-  to §9–§11. Brad approved without a thorough read, standing condition: "we're dealing with
-  people's data here, so security is top priority all the time."
-- [x] **Mission `ticketing-foundation` planned and committed — `aff6c2f`.** 14 features, 3
-  milestones, `.agent/memory/project/missions/2026-08-17-ticketing-foundation.md`, status
-  `pending` (not started). Old zero-milestone stub `2026-08-17-ticket-flow-end-to-end.md` closed.
-  Six decisions recorded in the mission body: door-staff gets `lookup-booking-ref` but not
-  `search-buyers`/`export-buyer-data`; comps bypass PayFast entirely; Resend is an external
-  blocker off the critical path; demo prices are marker-tagged placeholders; the `show` schema
-  collision (F1) is resolved by extending the archive type rather than adding a second name; one
-  ticket type for the first run.
-- [ ] **[F1 prerequisite] Size the `show` archive-document impact before extending the schema.**
-  @architect must count published `show` documents in Sanity and confirm no existing query/Studio
-  view breaks when sales fields (`edition`, `startDate`, `endDate`, `venue`, `salesOpen`,
-  `active`) are added to the archive type. Flagged explicitly in the mission F1 brief.
-- [ ] **[F10 flag] `DEFAULT_SITE_URL = 'https://saoc.co.za'` in the checkout route will become
-  stale-in-a-new-direction once the nameserver switch happens.** Its comment currently says that
-  host resolves to the old Joomla site — true today, false after cutover. Handle inside the
-  single authorised ITN re-pin ceremony (see the go-live PayFast item below), not as a second
-  reopening of that route.
-- [ ] **[F11 note] Resend email work does not need to wait on DNS.** `lib/email.ts` is already
-  complete (client, `sendEmail({to, subject, react})`, from-address via `RESEND_FROM_ADDRESS`) —
-  no API key, no ticket caller yet. Resend's `delivered@resend.dev` / `bounced@resend.dev` test
-  recipients let F11 be built and proven, including hard-bounce handling, with no verified domain.
-- [ ] **[domain/DNS sequencing, NEW 2026-08-17] saoc.co.za has transferred to SAOC control;
-  nameservers deliberately still point at the OLD cPanel host** (mailboxes get pulled first, then
-  nameservers switch). **Resend DNS records must be added only AFTER the nameserver switch** — add
-  them now and they are lost silently with no code change to blame when email stops sending.
-  Recommended: verify the subdomain `tickets.saoc.co.za` (not the root, so records can't disturb
-  `@saoc.co.za` mail routing mid-migration), European region.
-
-## Session 2026-08-17 (later still) — F4 (roles custom claim + tooling) DONE, four follow-ups scoped
-
-- [x] **F4 — `roles` custom claim (per-show map), AND-only composition, revoke-on-mutate tooling,
-  batch-grant tooling, date-window lapse, one-time admin migration — gate 12/12 (verified twice),
-  F3 re-gate still 8/8, @qa PASS (8 mutants, 7 died).** Full detail in `learned.md` "Ticketing
-  foundation — F4 done". `lib/admin-auth.ts` extended; new `lib/admin-grant-validation.ts`,
-  `lib/admin-revoke-plan.ts`, `lib/admin-orphan-roles.ts`, `lib/admin-migrate-roles-plan.ts`, new
-  `scripts/admin-migrate-roles.ts`, extended `scripts/admin-grant.ts` / `admin-revoke.ts` /
-  `admin-list.ts`. Docs in `docs/ticketing.md` (F4 section) and `docs/admin-access.md`.
-- [ ] **[P2, NEW] No claim-size guard on the grant path.** Firebase caps custom claims at ~1000
-  bytes; roughly 24 per-show `manager` grants (or ~36 single-role grants) exceed it. Nothing
-  checks size before `setCustomUserClaims`; the operator gets a raw `auth/claims-too-large` error
-  with no advance warning. Target F13's batch-grant work. Measured by @qa.
-- [ ] **[P2, NARROWED 2026-08-18] A throwing `lookupShowWindow` closure would still propagate
-  out of `hasCapability()`** rather than returning false — `lib/admin-auth.ts:170,199` does not
-  wrap the call in a try/catch. Not exploitable today: the shipped `resolveShowWindowLookup`
-  closure (`lib/show-window-lookup.ts:64-72,149-155`) catches internally and can never throw, and
-  no route in this codebase constructs a raw closure outside that module. Remains a real
-  type-level boundary — any future capability-gated route that hand-rolls a `ShowWindowLookup`
-  instead of using `resolveShowWindowLookup` must catch internally itself, or wrap the call at
-  the `hasCapability()` boundary.
-- [ ] **[P3, NEW 2026-08-18, standing convention] No central default-injection point for
-  `ShowWindowLookup`.** `hasCapability()`'s default remains `() => null`
-  (`lib/admin-auth.ts:199`); each capability-gated route wires the real lookup itself —
-  `app/api/admin/tickets/comp/route.ts:88-89`, `app/api/admin/vendors/route.ts:26-27`,
-  `app/api/admin/vendors/[id]/payment/route.ts:38-39`,
-  `app/api/admin/vendors/[id]/review/route.ts:43-44`. Each site is independently caught by a
-  wiring check — this contract's A9 (`check-comp-route-wiring.mjs`), vendor F6's
-  `check-route-wiring.mjs`, vendor F7's `check-admin-payment-route-wiring.mjs`. Any future
-  capability-gated route must call `resolveShowWindowLookup` and pass `{ now, lookupShowWindow }`
-  itself, and must land with its own wiring check — same discipline F6/F7 followed. Not an
-  engineering task, just the convention new routes must follow.
-  Separately, noted without inflating it: `app/api/admin/checkin/route.ts`,
-  `app/api/admin/tickets/route.ts`, and `app/api/admin/export-csv/route.ts` call no capability
-  check at all. The checkin one is a deliberate documented deferral
-  (`app/api/admin/checkin/route.ts:19-27` — unsafe to enable before
-  `scripts/admin-migrate-roles.ts --apply` runs live, which it has not; see the STANDING item
-  below). The other two are pre-existing and unrelated to `ShowWindowLookup`.
-- [x] **[P1, ESCALATED from P3 2026-08-17, BLOCKS F13] No live Sanity-backed `ShowWindowLookup`
-  — DONE 2026-08-17/18, commit `0fca15a` ("feat(ticketing): production ShowWindowLookup,
-  unblocking per-show role grants").** Implementation: `lib/show-window-lookup.ts`. Contract:
-  `contracts/contract-ticketing-show-window-lookup.yaml` (feature id `F13-show-window-lookup`,
-  assertions A1-A10), decision record at
-  `contracts/golden/ticketing-show-window-lookup/README.md`, 7 check scripts under
-  `contracts/checks/ticketing-show-window-lookup/`. Re-verified against disk 2026-08-18: all
-  checks pass live. Window fields: `active` (via the existing `resolveActiveShow()`) selects
-  *which* show; `show.startDate`/`endDate` (`sanity/schemas/documents/show.ts:51-52`) define the
-  window. Timezone: `parseUtcDatetime()` (`lib/show-window-lookup.ts:95-101`) accepts only an
-  explicit `Z` or `±HH:MM` offset and rejects date-only/offset-less strings outright — fail-closed,
-  never silently reinterpreted; A7 is gated under `TZ=Africa/Johannesburg` so it reproduces the
-  SAST/UTC defect class regardless of the gate machine's timezone. Cache: `ShowWindowCache`, 60s
-  TTL, staleness re-checked at read as well as write. Superseded text below, kept for history:
-  implementation exists anywhere — per-show role grants are ALWAYS refused in production, even
-  inside their date window.** Verified this session: `lib/admin-auth.ts:199` defaults
-  `lookupShowWindow` to `() => null` whenever a caller passes no opts; no production
-  implementation of a `ShowWindowLookup` exists in `app/`, `lib/`, `sanity/`, or `scripts/` —
-  every reference lives inside `lib/admin-auth.ts`'s own type/function definitions; the new comp
-  route (`app/api/admin/tickets/comp/route.ts:76`) calls `hasCapability()` with no opts, and every
-  future route that follows this pattern will too. Net effect: any per-show grant (e.g. `manager`
-  scoped to one show) is refused in every real request, squarely inside its date window — only an
-  org-wide `'*': ['owner']` grant works, because that path skips the window check entirely. F4's
-  contract doesn't catch this because it injects its own lookup, proving the FUNCTION honours a
-  window when given one, while no route ever gives it one. **Fails closed, so this is not a
-  security hole — it's a functionality hole**, but it directly **blocks F13** ("Lee-Ann granted a
-  real per-show `manager` role, verified by HTTP round trips including negative control") — as
-  wired, that verification cannot pass, and Lee-Ann would appear to hold a role that silently does
-  nothing, with no error explaining why. Implementing this is a real correctness question, not
-  just plumbing: which Sanity date fields actually define the window (`show.startDate`/`endDate`?
-  `salesOpen`?), and how timezone is handled — SAOC operates SAST (+2) while Firestore/Cloud
-  Logging timestamps are UTC, and this project has already shipped one false published correction
-  from exactly that confusion (see `learned.md` "Firestore `createTime` and Cloud Logging
-  timestamps are UTC; SAOC operates SAST (+2)"). Whoever builds the real `ShowWindowLookup` should
-  treat the timezone handling as a decision, not a detail.
-- [ ] **[P3, NEW] Pre-existing American spellings** at `docs/ticketing.md:424, 484, 488, 820`
-  (from the F2 docs pass). Deliberately left alone to keep the F4 commit scoped. The
-  Microsoft/Entra proper nouns in `docs/admin-access.md` are correct as-is and must NOT be
-  "fixed".
-- [ ] **[STANDING, carried forward] The live `roles`-claim migration has NOT been run.**
-  `scripts/admin-migrate-roles.ts` exists, is dry-run by default, and has never executed against
-  the live project. No account currently holds a `roles` claim, including `brad@inunu.net` (the
-  sole admin). Running it with `--apply` is a human-gated step Brad must authorise.
-
-## Session 2026-08-17 (later) — F1 (show schema collision) DONE, three follow-ups scoped ahead of F9
-
-- [x] **F1 — `show` schema collision resolved, gate 9/9, @qa PASS.** Full detail in `learned.md`
-  "Ticketing foundation — F1 done". `sanity/schemas/documents/{show,ticketType}.ts`,
-  `lib/show-resolution.ts` (new), `scripts/migrate-show-sales-fields.ts` (new),
-  `sanity/queries.ts`, `app/api/tickets/checkout/route.ts`, contract + 6 checks + goldens under
-  `contracts/`, docs in `docs/ticketing.md` + `docs/ticketing-for-editors.md`.
-- [ ] **[P2, NEW] Studio guard against a second active show.** @qa finding, MEDIUM severity. The
-  `active` checkbox on the `show` schema sits alongside the archive fields with no fieldset,
-  `hidden`, or `readOnly` condition, and `sanity/structure.ts` lists `show` as a plain document
-  type list — nothing in Studio warns an editor before they tick it. If an editor ticks "Active"
-  on a past archive doc (so two docs are both `active: true`), `resolveActiveShow()` correctly
-  fails closed to `null` — but `ticketTypeMatchesActiveShow()` then rejects EVERY ticket type for
-  EVERY buyer with a generic 500. A sitewide sales outage from one mis-click, with no Studio
-  warning and no alerting. Lee-Ann is the person who would hit this. Scope as its own feature with
-  its own behavioural assertions (a Studio-side guard/validation, not just a code-side fail-close)
-  — do not fold into another feature without dedicated tests. Slot ahead of F9 (demo ticket type).
-- [ ] **[P3, NEW] `ticketType.show` reference picker is unfiltered.** `to: [{type:'show'}]` with
-  no `options.filter`, so an editor can point a ticket type at e.g. a 2012 archived show.
-  Checkout fails closed (the mismatch is caught server-side), so this is wasted-editor-effort
-  cosmetic risk only, not a security or sales-outage issue. Add an `options.filter` scoping the
-  reference to `active == true` shows.
-- [ ] **[P2, NEW] `show-19-2027` edition/dates/venue are a COPY of the `nationalShow` singleton,
-  not a live reference.** @dev sourced the real values rather than inventing a placeholder
-  (correct — there is prior form on this project of an invented CTICC venue leaking into six-plus
-  fields), and the two documents match exactly today, verified. But because it's a copy, a future
-  edit to either document will silently make them diverge in front of buyers. Documented as a
-  known limitation in both `docs/ticketing.md` and `docs/ticketing-for-editors.md`; needs a real
-  resolution (e.g. one document is authoritative and the other reads from it) before shipping
-  further ticketing-facing UI that displays both.
-- [ ] **[P2, unresolved, re-measured] Firestore fixture-leak count: 15 docs today (14
-  `nationalShow` + 1 `door-qr-check-wrong-show`), NOT a clean monotonic climb.** Earlier sessions
-  recorded 5 → 12 → 17 → (now) 15. The trend line going down as well as up means the prior
-  "ongoing leak" narrative may be wrong, or measurement conditions differ session to session (see
-  `learned.md` "unchanged detector reading" for the general caution against inferring a story from
-  an unverified count). Record the number, don't re-narrate a trend from it — next session should
-  measure under controlled conditions (immediately before/after a known check run) before drawing
-  any conclusion. Deletion of leaked docs remains Brad's call, not an agent's.
-
-## Session 2026-08-16 (afternoon) — P1 weak-assertion audit complete, no live vulnerability
-
-- [x] **P1 weak-assertion audit — DONE, no live vulnerability found anywhere.** Full narrative in
-  `learned.md` "P1 weak-assertion audit". Retired/rewrote weak assertions across four contracts:
-  `650d02c`/`8e3e98b` (entry-point guard on scan-dataset-residue.ts + false-claim correction),
-  `808ca7b` (D5-04/16/23 retired as auth-greps-a-comment-satisfies; D3-16/19 corrected off a
-  deleted Stripe field), `382e157` (D6 door check-in auth proven by real HTTP round trip),
-  `f87bcb3` (payfast-m1 ITN validation proven behaviourally + by AST), `0b5f0ea` (D6's four
-  remaining stale greps retired), `f4a37bd` (scanner now detects D6 + known-residue fixtures; A34
-  leak-regression guard added). Sprint doc corrections in `7222e12`/`4c8a1a0`/`2deda6c`.
-- [ ] **[P1, unexplained] Firestore fixture leak is ONGOING.** `tickets` collection went 5 → 12 →
-  17 documents today; scanner went 12 hits/13 docs → 29 hits/18 docs. Checks DO call
-  `withCleanup()` — the open question is why it isn't reclaiming these documents. A34 (new,
-  `f4a37bd`) now measures the delta directly instead of trusting an unchanged scanner count (see
-  `learned.md` "unchanged detector reading" lesson). **Do not guess the cause — measure it next
-  session.** 12+ detect-only documents remain live in Firestore; deletion is Brad's call, not an
-  agent's.
-- [ ] **[P1, pre-existing, cannot pass as written] payfast-m1 A1 and A6 — same stale/self-defeating
-  grep family as the retired D5/D6 assertions, NOT yet fixed.** A1 forbids the string
-  `stripePaymentIntentId` anywhere under `docs/` and trips on the sentence in `docs/` explaining
-  the field was removed (red since commit `e7de1e0`). A6 expects `m_payment_id` literally inside
-  a route file that now correctly delegates that logic to `lib/checkin.ts`. Retire-or-rewrite
-  using the same `exit 77` / `SUPERSEDED:` pattern applied to D5/D6 this session.
-- [ ] **[P2] Shared contract test-server has no lock/refcount — one check can kill another's
-  server mid-run.** `contracts/checks/admin-auth-hardening/server-ctl.sh` claims lock/refcount
-  handling in its comments but implements none: a single fixed PIDFILE on port 3400, so one
-  contract's `stop()` can tear down a server a different contract is still using. Causes
-  intermittent failures specifically in busy multi-agent sessions. Shared infra — deliberately
-  left untouched this session, flagging for whoever owns contract tooling next.
-- [ ] **[P2, lower severity, unfixed] Two more weak assertions found but not fixed this session.**
-  `contract-ticketing-m1-m2.yaml` A20 (price source assertion is easily satisfied without the
-  real property holding) and `contract-ticketing-hardening.yaml` A16 (secret-leak regex evaded by
-  indirection or multiline formatting).
-
-## Session 2026-08-16 (morning) — safety scanner shipped, PayFast pin-lift still blocking, WCAG held
-
-- [x] **Live-dataset residue scanner + CI guard — DONE, commit `f7155fe`.**
-  `scripts/scan-dataset-residue.ts` + `dataset-residue-guard` job in `.github/workflows/ci.yml`
-  (push/PR/daily cron), contract 14/14, `docs/dataset-residue-guard.md`. Built directly in
-  response to the `/national-show` sentinel-in-production incident this session (see content
-  repair item below). See `learned.md` "Dataset Residue Guard" for the two rounds of adversarial
-  QA findings folded into the final version.
-- [x] **National Show live-content repair — DONE, no commit (Sanity dataset, not code).**
-  `/national-show` had been serving `F3-TITLE-SENTINEL-1786560879358` as its H1 with the
-  countdown target set to 2098-12-31 for ~3 days. Restored `title`/`location`/`countdownDate`
-  on the `nationalShow` singleton from `scripts/seed-page-singletons.ts` (~lines 211-216),
-  revalidated, verified live, and scanned all 133 dataset docs clean.
-- [x] **[P1, BLOCKER] PayFast ITN signature helpers shipped but route stays pinned — DONE, F10
-  re-pin ceremony completed.** Verified against disk 2026-08-18: `app/api/tickets/itn/route.ts`
-  imports `buildPayfastNotifyParamString` and `generateNotifySignature` (lines 7-8), calls
-  `generateNotifySignature` at line 113 and `buildPayfastNotifyParamString` at line 212. Both
-  call sites and the import are wired in; assertions A5/A6 are green. Cross-reference:
-  `contracts/golden/ticketing-f10-itn-repin/README.md` — this was the single authorised
-  reopening of the sha256-pinned route for this mission. Do not open, edit, or re-pin
-  `app/api/tickets/itn/route.ts` outside a similarly authorised ceremony.
-- [x] **[P1] `parseOrderedFields` uses `continue` where the ITN spec implies `break` at the
-  signature key — FIXED as part of the same F10 re-pin ceremony above.** Verified against disk
-  2026-08-18: `app/api/tickets/itn/route.ts:91` is now `break;`. Do not re-open to double-check
-  by editing — reading is fine, editing requires its own authorised ceremony per the item above.
-- [ ] **[P2] No branch protection on `main`** (`gh api` → 404 confirmed this session) — the new
-  `dataset-residue-guard` CI job (and every other CI check) is advisory only; a broken push still
-  merges. Remedy URL + exact `gh` command are recorded in the residue-guard golden README and
-  `docs/dataset-residue-guard.md`.
-- [ ] **[P2, HELD for Brad's design call] WCAG accent-token contrast audit — commit `011d98b`,
-  docs only, no production code changed.** 30-row audit + contract identify real accent-contrast
-  failures on live public pages. Remedy is fully specified in
-  `contracts/golden/wcag-accent-contrast/remedy.md`, but is deliberately not applied — it's a
-  design-token decision, not an engineering call. This is a live accessibility failure on public
-  pages; should not sit indefinitely once Brad greenlights the token change.
-
-## SAOC Project — Active (Phase 1 scope only)
-
-_Last compacted: 2026-07-10 by session (machine-reboot wrap-up). Full history: git log on this file._
-
-- [x] **[P1] Response to Lee-Ann McCleland (SAOC Secretary) — SENT** — Response to her 11 proposal-evaluation questions (`documents/Inunu - Additional info request.docx`) drafted, fact-checked (PayFast recommended over waitlisted Yoco, Quicket cost comparison sourced, security claims verified against the actual codebase), and sent from brad@inunu.net 2026-07-01. Covered: security, payment security, refunds, ticketing costs vs Quicket, membership scope, journal archive, judges platform, CMS ease of use, Next.js scalability, ownership transfer, support model, non-renewal consequences. **Now WAITING on the Council's decision — no action pending on our side.**
-
-- [x] **DONE (compacted 2026-07-10) — Phase 1 platform build + polish + AI/CI.** Full detail in git log. Covers:
-  - **Phase A Foundation** (Next.js + TS strict + Tailwind v4 + Sanity CMS + Firebase App Hosting + lint/format + CI); **Phase B** 8 CMS-driven static pages; **Phase C** events calendar (month-grouped, ICS export — note member-only event submission form built as C5 is Phase 2 scope, shipped but not linked); **Phase D partial** 2027 ticketing D1/D3/D5/D6 (Resend email, Firestore ticket model, admin dashboard, door check-in); **Phase E** SEO + Secretary training + launch checklist (E4 22/22, E5 19/19, E6 14/14).
-  - **Chrome wiring** (real UtilityBar/Header/Footer in layout); **Design-verify pass** (full globals.css token set, radius-0, editorial polish); **AI/LLM optimization** (llms.txt + llms-full.txt + robots.ts AI allowlist + NGO JSON-LD); **llms-full.txt nightly GROQ cron** (`.github/workflows/refresh-llms.yml`, needs GitHub secrets `NEXT_PUBLIC_SANITY_PROJECT_ID` + `SANITY_API_TOKEN` before cron fires); **Inner-pages design polish** (mission 2026-06-30, done 2026-07-01, commit 0488cc8).
-  - **PayFast ticketing M1** (F1 schema rework, F2 checkout initiation route, F3 ITN webhook handler; 3 rounds adversarial QA fixed 2 real payment-security bugs — spoofable X-Forwarded-For IP trust + non-atomic idempotency race; docs/payfast-integration.md; gate 33/33; **left UNCOMMITTED intentionally**).
-  - **CI fix 2026-07-10**: removed pnpm version pin conflict in `.github/workflows/ci.yml` that failed every CI run since 2026-06-30 (commit 5c75473, pushed to main).
-
-- [ ] **[P1] Scope reconciliation: Spec V2 vs Phase 1 — DECISION MADE 2026-07-20, provenance VERIFIED 2026-07-23, awaiting Brad to send.** Full decision in `needs-human.md`. Brad decided: keep Phase 1 tight to ~original scope (absorb small Spec V2 polish free), defer/reprice the four "root cause" items as a separately-scoped Phase 2 — (1) shared relational content DB / Section 7 schemas, (2) unified multi-category booking + waitlists, (3) Members Portal + journal + awards archive, (4) Symposium/WOSA Conference/Workshops event layer. Delivery sequence: (a) design sign-off → (b) core SAOC site + Show "marker" landing page live → (c) ticketing live off that same page → (d) the four big items as Phase 2. Driver: sponsor-presentable site ASAP + Show tickets on sale early enough to sell out by early 2027.
-  - **(2026-07-23) Proposal provenance now CONFIRMED, not assumed.** The proposal Lee-Ann actually received was `SAOC_Website_Proposal_28-05-2026.pdf`, emailed 28 May 2026 to `saoctreasurer@gmail.com` (a DIFFERENT address than the `2027national@gmail.com` she uses now). Brad's sent PDF was downloaded from Gmail and diffed word-for-word against `documents/SAOC_Website_Proposal_28-05-2026.docx` on disk — content identical, only PDF letterhead/pagination differs. The docx on disk is now the CONFIRMED source of truth.
-  - **(2026-07-23) New phase-map artifact** (page-by-page scope comparison, all 24 Spec V2 pages mapped individually to Phase 1 / Phase 2 / needs-decision, each with reasoning, cross-referenced against the verified proposal): https://claude.ai/code/artifact/eb888f16-a4e8-42c7-9a1e-0c595fc85326 . Flags one overstatement in Lee-Ann's own Spec V2: it claims the full unified multi-category booking (General Admission + Symposium + WOSA + Workshops in one checkout) was "confirmed by INUNU" — only General Admission for Phase 1 is actually confirmed.
-  - **Draft email ("SAOC website — how I'd sequence the build," to Lee-Ann <2027national@gmail.com>) sits UNSENT in Brad's Gmail drafts (id `r7069159880970212600`) and is now STALE** relative to the corrected call-prep doc — it has NOT been rewritten to reflect the verified/corrected facts. Brad has not decided whether to rewrite it or work live from the phase-map artifact on the call. No agent action — Brad edits+sends, rewrites, or replies personally. Scope-freeze on Section 7 schemas / un-built National Show pages remains in force until this is sent and confirmed.
-- [x] **[P1] Pull National Show 2027 brand assets from Gmail into the repo — DONE 2026-07-20.** Collected under `branding/national-show-2027/`: `logo/` (5 files — full-res PNG, JPEG, small web PNG, alt dark colourway, print PDF), `reference-photos/` (13 of Scott Ormerod's watermarked studio orchid photos), `palette-and-type/` (colour hex `A7A841`/`7F7D33`/`211A57`/`F3F2D6` + font recs Montserrat + Hey August/James Stroker/Fake Serif), and a `README.md` manifest with full provenance per asset. **Show-specific branding only.** Two follow-ups remain (see needs-human.md): (a) folder is **untracked — Brad hasn't decided whether to commit**; (b) ~~photo usage rights unconfirmed~~ **RESOLVED 2026-07-28 (Brad):** Scott only sends photos SAOC holds full copyright over — the 13 photos in the repo are cleared for use. Do NOT use the placeholder `design/design_handoff_saoc/` "Sage & Paper" system as the real brand; the SAOC-org brand is still outstanding.
-
-- [ ] **[branding, PENDING COMMITTEE] National Show brand model — may affect asset folder structure** — Brad's working hypothesis (unconfirmed, needs a committee conversation — see `needs-human.md`): the National Show may want a **stable master brand** persisting across editions + a **rotating per-edition "host sub-brand"** layer, instead of the current full-from-scratch redesign each host cycle (the 2027 identity is explicitly "WESTERN CAPE 2027", host-region-tied). **IF the committee agrees to that model**, it changes how future Show branding assets should be structured/named: e.g. `branding/national-show/` as a stable parent with per-edition subfolders like `branding/national-show/2027-western-cape/`. Consequence: the current `branding/national-show-2027/` folder naming may need revisiting once the model is decided. **Do NOT restructure anything now** — this is contingent on the committee decision, which is Brad's to have with Lee-Ann + the National Show committee. Blocked until then.
-
-- [ ] **D2/D4: PayFast ticketing — M1 DONE, M2 BLOCKED.** Mission `2026-07-01-payfast-ticketing.md` ACTIVE, paused at the M1/M2 boundary (checkpoint M1/F3). Gateway = PayFast (Yoco waitlisted with no ETA; PayFast recommended + committed, verified against PayFast dev docs — Subscriptions API, Refunds API, hosted redirect + Onsite Beta, PCI DSS Level 1).
-  - **M1 DONE (uncommitted):** F1 Firestore schema reworked off the old Stripe-shaped field to PayFast's model; F2 checkout initiation route; F3 ITN webhook handler. Documented in `docs/payfast-integration.md`. Gate green 33/33.
-  - **M2 BLOCKED:** F4 buy-flow UI, F5 confirmation page + email (Resend), F6 sandbox verification. Blocked on TWO external inputs, both logged in `needs-human.md`: (1) **PayFast Sandbox credentials** (free signup at sandbox.payfast.co.za, no FICA — Merchant ID/Key/Passphrase into .env.local) — **(2026-07-28) Brad is waiting on the society to supply PayFast credentials; external wait, no agent action**; (2) **real 2027 Show ticket pricing** (adult/pensioner/child/member/exhibitor tiers + capacity). Resume: `python3 execution/mission.py resume` → `/spec` for F4.
-  - **Live merchant account — FICA COMPLETE (Brad, 2026-08-12).** The non-profit FICA verification is
-    done, which was the last gate on a live PayFast merchant account. **This no longer blocks going
-    live; the remaining live-payment work is now ours, not paperwork.** See the new "Go-live: PayFast
-    live credentials" entry below for exactly what is left.
-- [ ] **Configure SPF/DKIM/DMARC on saoc.co.za** — required before launch. Setup guide: docs/email-dns-setup.md. Brad to add DNS records once Resend domain verified.
-- [ ] **Domain transfer** — saoc.co.za to Inunu Net registrar. Brad to initiate. R172.50 once-off.
-- [ ] **DNS cutover** — point saoc.co.za to Firebase App Hosting. Requires domain transfer complete + SPF/DKIM/DMARC in place.
-
-### Legacy site migration → Inunu VPS (2026-07-20) — RESTORE DONE, cutover pending
-Old saoc.co.za (legacy cPanel at i-svr.net; access held by "Nico"; committee/Lee-Ann no longer directly manage it) is being migrated to Inunu's own **multi-tenant** VPS `wh3.inunu.co.za` (cPanel user `ahsaoc`, domain `saoc.co.za`, account IP `164.160.89.117`; root via `ssh wh3`, key-based). ALL work scoped strictly to `/home/ahsaoc` via `su -s /bin/bash - ahsaoc` + `user=ahsaoc`-scoped cPanel API — other tenants on the box (eastrandorchids/allwastesolutions/acruxaccounting) untouched. This is a **local-preview restore only**; the legacy public site is untouched and still live. All credentials (temp mailbox pwds, new DB pw, and the OLD plaintext DB cred `saoccoza_NicoG` found in the legacy `configuration.php`) live ONLY in gitignored `/Users/vetus/ai/SAOC/ops-secrets.local.md` — never reference their contents in any committed file.
-- [x] Full JetBackup5 account backup pulled from legacy host (native cPanel "Backup" was disabled — JetBackup was the only path). Saved locally at `/Users/vetus/ai/SAOC/Old SAOC Website Backup/` (`download_saoccoza_1784561106_17043.tar.gz`, 989MB, + extracted copy) — NOT in git (large binary, out of repo scope).
-- [x] Website files restored — live Joomla `public_html/` (435MB, 13,860 files). Stale duplicates `public_html_1`/`public_html_2` (old installs; `_2` has an untouched `installation/`) deliberately NOT restored.
-- [x] Database restored — new DB `ahsaoc_saoc` + user `ahsaoc_saocweb` (fresh generated pw, NOT the old exposed one); old `saoccoza_SAOC` dump imported cleanly (78 tables verified); `public_html/configuration.php` repointed to new creds.
-- [x] Email restored — all 5 mailboxes (info@ ngos@ president@ show@ treasurer-secretary@) recreated with TEMP pwds; old Maildir content (192MB across all 5, sizes verified vs source) restored on top so historical mail is intact.
-- [x] Local preview working — cPanel subdomain `new.saoc.co.za` created (same `public_html`, not empty) + `rebuildhttpdconf` + graceful httpd restart; Brad's `/etc/hosts` maps `164.160.89.117 new.saoc.co.za` (corrected once from a stale `.116`). Serves restored Joomla site, verified end-to-end via HTTP + browser.
-- [x] ~~Swap 5 temp mailbox pwds → real originals~~ **RESOLVED 2026-07-20: NOT swapping.** Lee-Ann's supplied originals were weak / reused (treasurer's ≈ legacy cPanel login pw). Brad decided to KEEP the generated random passwords on all 5 mailboxes for security; users re-enter the new pw once at cutover. Committee follow-up on password hygiene is Brad's. Detail in needs-human.md.
-- [ ] Re-pull mail from legacy host ONE more time immediately before DNS cutover — today's restore is a snapshot; catches mail received 2026-07-20 → cutover day.
-- [ ] Real DNS/domain cutover saoc.co.za → new VPS (NOT done; legacy i-svr.net site still live/public).
-- [ ] Decide whether stale `public_html_1`/`public_html_2` are worth preserving.
-- [ ] **[P2, candidate contract, NEW 2026-08-12] Secret verification guard** — after any
-  `firebase apphosting:secrets:set`, read the secret back and assert: (a) SHA-256 digest matches the
-  intended value, (b) byte length matches exactly, (c) no leading/trailing whitespace. Three separate
-  incidents of secret-payload corruption in 16 weeks (dotenv banner, trailing tab, stray character)
-  went undetected until they reached production because no post-write verification ran. **Note:** `gcloud`
-  is NOT installed in the typical project environment and is NOT needed — the Firebase CLI's cached
-  OAuth token in `~/.config/configstore/firebase-tools.json` has `cloud-platform` scope and works
-  against Secret Manager, IAM, Firestore, Service Usage, and Cloud Logging REST APIs. Use the Firebase
-  CLI or REST directly. Details: `docs/secret-corruption-incidents.md`.
-
-- [ ] **[P3, cleanup, NEW 2026-08-12] Remove four test documents from Firestore** — added during
-  PayFast diagnostic probes today: two `tickets` collection documents (booking refs
-  `SAOC-2027-JG6Q598FG0QD` and `SAOC-2027-C584G82Z7F6D`), and two `contactSubmissions` diagnostic
-  records. These are test data only; remove before any UAT involving real reservations or contact forms.
-
-- [ ] **[P1, NEW 2026-08-12] Go-live: switch PayFast from sandbox to live credentials.** Unblocked by
-  FICA completion. The code is ready — the checkout, ITN webhook, capacity transaction, idempotency,
-  reservation TTL and 60-bit booking refs are all gate-green (`contracts/contract-ticketing-hardening.yaml`
-  37/37). What remains, in order:
-  1. Obtain live Merchant ID / Merchant Key / Passphrase from the verified PayFast account.
-  2. Store them in Secret Manager, NOT `.env.local` — `firebase apphosting:secrets:set` for each,
-     then reference them in `apphosting.yaml`. **Set them with `printf '%s' | --data-file=-`, never
-     `echo`** — the F2 incident was caused by a trailing newline and non-ASCII prose corrupting a
-     secret payload, and exact string comparison then never matched (see the F2 section above).
-  3. Flip `lib/payfast.ts` off the sandbox constants and confirm the live process URL is used.
-  4. `SITE_URL` in `apphosting.yaml` currently points at the App Hosting URL. It must become the real
-     domain before live ITNs will land correctly — **so this is gated behind the DNS cutover**, not
-     independent of it.
-  5. Re-verify the ITN signature path against a live transaction. `app/api/tickets/itn/route.ts` is
-     sha256-pinned (A15); changing it requires the documented re-pin ceremony in
-     `contracts/golden/ticketing-hardening/itn-write-guard.golden.md`.
-  **Do not go live before real council-confirmed prices are in** — every price in the dataset today is
-  an invented placeholder rendered with a "provisional" label, and a live gateway taking real money
-  against invented prices is the worst possible ordering.
-
-- [ ] **Live PayFast test transactions + cross-browser dry-run** — Phase 1 launch gate. Run after D2/D4 (PayFast M2) complete and live FICA-verified credentials are in place.
-
-- [ ] **[P1, NEW 2026-08-14] Payment gateway decision — execute findings from research paper.** Recommendation: stay on PayFast for 2027 Show, add Ozow as secondary option (subject to vendor Q&A). Follow-ups: (1) email vendor questions in section 10 of `docs/payment-gateway-research-2026-08.md` (PayFast: Clause 9.8 commitment + refund API; Ozow: credential-free banks, settlement timing, fund-float, NPO onboarding); (2) PayFast Clause 9.8 fund-hold commitment must be in writing before sales open; (3) build SAOC refund-state tracking before high refund volume (currently system has no "refunded" ticket state); (4) request PCI-DSS/ISO 27001 certificates + verify via IAF CertSearch before signing; (5) negotiate POPIA operator agreement; (6) attorney review of refund policy (section 8 contains our legal reading, not binding advice); (7) disclose to Council our conflict of interest (we built custom system) and thin-evidence spots (Peach/Paystack recurring unconfirmed, Yoco API not fully reviewed). All findings dated 2026-08-14, no new research needed. Role: procurement/leadership.
-
-- [ ] **Auto-refresh llms.txt + llms-full.txt via Alembic** — Alembic-based script BUILT (`scripts/refresh-llms.ts`, `pnpm refresh-llms`): crawls 7 routes through Alembic → regenerates `public/llms-full.txt`. ⚠️ Alembic blocks `localhost` hostnames by design, so the script only works against the live external URL (`https://saoc.co.za/<page>`) — usable only POST DNS-cutover, and NOT usable in CI (GitHub Actions can't reach local Alembic). `public/llms.txt` (index + descriptions) stays hand-authored. Production automation moved to the GROQ item below. Depends on live domain. Docs: `docs/llm-optimization.md`.
-- [x] **Home page UI drift audit — DONE 2026-07-28 (F5, `hardening-ui-fidelity` mission).** Full re-audit against `design/Claude Design HTML/SAOC Website (standalone).html`, superseding the stale 2026-06-30 notes below. Findings: `.agent/memory/scratch/home-audit-20260728/audit.md`. 9 deviations (D1–D9) found; code fixes for D2/D3/D5/D7/D8/D9 + D1's code half contracted as F6 (`contracts/f6-home-fidelity.yaml`). Two items split out as their own backlog entries below: D1 content population, D6 hero copy authority.
-- [x] **F6 home-page fidelity code fixes — DONE 2026-07-29.** Gate `contracts/f6-home-fidelity.yaml` PASS (26/26 shell assertions, verified by orchestrator). Changed `components/home/{PartnersSection,YearbookStrip,MissionBlock,NavCards}.tsx`, `components/chrome/{UtilityBar,Footer}.tsx`, `components/ui/EventRow.tsx`, `eslint.config.mjs`; `playwright` added as devDependency. Docs: `docs/home-page-fidelity.md`, `docs/m3-home.md`. See [[learned.md]] "F6 Home-Page Fidelity (2026-07-29)" for the caught defect (stale `.next` cache hid a rendering bug behind a passing grep-only assertion).
-- [ ] **[content] Populate `hostSociety` on Sanity `societyEvent` documents** — confirmed via direct Sanity query 2026-07-28: **0 of 18** `societyEvent` docs have a populated `hostSociety` reference, so the home page's Upcoming Events strip always renders a blank host-society column (design reference shows e.g. "CAPE ORCHID SOCIETY" there). This is a Sanity Studio content-entry task, not a code bug — `EventRow.tsx`'s code-side fix (hide the blank span when `event.host` is falsy) is in F6. Someone with Studio access needs to set `hostSociety` on each event document once Studio editing is unblocked (see the Sanity Studio P0 item above).
-- [ ] **[copy, needs decision] Hero lede copy — reference vs. local differ, authority unresolved** — Reference: "Twenty-one affiliated societies. A nationally standardised judging system. A flagship show every three years. This is where cultivated orchids are grown, studied, exhibited and celebrated." Local (`components/home/Hero.tsx:84-86`): "Uniting twenty-one affiliated societies in the cultivation, exhibition, and appreciation of orchids across South Africa since 1968." Found during the 2026-07-28 F5 audit — flagged as a content/copy deviation, not a layout bug. Do NOT change without confirming which copy is authoritative (may be an intentional later revision, not drift) — client/design-owner call.
-- [ ] **[P3] Fix 375px horizontal overflow in `ShowBand.tsx:35`** — `aspect-[4/3]` causes horizontal overflow at 375px viewport width. Pre-existing, found during F6 QA (2026-07-29), NOT caused by the F6 change set.
-- [ ] **Complete or remove orphan F6 rendered-check harness** — `contracts/checks/f6-home-fidelity/` has `_shared.mjs` + `utilitybar-tagline-desktop.mjs` (Playwright-based rendered checks) but `contracts/f6-home-fidelity.yaml` has no A27+ assertions invoking them — @architect died mid-session before finishing this. Either complete the harness (checks: utilitybar hidden at 375px, "EST. 1968" badge overlay renders, PartnersSection shows 6-col single row) and wire the assertions, or remove the orphan files and the now-unused `playwright` devDependency.
-- [ ] **Fix `$ANTHROPIC_DEFAULT_HAIKU_MODEL` agent-model config — REPRODUCED AGAIN 2026-07-29, previous fix attempt DISPROVEN.** The `docs` agent failed to spawn again with `There's an issue with the selected model ($ANTHROPIC_DEFAULT_HAIKU_MODEL)`. A prior session had removed the env entry from `.claude/settings.json` as a candidate fix — that did NOT fix it. Root cause is the `docs` agent's own frontmatter declaring `model: haiku`; that alias fails to resolve regardless of the settings.json env var. Workaround remains an explicit model override at spawn time. Underlying config issue still open; do not re-attempt the settings.json-removal fix, it's confirmed not to work.
-
-- [ ] **Sanity v6 major upgrade** — `sanity@5.31.1 → 6.3.0` (and likely `next-sanity@11 → 13`). Pre-mission research required: review v6 changelog + migration guide, check next-sanity v13 breaking changes, verify Firebase App Hosting SSR compatibility, confirm React 19 peer dep story, identify any schema or Studio API changes. Do NOT upgrade without a research pass — this is a major version with likely breaking changes across both packages.
-
-- [ ] **Secretary CMS controls (phase 1)** — Scope-narrowed: start with only what the secretary actively needs to edit, build up slowly to avoid risk. Phase 1 target fields: hero headings/lede on key pages (home, about, national-show), upcoming show details (date, venue, ticketing link), news/announcements block, contact details. Do NOT attempt full-site editability in one mission. Each phase ships, verifies, and stabilises before the next. Seed must pre-populate all new fields from current hardcoded values so the secretary starts with real content rather than blank forms.
-
-- [x] **Assess Sanity Free-plan downgrade impact — DONE 2026-07-28.** Full assessment: `docs/sanity-free-plan-assessment.md`. Verdict: OK — nothing measured is within 2x of any Free-plan cap, nothing breached.
-
-- [ ] **[P3] Manual Sanity dashboard usage check** — manage.sanity.io → Settings → Usage: confirm CDN/API/bandwidth/asset totals + that administrator/editor/viewer role display doesn't conflict with Free's 2-role cap. Not retrievable via token API (verified 2026-07-28). 5-min human task.
-
-- [ ] **[P3] Fix `@sanity/image-url` deprecated default export** — `sanity/lib/image.ts` fires a deprecation warning on every home-page render in dev (found during the 2026-07-28 home-page drift audit, `.agent/memory/scratch/home-audit-20260728/audit.md`). Low priority, cosmetic dev-console noise only, no functional impact observed.
-
-- [x] **[P1, security] `dotenv@17.4.2` promotional banner — DONE 2026-07-28. VERDICT: BENIGN.** Installed tarball hash matches npm registry `dist.integrity` exactly, no install scripts, zero advisories for `dotenv` itself; banner is upstream maintainer self-promotion via `dotenv`'s rotating TIPS feature (no network call, no data collection). Fix applied: `scripts/seed-sanity.ts` now loads `dotenv` with `config({ quiet: true })`. Full detail: `docs/dotenv-supply-chain-f1.md`.
-
-- [x] **[hygiene] React peer-dependency range tightened for Sanity Studio — DONE 2026-07-24 (uncommitted).** `package.json` `react`/`react-dom` bumped `^19.0.0` → `^19.2.2` to match `sanity@5.31.1`'s and `@sanity/vision`'s actual peer floor (Structure Tool calls `React.useEffectEvent`, a React ≥19.2.2-only API). Gate green 8/9 static assertions (`contracts/contract-sanity-react-peer-fix.yaml`, RF-01–RF-10; RF-11 is human-only, see P0 item below). **Real hygiene, but NOT confirmed root cause** — `pnpm-lock.yaml` resolved React `19.2.7` throughout the entire incident history (before the bug, after a prior failed fix `397de87`, and now), so the runtime version was never actually the problem. Full writeup: `docs/sanity-studio-p0-investigation.md`.
-- [x] **[bugfix] `/studio` hard-crashed under `pnpm dev` — DONE 2026-07-24 (uncommitted).** `sanity.config.ts` was `require()`-ing the ESM-only `@sanity/vision` package inside a dev-only conditional — ESM-only packages have no CJS entry to `require()`, so this hard-500'd the ENTIRE `/studio` route locally (production builds were unaffected; webpack prunes the dead branch). Fixed via static `import { visionTool } from '@sanity/vision'` + moved the dev-only gate to the plugins array instead of the import mechanism. Independently reproduced broken-then-fixed; gate green 7/7 (`contracts/contract-sanity-vision-esm-fix.yaml`, VF-01–VF-07 — two bugs in the gate script itself, a curl exit-code concatenation bug and a dev-server process-leak-on-cleanup bug, were also found and fixed as part of this contract). This fix is a genuine standalone bug fix AND the prerequisite that unblocks local `pnpm dev` access to `/studio` for the P0 investigation below.
-- [ ] **[P0, ENGINEERING — TOP PRIORITY per Brad 2026-07-28] Sanity Studio: not usable for editing AT ALL — TWO BUGS FIXED 2026-07-28, CORS/membership still open, human verification pending.** **(2026-07-28) Brad reports the symptom is broader than previously logged: he has never successfully opened Sanity Studio to edit ANY page, in any environment — "Sanity is not working at all". Back-end editing via Sanity is a core deliverable; Brad asked to prioritize research into what's wrong. Note the environment Brad tested (hosted vs localhost) is unconfirmed — prior "document list loads, edit pane blank" observation may have been a different environment/stage of the same failure.** Studio is substantially built (`app/studio/[[...tool]]/`, full schema set in `sanity/schemas/documents/*`, `sanity/lib/` client+fetch, seed at `scripts/seed-sanity.ts`). Symptom: document list loads fine, but clicking into a document to edit shows no edit form. Investigated 2026-07-24: (1) React `useEffectEvent` peer-version mismatch — ruled out, see hygiene item above; (2) Sanity Free-plan permission downgrade (project auto-downgraded 2026-07-14) — ruled out via live API check: direct read query AND a real mutate transaction against the `production` dataset both returned HTTP 200 with the project's actual `SANITY_API_TOKEN`, confirming full read/write access on Free plan. Along the way, found and fixed the separate `/studio` dev-crash above, which now unblocks local reproduction. **Next step, tracked as `RF-11` (`agent_review`, SKIP verdict, cannot be machine-checked) in `contracts/contract-sanity-react-peer-fix.yaml`, detail in `needs-human.md`:** run `pnpm dev`, open `http://localhost:3002/studio` with real credentials, click into an existing document (e.g. a society or event), and record exactly what happens — does the edit pane render fields, stay blank, spin, or error — plus any browser console errors (note in particular whether a `useEffectEvent` error appears, corroborating evidence either way). Full investigation writeup: `docs/sanity-studio-p0-investigation.md`.
-  - **(2026-07-28) @analyst diagnostic pass — TWO distinct confirmed bugs + one human question. Evidence: `.agent/memory/scratch/sanity-p0-20260728/` (screenshots + dev.log).** (1) **CONFIRMED, local:** `pnpm dev` → `/studio` hard-crashes server-side on EVERY request (`TypeError: Cannot read properties of null (reading 'useSyncExternalStore')` / invalid hook call) — HTTP 200 but infinite spinner, Studio never renders. Likely cause: `next.config.ts:5` `serverExternalPackages: ['sanity','next-sanity','@sanity/vision']` (documented failure class — next-sanity#707, sanity#2819, next.js#70487); present since first Sanity commit. NOTE: prior session's RF-11 was never actually performed — it stopped at HTTP 200 without checking the dev-server console. (2) **CONFIRMED, all envs:** `app/layout.tsx:83-88` renders UtilityBar/Header/Footer unconditionally, so marketing chrome wraps `/studio` too (`app/(marketing)/layout.tsx` is a passthrough — route group isolates nothing). (3) **Deployed** (`saoc-prod--saoc-webapp.europe-west4.hosted.app/studio`) renders the Sanity LOGIN screen fine — but Sanity project `26yfbug4` has exactly ONE human member (created 2026-06-11, email not exposed at editor-token grant); if that's not Brad's account, login is a dead end = his "not working at all". (4) CORS origins UNVERIFIABLE with current editor-role token (401 on cors/read) — needs manage.sanity.io admin. **Fix path:** contract asserting (a) serverExternalPackages fix → dev `/studio` renders doc fields zero console errors (closes RF-11), (b) chrome moved to `(marketing)` layout; human-queue: confirm Brad's Sanity login email is the project member + check CORS origins. **(2026-07-28) Brad confirms he signs in as `brad@inunu.net` and will do all testing under his own account before inviting anyone. Whether `brad@inunu.net` IS the project's single human member (created 2026-06-11) remains UNVERIFIED — local Sanity CLI is not logged in (`sanity debug`: "Not logged in"), so `sanity users list` fails; Brad to run `pnpm exec sanity login` (interactive) or check manage.sanity.io/projects/26yfbug4 → Members + API → CORS origins.**
-  - **(2026-07-28) Chain complete: @analyst → @architect → @dev → @qa → @docs, gate 6/6 PASS.** Both confirmed bugs FIXED (uncommitted, commit follows this wrap-up): (a) `serverExternalPackages: ['sanity','next-sanity','@sanity/vision']` removed from `next.config.ts` (cargo-culted at initial install, caused the dev-only SSR hard-crash on every `/studio` request); (b) marketing chrome moved from `app/layout.tsx` to `app/(marketing)/layout.tsx` so `/studio` and `/admin` no longer inherit UtilityBar/Header/Footer. **Still open, human-only:** (1) confirm `brad@inunu.net` is the Sanity project's single human member (created 2026-06-11) — local Studio now mounts and lands on "Connect this studio to your project," the classic missing-CORS symptom; (2) add local dev origin to CORS at manage.sanity.io/projects/26yfbug4 → API → CORS. Full writeup: `docs/sanity-studio-p0-investigation.md`.
-
-- [ ] **[docs-accuracy] Correct `CLAUDE.md` tech-stack table — it omits Sanity (stale).** The tech-stack table in `CLAUDE.md` lists only Firestore and makes no mention of Sanity, but **Sanity Studio was part of the stack from the start** and is substantially built (schemas, `/studio` route, client libs, seed script, `@sanity/*`/`sanity`/`next-sanity` in `package.json`). This stale table already caused a wrong "Sanity = unagreed scope creep" flag in the call-prep doc that Brad had to correct. Update the table to include Sanity CMS. Low effort. _(Do not fix as part of memory-logging — tracked here for a normal doc pass.)_
-
-- [ ] **[reference, living doc] Call-prep doc for Lee-Ann call — `documents/SAOC-LeeAnn-Call-Prep-2026-07-20.md`.** Built by diffing Lee-Ann's Spec V1/V2 against the 28-May proposal. Contains: the decided Phase 1/2 sequencing (restated from the unsent Gmail draft), open questions (payment-gateway paperwork mismatch, Sanity Studio status, ticket pricing/capacity — still blocks PayFast M2, content-gathering ownership/timeline, one-codebase-vs-two-sites, POPIA ownership), branding questions, the committee's own Spec-V2 Section-8 questions, and a running "Log — new items" section Brad keeps appending to.
-  - **(2026-07-23) Corrected this session** after Brad caught earlier work asserting from memory instead of source: (a) **sources section** rewritten with the verified proposal provenance (28-May PDF → `saoctreasurer@gmail.com`, diffed against the on-disk docx); (b) **B1 (Yoco) corrected** — Yoco→PayFast is NOT an open question: Brad's SENT reply of 3 Jul 2026 (thread `19f177b373bd9f35`, to `2027national@gmail.com`) already told Lee-Ann Yoco is waitlisted with no ETA, recommended PayFast with exact fees (3.2% + R2/card txn, 2.0% Instant EFT) and listed the FICA docs; Lee-Ann acknowledged same day and said the committee would revert (no reply since). Now framed only as a "did the committee land anywhere?" follow-up, not a fresh question; (c) **phase-map artifact linked** (see scope-reconciliation item above); (d) **new C3 sub-item added** — Brad's view that the current National Show branding (Scott Ormerod's logo/colours/fonts) is somewhat lacking for a national-event brand; wants to directly ask Lee-Ann/the committee whether it's locked or open to a proper redesign via Claude Design, framed as a process offer, not a critique of Scott's volunteer work.
-  - **Brad is still adding to it — no agent action; reference only.**
-
-- [x] **[hardening] gitignore the legacy backup dir `Old SAOC Website Backup/` — DONE 2026-07-23.** Was UNTRACKED but NOT gitignored, so a stray `git add -A` would have staged it — including `homedir/public_html/configuration.php` and `database_user/` files carrying the OLD plaintext legacy DB credential. Added both `Old SAOC Website Backup/` and `ops-secrets.local.md` to `.gitignore` (lines 40–41); verified with `git check-ignore` (IGNORED-OK) and `git ls-files` (dir not tracked). Purely closed the accidental-commit window on the legacy cred; no live-site change. Re-verified 2026-07-23: no session mailbox password value appears in any tracked file (only the DB *username* label `saoccoza_NicoG*` is referenced in memory notes, never the secret value — actual values stay in gitignored `ops-secrets.local.md`).
-
-## Autonomous routines — RETIRED (2026-07-28, Brad)
-_The cloud RemoteTrigger routines were a once-off autonomy experiment that didn't work out — there is NO permanent nightly autonomous routine. Findings were passed upstream to the Athanor template maintainer, who will iterate on autonomy; improving that is NOT this project's job. Historical trigger IDs (for reference only, do not recreate): `trig_01Ry4fkFgbZCoW9CgUtqfh8D` (nightly sync + mission progress, had a 2026-07-15 scope-freeze), `trig_01PNsrRuno8EzxpaZP8dArv1` (harness watch 6-hourly), `trig_01Ue5oZh2nhRoKDXdURaFWu1` (disabled 2026-07-15)._
-
-## Standing rule (2026-08-12, Brad): leave `branding/`, `design spec/`, `design/Claude Design HTML/` alone
-Brad is actively reorganising these three untracked directories by hand. No agent should read,
-move, edit, or clean up anything inside them until he says otherwise — not even as a "hygiene"
-pass or gitignore fix. If a task seems to require touching one, stop and ask first.
-
-## Standing rule (2026-07-28, Brad): scope = SAOC only; dogfood the harness, report upstream
-- This workspace's job is the SAOC deliverables, nothing else (not WOSA, not Athanor autonomy R&D).
-- Use the Athanor harness AS DESIGNED (mission → contract+goldens → @dev → @qa → @docs → gate → @maintainer) while building SAOC, and file every harness bug, friction point, or improvement idea upstream as a GitHub issue (`gh`) on the Athanor repo (`InunuNet/Athanor`) rather than working around it silently.
-
-## F2 — Deploy: secrets do not resolve at runtime — PARTIALLY DONE, mission NOT closed (cms-activation-deploy, 2026-07-29/30)
-
-Deploy shipped (commit `84dbf58`, backend `saoc-prod`) and the P0 (Studio editing) is genuinely
-fixed for real users — `/studio/structure/{homePage,aboutPage,nationalShow,judgingPage}` all open
-real document editors and all 12 marketing routes return 200, contract gate 6/6 against
-production. BUT draft-mode preview and webhook revalidation are dead in production.
-
-- [ ] **[P0, blocker] `SANITY_REVALIDATE_SECRET` / `SANITY_API_TOKEN` do not resolve at runtime.** **ROOT CAUSE REDIAGNOSED 2026-07-30 — the analysis below is SUPERSEDED and wrong.** The real cause is Secret Manager **payload corruption**, not IAM, not a stale build, not a failed rollout: both secrets were written by the same broken invocation, which stored `<~80-95 bytes of non-ASCII prose>` + `\n` + `<the real token>`. Secret Manager stores payloads verbatim with no trimming, so runtime resolves the whole contaminated blob and exact string equality against the clean value can never match — which is precisely why correct/wrong/absent all returned an identical 401. Proven structurally without printing either value: the payload's post-newline tail sha256 matches `.env.local` exactly (43 of 123 bytes for REVALIDATE; 180 of 276 for API_TOKEN). Both routes were exonerated — `app/api/revalidate/route.ts:5` and `app/api/draft/route.ts:7` read the env var INSIDE the handler, not at module scope. **`SANITY_API_TOKEN` was corrupted identically and would have failed the event-submission form the moment anything exercised it — a second latent production defect found by this diagnosis.** Fix: re-set both via `printf '%s' | --data-file=-` (never `echo`, which appends a newline; never dotenv, whose banner pollutes stdout), then force a rollout, since secret values resolve at Cloud Run revision creation. Guarded permanently by assertion A9. *Superseded original analysis, retained only as a record of the false trail:* The `grantaccess` re-run since verified via Secret Manager `getIamPolicy` REST that both secrets ARE bound to the backend's real service account — so the blocker now is getting a NEW build to actually run: `firebase apphosting:rollouts:create --git-branch main [--force]` reports success but creates nothing (likely dedupes on commit SHA against the already-failed build for `84dbf58`). A REST workaround was identified and started but not confirmed: `POST .../backends/saoc-prod/builds?buildId=<unique-id>` with `{"source":{"codebase":{"branch":"main"}}}` returned a real build operation (`build-manual-1785355696`) still in progress at session end. **Resume here:** poll that build (or a fresh one) to READY, confirm its `config.effectiveEnv` resolves both secrets, then re-probe `/api/revalidate` (correct secret → 200, wrong/none → still 401) and `/api/draft`. Full trace (auth method, exact API calls, evidence) recorded in `learned.md` under "F2 Deploy — Secrets Runtime Resolution Failure" since the original scratch investigation file is gone (`brain.py wrap-up` purges scratch).
-- [x] ~~**App Hosting continuous deployment appears unarmed.**~~ **DISPROVEN 2026-07-30 by contract assertion A10.** Push-to-`main` autodeploy IS armed: the build serving 100% of production traffic (`build-2026-07-30-001`, commit `01dd63f`) was created automatically at 05:13Z with committer `github-actions[bot]`, with no manual rollout. The earlier conclusion came from the rollout-creation dedupe bug (below) masking the automatic path. Unattended/overnight deploys are NOT blocked — a commit on `main` ships on its own.
-- [ ] Verify whether `SANITY_API_TOKEN` resolves at runtime once a good build is live (needs a Firebase ID token or a temporary diagnostic route) — same fix as the revalidate secret should cover it, but confirm separately since it's a different code path (`app/api/events/submit/route.ts`'s write client).
-- [ ] **[security] Rotate `FIREBASE_ADMIN_PRIVATE_KEY`** (leaked into a session transcript via a non-allowlist `sed` redaction of `.env.local` — the pattern only matched single-line pairs, missing the multi-line key body) **and `SANITY_REVALIDATE_SECRET`** (became visible in screenshots during verification) before launch.
-- [ ] **No admin UI lists `contactSubmissions`** — enquiries submitted via the contact form are visible only in the Firebase console, not anywhere in `/admin`. Real gap before launch; worth scoping as a small follow-up feature (a simple authenticated list/table view, same pattern as the door check-in scanner).
-
-## Blocked (awaiting Brad)
-- **RESEND_API_KEY not set anywhere (no Resend account signed up yet)** — found during F2 (`cms-activation-deploy`) apphosting.yaml env-var gap audit, 2026-07-29. `lib/email.ts` reads `process.env.RESEND_API_KEY`; `app/api/contact/route.ts` calls it inside its own try/catch and swallows the error, so this is NOT a contact-form outage — the Firestore write and HTTP 201 still succeed. Effect is silent degradation: submitters get a success response but never receive the confirmation email, in prod today and after F2's deploy. Fix: Brad signs up at resend.com, verifies the saoc.co.za sending domain, runs `firebase apphosting:secrets:set RESEND_API_KEY --project saoc-webapp`, then apphosting.yaml gets a `RESEND_API_KEY` (secret) + `RESEND_FROM_ADDRESS` (plain value) entry in a follow-up feature. Deliberately dropped from F2's contract (A5/A6 removed 2026-07-29 per team-lead) rather than declaring a `secret:` ref to a Secret Manager entry that doesn't exist, which would fail the whole App Hosting rollout.
-- ~~**PayFast live merchant account (FICA verification)**~~ **DONE 2026-08-12 (Brad).** FICA is complete and the live merchant account is available. No longer awaiting Brad. The remaining go-live work is engineering, tracked as "Go-live: PayFast live credentials" above — and it is gated behind the DNS cutover, because `SITE_URL` must be the real domain before live ITNs land correctly.
-- **DNS records**: SPF/DKIM/DMARC + Firebase hosting A-record. Brad to add after Resend domain verified.
-- **Domain transfer**: saoc.co.za from current registrar to Inunu Net.
-
-## Phase 2 — Out of scope (do not work on until Phase 1 ships)
-- Society individual pages + admin logins + federated ticketing
-- Paid SAOC membership (Yoco recurring billing) + members-only area
-- Digital archive of Orchids South Africa yearbooks
-- Donation system, sponsorship management, Google Ad Grant
-- Learning library, judges training portal, articles/video
-
-## Hosting — Decision Pending Brad (researched 2026-06-20)
-Research complete: `documents/hosting-research-2026-06-20.md`. Key findings: (1) Vercel has Cape Town `cpt1` compute but SA SSR requires Pro plan ($20/month); free plan only caches in SA. (2) Fly.io `jnb` Johannesburg is best-value SA SSR at $8–15/month, requires Dockerfile migration. (3) "Coolify on Hetzner JNB" was a misconception — Hetzner Cloud has no SA DC; Hetzner SA is now Xneelo (separate company, suitable but maintenance-heavy). **Recommendation: stay on Firebase until latency is a measured problem; if SA compute is a hard requirement, Fly.io `jnb` is best value.** Brad to confirm: (a) hard requirement vs. preference, (b) budget ceiling, (c) no migration before DNS cutover.
-
-## Harness Upstream (Athanor → InunuNet/Athanor)
-- [x] **[athanor-upstream] Triage 2 pre-existing harness test failures — DONE 2026-07-28, clean-template triage. VERDICT: SPLIT.**
-  - `test_mission.py` (17/19) — **UPSTREAM BUG.** Test 8 asserts old `resume` exit-0 semantics; current `mission.py` exits 2 "MAINTAINER WRAP-UP REQUIRED" for all-done fixtures. Reproduces identically on clean Athanor main. Filed: https://github.com/InunuNet/Athanor/issues/1318
-  - `test_contract_fix.py` (10/15) — **ORPHANED LOCAL TEST.** Authored locally in `e863d887` alongside a 15-line single-phase `gate_cmd` fix to `contract.py`; a later `make update-template` silently overwrote `contract.py` with upstream (fix lost; `contract.py` now byte-identical to upstream), leaving the test permanently red. Test deleted locally 2026-07-28 (recoverable at `e863d887`). Fix + clobber-friction filed upstream: https://github.com/InunuNet/Athanor/issues/1319
-- [ ] **[athanor-upstream] sync-autonomy v2** — `set-autonomy LEVEL=high` should propagate to `.claude/settings.json` permissionMode. Filed 2026-06-16.
-- [ ] **[athanor-upstream] mission.py slug fix** — cross-date slug scan fix needs upstreaming via `make update-template`. Filed 2026-06-16.
-- [ ] TEMPLATE BUG: `execution/gh_closure_scan.py` throws `ERROR: <file> has no YAML frontmatter` and returns zero candidates (silently, exit 0) if ANY file under `.agent/memory/project/missions/` lacks frontmatter — e.g. a plain planning note like `OVERNIGHT-PLAN-2026-07-30.md`. It should skip/warn on the one bad file and keep scanning the rest of the directory, not abort the whole scan. Found 2026-07-30 during mission close on `cms-activation-deploy`; user should run /report-bug.
-- [ ] TEMPLATE BUG (NEW 2026-08-17, different symptom than above): `execution/gh_closure_scan.py --format lines` now fails immediately with `ERROR: could not resolve --repo:` (empty value) — no missing-frontmatter message this time, script appears to not even reach the mission-scan step. Not yet triaged (repo-detection / `gh` config vs. a regression in the script itself); user should run /report-bug.
-
-## Deferred (auto-tracked)
-- [ ] [dev 2026-06-18] Factory loop script needs error handling — Out of scope for this task _(priority: low, handoff: 20260618T075409-dev.json)_
-
-_Last compacted: 2026-07-10 by session. Dismissed: check_own_comms + quota-monitor + qa-guard informational pulse noise — all informational, no action required. Full history: git log on this file._
-
-## WOSA website rebuild — REMOVED FROM THIS PROJECT'S QUEUE (2026-07-28, Brad)
-- [x] **~~[P1] Rebuild wildorchids.co.za (WOSA)~~ — NOT OURS. A separate developer and session are handling the WOSA rebuild.** Standing rule from Brad 2026-07-28: WOSA is an affiliate of SAOC — the SAOC site will carry plenty of info ABOUT them (and link to wildorchids.co.za), but we do NOT build or interfere with anything on their dedicated website. No agent, mission, or autonomous routine in this workspace should pick this up. Original requirements kept below for historical context only:
-  - Visit the LIVE site at wildorchids.co.za and extract every design item (layout, colours, typography, spacing, imagery treatment, components) — copy faithfully, do not reinterpret or invent.
-  - Target stack: Next.js, React, TypeScript, Firebase — same as SAOC — but content must be Sanity.io-editable on the backend (matches the CMS pattern already proven on this SAOC project).
-  - Build LOCALLY first — no deploy yet. This phase is a placeholder/shell only.
-  - Explicitly OUT of scope for this phase: full orchid genera/species taxonomy, full province listings, and other large structured content sets — those are data-migration work for a later phase.
-  - Sequence: (1) design fidelity + shell first, get that nailed down, (2) THEN plan data migration separately.
-  - Token-conscious: Brad flagged limited budget for this — plan carefully before executing, avoid wasted exploration.
-  - NOTE: per CLAUDE.md scope boundary, WOSA is wild-orchid conservation, a separate org from SAOC — this is almost certainly a new/separate project directory, not inside this SAOC repo. Confirm target repo location before starting.
-  - Status: NOT STARTED. Queued for a fresh session with full context budget (this session was near its context limit when the request came in — starting fresh avoids burning tokens on session recap instead of the actual design audit).
-
-## P1 — Home page hydration mismatch in ShowBand / useCountdown — FIXED 2026-07-29 (F1, `cms-activation-deploy`)
-
-**CLOSED.** `lib/hooks/useCountdown.ts` now uses `useSyncExternalStore` with a frozen
-all-zeros `getServerSnapshot`, matching the pattern proven for `components/show/ShowCountdown.tsx`
-in M2. Gate `contracts/f1-countdown-hydration.yaml` PASS (3/3), including a behavioural Playwright
-check negative-controlled twice (pre-fix by @architect, post-fix stash-and-restore by @qa) and
-live confirmation of real ticking (415 days, seconds 01→59) and clean interval teardown on
-unmount. Full writeup: `docs/f1-countdown-hydration.md`.
-
-Original finding (2026-07-29, kept for history): `useState<CountdownParts>(() => compute(targetDate))`
-— a `Date.now()`-derived lazy initializer, rendered by `components/home/ShowBand.tsx` on the
-home page — computed the countdown once on the server and again independently at hydration, so
-any page load slower than ~1s produced a hydration mismatch and a visible flash. Reproduced by
-@qa with Playwright (3s `_next/**` throttle): 2 `pageerror`s on `/`, numerals `31` vs `32` and
-`30` vs `31`. Pre-existing since 2026-06-01/06-12, not caused by the Next 16 upgrade — deliberately
-left out of scope for M2.
-
-## Low priority — `useMemo` vs `useState` trade-off in `useCountdown.ts` (F1, 2026-07-29)
-
-@qa flagged a non-blocking, unproven concern during F1 review: `useCountdown.ts` builds its
-external store with `useMemo(() => createCountdownStore(targetMs), [targetMs])`, which carries a
-React spec-level allowance to be discarded and recreated (unlike `ShowCountdown.tsx`'s
-`useState(createCountdownStore)`, which never discards). @qa could not get React to actually
-discard the memo, and reasoned that even if it did, the `setInterval` is created inside
-`subscribe()` at commit time (not inside the memo callback), so a discarded memo would be inert
-rather than leaking. Counter-argument: `useState`'s lazy initializer only runs once ever, so it
-would NOT rebuild the store when `targetMs` changes on a later render — since `useCountdown` is a
-shared hook that must support a caller changing its target (unlike `ShowCountdown`'s hardcoded
-constant), `useMemo` is the form that actually supports the hook's contract. Open trade-off, not
-a defect — no action needed unless a future session observes an actual discard-related bug.
-
-## F6 — Page singletons: assessment findings (studio-next16-upgrade, 2026-07-29)
-
-Full assessment: `docs/f6-page-singletons.md`. Assessment only — no documents created, no
-code changed, per scope freeze.
-
-- [ ] `membersPage` schema is orphaned — registered in Sanity Studio but no query in
-  `sanity/queries.ts` and no `app/(marketing)/members/` route consume it. Needs a scope
-  decision from Brad: build the page (new-page work, out of scope for F6) or remove the
-  schema so it stops misleading editors.
-- [x] Dead editable fields: `homePage.countdownDate` and `contactPage.formRecipients` are
-  editable in Studio but nothing reads them. Either wire them in or remove them.
-  **DONE 2026-08-12 (Stream C, `be80580`)** — both removed from the schemas after live
-  `defined()` counts confirmed zero documents used them. `nationalShow.location` and
-  `ticketType.price` (superseded duplicates) went the same way.
-- [ ] No custom desk structure in `sanity.config.ts` (stock `structureTool()`) — the six
-  page singletons are not pinned to a single document. An editor can create duplicate
-  `homePage` (etc.) docs and the site will silently render an arbitrary one (`[0]` of an
-  unordered GROQ result), with no error surfaced anywhere. ~1-2 hrs to fix with a standard
-  Sanity desk-structure singleton pattern.
-- [ ] Seed one document per singleton from the existing hardcoded copy (~2-3 hrs,
-  mechanical migration) — makes `docs/secretary-cms-guide.md`'s promises true without
-  changing anything visible on the live site.
-- [ ] Populate `hostSociety` on the 18 `societyEvent` docs (~15-20 min, needs domain
-  knowledge — someone who knows which society hosts which event; code side is already
-  correct, see `docs/f6-page-singletons.md` §4).
-- [ ] `docs/secretary-cms-guide.md` §7 and §12 currently instruct the secretary to open
-  singleton documents that do not exist yet ("there is one document — click it to open").
-  Guide is wrong until either the documents are seeded or the guide gets a "first time
-  only, click New document" branch added (~15 min doc fix, can happen independent of
-  seeding).
-- [ ] Deployed Studio at `saoc-prod--saoc-webapp.europe-west4.hosted.app` still runs the
-  old Next 15 build and remains broken (the `useEffectEvent` crash) until the next deploy
-  ships the Next 16 upgrade from this mission.
-- [ ] Pre-existing prettier drift across ~160 files (`pnpm format:check` fails) — unrelated
-  to this mission, noted during the M2 regression pass.
-
-## Content gaps observed in Studio walkthrough (Brad, 2026-07-29)
-
-Direct visual evidence from a live authenticated Studio session on port 3333. These are
-content-entry gaps, not code defects — every field below renders correctly and is editable.
-
-**A 7th empty document type, not caught by the F6 assessment:**
-- `Judge` — "No documents of this type". The schema is registered and reachable in the
-  Studio sidebar, but zero documents exist. F6 enumerated the six page singletons and the
-  `hostSociety` gap; it did not flag `Judge`. Needs the same scope decision as
-  `membersPage`: is a judges directory planned, or should the schema be removed?
-
-**Empty fields on existing documents (spot-checked, likely not exhaustive):**
-- `societyEvent` — **Slug is empty** (confirmed on "Cape Orchid Society Autumn Show").
-  This is the direct cause of `/events/[slug]` being unverifiable in the M2 regression pass
-  (3 of 62 routes were compiled-and-present only, never live-rendered). Populating slugs
-  would close that gap. Note the Studio has a "Generate" button per document.
-- `society` — Description, Logo, Website all empty on "Cape Orchid Society" (Member Count
-  is populated at 220, so the docs are partially filled).
-- `boardMember` — Email and Photo empty on "David Naidoo" (Name and Role populated).
-- `sponsor` — Tier, Logo, Website, Description all empty on "Royal Horticultural Society"
-  (Name only).
-- `show` — Date empty on "National Show 14 (2012)" (Title, Slug, Year populated).
-
-**Populated and healthy:** 21 societies, 18 events, 6 board members, 6 shows
-(National Show 14–19, incl. 19 (2027)), 10 show classes, 6 awards, 6 sponsors, 9 provinces.
-
-Note: "Wild Orchids of Southern Africa" exists as a `sponsor` document — worth confirming
-that matches the intended WOSA relationship (SAOC links to WOSA as a partner organisation;
-see CLAUDE.md scope boundary).
-
-## F3 — Pin singletons: follow-ups (cms-activation-deploy, 2026-07-29)
-
-Full detail: `docs/f3-pin-singletons.md`. F3 shipped and @qa passed all five assertions;
-these are the residual items, not defects in what shipped.
-
-- [ ] **[Low] Check gap:** `contracts/checks/f3-pin-singletons/check-new-document-filter.mjs:17`
-  hardcodes `MUST_SURVIVE = ['society', 'event']`, but `'event'` is not a real schema
-  type name — the actual type is `societyEvent` (`sanity/schemas/index.ts` imports a
-  binding named `event` from `documents/event.ts`, whose `defineType` declares
-  `name: 'societyEvent'`). Causes no false pass today (A2 only tests set membership,
-  and `'event'` never collides with the pinned-type list either way), but it means A2
-  never actually exercises the real `societyEvent` name — a future regression that
-  accidentally filtered `societyEvent` out of the create-new menu would go uncaught.
-  Needs an @architect follow-up to fix the constant to `'societyEvent'`.
-- [ ] **[Informational]** F3 protects the Studio UI only, not the write API — @qa
-  confirmed `client.create({ _type: 'homePage', ... })` with a write-token client
-  succeeds against the live dataset with zero resistance (test doc deleted, counts
-  verified back to 0 immediately after). No write-token integration exists in this
-  codebase today that would exploit this, so no action needed now — revisit if one is
-  ever added (a script, migration, or third-party integration holding a Sanity write
-  token could still create a duplicate of a pinned singleton type and reopen the
-  `[0]`-query fragility F3 exists to close).
-- [ ] **[Needs client answer]** Per the project spec
-  (`documents/Website Development SpecificationV1.docx` §3.5, cross-referenced to
-  §8), the real Members Portal is planned as an authenticated, member-only area with
-  a Digital Journal library — separate future build, not the `membersPage` singleton
-  F3 pinned as an empty placeholder. The spec leaves open how membership status will
-  be verified and kept in sync with SAOC's actual membership records. This needs a
-  client answer before the Members Portal itself can be built (not blocking on F3,
-  which only pins the placeholder).
-
-### [P0 BLOCKER] The CMS→site loop does not work in production — found 2026-07-30 by F6
-
-- [ ] **A published Studio edit never reaches the public site. The App Hosting CDN edge never
-  invalidates.** This is the mission's central claim failing, and it is NOT a check-script bug —
-  reproduced three times, and independently re-verified by the orchestrator.
-  **What works:** Studio publish writes to the dataset (confirmed by authoritative Content Lake read);
-  `POST /api/revalidate` with the correct secret returns 200 `{"ok":true,"revalidated":true}` (F2's fix
-  is real); `revalidateTag()` correctly marks Next's own cache stale.
-  **What fails:** the CDN in front keeps serving its own cached object. Live headers on `/about`:
-  `x-nextjs-cache: STALE` (Next knows) alongside `cdn-cache-status: hit`, `cache-control:
-  s-maxage=31536000` (one year), and `age` climbing monotonically across a 120s poll. Next marks it
-  stale; the edge serves the stale copy anyway.
-  **Lead, unconfirmed:** App Hosting is presumably meant to translate `revalidateTag()` into a CDN
-  purge — there are `cache-tag` response headers that look built for exactly that. Note
-  `x-fah-adapter: nextjs-14.0.21` is reported against a Next **16.2.12** app; that version gap is the
-  first thing for someone with App Hosting context to examine. Do not assume it is the cause.
-  **Consequence for the client:** the secretary can edit, publish, and see nothing change on any
-  already-cached page — the exact failure this mission exists to prevent. Everything else about the
-  CMS is now correct, so this single gap gates the whole deliverable.
-- [ ] **[P1] `/events/[slug]` has a second, independent propagation gap.**
-  `app/(marketing)/events/[slug]/page.tsx` tags its `sanityFetch` calls `['events']` only — no
-  `'sanity'` tag, and `'events'` does not match the real document `_type` (`societyEvent`) that a
-  webhook payload would send. So even once the CDN issue is fixed, event detail pages likely still
-  will not revalidate. Found while designing F6; deliberately NOT used as the test target so it could
-  not be confounded with the CDN finding.
-- [ ] Verifying the actual Sanity webhook fires end-to-end is currently impossible with the
-  dataset-scoped `SANITY_API_TOKEN` — reading webhook config needs the `sanity.project.webhooks/read`
-  grant (confirmed live: 401). F6 asserts the direct revalidate call instead, which is a weaker claim,
-  stated as such rather than overclaimed.
-
-### CMS wiring gaps — site-wide route audit, 2026-07-30
-
-Source-first audit of all 18 `app/(marketing)/` routes: grepped every page for `sanityFetch`/query
-imports and read what each does with the result. Method note: seeded copy was migrated FROM the
-component fallbacks, so the two are byte-identical and text matching proves nothing — discriminate
-via Sanity CDN asset URLs, PortableText `_key` UUIDs in the RSC payload, or source reading.
-
-- [x] **[P2] `/national-show/archive/[year]` has no page for any show added in the Studio.**
-  **FIXED 2026-08-12 (Stream C, `be80580`)** — `archive/[year]` now merges Sanity with the static
-  array, so a Studio-added show has a detail page. Leftover from that merge: `show.awards` lost its
-  rendered surface (no live effect — all values are null; booked in the new section below).
-  Original text: The archive
-  LIST (`archive/page.tsx:42`) is Sanity-backed via `pastShowsQuery`, so a `show` document created in
-  the Studio does appear there. The DETAIL page (`archive/[year]/page.tsx:6,49`) reads only the static
-  `lib/data/shows` array and calls `notFound()` otherwise — so a Studio-added show has a list entry but
-  no detail page behind it.
-  **CORRECTION (same day):** an earlier revision of this entry claimed the list "publishes a broken
-  public link" and ranked it P1. That was wrong — verified `archive/page.tsx` links only to
-  `/national-show` and `/contact`; the list cards are plain divs, not links, and the only
-  `archive/${year}` hrefs are the prev/next buttons inside the detail page, themselves generated from
-  the static array. So no dead link is created today. The real exposure is narrower: a visitor who
-  reaches that URL directly — a shared link, or once someone wires up card links — gets a 404.
-  Downgraded to P2 accordingly. Note the latent trap: whoever later makes the list cards clickable
-  turns this into the visible-broken-link problem it was mistakenly described as.
-- [x] **[P2] Orphaned document types — editable in the Studio, read by nothing.**
-  **PART STALE, PART DONE — corrected 2026-08-12 (Stream C, `be80580`).** ⚠️ The `award` half of
-  this entry was **wrong**: `award` is not orphaned. It has 6 documents, `awardsQuery` exists
-  (`sanity/queries.ts:196`) and `/judging` already fetches it
-  (`app/(marketing)/judging/page.tsx:9,40`). No work was needed; do not act on the claim below.
-  `province` was **wired, not removed** — 9 live docs — and the `/societies` chips were verified by
-  Playwright to actually filter. `membersPage` remains a deliberate placeholder (still open above).
-  Original text: `award`
-  (`AwardsGrid.tsx` reads the static `lib/data/awards` instead) and `province` (`society.province` is
-  free-text, not a reference to it). Either wire them or remove them from the Studio; leaving them
-  editable teaches the client that publishing does nothing. `membersPage` is also unread but is a
-  deliberate placeholder with no `/members` route yet. NOT orphaned despite absence from a naive
-  `_type ==` grep: `judge`, dereferenced via `judgingPageQuery`'s `judges[]->` (`queries.ts:142`).
-- [ ] **[P2] Unread schema fields:** `aboutPage.title`, `aboutPage.boardIntroText`, `judgingPage.stats`
-  (hero headings are hardcoded JSX). Same class as the already-recorded `homePage.countdownDate`.
-
-**Verified Sanity-backed** (safe to tell the client she can edit): `/` (hero images, mission text,
-countdown via `nationalShow.countdownDate`, events strip, partners), `/about` (pillars, timeline,
-board), `/judging` (all copy + judge directory), `/contact` (code path correct; unverifiable from HTML
-until F6), `/events` + `/events/[slug]`, `/sponsors`, `/societies` + `/societies/[slug]`,
-`/national-show/archive` (list only).
-
-**Verified NOT editable:** `nationalShow` title/venue/host/hero/exhibitor stages; the `/national-show`
-page's own countdown (`ShowCountdown.tsx:5` hardcodes the target — note this differs from the home-page
-countdown, which IS live); `archive/[year]`; `/media-kit`, `/constitution`, `/privacy`, `/terms`,
-`/national-show/exhibitors` (no CMS pretense — expected, not broken).
-
-### Seeded-but-inert content — found 2026-07-30 by post-F4 render audit
-
-- [x] **[P1] `/national-show` never reads the `nationalShow` singleton.** **FIXED 2026-08-12
-  (Stream B, `be80580`)** — show identity (title, venue, dates, edition, countdown) now flows from
-  Sanity to all seven surfaces, proven by a runtime swap sweep (A61) rather than a source grep.
-  Before the fix, swapping the venue rendered two different venues in one viewport.
-  Original text: F4 seeded the document and its
-  gate passed 4/4 — but the gate asserts against the **Sanity API**, not the rendered page.
-  `app/(marketing)/national-show/page.tsx:7-8,89-90` calls `sanityFetch` for `showClassesQuery` and
-  `pastShowsQuery` only. There is no `nationalShowQuery`. Title, venue (`'CTICC, Cape Town'`, line 151),
-  hero image, exhibitor stages and the countdown target (hardcoded in `components/show/ShowCountdown.tsx`)
-  are all literal JSX/constants. So the secretary can edit the National Show page in the Studio, publish,
-  and **nothing will change on the site** — the exact failure this mission exists to prevent. Not a
-  query/field-name mismatch (that would be a one-line fix); the page needs wiring to fetch the singleton,
-  which is a code change against heavily hardcoded JSX, so it was deliberately NOT done as part of F4's
-  content migration. Note this compounds the already-recorded `homePage.countdownDate` dead-field problem:
-  `nationalShow.countdownDate` was documented to the secretary as the field that *does* drive the
-  countdown, and it does not either — the countdown is a constant in the component.
-- [ ] **[P2] `/contact` cannot be discriminated without a round-trip edit.** `contactPage`'s seeded values
-  and the component fallback are byte-identical, and `contactPageQuery` (`sanity/queries.ts:149`) projects
-  no `_key` for array items, so no structural marker reaches the rendered HTML. Unknown whether the page
-  fetches successfully or silently falls back. F6's round-trip proof should settle it.
-- [x] Confirmed genuinely fetching Sanity on the deployed site: `/` (hero images resolve to
-  `cdn.sanity.io`, not `/images/*`), `/about` and `/judging` (PortableText branch taken, Sanity `_key`
-  UUIDs present in the RSC payload). Discriminators recorded here because seeded copy was migrated FROM
-  the component fallbacks — the two are identical strings, so text matching proves nothing.
-
-### F2 — contradiction RESOLVED 2026-07-30
-
-- [x] ~~**Which build is actually live on `saoc-prod`?**~~ **SETTLED.** Neither prior position was right about the
-  present state — the build-resource inspection was accurate when taken (2026-07-29) but went stale overnight.
-  A CI-triggered build shipped F1+F3+F2 at 05:13Z on 2026-07-30 and now serves 100% of traffic:
-  `build-2026-07-30-001`, commit `01dd63f`, confirmed by two independent control planes (App Hosting traffic
-  split + Cloud Run `latestReadyRevision`) and by `git merge-base --is-ancestor` against all three of `604ba3a`,
-  `ffb4225`, `84dbf58`. The behavioural evidence (pinned singleton editor rendering) was therefore correct.
-  Now permanently guarded by assertion A10 (`contracts/checks/f2-deploy-next16/build-identity-deployed.mjs`).
-  **Lesson:** ETag is NOT a build discriminator — ISR regeneration changes it — and a single build-resource read
-  in isolation is not either. Cross-check two control planes plus git ancestry.
-- [ ] `firebase apphosting:rollouts:create` reports "Successfully created a new rollout!" while creating **no** new
-  rollout or build resource (verified by REST GET; next sequential ids 404). Appears to dedupe on git SHA. @dev
-  worked around it by POSTing directly to the App Hosting REST builds endpoint (`build-manual-1785355696`) — status
-  unknown, never polled to completion.
-- [ ] IAM is confirmed fixed and durable: `firebase-app-hosting-compute@saoc-webapp.iam.gserviceaccount.com` holds
-  `secretAccessor` + `viewer` on both `SANITY_REVALIDATE_SECRET` and `SANITY_API_TOKEN`, verified via Secret Manager
-  IAM policy REST calls. The remaining failure is getting a build that references the secrets to actually roll out.
-- [ ] Production ETag is NOT a build discriminator — it changed again (`a8e4pxlfw41lfq` → `1337qsztbrz1lfq`) without a
-  confirmed new rollout, because ISR prerender regeneration also changes it. A8 is weaker evidence than it looks.
-
-## Client / governance — raised 2026-08-11
-
-- [ ] **Secure organisation-owned document custody for SAOC** (council discussion point, not a
-  build task yet). Institutional records currently sit in individuals' Google Drives, thumb
-  drives and personal email. Need a role-based, SAOC-owned home for constitution, minutes,
-  judging standards, show archives, brand assets, sponsor agreements, NPO/PBO and financial
-  documents, photography rights, and site credentials. Critical sub-point: accounts must be
-  registered to SAOC as an organisation, not to whoever creates them — applies especially to
-  the PayFast merchant account, the domain, and any Google/Microsoft tenant. GitHub stays the
-  home for source code only; it is the wrong tool for committee documents. Written up as
-  section E in `documents/SAOC-LeeAnn-Call-Prep-2026-07-20.md`.
-- [ ] **Society-published calendar feeds aggregated into the national events calendar** (Phase 2,
-  back burner). Each of the 21 societies maintains its own iCalendar (`.ics`) feed; the site
-  subscribes and aggregates, so maintenance stays with the societies rather than loading SAOC
-  staff. NOT web scraping — `.ics` is a stable standard published natively by Google Calendar,
-  Outlook and Facebook Events. The codebase already emits `.ics` (`app/api/events.ics`,
-  per-event exports), so this is the mirror image of existing work. Needs a moderation step
-  before public display, and a manual-entry fallback for societies with no digital calendar.
-  Validate cheaply first: ask how many of the 21 societies actually keep one. Written up as
-  section F in the call-prep doc.
-- [ ] **Retrofit JSX-interpolation rigour onto pre-existing contracts** (raised by TKT-architect
-  2026-08-11, deferred — not what the demo needed). Assertions that check "this Sanity field is
-  rendered" via a plain substring grep for the field name are FALSE GREENS: they pass a field
-  that appears only in a fetch, destructure or type annotation and is never rendered. That is
-  precisely the live `aboutPage.title` bug (fetched at `about/page.tsx:19-20`, never rendered).
-  The correct check requires the field inside an actual JSX curly-brace interpolation, excluding
-  `{/* comment */}` matches. Also worth adding everywhere: assert no reversed fallback precedence
-  (`'literal' ?? data.field`), which lets a hardcoded string silently mask a published Studio
-  edit — same symptom as an unrendered field, different cause. Reference implementation:
-  A48/A49/A50/A50a in `contracts/contract-ticketing-m1-m2.yaml`.
-- [ ] **Two known silent no-op CMS fields — fix before Lee-Ann's Studio walkthrough.**
-  `contactPage.formRecipients` (in the schema, editable in Studio, consumed by nothing) and
-  `aboutPage.title` (fetched, never rendered). An editor changes either, publishes, sees no
-  effect, and concludes the CMS is broken. Delete or wire — do not leave as-is.
-- [ ] **Agent naming convention for parallel missions:** prefix subagent names with the mission
-  slug, not the feature ID. Running `saoc-pages-editable` and `ticketing-pages` concurrently
-  produced `F1-dev` and a `TKT-dev` whose contract also had an F1 — the second agent stopped and
-  asked whether it was duplicating work. Correct behaviour on its part, avoidable collision on ours.
-- [x] **F6 — Door scanner admits unpaid tickets (HIGHEST ticketing priority).**
-  **FIXED 2026-08-12 (Stream A, `be80580`)** — admission logic extracted to `lib/checkin.ts`;
-  the route delegates and holds none. Every unenumerated state now fails closed (cancelled,
-  refunded, case/whitespace variants, absent status). Note the auth layer above it is still
-  non-functional — Firebase Auth is unprovisioned, see `needs-human.md`.
-  `app/api/admin/checkin/route.ts` looks a ticket up by `bookingRef` alone and only refuses one
-  that is ALREADY checked in. It never checks `status === 'paid'` and never checks `showId`. A
-  merely `reserved` (unpaid) ticket, including one created under a spoofed `showId`, is as
-  admissible at the door as a legitimate paid one. Pre-existing, outside the M1/M2 contract,
-  found by @qa 2026-08-11 while probing the capacity gate. Fix before any real door use.
-- [x] **F6 — TOCTOU race on ticket capacity.** **FIXED 2026-08-12 (Stream A, `be80580`)** —
-  now a Firestore transaction; @qa measures exactly 1×201/19×409 at 20-way concurrency on the
-  boundary. The fix introduced its own regression (seats never released on abandonment), since
-  closed by a TTL that can never expire a paid ticket. Original text: The capacity check in
-  `app/api/tickets/checkout/route.ts` is an unguarded read-then-write: it counts sold tickets,
-  then writes the reservation, with no transaction. @qa reproduced it live — a type at 49/50 hit
-  with 5 concurrent POSTs returned 201 five times, ending at 54/50 (4 oversold). Needs Firestore
-  `runTransaction` around count-then-write, not sequential awaits. Matters most exactly when a
-  popular type is selling out, which is when concurrent buyers are likeliest.
-- [x] **F6 — Checkout idempotency + booking-ref enumeration.**
-  **FIXED 2026-08-12 (Stream A, `be80580`)** — booking refs are now 60-bit crypto-random, and
-  checkout is idempotent with the key bound to buyer and payload. Previously a replayed key
-  returned another buyer's booking reference, which is the door code. Original text: No protection against rapid
-  duplicate POSTs from one client beyond the UI disabling its own submit button. Booking refs are
-  a fixed prefix plus a 6-digit number (`SAOC-2027-000000`–`999999`), i.e. guessable; the status
-  endpoint's minimal `{status}` response limits but does not eliminate the value of enumeration.
-- [x] **F7 — `SITE_URL` is absent from `apphosting.yaml`.** **FIXED 2026-08-12 (Stream A,
-  `be80580`)** — declared in `apphosting.yaml`; deployed ITNs would otherwise have reached the old
-  Joomla site. Original text: Set locally and read at request time,
-  so PayFast sandbox works from this machine. On a deploy the checkout route falls back to
-  `https://saoc.co.za` — the OLD Joomla site — so the ITN callback would be delivered there and
-  never reach the app. Every deployed payment would sit permanently `reserved`. Blocks any real
-  deployed ticket sale.
-- [ ] **Council decision blocking ticketing: real prices and venue capacity.** Everything now in
-  the Sanity dataset is INVENTED by us and labelled "Provisional price — pending council
-  confirmation.": Adult R150/300, Pensioner R100/100, SAOC Member R100/150, Child R50/100,
-  Exhibitor free/50. The single most revenue-blocking open item.
-- [x] **Proper favicon for the site — SHIPPED 2026-08-12 (interim).** `app/favicon.ico` now serves
-  Brad's yellow-orchid mark from `/Users/vetus/ai/SAOC Branding/favicon.ico` (outside the repo).
-  Rebuilt from 6 layers to 4 (16/32/48/64), dropping the 128 and 256 layers: 93,316 -> 12,272
-  bytes, an 87% cut, since 256px was 62KB of the file and never renders in a tab. Served copy
-  verified byte-identical and all four PNG payloads valid. **Revisit when the SAOC org logo
-  lands** — the mark is a detailed full-colour illustration that loses definition at 16px, and the
-  site chrome uses a monochrome line-drawing disa, so the tab icon and the header mark are not yet
-  the same identity. Original text below.
-- [ ] **Proper favicon for the site.** We are currently serving a default — likely the Next.js,
-  Sanity Studio or Firebase placeholder rather than anything SAOC. Needs a real SAOC icon
-  (and check `/studio` separately, which may carry its own). Blocked on the SAOC org logo Brad
-  is designing; do the favicon pass once that lands so the mark is consistent. Raised by Brad
-  2026-08-11.
-
-## Open after the overnight four-stream session (2026-08-12, commit `be80580`)
-
-All four streams are contract-green and documented (A 37/37, B 72/72, C 14/14, D 52/52). These
-are what they left behind.
-
-- [ ] **@qa round-2 findings R2-1 … R2-5 on ticketing — none fixed, all non-blocking.** Full text
-  in `.agent/memory/scratch/harden-qa.md`, round-2 section. Summary:
-  - **R2-1** — a new failure mode introduced by design and invisible to the operator.
-  - **R2-2** — a correct 409 the client cannot recover from.
-  - **R2-3** — pre-existing, but round 2 made it *look* handled, which is worse than leaving it
-    visibly broken.
-  - **R2-4** — the uncovered half of S5.
-  - **R2-5** — wrong copy on one refusal path.
-- [ ] **Streams B and D: round-2 fixes were verified by the gate but never re-reviewed by @qa.**
-  Round 1's equivalent on Stream A found five real defects *past* a green gate, including a
-  regression the fix itself introduced. Treat gate-green-but-unreviewed as unfinished.
-- [x] **`nationalShow.exhibitorStages` retirement — DONE 2026-08-12, by team-lead ruling.** The
-  deadlock turned out to have three sides, not two. Stream B's A5 was amended to drop the field
-  (it guards against *collateral* deletion during F1, which a deliberate retirement is not, and a
-  grep cannot tell them apart), and B gained **A77**, which asserts the retirement is COMPLETE
-  across schema, GROQ projection and the landing page's read path — so a half-done removal now
-  fails rather than passing quietly. The third side was
-  `cms-loop-f3-national-show.yaml` **A3**, whose whole subject was the field; retired in the same
-  change with the reasoning recorded inline. Dataset verified empty first
-  (`count(*[defined(exhibitorStages)]) == 0`), so no editorial content was destroyed.
-- [x] **Stream B's A41/A56/A24 rotating red by gate ordering — DONE 2026-08-12.** Fixed in the
-  shared helper as this entry asked, not per assertion: `settlePage()` polls until the page agrees
-  with the dataset, and **A76** now fails any dataset-sourced rendered check that calls
-  `fetchOkPage()` directly, so the defect cannot be reintroduced. Two causes hid behind the one
-  symptom — the page lagging the dataset (fixed by polling) and the dataset being *deliberately
-  invalid* mid-sweep, which polling cannot fix and which is why the read-only checks now take the
-  dataset lock too. Root cause of the dataset corruption underneath it all was missing
-  `timeout_seconds`: every mutating check inherited the 60s default and was SIGKILLed mid-mutation.
-
-- [ ] **`cms-loop-f3-national-show.yaml` A5 is superseded — needs a scope review, not a patch.**
-  It asserts the `nationalShow` schema still declares exactly its original six fields, so it is
-  **already red for a sanctioned reason**: the visitor stream legitimately added `showEndDate`,
-  `edition`, `hostRegion` and `venue`. That is a contract that has been overtaken by later work,
-  not a defect, and it wants a considered pass by someone with the context rather than a one-line
-  fix. While in there, decide whether to delete the now-unreferenced
-  `contracts/checks/cms-loop-f3-national-show/check-exhibitor-stages-round-trip.mjs` (retired A3,
-  kept only as the worked example of the round-trip pattern).
-- [ ] **`show.awards` lost its rendered surface in the archive merge** (Stream C). No live effect
-  today — every value is null — but the field is now editable with nothing reading it, which is the
-  exact pattern that teaches editors publishing does nothing.
-- [ ] **No SAOC-side notification exists for contact-form enquiries.** Submissions land in
-  Firestore and nothing tells anyone. Staff would have to go looking. Confirmed during Stream C.
-- [ ] **`scripts/seed-page-singletons.ts` still uses destructive `createOrReplace`** (7 occurrences,
-  verified 2026-08-12). Untouched by this session. Seeds must be create-if-absent; a re-run today
-  silently overwrites edited singletons.
-- [ ] **TEMPLATE BUG: `execution/gh_closure_scan.py` aborts on any non-mission file in
-  `.agent/memory/project/missions/`.** It exits with
-  `ERROR: .agent/memory/project/missions/OVERNIGHT-PLAN-2026-07-30.md has no YAML frontmatter`
-  and scans nothing, so closure scanning has been silently non-functional here. It should skip
-  files without frontmatter rather than abort. Not fixed (Athanor file, out of this project's
-  scope) — user may run `/report-bug`. Workaround: `InunuNet/SAOC` currently has **zero open
-  GitHub issues**, so nothing was missed this session.
-
-### Filed upstream this session (InunuNet/Athanor)
-
-- https://github.com/InunuNet/Athanor/issues/1337 — `contract.py` drops the CLI `--timeout-seconds`
-  override for sub-phases under `--phase all`. Verified in source: the per-sub-phase
-  `argparse.Namespace` omits `timeout_seconds`, so the consumer's `getattr(args, ..., 60)` falls
-  back to 60. **Per-assertion `timeout_seconds` DO survive** (`contract.py:137-138`) — an earlier
-  agent report claiming declared timeouts were dropped was wrong, and the issue says so. The
-  issue also asks for SAOC's local `normalize_contract` patch to be upstreamed.
-- https://github.com/InunuNet/Athanor/issues/1338 — `handoff_check.py`'s GATE BLOCKED file omits
-  the failure reason, artefact path, trend and mission id, so the human it escalates to gets no
-  diagnostic. Instance: `.agent/memory/scratch/gate-blocked-20260812T031704Z.md` (the pulse
-  `qa -> docs` handoff froze itself after three failures). It blocked nothing this session only
-  because agents were dispatched directly rather than through the pulse.
-
-## Content intake from Lee-Ann's Drive folder — 2026-08-12
-
-Folder "Docs for Brad": https://drive.google.com/drive/folders/1rZJVrYwrWM92vqmPw2c9E_HABQKEQoGa
-Access VERIFIED 2026-08-12 via the `gws` CLI (authenticated as Brad; plain curl/Alembic only see
-the HTML shell). All five files downloaded and read. Mirrored to `documents/from-leeann-drive/`,
-which is **gitignored** — Spec V3's final "Email Collection Checklist" carries plaintext mailbox
-passwords. Brad met Lee-Ann on Teams the same morning; no status email is owed to her.
-
-- [ ] **[P1, COMMERCIAL — Brad's call] `Website Development SpecificationV3.docx` scopes TWO
-  separate websites**, not one: a permanent SAOC organisational site (6 pages) and a dedicated
-  2027 National Show event site (18 pages). We built one site with the Show as a section under
-  `/national-show`. V3's Section 6 also marks as "Confirmed by INUNU" several items never priced
-  in the accepted 28-May proposal — unified multi-category checkout (Admission + Symposium +
-  WOSA + Workshops in one transaction), filterable exhibitor/guest databases, the relational
-  awards archive, and the Members Portal with journal library. This supersedes the V1/V2 phase-map
-  work. **Do not restructure routes; this needs a scope+price conversation first.**
-- [ ] **[P1] Spec V3 Section 8 is a direct question list for INUNU** (13 questions across CMS,
-  filtering, bookings, notifications and archiving). Several already have answers in our codebase.
-  Worth a written reply so the register's "Pending confirmation" rows can be closed.
-- [ ] **[P2] Real Show copy has arrived — three approved pages, ready to load into Sanity.**
-  `About - 2027 National Show.docx`, `What to Expect.docx`, `South African Exhibitors.docx`.
-  This is the first client-approved copy we have; it replaces our labelled placeholders on
-  `/national-show` and `/national-show/what-to-expect`. Confirms the show theme: **"From Wild
-  Origins to Cultivated Excellence: The Future of Orchids."** Small, well-scoped content mission.
-- [ ] **[P2] `2027_SAOC_National_Show_Vendor_Registration_Form.docx` is a 21k-char paper form**
-  covering vendor/business details, booth requirements, power, products, insurance and payment.
-  Natural candidate for a structured online vendor application (Firestore + confirmation email,
-  same pattern as event submissions) rather than a PDF download. Scope question, not yet a task.
-- [ ] **[security, low urgency] Spec V3 circulates SAOC mailbox passwords in plaintext** in a
-  shared Drive doc. The values are already stale — the 2026-07-20 VPS migration replaced all five
-  with generated passwords and deliberately did not restore the originals. Worth telling Lee-Ann
-  the doc should not carry credentials at all.
-- [ ] **[content] The `show@saoc.co.za` mailbox has been unused since 2020**; Lee-Ann suggests
-  archiving it. Also flagged in V3: Brad to create per-area show email addresses (symposium, WOSA,
-  bookings) so committee members get registration notifications for their own area.
-
-- [ ] **[P3] `components/chrome/Footer.tsx:117` links the dead `wosa.org.za`.** Site-wide footer,
-  every page. The live WOSA site is `https://wildorchids.co.za`. Found 2026-08-12 by
-  PARTNERS-architect while scoping the home-page partners redesign; deliberately left out of that
-  contract's scope (which fixes the same dead URL in `PartnersSection.tsx` only). One-line fix.
-- [ ] **[P3, a11y] Partners card link accessible name concatenates.** In
-  `components/home/PartnersSection.tsx` the name and description `<span>`s are JSX-adjacent with
-  no whitespace text node, so the anchor's accessible name reads
-  "Wild Orchids of Southern AfricaPartner organisation hosting…". Renders fine visually and most
-  screen readers pause at the block boundary, but it is not guaranteed across all AT. Found by
-  PARTNERS-qa in both review rounds 2026-08-12; deliberately not fixed in that feature. Fix with
-  an explicit `aria-label` on the link or a whitespace/`{' '}` separator.
-
-- [ ] **[P1, sequencing decision — Brad 2026-08-12] Ticketing: single tier first, multi-tier
-  PAUSED.** Prove the existing General Admission flow end to end against the PayFast sandbox
-  before building anything else. Only then expand to multi-tier (General Admission / Symposium /
-  WOSA Conference / Workshops / Exhibitor), and pause again for council feedback before
-  committing to that shape. Rationale: de-risk the payment path once, cheaply, rather than
-  discovering a gateway problem inside a five-product checkout — and the multi-tier structure
-  can't be finalised without real council prices, capacities, and Lee-Ann's per-event write-ups
-  anyway. Note the two-level shape when it does come: General Admission has CATEGORIES under it
-  (adult/pensioner/child/member) while Symposium/WOSA/Workshops are separate PRODUCTS with their
-  own capacity and waiting lists; the current flat `ticketType` schema will not stretch to that.
-  Also outstanding from Lee-Ann: a cocktail event with option dropdowns (her spreadsheet, tab 2)
-  that is not in the five tiers.
-
-## Missions scoped and written to disk — 2026-08-12
-
-- [ ] **MISSION `sandbox-ticket-proof`** (`.agent/memory/project/missions/2026-08-12-sandbox-ticket-proof.md`)
-  — 5 features, 3 milestones, validated, **now the active mission**. Prove the existing
-  single-tier ticket flow end to end against the PayFast sandbox on a DEPLOYED environment, then
-  pause. F1 is deploying current `main` — the deployed site is still on `01dd63f` (2026-07-30) and
-  `/tickets` 404s there, so nothing is testable until it lands. F5 (door admission) is blocked on
-  Firebase Auth. Sandbox only; no live credentials, no price changes, no ITN route edits.
-- [ ] **MISSION `national-show-design-alignment`** (`.agent/memory/project/missions/2026-08-12-national-show-design-alignment.md`)
-  — 4 features, 3 milestones, validated, **BLOCKED pending Brad delivering the Claude Design
-  bundle**. Ingest the design system, add tokens to `globals.css` without breaking the placeholder
-  "Sage & Paper" set used site-wide, rebuild the Show section against the design without
-  restructuring routes or re-hardcoding anything currently wired to the `nationalShow` singleton,
-  then apply the 2027 Show brand layer below the header. Cannot start until the assets arrive —
-  no agent invents brand assets.
-
-- [ ] **[P2, mobile] `/contact` is unreachable from the header on mobile.** Verified live at 375px
-  with Playwright 2026-08-12: the header's Contact button is `hidden sm:inline-block`
-  (`components/chrome/Header.tsx:150`) so it does not render, and `MobileMenu.tsx` renders only the
-  NAV array plus a `mailto:council@saoc.co.za` link — it never includes `/contact`. Count of
-  visible `a[href="/contact"]` in the header at 375px: **0 before opening the menu, 0 after**.
-  So a phone visitor has no route to the contact form from the header at all; the footer is the
-  only remaining path. Found by PARTNERS-docs while documenting ticket reachability (it chose
-  NAV-array placement for Tickets precisely because the Contact button pattern is mobile-invisible).
-  Same defect class as the ticket-reachability fix — a real entry point that exists but cannot be
-  clicked. Fix by adding `/contact` to the MobileMenu, not by unhiding the button (which would
-  crowd the mobile header).
-
-- [ ] **[P1, content] Rebuild visitor travel content for the Stellenbosch venue.** Brad corrected
-  the National Show venue on 2026-08-12: it is **The Hangar, Stellenbosch Flying Club** (Stellenbosch
-  Airfield, R44, Stellenbosch 7600; approx. -33.9794, 18.8196), NOT the CTICC placeholder. The
-  `nationalShow.venue` object, `show-19-2027.location`, the national-show societyEvent, and two
-  `showFaq-getting-there-*` answers were all corrected in Sanity, and every CTICC-anchored travel
-  section was **cleared rather than rewritten**, because inventing airfield transport detail is
-  exactly the failure mode the project bans. Emptied: `airportRoutes`, `accommodation`, `attractions`
-  (all list components return null when empty, so pages degrade cleanly — verified over HTTP).
-  Neutralised to "not confirmed" prose: `publicTransport`, `parking`, `accessibility`,
-  `gettingThereIntro`, `accommodationIntro`. Confirmations for those six set to `pending`.
-  **What is owed:** real Stellenbosch-area travel, parking, accommodation and attractions content —
-  needs committee input (there is no scheduled public transport to the airfield, so arrival is
-  effectively drive/e-hail only, which changes the shape of the advice). Pre-change values are
-  backed up at `.agent/memory/scratch/venue-change-2026-08-12/before.json`.
-- [ ] **[P2] `scripts/seed-show-visitor-info.ts` still contains the CTICC copy.** Inert today —
-  every write is `createIfNotExists`, so it cannot clobber the corrected dataset — but it is now a
-  stale source of truth if the dataset is ever rebuilt from empty. Update the seed constants to
-  match the corrected Sanity content. Code change, so it goes through the chain.
-- [x] **[RESOLVED 2026-08-12] Stellenbosch venue is confirmed.** Lee-Ann confirmed it to Brad by
-  WhatsApp; `showVisitorInfo.confirmations.venue` set to `confirmed`, so the "to be confirmed by
-  the show committee" badge no longer renders under the venue. Remaining pending badges (parking,
-  accessibility, public transport, accommodation, attractions) are correct — those are still open.
-
-- [x] **[SUPERSEDED] Is the Stellenbosch venue committee-confirmed?** `confirmations.venue`
-  was left at `pending`, so the site still shows a "to be confirmed by the show committee" badge
-  under the venue. The venue name itself is now stated plainly (no "working venue" hedging). If the
-  committee has signed it off, flip that one field to `confirmed` and the badge disappears.
-
-- [ ] **[P1, architecture] Make show identity edition-scoped so a venue/date change is ONE edit.**
-  Brad, 2026-08-12: "after three years they're going to do a new show and that'll have a new venue
-  — are we going to have to recreate all of this every time?" Correct concern. Verified today: the
-  venue fact is stored in **four** places — `nationalShow.venue.name`, `nationalShow.location`,
-  `show-19-2027.location`, and the national-show `societyEvent.venue` — plus four repo files. They
-  agree right now only because they were all written by hand in one sitting. That is the definition
-  of drift waiting to happen.
-  **What good looks like** (see `.claude/rules/content-modeling.md`):
-  1. One venue object as the single source; the edition doc and calendar event reference the show
-     rather than restating its location as free strings. Contract-assert the copies agree.
-  2. Venue-dependent prose (`showVisitorInfo`: travel, parking, accommodation, attractions) records
-     WHICH venue it was written for, so a venue change auto-flags it stale instead of silently
-     serving directions to the wrong side of the province. This is the fix that would have caught
-     the CTICC bug by itself — the current `confirmations.*` flags rely on a human remembering.
-  3. A documented, repeatable **show rollover** procedure: current edition → archive entry, new
-     edition → current. Must be a content operation, never a code change.
-  Blocked on nothing technically, but sequence it AFTER `contract-venue-seed-truth` lands (that one
-  removes the immediate from-empty-rebuild regression) and after the design-alignment mission, since
-  a Show redesign may move these surfaces anyway. Scope as its own mission via /mission new.
-
-- [ ] **[venue-prose-residue, KNOWN-OPEN] `contracts/golden/f4-seed-page-singletons/nationalShow.golden.json` still pins CTICC.** The seed script changed (venue corrected to Hangar by `venue-seed-truth`) but this golden didn't — it still expects CTICC as output from `seedNationalShow()`. Owned by `contracts/cms-loop-f3-national-show.yaml`, not `venue-prose-residue.yaml`. A19 in `contract-venue-prose-residue.yaml` deliberately leaves it alone (asserting it still holds CTICC as proof the fix stayed scoped). Self-detecting failure on the F4 contract's next run; stale until then. See `contracts/golden/venue-prose-residue/README.md` for why this is out of scope.
-
-- [ ] **[venue-prose-residue, KNOWN-OPEN] Historical golden files from old CTICC research phase.** `contracts/golden/show-visitor-info/{cticc-research.golden.md, venue-single-source.golden.md, show-identity-wiring.golden.md, assertion-discrimination.golden.md}` are preserved as dated research records of what was researched and when for the old venue. Deliberate preservation under content-modeling rule 6 (don't corrupt real history with careless global replace). Worth a human decision: mark with a "superseded" banner to clarify they are historical, or archive them entirely? Not a defect; clearing decision is optional.
-
-- [ ] **[venue-prose-residue, needs second pair of eyes] Review remaining scope exclusions in the venue-prose-residue checkers.** @architect audited the checkers' scope exclusions during this contract and found one bad attribution: the golden's identity fields (e.g. `showFaq-getting-there-3`'s copy) were claimed as "owned by `contract-venue-seed-truth`," but that was never true — only this contract's own A13 actually protects them. That one was caught and corrected; the audit was not exhaustive. Worth a second reviewer walking `contracts/golden/venue-prose-residue/README.md` and the checker scripts' exclusion lists end to end, given this is the exact defect class (imprecise ownership claims narrowing a checker's scope) that let stale CTICC prose survive two earlier green gates.
-
-## Local dev URL — https://dev.saoc.co.za (added 2026-08-13)
-
-`scripts/install-dev-domain.sh` gives the local dev server a permanent hostname.
-**Brad must run it once from Terminal.app** (`cd ~/ai/SAOC && sudo bash scripts/install-dev-domain.sh`)
-— sudo cannot prompt for a password in the agent shell, so no agent can complete this step.
-Until it is run, the working URL is `https://dev.saoc.co.za:3333` (hosts entry + cert are
-already in place); after it is run, the bare `https://dev.saoc.co.za` works and persists
-across reboots. Reverse with `--uninstall`.
-
-Start the server with `pnpm dev:secure` (NOT `pnpm dev`, which is HTTP on :3002 and will
-fail in Chrome — Chrome auto-upgrades .co.za to https and an HTTP server returns
-ERR_SSL_PROTOCOL_ERROR).
-
-**Never drive a PayFast test from the local server.** `SITE_URL` is unset locally and falls
-back to `https://saoc.co.za`, the old Joomla site, so the ITN would be delivered there and
-the ticket would sit `reserved` forever. Use the deployed host for payment testing.
-
-- [ ] **[P1, SECURITY, NEW 2026-08-14 — SEVERITY CORRECTED same day] Open self-signup, an ungated
-  session route, and an ungated `/admin/door`. Admin DATA was never reachable.**
-  **The original P0 entry claimed a self-registered account could reach the buyer list, CSV
-  export and door scanner, and called it a POPIA notifiable-breach shape. That was an inference
-  from a successful `accounts:signUp`, never tested end to end. Re-tested against the deployed
-  host on 2026-08-14 and it is WRONG.** Measured, with a freshly self-registered account:
-  `POST /api/admin/session` → **200, session cookie issued** (real defect, no claim check);
-  `/api/admin/tickets` → 403; `/api/admin/export-csv` → 403; `/admin` → 307 to `/admin/login`;
-  `/admin/door` → **200, scanner UI renders** (client component, no server gate, no middleware —
-  UI exposure only, since check-in POSTs are 403). Five of six surfaces already check
-  `decodedToken.admin === true || role === 'admin'` (`app/admin/page.tsx:24`,
-  `app/api/admin/tickets/route.ts:25`, `checkin/route.ts:27`, `export-csv/route.ts:32`).
-  Both probe accounts deleted and verified gone; project now has 0 accounts.
-  GENUINE WORK: (a) `/api/admin/session` must refuse to mint a session for a non-allowlisted
-  identity; (b) `/admin/door` needs a server-side gate; (c) no allowlist governs who may hold
-  the `admin` claim — grant/revoke is undefined; (d) close open self-signup as defence in depth.
-  ALSO: **the project has ZERO auth accounts and ZERO admin claims**, so `/admin` is currently
-  inaccessible to everyone including Brad — that, not a breach, is why the door scanner has been
-  untestable in every environment. Provisioning is the unblocker.
-  ALSO: `contracts/contract-d5-admin-dashboard.yaml` assertion D5-04 is a false-green shape —
-  it greps for `admin` plus `claim|role|verifySessionCookie` in the same file, which cannot
-  distinguish a real authorisation check from an incidental mention. Replace with a live check.
-  Lesson recorded: a successful first step is not proof of the last step.
-
-- [ ] **[P2, NEW 2026-08-14] Empty-allowlist scenario is reasoned about, not proven live.** QA's adversarial
-  pass on F1 confirmed every other fail-closed state with real HTTP, but did NOT restart the harness
-  server with an empty/unset/whitespace-only/trailing-comma `ADMIN_EMAIL_ALLOWLIST` — that needed a
-  server restart outside its remit. `parseAllowlist()` is a deterministic trimmed/lowercased split
-  over `[].includes()`, so residual risk is low, but this is EXACTLY the secret-corruption defect
-  class: an empty allowlist fails closed for everyone and is indistinguishable from a working gate
-  from outside. The `[admin-auth] ADMIN_EMAIL_ALLOWLIST parsed length: 0` log line is the only
-  external signal. Add a real assertion that boots the server with each malformed value and proves
-  (a) everyone is refused and (b) the length-0 log line appears. Fold into F3 if F3 touches this path.
-
-- [ ] **[P1, NEW 2026-08-14] Ticket delivery does not exist — buyers receive nothing.**
-  `lib/email.ts` contains no ticket/booking logic and is never called from
-  `app/api/tickets/checkout/route.ts` or `app/api/tickets/itn/route.ts`. Nothing generates a
-  QR code, yet `app/admin/door/page.tsx` scans QR codes (html5-qrcode) — so the scanner has
-  nothing to scan and every attendee would be checked in by typing a 12-character reference
-  by hand at the gate. Buyer currently gets a booking reference rendered on a web page and no
-  email at all. Needed before ticket sales open, independent of gateway choice.
-  Note: no Resend account exists yet, so delivery also needs an email provider decision.
-
-- [ ] **[P1, NEW 2026-08-14] Refunds cannot be represented in the data model.**
-  'refund' appears nowhere in app/, lib/ or types/. `TicketStatus` (types/index.ts:128) is
-  'reserved' | 'paid' | 'cancelled' | 'checked-in' — no 'refunded'. A refund today means
-  refunding in the PayFast dashboard and hand-editing Firestore, with nothing linking the two
-  and no way to distinguish a refunded ticket from one cancelled before payment. PayFast DOES
-  expose a Refunds API (GET/POST /refunds/:pf_payment_id, same MD5+passphrase auth as the ITN),
-  so this is buildable — see docs/payment-gateway-research-2026-08.md.
-
-## admin-auth-hardening — M1 done, F4 proven end-to-end, F5 shipped, only F6 remains (2026-08-17)
-
-F1 (authorisation gate), F2 (adversarial refusal proof), F3 (account provisioning) all `done`,
-milestone M1 gated (F1/F2 contract 12/12, F3's own contract 11/11). New scripts:
-`scripts/admin-grant.ts` (grants `admin:true`, `--existing` flag required to touch a
-pre-existing account — see [[learned.md]] "admin-auth-hardening F3"), `admin-revoke.ts`,
-`admin-list.ts`. `docs/admin-access.md` extended.
-
-**F4 (Google sign-in) done 2026-08-15**, gate green 6/6, 100% machine-verifiable, zero
-`agent_review`. Shipped: `GoogleAuthProvider` + `signInWithPopup` on `/admin/login`,
-`app/admin/login/GoogleSignInButton.tsx`, a squatter-shape warning in `admin-grant.ts`,
-`docs/admin-access.md` extended with "Google sign-in" + "Claim before allowlist". Design is
-**claim-first provisioning**: an email must go through `admin-grant.ts` BEFORE it is added to
-`ADMIN_EMAIL_ALLOWLIST`, because Firebase enforces email uniqueness unconditionally once
-claimed — this closes the squatting race at the platform level rather than by operator
-discipline alone. `lib/admin-auth.ts` and the session route were NOT touched by F4. This
-closes the "federated sign-in auto-verifies email" item below (now resolved by the claim-first
-design, not a raw guard).
-
-`brad@inunu.net` is now the only admin — Firebase uid `NhSVXoMlT2bl6h4gDoyr5NZ1VW52`,
-`admin` claim, `emailVerified: true`, account created by us (so no pre-existing squatter risk
-on this address). Local `.env.local` allowlist updated.
-
-**Post-ship hardening, 2026-08-15 (`79ee2f8`, `93c5855`, `22397a1`) — see [[learned.md]] "F4
-meets reality".** A green gate did not mean a working product: `/admin/login` shipped with
-invisible input fields (inline styles), and `/admin`/`/admin/door` one click behind it had the
-identical unstyled defect. `ADMIN_EMAIL_ALLOWLIST` was missing from `apphosting.yaml`/Secret
-Manager entirely, so the deployed server refused every identity including valid Google
-sign-ins — fixed via Secret Manager, value verified byte-exact. Fixed: login restyled on real
-site tokens with site chrome added (`app/admin/login/layout.tsx`); `/admin` dashboard styled
-with a real table (`components/admin/TicketsTable.tsx`, `StatusPill.tsx`); `/admin/door` styled
-for one-handed show-entrance use, deliberately no marketing chrome (`DoorResultBanner.tsx`);
-Google button rebuilt to Google's published branding guidelines (official four-colour G inlined
-as SVG, `#747775` stroke, height-matched); autocomplete attributes added for password managers;
-client-side auth errors now log real Firebase codes. **F4 is now proven end to end by a human**
-— Brad signed in with Google and reached `/admin` with real ticket data, same Firebase uid
-throughout (`NhSVXoMlT2bl6h4gDoyr5NZ1VW52`), admin claim intact, no second account — this
-closes F6's admin half; the door-scanner half of F6 is still open.
-
-**F5 (Microsoft + Apple sign-in) DONE 2026-08-17** — resumed from the 2026-08-15 PARKED state
-(the two open questions logged below were resolved by Brad before this chain ran), shipped
-`3ffc36a`. Chain: @architect (unparked contract) -> @dev -> @qa (FAIL) -> @dev (fixes) -> @qa
-(PASS) -> contract gate 4/4 -> @docs -> commit. Milestone M2 now gates 2/2. Mission file
-`missions/2026-08-14-admin-auth-hardening.md` shows F5 `status: done`, mission `status: paused`
-(F6 still open). Shipped: three provider handlers on `/admin/login` collapsed into one
-`handleFederatedSignIn()`, all funnelling through the existing `mintSession()` ->
-`POST /api/admin/session` call; new Microsoft/Apple button components; Apple requests the
-`email` scope explicitly; Apple's SVG mark replaced (the original path's geometry ran outside
-its declared `viewBox`, rendering as a malformed blob — caught only by the real-browser check,
-see `learned.md`). Also fixed a pre-existing documentation defect: `docs/admin-access.md` told
-operators they could recover a refused sign-in's email from a `getAdminSession()` server log
-that did not exist; `classifyRefusal()` now actually logs (reason + attempted email,
-server-side only) so the claim is true. **F6 (door scanner/admin proven working end to end, by
-a human) is now the ONLY feature remaining on this mission**, `status: pending`, milestone M3 —
-inherently a human task, not dispatchable to an agent chain.
-
-- [ ] **[P1, residual risk, NEW 2026-08-17] F5's new debug-log claim is not mechanically
-  enforced.** `app/api/admin/session/route.ts:29` calls `classifyRefusal()` purely for its
-  logging side effect and discards the return value — nothing asserts the call site still exists
-  or that the log actually fires on a refusal. A future refactor could silently delete it without
-  any check catching the loss, reintroducing the exact "documented but non-functional debugging
-  path" defect this feature just fixed. See `learned.md` "F5 admin-auth-hardening — Residual
-  Risks" for the recommended fix (a contract assertion that exercises a real refusal round trip
-  and validates the log line, not a grep for the function name).
-- [ ] **[P2, residual risk, NEW 2026-08-17] `A-STRUCT-01`'s Apple `addScope('email')` check is
-  grep/line-window based and provably defeatable** — @qa showed it still passes against a
-  commented-out call and against an `addScope` on a dead branch. Not a blocker (the real code
-  path is correct and manually console-verified), but if Apple sign-in ever stops receiving
-  emails from real users, treat this check itself as a suspect before anything else. See
-  `learned.md` for full detail; a real fix needs AST parsing, not a bigger grep.
-- [ ] **[P0, human, required for F5 to function in any deployed environment] Enable Microsoft
-  and Apple sign-in providers.** Mirrors the still-open Google item below, done separately per
-  provider: Microsoft needs an Azure/Entra app registration (tenant, client id, secret) enabled
-  in Firebase Auth; Apple needs the Services ID + signing key (Brad confirmed he holds a paid
-  Apple Developer Program membership) configured in Firebase Auth. A green gate proves the code
-  path, not that either provider is actually turned on for `saoc-webapp`.
-
-- [ ] **[P0, human, required for F4 to function] Enable Google sign-in in Firebase Auth.**
-  A green gate does NOT prove this was done — go to
-  `https://console.firebase.google.com/project/saoc-webapp/authentication/providers`, enable
-  Google, set a support email.
-- [ ] **[P0, human] Add `brad@inunu.net` to the DEPLOYED `ADMIN_EMAIL_ALLOWLIST`** in Secret
-  Manager — only `.env.local` (local) has been updated. The two `saoc.co.za` entries in
-  `.env.local` are contract fixtures and must NOT go into Secret Manager.
-- [ ] **[P1, REASSIGNED to agent work 2026-08-18, no longer a Brad task] Close self-signup via a
-  `functions.auth.user().onCreate()` Cloud Function, not the Identity Platform toggle.** Verified
-  still live 2026-08-15 (`accounts:signUp` returns `WEAK_PASSWORD`, not
-  `auth/admin-restricted-operation`) — this is the actual fix for the account pre-hijacking risk
-  `--existing` only guards against. The Identity Platform "Disable user actions" toggle
-  (`console.cloud.google.com/customer-identity/settings?project=saoc-webapp`) remains
-  deliberately NOT used — Google confirms in-product it is a one-way upgrade with no downgrade
-  path, and an adversarial cost/benefit check found zero features SAOC would ever use in the full
-  GCIP tier (MFA/SAML/OIDC/multi-tenancy/IAP all irrelevant at this project's scale; the free MAU
-  allowance is identical with or without the upgrade). Blocking Functions were considered as an
-  alternative and ruled out — Firebase's own docs require the same GCIP upgrade to use them
-  (`firebase.google.com/docs/auth/extend-with-blocking-functions`, "Before you begin").
-  **Real path: `functions.auth.user().onCreate()`**, a first-generation Cloud Functions trigger
-  that does NOT require the Identity Platform upgrade — confirmed against
-  `firebase.google.com/docs/functions/auth-events`, which documents it as a plain Firebase
-  Authentication trigger, separate from and prior to the page's own "Trigger blocking functions"
-  section. Deploy a function that deletes any newly-created user unless their email is on
-  `ADMIN_EMAIL_ALLOWLIST`, using the Admin SDK (`admin.auth().deleteUser()`), matching this
-  project's existing claim-first/allowlist provisioning model (see F4 above). Requires the
-  project on the Blaze plan — **already true**, verified live via
-  `npx firebase apphosting:backends:list --project saoc-webapp` (App Hosting is Blaze-only), so
-  this needs no new billing action from Brad. Residual, disclosed gap: this fires after account
-  creation, not before like a blocking function, so there is a brief window where a self-created
-  account holds a valid ID token before deletion — acceptable because `lib/admin-auth.ts`'s
-  claim-first authorisation model already grants zero capability to any account without the
-  `admin` claim, so an unclaimed account mid-deletion has no more access than one that never
-  existed. Confirm the fix the same way the old entry did: `auth/admin-restricted-operation` (or
-  equivalent — a self-registered account existing only briefly, then gone) on a subsequent
-  `accounts:signUp` probe. Do not enable Identity Platform for this or any other reason without a
-  fresh explicit go-ahead from Brad — that constraint stands regardless of which feature wants it.
-- [x] ~~**[P2, design input for F4/F5] Federated sign-in auto-verifies email.**~~ **RESOLVED by
-  F4's claim-first design (see above)** — the squatting race is closed by Firebase's
-  unconditional email-uniqueness enforcement, not by the `--existing` guard alone. @qa traced
-  the residual gap (a verified password-only account pre-existing at an address) and confirmed
-  it is NOT exploitable: verifying a Firebase email requires mailbox access, and there is no
-  in-app signup/verification UI, so anyone in that state already owns the address.
-- [ ] **[P2] `/admin/login` should handle `auth/admin-restricted-operation` gracefully** once
-  self-signup is disabled above — today the UI has no path for that error code.
-- [ ] **[P2] A-GRANT-03's stdout-grep assertion doesn't prove anything** (see
-  [[learned.md]] item 4) — rewrite to observe the Admin SDK call rather than grep stdout for
-  "reset link".
-- [ ] **[P3, untested] Concurrent grant/revoke race on the same identity** — low likelihood for a
-  manual single-operator CLI, not exercised this session.
-- [ ] **[P3, style] `app/admin/login/page.tsx` uses inline styles throughout**, against
-  `.claude/rules/coding.md` (wants tokens/utility classes). Pre-dates F4; deliberately not fixed
-  inside an auth change — own task, own review.
-- [ ] **[P3] No tooling here can drive a real Google OAuth consent flow** — the sign-in button is
-  structurally verified but never exercised end to end. Belongs to F6's human proof.
-- [ ] **[P1, audit] Audit remaining contracts for the weak-assertion defect class** (see
-  [[learned.md]] "Weak-assertion defect class — 4th confirmed instance"), starting with the
-  already-recorded D5-04 false-green in `contract-d5-admin-dashboard.yaml`.
-
-- [x] ~~**[P2, NEW 2026-08-14, F5 scope — PARKED, see above] Additional sign-in providers.**~~
-  **DONE 2026-08-17 — see "admin-auth-hardening" section above.** Brad wants Google (done, F4),
-  Microsoft and Apple (done, F5). Code is shipped for all three; enabling each provider in the
-  Firebase console for the deployed environment is a separate open human task, tracked above.
-
-- [ ] **[P2, accessibility, NEW 2026-08-15] `ContactForm` and `TicketPurchaseForm` render error
-  text as `text-accent`** — 2.94:1 contrast on ivory, fails WCAG AA. Public-facing, affects
-  visitors, not just admins. Found while restyling the admin pages, which now use a bordered
-  callout at 13.6:1 instead — apply the same pattern to the two public forms.
-- [ ] **[P3, NEW 2026-08-15] OAuth consent screen shows `saoc-webapp.firebaseapp.com`** instead
-  of the Council's name during Google sign-in. Needs a custom `authDomain` configured in
-  Firebase Auth settings.
-- [ ] **[P1, cleanup, NEW 2026-08-15] A 53 MB zip is in git history from commit `5b67fdf`**
-  (`branding/National Show 2027/Old NOS 2027 Assets.zip`) — `branding/` is Brad's own active
-  workstream (see the standing rule above: leave it alone) and a binary that size does not
-  belong in git regardless. Repo is now 171 MB. Removal needs a history rewrite + force-push, so
-  it needs Brad's explicit permission and a quiet moment when nobody else is pushing.
-- [ ] **[P2, NEW 2026-08-15] No test admin credentials exist for automated visual QA** — `/admin`
-  and `/admin/door` are behind the Firebase Auth gate, so a browser agent cannot sign in and
-  verify them; only a human (Brad) can currently see these pages render. Worth solving —
-  candidates: a dedicated test admin account with narrowly scoped, rotatable credentials, or a
-  gate-bypass token for CI/QA use only, never for production traffic.
-- [ ] **[P2, harness, NEW 2026-08-15] Contract checks cannot detect missing DEPLOYED
-  configuration** — this project's contract gate runs against a local server reading
-  `.env.local`, so it structurally cannot catch a secret/env var that's declared locally but
-  missing from `apphosting.yaml`/Secret Manager (see the F4 `ADMIN_EMAIL_ALLOWLIST` incident
-  above). Consider a post-deploy smoke-assertion step that probes the live URL for the specific
-  failure mode (e.g. a known-good credential should reach 200, not 401/403) rather than relying
-  on local-only checks for anything that depends on deployed secrets.
-- [ ] **[P4, informational, NEW 2026-08-15] Google Sans is not loaded** — the Google sign-in
-  button uses the site's own sans stack instead of Google's specified typeface, a known and
-  accepted deviation from the letter of Google's branding spec. Not worth loading a webfont for
-  one button; no action expected unless this becomes a wider pattern.
-- [ ] **[P1, NEW 2026-08-15] Door scanner (F6's second half) still unproven at a real entrance.**
-  F4 proved the admin dashboard end to end with a human login; the door check-in scanner has not
-  had the same human proof yet. Milestone M3 remains `pending` until this happens.
-
-## Ticket status stuck at `reserved` — found 2026-08-15 during F6 door testing
-
-All four tickets in the live Firestore `tickets` collection show status **`reserved`**, none
-`paid`, and `purchasedAt` is empty (`—`) on every row. Confirmed visually on the styled
-`/admin` dashboard.
-
-**Why it matters:** the door scanner correctly refuses a `reserved` ticket with "This ticket
-has not been paid for" — verified on a real Samsung S23 FE with booking ref
-`SAOC-2027-5H63FBAE8AHP`. So the check-in gate works, but **no ticket can ever be admitted
-until something sets status to `paid`.** At a real door, every attendee would be refused.
-
-**Suspected cause:** the PayFast ITN webhook (`app/api/tickets/itn/route.ts`, sha256-pinned)
-is not flipping `reserved` → `paid`. Either it never fires in sandbox, fails verification
-silently, or was never exercised. Brad's understanding was that these tickets ARE paid, which
-suggests payments completed on PayFast's side while our record never updated — the worst shape
-of failure, because it is invisible until the door.
-
-**Next steps:** trace one sandbox payment end to end; confirm whether the ITN endpoint is
-reachable from PayFast and whether it writes. Relates to the `sandbox-ticket-proof` mission.
-Do NOT modify `app/api/tickets/itn/route.ts` without checking its sha256 pin first.
-
-**Blocks:** a successful door check-in cannot be demonstrated (F6) until at least one ticket
-reaches `paid`.
-
-## Session 2026-08-17 — Three contracts shipped (fixture-leak fix, door-test-qr, timeout-enforcement)
-
-### New backlog items (all pre-existing ceiling limits, not new defects)
-
-- [ ] **[P1, cleanup, NEW 2026-08-17] Fixture residue — 15 @harden-check.invalid docs in live Firestore tickets collection** — Added during prior diagnostics and test runs; blocking A5 and A34 environmental requirements in both `contract-payfast-m1-lock-cleanup-fix.yaml` and `contract-door-test-qr-seeder.yaml`. Deletion is Brad's call. Once deleted, both A5 and A34 will pass (green-checked). See `docs/fixture-leak-hardening.md` "Known Limitations" and `docs/door-test-qr-seeder.md` "A5 — Environmental RED".
-
-- [ ] **[P1, harness, NEW 2026-08-17] PR contract.py timeout enforcement to InunuNet/Athanor BEFORE next make update-template** — CRITICAL. `execution/contract.py` fix for dropped `timeout_seconds` copy is shipped locally (commit `contract-check-timeout-enforcement.yaml` 8/8 green), but it MUST be PR'd upstream or the next `make update-template` will silently revert it and reopen the fixture-leak vulnerability with no warning. Details: `docs/contract-timeout-enforcement-harness.md`. Coordinates: InunuNet/Athanor → execution/contract.py → 4 edits (26 ins / 5 del).
-
-- [ ] **[P2, harness validation, NEW 2026-08-17] contract.py timeout validation has three unguarded ceilings** — All pre-existing, not introduced by the fix. (1) `validate_cmd()` is never called from `check_cmd()`/`gate_cmd()`, so rejected timeout values still reach the runner (`true` → timeout=1, string → raw TypeError). (2) No upper bound — `timeout_seconds: 999999999999` would parse and cause unhandled OverflowError. (3) The `is not None` edit is structurally correct but not covered by any assertion. Documented as "Known Limitations" in `docs/contract-timeout-enforcement-harness.md` — do not claim complete validation unless these are fixed. Harness-level issue; file upstream if needed.
-
-- [ ] **[P3, harness detection, NEW 2026-08-17] Lock-timeout invariant walk skips bare/aliased specifiers to _shared.mjs** — The import-graph walk added to defeat barrel imports has an acceptable but documented boundary: bare or aliased specifiers that secretly resolve to `_shared.mjs` are skipped as external (ESM-only codebase, `require()` unmatched). This is a design choice, not a defect, but future refactoring that moves `_shared.mjs` or changes its import pattern should revisit this assumption. Documented in `docs/fixture-leak-hardening.md` "Secondary Hardening: Lock-Timeout Invariant" under "Remaining ceiling".
-
-- [ ] **[P1, UI, observed on a real device] `/admin/door` "Check In" button is clipped off the
-  bottom of the viewport on mobile.** Observed 2026-08-17 on Android Chrome at
-  `beta.saoc.co.za/admin/door` (screenshot from Brad): the camera viewport + manual-entry field
-  push the primary action below the fold, leaving only the top ~8px of the button visible above
-  the system nav bar. The button is reachable by scrolling, but the door scanner is a
-  one-handed, at-speed surface at a show entrance — the primary action must be visible without
-  scrolling. Likely fixes: constrain the camera viewport height (e.g. `max-height` in `dvh`, not
-  `vh` — mobile browser chrome makes `vh` wrong), and/or pin the manual-entry row to the bottom.
-  Must be verified on a REAL device at 320/375px, not just a desktop resize — this is exactly
-  the class of defect the "visual work is not done until a browser has seen it" rule exists for.
-  Note `dvh`/`svh` handle the collapsing-URL-bar case that `vh` does not.
-
-- [ ] **[P1] Door check-in refusals are never logged server-side.**
-  `app/api/admin/checkin/route.ts` logs only on a malformed body (`console.error`) or an
-  unhandled exception. Every admission verdict — `not-found`, `unpaid`, `wrong-show`,
-  `already-checked-in`, and successful admits — returns to the client and leaves no server
-  record. At a show entrance this makes "the scanner didn't work for someone at 10am"
-  unfalsifiable. Observed live 2026-08-17: Brad scanned four codes at `beta.saoc.co.za`, all
-  returned `Ticket not found`, and there was no server-side evidence of any of it. Want:
-  structured log per attempt (bookingRef, verdict, httpStatus, timestamp) per
-  `.claude/rules/coding.md` logging standards — and consider a Firestore audit collection, not
-  just stdout, since door staff run on phones and nobody reads Cloud Logging at a gate.
-
-- [ ] **[P2, process trap] Running the door-test-qr-seeder gate DESTROYS live human test
-  fixtures.** A4 (`check-teardown-scoped.mjs`) deletes the three seeded `DOOR-QR-*` docs to prove
-  teardown is exactly scoped, and never re-seeds. On 2026-08-17 the orchestrator ran the full
-  gate ~10 min before Brad scanned; every code correctly returned `not-found` because the tickets
-  were genuinely gone, costing a live testing session and reading as a scanner failure. Fix:
-  A4 should re-seed after asserting teardown, or the gate should print a loud "fixtures torn
-  down — run `pnpm door:seed` before human testing" notice. Same class as the fixture-leak
-  lesson: a check's side effects on shared live state are part of its contract.
-
-- [ ] **[P2, doc drift, NEW 2026-08-17] `docs/firestore-ticket-schema.md` is stale on `TicketType`.**
-  It still documents the retired hardcoded union (`'general' | 'member' | 'vip'`) and a 6-digit
-  `bookingRef` example. `types/index.ts` moved `TicketType` to a free-form `string` (ticket
-  categories now live as `ticketType` Sanity documents, keyed by slug) and `lib/booking-ref.ts`
-  moved to 60-bit Crockford base32 references, both already covered correctly in
-  `docs/ticketing.md` and `docs/ticketing-hardening.md`. Flagged while writing
-  `docs/ticketing-system-foundation-spec.md` — fix the doc in place (not in scope of that spec).
-
-- [P3] `refunded` TicketStatus has no `StatusPill` style — renders its literal text through the
-  neutral fallback, visually indistinguishable from an unrecognised status and from nothing in
-  particular. Found by @qa during F2 (2026-08-17), non-blocking. Natural home is F8 (comp/refund
-  route) or a dashboard-polish pass. `components/admin/StatusPill.tsx` `STATUS_STYLES`.
-- [P2] `createOrderWithPosition()` in `lib/orders.ts` uses idempotent `transaction.set()`, not
-  `.create()` — a colliding `bookingRef` silently overwrites instead of failing. Inert today (no
-  live caller; ~60 bits of CSPRNG entropy per ref) but F8/F10 must confirm collision-detection is
-  not load-bearing in their flows before reusing this primitive.
-- [P2] `amount`/`purchasedAt`/`m_payment_id`/`pf_payment_id` are duplicated on both `Order` and
-  `Ticket` after F2, deliberately. F10 must remove the position copies together with a backfill
-  when checkout/ITN stop writing them. Until then nothing detects divergence between the copies.
-
-## Ticketing foundation — F3 done: admin roles/capabilities (2026-08-17)
-
-F3 shipped — `lib/admin-roles.ts`, contract `contracts/contract-ticketing-f3-admin-roles.yaml`
-(8/8, zero `agent_review`), docs in `docs/ticketing.md` + `docs/admin-access.md`. See
-`learned.md` "Ticketing foundation — F3 done" for the golden-doc self-contradiction, the
-authorship-vs-behaviour assertion lesson, and the temp-file-deletion incident.
-
-- [P3] A3's own description says it catches a "dead capability" (one no role grants), but in
-  @qa's mutation test it actually fired via its `CAPABILITIES.size !== 7` branch. Cosmetic
-  wording mismatch — the check itself is correct, just mis-described.
-- [P3] The golden README claims `fixtures/capability-typecheck.ts` is the *only* independent
-  check against a whole-set capability rename. That's now stale — @qa proved the source-level
-  check (`check-manager-hand-listed-source.mjs`) also catches it, since it carries its own
-  hard-coded capability array. Update the README's claim so it doesn't overstate the fixture's
-  uniqueness.
-- [P2] `resolve()` returning an array instead of a `Set` is caught by A1 (type error), but a
-  `const result: any = []` bypass slips A1 and is only caught by A7 (lint's `no-explicit-any`).
-  Two-layer catch — keep A7 in the gate; don't drop it as cosmetic.
-- [P2, carry forward to F13, not F4] Admin self-signup is still open at the Identity Toolkit
-  level (`client.permissions` empty, verified live 2026-08-17). It does not grant admin —
-  `admin: true` is only ever set by `scripts/admin-grant.ts`, which already refuses
-  pre-existing accounts without `--existing` and warns on the squatter shape. Residual risk:
-  email pre-registration ahead of Lee-Ann's onboarding in F13.
-
-- **P1 — checkout never creates an `orders` document.** `app/api/tickets/checkout/route.ts`
-  writes only to `TICKETS_COLLECTION` (`transaction.create(tickets.doc(bookingRef), …)`,
-  line 247); it contains no reference to `createOrderWithPosition`, `ORDERS_COLLECTION`,
-  `'orders'` or `orderId`. Verified directly 2026-08-17. Consequences: F10's
-  `markOrderAndPositionPaidByPaymentId()` always resolves `order-not-found` for a real
-  purchase, so a real ITN never commits paid state; F11's confirmation email never fires;
-  every real order's `recoveryToken` stays null, so F6 recovery and F14 cannot work. The
-  spec claims checkout is order-aware (§ around lines 177/251) — the code does not match.
-  Contract in progress: `contracts/contract-ticketing-checkout-orders.yaml`.
-
-- **P3 — `components/tickets/TicketPurchaseForm.tsx` is 155 lines, over the project's own
-  150-line component limit.** Fails `ticketing-m1-m2` A35. Pre-existing since 2026-08-12,
-  untouched by the ticketing-foundation work. Needs a sub-component extraction, and because
-  it changes rendering it needs BrowserAgent verification at 1440/375/320px before it can be
-  called done — not a blind refactor.
-
-- [ ] F11 hardening (QA finding, 2026-08-17): `check-qr-roundtrip.mjs` (A3) negative control relies on the `qrcode` library's own empty-string rejection. Dropping only the `.trim()` from `lib/qr.ts`'s guard lets a whitespace-only bookingRef encode silently and A3 still passes. Add an explicit whitespace-only case to the A3 negative control. Not a live defect — guard is present and correct in shipped code.
-
-
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-17-agent-tier-split.md
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-- [ ] SAOC (Misc): [scheduled-resume] Reached 2026-08-18 02:22:00 — handing off to pulse_mission_loop.sh (one shot).
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-- **P3 — no request body-size cap on any App Router API route.** All app/api/ routes call
-  request.json() uncapped (App Router has no default body-parser limit). Found by @qa during
-  vendor F5; pre-existing and project-wide, not F5-specific. Needs one shared guard.
-
-
-
-
-
-
-- **P2 — fleet_loop.sh commits feature work under "chore: comms reply + fleet-loop session
-  wrap" labels.** Twice now (F3's page, F6's entire implementation, commits 7a01367/8db73e1).
-  History is truthful in content but lying in labels, and it races the orchestrator's own
-  staging. Gated off (chmod -x) 2026-08-18; needs a contract before re-enabling: label
-  accuracy + never staging files outside .agent/memory/.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-- [P2] F8 check A4 blind to both bare-JSX interpolation of undefined (renders blank) AND template-literal coercion of null (renders "null" — this exact regression shipped in bcbbc03, fixed in cd0308d). Architect: widen A4 to grep "null" as well as "undefined", plus a bare-`{boothNumber}`-as-JSX-child guard. (2026-08-18)
-
-- [P3] app/(marketing)/events/submit/page.tsx calls initAdmin() at page scope without force-dynamic — same cloud-prerender trap class as /admin/vendors (fixed); has built OK so far, but verify before it bites. (2026-08-18)
-
-
-
-
-
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818181105.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818181704.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818182218.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818182747.txt
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-18-agent-dispatch-naming.md
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818183329.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818183907.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818184431.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818185007.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818185520.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818190038.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818190559.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818191120.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818191652.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818192223.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818192749.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818193302.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818193818.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818194338.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818194853.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818195406.txt
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-06-28-cross-model-qa-codex.md
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818195918.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818200444.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818201009.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818201521.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818202039.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818202602.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818203127.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818203639.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818204200.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818204714.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818205234.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818205748.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818210312.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818210825.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818211336.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818211849.txt
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=none
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818212402.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818212915.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818213428.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818213940.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818214456.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818215016.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818215536.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818220048.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818220607.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818221123.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818221644.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818222157.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818222712.txt
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=None
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818223233.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818223747.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818224306.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818224825.txt
-
-## P1 — Stranded 'reserved' orders after a failed ITN: no reconciliation, no alert
-
-**Found:** 2026-08-18, during mission prove-ticket-purchase-works-end-to-end-b (@qa, live
-Firestore + Cloud Logging evidence).
-
-Three orders from the 19:24-19:28Z pre-fix window are permanently stuck `status='reserved'`:
-`SAOC-2027-5KYDSBMT38KX`, `SAOC-2027-R06HZ12P06EY`, `SAOC-2027-G08QJQK278NY` (CORRECTED 2026-08-18: originally logged without the `SAOC-2027-` prefix, which propagated into contract fixtures and broke them) (all buyer "Thabo E2E Test"). Two of them
-(R06, G08) had their ITNs REJECTED by the source-IP bug — PayFast collected the payment and
-notified us; the handler refused the notification; the order never flipped to `paid`.
-
-**Why it matters beyond the fixed bug:** the source-IP bug is fixed, but the fix does not
-recover orders stranded while it was live, and nothing prevents a recurrence from any FUTURE
-ITN failure (deploy window, PayFast outage, signature/passphrase change, our own 500). The
-failure is SILENT: the buyer is charged at the gateway, holds no ticket, and no process
-notices. These were sandbox tests so nothing is owed — in production this is a real customer
-with a real charge and no ticket.
-
-**Gap:** there is no reconciliation job and no alert on orders left `reserved` past their
-`expiresAt`. Detection today depends on a human noticing.
-
-**Suggested:** (a) scheduled reconciliation querying PayFast for `reserved` orders past
-expiry and settling/flagging them; (b) alert on any order `reserved` beyond expiry;
-(c) decide the recovery path for an order proven paid at the gateway but unpaid in Firestore.
-
-**Blocking?** Not for this mission. SHOULD be resolved before public ticket sales open.
-
-**CORRECTED 2026-08-19:** the detection/alert half of the "suggested" fix above
-(order-reconciliation) shipped and is correct. A follow-on seat-hold feature
-(ticketing-capacity-reconciliation-hold) was then built on the assumption that these four
-orders (and any future ones like them) could be safely held pending manual review — but @qa
-found that assumption false and it was withdrawn before shipping. These four remain sandbox
-test orders, as already noted above ("nothing is owed") — not real customers, and this entry's
-"in production this is a real customer" framing was hypothetical, not a claim that these four
-specifically were real customers. The finding that changes the recommendation: even for R06/G08,
-where Cloud Logging correlation showed a genuine sandbox PayFast payment was collected and its
-ITN wrongly rejected by the source-IP bug, Firestore itself records NOTHING that distinguishes
-that case from an ordinary abandoned checkout (`gatewayPaymentId`/`pf_payment_id` are only ever
-written in the same transaction that flips `status` to `'paid'`, so a still-`reserved` order
-structurally cannot carry either field regardless of what actually happened at the gateway). The
-distinguishing evidence for R06/G08 came entirely from manual Cloud Logging archaeology, not
-from any field an automated process could read. See
-`.agent/memory/project/specs/ticketing-capacity-reconciliation-hold/WITHDRAWN.md` for the full
-reasoning and the proposed real fix (a human-gated manual-settle admin action, not automatic).
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818225339.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818225856.txt
-
-## P2 — gh_closure_scan.py fails but exits 0 (silent-green defect)
-
-**Found:** 2026-08-18 during mission wrap-up (@maintainer hit it; orchestrator confirmed).
-
-`python3 execution/gh_closure_scan.py --format lines` prints
-`ERROR: .agent/memory/project/missions/OVERNIGHT-PLAN-2026-07-30.md has no YAML frontmatter`
-and then **exits 0**. Any caller gating on the exit code reads a hard failure as success, so
-the GitHub closure scan has been silently non-functional for an unknown period.
-
-Two separate defects:
-1. **Exit-code bug (the real one):** an ERROR path returns 0. Same defect class as this
-   session's F1 findings — a check that reports green while measuring nothing. Should exit
-   non-zero on a parse failure.
-2. **Input:** `OVERNIGHT-PLAN-2026-07-30.md` is a plan note, not a mission, but sits in
-   `missions/` with no frontmatter. Either give it frontmatter, move it out of `missions/`,
-   or have the scanner skip non-mission files deliberately rather than erroring on them.
-
-Fixing only (2) would hide (1) again — the exit-code bug is the item that matters.
-
-## P2 — Ticket confirmation emails have no reply_to; replies vanish
-
-**Found:** 2026-08-18, while confirming Resend domain setup.
-
-`lib/email.ts:17-18` sends ticket confirmations from
-`SAOC Tickets <tickets@tickets.saoc.co.za>` and no `reply_to` is set anywhere in
-`lib/email.ts` or `lib/confirmation-email.ts`.
-
-`tickets@tickets.saoc.co.za` READS like a monitored mailbox, so buyers will reply to it
-("change my booking", "I didn't get my QR"). Resend "Enable Receiving" is deliberately OFF
-(correct — we send only, and inbound MX on that subdomain would serve a pipeline that doesn't
-exist), which means those replies go nowhere and the sender may not even get a clear bounce.
-
-**Fix:** set `reply_to: info@saoc.co.za` on ticket confirmations (Brad's instruction 2026-08-18) (and review whether forms
-mail should do the same — it at least uses an honest `noreply@` sender). Do NOT fix this by
-enabling inbound receiving.
-
-**Priority:** not blocking F3/F4, but should land before public ticket sales — a buyer with a
-payment problem replying into a void is a support failure at the worst moment.
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818230414.txt
-
-## P1 — QR exists only in the confirmation email; page has none
-
-**Found:** 2026-08-18, F3/F4 verification.
-
-QR generation is REAL and functional — `lib/qr.ts:generateBookingRefQrDataUri()` (qrcode pkg,
-PNG data URI of the booking ref), rendered per ticket by `emails/OrderConfirmation.tsx`. The
-door scanner (`app/admin/door/page.tsx`, html5-qrcode) decodes plain text and
-`lib/checkin.ts:admit()` looks up `tickets` by that exact string — chain is correctly wired.
-
-**The gap:** `app/(marketing)/tickets/confirmation/page.tsx` renders NO image/svg/canvas (154
-lines, verified) — the booking ref appears as plain text only. There is no PDF, no wallet pass,
-no downloadable ticket. So the attendee's only scannable artifact is the EMAIL, putting email
-deliverability on the critical path for the primary (scan) check-in method.
-
-Mitigation that already exists: the door page has a `manualRef` input, so staff can type the ref.
-That works but is slow at a queue and depends on the attendee having the ref to hand.
-
-**Suggested:** render the QR on the confirmation page too (same helper, no new dependency) so the
-attendee always has a scannable artifact regardless of email delivery. Cheap fix, removes a
-single point of failure on show day.
-
-## P3 — Dead file: emails/TicketConfirmation.tsx
-
-Not imported anywhere (repo-wide grep; only false positive was the confirmation page's own
-`TicketConfirmationPage` function name). Superseded by `emails/OrderConfirmation.tsx`. Contains
-stale copy claiming "A PDF ticket with QR code will be available in a future update", which
-contradicts current behaviour. Delete.
-
-Related: header comments in `lib/confirmation-email.ts` are stale — they still describe an
-earlier "minimal stub, doesn't call Resend" state. The code genuinely calls Resend and generates
-real QR images now. Comments should be corrected; they actively mislead a reader.
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818230936.txt
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-18-model-env-integrity.md
-
-## P1 — Ticket delivery: QR on the paid page + buyer details + download + email from info@saoc.co.za
-
-**Brad's instruction, 2026-08-18.** Supersedes/absorbs the earlier "QR is email-only" P1 above.
-
-Required end state for a paid ticket:
-1. **QR rendered on the confirmation (paid) page** — not email-only. `lib/qr.ts:generateBookingRefQrDataUri()`
-   already exists and works; the page (`app/(marketing)/tickets/confirmation/page.tsx`) currently
-   renders no image at all, just the ref as text.
-2. **Buyer details shown on that page** alongside the QR (attendee name, ticket type, amount,
-   booking ref — decide the exact set against what the order/position docs actually hold).
-   NOTE: the status endpoint currently returns `{ status }` ONLY and its own comment says that
-   minimalism is a deliberate security mitigation — booking refs are 60-bit and unguessable, but
-   anyone holding a ref (e.g. a photo of a ticket) can already see its state. Widening that
-   endpoint to include buyer PII needs a deliberate decision, not a quiet change — see
-   `app/api/tickets/status/route.ts` comments. Likely correct approach: render details
-   server-side on the page from the Admin SDK rather than widening the public JSON endpoint.
-3. **Download option** — attendee can save the ticket (PDF or image). None exists today; there is
-   no PDF generation anywhere in the codebase.
-4. **Emailed from `info@saoc.co.za`.**
-
-**DECISION 2026-08-18 (Brad): staying with Option A — FROM stays `tickets@tickets.saoc.co.za`,
-replies routed to info@ via `reply_to`. Item 4 (send FROM info@) is NOT being built for now.**
-
-Correction to an earlier overstatement in this entry: verifying the apex at Resend is LOWER risk
-than first claimed here. Resend's record pattern (observed for tickets.saoc.co.za) puts MX+SPF on
-a `send.<domain>` subdomain and DKIM on `resend._domainkey.<domain>` — so apex verification would
-NOT modify the apex SPF or apex MX at all; the records are purely additive on new names. The
-"must merge into existing SPF or break all council mail" hazard described below does not arise.
-(Inferred from the subdomain pattern, not from Resend's apex instructions — confirm in-dashboard
-before acting on it.)
-
-Reason A was chosen anyway, on the merits rather than difficulty: subdomain sending ISOLATES
-deliverability reputation. If a ticket blast draws spam complaints, damage lands on
-tickets.saoc.co.za and the council's day-to-day saoc.co.za mail is unaffected. Merging ticket
-mail onto the apex would fuse those reputations permanently. Recipients also see the DISPLAY NAME
-("SAOC Tickets"), not the domain, in their inbox list.
-
-Also ruled out: Resend inbound receiving + forward to info@. Resend inbound is WEBHOOK delivery,
-not mail forwarding — it would mean building and operating a mail forwarder that can silently
-drop replies. Strictly worse than a reply_to header, which needs no infrastructure.
-
-**Historical note (superseded by the above):** email currently sends FROM
-`tickets@tickets.saoc.co.za` (`lib/email.ts:TICKETS_FROM_ADDRESS`). `info@saoc.co.za` is on the
-APEX domain, and only the `tickets.` and `forms.` SUBDOMAINS are verified at Resend. The apex
-`saoc.co.za` is NOT a verified Resend sending domain — its DNS still carries legacy cPanel mail
-config (SPF `v=spf1 ip4:164.160.89.117 +a +mx ~all`, MX `0 saoc.co.za`). Sending from
-`info@saoc.co.za` will FAIL exactly as `tickets.saoc.co.za` did before verification.
-
-To send from the apex, `saoc.co.za` must be added and verified at Resend — and its DNS is the
-LIVE mail domain for the council's existing mailboxes, so adding Resend SPF/DKIM there must not
-break inbound/existing mail. That is a materially riskier change than the subdomain setup and
-needs care. Related in-flight work: the reply-to feature (spec `reply-to-header-fix`) sets
-`reply_to: info@saoc.co.za`, which achieves "replies reach info@" WITHOUT touching the apex
-sending domain — worth confirming with Brad whether reply-to satisfies the intent, or whether he
-specifically wants the visible FROM to read info@saoc.co.za.
-
-**Priority:** P1, before public ticket sales. Item 1 (QR on page) is the cheapest and removes
-email deliverability from the critical path of door check-in.
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818231449.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818232006.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818232534.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818233051.txt
-
-
-## CORRECTIONS to earlier vendor-form backlog entries (2026-08-18, @architect verified against source)
-
-Two entries were wrong. Verified by reading `VendorBoothFieldset.tsx`, `VendorCategoryFieldset.tsx`,
-`lib/vendor-register-response.ts` and `VendorRegisterStatusBanner.tsx` directly rather than
-trusting the logged text:
-
-1. **Conditional-field bug is WORSE than logged.** An entry claimed the food-only fields already
-   gate correctly on category. They do not gate AT ALL. None of `electricalLoad`,
-   `foodHandlingCertificateNumber`, or `foodItemList` has any conditional render or payload
-   exclusion — every vendor sees food-handling fields regardless of category. Being fixed under
-   spec `vendor-page-fixes` F1.
-
-2. **Rate-limit UX entry is STALE — already fixed.** "No human-readable time shown" was closed by
-   commit f7c5f6f (`formatRetryAfter` / `retryAfterLabel` in lib/vendor-register-response.ts,
-   rendered by VendorRegisterStatusBanner). No action needed; treat as closed.
-
-Lesson worth keeping: backlog entries written during live testing captured symptoms accurately but
-diagnoses imprecisely. Verify against source before scoping work from them.
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818233604.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818234125.txt
-
-## P2 — Site-wide: button focus ring is invisible on cream backgrounds (WCAG 2.4.7)
-
-**Found:** 2026-08-18 by BrowserAgent visual review (verified via computed styles + 3x zoom
-screenshot, not inferred from source).
-
-Buttons on the cream body background render their focus outline as `rgb(244,243,236)` — the SAME
-colour as the background — with a 2px offset, so the ring sits invisibly in cream-on-cream. The
-element IS focusable and keyboard-operable (Enter works); the problem is purely that a keyboard
-user cannot SEE where focus is.
-
-Confirmed affected:
-- "Download ticket" on `/tickets/confirmation` (new, but inherits the site-wide pattern)
-- "Buy Ticket" on `/tickets` — the site's primary purchase CTA
-- Likely every button on a cream surface; not audited exhaustively.
-
-NOT a regression from the QR feature — pre-existing. Header/footer nav links already do this
-correctly with a near-black outline, so the correct pattern exists in the codebase; it just was
-never applied to buttons on cream.
-
-**Why it matters:** WCAG 2.4.7 (Focus Visible) failure on the purchase path, and this project's
-own `.claude/rules/coding.md` requires "every interactive element needs a label, role, and
-keyboard handler" with visible focus. A sighted keyboard user tabbing to buy a ticket cannot tell
-what is selected.
-
-**Fix:** give buttons on cream backgrounds a dark focus outline matching what the nav links
-already use. Single token/utility change; audit all buttons afterward with a browser, not a grep.
-
-**Suggested:** fold into the next UI pass rather than a standalone mission — but do not lose it,
-it is on the ticket-buying path.
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818234643.txt
-
-## P2 — PROCESS: two live contract locations caused duplicate work tonight
-
-**Found:** 2026-08-18. Codex (not the gate, not @qa) discovered an orphaned contract breaking on
-an import.
-
-This repo has TWO places contracts live:
-- `contracts/` — git-tracked, legacy, holds the vendor F1-F9 series, ticketing-hardening, etc.
-- `.agent/memory/project/specs/<slug>/` — where recent missions write contract + goldens.
-
-**What it cost:** an earlier session wrote `contracts/contract-vendor-form-submit-visibility-fix.yaml`
-(never committed) for the boothCount + invisible-banner bug. Tonight @architect independently
-designed `vendor-page-fixes` for the SAME two defects, having no idea the first existed — it
-scoped from the backlog and source, and nothing pointed at `contracts/`. Two designs, same
-destination, divergent APIs (`validateBoothCount()` vs `validateVendorRegisterFormClientSide()`).
-The older one's check script then broke against the shipped code, which is how it was found.
-
-Nothing caught this: the gate only runs the contract it's pointed at, @qa reviewed within scope,
-and the duplicate was invisible to both. Codex found it only because it reviews a diff rather
-than a contract.
-
-**Also note:** an untracked contract has no git history — deleting it is unrecoverable. The
-decision record here was archived deliberately to
-`.agent/memory/project/specs/vendor-page-fixes/superseded/`, but that was a judgement call, not a
-guarantee the process provides.
-
-**Suggested:** decide on ONE canonical location and migrate, or document clearly which is for what
-and have @architect check both before scoping. At minimum, contracts should be committed when
-written — an untracked contract is invisible to every tool and every future agent.
-
-**Minor, same investigation:** `SecurityValidator.hook.ts` false-positives on `rm -rf` with
-multiple ABSOLUTE paths (reads plain `/Users/...` as "recursive force-delete from filesystem
-root"). Worked around with one relative path per command; no override needed. Worth tightening if
-it recurs.
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818235206.txt
-
-## P1 — LIVE BUG: reserved seats never release; abandoned carts hold capacity forever
-
-**Found:** 2026-08-18 by a NEGATIVE CONTROL in the capacity-hold contract's truth table (the case
-asserting an expired-but-unalerted seat MUST still release). Traced by @dev reading a real fixture
-back from Firestore.
-
-`lib/checkout-reservation.ts`'s `buildReservationDocs` writes `expiresAt` onto the **Order**
-document only — never onto the **Ticket position** document (~lines 49-70).
-
-But `getSoldCountsByTicketType` / `stillHoldsSeat` (`lib/data/tickets.ts`) read ONLY the `tickets`
-collection. With no `expiresAt` on the position, every reserved position hits the existing
-"no expiresAt -> return true, fail closed" branch UNCONDITIONALLY.
-
-**Therefore lazy expiry-release never fires in production.** `RESERVATION_TTL_MINUTES = 30` is
-inert for capacity counting.
-
-**Impact:** a buyer who opens checkout and walks away holds that seat permanently. A show can sell
-out entirely on abandoned carts that were never paid for. This is live today, and it is the
-OPPOSITE failure from the oversell path the capacity-hold work set out to fix — both are real.
-
-Note the fail-closed branch is individually correct (better to hold a seat than oversell); the bug
-is that the field it needs is never written, so the branch it guards is unreachable.
-
-**Fix:** write `expiresAt` onto the position document in `buildReservationDocs`, matching the
-Order. Then verify the release path actually fires — do not assume, since it has apparently never
-run.
-
-**Caution:** this interacts with the reconciliation hold. Once seats DO release, a paid-but-
-stranded order's seat becomes resellable unless the reconciliation-alerted hold is in place. The
-two changes should land together or in the right order, not independently.
-
-**Also worth noting:** the concurrency/no-oversell property is genuinely well proven (5 concurrent
-requests at the last seat, real server, real Firestore). That rigour is real — but it verified the
-WRITE path while nothing verified the RELEASE path, which is where the defect sat.
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260818235743.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819000313.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819000851.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819001414.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819001943.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819002504.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819003025.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819003558.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819004114.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819004636.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819005154.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819005711.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819010224.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819010739.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819011250.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819011800.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819012310.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819012820.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819013330.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819013839.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819014348.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819014856.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819015405.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819015913.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819020422.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819020930.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819021439.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819021947.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819022456.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819023004.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819023513.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819024021.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819024530.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819025039.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819025547.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819030056.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819030604.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819031113.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819031621.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819032130.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819032638.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819033147.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819033656.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819034205.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819034713.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819035222.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819035730.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819040238.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819040747.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819041256.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819041804.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819042313.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819042821.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819043330.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819043838.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819044347.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819044856.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819045404.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819045913.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819050421.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819050930.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819051439.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819051947.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819052456.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819053005.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819053513.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819054022.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819054530.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819055039.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819055547.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819060056.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819060604.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819061113.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819061622.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819062131.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819062640.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819063148.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819063657.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819064205.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819064714.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819065222.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819065731.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819070239.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819070748.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819071256.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819071805.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819072313.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819072822.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819073331.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819073839.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819074347.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819074856.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819075404.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819075913.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819080422.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819080930.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819081439.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819081948.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819082456.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819083005.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819083513.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819084022.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819084531.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819085039.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819085548.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819090056.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819090605.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819091113.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819091622.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819092130.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819092639.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819093148.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819093656.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819094205.txt
+# SAOC Backlog
+
+Organised by **priority and subject**, not by session. Rebuilt 2026-08-19 from a 2,677-line
+session diary (pre-cleanup copy: `archive/backlog-2026-08-19-pre-cleanup.md`).
+
+**Rules for this file.** One line of stale information here misleads every agent, every session.
+Completed items are deleted, not ticked — git history is the record. Plan steps live in
+`Plans/` and mission files, not here. `[verify]` marks an item whose status is genuinely unknown.
+
+**Governing context.** The ticketing system is being rebuilt to the council's brief
+(`Ticketing system overview - with details.docx`, Drive `1fegrT9UKObJ71tUjUme_kFtqieSOsYca`).
+The approved plan is `Plans/valiant-squishing-thimble.md`. It supersedes older project
+assumptions about ticketing: single-line checkout, terminal once-per-lifetime check-in, the
+`attendeeName`/`attendeeEmail` pair, and single-ticket-type assumptions are all being replaced.
+Do not scope work from an entry that contradicts it.
 
 ---
 
-## Ticket branding + delivery items — logged 2026-08-19 from Brad's live purchase (SAOC-2027-YTKY3E5JF775)
-
-Context: Brad completed a real end-to-end purchase. The flow now works all the way through to a
-delivered email. These are presentation/format defects on a working pipeline, not broken plumbing.
-
-### P1 — BUG: QR code image does not render in the confirmation email
-Gmail shows the broken-image placeholder with its alt text ("QR code for booking reference
-SAOC-2027-YTKY3E5JF775") where the QR should be. The QR renders correctly on the confirmation
-page and in the downloaded file, so the generation is fine — this is specific to how the image
-is delivered to the email client.
-
-Likely cause to investigate first: the email references the QR by URL rather than embedding it.
-Gmail proxies remote images through googleusercontent and blocks/fails a range of sources; a
-data: URI is also stripped by Gmail. The robust fix for email clients is a CID-attached inline
-image (Resend supports attachments with a content id), not a remote URL and not a data URI.
-
-Do NOT treat "it renders in my browser preview" as proof of a fix — this defect only exists in
-the real client. Any assertion must check what the delivered email actually contains, and the
-fix needs a real send to a real Gmail inbox before it can be called done. Note the alt text is
-correct and useful, so accessibility is already right; only the image delivery is wrong.
-
-### P2 — Downloaded ticket must be a PDF, not a PNG
-Currently downloads as `saoc-ticket-<ref>.png` (see components/tickets/DownloadTicketButton.tsx).
-Brad wants a PDF. A PDF is the correct artifact for a printable ticket — it carries page size,
-vector text that stays crisp, and is what people expect to store or print.
-
-Watch: the QR must remain a crisp, scannable raster or vector at print size — a downscaled or
-JPEG-compressed QR fails scanning at the door, which is the one thing this artifact exists to do.
-Any contract for this needs a real scan test of the generated PDF, not just "a PDF was produced".
-
-### P2 — Uniform branding across all three ticket surfaces
-Brad is providing a design template. Three surfaces must share one visual identity:
-1. Confirmation page (app/(marketing)/tickets/confirmation/page.tsx) — currently plain: bare QR
-   on white, no logo, no show identity.
-2. Downloaded ticket artifact — currently a bare QR + name + type + ref on white.
-3. Confirmation email (emails/) — currently unstyled default: "Order Confirmation" heading and
-   plain label/value rows, no SAOC identity at all.
-
-BLOCKED until Brad supplies the template. Per CLAUDE.md's standing rule, do not invent brand
-assets — no colours, logos, or type decisions ahead of the handoff. Related memory:
-project_design_folders_brad_active.
-
-Email branding has a hard constraint the other two don't: email clients strip <style> blocks,
-ignore most modern CSS, and Gmail clips messages over ~102KB. It needs table-based layout with
-inline styles, and a logo delivered the same CID-attachment way the QR fix will use.
-
-### Also confirmed by this run
-F3 (confirmation email delivery) is now PROVEN end-to-end against a real inbox — sender
-tickets@tickets.saoc.co.za, correct attendee/type/ref, arrived in ~seconds. The only defect is
-the QR image above. F4 (door scan) remains the last unproven step of the mission.
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819094729.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819095246.txt
-
-## Door check-in findings — logged 2026-08-19 from Brad's live mobile test (SAOC-2027-YTKY3E5JF775)
-
-### F4 IS PROVEN — the scan worked; the UI just didn't say so
-Verified live: that ticket's status in Firestore is `checked-in`. Brad's FIRST scan succeeded and
-flipped it; every subsequent scan and manual entry correctly refused it as a duplicate. So the
-camera scan, the QR decode, POST /api/admin/checkin, the status write, and the duplicate-refusal
-guard all work on a real phone against the deployed site.
-
-Brad read it as "doesn't do anything" and hypothesised there was no active show. Both readings
-were wrong, and that is a UI failure, not a user failure — the interface gave a competent
-operator no way to tell success from failure. Do not "fix" a working pipeline on the strength of
-that first impression.
-
-### P1 — UX: the check-in result panel reads as failure when it is actually correct
-The panel renders "X Not checked in / Already checked in". Three different outcomes need to be
-visually distinct at a glance, in bright daylight, at a door, by someone holding a phone in one
-hand and a ticket in the other:
-- ADMITTED (first successful scan) — unmistakably positive, and it must PERSIST long enough to be
-  seen. Brad never saw his, which is why he thought nothing happened.
-- ALREADY ADMITTED (duplicate) — cautionary, not failure. Should say when it was first scanned
-  and by whom; that is the information a door steward actually needs to resolve a dispute.
-  `checkinAttempts` already records scannedByUid and outcome, so the data exists.
-- REFUSED (unpaid / wrong show / unknown ref) — genuinely negative, and must be distinguishable
-  from a duplicate, since the operator's next action is completely different.
-Current copy conflates the last two under one X. Any contract here needs a real-device visual
-check, not a DOM assertion — this is exactly the class of defect the automated suite has twice
-failed to see (see admin-nav-active-state).
-
-### P1 — UX: check-in button is below the fold; not one-handed
-On a real phone the operator must scroll with their thumb, past the camera viewport, to reach
-"Check In". Door scanning is inherently one-handed. The primary action and the result panel need
-to be reachable and visible without scrolling, at 375px and 320px. Note the constraint already
-established in admin-nav-menu: the nav on this page stays `variant="minimal"` precisely so it
-does not obstruct the camera — the same reasoning applies to whatever layout change lands here.
-
-### P2 — Manual entry should take only the unique suffix
-Staff should never type `SAOC-2027-`. Show the prefix as a fixed affix in the UI (inside the
-field on the left, or as a label immediately adjacent) and accept only the suffix.
-Must still accept a full pasted reference and normalise it rather than rejecting it — a scanner
-app, an email copy-paste, or a steward typing the whole thing must all work. Note Brad's own
-input was `SAOC-2027- YTKY3E5JF775` (with a stray space) and still resolved, so some
-normalisation already exists; find it before adding a second, competing one.
-Uppercase-normalise too — a phone keyboard will autocapitalise inconsistently.
-
-### Not a defect
-Brad's "we don't have an active show" theory: unfounded. The check-in resolved the ticket and
-returned a real per-ticket verdict, which it could not do without the show wiring working.
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819105122.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819110247.txt
-
-### P1 SHARPENED (Brad, 2026-08-19) — the successful check-in produced NO feedback at all
-Brad confirms: on the scan that actually worked, the door page showed nothing. Not a message he
-misread — nothing. This is stronger than "the wording reads as failure" and should be treated as
-the primary defect.
-
-LEADING HYPOTHESIS, unverified — do not treat as diagnosed: the result panel renders BELOW THE
-FOLD (same finding as the Check In button). On the successful first scan the confirmation would
-have rendered off-screen, and with nothing changing in the visible viewport Brad had no reason to
-scroll. On later attempts he did scroll, found the panel, and by then the ticket was already
-checked in — which is why the only message he ever saw was the duplicate one. If that's right,
-"no feedback" and "below the fold" are ONE defect, not two, and fixing the layout fixes both.
-
-RULE OUT FIRST, in this order, before designing anything:
-1. Does the admitted state render at all? Check whether the success branch produces a result
-   panel, or only the failure/duplicate branches do.
-2. If it renders, does it persist, or is it cleared by the scanner resuming its loop?
-3. Where does it render relative to the viewport at 375px and 320px, immediately after a scan?
-Only then decide the fix. Whatever lands must put confirmation where the operator is already
-looking — at or above the camera viewport — not below a control they have to scroll to reach.
-
-The success path is the one that has never been seen working by a human. It is also the only
-outcome that happens thousands of times at a real door. Verify it on a real phone with a real
-unscanned ticket; a DOM assertion cannot see this, and neither could the existing automated
-suite — nothing in it ever asserted that a successful scan shows the operator anything.
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819110803.txt
-
-### P1 REFINED (Brad, 2026-08-19) — required door check-in feedback behaviour
-Brad's explicit spec, not an interpretation:
-- SUCCESS: visually assertive, bright/green, unmistakable at a glance. Then the page RESETS —
-  clearing the previous booking reference so the next person can be scanned immediately.
-- FAILURE: HOLDS the entered reference in place so the operator can inspect it, with a bright
-  red "Check-in not accepted" AND the specific reason (already checked in / unpaid / wrong show /
-  unknown reference). The reason is required, not optional — it determines the steward's next
-  action.
-- Use complementary colours from the existing design palette.
-
-BLOCKER ON THAT LAST POINT — flag to Brad before any implementation, do not resolve it silently:
-app/globals.css has NO semantic feedback colours. The full token set is primary / primary-800 /
-primary-700 / primary-100 / accent / accent-soft / parchment / ivory / bone / ink / muted / rule /
-rule-soft — warm neutrals plus a dark green primary and a muted gold accent. There is no success
-green, no error red, and nothing that reads as "bright" at a door in daylight.
-
-So "bright green" and "bright red" CANNOT be satisfied from the current palette. This needs either
-(a) Brad deliberately adding two semantic tokens to the brand, or (b) an explicit decision to use
-primary (dark green) for success and accent for failure — which would be muted, low-contrast, and
-arguably fails the actual requirement of being assertive on a phone in sunlight.
-Per CLAUDE.md's standing rule, do NOT invent colours to close this gap. It is a brand decision
-and it is Brad's. Raise it, get the two values, then build.
-
-Accessibility note for whoever does build it: colour alone must not carry the verdict — pair it
-with an icon and text, and meet contrast on the parchment ground. A door steward may be
-colour-blind, and the screen will be in bright outdoor light.
-
-### Admin "mark paid" route — Brad wants it, deferred for discussion (2026-08-19)
-Brad's stated use case: a buyer pays by private banking / EFT rather than through PayFast, so no
-ITN ever arrives and the order sits reserved forever. He is unsure how it should work and wants
-to discuss before it is built. KEEP ON BACKLOG — do not build unattended.
-
-Why this is the right thing to defer: it moves money on a human's say-so, and it is the same
-capability the withdrawn ticketing-capacity-reconciliation-hold was reaching for (see that
-spec's WITHDRAWN.md — no data we record can distinguish paid-but-ITN-failed from an abandoned
-cart, so a human deciding is the only sound resolution path).
-
-Questions to settle with Brad when it is discussed:
-- Who may do it? This is the highest-privilege action in the system; it should be its own
-  capability, not bundled into general admin.
-- What evidence is recorded? A reference to the bank payment, the acting admin's uid, and a
-  timestamp, all immutable — this is the audit trail if a payment is ever disputed.
-- Does it send the confirmation email + QR, exactly as a PayFast payment does?
-- Does it decrement capacity the same way? (It must, or manual sales oversell the show.)
-- Can it be reversed, and if so by whom and with what record?
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819111334.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819111908.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819112500.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819113028.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819113553.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819114114.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819114640.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819115204.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819115730.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819120308.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819120836.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819121403.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819121929.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819122504.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819123026.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819123541.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819124104.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819124627.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819125141.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819125707.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819130232.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819130752.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819131307.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819131826.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819132336.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819132846.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819133358.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819133908.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819134418.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819134928.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819135438.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819135949.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819140501.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819141012.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819141522.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819142032.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819142543.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819143053.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819143604.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819144114.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819144626.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819145136.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819145647.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819150157.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819150706.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819151216.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819151726.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819152235.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819152744.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819153256.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819153809.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819154332.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819154910.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819155428.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819155940.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819160453.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819170426.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819170942.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819171506.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819172056.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819172612.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819173142.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819173720.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819174245.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819174803.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819175339.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819175924.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819180441.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819181000.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819181529.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819182045.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819182616.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819183159.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819183723.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819184251.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819184820.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819185352.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819185947.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819190515.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819191031.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819191552.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819192109.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819192642.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819193213.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819193813.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819194343.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819194901.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819195423.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819195954.txt
-
-- [ ] SAOC (Misc): New Event: check_own_comms-20260819200521.txt
+## Standing rules
+
+- **Leave `branding/`, `design spec/`, `design/Claude Design HTML/` alone** (Brad, 2026-08-12).
+  He is reorganising them by hand. Do not read, move, edit or "tidy" anything inside them.
+- **No invented brand assets** — colours, logos, type, semantic feedback colours. Ask Brad.
+- **Scope = SAOC only.** Not WOSA (separate developer), not Athanor R&D. Dogfood the harness and
+  file every harness bug upstream at `InunuNet/Athanor` rather than working around it silently.
+- **Never drive a PayFast test from the local server.** `SITE_URL` is unset locally and falls back
+  to `https://saoc.co.za` (the old Joomla site), so the ITN is delivered there and the ticket sits
+  `reserved` forever. Use the deployed host for payment testing.
+- **Local dev:** `pnpm dev:secure`, not `pnpm dev`. Chrome auto-upgrades `.co.za` to HTTPS.
+
+---
+
+## Blocked on the council / Lee-Ann
+
+- [ ] **[P1] Real show dates.** Her spec describes Thursday–Sunday; the `18–21 September 2027` in
+  the dataset is an invented placeholder that falls Sat–Tue. **Do not derive 16–19** — that
+  substitutes a new invention for the old one. Blocks the Day Visitor day-picker and the VIP date.
+  When they arrive, purge all placeholders in ONE pass (plan Stage 7 lists every site).
+- [ ] **[P1] Ticket prices and capacities.** Everything in the Sanity dataset today is invented and
+  labelled "Provisional price — pending council confirmation." Asked via the pricing artifact.
+  Also outstanding: early-bird cut-off date and released quantity; which days the Weekend Pass
+  covers; whether children need a ticket type at all.
+- [ ] **[P1] Refund and cancellation terms.** `/refunds` shipped structurally complete and
+  deliberately figure-free. Needs cancellation windows, refund conditions, cooling-off period.
+  When supplied, POLICY-10 (the digit+unit ban) must be revisited — it currently bans the very
+  figures that need adding.
+- [ ] **[P1] POPIA Information Officer is undesignated.** `/privacy` names `secretary@saoc.co.za`
+  by project convention. Under POPIA the officer defaults to the head of the organisation and must
+  be registered with the Information Regulator; nothing shows SAOC has designated anyone.
+- [ ] **[P1] All three policy pages carry an "AI-generated draft, not legal advice" notice** and
+  need professional legal review before the council relies on them.
+- [ ] **[P1, commercial — Brad's call] Spec V3 scopes TWO websites**, not one: a permanent SAOC
+  org site (6 pages) and a dedicated 2027 Show site (18 pages). V3 §6 also marks as "Confirmed by
+  INUNU" several items never priced in the accepted 28-May proposal — unified multi-category
+  checkout, filterable exhibitor/guest databases, the relational awards archive, the Members
+  Portal. **Do not restructure routes; this needs a scope+price conversation first.**
+- [ ] **[P1] Spec V3 §8 is a 13-question list for INUNU** (CMS, filtering, bookings,
+  notifications, archiving). Several already have answers in our codebase. Worth a written reply.
+- [ ] **[P1] Stellenbosch visitor travel content.** Every CTICC-anchored travel section was
+  *cleared* rather than rewritten (correct — inventing airfield transport detail is the banned
+  failure mode). `airportRoutes`/`accommodation`/`attractions` are empty; `publicTransport`,
+  `parking`, `accessibility` and two intros are neutralised to "not confirmed". Owed: real
+  Stellenbosch-area content. There is no scheduled public transport to the airfield, so arrival
+  is drive/e-hail only, which changes the shape of the advice. Pre-change values backed up at
+  `.agent/memory/scratch/venue-change-2026-08-12/before.json`.
+- [ ] **[P2] Vendor Terms & Conditions document does not exist.**
+  `VendorPaymentFieldset.tsx:49` makes vendors agree to a document with no page, route or text
+  behind it — an agreement checkbox binding to nothing. Content is Lee-Ann's to write; do not
+  draft placeholder legal text. Once supplied, the page + linked label is ordinary work.
+- [ ] **[P2] National Show brand model.** Brad's unconfirmed hypothesis: a stable master brand
+  across editions plus a rotating per-edition host sub-brand, instead of a full redesign each
+  cycle. If the committee agrees, `branding/national-show-2027/` may need restructuring into a
+  stable parent with per-edition subfolders. **Do not restructure anything now.**
+- [ ] **[P2] Secure organisation-owned document custody.** Institutional records sit in
+  individuals' Drives, thumb drives and personal email. Critical sub-point: accounts must be
+  registered to SAOC as an organisation, not to whoever created them — especially the payment
+  merchant account, the domain, and any Google/Microsoft tenant. Section E of the call-prep doc.
+- [ ] **[P2] Real Show copy has arrived and is not yet loaded.** `About - 2027 National Show.docx`,
+  `What to Expect.docx`, `South African Exhibitors.docx` — first client-approved copy, replaces
+  our labelled placeholders. Confirms the theme: "From Wild Origins to Cultivated Excellence."
+- [ ] **[P2, security] Spec V3 circulates SAOC mailbox passwords in plaintext** in a shared Drive
+  doc. Values are already stale (the VPS migration replaced all five). Tell Lee-Ann the doc should
+  not carry credentials at all.
+- [ ] **[P3] `show@saoc.co.za` has been unused since 2020**; Lee-Ann suggests archiving. V3 also
+  asks for per-area show addresses (symposium, WOSA, bookings) so committee members get their own
+  area's registration notifications.
+- [ ] **[P3] Hero lede copy authority unresolved.** The design reference and
+  `components/home/Hero.tsx:84-86` differ. May be an intentional later revision, not drift — do
+  not change without confirming which is authoritative.
+
+---
+
+## Blocked on Brad (human action, not dispatchable)
+
+- [ ] **[P1] Payment gateway decision and merchant account.** Recommendation on file: stay on
+  PayFast for 2027, Ozow as a secondary subject to vendor Q&A; the council prefers Ozow and Ozow
+  onboarding cannot start without a merchant account. Time-sensitive: card payments must be
+  explicitly activated or international attendees cannot pay at all. Outstanding follow-ups from
+  `docs/payment-gateway-research-2026-08.md` §10: PayFast Clause 9.8 fund-hold commitment in
+  writing before sales open; PCI-DSS/ISO 27001 certificates verified via IAF CertSearch; POPIA
+  operator agreement; attorney review of the refund policy; and disclosure to the council of our
+  conflict of interest (we built the custom system) and the thin-evidence spots.
+- [ ] **[P1] Go-live: live payment credentials.** In order: obtain live Merchant ID/Key/Passphrase;
+  store in Secret Manager with `printf '%s' | --data-file=-` (**never `echo`** — see the secret
+  corruption class); flip `lib/payfast.ts` off the sandbox constants; point `SITE_URL` at the real
+  domain (**gated behind DNS cutover** — live ITNs will not land otherwise); re-verify the ITN
+  signature path against a live transaction via the documented re-pin ceremony.
+  **Do not go live before council-confirmed prices are in.**
+- [ ] **[P1] DNS cutover.** Nameservers still point at the old cPanel host. Sequence:
+  re-pull mail from the legacy host one final time immediately before cutover (the 2026-07-20
+  restore is a snapshot) → switch nameservers → only THEN add any further Resend DNS records.
+  Adding them before the switch loses them silently with no code change to blame.
+- [ ] **[P1] Run `scripts/install-dev-domain.sh` once from Terminal.app**
+  (`cd ~/ai/SAOC && sudo bash scripts/install-dev-domain.sh`) — sudo cannot prompt in an agent
+  shell. Until then the working URL is `https://dev.saoc.co.za:3333`.
+- [ ] **[P1] A 53 MB zip sits in git history** from commit `5b67fdf`
+  (`branding/National Show 2027/Old NOS 2027 Assets.zip`). Repo is 171 MB. Removal needs a history
+  rewrite + force-push, so it needs Brad's explicit permission and a quiet moment.
+- [ ] **[P1] Live `roles`-claim migration has never been run.** `scripts/admin-migrate-roles.ts`
+  is dry-run by default; no account holds a `roles` claim, including `brad@inunu.net`. Running
+  `--apply` is human-gated. `app/api/admin/checkin/route.ts`'s capability check stays deliberately
+  deferred until it has.
+- [ ] **[P1] Firestore test-data cleanup — deletion is Brad's call, not an agent's.** Live
+  collections carry test residue: ~15 `@harden-check.invalid` fixture docs in `tickets`, two
+  `contactSubmissions` diagnostic records, and the sandbox order/ticket documents from proving
+  purchase end to end. Blocks A5/A34 in `contract-payfast-m1-lock-cleanup-fix.yaml` and
+  `contract-door-test-qr-seeder.yaml` (both go green once cleared). Note the leak count has gone
+  both up and down across sessions (5 → 12 → 17 → 15) — record the number, do not narrate a trend
+  from it; measure under controlled conditions before drawing a conclusion.
+- [ ] **[P1, security] Rotate `FIREBASE_ADMIN_PRIVATE_KEY`** (leaked into a session transcript via
+  a redaction pattern that only matched single-line pairs, missing the multi-line key body)
+  **and `SANITY_REVALIDATE_SECRET`** (visible in verification screenshots) before launch.
+- [ ] **[P2] Admin "mark paid" route — Brad wants it, wants to discuss before it is built.**
+  Use case: a buyer pays by EFT, no ITN arrives, the order sits reserved forever. This is also the
+  only sound resolution for a paid-but-ITN-failed order — nothing Firestore records can
+  distinguish that from an abandoned cart (see
+  `specs/ticketing-capacity-reconciliation-hold/WITHDRAWN.md`), so a human deciding is the answer.
+  Questions to settle: who may do it (its own capability, not general admin); what evidence is
+  recorded (bank reference, acting uid, timestamp, immutable); does it send the confirmation email
+  and QR; does it decrement capacity (it must, or manual sales oversell); can it be reversed.
+  **Do not build unattended.**
+- [ ] **[P2] Semantic feedback colours do not exist in the brand.** `app/globals.css` has
+  primary / accent / parchment / ivory / bone / ink / muted / rule only — no success green, no
+  error red, nothing that reads as bright at a door in daylight. Brad's door check-in spec
+  requires "bright green" and "bright red", which the current palette cannot satisfy. Either he
+  adds two semantic tokens, or he decides explicitly to use primary/accent (muted, arguably fails
+  the requirement). **Blocks the door check-in feedback work.** Do not invent colours.
+- [ ] **[P2] Design template for ticket branding** — needed before the three ticket surfaces can be
+  unified (see Ticketing below).
+- [ ] **[P2] Design bundle for mission `national-show-design-alignment`** (4 features, validated,
+  blocked). Cannot start until the assets arrive.
+- [ ] **[P2] Microsoft and Apple sign-in providers are DEFERRED (2026-08-17).** Code shipped in F5;
+  neither provider is enabled for `saoc-webapp`. Microsoft needs an Entra app registration (needs
+  a directory), Apple needs a Services ID + signing key. A green gate proves the code path, not
+  that the provider is on.
+- [ ] **[P2] Domain owner contact details.** Apply Lee-Ann's correct registrant details at
+  domains.co.za — "Update Pending" may be gating registry changes.
+- [ ] **[P3] Manual Sanity dashboard usage check** — manage.sanity.io → Settings → Usage. Confirm
+  CDN/API/bandwidth totals and that role display doesn't conflict with Free's 2-role cap. Not
+  retrievable via the token API. 5-minute task.
+- [ ] **[P3] Decide whether the legacy `public_html_1` / `public_html_2` copies are worth keeping.**
+
+---
+
+## Ticketing — open work (read `Plans/valiant-squishing-thimble.md` first)
+
+- [ ] **[P1] Verify the reserved-seat release path actually fires.** `buildReservationDocs` now
+  writes `expiresAt` onto the position document as well as the order (`lib/checkout-reservation.ts`
+  lines 56 and 81), which was the missing field that made lazy expiry-release unreachable — every
+  reserved position hit the "no `expiresAt` → fail closed" branch unconditionally, so
+  `RESERVATION_TTL_MINUTES = 30` was inert and abandoned carts held capacity forever. **The write
+  is fixed; the release path itself has still never been observed running.** Verify it, do not
+  assume. Note the interaction: once seats DO release, a paid-but-stranded order's seat becomes
+  resellable. Also note what this episode showed — the no-oversell WRITE path is genuinely well
+  proven (5 concurrent requests at the last seat, real server, real Firestore) while nothing
+  verified the RELEASE path, which is where the defect sat.
+- [ ] **[P1] QR code image does not render in the confirmation email.** Gmail shows the
+  broken-image placeholder with its alt text. Generation is fine — it renders on the confirmation
+  page and in the downloaded file. Likely cause: the email references the QR by URL or data: URI;
+  Gmail proxies remote images and strips data: URIs. Robust fix is a CID-attached inline image
+  (Resend supports attachments with a content id). **"It renders in my browser preview" is not
+  proof of a fix** — this defect only exists in the real client, so any assertion must check what
+  the delivered email contains, and the fix needs a real send to a real Gmail inbox.
+- [ ] **[P1] Door check-in: the successful scan produces no visible feedback.** Brad's live mobile
+  test — the scan WORKED (ticket reached `checked-in`, duplicates correctly refused) and the UI
+  showed him nothing. Leading hypothesis, unverified: the result panel renders below the fold, same
+  as the "Check In" button, so on the first successful scan the confirmation rendered off-screen.
+  If so, "no feedback" and "below the fold" are ONE defect. **Rule out in this order before
+  designing:** (1) does the admitted state render at all, or only the failure/duplicate branches;
+  (2) if it renders, does it persist or is it cleared when the scanner loop resumes; (3) where does
+  it land relative to the viewport at 375px and 320px immediately after a scan.
+  **Brad's required behaviour, explicit:** SUCCESS is visually assertive and unmistakable at a
+  glance, then the page RESETS clearing the previous ref so the next person can be scanned.
+  FAILURE HOLDS the entered reference for inspection, with a bright red "Check-in not accepted"
+  AND the specific reason — already checked in / unpaid / wrong show / unknown reference — because
+  the reason determines the steward's next action. Blocked on the semantic-colour decision above.
+  Accessibility: colour alone must not carry the verdict; pair with icon and text, meet contrast on
+  parchment, assume a colour-blind steward in bright sunlight.
+  Verify on a real phone with a real unscanned ticket — a DOM assertion cannot see this, and the
+  existing suite never asserted that a successful scan shows the operator anything.
+  `[verify against new brief]` — the verdict taxonomy changes when check-in becomes per-day.
+- [ ] **[P1] Door check-in is not one-handed.** The operator must scroll past the camera viewport
+  with their thumb to reach "Check In"; on Android Chrome only the top ~8px of the button clears
+  the system nav bar. Primary action and result panel must be visible without scrolling at 375px
+  and 320px. Use `dvh`/`svh`, not `vh` — mobile browser chrome makes `vh` wrong. The nav on this
+  page stays `variant="minimal"` so it does not obstruct the camera; the same reasoning applies to
+  whatever layout lands. Must be verified on a real device.
+- [ ] **[P2] Manual entry should take only the unique suffix.** Staff should never type
+  `SAOC-2027-`; show it as a fixed affix. Must still accept a full pasted reference and normalise
+  it (a scanner app, an email copy-paste and a typing steward must all work) — Brad's input had a
+  stray space and still resolved, so some normalisation exists; find it before adding a competing
+  second one. Uppercase-normalise too; phone keyboards autocapitalise inconsistently.
+- [ ] **[P2] Downloaded ticket must be a PDF, not a PNG.** Currently
+  `saoc-ticket-<ref>.png` (`components/tickets/DownloadTicketButton.tsx`). A PDF carries page size
+  and vector text. **Watch:** the QR must stay crisp and scannable at print size — a downscaled or
+  JPEG-compressed QR fails at the door, which is the one thing the artifact exists to do. Any
+  contract needs a real scan test of the generated PDF, not "a PDF was produced".
+- [ ] **[P2] Uniform branding across the three ticket surfaces** — confirmation page, downloaded
+  artifact, confirmation email. All three are currently plain/unstyled with no SAOC identity.
+  BLOCKED on Brad's template. Email has a hard constraint the others don't: clients strip `<style>`
+  blocks, ignore most modern CSS, and Gmail clips over ~102KB — so table layout, inline styles, and
+  a logo delivered as a CID attachment the same way the QR fix will be.
+- [ ] **[P1] Refunds cannot be represented end to end.** `TicketStatus` has a `refunded` value but
+  nothing sets it, `components/admin/StatusPill.tsx` has no style for it (renders through the
+  neutral fallback, indistinguishable from an unrecognised status), and no gateway refund call
+  exists. A refund today means refunding in the gateway dashboard and hand-editing Firestore with
+  nothing linking the two. PayFast exposes a Refunds API (same MD5+passphrase auth as the ITN), so
+  this is buildable. Needed before high refund volume.
+- [ ] **[P2] `createOrderWithPosition()` uses idempotent `transaction.set()`, not `.create()`** —
+  a colliding `bookingRef` silently overwrites instead of failing. Inert today (~60 bits of CSPRNG
+  entropy per ref), but any flow reusing this primitive must confirm collision detection is not
+  load-bearing. `[verify against new brief]` — the multi-line-item reservation transaction rewrites
+  this path.
+- [ ] **[P2] `amount`/`purchasedAt`/`m_payment_id`/`pf_payment_id` are duplicated on both `Order`
+  and `Ticket`**, deliberately, and nothing detects divergence between the copies. The position
+  copies were meant to be removed with a backfill once checkout/ITN stop writing them.
+  `[verify against new brief]`.
+- [ ] **[P2] Recovery-token wiring has no owner.** `lib/recovery-token.ts` ships the primitives;
+  something must CALL `mintRecoveryToken()` at order creation and persist it, or there is nothing
+  for a recovery link to verify against. Same shape: the guest-order-claiming backfill (a guest's
+  existing orders' `buyerUid` backfilled when they later register) is owned by nobody.
+  `[verify against new brief]` — the booking-contact block rewrites order creation and may absorb
+  or obsolete both.
+- [ ] **[P3] `RECOVERY_TOKEN_DEFAULT_TTL_MS` is a 180-day working placeholder**, not a
+  council-approved value. Real security/usability tradeoff: too short locks buyers out of tickets
+  they paid for, too long keeps a leaked link live for months.
+- [ ] **[P2] Confirm a `checkinAttempts` document is actually written on a real scan.** The path is
+  wired (`app/api/admin/checkin/route.ts:60` → `recordCheckinAttempt`), but the paused mission
+  `prove-ticket-purchase-works-end-to-end-b` M1 gate observed no document after a live scan.
+  Agent-actionable: query Firestore directly, do not queue a human scan. If the write genuinely
+  fails, it fails silently — `lib/checkin-audit.ts:143` logs and swallows. Must survive the Stage 5
+  per-day check-in rewrite: re-verify after it lands.
+- [ ] **[P2] `docs/firestore-ticket-schema.md` is stale on `TicketType`** — still documents the
+  retired `'general' | 'member' | 'vip'` union and a 6-digit `bookingRef`. Reality: free-form
+  string keyed by Sanity slug, 60-bit Crockford base32 refs.
+
+---
+
+## Security & admin auth
+
+- [ ] **[P1] Confirm `/admin/door` has a server-side gate.** It was a client component with no
+  server gate and no middleware — UI exposure only (check-in POSTs correctly 403), but a
+  self-registered account could render the scanner. Self-signup itself is now closed by the
+  `guardSelfSignup` Cloud Function. Verify the page gate specifically.
+- [ ] **[P1] F5's debug-log claim is not mechanically enforced.**
+  `app/api/admin/session/route.ts:29` calls `classifyRefusal()` purely for its logging side effect
+  and discards the return value. Nothing asserts the call site exists or that the log fires on a
+  refusal — a refactor could silently delete it and reintroduce the exact "documented but
+  non-functional debugging path" defect this fixed. Fix is a real refusal round trip that validates
+  the log line, not a grep for the function name.
+- [ ] **[P2] Empty-allowlist behaviour is reasoned about, not proven live.** No test restarts the
+  server with an empty/unset/whitespace-only/trailing-comma `ADMIN_EMAIL_ALLOWLIST`. Residual risk
+  is low (`parseAllowlist()` is a deterministic trimmed split) but this is exactly the
+  secret-corruption defect class: an empty allowlist fails closed for everyone and is
+  indistinguishable from a working gate from outside. Assert both that everyone is refused and that
+  the `parsed length: 0` log line appears.
+- [ ] **[P2] No claim-size guard on the grant path.** Firebase caps custom claims at ~1000 bytes;
+  ~24 per-show `manager` grants exceed it. The operator gets a raw `auth/claims-too-large` with no
+  advance warning.
+- [ ] **[P2] `/admin/login` has no path for `auth/admin-restricted-operation`**, which self-signup
+  refusal now produces.
+- [ ] **[P2] No test admin credentials exist for automated visual QA.** `/admin` and `/admin/door`
+  are behind Firebase Auth, so no browser agent can verify them render — only Brad can see these
+  pages. Candidates: a narrowly-scoped rotatable test account, or a CI-only gate-bypass token never
+  valid for production traffic.
+- [ ] **[P3] A throwing `lookupShowWindow` closure propagates out of `hasCapability()`** rather
+  than returning false (`lib/admin-auth.ts:170,199` — no try/catch). Not exploitable: the shipped
+  `resolveShowWindowLookup` catches internally and can never throw. Any future route that
+  hand-rolls a `ShowWindowLookup` must catch internally or wrap at the boundary.
+- [ ] **[P3, convention] Every capability-gated route wires `ShowWindowLookup` itself** —
+  `hasCapability()`'s default is `() => null`. New routes must call `resolveShowWindowLookup`, pass
+  `{ now, lookupShowWindow }`, and land with their own wiring check. Not a task; the convention.
+  Separately: `checkin`, `tickets` and `export-csv` admin routes call no capability check at all —
+  the checkin one is the documented deferral above; the other two are pre-existing.
+- [ ] **[P3] OAuth consent screen shows `saoc-webapp.firebaseapp.com`** instead of the council's
+  name. Needs a custom `authDomain`.
+- [ ] **[P3, untested] Concurrent grant/revoke race on the same identity** — low likelihood for a
+  manual single-operator CLI.
+
+---
+
+## Accessibility & UI defects
+
+- [ ] **[P2, WCAG 2.4.7] Button focus rings are invisible on cream backgrounds, site-wide.**
+  Buttons render their focus outline as `rgb(244,243,236)` — the same colour as the body — with a
+  2px offset. Elements are focusable and keyboard-operable; a keyboard user simply cannot see where
+  focus is. Confirmed on "Buy Ticket" (`/tickets`, the primary purchase CTA) and "Download ticket".
+  Header/footer nav links already do this correctly with a near-black outline, so the right pattern
+  exists in the codebase — it was never applied to buttons on cream. Single token change; audit all
+  buttons afterwards with a browser, not a grep.
+- [ ] **[P2, WCAG] `ContactForm` and `TicketPurchaseForm` render error text as `text-accent`** —
+  2.94:1 on ivory, fails AA, public-facing. The admin pages already use a bordered callout at
+  13.6:1; apply the same pattern.
+- [ ] **[P2, HELD for Brad's design call] WCAG accent-token contrast audit.** 30-row audit and
+  contract identify real accent-contrast failures on live public pages. Remedy fully specified in
+  `contracts/golden/wcag-accent-contrast/remedy.md`, deliberately not applied — it is a design-token
+  decision. This is a live accessibility failure on public pages and should not sit indefinitely.
+- [ ] **[P2] `/contact` is unreachable from the header on mobile.** Verified live at 375px: the
+  header's Contact button is `hidden sm:inline-block` (`Header.tsx:150`) and `MobileMenu.tsx`
+  renders only the NAV array plus a `mailto:` link. Zero `a[href="/contact"]` in the header before
+  or after opening the menu. Footer is the only path. Fix by adding `/contact` to MobileMenu, not
+  by unhiding the button.
+- [ ] **[P2] Vendor form has no client-side validation gating submission.** `checkValidity()`
+  correctly flags empty required fields and whitespace-only text, but nothing in the submit handler
+  checks it before firing the network request — a fully empty form POSTs. All rejection is
+  server-side with no client backstop.
+- [ ] **[P2] `boothCount` still bypasses the form's own guarded-parse pattern.**
+  `lib/vendor-register-form-payload.ts:117` is a raw `Number.parseInt`; every other numeric field
+  routes through `toOptionalInt()`. Garbage parses to `NaN` → `null` in the body → correct but
+  invisible server rejection. Note the field is `type="number"`, so Chromium silently discards
+  non-numeric keystrokes as you type — "e1" never reaches state as a literal, it ends up empty with
+  no inline feedback. Four Codex findings on the abandoned scratch design are worth reading before
+  reusing any of it: React batches same-event `setDescriptor` calls so an
+  unmount/remount-dependent banner effect never reruns on a second failure; `"1.5"` and `"1e3"`
+  coerce to `1` and must not be treated as valid; a wiring check must prove the return is
+  conditional on validation failing, not merely that some return exists; and a `tabindex="-1"`
+  check must target the ref'd root element, not scan the whole rendered HTML.
+- [ ] **[P2] Vendor registration rate-limits after ~4 attempts for 45 minutes.** A vendor fumbling
+  the form while genuinely trying to fix it gets locked out. (The human-readable countdown itself
+  was fixed in `f7c5f6f`; the 45-minute lockout on a form this error-prone is the remaining issue.)
+  Two BrowserAgent tests were blocked by this and remain unrun: the exact error-banner text repro,
+  and one clean valid submission.
+- [ ] **[P2] `vendorCategory` claims `aria-required="true"` but enforces nothing** — none of its 8
+  checkboxes has `required`, and the client wouldn't block on it regardless. A screen-reader user is
+  told the group is required; nothing backs that up.
+- [ ] **[P2] No visible focus indicator on ~24 of ~40 vendor-form interactive elements** — every
+  text/number/email/tel/url/textarea input relies on a barely-perceptible border-colour shift with
+  `outline: none`. Checkboxes, radios, submit and nav links are correct; isolated to text inputs.
+- [ ] **[P2] No `maxlength` on any of the 25 vendor form fields** (5000 chars accepted into
+  `businessName` with no truncation or warning) **and no `pattern` on the phone field** —
+  `type="tel"` accepts `"not a phone number !!"` verbatim.
+- [ ] **[P2] Vendor form all-caps labels are hard to read.** `font-mono text-[11px] uppercase
+  tracking-[0.16em]` across five shared components. Contrast passes at 5.24:1 — the problem is
+  11px + uppercase + 1.76px letter-spacing combined, not colour. Brad found it genuinely hard to
+  read at length, and he is the decision-maker, so this is authorised, not invented brand work.
+  First check whether the treatment is scoped to the vendor components or shared site-wide; a fix
+  must not silently diverge the vendor form's typography from the rest of the site. Recommendation:
+  keep the mono/letter-spacing character, drop `uppercase` for sentence case.
+- [ ] **[P3] 375px horizontal overflow in `ShowBand.tsx:35`** (`aspect-[4/3]`). Pre-existing.
+- [ ] **[P3, a11y] Partners card accessible name concatenates** — the name and description spans in
+  `PartnersSection.tsx` are JSX-adjacent with no whitespace text node, so the anchor reads
+  "…Southern AfricaPartner organisation hosting…". Fix with an `aria-label` or a `{' '}` separator.
+- [ ] **[P3] `components/chrome/Footer.tsx:117` links the dead `wosa.org.za`** — site-wide, every
+  page. The live site is `https://wildorchids.co.za`. One-line fix.
+
+---
+
+## Vendor registration
+
+- [ ] **[P2] Permit fields ask for a number but should collect the actual document.** Brad:
+  "when we ask for a document it needs to actually upload a document, save it and email it as an
+  attachment." Affects `phytosanitaryPermitNumber`, `citesPermitNumber`,
+  `foodHandlingCertificateNumber`. F7's proof-of-payment path is the pattern to extend (public
+  unauthenticated upload, base64 in / Storage out, MIME allowlist, size cap, extension derived from
+  `mimeType` never the caller's filename). `lib/email.ts`'s `sendEmail()` has no attachment support
+  — Resend supports `attachments: [{filename, content}]`, so extend rather than replace. Open
+  design questions: does upload replace the number field or sit alongside it; who receives the
+  attachment; does it apply to all three fields. F9's "collected, not verified" stance should very
+  likely carry forward regardless.
+- [ ] **[P3] CIPC and VAT numbers accept any data.** Both free-text with zero format validation.
+  A real fix validates against SA's actual CIPC format and the 10-digit VAT format (starts with 4)
+  — but confirm the CIPC format from an authoritative source; do not guess a registration-number
+  regex.
+- [ ] **[P3, informational] No CAPTCHA on the vendor form.** Mitigation is a honeypot plus per-IP
+  rate limiting. Reasonable for low-volume B2B registration, not CAPTCHA-strength against a
+  determined bot. Answered for Brad; no fix implied unless he asks.
+
+---
+
+## CMS / content
+
+- [ ] **[P1, verify — may be resolved] The CMS→site loop may not invalidate at the CDN.** Logged
+  2026-07-30: Studio publish wrote to the dataset and `POST /api/revalidate` returned 200, but the
+  App Hosting CDN kept serving its cached object (`x-nextjs-cache: STALE` alongside
+  `cdn-cache-status: hit`, `s-maxage=31536000`, `age` climbing). Lead, unconfirmed: `x-fah-adapter:
+  nextjs-14.0.21` reported against a Next 16 app. **Content edits have since propagated and been
+  verified live over HTTP more than once**, so this may be resolved — confirm before scoping work,
+  and do not assume the version gap is the cause.
+- [ ] **[P1] `/events/[slug]` has an independent propagation gap.** It tags its `sanityFetch` calls
+  `['events']` only — no `'sanity'` tag, and `'events'` does not match the real document `_type`
+  (`societyEvent`) a webhook payload sends. Event detail pages likely will not revalidate even once
+  the CDN question is settled.
+- [ ] **[P2] `scripts/seed-page-singletons.ts` still uses destructive `createOrReplace`**
+  (7 occurrences). Seeds must be create-if-absent; a re-run today silently overwrites edited
+  singletons.
+- [ ] **[P2] `scripts/seed-show-visitor-info.ts` still contains the CTICC copy.** Inert today
+  (every write is `createIfNotExists`) but it is a stale source of truth if the dataset is ever
+  rebuilt from empty.
+- [ ] **[P2] Studio has no guard against a second active show.** The `active` checkbox on `show`
+  has no fieldset, `hidden` or `readOnly` condition, and `structure.ts` lists `show` as a plain
+  type list. If an editor ticks Active on a past archive doc, `resolveActiveShow()` correctly fails
+  closed to `null` — and `ticketTypeMatchesActiveShow()` then rejects EVERY ticket type for EVERY
+  buyer with a generic 500. A sitewide sales outage from one mis-click, no warning, no alerting.
+  Lee-Ann is the person who would hit this. Needs its own behavioural assertions — a Studio-side
+  guard, not just the code-side fail-close.
+- [ ] **[P2] `show-19-2027`'s edition/dates/venue are a COPY of the `nationalShow` singleton**, not
+  a reference. They match exactly today, verified — but a future edit to either silently diverges
+  in front of buyers. Needs one document to be authoritative.
+- [ ] **[P2] Make show identity edition-scoped so a venue/date change is ONE edit.** Brad: "after
+  three years they'll do a new show with a new venue — are we going to recreate all of this every
+  time?" The venue fact lives in four dataset places plus four repo files; they agree only because
+  they were written by hand in one sitting. What good looks like: one venue object as the single
+  source with the edition doc and calendar event referencing it; venue-dependent prose recording
+  WHICH venue it was written for so a change auto-flags it stale (this alone would have caught the
+  CTICC bug — the current `confirmations.*` flags rely on a human remembering); and a documented
+  show-rollover procedure that is a content operation, never a code change. Sequence after the
+  design-alignment mission, which may move these surfaces anyway.
+- [ ] **[P2] Unread schema fields teach editors that publishing does nothing.** `aboutPage.title`
+  (fetched, never rendered), `aboutPage.boardIntroText`, `judgingPage.stats` (hero headings are
+  hardcoded JSX), `contactPage.formRecipients` (consumed by nothing), and `show.awards` (lost its
+  rendered surface in the archive merge — no live effect today since all values are null). Delete
+  or wire; do not leave as-is.
+- [ ] **[P2] `membersPage` and `judge` schemas are registered with no consumer.** `membersPage` has
+  no query and no `/members` route; `judge` has zero documents. Both need the same scope decision:
+  build, or remove so they stop misleading editors. Related: the real Members Portal is a separate
+  future build, and the spec leaves open how membership status is verified against SAOC's actual
+  records — that needs a client answer first.
+- [ ] **[P2] Populate `hostSociety` on the 18 `societyEvent` documents.** 0 of 18 are set, so the
+  home page's Upcoming Events strip always renders a blank host-society column. Content-entry task
+  needing domain knowledge; the code side is correct.
+- [ ] **[P2] `societyEvent` slugs are empty** (confirmed on "Cape Orchid Society Autumn Show"),
+  which is the direct cause of `/events/[slug]` being unverifiable in the M2 regression pass.
+  Studio has a per-document "Generate" button. Other spot-checked gaps: `society` description/logo/
+  website, `boardMember` email/photo, `sponsor` tier/logo/website/description, `show` date.
+- [ ] **[P2] `docs/secretary-cms-guide.md` §7 and §12 instruct the secretary to open singleton
+  documents that may not exist** ("there is one document — click it to open"). Either the documents
+  are seeded or the guide needs a first-time branch. `[verify]` — seeding may have happened since.
+- [ ] **[P2] No SAOC-side notification for contact-form enquiries, and no admin UI lists them.**
+  Submissions land in `contactSubmissions` and nothing tells anyone; they are visible only in the
+  Firebase console. Real gap before launch — worth a small authenticated list view, same pattern as
+  the door scanner.
+- [ ] **[P2] Secretary CMS controls, phase 1.** Scope-narrowed deliberately: hero headings/lede on
+  home/about/national-show, upcoming show details, a news block, contact details. Do NOT attempt
+  full-site editability in one mission. Seed must pre-populate every new field from current
+  hardcoded values so she starts with real content, not blank forms.
+- [ ] **[P3] `ticketType.show` reference picker is unfiltered** — an editor can point a ticket type
+  at a 2012 archived show. Checkout fails closed, so this is wasted-editor-effort only. Add an
+  `options.filter` scoping to `active == true`.
+- [ ] **[P3] Verifying the Sanity webhook end to end is impossible with the dataset-scoped
+  `SANITY_API_TOKEN`** — reading webhook config needs `sanity.project.webhooks/read` (401
+  confirmed). Contracts assert the direct revalidate call instead, which is a weaker claim.
+- [ ] **[P3] `@sanity/image-url` deprecated default export** fires a warning on every home-page
+  render in dev. Cosmetic console noise.
+- [ ] **[P2] Sanity v6 major upgrade** — `sanity@5.31.1 → 6.3.0`, likely `next-sanity@11 → 13`.
+  Requires a research pass first: v6 changelog, next-sanity v13 breaking changes, App Hosting SSR
+  compatibility, React 19 peer story, schema/Studio API changes. Do NOT upgrade blind.
+- [ ] **[P3] Auto-refresh `llms.txt` / `llms-full.txt`.** `scripts/refresh-llms.ts` is built but
+  Alembic blocks `localhost` by design, so it only works against the live external URL — usable
+  post-cutover only, and never in CI. `public/llms.txt` stays hand-authored.
+
+---
+
+## Contract & test infrastructure
+
+- [ ] **[P1] Five stale sha256 pins across two files — same defect, two instances.** In both cases
+  a pinned file changed for a reviewed, deliberate reason and the pin was never re-cut, so the
+  assertion went quietly red. **The current content IS the intended baseline in both cases** — this
+  is drift to catch up with, not a regression to revert. Each needs a re-pin ceremony: @architect
+  authors the expected value, @dev never computes a pin, and it is never an in-passing edit.
+  1. ~~`app/api/tickets/itn/route.ts` — four pins.~~ ✅ **Re-pinned 2026-08-20 by
+     `payment-provider-seam` F2.** `discover_route_pins.py` found a FIFTH pin beyond the four
+     originally listed here — a DIFF pin (`ticketing-hardening` A33) deriving its own NEW_SHA from
+     the same expected file the ceremony itself validates against. All five updated to `09adc6fcab5eb9c0a67e57bb1dc5ae533aeecf815e84353594927baae19964a8`;
+     `shasum -c` and `diff` all exit 0. A sixth orphan copy of the expected file survives at
+     `golden/ticketing-f10-itn-repin/itn-route.expected.ts.txt` (prose refs only) — consolidation
+     still deferred. See `learned.md` "payment provider seam" session entries.
+  2. **`lib/orders.ts` — one pin.**
+     `contracts/golden/production-blockers-f4-itn-check-repoint/orders-lib.golden.sha256` records
+     `47c2e83c…`; the file hashes to `a8c8b416…`. Triaged 2026-08-19 to commit `31ee68c`
+     "fix(tickets): write expiresAt onto the position, releasing abandoned seats" — the reviewed
+     fix to the live capacity bug. Needs its own catch-up ceremony; explicitly **NOT** folded into
+     `payment-provider-seam` F2, which does not touch this file.
+- [ ] **[P1] Re-pin discipline has no enforcement at all — five silently-red pins found in one
+  evening.** Nothing fails when a pinned file changes legitimately and the pin is not updated: the
+  assertion goes quietly red in a place nobody routinely looks, and the contract corpus decays
+  while still reporting green overall. All five were found by an architect who happened to be
+  reading, which is luck, not a control. @architect is drafting a standing drift-detection check
+  across ALL contracts. **This is worth more than any individual re-pin.**
+- [ ] **[P2] The `vendor-f3-showcase-page` golden has never been evaluated by any assertion.** It
+  is correctly formatted and currently accurate — @architect's initial "drifted" report was its own
+  false negative, self-corrected. The defect is that no assertion in any contract runs it: a green
+  pin that has never been evaluated. Different problem from a decayed one, and **not fixable by
+  drift detection** — the hash matches; nothing ever checks it.
+- [ ] **[P1] PR the `contract.py` timeout-enforcement fix upstream BEFORE the next
+  `make update-template`.** The fix for dropped `timeout_seconds` copying is shipped locally
+  (8/8 green) but `make update-template` will silently revert it and reopen the fixture-leak
+  vulnerability with no warning. Coordinates: `InunuNet/Athanor` → `execution/contract.py`, 4 edits
+  (26 ins / 5 del). Detail: `docs/contract-timeout-enforcement-harness.md`.
+- [ ] **[P1] Audit remaining contracts for the weak-assertion defect class** — an assertion
+  satisfiable by something that is not the real property. The 2026-08-16 audit cleared four
+  contracts and found no live vulnerability; the sweep is not exhaustive.
+- [x] ~~**[P1] `contract-payfast-m1` A18 asserts a security property the system deliberately no
+  longer has.**~~ ✅ **Retired 2026-08-20 by `payment-provider-seam` F2** — removed from
+  `check-itn-behaviour-unchanged.sh` (suite hard-counted `EXPECTED_SUITE_SIZE=3` so a silent
+  re-add goes red). Note: the original "proven pre-existing via differential" method was itself
+  found unsound mid-mission (the check is nondeterministic on BOTH pre- and post-rewire code — a
+  differential across a flaky check proves nothing whichever way it lands); the retirement instead
+  rests on the deterministic probe (pre-rewire route + bogus IP + settle time → `status='paid'`
+  anyway) and on `8476c56` predating the check's last touch. Four downstream contracts still
+  reference the removed file's prose — repointed, not orphaned. See `learned.md`.
+- [ ] **[P1] `payfast-m1` A1 and A6 cannot pass as written.** A1 forbids `stripePaymentIntentId`
+  anywhere under `docs/` and trips on the sentence explaining the field was removed (red since
+  `e7de1e0`). A6 expects `m_payment_id` literally inside a route that now correctly delegates to
+  `lib/checkin.ts`. Retire-or-rewrite with the `exit 77` / `SUPERSEDED:` pattern used on D5/D6.
+- [ ] **[P2] Two known weak assertions, unfixed.** `contract-ticketing-m1-m2.yaml` A20 (price-source
+  assertion satisfiable without the real property) and `contract-ticketing-hardening.yaml` A16
+  (secret-leak regex evaded by indirection or multiline formatting).
+- [ ] **[P2] `A-STRUCT-01`'s self-signup structural check is satisfied by a comment.** It greps for
+  the literal `functions.auth.user().onCreate(` on one physical line; the real chain is split across
+  lines, so only the JSDoc comment matches. QA proved it by swapping the whole trigger for a no-op
+  HTTP handler — all four structural checks still passed. Not exploitable today (the behavioural
+  checks genuinely exercise the emulator) but a future regression changing the trigger type with the
+  comment intact passes silently. Strip comments before matching, or match the real multi-line shape.
+- [ ] **[P2] `A-STRUCT-01`'s Apple `addScope('email')` check is grep-based and provably defeatable**
+  — it passes against a commented-out call and against an `addScope` on a dead branch. If Apple
+  sign-in ever stops receiving emails, suspect this check first. A real fix needs AST parsing.
+- [ ] **[P2] F8 check A4 is blind to null.** It greps for `undefined` only, missing both
+  bare-JSX interpolation of undefined (renders blank) and template-literal coercion of null
+  (renders "null" — that exact regression shipped in `bcbbc03`, fixed in `cd0308d`). Widen to
+  `null` plus a bare-`{boothNumber}`-as-JSX-child guard.
+- [ ] **[P2] `A-GRANT-03`'s stdout-grep assertion proves nothing** — rewrite to observe the Admin
+  SDK call rather than grep stdout for "reset link".
+- [ ] **[P2] Retrofit JSX-interpolation rigour onto pre-existing contracts.** Assertions that check
+  "this Sanity field is rendered" via a plain substring grep are false greens — they pass a field
+  that appears only in a fetch, destructure or type annotation. That is precisely the
+  `aboutPage.title` bug. The correct check requires the field inside a real JSX interpolation,
+  excluding `{/* comment */}`. Also assert no reversed fallback precedence
+  (`'literal' ?? data.field`), which lets a hardcoded string mask a published edit. Reference:
+  A48/A49/A50/A50a in `contract-ticketing-m1-m2.yaml`.
+- [ ] **[P2] The shared contract test-server has no lock or refcount.**
+  `contracts/checks/admin-auth-hardening/server-ctl.sh` claims lock/refcount handling in its
+  comments and implements none — one fixed PIDFILE on port 3400, so one contract's `stop()` tears
+  down a server another contract is still using. Causes intermittent failures specifically in busy
+  multi-agent sessions.
+- [ ] **[P2, process trap] Running the door-test-qr-seeder gate DESTROYS live human test
+  fixtures.** A4 deletes the three seeded `DOOR-QR-*` docs to prove teardown is scoped, and never
+  re-seeds — on 2026-08-17 that cost a live testing session and read as a scanner failure. A4 should
+  re-seed after asserting, or the gate should print a loud warning. A check's side effects on shared
+  live state are part of its contract.
+- [ ] **[P2] Contract checks structurally cannot detect missing DEPLOYED configuration.** The gate
+  runs against a local server reading `.env.local`, so it cannot catch a secret declared locally and
+  missing from `apphosting.yaml`/Secret Manager (the `ADMIN_EMAIL_ALLOWLIST` incident). Wants a
+  post-deploy smoke assertion probing the live URL for the specific failure mode.
+- [ ] **[P2, candidate contract] Secret verification guard.** After any
+  `firebase apphosting:secrets:set`, read the secret back and assert SHA-256 digest match, exact
+  byte length, and no leading/trailing whitespace. Four payload-corruption incidents in 16 weeks
+  reached production undetected because no post-write verification ran. `gcloud` is NOT needed —
+  the Firebase CLI's cached OAuth token has `cloud-platform` scope. Detail:
+  `docs/secret-corruption-incidents.md`.
+- [ ] **[P2] Two live contract locations cause duplicate work.** Contracts live both in `contracts/`
+  (git-tracked, legacy) and `.agent/memory/project/specs/<slug>/` (recent missions). An untracked
+  contract for the boothCount bug was independently redesigned from scratch by a later architect —
+  two designs, same destination, divergent APIs — and nothing caught it: the gate only runs the
+  contract it is pointed at, and @qa reviews within scope. Codex found it only because it reviews a
+  diff. Decide on ONE canonical location, or document which is for what and have @architect check
+  both. At minimum, contracts must be committed when written — an untracked contract is invisible to
+  every tool and unrecoverable if deleted.
+- [ ] **[P2] `contract.py` timeout validation has three unguarded ceilings** (all pre-existing):
+  `validate_cmd()` is never called from `check_cmd()`/`gate_cmd()` so rejected values still reach
+  the runner; no upper bound (`999999999999` causes an unhandled OverflowError); the `is not None`
+  edit is correct but uncovered by any assertion. Do not claim complete validation until fixed.
+- [ ] **[P2] Contract assertions read `$MISSION_F2_BOOKING_REF`, which nothing sets** —
+  `mission.py cmd_gate` and `contract.py` both pass a plain env copy, so the gate runs with an empty
+  ref and fails for the wrong reason. Persist it or inline it into the assertion command.
+- [ ] **[P2] `specs/prove-ticket-purchase-works-end-to-end-b/contract-f1.yaml` is one omnibus file**
+  holding all 10 assertions for F1–F4, and no feature declares a `contract:` field — so gating M1
+  evaluates F3/F4 assertions outside that milestone and skips F2 entirely. Split per feature.
+- [ ] **[P2] No branch protection on `main`** (`gh api` → 404). Every CI check, including
+  `dataset-residue-guard`, is advisory only; a broken push still merges. Remedy command recorded in
+  `docs/dataset-residue-guard.md`.
+- [ ] **[P2, CI] Wire the two credential-free structural ITN checks into CI with a path trigger.**
+  `check-paid-write-inside-transaction-scope.mjs` and
+  `check-server-confirm-fetch-outside-transaction-scope.mjs` need no secrets and cost nothing, but
+  run only inside the credential-gated `contract-payfast-m1.yaml` suite, which rarely runs. A job
+  triggered on diffs to `app/api/tickets/itn/route.ts` or `lib/orders.ts` would have caught F4's
+  entire staleness the day F10 merged instead of months later via audit.
+- [ ] **[P2] `cms-loop-f3-national-show.yaml` A5 is superseded and wants a scope review, not a
+  patch.** It asserts the `nationalShow` schema declares exactly its original six fields, so it is
+  already red for a sanctioned reason — the visitor stream legitimately added `showEndDate`,
+  `edition`, `hostRegion`, `venue`. While in there, decide whether to delete the now-unreferenced
+  `check-exhibitor-stages-round-trip.mjs`.
+- [ ] **[P2] `contracts/golden/f4-seed-page-singletons/nationalShow.golden.json` still pins CTICC.**
+  The seed script's venue was corrected; the golden was not. Owned by
+  `cms-loop-f3-national-show.yaml`; A19 in `contract-venue-prose-residue.yaml` deliberately leaves
+  it alone as proof that fix stayed scoped. Self-detecting on the F4 contract's next run.
+- [ ] **[P2] Second pair of eyes on the venue-prose-residue checkers' scope exclusions.** One bad
+  attribution was found and corrected (golden identity fields claimed as owned by a contract that
+  never protected them); the audit was not exhaustive. This is the exact defect class — imprecise
+  ownership claims narrowing a checker's scope — that let stale CTICC prose survive two green gates.
+- [ ] **[P3] `check-new-document-filter.mjs:17` hardcodes `MUST_SURVIVE = ['society', 'event']`**
+  but `'event'` is not a real schema type — it is `societyEvent`. No false pass today, but A2 never
+  exercises the real name, so a regression filtering `societyEvent` out of the create-new menu would
+  go uncaught.
+- [ ] **[P3] `lib/qr.ts`'s whitespace-only `bookingRef` case is unexercised.** The empty-string
+  branch is actually proven by the `qrcode` library throwing on `''`, not by the guard's own
+  `.trim()` — a mutant that removed the guard still failed A3 for the wrong reason. A whitespace-only
+  ref would encode silently. Add a dedicated whitespace-only case only the guard rejects.
+- [ ] **[P3] Complete or remove the orphan F6 rendered-check harness.**
+  `contracts/checks/f6-home-fidelity/` has Playwright checks with no assertions invoking them
+  (@architect died mid-session). Either wire them or remove the files and the unused `playwright`
+  devDependency.
+- [ ] **[P3] `fleet_loop.sh` commits feature work under "chore: comms reply" labels** — twice,
+  including an entire feature implementation. History truthful in content, lying in labels, and it
+  races the orchestrator's staging. Gated off (`chmod -x`) 2026-08-18; needs a contract before
+  re-enabling: label accuracy plus never staging outside `.agent/memory/`.
+- [ ] **[P3] `firebase apphosting:rollouts:create` reports success while creating nothing** —
+  appears to dedupe on git SHA. Workaround is POSTing directly to the App Hosting REST builds
+  endpoint.
+
+---
+
+- [ ] **[P1] `contract-payfast-m1` A30/A31 (`check-itn-atomic-idempotent-write`) has a dead
+  scenario-1 comparison.** It checks `position.pf_payment_id` on both sides — F10 moved payment
+  identity to `order.gatewayPaymentId`, nothing writes the position field, and
+  `buildReservationDocs` initialises it to `null`. Both sides are null every run regardless of
+  what the transaction does; unfalsifiable. Found during `payment-provider-seam` F2's suite sweep
+  (same shape as the retired A18 above) but explicitly left for `contract-payfast-m1`'s own pass —
+  its two sibling assertions in the same block still bind, so this is a single-scenario repair,
+  not a block-wide one.
+- [ ] **[P2] Docs still name the pre-`payment-provider-seam` `AMOUNT_MATCH_TOLERANCE`** —
+  `docs/payment-seam.md`, `docs/payfast-integration.md`, `contracts/golden/payment-seam-f1/*`.
+  The real guard is now integer-cents (`AMOUNT_MATCH_TOLERANCE_CENTS`,
+  `app/api/tickets/itn/route.ts:34`, `lib/payments/payfast.ts` for the adapter-side
+  `grossAmountCents` parse) — the float-tolerance version it replaces accepted a genuine 1-cent
+  underpayment. Docs task, not code.
+
+## Code quality & housekeeping
+
+- [ ] **[P2] Prettier fails repo-wide** — 28 files across `app/`, and a wider ~160-file drift noted
+  earlier. Deliberately not fixed piecemeal inside feature contracts (fixing 4 of 28 leaves the rest
+  inconsistent). Decide whether to run `pnpm format` repo-wide in one pass and gate it in CI.
+- [ ] **[P3] No request body-size cap on any App Router API route.** Every route calls
+  `request.json()` uncapped; App Router has no default limit. Project-wide; wants one shared guard.
+- [ ] **[P3] `app/(marketing)/events/submit/page.tsx` calls `initAdmin()` at page scope without
+  `force-dynamic`** — same cloud-prerender trap class as `/admin/vendors` (fixed). Has built OK so
+  far; verify before it bites.
+- [ ] **[P3] `functions/src/index.ts` uses plain `console.*` instead of `firebase-functions`'
+  `logger.*`**, losing structured Cloud Logging fields on a security-relevant deletion audit trail.
+  The v1 import never pulls in the `console.*`-patching shim, so `{uid, email, reason}` flattens
+  into the text payload. Against this project's own structured-logging rule.
+- [ ] **[P3] Pre-existing American spellings** at `docs/ticketing.md:424, 484, 488, 820`. The
+  Microsoft/Entra proper nouns in `docs/admin-access.md` are correct and must NOT be "fixed".
+- [ ] **[P3] Stale header comments in `lib/confirmation-email.ts`** still describe an earlier
+  "minimal stub, doesn't call Resend" state. The code genuinely calls Resend and generates real QR
+  images; the comments actively mislead a reader.
+- [ ] **[P2] Favicon: revisit when the SAOC org logo lands.** The interim mark is a detailed
+  full-colour illustration that loses definition at 16px, while the site chrome uses a monochrome
+  line-drawing disa — the tab icon and the header mark are not yet the same identity.
+
+---
+
+## Harness — upstream to InunuNet/Athanor
+
+- [ ] **TEMPLATE BUG: `execution/gh_closure_scan.py` fails but exits 0.** It prints
+  `ERROR: …/OVERNIGHT-PLAN-2026-07-30.md has no YAML frontmatter`, scans nothing, and returns 0 —
+  so any caller gating on the exit code reads a hard failure as success, and closure scanning has
+  been silently non-functional here for an unknown period. Two defects: **the exit code is the one
+  that matters** (an ERROR path returning 0 is the same "reports green while measuring nothing"
+  class this project keeps hitting), and separately the scanner should skip non-mission files rather
+  than aborting the whole directory. Fixing only the input hides the exit-code bug again. A second
+  symptom seen 2026-08-17 (`ERROR: could not resolve --repo:`) appears transient/environmental.
+- [ ] **[athanor-upstream] sync-autonomy v2** — `set-autonomy LEVEL=high` should propagate to
+  `.claude/settings.json` `permissionMode`. Filed 2026-06-16.
+- [ ] **[athanor-upstream] `mission.py` slug fix** — cross-date slug scan fix needs upstreaming via
+  `make update-template`. Filed 2026-06-16.
+- [ ] **[P3] `SecurityValidator.hook.ts` false-positives on `rm -rf` with multiple absolute paths**
+  (reads a plain `/Users/...` as recursive delete from filesystem root). Worked around with one
+  relative path per command. Worth tightening if it recurs.
+
+---
+
+## Hosting — decision pending Brad
+
+Research: `documents/hosting-research-2026-06-20.md`. Vercel has Cape Town compute but SA SSR needs
+Pro ($20/mo); Fly.io `jnb` is best-value SA SSR at $8–15/mo but requires a Dockerfile migration;
+"Coolify on Hetzner JNB" was a misconception (Hetzner has no SA DC). **Recommendation: stay on
+Firebase until latency is a measured problem.** Brad to confirm whether SA compute is a hard
+requirement, the budget ceiling, and that no migration happens before DNS cutover.
+
+---
+
+## Phase 2 — out of scope (do not work on until Phase 1 ships)
+
+- Society individual pages, society admin logins, federated ticketing
+- Paid SAOC membership (recurring billing) + members-only area
+- Digital archive of *Orchids South Africa* yearbooks
+- Donation system, sponsorship management, Google Ad Grant
+- Learning library, judges training portal, articles/video
+- Society-published `.ics` calendar feeds aggregated into the national calendar. Not scraping —
+  `.ics` is published natively by Google Calendar, Outlook and Facebook Events, and the codebase
+  already emits it. Needs a moderation step and a manual-entry fallback. Validate cheaply first:
+  ask how many of the 21 societies actually keep one.
+- Conference registration, workshops, field trips, the cocktail event, time-conflict detection and
+  the admin reporting layer from the council's ticketing brief — later slices, deliberately not in
+  the current plan.
+
+---
+
+## Closure Candidates (needs sign-off)
+
+_None currently. `execution/gh_closure_scan.py` does not run to completion (see harness section);
+`InunuNet/SAOC` last showed zero open GitHub issues._
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=none

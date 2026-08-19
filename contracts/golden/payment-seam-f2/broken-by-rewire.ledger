@@ -1,0 +1,20 @@
+# Assertions in OTHER contracts that the F2 rewire necessarily breaks.
+# Format: contract|assertion|disposition|reason
+#
+# This ledger is a RECORD, not the gate. The gate (A5) is simply "every discovered pin and content
+# assertion for the route passes" — discovered, never enumerated. The ledger exists so that a
+# failure is instantly diagnosable as declared-and-expected rather than a surprise, and so the
+# reasoning behind each repoint survives the commit that performs it.
+#
+# Every entry below was found by RUNNING the assertion, not by reading the contract.
+#
+# NOTE FOR ANY FUTURE CATCH-UP CEREMONY (ruled 2026-08-19): when a golden has been PARTIALLY
+# re-pinned — edited for one line while other lines stayed stale — the ceremony must re-pin the
+# WHOLE FILE, never just the drifted lines someone happened to identify. Partial re-pinning is what
+# creates that state, and it is worse than neglect: the file's history reads "maintained", which
+# defeats the cheapest heuristic anyone has for judging whether a pin can be trusted.
+
+contract-ticketing-hardening.yaml|A33|REPOINT|diff against ticketing-hardening's own itn-route.expected.ts.txt. Three expected-files existed for one route; that plurality is the defect. Repoint to contracts/golden/payment-seam-f2/itn-route.expected.ts.txt so there is ONE current expected file and everything else points at it.
+contract-payfast-itn-signature.yaml|A5|REPOINT|greps the route for `generateNotifySignature(fields, passphrase)`. F2 moves that call into lib/payments/payfast.ts. Repoint the grep at the adapter: the property (the inbound algorithm is the one used to verify) is unchanged, only its address.
+contract-payfast-itn-signature.yaml|A6|REPOINT|greps the route for `body: buildPayfastNotifyParamString(fields)`. Same move, same repoint. This is the pre-F10 defect guard and must keep pointing at wherever the confirm body is built.
+contract-payfast-m1.yaml|A17|REPOINT|greps the route for `generateSignature|validateSignature|signature`. DIRECT COLLISION with F2's A1, which bans the word `signature` from route files including comments. A17 requires the word present; A1 requires it absent. A17's intent — signature verification happens somewhere on this path — is now satisfied in the adapter, so the grep repoints there. Flagged rather than resolved unilaterally: A1's strictness created this collision.

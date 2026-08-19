@@ -12,9 +12,15 @@ door a second time. No attacker is required: PayFast retries ITN delivery until 
 
 ## The change is specified byte-for-byte
 
-`contracts/golden/ticketing-hardening/itn-route.expected.ts.txt` **is** the intended file.
-Copy it verbatim to `app/api/tickets/itn/route.ts`. Do not retype it, do not reflow it,
-do not "improve" the comments — A15 pins its sha256 and A33 diffs against it.
+The architect-authored expected file **is** the intended file. Copy it verbatim to
+`app/api/tickets/itn/route.ts`. Do not retype it, do not reflow it, do not "improve" the
+comments — A15 pins its sha256 and A33 diffs against it.
+
+**Superseded 2026-08-19 (payment-seam-f2).** That expected file now lives at
+`contracts/golden/payment-seam-f2/itn-route.expected.ts.txt`. The copy that used to sit in
+this directory was deleted rather than updated: three expected files had accumulated for
+one route, and that plurality was itself the defect. One current expected file; A15 and A33
+both resolve against it.
 
 Three hunks, nothing else in the file moves:
 

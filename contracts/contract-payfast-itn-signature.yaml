@@ -87,7 +87,7 @@ assertions:
         `generateNotifySignature(fields, passphrase)`. REJECTS a fix that adds the new
         functions to lib/payfast.ts but forgets to update the call site (the actual
         currently-failing line).
-      command: grep -q "generateNotifySignature(fields, passphrase)" /Users/vetus/ai/SAOC/app/api/tickets/itn/route.ts
+      command: grep -q "generateNotifySignature(fields, passphrase)" /Users/vetus/ai/SAOC/lib/payments/payfast.ts
 
     - id: A6
       description: >
@@ -97,7 +97,7 @@ assertions:
         server-confirm body on the old (wrong) builder — per the docs, PayFast's
         /eng/query/validate endpoint expects the SAME (inbound) param string as the
         signature check, so this call site has the identical defect and must change too.
-      command: 'grep -q "body: buildPayfastNotifyParamString(fields)" /Users/vetus/ai/SAOC/app/api/tickets/itn/route.ts'
+      command: 'grep -q "body: buildPayfastNotifyParamString(fields)" /Users/vetus/ai/SAOC/lib/payments/payfast.ts'
 
     - id: A7
       description: >

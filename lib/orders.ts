@@ -205,7 +205,7 @@ export interface OrdersFirestoreRwLike {
 export type FindReservedOrderResult =
   | { status: 'not-found' }
   | { status: 'already-settled'; orderStatus: OrderStatus }
-  | { status: 'reserved'; amount: number };
+  | { status: 'reserved'; amount: number; orderId: string };
 
 /**
  * Read-only, NOT transactional — an optimisation and amount-check path only, mirroring the
@@ -213,6 +213,12 @@ export type FindReservedOrderResult =
  * inside markOrderAndPositionPaidByPaymentId's own transaction below; this function's result
  * can be stale under concurrent ITN delivery and must never be relied on for the write
  * decision itself.
+ *
+ * F2 (payment-provider-seam, orders-query-race-spec §3 "C") — the located document's id is
+ * now returned in the 'reserved' result so the caller can pass it to
+ * markOrderAndPositionPaidByPaymentId and skip that function's own index query entirely. Two
+ * independent index reads of the same key at two different moments can disagree; a caller
+ * that already holds the ref should never re-derive it from a second query.
  */
 export async function findReservedOrderByPaymentId(
   mPaymentId: string,
@@ -226,13 +232,14 @@ export async function findReservedOrderByPaymentId(
     return { status: 'not-found' };
   }
 
-  const order = snapshot.docs[0].data() as Partial<Order> | undefined;
+  const orderDoc = snapshot.docs[0];
+  const order = orderDoc.data() as Partial<Order> | undefined;
   const orderStatus = order?.status;
   if (orderStatus !== 'reserved') {
     return { status: 'already-settled', orderStatus: orderStatus as OrderStatus };
   }
 
-  return { status: 'reserved', amount: Number(order?.amount) };
+  return { status: 'reserved', amount: Number(order?.amount), orderId: orderDoc.id };
 }
 
 export type MarkOrderPaidOutcome =
@@ -244,12 +251,28 @@ export type MarkOrderPaidOutcome =
       recoveryToken: string | null;
       position: { bookingRef: string; attendeeName: string; ticketType: TicketType };
     }
-  | { committed: false; reason: 'order-not-found' | 'order-not-reserved' | 'position-not-found' };
+  | {
+      committed: false;
+      reason:
+        | 'order-not-found'
+        | 'order-vanished'
+        | 'order-payment-id-mismatch'
+        | 'order-not-reserved'
+        | 'position-not-found';
+    };
 
 export interface MarkOrderAndPositionPaidInput {
   m_payment_id: string;
   gatewayPaymentId: string | null;
   now: Timestamp;
+  /**
+   * F2 (payment-provider-seam, orders-query-race-spec §3 "C") — the order's document id, as
+   * already located by findReservedOrderByPaymentId. When supplied, the order ref is resolved
+   * directly (`orders.doc(orderId)`) and the redundant `orders.where('m_payment_id', ...)`
+   * index query below is skipped entirely, so the orders index is read at most once per
+   * notification. The query survives only as a fallback for callers that supply no id.
+   */
+  orderId?: string;
 }
 
 /**
@@ -271,20 +294,41 @@ export async function markOrderAndPositionPaidByPaymentId(
   const orders = db.collection(ORDERS_COLLECTION);
   const tickets = db.collection(TICKETS_COLLECTION);
 
-  const orderSnapshot = await orders.where('m_payment_id', '==', input.m_payment_id).limit(1).get();
-  if (orderSnapshot.empty) {
-    return { committed: false, reason: 'order-not-found' };
+  let orderRefId: string;
+  if (input.orderId) {
+    orderRefId = input.orderId;
+  } else {
+    const orderSnapshot = await orders.where('m_payment_id', '==', input.m_payment_id).limit(1).get();
+    if (orderSnapshot.empty) {
+      return { committed: false, reason: 'order-not-found' };
+    }
+    orderRefId = orderSnapshot.docs[0].id;
   }
-  const orderRef = orders.doc(orderSnapshot.docs[0].id);
+  const orderRef = orders.doc(orderRefId);
 
   const positionSnapshot = await tickets.where('orderId', '==', orderRef.id).limit(1).get();
 
   return db.runTransaction(async (transaction) => {
     const orderDoc = await transaction.get(orderRef);
     if (!orderDoc.exists) {
-      return { committed: false, reason: 'order-not-found' };
+      // F2 (orders-query-race-spec §3 "D") — distinct from the pre-transaction query miss
+      // above. This means the order existed when its ref was resolved (by query or by id)
+      // and was gone by the time the transaction re-read it: a genuinely different, far
+      // more alarming event than "never found it" and must not share a reason code with it.
+      return { committed: false, reason: 'order-vanished' };
     }
     const order = orderDoc.data() as Partial<Order> | undefined;
+    // F2 (payment-provider-seam, Codex GPT-5.5 cross-model review, 2026-08-20) — the orderId
+    // supplied by the caller (from findReservedOrderByPaymentId's earlier, non-transactional
+    // lookup) resolves the ref directly and skips this transaction's own where() query. That
+    // is safe ONLY if we revalidate here that the document the ref actually points at still
+    // belongs to THIS notification's m_payment_id. A stale or wrong orderId can point at a
+    // real, still-'reserved' order for a DIFFERENT payment; without this check that order
+    // would be marked paid for money it never received. Checked before the status check below
+    // so a mismatched-identity order is never misdiagnosed as merely "already settled".
+    if (order?.m_payment_id !== input.m_payment_id) {
+      return { committed: false, reason: 'order-payment-id-mismatch' };
+    }
     if (order?.status !== 'reserved') {
       return { committed: false, reason: 'order-not-reserved' };
     }

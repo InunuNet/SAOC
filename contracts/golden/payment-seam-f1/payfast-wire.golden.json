@@ -1,0 +1,148 @@
+{
+  "_meta": {
+    "purpose": "Byte-for-byte capture of the CURRENT on-the-wire PayFast behaviour, generated from the real lib/payfast.ts + app/api/tickets/checkout/route.ts + app/api/tickets/itn/route.ts on 2026-08-19 BEFORE any code moved. Every value here was produced by executing the live code, not by hand-transcription. lib/payments/ must reproduce all of it exactly.",
+    "generated_from_shas": {
+      "lib/payfast.ts": "b5ab57a236758f16946a6477f61bae1ad90195cba6064bd99368158b805c2066",
+      "app/api/tickets/checkout/route.ts": "b458ed702c72f5551b97503a6683e8856d4a973db1fc6e804aa2fa5940a55309",
+      "app/api/tickets/itn/route.ts": "a71f9505a21775425c9952dccf3e02abbe06fef0e2b58a1529cb3a2408f395d1"
+    },
+    "credentials": "Every merchant id, key and passphrase below is a fabricated test value. 10000100 is PayFast's own published sandbox demo merchant id. Nothing here is a real SAOC credential."
+  },
+
+  "constants": {
+    "processUrl": "https://sandbox.payfast.co.za/eng/process",
+    "validateUrl": "https://sandbox.payfast.co.za/eng/query/validate",
+    "itnHosts": [
+      "www.payfast.co.za",
+      "sandbox.payfast.co.za",
+      "w1w.payfast.co.za",
+      "w2w.payfast.co.za"
+    ]
+  },
+
+  "outbound": {
+    "inputs": {
+      "siteUrl": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app",
+      "reference": "SAOC-2027-GOLDEN0001",
+      "merchantId": "10000100",
+      "merchantKey": "test-merchant-key-not-real",
+      "passphrase": "golden-test-passphrase not-real",
+      "amountFormatted": "250.00",
+      "itemName": "SAOC 2027 National Show Ticket",
+      "returnUrl": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/confirmation?ref=SAOC-2027-GOLDEN0001",
+      "cancelUrl": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/cancelled?ref=SAOC-2027-GOLDEN0001",
+      "notifyUrl": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/api/tickets/itn"
+    },
+    "fieldOrder": [
+      "merchant_id",
+      "merchant_key",
+      "return_url",
+      "cancel_url",
+      "notify_url",
+      "m_payment_id",
+      "amount",
+      "item_name"
+    ],
+    "signedFields": {
+      "merchant_id": "10000100",
+      "merchant_key": "test-merchant-key-not-real",
+      "return_url": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/confirmation?ref=SAOC-2027-GOLDEN0001",
+      "cancel_url": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/cancelled?ref=SAOC-2027-GOLDEN0001",
+      "notify_url": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/api/tickets/itn",
+      "m_payment_id": "SAOC-2027-GOLDEN0001",
+      "amount": "250.00",
+      "item_name": "SAOC 2027 National Show Ticket"
+    },
+    "paramString": "merchant_id=10000100&merchant_key=test-merchant-key-not-real&return_url=https%3A%2F%2Fsaoc-prod--saoc-webapp.europe-west4.hosted.app%2Ftickets%2Fconfirmation%3Fref%3DSAOC-2027-GOLDEN0001&cancel_url=https%3A%2F%2Fsaoc-prod--saoc-webapp.europe-west4.hosted.app%2Ftickets%2Fcancelled%3Fref%3DSAOC-2027-GOLDEN0001&notify_url=https%3A%2F%2Fsaoc-prod--saoc-webapp.europe-west4.hosted.app%2Fapi%2Ftickets%2Fitn&m_payment_id=SAOC-2027-GOLDEN0001&amount=250.00&item_name=SAOC+2027+National+Show+Ticket",
+    "signatureWithPassphrase": "fddf5f7756bdbe60ca4cdf184b522384",
+    "signatureWithoutPassphrase": "8c74b870e6ca064b5c38cb8c9ba315c4",
+    "signatureWithEmptyStringPassphrase": "8c74b870e6ca064b5c38cb8c9ba315c4"
+  },
+
+  "inbound": {
+    "passphrase": "golden-test-passphrase not-real",
+    "fieldOrder": [
+      "m_payment_id",
+      "pf_payment_id",
+      "payment_status",
+      "item_name",
+      "item_description",
+      "amount_gross",
+      "amount_fee",
+      "amount_net",
+      "custom_str1",
+      "custom_str2",
+      "custom_str3",
+      "custom_str4",
+      "custom_str5",
+      "custom_int1",
+      "custom_int2",
+      "custom_int3",
+      "custom_int4",
+      "custom_int5",
+      "name_first",
+      "name_last",
+      "email_address",
+      "merchant_id"
+    ],
+    "fields": {
+      "m_payment_id": "SAOC-2027-GOLDEN0001",
+      "pf_payment_id": "9999001",
+      "payment_status": "COMPLETE",
+      "item_name": "SAOC 2027 National Show Ticket",
+      "item_description": "",
+      "amount_gross": "250.00",
+      "amount_fee": "-10.00",
+      "amount_net": "240.00",
+      "custom_str1": "",
+      "custom_str2": "",
+      "custom_str3": "",
+      "custom_str4": "",
+      "custom_str5": "",
+      "custom_int1": "",
+      "custom_int2": "",
+      "custom_int3": "",
+      "custom_int4": "",
+      "custom_int5": "",
+      "name_first": "Test",
+      "name_last": "",
+      "email_address": "buyer@example.com",
+      "merchant_id": "10000100"
+    },
+    "notifyParamString": "m_payment_id=SAOC-2027-GOLDEN0001&pf_payment_id=9999001&payment_status=COMPLETE&item_name=SAOC+2027+National+Show+Ticket&item_description=&amount_gross=250.00&amount_fee=-10.00&amount_net=240.00&custom_str1=&custom_str2=&custom_str3=&custom_str4=&custom_str5=&custom_int1=&custom_int2=&custom_int3=&custom_int4=&custom_int5=&name_first=Test&name_last=&email_address=buyer%40example.com&merchant_id=10000100",
+    "notifySignatureWithPassphrase": "056f2b28eb5f9895b0ec730ca540653b",
+    "notifySignatureWithoutPassphrase": "da250ae57898dd19adf6f7ec53f1fd30"
+  },
+
+  "builderDivergence": {
+    "_why": "The outbound (checkout-signing) and inbound (ITN-verifying) parameter-string algorithms are GENUINELY DIFFERENT: outbound trims values and skips blank fields, inbound does neither. Collapsing them into one is the single most likely mistake a 'pure move' can make, and it is the exact defect ticketing-F10 was opened to fix (see contracts/golden/payfast-itn-signature/inbound-algorithm.golden.md). These vectors make that divergence observable THROUGH THE SEAM: the same padded item name produces a signature identical to the unpadded one on the outbound path, and a different one on the inbound path.",
+    "paddedItemName": "  SAOC 2027 National Show Ticket  ",
+    "outboundParamStringWithPaddedItemName": "merchant_id=10000100&merchant_key=test-merchant-key-not-real&return_url=https%3A%2F%2Fsaoc-prod--saoc-webapp.europe-west4.hosted.app%2Ftickets%2Fconfirmation%3Fref%3DSAOC-2027-GOLDEN0001&cancel_url=https%3A%2F%2Fsaoc-prod--saoc-webapp.europe-west4.hosted.app%2Ftickets%2Fcancelled%3Fref%3DSAOC-2027-GOLDEN0001&notify_url=https%3A%2F%2Fsaoc-prod--saoc-webapp.europe-west4.hosted.app%2Fapi%2Ftickets%2Fitn&m_payment_id=SAOC-2027-GOLDEN0001&amount=250.00&item_name=SAOC+2027+National+Show+Ticket",
+    "outboundSignatureWithPaddedItemName": "fddf5f7756bdbe60ca4cdf184b522384",
+    "inboundFieldsWithPaddedItemName": {
+      "m_payment_id": "SAOC-2027-GOLDEN0001",
+      "pf_payment_id": "9999001",
+      "payment_status": "COMPLETE",
+      "item_name": "  SAOC 2027 National Show Ticket  ",
+      "item_description": "",
+      "amount_gross": "250.00",
+      "name_last": "",
+      "merchant_id": "10000100"
+    },
+    "inboundParamStringWithPaddedItemName": "m_payment_id=SAOC-2027-GOLDEN0001&pf_payment_id=9999001&payment_status=COMPLETE&item_name=++SAOC+2027+National+Show+Ticket++&item_description=&amount_gross=250.00&name_last=&merchant_id=10000100",
+    "inboundSignatureWithPaddedItemName": "c7efd6de8a7ab2a9e1d8e4abe50a1401"
+  },
+
+  "statusMapping": {
+    "_why": "Today app/api/tickets/itn/route.ts flips an order to paid ONLY when fields['payment_status'] === 'COMPLETE' (COMPLETE_STATUS, strict, case-sensitive). Every other value leaves the order reserved. mapStatus must preserve that exactly: 'COMPLETE' is the ONLY input that may yield 'paid'.",
+    "paidInput": "COMPLETE",
+    "nonPaidInputs": ["FAILED", "PENDING", "CANCELLED", "complete", "Complete", "COMPLETED", "", "COMPLETE ", " COMPLETE"],
+    "expected": {
+      "COMPLETE": "paid",
+      "FAILED": "failed",
+      "PENDING": "pending",
+      "CANCELLED": "cancelled"
+    },
+    "unknownFallback": "unknown"
+  }
+}

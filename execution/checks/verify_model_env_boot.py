@@ -72,6 +72,12 @@ MODEL_VARS = (
 SKIP_CONNECTION = "connection"  # proxy down/unreachable -- no response at all
 SKIP_RESPONSE = "response"      # proxy answered, but the reply couldn't be used
 
+# Set by warn() immediately before it returns, read by run_boot_report() right
+# after each sequential sub-check call. The three boot_report sub-checks run
+# strictly single-threaded, so a module-level flag is safe here -- this does
+# not change warn()'s own return type/exit-code contract (still always 0).
+_last_call_warned = False
+
 
 def ok(msg: str) -> int:
     print(f"PASS: {msg}")
@@ -89,6 +95,16 @@ def skip(msg: str) -> int:
     # Mirrors verify_free_model_catalog.py's skip() doctrine verbatim.
     print(f"SKIP: {msg}")
     return 77
+
+
+def warn(msg: str) -> int:
+    # Advisory, not a failure -- always exits 0. Distinct prefix from PASS
+    # so an OpenRouter-shaped-but-no-override steady state is visible
+    # instead of blending into a quiet PASS line.
+    global _last_call_warned
+    _last_call_warned = True
+    print(f"WARN: {msg}")
+    return 0
 
 
 def load_env_block(path: Path) -> dict:
@@ -133,16 +149,34 @@ def check_literal_unexpanded(settings_path: Path, settings_local_path: Path) -> 
 
 
 def check_empty_override() -> int:
-    problems = [var for var in MODEL_VARS if os.environ.get(var, None) == ""]
-    if problems:
-        return fail(
-            f"env var(s) exported but set to an empty string: {problems} -- "
-            "an empty override is unambiguously broken, not a valid "
-            "'use the default' no-op"
-        )
+    empty = []
+    unexpanded = []
+    for var in MODEL_VARS:
+        value = os.environ.get(var, None)
+        if value == "":
+            empty.append(var)
+        elif value is not None and value.startswith("$"):
+            unexpanded.append(var)
+    if empty or unexpanded:
+        parts = []
+        if empty:
+            parts.append(
+                f"env var(s) exported but set to an empty string: {empty} -- "
+                "an empty override is unambiguously broken, not a valid "
+                "'use the default' no-op"
+            )
+        if unexpanded:
+            parts.append(
+                f"env var(s) exported but holding an unexpanded literal "
+                f"(starts with '$'): {unexpanded} -- Claude Code does not "
+                "shell-expand live process env values, so this injects the "
+                "literal string as the model id and breaks spawn for every "
+                "agent using that tier (see docs/openrouter.md)"
+            )
+        return fail("; ".join(parts))
     return ok(
-        "no ANTHROPIC_DEFAULT_*_MODEL var is set-but-empty in the live "
-        "process environment"
+        "no ANTHROPIC_DEFAULT_*_MODEL var is set-but-empty or holding an "
+        "unexpanded literal in the live process environment"
     )
 
 
@@ -179,14 +213,26 @@ def check_env_catalog_live(endpoint: str, timeout: float) -> int:
     base_url = os.environ.get("ANTHROPIC_BASE_URL", "")
     overrides = {var: os.environ[var] for var in MODEL_VARS if os.environ.get(var)}
 
-    if "openrouter" not in base_url.lower() or not overrides:
-        # Nothing OpenRouter-shaped configured to check -- native Anthropic,
-        # or no override set. Must not touch the network at all in this
-        # branch (proven by the wiring check's elapsed-time assertion).
+    if "openrouter" not in base_url.lower():
+        # Native Anthropic -- nothing OpenRouter-shaped configured at all.
+        # Must not touch the network at all in this branch (proven by the
+        # wiring check's elapsed-time assertion).
         return ok(
-            "nothing OpenRouter-shaped configured (ANTHROPIC_BASE_URL not "
-            "OpenRouter-shaped, or no ANTHROPIC_DEFAULT_*_MODEL override "
-            "set) -- no network attempt made"
+            "native Anthropic config (ANTHROPIC_BASE_URL not OpenRouter-"
+            "shaped) -- no network attempt made"
+        )
+
+    if not overrides:
+        # OpenRouter-shaped base URL with no override set. This is the
+        # normal post-setup_openrouter_config() steady state now that it no
+        # longer writes ANTHROPIC_DEFAULT_*_MODEL -- advisory, not a
+        # failure. Still must not touch the network in this branch.
+        return warn(
+            "OpenRouter-shaped ANTHROPIC_BASE_URL detected but no "
+            "ANTHROPIC_DEFAULT_*_MODEL override is set -- fast-tier agents "
+            "will fall back to Anthropic model ids against the OpenRouter "
+            "endpoint unless you configure overrides manually (see "
+            "docs/openrouter.md) -- no network attempt made"
         )
 
     models, skip_reason = fetch_catalog(endpoint, timeout)
@@ -224,13 +270,19 @@ def run_boot_report(
     make the boot hook's own invocation nonzero; full_boot.sh wires this
     call non-fatally regardless, but boot_report is self-contained on this
     property so it behaves correctly even if invoked directly."""
-    results = [
-        ("literal_unexpanded", check_literal_unexpanded(settings_path, settings_local_path)),
-        ("empty_override", check_empty_override()),
-        ("env_catalog_live", check_env_catalog_live(endpoint, timeout)),
-    ]
+    global _last_call_warned
+    checks = (
+        ("literal_unexpanded", lambda: check_literal_unexpanded(settings_path, settings_local_path)),
+        ("empty_override", check_empty_override),
+        ("env_catalog_live", lambda: check_env_catalog_live(endpoint, timeout)),
+    )
     any_bad = False
-    for name, rc in results:
+    any_warn = False
+    for name, run_check in checks:
+        _last_call_warned = False
+        rc = run_check()
+        if _last_call_warned:
+            any_warn = True
         if rc == 0:
             continue
         any_bad = True
@@ -240,8 +292,13 @@ def run_boot_report(
             "above. ANTHROPIC_DEFAULT_*_MODEL may be misconfigured; see "
             "docs/openrouter.md."
         )
-    if not any_bad:
+    if not any_bad and not any_warn:
         print("PASS: boot_report -- all model-env boot guard checks passed")
+    elif not any_bad and any_warn:
+        print(
+            "WARN: boot_report -- model-env boot guard checks passed with "
+            "warning(s); see WARN line(s) above"
+        )
     return 0
 
 

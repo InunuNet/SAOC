@@ -158,7 +158,7 @@ assertions:
       command: 'test -f app/api/tickets/itn/route.ts'
     - id: A17
       description: F3 - validates the ITN signature
-      command: 'grep -Eq "generateSignature|validateSignature|signature" app/api/tickets/itn/route.ts'
+      command: 'grep -Eq "generateSignature|validateSignature|signature" lib/payments/payfast.ts'
     - id: A18
       description: >-
         F3 - BEHAVIOURAL: source-IP validation genuinely gates the ITN write path. Calls
@@ -184,9 +184,9 @@ assertions:
     - id: A20
       description: >-
         F3 - BEHAVIOURAL: amount_gross is COMPARED to the reserved ticket's stored
-        amount, not merely read. Exercises a gross tamper, an exact match, and both sides
-        of the AMOUNT_MATCH_TOLERANCE (0.01) boundary read directly from route.ts's own
-        `>=` operator — see
+        amount, not merely read. Exercises a gross tamper, an exact match, the
+        AMOUNT_MATCH_TOLERANCE_CENTS (1) reject boundary, and an unparseable/sub-cent
+        amount, all read directly from route.ts's own integer-cents comparison — see
         contracts/checks/payfast-m1/check-itn-amount-tamper-rejected.mts. LOCAL-ONLY,
         same credential/skip convention as A18.
       command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-amount-tamper-rejected.mts'

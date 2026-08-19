@@ -1,12 +1,14 @@
 // F10 (ticketing-foundation) — compiler-driven (not source-grep) proof of the new and extended
-// exported shapes lib/orders.ts, lib/confirmation-email.ts and app/api/tickets/itn/route.ts's
+// exported shapes lib/orders.ts, lib/confirmation-email.ts and lib/payments/payfast.ts's
 // exported parseOrderedFields must carry. Run via its own scoped tsconfig (see that file)
 // because the root tsconfig.json excludes `contracts/` from `pnpm type-check`.
 //
 // Five things proven here that the runtime checks (A3-A7) cannot see:
-//   1. parseOrderedFields is exported from the pinned route with the SAME signature it had
-//      before F10 (string in, {fields, signature} out) — a re-pin that accidentally changed
-//      its call shape would still need to satisfy this.
+//   1. parseOrderedFields is exported with the SAME signature it had before F10 (string in,
+//      {fields, signature} out) — a re-pin that accidentally changed its call shape would
+//      still need to satisfy this. F2 (payment-provider-seam) moved it out of the pinned route
+//      and into lib/payments/payfast.ts, where the gateway's own body parse belongs; the
+//      signature it must carry is unchanged.
 //   2. findReservedOrderByPaymentId's three-way discriminated result narrows correctly by
 //      `status` (not-found / already-settled / reserved), each arm exposing only the fields
 //      that variant actually carries (e.g. `amount` only exists on the 'reserved' arm).
@@ -28,7 +30,7 @@
 //
 // Run as: npx tsc --noEmit -p contracts/checks/ticketing-f10-itn-repin/tsconfig.typecheck.json
 
-import { parseOrderedFields } from '../../../../app/api/tickets/itn/route';
+import { parseOrderedFields } from '../../../../lib/payments/payfast';
 
 import type {
   FindReservedOrderResult,
@@ -41,7 +43,7 @@ import { findReservedOrderByPaymentId, markOrderAndPositionPaidByPaymentId } fro
 import type { SendConfirmationEmailInput } from '../../../../lib/confirmation-email';
 import { deliverConfirmationEmailAfterCommit, sendConfirmationEmail } from '../../../../lib/confirmation-email';
 
-// --- app/api/tickets/itn/route.ts (parseOrderedFields, exported by F10) ---
+// --- lib/payments/payfast.ts (parseOrderedFields, exported by F10, relocated by F2) ---
 
 const parsed: { fields: Record<string, string>; signature: string | null } = parseOrderedFields(
   'm_payment_id=SAOC-2027-TYPECHECK01&signature=deadbeef'
@@ -89,7 +91,12 @@ function narrowMarkOutcome(outcome: MarkOrderPaidOutcome): string | null {
   // The failure arm exposes only `reason` — accessing `orderId` here must NOT compile if this
   // block is ever uncommented, which is exactly the proof this file exists to carry:
   // const leaked = outcome.orderId;
-  const reason: 'order-not-found' | 'order-not-reserved' | 'position-not-found' = outcome.reason;
+  const reason:
+    | 'order-not-found'
+    | 'order-vanished'
+    | 'order-payment-id-mismatch'
+    | 'order-not-reserved'
+    | 'position-not-found' = outcome.reason;
   return reason;
 }
 void narrowMarkOutcome;

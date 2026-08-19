@@ -27,7 +27,7 @@
 //
 // Run as: npx tsx contracts/checks/ticketing-f10-itn-repin/check-break-fix-field-order.mjs
 
-import { parseOrderedFields } from '../../../app/api/tickets/itn/route.ts';
+import { parseOrderedFields } from '../../../lib/payments/payfast.ts';
 
 const failures = [];
 

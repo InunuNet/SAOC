@@ -178,6 +178,14 @@ class FirestoreClient:
         turn a routine verification run into a setup failure. Callers that need
         chronological order sort the (small, per-booking-ref) result set client-side by
         a timestamp field instead.
+
+        Each returned dict also carries the document's own id under the `_id` key (decoded
+        from the REST response's `document.name`, the last path segment) — a query result
+        does not otherwise reveal its own document id, only its fields, and a caller may need
+        it (e.g. to navigate to `/tickets/{bookingRef}` when the `bookingRef` FIELD itself is
+        unset on an older fixture but the doc id — which is always the real booking ref, see
+        lib/orders.ts — is not). `_id` is not a real Firestore field name in this project's
+        schemas, so it cannot collide with one.
         """
         url = f"{self._base}:runQuery"
         body = {
@@ -209,7 +217,9 @@ class FirestoreClient:
         for entry in response.json():
             document = entry.get("document")
             if document:
-                documents.append(decode_fields(document.get("fields", {})))
+                decoded = decode_fields(document.get("fields", {}))
+                decoded["_id"] = document.get("name", "").rsplit("/", 1)[-1]
+                documents.append(decoded)
         return documents
 
 

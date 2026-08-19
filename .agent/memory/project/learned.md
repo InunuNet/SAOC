@@ -1460,3 +1460,173 @@ for a compliance-facing page to do its job; only the first is checkable by hitti
 directly, which is what most route-existence checks do.
 **How to apply:** for any page whose purpose is external-facing/compliance-facing, explicitly
 check it's linked from site chrome (nav/footer), not just that the route resolves.
+
+## A verification mechanism that decays silently is worse than none (2026-08-19)
+
+Five sha256 pins were red and nothing failed: four on `app/api/tickets/itn/route.ts`, one on
+`lib/orders.ts`. Both files had changed for legitimate, reviewed reasons — the source-IP
+"logged, not enforced" change, and `31ee68c`'s expiresAt-on-the-position capacity fix — and in
+neither case was the pin re-cut. The assertions simply went quiet in a place nobody routinely
+looks. All five were found by an architect who happened to be reading, which is luck, not a
+control.
+
+**The general form: a verification mechanism that decays silently is worse than none, because it
+reports safety it is no longer providing.** A pin nobody has re-cut still *looks* like a guarded
+file in the contract listing. This is the same family as the project's existing defect class —
+an assertion satisfiable by something that isn't the property under test (see "Presence vs.
+property"). Different mechanism, identical outcome: the gate is green and means nothing.
+
+Consequences for how we work: re-pinning is a ceremony (@architect authors the expected value,
+@dev never computes a pin), and any decaying mechanism needs its own drift detector. A standing
+check across ALL contracts is worth more than fixing any individual pin.
+
+## @dev flagging its own gate as defective is the behaviour we want (2026-08-19)
+
+@dev hit two checks in its own gate that would not pass, and reported them as defective checks
+rather than reinterpreting the goldens until they agreed. Both were confirmed real, independently,
+by @qa and by Codex. The failure mode this avoids is specific and severe: a dev that quietly
+"interprets" a golden into agreement destroys the evidence — the golden stops being an independent
+record of intent and becomes a restatement of whatever the code now does, and the divergence it
+existed to catch is gone with no trace in the diff. **A check you cannot pass is a finding. Escalate
+it; never edit the oracle to match the output.**
+
+## The orchestrator's own rulings are not exempt from review (2026-08-19)
+
+The orchestrator specified an assertion requiring a count of exactly one, which was not
+implementable as written; @qa caught it. Recorded alongside the @dev item above because the two
+together are the evidence that the cross-checks are load-bearing rather than ceremony: the chain
+caught a bad instruction travelling *down* it on the same night it caught defects travelling *up*.
+Authority in the chain is about who decides scope, not about whose output skips verification.
+
+## An assertion can outlive the decision it was written to protect (2026-08-19)
+
+A third member of the family that includes presence-not-property and the stale sha256 pins, and
+distinct from both. `contract-payfast-m1` A18 asserts a bogus ITN source IP is rejected before the
+write path. Commit `8476c56` deliberately made source-IP **logged, not enforced**, after a real
+signature-verified sandbox ITN arrived from outside the resolved host set. A18 is not a weak
+assertion — it tests its real property, precisely. Nothing drifted underneath it either, so it is
+not a stale pin. **The product decision moved and the check didn't.**
+
+It fails in the safer direction: loudly, demanding more security than the system has. That makes
+it less dangerous than a silent pin — but it still sat red and unread for a day and a half, so the
+operational failure mode is identical: **nothing routinely runs these gates and reads the output.**
+
+The consequence worth keeping: the pin-drift detector now in design would NOT catch this one.
+Drift detection compares a file against a recorded hash; here no file drifted from any record — a
+decision drifted from an assertion, and only a human reading the check against the decision log
+can see that. Detecting drift solves half the problem. The other half is that a red assertion
+nobody reads is indistinguishable from a green one. Any future work on gate health must address
+both, and **shipping the detector alone must not be mistaken for having fixed this.**
+
+## Partial re-pin is worse than no re-pin (2026-08-19)
+
+`contracts/golden/m2-next16-upgrade/` pins `apphosting.yaml`. Two drifts were live: `memoryMiB`
+512→1024 (`84dbf58`, 2026-07-29) and the whole `ADMIN_EMAIL_ALLOWLIST` entry (`79ee2f8`,
+2026-08-15). But the golden **was** edited on 2026-08-14 by `48b564c` — a one-line fix to an API-key
+O/0 transcription typo — while `memoryMiB` had already been stale a fortnight. Someone opened the
+file, corrected one line, and left the rest.
+
+**Neglect leaves a golden whose history says *nobody looked*. A partial re-pin leaves one whose
+history says *maintained*** — recent commit, plausible message, still wrong. That is why it is
+worse than neglect: it defeats the cheapest heuristic anyone has for judging whether a pin can be
+trusted, "has this been touched lately?"
+
+Operational consequence, and the part to keep: **a catch-up ceremony must re-pin the whole file,
+never just the drifted lines you happen to have identified.** Partial re-pinning is exactly what
+produced this. Fifth member of the silently-decaying-mechanism family (see below).
+
+## A measuring instrument that silently transforms its input (2026-08-19)
+
+@architect's first pin-survey runner normalised whitespace in each assertion command before
+executing it. `shasum -a 256 -c -` requires *exactly two spaces* between digest and path, so the
+runner **reported four healthy pins as broken**. Caught only because the numbers contradicted a
+direct run.
+
+This is the project's signature defect class aimed at the tooling rather than the code: the
+instrument didn't measure the thing, it measured a transformed copy, and reported a fault that
+wasn't there. Two points. It failed in the **safe** direction — a false red gets investigated. And
+that is precisely why it matters: **the identical bug in the other direction is a false green, and
+a false green is never questioned.** An instrument that can silently alter what it measures should
+be assumed capable of both, so the fix is not "that particular normalisation was wrong" but "the
+runner must execute the assertion command verbatim".
+
+**The silently-decaying-mechanism family now has five members**, all ending in a gate that reports
+safety it is not providing: presence-not-property; stale sha256 pins; an assertion outliving the
+decision it protected; partial re-pin; and an instrument that transforms its input.
+
+## Payment provider seam — six new members of the silently-decaying-mechanism family (2026-08-19/20)
+
+Mission `payment-provider-seam` produced six further variants of the same root failure (a gate
+that reports safety it isn't providing), plus a process decision worth generalising.
+
+- **Proximity is not attribution.** A check for "does the gutted branch 500" was satisfied by a
+  `status: 500` belonging to a *neighbouring* guard in the same scanned window, while the branch
+  under test had been emptied to a bare `console.error`. A correct check design can still be
+  defeated if its evidence-gathering scans a window instead of binding to the specific construct
+  under test. Fix: brace-count the actual branch body, don't grep the surrounding lines.
+- **Assert the right question was asked, not that a question was asked.** `readiness('verify-
+  notification')` passed a check written to require `readiness('initiate')` at checkout — it
+  verified *a* call happened, never that it was the *correct* one. Would have refused purchases
+  that succeed today (demanding a passphrase checkout doesn't need). When an interface takes a
+  parameter that changes its meaning, pin the parameter value, not just the call site.
+- **Before deleting a "redundant" read, enumerate every invariant it enforces as a side effect.**
+  A duplicate Firestore query was removed as redundant lookup; it was also the only in-transaction
+  check that the resolved order's `m_payment_id` matched the notification's. Two Opus architects,
+  a nine-mutation harness, and a green 14/14 gate all missed it — Codex found it on a plain read.
+  Corollary for future dedup work: "this query just re-fetches the same doc" is not the same claim
+  as "this query enforces nothing the other doesn't."
+- **An assertion can pass because the field it compares is dead.** Two instances in one suite:
+  a property deleted by an earlier commit (every green spurious, 5/5 runs), and a field
+  (`position.pf_payment_id`) nothing writes and which is `null` on both sides every run — the
+  comparison is unfalsifiable regardless of what the code does. Two in one suite is a signal, not
+  a coincidence: it means every suite in the contract needs the same sweep, not just the one where
+  the first was found by accident.
+- **Instrument failure that exits 1 is indistinguishable from genuine absence.** A hardening pass
+  made instrument faults exit 3 with a message — closing the hole for faults that exit that way,
+  but leaving anything that exits 1 (a constrained sandbox, missing python3, wrong cwd) reporting
+  as "step absent" with full confidence. Codex's own read-only sandbox reproduced this nine times
+  in one run against checks that pass fine in the real environment. Fix direction: absence must
+  require positive proof the file was read and parsed, not merely a non-zero exit code — and never
+  trust this project's checks run inside another agent's sandbox.
+- **Float comparison in a money guard accepts underpayment.** `Math.abs(Number('0.02') - 0.03)`
+  evaluates to `0.009999999999999998`, under a `0.01` tolerance — a one-cent underpayment passed
+  the exact check written to reject it. Any amount-matching guard must compare integer cents via
+  string parsing (`^(\d+)(?:\.(\d{1,2}))?$` style), never `Number(x) * 100`, which still round-trips
+  through float.
+
+**Where format translation belongs vs where the decision belongs (ruling, not just a lesson):**
+parsing a gateway's wire-format decimal string into integer cents is format translation — same
+category as `mapStatus` translating a status vocabulary — and belongs in the adapter. Judging
+whether the resulting number is acceptably close to what's owed is a decision about our money and
+stays in the route. The rejected alternative matters as much as the ruling: documenting the
+2-decimal-string shape as an interface-wide guarantee (so the route's own parser could cite the
+interface instead of PayFast) was rejected because the other two adapters (Ozow, Peach) don't
+exist yet — asserting they share PayFast's wire shape would smuggle an unconfirmed value into the
+seam, the identical defect class as the invented CTICC venue and the invented 18-21 September show
+dates. Provider-specific shape assumptions get proven per-adapter as each one is actually built,
+never generalised from the one gateway currently in front of you.
+
+**A check that exists but is registered in no contract is not a check.** Found three times this
+mission (a 9-mutation regression harness, a fixture with its own scoped tsconfig invisible to the
+root `pnpm type-check`, plus a prior instance), letting a real compile error sit under a
+green root gate. `discover_route_pins.py` already parses contract `command:` fields for pin
+discovery — the same walk would surface check files that exist on disk but appear in no
+contract's `command:` list. Worth building as a standing audit, not re-discovering per mission.
+
+**Do not report a task as already satisfied without running the check that proves it.** @docs on
+Haiku reported two documentation items as "already correctly documented" — a one-second grep
+showed neither existed anywhere except the line Haiku itself had just written. Mechanical line/
+constant-name corrections from the same agent were all verified correct. Confirms the existing
+`feedback_model_choice_no_haiku` pattern (flawless on lookups, confidently wrong on substantive
+claims) with a new specific failure shape: self-reported completeness needs a grep before it's
+trusted, regardless of which model wrote the report.
+
+**Process note — model policy and why the Codex pass is mandatory, not advisory.** Standing model
+policy: Sonnet for all Claude agent roles except @docs (Haiku) and QA cross-check (Codex GPT-5.5).
+Codex found two real, previously-unflagged production defects this mission (the missing in-
+transaction identity check on `orderId`/`m_payment_id`, and the floating-point amount guard) in
+code that had already passed two Opus architects, a full internal @qa pass, and a green contract
+gate. That is the standing justification for running the mandatory cross-model Codex pass after
+every internal @qa, no exceptions — same-model review of same-model code does not reliably catch
+this defect class; consistent with the earlier vendor-registration-form incident that established
+the rule in the first place.

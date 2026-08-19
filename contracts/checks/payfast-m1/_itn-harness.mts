@@ -238,5 +238,75 @@ export async function createOrderAndPosition(fields: CreateOrderAndPositionField
   shared.recordFixtureCreated('tickets', positionRef.id);
   await positionRef.set(position);
 
+  // F2 (payment-provider-seam, orders-query-race-spec §3 "A") — must not return until BOTH
+  // index queries the ITN route will make against this fixture are satisfiable:
+  // orders.where('m_payment_id', ...) (lib/orders.ts findReservedOrderByPaymentId) and
+  // tickets.where('orderId', ...) (lib/orders.ts markOrderAndPositionPaidByPaymentId). C
+  // (lib/orders.ts) removes the SECOND orders-index read by resolving that ref by id, but
+  // does not touch the tickets.where('orderId') read, which stays the next coin toss if this
+  // fixture can still hand back a ref before its own writes are queryable. Fails loudly with
+  // a distinct PRECONDITION: message on timeout rather than silently letting a fixture-freshness
+  // gap read back as a route defect — see spec §3 "Guarantee".
+  await waitUntilQueryable(database, order.m_payment_id, orderRef.id);
+
   return positionRef;
+}
+
+const FIXTURE_QUERYABLE_TIMEOUT_MS = 5000;
+const FIXTURE_QUERYABLE_POLL_INTERVAL_MS = 100;
+
+/** Minimal structural shape `waitUntilQueryable` actually calls — deliberately NOT the real
+ * Firestore type, so a plain in-memory fake can drive it in a regression test with no
+ * Firestore and no network (same pattern as lib/orders.ts's OrdersFirestoreRwLike). */
+export interface QueryableDbLike {
+  collection(name: string): {
+    where(field: string, op: '==', value: unknown): {
+      limit(n: number): { get(): Promise<{ empty: boolean }> };
+    };
+  };
+}
+
+/**
+ * Polls both index queries the ITN route will issue against this fixture until each returns
+ * the just-written document, or throws a `PRECONDITION:`-prefixed error after `timeoutMs`.
+ * Bounded and loud on purpose — see call site. Exported (not a call-site-only local) so the
+ * regression suite can drive it directly against a stub whose queries never become
+ * non-empty (R3) without needing real Firestore or the rest of createOrderAndPosition's
+ * sentinel-write machinery.
+ */
+export async function waitUntilQueryable(
+  database: QueryableDbLike,
+  mPaymentId: string | null,
+  orderId: string,
+  timeoutMs = FIXTURE_QUERYABLE_TIMEOUT_MS,
+  pollIntervalMs = FIXTURE_QUERYABLE_POLL_INTERVAL_MS
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  const ordersQueryable = async () => {
+    if (!mPaymentId) return true;
+    const snap = await database
+      .collection('orders')
+      .where('m_payment_id', '==', mPaymentId)
+      .limit(1)
+      .get();
+    return !snap.empty;
+  };
+  const ticketsQueryable = async () => {
+    const snap = await database.collection('tickets').where('orderId', '==', orderId).limit(1).get();
+    return !snap.empty;
+  };
+
+  for (;;) {
+    const [ordersOk, ticketsOk] = await Promise.all([ordersQueryable(), ticketsQueryable()]);
+    if (ordersOk && ticketsOk) return;
+    if (Date.now() >= deadline) {
+      throw new Error(
+        `PRECONDITION: fixture order/position not queryable via the route's own index reads ` +
+          `within ${timeoutMs}ms (orders.where('m_payment_id')=${ordersOk}, ` +
+          `tickets.where('orderId')=${ticketsOk}). This is a fixture-freshness failure, not a ` +
+          `route defect — do not attribute a check failure downstream of this to route.ts.`
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+  }
 }

@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-08-19T18:05Z_
+_Generated: 2026-08-19T22:56Z_
 
 ## What happened last session
-Shipped policy-pages (F1): rewrote /privacy to remove a false third-party-data-sharing claim, added conditions of sale to /terms, and created /refunds — the three legal pages South African payment gateways (Ozow confirmed) require before approving a merchant account. Gate 14/14 pass, Codex cross-model pass run (one Prettier finding attributed to pre-existing repo-wide drift, not this change). Logged 4 backlog follow-ups (2 blocked on council: POPIA Information Officer designation and refund terms; 1 repo hygiene: Prettier; 1 standing: legal review notice) and 5 reusable lessons in learned.md about content-correctness as an uncovered defect class, negative-control-testing ban assertions, and route reachability vs existence.
+payment-provider-seam mission (F1/F2 in progress): PaymentProvider interface + PayFast adapter landed with byte-exact goldens; both routes rewired to the seam with a readiness() precede-write guard; six new silently-decaying-mechanism check defects found and fixed (proximity-not-attribution, right-question-not-a-question, dead-field assertions x2, instrument-exit-1 blindness, float money guard); Codex found two real production defects (missing in-transaction identity check, float underpayment) that two Opus architects and a green 14/14 gate missed; A18 dead security assertion retired, five stale sha256 pins on itn/route.ts re-pinned. F3 live purchase, F4 Codex+docs, and commit still open for next session.

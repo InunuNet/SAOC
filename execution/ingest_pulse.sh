@@ -64,7 +64,16 @@ find "$INBOX_DIR" -maxdepth 1 -type f -name "*.txt" | while read -r inbox_file; 
             continue
         else
             SUMMARY=$(head -n 1 "$inbox_file" | cut -c 1-100)
-            [ -z "$SUMMARY" ] && SUMMARY="New Event: $filename"
+            if [ -z "$SUMMARY" ]; then
+                # Empty output means the underlying check found nothing new
+                # (e.g. a comms/file watcher whose watched content didn't
+                # change since last run). Archive silently instead of
+                # fabricating a "New Event" backlog item — see
+                # .agent/memory/project/learned.md (check_own_comms pollution).
+                mv "$inbox_file" "$ARCHIVE_DIR/"
+                echo "${PROJECT_PREFIX}Archived (empty output, no change): $filename"
+                continue
+            fi
             ITEM="- [ ] ${PROJECT_NAME} (Misc): $SUMMARY"
         fi
 

@@ -5,7 +5,8 @@ import { generateBookingRef } from '@/lib/booking-ref';
 import { buildReservationDocs, writeReservationPair } from '@/lib/checkout-reservation';
 import { initAdmin } from '@/lib/firebase-admin';
 import { ORDERS_COLLECTION } from '@/lib/orders';
-import { generateSignature, PAYFAST_SANDBOX_PROCESS_URL } from '@/lib/payfast';
+import { paymentProvider } from '@/lib/payments';
+import type { ProviderReadiness } from '@/lib/payments';
 import { mintRecoveryToken } from '@/lib/recovery-token';
 import { client } from '@/sanity/lib/client';
 import {
@@ -20,12 +21,12 @@ import { NATIONAL_SHOW_ID, RESERVATION_TTL_MINUTES } from '@/lib/tickets-constan
 
 /**
  * Canonical production origin. Used only as the fallback when `SITE_URL` is unset.
- * PayFast sandbox testing MUST override it — `saoc.co.za` still resolves to the old
- * Joomla site, so a sandbox `notify_url` built on this origin would deliver the ITN
+ * Sandbox testing MUST override it — `saoc.co.za` still resolves to the old Joomla
+ * site, so a sandbox notification callback built on this origin would be delivered
  * there and never reach this app. Set `SITE_URL` to the App Hosting origin instead.
  */
 const DEFAULT_SITE_URL = 'https://saoc.co.za';
-const ITEM_NAME = 'SAOC 2027 National Show Ticket';
+const TICKET_ITEM_LABEL = 'SAOC 2027 National Show Ticket';
 
 /**
  * Resolve the origin at request time, not module load. Firebase App Hosting supplies
@@ -304,25 +305,42 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return unusableTicketType(ticketType, 'show');
   }
 
-  const merchantId = process.env.PAYFAST_SANDBOX_MERCHANT_ID;
-  const merchantKey = process.env.PAYFAST_SANDBOX_MERCHANT_KEY;
-  const passphrase = process.env.PAYFAST_SANDBOX_PASSPHRASE;
-  const recoveryTokenSecret = process.env.RECOVERY_TOKEN_SECRET;
-
-  if (!merchantId || !merchantKey) {
-    console.error(
-      '[tickets/checkout] Missing PAYFAST_SANDBOX_MERCHANT_ID or PAYFAST_SANDBOX_MERCHANT_KEY env var.'
-    );
+  // The gateway credential guard, BEFORE any Firestore write — the position
+  // contracts/golden/payment-seam-f1/fail-closed-guards.golden.md pins. initiate() cannot serve
+  // here: it needs the booking reference and the server-derived amount, which only exist after
+  // reserveTicket(), so refusing there would already have burned a seat that nobody can pay for
+  // until its TTL expires. readiness('initiate') asks the same question with nothing but config,
+  // so the route refuses early without ever reading a gateway credential itself.
+  //
+  // Wrapped, because the wrong answer to "is the gateway configured?" is an optimistic one: an
+  // adapter that throws must mean REFUSE, never "assume fine".
+  let gatewayReadiness: ProviderReadiness;
+  try {
+    gatewayReadiness = paymentProvider.readiness('initiate');
+  } catch (error) {
+    console.error('[tickets/checkout] Payment provider readiness probe threw:', error);
+    gatewayReadiness = { ready: false, reason: 'not-configured', missing: [] };
+  }
+  if (!gatewayReadiness.ready) {
+    console.error('[tickets/checkout] Payment gateway is not configured.', {
+      reason: gatewayReadiness.reason,
+      missing: gatewayReadiness.missing,
+    });
     return NextResponse.json(
       { error: 'Payment gateway is not configured. Please try again later.' },
       { status: 500 }
     );
   }
 
-  // Fail closed, same posture as the PayFast credential guard above: an unset secret must
+  const recoveryTokenSecret = process.env.RECOVERY_TOKEN_SECRET;
+
+  // Fail closed, same posture as the gateway credential refusal above: an unset secret must
   // refuse the purchase before any Firestore write, never silently mint a never-verifiable-
-  // again recovery token. See contracts/golden/ticketing-checkout-orders/README.md
-  // "recoveryToken minting: fail closed, same posture as the PayFast credential guards".
+  // again recovery token. See contracts/golden/ticketing-checkout-orders/README.md, section
+  // "recoveryToken minting", for the full reasoning. This guard deliberately stays HERE, ahead
+  // of the reservation write, where
+  // contracts/checks/ticketing-checkout-orders/check-fail-closed-secret-guard.sh proves it by
+  // source position.
   if (!recoveryTokenSecret) {
     console.error('[tickets/checkout] Missing RECOVERY_TOKEN_SECRET env var.');
     return NextResponse.json(
@@ -355,7 +373,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: await fetchSoldOutMessage() }, { status: 409 });
   }
 
-  // Refusals carry no bookingRef and no PayFast fields: leaking the original buyer's
+  // Refusals carry no bookingRef and no hand-off fields: leaking the original buyer's
   // reference is the whole defect, and a 409 that still echoes it fixes nothing.
   if (outcome.kind === 'key-payload-mismatch') {
     return NextResponse.json(
@@ -375,31 +393,52 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // A replay is re-signed here from the STORED, server-derived amount — never from a
-  // stored signature and never from the request body.
+  // A replay is re-authenticated here from the STORED, server-derived amount — never from a
+  // stored hand-off payload and never from the request body.
   const { bookingRef, amount } = outcome;
   const amountFormatted = amount.toFixed(2);
 
-  // Field order matters — it IS the signature base string order (PayFast spec: attribute
-  // order, not alphabetical). Compute the signature last, once all other fields are set.
+  // F2 (payment-provider-seam): this route no longer knows which gateway it is handing off to.
+  // Assembling the fields, ordering them and authenticating them all belong to the provider
+  // (lib/payments/); what stays here is the reference, the server-derived amount and our own
+  // callback URLs. Nothing below may reach for a gateway-specific field name again.
   const siteUrl = resolveSiteUrl();
-  const signedFields: Record<string, string> = {
-    merchant_id: merchantId,
-    merchant_key: merchantKey,
-    return_url: `${siteUrl}/tickets/confirmation?ref=${bookingRef}`,
-    cancel_url: `${siteUrl}/tickets/cancelled?ref=${bookingRef}`,
-    notify_url: `${siteUrl}/api/tickets/itn`,
-    m_payment_id: bookingRef,
-    amount: amountFormatted,
-    item_name: ITEM_NAME,
-  };
-  const signature = generateSignature(signedFields, passphrase);
+  const initiation = await paymentProvider.initiate({
+    reference: bookingRef,
+    amountFormatted,
+    itemName: TICKET_ITEM_LABEL,
+    returnUrl: `${siteUrl}/tickets/confirmation?ref=${bookingRef}`,
+    cancelUrl: `${siteUrl}/tickets/cancelled?ref=${bookingRef}`,
+    notifyUrl: `${siteUrl}/api/tickets/itn`,
+  });
+
+  // The gateway credential guard again, and this is DEFENCE IN DEPTH rather than redundancy:
+  // config is read per call by design, so it can genuinely change between the readiness probe
+  // above and this hand-off. 500 and not 4xx is deliberate: the request was well-formed and the
+  // misconfiguration is ours, so a 4xx would tell the buyer to fix something they cannot see.
+  // Status and message are byte-identical to the pre-F2 refusal
+  // (contracts/golden/payment-seam-f1/fail-closed-guards.golden.md).
+  if (!initiation.ok) {
+    // Compile-time exhaustiveness, not decoration: 'not-configured' is the only refusal the
+    // interface can currently produce, and this annotation breaks the build if it ever grows
+    // another — forcing this route to decide what that new refusal means rather than silently
+    // folding it into the same 500.
+    const refusal: 'not-configured' = initiation.reason;
+    console.error('[tickets/checkout] Payment provider refused the hand-off', {
+      bookingRef,
+      reason: refusal,
+    });
+    return NextResponse.json(
+      { error: 'Payment gateway is not configured. Please try again later.' },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json(
     {
       bookingRef,
-      processUrl: PAYFAST_SANDBOX_PROCESS_URL,
-      fields: { ...signedFields, signature },
+      processUrl: initiation.processUrl,
+      fields: initiation.fields,
     },
     // A fresh reservation is 201, an idempotent replay is 200, so the two remain
     // distinguishable to a client that wants to know whether it actually created one.
@@ -449,8 +488,8 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
           return { kind: 'key-payload-mismatch' };
         }
 
-        // Rule 2: the replay branch hands back a live, signed PayFast payload, so it may
-        // only run while the reservation can still be paid for.
+        // Rule 2: the replay branch hands back a live, authenticated payment hand-off, so it
+        // may only run while the reservation can still be paid for.
         if (data['status'] !== RESERVED_STATUS) return { kind: 'key-not-payable', reason: 'status' };
         const expiresAt = data['expiresAt'];
         if (expiresAt instanceof Timestamp && expiresAt.toMillis() <= Date.now()) {

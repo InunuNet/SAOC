@@ -11,8 +11,8 @@ goal: >-
   createOrderWithPosition primitive rather than a parallel one); (4) add a post-commit,
   try/catch-isolated confirmation-email hookup that can never roll back or block a committed
   payment. The route is then re-pinned to a NEW architect-authored expected file, following the
-  exact ceremony precedent contracts/golden/ticketing-hardening/itn-route.expected.ts.txt
-  established: @dev makes the source byte-identical to a file @dev did not author; @dev never
+  exact ceremony precedent that contract-ticketing-hardening established (its expected file has
+  since been superseded by contracts/golden/payment-seam-f2/itn-route.expected.ts.txt): @dev makes the source byte-identical to a file @dev did not author; @dev never
   computes or chooses the new pin value. Full decision record, every defeating mutation, the
   idempotency finding, the F10/F11 boundary, and what this contract cannot prove offline:
   contracts/golden/ticketing-f10-itn-repin/README.md

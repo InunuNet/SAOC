@@ -126,8 +126,9 @@ amount, they could pay R1 for a R300 ticket and the ITN amount-match check downs
    source of QA findings on this milestone (see [GCLB two-hop extraction](#gclb-two-hop-client-ip-extraction)
    below) — an earlier version of `getClientIp()` silently rejected every legitimate ITN.
 3. **Amount match** — the ITN's `amount_gross` must match the reserved ticket's server-derived
-   `amount` within a fixed ZAR 0.01 tolerance (`AMOUNT_MATCH_TOLERANCE` in the route, not a
-   config value — cents rounding only).
+   `amount` within a fixed ZAR 0.01 tolerance (stored as `AMOUNT_MATCH_TOLERANCE_CENTS = 1` in
+   integer cents, not a config value, to avoid floating-point rounding that would accept
+   underpayment).
 4. **Server-confirm callback** — POST the received data back to PayFast's own
    `https://sandbox.payfast.co.za/eng/query/validate` endpoint and require the response body to
    equal exactly `VALID`. This is PayFast confirming, server-to-server, that the notification

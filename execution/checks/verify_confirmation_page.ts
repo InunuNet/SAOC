@@ -2,8 +2,8 @@
  * Contract assertion for confirmation-page-qr-and-download/contract-f1.yaml (A6).
  *
  * The load-bearing behavioral proof for this feature: a Playwright-driven run against a real
- * built-and-served instance of the app, using one real paid booking ref and one bogus ref,
- * proving in one script:
+ * built-and-served instance of the app, using a real paid booking ref, a bogus/nonexistent ref,
+ * and (best-effort) a real ref that is genuinely still 'reserved', proving in one script:
  *   1. the paid page's rendered QR <img>, decoded with jsqr+pngjs, yields EXACTLY the paid
  *      ref's bookingRef string;
  *   2. the paid page's rendered text contains that ref's real attendeeName and ticketType,
@@ -11,15 +11,35 @@
  *      "Independent fixture lookup");
  *   3. clicking the page's download control produces a downloaded PNG whose OWN embedded QR,
  *      independently decoded, ALSO equals the exact bookingRef;
- *   4. the bogus-ref page renders no QR image and no buyer-detail text (fail-closed).
+ *   4. the bogus-ref page renders no QR image and no buyer-detail text (fail-closed on an
+ *      ABSENT document);
+ *   5. the reserved-ref page ALSO renders no QR image and no buyer-detail text (fail-closed on
+ *      a document that genuinely EXISTS, with real attendeeName/ticketType/amount on it, but is
+ *      not yet 'paid'/'checked-in') — this is the case #4 does not cover: a status-gate
+ *      regression (e.g. someone loosens getConfirmedTicketForDisplay to key off field presence
+ *      instead of status) would still pass case #4 (no document at all) while leaking a paid
+ *      page and buyer PII for an unpaid reservation. See --reserved-ref below for how this
+ *      fixture is resolved and what happens when none is available.
  *
  * Every sub-case failure exits non-zero and names exactly which case failed, matching
  * verify_reply_to.ts's per-case failure-reporting convention. A setup failure (server never
  * came up, Firestore lookup failed) exits non-zero with a DISTINCT "SETUP FAILURE" message so
- * it is never confused with a real behavioral failure.
+ * it is never confused with a real behavioral failure. The reserved-ref sub-case is the one
+ * exception to "every failure is fatal": if no genuinely-reserved document can be found (see
+ * below), it SKIPs with an explicit, loud message rather than either failing the whole run over
+ * missing test data or — worse — silently reporting an overall PASS that never actually
+ * exercised the status gate.
+ *
+ * --reserved-ref <REF> (optional): a real booking ref expected to still be in 'reserved' status.
+ * Its status is re-verified against live Firestore before use (a fixture can flip to 'paid'
+ * between when it was picked and when this runs), because hardcoding a ref that might no longer
+ * be reserved would make this sub-case pass for the wrong reason. If omitted, or if the
+ * supplied ref is no longer 'reserved', this falls back to discovering ANY document currently
+ * in 'reserved' status via a live query. If that also finds nothing, the reserved-ref sub-case
+ * is SKIPPED (loudly) rather than passed by default.
  *
  * Run: node_modules/.bin/tsx execution/checks/verify_confirmation_page.ts \
- *        --paid-ref <REF> --bad-ref <REF>
+ *        --paid-ref <REF> --bad-ref <REF> [--reserved-ref <REF>]
  */
 
 import { spawn, execFile, type ChildProcess } from 'node:child_process';
@@ -42,6 +62,7 @@ const SERVER_POLL_INTERVAL_MS = 500;
 interface Args {
   paidRef: string;
   badRef: string;
+  reservedRef: string | undefined;
 }
 
 function parseArgs(): Args {
@@ -52,11 +73,12 @@ function parseArgs(): Args {
   };
   const paidRef = get('--paid-ref');
   const badRef = get('--bad-ref');
+  const reservedRef = get('--reserved-ref');
   if (!paidRef || !badRef) {
     console.error('SETUP FAILURE: --paid-ref and --bad-ref are both required');
     process.exit(2);
   }
-  return { paidRef, badRef };
+  return { paidRef, badRef, reservedRef };
 }
 
 function setupFailure(message: string): never {
@@ -100,21 +122,73 @@ async function waitForServer(baseUrl: string): Promise<void> {
   throw new Error(`server did not become ready within ${SERVER_START_TIMEOUT_MS}ms at ${baseUrl}`);
 }
 
+interface FetchedTicketFields {
+  attendeeName: string;
+  ticketType: string;
+  bookingRef: string | null;
+  amount: number | null;
+  status: string | null;
+}
+
 /** Independently looks up a ticket's real fields via the shared Python Firestore REST helper —
- *  never hardcoded, so this check stays correct if the fixture ticket is ever edited. */
-async function fetchTicketFields(
-  bookingRef: string
-): Promise<{ attendeeName: string; ticketType: string; bookingRef: string }> {
+ *  never hardcoded, so this check stays correct if the fixture ticket is ever edited. Returns
+ *  null (not a thrown error) when the helper reports "not found" (its exit code 1) — that is a
+ *  real, expected outcome for --status discovery when nothing currently matches, and callers
+ *  need to distinguish it from a genuine setup failure (exit code 2 / any other crash). */
+async function fetchTicketFieldsBy(
+  mode: { bookingRef: string } | { status: string }
+): Promise<FetchedTicketFields | null> {
+  const flagArgs = 'bookingRef' in mode ? ['--booking-ref', mode.bookingRef] : ['--status', mode.status];
   try {
     const { stdout } = await execFileAsync('python3', [
       path.join(REPO_ROOT, 'execution', 'checks', '_fetch_ticket_fields.py'),
-      '--booking-ref',
-      bookingRef,
+      ...flagArgs,
     ]);
     return JSON.parse(stdout.trim());
   } catch (error) {
-    throw new Error(`independent Firestore fixture lookup for ${bookingRef} failed: ${error}`);
+    const execError = error as { code?: number; stderr?: string };
+    if (execError.code === 1) {
+      return null; // genuine "not found" — not a setup failure.
+    }
+    const describedMode = 'bookingRef' in mode ? mode.bookingRef : `status=${mode.status}`;
+    throw new Error(`independent Firestore fixture lookup for ${describedMode} failed: ${error}`);
   }
+}
+
+/** Resolves a fixture the reserved-ref sub-case can safely test against, or a skip reason.
+ *
+ * Order: (1) if --reserved-ref was given, re-verify it live and use it if it's still 'reserved'
+ * (a fixture picked earlier can flip to 'paid' by the time this runs); (2) otherwise, or if that
+ * ref is no longer reserved, discover ANY document currently 'reserved' via a live query;
+ * (3) if neither yields a usable fixture, return a skip reason — never silently proceed as if
+ * the sub-case passed.
+ */
+async function resolveReservedFixture(
+  explicitRef: string | undefined
+): Promise<{ ref: string; fields: FetchedTicketFields } | { skip: string }> {
+  if (explicitRef) {
+    const fields = await fetchTicketFieldsBy({ bookingRef: explicitRef });
+    if (fields && fields.status === 'reserved') {
+      return { ref: explicitRef, fields };
+    }
+    console.warn(
+      fields
+        ? `--reserved-ref ${explicitRef} is no longer 'reserved' (status=${JSON.stringify(fields.status)}) — ` +
+          'falling back to discovering another reserved document.'
+        : `--reserved-ref ${explicitRef} no longer exists — falling back to discovering another reserved document.`
+    );
+  }
+
+  // _fetch_ticket_fields.py resolves bookingRef from the document's own field, falling back to
+  // the Firestore document id (via _firestore_rest.py's query_by_field "_id") when the field
+  // itself is unset on an older fixture — so `discovered.bookingRef` is always navigable when
+  // `discovered` is non-null.
+  const discovered = await fetchTicketFieldsBy({ status: 'reserved' });
+  if (discovered && discovered.bookingRef) {
+    return { ref: discovered.bookingRef, fields: discovered };
+  }
+
+  return { skip: 'no document currently in status=reserved was found (explicit ref, if given, was also unusable)' };
 }
 
 /** Decodes a data:image/png;base64,... URI or a raw PNG file buffer with jsqr, returning the
@@ -132,15 +206,24 @@ function decodeQrFromDataUri(dataUri: string): string | null {
 }
 
 async function main(): Promise<void> {
-  const { paidRef, badRef } = parseArgs();
+  const { paidRef, badRef, reservedRef: explicitReservedRef } = parseArgs();
 
   // --- Independent fixture lookup, before touching the browser ---
-  let expected: { attendeeName: string; ticketType: string; bookingRef: string };
+  let expected: FetchedTicketFields;
   try {
-    expected = await fetchTicketFields(paidRef);
+    const fetched = await fetchTicketFieldsBy({ bookingRef: paidRef });
+    if (!fetched) {
+      throw new Error(`no document found at tickets/${paidRef} — --paid-ref must be a real, existing ticket`);
+    }
+    expected = fetched;
   } catch (error) {
     setupFailure(String(error));
   }
+
+  // --- Resolve the reserved-ref fixture (best-effort; may SKIP, never silently passes) ---
+  const reservedFixture = await resolveReservedFixture(explicitReservedRef).catch((error) => {
+    setupFailure(`reserved-ref resolution failed: ${error}`);
+  });
 
   // --- Build + start a real production server on an ephemeral port ---
   const port = await findFreePort().catch((error) => setupFailure(String(error)));
@@ -266,7 +349,50 @@ async function main(): Promise<void> {
       );
     }
 
-    console.log('verify_confirmation_page PASSED: QR, buyer details, download, and fail-closed bad-ref all verified.');
+    // --- Case 5: a REAL, existing-but-'reserved' document also fails closed (status gate,
+    // not mere document presence) ---
+    if ('skip' in reservedFixture) {
+      console.warn(`SKIP [reserved-ref]: ${reservedFixture.skip}`);
+    } else {
+      const { ref: reservedRef, fields: reservedFields } = reservedFixture;
+      // NOT 'networkidle' here: a 'reserved' ticket renders <ConfirmationPoller>, which polls
+      // /api/tickets/status on a recurring 3s interval FOREVER (the ticket never becomes paid),
+      // so the network never satisfies "idle" and page.goto would hang until its own timeout.
+      // 'load' is correct and sufficient — the assertions below only need the DOM present, not
+      // network silence.
+      await page.goto(`${baseUrl}/tickets/confirmation?ref=${encodeURIComponent(reservedRef)}`, {
+        waitUntil: 'load',
+      });
+      const reservedQrCount = await page.locator('img[alt*="QR code"]').count();
+      if (reservedQrCount !== 0) {
+        failCase(
+          'reserved-ref-no-qr-rendered',
+          `expected no QR <img> for a real but still-'reserved' ref (${reservedRef}), found ` +
+            `${reservedQrCount} — the status gate in getConfirmedTicketForDisplay has been loosened`
+        );
+      }
+      const reservedBodyText = (await page.textContent('body')) ?? '';
+      const reservedAmountText =
+        typeof reservedFields.amount === 'number' ? `R${reservedFields.amount.toFixed(2)}` : null;
+      const leaked =
+        reservedBodyText.includes(reservedFields.attendeeName) ||
+        reservedBodyText.includes(reservedFields.ticketType) ||
+        (reservedAmountText !== null && reservedBodyText.includes(reservedAmountText));
+      if (leaked) {
+        failCase(
+          'reserved-ref-no-buyer-details-leaked',
+          `a real but still-'reserved' ref (${reservedRef}) rendered its own attendeeName/` +
+            'ticketType/amount on the page — the status gate in getConfirmedTicketForDisplay has ' +
+            'been loosened to key off field presence instead of paid/checked-in status'
+        );
+      }
+    }
+
+    console.log(
+      'verify_confirmation_page PASSED: QR, buyer details, download, fail-closed bogus-ref, and ' +
+        (('skip' in reservedFixture) ? 'SKIPPED reserved-ref' : 'fail-closed reserved-ref') +
+        ' all verified.'
+    );
   } catch (error) {
     // Any unexpected exception here is a real failure of the run itself, not a named
     // sub-case — surface it loudly rather than letting it look like a clean exit.

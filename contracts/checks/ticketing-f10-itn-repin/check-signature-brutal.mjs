@@ -2,7 +2,7 @@
 // F10 (ticketing-foundation) — the ITN signature-verification brutal suite. This is the
 // assertion that decides whether someone can mint themselves a paid ticket for free: it
 // proves a genuine ITN is accepted and a tampered/forged/malformed one is rejected, using the
-// SAME pipeline app/api/tickets/itn/route.ts's guard 1 uses — parseOrderedFields (exported
+// SAME pipeline the notification route's guard 1 uses — parseOrderedFields (exported
 // from the pinned route) feeding generateNotifySignature/buildPayfastNotifyParamString
 // (lib/payfast.ts). Never imports the Next.js route handler itself (importing a route module
 // outside the Next runtime is fragile); the sha256 pin (A8 in the contract) is the separate
@@ -23,7 +23,7 @@
 //
 // Run as: npx tsx contracts/checks/ticketing-f10-itn-repin/check-signature-brutal.mjs
 
-import { parseOrderedFields } from '../../../app/api/tickets/itn/route.ts';
+import { parseOrderedFields } from '../../../lib/payments/payfast.ts';
 import { buildPayfastNotifyParamString, generateNotifySignature } from '../../../lib/payfast.ts';
 
 const failures = [];

@@ -1,6 +1,6 @@
 ---
 name: qa-apex
-model: opus
+model: sonnet
 description: "Apex-tier adversarial review. Same contract as @qa; dispatched only for features declaring tier: apex. Never writes production code."
 ---
 
