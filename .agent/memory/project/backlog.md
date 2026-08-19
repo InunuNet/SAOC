@@ -2326,3 +2326,268 @@ WRITE path while nothing verified the RELEASE path, which is where the defect sa
 - [ ] SAOC (Misc): New Event: check_own_comms-20260819003025.txt
 
 - [ ] SAOC (Misc): New Event: check_own_comms-20260819003558.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819004114.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819004636.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819005154.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819005711.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819010224.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819010739.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819011250.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819011800.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819012310.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819012820.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819013330.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819013839.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819014348.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819014856.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819015405.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819015913.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819020422.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819020930.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819021439.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819021947.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819022456.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819023004.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819023513.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819024021.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819024530.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819025039.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819025547.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819030056.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819030604.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819031113.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819031621.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819032130.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819032638.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819033147.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819033656.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819034205.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819034713.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819035222.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819035730.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819040238.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819040747.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819041256.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819041804.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819042313.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819042821.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819043330.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819043838.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819044347.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819044856.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819045404.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819045913.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819050421.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819050930.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819051439.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819051947.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819052456.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819053005.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819053513.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819054022.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819054530.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819055039.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819055547.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819060056.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819060604.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819061113.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819061622.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819062131.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819062640.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819063148.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819063657.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819064205.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819064714.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819065222.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819065731.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819070239.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819070748.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819071256.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819071805.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819072313.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819072822.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819073331.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819073839.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819074347.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819074856.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819075404.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819075913.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819080422.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819080930.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819081439.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819081948.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819082456.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819083005.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819083513.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819084022.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819084531.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819085039.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819085548.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819090056.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819090605.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819091113.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819091622.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819092130.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819092639.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819093148.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819093656.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819094205.txt
+
+---
+
+## Ticket branding + delivery items — logged 2026-08-19 from Brad's live purchase (SAOC-2027-YTKY3E5JF775)
+
+Context: Brad completed a real end-to-end purchase. The flow now works all the way through to a
+delivered email. These are presentation/format defects on a working pipeline, not broken plumbing.
+
+### P1 — BUG: QR code image does not render in the confirmation email
+Gmail shows the broken-image placeholder with its alt text ("QR code for booking reference
+SAOC-2027-YTKY3E5JF775") where the QR should be. The QR renders correctly on the confirmation
+page and in the downloaded file, so the generation is fine — this is specific to how the image
+is delivered to the email client.
+
+Likely cause to investigate first: the email references the QR by URL rather than embedding it.
+Gmail proxies remote images through googleusercontent and blocks/fails a range of sources; a
+data: URI is also stripped by Gmail. The robust fix for email clients is a CID-attached inline
+image (Resend supports attachments with a content id), not a remote URL and not a data URI.
+
+Do NOT treat "it renders in my browser preview" as proof of a fix — this defect only exists in
+the real client. Any assertion must check what the delivered email actually contains, and the
+fix needs a real send to a real Gmail inbox before it can be called done. Note the alt text is
+correct and useful, so accessibility is already right; only the image delivery is wrong.
+
+### P2 — Downloaded ticket must be a PDF, not a PNG
+Currently downloads as `saoc-ticket-<ref>.png` (see components/tickets/DownloadTicketButton.tsx).
+Brad wants a PDF. A PDF is the correct artifact for a printable ticket — it carries page size,
+vector text that stays crisp, and is what people expect to store or print.
+
+Watch: the QR must remain a crisp, scannable raster or vector at print size — a downscaled or
+JPEG-compressed QR fails scanning at the door, which is the one thing this artifact exists to do.
+Any contract for this needs a real scan test of the generated PDF, not just "a PDF was produced".
+
+### P2 — Uniform branding across all three ticket surfaces
+Brad is providing a design template. Three surfaces must share one visual identity:
+1. Confirmation page (app/(marketing)/tickets/confirmation/page.tsx) — currently plain: bare QR
+   on white, no logo, no show identity.
+2. Downloaded ticket artifact — currently a bare QR + name + type + ref on white.
+3. Confirmation email (emails/) — currently unstyled default: "Order Confirmation" heading and
+   plain label/value rows, no SAOC identity at all.
+
+BLOCKED until Brad supplies the template. Per CLAUDE.md's standing rule, do not invent brand
+assets — no colours, logos, or type decisions ahead of the handoff. Related memory:
+project_design_folders_brad_active.
+
+Email branding has a hard constraint the other two don't: email clients strip <style> blocks,
+ignore most modern CSS, and Gmail clips messages over ~102KB. It needs table-based layout with
+inline styles, and a logo delivered the same CID-attachment way the QR fix will use.
+
+### Also confirmed by this run
+F3 (confirmation email delivery) is now PROVEN end-to-end against a real inbox — sender
+tickets@tickets.saoc.co.za, correct attendee/type/ref, arrived in ~seconds. The only defect is
+the QR image above. F4 (door scan) remains the last unproven step of the mission.
