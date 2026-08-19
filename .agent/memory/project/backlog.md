@@ -2643,3 +2643,32 @@ Uppercase-normalise too — a phone keyboard will autocapitalise inconsistently.
 ### Not a defect
 Brad's "we don't have an active show" theory: unfounded. The check-in resolved the ticket and
 returned a real per-ticket verdict, which it could not do without the show wiring working.
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819105122.txt
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819110247.txt
+
+### P1 SHARPENED (Brad, 2026-08-19) — the successful check-in produced NO feedback at all
+Brad confirms: on the scan that actually worked, the door page showed nothing. Not a message he
+misread — nothing. This is stronger than "the wording reads as failure" and should be treated as
+the primary defect.
+
+LEADING HYPOTHESIS, unverified — do not treat as diagnosed: the result panel renders BELOW THE
+FOLD (same finding as the Check In button). On the successful first scan the confirmation would
+have rendered off-screen, and with nothing changing in the visible viewport Brad had no reason to
+scroll. On later attempts he did scroll, found the panel, and by then the ticket was already
+checked in — which is why the only message he ever saw was the duplicate one. If that's right,
+"no feedback" and "below the fold" are ONE defect, not two, and fixing the layout fixes both.
+
+RULE OUT FIRST, in this order, before designing anything:
+1. Does the admitted state render at all? Check whether the success branch produces a result
+   panel, or only the failure/duplicate branches do.
+2. If it renders, does it persist, or is it cleared by the scanner resuming its loop?
+3. Where does it render relative to the viewport at 375px and 320px, immediately after a scan?
+Only then decide the fix. Whatever lands must put confirmation where the operator is already
+looking — at or above the camera viewport — not below a control they have to scroll to reach.
+
+The success path is the one that has never been seen working by a human. It is also the only
+outcome that happens thousands of times at a real door. Verify it on a real phone with a real
+unscanned ticket; a DOM assertion cannot see this, and neither could the existing automated
+suite — nothing in it ever asserted that a successful scan shows the operator anything.
