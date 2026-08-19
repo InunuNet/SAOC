@@ -624,6 +624,36 @@ One real end-to-end vendor submission on the deployed dev site:
 4. Optionally upload a proof-of-payment file and flag payment received in the review UI.
 Mark F10 done with: python3 execution/mission.py checkpoint --feature F10 --status done
 
+## F3 (payment-provider-seam) — door check-in step BLOCKED, needs Brad (2026-08-20)
+
+Live purchase proof (checkout -> PayFast sandbox -> ITN -> paid) completed successfully against
+the deployed seam code (rollout `build-2026-08-19-009`, commit `0b39a86`). Booking ref
+`SAOC-2027-EAS2GC19BG1K`, order `6JaiiPqmFXVxKnIz9kwM`, both `status: 'paid'` in Firestore.
+
+The door check-in step could not be run. Tried to reuse `admin-auth-hardening`'s own
+create-sign-in-delete fixture-account helpers (`createAllowlistedFixtureUser` in
+`contracts/checks/admin-auth-hardening/_shared.mjs`) against the LIVE deployed site — this is
+the project's own documented pattern for automated admin-auth verification, not an invented
+workaround. `POST /api/admin/session` returned 403. Cloud Logging confirms why:
+`[admin-auth] ADMIN_EMAIL_ALLOWLIST parsed length: 1` on the deployed server, reason
+`not-allowlisted` for `admin-auth-check-allowlisted@saoc.co.za`.
+
+**The deployed `ADMIN_EMAIL_ALLOWLIST` secret has only 1 entry.** Local `.env.local` has 5
+(`admin-auth-check-allowlisted@saoc.co.za`, `admin-auth-f3-check-allowlisted@saoc.co.za`,
+`brad@inunu.net`, `admin-signout-check-a@saoc.co.za`, `admin-signout-check-b@saoc.co.za`) — the
+deployed Secret Manager value has diverged from local and almost certainly holds only
+`brad@inunu.net`. I did not touch the deployed secret; changing it is a production config
+change outside QA verification scope, and I have no way to know if the divergence is
+intentional (deliberately narrower on the live backend) or drift.
+
+To actually run a live door check-in scan, either: (a) Brad signs in himself at
+`/admin/login` on https://saoc-prod--saoc-webapp.europe-west4.hosted.app with his own
+allowlisted `brad@inunu.net` account and manually enters booking ref
+`SAOC-2027-EAS2GC19BG1K` at `/admin/door`, confirming a second submission is refused; or (b)
+someone with Secret Manager access adds one of the fixture emails to the deployed
+`ADMIN_EMAIL_ALLOWLIST` so an agent can safely provision-and-delete a fixture account against
+it, then decides whether to revert the addition afterward.
+
 ## Standing constraint
 
 Never delete any Firestore or Sanity document. Deletion is Brad's decision alone.

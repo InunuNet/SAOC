@@ -1,8 +1,9 @@
 {
   "mission": ".agent/memory/project/missions/2026-08-19-payment-provider-seam.md",
   "checkpoint": {
-    "milestone": null,
-    "feature": null
+    "milestone": "M2",
+    "feature": "F4",
+    "ts": "2026-08-19T23:44:38.776651+00:00"
   },
-  "activated_at": "2026-08-19T19:22:28.527595+00:00"
+  "activated_at": "2026-08-19T23:44:38.776722+00:00"
 }
