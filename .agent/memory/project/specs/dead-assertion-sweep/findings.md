@@ -1,0 +1,66 @@
+# Dead-assertion sweep — findings (2026-08-20, read-only audit)
+
+Prompted by two dead assertions found BY ACCIDENT during `payment-provider-seam`, both in one
+suite. Neither was found by looking. Scope below is honest about what was NOT covered.
+
+## Scanned
+- All contract `command:` fields diffed against every executable under `contracts/checks/`
+  (registered-nowhere scan).
+- `contract-payfast-m1` A18 cross-checked against current route + adapter source.
+- `mission.py` contract auto-discovery vs all 28 mission files' frontmatter.
+- Count of scoped `tsconfig.typecheck.json` (21; corroborates the known ~20 figure).
+
+## NOT scanned
+Assertion *bodies* in the other ~90 contracts for proximity / wrong-question / result-discarded /
+vacuous shapes. **The sweep is incomplete and must not be read as clean.** Both real findings came
+from checking a specific claim against source, not from generic pattern matching — a follow-up
+sweep should read assertion bodies contract-by-contract.
+
+## Finding 1 — CONFIRMED, highest consequence
+`contracts/contract-payfast-m1.yaml:162-172` **A18 asserts the INVERSE of shipped behaviour.**
+It claims "source-IP validation genuinely gates the ITN write path… bogus IP → ticket stays
+untouched". `app/api/tickets/itn/route.ts:69-86` deliberately does NOT enforce: "LOGGED, NOT
+ENFORCED (2026-08-18)… source IP is defense-in-depth only and must never be able to reject a
+payment". `sourceIpTrusted` feeds `console.warn` only and gates nothing.
+
+Verified directly by the orchestrator. **This is a DIFFERENT A18 from the one removed during
+payment-provider-seam** (that one was a member of `payment-seam-f2`'s
+`check-itn-behaviour-unchanged.sh` suite). Two assertions share the number in different contracts;
+the orchestrator briefly conflated them and reported this one as already fixed.
+
+Passed 5/5 historically for an unrelated reason (`order-not-found`). LOCAL-ONLY: exits 0 as a skip
+without credentials, so it rarely runs and has never meaningfully been red. @architect dispatched
+to invert (assert untrusted-IP + valid signature + server confirm STILL reaches `paid`, locking in
+the 2026-08-18 decision) or retire, with the silent-skip hazard addressed.
+
+## Finding 2 — CONFIRMED wiring gap / SUSPECTED assertion health
+**10 real contracts (~60 assertions) under `.agent/memory/project/specs/` are unreachable by
+`mission.py gate`.** `execution/mission.py:769-793` `_existing_contract_for_feature` only
+auto-discovers `specs/<mission-slug>/contract-f<N>.yaml`; none of these directory names match any
+mission's `slug:`. Affected: admin-signout-revocation, admin-nav-active-state, admin-nav-menu,
+order-reconciliation, reconcile-response-accuracy, reply-to-header-fix,
+confirmation-page-qr-and-download, ticketing-capacity-reconciliation-hold,
+ticketing-position-expiry-write, vendor-page-fixes (f1+f2).
+
+`2026-08-18-production-blockers.md` has `features: []` and `milestones: []` despite `status: done`
+— that batch was tracked by dispatch-naming convention only, never entered in the ledger.
+
+**Highest-value orphan: `admin-signout-revocation/contract-f1.yaml`** — a real auth/session
+contract whose A3 (cross-user force-sign-out) and A6 (session-replay weaponisation) were, per their
+own text, observed failing pre-fix. Only `order-reconciliation` has any evidence of a manual run.
+Individual assertion health inside these ten is UNVERIFIED.
+
+## Ruled NOT dead (recorded so they are not re-investigated)
+`payment-seam-f2/{code_lines.py, discover_route_pins.py, readiness_gate.py}` and
+`ticketing-hardening/_checkin-harness.mts` are library imports used by referenced siblings.
+The ~21 `fixtures/*-typecheck.ts` are compiled via their own tsconfig — the known
+"invisible to root gate" pattern, not registered-nowhere. Three scope guards
+(`contract-check-timeout-enforcement` A7, `contract-payfast-m1-lock-cleanup-fix`
+A0-ITN-UNTOUCHED, `contract-payfast-m1-residue-cleanup` A12) are known and expected.
+
+## Recommended order of repair
+1. A18 (in progress) — one file, and it currently misdescribes a security boundary.
+2. Decide the orphaned-contract question: register the 10 into a tracked mission, or accept that
+   ad-hoc missions bypass `mission.py gate` and hand-run `contract.py gate` on each with the
+   result recorded durably. `admin-signout-revocation` first, given what A3/A6 guard.
+3. Follow-up sweep of the remaining ~90 contracts' assertion bodies.

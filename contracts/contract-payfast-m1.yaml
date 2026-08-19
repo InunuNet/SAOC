@@ -161,14 +161,21 @@ assertions:
       command: 'grep -Eq "generateSignature|validateSignature|signature" lib/payments/payfast.ts'
     - id: A18
       description: >-
-        F3 - BEHAVIOURAL: source-IP validation genuinely gates the ITN write path. Calls
-        route.ts's POST() directly with a real dns.lookup()-resolved PayFast IP (positive
-        case, ticket becomes paid) and a bogus TEST-NET-3 IP (negative case, ticket stays
-        untouched) — see contracts/checks/payfast-m1/check-itn-source-ip-validation.mts
-        for the residual-scope note (proves genuine branching validation, not that DNS is
-        re-resolved on literally every request). LOCAL-ONLY: needs PAYFAST_SANDBOX_* and
-        FIREBASE_ADMIN_* from .env.local, absent from CI; emits a distinct
-        ::warning::...skipping A18 (exit 0, NOT a pass) when those creds are unavailable.
+        F3 - BEHAVIOURAL, CORRECTED 2026-08-20 (this assertion previously asserted the
+        INVERSE of shipped behaviour — see contracts/checks/payfast-m1/check-itn-source-ip-
+        validation.mts's header for the full correction record; it was passing 5/5 for an
+        unrelated reason, order-not-found on both fixtures, and would have stayed green if
+        IP-rejection had ever been reintroduced). Source IP is advisory only and never gates
+        the ITN write path (deliberate, app/api/tickets/itn/route.ts:69-86,
+        lib/payments/payfast.ts verifyNotification — 2026-08-18). Calls route.ts's POST()
+        directly with a real dns.lookup()-resolved PayFast IP and a bogus TEST-NET-3 IP,
+        both with a valid signature and a successful server-confirm — BOTH must result in
+        the ticket becoming paid, proving source IP cannot reject an otherwise-authenticated
+        payment. LOCAL-ONLY: needs PAYFAST_SANDBOX_* and FIREBASE_ADMIN_* from .env.local,
+        absent from CI; emits a distinct ::warning::...skipping A18 (exit 0, NOT a pass)
+        when those creds are unavailable — this exit-0-on-skip shape is a known,
+        not-yet-fixed instrument-vs-absence hazard shared by A19-A21, unaddressed here (see
+        the check script's header for why not).
       command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-source-ip-validation.mts'
       timeout_seconds: 120
     - id: A19
