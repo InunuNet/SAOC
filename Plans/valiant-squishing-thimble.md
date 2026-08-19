@@ -150,6 +150,14 @@ cross-model review → @docs → contract gate → @maintainer).
 
 **Stage 0 — Catalogue to Lee-Ann.** Send sections 1 and 2. No code.
 
+**Stage 0b — SHIPPED 2026-08-19 (`66cb9f6`), gate 14/14.** `/privacy` rewritten (the false
+"not shared with third parties" claim removed, real recipients disclosed), `/terms` extended with
+conditions of sale, `/refunds` created with no fabricated figures, footer links all three.
+`/terms` had existed since launch but was linked nowhere. All three carry a visible AI-draft notice.
+Still open, both council decisions: the POPIA Information Officer designation, and the actual refund
+terms. **Not yet deployed** — the pages do nothing for a merchant application until they are live on
+the site the gateway reviews. Original scoping below.
+
 **Stage 0b — Legal pages required for merchant approval. GATES THE GATEWAY.** Ozow's merchant
 application requires them to review the live site and find three pages: **Terms & Conditions**,
 **Privacy / POPIA policy**, and a **Refund / Cancellation Policy**. Brad confirmed this from Ozow's
