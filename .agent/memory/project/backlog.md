@@ -2672,3 +2672,51 @@ The success path is the one that has never been seen working by a human. It is a
 outcome that happens thousands of times at a real door. Verify it on a real phone with a real
 unscanned ticket; a DOM assertion cannot see this, and neither could the existing automated
 suite — nothing in it ever asserted that a successful scan shows the operator anything.
+
+- [ ] SAOC (Misc): New Event: check_own_comms-20260819110803.txt
+
+### P1 REFINED (Brad, 2026-08-19) — required door check-in feedback behaviour
+Brad's explicit spec, not an interpretation:
+- SUCCESS: visually assertive, bright/green, unmistakable at a glance. Then the page RESETS —
+  clearing the previous booking reference so the next person can be scanned immediately.
+- FAILURE: HOLDS the entered reference in place so the operator can inspect it, with a bright
+  red "Check-in not accepted" AND the specific reason (already checked in / unpaid / wrong show /
+  unknown reference). The reason is required, not optional — it determines the steward's next
+  action.
+- Use complementary colours from the existing design palette.
+
+BLOCKER ON THAT LAST POINT — flag to Brad before any implementation, do not resolve it silently:
+app/globals.css has NO semantic feedback colours. The full token set is primary / primary-800 /
+primary-700 / primary-100 / accent / accent-soft / parchment / ivory / bone / ink / muted / rule /
+rule-soft — warm neutrals plus a dark green primary and a muted gold accent. There is no success
+green, no error red, and nothing that reads as "bright" at a door in daylight.
+
+So "bright green" and "bright red" CANNOT be satisfied from the current palette. This needs either
+(a) Brad deliberately adding two semantic tokens to the brand, or (b) an explicit decision to use
+primary (dark green) for success and accent for failure — which would be muted, low-contrast, and
+arguably fails the actual requirement of being assertive on a phone in sunlight.
+Per CLAUDE.md's standing rule, do NOT invent colours to close this gap. It is a brand decision
+and it is Brad's. Raise it, get the two values, then build.
+
+Accessibility note for whoever does build it: colour alone must not carry the verdict — pair it
+with an icon and text, and meet contrast on the parchment ground. A door steward may be
+colour-blind, and the screen will be in bright outdoor light.
+
+### Admin "mark paid" route — Brad wants it, deferred for discussion (2026-08-19)
+Brad's stated use case: a buyer pays by private banking / EFT rather than through PayFast, so no
+ITN ever arrives and the order sits reserved forever. He is unsure how it should work and wants
+to discuss before it is built. KEEP ON BACKLOG — do not build unattended.
+
+Why this is the right thing to defer: it moves money on a human's say-so, and it is the same
+capability the withdrawn ticketing-capacity-reconciliation-hold was reaching for (see that
+spec's WITHDRAWN.md — no data we record can distinguish paid-but-ITN-failed from an abandoned
+cart, so a human deciding is the only sound resolution path).
+
+Questions to settle with Brad when it is discussed:
+- Who may do it? This is the highest-privilege action in the system; it should be its own
+  capability, not bundled into general admin.
+- What evidence is recorded? A reference to the bank payment, the acting admin's uid, and a
+  timestamp, all immutable — this is the audit trail if a payment is ever disputed.
+- Does it send the confirmation email + QR, exactly as a PayFast payment does?
+- Does it decrement capacity the same way? (It must, or manual sales oversell the show.)
+- Can it be reversed, and if so by whom and with what record?
