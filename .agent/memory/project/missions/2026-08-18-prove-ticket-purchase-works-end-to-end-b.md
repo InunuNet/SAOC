@@ -15,7 +15,7 @@ goal: 'Prove ticket purchase works end-to-end: browse -> checkout -> PayFast san
   rule, see project memory feedback_orchestrator_only_hard_rule).'
 created_at: '2026-08-18T20:01:20.444841+00:00'
 started_at: null
-last_active_at: '2026-08-18T20:59:36.208671+00:00'
+last_active_at: '2026-08-19T07:56:06.951942+00:00'
 status: pending
 cost_estimate:
   features: 0
@@ -23,8 +23,8 @@ cost_estimate:
   total_calls: 0
 last_checkpoint:
   milestone: M2
-  feature: F3
-  ts: '2026-08-18T20:59:36.208671+00:00'
+  feature: F4
+  ts: '2026-08-19T07:56:06.951942+00:00'
 features:
 - id: F1
   title: Verify App Hosting auto-deploy is actually healthy after the tsconfig fix
@@ -65,7 +65,7 @@ features:
 - id: F4
   title: Real door check-in scan flips the order to 'checked-in' with a correct audit
     trail
-  status: pending
+  status: done
   inline_brief: Provision or confirm a real test-admin identity (scripts/admin-grant.ts
     for the admin claim, AND live membership of the deployed ADMIN_EMAIL_ALLOWLIST
     -- the script deliberately does not touch the allowlist, both are required). Sign
@@ -76,6 +76,7 @@ features:
     same ref is correctly refused. If no agent can safely obtain interactive Firebase
     Auth credentials, this resolves to a documented manual protocol Brad runs himself
     with exact assertions supplied by @architect -- not a silent skip.
+  completed_at: '2026-08-19T07:56:06.951769+00:00'
 milestones:
 - id: M1
   title: Deploy pipeline trusted and a real purchase reaches 'paid'
@@ -90,6 +91,7 @@ milestones:
   - F3
   - F4
 ---
+
 
 
 

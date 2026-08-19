@@ -2,8 +2,8 @@
   "mission": ".agent/memory/project/missions/2026-08-18-prove-ticket-purchase-works-end-to-end-b.md",
   "checkpoint": {
     "milestone": "M2",
-    "feature": "F3",
-    "ts": "2026-08-18T20:59:36.208671+00:00"
+    "feature": "F4",
+    "ts": "2026-08-19T07:56:06.951942+00:00"
   },
-  "activated_at": "2026-08-18T20:59:36.208874+00:00"
+  "activated_at": "2026-08-19T07:56:06.952048+00:00"
 }
