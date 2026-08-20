@@ -33,7 +33,7 @@ export function TicketFormField({
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         aria-invalid={Boolean(error)}
-        className="w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 disabled:opacity-60"
+        className="w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted transition-colors focus:border-ink/40 disabled:opacity-60"
       />
       {error ? <p className="font-sans text-[13px] text-accent">{error}</p> : null}
     </div>

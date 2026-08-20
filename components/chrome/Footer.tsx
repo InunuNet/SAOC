@@ -131,7 +131,7 @@ export function Footer() {
           <span className="font-sans text-[13px] text-ivory/45">
             &copy; {new Date().getFullYear()} South African Orchid Council. All rights reserved.
           </span>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <Link
               href="/privacy"
               className="font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"

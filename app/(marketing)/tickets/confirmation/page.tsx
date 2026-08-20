@@ -12,6 +12,10 @@ import { getConfirmedOrderForDisplay } from '@/lib/orders';
 // app/(marketing)/tickets/page.tsx's force-dynamic.
 export const dynamic = 'force-dynamic';
 
+export function normalizeBookingRefParam(ref: string | string[] | undefined): string {
+  return typeof ref === 'string' ? ref.trim() : '';
+}
+
 interface TicketsPageCopy {
   confirmationSuccessHeading?: string | null;
   confirmationSuccessMessage?: string | null;
@@ -22,10 +26,10 @@ interface TicketsPageCopy {
 export default async function TicketConfirmationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string }>;
+  searchParams: Promise<{ ref?: string | string[] }>;
 }) {
   const { ref } = await searchParams;
-  const bookingRef = ref?.trim() ?? '';
+  const bookingRef = normalizeBookingRefParam(ref);
 
   const confirmedOrder = bookingRef.length > 0 ? await getConfirmedOrderForDisplay(bookingRef) : null;
 

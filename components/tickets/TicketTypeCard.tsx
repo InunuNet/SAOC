@@ -92,7 +92,7 @@ export function TicketTypeCard({
               const parsed = Number.parseInt(e.target.value, 10);
               onQuantityChange(slug, Number.isNaN(parsed) ? 0 : Math.max(0, parsed));
             }}
-            className="w-12 rounded-sm border border-rule bg-ivory px-1 py-1 text-center font-sans text-[15px] text-ink outline-none disabled:opacity-60"
+            className="w-12 rounded-sm border border-rule bg-ivory px-1 py-1 text-center font-sans text-[15px] text-ink disabled:opacity-60"
           />
           <button
             type="button"
