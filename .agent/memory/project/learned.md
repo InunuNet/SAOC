@@ -1630,3 +1630,44 @@ gate. That is the standing justification for running the mandatory cross-model C
 every internal @qa, no exceptions — same-model review of same-model code does not reliably catch
 this defect class; consistent with the earlier vendor-registration-form incident that established
 the rule in the first place.
+
+## multi-line-item-cart, M1+M2 (2026-08-20)
+
+**A required-field addition on a shared type reliably breaks EARLIER features' frozen golden
+fixtures, not just contemporaries.** Happened three times in one session: F4's own contract
+fixture broke on its own new field, then F5's new required `chosenDay` field on `LineItemPlan`
+broke the original F1/F2 contract's frozen typecheck fixture from a *previous, already-shipped*
+feature. Adding a required field to an existing exported type doesn't just risk the feature being
+built — it risks any earlier contract that constructs object literals of that type. Standing
+process gap: before calling a feature done, grep all contracts/checks for constructions of any
+type a feature added required fields to, rather than waiting for Codex or the orchestrator to
+catch the regression reactively. The fix, both times, was a broad sweep for every construction
+site, not just the one instance that surfaced.
+
+**@qa PASS does not predict a Codex pass.** F4 and F5 both passed internal @qa cleanly, then the
+mandatory Codex GPT-5.5 pass found real, qa-missed defects in both — F4: the public `/tickets`
+page's sold-out check used raw capacity instead of `effectiveCapacity()`, and a seed script
+hardcoded "provisional" text that wasn't actually gated by the provisional flag. F5: `chosenDay`
+wasn't stripped for non-day-selection ticket types (data pollution), and idempotency replay
+ignored `chosenDay` entirely (a replay with a different day silently returned the original
+reservation instead of erroring). This is the third and fourth confirmed case of Codex catching
+what two rounds of same-model @qa missed — reinforces `feedback_codex_mandatory_qa`, not
+theoretical.
+
+**SAST (UTC+2) vs UTC is a recurring defect class, not a one-off — this is incident #2.** F5's
+`computeShowDays()` derived calendar days from a Sanity/Firestore datetime field using raw UTC.
+Since South Africa has no DST, a normal SAST-local show-day entry gets silently widened into a
+false 2-day window the moment real dates are entered — a fixed +2h offset was the correct fix,
+not a full timezone library. Any future code that derives a *calendar day* (not just a
+timestamp) from a Sanity/Firestore datetime field needs explicit SAST-awareness designed in from
+the start, not caught by QA after the fact. See also `reference_firestore_timestamps_are_utc`.
+
+**A Codex 180s timeout is a wrapper failure, not a FAIL verdict.** Observed three times this
+session (`execution/codex_qa.sh` exit 1, "codex exec timed out after 180s" as the only output).
+Retrying the identical diff usually succeeds on the 2nd or 3rd attempt — don't mistake the
+timeout for a real finding, and don't skip the retry.
+
+**Orchestrator independently re-running gates/checks (never trusting agent self-report) caught
+real problems this session that would otherwise have shipped** — a dev-server-not-running false
+red during M1 re-verification, and both fixture regressions above. Concrete reinforcement of the
+standing "never assert without verification" behavior rule, not hypothetical.

@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-08-20T00:14Z_
+_Generated: 2026-08-20T15:53Z_
 
 ## What happened last session
-payment-provider-seam shipped and closed: PaymentProvider seam with readiness gate, order-identity guard and integer-cents amounts, proven live with a real purchase (SAOC-2027-EAS2GC19BG1K) against deployed 0b39a86. Codex found two real production defects our own chain passed: a missing in-transaction m_payment_id check that could mark an unrelated order paid, and a float amount comparison accepting a one-cent underpayment. A dead-assertion sweep then closed every stale assertion found: A18 removed, a second A18 inverted (it asserted source-IP gates the ITN write while the route deliberately never enforces), A7 repointed after the seam moved signing, A30/A31 repaired (compared a field nothing writes). Each proven by observing it fail first. Open for Brad: deployed ADMIN_EMAIL_ALLOWLIST has 1 entry vs 5 local, and App Hosting auto-rollout silently stopped firing.
+multi-line-item-cart mission M1+M2 closed: real cart checkout (F1-F3), 5 admission products via provisional-figures.ts (F4), day selection + named attendees with SAST-aware computeShowDays (F5). Codex GPT-5.5 caught real defects @qa missed in both F4 and F5; required-field additions broke earlier frozen fixtures 3x this session; SAST/UTC timezone bug is now a confirmed recurring defect class. F1/F2 9/9, F3-UI 5/5, F4 11/11, F5 15/15, all gates independently re-verified. Next: F6 (contact block, POPIA fields, 5-ticket cap) flagged as pre-start checkpoint.
