@@ -6,7 +6,7 @@ goal: 'Visitor ticketing purchase flow: multi-line-item cart, the four admission
   limit'
 created_at: '2026-08-20T07:42:29.138799+00:00'
 started_at: '2026-08-20T07:49:48.246148+00:00'
-last_active_at: '2026-08-20T13:10:04.060528+00:00'
+last_active_at: '2026-08-20T14:16:38.795646+00:00'
 status: in_progress
 cost_estimate:
   features: 6
@@ -14,8 +14,8 @@ cost_estimate:
   total_calls: 36
 last_checkpoint:
   milestone: M2
-  feature: F4
-  ts: '2026-08-20T13:10:04.060528+00:00'
+  feature: F5
+  ts: '2026-08-20T14:16:38.795646+00:00'
 features:
 - id: F1
   status: done
@@ -49,14 +49,12 @@ features:
   spec: contracts/golden/ticketing-f4-admission-products/README.md
   contract: contracts/contract-ticketing-f4-admission-products.yaml
 - id: F5
-  status: pending
+  status: done
   title: Day selection and named attendees on positions
-  inline_brief: 'Day Visitor positions carry a chosen day; VIP positions carry a named
-    attendee. BLOCKED-ADJACENT: the real show dates are NOT known — 18-21 September
-    2027 is an invented placeholder and Lee-Ann''s spec establishes Thursday-Sunday
-    without calendar dates. Do NOT derive dates. Drive the day-picker from the show
-    record so the feature ships data-driven and the dates drop in when she answers.
-    Check-in must later validate the chosen day (Stage 5, not this mission).'
+  inline_brief: null
+  completed_at: '2026-08-20T14:16:38.795492+00:00'
+  spec: contracts/golden/ticketing-f5-day-attendees/README.md
+  contract: contracts/contract-ticketing-f5-day-attendees.yaml
 - id: F6
   status: pending
   title: Booking contact block and the per-booking ticket limit
@@ -87,6 +85,8 @@ milestones:
   - F6
   status: pending
 ---
+
+
 
 
 
