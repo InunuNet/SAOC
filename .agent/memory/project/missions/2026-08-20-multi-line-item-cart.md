@@ -44,13 +44,10 @@ features:
 - id: F4
   status: done
   title: The four admission products as ticket-type documents
-  inline_brief: 'Early Bird, Day Visitor, Early-Bird Weekend Pass, Weekend Pass, VIP.
-    Schema additions: an early-bird availability window, a released quantity, a requires-day-selection
-    flag and a requires-attendee-names flag. Prices and capacities are PROVISIONAL
-    until Lee-Ann returns the questionnaire — they live in one place, flagged, per
-    .agent/memory/project/provisional-figures.md. Never render a provisional figure
-    to a public page as settled fact.'
+  inline_brief: null
   completed_at: '2026-08-20T13:10:04.060261+00:00'
+  spec: contracts/golden/ticketing-f4-admission-products/README.md
+  contract: contracts/contract-ticketing-f4-admission-products.yaml
 - id: F5
   status: pending
   title: Day selection and named attendees on positions
@@ -90,6 +87,7 @@ milestones:
   - F6
   status: pending
 ---
+
 
 
 
