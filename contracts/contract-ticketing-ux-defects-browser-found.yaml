@@ -1,0 +1,138 @@
+schema: athanor.contract/v1
+slug: ticketing-ux-defects-browser-found
+goal: >-
+  A real BrowserAgent pass driving the RENDERED /tickets page (not source inference)
+  found four UX defects, three of which violate this project's own coding standard
+  (.claude/rules/coding.md, UI/Frontend section: visible focus state on every
+  interactive element; mandatory loading/error states for async operations;
+  mobile-first from 320px with no pixel-fixed layouts). Every defect below was
+  independently reconfirmed live against the running dev server
+  (http://localhost:3002) while authoring this contract — not merely repeated from the
+  brief. One originally-reported defect (a missing loading/disabled state on "Buy
+  Ticket") did NOT reproduce and is explicitly OUT of scope here — see README "Item 2
+  does not reproduce — scoped out". Full decision record, every judgement call, the
+  live evidence for each defect (including the one that turned out not to reproduce),
+  every assertion's defeating mutation, and the mutation-discrimination pass proving
+  each new check actually detects the real fix (not just the absence of the bug):
+  contracts/golden/ticketing-ux-defects-browser-found/README.md.
+created_at: '2026-08-20'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      components/tickets/TicketFormField.tsx and components/tickets/TicketTypeCard.tsx
+      (both edited — see README "Why deleting outline-none is the whole fix"):
+
+      Delete the literal `outline-none` utility class from the `<input>` element's
+      className string in BOTH files (TicketFormField.tsx's shared name/email input;
+      TicketTypeCard.tsx's quantity `<input type=number>`) — nothing else in either
+      className changes. This restores the browser's native `:focus-visible` outline,
+      the SAME mechanism the existing +/- stepper buttons and the Buy Ticket button
+      already rely on today (neither overrides `outline` at all). No new Tailwind
+      class, no new design token, no new visual language — a deletion only, per this
+      project's "No invented brand assets" rule and the architect brief's explicit
+      instruction not to invent a focus-ring style. TicketFormField.tsx's existing
+      `focus:border-ink/40` class is UNCHANGED and stays (it is not the property this
+      contract's fix targets — see README).
+    status: pending
+
+  - id: F2
+    name: >-
+      app/(marketing)/tickets/confirmation/page.tsx (edited — see README "Why a named,
+      exported pure function"):
+
+      `searchParams` type changes from `Promise<{ ref?: string }>` to
+      `Promise<{ ref?: string | string[] }>` — matching what Next.js actually hands the
+      page at runtime for a repeated query param (`?ref=A&ref=B`), which the CURRENT
+      type lies about.
+
+      New export: `export function normalizeBookingRefParam(ref: string | string[] |
+      undefined): string` — pure, zero Firestore/Sanity/network dependency (must be
+      importable and callable with no live dependency reachable at all, proving the
+      guard runs before any Firestore call could occur). Returns `''` for anything that
+      is not a plain string (an array of any length, including empty and
+      single-element arrays, and `undefined`) — the SAME empty fallback the page
+      already uses for a missing ref, so an array-valued ref falls through to the
+      EXISTING not-found/`<ConfirmationPoller>` state, never a crash. For a genuine
+      string, returns `ref.trim()` — byte-identical to today's `ref?.trim() ?? ''`
+      behaviour for the only shape that has ever really occurred.
+
+      The page body's `const bookingRef = ref?.trim() ?? '';` line is replaced with
+      `const bookingRef = normalizeBookingRefParam(ref);` — the ONE call-site change;
+      everything downstream of `bookingRef` (the `getConfirmedOrderForDisplay` call,
+      the `<ConfirmationPoller>` fallback) is UNCHANGED.
+    status: pending
+
+  - id: F3
+    name: >-
+      components/chrome/Footer.tsx (edited — see README "Root cause: the inner row,
+      not the outer bar"):
+
+      The bottom bar's inner legal-links row — `<div className="flex items-center
+      gap-4">` (Privacy/Terms/Refunds/Constitution/Media kit) — gains `flex-wrap`,
+      becoming `<div className="flex items-center gap-4 flex-wrap">`. This reuses the
+      EXACT utility class the bottom bar's own OUTER row already carries one level up
+      in the same file (`...justify-between gap-4 px-8 py-4 flex-wrap`) — no new class,
+      no new breakpoint, no new token. Nothing else in Footer.tsx changes.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-ux-defects-browser-found/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        components/tickets/TicketFormField.tsx, components/tickets/TicketTypeCard.tsx,
+        app/(marketing)/tickets/confirmation/page.tsx, and components/chrome/Footer.tsx
+        are edited.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Every keyboard-Tab-reachable <input> on /tickets (the quantity stepper input
+        and an attendee name input) shows a genuinely VISIBLE focus indicator
+        (computed outlineStyle !== 'none') after a REAL Tab keypress — not
+        `.focus()`, not a source grep for a class name. Consistent with the +/-
+        stepper button's own unmodified native ring, asserted in the SAME run as a
+        negative control (must stay outlineStyle !== 'none', proving the fix does not
+        regress the buttons it does not touch). A border-color-only change (the
+        existing focus:border-ink/40 on attendee fields) does NOT satisfy this check —
+        see the check's own header for why. Requires a running dev server at
+        http://localhost:3002 (override via TICKETING_UX_CHECK_BASE_URL).
+      command: >-
+        npx tsx contracts/checks/ticketing-ux-defects-browser-found/check-input-focus-ring.mjs
+      timeout_seconds: 60
+
+    - id: A3
+      description: >-
+        The site-wide footer causes no horizontal self-overflow at a 320px viewport on
+        /tickets, measured both at the <footer> element (scrollWidth <= clientWidth)
+        and at document.documentElement (no page-wide horizontal scroll) — real
+        Chromium, same convention as contracts/checks/partners-cards/
+        check-overflow-375.mjs. Requires a running dev server at
+        http://localhost:3002 (override via TICKETING_UX_CHECK_BASE_URL).
+      command: >-
+        npx tsx contracts/checks/ticketing-ux-defects-browser-found/check-footer-overflow-320.mjs
+      timeout_seconds: 60
+
+    - id: A4
+      description: >-
+        normalizeBookingRefParam() treats EVERY array-shaped ref (two-element,
+        single-element, and empty array) the same as a missing/empty ref — returns
+        '', never throws. Negative controls in the same run: a real single-string ref
+        is trimmed and returned unchanged (today's only real shape, proving the fix
+        does not regress the working path), and a whitespace-padded single-string ref
+        is still trimmed. Named defeating mutation (verified during authoring, not
+        merely asserted): an implementation that picks the array's FIRST element
+        instead of normalizing to '' — this fails cases (1)/(2) with "expected '',
+        got 'A'", proving the check does not just accept "any non-throwing behaviour".
+      command: >-
+        npx tsx contracts/checks/ticketing-ux-defects-browser-found/check-confirmation-array-ref.mjs
+
+    - id: A5
+      description: pnpm lint passes with zero errors after all changes.
+      command: pnpm lint
