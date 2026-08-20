@@ -8,6 +8,7 @@ import { activeTicketTypesQuery, nationalShowSalesQuery, ticketsPageQuery } from
 import { getSoldCountsByTicketType } from '@/lib/data/tickets';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { filterPubliclyListableTicketTypes } from '@/lib/demo-ticket-type';
+import { effectiveCapacity } from '@/lib/checkout-reservation';
 
 // This page calls getSoldCountsByTicketType() (lib/data/tickets.ts), which uses the
 // Firebase Admin SDK — and FIREBASE_ADMIN_PROJECT_ID/CLIENT_EMAIL/PRIVATE_KEY are
@@ -38,8 +39,10 @@ interface SanityTicketType {
   price: number;
   description: string;
   capacity: number;
+  releasedQuantity?: number | null;
   order: number;
   demo?: boolean | null;
+  provisional?: boolean | null;
 }
 
 interface SalesState {
@@ -84,7 +87,8 @@ export default async function TicketsPage() {
     name: t.name,
     price: t.price,
     description: t.description,
-    soldOut: (soldCounts[t.slug] ?? 0) >= t.capacity,
+    soldOut: (soldCounts[t.slug] ?? 0) >= effectiveCapacity(t.capacity, t.releasedQuantity),
+    provisional: t.provisional === true,
   }));
   const allSoldOut = cardData.length > 0 && cardData.every((t) => t.soldOut);
 

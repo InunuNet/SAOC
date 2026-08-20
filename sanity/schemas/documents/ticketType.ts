@@ -59,5 +59,52 @@ export const ticketType = defineType({
         'listing and identifiable in Firestore purchase records via its reserved slug. See ' +
         'contracts/golden/ticketing-f9-demo-ticket/README.md.',
     }),
+    // F4 (multi-line-item-cart, M2): machine-readable provisional flag — replaces the F1
+    // prose-only "Provisional price — pending council confirmation." description string as
+    // the ONLY provisional signal, so the /tickets UI can gate a real conditional on it. The
+    // existing `description` field is unaffected — the two are complementary. See
+    // contracts/golden/ticketing-f4-admission-products/README.md.
+    defineField({
+      name: 'provisional',
+      title: 'Provisional',
+      type: 'boolean',
+      initialValue: true,
+      description:
+        'True while this price/capacity is a web-team estimate, not council-confirmed. ' +
+        'Gates a visible "provisional" marker on the public /tickets page.',
+    }),
+    // F4: optional early-bird window. Null/unset means no early-bird restriction applies.
+    defineField({
+      name: 'earlyBirdCutoff',
+      title: 'Early-Bird Cutoff',
+      type: 'datetime',
+      description: 'Last day this ticket type is on sale at its early-bird rate. Optional.',
+    }),
+    // F4: staged-release lever, conceptually distinct from `capacity` (see golden README
+    // "releasedQuantity: why it's a field at all"). Deliberately NOT required — most
+    // products never set it — and 0 is a valid, real value (not "unset").
+    defineField({
+      name: 'releasedQuantity',
+      title: 'Released Quantity',
+      type: 'number',
+      description:
+        'How many of this ticket type\'s capacity are currently released for sale. Leave ' +
+        'unset to release the full capacity. 0 is a valid value (not yet released).',
+      validation: (Rule) => Rule.integer().min(0),
+    }),
+    defineField({
+      name: 'requiresDaySelection',
+      title: 'Requires Day Selection',
+      type: 'boolean',
+      initialValue: false,
+      description: 'True for products (e.g. Day Visitor) where the buyer must choose a day.',
+    }),
+    defineField({
+      name: 'requiresAttendeeNames',
+      title: 'Requires Attendee Names',
+      type: 'boolean',
+      initialValue: false,
+      description: 'True for products (e.g. VIP) that must capture a named attendee.',
+    }),
   ],
 });

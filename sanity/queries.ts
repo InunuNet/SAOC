@@ -110,6 +110,9 @@ export const nationalShowSalesQuery = defineQuery(`
 // query must select the field the filter depends on. See
 // contracts/golden/ticketing-f9-demo-ticket/README.md, "A real, pre-existing gap this
 // contract closes".
+// F4 (multi-line-item-cart, M2): `provisional,` is additive — the public /tickets page gates
+// a visible "provisional" marker on this flag. See
+// contracts/golden/ticketing-f4-admission-products/README.md.
 export const activeTicketTypesQuery = defineQuery(`
   *[_type == "ticketType" && active == true] | order(order asc){
     _id,
@@ -118,18 +121,26 @@ export const activeTicketTypesQuery = defineQuery(`
     price,
     description,
     capacity,
+    releasedQuantity,
     order,
-    demo
+    demo,
+    provisional
   }
 `);
 
+// F4 (multi-line-item-cart, M2): `releasedQuantity,`/`earlyBirdCutoff,` are additive —
+// checkout's per-ticketType loop enforces both server-side via effectiveCapacity()/
+// isWithinEarlyBirdWindow(). See
+// contracts/golden/ticketing-f4-admission-products/README.md.
 export const ticketTypeBySlugQuery = defineQuery(`
   *[_type == "ticketType" && slug.current == $slug && active == true][0]{
     _id,
     name,
     price,
     capacity,
-    show
+    show,
+    releasedQuantity,
+    earlyBirdCutoff
   }
 `);
 

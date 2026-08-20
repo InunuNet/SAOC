@@ -299,3 +299,39 @@ export function writeMultiReservationPair(
     transaction.create(refs.positionRefs[index], position);
   });
 }
+
+// ---------------------------------------------------------------------------------------------
+// ticketing-f4-admission-products (F4) — additive pure exports. See
+// contracts/golden/ticketing-f4-admission-products/README.md for the full decision record.
+// Every export above this point is UNCHANGED; nothing below repurposes it.
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Never exceeds `capacity` regardless of what `releasedQuantity` says — a released quantity
+ * greater than physical capacity is a misconfiguration, not license to oversell. `0` is a
+ * real, usable released quantity — NOT treated as "unset" via `||` (a released-quantity pool
+ * that hasn't opened yet must return 0, never fall back to the full physical capacity).
+ */
+export function effectiveCapacity(
+  capacity: number,
+  releasedQuantity: number | null | undefined
+): number {
+  if (releasedQuantity === null || releasedQuantity === undefined) return capacity;
+  return Math.min(capacity, releasedQuantity);
+}
+
+/**
+ * `cutoffIso === null | undefined` => always true (no window restriction). Otherwise: true
+ * through the END of the cutoff date (i.e. up to but not including the start of the day
+ * after the cutoff date), not exact-millisecond comparison against midnight — a purchase
+ * attempt made during the cutoff date itself must still succeed.
+ */
+export function isWithinEarlyBirdWindow(
+  now: Date,
+  cutoffIso: string | null | undefined
+): boolean {
+  if (cutoffIso === null || cutoffIso === undefined) return true;
+  const cutoffEndExclusive = new Date(cutoffIso);
+  cutoffEndExclusive.setUTCDate(cutoffEndExclusive.getUTCDate() + 1);
+  return now.getTime() < cutoffEndExclusive.getTime();
+}

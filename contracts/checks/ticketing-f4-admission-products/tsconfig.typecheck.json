@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/provisional-figures.ts",
+    "../../../lib/checkout-reservation.ts",
+    "../../../components/tickets/TicketTypeCard.tsx",
+    "fixtures/f4-typecheck.ts"
+  ],
+  "exclude": []
+}

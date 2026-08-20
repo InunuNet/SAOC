@@ -1,0 +1,222 @@
+schema: athanor.contract/v1
+slug: ticketing-f4-admission-products
+goal: >-
+  Mission multi-line-item-cart (F4), milestone M2. Replaces the placeholder ticketType
+  catalogue (adult/pensioner/child/saoc-member/exhibitor — scripts/seed-ticketing.ts) with
+  the five real Orchid Exhibition Visitor products (Early Bird, Day Visitor, Early-Bird
+  Weekend Pass, Weekend Pass, VIP) per .agent/memory/project/provisional-figures.md. Adds
+  four schema fields to sanity/schemas/documents/ticketType.ts (provisional, earlyBirdCutoff,
+  releasedQuantity, requiresDaySelection, requiresAttendeeNames — five, not four; see golden
+  README), enforces the early-bird window and released-quantity ceiling for real inside
+  app/api/tickets/checkout/route.ts's existing capacity transaction (not stored-and-ignored),
+  and gates a real, visible "provisional" marker in the public /tickets UI on the new boolean
+  flag instead of the F1 ticketing-pages precedent's prose-only description string. Every
+  price/capacity/releasedQuantity/cutoff number is contained in ONE new file,
+  lib/provisional-figures.ts — see golden README for the full decision record, including why
+  a documented sixth product (Child ticket) is deliberately OUT of scope.
+  Full decision record: contracts/golden/ticketing-f4-admission-products/README.md.
+created_at: '2026-08-20'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      lib/provisional-figures.ts (NEW file — the single source of truth for every
+      admission-product number):
+
+      `export interface ProvisionalAdmissionProduct { slug: string; name: string; price:
+      number; capacity: number; releasedQuantity: number | null; earlyBirdCutoff: string |
+      null; requiresDaySelection: boolean; requiresAttendeeNames: boolean; provisional: true;
+      }`. `export const EARLY_BIRD_CUTOFF = '2027-07-31';`. `export const ADMISSION_PRODUCTS:
+      ProvisionalAdmissionProduct[]` — EXACTLY the five rows in the golden README's table
+      (early-bird/day-visitor/early-bird-weekend-pass/weekend-pass/vip), transcribed verbatim
+      from provisional-figures.md, `provisional: true` on every row, `requiresDaySelection:
+      true` ONLY on day-visitor, `requiresAttendeeNames: true` ONLY on vip. No child-ticket
+      row (see golden README "Child ticket: OUT of scope for F4, explicitly").
+    status: pending
+
+  - id: F2
+    name: >-
+      sanity/schemas/documents/ticketType.ts (edited, additive only — every pre-existing
+      field name/precedent-comment UNCHANGED):
+
+      Five new `defineField` entries: `provisional` (boolean, `initialValue: true`) —
+      machine-readable, distinct from and complementary to the existing `description` text
+      field, not replacing it. `earlyBirdCutoff` (datetime, optional). `releasedQuantity`
+      (number, optional, `Rule.integer().min(0)` — deliberately NOT `.required()`, deliberately
+      allows 0). `requiresDaySelection` (boolean, `initialValue: false`). `requiresAttendeeNames`
+      (boolean, `initialValue: false`).
+    status: pending
+
+  - id: F3
+    name: >-
+      lib/checkout-reservation.ts (additive new exports — every existing export from the
+      ticketing-multi-line-item-cart contract UNCHANGED):
+
+      `export function effectiveCapacity(capacity: number, releasedQuantity: number | null |
+      undefined): number` — pure; returns the tighter of the two; treats `0` as a real,
+      usable releasedQuantity (never `releasedQuantity || capacity`, see golden README's
+      defeating-mutation note); never returns a value greater than `capacity`.
+
+      `export function isWithinEarlyBirdWindow(now: Date, cutoffIso: string | null |
+      undefined): boolean` — pure; `null`/`undefined` cutoff -> always `true`; otherwise
+      `true` through the END of the cutoff date (inclusive), not exact-millisecond comparison
+      against midnight.
+    status: pending
+
+  - id: F4
+    name: >-
+      sanity/queries.ts + app/api/tickets/checkout/route.ts (edited):
+
+      `ticketTypeBySlugQuery` additionally selects `releasedQuantity` and `earlyBirdCutoff`
+      (additive — `_id`/`name`/`price`/`capacity`/`show` UNCHANGED). `SanityTicketType`
+      (route.ts) gains `releasedQuantity: unknown` and `earlyBirdCutoff: unknown`. Inside the
+      existing per-distinct-ticketType validation loop, AFTER the existing
+      isUsableAmount/ticketTypeMatchesActiveShow checks: `capacityByType[slug] =
+      effectiveCapacity(capacity, releasedQuantity)` (replaces the bare `capacity` value —
+      `planCapacity()`/`aggregateRequestedQuantities()` themselves are UNCHANGED, this is the
+      entire integration point). A new guard: when `earlyBirdCutoff` is set and
+      `!isWithinEarlyBirdWindow(new Date(), earlyBirdCutoff)`, refuse the WHOLE request with a
+      409 and a distinct message (not the sold-out 409, not a 500) — textually BEFORE
+      `reserveTicket(` is called, same anchor-ordering posture as the existing
+      RECOVERY_TOKEN_SECRET guard.
+    status: pending
+
+  - id: F5
+    name: >-
+      sanity/queries.ts (`activeTicketTypesQuery`) + app/(marketing)/tickets/page.tsx +
+      components/tickets/TicketTypeCard.tsx (edited):
+
+      `activeTicketTypesQuery` additionally selects `provisional` (additive). `page.tsx`'s
+      `SanityTicketType` interface and `cardData` mapping gain `provisional: t.provisional ===
+      true` (defaults false-safe). `TicketTypeCard.tsx`'s `TicketTypeCardData` gains
+      `provisional: boolean` (required, not optional). The card renders real, visible text
+      containing "provisional" (exact copy is @dev's call) ONLY when `provisional === true` —
+      no marker at all when `false`.
+    status: pending
+
+  - id: F6
+    name: >-
+      scripts/seed-ticketing.ts (rewritten): iterates `ADMISSION_PRODUCTS` from
+      lib/provisional-figures.ts instead of a local `TICKET_TYPES` literal array — no
+      price/capacity/releasedQuantity/cutoff number is re-typed in this file. The five OLD
+      placeholder ticketType documents (adult/pensioner/child/saoc-member/exhibitor) are set
+      `active: false` via `.patch(...).set({ active: false })` — never deleted. The five NEW
+      products are written via the SAME `createIfNotExists` idempotent pattern the file
+      already uses, keyed on a deterministic `_id` (e.g. `ticketType-${slug}`), including the
+      required `show` reference to the currently active `show` document (unchanged
+      requirement from the existing schema).
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-f4-admission-products/README.md
+  - contracts/checks/ticketing-f4-admission-products/tsconfig.typecheck.json
+  - contracts/checks/ticketing-f4-admission-products/fixtures/f4-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        lib/provisional-figures.ts (new), lib/checkout-reservation.ts,
+        sanity/schemas/documents/ticketType.ts, sanity/queries.ts,
+        app/api/tickets/checkout/route.ts, app/(marketing)/tickets/page.tsx, and
+        components/tickets/TicketTypeCard.tsx are added/edited.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven (not source-grep) proof of the new F4 exported shapes:
+        ProvisionalAdmissionProduct's `provisional` field is the literal `true` (assigning
+        `false` is rejected via @ts-expect-error); effectiveCapacity()/
+        isWithinEarlyBirdWindow() accept the documented argument types and return
+        number/boolean; TicketTypeCardData requires (not optionally carries) `provisional`
+        (omitting it is rejected via @ts-expect-error).
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-f4-admission-products/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        Every admission-product price/capacity/releasedQuantity number lives in
+        lib/provisional-figures.ts ALONE — no other .ts/.tsx file under app/, components/,
+        lib/, scripts/, or sanity/ re-types one of the five price literals in a
+        price:/capacity:/releasedQuantity: object-literal position. Named defeating mutation:
+        scripts/seed-ticketing.ts carrying its own copy of the numbers instead of importing
+        ADMISSION_PRODUCTS — exactly the containment failure that produced the CTICC-venue and
+        18-21-September-2027-dates incidents this discipline exists to prevent.
+      command: >-
+        bash contracts/checks/ticketing-f4-admission-products/check-single-source-of-truth.sh
+
+    - id: A4
+      description: >-
+        effectiveCapacity() takes the tighter of capacity/releasedQuantity, never exceeds the
+        physical capacity ceiling even when releasedQuantity is misconfigured above it, and —
+        the core defect this targets — treats releasedQuantity: 0 as a REAL, usable value
+        rather than falling back to full capacity via a falsy-0 check.
+      command: >-
+        npx tsx contracts/checks/ticketing-f4-admission-products/check-effective-capacity.mjs
+
+    - id: A5
+      description: >-
+        isWithinEarlyBirdWindow() never restricts a ticket type with no cutoff, and holds
+        through the FULL cutoff date (a purchase attempt during the cutoff date itself must
+        still succeed) rather than closing at exact midnight of the cutoff date.
+      command: >-
+        npx tsx contracts/checks/ticketing-f4-admission-products/check-early-bird-window.mjs
+
+    - id: A6
+      description: >-
+        app/api/tickets/checkout/route.ts actually WIRES effectiveCapacity() into
+        capacityByType and refuses (with a guard textually preceding reserveTicket()) when
+        isWithinEarlyBirdWindow() is false — proving real enforcement, not a schema field that
+        is stored and never read (architect brief non-negotiable #4).
+      command: >-
+        bash contracts/checks/ticketing-f4-admission-products/check-checkout-wiring.sh
+
+    - id: A7
+      description: >-
+        sanity/schemas/documents/ticketType.ts defines all five new fields (provisional,
+        earlyBirdCutoff, releasedQuantity, requiresDaySelection, requiresAttendeeNames) with
+        the correct type and default, additively — every pre-existing field
+        (name/slug/price/description/capacity/active/order/show/demo) remains present.
+      command: >-
+        npx tsx contracts/checks/ticketing-f4-admission-products/check-schema-fields.mjs
+
+    - id: A8
+      description: >-
+        lib/provisional-figures.ts's ADMISSION_PRODUCTS contains EXACTLY the five council
+        products (no invented sixth/child ticket) with correct price/capacity/
+        releasedQuantity/earlyBirdCutoff per row, and requiresDaySelection is true for
+        EXACTLY day-visitor while requiresAttendeeNames is true for EXACTLY vip — a swap onto
+        the wrong product would compile and run without error, so only a data check catches
+        it.
+      command: >-
+        npx tsx contracts/checks/ticketing-f4-admission-products/check-admission-products-data.mjs
+
+    - id: A9
+      description: >-
+        components/tickets/TicketTypeCard.tsx renders a real, visible "provisional" text
+        marker (proven via react-dom/server, stripped-tag text content) when
+        provisional===true, and renders NO such marker when provisional===false, in the SAME
+        check run — the negative control rules out a hardcoded-always-on badge.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f4-admission-products/check-provisional-badge-gated.mjs
+
+    - id: A10
+      description: >-
+        No regression to the multi-line-item-cart contract's already-gated invariants:
+        planCapacity() still aggregates per-type demand across the whole cart (not a
+        per-line-item static check) and buildMultiReservationDocs()/
+        writeMultiReservationPair() still write N positions atomically, all-or-nothing, now
+        that capacityByType is schema-driven via effectiveCapacity() rather than a bare
+        Sanity capacity read. Re-runs ticketing-multi-line-item-cart's own proven checks
+        unmodified — a real regression in either function fails these exactly as it would
+        have failed the original contract.
+      command: >-
+        npx tsx contracts/checks/ticketing-multi-line-item-cart/check-plan-capacity-aggregates.mjs
+        && npx tsx contracts/checks/ticketing-multi-line-item-cart/check-multi-write-atomicity.mjs
+
+    - id: A11
+      description: pnpm lint passes with zero errors after all changes.
+      command: pnpm lint

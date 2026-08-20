@@ -10,6 +10,11 @@ export interface TicketTypeCardData {
   price: number;
   description: string;
   soldOut: boolean;
+  /** F4 (multi-line-item-cart, M2) — gates a real, visible "provisional" text marker. See
+   *  contracts/golden/ticketing-f4-admission-products/README.md, "UI: provisional badge is
+   *  flag-gated, observably". Required (not optional) so the UI gate can never silently
+   *  degrade to "never show the badge". */
+  provisional: boolean;
 }
 
 interface TicketTypeCardProps {
@@ -29,7 +34,7 @@ export function TicketTypeCard({
   decreaseLabel,
   increaseLabel,
 }: TicketTypeCardProps) {
-  const { slug, name, price, description, soldOut } = ticketType;
+  const { slug, name, price, description, soldOut, provisional } = ticketType;
   const inputId = `ticket-type-qty-${slug}`;
 
   function decrease() {
@@ -60,6 +65,14 @@ export function TicketTypeCard({
         {soldOut ? (
           <span className="mt-2 inline-block font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
             {soldOutLabel}
+          </span>
+        ) : null}
+        {provisional ? (
+          <span
+            data-testid="provisional-badge"
+            className="mt-2 block font-sans text-[12px] italic text-ink/70"
+          >
+            Provisional pricing — subject to change
           </span>
         ) : null}
       </div>

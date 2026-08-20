@@ -6,56 +6,43 @@ goal: 'Visitor ticketing purchase flow: multi-line-item cart, the four admission
   limit'
 created_at: '2026-08-20T07:42:29.138799+00:00'
 started_at: '2026-08-20T07:49:48.246148+00:00'
-last_active_at: '2026-08-20T09:49:09.412254+00:00'
+last_active_at: '2026-08-20T13:10:04.060528+00:00'
 status: in_progress
 cost_estimate:
   features: 6
   milestones: 3
   total_calls: 36
 last_checkpoint:
-  milestone: M1
-  feature: F2
-  ts: '2026-08-20T09:49:09.412254+00:00'
+  milestone: M2
+  feature: F4
+  ts: '2026-08-20T13:10:04.060528+00:00'
 features:
 - id: F1
   status: done
   title: Contract + goldens for N-line-item checkout and atomic multi-type reservation
-  inline_brief: '@architect authors this BEFORE any code. Pin the current single-item
-    request shape (CheckoutRequestBody / isValidCheckoutBody, checkout/route.ts ~138-160)
-    as the baseline, then specify the N-line-item shape. Non-negotiable invariants
-    that must survive and be asserted: showId must equal the pinned NATIONAL_SHOW_ID
-    (an unvalidated showId picks a fresh always-empty capacity ledger and bypasses
-    the gate entirely); prices come from the server, never the request; readiness(''initiate'')
-    keeps its position before the reservation write with its verdict gating a pinned
-    500; the RECOVERY_TOKEN_SECRET fail-closed guard precedes the write; an idempotency
-    key replayed with N line items must not double-reserve. Decide and justify: what
-    happens when one line item fits and another does not (must be all-or-nothing AND
-    observably so, never silently partial), and a pinned maximum line-item count with
-    a reason derived from Firestore transaction limits rather than discovered in production.
-    Every assertion must be observed failing first.'
+  inline_brief: null
   started_at: '2026-08-20T07:49:48.245961+00:00'
   completed_at: '2026-08-20T07:55:15.640683+00:00'
+  spec: Plans/valiant-squishing-thimble.md
+  contract: contracts/contract-ticketing-multi-line-item-cart.yaml
 - id: F2
   status: done
   title: Checkout API accepts N line items and reserves capacity atomically
-  inline_brief: '@dev implements against F1''s goldens only. Extend the request shape
-    and the reservation transaction to reserve across several ticket types in ONE
-    transaction. Idempotency-key replay behaviour must remain correct. No change to
-    readiness, the recovery guard, or the amount/price authority. This is the highest-risk
-    change in the ticketing slice per Plans/valiant-squishing-thimble.md.'
+  inline_brief: null
   started_at: '2026-08-20T07:55:16.212868+00:00'
   completed_at: '2026-08-20T08:06:13.108182+00:00'
+  spec: Plans/valiant-squishing-thimble.md
+  contract: contracts/contract-ticketing-multi-line-item-cart.yaml
 - id: F3
-  status: in_progress
+  status: done
   title: Cart UI — select multiple ticket types and quantities, then check out
-  inline_brief: The API is useless to a buyer without this. Mobile-first from 320px,
-    loading and error states mandatory, every interactive element labelled and keyboard-operable.
-    MUST be verified in a real browser by BrowserAgent at 1440/375/320 — contract
-    greps cannot see a rendered page, and this project has shipped a green gate over
-    invisible input fields before.
+  inline_brief: null
   started_at: '2026-08-20T08:06:13.508161+00:00'
+  completed_at: '2026-08-20T12:35:59.761355+00:00'
+  spec: Plans/valiant-squishing-thimble.md
+  contract: contracts/contract-ticketing-multi-line-item-cart-ui.yaml
 - id: F4
-  status: pending
+  status: done
   title: The four admission products as ticket-type documents
   inline_brief: 'Early Bird, Day Visitor, Early-Bird Weekend Pass, Weekend Pass, VIP.
     Schema additions: an early-bird availability window, a released quantity, a requires-day-selection
@@ -63,6 +50,7 @@ features:
     until Lee-Ann returns the questionnaire — they live in one place, flagged, per
     .agent/memory/project/provisional-figures.md. Never render a provisional figure
     to a public page as settled fact.'
+  completed_at: '2026-08-20T13:10:04.060261+00:00'
 - id: F5
   status: pending
   title: Day selection and named attendees on positions
@@ -87,7 +75,9 @@ milestones:
   - F1
   - F2
   - F3
-  status: pending
+  status: done
+  gate_ran_at: '2026-08-20T12:37:11.523439+00:00'
+  gate_result: pass
 - id: M2
   title: Real products, with day and attendee capture
   features:
@@ -100,6 +90,13 @@ milestones:
   - F6
   status: pending
 ---
+
+
+
+
+
+
+
 
 
 

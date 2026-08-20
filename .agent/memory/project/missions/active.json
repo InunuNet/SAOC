@@ -1,9 +1,9 @@
 {
   "mission": ".agent/memory/project/missions/2026-08-20-multi-line-item-cart.md",
   "checkpoint": {
-    "milestone": "M1",
-    "feature": "F2",
-    "ts": "2026-08-20T09:49:09.412254+00:00"
+    "milestone": "M2",
+    "feature": "F4",
+    "ts": "2026-08-20T13:10:04.060528+00:00"
   },
-  "activated_at": "2026-08-20T09:49:09.412601+00:00"
+  "activated_at": "2026-08-20T13:10:04.060614+00:00"
 }

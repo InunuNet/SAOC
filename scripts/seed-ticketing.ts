@@ -1,6 +1,12 @@
 /**
- * F1 (ticketing-pages) — Seed the five council ticket categories, the ticketsPage
- * copy singleton, and patch nationalShow with a CLOSED sales gate.
+ * F1 (ticketing-pages) — Seed the ticketsPage copy singleton and patch nationalShow with a
+ * CLOSED sales gate. F4 (multi-line-item-cart, M2) — seed the five REAL council admission
+ * products from lib/provisional-figures.ts (the single source of truth for every price/
+ * capacity/releasedQuantity/earlyBirdCutoff number — this script carries no copy of its own,
+ * see contracts/golden/ticketing-f4-admission-products/README.md), and retire the five OLD
+ * placeholder ticket types (adult/pensioner/child/saoc-member/exhibitor) by setting
+ * `active: false` — never deleted, the pre-production dataset may still be referenced by slug
+ * in a demo/QA pass.
  *
  * Deliberately separate from scripts/seed-page-singletons.ts, which is known-hazardous
  * (it force-replaces documents with hardcoded literals — re-running it silently reverts
@@ -12,9 +18,12 @@
  *     can never flip salesOpen back to false after someone has deliberately opened
  *     sales for the demo.
  *
- * Real prices have never been confirmed by the council — every seeded ticketType is
- * visibly marked "Provisional price — pending council confirmation." in its
- * description. See contracts/golden/ticketing-m1-m2/seed-ticketing.golden.json.
+ * Every seeded ticketType carries `provisional: true` — machine-readable, gating the public
+ * /tickets page's visible "provisional" marker (see
+ * contracts/golden/ticketing-f4-admission-products/README.md). `description` is permanent,
+ * factual copy from lib/provisional-figures.ts (what the ticket covers) — it never carries
+ * provisional-pricing messaging itself; that comes ONLY from the provisional-flag-gated badge,
+ * so the two never fall out of sync when a product's provisional flag flips independently.
  *
  * Required env (read directly from .env.local, NOT via the `dotenv` package — see
  * scripts/seed-page-singletons.ts header for why):
@@ -29,6 +38,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { createClient, type SanityClient } from '@sanity/client';
+
+import { ADMISSION_PRODUCTS } from '../lib/provisional-figures';
 
 // ---------------------------------------------------------------------------
 // Env — parsed directly from .env.local (see file header).
@@ -80,79 +91,59 @@ const client: SanityClient = createClient({
 const NATIONAL_SHOW_ID = 'nationalShow';
 
 // ---------------------------------------------------------------------------
-// Ticket types — the council's real five categories, placeholder pricing/capacity.
-// Each description is its own literal "Provisional price — pending council
-// confirmation." string (not a shared constant) so the provisional marking is
-// visibly, individually present on every one of the five seeded documents.
+// Ticket types — F4 (multi-line-item-cart, M2): the five REAL council admission
+// products, imported from lib/provisional-figures.ts (the single source of truth for
+// every price/capacity/releasedQuantity/earlyBirdCutoff number — see
+// contracts/golden/ticketing-f4-admission-products/README.md). The five OLD placeholder
+// categories below are retired (active: false), never deleted.
 // ---------------------------------------------------------------------------
 
-interface SeedTicketType {
-  slug: string;
-  name: string;
-  price: number;
-  description: string;
-  capacity: number;
-  order: number;
+/** The five OLD placeholder ticket categories (F1, pre-council-spec) — retired, not deleted. */
+const OLD_PLACEHOLDER_SLUGS = ['adult', 'pensioner', 'child', 'saoc-member', 'exhibitor'];
+
+async function fetchActiveShowId(): Promise<string> {
+  const activeShow = await client.fetch<{ _id: string } | null>(
+    `*[_type == "show" && active == true][0]{ _id }`
+  );
+  if (!activeShow) {
+    throw new Error('No active `show` document found — cannot seed ticketType.show reference.');
+  }
+  return activeShow._id;
 }
 
-const TICKET_TYPES: SeedTicketType[] = [
-  {
-    slug: 'adult',
-    name: 'Adult',
-    price: 150,
-    description: 'Provisional price — pending council confirmation.',
-    capacity: 300,
-    order: 1,
-  },
-  {
-    slug: 'pensioner',
-    name: 'Pensioner',
-    price: 100,
-    description: 'Provisional price — pending council confirmation.',
-    capacity: 100,
-    order: 2,
-  },
-  {
-    slug: 'child',
-    name: 'Child',
-    price: 50,
-    description: 'Provisional price — pending council confirmation.',
-    capacity: 100,
-    order: 3,
-  },
-  {
-    slug: 'saoc-member',
-    name: 'SAOC Member',
-    price: 100,
-    description: 'Provisional price — pending council confirmation.',
-    capacity: 150,
-    order: 4,
-  },
-  {
-    slug: 'exhibitor',
-    name: 'Exhibitor',
-    price: 0,
-    description: 'Provisional price — pending council confirmation.',
-    capacity: 50,
-    order: 5,
-  },
-];
-
-async function seedTicketTypes(): Promise<void> {
-  console.log('  ticketType documents:');
-  for (const t of TICKET_TYPES) {
+async function seedTicketTypes(showId: string): Promise<void> {
+  console.log('  ticketType documents (new, from lib/provisional-figures.ts):');
+  for (const [index, product] of ADMISSION_PRODUCTS.entries()) {
     await client.createIfNotExists({
-      _id: `ticketType-${t.slug}`,
+      _id: `ticketType-${product.slug}`,
       _type: 'ticketType',
-      name: t.name,
-      slug: { _type: 'slug', current: t.slug },
-      price: t.price,
-      description: t.description,
-      capacity: t.capacity,
+      name: product.name,
+      slug: { _type: 'slug', current: product.slug },
+      price: product.price,
+      description: product.description,
+      capacity: product.capacity,
       active: true,
-      order: t.order,
+      order: index + 1,
+      show: { _type: 'reference', _ref: showId },
+      provisional: product.provisional,
+      earlyBirdCutoff: product.earlyBirdCutoff,
+      releasedQuantity: product.releasedQuantity,
+      requiresDaySelection: product.requiresDaySelection,
+      requiresAttendeeNames: product.requiresAttendeeNames,
     });
-    console.log(`    ${t.slug} (createIfNotExists)`);
+    console.log(`    ${product.slug} (createIfNotExists)`);
+  }
+
+  console.log('  ticketType documents (old placeholders, retired):');
+  for (const slug of OLD_PLACEHOLDER_SLUGS) {
+    const docId = `ticketType-${slug}`;
+    const exists = await client.fetch<boolean>(`defined(*[_id == $docId][0]._id)`, { docId });
+    if (!exists) {
+      console.log(`    ${slug} (no document — nothing to retire)`);
+      continue;
+    }
+    await client.patch(docId).set({ active: false }).commit({ autoGenerateArrayKeys: false });
+    console.log(`    ${slug} -> active: false`);
   }
 }
 
@@ -210,7 +201,8 @@ async function patchNationalShowSalesOpen(): Promise<void> {
 
 async function main(): Promise<void> {
   console.log(`Seeding ticketing content in Sanity dataset "${dataset}" (project ${projectId})`);
-  await seedTicketTypes();
+  const showId = await fetchActiveShowId();
+  await seedTicketTypes(showId);
   await seedTicketsPage();
   await patchNationalShowSalesOpen();
   console.log('Seed complete.');

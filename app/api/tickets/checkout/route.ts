@@ -5,6 +5,8 @@ import { generateBookingRef } from '@/lib/booking-ref';
 import {
   aggregateRequestedQuantities,
   buildMultiReservationDocs,
+  effectiveCapacity,
+  isWithinEarlyBirdWindow,
   lineItemsMatchExistingPositions,
   planCapacity,
   writeMultiReservationPair,
@@ -91,6 +93,8 @@ interface SanityTicketType {
   price: unknown;
   capacity: unknown;
   show: { _ref: string } | null | undefined;
+  releasedQuantity: unknown;
+  earlyBirdCutoff: unknown;
 }
 
 // F1 (ticketing-foundation): the currently sellable `show`, per resolveActiveShow()'s
@@ -130,11 +134,30 @@ function isUsableAmount(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
+// F4 (multi-line-item-cart, M2): `releasedQuantity` is optional and 0 is a real value — this
+// narrows `unknown` to `number | null` (never `undefined`, which effectiveCapacity() also
+// accepts, but Sanity's GROQ response uses `null` for an absent field). Same
+// typeof-load-bearing-twice reasoning as isUsableAmount() above: reject a stray string before
+// it reaches effectiveCapacity().
+function isUsableReleasedQuantity(value: unknown): value is number | null {
+  if (value === null || value === undefined) return true;
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
+
+// F4: `earlyBirdCutoff` is optional — null/undefined means no early-bird restriction.
+function isUsableEarlyBirdCutoff(value: unknown): value is string | null {
+  if (value === null || value === undefined) return true;
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 /**
  * 500, not 400: the request was well-formed and the CMS document is misconfigured, so a
  * 4xx would tell the buyer to fix something they cannot see.
  */
-function unusableTicketType(slug: string, field: 'capacity' | 'price' | 'show'): NextResponse {
+function unusableTicketType(
+  slug: string,
+  field: 'capacity' | 'price' | 'show' | 'releasedQuantity' | 'earlyBirdCutoff'
+): NextResponse {
   console.error(
     `[tickets/checkout] ticketType '${slug}' has an unusable ${field}; refusing before any Firestore write.`
   );
@@ -346,15 +369,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 500, not 400: the request was well-formed and the CMS document is misconfigured, so
     // a 4xx would tell the buyer to fix something they cannot see.
-    const { capacity, price } = ticketTypeDoc;
+    const { capacity, price, releasedQuantity, earlyBirdCutoff } = ticketTypeDoc;
     if (!isUsableAmount(capacity)) return unusableTicketType(slug, 'capacity');
     if (!isUsableAmount(price)) return unusableTicketType(slug, 'price');
     if (!ticketTypeMatchesActiveShow(ticketTypeDoc, activeShowId)) {
       return unusableTicketType(slug, 'show');
     }
+    if (!isUsableReleasedQuantity(releasedQuantity)) {
+      return unusableTicketType(slug, 'releasedQuantity');
+    }
+    if (!isUsableEarlyBirdCutoff(earlyBirdCutoff)) {
+      return unusableTicketType(slug, 'earlyBirdCutoff');
+    }
 
+    // F4: a released quantity greater than physical capacity never raises the ceiling — see
+    // lib/checkout-reservation.ts's effectiveCapacity(). This is the entire integration point
+    // with planCapacity()/aggregateRequestedQuantities(), neither of which changes.
     amountByType[slug] = price;
-    capacityByType[slug] = capacity;
+    capacityByType[slug] = effectiveCapacity(capacity, releasedQuantity);
+
+    // F4: a closed early-bird window refuses the WHOLE cart, same "any one bad type refuses
+    // the whole request" posture as the capacity/price/show checks above — with a 409 (a
+    // legitimate, time-based business state, not a 500 misconfiguration and not a 400 client
+    // error), before any Firestore write is attempted.
+    if (earlyBirdCutoff !== null && !isWithinEarlyBirdWindow(new Date(), earlyBirdCutoff)) {
+      return NextResponse.json(
+        { error: 'Early-bird pricing for this ticket type has closed.' },
+        { status: 409 }
+      );
+    }
   }
 
   // The gateway credential guard, BEFORE any Firestore write — the position
