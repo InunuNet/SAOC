@@ -78,13 +78,16 @@ milestones:
   features:
   - F4
   - F5
-  status: pending
+  status: done
+  gate_ran_at: '2026-08-20T14:17:17.107326+00:00'
+  gate_result: pass
 - id: M3
   title: Booking contact block and limits enforced
   features:
   - F6
   status: pending
 ---
+
 
 
 
