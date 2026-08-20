@@ -233,7 +233,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         buyerEmail: outcome.buyerEmail,
         buyerName: outcome.buyerName,
         recoveryToken: outcome.recoveryToken,
-        positions: [outcome.position],
+        positions: outcome.positions,
       }),
     (error) => {
       console.error('[tickets/itn] Confirmation email failed — payment already committed, not rolled back', {

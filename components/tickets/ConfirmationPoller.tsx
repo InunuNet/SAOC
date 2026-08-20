@@ -10,10 +10,13 @@ import { ticketsPageQuery } from '@/sanity/queries';
 // F1 (confirmation-page-qr-and-download) — extracted out of the old all-client confirmation
 // page. This component now handles ONLY the pre-confirmed states (checking/reserved/
 // timed-out/not-found); the 'confirmed' render moved server-side into page.tsx, which reads
-// real Firestore data via lib/orders.ts:getConfirmedTicketForDisplay. Polling behavior and the
-// UNCHANGED /api/tickets/status endpoint (still { status } only) are unchanged from before —
-// see contracts/golden/ticketing-m1-m2/page-states.golden.md for why polling exists at all
-// (the buyer's browser redirect races PayFast's server-to-server ITN).
+// real Firestore data via lib/orders.ts:getConfirmedOrderForDisplay (ticketing-multi-line-item-
+// cart-ui F3 — order-aware, returns every paid position; this component itself has no
+// single-ticket assumption baked in, since it only ever polls `bookingRef`'s status and defers
+// to page.tsx for what "confirmed" renders). Polling behavior and the UNCHANGED
+// /api/tickets/status endpoint (still { status } only) are unchanged from before — see
+// contracts/golden/ticketing-m1-m2/page-states.golden.md for why polling exists at all (the
+// buyer's browser redirect races PayFast's server-to-server ITN).
 //
 // On detecting paid/checked-in, this calls router.refresh() instead of rendering the confirmed
 // state itself — that re-runs the Server Component for the current URL, which now finds the

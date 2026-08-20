@@ -4,11 +4,12 @@ import { ConfirmationPoller } from '@/components/tickets/ConfirmationPoller';
 import { DownloadTicketButton } from '@/components/tickets/DownloadTicketButton';
 import { client } from '@/sanity/lib/client';
 import { ticketsPageQuery } from '@/sanity/queries';
-import { getConfirmedTicketForDisplay } from '@/lib/orders';
+import { getConfirmedOrderForDisplay } from '@/lib/orders';
 
 // F1 (confirmation-page-qr-and-download) — this page reads live Firestore via the Admin SDK
-// (getConfirmedTicketForDisplay) on every request, so it cannot be statically prerendered or
-// ISR-cached — same reasoning as app/(marketing)/tickets/page.tsx's force-dynamic.
+// (getConfirmedOrderForDisplay, ticketing-multi-line-item-cart-ui F3) on every request, so it
+// cannot be statically prerendered or ISR-cached — same reasoning as
+// app/(marketing)/tickets/page.tsx's force-dynamic.
 export const dynamic = 'force-dynamic';
 
 interface TicketsPageCopy {
@@ -26,9 +27,9 @@ export default async function TicketConfirmationPage({
   const { ref } = await searchParams;
   const bookingRef = ref?.trim() ?? '';
 
-  const confirmedTicket = bookingRef.length > 0 ? await getConfirmedTicketForDisplay(bookingRef) : null;
+  const confirmedOrder = bookingRef.length > 0 ? await getConfirmedOrderForDisplay(bookingRef) : null;
 
-  if (!confirmedTicket) {
+  if (!confirmedOrder) {
     return <ConfirmationPoller bookingRef={bookingRef} />;
   }
 
@@ -39,38 +40,48 @@ export default async function TicketConfirmationPage({
   const ticketIncludesNote = copy?.ticketIncludesNote ?? '';
   const downloadTicketButtonLabel = copy?.downloadTicketButtonLabel ?? 'Download ticket';
 
-  const { bookingRef: confirmedRef, attendeeName, ticketType, amount, qrDataUri } = confirmedTicket;
+  const { positions } = confirmedOrder;
+  const orderTotal = positions.reduce((sum, position) => sum + position.amount, 0);
 
   return (
     <div className="mx-auto max-w-[600px] px-8 py-20 text-center">
       <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Paid</p>
       <h1 className="mt-3 font-serif text-[32px] font-medium text-ink">{confirmationSuccessHeading}</h1>
       <p className="mt-4 font-sans text-[15px] leading-relaxed text-ink/80">{confirmationSuccessMessage}</p>
+      <p className="mt-4 font-sans text-[15px] font-medium text-ink">
+        {positions.length} {positions.length === 1 ? 'ticket' : 'tickets'} · Total R{orderTotal.toFixed(2)}
+      </p>
 
-      <img
-        src={qrDataUri}
-        alt={`QR code for booking reference ${confirmedRef} — scan at the door for check-in`}
-        width={240}
-        height={240}
-        className="mx-auto mt-8"
-      />
+      <div className="mt-8 space-y-10">
+        {positions.map((position) => (
+          <div key={position.bookingRef} className="border-t border-rule pt-8 first:border-t-0 first:pt-0">
+            <img
+              src={position.qrDataUri}
+              alt={`QR code for booking reference ${position.bookingRef} — scan at the door for check-in`}
+              width={240}
+              height={240}
+              className="mx-auto"
+            />
 
-      <div className="mt-6 space-y-1">
-        <p className="font-serif text-[18px] font-medium text-ink">{attendeeName}</p>
-        <p className="font-sans text-[14px] text-ink/80">
-          {ticketType} · R{amount.toFixed(2)}
-        </p>
-        <p className="font-mono text-[13px] text-muted">Booking ref: {confirmedRef}</p>
-      </div>
+            <div className="mt-6 space-y-1">
+              <p className="font-serif text-[18px] font-medium text-ink">{position.attendeeName}</p>
+              <p className="font-sans text-[14px] text-ink/80">
+                {position.ticketType} · R{position.amount.toFixed(2)}
+              </p>
+              <p className="font-mono text-[13px] text-muted">Booking ref: {position.bookingRef}</p>
+            </div>
 
-      <div className="mt-6">
-        <DownloadTicketButton
-          bookingRef={confirmedRef}
-          attendeeName={attendeeName}
-          ticketType={ticketType}
-          qrDataUri={qrDataUri}
-          label={downloadTicketButtonLabel}
-        />
+            <div className="mt-6">
+              <DownloadTicketButton
+                bookingRef={position.bookingRef}
+                attendeeName={position.attendeeName}
+                ticketType={position.ticketType}
+                qrDataUri={position.qrDataUri}
+                label={downloadTicketButtonLabel}
+              />
+            </div>
+          </div>
+        ))}
       </div>
 
       {ticketIncludesNote ? (

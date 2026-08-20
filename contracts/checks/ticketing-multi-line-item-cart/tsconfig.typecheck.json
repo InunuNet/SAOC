@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/checkout-reservation.ts",
+    "../../../lib/orders.ts",
+    "../../../app/api/tickets/checkout/route.ts",
+    "../../../types/index.ts",
+    "fixtures/multi-line-item-typecheck.ts"
+  ],
+  "exclude": []
+}

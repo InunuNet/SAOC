@@ -1,0 +1,253 @@
+schema: athanor.contract/v1
+slug: ticketing-multi-line-item-cart
+goal: >-
+  Mission multi-line-item-cart (F1/F2), Stage 2 of Plans/valiant-squishing-thimble.md.
+  app/api/tickets/checkout/route.ts accepts exactly ONE ticketType and one attendee per
+  request today (CheckoutRequestBody / isValidCheckoutBody, lines ~139-163). The
+  Order->positions model already supports N positions; the request shape and the
+  reservation transaction do not. This contract extends checkout to N line items,
+  reserves capacity across several ticket types atomically in ONE Firestore transaction
+  (all-or-nothing, and observably so), keeps idempotency-key replay behaviour correct for
+  N items, and fixes the one companion defect that shipping reservation alone would
+  create: markOrderAndPositionPaidByPaymentId (lib/orders.ts) currently marks only ONE
+  position of a multi-position order paid via a stale `.limit(1)`, which would leave
+  paid-for tickets stuck 'reserved' forever. Full decision record, every judgement call,
+  every assertion's named defeating mutation, and what this contract deliberately does
+  NOT fix (with reasons): contracts/golden/ticketing-multi-line-item-cart/README.md.
+created_at: '2026-08-20'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      lib/checkout-reservation.ts (additive new exports — existing single-item exports
+      buildReservationDocs/writeReservationPair/BuildReservationDocsInput/
+      ReservationDocs/CreateCapableTransactionLike/PAYFAST_GATEWAY are UNCHANGED, see
+      README "Why the single-item builder is not deleted"):
+
+      `export interface LineItemPlan { ticketType: string; attendeeName: string;
+      attendeeEmail: string; amount: number; bookingRef: string; }`.
+
+      `export function aggregateRequestedQuantities(lineItems: { ticketType: string }[]):
+      Record<string, number>` — pure, sums requested quantity per ticket type across the
+      whole cart.
+
+      `export function planCapacity(input: { requestedQtyByType: Record<string, number>;
+      soldCountsByType: Record<string, number>; capacityByType: Record<string, number>
+      }): { kind: 'ok' } | { kind: 'over-capacity'; ticketTypes: string[] }` — pure,
+      all-or-nothing decision across every distinct type in the cart, names EVERY
+      offending type.
+
+      `export function lineItemsMatchExistingPositions(requested: { ticketType: string;
+      attendeeEmail: string }[], existing: { ticketType: string; attendeeEmail: string
+      }[]): boolean` — pure, order-independent multiset equality (both count and content
+      must match).
+
+      `export interface BuildMultiReservationDocsInput { orderId: string; reference:
+      string; showId: string; lineItems: LineItemPlan[]; idempotencyKey: string;
+      expiresAt: Timestamp; recoveryToken: string; recoveryTokenExpiresAt: Timestamp;
+      now: Timestamp; }`. `export interface MultiReservationDocs { order: Omit<Order,
+      'id'>; positions: (Omit<Ticket, 'id'> & { idempotencyKey: string })[]; }`.
+      `export function buildMultiReservationDocs(input:
+      BuildMultiReservationDocsInput): MultiReservationDocs` — order.amount = sum of
+      every line item's amount; order.m_payment_id = input.reference; order.buyerName/
+      buyerEmail = lineItems[0].attendeeName/attendeeEmail (see README "Buyer identity
+      for a multi-item order"); every position's m_payment_id = the SHARED
+      input.reference, NOT that position's own bookingRef (see README "Why every
+      position shares m_payment_id"); every position otherwise mirrors the single-item
+      shape (own bookingRef as doc id, own ticketType, own attendeeName/attendeeEmail,
+      own amount — that line item's price, never the order total).
+
+      `export function writeMultiReservationPair(transaction:
+      CreateCapableTransactionLike, refs: { orderRef: { id: string }; positionRefs: {
+      id: string }[] }, docs: MultiReservationDocs): void` — same
+      create()-and-fail-on-collision semantics as writeReservationPair, reusing the SAME
+      CreateCapableTransactionLike interface; writes the order first, then every
+      position in lineItems order.
+    status: pending
+
+  - id: F2
+    name: >-
+      app/api/tickets/checkout/route.ts (edited, not re-pinned — carries no sha256 pin):
+
+      `CheckoutRequestBody` becomes `{ showId: unknown; lineItems: unknown }` —
+      `ticketType`/`attendeeName`/`attendeeEmail` REMOVED from the top level (no dual
+      old-and-new shape). `export interface CheckoutLineItemInput { ticketType: string;
+      attendeeName: string; attendeeEmail: string; }` — deliberately NO `amount`/`price`
+      field (A2 compile-time-proves a client cannot construct one carrying either).
+      `export const MAX_LINE_ITEMS = 20;` — resource-exhaustion ceiling, NOT the
+      council's 5-tickets-per-booking business rule (confirmed Stage 4/mission F6 per
+      README "The 5-ticket limit: Stage 4, confirmed" — do not implement that rule
+      here). `export function parseLineItems(raw: unknown): CheckoutLineItemInput[] |
+      null` — pure, zero Firestore/Sanity/network dependency; rejects non-array, length
+      0, length > MAX_LINE_ITEMS, or ANY single item failing the existing per-field
+      rules (non-empty ticketType, non-empty attendeeName, EMAIL_PATTERN-valid
+      attendeeEmail) — one bad item rejects the WHOLE cart.
+
+      `showId === NATIONAL_SHOW_ID` validation, the salesOpen gate,
+      `paymentProvider.readiness('initiate')`, and the `RECOVERY_TOKEN_SECRET`
+      fail-closed guard are ALL UNCHANGED in position and shape — still gate the
+      reservation write in the same order as today. Ticket-type lookup/validation
+      (isUsableAmount, ticketTypeMatchesActiveShow, unusableTicketType) runs per
+      DISTINCT ticketType referenced by lineItems (dedupe by slug) — same logic,
+      applied per type; any one bad type refuses the WHOLE request with the existing
+      500 shape before any write.
+
+      Inside reserveTicket()'s db.runTransaction (same TRANSACTION_MAX_ATTEMPTS = 10):
+      idempotency duplicate probe becomes `tickets.where('idempotencyKey', '==',
+      key).get()` — `.limit(1)` REMOVED (see README "Why .limit(1) must go"). Non-empty
+      -> build `existing` from ALL matched docs, compare via
+      lineItemsMatchExistingPositions; mismatch -> key-payload-mismatch (unchanged
+      shape); match -> fetch the ORDER (via duplicate.docs[0].data().orderId) and check
+      status/expiresAt ON THE ORDER, not a position (see README "Order becomes the
+      state authority for replay") -> key-not-payable or `{ kind: 'replayed',
+      reference: order.m_payment_id, amount: order.amount, positions:
+      duplicate.docs.map(d => ({ bookingRef: d.id, ticketType: d.data().ticketType }))
+      }`. Empty -> aggregateRequestedQuantities + planCapacity against soldCounts and
+      the per-type capacity map from the Sanity lookups; over-capacity -> `{ kind:
+      'over-capacity', ticketTypes }`, NO writes, logged server-side by name; ok ->
+      mint `reference = generateBookingRef()` for lineItems[0]'s OWN bookingRef (every
+      other line item mints its own independent bookingRef too), one orderRef, one
+      recovery token keyed to orderRef.id (unchanged mint call shape), build via
+      buildMultiReservationDocs, write via writeMultiReservationPair, return `{ kind:
+      'created', reference, amount: totalAmount, positions }`.
+
+      Route response: `{ bookingRef: outcome.reference, positions: outcome.positions,
+      processUrl, fields }` — `bookingRef` kept as the top-level field name/semantics
+      (resolves to a real position doc for N=1, byte-identical to today); `positions`
+      is additive. Status code logic (201 created / 200 replayed) UNCHANGED.
+    status: pending
+
+  - id: F3
+    name: >-
+      lib/orders.ts, markOrderAndPositionPaidByPaymentId (edited — see README "F2 —
+      lib/orders.ts: markOrderAndPositionPaidByPaymentId must mark EVERY position
+      paid", the single most important decision in this contract; IN SCOPE, not
+      deferred):
+
+      The pre-transaction position lookup becomes `await tickets.where('orderId', '==',
+      orderRef.id).get()` — `.limit(1)` REMOVED (same read timing as today, only the
+      query's limit changes). Inside the transaction: `transaction.get()` +
+      revalidate-exists for EVERY position in the result (not just the first), then
+      `transaction.update()` EVERY one of them to `{ status: 'paid', purchasedAt:
+      input.now }` — same per-document update shape as today, applied N times.
+      `MarkOrderPaidOutcome`'s `committed: true` variant's `position: {...}` (singular)
+      becomes `positions: {...}[]` (plural). Every OTHER branch
+      (order-not-found/order-vanished/order-payment-id-mismatch/order-not-reserved/
+      position-not-found) is UNCHANGED — position-not-found still means "found zero",
+      never "found some but not all" (there is no window where some positions of one
+      order exist and others do not, since F2 above writes them all atomically).
+
+      app/api/tickets/itn/route.ts — the ONE forced call-site change: destructures
+      `positions[0]` (not `position`) for the confirmation-email content, producing
+      BYTE-IDENTICAL email content/behaviour to today for the N=1 case (the only kind
+      of order that has ever existed until F2 ships). Does NOT enumerate every ticket
+      in the email body — explicitly out of scope, see README "What this contract does
+      NOT fix" items 1-2.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-multi-line-item-cart/README.md
+  - contracts/checks/ticketing-multi-line-item-cart/tsconfig.typecheck.json
+  - contracts/checks/ticketing-multi-line-item-cart/fixtures/multi-line-item-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        lib/checkout-reservation.ts, app/api/tickets/checkout/route.ts, and
+        lib/orders.ts are edited.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven (not source-grep) proof of the new multi-item exported shapes:
+        buildMultiReservationDocs()'s return is assignable to { order: Omit<Order,'id'>;
+        positions: (Omit<Ticket,'id'> & { idempotencyKey: string })[] }; a positions
+        array entry missing idempotencyKey is rejected via @ts-expect-error;
+        writeMultiReservationPair() accepts the SAME narrow CreateCapableTransactionLike
+        interface as the single-item writer (both the real firebase-admin Transaction
+        class and a create()-only fake); and CheckoutLineItemInput cannot be constructed
+        with an `amount` field (@ts-expect-error) — the compile-time half of "prices come
+        from the server, never the request", extended to every line item.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-multi-line-item-cart/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        planCapacity() decides capacity for the WHOLE cart aggregated per ticket type,
+        never a static per-line-item check. Core case: capacity 1, 0 already sold, cart
+        requests the SAME type twice -> must be over-capacity (a per-line-item loop
+        against a static soldCounts snapshot would wrongly approve both). Also: two
+        DIFFERENT types where only one is short by 1 -> over-capacity names ONLY the
+        short type; exact-fit case -> ok; negative control — an unrelated sold-out type
+        not referenced by the cart must never leak into the decision. Named defeating
+        mutation: checking each line item against soldCounts without accumulating
+        same-request demand within the loop.
+      command: >-
+        npx tsx contracts/checks/ticketing-multi-line-item-cart/check-plan-capacity-aggregates.mjs
+
+    - id: A4
+      description: >-
+        lineItemsMatchExistingPositions() compares the FULL multiset of {ticketType,
+        attendeeEmail} pairs between a replayed request and existing positions, order-
+        independent, count-sensitive. Cases: identical reordered sets match; a LATER
+        line item's attendeeEmail or ticketType tampered (first item still matches) must
+        NOT match; repeated-pair count mismatch must not match; fewer/more items than
+        existing must not match. Negative control: disjoint sets must not match. Named
+        defeating mutation: comparing only the first item of each set (the literal port
+        of today's `.limit(1)` duplicate-probe logic to a comparison function).
+      command: >-
+        npx tsx contracts/checks/ticketing-multi-line-item-cart/check-idempotency-replay-full-set.mjs
+
+    - id: A5
+      description: >-
+        parseLineItems() enforces MAX_LINE_ITEMS=20 and per-item validity with ZERO
+        external dependency (called with no db/client argument in scope at all,
+        proving the cap runs before any Sanity/Firestore call, not after). Rejects
+        empty/non-array/oversized carts and rejects the WHOLE cart when ANY single item
+        is malformed (never silently drops the bad item). Negative control: a single
+        valid item is accepted, proving the harness isn't just rejecting everything.
+      command: >-
+        npx tsx contracts/checks/ticketing-multi-line-item-cart/check-parse-line-items-cap.mjs
+
+    - id: A6
+      description: >-
+        buildMultiReservationDocs()/writeMultiReservationPair() write N positions + 1
+        order atomically, all-or-nothing, proven for a MIDDLE (not last) position write
+        failing specifically — a write-as-you-go (non-staged) implementation could pass
+        a last-write-fails test by accident but not a middle-write-fails one. Success
+        path also proves order.amount is the SUM of every line item's price (never a
+        client total), and every position's m_payment_id equals the shared order
+        reference. Named defeating mutation: committing writes incrementally instead of
+        staging them until the whole callback succeeds.
+      command: >-
+        npx tsx contracts/checks/ticketing-multi-line-item-cart/check-multi-write-atomicity.mjs
+
+    - id: A7
+      description: >-
+        markOrderAndPositionPaidByPaymentId() (lib/orders.ts) must mark EVERY position
+        of a multi-position order 'paid', not just one. Run against TODAY'S REAL,
+        UNMODIFIED code with a 3-position fixture via a fake Firestore-shaped store —
+        this is a real behavioural gap in already-shipped code (the `.limit(1)` position
+        lookup), latent until F1/F2 make it reachable, not new code that merely doesn't
+        exist yet. Negative control in the same run: a genuine single-position order
+        (today's only real shape) must still be marked paid correctly, proving the fix
+        this assertion demands cannot regress the live, already-proven purchase path.
+      command: >-
+        npx tsx contracts/checks/ticketing-multi-line-item-cart/check-itn-marks-all-positions-paid.mjs
+
+    - id: A8
+      description: >-
+        Same requirement as A7, restated with a DIFFERENT position count (2, not 3) in
+        the same run/file, so a fix that merely raises the limit to a fixed small
+        constant (e.g. `.limit(3)`) instead of removing it is still caught by whichever
+        of A7/A8 exceeds that constant.
+      command: >-
+        npx tsx contracts/checks/ticketing-multi-line-item-cart/check-itn-marks-all-positions-paid.mjs
+
+    - id: A9
+      description: pnpm lint passes with zero errors after all changes.
+      command: pnpm lint

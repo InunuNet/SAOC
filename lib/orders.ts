@@ -249,7 +249,7 @@ export type MarkOrderPaidOutcome =
       buyerEmail: string;
       buyerName: string;
       recoveryToken: string | null;
-      position: { bookingRef: string; attendeeName: string; ticketType: TicketType };
+      positions: { bookingRef: string; attendeeName: string; ticketType: TicketType }[];
     }
   | {
       committed: false;
@@ -306,7 +306,7 @@ export async function markOrderAndPositionPaidByPaymentId(
   }
   const orderRef = orders.doc(orderRefId);
 
-  const positionSnapshot = await tickets.where('orderId', '==', orderRef.id).limit(1).get();
+  const positionSnapshot = await tickets.where('orderId', '==', orderRef.id).get();
 
   return db.runTransaction(async (transaction) => {
     const orderDoc = await transaction.get(orderRef);
@@ -336,21 +336,43 @@ export async function markOrderAndPositionPaidByPaymentId(
     if (positionSnapshot.empty) {
       return { committed: false, reason: 'position-not-found' };
     }
-    const positionRef = tickets.doc(positionSnapshot.docs[0].id);
-    const positionDoc = await transaction.get(positionRef);
-    if (!positionDoc.exists) {
+
+    // F2 (ticketing-multi-line-item-cart) — revalidate-exists and mark paid EVERY position
+    // sharing this order, not just one. `.limit(1)` above was written when one order always
+    // had exactly one position; once checkout can create N positions per order (F1 of this
+    // contract), a `.limit(1)` position lookup here leaves N-1 paid-for tickets stuck
+    // 'reserved' forever. `position-not-found` still means "found zero" — there is no window
+    // where some positions of an order exist and others do not, since they are written
+    // atomically together.
+    // Sequential, not Promise.all — same posture as
+    // lib/data/tickets.ts's getSoldCountsByTicketType/sequentialGet: interleaving concurrent
+    // reads on the SAME transaction risks a deadlock.
+    const positionRefs = positionSnapshot.docs.map((doc) => tickets.doc(doc.id));
+    const positionDocs: OrdersDocSnapshotLike[] = [];
+    for (const positionRef of positionRefs) {
+      positionDocs.push(await transaction.get(positionRef));
+    }
+    if (positionDocs.some((doc) => !doc.exists)) {
       return { committed: false, reason: 'position-not-found' };
     }
-    const position = positionDoc.data() as Partial<Ticket> | undefined;
 
     transaction.update(orderRef, {
       status: 'paid',
       gatewayPaymentId: input.gatewayPaymentId,
       purchasedAt: input.now,
     });
-    transaction.update(positionRef, {
-      status: 'paid',
-      purchasedAt: input.now,
+
+    const positions = positionRefs.map((positionRef, index) => {
+      transaction.update(positionRef, {
+        status: 'paid',
+        purchasedAt: input.now,
+      });
+      const position = positionDocs[index].data() as Partial<Ticket> | undefined;
+      return {
+        bookingRef: (position?.bookingRef as string | undefined) ?? positionRef.id,
+        attendeeName: (position?.attendeeName as string | undefined) ?? '',
+        ticketType: position?.ticketType as TicketType,
+      };
     });
 
     return {
@@ -359,11 +381,7 @@ export async function markOrderAndPositionPaidByPaymentId(
       buyerEmail: order?.buyerEmail ?? '',
       buyerName: order?.buyerName ?? '',
       recoveryToken: (order?.recoveryToken as string | null | undefined) ?? null,
-      position: {
-        bookingRef: (position?.bookingRef as string | undefined) ?? positionRef.id,
-        attendeeName: (position?.attendeeName as string | undefined) ?? '',
-        ticketType: position?.ticketType as TicketType,
-      },
+      positions,
     };
   });
 }
@@ -430,4 +448,90 @@ export async function getConfirmedTicketForDisplay(
     amount,
     qrDataUri: await generateBookingRefQrDataUri(bookingRef),
   };
+}
+
+// ---------------------------------------------------------------------------------------------
+// ticketing-multi-line-item-cart-ui (F3) — order-aware replacement call site for the
+// confirmation page. NEW, additive sibling to getConfirmedTicketForDisplay above — that
+// function is left UNCHANGED, still the subject of
+// execution/checks/verify_confirmation_page.ts, which stays valid and green. See
+// contracts/golden/ticketing-multi-line-item-cart-ui/README.md "F3".
+// ---------------------------------------------------------------------------------------------
+
+export interface ConfirmedOrderDisplay {
+  reference: string;
+  /** Every PAID (or checked-in) position belonging to the order, reusing the existing
+   *  per-position ConfirmedTicketDisplay shape unchanged. */
+  positions: ConfirmedTicketDisplay[];
+}
+
+/**
+ * Resolves the order via `orders.where('m_payment_id', '==', reference).limit(1)` (same
+ * query shape `findReservedOrderByPaymentId` already uses), fails closed to null unless
+ * `order.status === 'paid'`. Resolves EVERY position via `tickets.where('orderId', '==',
+ * order.id).get()` — NO `.limit(1)`, same reasoning as `markOrderAndPositionPaidByPaymentId`'s
+ * own fix above — filtered to the existing `CONFIRMED_TICKET_STATUSES`, generating one QR per
+ * position via the SAME `generateBookingRefQrDataUri` (or the injected
+ * `deps.generateQrDataUri`).
+ *
+ * Fails closed to null if, after filtering, zero positions qualify — this function does not
+ * assume the reservation write always produces at least one confirmable position; it
+ * re-derives fail-closed on its own data, never on a promise made elsewhere.
+ *
+ * `deps.db` — optional, defaults to the real `getFirestore(initAdmin())` when omitted, same
+ * convention as `createOrderWithPosition`/`markOrderAndPositionPaidByPaymentId`'s `deps.db`.
+ */
+export async function getConfirmedOrderForDisplay(
+  reference: string,
+  deps: {
+    db?: OrdersFirestoreRwLike;
+    generateQrDataUri?: (bookingRef: string) => Promise<string>;
+  } = {}
+): Promise<ConfirmedOrderDisplay | null> {
+  if (reference.trim().length === 0) {
+    return null;
+  }
+
+  const db: OrdersFirestoreRwLike = deps.db ?? (getFirestore(initAdmin()) as unknown as OrdersFirestoreRwLike);
+  const generateQrDataUri = deps.generateQrDataUri ?? generateBookingRefQrDataUri;
+  const orders = db.collection(ORDERS_COLLECTION);
+  const tickets = db.collection(TICKETS_COLLECTION);
+
+  const orderSnapshot = await orders.where('m_payment_id', '==', reference).limit(1).get();
+  if (orderSnapshot.empty) {
+    return null;
+  }
+  const orderDoc = orderSnapshot.docs[0];
+  const order = orderDoc.data() as Partial<Order> | undefined;
+  if (order?.status !== 'paid') {
+    return null;
+  }
+
+  const positionSnapshot = await tickets.where('orderId', '==', orderDoc.id).get();
+  const confirmedPositions: ConfirmedTicketDisplay[] = [];
+  for (const doc of positionSnapshot.docs) {
+    const position = doc.data() as Partial<Ticket> | undefined;
+    const status = position?.status;
+    if (!status || !CONFIRMED_TICKET_STATUSES.has(status)) continue;
+
+    const attendeeName = position?.attendeeName;
+    const ticketType = position?.ticketType;
+    const amount = position?.amount;
+    if (!attendeeName || !ticketType || typeof amount !== 'number') continue;
+
+    const bookingRef = (position?.bookingRef as string | undefined) ?? doc.id;
+    confirmedPositions.push({
+      bookingRef,
+      attendeeName,
+      ticketType,
+      amount,
+      qrDataUri: await generateQrDataUri(bookingRef),
+    });
+  }
+
+  if (confirmedPositions.length === 0) {
+    return null;
+  }
+
+  return { reference, positions: confirmedPositions };
 }

@@ -1,5 +1,8 @@
-// F2 (ticketing-pages) — presentational card for one ticket type inside
-// TicketPurchaseForm's radio group. No hooks/browser APIs of its own, so it needs no
+// F2 (ticketing-pages; edited by ticketing-multi-line-item-cart-ui F2) — presentational
+// card for one ticket type inside TicketPurchaseForm's cart. The selection control is a
+// quantity stepper (0 by default; pinned to 0 and disabled when soldOut — real capacity
+// enforcement stays entirely server-side, this disable is UX only, matching the previous
+// soldOut-disables-radio convention). No hooks/browser APIs of its own, so it needs no
 // 'use client' directive — it inherits the client boundary from its parent form.
 export interface TicketTypeCardData {
   slug: string;
@@ -11,53 +14,97 @@ export interface TicketTypeCardData {
 
 interface TicketTypeCardProps {
   ticketType: TicketTypeCardData;
-  selected: boolean;
-  onSelect: (slug: string) => void;
+  quantity: number;
+  onQuantityChange: (slug: string, quantity: number) => void;
   soldOutLabel: string;
+  decreaseLabel: string;
+  increaseLabel: string;
 }
 
-export function TicketTypeCard({ ticketType, selected, onSelect, soldOutLabel }: TicketTypeCardProps) {
+export function TicketTypeCard({
+  ticketType,
+  quantity,
+  onQuantityChange,
+  soldOutLabel,
+  decreaseLabel,
+  increaseLabel,
+}: TicketTypeCardProps) {
   const { slug, name, price, description, soldOut } = ticketType;
-  const inputId = `ticket-type-${slug}`;
+  const inputId = `ticket-type-qty-${slug}`;
+
+  function decrease() {
+    if (soldOut) return;
+    onQuantityChange(slug, Math.max(0, quantity - 1));
+  }
+
+  function increase() {
+    if (soldOut) return;
+    onQuantityChange(slug, quantity + 1);
+  }
 
   return (
-    <label
-      htmlFor={inputId}
-      className={`flex cursor-pointer items-start justify-between gap-4 border p-5 transition ${
+    <div
+      className={`flex items-start justify-between gap-4 border p-5 transition ${
         soldOut
-          ? 'cursor-not-allowed border-rule bg-bone/60 opacity-60'
-          : selected
+          ? 'border-rule bg-bone/60 opacity-60'
+          : quantity > 0
             ? 'border-ink bg-bone'
-            : 'border-rule bg-parchment hover:bg-bone'
+            : 'border-rule bg-parchment'
       }`}
     >
-      <div className="flex items-start gap-3">
-        <input
-          id={inputId}
-          type="radio"
-          name="ticketType"
-          value={slug}
-          checked={selected}
-          disabled={soldOut}
-          onChange={() => onSelect(slug)}
-          className="mt-1.5"
-          aria-describedby={`${inputId}-desc`}
-        />
-        <div>
-          <p className="font-serif text-[18px] font-semibold text-ink">{name}</p>
-          <p id={`${inputId}-desc`} className="mt-1 font-sans text-[13px] text-ink/70">
-            {description}
-          </p>
-          {soldOut ? (
-            <span className="mt-2 inline-block font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
-              {soldOutLabel}
-            </span>
-          ) : null}
+      <div>
+        <p className="font-serif text-[18px] font-semibold text-ink">{name}</p>
+        <p id={`${inputId}-desc`} className="mt-1 font-sans text-[13px] text-ink/70">
+          {description}
+        </p>
+        {soldOut ? (
+          <span className="mt-2 inline-block font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+            {soldOutLabel}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="flex shrink-0 flex-col items-end gap-2">
+        <p className="font-serif text-[20px] font-medium text-ink">
+          {price === 0 ? 'Free' : `R${price.toFixed(2)}`}
+        </p>
+        <div className="flex items-center gap-2" role="group" aria-label={`${name} quantity`}>
+          <button
+            type="button"
+            onClick={decrease}
+            disabled={soldOut || quantity === 0}
+            aria-label={`${decreaseLabel} ${name}`}
+            className="flex h-8 w-8 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            −
+          </button>
+          <input
+            id={inputId}
+            type="number"
+            inputMode="numeric"
+            min={0}
+            step={1}
+            value={quantity}
+            disabled={soldOut}
+            aria-describedby={`${inputId}-desc`}
+            aria-label={`${name} quantity`}
+            onChange={(e) => {
+              const parsed = Number.parseInt(e.target.value, 10);
+              onQuantityChange(slug, Number.isNaN(parsed) ? 0 : Math.max(0, parsed));
+            }}
+            className="w-12 rounded-sm border border-rule bg-ivory px-1 py-1 text-center font-sans text-[15px] text-ink outline-none disabled:opacity-60"
+          />
+          <button
+            type="button"
+            onClick={increase}
+            disabled={soldOut}
+            aria-label={`${increaseLabel} ${name}`}
+            className="flex h-8 w-8 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            +
+          </button>
         </div>
       </div>
-      <p className="shrink-0 font-serif text-[20px] font-medium text-ink">
-        {price === 0 ? 'Free' : `R${price.toFixed(2)}`}
-      </p>
-    </label>
+    </div>
   );
 }

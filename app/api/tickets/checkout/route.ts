@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { generateBookingRef } from '@/lib/booking-ref';
-import { buildReservationDocs, writeReservationPair } from '@/lib/checkout-reservation';
+import {
+  aggregateRequestedQuantities,
+  buildMultiReservationDocs,
+  lineItemsMatchExistingPositions,
+  planCapacity,
+  writeMultiReservationPair,
+  type LineItemPlan,
+} from '@/lib/checkout-reservation';
 import { initAdmin } from '@/lib/firebase-admin';
 import { ORDERS_COLLECTION } from '@/lib/orders';
 import { paymentProvider } from '@/lib/payments';
@@ -17,7 +24,12 @@ import {
 } from '@/sanity/queries';
 import { getSoldCountsByTicketType } from '@/lib/data/tickets';
 import { resolveActiveShow } from '@/lib/show-resolution';
-import { NATIONAL_SHOW_ID, RESERVATION_TTL_MINUTES } from '@/lib/tickets-constants';
+import { MAX_LINE_ITEMS, NATIONAL_SHOW_ID, RESERVATION_TTL_MINUTES } from '@/lib/tickets-constants';
+
+// Re-exported (not just imported) so contracts/checks/ticketing-multi-line-item-cart/
+// check-parse-line-items-cap.mjs, which imports MAX_LINE_ITEMS from this route module,
+// keeps working — the single source of truth is still lib/tickets-constants.ts.
+export { MAX_LINE_ITEMS };
 
 /**
  * Canonical production origin. Used only as the fallback when `SITE_URL` is unset.
@@ -137,29 +149,56 @@ interface SanityNationalShowSales {
 }
 
 interface CheckoutRequestBody {
-  showId?: unknown;
-  ticketType?: unknown;
-  attendeeName?: unknown;
-  attendeeEmail?: unknown;
+  showId: unknown;
+  lineItems: unknown;
 }
 
-function isValidCheckoutBody(
-  body: CheckoutRequestBody
-): body is { showId: string; ticketType: string; attendeeName: string; attendeeEmail: string } {
-  return (
-    // showId must be the known pinned nationalShow singleton id, not merely "a
-    // non-empty string" — getSoldCountsByTicketType(showId) scopes its capacity
-    // ledger by this exact value, so an unvalidated showId lets a spoofed value pick
-    // a fresh, always-empty ledger and bypass the capacity gate entirely. Same
-    // posture as amount/salesOpen: the request body is never the authority.
-    typeof body.showId === 'string' &&
-    body.showId === NATIONAL_SHOW_ID &&
-    typeof body.ticketType === 'string' &&
-    typeof body.attendeeName === 'string' &&
-    body.attendeeName.trim().length > 0 &&
-    typeof body.attendeeEmail === 'string' &&
-    EMAIL_PATTERN.test(body.attendeeEmail)
-  );
+export interface CheckoutLineItemInput {
+  ticketType: string;
+  attendeeName: string;
+  attendeeEmail: string;
+}
+
+/**
+ * Pure — no Firestore, no Sanity, no network. Returns null for: not an array; length 0;
+ * length > MAX_LINE_ITEMS; or ANY single item failing the per-field rules (non-empty
+ * ticketType, non-empty attendeeName, EMAIL_PATTERN-valid attendeeEmail) — one bad item
+ * rejects the WHOLE cart, never silently drops it and proceeds with the rest.
+ */
+export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_LINE_ITEMS) {
+    return null;
+  }
+
+  const lineItems: CheckoutLineItemInput[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== 'object' || entry === null) return null;
+    const candidate = entry as Record<string, unknown>;
+    const { ticketType, attendeeName, attendeeEmail } = candidate;
+    if (
+      typeof ticketType !== 'string' ||
+      ticketType.trim().length === 0 ||
+      typeof attendeeName !== 'string' ||
+      attendeeName.trim().length === 0 ||
+      typeof attendeeEmail !== 'string' ||
+      !EMAIL_PATTERN.test(attendeeEmail)
+    ) {
+      return null;
+    }
+    lineItems.push({ ticketType, attendeeName, attendeeEmail });
+  }
+  return lineItems;
+}
+
+/**
+ * showId must be the known pinned nationalShow singleton id, not merely "a non-empty
+ * string" — getSoldCountsByTicketType(showId) scopes its capacity ledger by this exact
+ * value, so an unvalidated showId lets a spoofed value pick a fresh, always-empty ledger
+ * and bypass the capacity gate entirely. Same posture as amount/salesOpen: the request
+ * body is never the authority.
+ */
+function isValidShowId(showId: unknown): showId is string {
+  return typeof showId === 'string' && showId === NATIONAL_SHOW_ID;
 }
 
 /**
@@ -168,30 +207,23 @@ function isValidCheckoutBody(
  * to fetch Sanity copy for the 409, and Sanity must never be called from inside a
  * transaction body that Firestore may retry.
  */
+type ReservationPosition = { bookingRef: string; ticketType: string };
+
 type ReservationOutcome =
-  | { kind: 'created'; bookingRef: string; amount: number }
-  | { kind: 'replayed'; bookingRef: string; amount: number }
-  | { kind: 'over-capacity' }
+  | { kind: 'created'; reference: string; amount: number; positions: ReservationPosition[] }
+  | { kind: 'replayed'; reference: string; amount: number; positions: ReservationPosition[] }
+  | { kind: 'over-capacity'; ticketTypes: string[] }
   | { kind: 'key-payload-mismatch' }
   | { kind: 'key-not-payable'; reason: 'status' | 'expired' };
 
 interface ReservationInput {
   showId: string;
-  ticketType: string;
-  attendeeName: string;
-  attendeeEmail: string;
-  amount: number;
-  capacity: number;
+  lineItems: CheckoutLineItemInput[];
+  amountByType: Record<string, number>;
+  capacityByType: Record<string, number>;
   idempotencyKey: string;
   recoveryTokenSecret: string;
 }
-
-/**
- * One checkout request reserves exactly one seat — there is no multi-ticket-per-request
- * field today — but the comparison is written in terms of the requested quantity so it
- * stays correct if that's ever added.
- */
-const REQUESTED_QUANTITY = 1;
 
 /**
  * Visitor-facing copy comes from Sanity (ticketsPage.soldOutMessage), the same field
@@ -230,14 +262,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
   }
 
-  if (!isValidCheckoutBody(body)) {
+  if (!isValidShowId(body.showId)) {
     return NextResponse.json(
-      { error: 'showId, ticketType, attendeeName, and a valid attendeeEmail are required.' },
+      { error: 'showId, lineItems (1-20 valid line items) are required.' },
       { status: 400 }
     );
   }
+  const showId = body.showId;
 
-  const { showId, ticketType, attendeeName, attendeeEmail } = body;
+  const lineItems = parseLineItems(body.lineItems);
+  if (!lineItems) {
+    return NextResponse.json(
+      { error: 'showId, lineItems (1-20 valid line items) are required.' },
+      { status: 400 }
+    );
+  }
 
   if (!client) {
     console.error('[tickets/checkout] Sanity client is not configured (missing project id).');
@@ -262,30 +301,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Ticket sales are currently closed.' }, { status: 403 });
   }
 
-  let ticketTypeDoc: SanityTicketType | null;
-  try {
-    ticketTypeDoc = await client.fetch<SanityTicketType | null>(ticketTypeBySlugQuery, {
-      slug: ticketType,
-    });
-  } catch (error) {
-    console.error('[tickets/checkout] Failed to fetch ticketType from Sanity:', error);
-    return NextResponse.json(
-      { error: 'Unable to look up ticket pricing. Please try again.' },
-      { status: 500 }
-    );
-  }
-  if (!ticketTypeDoc) {
-    return NextResponse.json({ error: `Unknown ticketType: ${ticketType}` }, { status: 400 });
-  }
-
-  // 500, not 400: the request was well-formed and the CMS document is misconfigured, so
-  // a 4xx would tell the buyer to fix something they cannot see.
-  const { capacity, price } = ticketTypeDoc;
-  if (!isUsableAmount(capacity)) return unusableTicketType(ticketType, 'capacity');
-  if (!isUsableAmount(price)) return unusableTicketType(ticketType, 'price');
-
   // F1 (ticketing-foundation): additive active-show gate, same failure shape as the
-  // capacity/price checks above. resolveActiveShow() fails closed to null, so a stale
+  // capacity/price checks below. resolveActiveShow() fails closed to null, so a stale
   // ticket type (or a ticket type predating the `show` reference field) is refused
   // rather than silently sold against the wrong show.
   let allShows: { _id: string; active: boolean | null }[];
@@ -301,8 +318,43 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
   const activeShowId = resolveActiveShow(allShows);
-  if (!ticketTypeMatchesActiveShow(ticketTypeDoc, activeShowId)) {
-    return unusableTicketType(ticketType, 'show');
+
+  // ticketing-multi-line-item-cart (F2): one Sanity fetch PER DISTINCT ticketType the cart
+  // references (dedupe by slug — two line items of the same type fetch its Sanity doc
+  // once, not twice), same capacity/price/show validation as before, applied per type. Any
+  // one bad type refuses the WHOLE request before any Firestore write.
+  const distinctTicketTypes = [...new Set(lineItems.map((lineItem) => lineItem.ticketType))];
+  const amountByType: Record<string, number> = {};
+  const capacityByType: Record<string, number> = {};
+
+  for (const slug of distinctTicketTypes) {
+    let ticketTypeDoc: SanityTicketType | null;
+    try {
+      ticketTypeDoc = await client.fetch<SanityTicketType | null>(ticketTypeBySlugQuery, {
+        slug,
+      });
+    } catch (error) {
+      console.error('[tickets/checkout] Failed to fetch ticketType from Sanity:', error);
+      return NextResponse.json(
+        { error: 'Unable to look up ticket pricing. Please try again.' },
+        { status: 500 }
+      );
+    }
+    if (!ticketTypeDoc) {
+      return NextResponse.json({ error: `Unknown ticketType: ${slug}` }, { status: 400 });
+    }
+
+    // 500, not 400: the request was well-formed and the CMS document is misconfigured, so
+    // a 4xx would tell the buyer to fix something they cannot see.
+    const { capacity, price } = ticketTypeDoc;
+    if (!isUsableAmount(capacity)) return unusableTicketType(slug, 'capacity');
+    if (!isUsableAmount(price)) return unusableTicketType(slug, 'price');
+    if (!ticketTypeMatchesActiveShow(ticketTypeDoc, activeShowId)) {
+      return unusableTicketType(slug, 'show');
+    }
+
+    amountByType[slug] = price;
+    capacityByType[slug] = capacity;
   }
 
   // The gateway credential guard, BEFORE any Firestore write — the position
@@ -353,11 +405,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     outcome = await reserveTicket({
       showId,
-      ticketType,
-      attendeeName: attendeeName.trim(),
-      attendeeEmail: attendeeEmail.trim().toLowerCase(),
-      amount: price,
-      capacity,
+      lineItems: lineItems.map((lineItem) => ({
+        ticketType: lineItem.ticketType,
+        attendeeName: lineItem.attendeeName.trim(),
+        attendeeEmail: lineItem.attendeeEmail.trim().toLowerCase(),
+      })),
+      amountByType,
+      capacityByType,
       idempotencyKey,
       recoveryTokenSecret,
     });
@@ -370,6 +424,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   if (outcome.kind === 'over-capacity') {
+    console.error('[tickets/checkout] over-capacity for types:', outcome.ticketTypes);
     return NextResponse.json({ error: await fetchSoldOutMessage() }, { status: 409 });
   }
 
@@ -395,7 +450,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // A replay is re-authenticated here from the STORED, server-derived amount — never from a
   // stored hand-off payload and never from the request body.
-  const { bookingRef, amount } = outcome;
+  const { reference, amount, positions } = outcome;
   const amountFormatted = amount.toFixed(2);
 
   // F2 (payment-provider-seam): this route no longer knows which gateway it is handing off to.
@@ -404,11 +459,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // callback URLs. Nothing below may reach for a gateway-specific field name again.
   const siteUrl = resolveSiteUrl();
   const initiation = await paymentProvider.initiate({
-    reference: bookingRef,
+    reference,
     amountFormatted,
     itemName: TICKET_ITEM_LABEL,
-    returnUrl: `${siteUrl}/tickets/confirmation?ref=${bookingRef}`,
-    cancelUrl: `${siteUrl}/tickets/cancelled?ref=${bookingRef}`,
+    returnUrl: `${siteUrl}/tickets/confirmation?ref=${reference}`,
+    cancelUrl: `${siteUrl}/tickets/cancelled?ref=${reference}`,
     notifyUrl: `${siteUrl}/api/tickets/itn`,
   });
 
@@ -425,7 +480,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // folding it into the same 500.
     const refusal: 'not-configured' = initiation.reason;
     console.error('[tickets/checkout] Payment provider refused the hand-off', {
-      bookingRef,
+      reference,
       reason: refusal,
     });
     return NextResponse.json(
@@ -436,7 +491,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   return NextResponse.json(
     {
-      bookingRef,
+      // Kept as the top-level field name/semantics — it is what the confirmation page's
+      // `?ref=` param and the PayFast hand-off already key on, and (per the order-reference
+      // decision, see README) it resolves to a REAL position document for N=1, byte-identical
+      // to today. `positions` is purely additive.
+      bookingRef: reference,
+      positions,
       processUrl: initiation.processUrl,
       fields: initiation.fields,
     },
@@ -469,48 +529,92 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
   return db.runTransaction(
     async (transaction): Promise<ReservationOutcome> => {
       const soldCounts = await getSoldCountsByTicketType(input.showId, transaction);
+
+      // ticketing-multi-line-item-cart (F2): `.limit(1)` removed. Once one idempotency key
+      // can produce N positions, `.limit(1)` here would silently see only one of them — see
+      // README "Why .limit(1) must go".
       const duplicate = await transaction.get(
-        tickets.where('idempotencyKey', '==', input.idempotencyKey).limit(1)
+        tickets.where('idempotencyKey', '==', input.idempotencyKey)
       );
 
       if (!duplicate.empty) {
-        const data = duplicate.docs[0].data();
+        const requested = input.lineItems.map((lineItem) => ({
+          ticketType: lineItem.ticketType,
+          attendeeEmail: lineItem.attendeeEmail,
+        }));
+        const existing = duplicate.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            ticketType: data['ticketType'] as string,
+            attendeeEmail: data['attendeeEmail'] as string,
+          };
+        });
 
         // Rule 1: the key is bound to the payload it first created. Matching on the key
-        // alone handed a replaying stranger the original buyer's bookingRef — which is
-        // the door code — and re-signed a payment at the original ticket type's price.
+        // alone handed a replaying stranger the original buyer's bookingRef — which is the
+        // door code — and re-signed a payment at the original ticket type's price.
         // attendeeName is deliberately excluded: correcting a typo in your own name on a
-        // retry is a legitimate replay, and the name is not a security boundary.
-        if (
-          data['attendeeEmail'] !== input.attendeeEmail ||
-          data['ticketType'] !== input.ticketType
-        ) {
+        // retry is a legitimate replay, and the name is not a security boundary. Compared
+        // as a full order-independent multiset, not just the first line item — see README
+        // "Order becomes the state authority for replay".
+        if (!lineItemsMatchExistingPositions(requested, existing)) {
           return { kind: 'key-payload-mismatch' };
         }
 
         // Rule 2: the replay branch hands back a live, authenticated payment hand-off, so it
-        // may only run while the reservation can still be paid for.
-        if (data['status'] !== RESERVED_STATUS) return { kind: 'key-not-payable', reason: 'status' };
-        const expiresAt = data['expiresAt'];
-        if (expiresAt instanceof Timestamp && expiresAt.toMillis() <= Date.now()) {
+        // may only run while the reservation can still be paid for. State authority for
+        // replay is the ORDER, not an arbitrary position — see README "Order becomes the
+        // state authority for replay".
+        const orderId = duplicate.docs[0].data()['orderId'] as string | undefined;
+        const orderDoc = orderId ? await transaction.get(orders.doc(orderId)) : null;
+        const orderData = orderDoc?.exists ? orderDoc.data() : undefined;
+        if (!orderData) return { kind: 'key-not-payable', reason: 'status' };
+
+        if (orderData['status'] !== RESERVED_STATUS) {
+          return { kind: 'key-not-payable', reason: 'status' };
+        }
+        const orderExpiresAt = orderData['expiresAt'];
+        if (orderExpiresAt instanceof Timestamp && orderExpiresAt.toMillis() <= Date.now()) {
           return { kind: 'key-not-payable', reason: 'expired' };
         }
 
         return {
           kind: 'replayed',
-          bookingRef: data['bookingRef'] as string,
-          amount: data['amount'] as number,
+          reference: orderData['m_payment_id'] as string,
+          amount: orderData['amount'] as number,
+          positions: duplicate.docs.map((doc) => ({
+            bookingRef: doc.id,
+            ticketType: doc.data()['ticketType'] as string,
+          })),
         };
       }
 
-      const alreadyHeld = soldCounts[input.ticketType] ?? 0;
-      if (alreadyHeld + REQUESTED_QUANTITY > input.capacity) return { kind: 'over-capacity' };
+      const requestedQtyByType = aggregateRequestedQuantities(input.lineItems);
+      const capacityResult = planCapacity({
+        requestedQtyByType,
+        soldCountsByType: soldCounts,
+        capacityByType: input.capacityByType,
+      });
+      if (capacityResult.kind === 'over-capacity') {
+        return { kind: 'over-capacity', ticketTypes: capacityResult.ticketTypes };
+      }
 
-      // The document id is derived from the booking reference, so a collision fails the
-      // create instead of silently issuing a duplicate door code.
-      const bookingRef = generateBookingRef();
+      // Every line item mints its own, independent bookingRef (own door code) — the
+      // document id is derived from it, so a collision fails the create instead of
+      // silently issuing a duplicate door code. The order-level reference is the FIRST
+      // line item's own bookingRef, never a newly invented identifier — see README "Why
+      // the order reference is the first line item's own bookingRef, not a new identifier".
+      const lineItemPlans: LineItemPlan[] = input.lineItems.map((lineItem) => ({
+        ticketType: lineItem.ticketType,
+        attendeeName: lineItem.attendeeName,
+        attendeeEmail: lineItem.attendeeEmail,
+        amount: input.amountByType[lineItem.ticketType],
+        bookingRef: generateBookingRef(),
+      }));
+      const reference = lineItemPlans[0].bookingRef;
+
       const orderRef = orders.doc();
-      const positionRef = tickets.doc(bookingRef);
+      const positionRefs = lineItemPlans.map((lineItemPlan) => tickets.doc(lineItemPlan.bookingRef));
 
       // One `now` shared by the reservation expiry and the recovery-token mint — see
       // contracts/golden/ticketing-checkout-orders/README.md F2 "mint the recovery token
@@ -525,14 +629,11 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         now,
       });
 
-      const docs = buildReservationDocs({
+      const docs = buildMultiReservationDocs({
         orderId: orderRef.id,
-        bookingRef,
+        reference,
         showId: input.showId,
-        attendeeName: input.attendeeName,
-        attendeeEmail: input.attendeeEmail,
-        ticketType: input.ticketType,
-        amount: input.amount,
+        lineItems: lineItemPlans,
         idempotencyKey: input.idempotencyKey,
         expiresAt,
         recoveryToken: minted.token,
@@ -540,8 +641,18 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         now: Timestamp.fromDate(now),
       });
 
-      writeReservationPair(transaction, { orderRef, positionRef }, docs);
-      return { kind: 'created', bookingRef, amount: input.amount };
+      writeMultiReservationPair(transaction, { orderRef, positionRefs }, docs);
+
+      const totalAmount = lineItemPlans.reduce((sum, lineItemPlan) => sum + lineItemPlan.amount, 0);
+      return {
+        kind: 'created',
+        reference,
+        amount: totalAmount,
+        positions: lineItemPlans.map((lineItemPlan) => ({
+          bookingRef: lineItemPlan.bookingRef,
+          ticketType: lineItemPlan.ticketType,
+        })),
+      };
     },
     { maxAttempts: TRANSACTION_MAX_ATTEMPTS }
   );

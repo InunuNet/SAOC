@@ -1,0 +1,190 @@
+schema: athanor.contract/v1
+slug: ticketing-multi-line-item-cart-ui
+goal: >-
+  Mission multi-line-item-cart, F3 ("Cart UI — select multiple ticket types and
+  quantities, then check out"). The N-line-item checkout API is pinned by the sibling
+  contract-ticketing-multi-line-item-cart ({ showId, lineItems: [...] }); this contract
+  builds the buyer-facing surface that produces that request, and closes the two gaps
+  that sibling contract's own README named but deliberately deferred: the confirmation
+  page and email showing only the FIRST ticket of a multi-item order. Prices displayed
+  must always trace back to the server-resolved ticketType data already flowing through
+  the page — never a second, hardcoded price table — and the amount shown immediately
+  before a PayFast redirect must be the server-derived total from the checkout response,
+  not the pre-submit client estimate. Full decision record, every judgement call, a
+  named sequencing risk against the sibling contract's in-flight @dev work, every
+  assertion's defeating mutation, and the explicit list of visual/interactive claims
+  this contract deliberately leaves to a real BrowserAgent check rather than a grep:
+  contracts/golden/ticketing-multi-line-item-cart-ui/README.md.
+created_at: '2026-08-20'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      lib/cart.ts (NEW file — pure, no Firestore/Sanity import, client-bundle-safe, same
+      convention as lib/tickets-constants.ts):
+
+      `export interface CartTicketTypeInfo { slug: string; price: number; soldOut:
+      boolean; }`. `export interface CartAttendee { attendeeName: string; attendeeEmail:
+      string; }`.
+
+      `export function computeCartTotal(quantities: Record<string, number>, types:
+      CartTicketTypeInfo[]): number` — sums quantities[slug] * that slug's price,
+      reading ONLY from the types array (no hidden second price source anywhere in this
+      function); a slug in quantities but absent from types is EXCLUDED from the total,
+      never priced at 0-and-kept, never thrown.
+
+      `export function cartItemCount(quantities: Record<string, number>): number` — sum
+      of every quantity, ignoring entries <= 0.
+
+      `export function buildLineItemsFromCart(quantities: Record<string, number>,
+      attendeesByType: Record<string, CartAttendee[]>, typesOrder: string[]):
+      CheckoutLineItemInput[]` (CheckoutLineItemInput imported from
+      '@/app/api/tickets/checkout/route', already pinned by the sibling contract) —
+      expands { slug: quantity } into a flat, ORDERED array pairing each unit, IN ORDER,
+      with the attendee row assigned to it. typesOrder fixes between-type ordering.
+      THROWS if attendeesByType[slug]?.length !== quantities[slug] for any selected type
+      — a mismatched row count must fail loudly before any POST, never silently pad or
+      truncate.
+    status: pending
+
+  - id: F2
+    name: >-
+      components/tickets/TicketTypeCard.tsx (edited): the radio input becomes a
+      quantity stepper (0 by default; pinned to 0 and disabled when soldOut — real
+      capacity enforcement stays entirely server-side, per the sibling contract; this
+      disable is UX only, matching the existing soldOut-disables-radio convention).
+
+      components/tickets/TicketPurchaseForm.tsx (edited): cart state becomes
+      Record<slug, number> (replacing selectedType). A running total renders
+      continuously via computeCartTotal(quantities, ticketTypes) — the SAME
+      ticketTypes prop the Server Component already passes from
+      activeTicketTypesQuery, no new fetch, no new price source — labelled as an
+      ESTIMATE (see README "Why the running total is explicitly an estimate"), never
+      presented as the final charged amount. Below the type list: one
+      attendee-name/email field pair PER UNIT in the cart, grouped by type, reusing the
+      existing TicketFormField component and EMAIL_PATTERN validation — the SAME
+      per-position requirement the backend already enforces uniformly across every
+      type today (Stage 3/mission-F5's per-type "requires attendee names" flag is
+      explicitly NOT implemented here).
+
+      On submit: buildLineItemsFromCart(quantities, attendeesByType, typesOrder)
+      (thrown mismatch -> a field-level error, not a network error); reject
+      client-side if cartItemCount(...) === 0 ("select at least one ticket") or
+      exceeds MAX_LINE_ITEMS (imported from '@/app/api/tickets/checkout/route', the
+      SAME constant the server enforces — UX-only pre-check, the server's own cap
+      remains the real boundary); POST { showId: NATIONAL_SHOW_ID, lineItems } with
+      the SAME one-key-per-form-instance Idempotency-Key convention, UNCHANGED.
+
+      Pre-redirect amount display: before rendering PayfastRedirectForm, display the
+      amount from the CHECKOUT RESPONSE'S fields.amount (the PayFast hidden field the
+      server's paymentProvider.initiate(...) call already produces) — NEVER the
+      pre-submit computeCartTotal(...) estimate. This is the reconciliation point
+      against "a displayed total that disagrees with the charged total".
+    status: pending
+
+  - id: F3
+    name: >-
+      lib/orders.ts (ADDITIVE — see README "Sequencing risk": this file is being
+      concurrently edited by the sibling contract's @dev work; do not dispatch this
+      feature against a stale checkout of lib/orders.ts, and prefer sequencing it after
+      that work merges, or handing it to the same @dev session):
+
+      `export interface ConfirmedOrderDisplay { reference: string; positions:
+      ConfirmedTicketDisplay[]; }` (reuses the existing ConfirmedTicketDisplay shape,
+      unchanged). `export async function getConfirmedOrderForDisplay(reference: string,
+      deps?: { db?: OrdersFirestoreRwLike; generateQrDataUri?: (bookingRef: string) =>
+      Promise<string> }): Promise<ConfirmedOrderDisplay | null>` — resolves the order
+      via orders.where('m_payment_id', '==', reference).limit(1) (same query shape as
+      findReservedOrderByPaymentId), fails closed to null unless order.status ===
+      'paid'; resolves EVERY position via tickets.where('orderId', '==',
+      order.id).get() (NO .limit(1)), filtered to the existing CONFIRMED_TICKET_STATUSES
+      ('paid'/'checked-in'), generating one QR per position via the SAME
+      generateBookingRefQrDataUri (or the injected deps.generateQrDataUri). Fails closed
+      to null if zero positions qualify after filtering.
+      `getConfirmedTicketForDisplay` (existing, single-position) is left UNCHANGED —
+      still the subject of execution/checks/verify_confirmation_page.ts, which stays
+      green untouched.
+
+      app/(marketing)/tickets/confirmation/page.tsx (edited): switches its call from
+      getConfirmedTicketForDisplay(bookingRef) to
+      getConfirmedOrderForDisplay(bookingRef) and renders a LIST — one card per
+      position (attendee name, ticket type, amount, that position's own QR, own
+      booking ref, own DownloadTicketButton, reused unchanged, keyed by bookingRef) —
+      plus an order-level heading total (sum of positions[].amount) above the list.
+      ConfirmationPoller's polling/pending/not-found states are UNCHANGED.
+    status: pending
+
+  - id: F4
+    name: >-
+      app/api/tickets/itn/route.ts (ONE LINE — see README "Sequencing risk", same
+      caution as F3): once the sibling contract's own F3 changes
+      MarkOrderPaidOutcome.committed:true's shape from `position: {...}` to `positions:
+      {...}[]`, this route's sendConfirmationEmail(...) call site changes
+      `positions: [outcome.position]` to `positions: outcome.positions` — removing the
+      array-wrapper, nothing else. lib/confirmation-email.ts and
+      emails/OrderConfirmation.tsx are ALREADY forward-compatible with multiple
+      positions (found already built, not added by this contract) — NOT modified.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-multi-line-item-cart-ui/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        lib/cart.ts is added and components/tickets/*, lib/orders.ts,
+        app/(marketing)/tickets/confirmation/page.tsx, and
+        app/api/tickets/itn/route.ts are edited.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        computeCartTotal()/cartItemCount() price and count ONLY from the `types` array
+        handed to them — no hidden second price source. Cases: basic multi-type sum;
+        THE CORE PROOF — changing a price in the types array (simulating a real Sanity
+        price update) changes the computed total accordingly; a free (price 0) type
+        contributes 0 without erroring; a zeroed-quantity type contributes nothing; an
+        unknown slug (present in quantities, absent from types) is excluded from the
+        total, proven by exact equality against the same cart with that entry removed.
+        Named defeating mutation: a hardcoded PRICES table used instead of, or in
+        addition to, the types array argument.
+      command: >-
+        npx tsx contracts/checks/ticketing-multi-line-item-cart-ui/check-cart-total-and-expansion.mjs
+
+    - id: A3
+      description: >-
+        buildLineItemsFromCart() expands a cart deterministically, pairs each unit with
+        its OWN attendee row in order, and THROWS on a mismatched attendee-row count
+        rather than silently padding/truncating the cart. Cases: basic multi-type
+        expansion; deterministic output across repeated calls with freshly-built
+        (non-reused-reference) inputs; the throw case (1 attendee row supplied for
+        quantity 2). Negative control: a genuinely valid single-item cart succeeds.
+        Named defeating mutation: silently reusing the first attendee row to fill a
+        missing one, which would submit a real position with the WRONG attendee's name
+        and email attached to it.
+      command: >-
+        npx tsx contracts/checks/ticketing-multi-line-item-cart-ui/check-cart-total-and-expansion.mjs
+
+    - id: A4
+      description: >-
+        getConfirmedOrderForDisplay() (lib/orders.ts) returns EVERY paid position of a
+        multi-position order (proven for a 3-position fixture with mixed 'paid'/
+        'checked-in' status, each carrying its own distinct QR), resolves through the
+        ORDER (m_payment_id), not a single position document. Negative control: a
+        genuine single-position order (today's only real shape) still resolves to
+        exactly one position — no regression to the live path. Fail-closed control: an
+        unpaid ('reserved') order resolves to null, same posture as the existing
+        single-position function's status gate. Named defeating mutation: keeping the
+        confirmation page on the existing single-position lookup, which does not error
+        for a multi-item order's reference — it just silently shows one ticket and never
+        surfaces that more exist.
+      command: >-
+        npx tsx contracts/checks/ticketing-multi-line-item-cart-ui/check-confirmation-shows-all-positions.mjs
+
+    - id: A5
+      description: pnpm lint passes with zero errors after all changes.
+      command: pnpm lint

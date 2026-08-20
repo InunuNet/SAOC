@@ -1,0 +1,73 @@
+schema: athanor.contract/v1
+slug: ticketing-line-item-cap-drift-guard
+goal: >-
+  Mission multi-line-item-cart follow-up. lib/cart.ts currently declares its own local
+  CART_MAX_LINE_ITEMS = 20, independently of app/api/tickets/checkout/route.ts's
+  MAX_LINE_ITEMS = 20 — a documented, deliberate workaround (a client component cannot
+  import a VALUE from the route module, which pulls firebase-admin/Sanity into the
+  bundle) but a silent-drift defect waiting to happen: raise the server's cap and the
+  client keeps blocking at the old number, refusing a legitimate purchase for no visible
+  reason. This contract extracts the constant into the existing client-safe
+  lib/tickets-constants.ts, has both the route and lib/cart.ts import it, and pins an
+  assertion that fails the moment the two ever diverge — proven by runtime value
+  equality AND TypeScript-AST-verified import presence (never a text grep for the
+  literal 20, which would miss a divergent literal or a deleted import). Full decision
+  record, the two named traps this assertion is designed around, and the detector
+  self-test proving it discriminates before it judges the real files:
+  contracts/golden/ticketing-line-item-cap-drift-guard/README.md.
+created_at: '2026-08-20'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      lib/tickets-constants.ts (additive): `export const MAX_LINE_ITEMS = 20;` — moved
+      here from app/api/tickets/checkout/route.ts, same value, new JSDoc explaining this
+      is a resource-exhaustion ceiling and NOT the council's 5-tickets-per-booking
+      business rule (mission F6/Stage 4, unrelated).
+
+      app/api/tickets/checkout/route.ts (edited): the local `export const
+      MAX_LINE_ITEMS = 20;` declaration is REMOVED and replaced with `import {
+      MAX_LINE_ITEMS } from '@/lib/tickets-constants';`. parseLineItems()'s existing
+      use of MAX_LINE_ITEMS is otherwise UNCHANGED — same comparison, same position,
+      same behaviour.
+
+      lib/cart.ts (edited): the local `export const CART_MAX_LINE_ITEMS = 20;`
+      declaration's LITERAL is replaced — `import { MAX_LINE_ITEMS } from
+      '@/lib/tickets-constants'; export const CART_MAX_LINE_ITEMS = MAX_LINE_ITEMS;` —
+      keeping the exported NAME stable so components/tickets/useTicketCart.ts needs no
+      change (see README "Why keep the CART_MAX_LINE_ITEMS export name"). If the @dev
+      session implementing this prefers useTicketCart.ts import MAX_LINE_ITEMS directly
+      from lib/tickets-constants.ts instead and drop the re-export, that is an
+      acceptable equivalent — the assertion below is agnostic to which shape is chosen,
+      it only requires lib/cart.ts's exported cap constant to import, not redeclare,
+      the shared symbol.
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-line-item-cap-drift-guard/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        MAX_LINE_ITEMS is single-sourced from lib/tickets-constants.ts. Structural
+        (TypeScript AST, not text grep): lib/tickets-constants.ts declares the sole
+        numeric-literal MAX_LINE_ITEMS; neither lib/cart.ts nor
+        app/api/tickets/checkout/route.ts declares its own numeric-literal cap
+        constant, and both contain an ImportDeclaration naming MAX_LINE_ITEMS from a
+        module specifier resolving to lib/tickets-constants. Runtime: the imported
+        values are equal. Behavioural, self-referential: parseLineItems() accepts
+        exactly MAX_LINE_ITEMS line items and rejects MAX_LINE_ITEMS + 1, using
+        whatever value is currently imported — never a hardcoded 20 anywhere in the
+        check. The two AST detector functions are self-tested against 4 synthetic
+        fixtures (compliant / local-literal-only / unrelated-differently-named-constant
+        / partial-fix-with-a-leftover-shadow-literal) BEFORE being trusted to judge the
+        real files. Named defeating mutations: (a) a grep-for-"20" style check, which
+        would pass even after one file's literal diverges from the other's, or after
+        both imports are deleted while the values coincidentally stay equal; (b) a
+        "partial fix" that adds the import but leaves the old local literal declaration
+        in place (the shadow-literal self-test fixture proves this is caught).
+      command: >-
+        npx tsx contracts/checks/ticketing-line-item-cap-drift-guard/check-single-sourced-cap.mjs
