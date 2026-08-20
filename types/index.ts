@@ -176,6 +176,10 @@ export interface Ticket {
   // have none. See
   // .agent/memory/project/specs/ticketing-position-expiry-write/goldens/README.md.
   expiresAt?: Timestamp | null;
+  // F5 (ticketing-f5-day-attendees) — the buyer's selected show day for a
+  // requiresDaySelection ticket type, null for every other position. Optional/nullable:
+  // every pre-F5 Ticket literal never mentions it and must still compile.
+  chosenDay?: string | null;
 }
 
 // F2 (ticketing-foundation) — an order is never itself "checked-in" (only a position is

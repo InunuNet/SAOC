@@ -155,6 +155,58 @@ export const fetchActiveShowWindow: ShowWindowSource = async () => {
   }
 };
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const CHOSEN_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+// South Africa does not observe DST, so SAST is always a fixed UTC+2 offset.
+const SAST_OFFSET_MS = 2 * 60 * 60 * 1000;
+
+function toUtcDayString(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * F5 (ticketing-f5-day-attendees) — inclusive list of calendar days (SAST-local,
+ * 'YYYY-MM-DD') spanning `window.startDate`..`window.endDate`. Pure: the entire output is
+ * derived from `window` alone. Walks whole SAST calendar days (via each day's midnight,
+ * recovered by shifting each UTC instant by SAST_OFFSET_MS before reading its UTC calendar
+ * day) rather than dividing the millisecond span by MS_PER_DAY, so a window whose start/end
+ * times aren't both exactly midnight still yields the correct calendar-day count.
+ */
+export function computeShowDays(window: ShowWindow): string[] {
+  const days: string[] = [];
+  const startSast = new Date(window.startDate.getTime() + SAST_OFFSET_MS);
+  const endSast = new Date(window.endDate.getTime() + SAST_OFFSET_MS);
+  let cursor = Date.UTC(
+    startSast.getUTCFullYear(),
+    startSast.getUTCMonth(),
+    startSast.getUTCDate()
+  );
+  const last = Date.UTC(
+    endSast.getUTCFullYear(),
+    endSast.getUTCMonth(),
+    endSast.getUTCDate()
+  );
+
+  while (cursor <= last) {
+    days.push(toUtcDayString(new Date(cursor)));
+    cursor += MS_PER_DAY;
+  }
+
+  return days;
+}
+
+/**
+ * F5 (ticketing-f5-day-attendees) — true iff `chosenDay` is one of
+ * `computeShowDays(window)`'s entries. False for a malformed string (never throws) and
+ * false for a syntactically valid date outside the window, including both boundaries'
+ * immediate neighbours.
+ */
+export function isValidChosenDay(chosenDay: string, window: ShowWindow): boolean {
+  if (!CHOSEN_DAY_PATTERN.test(chosenDay)) return false;
+  return computeShowDays(window).includes(chosenDay);
+}
+
 let productionShowWindowCache: ShowWindowCache | null = null;
 
 /** Module-level singleton backed by `fetchActiveShowWindow` — the TTL bound must apply

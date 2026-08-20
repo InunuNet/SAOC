@@ -1,0 +1,327 @@
+schema: athanor.contract/v1
+slug: ticketing-f5-day-attendees
+goal: >-
+  Mission multi-line-item-cart (F5), milestone M2. Day Visitor line items must carry a
+  chosenDay validated server-side against the ACTIVE show's real startDate/endDate window
+  (lib/show-window-lookup.ts's new computeShowDays()/isValidChosenDay(), reusing the
+  existing ShowWindow/buildShowWindow() primitives, never a hardcoded date). VIP line items
+  get a new, flag-driven (not slug-driven) isNamedAttendeeSatisfied() defense-in-depth check.
+  Both wired into app/api/tickets/checkout/route.ts's existing per-line-item validation pass,
+  ahead of reserveTicket(). The day-picker UI (components/tickets/CartDayPicker.tsx) is
+  provably driven by the show record, not a hardcoded list. No real or placeholder calendar
+  date/day-name is introduced anywhere — every fixture uses an obviously-synthetic 2098/2099
+  date range. Full decision record:
+  contracts/golden/ticketing-f5-day-attendees/README.md.
+created_at: '2026-08-20'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      lib/show-window-lookup.ts (edited, additive only — every existing export
+      (ShowWindowSource/SHOW_WINDOW_CACHE_TTL_MS/ShowWindowCache/parseUtcDatetime/
+      buildShowWindow/fetchActiveShowWindow/getProductionShowWindowCache/
+      resolveShowWindowLookup) UNCHANGED):
+
+      `export function computeShowDays(window: ShowWindow): string[]` — pure. Returns the
+      inclusive list of UTC calendar days ('YYYY-MM-DD') from window.startDate through
+      window.endDate. The result is ENTIRELY a function of `window` — no other input, no
+      literal date/day-name anywhere in the function body.
+
+      `export function isValidChosenDay(chosenDay: string, window: ShowWindow): boolean` —
+      pure. True iff `chosenDay` is one of `computeShowDays(window)`'s entries. False for a
+      malformed string and false for a syntactically valid date outside the window
+      (including the day immediately before startDate and immediately after endDate).
+    status: pending
+
+  - id: F2
+    name: >-
+      lib/checkout-reservation.ts (additive new exports — every existing export from the
+      ticketing-multi-line-item-cart and ticketing-f4-admission-products contracts
+      UNCHANGED):
+
+      `export function isNamedAttendeeSatisfied(requiresAttendeeNames: boolean,
+      attendeeName: string): boolean` — pure. Returns `attendeeName.trim().length > 0`
+      when `requiresAttendeeNames` is true; returns `true` unconditionally when false
+      (not required). Deliberately keyed on the boolean argument alone — never on a
+      ticket-type slug string — so callers stay CMS-data-driven.
+
+      `CheckoutLineItemInputLike` and `LineItemPlan` each gain `chosenDay: string | null`
+      (additive). `buildMultiReservationDocs()` writes `chosenDay: lineItem.chosenDay` onto
+      every position it constructs (`null`, never `undefined`, when the line item carries
+      none).
+    status: pending
+
+  - id: F3
+    name: >-
+      types/index.ts (edited, additive only): `Ticket` gains `chosenDay?: string | null`
+      — optional/nullable, same precedent as `orderId`/`compedBy`/`expiresAt`.
+    status: pending
+
+  - id: F4
+    name: >-
+      sanity/queries.ts + app/api/tickets/checkout/route.ts (edited):
+
+      `ticketTypeBySlugQuery` additionally selects `requiresDaySelection` and
+      `requiresAttendeeNames` (additive — every existing selected field UNCHANGED).
+
+      route.ts switches its active-show lookup from `allShowActivationQuery` to the
+      already-existing `activeShowWindowQuery` (superset: `_id`, `active`, `startDate`,
+      `endDate`) — `resolveActiveShow()` itself is UNCHANGED, only which query feeds it
+      changes. The route then calls the EXISTING `buildShowWindow()` (imported from
+      lib/show-window-lookup.ts) on the resolved active show's raw fields to obtain a
+      `ShowWindow | null`.
+
+      `SanityTicketType` gains `requiresDaySelection: unknown` and `requiresAttendeeNames:
+      unknown` (same `unknown`-narrowing posture as every other field on this interface).
+      `CheckoutLineItemInput` gains `chosenDay?: string`. `parseLineItems()` accepts an
+      optional `chosenDay` per line item — absent is fine for any type; when present, it
+      must match `/^\d{4}-\d{2}-\d{2}$/` or the WHOLE cart is rejected (400), same
+      one-bad-item-rejects-the-whole-cart posture as the existing attendeeEmail check.
+
+      Inside the existing per-distinct-ticketType loop, capture
+      `requiresDaySelectionByType[slug]`/`requiresAttendeeNamesByType[slug]` from the
+      Sanity doc (boolean-narrowed, `=== true`).
+
+      A NEW per-LINE-ITEM loop (over every `lineItems` entry, not just distinct types —
+      each line item may carry its own chosenDay) runs AFTER the per-type loop and BEFORE
+      `reserveTicket(` is called:
+        - If `requiresDaySelectionByType[lineItem.ticketType]` is true: reject (400) if
+          `chosenDay` is missing or fails the format check already applied in
+          parseLineItems (defense in depth — parseLineItems already rejects a malformed
+          string, this is the "required when the type demands it" half); if the resolved
+          `ShowWindow` is null, refuse with `unusableTicketType(slug, 'showWindow')`'s 500
+          pattern (CMS misconfiguration, not a buyer error) — but ONLY reached for a line
+          item that actually requires a day, never for a cart with no Day Visitor items;
+          otherwise reject (400, distinct message, e.g. "The chosen day is outside the
+          show dates.") if `!isValidChosenDay(chosenDay, showWindow)`.
+        - If `requiresAttendeeNamesByType[lineItem.ticketType]` is true: reject (400,
+          distinct message) if `!isNamedAttendeeSatisfied(true, lineItem.attendeeName)`.
+      Both guards textually precede `reserveTicket(` — same anchor-ordering technique
+      `check-checkout-wiring.sh` already proves for RECOVERY_TOKEN_SECRET/F4's early-bird
+      guard.
+    status: pending
+
+  - id: F5
+    name: >-
+      lib/cart.ts + components/tickets/TicketTypeCard.tsx + components/tickets/
+      CartDayPicker.tsx (NEW) + components/tickets/useTicketCart.ts +
+      app/(marketing)/tickets/page.tsx (edited/new, additive):
+
+      `TicketTypeCardData`/`CartTicketTypeInfo` gain `requiresDaySelection: boolean`
+      (required, not optional — same posture as F4's `provisional`).
+
+      `CartDayPicker.tsx` (new): same shape/precedent as `CartAttendeeFields.tsx` — one
+      `<select>` row per unit, grouped by ticket type, rendered ONLY for
+      `requiresDaySelection` types with `quantity > 0`. Its full list of `<option>` values
+      comes from a `showDays: string[]` prop and NOTHING else — no literal date/day-name
+      inside the component.
+
+      `page.tsx` (server component) fetches `activeShowWindowQuery`, resolves the active
+      show via the existing `resolveActiveShow()`, `buildShowWindow()`s it, and
+      `computeShowDays()`s the result (empty array if null), passing `showDays` down
+      through `TicketPurchaseForm` to `CartDayPicker` — the SAME three functions the
+      checkout route now also calls.
+
+      `lib/cart.ts`'s `buildLineItemsFromCart()` gains a `chosenDayByType: Record<string,
+      string[]>` parameter (additive) and includes each unit's `chosenDay` in its output
+      `CheckoutLineItemInput` (`undefined` when the type doesn't require one), THROWing on
+      a chosenDay-row-count mismatch exactly like the existing attendee-row check.
+      `useTicketCart.ts` gains the corresponding `chosenDayByType` state and an
+      `updateChosenDay(slug, index, value)` setter, following `updateAttendeeField`'s
+      existing pattern.
+    status: pending
+
+  - id: F6
+    name: >-
+      lib/checkout-reservation.ts (additive, Codex GPT-5.5 cross-model gap fixes, added
+      2026-08-20 after 12/12 gated + @qa x2 — see README "Codex GPT-5.5 cross-model gaps"):
+
+      `export function resolveChosenDayForPosition(chosenDay: string | null | undefined,
+      requiresDaySelection: boolean): string | null` — pure. Returns `chosenDay ?? null`
+      when `requiresDaySelection` is true; returns `null` unconditionally when false,
+      regardless of what `chosenDay` was supplied — closes gap 1 (a non-day-selection line
+      item's chosenDay must never reach persistence).
+
+      `lineItemsMatchExistingPositions()`'s composite match key gains `chosenDay` (both
+      the `requested`/`existing` parameter item shapes gain `chosenDay: string | null`,
+      additive) — a divergent `chosenDay` between a replayed request and the positions an
+      idempotency key already produced is now a mismatch, same outcome
+      (`key-payload-mismatch` -> 409) the function already returns for a divergent
+      ticketType/attendeeEmail — closes gap 2. `attendeeName` remains deliberately
+      excluded from the match key, unchanged (pre-existing F1 decision, out of scope —
+      see README for why the two fields are not analogous).
+
+      `app/api/tickets/checkout/route.ts`'s reserveTicket() call routes every line item's
+      chosenDay through `resolveChosenDayForPosition(lineItem.chosenDay,
+      requiresDaySelectionByType[lineItem.ticketType] === true)`, REPLACING the old
+      unconditional `chosenDay: lineItem.chosenDay ?? null` passthrough, textually ahead
+      of reserveTicket( by source position (same anchor-ordering technique as A6).
+    status: pending
+
+goldens:
+  - contracts/golden/ticketing-f5-day-attendees/README.md
+  - contracts/checks/ticketing-f5-day-attendees/tsconfig.typecheck.json
+  - contracts/checks/ticketing-f5-day-attendees/fixtures/f5-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after
+        lib/show-window-lookup.ts, lib/checkout-reservation.ts, types/index.ts,
+        sanity/queries.ts, app/api/tickets/checkout/route.ts, lib/cart.ts,
+        components/tickets/TicketTypeCard.tsx, components/tickets/CartDayPicker.tsx,
+        components/tickets/useTicketCart.ts, and app/(marketing)/tickets/page.tsx are
+        added/edited.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven (not source-grep) proof of the new F5 exported shapes:
+        computeShowDays()/isValidChosenDay() accept the documented ShowWindow-shaped
+        argument and return string[]/boolean; isNamedAttendeeSatisfied() accepts
+        (boolean, string) and returns boolean; TicketTypeCardData requires (not
+        optionally carries) requiresDaySelection (omitting it is rejected via
+        @ts-expect-error).
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticketing-f5-day-attendees/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        computeShowDays() derives its ENTIRE output from the ShowWindow argument alone —
+        proven against two disjoint, obviously-synthetic date ranges (2099-01-01..
+        2099-01-04 and 2098-11-05..2098-11-07): the exact expected day list for each, and
+        that the two outputs are DIFFERENT (the negative control ruling out a hardcoded
+        or memoized day list). Also proves the single-day and cross-month-boundary cases,
+        and (6) the SAST-entry/UTC-storage case: a window built from Sanity-style
+        UTC-offset instants representing an SAOC editor's SAST-local single-day entry
+        (2099-09-15T22:00:00.000Z..2099-09-16T21:59:59.999Z, i.e. '16th 00:00'..'16th
+        23:59:59.999' SAST) must report exactly ['2099-09-16'] — not the raw UTC calendar
+        days of the stored instants, which spuriously widens the range to a 2-day span.
+      command: >-
+        npx tsx contracts/checks/ticketing-f5-day-attendees/check-day-list-from-window.mjs
+
+    - id: A4
+      description: >-
+        isValidChosenDay() accepts every day strictly inside a synthetic window, accepts
+        both boundary days (startDate's day and endDate's day themselves), rejects the day
+        immediately before startDate and the day immediately after endDate (off-by-one at
+        both edges), and rejects a malformed chosenDay string outright.
+      command: >-
+        npx tsx contracts/checks/ticketing-f5-day-attendees/check-chosen-day-validation.mjs
+
+    - id: A5
+      description: >-
+        isNamedAttendeeSatisfied() is flag-driven, not slug-driven: requiresAttendeeNames
+        true + empty/whitespace-only name -> false; true + non-empty name -> true; false +
+        empty name -> true (not required). Proven with a synthetic ticket-type slug that
+        is NOT 'vip', ruling out a hardcoded-slug implementation as the thing actually
+        satisfying this check.
+      command: >-
+        npx tsx contracts/checks/ticketing-f5-day-attendees/check-attendee-name-requirement.mjs
+
+    - id: A6
+      description: >-
+        app/api/tickets/checkout/route.ts actually WIRES computeShowDays()/
+        isValidChosenDay()/isNamedAttendeeSatisfied() into its validation pass, reads
+        requiresDaySelection/requiresAttendeeNames from the fetched ticketType doc, uses
+        activeShowWindowQuery (not allShowActivationQuery alone) to obtain date fields,
+        and BOTH new guards (the negated isValidChosenDay/isNamedAttendeeSatisfied calls)
+        appear textually BEFORE reserveTicket( is called — proving real enforcement, not
+        a schema field stored and never read.
+      command: >-
+        bash contracts/checks/ticketing-f5-day-attendees/check-checkout-wiring.sh
+
+    - id: A7
+      description: >-
+        sanity/queries.ts's ticketTypeBySlugQuery selects both requiresDaySelection and
+        requiresAttendeeNames, additively (every field the ticketing-f4-admission-products
+        contract already proved present on this query remains present).
+      command: >-
+        npx tsx contracts/checks/ticketing-f5-day-attendees/check-query-fields.mjs
+
+    - id: A8
+      description: >-
+        buildMultiReservationDocs() (lib/checkout-reservation.ts) writes each line item's
+        chosenDay onto its OWN position (not the order, not cross-applied to every
+        position in a mixed cart), writes explicit null (never undefined) for a line item
+        with none, and a mixed cart (one Day Visitor line item with a chosenDay, one
+        Weekend Pass line item without) ends up with exactly one position carrying a
+        non-null chosenDay.
+      command: >-
+        npx tsx contracts/checks/ticketing-f5-day-attendees/check-position-day-fields.mjs
+
+    - id: A9
+      description: >-
+        components/tickets/CartDayPicker.tsx renders day options that CHANGE when its
+        showDays prop changes — proven via react-dom/server against two disjoint synthetic
+        showDays arrays in the SAME check run (the negative control ruling out a hardcoded
+        day list) — and renders NO picker at all for a ticket type whose
+        requiresDaySelection is false, in the same run.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-f5-day-attendees/check-day-picker-ui-gated.mjs
+
+    - id: A10
+      description: >-
+        No regression to already-gated invariants: planCapacity() still aggregates
+        per-type demand across the whole cart, buildMultiReservationDocs()/
+        writeMultiReservationPair() still write N positions atomically all-or-nothing, and
+        effectiveCapacity()/isWithinEarlyBirdWindow() (F4) are unchanged by F5's edits to
+        the same file. Re-runs the multi-line-item-cart and F4 contracts' own proven
+        checks unmodified — a real regression in any of these functions fails these
+        exactly as it would have failed the original contracts.
+      command: >-
+        npx tsx contracts/checks/ticketing-multi-line-item-cart/check-plan-capacity-aggregates.mjs
+        && npx tsx contracts/checks/ticketing-multi-line-item-cart/check-multi-write-atomicity.mjs
+        && npx tsx contracts/checks/ticketing-f4-admission-products/check-effective-capacity.mjs
+        && npx tsx contracts/checks/ticketing-f4-admission-products/check-early-bird-window.mjs
+
+    - id: A11
+      description: >-
+        No real or placeholder calendar date or day-name leaked into this feature's own
+        source, checks, fixtures, or golden README — greps this contract's own check/
+        fixture/golden files for the specific placeholder date range
+        ('2027-09-1[6-9]'/'18-21 September'/'Thu(rsday)?-Sun(day)?' as a literal
+        show-date claim) and fails if found, so a future edit to this contract cannot
+        silently reintroduce the exact incident this feature's README documents avoiding.
+      command: >-
+        bash contracts/checks/ticketing-f5-day-attendees/check-no-placeholder-dates.sh
+
+    - id: A12
+      description: pnpm lint passes with zero errors after all changes.
+      command: pnpm lint
+
+    - id: A13
+      description: >-
+        Codex GPT-5.5 cross-model gap 1 (added 2026-08-20). resolveChosenDayForPosition()
+        (lib/checkout-reservation.ts) nulls a supplied chosenDay whenever
+        requiresDaySelection is false, keeps a supplied chosenDay unchanged when true, and
+        stays null when no chosenDay was supplied at all in either case — the pure-function
+        half of closing "chosenDay not nulled for non-day-selection ticket types."
+      command: >-
+        npx tsx contracts/checks/ticketing-f5-day-attendees/check-chosen-day-stripped-for-non-day-types.mjs
+
+    - id: A14
+      description: >-
+        Codex GPT-5.5 cross-model gap 1 (added 2026-08-20), wiring half. app/api/tickets/
+        checkout/route.ts's reserveTicket() call actually routes chosenDay through
+        resolveChosenDayForPosition() — replacing, not sitting alongside, the old
+        unconditional `chosenDay: lineItem.chosenDay ?? null` passthrough — and the call
+        appears textually BEFORE reserveTicket( by source position, same anchor-ordering
+        technique as A6.
+      command: >-
+        bash contracts/checks/ticketing-f5-day-attendees/check-chosen-day-persistence-wiring.sh
+
+    - id: A15
+      description: >-
+        Codex GPT-5.5 cross-model gap 2 (added 2026-08-20). lineItemsMatchExistingPositions()
+        treats a divergent chosenDay between a replayed request and the positions an
+        idempotency key already produced as a mismatch (including a null-vs-concrete
+        divergence), while an identical chosenDay (including both-null, the ordinary
+        non-day-selection case) still matches — closing "idempotency replay comparison
+        ignores chosenDay" without over-reaching into the pre-existing, deliberately
+        unchanged attendeeName exclusion.
+      command: >-
+        npx tsx contracts/checks/ticketing-f5-day-attendees/check-idempotency-replay-honors-chosen-day.mjs

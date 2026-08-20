@@ -55,16 +55,22 @@ const cardData: TicketTypeCardData = {
   description: 'One-day admission at the early-bird rate.',
   soldOut: false,
   provisional: true,
+  requiresDaySelection: false,
 };
 void cardData;
 
 // @ts-expect-error — TicketTypeCardData must require `provisional` (no accidental optionality
-// that would let the UI gate silently degrade to "never show the badge").
+// that would let the UI gate silently degrade to "never show the badge"). `requiresDaySelection`
+// is supplied here (rather than left off too) to keep this isolated to proving ONLY the
+// `provisional` omission errors — same isolation rule this file follows elsewhere (see the
+// `badProvisional` comment above) — so a second, unrelated missing-field error on the same
+// object literal can't mask a future regression that makes `provisional` wrongly optional.
 const cardDataMissingProvisional: TicketTypeCardData = {
   slug: 'day-visitor',
   name: 'Day Visitor Ticket',
   price: 150,
   description: 'Single-day admission.',
   soldOut: false,
+  requiresDaySelection: false,
 };
 void cardDataMissingProvisional;

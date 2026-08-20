@@ -104,7 +104,7 @@ The `FIREBASE_PRIVATE_KEY` contains literal `\n` characters in the JSON — past
 | `events` | Society events and shows — add as Firestore docs |
 | `nationalShows` | Past and upcoming national shows — add as Firestore docs |
 | `contactSubmissions` | Written by the `/api/contact` route — do not edit manually |
-| `orders` / `tickets` | Ticket orders and their positions. Requires a deployed Firestore composite index on `orders(status, expiresAt)` (`firestore.indexes.json`) for `POST /api/admin/reconcile-orders` to query stranded orders — see [docs/order-reconciliation.md](docs/order-reconciliation.md) |
+| `orders` / `tickets` | Ticket orders and their positions. Requires a deployed Firestore composite index on `orders(status, expiresAt)` (`firestore.indexes.json`) for `POST /api/admin/reconcile-orders` to query stranded orders — see [docs/order-reconciliation.md](docs/order-reconciliation.md). Positions carry `chosenDay: string \| null` (F5) validated server-side against the active show's window — see [docs/f5-day-selection-attendees.md](docs/f5-day-selection-attendees.md) |
 | `ticketType` (Sanity) | The five admission products (Early-Bird Exhibition, Day Visitor, Early-Bird Weekend Pass, Weekend Pass, VIP). F4 adds five schema fields: `provisional`, `earlyBirdCutoff`, `releasedQuantity`, `requiresDaySelection`, `requiresAttendeeNames` — see [docs/f4-admission-products.md](docs/f4-admission-products.md) |
 
 ### Admin authorisation

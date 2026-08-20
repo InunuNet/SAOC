@@ -32,6 +32,9 @@ export interface CartTicketTypeInfo {
    *  price source these functions ever read. */
   price: number;
   soldOut: boolean;
+  /** F5 (ticketing-f5-day-attendees) — required, same posture as TicketTypeCardData's own
+   *  field; buildLineItemsFromCart() reads it to decide which types carry a chosenDay. */
+  requiresDaySelection: boolean;
 }
 
 export interface CartAttendee {
@@ -78,11 +81,18 @@ export function cartItemCount(quantities: Record<string, number>): number {
  * THROWS if `attendeesByType[slug]?.length !== quantities[slug]` for any selected type
  * — a mismatched row count is a UI bug and must fail loudly before a POST is ever sent,
  * never silently pad or truncate the cart.
+ *
+ * F5 (ticketing-f5-day-attendees): `chosenDayByType[slug]` pairs each unit with its chosen
+ * day the SAME row-per-unit way `attendeesByType` already does. A slug absent from (or with
+ * an empty array in) `chosenDayByType` — every type that doesn't require a day — produces
+ * `chosenDay: undefined` for its line items; a NON-EMPTY entry whose length doesn't match
+ * the quantity THROWS, the same "UI bug must fail loudly" posture as the attendee check.
  */
 export function buildLineItemsFromCart(
   quantities: Record<string, number>,
   attendeesByType: Record<string, CartAttendee[]>,
-  typesOrder: string[]
+  typesOrder: string[],
+  chosenDayByType: Record<string, string[]> = {}
 ): CheckoutLineItemInput[] {
   const lineItems: CheckoutLineItemInput[] = [];
 
@@ -97,13 +107,30 @@ export function buildLineItemsFromCart(
       );
     }
 
-    for (const attendee of attendees) {
-      lineItems.push({
-        ticketType: slug,
-        attendeeName: attendee.attendeeName,
-        attendeeEmail: attendee.attendeeEmail,
-      });
+    const chosenDays = chosenDayByType[slug] ?? [];
+    if (chosenDays.length > 0 && chosenDays.length !== quantity) {
+      throw new Error(
+        `Chosen-day row count for '${slug}' (${chosenDays.length}) does not match its quantity (${quantity}).`
+      );
     }
+
+    attendees.forEach((attendee, index) => {
+      const chosenDay = chosenDays[index];
+      lineItems.push(
+        chosenDay === undefined
+          ? {
+              ticketType: slug,
+              attendeeName: attendee.attendeeName,
+              attendeeEmail: attendee.attendeeEmail,
+            }
+          : {
+              ticketType: slug,
+              attendeeName: attendee.attendeeName,
+              attendeeEmail: attendee.attendeeEmail,
+              chosenDay,
+            }
+      );
+    });
   }
 
   return lineItems;

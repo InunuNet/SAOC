@@ -39,7 +39,7 @@ fi
 # gateway readiness, RECOVERY_TOKEN_SECRET) — a guard placed after the reservation attempt cannot
 # prevent it.
 GUARD_LINE=$(grep -n '!isWithinEarlyBirdWindow(' "$ROUTE_FILE" | head -1 | cut -d: -f1 || true)
-CALL_LINE=$(grep -n 'reserveTicket(' "$ROUTE_FILE" | head -1 | cut -d: -f1 || true)
+CALL_LINE=$(grep -n 'await reserveTicket(' "$ROUTE_FILE" | head -1 | cut -d: -f1 || true)
 
 if [[ -z "$GUARD_LINE" ]]; then
   echo "FAIL: no negated '!isWithinEarlyBirdWindow(' guard found — the cutoff must actively REFUSE"

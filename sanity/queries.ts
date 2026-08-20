@@ -113,6 +113,9 @@ export const nationalShowSalesQuery = defineQuery(`
 // F4 (multi-line-item-cart, M2): `provisional,` is additive — the public /tickets page gates
 // a visible "provisional" marker on this flag. See
 // contracts/golden/ticketing-f4-admission-products/README.md.
+// F5 (ticketing-f5-day-attendees): `requiresDaySelection,` is additive — the public
+// /tickets page gates CartDayPicker rendering on this flag. See
+// contracts/golden/ticketing-f5-day-attendees/README.md.
 export const activeTicketTypesQuery = defineQuery(`
   *[_type == "ticketType" && active == true] | order(order asc){
     _id,
@@ -124,7 +127,8 @@ export const activeTicketTypesQuery = defineQuery(`
     releasedQuantity,
     order,
     demo,
-    provisional
+    provisional,
+    requiresDaySelection
   }
 `);
 
@@ -132,6 +136,9 @@ export const activeTicketTypesQuery = defineQuery(`
 // checkout's per-ticketType loop enforces both server-side via effectiveCapacity()/
 // isWithinEarlyBirdWindow(). See
 // contracts/golden/ticketing-f4-admission-products/README.md.
+// F5 (ticketing-f5-day-attendees): `requiresDaySelection,`/`requiresAttendeeNames,` are
+// additive — checkout's per-line-item loop enforces both server-side. See
+// contracts/golden/ticketing-f5-day-attendees/README.md.
 export const ticketTypeBySlugQuery = defineQuery(`
   *[_type == "ticketType" && slug.current == $slug && active == true][0]{
     _id,
@@ -140,7 +147,9 @@ export const ticketTypeBySlugQuery = defineQuery(`
     capacity,
     show,
     releasedQuantity,
-    earlyBirdCutoff
+    earlyBirdCutoff,
+    requiresDaySelection,
+    requiresAttendeeNames
   }
 `);
 

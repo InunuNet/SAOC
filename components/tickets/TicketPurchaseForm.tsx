@@ -2,6 +2,7 @@
 
 import { TicketTypeCard, type TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
 import { CartAttendeeFields } from '@/components/tickets/CartAttendeeFields';
+import { CartDayPicker } from '@/components/tickets/CartDayPicker';
 import { CheckoutRedirectNotice } from '@/components/tickets/CheckoutRedirectNotice';
 import { useTicketCart } from '@/components/tickets/useTicketCart';
 
@@ -9,9 +10,15 @@ interface TicketPurchaseFormProps {
   ticketTypes: TicketTypeCardData[];
   buyButtonLabel: string;
   soldOutMessage: string;
+  showDays: string[];
 }
 
-export function TicketPurchaseForm({ ticketTypes, buyButtonLabel, soldOutMessage }: TicketPurchaseFormProps) {
+export function TicketPurchaseForm({
+  ticketTypes,
+  buyButtonLabel,
+  soldOutMessage,
+  showDays,
+}: TicketPurchaseFormProps) {
   const cart = useTicketCart(ticketTypes);
 
   if (cart.redirect) {
@@ -52,6 +59,16 @@ export function TicketPurchaseForm({ ticketTypes, buyButtonLabel, soldOutMessage
         errors={cart.attendeeErrors}
         disabled={cart.status === 'submitting'}
         onAttendeeChange={cart.updateAttendeeField}
+      />
+
+      <CartDayPicker
+        ticketTypes={ticketTypes}
+        quantities={cart.quantities}
+        showDays={showDays}
+        chosenDayByType={cart.chosenDayByType}
+        errors={cart.chosenDayErrors}
+        disabled={cart.status === 'submitting'}
+        onChosenDayChange={cart.updateChosenDay}
       />
 
       {cart.cartError ? (

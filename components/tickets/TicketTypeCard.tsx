@@ -15,6 +15,10 @@ export interface TicketTypeCardData {
    *  flag-gated, observably". Required (not optional) so the UI gate can never silently
    *  degrade to "never show the badge". */
   provisional: boolean;
+  /** F5 (ticketing-f5-day-attendees) — gates CartDayPicker rendering for this type.
+   *  Required (not optional), same posture as `provisional`, so the day-picker gate can
+   *  never silently degrade to "never render". */
+  requiresDaySelection: boolean;
 }
 
 interface TicketTypeCardProps {

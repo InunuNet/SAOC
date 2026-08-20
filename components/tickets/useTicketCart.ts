@@ -14,8 +14,9 @@ import {
   type CartAttendee,
 } from '@/lib/cart';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
-import { emptyAttendee, validateAttendees } from '@/components/tickets/cartValidation';
+import { emptyAttendee, validateAttendees, validateChosenDays } from '@/components/tickets/cartValidation';
 import type { AttendeeFieldErrors } from '@/components/tickets/CartAttendeeFields';
+import type { DayPickerErrors } from '@/components/tickets/CartDayPicker';
 import type { TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
 
 export type CheckoutStatus = 'idle' | 'submitting' | 'error';
@@ -30,6 +31,8 @@ export function useTicketCart(ticketTypes: TicketTypeCardData[]) {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [attendeesByType, setAttendeesByType] = useState<Record<string, CartAttendee[]>>({});
   const [attendeeErrors, setAttendeeErrors] = useState<AttendeeFieldErrors>({});
+  const [chosenDayByType, setChosenDayByType] = useState<Record<string, string[]>>({});
+  const [chosenDayErrors, setChosenDayErrors] = useState<DayPickerErrors>({});
   const [cartError, setCartError] = useState('');
   const [status, setStatus] = useState<CheckoutStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -47,6 +50,17 @@ export function useTicketCart(ticketTypes: TicketTypeCardData[]) {
       const additional = Array.from({ length: quantity - current.length }, emptyAttendee);
       return { ...prev, [slug]: [...current, ...additional] };
     });
+
+    const type = ticketTypes.find((t) => t.slug === slug);
+    if (type?.requiresDaySelection) {
+      setChosenDayByType((prev) => {
+        const current = prev[slug] ?? [];
+        if (quantity === current.length) return prev;
+        if (quantity < current.length) return { ...prev, [slug]: current.slice(0, quantity) };
+        const additional = Array.from({ length: quantity - current.length }, () => '');
+        return { ...prev, [slug]: [...current, ...additional] };
+      });
+    }
   }
 
   function updateAttendeeField(slug: string, index: number, field: keyof CartAttendee, value: string) {
@@ -56,12 +70,21 @@ export function useTicketCart(ticketTypes: TicketTypeCardData[]) {
     });
   }
 
+  function updateChosenDay(slug: string, index: number, value: string) {
+    setChosenDayByType((prev) => {
+      const rows = prev[slug] ?? [];
+      return { ...prev, [slug]: rows.map((row, i) => (i === index ? value : row)) };
+    });
+  }
+
   async function submit() {
     if (status === 'submitting') return;
 
     setCartError('');
     const rowErrors = validateAttendees(ticketTypes, quantities, attendeesByType);
     setAttendeeErrors(rowErrors);
+    const dayErrors = validateChosenDays(ticketTypes, quantities, chosenDayByType);
+    setChosenDayErrors(dayErrors);
 
     const itemCount = cartItemCount(quantities);
     if (itemCount === 0) {
@@ -72,11 +95,11 @@ export function useTicketCart(ticketTypes: TicketTypeCardData[]) {
       setCartError(`Please select at most ${CART_MAX_LINE_ITEMS} tickets.`);
       return;
     }
-    if (Object.keys(rowErrors).length > 0) return;
+    if (Object.keys(rowErrors).length > 0 || Object.keys(dayErrors).length > 0) return;
 
     let lineItems: CheckoutLineItemInput[];
     try {
-      lineItems = buildLineItemsFromCart(quantities, attendeesByType, typesOrder);
+      lineItems = buildLineItemsFromCart(quantities, attendeesByType, typesOrder, chosenDayByType);
     } catch {
       setCartError('Something is off with your ticket selection. Please review your entries and try again.');
       return;
@@ -115,6 +138,8 @@ export function useTicketCart(ticketTypes: TicketTypeCardData[]) {
     quantities,
     attendeesByType,
     attendeeErrors,
+    chosenDayByType,
+    chosenDayErrors,
     cartError,
     status,
     errorMessage,
@@ -122,6 +147,7 @@ export function useTicketCart(ticketTypes: TicketTypeCardData[]) {
     estimatedTotal: computeCartTotal(quantities, ticketTypes),
     updateQuantity,
     updateAttendeeField,
+    updateChosenDay,
     submit,
   };
 }

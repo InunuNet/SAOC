@@ -6,10 +6,13 @@ import {
   aggregateRequestedQuantities,
   buildMultiReservationDocs,
   effectiveCapacity,
+  isNamedAttendeeSatisfied,
   isWithinEarlyBirdWindow,
   lineItemsMatchExistingPositions,
   planCapacity,
+  resolveChosenDayForPosition,
   writeMultiReservationPair,
+  type CheckoutLineItemInputLike,
   type LineItemPlan,
 } from '@/lib/checkout-reservation';
 import { initAdmin } from '@/lib/firebase-admin';
@@ -17,9 +20,10 @@ import { ORDERS_COLLECTION } from '@/lib/orders';
 import { paymentProvider } from '@/lib/payments';
 import type { ProviderReadiness } from '@/lib/payments';
 import { mintRecoveryToken } from '@/lib/recovery-token';
+import { buildShowWindow, isValidChosenDay } from '@/lib/show-window-lookup';
 import { client } from '@/sanity/lib/client';
 import {
-  allShowActivationQuery,
+  activeShowWindowQuery,
   nationalShowSalesQuery,
   ticketTypeBySlugQuery,
   ticketsPageQuery,
@@ -95,6 +99,8 @@ interface SanityTicketType {
   show: { _ref: string } | null | undefined;
   releasedQuantity: unknown;
   earlyBirdCutoff: unknown;
+  requiresDaySelection: unknown;
+  requiresAttendeeNames: unknown;
 }
 
 // F1 (ticketing-foundation): the currently sellable `show`, per resolveActiveShow()'s
@@ -156,7 +162,7 @@ function isUsableEarlyBirdCutoff(value: unknown): value is string | null {
  */
 function unusableTicketType(
   slug: string,
-  field: 'capacity' | 'price' | 'show' | 'releasedQuantity' | 'earlyBirdCutoff'
+  field: 'capacity' | 'price' | 'show' | 'releasedQuantity' | 'earlyBirdCutoff' | 'showWindow'
 ): NextResponse {
   console.error(
     `[tickets/checkout] ticketType '${slug}' has an unusable ${field}; refusing before any Firestore write.`
@@ -180,13 +186,19 @@ export interface CheckoutLineItemInput {
   ticketType: string;
   attendeeName: string;
   attendeeEmail: string;
+  /** F5 (ticketing-f5-day-attendees) — absent is fine for any type; when present, must
+   *  match CHOSEN_DAY_PATTERN or the whole cart is rejected. */
+  chosenDay?: string;
 }
+
+const CHOSEN_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Pure — no Firestore, no Sanity, no network. Returns null for: not an array; length 0;
  * length > MAX_LINE_ITEMS; or ANY single item failing the per-field rules (non-empty
- * ticketType, non-empty attendeeName, EMAIL_PATTERN-valid attendeeEmail) — one bad item
- * rejects the WHOLE cart, never silently drops it and proceeds with the rest.
+ * ticketType, non-empty attendeeName, EMAIL_PATTERN-valid attendeeEmail, and — when
+ * present — CHOSEN_DAY_PATTERN-valid chosenDay) — one bad item rejects the WHOLE cart,
+ * never silently drops it and proceeds with the rest.
  */
 export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_LINE_ITEMS) {
@@ -197,7 +209,7 @@ export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
   for (const entry of raw) {
     if (typeof entry !== 'object' || entry === null) return null;
     const candidate = entry as Record<string, unknown>;
-    const { ticketType, attendeeName, attendeeEmail } = candidate;
+    const { ticketType, attendeeName, attendeeEmail, chosenDay } = candidate;
     if (
       typeof ticketType !== 'string' ||
       ticketType.trim().length === 0 ||
@@ -208,7 +220,14 @@ export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
     ) {
       return null;
     }
-    lineItems.push({ ticketType, attendeeName, attendeeEmail });
+    if (chosenDay !== undefined && (typeof chosenDay !== 'string' || !CHOSEN_DAY_PATTERN.test(chosenDay))) {
+      return null;
+    }
+    lineItems.push(
+      chosenDay === undefined
+        ? { ticketType, attendeeName, attendeeEmail }
+        : { ticketType, attendeeName, attendeeEmail, chosenDay }
+    );
   }
   return lineItems;
 }
@@ -241,7 +260,7 @@ type ReservationOutcome =
 
 interface ReservationInput {
   showId: string;
-  lineItems: CheckoutLineItemInput[];
+  lineItems: CheckoutLineItemInputLike[];
   amountByType: Record<string, number>;
   capacityByType: Record<string, number>;
   idempotencyKey: string;
@@ -328,11 +347,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // capacity/price checks below. resolveActiveShow() fails closed to null, so a stale
   // ticket type (or a ticket type predating the `show` reference field) is refused
   // rather than silently sold against the wrong show.
-  let allShows: { _id: string; active: boolean | null }[];
+  // F5 (ticketing-f5-day-attendees): activeShowWindowQuery replaces allShowActivationQuery
+  // — same activation fields PLUS startDate/endDate, so this is one Sanity round-trip for
+  // show-activation state, not two. resolveActiveShow() itself is unchanged.
+  let allShows: { _id: string; active: boolean | null; startDate?: unknown; endDate?: unknown }[];
   try {
-    allShows = (await client.fetch<{ _id: string; active: boolean | null }[]>(
-      allShowActivationQuery
-    )) ?? [];
+    allShows =
+      (await client.fetch<
+        { _id: string; active: boolean | null; startDate?: unknown; endDate?: unknown }[]
+      >(activeShowWindowQuery)) ?? [];
   } catch (error) {
     console.error('[tickets/checkout] Failed to fetch show activation state:', error);
     return NextResponse.json(
@@ -341,6 +364,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
   const activeShowId = resolveActiveShow(allShows);
+  const activeShowDoc = activeShowId ? allShows.find((show) => show._id === activeShowId) : null;
+  const showWindow = buildShowWindow(activeShowDoc ?? null);
 
   // ticketing-multi-line-item-cart (F2): one Sanity fetch PER DISTINCT ticketType the cart
   // references (dedupe by slug — two line items of the same type fetch its Sanity doc
@@ -349,6 +374,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const distinctTicketTypes = [...new Set(lineItems.map((lineItem) => lineItem.ticketType))];
   const amountByType: Record<string, number> = {};
   const capacityByType: Record<string, number> = {};
+  // F5 (ticketing-f5-day-attendees): captured per distinct type, enforced per LINE item below
+  // (a line item's own chosenDay is what's being validated, not the type as a whole).
+  const requiresDaySelectionByType: Record<string, boolean> = {};
+  const requiresAttendeeNamesByType: Record<string, boolean> = {};
 
   for (const slug of distinctTicketTypes) {
     let ticketTypeDoc: SanityTicketType | null;
@@ -387,6 +416,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // with planCapacity()/aggregateRequestedQuantities(), neither of which changes.
     amountByType[slug] = price;
     capacityByType[slug] = effectiveCapacity(capacity, releasedQuantity);
+    requiresDaySelectionByType[slug] = ticketTypeDoc.requiresDaySelection === true;
+    requiresAttendeeNamesByType[slug] = ticketTypeDoc.requiresAttendeeNames === true;
 
     // F4: a closed early-bird window refuses the WHOLE cart, same "any one bad type refuses
     // the whole request" posture as the capacity/price/show checks above — with a 409 (a
@@ -397,6 +428,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: 'Early-bird pricing for this ticket type has closed.' },
         { status: 409 }
       );
+    }
+  }
+
+  // F5 (ticketing-f5-day-attendees): a NEW per-LINE-ITEM validation pass — every line item,
+  // not just distinct types, since each line item may carry its own chosenDay — ahead of the
+  // reservation attempt below. A stored-but-ignored requiresDaySelection/requiresAttendeeNames
+  // flag is the same failure mode F4's non-negotiable #4 already ruled out for this route.
+  for (const lineItem of lineItems) {
+    if (requiresDaySelectionByType[lineItem.ticketType]) {
+      if (!lineItem.chosenDay) {
+        return NextResponse.json(
+          { error: 'A day selection is required for this ticket type.' },
+          { status: 400 }
+        );
+      }
+      if (!showWindow) {
+        return unusableTicketType(lineItem.ticketType, 'showWindow');
+      }
+      if (!isValidChosenDay(lineItem.chosenDay, showWindow)) {
+        return NextResponse.json(
+          { error: 'The chosen day is outside the show dates.' },
+          { status: 400 }
+        );
+      }
+    }
+    if (requiresAttendeeNamesByType[lineItem.ticketType]) {
+      if (!isNamedAttendeeSatisfied(true, lineItem.attendeeName)) {
+        return NextResponse.json(
+          { error: 'An attendee name is required for this ticket type.' },
+          { status: 400 }
+        );
+      }
     }
   }
 
@@ -452,6 +515,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         ticketType: lineItem.ticketType,
         attendeeName: lineItem.attendeeName.trim(),
         attendeeEmail: lineItem.attendeeEmail.trim().toLowerCase(),
+        chosenDay: resolveChosenDayForPosition(
+          lineItem.chosenDay,
+          requiresDaySelectionByType[lineItem.ticketType]
+        ),
       })),
       amountByType,
       capacityByType,
@@ -584,12 +651,14 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         const requested = input.lineItems.map((lineItem) => ({
           ticketType: lineItem.ticketType,
           attendeeEmail: lineItem.attendeeEmail,
+          chosenDay: lineItem.chosenDay,
         }));
         const existing = duplicate.docs.map((doc) => {
           const data = doc.data();
           return {
             ticketType: data['ticketType'] as string,
             attendeeEmail: data['attendeeEmail'] as string,
+            chosenDay: (data['chosenDay'] as string | null | undefined) ?? null,
           };
         });
 
@@ -653,6 +722,7 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         attendeeEmail: lineItem.attendeeEmail,
         amount: input.amountByType[lineItem.ticketType],
         bookingRef: generateBookingRef(),
+        chosenDay: lineItem.chosenDay,
       }));
       const reference = lineItemPlans[0].bookingRef;
 

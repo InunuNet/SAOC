@@ -62,6 +62,7 @@ const linePlan: LineItemPlan = {
   attendeeEmail: 'attendee@example.com',
   amount: 130,
   bookingRef: 'SAOC-2027-TYPECHECK01',
+  chosenDay: null,
 };
 
 const input: BuildMultiReservationDocsInput = {

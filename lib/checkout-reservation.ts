@@ -125,6 +125,8 @@ export interface CheckoutLineItemInputLike {
   ticketType: string;
   attendeeName: string;
   attendeeEmail: string;
+  /** F5 (ticketing-f5-day-attendees) — null when the line item carries no chosen day. */
+  chosenDay: string | null;
 }
 
 export interface LineItemPlan {
@@ -135,6 +137,8 @@ export interface LineItemPlan {
   amount: number;
   /** This position's OWN door code — distinct per line item, always. */
   bookingRef: string;
+  /** F5 (ticketing-f5-day-attendees) — null when this line item carries no chosen day. */
+  chosenDay: string | null;
 }
 
 /**
@@ -182,13 +186,16 @@ export function planCapacity(input: {
  * probe) is exactly the defect this exists to rule out.
  */
 export function lineItemsMatchExistingPositions(
-  requested: { ticketType: string; attendeeEmail: string }[],
-  existing: { ticketType: string; attendeeEmail: string }[]
+  requested: { ticketType: string; attendeeEmail: string; chosenDay: string | null }[],
+  existing: { ticketType: string; attendeeEmail: string; chosenDay: string | null }[]
 ): boolean {
   if (requested.length !== existing.length) return false;
 
-  const toKey = (item: { ticketType: string; attendeeEmail: string }): string =>
-    `${item.ticketType}\u0000${item.attendeeEmail}`;
+  const toKey = (item: {
+    ticketType: string;
+    attendeeEmail: string;
+    chosenDay: string | null;
+  }): string => `${item.ticketType}\u0000${item.attendeeEmail}\u0000${item.chosenDay ?? ''}`;
 
   const remainingByKey = new Map<string, number>();
   for (const item of existing) {
@@ -278,6 +285,7 @@ export function buildMultiReservationDocs(
       compedBy: null,
       expiresAt: input.expiresAt,
       idempotencyKey: input.idempotencyKey,
+      chosenDay: lineItem.chosenDay,
     })
   );
 
@@ -334,4 +342,39 @@ export function isWithinEarlyBirdWindow(
   const cutoffEndExclusive = new Date(cutoffIso);
   cutoffEndExclusive.setUTCDate(cutoffEndExclusive.getUTCDate() + 1);
   return now.getTime() < cutoffEndExclusive.getTime();
+}
+
+// ---------------------------------------------------------------------------------------------
+// ticketing-f5-day-attendees (F5) — additive pure export. See
+// contracts/golden/ticketing-f5-day-attendees/README.md for the full decision record.
+// Every export above this point is UNCHANGED; nothing below repurposes it.
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Pure, flag-driven (never slug-driven): true when `requiresAttendeeNames` is false (a name
+ * is never required), or when it is true AND `attendeeName` has non-whitespace content.
+ * Deliberately keyed on the boolean argument alone, never on a ticket-type slug string, so a
+ * future second named-attendee product needs only a CMS flag, no code change.
+ */
+export function isNamedAttendeeSatisfied(
+  requiresAttendeeNames: boolean,
+  attendeeName: string
+): boolean {
+  if (!requiresAttendeeNames) return true;
+  return attendeeName.trim().length > 0;
+}
+
+/**
+ * Codex GPT-5.5 cross-model finding (2026-08-20), F5 gap 1. `chosenDay` is meaningful ONLY
+ * for a ticket type with `requiresDaySelection: true` — strips it to null for every other
+ * type rather than persisting whatever the request happened to attach. Silently ignoring
+ * extra data, never rejecting it, matches this feature's existing permissive-on-extra-data
+ * convention (README, "chosenDay: request shape, storage, and validation").
+ */
+export function resolveChosenDayForPosition(
+  chosenDay: string | null | undefined,
+  requiresDaySelection: boolean
+): string | null {
+  if (!requiresDaySelection) return null;
+  return chosenDay ?? null;
 }

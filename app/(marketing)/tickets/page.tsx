@@ -4,11 +4,18 @@ import { PageHero } from '@/components/ui/PageHero';
 import { SalesClosedNotice, TicketPurchaseForm } from '@/components/tickets';
 import type { TicketTypeCardData } from '@/components/tickets';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { activeTicketTypesQuery, nationalShowSalesQuery, ticketsPageQuery } from '@/sanity/queries';
+import {
+  activeShowWindowQuery,
+  activeTicketTypesQuery,
+  nationalShowSalesQuery,
+  ticketsPageQuery,
+} from '@/sanity/queries';
 import { getSoldCountsByTicketType } from '@/lib/data/tickets';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { filterPubliclyListableTicketTypes } from '@/lib/demo-ticket-type';
 import { effectiveCapacity } from '@/lib/checkout-reservation';
+import { buildShowWindow, computeShowDays } from '@/lib/show-window-lookup';
+import { resolveActiveShow } from '@/lib/show-resolution';
 
 // This page calls getSoldCountsByTicketType() (lib/data/tickets.ts), which uses the
 // Firebase Admin SDK — and FIREBASE_ADMIN_PROJECT_ID/CLIENT_EMAIL/PRIVATE_KEY are
@@ -43,10 +50,18 @@ interface SanityTicketType {
   order: number;
   demo?: boolean | null;
   provisional?: boolean | null;
+  requiresDaySelection?: boolean | null;
 }
 
 interface SalesState {
   salesOpen?: boolean | null;
+}
+
+interface SanityShowActivation {
+  _id: string;
+  active: boolean | null;
+  startDate?: unknown;
+  endDate?: unknown;
 }
 
 // Static fallbacks — the seed script always populates these, but a page render
@@ -58,14 +73,26 @@ const FALLBACK_SOLD_OUT = 'Sold out';
 const FALLBACK_SALES_CLOSED = 'Ticket sales are not yet open — check back soon.';
 
 export default async function TicketsPage() {
-  const [pageData, salesState, ticketTypes] = await Promise.all([
+  const [pageData, salesState, ticketTypes, allShows] = await Promise.all([
     sanityFetch<TicketsPageData>({ query: ticketsPageQuery, tags: ['ticketsPage', 'sanity'] }),
     sanityFetch<SalesState>({ query: nationalShowSalesQuery, tags: ['nationalShow', 'sanity'] }),
     sanityFetch<SanityTicketType[]>({
       query: activeTicketTypesQuery,
       tags: ['ticketType', 'sanity'],
     }),
+    sanityFetch<SanityShowActivation[]>({
+      query: activeShowWindowQuery,
+      tags: ['show', 'sanity'],
+    }),
   ]);
+
+  // F5 (ticketing-f5-day-attendees): the SAME resolveActiveShow()/buildShowWindow()/
+  // computeShowDays() the checkout route calls — one computation, two call sites — so the
+  // days shown here and the days the server accepts can never independently drift.
+  const activeShowId = resolveActiveShow(allShows ?? []);
+  const activeShowDoc = activeShowId ? (allShows ?? []).find((s) => s._id === activeShowId) : null;
+  const showWindow = buildShowWindow(activeShowDoc ?? null);
+  const showDays = showWindow ? computeShowDays(showWindow) : [];
 
   const salesOpen = salesState?.salesOpen === true;
   const title = pageData?.title ?? FALLBACK_TITLE;
@@ -89,6 +116,7 @@ export default async function TicketsPage() {
     description: t.description,
     soldOut: (soldCounts[t.slug] ?? 0) >= effectiveCapacity(t.capacity, t.releasedQuantity),
     provisional: t.provisional === true,
+    requiresDaySelection: t.requiresDaySelection === true,
   }));
   const allSoldOut = cardData.length > 0 && cardData.every((t) => t.soldOut);
 
@@ -113,6 +141,7 @@ export default async function TicketsPage() {
             ticketTypes={cardData}
             buyButtonLabel={buyButtonLabel}
             soldOutMessage={soldOutMessage}
+            showDays={showDays}
           />
         )}
 
