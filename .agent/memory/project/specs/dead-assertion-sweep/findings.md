@@ -64,3 +64,38 @@ A0-ITN-UNTOUCHED, `contract-payfast-m1-residue-cleanup` A12) are known and expec
    ad-hoc missions bypass `mission.py gate` and hand-run `contract.py gate` on each with the
    result recorded durably. `admin-signout-revocation` first, given what A3/A6 guard.
 3. Follow-up sweep of the remaining ~90 contracts' assertion bodies.
+
+---
+
+## Follow-up: `admin-signout-revocation/contract-f1.yaml` re-run 2026-08-20 — PASS, 6/6, all real
+
+Re-run against a freshly-built isolated production server (port 3400 via
+`contracts/checks/admin-auth-hardening/server-ctl.sh`), then each check re-run directly to see
+untruncated output and true exit codes. **No assertion skipped**; all required env vars present,
+so no `skipForMissingCredentials` exit-0-as-pass ambiguity arose.
+
+Each was checked for tonight's failure shapes rather than accepted on its green:
+- **A1** behavioural revocation — re-presents the SAME cookie after DELETE; would fail against
+  dead code or a swallowed error.
+- **A2** unconditional cookie clear — 3 sub-cases (absent / garbage / well-formed fake JWT), each
+  asserting `max-age=0`; catches an implementation that only clears on successful uid resolution.
+- **A3** crafted-uid attack — authenticates as fixture A, sends B's uid in body/query, proves B's
+  cookie still works AND A's own is revoked. A real cross-user probe, not a source grep.
+- **A4** — **deliberately weak by its own description** (presence of a doc comment, not
+  behaviour). Its pass was explicitly NOT treated as strong evidence. Greps re-run by hand and
+  confirmed adjacent to the real call site, not a coincidental match.
+- **A5** handler reads no body/query — verified against route source.
+- **A6** (the Codex 2026-08-19 replay finding) — **the model assertion of the whole corpus.** Both
+  buggy and fixed code return 200 on a replayed revocation, so HTTP status cannot distinguish
+  them. It therefore uses a SECOND INDEPENDENT OBSERVABLE — `tokensValidAfterTime` from the Admin
+  SDK: first DELETE changes it, replay returns 200 but leaves it UNCHANGED. **Measured through a
+  channel the bug cannot fake.** This is the technique the weak assertions in this repo all lack.
+
+**SCOPE CAVEAT — does not transfer.** Every check targeted `http://127.0.0.1:3400`, a locally
+built server from the current working tree. **The DEPLOYED admin surface remains unverified**, and
+the deployed allowlist divergence (parsed length 1 vs 5 local) still blocks that. No secret or
+config was touched.
+
+**Conclusion: the orphan-contract worry was right to raise and wrong in this instance.** Being
+unreachable by `mission.py gate` did not mean stale — this contract is accurate against current
+code. The wiring gap is still real; the assertions behind it are not automatically rotten.
