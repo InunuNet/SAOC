@@ -101,11 +101,22 @@ assertions:
 
     - id: A7
       description: >
-        checkout/route.ts:406 (outbound signing) must remain untouched — still calls
-        generateSignature, not generateNotifySignature. REJECTS a fix that (incorrectly)
-        "unifies" both call sites onto the new inbound function, which would break outbound
-        checkout signing (currently working).
-      command: grep -q "generateSignature(signedFields, passphrase)" /Users/vetus/ai/SAOC/app/api/tickets/checkout/route.ts
+        Outbound checkout signing must still call generateSignature, not
+        generateNotifySignature. REJECTS a fix that (incorrectly) "unifies" both call
+        sites onto the new inbound function, which would break outbound checkout
+        signing (currently working).
+        REPOINTED 2026-08-20: commit 0b39a86 (PaymentProvider seam) legitimately moved
+        this call site out of app/api/tickets/checkout/route.ts and into the PayFast
+        adapter at lib/payments/payfast.ts (now line 231) — the route calls the seam
+        only and no longer contains gateway vocabulary at all (see F2's A1, which pins
+        that absence). This is not a case being fixed to match changed code: the old
+        assertion pinned the call site's PRE-seam location and went red against
+        correct post-seam code, reporting a false regression whose fix-the-check-to-
+        pass would have meant deleting it or restoring signing logic to the route —
+        undoing the seam. The repoint pins the same on-the-wire signing call at its
+        correct home instead. Does not duplicate F2's A1 (route purity): this
+        assertion is about the adapter, not the route.
+      command: grep -q "generateSignature(signedFields, passphrase)" /Users/vetus/ai/SAOC/lib/payments/payfast.ts
 
     - id: A8
       description: >

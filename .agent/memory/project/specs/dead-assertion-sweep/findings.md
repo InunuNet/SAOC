@@ -145,3 +145,33 @@ path they no longer occupy. `discover_route_pins.py` already parses `command:` f
 **Note the ratio: 1 finding in 7 contracts.** The corpus is in better shape than the night's early
 findings implied — the weak assertions cluster in `payfast-m1`, which is also the oldest and most
 frequently amended.
+
+### A7 REPOINTED 2026-08-20 — and the symbol-discovery gap is cheaper to close than expected
+
+`contract-payfast-itn-signature.yaml:102-119` now pins `lib/payments/payfast.ts`. Verified FOUR
+ways, including the one that matters: **the old line was temporarily re-added to the route and the
+new check stayed GREEN** — proving it pins the adapter and cannot be satisfied by route content.
+Also seen red against a real regression (call swapped to `generateNotifySignature`). All probes
+reverted; only the contract file changed.
+
+A5/A6 checked and **NOT stale** — both already target `lib/payments/payfast.ts`. A1-A4/A8 target
+the untouched `lib/payfast.ts` algorithm module the adapter imports from, so they never moved.
+**Only the one call-site pin had drifted.**
+
+### Backlog: symbol-relocation discovery — mechanical half needs ZERO new code
+`discover_route_pins.py` already substring-matches `command:` text, so it works on symbols today.
+Run live:
+- `discover_route_pins.py "generateSignature(signedFields, passphrase)"` -> exactly A7 (the stale one).
+- `discover_route_pins.py "generateSignature"` -> A7 + `payfast-m1` A8, A17; both hand-checked
+  correct. **Surfaces candidates without false-clearing anything**; ~3 hits took under a minute.
+
+Missing for a real gate rather than "someone remembers to grep": (a) a relocation manifest
+`{symbol, moved_from, moved_to}` — cheapest source is the mover's own commit message, which @dev
+already narrates in prose; (b) a classifier treating a CONTENT hit at `moved_from` as hard FAIL,
+`moved_to` as PASS, anything else UNKNOWN-for-review — mirroring the SHA256/DIFF/WORKTREE/CONTENT
+split the script already implements.
+
+**Recommendation: do NOT build a separate tool.** Add `--symbols <manifest.yaml>` to
+`discover_route_pins.py`, reusing its existing `commands()`/`classify()`, and run it at mission
+gate time as a cross-cutting check rather than per-feature. ~40-60 lines. Pairs with the
+`type: codex_qa` assertion kind `workflow.md` records as pulled-but-not-wired.
