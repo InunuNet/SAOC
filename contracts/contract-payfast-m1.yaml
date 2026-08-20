@@ -237,6 +237,29 @@ assertions:
         CI-runnable, no credentials needed) proves transaction.update(docRef, ...) is a
         lexical descendant of the db.runTransaction callback. The behavioural half is
         LOCAL-ONLY, same credential/skip convention as A18.
+
+        DEAD ASSERTION REPAIRED (2026-08-20, dead-assertion-sweep). Scenario 1's third
+        check compared `afterRace?.pf_payment_id === pfPaymentIdAfterWinner` on the
+        position document — unfalsifiable, since F10 moved payment identity to
+        `order.gatewayPaymentId` and nothing writes `position.pf_payment_id`
+        (`buildReservationDocs` only ever initialises it to null), so both sides read
+        null on every run regardless of whether the transaction's idempotency guard held.
+        Verified independently against `lib/orders.ts`, `lib/checkout-reservation.ts`,
+        `lib/comp-tickets.ts` before repair. Repaired to compare `order.gatewayPaymentId`
+        instead (the live field `markOrderAndPositionPaidByPaymentId` actually writes),
+        resolving the sibling order via the position's `orderId`, same pattern scenario 2
+        already used. Observed RED against a scratch mutant of
+        `markOrderAndPositionPaidByPaymentId` with its `order?.status !== 'reserved'`
+        transactional guard disabled (`if (false)` in place of the real check), run via
+        `ITN_ROUTE_IMPORT_OVERRIDE` per the harness's own documented convention — the
+        loser's transaction then overwrote `gatewayPaymentId`, exactly the failure this
+        assertion exists to catch — and GREEN against the real, unmodified route/adapter.
+        No production file (`lib/orders.ts`, `app/api/tickets/`, `lib/payments/`) was
+        edited; the mutant lived only under the gitignored `_mutants/` scratch dir and
+        was removed after the proof. The sibling `purchasedAt` idempotency assertion in
+        this same scenario, and all of scenario 2 (which already asserted
+        `order.gatewayPaymentId` correctly), were live before this repair and are
+        untouched by it.
       command: 'pnpm exec tsx contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts && pnpm exec tsx contracts/checks/payfast-m1/check-paid-write-inside-transaction-scope.mjs'
       timeout_seconds: 150
     - id: A31

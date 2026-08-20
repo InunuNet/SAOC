@@ -175,3 +175,30 @@ split the script already implements.
 `discover_route_pins.py`, reusing its existing `commands()`/`classify()`, and run it at mission
 gate time as a cross-cutting check rather than per-feature. ~40-60 lines. Pairs with the
 `type: codex_qa` assertion kind `workflow.md` records as pulled-but-not-wired.
+
+### A30/A31 REPAIRED 2026-08-20 — the last known dead assertion is closed
+
+`check-itn-atomic-idempotent-write.mts` scenario 1 compared `position.pf_payment_id` on both
+sides. Independently re-verified before repair: the field is initialised to `null` at
+`lib/checkout-reservation.ts:62,78` and `lib/comp-tickets.ts:64` and **never written again**;
+`markOrderAndPositionPaidByPaymentId` (`lib/orders.ts:346-354`) writes
+`{status, gatewayPaymentId, purchasedAt}` to the ORDER and only `{status, purchasedAt}` to the
+position. Null == null on every run.
+
+Now asserts the same property against the live field — the order resolved via the position's
+`orderId` (the pattern scenario 2 already used), checking `order.gatewayPaymentId` still holds the
+winner's value after the race. **The property was always real; only its subject had moved.**
+
+**Proven both directions, live:** control exit 0 (run twice); mutant exit 1 with the loser
+overwriting the winner's `gatewayPaymentId`. Mutant built by copying `route.ts` + `orders.ts` into
+gitignored scratch and neutering the `order?.status !== 'reserved'` guard to `if (false)`, wired
+via `ITN_ROUTE_IMPORT_OVERRIDE`. **No production file touched, even transiently.** Scratch removed;
+`git status` clean apart from the two intended files.
+
+Header prose was also stale and is fixed: it described guards "in route.ts" citing a literal
+(`RESERVED_STATUS`) that does not exist in the ITN route at all — it belongs to `checkout/route.ts`.
+F10/F2 moved both guards into `lib/orders.ts`. The substantive argument was kept.
+
+**Every dead assertion found tonight is now closed:** A18 (payment-seam-f2 suite) removed,
+A18 (payfast-m1) inverted, A7 repointed, A30/A31 repaired — each proven by observing it fail
+first, the standard none of them originally met.

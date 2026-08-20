@@ -9,18 +9,22 @@
 //
 // WHY THIS IS A RACE, NOT A SIMPLE SEQUENTIAL REPLAY (important correction versus the
 // first draft of this check, kept here so nobody "fixes" it back)
-// route.ts has TWO guards, not one: a non-transactional "fast path" read near the top
-// (`if (currentStatus !== RESERVED_STATUS) { ... return; }`), and the transactional
-// re-read inside db.runTransaction that A31 actually names. A sequential replay — call
-// the route, wait for it to fully finish and commit 'paid', THEN call it again with the
-// identical body — is caught entirely by the FAST PATH: the second call's outer,
-// non-transactional read already sees 'paid' and returns before ever reaching the
-// amount check, the server-confirm fetch, or the transaction. Proved empirically: with
-// the transaction's inner re-check deliberately disabled (dropping the
-// `freshSnapshot.data()?.['status'] !== RESERVED_STATUS` guard down to `if (false)`), a
-// sequential-replay version of this check still PASSED — it was not exercising the code
-// the audit asked about. See the report accompanying this task for the actual
-// before/after terminal output.
+// STALE-PROSE NOTE (fixed during the A30/A31 dead-assertion repair): earlier drafts of
+// this comment described both guards as living "in route.ts". F10/F2 moved them: the
+// route (app/api/tickets/itn/route.ts) now only calls lib/orders.ts and branches on the
+// result. There are still TWO guards, not one, just not in this file — a non-transactional
+// "fast path" read (`findReservedOrderByPaymentId`'s `already-settled` result, checked at
+// route.ts step 6) and the transactional re-read inside `markOrderAndPositionPaidByPaymentId`'s
+// `db.runTransaction` callback (`order?.status !== 'reserved'`, lib/orders.ts) that A31
+// actually names. A sequential replay — call the route, wait for it to fully finish and
+// commit 'paid', THEN call it again with the identical body — is caught entirely by the
+// FAST PATH: the second call's outer, non-transactional read already sees the order is no
+// longer 'reserved' and returns before ever reaching the amount check, the server-confirm
+// fetch, or the transaction. Proved empirically: with the transaction's inner re-check
+// deliberately disabled (dropping the `order?.status !== 'reserved'` guard down to
+// `if (false)`), a sequential-replay version of this check still PASSED — it was not
+// exercising the code the audit asked about. See the report accompanying this task for the
+// actual before/after terminal output.
 //
 // The real race the route's own comment describes is CONCURRENT delivery: two ITNs
 // whose non-transactional reads both land before either has committed. This check
@@ -92,12 +96,26 @@ await shared.withCleanup(
     const reqWinner = buildItnRequest({ body: bodyWinner, xff });
     const reqLoser = buildItnRequest({ body: bodyLoser, xff });
 
+    // F10 moved payment identity off the position (`tickets.pf_payment_id`, which
+    // `buildReservationDocs` only ever initialises to null and nothing writes thereafter)
+    // onto `orders.gatewayPaymentId` (lib/orders.ts markOrderAndPositionPaidByPaymentId's
+    // transaction.update(orderRef, ...)). The race property under test — the loser must not
+    // clobber the winner's recorded payment identity — has to be read from the field that is
+    // actually live. Resolve the sibling order ref once, up front, the same way scenario 2
+    // below already does via `positionBefore.orderId`.
+    const positionForOrder1 = await shared.readTicketById(ticketRef1.id);
+    shared.assert(
+      typeof positionForOrder1?.orderId === 'string' && positionForOrder1.orderId.length > 0,
+      'PRECONDITION: fixture position has no orderId — cannot locate its sibling order'
+    );
+    const orderRef1 = shared.db().collection('orders').doc(positionForOrder1.orderId);
+
     let winnerCommittedResolve: () => void;
     const winnerCommitted = new Promise<void>((resolve) => {
       winnerCommittedResolve = resolve;
     });
     let purchasedAtAfterWinner: number | null = null;
-    let pfPaymentIdAfterWinner: string | null = null;
+    let gatewayPaymentIdAfterWinner: string | null = null;
 
     // The shared global-fetch stub distinguishes the two in-flight requests by the
     // pf_payment_id embedded in their posted body. The "loser" (whichever request we
@@ -116,7 +134,9 @@ await shared.withCleanup(
       const winnerDone = POST(reqWinner).then(async (res) => {
         const ticket = await shared.readTicketById(ticketRef1.id);
         purchasedAtAfterWinner = ticket?.purchasedAt?.toMillis?.() ?? null;
-        pfPaymentIdAfterWinner = ticket?.pf_payment_id ?? null;
+        const orderAfterWinner = await orderRef1.get();
+        gatewayPaymentIdAfterWinner =
+          (orderAfterWinner.data()?.['gatewayPaymentId'] as string | undefined) ?? null;
         winnerCommittedResolve();
         return res;
       });
@@ -131,9 +151,10 @@ await shared.withCleanup(
 
     const afterRace = await shared.readTicketById(ticketRef1.id);
     shared.assert(afterRace?.status === 'paid', `after the race the ticket status is '${afterRace?.status}', not 'paid'`);
+    const orderAfterRace = await orderRef1.get();
     shared.assert(
-      afterRace?.pf_payment_id === pfPaymentIdAfterWinner,
-      `the loser's transaction overwrote pf_payment_id after the winner had already committed: expected '${pfPaymentIdAfterWinner}' (the winner's), got '${afterRace?.pf_payment_id}'. A correctly guarded transaction re-reads status inside the transaction and no-ops once it is no longer 'reserved'.`
+      orderAfterRace.data()?.['gatewayPaymentId'] === gatewayPaymentIdAfterWinner,
+      `the loser's transaction overwrote order.gatewayPaymentId after the winner had already committed: expected '${gatewayPaymentIdAfterWinner}' (the winner's), got '${orderAfterRace.data()?.['gatewayPaymentId']}'. A correctly guarded transaction re-reads status inside the transaction and no-ops once it is no longer 'reserved'.`
     );
     shared.assert(
       (afterRace?.purchasedAt?.toMillis?.() ?? null) === purchasedAtAfterWinner,
