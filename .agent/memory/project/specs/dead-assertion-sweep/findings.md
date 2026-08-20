@@ -99,3 +99,49 @@ config was touched.
 **Conclusion: the orphan-contract worry was right to raise and wrong in this instance.** Being
 unreachable by `mission.py gate` did not mean stale — this contract is accurate against current
 code. The wiring gap is still real; the assertions behind it are not automatically rotten.
+
+---
+
+## Second sweep, 2026-08-20 — assertion BODIES, money/admission/auth families
+
+**PARTIAL COVERAGE: 7 of 23 contracts read in full.** NOT read (do not treat as clean):
+`contract-admin-auth-{f3-provisioning,f4-google,f5-federated}.yaml`, `contract-d5-admin-dashboard`,
+`contract-ticketing-f1`..`f9`, `-f11`, `-hardening`, `-m1-m2`, `-show-window-lookup`.
+Next priority: `ticketing-hardening` and `ticketing-m1-m2` (largest, oldest, most surface).
+
+### CONFIRMED — `contract-payfast-itn-signature.yaml:102-108` A7 is red against CORRECT code
+It pins the literal `generateSignature(signedFields, passphrase)` in
+`app/api/tickets/checkout/route.ts`. **Tonight's own commit `0b39a86` moved outbound signing into
+`lib/payments/payfast.ts:231`.** Verified by orchestrator: the grep exits 1.
+
+**Opposite failure direction from the rest of the night** — it hides no defect; it reports a FALSE
+REGRESSION. The danger is that someone "fixes" it by restoring signing into the route, undoing the
+seam.
+
+**How we shipped it: we ran only the payment-seam contracts.** F2's A5b discovers every assertion
+touching the rewired ROUTE FILE — which is why the route's five golden pins were found — but
+nothing does the equivalent for **SYMBOLS THE SEAM MOVED BETWEEN FILES**. `generateSignature` left
+the route; A7 pinned it there; no discovery walked that edge.
+
+**Backlog (assessment requested, build deferred):** a discovery check that, given symbols relocated
+by a change, finds every contract assertion whose `command:` references those symbols alongside a
+path they no longer occupy. `discover_route_pins.py` already parses `command:` fields via YAML.
+
+### Read and SOUND (verified by running commands / git history, not by description text)
+- `contract-admin-auth-hardening` — the strongest in the repo: real HTTP round trips, a genuine
+  negative control (A-NEGCTL-01 proves the probe harness itself CAN fail), fail-closed enumeration
+  over 4 unenumerated states, and A-STATE-02 proving `checkRevoked` is actually wired rather than
+  an unused parameter. It explicitly documents why `contract-d5-admin-dashboard` D5-04 was a
+  false-green grep.
+- `contract-payfast-m1-lock-cleanup-fix` — every behavioural claim pairs with a "prove it can
+  actually fail" step (A3, A10, A14, A19) plus a self-test.
+- `contract-ticketing-checkout-orders` A3-A6 — run directly; pass for the stated reason.
+- `contract-payfast-m1-residue-cleanup` A10 — includes deliberate NEAR-MISS documents that must
+  NOT match. A real negative control.
+- `contract-ticketing-f10-itn-repin` A8 — pin matches `09adc6fc…`. Its *description prose* still
+  cites the old hash `253c15c4…`: stale prose, not a functional defect, since the command checks
+  the live golden file.
+
+**Note the ratio: 1 finding in 7 contracts.** The corpus is in better shape than the night's early
+findings implied — the weak assertions cluster in `payfast-m1`, which is also the oldest and most
+frequently amended.
