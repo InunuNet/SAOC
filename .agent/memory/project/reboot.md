@@ -1,5 +1,9 @@
 # Reboot Context
-_Generated: 2026-08-21T13:21Z_
+_Generated: 2026-08-21T16:00Z_
 
 ## What happened last session
-ticketing-nav-restructure M1 (F1+F2) done, gate 8/8: National Show mega-menu with Tickets chooser + direct Visitor/Exhibitor/Vendor deep links, desktop+mobile; Events naming collision resolved by construction. Two real defects caught and fixed: keyboard focus-escape bug (qa-apex, live interaction) and mobile disclosure missing its own /national-show link (Codex, file read) — second confirmed instance of the two review styles catching different bug classes. Mission Two (Conferences/Workshops categories) intentionally not drafted, blocked on leeann-content-corrections F4 pricing data.
+Shipped and closed ticketing-nav-restructure M1 (commit 3b83471, gate 8/8, qa-apex + Codex both caught real bugs). Drafted but did not dispatch Mission Two (ticketing-conferences-and-events: F1 Conferences, F2 Workshops/Field-Trips/Cocktails, F3 nav extension, F4 checkout wiring) to .agent/memory/project/missions/2026-08-21-ticketing-conferences-and-events.md, status pending. Fixed two unclosed YAML single-quote bugs in that mission's frontmatter (F2 and F4 inline_brief) that broke gh_closure_scan.py and would have broken mission.py activation. active.json still points at leeann-content-corrections (not yet complete) -- confirm mission priority with Brad before next dispatch.
+
+## Top priorities
+- Confirm with Brad whether leeann-content-corrections or ticketing-conferences-and-events (Mission Two) runs next
+- If Mission Two: dispatch chain starting at @architect-apex for F1 (Conferences estimation) per active.json mission pointer update

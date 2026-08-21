@@ -204,8 +204,12 @@ top-level nav item with a mega-menu whose Tickets column routes to a chooser pag
 (`/national-show/tickets`) plus direct Visitor/Exhibitor/Vendor sub-links; the ticketed-"Events"
 vs. societies-calendar-"Events" naming collision is resolved by construction. Scoped to Exhibition
 only — Conferences and Workshops/Field-Trips/Cocktails still need their own nav sub-links once
-built (Mission Two, not yet drafted, blocked on real pricing data). Next up: scope and build the
-remaining ticket categories themselves.
+built. **Mission Two drafted 2026-08-21, not yet started/dispatched**:
+`.agent/memory/project/missions/2026-08-21-ticketing-conferences-and-events.md` — F1 Conferences
+estimation/structure, F2 Workshops/Field-Trips/Cocktails estimation/structure, F3 nav extension,
+F4 checkout wiring; 2 milestones, status `pending`. `active.json` still points at
+`leeann-content-corrections` (not yet complete) — confirm with Brad which mission has priority
+before the chain dispatch.
 - [ ] **[P2] Day Visitor's chosen day is not shown on the ticket confirmation page.** Verified
   2026-08-21: `chosenDay` is correctly captured and persisted (`"2027-09-18"` confirmed in
   Firestore against a real purchase), but `/tickets/confirmation` only shows
@@ -773,3 +777,5 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=none
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-scoped-staging-commits.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-compaction-nudge-template-propagation.md

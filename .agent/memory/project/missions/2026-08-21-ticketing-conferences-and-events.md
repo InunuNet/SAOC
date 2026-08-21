@@ -51,7 +51,7 @@ features:
     naming risk flagged in `ticketing-nav-restructure` F2 - Mission One resolved the
     top-level nav collision by construction, but this feature''s own labels/copy must still
     avoid bare "Events" for this category (e.g. "Workshops & Field Trips", not "Events") to
-    stay consistent with that resolution. Tier: apex, same reasoning as F1.
+    stay consistent with that resolution. Tier: apex, same reasoning as F1.'
 - id: F3
   status: pending
   tier: standard
@@ -81,7 +81,7 @@ features:
     refunds-policy mission brief, or per-workshop-session capacity). Do not assume additive
     without checking - the Workshops category in particular may need attendee-slot-per-
     session logic the current day-selection code was not built for. Tier: apex - checkout/
-    payment code, same risk class as the rest of ticketing.
+    payment code, same risk class as the rest of ticketing.'
 milestones:
 - id: M1
   title: Estimate and structure both new categories

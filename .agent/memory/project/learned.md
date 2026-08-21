@@ -1734,3 +1734,17 @@ finds behavioral bugs through interaction, the other finds structural omissions 
 and this session is a second confirmed instance (after the 2026-08-18 vendor-form incident
 already recorded in `.claude/rules/workflow.md`) of Codex catching something Claude's own QA
 missed on the same diff.
+
+## Unclosed YAML single-quote in a mission's inline_brief breaks parsing and hides itself (2026-08-21)
+
+Drafted mission `2026-08-21-ticketing-conferences-and-events.md` had two `inline_brief` fields
+opened with `'` but never closed — one swallowed the next feature's `id`/`status`/`tier`/`title`
+keys whole (visible in the YAML string only because those keys happened to contain `''` which
+reads as an escaped quote, not a terminator) before erroring on the following feature's own
+opening quote; the second ran off the end of the document. `gh_closure_scan.py`'s error message
+pointed at the SECOND (wrong) unclosed string first — the actual bug was one field earlier. When
+a mission YAML frontmatter fails to parse, don't trust the first reported line/column as the
+defect location; check every multi-line single-quoted block in the file has a matching close
+before assuming the pointed-at line is the fault. Multi-line quoted `inline_brief` fields in
+hand-written mission YAML are a real defect class — worth a quick `python3 -c "import yaml;
+yaml.safe_load(...)"` sanity check right after drafting, before the mission is ever activated.
