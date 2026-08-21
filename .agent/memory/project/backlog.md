@@ -108,14 +108,23 @@ Do not scope work from an entry that contradicts it.
 
 ## Blocked on Brad (human action, not dispatchable)
 
-- [ ] **[P1] Payment gateway decision and merchant account.** Recommendation on file: stay on
-  PayFast for 2027, Ozow as a secondary subject to vendor Q&A; the council prefers Ozow and Ozow
-  onboarding cannot start without a merchant account. Time-sensitive: card payments must be
-  explicitly activated or international attendees cannot pay at all. Outstanding follow-ups from
-  `docs/payment-gateway-research-2026-08.md` §10: PayFast Clause 9.8 fund-hold commitment in
-  writing before sales open; PCI-DSS/ISO 27001 certificates verified via IAF CertSearch; POPIA
-  operator agreement; attorney review of the refund policy; and disclosure to the council of our
-  conflict of interest (we built the custom system) and the thin-evidence spots.
+- [ ] **[P1, HIGH PRIORITY — Brad's direction 2026-08-21] Add Ozow as a second PaymentProvider —
+  it is the client's preferred gateway, not just a council preference under consideration.**
+  PayFast is built and working (`lib/payments/payfast.ts`, seam at `lib/payments/index.ts`/
+  `lib/payments/types.ts` from the payment-provider-seam mission). Ozow needs its own
+  `PaymentProvider` implementation against that same seam (readiness gate, order-identity guard,
+  integer-cents amounts — see the payment-seam-f1 decision record for the invariants a second
+  provider must also satisfy) plus a merchant account (Ozow onboarding cannot start without one —
+  time-sensitive, these applications take a while). **Ticketing is the single biggest piece of
+  Phase 1 coding work and the current top priority** — this sits inside that scope, not adjacent
+  to it. Outstanding follow-ups from `docs/payment-gateway-research-2026-08.md` §10 still apply
+  once a provider is chosen for real: PayFast Clause 9.8 fund-hold commitment in writing before
+  sales open; PCI-DSS/ISO 27001 certificates verified via IAF CertSearch; POPIA operator
+  agreement; attorney review of the refund policy; disclosure to the council of our conflict of
+  interest (we built the custom system) and the thin-evidence spots. Card payments must be
+  explicitly activated on whichever provider's merchant account — not always on by default — or
+  international attendees cannot pay at all (confirmed again in the pricing artifact's payment
+  note to Lee-Ann).
 - [ ] **[P1] Go-live: live payment credentials.** In order: obtain live Merchant ID/Key/Passphrase;
   store in Secret Manager with `printf '%s' | --data-file=-` (**never `echo`** — see the secret
   corruption class); flip `lib/payfast.ts` off the sandbox constants; point `SITE_URL` at the real
