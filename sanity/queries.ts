@@ -137,6 +137,11 @@ export const activeTicketTypesQuery = defineQuery(`
 // each category's purchase page (/tickets, /national-show/conferences, /national-show/
 // workshops) selects only its own products server-side rather than over-fetching every
 // category and filtering in JS. See contracts/golden/ticketing-purchase-pages-f3/README.md.
+// F5 defect repair (ticketing-conferences-and-events, M2, Codex GPT-5.5 cross-model review
+// 2026-08-21): `capacityPool,`/`headcountPerUnit,` are additive — CategoryTicketsPage.tsx's
+// sold-out determination now calls planPooledCapacity() (the same pooling math checkout
+// enforces) rather than comparing a type's own sold count to its own capacity field, which
+// under-reports sold-out for a shared pool. See goldens/f5-checkout.golden.md.
 export const activeTicketTypesByCategoryQuery = defineQuery(`
   *[_type == "ticketType" && active == true && (category == $category || (!defined(category) && $category == "admission"))] | order(order asc){
     _id,
@@ -151,6 +156,8 @@ export const activeTicketTypesByCategoryQuery = defineQuery(`
     provisional,
     requiresDaySelection,
     category,
+    capacityPool,
+    headcountPerUnit,
   }
 `);
 
@@ -171,7 +178,41 @@ export const ticketTypeBySlugQuery = defineQuery(`
     releasedQuantity,
     earlyBirdCutoff,
     requiresDaySelection,
-    requiresAttendeeNames
+    requiresAttendeeNames,
+    capacityPool,
+    headcountPerUnit
+  }
+`);
+
+// F5 defect repair (ticketing-conferences-and-events, M2, Codex GPT-5.5 cross-model review
+// 2026-08-21): checkout must resolve the correct pool key for EVERY ticketType slug that
+// already has sold/reserved tickets in a pool the cart touches — not just the slugs the
+// current buyer is requesting — or a sibling slug's prior sales silently fall back to being
+// their own singleton pool and escape the shared ceiling. Fetches every ticketType sharing
+// `$pool` so the route can complete poolConfigByType before planPooledCapacity() runs.
+//
+// Second Codex GPT-5.5 pass (2026-08-21): deliberately NOT filtered on `active == true`. A
+// sibling deactivated after selling out (or retired) still has real reserved/paid positions
+// in Firestore, and getSoldCountsByTicketType() counts those regardless of the sibling's
+// current `active` value — an active-only filter here would let that sibling's sold heads
+// fall back to their own singleton pool and escape the shared ceiling, the exact oversell
+// class this query exists to close. This is independent of draft-document exclusion — the
+// checkout route's client (sanity/lib/client.ts) never resolves unpublished drafts, the same
+// as every other query this route already runs — so dropping `active == true` only widens
+// the result to inactive-but-published siblings, never to drafts.
+// F5 defect repair (ticketing-conferences-and-events, M2, Codex GPT-5.5 cross-model review
+// 2026-08-21, third pass): `capacityPool` is a free-text string, not namespaced per show — a
+// published ticketType belonging to a DIFFERENT show that happens to reuse the same pool name
+// would be fetched as a "sibling" here and merged into poolConfigByType, poisoning the current
+// checkout's pool config with an unrelated headcountPerUnit/sold-count weighting. Scoped to
+// `show._ref == $showId` using the same reference-field access pattern checkout already uses
+// (ticketTypeMatchesActiveShow() in app/api/tickets/checkout/route.ts). Deliberately still NOT
+// filtered on `active == true` — see the comment above this query for why that stays open.
+export const ticketTypesByPoolQuery = defineQuery(`
+  *[_type == "ticketType" && capacityPool == $pool && show._ref == $showId]{
+    "slug": slug.current,
+    capacityPool,
+    headcountPerUnit
   }
 `);
 

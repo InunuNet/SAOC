@@ -1,0 +1,247 @@
+schema: athanor.contract/v1
+slug: ticketing-conferences-and-events
+goal: >
+  F5 (M2): Checkout support for Conference and Workshop/Field-Trip/Cocktail ticket types.
+  Conference products (6, requiresAttendeeNames/requiresDaySelection flags only) are already
+  fully additive through the existing multi-line-item checkout pipeline — confirmed by reading
+  lib/checkout-reservation.ts, app/api/tickets/checkout/route.ts, lib/data/tickets.ts before
+  scoping, zero gap. Workshop/Field-Trip/Cocktails products (4 real, sellable) have a genuine
+  capacity-enforcement gap: checkout counts capacity strictly per ticketType slug with no
+  pooling or occupancy-weighting, which contracts/golden/ticketing-workshops-f2/README.md's
+  "Capacity revision" section already closed with a NUMBERS-ONLY interim fix (resized capacity
+  constants so the worst case of per-slug enforcement stays safe) explicitly flagged as this
+  feature's to properly resolve, not just re-verify. This feature adds a real, additive,
+  backward-compatible pooled-capacity mechanism (capacityPool/headcountPerUnit fields, a new
+  planPooledCapacity() pure function that is a strict generalization of the existing
+  planCapacity()) and restores the real physical ceilings (200 heads / 60 seats) the interim
+  fix had conservatively capped below. Also resolves F2's explicitly-deferred 18+ enforcement
+  question: decision is a physical door-check policy, no new schema/checkout logic — see
+  goldens/f5-checkout.golden.md "Determination 3" for the full rationale. Full design record:
+  goldens/f5-checkout.golden.md — read it before implementing; do not re-derive the design.
+created_at: '2026-08-21'
+autonomy: high
+features:
+  - id: F5
+    name: Checkout support for Conference and Workshop/Field-Trip/Cocktail ticket types
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-conferences-and-events/goldens/f5-checkout.golden.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        planPooledCapacity() and the CapacityPoolConfig type/interface are exported from
+        lib/checkout-reservation.ts, additive alongside the existing planCapacity() (which
+        must remain — this is a generalization, not a replacement of the export).
+      command: grep -q "export function planPooledCapacity" lib/checkout-reservation.ts && grep -q "CapacityPoolConfig" lib/checkout-reservation.ts && grep -q "export function planCapacity" lib/checkout-reservation.ts
+    - id: A2
+      description: >
+        The checkout route calls the new planPooledCapacity(), not the legacy planCapacity() —
+        the pooled/weighted check must actually be wired in, not merely exist unused.
+      command: grep -q "planPooledCapacity(" app/api/tickets/checkout/route.ts && ! grep -q "planCapacity(" app/api/tickets/checkout/route.ts
+    - id: A3
+      description: >
+        The checkout route reads capacityPool and headcountPerUnit per ticketType from its
+        Sanity fetch — proves the new fields actually flow into the route, not just exist in
+        the schema/query unused.
+      command: grep -q "capacityPool" app/api/tickets/checkout/route.ts && grep -q "headcountPerUnit" app/api/tickets/checkout/route.ts
+    - id: A4
+      description: >
+        sanity/schemas/documents/ticketType.ts declares the two new additive, optional fields
+        (capacityPool: string, headcountPerUnit: number) — no removal/rename of any existing
+        field.
+      command: 'grep -q "name: ''capacityPool''" sanity/schemas/documents/ticketType.ts && grep -q "name: ''headcountPerUnit''" sanity/schemas/documents/ticketType.ts'
+    - id: A5
+      description: >
+        ticketTypeBySlugQuery (the query the checkout route actually calls per line item) now
+        selects both new fields — the specific query the route depends on, not merely some
+        query in the file.
+      command: grep -A15 "export const ticketTypeBySlugQuery" sanity/queries.ts | grep -q "capacityPool" && grep -A15 "export const ticketTypeBySlugQuery" sanity/queries.ts | grep -q "headcountPerUnit"
+    - id: A6
+      description: >
+        lib/provisional-figures.ts's four Workshop/Field-Trip/Cocktails products carry the
+        correct capacityPool/headcountPerUnit/capacity values, the real ceiling numbers are
+        restored (200/200/60/60, not F2's interim 100/50/30/30), every product sharing a pool
+        declares an identical real ceiling (generic invariant, not a hardcoded numbers-match),
+        and Admission/Conference products stay unpooled (scope guard). See
+        contracts/checks/ticketing-conferences-and-events-f5/check-pool-data-invariant.mjs.
+      command: npx tsx contracts/checks/ticketing-conferences-and-events-f5/check-pool-data-invariant.mjs
+    - id: A7
+      description: >
+        planPooledCapacity() actually computes the pooled/weighted capacity decision
+        correctly: backward-compatible with planCapacity() when no pool is configured;
+        allows exactly the real ceiling (200 heads / 60 seats); rejects one unit over;
+        and correctly weighs a pool's PRIOR sold count from a DIFFERENT slug in the same pool
+        against a fresh request for another slug — the exact cross-slug oversell shape Codex
+        GPT-5.5 found in F2. Calls the real function with concrete inputs and asserts its
+        returned decision, not a text/name match. See
+        contracts/checks/ticketing-conferences-and-events-f5/check-pooled-capacity-behavior.mjs.
+      command: npx tsx contracts/checks/ticketing-conferences-and-events-f5/check-pooled-capacity-behavior.mjs
+    - id: A8
+      description: >
+        The 18+ restriction stays a door-check policy (Determination 3) — no date-of-birth or
+        age-verification field was added to the ticketType schema as a side effect of this
+        feature, and the existing "18+" advance-notice copy in the cocktail products'
+        descriptions is still present.
+      command: '! grep -qiE "dateOfBirth|ageVerif" sanity/schemas/documents/ticketType.ts && grep -q "18+" lib/provisional-figures.ts'
+    - id: A9
+      description: TypeScript compiles clean after every change above.
+      command: pnpm exec tsc --noEmit
+    - id: A10
+      description: >
+        Defect repair (Codex GPT-5.5 cross-model review, 2026-08-21): poolConfigByType was
+        built from the cart's own distinct ticketType slugs only, so a pool sibling's prior
+        sold tickets (e.g. already-sold sunset-cocktails-couple when the cart only requests
+        sunset-cocktails-single) resolved their pool key as themselves instead of the shared
+        pool, escaping the shared ceiling — an oversell. A7's check-pooled-capacity-behavior.mjs
+        cannot catch this: it hand-builds a complete poolConfigByType and so only proves the
+        pure function, never route.ts's construction of it. Architect repair (2026-08-21):
+        replaces a self-authored, gameable A10 (a process deviation — dev must never write
+        contract/QA inputs) that only grepped for text presence and compared line numbers
+        against the FIRST substring match of "reserveTicket(", which can land on a comment
+        rather than the real call, and which @qa-apex defeated with a synthetic route.ts where
+        the merge logic lived in a function POST() never calls. This script instead
+        brace-matches POST()'s own function body, requires the
+        poolConfigByType[sibling.slug] merge assignment to sit directly inside that body (not
+        inside a dead nested helper POST() never invokes), strips comments before anchoring to
+        the real `await reserveTicket(` call expression, and confirms that call passes the same
+        poolConfigByType object through — negatively verified against both the module-level and
+        nested dead-code shapes, and against a merge-after-call ordering defect. See
+        contracts/checks/ticketing-conferences-and-events-f5/check-pool-sibling-wiring.mjs.
+      command: node contracts/checks/ticketing-conferences-and-events-f5/check-pool-sibling-wiring.mjs
+    - id: A11
+      description: >
+        Second defect repair (Codex GPT-5.5 cross-model review, 2026-08-21, two defects in the
+        same pass). Defect 2 (backend oversell, higher severity): ticketTypesByPoolQuery had
+        been filtering pool siblings on `active == true`, but a sibling deactivated after
+        selling out (or retired) still holds real sold/reserved Firestore positions that
+        getSoldCountsByTicketType() counts regardless of current `active` status — the filter
+        let those heads escape the shared ceiling. Fixed by dropping the filter (~sanity/
+        queries.ts:203); this is a regression guard against it recurring. Defect 1 (UI
+        correctness): CategoryTicketsPage.tsx's sold-out check needs capacityPool/
+        headcountPerUnit from activeTicketTypesByCategoryQuery (the query it actually calls) to
+        build poolConfigByType at all — proves both new fields are actually selected there, not
+        just in ticketTypeBySlugQuery (A5). Extracts each query's real GROQ template-literal
+        body (not a fixed line-window grep, which drifts if the file is reordered) — negatively
+        verified against both a reintroduced `active == true` filter and a dropped
+        headcountPerUnit field, confirmed to fail for the right reason in each case. Extended
+        2026-08-21 (third Codex GPT-5.5 defect repair, same pass as A17 below): ticketTypesByPoolQuery
+        had been matching pool siblings by `capacityPool == $pool` alone with no show scoping — any
+        published ticketType anywhere sharing the same capacityPool STRING, regardless of which show
+        it belongs to, was treated as a sibling, poisoning the current checkout's pool config with an
+        unrelated show's sold counts/headcount. Fixed by adding `show._ref == $showId` to the query's
+        filter (sanity/queries.ts); this check now also asserts that filter is present, negatively
+        verified against a fixture with it removed (confirmed FAIL for the right reason). See
+        contracts/checks/ticketing-conferences-and-events-f5/check-ui-query-regression-guards.mjs.
+      command: node contracts/checks/ticketing-conferences-and-events-f5/check-ui-query-regression-guards.mjs
+    - id: A17
+      description: >
+        Companion to A11's show-scoping fix (Codex GPT-5.5 cross-model review, 2026-08-21, same
+        pass): A11 proves ticketTypesByPoolQuery's GROQ body itself filters on
+        `show._ref == $showId`; it cannot prove callers actually bind that param. GROQ params left
+        unbound by a caller do not error — they silently fail to filter (the comparison becomes
+        `show._ref == null`, matching nothing), which is a distinct failure mode from the query
+        definition being wrong. This check proves BOTH real call sites — the checkout route
+        (app/api/tickets/checkout/route.ts, client.fetch(ticketTypesByPoolQuery, { pool, showId })
+        at ~line 519) and CategoryTicketsPage.tsx (sanityFetch({ query: ticketTypesByPoolQuery,
+        params: { pool, showId } }) at ~line 164) — actually pass a `showId` param bound to a real
+        identifier, not omitted or explicitly `undefined`. Brace-matches each call's own argument
+        list on comment-stripped source (same technique family as A10/A13/A14), anchored past the
+        import statement so the two occurrences of the bare export name in route.ts (import line
+        vs. the real client.fetch call) can't be confused. Negatively verified against both call
+        sites independently, each with its `showId:` entry deleted from the params object —
+        confirmed to fail for the right reason in each case. See
+        contracts/checks/ticketing-conferences-and-events-f5/check-pool-query-showid-callsites.mjs.
+      command: node contracts/checks/ticketing-conferences-and-events-f5/check-pool-query-showid-callsites.mjs
+    - id: A12
+      description: >
+        Defect 1 (UI correctness) repair: CategoryTicketsPage.tsx's sold-out determination now
+        calls planPooledCapacity() per listed product, asking "would exactly 1 more unit of
+        this slug fit?" — a different call shape than A7's checkout coverage (which proves the
+        function against a full cart's aggregate bulk request, checked once per checkout
+        attempt). This proves the per-unit "would 1 fit" shape is correct in the two conditions
+        unique to the old bug: (1) a product whose OWN sold count is low must still report
+        over-capacity when a SIBLING's sales already exhaust the shared pool — comparing a
+        product's own sold count against its own capacity field (which holds the full pool
+        ceiling) is exactly Defect 1's original bug and almost never trips; (2) a sibling not
+        present in the category's own listing (different category page, or inactive) still
+        contributes its sold heads. Calls the real function with concrete inputs and asserts
+        its returned decision, not a text/name match. See
+        contracts/checks/ticketing-conferences-and-events-f5/check-ui-pool-behavior-per-unit.mjs.
+      command: npx tsx contracts/checks/ticketing-conferences-and-events-f5/check-ui-pool-behavior-per-unit.mjs
+    - id: A13
+      description: >
+        A12 proves planPooledCapacity()'s per-unit math is correct in isolation; it does not
+        prove CategoryTicketsPage.tsx's card-rendering loop actually calls it on a live,
+        reachable path — a dead or bypassed call would pass every other check while still
+        shipping Defect 1. In the style of A10's check-pool-sibling-wiring.mjs: brace-matches
+        the `cardData = types.map((t) => { ... })` callback's own body on comment-stripped
+        source, requires `planPooledCapacity(` to be called inside that body (not merely
+        present elsewhere in the file), requires the returned object's `soldOut` field to be
+        set from that call's `.kind === 'over-capacity'` result (not computed-and-discarded),
+        and confirms `cardData` is the value actually passed to the rendered
+        `<TicketPurchaseForm ticketTypes={cardData}>` (not silently swapped for a literal or
+        different variable at render time). Negatively verified against three dead-code/
+        discard shapes: the call removed from the map body entirely, its result ignored when
+        setting soldOut, and cardData computed but not rendered — confirmed to fail for the
+        right reason in each case. See
+        contracts/checks/ticketing-conferences-and-events-f5/check-category-page-pool-wiring.mjs.
+      command: node contracts/checks/ticketing-conferences-and-events-f5/check-category-page-pool-wiring.mjs
+    - id: A14
+      description: >
+        Coverage-gap repair (@qa-apex, 2026-08-21): A13 proves planPooledCapacity() is called
+        inside cardData's types.map() and drives soldOut, but never proves
+        CategoryTicketsPage.tsx's separate sibling-fetch-and-merge loop (`for (const poolKey of
+        poolKeysTouched) { ... }`, ~lines 157-174, the UI-side analog of what A10 already
+        protects in route.ts) actually runs and feeds that map. @qa-apex proved the gap
+        concretely: deleting the entire loop from a copy of the file left A13 green, because
+        planPooledCapacity() is still called with SOME poolConfigByType — just one silently
+        missing off-page/inactive siblings, reintroducing the exact Defect 1 shape A12/A13 exist
+        to prevent. In the style of A10/A13: brace-matches CategoryTicketsPage()'s own function
+        body (skipping the destructured-parameter brace to find the real body opening), finds
+        the poolKeysTouched loop's own brace-matched body inside it, requires
+        ticketTypesByPoolQuery to be genuinely passed as sanityFetch's `query:` argument inside
+        that loop (not merely imported), requires the `poolConfigByType[sibling.slug] = ...`
+        merge assignment to live directly inside the loop body (not a dead nested
+        function/arrow), and requires that assignment to textually precede the `cardData =
+        types.map(...)` assignment that consumes it. Negatively verified against two defeats:
+        the entire loop deleted (reproduces @qa-apex's exact defeat — confirmed FAIL, and
+        confirmed A13 still wrongly PASSES on the same fixture, proving the gap was real), and
+        the loop moved to after cardData is computed (an ordering defect — confirmed FAIL). See
+        contracts/checks/ticketing-conferences-and-events-f5/check-category-page-sibling-wiring.mjs.
+      command: node contracts/checks/ticketing-conferences-and-events-f5/check-category-page-sibling-wiring.mjs
+    - id: A15
+      description: >
+        Defense-in-depth repair (@dev, 2026-08-21): capacity's field validation had been sharing
+        isUsableAmount() (non-integer, correct for price) instead of a dedicated integer check
+        matching the Sanity schema's own `Rule.required().integer().min(0)` for capacity
+        (sanity/schemas/documents/ticketType.ts). Fix: isUsableCapacity() (typeof number &&
+        Number.isInteger && >= 0), with capacity's call site switched onto it and price's call
+        site left unchanged on isUsableAmount(). isUsableCapacity() is an unexported route.ts
+        internal, and the route module imports next/server and firebase-admin, so this extracts
+        the function's REAL body text (comment-stripped brace-matching, same technique as A10/
+        A13/A14) and executes it via `new Function` against a truth table — proving the actual
+        guarded predicate, not a re-implementation that could drift from it — plus a regression
+        guard that price's call site still reads isUsableAmount(price), which still accepts
+        fractional ZAR amounts (99.99), so a future edit cannot silently over-tighten price to
+        integer-only too. Negatively verified against a fixture where isUsableCapacity() reverts
+        to Number.isFinite (accepts 10.5) and a fixture where price's call site is switched onto
+        isUsableCapacity() — both confirmed to fail for the right reason. See
+        contracts/checks/ticketing-conferences-and-events-f5/check-capacity-validator-behavior.mjs.
+      command: node contracts/checks/ticketing-conferences-and-events-f5/check-capacity-validator-behavior.mjs
+    - id: A16
+      description: >
+        Coverage-gap repair alongside A15: isUsableHeadcountPerUnit() (route.ts) already enforces
+        a positive integer matching the schema's `Rule.integer().min(1)` for headcountPerUnit,
+        but — unlike A15's capacity fix — no prior assertion in this contract behaviorally proved
+        it; A6/A7/A12 exercise planPooledCapacity()'s consumption of headcountPerUnit values, not
+        the field-validation predicate itself. Same extraction technique and rationale as A15
+        (unexported route.ts internal; route module requires next/server + firebase-admin to
+        import, so the real predicate body is extracted and executed via `new Function`, not
+        re-implemented). Truth table: null/undefined accepted (optional, defaults to 1
+        elsewhere); 1 and 200 accepted; 1.5, 0, -1, NaN, Infinity, and a string all rejected.
+        Negatively verified against a fixture where the >= 1 floor is weakened to >= 0 (accepts
+        0) — confirmed to fail for the right reason. See
+        contracts/checks/ticketing-conferences-and-events-f5/check-headcount-validator-behavior.mjs.
+      command: node contracts/checks/ticketing-conferences-and-events-f5/check-headcount-validator-behavior.mjs

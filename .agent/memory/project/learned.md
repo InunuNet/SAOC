@@ -1859,3 +1859,38 @@ just those assertions. Fix: use YAML's own single-quote-doubling escape (`''` in
 scalar) for a literal single quote, not shell-style splicing. Validate any contract with literal
 quotes in its shell commands via `python3 -c "import yaml; yaml.safe_load(open('contract.yaml'))"`
 before running the gate.
+
+## Fourth and fifth confirmed instances: F5 checkout ran 5 real Codex-caught defect cycles, and one self-authored proof artifact (architect's, not dev's) still needed adversarial repair (2026-08-21)
+
+`ticketing-conferences-and-events` F5 (checkout support for Conference/Workshop/Field-Trip/
+Cocktail ticket types, closing the pooled-capacity fix deferred from F2) went through FIVE
+independent, real, correctly-caught defect-repair cycles before shipping: (1) cross-slug pool
+oversell — `poolConfigByType` only covered the cart's own slugs, not sold siblings outside the
+cart; (2) UI sold-out display not reflecting pooled exhaustion, plus inactive pool siblings
+escaping the pool ceiling (`active == true` filter dropped siblings with real sold/reserved
+positions); (3) fractional `capacity` accepted at the route despite the Sanity schema declaring
+`integer()` — schema `validation:` is authoring-time only, not a read-time guarantee; (4) the
+same validator-sharing bug applied to capacity's read-time check (`isUsableAmount()`, correct
+for the genuinely-fractional `price` field, was wrongly reused for `capacity` too); (5)
+`ticketTypesByPoolQuery` not scoped to the active show — a pool name collision across two shows
+would poison one checkout's capacity math with an unrelated show's sold counts. Every one was a
+genuine bug, not a false positive, and every one was closed with a negatively-verified contract
+assertion (proven to fail for the right reason against a broken copy), not just "looks right."
+This is strong evidence FOR the mandatory multi-layer chain (architect-apex -> dev -> qa-apex ->
+Codex, repeated) rather than evidence of inefficiency — all five would have shipped to
+production undetected under a single-pass dev-plus-self-review workflow. See the mission file's
+"Closeout — F5" for the full defect-by-defect account.
+
+**Also worth logging: adversarially audit self-authored proof artifacts even when
+architect-authored, not just dev-authored.** The standing rule that dev never writes contract
+assertions exists because dev grading its own fix is a conflict of interest — but F5 showed the
+same risk applies one level up. @qa-apex found A13 (architect-apex's own assertion, proving
+`planPooledCapacity()` drives the UI's sold-out check) was satisfiable by a broken build: deleting
+the entire sibling-fetch-and-merge loop that populates `poolConfigByType` with off-page/inactive
+siblings left A13 green, because the function was still called with SOME `poolConfigByType` —
+just one silently missing the siblings, quietly reintroducing the exact oversell A13 was meant to
+prevent. A14 closed the gap by proving the loop itself is genuinely wired and reachable, not just
+that the function downstream of it gets called. Lesson: "the author isn't dev" is not sufficient
+grounds to skip adversarial review of a proof artifact — any self-authored assertion, regardless
+of which role wrote it, needs an independent pass asking "what broken implementation would this
+still pass?"

@@ -278,9 +278,11 @@ both desktop and mobile. The Tickets column heading routes to a new chooser page
 (`/national-show/tickets`); the same column also lists direct Visitor/Exhibitor/Vendor
 sub-links. F2's naming collision (ticketed "Events" category vs. the existing societies-
 calendar "Events" nav item) is resolved by construction — no second top-level "Events".
-Scoped deliberately to the Exhibition category only; Conferences/Workshops categories are
-Mission Two, intentionally not drafted, blocked on real pricing data from
-`leeann-content-corrections` F4. Two real defects caught this session (see `learned.md`): a
+Scoped deliberately to the Exhibition category only; Conferences/Workshops categories were
+Mission Two (`ticketing-conferences-and-events`), which Brad launched directly per his own
+standing instruction (estimate now, correct later) rather than waiting on
+`leeann-content-corrections` F4 — **Mission Two is now DONE as of 2026-08-21** (M1 estimation +
+M2 purchase pages/nav/checkout, 5/5 features, see the mission file's closeout). Two real defects caught this session (see `learned.md`): a
 keyboard focus-escape bug in the desktop mega-menu (@qa-apex, live interaction) and a mobile
 "National Show" disclosure that never linked to `/national-show` itself (Codex, file read) —
 both fixed and now covered by regression tests, and a second confirmed instance of Codex and
@@ -289,3 +291,23 @@ Claude's own QA catching genuinely different bug classes on the same diff. Docs:
 still points at `leeann-content-corrections`, not this mission — this mission ran without
 ever being set active; worth checking with the orchestrator whether that was intentional or
 a missed `mission.py activate` step.
+
+### 2026-08-21 (latest) — `ticketing-conferences-and-events` (Mission Two) DONE — all 5 features, mission complete
+
+~~`ticketing-conferences-and-events` Mission Two (M1: F1 Conferences estimation, F2
+Workshops/Field-Trips/Cocktails estimation; M2: F3 purchase pages, F4 nav wiring, F5 checkout)~~
+✅ **DONE**, all 5 features, F5's contract gate 17/17 green (mission-wide gates all green — see
+`.agent/memory/project/missions/2026-08-21-ticketing-conferences-and-events.md` for the full
+closeout of each feature). SAOC ticketing now covers all three categories from Lee-Ann's spec —
+Exhibition/Admission (Mission One + `multi-line-item-cart`), Conferences (SAOC Symposium/WOSA
+Conference/Joint), and Workshops/Field Trips/Cocktails — on one shared cart/PayFast/confirmation
+pipeline. F5 (checkout support + the pooled-capacity fix deferred from F2) needed five real,
+independently-caught defect-repair cycles — cross-slug pool oversell, an inactive-sibling pool
+leak plus a UI sold-out display gap, a coverage gap in the architect's own proof artifact
+(A13→A14, found by @qa-apex), a shared-validator integer/fractional bug, and a cross-show pool
+name collision — every one closed with a negatively-verified contract assertion. See `learned.md`
+for the reusable lessons (apex chain justified by real catch rate; adversarially audit
+self-authored proof artifacts regardless of author role). Outstanding, tracked in `backlog.md`:
+workshop sessions themselves remain unpriced/unbuilt (blocked on a council-confirmed session
+list, not a mission gap), and the admission products' `category: null` backfill (protected by
+F3's fallback, not urgent).

@@ -126,5 +126,27 @@ export const ticketType = defineType({
       description: 'Which purchase page this ticket type is sold on.',
       validation: (Rule) => Rule.required(),
     }),
+    // F5 (ticketing-conferences-and-events, M2): additive, optional pooled-capacity fields —
+    // same posture as `releasedQuantity`/`earlyBirdCutoff` above. Unset means this ticket type
+    // is its own singleton pool, byte-identical to today's per-slug capacity behavior. See
+    // goldens/f5-checkout.golden.md "Determination 2".
+    defineField({
+      name: 'capacityPool',
+      title: 'Capacity Pool',
+      type: 'string',
+      description:
+        'Optional. The shared physical pool this ticket type\'s sold units draw from (e.g. ' +
+        '"sunset-cocktails"). Leave unset for a product that is its own singleton pool — ' +
+        'every product sharing a pool value must declare the same capacity.',
+    }),
+    defineField({
+      name: 'headcountPerUnit',
+      title: 'Headcount Per Unit',
+      type: 'number',
+      description:
+        'How many physical seats/heads one sold unit of this ticket type consumes against ' +
+        'its capacity pool. Defaults to 1 when unset (e.g. a "couple" ticket is 2).',
+      validation: (Rule) => Rule.integer().min(1),
+    }),
   ],
 });

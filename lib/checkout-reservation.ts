@@ -378,3 +378,73 @@ export function resolveChosenDayForPosition(
   if (!requiresDaySelection) return null;
   return chosenDay ?? null;
 }
+
+// ---------------------------------------------------------------------------------------------
+// ticketing-conferences-and-events (F5, M2) — additive pure export. See
+// goldens/f5-checkout.golden.md for the full decision record.
+// Every export above this point is UNCHANGED; nothing below repurposes it.
+// ---------------------------------------------------------------------------------------------
+
+export interface CapacityPoolConfig {
+  /** The shared pool this ticket type's sold units draw from. `null` => this ticketType is
+   *  its own singleton pool — same as today's per-slug behavior. */
+  pool: string | null;
+  /** How many physical seats/heads one sold unit of this type consumes against its pool.
+   *  Defaults to 1 when a type has no explicit config. */
+  headcountPerUnit: number;
+}
+
+/**
+ * Pure. Strict generalization of `planCapacity()` — pools capacity across ticket types that
+ * share a `capacityPool`, weighting each requested/sold unit by its `headcountPerUnit`, rather
+ * than checking each ticket type's slug independently. When `poolConfigByType` is empty (or
+ * every entry resolves to `pool: null, headcountPerUnit: 1`), this produces byte-identical
+ * results to `planCapacity()` on the same inputs.
+ *
+ * Resolves each entry's pool key as `poolConfigByType[slug]?.pool ?? slug` and its weight as
+ * `poolConfigByType[slug]?.headcountPerUnit ?? 1`, sums weighted requested/sold quantities per
+ * pool key, and rejects a pool where `soldHeads + requestedHeads > capacityByType[poolKey]`.
+ * Returns every REQUESTED slug (not pool key) whose resolved pool is over capacity, preserving
+ * `planCapacity()`'s "every offending type, not just the first" contract.
+ */
+export function planPooledCapacity(input: {
+  requestedQtyByType: Record<string, number>;
+  soldCountsByType: Record<string, number>;
+  /** Keyed by resolved POOL KEY (poolConfigByType[slug]?.pool ?? slug), not always by slug. */
+  capacityByType: Record<string, number>;
+  poolConfigByType: Record<string, CapacityPoolConfig>;
+}): { kind: 'ok' } | { kind: 'over-capacity'; ticketTypes: string[] } {
+  const resolvePoolKey = (ticketType: string): string =>
+    input.poolConfigByType[ticketType]?.pool ?? ticketType;
+  const resolveWeight = (ticketType: string): number =>
+    input.poolConfigByType[ticketType]?.headcountPerUnit ?? 1;
+
+  const requestedHeadsByPool: Record<string, number> = {};
+  for (const [ticketType, requestedQty] of Object.entries(input.requestedQtyByType)) {
+    const poolKey = resolvePoolKey(ticketType);
+    requestedHeadsByPool[poolKey] =
+      (requestedHeadsByPool[poolKey] ?? 0) + requestedQty * resolveWeight(ticketType);
+  }
+
+  const soldHeadsByPool: Record<string, number> = {};
+  for (const [ticketType, soldQty] of Object.entries(input.soldCountsByType)) {
+    const poolKey = resolvePoolKey(ticketType);
+    soldHeadsByPool[poolKey] =
+      (soldHeadsByPool[poolKey] ?? 0) + soldQty * resolveWeight(ticketType);
+  }
+
+  const overCapacityTypes: string[] = [];
+  for (const ticketType of Object.keys(input.requestedQtyByType)) {
+    const poolKey = resolvePoolKey(ticketType);
+    const soldHeads = soldHeadsByPool[poolKey] ?? 0;
+    const requestedHeads = requestedHeadsByPool[poolKey] ?? 0;
+    const capacity = input.capacityByType[poolKey] ?? 0;
+    if (soldHeads + requestedHeads > capacity) {
+      overCapacityTypes.push(ticketType);
+    }
+  }
+
+  return overCapacityTypes.length > 0
+    ? { kind: 'over-capacity', ticketTypes: overCapacityTypes }
+    : { kind: 'ok' };
+}

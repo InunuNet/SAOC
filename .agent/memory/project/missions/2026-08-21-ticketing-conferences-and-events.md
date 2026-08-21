@@ -6,8 +6,9 @@ goal: 'Mission Two: extend ticketing to the two remaining categories from Lee-An
   using the nav shell and provisional-figures discipline Mission One and F4 already established'
 created_at: '2026-08-21T13:30:00+00:00'
 started_at: '2026-08-21T16:05:00+00:00'
+completed_at: '2026-08-21T23:00:00+00:00'
 last_active_at: '2026-08-21T00:00:00+00:00'
-status: in_progress
+status: done
 cost_estimate:
   features: 0
   milestones: 0
@@ -15,7 +16,7 @@ cost_estimate:
 last_checkpoint:
   milestone: M2
   feature: F5
-  ts: '2026-08-21T00:00:00+00:00'
+  ts: '2026-08-21T23:00:00+00:00'
 features:
 - id: F1
   status: done
@@ -91,7 +92,7 @@ features:
     is unblocked (A1-A5). Tier: standard - this should be a small, mechanical extension
     once F3 ships real routes.'
 - id: F5
-  status: pending
+  status: done
   tier: apex
   title: Checkout support for Conference and Workshop/Field-Trip/Cocktail ticket types
   inline_brief: 'Extend the existing multi-line-item cart/checkout (shipped in
@@ -122,7 +123,7 @@ milestones:
   - F3
   - F4
   - F5
-  status: pending
+  status: done
 ---
 
 # Mission: Conferences and Events ticketing (Mission Two)
@@ -294,3 +295,96 @@ config.ts` append) -> @qa PASS, no defects -> Codex GPT-5.5 cross-model review P
 **M2 is now 2 of 3 features done (F3, F4).** Only **F5** (checkout support for Conference and
 Workshop/Field-Trip/Cocktail ticket types, plus the multi-head/shared-pool capacity-pooling fix
 deferred from F2) remains before this mission closes. Next up: F5.
+
+## Closeout — F5 (2026-08-21) — MISSION COMPLETE
+
+F5 (checkout support for Conference and Workshop/Field-Trip/Cocktail ticket types) done,
+contract gate 17/17 green. **This was the last feature of Mission Two — M2 is now 3/3 (F3, F4,
+F5) and the entire mission (M1 + M2, all 5 features) is complete.**
+
+@architect-apex confirmed Conference products (6, from F1) are fully additive against the
+existing checkout with zero gap — the day-attendees flag-driven enforcement already handles
+them generically. The Workshop/Field-Trip/Cocktail products (4, from F2) had a real, previously
+named gap: F2's capacity-enforcement mechanism is strictly per-slug, with no concept of pooling
+capacity across slugs or weighting a unit by how many physical heads it represents — the exact
+gap F2's own "Capacity revision" section explicitly deferred to this feature rather than
+pretending its interim numbers-only fix (resized constants) was the real fix.
+
+**Design shipped:** two new additive/optional `ticketType` fields (`capacityPool: string | null`,
+`headcountPerUnit: number`, default 1) and a new pure `planPooledCapacity()` function in
+`lib/checkout-reservation.ts`, added alongside (not replacing) the existing `planCapacity()`.
+When no product sets `capacityPool`, pool key == slug and weight == 1 for everything, so the new
+function is byte-identical to the old one on every existing product — Admission and Conference
+products get zero behavior change. `route.ts` now fetches `capacityPool`/`headcountPerUnit` per
+ticketType, builds a pool-keyed `capacityByType` via `Math.min` (a defensive floor against the
+data invariant — every pool member must declare an identical `capacity` — ever being violated),
+and calls `planPooledCapacity()` in place of `planCapacity()`. The interim conservative numbers
+from F2 (100/50/30/30) were restored to their real physical ceilings (200/200/60/60) now that
+the pooling math correctly enforces them. The 18+ Sunset Cocktails restriction (left open by F2)
+was decided here as a physical door-check policy, not a checkout-time mechanism — a checkout-time
+self-attestation verifies nothing and would add a new PII surface for a control a door check
+already provides more reliably; a contract assertion (A9) guards against the schema growing a
+`dateOfBirth`/age-verification field as scope creep.
+
+**This feature needed FIVE independent defect-repair cycles — the most of any feature in this
+mission, and each one a genuinely different real bug, not a repeat.** Full account:
+
+1. **Cross-slug pool oversell (route.ts wiring).** First Codex GPT-5.5 pass: `poolConfigByType`
+   only covered ticketType slugs present in the current cart, not other slugs that share a pool
+   but sold out via a different sibling. A10 added to prove pool config is built from every
+   sibling, not just cart members.
+2. **Two defects in the same second Codex pass, one backend and one UI, same root cause** (`active
+   == true` and "own sold count vs. own capacity" both being per-slug assumptions unsafe once a
+   slug joins a shared pool): (a) `ticketTypesByPoolQuery` filtered siblings on `active == true`,
+   silently dropping a deactivated-but-still-holding-real-positions sibling from the pool
+   entirely — an oversell via a different mechanism than #1, closed by A11. (b)
+   `CategoryTicketsPage.tsx`'s sold-out check compared a pooled product's own sold count against
+   its own `capacity` field, which almost never trips because the data invariant requires every
+   pool member to declare the FULL pool ceiling, not a per-product share — closed by rewiring the
+   UI to call the same `planPooledCapacity()` route.ts uses, proven by A12 (math) and A13
+   (wiring/reachability).
+3. **A14, found by @qa-apex auditing A13 itself, not a new production defect but a coverage gap
+   in the proof:** A13 only proved `planPooledCapacity()` drives `soldOut` inside the UI's
+   `cardData` map — it never proved the separate sibling-fetch-and-merge loop that populates
+   `poolConfigByType` with off-page/inactive siblings was itself wired and reachable. @qa-apex
+   proved the gap concretely: deleting that loop left A13 green, quietly reintroducing #2(b)'s
+   exact oversell shape. A14 closes it by brace-matching the loop and requiring it to genuinely
+   invoke the query and precede `cardData`'s computation.
+4. **Fractional `capacity` accepted despite the Sanity schema declaring `integer()`.** Schema
+   `validation:` is authoring-time only, not a read-time guarantee — a document written outside
+   Studio with a fractional `capacity` would silently corrupt `planPooledCapacity()`'s arithmetic.
+   Found the route was sharing `isUsableAmount()` (correct for the genuinely-fractional `price`)
+   for `capacity` too. Fixed with a dedicated `isUsableCapacity()`; A15/A16 prove both predicates'
+   real guarded bodies (via brace-matching + `new Function`, not a hand re-implementation that
+   could drift) against a truth table, and A15 regression-guards that price's call site was left
+   unchanged (not silently over-tightened to integer-only).
+5. **`ticketTypesByPoolQuery` not scoped to the active show.** Third Codex pass: the query matched
+   pool siblings by `capacityPool == $pool` alone, no show scoping — two unrelated shows both
+   naming a pool the same string would collide, poisoning one checkout's capacity math with an
+   unrelated show's sold counts. Fixed by adding `show._ref == $showId` to the query and passing
+   `showId` at both call sites (route.ts and CategoryTicketsPage.tsx). A11 extended to assert the
+   GROQ body; new A17 separately proves both call sites actually bind the `showId` param (an
+   unbound GROQ param silently fails to filter rather than erroring — a distinct failure mode from
+   the query definition itself being wrong).
+
+Every one of the five was closed with a negatively-verified contract assertion (proven to fail
+for the right reason against a broken copy of the code), not just re-reading the fix and agreeing
+it looked right. Final Codex GPT-5.5 pass: PASS, no findings (also ran tsc/eslint itself). Final
+@qa-apex whole-diff pass: PASS, no blocking findings.
+
+Chain: @architect-apex (`contract-f5-checkout.yaml`, `goldens/f5-checkout.golden.md` — the design
+record, read in full for the pool-key/weight algorithm and the door-check-policy rationale) ->
+@dev (multiple passes, one per repair cycle above) -> @qa-apex (adversarial, including the A14
+proof-of-proof-gap finding) -> Codex GPT-5.5 (three review passes, findings 1 and 2 on pass one/
+two, finding 5 on pass three) -> @docs (`docs/f5-ticketing-checkout.md`, README updated) ->
+contract gate 17/17 PASS.
+
+**MISSION COMPLETE.** Both M1 (F1 Conferences estimation, F2 Workshops/Field-Trips/Cocktails
+estimation) and M2 (F3 purchase pages, F4 nav wiring, F5 checkout) are done. SAOC ticketing now
+covers all three categories from Lee-Ann's spec (Exhibition/Admission from Mission One +
+`multi-line-item-cart`, Conferences and Workshops/Field-Trips/Cocktails from this mission) on one
+shared cart/PayFast/confirmation pipeline, with pooled-capacity enforcement now generically
+correct rather than approximated. Outstanding, tracked in `backlog.md`: workshop sessions
+themselves are still unpriced/unbuilt (genuinely blocked on a council-confirmed session list, not
+this mission's gap), and the admission products' `category: null` backfill (protected by F3's
+fallback, not urgent) remains open.

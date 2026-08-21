@@ -45,18 +45,19 @@ Do not scope work from an entry that contradicts it.
   instruction, already the pattern used for the ticketing admission products in
   `lib/provisional-figures.ts`/F4).** Do not leave figures blank waiting on the council; put in
   our best estimate, flagged provisional, same discipline as F4. Conference tickets (SAOC
-  Symposium/WOSA/joint, 6 entries) now estimated and structured as of 2026-08-21
-  (`ticketing-conferences-and-events` F1, `CONFERENCE_PRODUCTS` in `lib/provisional-figures.ts`)
-  — data model done, purchase pages shipped in F3 (2026-08-21), nav wired in F4 (2026-08-21).
-  Checkout (F5) of the same mission still pending. Workshops/Field Trips/Cocktails category also now estimated and structured as
-  of 2026-08-21 (`ticketing-conferences-and-events` F2, M1 now complete) — 4 real priceable
-  products (Sunset Cocktails single/couple, Field Trip single/all-outings) with
-  structurally-safe capacities (100/50/30/30), plus a non-sellable
-  `WORKSHOP_PRICING_STRUCTURE` placeholder since individual workshop sessions genuinely cannot
-  be priced without a council-confirmed session list — do not invent specific workshops. Still
-  outstanding: vendor fees (exhibit/food), venue/workshop capacity figures generally, and the
-  real workshop session list itself. Her form answers (pricing artifact) are still empty as of
-  2026-08-21 — do not wait for them to start estimating the remaining categories.
+  Symposium/WOSA/joint, 6 entries) fully shipped as of 2026-08-21 — data model (F1), purchase
+  pages (F3), nav (F4), and checkout (F5) all done; `ticketing-conferences-and-events` (Mission
+  Two) is now complete end to end. Workshops/Field Trips/Cocktails category likewise fully
+  shipped as of 2026-08-21 (F2 estimation, F5 checkout closes the pooled-capacity fix F2
+  deferred) — 4 real priceable products (Sunset Cocktails single/couple, Field Trip
+  single/all-outings) now enforce their REAL physical ceilings (200/200/60/60) via
+  `planPooledCapacity()`'s pool-key/headcount-weighted math, not the F2 interim's conservative
+  resized constants (100/50/30/30). A non-sellable `WORKSHOP_PRICING_STRUCTURE` placeholder
+  remains since individual workshop sessions genuinely cannot be priced without a
+  council-confirmed session list — do not invent specific workshops. Still outstanding: vendor
+  fees (exhibit/food), venue/workshop capacity figures generally, and the real workshop session
+  list itself. Her form answers (pricing artifact) are still empty as of 2026-08-21 — do not
+  wait for them to start estimating the remaining categories.
 - [ ] **[P1] Refund and cancellation terms — draft real content ourselves for her to review/adjust
   (Brad's direction, 2026-08-21), do not wait for her answer first.** `/refunds` exists
   (`app/(marketing)/refunds/page.tsx`, 109 lines) but is deliberately figure-free — no cancellation
@@ -211,18 +212,19 @@ DONE 2026-08-21** (`ticketing-nav-restructure` M1, gate 8/8) — "National Show"
 top-level nav item with a mega-menu whose Tickets column routes to a chooser page
 (`/national-show/tickets`) plus direct Visitor/Exhibitor/Vendor sub-links; the ticketed-"Events"
 vs. societies-calendar-"Events" naming collision is resolved by construction. Scoped to Exhibition
-only — Conferences and Workshops/Field-Trips/Cocktails still need their own nav sub-links once
-built. **Mission Two: M1 (F1 Conferences + F2 Workshops/Field-Trips/Cocktails estimation/structure)
-is DONE as of 2026-08-21** —
-`.agent/memory/project/missions/2026-08-21-ticketing-conferences-and-events.md`, `active.json`
-checkpoint now `M2/F5`. Mission `status` stays `in_progress`; M2's F3 and F4 are done, only F5
-(checkout wiring) remains. F2 also carries a known future item: it shipped a structurally-safe
-interim fix (resized capacity constants) for a real oversell defect Codex GPT-5.5 caught
-(multi-head products and shared capacity pools not modelled by the checkout's per-slug-only
-capacity enforcement) — the real fix (multi-head- and shared-pool-aware capacity enforcement in
-`lib/checkout-reservation.ts`) is explicitly deferred to F5 (checkout), not yet built. Workshops
-themselves remain unpriced/unbuilt pending a real council-confirmed session list — F2
-deliberately did not invent specific sessions.
+only — Conferences and Workshops/Field-Trips/Cocktails now have their own nav sub-links too (see
+F4 below). **`ticketing-conferences-and-events` (Mission Two) is DONE IN FULL as of 2026-08-21** —
+`.agent/memory/project/missions/2026-08-21-ticketing-conferences-and-events.md` has the closeout
+for every feature; mission `status` is `done`. M1 (F1 Conferences + F2 Workshops/Field-
+Trips/Cocktails estimation/structure) and M2 (F3 purchase pages, F4 nav wiring, F5 checkout) are
+all complete, 5/5 features. F2's known future item — a structurally-safe interim fix (resized
+capacity constants) for a real oversell defect Codex GPT-5.5 caught (multi-head products and
+shared capacity pools not modelled by the checkout's per-slug-only capacity enforcement) — is now
+CLOSED: F5 shipped the real fix (multi-head- and shared-pool-aware capacity enforcement via
+`planPooledCapacity()` in `lib/checkout-reservation.ts`) and restored the real physical ceilings
+(200/200/60/60) that F2's interim numbers (100/50/30/30) had conservatively capped below.
+Workshops themselves (the per-session structure) remain unpriced/unbuilt pending a real
+council-confirmed session list — deliberately out of scope for this mission, not a gap in it.
 
 **F3 (Build category-aware Conferences and Workshops & Field Trips purchase pages) is DONE as of
 2026-08-21** — Conferences and Workshops & Field Trips now have real purchase pages/routes,
@@ -232,8 +234,14 @@ reachable from the nav chooser (`/national-show/tickets`) and directly
 file's Closeout — F3 note for detail) before shipping. **F4 (extend the mega-menu's Tickets
 column with Conferences and Workshops & Field Trips) is DONE as of 2026-08-21** — gate 8/8,
 @qa PASS, Codex GPT-5.5 PASS, `components/chrome/nav-config.ts` extended by append only, no
-structural changes to Header/MegaMenu/MobileMenu. One item remains in M2: **F5** (checkout
-capacity-pooling fix deferred from F2, plus general checkout support for these ticket types).
+structural changes to Header/MegaMenu/MobileMenu. **F5 (checkout support for Conference and
+Workshop/Field-Trip/Cocktail ticket types, plus the real pooled-capacity fix deferred from F2) is
+DONE as of 2026-08-21** — contract gate 17/17 green, needed FIVE independent real defect-repair
+cycles (cross-slug pool oversell; an inactive-sibling pool leak plus a UI sold-out display gap;
+a coverage gap in the architect's own proof artifact found by @qa-apex; a shared-validator
+integer/fractional bug on `capacity`; a cross-show pool-name-collision gap in
+`ticketTypesByPoolQuery`) — see the mission file's Closeout — F5 for the full account and
+`learned.md` for the reusable lessons. **This closes out Mission Two — no items remain in M2.**
 - [ ] **[P2] `scripts/migrate-ticket-type-category.ts` has only ever run `--dry-run`.** The 5 live
   admission `ticketType` docs in production Sanity still have `category: null`. This is
   protected by F3's admission-only null-category read-time fallback in the GROQ query, so it is
@@ -814,3 +822,5 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-pulse-quota-resume-hardening.md
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-contract-gate-integrity-fixes.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-token-accounting-hardening.md

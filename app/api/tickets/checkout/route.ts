@@ -9,9 +9,10 @@ import {
   isNamedAttendeeSatisfied,
   isWithinEarlyBirdWindow,
   lineItemsMatchExistingPositions,
-  planCapacity,
+  planPooledCapacity,
   resolveChosenDayForPosition,
   writeMultiReservationPair,
+  type CapacityPoolConfig,
   type CheckoutLineItemInputLike,
   type LineItemPlan,
 } from '@/lib/checkout-reservation';
@@ -26,6 +27,7 @@ import {
   activeShowWindowQuery,
   nationalShowSalesQuery,
   ticketTypeBySlugQuery,
+  ticketTypesByPoolQuery,
   ticketsPageQuery,
 } from '@/sanity/queries';
 import { getSoldCountsByTicketType } from '@/lib/data/tickets';
@@ -101,6 +103,10 @@ interface SanityTicketType {
   earlyBirdCutoff: unknown;
   requiresDaySelection: unknown;
   requiresAttendeeNames: unknown;
+  // F5 (ticketing-conferences-and-events, M2): optional pooled-capacity fields — unknown for
+  // the same reason as every other field above, Sanity does not enforce types at the API level.
+  capacityPool: unknown;
+  headcountPerUnit: unknown;
 }
 
 // F1 (ticketing-foundation): the currently sellable `show`, per resolveActiveShow()'s
@@ -140,6 +146,17 @@ function isUsableAmount(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
+// F5: `capacity` must be a non-negative INTEGER, matching the schema's own
+// `Rule.required().integer().min(0)` (sanity/schemas/documents/ticketType.ts) — unlike
+// `price`, capacity is a seat count and cannot carry a fraction. A document written outside
+// Studio could otherwise persist a fractional capacity that Studio validation never saw,
+// which effectiveCapacity()/planPooledCapacity() (lib/checkout-reservation.ts) would then
+// silently carry into pooled-capacity math. Same typeof-load-bearing-twice reasoning as
+// isUsableAmount() above.
+function isUsableCapacity(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+}
+
 // F4 (multi-line-item-cart, M2): `releasedQuantity` is optional and 0 is a real value — this
 // narrows `unknown` to `number | null` (never `undefined`, which effectiveCapacity() also
 // accepts, but Sanity's GROQ response uses `null` for an absent field). Same
@@ -156,13 +173,38 @@ function isUsableEarlyBirdCutoff(value: unknown): value is string | null {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+// F5 (ticketing-conferences-and-events, M2): `capacityPool` is optional — null/undefined means
+// this ticket type is its own singleton pool.
+function isUsableCapacityPool(value: unknown): value is string | null {
+  if (value === null || value === undefined) return true;
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+// F5: `headcountPerUnit` is optional — null/undefined defaults to 1 (resolved below, not here).
+// Must be a positive integer, matching the schema's own `Rule.integer().min(1)` constraint
+// (sanity/schemas/documents/ticketType.ts) — a document written outside Studio (e.g. a future
+// migration script) could otherwise persist a fractional value that Studio validation never saw,
+// which planPooledCapacity() would then silently multiply into pooled-capacity math.
+function isUsableHeadcountPerUnit(value: unknown): value is number | null {
+  if (value === null || value === undefined) return true;
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1;
+}
+
 /**
  * 500, not 400: the request was well-formed and the CMS document is misconfigured, so a
  * 4xx would tell the buyer to fix something they cannot see.
  */
 function unusableTicketType(
   slug: string,
-  field: 'capacity' | 'price' | 'show' | 'releasedQuantity' | 'earlyBirdCutoff' | 'showWindow'
+  field:
+    | 'capacity'
+    | 'price'
+    | 'show'
+    | 'releasedQuantity'
+    | 'earlyBirdCutoff'
+    | 'showWindow'
+    | 'capacityPool'
+    | 'headcountPerUnit'
 ): NextResponse {
   console.error(
     `[tickets/checkout] ticketType '${slug}' has an unusable ${field}; refusing before any Firestore write.`
@@ -262,7 +304,9 @@ interface ReservationInput {
   showId: string;
   lineItems: CheckoutLineItemInputLike[];
   amountByType: Record<string, number>;
+  /** F5: keyed by resolved pool key (capacityPool ?? slug), not always by slug. */
   capacityByType: Record<string, number>;
+  poolConfigByType: Record<string, CapacityPoolConfig>;
   idempotencyKey: string;
   recoveryTokenSecret: string;
 }
@@ -378,6 +422,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // (a line item's own chosenDay is what's being validated, not the type as a whole).
   const requiresDaySelectionByType: Record<string, boolean> = {};
   const requiresAttendeeNamesByType: Record<string, boolean> = {};
+  // F5 (ticketing-conferences-and-events, M2): capacityByType below is now keyed by resolved
+  // POOL KEY (capacityPool ?? slug), not always by slug — see
+  // goldens/f5-checkout.golden.md "Route.ts wiring".
+  const poolConfigByType: Record<string, CapacityPoolConfig> = {};
 
   for (const slug of distinctTicketTypes) {
     let ticketTypeDoc: SanityTicketType | null;
@@ -398,8 +446,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 500, not 400: the request was well-formed and the CMS document is misconfigured, so
     // a 4xx would tell the buyer to fix something they cannot see.
-    const { capacity, price, releasedQuantity, earlyBirdCutoff } = ticketTypeDoc;
-    if (!isUsableAmount(capacity)) return unusableTicketType(slug, 'capacity');
+    const { capacity, price, releasedQuantity, earlyBirdCutoff, capacityPool, headcountPerUnit } =
+      ticketTypeDoc;
+    if (!isUsableCapacity(capacity)) return unusableTicketType(slug, 'capacity');
     if (!isUsableAmount(price)) return unusableTicketType(slug, 'price');
     if (!ticketTypeMatchesActiveShow(ticketTypeDoc, activeShowId)) {
       return unusableTicketType(slug, 'show');
@@ -410,12 +459,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!isUsableEarlyBirdCutoff(earlyBirdCutoff)) {
       return unusableTicketType(slug, 'earlyBirdCutoff');
     }
+    if (!isUsableCapacityPool(capacityPool)) {
+      return unusableTicketType(slug, 'capacityPool');
+    }
+    if (!isUsableHeadcountPerUnit(headcountPerUnit)) {
+      return unusableTicketType(slug, 'headcountPerUnit');
+    }
 
     // F4: a released quantity greater than physical capacity never raises the ceiling — see
     // lib/checkout-reservation.ts's effectiveCapacity(). This is the entire integration point
-    // with planCapacity()/aggregateRequestedQuantities(), neither of which changes.
+    // with planPooledCapacity()/aggregateRequestedQuantities().
     amountByType[slug] = price;
-    capacityByType[slug] = effectiveCapacity(capacity, releasedQuantity);
+    // F5: capacityByType is keyed by resolved POOL KEY, not always by slug. Math.min against
+    // any value already present at that key is a defensive floor — the pool-data invariant
+    // (contracts/checks/ticketing-conferences-and-events-f5/check-pool-data-invariant.mjs)
+    // already requires every pool member to declare an identical capacity/releasedQuantity, so
+    // this should be a no-op in the correct case; it fails safe toward the LOWER ceiling if
+    // that invariant is ever violated by a future edit.
+    const poolKey = capacityPool ?? slug;
+    const thisTypeCeiling = effectiveCapacity(capacity, releasedQuantity);
+    capacityByType[poolKey] =
+      poolKey in capacityByType
+        ? Math.min(capacityByType[poolKey], thisTypeCeiling)
+        : thisTypeCeiling;
+    poolConfigByType[slug] = { pool: capacityPool ?? null, headcountPerUnit: headcountPerUnit ?? 1 };
     requiresDaySelectionByType[slug] = ticketTypeDoc.requiresDaySelection === true;
     requiresAttendeeNamesByType[slug] = ticketTypeDoc.requiresAttendeeNames === true;
 
@@ -428,6 +495,47 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: 'Early-bird pricing for this ticket type has closed.' },
         { status: 409 }
       );
+    }
+  }
+
+  // F5 defect repair (ticketing-conferences-and-events, M2, Codex GPT-5.5 cross-model review
+  // 2026-08-21): poolConfigByType above is built ONLY from the cart's own distinct ticketType
+  // slugs. But getSoldCountsByTicketType() below returns sold counts for EVERY ticketType ever
+  // sold for this show, including pool siblings the current buyer isn't purchasing. Without a
+  // poolConfigByType entry, planPooledCapacity() resolves an unrecognised sold slug's pool key
+  // as itself (`poolConfigByType[slug]?.pool ?? slug`) rather than the shared pool — so, e.g.,
+  // already-sold sunset-cocktails-couple heads would never count against a fresh
+  // sunset-cocktails-single request's shared ceiling. Complete poolConfigByType here with every
+  // OTHER active ticketType sharing a pool the cart touches, before planPooledCapacity() runs.
+  const poolKeysTouchedByCart = new Set(
+    Object.values(poolConfigByType)
+      .map((config) => config.pool)
+      .filter((pool): pool is string => pool !== null)
+  );
+  for (const poolKey of poolKeysTouchedByCart) {
+    let siblingDocs: { slug: string | null; capacityPool: unknown; headcountPerUnit: unknown }[];
+    try {
+      siblingDocs =
+        (await client.fetch<{ slug: string | null; capacityPool: unknown; headcountPerUnit: unknown }[]>(
+          ticketTypesByPoolQuery,
+          { pool: poolKey, showId: activeShowId }
+        )) ?? [];
+    } catch (error) {
+      console.error('[tickets/checkout] Failed to fetch pool siblings from Sanity:', error);
+      return NextResponse.json(
+        { error: 'Unable to look up ticket pricing. Please try again.' },
+        { status: 500 }
+      );
+    }
+    for (const sibling of siblingDocs) {
+      if (!sibling.slug || sibling.slug in poolConfigByType) continue;
+      if (!isUsableHeadcountPerUnit(sibling.headcountPerUnit)) {
+        return unusableTicketType(sibling.slug, 'headcountPerUnit');
+      }
+      poolConfigByType[sibling.slug] = {
+        pool: poolKey,
+        headcountPerUnit: sibling.headcountPerUnit ?? 1,
+      };
     }
   }
 
@@ -522,6 +630,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       })),
       amountByType,
       capacityByType,
+      poolConfigByType,
       idempotencyKey,
       recoveryTokenSecret,
     });
@@ -702,10 +811,11 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
       }
 
       const requestedQtyByType = aggregateRequestedQuantities(input.lineItems);
-      const capacityResult = planCapacity({
+      const capacityResult = planPooledCapacity({
         requestedQtyByType,
         soldCountsByType: soldCounts,
         capacityByType: input.capacityByType,
+        poolConfigByType: input.poolConfigByType,
       });
       if (capacityResult.kind === 'over-capacity') {
         return { kind: 'over-capacity', ticketTypes: capacityResult.ticketTypes };

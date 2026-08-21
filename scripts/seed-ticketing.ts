@@ -138,6 +138,8 @@ export function buildTicketTypeDoc(
     requiresDaySelection: product.requiresDaySelection,
     requiresAttendeeNames: product.requiresAttendeeNames,
     category: product.category,
+    capacityPool: product.capacityPool ?? null,
+    headcountPerUnit: product.headcountPerUnit ?? null,
   };
 }
 

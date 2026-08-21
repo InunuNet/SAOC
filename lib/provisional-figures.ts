@@ -33,6 +33,14 @@ export interface ProvisionalAdmissionProduct {
   /** Always `true` in this file today — literal, not computed — see golden README "The
    *  provisional flag is per-value, not per-file". */
   provisional: true;
+  /** F5 (ticketing-conferences-and-events, M2): the shared physical pool this product's sold
+   *  units draw from. `null`/unset (the default for every Admission/Conference product) means
+   *  the product is its own singleton pool — byte-identical to today's per-slug behavior. See
+   *  goldens/f5-checkout.golden.md "Determination 2". */
+  capacityPool?: string | null;
+  /** F5: how many physical seats/heads one sold unit of this product consumes against its
+   *  pool. Defaults to 1 when unset. */
+  headcountPerUnit?: number;
 }
 
 export const EARLY_BIRD_CUTOFF = '2027-07-31';
@@ -219,10 +227,12 @@ const SUNSET_COCKTAILS_COUPLE_PRICE = 450;
 const FIELD_TRIP_SINGLE_PRICE = 300;
 const FIELD_TRIP_ALL_OUTINGS_PRICE = 750;
 
-const SUNSET_COCKTAILS_SINGLE_CAPACITY = 100;
-const SUNSET_COCKTAILS_COUPLE_CAPACITY = 50;
-const FIELD_TRIP_SINGLE_CAPACITY = 30;
-const FIELD_TRIP_ALL_OUTINGS_CAPACITY = 30;
+// F5 (ticketing-conferences-and-events, M2): real physical ceilings, restored from F2's
+// interim conservative resize (100/50/30/30) now that planPooledCapacity() correctly pools
+// capacity across the products sharing each physical venue/vehicle constraint — see
+// goldens/f5-checkout.golden.md "Determination 2".
+const SUNSET_COCKTAILS_POOL_CAPACITY = 200;
+const FIELD_TRIP_POOL_CAPACITY = 60;
 
 export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
@@ -231,12 +241,14 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
     category: 'workshop-field-trip',
     description: 'Admission to the Sunset Cocktails evening reception. 18+ event.',
     price: SUNSET_COCKTAILS_SINGLE_PRICE,
-    capacity: SUNSET_COCKTAILS_SINGLE_CAPACITY,
+    capacity: SUNSET_COCKTAILS_POOL_CAPACITY,
     releasedQuantity: null,
     earlyBirdCutoff: null,
     requiresDaySelection: false,
     requiresAttendeeNames: true,
     provisional: true,
+    capacityPool: 'sunset-cocktails',
+    headcountPerUnit: 1,
   },
   {
     slug: 'sunset-cocktails-couple',
@@ -244,12 +256,14 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
     category: 'workshop-field-trip',
     description: 'Admission to the Sunset Cocktails evening reception for two guests. 18+ event.',
     price: SUNSET_COCKTAILS_COUPLE_PRICE,
-    capacity: SUNSET_COCKTAILS_COUPLE_CAPACITY,
+    capacity: SUNSET_COCKTAILS_POOL_CAPACITY,
     releasedQuantity: null,
     earlyBirdCutoff: null,
     requiresDaySelection: false,
     requiresAttendeeNames: true,
     provisional: true,
+    capacityPool: 'sunset-cocktails',
+    headcountPerUnit: 2,
   },
   {
     slug: 'field-trip-single',
@@ -257,12 +271,14 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
     category: 'workshop-field-trip',
     description: 'Transport and entry for one guided field trip outing.',
     price: FIELD_TRIP_SINGLE_PRICE,
-    capacity: FIELD_TRIP_SINGLE_CAPACITY,
+    capacity: FIELD_TRIP_POOL_CAPACITY,
     releasedQuantity: null,
     earlyBirdCutoff: null,
     requiresDaySelection: false,
     requiresAttendeeNames: true,
     provisional: true,
+    capacityPool: 'field-trip',
+    headcountPerUnit: 1,
   },
   {
     slug: 'field-trip-all-outings',
@@ -270,12 +286,14 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
     category: 'workshop-field-trip',
     description: 'Transport and entry for all guided field trip outings.',
     price: FIELD_TRIP_ALL_OUTINGS_PRICE,
-    capacity: FIELD_TRIP_ALL_OUTINGS_CAPACITY,
+    capacity: FIELD_TRIP_POOL_CAPACITY,
     releasedQuantity: null,
     earlyBirdCutoff: null,
     requiresDaySelection: false,
     requiresAttendeeNames: true,
     provisional: true,
+    capacityPool: 'field-trip',
+    headcountPerUnit: 1,
   },
 ];
 

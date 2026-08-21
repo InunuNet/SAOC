@@ -9,12 +9,13 @@ import {
   activeTicketTypesByCategoryQuery,
   nationalShowSalesQuery,
   ticketsPageQuery,
+  ticketTypesByPoolQuery,
 } from '@/sanity/queries';
 import { getSoldCountsByTicketType } from '@/lib/data/tickets';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { warnMissingCategoryFallback } from '@/lib/tickets-category-warning';
 import { filterPubliclyListableTicketTypes } from '@/lib/demo-ticket-type';
-import { effectiveCapacity } from '@/lib/checkout-reservation';
+import { effectiveCapacity, planPooledCapacity, type CapacityPoolConfig } from '@/lib/checkout-reservation';
 import { buildShowWindow, computeShowDays } from '@/lib/show-window-lookup';
 import { resolveActiveShow } from '@/lib/show-resolution';
 import type { ProvisionalProductCategory } from '@/lib/provisional-figures';
@@ -49,6 +50,8 @@ interface SanityTicketType {
   provisional?: boolean | null;
   requiresDaySelection?: boolean | null;
   category?: string | null;
+  capacityPool?: string | null;
+  headcountPerUnit?: number | null;
 }
 
 interface SalesState {
@@ -133,15 +136,60 @@ export async function CategoryTicketsPage({
   const types = filterPubliclyListableTicketTypes(ticketTypes ?? []);
   const soldCounts = salesOpen ? await getSoldCountsByTicketType(NATIONAL_SHOW_ID) : {};
 
-  const cardData: TicketTypeCardData[] = types.map((t) => ({
-    slug: t.slug,
-    name: t.name,
-    price: t.price,
-    description: t.description,
-    soldOut: (soldCounts[t.slug] ?? 0) >= effectiveCapacity(t.capacity, t.releasedQuantity),
-    provisional: t.provisional === true,
-    requiresDaySelection: t.requiresDaySelection === true,
-  }));
+  // F5 defect repair (ticketing-conferences-and-events, M2, Codex GPT-5.5 cross-model review
+  // 2026-08-21): a pooled product's sold-out state can't be determined from its own slug's
+  // sold count against its own `capacity` field — every product sharing a pool declares the
+  // FULL pool ceiling as its own `capacity` (see lib/provisional-figures.ts), so that
+  // comparison almost never trips even when the shared pool is actually exhausted. Reuse
+  // planPooledCapacity() — the same pooling math checkout enforces server-side — asking "would
+  // one more unit of this type fit?" for each listed type, rather than reimplementing the
+  // pooling arithmetic a second time here.
+  const poolConfigByType: Record<string, CapacityPoolConfig> = {};
+  const capacityByType: Record<string, number> = {};
+  for (const t of types) {
+    const poolKey = t.capacityPool ?? t.slug;
+    poolConfigByType[t.slug] = { pool: t.capacityPool ?? null, headcountPerUnit: t.headcountPerUnit ?? 1 };
+    const ceiling = effectiveCapacity(t.capacity, t.releasedQuantity);
+    capacityByType[poolKey] =
+      poolKey in capacityByType ? Math.min(capacityByType[poolKey], ceiling) : ceiling;
+  }
+
+  // Pool siblings not in `types` (inactive, or listed on a different category page) still hold
+  // sold/reserved positions that count against the shared ceiling — same reasoning as
+  // checkout's own sibling fetch in app/api/tickets/checkout/route.ts.
+  const poolKeysTouched = new Set(
+    types.map((t) => t.capacityPool).filter((pool): pool is string => Boolean(pool))
+  );
+  for (const poolKey of poolKeysTouched) {
+    const siblingDocs =
+      (await sanityFetch<{ slug: string | null; headcountPerUnit?: number | null }[]>({
+        query: ticketTypesByPoolQuery,
+        params: { pool: poolKey, showId: activeShowId },
+        tags: ['ticketType', 'sanity'],
+      })) ?? [];
+    for (const sibling of siblingDocs) {
+      if (!sibling.slug || sibling.slug in poolConfigByType) continue;
+      poolConfigByType[sibling.slug] = { pool: poolKey, headcountPerUnit: sibling.headcountPerUnit ?? 1 };
+    }
+  }
+
+  const cardData: TicketTypeCardData[] = types.map((t) => {
+    const poolCheck = planPooledCapacity({
+      requestedQtyByType: { [t.slug]: 1 },
+      soldCountsByType: soldCounts,
+      capacityByType,
+      poolConfigByType,
+    });
+    return {
+      slug: t.slug,
+      name: t.name,
+      price: t.price,
+      description: t.description,
+      soldOut: poolCheck.kind === 'over-capacity',
+      provisional: t.provisional === true,
+      requiresDaySelection: t.requiresDaySelection === true,
+    };
+  });
   const allSoldOut = cardData.length > 0 && cardData.every((t) => t.soldOut);
 
   return (
