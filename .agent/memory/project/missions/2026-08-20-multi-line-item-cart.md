@@ -6,8 +6,8 @@ goal: 'Visitor ticketing purchase flow: multi-line-item cart, the four admission
   limit'
 created_at: '2026-08-20T07:42:29.138799+00:00'
 started_at: '2026-08-20T07:49:48.246148+00:00'
-last_active_at: '2026-08-20T14:16:38.795646+00:00'
-status: in_progress
+last_active_at: '2026-08-21T09:29:19.999943+00:00'
+status: paused
 cost_estimate:
   features: 6
   milestones: 3
@@ -87,6 +87,7 @@ milestones:
   - F6
   status: pending
 ---
+
 
 
 

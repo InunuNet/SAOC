@@ -1,9 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-08-20-multi-line-item-cart.md",
+  "mission": ".agent/memory/project/missions/2026-08-21-leeann-content-corrections.md",
   "checkpoint": {
-    "milestone": "M2",
-    "feature": "F5",
-    "ts": "2026-08-20T14:16:38.795646+00:00"
+    "milestone": null,
+    "feature": null
   },
-  "activated_at": "2026-08-20T14:16:38.795745+00:00"
+  "activated_at": "2026-08-21T09:29:24.284228+00:00"
 }
