@@ -38,6 +38,17 @@ export const NAV: readonly NavItem[] = [
     href: '/national-show',
     columns: [
       {
+        id: 'about',
+        heading: 'About the Show',
+        headingHref: '/national-show',
+        links: [
+          { id: 'what-to-expect', label: 'What to Expect', href: '/national-show/what-to-expect' },
+          { id: 'plan-your-visit', label: 'Plan Your Visit', href: '/national-show/plan-your-visit' },
+          { id: 'faq', label: 'FAQ', href: '/national-show/faq' },
+          { id: 'archive', label: 'Archive', href: '/national-show/archive' },
+        ],
+      },
+      {
         id: 'tickets',
         heading: 'Tickets',
         headingHref: '/national-show/tickets',

@@ -311,3 +311,22 @@ self-authored proof artifacts regardless of author role). Outstanding, tracked i
 workshop sessions themselves remain unpriced/unbuilt (blocked on a council-confirmed session
 list, not a mission gap), and the admission products' `category: null` backfill (protected by
 F3's fallback, not urgent).
+
+### 2026-08-21 (latest) — `national-show-menu-restructure` M1 (F1+F2) DONE
+
+~~`national-show-menu-restructure` M1 (F1 two-column "About the Show" + "Tickets" mega-menu
+column, F2 exhibitor-entry "not yet open" messaging fix)~~ ✅ **DONE**, contract gate 21/21
+green, @qa PASS (independent real-browser verification), Codex GPT-5.5 PASS on the real diff.
+Fixed Brad's live-tested complaint 2026-08-21: the About-the-Show content pages (What to
+Expect, Plan Your Visit, FAQ, Archive) were confirmed-live but unreachable from any nav, and
+`/national-show/exhibitors` read as a purchase dead end with no messaging. F1 added a second
+`NavColumn` to `components/chrome/nav-config.ts`'s show `NavItem` — MegaMenu.tsx gained a
+two-column layout, MobileMenu.tsx/Header.tsx needed zero structural change (proven by
+byte-diff assertion, not assumption). F2 added honest "not yet open" static copy to both
+`app/(marketing)/national-show/exhibitors/page.tsx` and the exhibitor chooser card on
+`app/(marketing)/national-show/tickets/page.tsx` — no invented dates, no purchase flow, no
+Sanity schema change. Docs: `docs/f1-national-show-menu-restructure.md`. Mission gate passed
+via `mission.py gate --milestone M1`; close-out staging blocked mid-session by an unrelated
+dirty `.claude/settings.json` from concurrent harness work in this session — see `learned.md`
+and the maintainer's report to `main` for detail; mission content (features/milestone status)
+is `done`, only the final wrap-mission commit step is pending.

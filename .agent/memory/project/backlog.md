@@ -242,6 +242,14 @@ a coverage gap in the architect's own proof artifact found by @qa-apex; a shared
 integer/fractional bug on `capacity`; a cross-show pool-name-collision gap in
 `ticketTypesByPoolQuery`) — see the mission file's Closeout — F5 for the full account and
 `learned.md` for the reusable lessons. **This closes out Mission Two — no items remain in M2.**
+**`national-show-menu-restructure` M1 (F1+F2) is DONE as of 2026-08-21** — contract gate 21/21
+green, @qa PASS, Codex GPT-5.5 PASS. Fixed Brad's live-tested complaint: the National Show
+mega-menu's Tickets column now sits alongside a new "About the Show" column (What to Expect,
+Plan Your Visit, FAQ, Archive — previously confirmed-live but unreachable from any menu), and
+`/national-show/exhibitors` plus the exhibitor chooser card on `/national-show/tickets` now
+carry honest "not yet open" static messaging instead of reading as a silent purchase dead end.
+See `docs/f1-national-show-menu-restructure.md` and `learned.md` for the reusable two-column-
+flat-over-nested-submenu pattern.
 - [ ] **[P2] `scripts/migrate-ticket-type-category.ts` has only ever run `--dry-run`.** The 5 live
   admission `ticketType` docs in production Sanity still have `category: null`. This is
   protected by F3's admission-only null-category read-time fallback in the GROQ query, so it is
@@ -824,3 +832,7 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-contract-gate-integrity-fixes.md
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-token-accounting-hardening.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-quota-mirror-partial-write.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-codex-qa-timeout.md

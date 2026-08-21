@@ -86,6 +86,14 @@ export default async function ExhibitorInfoPage() {
           </Link>
         </p>
 
+        <p className="mt-2 inline-flex items-start gap-2 border border-rule bg-parchment px-2.5 py-1 font-mono text-[10.5px] uppercase leading-relaxed tracking-[0.14em] text-muted">
+          <span aria-hidden="true">※</span>
+          <span>
+            Exhibitor ticket sales are not yet open. This page covers what to expect when
+            entries open — check back, or contact the council to be notified.
+          </span>
+        </p>
+
         <ExhibitorKeyDates
           heading={info?.keyDatesHeading}
           note={info?.keyDatesNote}

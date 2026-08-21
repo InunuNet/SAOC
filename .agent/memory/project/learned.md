@@ -1894,3 +1894,38 @@ that the function downstream of it gets called. Lesson: "the author isn't dev" i
 grounds to skip adversarial review of a proof artifact — any self-authored assertion, regardless
 of which role wrote it, needs an independent pass asking "what broken implementation would this
 still pass?"
+
+## Unpushed commits mean a "live" claim is unverified — check ahead/behind, not just local git log (2026-08-21)
+
+`national-show-menu-restructure`: 5 commits sat unpushed to GitHub for the entirety of the prior
+mission (`ticketing-conferences-and-events`), meaning `beta.saoc.co.za` was silently stale the
+whole time — Firebase App Hosting builds from GitHub pushes, not local commits or `git log`.
+Local commit history looking complete is not evidence the deployed site reflects it. Before
+telling Brad something is "live" or asking him to test it, run `git status -sb` and read the
+`ahead/behind` count as a routine health check, and confirm the push actually landed (not just
+that `git push` returned 0 — see the App Hosting rollout-dedup trap already in `backlog.md`).
+
+## Two-column flat mega-menu over nested submenu — reusable pattern for this project's mega-menus (2026-08-21)
+
+`national-show-menu-restructure` F1: adding a second `NavColumn` (flat, side-by-side with the
+existing column) rather than nesting a submenu inside a column was the deliberate choice,
+because `MegaMenu.tsx` has zero flyout/hover-intent concept today and this project already
+carries known a11y debt (see the WCAG contrast/focus-ring items in `backlog.md`) — adding
+nested/flyout interaction would compound that debt, not just add a feature. `MobileMenu.tsx`
+already stacks `columns.map()` inside one accordion panel, so a flat second column needed zero
+structural change there or in `Header.tsx` — proven with a byte-diff assertion against the
+pre-change baseline, not just assumed. Reuse this shape (append columns, never nest) for any
+future mega-menu ask on this project until the a11y debt is paid down and a real flyout pattern
+is deliberately designed.
+
+## `mission.py close-out`'s out-of-scope dirty-file guard can block on another agent's concurrent work (2026-08-21)
+
+`national-show-menu-restructure` close-out: `execution/skills/wrap_mission.sh` correctly
+refused to stage/commit because `.claude/settings.json` was dirty (a `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`
+change unrelated to this mission, from other concurrent harness work in the same busy
+multi-agent session). This is the guard working as designed — do not set
+`WRAP_ALLOW_OUT_OF_SCOPE=1` to push past it as maintainer; that risks bundling an unrelated,
+possibly in-flight change from another agent into this mission's commit. Correct response:
+finish all mission-file/memory content edits (which don't need git), leave the final
+close-out commit for a retry once the shared file is clean, and report the blocker rather
+than forcing it.

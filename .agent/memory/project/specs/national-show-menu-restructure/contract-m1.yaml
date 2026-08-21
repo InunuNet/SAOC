@@ -1,0 +1,143 @@
+schema: athanor.contract/v1
+slug: national-show-menu-restructure
+goal: >
+  M1: F1 extends components/chrome/nav-config.ts's "show" NavItem from 1 to 2 NavColumn
+  entries — new "About the Show" column (What to Expect, Plan Your Visit, FAQ, Archive)
+  alongside the existing untouched "Tickets" column — with MegaMenu.tsx gaining a
+  two-column layout and MobileMenu.tsx/Header.tsx needing zero structural change. F2 fixes
+  the exhibitor-entry dead-end complaint with honest "not yet open" static messaging on
+  app/(marketing)/national-show/exhibitors/page.tsx and the exhibitor chooser card on
+  app/(marketing)/national-show/tickets/page.tsx — copy only, no Sanity schema change, no
+  purchase flow. See .agent/memory/project/specs/national-show-menu-restructure/spec.md for
+  full rationale (two-column flat over nested submenu; why this is a messaging fix not a
+  routing bug).
+created_at: '2026-08-21'
+autonomy: high
+features:
+  - id: F1
+    name: Two-column National Show mega-menu — add "About the Show" alongside "Tickets"
+    status: pending
+  - id: F2
+    name: Exhibitor-entry messaging fix — honest "not yet open" status, no implied purchase
+    status: pending
+goldens:
+  - .agent/memory/project/specs/national-show-menu-restructure/goldens/f1-nav-about-column.golden.md
+  - .agent/memory/project/specs/national-show-menu-restructure/goldens/f2-exhibitor-messaging.golden.md
+assertions:
+  phase: 4
+  checks:
+    # --- F1: the 4 target pages are real, reachable routes ---
+    - id: A1
+      description: >
+        All 4 About-the-Show target pages exist as real route files (re-proves reachability
+        before wiring nav to them — if this ever goes red the nav change points at a 404).
+      command: 'test -f "app/(marketing)/national-show/what-to-expect/page.tsx" && test -f "app/(marketing)/national-show/plan-your-visit/page.tsx" && test -f "app/(marketing)/national-show/faq/page.tsx" && test -f "app/(marketing)/national-show/archive/page.tsx"'
+
+    # --- F1: new "about" column, each link individually ---
+    - id: A2
+      description: nav-config.ts has an "about" NavColumn with heading "About the Show" and headingHref /national-show.
+      command: 'grep -A2 "id: ''about''" components/chrome/nav-config.ts | grep -q "heading: ''About the Show''" && grep -A3 "id: ''about''" components/chrome/nav-config.ts | grep -q "headingHref: ''/national-show''"'
+    - id: A3
+      description: '"about" column has a what-to-expect link to /national-show/what-to-expect.'
+      command: 'grep -A2 "id: ''what-to-expect''" components/chrome/nav-config.ts | grep -q "href: ''/national-show/what-to-expect''"'
+    - id: A4
+      description: '"about" column has a plan-your-visit link to /national-show/plan-your-visit.'
+      command: 'grep -A2 "id: ''plan-your-visit''" components/chrome/nav-config.ts | grep -q "href: ''/national-show/plan-your-visit''"'
+    - id: A5
+      description: '"about" column has a faq link to /national-show/faq.'
+      command: 'grep -A2 "id: ''faq''" components/chrome/nav-config.ts | grep -q "href: ''/national-show/faq''"'
+    - id: A6
+      description: '"about" column has an archive link to /national-show/archive.'
+      command: 'grep -A2 "id: ''archive''" components/chrome/nav-config.ts | grep -q "href: ''/national-show/archive''"'
+    - id: A7
+      description: >
+        The "about" column has exactly 4 links total — guards against a duplicate entry or
+        an accidental extra being introduced.
+      command: '[ "$(sed -n "/id: ''about'',/,/^      },$/p" components/chrome/nav-config.ts | grep -cE "^\s*\{ id:")" = "4" ]'
+
+    # --- F1: pre-existing "tickets" column proven byte-for-byte unchanged ---
+    - id: A8
+      description: >
+        The pre-existing Tickets column's 5 links (visitor, exhibitor, vendor, conferences,
+        workshops) are all still present — pure append of a new column, not a rewrite of the
+        existing one.
+      command: '[ "$(grep -cE "id: ''visitor''|id: ''exhibitor''|id: ''vendor''|id: ''conferences''|id: ''workshops''" components/chrome/nav-config.ts)" = "5" ]'
+    - id: A9
+      description: The Tickets column still has exactly 5 links total (no accidental additions/removals).
+      command: '[ "$(sed -n "/id: ''tickets'',/,/^      },$/p" components/chrome/nav-config.ts | grep -cE "^\s*\{ id:")" = "5" ]'
+    - id: A10
+      description: >
+        The exact pre-existing Tickets NavLeaf lines are byte-for-byte unchanged (re-checks
+        the specific label/href pairs, not just counts).
+      command: 'grep -qF "{ id: ''visitor'', label: ''Visitor Tickets'', href: ''/tickets'' }" components/chrome/nav-config.ts && grep -qF "{ id: ''exhibitor'', label: ''Exhibitor Entry'', href: ''/national-show/exhibitors'' }" components/chrome/nav-config.ts && grep -qF "{ id: ''vendor'', label: ''Vendor Registration'', href: ''/national-show/vendors/register'' }" components/chrome/nav-config.ts && grep -qF "{ id: ''conferences'', label: ''Conferences'', href: ''/national-show/conferences'' }" components/chrome/nav-config.ts && grep -qF "{ id: ''workshops'', label: ''Workshops & Field Trips'', href: ''/national-show/workshops'' }" components/chrome/nav-config.ts'
+
+    # --- F1: exactly 2 columns on the show item ---
+    - id: A11
+      description: The "show" NavItem's columns array has exactly 2 NavColumn entries (about, tickets).
+      command: '[ "$(sed -n "/id: ''show'',/,/^  },$/p" components/chrome/nav-config.ts | grep -cE "^\s*\{$|^\s*id: ''(about|tickets)'',")" -ge "2" ] && grep -q "id: ''about''" components/chrome/nav-config.ts && grep -q "id: ''tickets''" components/chrome/nav-config.ts'
+
+    # --- F1: MegaMenu.tsx gained two-column layout, kept a11y primitives intact ---
+    - id: A12
+      description: >
+        MegaMenu.tsx's columns wrapper picked up a responsive multi-column layout class
+        (grid-cols-2 or flex-row at a breakpoint) — proves the layout change actually
+        landed, not just the data.
+      command: 'grep -qE "grid-cols-2|flex-row" components/chrome/MegaMenu.tsx'
+    - id: A13
+      description: >
+        MegaMenu.tsx did not strip native keyboard focus visibility while restyling the
+        columns wrapper — no outline-none/focus:outline-none introduced.
+      command: '! grep -qE "outline-none" components/chrome/MegaMenu.tsx'
+    - id: A14
+      description: >
+        MegaMenu.tsx's disclosure primitives (aria-haspopup, aria-expanded, Escape-close)
+        are untouched — two-column layout is a rendering change, not a new interaction model.
+      command: 'grep -q "aria-haspopup" components/chrome/MegaMenu.tsx && grep -q "aria-expanded" components/chrome/MegaMenu.tsx && grep -q "Escape" components/chrome/MegaMenu.tsx'
+
+    # --- F1: MobileMenu.tsx and Header.tsx need zero structural change ---
+    - id: A15
+      description: >
+        No structural change was made to MobileMenu.tsx or Header.tsx — this is the
+        architect's own claim from spec.md ("already renders columns.map() stacked, no
+        code change needed") and must be proven, not assumed. If @dev finds this claim
+        false, this assertion is the intended real finding for @qa, not a contract bug.
+      command: 'git diff --stat -- components/chrome/MobileMenu.tsx components/chrome/Header.tsx | grep -q . && exit 1 || exit 0'
+
+    # --- F2: exhibitor page banner ---
+    - id: A16
+      description: >
+        exhibitors/page.tsx renders a real JSX text node containing "not yet open"
+        (case-insensitive) about exhibitor ticket sales — checked via a helper script so
+        the match must land inside a JSX text/expression, not merely appear anywhere in
+        the file (comment, import path, or unrelated string).
+      command: 'python3 .agent/memory/project/specs/national-show-menu-restructure/scripts/check_jsx_text.py "app/(marketing)/national-show/exhibitors/page.tsx" "not yet open"'
+    - id: A17
+      description: >
+        The new exhibitor-page banner sits between PageHero and ExhibitorKeyDates in
+        render order (matches spec.md's placement instruction).
+      command: 'python3 .agent/memory/project/specs/national-show-menu-restructure/scripts/check_banner_order.py'
+
+    # --- F2: tickets chooser card ---
+    - id: A18
+      description: >
+        The exhibitor OPTIONS entry's body no longer implies action-now ("Register your
+        entries" is gone) and now states sales are not yet open, in the same voice family.
+      command: '! grep -q "Register your entries" "app/(marketing)/national-show/tickets/page.tsx" && grep -qiE "not yet open|opens closer to the show" "app/(marketing)/national-show/tickets/page.tsx"'
+    - id: A19
+      description: >
+        The exhibitor OPTIONS entry's cta and href are unchanged — this is a copy-only fix,
+        the destination was already correct.
+      command: 'grep -qF "cta: ''Exhibitor entry''" "app/(marketing)/national-show/tickets/page.tsx" && grep -qF "href: ''/national-show/exhibitors''" "app/(marketing)/national-show/tickets/page.tsx"'
+
+    # --- F2: no invented dates/process guardrail ---
+    - id: A20
+      description: >
+        No 4-digit year or day-of-week name was introduced into the new exhibitor-page
+        banner text or the reworded tickets-page card body — guards against fabricating a
+        date/commitment nobody has actually made.
+      command: 'python3 .agent/memory/project/specs/national-show-menu-restructure/scripts/no_invented_dates.py'
+
+    # --- shared: TypeScript compiles clean after both features ---
+    - id: A21
+      description: TypeScript compiles clean after the nav-config.ts, MegaMenu.tsx, exhibitors/page.tsx, and tickets/page.tsx edits.
+      command: pnpm exec tsc --noEmit

@@ -16,7 +16,7 @@ const OPTIONS = [
   {
     id: 'exhibitor',
     heading: "I'm exhibiting orchids",
-    body: 'Register your entries for judging and exhibition at the National Show.',
+    body: 'See what is involved in exhibiting at the National Show. Entry sales are not yet open — they open closer to the show.',
     cta: 'Exhibitor entry',
     href: '/national-show/exhibitors',
   },

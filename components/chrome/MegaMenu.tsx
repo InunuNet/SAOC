@@ -68,39 +68,41 @@ export function MegaMenu({ item }: MegaMenuProps) {
         <div
           role="menu"
           aria-label={item.label}
-          className="absolute left-0 top-full z-50 mt-3 min-w-[280px] rounded-sm border border-rule bg-parchment p-6 shadow-float"
+          className="absolute left-0 top-full z-50 mt-3 min-w-[280px] rounded-sm border border-rule bg-parchment p-6 shadow-float sm:min-w-[520px]"
         >
           <div className="flex flex-col gap-6">
-            {item.columns.map((column) => (
-              <div key={column.id}>
-                {column.headingHref ? (
-                  <Link
-                    href={column.headingHref}
-                    onClick={() => setOpen(false)}
-                    className="font-serif text-[16px] font-medium text-ink hover:text-primary transition-colors duration-150"
-                  >
-                    {column.heading}
-                  </Link>
-                ) : (
-                  <span className="font-serif text-[16px] font-medium text-ink">
-                    {column.heading}
-                  </span>
-                )}
-                <ul className="mt-3 flex flex-col gap-2">
-                  {column.links.map((link) => (
-                    <li key={link.id}>
-                      <Link
-                        href={link.href}
-                        onClick={() => setOpen(false)}
-                        className="font-sans text-[14px] text-ink/80 hover:text-primary transition-colors duration-150"
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <div className="flex flex-col gap-6 sm:flex-row sm:gap-10">
+              {item.columns.map((column) => (
+                <div key={column.id}>
+                  {column.headingHref ? (
+                    <Link
+                      href={column.headingHref}
+                      onClick={() => setOpen(false)}
+                      className="font-serif text-[16px] font-medium text-ink hover:text-primary transition-colors duration-150"
+                    >
+                      {column.heading}
+                    </Link>
+                  ) : (
+                    <span className="font-serif text-[16px] font-medium text-ink">
+                      {column.heading}
+                    </span>
+                  )}
+                  <ul className="mt-3 flex flex-col gap-2">
+                    {column.links.map((link) => (
+                      <li key={link.id}>
+                        <Link
+                          href={link.href}
+                          onClick={() => setOpen(false)}
+                          className="font-sans text-[14px] text-ink/80 hover:text-primary transition-colors duration-150"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
 
             <Link
               href={item.href}
