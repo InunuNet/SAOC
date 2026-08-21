@@ -9,19 +9,19 @@ goal: 'Restructure ticketing navigation so a visitor lands on the correct ticket
 created_at: '2026-08-21T00:00:00+00:00'
 started_at: null
 last_active_at: null
-status: in_progress
+status: done
 started_at: '2026-08-21T11:30:00+00:00'
 cost_estimate:
   features: 0
   milestones: 0
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M1
+  feature: F2
+  ts: '2026-08-21T00:00:00+00:00'
 features:
 - id: F1
-  status: pending
+  status: done
   tier: apex
   title: 'APPROVED 2026-08-21: National Show mega-menu with Tickets chooser + direct deep links'
   inline_brief: 'Brad approved a direction 2026-08-21 from
@@ -53,7 +53,7 @@ features:
     needs its own version of this mega-menu -> chooser structure, not just a desktop
     dropdown; do not ship desktop-only and call it done.'
 - id: F2
-  status: pending
+  status: done
   tier: standard
   title: Resolve the "Events" naming collision
   inline_brief: 'The site already has a top-level "Events" nav item at app/(marketing)/events/
@@ -77,7 +77,7 @@ milestones:
   features:
   - F1
   - F2
-  status: pending
+  status: done
 ---
 
 # Mission: Fix ticketing navigation
@@ -116,3 +116,19 @@ it once Mission One's gate is green and F4's estimates land.
 - Check whether this mission's F1/F2 overlap with the paused `multi-line-item-cart` mission's
   F6 (booking contact block, POPIA fields) before dispatching - unlikely given F6 is
   checkout-flow content not nav structure, but confirm rather than assume.
+
+## Closeout (2026-08-21)
+
+M1 (F1+F2) done, gate green 8/8. "National Show" is the one top-level nav item; a data-driven
+mega-menu (`components/chrome/nav-config.ts`) holds About the Show / Tickets / Get Involved
+columns, desktop and mobile both cover it. Tickets column heading routes to
+`/national-show/tickets` ("What are you here for?"); the same column also lists direct
+sub-links to Visitor/Exhibitor/Vendor entry points. F2's naming collision resolved by
+construction (no second top-level "Events"). Chain: @architect-apex (F1, tier: apex) →
+@dev → @qa-apex adversarial → mandatory Codex GPT-5.5 cross-model pass (run twice) → @docs
+(`docs/f1-ticketing-nav-restructure.md`) → gate 8/8. Two real defects caught and fixed, see
+`learned.md`: a keyboard focus-escape bug in the desktop mega-menu (@qa-apex) and a mobile
+"National Show" disclosure that never linked to `/national-show` itself (Codex). Mission
+status set to `done`. Mission Two (Conferences + Workshops/Field-Trips/Cocktails categories)
+is intentionally not drafted yet — blocked on real pricing data from
+`leeann-content-corrections` F4, per this file's own "Mission Two" section above.

@@ -267,3 +267,25 @@ position is intentional. A "fix NAV" mission (routing visitors between Orchid Ex
 Exhibitor/Vendor vs Conferences vs Events) is next up after `leeann-content-corrections`, before
 scoping the unbuilt ticket categories. QR codes still not rendering in confirmation emails —
 pre-existing P1, untouched this session.
+
+### 2026-08-21 (later) — `ticketing-nav-restructure` M1 (F1+F2) done
+
+~~`ticketing-nav-restructure` M1 (F1 mega-menu + chooser, F2 Events-naming collision)~~ ✅
+**DONE**, gate 8/8, @qa-apex adversarial PASS, Codex GPT-5.5 cross-model pass run twice
+(clean). "National Show" is now the single top-level nav item; a data-driven mega-menu
+(`components/chrome/nav-config.ts`) holds About the Show / Tickets / Get Involved columns on
+both desktop and mobile. The Tickets column heading routes to a new chooser page
+(`/national-show/tickets`); the same column also lists direct Visitor/Exhibitor/Vendor
+sub-links. F2's naming collision (ticketed "Events" category vs. the existing societies-
+calendar "Events" nav item) is resolved by construction — no second top-level "Events".
+Scoped deliberately to the Exhibition category only; Conferences/Workshops categories are
+Mission Two, intentionally not drafted, blocked on real pricing data from
+`leeann-content-corrections` F4. Two real defects caught this session (see `learned.md`): a
+keyboard focus-escape bug in the desktop mega-menu (@qa-apex, live interaction) and a mobile
+"National Show" disclosure that never linked to `/national-show` itself (Codex, file read) —
+both fixed and now covered by regression tests, and a second confirmed instance of Codex and
+Claude's own QA catching genuinely different bug classes on the same diff. Docs:
+`docs/f1-ticketing-nav-restructure.md`. Mission status set to `done`. **Note:** `active.json`
+still points at `leeann-content-corrections`, not this mission — this mission ran without
+ever being set active; worth checking with the orchestrator whether that was intentional or
+a missed `mission.py activate` step.

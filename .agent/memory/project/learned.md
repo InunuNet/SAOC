@@ -1707,3 +1707,30 @@ project's secret-corruption incident class (see `project_secret_corruption_class
 values and embedded `\n` sequences are easy to mis-split. The project's `dotenv` dependency is
 already available; load `.env.local` through it in any one-off verification script instead of
 writing a custom parser.
+
+## Menu/disclosure close logic needs a focus-out check, not just Escape/outside-click (2026-08-21)
+
+`ticketing-nav-restructure` F1's desktop mega-menu closed correctly on Escape and on an
+outside click, but Tab-ing past the last menu item left it open and visible — the close logic
+never handled focus leaving the menu via keyboard Tab, only the two other exit paths. @qa-apex
+found this through live interaction, not a code read. Fixed with an `onBlur`/`relatedTarget`
+check. Lesson: any dropdown/mega-menu/disclosure component's "when does this close" logic must
+enumerate all three exit paths (Escape, outside pointer click, keyboard focus leaving via Tab)
+as a checklist, not derive the third from the first two — they are genuinely different event
+sources and a component that handles two of them "looks done" while still failing keyboard
+users specifically.
+
+## Adversarial QA and Codex catch different bug classes — run both, neither substitutes for the other (2026-08-21)
+
+Same F1 nav-restructure feature: @qa-apex's adversarial pass (live interaction) caught the
+keyboard focus-escape bug above. The separate mandatory Codex GPT-5.5 cross-model pass (close
+file-level reading, not interaction) caught a different real bug in the same diff: the mobile
+"National Show" disclosure button never rendered a link to `/national-show` itself, only to its
+ticketing sub-links — a real navigation-loss regression that Codex's line-by-line file read
+caught and the Playwright/interaction-based QA suite had no test case for (it wasn't looking for
+an absent link, only for present ones behaving correctly). Reinforces
+`feedback_codex_mandatory_qa`: these two review styles are not redundant with each other — one
+finds behavioral bugs through interaction, the other finds structural omissions through reading,
+and this session is a second confirmed instance (after the 2026-08-18 vendor-form incident
+already recorded in `.claude/rules/workflow.md`) of Codex catching something Claude's own QA
+missed on the same diff.

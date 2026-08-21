@@ -100,6 +100,7 @@ types/            — TypeScript interfaces
 | Ticketing — position expiry write fix | Done | Reserved seat holds now actually release on expiry — fixes a live bug where abandoned carts held seats forever. See [docs/ticketing-position-expiry-write.md](docs/ticketing-position-expiry-write.md). |
 | Order reconciliation | Done | Detects orders stranded `reserved` past expiry and emails a human; never auto-settles. See [docs/order-reconciliation.md](docs/order-reconciliation.md). |
 | Admin navigation menu | Done | Persistent, capability-aware nav on every `/admin/*` surface, plus a real sign-out. See [docs/admin-nav-menu.md](docs/admin-nav-menu.md). |
+| Ticketing Navigation M1 | Done | National Show becomes the one top-level nav item with a mega-menu. Tickets column heading routes to a chooser page; direct sub-links go to Visitor/Exhibitor/Vendor entry. Exhibition category only (Visitor, Exhibitor, Vendor tickets). See [docs/f1-ticketing-nav-restructure.md](docs/f1-ticketing-nav-restructure.md). |
 
 Full milestone docs are in [`docs/`](docs/).
 

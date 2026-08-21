@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-08-21T11:09Z_
+_Generated: 2026-08-21T13:21Z_
 
 ## What happened last session
-Closed multi-line-item-cart M1+M2 UX/products/day-attendee work; proved a real ticketing purchase end-to-end against the deployed site (App Hosting rollout must be triggered explicitly, does not auto-fire on push); caught and corrected real memory/backlog drift on show dates and policy-page status; drafted new active mission leeann-content-corrections (placeholder purge, POPIA officer, refund content, remaining price estimates); elevated Ozow gateway to high priority per client's stated preference.
+ticketing-nav-restructure M1 (F1+F2) done, gate 8/8: National Show mega-menu with Tickets chooser + direct Visitor/Exhibitor/Vendor deep links, desktop+mobile; Events naming collision resolved by construction. Two real defects caught and fixed: keyboard focus-escape bug (qa-apex, live interaction) and mobile disclosure missing its own /national-show link (Codex, file read) — second confirmed instance of the two review styles catching different bug classes. Mission Two (Conferences/Workshops categories) intentionally not drafted, blocked on leeann-content-corrections F4 pricing data.

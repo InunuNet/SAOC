@@ -6,17 +6,22 @@
 // Rendered by Header; receives the same NAV array.
 // =============================================================
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
+
+import type { NavItem } from './nav-config';
 
 interface MobileMenuProps {
   open: boolean;
   onClose: () => void;
-  nav: ReadonlyArray<{ id: string; label: string; href: string; disabled?: boolean }>;
+  nav: ReadonlyArray<NavItem>;
 }
 
 export function MobileMenu({ open, onClose, nav }: MobileMenuProps) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
   if (!open) return null;
 
   const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -56,6 +61,67 @@ export function MobileMenu({ open, onClose, nav }: MobileMenuProps) {
         <nav aria-label="Mobile primary">
           <ul className="flex flex-col gap-1">
             {nav.map((n) => {
+              if (n.type === 'mega') {
+                const isExpanded = expandedId === n.id;
+                return (
+                  <li key={n.id}>
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
+                      onClick={() => setExpandedId(isExpanded ? null : n.id)}
+                      className="flex w-full items-center justify-between px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150"
+                    >
+                      {n.label}
+                      <ChevronDown
+                        size={16}
+                        strokeWidth={1.5}
+                        className={isExpanded ? 'rotate-180 transition-transform' : 'transition-transform'}
+                      />
+                    </button>
+                    {isExpanded && (
+                      <div className="pl-3 pb-2">
+                        <Link
+                          href={n.href}
+                          onClick={onClose}
+                          className="block px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150"
+                        >
+                          Visit National Show &rarr;
+                        </Link>
+                        {n.columns.map((column) => (
+                          <div key={column.id} className="mt-2">
+                            {column.headingHref ? (
+                              <Link
+                                href={column.headingHref}
+                                onClick={onClose}
+                                className="block px-3 py-2 font-serif text-[14px] font-medium text-ink hover:text-primary transition-colors duration-150"
+                              >
+                                {column.heading}
+                              </Link>
+                            ) : (
+                              <span className="block px-3 py-2 font-serif text-[14px] font-medium text-ink">
+                                {column.heading}
+                              </span>
+                            )}
+                            <ul className="flex flex-col gap-1">
+                              {column.links.map((link) => (
+                                <li key={link.id}>
+                                  <Link
+                                    href={link.href}
+                                    onClick={onClose}
+                                    className="block px-6 py-2 font-sans text-[14px] text-ink/80 hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150"
+                                  >
+                                    {link.label}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </li>
+                );
+              }
               if (n.disabled) {
                 return (
                   <li key={n.id}>

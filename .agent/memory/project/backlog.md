@@ -198,10 +198,14 @@ day selection, named attendees, checkout, PayFast payment, confirmation — prov
 end-to-end purchase against the deployed site 2026-08-21 (both positions correctly `paid`,
 `chosenDay` correctly persisted). **Exhibitor/Vendor ticketing, Conferences, and
 Workshops/Field Trips/Cocktails are NOT built** — vendor registration (a separate, already-
-built flow for booth applications) is not the same as an Exhibitor ticket/pass. Next mission
-after the nav fix is scoping and building these remaining categories. The site navigation does
-not yet distinguish or route between these categories — see the nav-fix mission
-(2026-08-21, next up) for the immediate work.
+built flow for booth applications) is not the same as an Exhibitor ticket/pass. **Nav restructure
+DONE 2026-08-21** (`ticketing-nav-restructure` M1, gate 8/8) — "National Show" is now the single
+top-level nav item with a mega-menu whose Tickets column routes to a chooser page
+(`/national-show/tickets`) plus direct Visitor/Exhibitor/Vendor sub-links; the ticketed-"Events"
+vs. societies-calendar-"Events" naming collision is resolved by construction. Scoped to Exhibition
+only — Conferences and Workshops/Field-Trips/Cocktails still need their own nav sub-links once
+built (Mission Two, not yet drafted, blocked on real pricing data). Next up: scope and build the
+remaining ticket categories themselves.
 - [ ] **[P2] Day Visitor's chosen day is not shown on the ticket confirmation page.** Verified
   2026-08-21: `chosenDay` is correctly captured and persisted (`"2027-09-18"` confirmed in
   Firestore against a real purchase), but `/tickets/confirmation` only shows
@@ -767,3 +771,5 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 `InunuNet/SAOC` last showed zero open GitHub issues._
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=none
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-scoped-staging-commits.md

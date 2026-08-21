@@ -15,16 +15,8 @@ import { Search, Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { MobileMenu } from './MobileMenu';
 import { SearchOverlay } from './SearchOverlay';
-
-const NAV: ReadonlyArray<{ id: string; label: string; href: string; disabled?: boolean }> = [
-  { id: 'about', label: 'About', href: '/about' },
-  { id: 'societies', label: 'Societies', href: '/societies' },
-  { id: 'judging', label: 'Judging & Awards', href: '/judging' },
-  { id: 'show', label: 'National Show', href: '/national-show' },
-  { id: 'events', label: 'Events', href: '/events' },
-  { id: 'tickets', label: 'Tickets', href: '/tickets' },
-  { id: 'learn', label: 'Learn', href: '#', disabled: true },
-];
+import { MegaMenu } from './MegaMenu';
+import { NAV } from './nav-config';
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -98,6 +90,9 @@ export function Header() {
           {/* Zone 2 — primary nav */}
           <nav aria-label="Primary" className="hidden min-[1240px]:flex items-center gap-7">
             {NAV.map((n) => {
+              if (n.type === 'mega') {
+                return <MegaMenu key={n.id} item={n} />;
+              }
               const active = !n.disabled && isActive(n.href);
               if (n.disabled) {
                 return (

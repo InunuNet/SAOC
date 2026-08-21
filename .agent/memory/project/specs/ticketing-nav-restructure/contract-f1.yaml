@@ -1,0 +1,92 @@
+schema: athanor.contract/v1
+slug: ticketing-nav-restructure
+goal: >
+  Restructure site nav so "National Show" becomes the one top-level item, with a mega-menu
+  whose Tickets column heading routes to a plain-language chooser page
+  (/national-show/tickets) while the same column also carries direct sub-links straight to
+  Visitor tickets (/tickets), Exhibitor entry (/national-show/exhibitors), and Vendor
+  registration (/national-show/vendors/register) — Exhibition category only, per the
+  approved artifact (see F1's golden). F2 audits that this pass never introduces a bare
+  "Events" label ambiguous with the existing societies-calendar /events nav item.
+  Combined into one contract per the mission brief's "architect's call" — F1 (structure)
+  and F2 (naming) ship in one dev pass, but every assertion below is tagged by feature so
+  QA can verify each independently.
+created_at: '2026-08-21'
+autonomy: high
+features:
+  - id: F1
+    name: National Show mega-menu with Tickets chooser + direct deep links (desktop + mobile)
+    status: pending
+  - id: F2
+    name: Resolve the "Events" naming collision in copy F1 touches
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-nav-restructure/goldens/f1-mega-menu-nav.golden.md
+  - .agent/memory/project/specs/ticketing-nav-restructure/goldens/f2-events-naming.golden.md
+assertions:
+  phase: 4
+  checks:
+    # --- F1: shape ---
+    - id: A1
+      description: >
+        [F1] A nav config module exists (e.g. components/chrome/nav-config.ts) declaring a
+        mega-type item for National Show that contains a column headed "Tickets". False
+        state that still passes — a file with these tokens present but never imported by
+        Header.tsx (A5/A7 are what prove it's actually wired in and rendered).
+      command: f=$(grep -rl "mega" components/chrome/*.ts* 2>/dev/null | xargs grep -l "columns" 2>/dev/null | xargs grep -l "Tickets" 2>/dev/null | head -1); test -n "$f"
+    - id: A2
+      description: >
+        [F1] The Tickets column's links are a data array (reserving room for Mission Two to
+        append Conferences/Workshops without touching Header/MegaMenu/MobileMenu source),
+        not individually hardcoded JSX <Link> elements inside a component file. Checked by
+        requiring the three known hrefs to co-occur in a single .ts/.tsx literal array
+        assignment (grep for all three within one file that is NOT Header.tsx or
+        MobileMenu.tsx — i.e. a shared config file both consume).
+      command: f=$(grep -rl "/national-show/vendors/register" components/chrome/*.ts* | grep -v -e Header.tsx -e MobileMenu.tsx | head -1); test -n "$f" && grep -q "/tickets" "$f" && grep -q "/national-show/exhibitors" "$f"
+    - id: A4
+      description: >
+        [F1] /tickets itself is untouched — the existing Visitor ticket purchase page still
+        renders from app/(marketing)/tickets/page.tsx with no route rename.
+      command: test -f "app/(marketing)/tickets/page.tsx" && grep -q "TicketPurchaseForm" "app/(marketing)/tickets/page.tsx"
+    - id: A5
+      description: >
+        [F1] The new chooser page exists at the additive route /national-show/tickets
+        (distinct from /tickets) and links to all three Exhibition-category destinations.
+      command: f="app/(marketing)/national-show/tickets/page.tsx"; test -f "$f" && grep -q "/tickets" "$f" && grep -q "/national-show/exhibitors" "$f" && grep -q "/national-show/vendors/register" "$f"
+    - id: A6
+      description: >
+        [F1] No Conferences/Workshops route or page was built this pass (scope boundary —
+        Mission Two owns those). False state that still passes — an empty placeholder file
+        that renders nothing would dodge a route-existence check alone, which is why this
+        also fails if either directory exists at all, not just if it's non-empty.
+      command: '! find app/\(marketing\)/national-show -type d \( -iname "conferences" -o -iname "workshops*" \) 2>/dev/null | grep -q .'
+    # --- F1: behavioral (real browser, both viewports, keyboard) ---
+    - id: A7
+      description: >
+        [F1] Load-bearing behavioral proof — see execution/checks/verify_nav_mega_menu.ts
+        header comment for the full list of sub-cases (desktop keyboard-open mega-menu with
+        correct hrefs, Escape-closes-and-returns-focus, mobile hamburger → expandable
+        National Show section exposing the same three real hrefs independently of desktop,
+        the chooser page's own links, AND that nav[aria-label="Primary"] has no DIRECT
+        top-level <a href="/tickets"> outside the mega-menu's own dropdown container — the
+        real replacement for a purely static check on source text, since it observes the
+        rendered DOM instead of one particular way of writing the nav-config literal).
+        Every sub-case is reported and must pass independently; a single failing sub-case
+        fails this assertion.
+      command: node_modules/.bin/tsx execution/checks/verify_nav_mega_menu.ts
+    # --- F2: naming audit ---
+    - id: A8
+      description: >
+        [F2] Nothing this pass writes uses the bare word "Events" to label a ticket
+        category. Scans exactly the files this contract touches/creates for the naming
+        collision (nav config, the new chooser page, Header.tsx, MobileMenu.tsx) — a repo-
+        wide grep would false-positive on the legitimate, unrelated /events societies-
+        calendar nav item and page, which must NOT be touched by this check.
+      command: python3 execution/checks/verify_no_bare_events_label.py
+    - id: A9
+      description: >
+        [F2] The existing top-level "Events" nav item (societies calendar, /events) is
+        unchanged — still present, still labelled exactly "Events", still routing to
+        /events. Proves F2 didn't rename or remove the legitimate item while chasing the
+        collision.
+      command: grep -q "'/events'" components/chrome/*.ts* 2>/dev/null || grep -q "\"/events\"" components/chrome/*.ts*
