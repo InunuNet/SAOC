@@ -5,20 +5,20 @@ goal: 'Mission Two: extend ticketing to the two remaining categories from Lee-An
   Conferences (SAOC Symposium / WOSA Conference / Joint) and Workshops/Field Trips/Cocktails -
   using the nav shell and provisional-figures discipline Mission One and F4 already established'
 created_at: '2026-08-21T13:30:00+00:00'
-started_at: null
-last_active_at: null
-status: pending
+started_at: '2026-08-21T16:05:00+00:00'
+last_active_at: '2026-08-21T00:00:00+00:00'
+status: in_progress
 cost_estimate:
   features: 0
   milestones: 0
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M1
+  feature: F1
+  ts: '2026-08-21T00:00:00+00:00'
 features:
 - id: F1
-  status: pending
+  status: done
   tier: apex
   title: Estimate and structure the Conferences category (SAOC Symposium / WOSA Conference / Joint)
   inline_brief: 'Per Lee-Ann''s spec (Drive `1fegrT9UKObJ71tUjUme_kFtqieSOsYca`, section C):
@@ -125,3 +125,24 @@ same provisional-figures discipline rather than duplicating or contradicting it.
   @dev -> @qa(-apex) adversarial -> mandatory Codex GPT-5.5 cross-model review -> @docs ->
   contract gate -> @maintainer -> commit. Do not skip the Codex pass - it caught a real bug
   Mission One's own adversarial QA missed.
+
+## Closeout — F1 (2026-08-21)
+
+F1 (Estimate and structure the Conferences category) done, contract gate 5/5 green.
+@architect-apex confirmed `leeann-content-corrections` F4 had not yet run and real pricing
+data does not exist, so F1 owned the provisional estimation itself per Brad's standing
+instruction (estimate now, correct later, do not block on the council) rather than waiting.
+`CONFERENCE_PRODUCTS` (6 entries: SAOC Symposium Early-Bird/Normal, WOSA Conference
+Early-Bird/Normal, SAOC/WOSA Joint Early-Bird/Normal) added to `lib/provisional-figures.ts`,
+following the exact same provisional-flagged, single-source-of-truth discipline as the F4
+admission products; `scripts/seed-ticketing.ts` wired to seed them as `ticketType` Sanity
+documents, same schema as the five existing admission products — no bespoke data model, no
+Sanity schema/nav/checkout changes (those are F3/F4 of this mission). Chain: @architect-apex
+(contract-f1.yaml, 5 shell assertions, goldens, decision record in
+`contracts/golden/ticketing-conferences-f1/README.md`) -> @dev -> @qa-apex adversarial
+(independently re-verified diff, pricing math, tsc, scope discipline, and the new
+`requiresAttendeeNames` + `!requiresDaySelection` combination against every downstream
+consumer — PASS, no defects) -> mandatory Codex GPT-5.5 cross-model review (PASS, exit 0)
+-> @docs (`docs/f1-ticketing-conferences.md`, README milestones table) -> contract gate
+5/5 PASS. M1 (F1+F2) not yet complete — F2 (Workshops/Field Trips/Cocktails category)
+still pending. Next up: F2.

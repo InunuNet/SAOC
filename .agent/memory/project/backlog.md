@@ -44,11 +44,14 @@ Do not scope work from an entry that contradicts it.
 - [ ] **[P1] Ticket prices and capacities — estimate now, correct later (Brad's standing
   instruction, already the pattern used for the ticketing admission products in
   `lib/provisional-figures.ts`/F4).** Do not leave figures blank waiting on the council; put in
-  our best estimate, flagged provisional, same discipline as F4. Still outstanding beyond the five
-  admission products already estimated: vendor fees (exhibit/food), conference tickets (SAOC
-  Symposium/WOSA/joint), workshop/field-trip/cocktail pricing and capacity, venue/workshop
-  capacity figures generally. Her form answers (pricing artifact) are still empty as of
-  2026-08-21 — do not wait for them to start estimating the remaining categories.
+  our best estimate, flagged provisional, same discipline as F4. Conference tickets (SAOC
+  Symposium/WOSA/joint, 6 entries) now estimated and structured as of 2026-08-21
+  (`ticketing-conferences-and-events` F1, `CONFERENCE_PRODUCTS` in `lib/provisional-figures.ts`)
+  — data model done, but not yet wired into nav or checkout (that's F3/F4 of the same mission,
+  still pending). Still outstanding: vendor fees (exhibit/food), workshop/field-trip/cocktail
+  pricing and capacity, venue/workshop capacity figures generally. Her form answers (pricing
+  artifact) are still empty as of 2026-08-21 — do not wait for them to start estimating the
+  remaining categories.
 - [ ] **[P1] Refund and cancellation terms — draft real content ourselves for her to review/adjust
   (Brad's direction, 2026-08-21), do not wait for her answer first.** `/refunds` exists
   (`app/(marketing)/refunds/page.tsx`, 109 lines) but is deliberately figure-free — no cancellation

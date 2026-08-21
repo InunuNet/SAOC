@@ -92,3 +92,96 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     provisional: true,
   },
 ];
+
+/**
+ * F1 (ticketing-conferences-and-events, M1) — the six Conferences category products (SAOC
+ * Symposium, WOSA Conference, SAOC/WOSA Joint, each Early-Bird/Normal). Reuses
+ * `ProvisionalAdmissionProduct` verbatim rather than a second interface — see
+ * contracts/golden/ticketing-conferences-f1/README.md for the full pricing/capacity
+ * rationale (our estimate, no client source; Joint is priced as a genuine bundle discount).
+ */
+
+const SYMPOSIUM_CONFERENCE_EARLY_BIRD_PRICE = 450;
+const SYMPOSIUM_CONFERENCE_NORMAL_PRICE = 550;
+const JOINT_EARLY_BIRD_PRICE = 750;
+const JOINT_NORMAL_PRICE = 900;
+
+const SINGLE_TRACK_CAPACITY = 150;
+const JOINT_CAPACITY = 80;
+
+export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
+  {
+    slug: 'saoc-symposium-early-bird',
+    name: 'SAOC Symposium (Early-Bird)',
+    description: 'Full registration for the SAOC Symposium track during the early-bird window.',
+    price: SYMPOSIUM_CONFERENCE_EARLY_BIRD_PRICE,
+    capacity: SINGLE_TRACK_CAPACITY,
+    releasedQuantity: SINGLE_TRACK_CAPACITY,
+    earlyBirdCutoff: EARLY_BIRD_CUTOFF,
+    requiresDaySelection: false,
+    requiresAttendeeNames: true,
+    provisional: true,
+  },
+  {
+    slug: 'saoc-symposium',
+    name: 'SAOC Symposium',
+    description: 'Full registration for the SAOC Symposium track.',
+    price: SYMPOSIUM_CONFERENCE_NORMAL_PRICE,
+    capacity: SINGLE_TRACK_CAPACITY,
+    releasedQuantity: null,
+    earlyBirdCutoff: null,
+    requiresDaySelection: false,
+    requiresAttendeeNames: true,
+    provisional: true,
+  },
+  {
+    slug: 'wosa-conference-early-bird',
+    name: 'WOSA Conference (Early-Bird)',
+    description: 'Full registration for the WOSA Conference track during the early-bird window.',
+    price: SYMPOSIUM_CONFERENCE_EARLY_BIRD_PRICE,
+    capacity: SINGLE_TRACK_CAPACITY,
+    releasedQuantity: SINGLE_TRACK_CAPACITY,
+    earlyBirdCutoff: EARLY_BIRD_CUTOFF,
+    requiresDaySelection: false,
+    requiresAttendeeNames: true,
+    provisional: true,
+  },
+  {
+    slug: 'wosa-conference',
+    name: 'WOSA Conference',
+    description: 'Full registration for the WOSA Conference track.',
+    price: SYMPOSIUM_CONFERENCE_NORMAL_PRICE,
+    capacity: SINGLE_TRACK_CAPACITY,
+    releasedQuantity: null,
+    earlyBirdCutoff: null,
+    requiresDaySelection: false,
+    requiresAttendeeNames: true,
+    provisional: true,
+  },
+  {
+    slug: 'saoc-wosa-joint-early-bird',
+    name: 'SAOC/WOSA Joint (Early-Bird)',
+    description:
+      'Combined registration for both the SAOC Symposium and WOSA Conference tracks during ' +
+      'the early-bird window.',
+    price: JOINT_EARLY_BIRD_PRICE,
+    capacity: JOINT_CAPACITY,
+    releasedQuantity: JOINT_CAPACITY,
+    earlyBirdCutoff: EARLY_BIRD_CUTOFF,
+    requiresDaySelection: false,
+    requiresAttendeeNames: true,
+    provisional: true,
+  },
+  {
+    slug: 'saoc-wosa-joint',
+    name: 'SAOC/WOSA Joint',
+    description: 'Combined registration for both the SAOC Symposium and WOSA Conference tracks.',
+    price: JOINT_NORMAL_PRICE,
+    capacity: JOINT_CAPACITY,
+    releasedQuantity: null,
+    earlyBirdCutoff: null,
+    requiresDaySelection: false,
+    requiresAttendeeNames: true,
+    provisional: true,
+  },
+];

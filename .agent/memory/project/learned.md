@@ -1748,3 +1748,27 @@ defect location; check every multi-line single-quoted block in the file has a ma
 before assuming the pointed-at line is the fault. Multi-line quoted `inline_brief` fields in
 hand-written mission YAML are a real defect class — worth a quick `python3 -c "import yaml;
 yaml.safe_load(...)"` sanity check right after drafting, before the mission is ever activated.
+
+## Architect self-estimating provisional figures when upstream data is missing is a repeatable pattern (2026-08-21)
+
+`ticketing-conferences-and-events` F1: @architect-apex was instructed to check whether
+`leeann-content-corrections` F4 (estimate remaining unpriced categories) had already produced
+real figures before scoping. It confirmed F4 had not run, then did the estimation itself using
+the exact same discipline already established for the five admission products in
+`lib/provisional-figures.ts` (estimated, provisional-flagged, single source of truth, trivial
+to replace when real figures land) rather than blocking on the council or inventing a new
+pattern. This is Brads standing instruction (estimate now, correct later) working as intended
+for a second category (Conferences: SAOC Symposium / WOSA Conference / Joint, 6 entries) —
+worth treating as the template for F2 (Workshops/Field Trips/Cocktails) and any future category
+with no real pricing yet: check upstream first, self-estimate with the same discipline if
+absent, never wait.
+
+## New `requiresAttendeeNames` + `!requiresDaySelection` ticketType combination now exists, checked clean (2026-08-21)
+
+The five existing admission products (F4, `f4-admission-products`) never combined
+`requiresAttendeeNames: true` with `requiresDaySelection: false` — conference tickets
+(single-day-implicit, but still need attendee names for badges/certificates) are the first
+ticketType data to do so. @qa-apex explicitly checked this combination against every
+downstream consumer of `ticketType` (checkout, cart, admin) before signing off — PASS, no
+consumer assumed the two flags are correlated. Worth re-checking again if F2s
+workshops/field-trips introduce yet another new flag combination (e.g. per-session capacity).

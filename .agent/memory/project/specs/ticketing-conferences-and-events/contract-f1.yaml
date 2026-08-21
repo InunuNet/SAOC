@@ -1,0 +1,61 @@
+schema: athanor.contract/v1
+slug: ticketing-conferences-and-events
+goal: >
+  F1 (M1): add the six Conferences ticket types (SAOC Symposium Early-Bird/Normal, WOSA
+  Conference Early-Bird/Normal, SAOC/WOSA Joint Early-Bird/Normal) as plain ticketType
+  documents, reusing the F4 admission-products schema and provisional-figures discipline
+  verbatim — no schema changes, one new sibling array in lib/provisional-figures.ts.
+created_at: '2026-08-21'
+autonomy: high
+features:
+  - id: F1
+    name: Estimate and structure the Conferences category (SAOC Symposium / WOSA Conference / Joint)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-conferences-and-events/goldens/f1-conferences.golden.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        [F1] CONFERENCE_PRODUCTS in lib/provisional-figures.ts has exactly the six required
+        slugs, each with the correct requiresDaySelection/requiresAttendeeNames/provisional
+        flags, correct early-bird-vs-normal earlyBirdCutoff/releasedQuantity pairing (reusing
+        the shared EARLY_BIRD_CUTOFF constant, not a re-typed literal date), each early-bird
+        price strictly below its normal sibling, and the Joint price in each window forming a
+        real bundle (below the sum of the two matching singles, above either alone). Imports
+        and inspects the actual exported array — not a source-text grep — so a structurally
+        wrong shape fails even if all six names/prices are present. Negatively verified against
+        a deliberately broken fixture (wrong requiresDaySelection, Joint priced above the sum of
+        singles, early-bird priced above normal) — confirmed to fail for the right reasons
+        before this check was accepted.
+      command: npx tsx contracts/checks/ticketing-conferences-f1/check-conference-products.mjs
+    - id: A2
+      description: >
+        [F1] scripts/seed-ticketing.ts wires in CONFERENCE_PRODUCTS the same way it already
+        wires in ADMISSION_PRODUCTS — proves the seed script imports from the single source of
+        truth rather than needing its own copy.
+      command: grep -q "CONFERENCE_PRODUCTS" scripts/seed-ticketing.ts
+    - id: A3
+      description: >
+        [F1] None of the six conference prices (450/550/750/900) are re-typed as literals
+        anywhere in the seed script, the tickets pages, or components/tickets/ — the single-
+        source-of-truth discipline that prevented the CTICC-venue/18-21-September-style
+        divergence-by-copy incidents. Scoped to ticket-relevant paths only (not the whole repo)
+        to avoid unrelated numeric literals (e.g. Tailwind color-scale classes, OG image widths)
+        producing false positives.
+      command: '! grep -rEn "\b(450|550|750|900)\b" scripts/seed-ticketing.ts components/tickets "app/(marketing)/tickets" "app/(marketing)/national-show" 2>/dev/null | grep -q .'
+    - id: A4
+      description: >
+        [F1] Sanity schema is reused, not extended with a bespoke parallel model — no
+        conference/symposium/joint/wosa-named field was added to ticketType.ts, and no new
+        schema document file for conferences was created. Proves F1's schema-reuse decision
+        held in the actual implementation, not just in the golden's stated intent.
+      command: '! grep -iE "symposium|wosa|joint" sanity/schemas/documents/ticketType.ts && ! (find sanity/schemas -iname "*conference*" -o -iname "*symposium*" | grep -q .)'
+    - id: A5
+      description: >
+        [F1] No product name or description in lib/provisional-figures.ts uses the bare word
+        "Events" — consistency with ticketing-nav-restructure F2's naming-collision resolution
+        (Conferences itself carries no collision risk, but this keeps the invariant enforced
+        file-wide rather than assumed safe forever).
+      command: '! grep -n "\bEvents\b" lib/provisional-figures.ts'

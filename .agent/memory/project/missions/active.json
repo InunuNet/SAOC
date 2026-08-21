@@ -1,8 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-08-21-leeann-content-corrections.md",
+  "mission": ".agent/memory/project/missions/2026-08-21-ticketing-conferences-and-events.md",
   "checkpoint": {
-    "milestone": null,
-    "feature": null
+    "milestone": "M1",
+    "feature": "F1"
   },
-  "activated_at": "2026-08-21T09:29:24.284228+00:00"
+  "activated_at": "2026-08-21T16:05:00.000000+00:00"
 }
