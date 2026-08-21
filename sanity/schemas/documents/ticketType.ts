@@ -106,5 +106,25 @@ export const ticketType = defineType({
       initialValue: false,
       description: 'True for products (e.g. VIP) that must capture a named attendee.',
     }),
+    // F3 (ticketing-conferences-and-events, M2): which purchase page this ticket type
+    // belongs on. Required for new documents, no default `initialValue` — matching the
+    // `show` field's precedent above: a silent wrong-category default is worse than a
+    // Studio validation error forcing a conscious choice. The 15 pre-existing documents
+    // predate this field and are backfilled by scripts/migrate-ticket-type-category.ts.
+    // See contracts/golden/ticketing-purchase-pages-f3/README.md.
+    defineField({
+      name: 'category',
+      title: 'Category',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Admission', value: 'admission' },
+          { title: 'Conference', value: 'conference' },
+          { title: 'Workshop / Field Trip', value: 'workshop-field-trip' },
+        ],
+      },
+      description: 'Which purchase page this ticket type is sold on.',
+      validation: (Rule) => Rule.required(),
+    }),
   ],
 });

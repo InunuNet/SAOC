@@ -1,0 +1,209 @@
+schema: athanor.contract/v1
+slug: ticketing-conferences-and-events
+goal: >
+  F3 (M2): make the Conferences (6 products) and Workshops & Field Trips (4 products) ticketType
+  documents F1/F2 already built actually reachable and purchasable — they exist only as Sanity
+  data today, with NO route, NO category field, and NO filtered query, so they currently render
+  MIXED into /tickets alongside the 5 admission products (confirmed: activeTicketTypesQuery has
+  no category filter, ticketType.ts has no category-discriminating field). Adds: a `category`
+  field on ticketType (schema + backfill migration for the 15 canonical products, keyed off the
+  same lib/provisional-figures.ts arrays F1/F2 already treat as single source of truth); a
+  category-parameterized query; two new sibling routes
+  (/national-show/conferences, /national-show/workshops) built on a shared extracted page
+  component; a fix to /tickets itself so it goes back to showing ONLY admission products; and
+  two new option cards on the existing /national-show/tickets chooser page. Checkout requires
+  NO changes — confirmed by reading app/api/tickets/checkout/route.ts and
+  lib/checkout-reservation.ts: checkout is entirely ticketType-slug-driven (Firestore's
+  TicketType is `type TicketType = string`, the bare slug), so the six Conference and four
+  Workshop/Field-Trip products already sell end-to-end through the existing pipeline once a
+  route exists to reach them. Do NOT resolve F5's deferred capacity-pooling fix here — this
+  feature does not touch lib/checkout-reservation.ts or app/api/tickets/checkout/route.ts at
+  all, which A8 below proves mechanically.
+
+  DEFECT REPAIR (2026-08-21, @qa-apex, verified against the real live `production` Sanity
+  dataset): the first implementation pass's `activeTicketTypesByCategoryQuery($category)`
+  filtered strictly on `category == $category`. Every one of the 10 ticketType documents that
+  actually exist in the live dataset today has `category: null` (the backfill migration script
+  has only ever been run with --dry-run, never for real) — `null == "admission"` is false in
+  GROQ, so /tickets, the currently-LIVE, real-selling admission page, would render ZERO ticket
+  cards the instant this feature ships. This revision adds a read-time, admission-only
+  null-category fallback to the query (A11), a script fix so the migration no longer crashes on
+  documents that don't exist yet (A12), and an in-app warning so an admission-page product that
+  is silently relying on the fallback is never invisible to operators forever (A13). See
+  contracts/golden/ticketing-purchase-pages-f3/README.md, "Defect repair", for the full design
+  rationale including why the fallback is deliberately admission-only and does not risk masking
+  a genuinely-uncategorized future conference/workshop product.
+
+  DEFECT REPAIR 2 (2026-08-21, Codex GPT-5.5 cross-model review, second pass — found AFTER the
+  first null-category defect above was already fixed and QA re-verified it live): every product
+  literal in lib/provisional-figures.ts carries an explicit `category` field (F3's own A1), but
+  scripts/seed-ticketing.ts's document-creation object literal never copies it onto the created
+  Sanity doc — `category: product.category` is simply missing from the `client.createIfNotExists`
+  call. activeTicketTypesByCategoryQuery's null-category fallback (A11) is deliberately
+  admission-only (see README "Why the fallback is admission-only"), so a freshly-seeded
+  conference/workshop-field-trip product would be created with no `category` at all and be
+  genuinely, permanently invisible on /national-show/conferences and /national-show/workshops —
+  a real bug in the seed path itself, not a one-time migration-timing gap. Fix: add
+  `category: product.category` to the doc literal. Also required, found while writing this
+  repair's negative verification: scripts/seed-ticketing.ts calls `main()` unconditionally at
+  module scope, so merely IMPORTING the module (as a test/check must, to exercise the real
+  doc-building logic in isolation) re-runs the full live seed against the real `production`
+  Sanity dataset — confirmed by actually running the pre-repair check and watching it print
+  "Seeding ticketing content in Sanity dataset \"production\"" before failing. createIfNotExists/
+  setIfMissing are idempotent so no data was corrupted, but importing test code must never have
+  live side effects (see project memory project_contract_checks_mutate_live_content.md). Fix:
+  extract doc-building into a pure, exported `buildTicketTypeDoc(product, index, showId)`
+  function with no env/network access, and guard `main()` behind a direct-execution check so
+  importing the module never triggers it. See A14 and contracts/golden/
+  ticketing-purchase-pages-f3/README.md, "Defect repair 2", for the full rationale.
+created_at: '2026-08-21'
+autonomy: high
+features:
+  - id: F3
+    name: Build category-aware Conferences and Workshops & Field Trips purchase pages
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-conferences-and-events/goldens/f3-purchase-pages.golden.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        [F3] Every one of the 15 products across ADMISSION_PRODUCTS/CONFERENCE_PRODUCTS/
+        WORKSHOP_FIELD_TRIP_PRODUCTS in lib/provisional-figures.ts carries the new `category`
+        field, correctly matching which array it lives in (admission/conference/
+        workshop-field-trip), with exact counts (5/6/4) and no 4th category value anywhere —
+        the single source of truth the schema, query, and migration script all key off.
+        Imports and inspects the actual exported arrays, not source text. Negatively verified:
+        fails today (pre-implementation) with 15 "expected category X, got undefined" findings
+        — confirmed by running it against the current repo state.
+      command: 'npx tsx contracts/checks/ticketing-purchase-pages-f3/check-category-assignment.mjs'
+    - id: A2
+      description: >
+        [F3] Sanity schema (sanity/schemas/documents/ticketType.ts) has a `category` field with
+        exactly the three required option values (admission/conference/workshop-field-trip) —
+        proves the category taxonomy is enforced in the CMS, not just in application code.
+      command: 'grep -q "name: ''category''" sanity/schemas/documents/ticketType.ts && grep -q "''admission''" sanity/schemas/documents/ticketType.ts && grep -q "''conference''" sanity/schemas/documents/ticketType.ts && grep -q "''workshop-field-trip''" sanity/schemas/documents/ticketType.ts'
+    - id: A3
+      description: >
+        [F3] A category-parameterized query exists in sanity/queries.ts (additive — the
+        existing activeTicketTypesQuery is untouched in name/shape for any other caller), used
+        by every ticket-purchase page to select only its own category's products.
+      command: 'grep -q "activeTicketTypesByCategoryQuery" sanity/queries.ts && grep -q ''\$category'' sanity/queries.ts'
+    - id: A4
+      description: >
+        [F3] The three purchase-page routes exist and each renders its own category via the
+        shared extracted page component — /tickets stays admission-only (this is the fix for
+        the live "all 15 products mixed on /tickets" bug), the two new routes render
+        conference and workshop-field-trip respectively. Proves no route was skipped and no
+        route was pointed at the wrong category.
+      command: 'grep -q ''category="admission"'' "app/(marketing)/tickets/page.tsx" && test -f "app/(marketing)/national-show/conferences/page.tsx" && grep -q ''category="conference"'' "app/(marketing)/national-show/conferences/page.tsx" && test -f "app/(marketing)/national-show/workshops/page.tsx" && grep -q ''category="workshop-field-trip"'' "app/(marketing)/national-show/workshops/page.tsx"'
+    - id: A5
+      description: >
+        [F3] The shared page component (extracted from /tickets/page.tsx's existing body so
+        the three routes are not a triplicated copy-paste of ~130 lines each) actually queries
+        by category rather than re-fetching the unfiltered list and filtering in JS — proves
+        the filtering is server-side/query-level, not a client-side band-aid that still
+        over-fetches every category on every page.
+      command: 'grep -rl "activeTicketTypesByCategoryQuery" components/tickets/ | grep -qi categor'
+    - id: A6
+      description: >
+        [F3] No bare word "Events" in either new route file — consistency with
+        ticketing-nav-restructure F2's naming-collision resolution and this mission's own
+        required qualified form ("Workshops & Field Trips"), same invariant F1's A5 and F2's A2
+        enforce for their own files.
+      command: '! grep -rnE "\bEvents\b" "app/(marketing)/national-show/conferences/page.tsx" "app/(marketing)/national-show/workshops/page.tsx"'
+    - id: A7
+      description: >
+        [F3] A one-time, idempotent migration script backfills `category` onto whichever of the
+        15 canonical ticketType documents actually exist in the target dataset, following the
+        exact setIfMissing/non-destructive/--dry-run pattern
+        scripts/migrate-show-sales-fields.ts already established (this project's incident
+        history is why force-overwrite migrations are refused) — keyed off the same
+        lib/provisional-figures.ts arrays A1 verifies, not a second hand-typed
+        slug-to-category list. Revised by the defect-repair pass: the script must query which
+        of the 15 document IDs actually exist before patching (`existingIds`) and SKIP —
+        log, don't throw — any that don't, because the live dataset today only has the 5
+        admission-category documents seeded; the 10 conference/workshop-field-trip documents
+        are seeded separately by scripts/seed-ticketing.ts (out of scope here) and will already
+        carry `category` at seed time via the provisional-figures spread, making this script's
+        patch for those a safe no-op once they exist. Without the existence check, the original
+        script would throw on every conference/workshop docId today (Sanity `.patch()` on a
+        nonexistent document errors) — this assertion proves that regression is closed.
+      command: 'test -f scripts/migrate-ticket-type-category.ts && grep -q "setIfMissing" scripts/migrate-ticket-type-category.ts && grep -q "provisional-figures" scripts/migrate-ticket-type-category.ts && grep -q "existingIds" scripts/migrate-ticket-type-category.ts && grep -q "SKIP" scripts/migrate-ticket-type-category.ts'
+    - id: A8
+      description: >
+        [F3] Checkout stays untouched — proves the "checkout is already generic, no F3 changes
+        needed" decision held in the real diff. No `category` reference anywhere in
+        app/api/tickets/checkout/route.ts or lib/checkout-reservation.ts; both files remain
+        ticketType-slug-driven only.
+      command: '! grep -l "category" app/api/tickets/checkout/route.ts lib/checkout-reservation.ts'
+    - id: A9
+      description: >
+        [F3] The existing /national-show/tickets chooser page (its OPTIONS card grid,
+        headingHref target of the mega-menu's Tickets column) gains two more cards for
+        Conferences and Workshops & Field Trips, linking to the two new routes — otherwise a
+        visitor landing on this pre-existing "what are you here for?" page would see no way to
+        reach the two categories this feature makes purchasable.
+      command: 'grep -q "Conferences" "app/(marketing)/national-show/tickets/page.tsx" && grep -q "Workshops" "app/(marketing)/national-show/tickets/page.tsx" && grep -q "/national-show/conferences" "app/(marketing)/national-show/tickets/page.tsx" && grep -q "/national-show/workshops" "app/(marketing)/national-show/tickets/page.tsx"'
+    - id: A10
+      description: >
+        [F3] Decision record exists documenting the schema/query/route design and the
+        confirmed-generic-checkout finding, so this scope decision doesn't silently rot the way
+        the pre-F3 nav gap did.
+      command: 'test -f contracts/golden/ticketing-purchase-pages-f3/README.md'
+    - id: A11
+      description: >
+        [F3][defect-repair] activeTicketTypesByCategoryQuery treats a null/missing `category`
+        field as "admission" ONLY when $category === "admission", with no leakage into the
+        conference or workshop-field-trip categories, and still excludes active:false
+        documents. This check EXECUTES the real GROQ query text extracted live from
+        sanity/queries.ts via groq-js (an actual GROQ parser/evaluator) against a synthetic
+        dataset covering every category state a live document can be in — it observes the
+        query mechanism itself, not source text. Negatively verified: run against this repo's
+        pre-repair query (`category == $category`, no fallback clause) it fails with
+        "admission fallback: expected [...vip, legacy-null-category, category-field-never-set],
+        got [vip]" — reproducing the exact live defect QA found (null-category documents
+        silently vanish from /tickets) — confirmed by running it against the current
+        pre-repair query text.
+      command: 'npx tsx contracts/checks/ticketing-purchase-pages-f3/check-category-query-null-fallback.mjs'
+    - id: A12
+      description: >
+        [F3][defect-repair] lib/tickets-category-warning.ts exports warnMissingCategoryFallback,
+        called by CategoryTicketsPage.tsx on every fetch — the safety valve for A11's fallback,
+        so a null/missing-category admission product relying on the fallback is never
+        permanently invisible to whoever operates the site. This check imports and calls the
+        REAL exported function against synthetic product lists and observes its actual
+        console.warn calls (count, and that the warning names the affected slug) — not source
+        text. Also proves the function stays silent for fully-categorized admission products
+        and for non-admission category requests (the fallback, and therefore the warning, is
+        admission-only — see A11). Negatively verified: fails today with ERR_MODULE_NOT_FOUND
+        because lib/tickets-category-warning.ts does not exist yet — confirmed by running it
+        against the current repo state.
+      command: 'npx tsx contracts/checks/ticketing-purchase-pages-f3/check-category-warning.mjs'
+    - id: A13
+      description: >
+        [F3][defect-repair] CategoryTicketsPage.tsx actually wires A12's warning function into
+        its real fetch path (not just defined-but-unused) — both the query's projected fields
+        and the component's fetch call must include `category`, and the component must call
+        warnMissingCategoryFallback with the fetched products and the requested category.
+      command: 'grep -A20 ''export const activeTicketTypesByCategoryQuery'' sanity/queries.ts | grep -q ''category,'' && grep -q ''warnMissingCategoryFallback'' components/tickets/CategoryTicketsPage.tsx'
+    - id: A14
+      description: >
+        [F3][defect-repair-2] scripts/seed-ticketing.ts writes the correct `category` field onto
+        every ticketType document it creates. Requires scripts/seed-ticketing.ts to export a
+        pure, side-effect-free `buildTicketTypeDoc(product, index, showId)` function (env
+        reading and Sanity client construction must move inside main(), not run at module top
+        level) and to build every created doc through it. This check imports the REAL exported
+        function and calls it against all 15 real product objects from
+        lib/provisional-figures.ts (ADMISSION_PRODUCTS/CONFERENCE_PRODUCTS/
+        WORKSHOP_FIELD_TRIP_PRODUCTS), asserting the returned doc's `category` field is defined
+        and exactly equals `product.category` for every one — observes the actual doc-building
+        output, not source text. Also proves `main()` is guarded behind a direct-execution check
+        so importing the module for this test never re-runs the live seed against the real
+        Sanity dataset (confirmed live: the pre-repair script prints "Seeding ticketing content
+        in Sanity dataset..." and executes main() merely on import). Negatively verified: run
+        against the pre-repair script it fails with "does not export a `buildTicketTypeDoc`
+        function" — confirmed by running it against the current repo state, which also
+        surfaced the main()-runs-on-import hazard live.
+      command: 'npx tsx contracts/checks/ticketing-purchase-pages-f3/check-seed-category-field.mjs'

@@ -1,0 +1,71 @@
+schema: athanor.contract/v1
+slug: ticketing-conferences-and-events
+goal: >
+  F3 (M2): DECISION — do NOT extend components/chrome/nav-config.ts's Tickets column yet.
+  F3's brief assumed "once F1/F2's routes exist," but F1/F2 (both done) only built the ticket-
+  TYPE DATA MODEL (CONFERENCE_PRODUCTS, WORKSHOP_FIELD_TRIP_PRODUCTS in
+  lib/provisional-figures.ts) — no purchase page/route for either category exists. Worse, the
+  one page that could plausibly host them (app/(marketing)/tickets/page.tsx) is not
+  category-aware: activeTicketTypesQuery (sanity/queries.ts) selects every active ticketType
+  document for the show with no category filter, and ticketType.ts (sanity/schemas/documents/)
+  has no category-discriminating field at all — so F1/F2's 10 seeded products already render
+  mixed into the same list as the 5 admission products, with no way to scope a link to "just
+  Conferences" or "just Workshops." A disabled-placeholder leaf is also not available without
+  a structural change: NavLeaf.disabled is honored only by Header.tsx/MobileMenu.tsx for
+  top-level items — MegaMenu.tsx's column-link rendering (line ~90-99) renders every
+  column.links entry as a plain active <Link>, never checking .disabled. Building either a
+  category-aware route or MegaMenu disabled-leaf support is real feature scope, not F3's
+  "small, mechanical extension" tier. This contract's assertions are guard rails proving
+  today's actual state (no premature nav entries, no routes, no category field, no disabled
+  support in MegaMenu) rather than fake implementation scope. See
+  contracts/golden/ticketing-nav-f3/README.md for the full decision record. Mission file
+  should re-scope F3 to depend on F4 (or a new feature) building the category-aware
+  page/route before nav wiring is meaningful — flagged to the orchestrator, not silently
+  patched around.
+created_at: '2026-08-21'
+autonomy: high
+features:
+  - id: F3
+    name: Extend the National Show mega-menu's Tickets column to include both new categories
+    status: blocked
+goldens:
+  - .agent/memory/project/specs/ticketing-conferences-and-events/goldens/f3-nav-deferred.golden.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        [F3] nav-config.ts's Tickets column still has exactly the three pre-existing links
+        (visitor, exhibitor, vendor) — no Conferences/Workshops entry was added prematurely.
+        Guards against silent scope creep past this decision; flips red the moment someone
+        adds a nav entry without first satisfying A2/A3 below.
+      command: '[ "$(grep -c "id: '"'"'visitor'"'"'\|id: '"'"'exhibitor'"'"'\|id: '"'"'vendor'"'"'" components/chrome/nav-config.ts)" = "3" ] && ! grep -qiE "id: '"'"'conference|id: '"'"'workshop" components/chrome/nav-config.ts'
+    - id: A2
+      description: >
+        [F3] No /national-show/conferences or /national-show/workshops route exists yet —
+        proves the "nothing live to link to" premise of the deferral decision, mechanically.
+        The day this assertion starts failing (a route appears) is the day F3 should be
+        re-opened.
+      command: '! find "app/(marketing)/national-show" -maxdepth 1 -iname "conferences" -o -maxdepth 1 -iname "workshops" 2>/dev/null | grep -q .'
+    - id: A3
+      description: >
+        [F3] ticketType Sanity schema still has no category-discriminating field (e.g.
+        "category"), and activeTicketTypesQuery still has no category filter — proves the
+        existing /tickets page cannot yet be scoped to a single category, so linking to it
+        under a "Conferences" or "Workshops & Field Trips" label would be misleading (shows
+        all 15 products, not just the linked category's). This is the concrete, checkable
+        form of "option (a) needs building, it isn't free."
+      command: '! grep -q "\"category\"" sanity/schemas/documents/ticketType.ts && ! grep -A20 "activeTicketTypesQuery = defineQuery" sanity/queries.ts | grep -q "category"'
+    - id: A4
+      description: >
+        [F3] MegaMenu.tsx's column-link rendering still does not check NavLeaf.disabled —
+        proves a disabled-placeholder nav entry (option c) is not available today without a
+        structural MegaMenu.tsx change, which F3's brief explicitly forbids making silently.
+        The day this flips (disabled support is added for a real reason), option (c) becomes
+        viable and should be reconsidered on its own merits.
+      command: '! grep -q "\.disabled" components/chrome/MegaMenu.tsx'
+    - id: A5
+      description: >
+        [F3] The decision record exists and documents the scope gap for the orchestrator/next
+        architect to act on.
+      command: test -f contracts/golden/ticketing-nav-f3/README.md

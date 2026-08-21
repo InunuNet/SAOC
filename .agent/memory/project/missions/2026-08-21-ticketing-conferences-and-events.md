@@ -13,8 +13,8 @@ cost_estimate:
   milestones: 0
   total_calls: 0
 last_checkpoint:
-  milestone: M1
-  feature: F2
+  milestone: M2
+  feature: F3
   ts: '2026-08-21T00:00:00+00:00'
 features:
 - id: F1
@@ -53,6 +53,27 @@ features:
     avoid bare "Events" for this category (e.g. "Workshops & Field Trips", not "Events") to
     stay consistent with that resolution. Tier: apex, same reasoning as F1.'
 - id: F3
+  status: done
+  tier: apex
+  title: Build category-aware Conferences and Workshops & Field Trips purchase pages
+  inline_brief: 'Inserted 2026-08-21 after @architect found F3 (now F4, nav wiring) and F4
+    (now F5, checkout) both assumed this already existed. It does not. F1/F2 (done, commits
+    9b48493 and 2937c50) only built the ticketType DATA MODEL - no route/page exists for
+    either category. Confirmed: the existing `/tickets` page''s `activeTicketTypesQuery`
+    (sanity/queries.ts:119) has zero category filter and `ticketType.ts` has no
+    category-discriminating field, so all 15 products (5 admission + 6 conference + 4
+    workshop/field-trip) would render mixed together on one page today. This feature adds
+    the category field (Sanity schema), the filtered query/page(s) for Conferences and
+    Workshops & Field Trips (read `app/(marketing)/tickets/page.tsx` as the pattern to
+    extend or sibling), and confirms the purchase flow works end-to-end for both new
+    categories using the EXISTING checkout pipeline (do not assume F5''s scope is required
+    first - check whether checkout already accepts these ticketType docs generically before
+    treating this as blocked on F5; multi-line-item-cart''s checkout code may already be
+    generic enough). Read `contracts/golden/ticketing-nav-f3/README.md` (the architect''s
+    full option analysis: a/b/c and why each was rejected/deferred) before scoping. Tier:
+    apex - new Sanity schema field, new query, new page(s), same risk class as F4/F5 in
+    multi-line-item-cart.'
+- id: F4
   status: pending
   tier: standard
   title: Extend the National Show mega-menu''s Tickets column to include both new categories
@@ -61,12 +82,15 @@ features:
     array specifically so this step would be an append, not a rewrite - read that file and
     `docs/f1-ticketing-nav-restructure.md` first. Add "Conferences" and "Workshops & Field
     Trips" as two more entries (direct links, matching the existing Visitor/Exhibitor/Vendor
-    pattern) once F1/F2''s routes exist. Do NOT touch Header.tsx/MegaMenu.tsx/MobileMenu.tsx
-    structurally - if this feature finds it needs to, that''s a signal Mission One''s
-    "data-driven for extensibility" claim was wrong and needs flagging, not silently
-    patching around. Tier: standard - this should be a small, mechanical extension if Mission
-    One''s design holds.'
-- id: F4
+    pattern) once F3''s routes exist (formerly gated on "F1/F2''s routes" - corrected 2026-08-21,
+    see F3). Do NOT touch Header.tsx/MegaMenu.tsx/MobileMenu.tsx structurally - if this
+    feature finds it needs to, that''s a signal Mission One''s "data-driven for
+    extensibility" claim was wrong and needs flagging, not silently patching around. A
+    guard-rail contract already exists at contract-f3.yaml (written when this was F3,
+    status blocked) - read it, it documents exactly what must change before this feature
+    is unblocked (A1-A5). Tier: standard - this should be a small, mechanical extension
+    once F3 ships real routes.'
+- id: F5
   status: pending
   tier: apex
   title: Checkout support for Conference and Workshop/Field-Trip/Cocktail ticket types
@@ -80,8 +104,11 @@ features:
     schema does not carry (e.g. the cocktail evening''s 18+ restriction noted in the
     refunds-policy mission brief, or per-workshop-session capacity). Do not assume additive
     without checking - the Workshops category in particular may need attendee-slot-per-
-    session logic the current day-selection code was not built for. Tier: apex - checkout/
-    payment code, same risk class as the rest of ticketing.'
+    session logic the current day-selection code was not built for; also read
+    `contracts/golden/ticketing-workshops-f2/README.md`''s "Capacity revision" section -
+    the interim per-slug capacity fix documented there (multi-head products, shared pools)
+    is explicitly this feature''s to properly resolve, not just re-verify. Tier: apex -
+    checkout/payment code, same risk class as the rest of ticketing.'
 milestones:
 - id: M1
   title: Estimate and structure both new categories
@@ -90,10 +117,11 @@ milestones:
   - F2
   status: done
 - id: M2
-  title: Wire them into nav and checkout
+  title: Build purchase pages, wire nav, and extend checkout
   features:
   - F3
   - F4
+  - F5
   status: pending
 ---
 
@@ -192,3 +220,49 @@ pass PASS exit 0) -> @docs (`docs/f2-ticketing-workshops-field-trips.md`, README
 table) -> contract gate 5/5 PASS. Mission status stays `in_progress` — M2 (F3 nav extension,
 F4 checkout wiring, which now also owns the deferred real capacity-pooling fix) still pending.
 Next up: F3.
+
+## Closeout — F3 (2026-08-21)
+
+F3 (Build category-aware Conferences and Workshops & Field Trips purchase pages) done,
+contract gate 14/14 green. @architect-apex confirmed the existing multi-line-item checkout
+needed zero changes (already generic) and designed the category schema field, a
+category-filtered GROQ query, and new pages/routes: `/national-show/conferences`,
+`/national-show/workshops`, plus a `/national-show/tickets` chooser and the existing
+`/tickets` admission page kept intact.
+
+**This feature needed THREE defect-repair cycles — the most of any feature so far in this
+mission.** Worth a future session knowing the pattern, since each cycle was a genuinely
+different hazard class, not repeats of the same mistake:
+
+1. **Real production-data hazard (caught by @qa-apex, not the contract).** Pass 1 was
+   contract-green, but QA independently ran a real dev server against the live production
+   Sanity dataset and found every existing `ticketType` doc has `category: null` — the new
+   category-filtered query would have emptied the live `/tickets` admission page in
+   production. Fixed with an admission-only null-category read-time fallback in the GROQ
+   query plus a `warnMissingCategoryFallback` console-warning safety valve (A11-A13 added).
+2. **Seed-script gap (caught by Codex GPT-5.5, not Claude's own QA).** Codex's first pass on
+   the fix found `scripts/seed-ticketing.ts` never writes `category` onto newly-created docs
+   — a permanent gap, not a migration-timing issue, since the null-fallback is deliberately
+   admission-only.
+3. **Import-safety hazard (found by @architect-apex while building fix #2, not looked for).**
+   While fixing the seed-script gap, @architect-apex also found `scripts/seed-ticketing.ts`
+   ran its live seed function unconditionally on module import — the same "a script that
+   mutates live data unconditionally on import" defect class already known from
+   `project_contract_checks_mutate_live_content.md` (second confirmed instance in this
+   project). Confirmed non-destructive only because the seed operations happen to be
+   idempotent. Fixed by extracting a pure `buildTicketTypeDoc()` (now including `category`)
+   and adding an `import.meta.url === file://${process.argv[1]}` direct-execution guard
+   (A14 added, 14 total).
+
+Chain: @architect-apex (contract-f3-purchase-pages.yaml) -> @dev pass 1 + @qa-apex pass 1
+(contract PASS, live-dataset FAIL) -> @architect-apex repair 1 (null-fallback + warning) ->
+@dev pass 2 + @qa-apex pass 2 (PASS, re-verified against live dataset) -> Codex GPT-5.5 pass 1
+(FAIL, seed-script category gap) -> @architect-apex repair 2 (pure builder fn + import guard,
+found the import-safety hazard along the way) -> @dev pass 3 + @qa-apex pass 3 (PASS,
+independently reproduced the import guard in isolation) -> Codex GPT-5.5 pass 2 (PASS, exit 0,
+also ran tsc/eslint itself) -> @docs (`docs/f3-ticketing-purchase-pages.md`, README milestones
+table) -> contract gate 14/14 PASS.
+
+Mission status stays `in_progress` — M2 also has F4 (nav wiring, was blocked on F3's routes
+existing, now unblocked) and F5 (checkout capacity-pooling fix, deferred from F2) still
+pending. Next up: F4.

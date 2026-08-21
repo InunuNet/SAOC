@@ -8,9 +8,16 @@
  * including why a Child ticket is deliberately NOT included here.
  */
 
+export type ProvisionalProductCategory = 'admission' | 'conference' | 'workshop-field-trip';
+
 export interface ProvisionalAdmissionProduct {
   slug: string;
   name: string;
+  /** F3 (ticketing-conferences-and-events, M2): which purchase page this product belongs
+   *  on — admission (/tickets), conference (/national-show/conferences), or
+   *  workshop-field-trip (/national-show/workshops). See
+   *  contracts/golden/ticketing-purchase-pages-f3/README.md. */
+  category: ProvisionalProductCategory;
   price: number;
   /** Permanent, factual copy of what the ticket covers — never references pricing or
    *  confirmation status. Provisional-pricing messaging comes ONLY from the flag-gated
@@ -34,6 +41,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'early-bird',
     name: 'Early-Bird Exhibition Ticket',
+    category: 'admission',
     description: 'Single-day admission to the National Show during the early-bird window.',
     price: 130,
     capacity: 400,
@@ -46,6 +54,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'day-visitor',
     name: 'Day Visitor Ticket',
+    category: 'admission',
     description: 'Single-day general admission to the National Show — choose your day.',
     price: 150,
     capacity: 800,
@@ -58,6 +67,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'early-bird-weekend-pass',
     name: 'Early-Bird Weekend Pass',
+    category: 'admission',
     description: 'Full-weekend admission to the National Show during the early-bird window.',
     price: 380,
     capacity: 150,
@@ -70,6 +80,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'weekend-pass',
     name: 'Weekend Pass',
+    category: 'admission',
     description: 'Full-weekend admission to the National Show.',
     price: 400,
     capacity: 300,
@@ -82,6 +93,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'vip',
     name: 'VIP Ticket',
+    category: 'admission',
     description: 'Reception access plus full-weekend admission to the National Show.',
     price: 300,
     capacity: 120,
@@ -113,6 +125,7 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'saoc-symposium-early-bird',
     name: 'SAOC Symposium (Early-Bird)',
+    category: 'conference',
     description: 'Full registration for the SAOC Symposium track during the early-bird window.',
     price: SYMPOSIUM_CONFERENCE_EARLY_BIRD_PRICE,
     capacity: SINGLE_TRACK_CAPACITY,
@@ -125,6 +138,7 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'saoc-symposium',
     name: 'SAOC Symposium',
+    category: 'conference',
     description: 'Full registration for the SAOC Symposium track.',
     price: SYMPOSIUM_CONFERENCE_NORMAL_PRICE,
     capacity: SINGLE_TRACK_CAPACITY,
@@ -137,6 +151,7 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'wosa-conference-early-bird',
     name: 'WOSA Conference (Early-Bird)',
+    category: 'conference',
     description: 'Full registration for the WOSA Conference track during the early-bird window.',
     price: SYMPOSIUM_CONFERENCE_EARLY_BIRD_PRICE,
     capacity: SINGLE_TRACK_CAPACITY,
@@ -149,6 +164,7 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'wosa-conference',
     name: 'WOSA Conference',
+    category: 'conference',
     description: 'Full registration for the WOSA Conference track.',
     price: SYMPOSIUM_CONFERENCE_NORMAL_PRICE,
     capacity: SINGLE_TRACK_CAPACITY,
@@ -161,6 +177,7 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'saoc-wosa-joint-early-bird',
     name: 'SAOC/WOSA Joint (Early-Bird)',
+    category: 'conference',
     description:
       'Combined registration for both the SAOC Symposium and WOSA Conference tracks during ' +
       'the early-bird window.',
@@ -175,6 +192,7 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'saoc-wosa-joint',
     name: 'SAOC/WOSA Joint',
+    category: 'conference',
     description: 'Combined registration for both the SAOC Symposium and WOSA Conference tracks.',
     price: JOINT_NORMAL_PRICE,
     capacity: JOINT_CAPACITY,
@@ -210,6 +228,7 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'sunset-cocktails-single',
     name: 'Sunset Cocktails (Single)',
+    category: 'workshop-field-trip',
     description: 'Admission to the Sunset Cocktails evening reception. 18+ event.',
     price: SUNSET_COCKTAILS_SINGLE_PRICE,
     capacity: SUNSET_COCKTAILS_SINGLE_CAPACITY,
@@ -222,6 +241,7 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'sunset-cocktails-couple',
     name: 'Sunset Cocktails (Couple)',
+    category: 'workshop-field-trip',
     description: 'Admission to the Sunset Cocktails evening reception for two guests. 18+ event.',
     price: SUNSET_COCKTAILS_COUPLE_PRICE,
     capacity: SUNSET_COCKTAILS_COUPLE_CAPACITY,
@@ -234,6 +254,7 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'field-trip-single',
     name: 'Field Trip (Single Outing)',
+    category: 'workshop-field-trip',
     description: 'Transport and entry for one guided field trip outing.',
     price: FIELD_TRIP_SINGLE_PRICE,
     capacity: FIELD_TRIP_SINGLE_CAPACITY,
@@ -246,6 +267,7 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'field-trip-all-outings',
     name: 'Field Trip (All-Outings Pass)',
+    category: 'workshop-field-trip',
     description: 'Transport and entry for all guided field trip outings.',
     price: FIELD_TRIP_ALL_OUTINGS_PRICE,
     capacity: FIELD_TRIP_ALL_OUTINGS_CAPACITY,

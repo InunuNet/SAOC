@@ -43,10 +43,13 @@ import {
   ADMISSION_PRODUCTS,
   CONFERENCE_PRODUCTS,
   WORKSHOP_FIELD_TRIP_PRODUCTS,
+  type ProvisionalAdmissionProduct,
 } from '../lib/provisional-figures';
 
 // ---------------------------------------------------------------------------
-// Env — parsed directly from .env.local (see file header).
+// Env — parsed directly from .env.local (see file header). Read only from inside
+// main() (via createSanityClient()), never at module scope — importing this module
+// (e.g. for testing buildTicketTypeDoc) must never read env or construct a client.
 // ---------------------------------------------------------------------------
 
 function readEnvLocal(): Record<string, string> {
@@ -70,25 +73,27 @@ function readEnvLocal(): Record<string, string> {
   return out;
 }
 
-const env = readEnvLocal();
-const projectId = env.NEXT_PUBLIC_SANITY_PROJECT_ID;
-const dataset = env.NEXT_PUBLIC_SANITY_DATASET;
-const token = env.SANITY_API_TOKEN;
+function createSanityClient(): SanityClient {
+  const env = readEnvLocal();
+  const projectId = env.NEXT_PUBLIC_SANITY_PROJECT_ID;
+  const dataset = env.NEXT_PUBLIC_SANITY_DATASET;
+  const token = env.SANITY_API_TOKEN;
 
-if (!projectId || !dataset || !token) {
-  throw new Error(
-    'Missing required env vars in .env.local: NEXT_PUBLIC_SANITY_PROJECT_ID, ' +
-      'NEXT_PUBLIC_SANITY_DATASET, SANITY_API_TOKEN',
-  );
+  if (!projectId || !dataset || !token) {
+    throw new Error(
+      'Missing required env vars in .env.local: NEXT_PUBLIC_SANITY_PROJECT_ID, ' +
+        'NEXT_PUBLIC_SANITY_DATASET, SANITY_API_TOKEN',
+    );
+  }
+
+  return createClient({
+    projectId,
+    dataset,
+    apiVersion: '2024-01-01',
+    token,
+    useCdn: false,
+  });
 }
-
-const client: SanityClient = createClient({
-  projectId,
-  dataset,
-  apiVersion: '2024-01-01',
-  token,
-  useCdn: false,
-});
 
 // Pinned singleton _id convention (matches sanity/structure.ts / seed-page-singletons.ts):
 // the document's own _id equals its schema type name.
@@ -105,7 +110,38 @@ const NATIONAL_SHOW_ID = 'nationalShow';
 /** The five OLD placeholder ticket categories (F1, pre-council-spec) — retired, not deleted. */
 const OLD_PLACEHOLDER_SLUGS = ['adult', 'pensioner', 'child', 'saoc-member', 'exhibitor'];
 
-async function fetchActiveShowId(): Promise<string> {
+/**
+ * Builds the ticketType document object for one product — pure, no env/network access, so it
+ * can be safely imported and exercised in isolation (see
+ * contracts/checks/ticketing-purchase-pages-f3/check-seed-category-field.mjs). `index` sets the
+ * `order` field (1-based, matching the original inline literal's `index + 1`).
+ */
+export function buildTicketTypeDoc(
+  product: ProvisionalAdmissionProduct,
+  index: number,
+  showId: string,
+): Record<string, unknown> & { _id: string; _type: string } {
+  return {
+    _id: `ticketType-${product.slug}`,
+    _type: 'ticketType',
+    name: product.name,
+    slug: { _type: 'slug', current: product.slug },
+    price: product.price,
+    description: product.description,
+    capacity: product.capacity,
+    active: true,
+    order: index + 1,
+    show: { _type: 'reference', _ref: showId },
+    provisional: product.provisional,
+    earlyBirdCutoff: product.earlyBirdCutoff,
+    releasedQuantity: product.releasedQuantity,
+    requiresDaySelection: product.requiresDaySelection,
+    requiresAttendeeNames: product.requiresAttendeeNames,
+    category: product.category,
+  };
+}
+
+async function fetchActiveShowId(client: SanityClient): Promise<string> {
   const activeShow = await client.fetch<{ _id: string } | null>(
     `*[_type == "show" && active == true][0]{ _id }`
   );
@@ -115,7 +151,7 @@ async function fetchActiveShowId(): Promise<string> {
   return activeShow._id;
 }
 
-async function seedTicketTypes(showId: string): Promise<void> {
+async function seedTicketTypes(client: SanityClient, showId: string): Promise<void> {
   console.log('  ticketType documents (new, from lib/provisional-figures.ts):');
   const allProducts = [
     ...ADMISSION_PRODUCTS,
@@ -123,23 +159,7 @@ async function seedTicketTypes(showId: string): Promise<void> {
     ...WORKSHOP_FIELD_TRIP_PRODUCTS,
   ];
   for (const [index, product] of allProducts.entries()) {
-    await client.createIfNotExists({
-      _id: `ticketType-${product.slug}`,
-      _type: 'ticketType',
-      name: product.name,
-      slug: { _type: 'slug', current: product.slug },
-      price: product.price,
-      description: product.description,
-      capacity: product.capacity,
-      active: true,
-      order: index + 1,
-      show: { _type: 'reference', _ref: showId },
-      provisional: product.provisional,
-      earlyBirdCutoff: product.earlyBirdCutoff,
-      releasedQuantity: product.releasedQuantity,
-      requiresDaySelection: product.requiresDaySelection,
-      requiresAttendeeNames: product.requiresAttendeeNames,
-    });
+    await client.createIfNotExists(buildTicketTypeDoc(product, index, showId));
     console.log(`    ${product.slug} (createIfNotExists)`);
   }
 
@@ -156,7 +176,7 @@ async function seedTicketTypes(showId: string): Promise<void> {
   }
 }
 
-async function seedTicketsPage(): Promise<void> {
+async function seedTicketsPage(client: SanityClient): Promise<void> {
   console.log('  ticketsPage:');
   await client.createIfNotExists({
     _id: 'ticketsPage',
@@ -196,7 +216,7 @@ async function seedTicketsPage(): Promise<void> {
   console.log('    seeded (createIfNotExists)');
 }
 
-async function patchNationalShowSalesOpen(): Promise<void> {
+async function patchNationalShowSalesOpen(client: SanityClient): Promise<void> {
   console.log('  nationalShow.salesOpen:');
   await client.patch(NATIONAL_SHOW_ID).setIfMissing({ salesOpen: false }).commit({
     autoGenerateArrayKeys: false,
@@ -209,15 +229,23 @@ async function patchNationalShowSalesOpen(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  console.log(`Seeding ticketing content in Sanity dataset "${dataset}" (project ${projectId})`);
-  const showId = await fetchActiveShowId();
-  await seedTicketTypes(showId);
-  await seedTicketsPage();
-  await patchNationalShowSalesOpen();
+  const client = createSanityClient();
+  console.log(`Seeding ticketing content in Sanity dataset "${client.config().dataset}" ` +
+    `(project ${client.config().projectId})`);
+  const showId = await fetchActiveShowId(client);
+  await seedTicketTypes(client, showId);
+  await seedTicketsPage(client);
+  await patchNationalShowSalesOpen(client);
   console.log('Seed complete.');
 }
 
-main().catch((err: unknown) => {
-  console.error('Seed failed:', err);
-  process.exit(1);
-});
+// Guard against module-scope side effects: importing this file (e.g. to test
+// buildTicketTypeDoc in isolation) must never trigger a live seed run — only direct
+// execution (`tsx scripts/seed-ticketing.ts` / `node --import tsx/esm scripts/seed-ticketing.ts`)
+// does.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err: unknown) => {
+    console.error('Seed failed:', err);
+    process.exit(1);
+  });
+}

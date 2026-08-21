@@ -132,6 +132,28 @@ export const activeTicketTypesQuery = defineQuery(`
   }
 `);
 
+// F3 (ticketing-conferences-and-events, M2): additive alongside activeTicketTypesQuery above
+// (untouched, in case anything else references it) — same shape, plus a $category filter, so
+// each category's purchase page (/tickets, /national-show/conferences, /national-show/
+// workshops) selects only its own products server-side rather than over-fetching every
+// category and filtering in JS. See contracts/golden/ticketing-purchase-pages-f3/README.md.
+export const activeTicketTypesByCategoryQuery = defineQuery(`
+  *[_type == "ticketType" && active == true && (category == $category || (!defined(category) && $category == "admission"))] | order(order asc){
+    _id,
+    name,
+    "slug": slug.current,
+    price,
+    description,
+    capacity,
+    releasedQuantity,
+    order,
+    demo,
+    provisional,
+    requiresDaySelection,
+    category,
+  }
+`);
+
 // F4 (multi-line-item-cart, M2): `releasedQuantity,`/`earlyBirdCutoff,` are additive —
 // checkout's per-ticketType loop enforces both server-side via effectiveCapacity()/
 // isWithinEarlyBirdWindow(). See

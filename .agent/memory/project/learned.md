@@ -1804,3 +1804,45 @@ exactly at the ceiling, never over. Reusable pattern: when the real fix for a de
 touching shared, high-blast-radius logic outside the current feature's scope, prefer a
 structurally-safe numbers-only interim fix with an explicit documented tradeoff and a named
 deferred follow-up feature over either scope creep or shipping the defect.
+
+## QA verifying against the real live dataset, not just contract assertions, is a repeatable pattern that catches what checkers can't see (2026-08-21)
+
+`ticketing-conferences-and-events` F3 (category-aware purchase pages): pass 1 was contract-green
+(all assertions PASS) but @qa-apex independently ran a real dev server against the live
+production Sanity dataset — not fixture data — and found every existing `ticketType` doc has
+`category: null`, which the new category-filtered query would have used to empty the live
+`/tickets` admission page in production. Pass 2, after the fix, QA re-verified against the real
+live dataset again to confirm the fallback works and doesn't leak into other categories. Neither
+finding was reachable from the contract assertions alone — both needed the actual production
+data shape. Worth making standard practice for any feature that adds a filter/query over existing
+Sanity/Firestore data: run it against the real dataset at least once before signing off, don't
+trust fixture or mock data to represent what production actually contains.
+
+## Second confirmed instance: a script that mutates live data unconditionally on module import (2026-08-21)
+
+`ticketing-conferences-and-events` F3: while fixing an unrelated seed-script gap, @architect-apex
+found `scripts/seed-ticketing.ts` ran its live seed function unconditionally on module import —
+meaning any check/tooling script that merely `import`s the file for its exported constants would
+re-trigger a live write against production Sanity. Confirmed non-destructive only because the
+seed operations happen to be idempotent; that was luck, not a property anyone verified in
+advance. This is the second confirmed instance of this defect class in this project — see
+`project_contract_checks_mutate_live_content.md` for the first (a sentinel-corruption incident
+that sat on the deployed site for 3 days). Fix pattern: extract a pure builder function, guard the
+live-executing part with a direct-execution check
+(`import.meta.url === file://${process.argv[1]}`). **Standing check before writing or reviewing
+any script/check that imports a script file: does importing that file, by itself, cause any
+side effect against a live system?** If yes, that's this defect class regardless of whether the
+side effect happens to be idempotent today.
+
+## Third confirmed instance this mission: Codex GPT-5.5 catching a real, permanent gap that a same-model pass missed (2026-08-21)
+
+`ticketing-conferences-and-events` F3: after @architect-apex's repair-1 fix (admission-only
+null-category fallback) passed contract assertions and @qa-apex's second adversarial pass,
+Codex GPT-5.5's first review of that same fix FAILED it — finding `scripts/seed-ticketing.ts`
+never writes `category` onto newly-created docs, a permanent gap (every future seed run would
+recreate the same production hazard the fallback exists to paper over), not a one-time migration
+issue. Neither @architect-apex's design nor Claude's own dev/QA passes had modelled this. This is
+the third confirmed instance this mission of the mandatory Codex gate catching a real defect that
+a same-model Claude pass missed entirely (see the two F2 entries above) — continues to reinforce
+that the gate is not a formality, especially for anything touching data models, capacity, or
+scripts that write live data.

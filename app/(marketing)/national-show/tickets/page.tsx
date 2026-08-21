@@ -27,6 +27,20 @@ const OPTIONS = [
     cta: 'Vendor registration',
     href: '/national-show/vendors/register',
   },
+  {
+    id: 'conferences',
+    heading: "I'm attending a conference",
+    body: 'Register for the SAOC Symposium, the WOSA Conference, or the combined Joint track.',
+    cta: 'Conferences tickets',
+    href: '/national-show/conferences',
+  },
+  {
+    id: 'workshops',
+    heading: 'I want workshops or a field trip',
+    body: 'Book Sunset Cocktails or a guided Field Trip outing at the show.',
+    cta: 'Workshops & Field Trips tickets',
+    href: '/national-show/workshops',
+  },
 ] as const;
 
 export default function NationalShowTicketsPage() {
