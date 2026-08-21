@@ -32,18 +32,29 @@ Do not scope work from an entry that contradicts it.
 
 ## Blocked on the council / Lee-Ann
 
-- [ ] **[P1] Real show dates.** Her spec describes Thursday–Sunday; the `18–21 September 2027` in
-  the dataset is an invented placeholder that falls Sat–Tue. **Do not derive 16–19** — that
-  substitutes a new invention for the old one. Blocks the Day Visitor day-picker and the VIP date.
-  When they arrive, purge all placeholders in ONE pass (plan Stage 7 lists every site).
-- [ ] **[P1] Ticket prices and capacities.** Everything in the Sanity dataset today is invented and
-  labelled "Provisional price — pending council confirmation." Asked via the pricing artifact.
-  Also outstanding: early-bird cut-off date and released quantity; which days the Weekend Pass
-  covers; whether children need a ticket type at all.
-- [ ] **[P1] Refund and cancellation terms.** `/refunds` shipped structurally complete and
-  deliberately figure-free. Needs cancellation windows, refund conditions, cooling-off period.
-  When supplied, POLICY-10 (the digit+unit ban) must be revisited — it currently bans the very
-  figures that need adding.
+- [x] ~~Real show dates~~ **CONFIRMED 2026-08-2x, verified 2026-08-21: Thursday 16 – Sunday 19
+  September 2027.** Stated as flat fact (not a fillable answer) in the pricing artifact
+  (`https://claude.ai/code/artifact/1b5729ed-46f5-497b-8070-63a025330e5a`) by a prior session —
+  never propagated here or purged from code. **Remaining real work (P1, not blocked anymore):**
+  the OLD `18–21 September` / `2027-09-18T09:00+02:00` placeholder is still what's actually seeded
+  in Sanity and drives the live home-page countdown — re-grep before acting (list goes stale fast)
+  but as of the 2026-08-19 audit it touched `scripts/seed-page-singletons.ts`,
+  `scripts/seed-show-visitor-info.ts`, `lib/data/events.ts`, and several docs. Purge to 16–19 Sept
+  in one pass and re-seed Sanity. See memory `project_show_dates_placeholder` for full detail.
+- [ ] **[P1] Ticket prices and capacities — estimate now, correct later (Brad's standing
+  instruction, already the pattern used for the ticketing admission products in
+  `lib/provisional-figures.ts`/F4).** Do not leave figures blank waiting on the council; put in
+  our best estimate, flagged provisional, same discipline as F4. Still outstanding beyond the five
+  admission products already estimated: vendor fees (exhibit/food), conference tickets (SAOC
+  Symposium/WOSA/joint), workshop/field-trip/cocktail pricing and capacity, venue/workshop
+  capacity figures generally. Her form answers (pricing artifact) are still empty as of
+  2026-08-21 — do not wait for them to start estimating the remaining categories.
+- [ ] **[P1] Refund and cancellation terms — draft real content ourselves for her to review/adjust
+  (Brad's direction, 2026-08-21), do not wait for her answer first.** `/refunds` exists
+  (`app/(marketing)/refunds/page.tsx`, 109 lines) but is deliberately figure-free — no cancellation
+  windows, refund conditions, or cooling-off period. Draft reasonable estimated terms, flag them
+  clearly as pending her confirmation. When real/adjusted figures land, POLICY-10 (the digit+unit
+  ban) must be revisited — it currently bans the very figures being added.
 - [ ] **[P1] POPIA Information Officer is undesignated.** `/privacy` names `secretary@saoc.co.za`
   by project convention. Under POPIA the officer defaults to the head of the organisation and must
   be registered with the Information Regulator; nothing shows SAOC has designated anyone.
