@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-08-20T15:53Z_
+_Generated: 2026-08-21T11:09Z_
 
 ## What happened last session
-multi-line-item-cart mission M1+M2 closed: real cart checkout (F1-F3), 5 admission products via provisional-figures.ts (F4), day selection + named attendees with SAST-aware computeShowDays (F5). Codex GPT-5.5 caught real defects @qa missed in both F4 and F5; required-field additions broke earlier frozen fixtures 3x this session; SAST/UTC timezone bug is now a confirmed recurring defect class. F1/F2 9/9, F3-UI 5/5, F4 11/11, F5 15/15, all gates independently re-verified. Next: F6 (contact block, POPIA fields, 5-ticket cap) flagged as pre-start checkpoint.
+Closed multi-line-item-cart M1+M2 UX/products/day-attendee work; proved a real ticketing purchase end-to-end against the deployed site (App Hosting rollout must be triggered explicitly, does not auto-fire on push); caught and corrected real memory/backlog drift on show dates and policy-page status; drafted new active mission leeann-content-corrections (placeholder purge, POPIA officer, refund content, remaining price estimates); elevated Ozow gateway to high priority per client's stated preference.

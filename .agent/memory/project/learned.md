@@ -1671,3 +1671,39 @@ timeout for a real finding, and don't skip the retry.
 real problems this session that would otherwise have shipped** — a dev-server-not-running false
 red during M1 re-verification, and both fixture regressions above. Concrete reinforcement of the
 standing "never assert without verification" behavior rule, not hypothetical.
+
+## Firebase App Hosting rollout does not auto-trigger on `git push` (2026-08-21)
+
+Proving the ticketing purchase flow end-to-end required the deployed host (PayFast sandbox needs
+a real domain — see backlog "Never drive a PayFast test from the local server"). Pushing 12
+previously-unpushed local commits to `origin/main` did NOT start a new rollout; the CLI's first
+deploy attempt actually shipped a stale commit because of the unpushed-commits gap. A rollout must
+be triggered explicitly and its `updateTime` verified against the intended commit before trusting
+that what's live matches what's in git. Treat "I pushed" and "it's deployed" as two separate,
+independently-verifiable claims on this project.
+
+## Memory/backlog drift: a stale "still needed" claim outlives the work it describes (2026-08-21)
+
+Prior-session memory and backlog both stated show dates were unconfirmed and that `/privacy`,
+`/refunds`, `/terms` were missing or incomplete. Neither was true: dates had already been
+confirmed (16–19 Sept 2027, distinct from the old invented 18–21 placeholder still live in seed
+scripts) and all three policy pages already existed and were already linked to Lee-Ann for review.
+The user caught this, not an agent. Root cause: memory files recorded a point-in-time snapshot and
+were never re-verified against current code/artifact state before being treated as still true —
+exactly the failure mode `feedback_verify_liveness_by_artefact` and the memory-system's own "verify
+before recommending" rule exist to prevent, but it slipped through anyway because nobody re-grepped
+before writing a new session's plan. Fix applied: re-read the live pricing artifact and the actual
+page files, then corrected `backlog.md` and the relevant personal memory files to match. Lesson:
+when a memory or backlog item claims something is "still missing" or "still needed," re-verify
+against the current file/artifact before propagating it into a new mission or plan — don't just
+carry it forward.
+
+## Use `dotenv`, not hand-rolled parsing, for one-off scripts reading `.env.local` (2026-08-21)
+
+The independent Firestore verification read (confirming `paid` status and `chosenDay` on both
+positions after the live purchase) needed `.env.local` credentials outside the Next.js runtime.
+Hand-rolling `.env.local` parsing is exactly the kind of ad hoc string handling that produced this
+project's secret-corruption incident class (see `project_secret_corruption_class`) — multi-line
+values and embedded `\n` sequences are easy to mis-split. The project's `dotenv` dependency is
+already available; load `.env.local` through it in any one-off verification script instead of
+writing a custom parser.

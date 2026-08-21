@@ -245,3 +245,25 @@ recurrence).
 **Next: F6** (booking contact block + POPIA-sensitive fields + 5-ticket cap) — flagged as a
 checkpoint before starting, since `/privacy` is currently known-inaccurate about what's actually
 collected (see `project_popia_deferred`). Not started this session.
+
+### 2026-08-21 — `multi-line-item-cart` paused; live purchase proven end-to-end; new mission drafted
+
+Mission paused (not closed) with F6 not started. Session instead: (1) proved a real ticketing
+purchase against the DEPLOYED site — pushed 12 unpushed local commits, explicitly triggered a
+Firebase App Hosting rollout (does not auto-fire on push — see `learned.md`), re-seeded production
+Sanity, then verified via BrowserAgent purchase flow AND an independent Firestore read that a Day
+Visitor and a VIP position both landed `paid` with correct `chosenDay` handling under one shared
+orderId; (2) caught and corrected real memory/backlog drift — show dates were already confirmed
+(16–19 Sept 2027, not the old 18–21 placeholder) and `/privacy`/`/refunds`/`/terms` already existed
+and were already linked to Lee-Ann, contrary to what prior-session memory claimed (see
+`learned.md`); (3) drafted new mission `.agent/memory/project/missions/2026-08-21-leeann-content-
+corrections.md` (F1 purge stale 18–21 Sept placeholder + re-seed confirmed dates, F2 designate
+Lee-Ann as interim POPIA Information Officer, F3 draft real estimated refund content, F4 estimate
+remaining unpriced ticket/vendor/conference categories) — **this is now the active mission**
+(`active.json`), not yet started; (4) Ozow gateway elevated to HIGH PRIORITY backlog — confirmed
+client preference, and ticketing is the single biggest Phase 1 workstream. Two non-blocking
+findings added to backlog: `chosenDay` not shown on confirmation page, separate booking ref per
+position is intentional. A "fix NAV" mission (routing visitors between Orchid Exhibition Visitor/
+Exhibitor/Vendor vs Conferences vs Events) is next up after `leeann-content-corrections`, before
+scoping the unbuilt ticket categories. QR codes still not rendering in confirmation emails —
+pre-existing P1, untouched this session.
