@@ -55,9 +55,14 @@ Do not scope work from an entry that contradicts it.
   windows, refund conditions, or cooling-off period. Draft reasonable estimated terms, flag them
   clearly as pending her confirmation. When real/adjusted figures land, POLICY-10 (the digit+unit
   ban) must be revisited — it currently bans the very figures being added.
-- [ ] **[P1] POPIA Information Officer is undesignated.** `/privacy` names `secretary@saoc.co.za`
-  by project convention. Under POPIA the officer defaults to the head of the organisation and must
-  be registered with the Information Regulator; nothing shows SAOC has designated anyone.
+- [ ] **[P1] POPIA Information Officer — placeholder decision made 2026-08-21, needs implementing
+  and formal confirmation.** Brad's call: name **Lee-Ann McCleland** (Fynbos Pottery Studio) as
+  Information Officer on `/privacy` for now — she can correct it later if the council wants someone
+  else. Not yet applied to `app/(marketing)/privacy/page.tsx` (still names `secretary@saoc.co.za`
+  by project convention). Still outstanding regardless of who: under POPIA the officer must be
+  formally registered with the Information Regulator; naming her on the page is not that
+  registration, just interim contact-page accuracy. Confirm her contact details (email/role) before
+  publishing — the screenshot this decision came from only confirms the name, not an email address.
 - [ ] **[P1] All three policy pages carry an "AI-generated draft, not legal advice" notice** and
   need professional legal review before the council relies on them.
 - [ ] **[P1, commercial — Brad's call] Spec V3 scopes TWO websites**, not one: a permanent SAOC
