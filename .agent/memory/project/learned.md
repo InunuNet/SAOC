@@ -1772,3 +1772,35 @@ ticketType data to do so. @qa-apex explicitly checked this combination against e
 downstream consumer of `ticketType` (checkout, cart, admin) before signing off — PASS, no
 consumer assumed the two flags are correlated. Worth re-checking again if F2s
 workshops/field-trips introduce yet another new flag combination (e.g. per-session capacity).
+
+## Codex caught a real oversell defect that Claude's own first-pass QA missed — again (2026-08-21)
+
+`ticketing-conferences-and-events` F2 (Workshops/Field Trips/Cocktails): first-pass @dev
+implementation passed all 5 contract assertions, `tsc`, and @qa-apex's first adversarial
+review — PASS all round. The mandatory Codex GPT-5.5 cross-model review then FAILED it on
+the same diff, finding a real oversell defect neither @architect-apex's design nor @qa-apex's
+first pass had modelled: `sunset-cocktails-couple` sells 2 heads per 1 capacity-slug-unit,
+and the two field-trip options (single/all-outings) share one physical capacity pool as two
+independent per-slug counters — the checkout's existing capacity enforcement
+(`lib/checkout-reservation.ts`) is per-slug-only and cannot see either case, so both are
+capable of overselling. This is the second confirmed instance (see the earlier "same-model
+writes and reviews its own code" entry) of the mandatory Codex pass catching a real
+business-logic/capacity bug that a same-model @qa pass missed entirely — reinforces that the
+Codex gate is not a formality and must never be skipped, especially on anything touching
+capacity, pricing, or checkout data models.
+
+## Interim numbers-only fix over touching shared checkout logic — reusable pattern (2026-08-21)
+
+Fixing the F2 oversell defect above, @architect-apex deliberately chose NOT to rewrite the
+shared per-slug capacity-enforcement logic (checkout-wide, higher blast radius, out of this
+feature's scope) — instead resized the four affected capacity constants
+(200/200/60/60 -> 100/50/30/30 in `lib/provisional-figures.ts`) so the worst case (all sales
+as the largest-heads-per-slug variant, or all sales landing in one of the two pooled counters)
+can never exceed the real physical ceiling. The real fix (multi-head- and shared-pool-aware
+capacity enforcement) was explicitly deferred to F4 (checkout wiring), with the tradeoff and
+deferral written into the golden README rather than left implicit or silently absorbed.
+@qa-apex's second pass independently hand-recomputed both worst cases to confirm they land
+exactly at the ceiling, never over. Reusable pattern: when the real fix for a defect requires
+touching shared, high-blast-radius logic outside the current feature's scope, prefer a
+structurally-safe numbers-only interim fix with an explicit documented tradeoff and a named
+deferred follow-up feature over either scope creep or shipping the defect.

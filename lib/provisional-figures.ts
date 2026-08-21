@@ -185,3 +185,95 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
     provisional: true,
   },
 ];
+
+/**
+ * F2 (ticketing-conferences-and-events, M1) — the four priceable Workshops & Field Trips
+ * category products (Sunset Cocktails Single/Couple, Field Trip Single/All-Outings). Reuses
+ * `ProvisionalAdmissionProduct` verbatim — see
+ * contracts/golden/ticketing-workshops-f2/README.md for the full pricing/capacity rationale
+ * (our estimate, no client source; both bundle prices are genuine discounts).
+ *
+ * Workshops itself is deliberately NOT included here — see `WORKSHOP_PRICING_STRUCTURE` below.
+ */
+
+const SUNSET_COCKTAILS_SINGLE_PRICE = 250;
+const SUNSET_COCKTAILS_COUPLE_PRICE = 450;
+const FIELD_TRIP_SINGLE_PRICE = 300;
+const FIELD_TRIP_ALL_OUTINGS_PRICE = 750;
+
+const SUNSET_COCKTAILS_SINGLE_CAPACITY = 100;
+const SUNSET_COCKTAILS_COUPLE_CAPACITY = 50;
+const FIELD_TRIP_SINGLE_CAPACITY = 30;
+const FIELD_TRIP_ALL_OUTINGS_CAPACITY = 30;
+
+export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
+  {
+    slug: 'sunset-cocktails-single',
+    name: 'Sunset Cocktails (Single)',
+    description: 'Admission to the Sunset Cocktails evening reception. 18+ event.',
+    price: SUNSET_COCKTAILS_SINGLE_PRICE,
+    capacity: SUNSET_COCKTAILS_SINGLE_CAPACITY,
+    releasedQuantity: null,
+    earlyBirdCutoff: null,
+    requiresDaySelection: false,
+    requiresAttendeeNames: true,
+    provisional: true,
+  },
+  {
+    slug: 'sunset-cocktails-couple',
+    name: 'Sunset Cocktails (Couple)',
+    description: 'Admission to the Sunset Cocktails evening reception for two guests. 18+ event.',
+    price: SUNSET_COCKTAILS_COUPLE_PRICE,
+    capacity: SUNSET_COCKTAILS_COUPLE_CAPACITY,
+    releasedQuantity: null,
+    earlyBirdCutoff: null,
+    requiresDaySelection: false,
+    requiresAttendeeNames: true,
+    provisional: true,
+  },
+  {
+    slug: 'field-trip-single',
+    name: 'Field Trip (Single Outing)',
+    description: 'Transport and entry for one guided field trip outing.',
+    price: FIELD_TRIP_SINGLE_PRICE,
+    capacity: FIELD_TRIP_SINGLE_CAPACITY,
+    releasedQuantity: null,
+    earlyBirdCutoff: null,
+    requiresDaySelection: false,
+    requiresAttendeeNames: true,
+    provisional: true,
+  },
+  {
+    slug: 'field-trip-all-outings',
+    name: 'Field Trip (All-Outings Pass)',
+    description: 'Transport and entry for all guided field trip outings.',
+    price: FIELD_TRIP_ALL_OUTINGS_PRICE,
+    capacity: FIELD_TRIP_ALL_OUTINGS_CAPACITY,
+    releasedQuantity: null,
+    earlyBirdCutoff: null,
+    requiresDaySelection: false,
+    requiresAttendeeNames: true,
+    provisional: true,
+  },
+];
+
+/**
+ * F2 (ticketing-conferences-and-events, M1) — the Workshops per-session pricing STRUCTURE.
+ * Deliberately NOT a `ProvisionalAdmissionProduct` (no `slug`, no `capacity`): no real workshop
+ * session (name, date, capacity) is council-confirmed yet, so no fabricated sellable ticketType
+ * document is created for it. See contracts/golden/ticketing-workshops-f2/README.md "The crux
+ * decision" for why Workshops is structured differently from Sunset Cocktails and Field Trips.
+ */
+
+const WORKSHOP_ESTIMATED_SESSION_PRICE = 120;
+
+export const WORKSHOP_PRICING_STRUCTURE = {
+  model: 'per-session',
+  estimatedSessionPrice: WORKSHOP_ESTIMATED_SESSION_PRICE,
+  note:
+    'No real workshop session (name, date, capacity) is council-confirmed yet, so none is ' +
+    'instantiated as a sellable ticketType here. This price is a starting anchor for a human ' +
+    'to adjust per session once real sessions are defined — not a figure to transcribe ' +
+    'verbatim into every future workshop regardless of its actual content.',
+  provisional: true,
+} as const;

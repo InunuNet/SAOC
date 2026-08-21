@@ -14,7 +14,7 @@ cost_estimate:
   total_calls: 0
 last_checkpoint:
   milestone: M1
-  feature: F1
+  feature: F2
   ts: '2026-08-21T00:00:00+00:00'
 features:
 - id: F1
@@ -38,7 +38,7 @@ features:
     logic (money, capacity), same class of risk as F4/F5 in multi-line-item-cart, which both
     needed apex-level rigor and both had Codex catch real defects Claude missed.'
 - id: F2
-  status: pending
+  status: done
   tier: apex
   title: Estimate and structure the Workshops/Field Trips/Cocktails category
   inline_brief: 'Per Lee-Ann''s spec section D: Sunset Cocktails (single/couple), Workshops
@@ -88,7 +88,7 @@ milestones:
   features:
   - F1
   - F2
-  status: pending
+  status: done
 - id: M2
   title: Wire them into nav and checkout
   features:
@@ -146,3 +146,49 @@ consumer — PASS, no defects) -> mandatory Codex GPT-5.5 cross-model review (PA
 -> @docs (`docs/f1-ticketing-conferences.md`, README milestones table) -> contract gate
 5/5 PASS. M1 (F1+F2) not yet complete — F2 (Workshops/Field Trips/Cocktails category)
 still pending. Next up: F2.
+
+## Closeout — F2 (2026-08-21)
+
+F2 (Estimate and structure the Workshops/Field Trips/Cocktails category) done, contract gate
+5/5 green. **M1 (F1+F2) is now complete.** @architect-apex split the category into 4 real
+priceable products (Sunset Cocktails single/couple, Field Trip single/all-outings) plus a
+non-sellable `WORKSHOP_PRICING_STRUCTURE` placeholder — deliberately did not invent specific
+workshop sessions, since those genuinely cannot be estimated without a council-confirmed list.
+
+**Notable defect, first-pass chain missed it, Codex caught it:** first-pass @dev implementation
+passed all 5 contract assertions, tsc, and @qa-apex's first adversarial review — PASS all
+round. The mandatory Codex GPT-5.5 cross-model review then FAILED it, finding a real oversell
+defect: `sunset-cocktails-couple` sells 2 heads per 1 capacity-slug-unit, and the two field-trip
+options (single/all-outings) share one physical capacity pool as two independent counters —
+both cases capable of overselling under the checkout's existing per-slug-only capacity
+enforcement (`lib/checkout-reservation.ts`), which neither @architect-apex's original design nor
+@qa-apex's first pass had modelled. This is exactly the class of bug the mandatory Codex pass
+exists for: same-model-writes-and-reviews-its-own-code missed a real business-logic/capacity
+defect that an independent model with no shared blind spot caught immediately.
+
+**Fix pattern — interim numbers-only fix over touching shared checkout logic:**
+@architect-apex, on revision, grounded the fix in the real checkout code
+(`lib/checkout-reservation.ts`, `lib/data/tickets.ts`,
+`app/api/tickets/checkout/route.ts`) and chose to resize the four capacity constants
+(200/200/60/60 -> 100/50/30/30) so the worst case (all sales as the largest-heads-per-slug
+variant, or all sales concentrated in one of the two pooled counters) can never exceed the real
+physical ceiling — rather than rewriting the shared per-slug capacity-enforcement logic itself,
+which is checkout-wide and higher risk to touch inside a data-model feature. The real fix (making
+capacity enforcement multi-head- and shared-pool-aware) is explicitly deferred to F4 (checkout
+wiring), with the tradeoff and the deferral documented in the golden README rather than left
+implicit. @qa-apex's second pass independently hand-recomputed both worst cases and confirmed
+both land exactly at the real ceiling, never over. Codex GPT-5.5's second pass, on the fixed
+diff, PASS exit 0. Worth reusing this pattern elsewhere: when a real fix requires touching
+shared, high-blast-radius logic that is out of the current feature's scope, a structurally-safe
+numbers-only interim fix with an explicit documented tradeoff and a named deferred follow-up
+feature is preferable to either scope creep or shipping the defect.
+
+Chain: @architect-apex (contract-f2.yaml, 5 shell assertions + 2 new mechanical invariant
+checks added on revision, goldens, `contracts/golden/ticketing-workshops-f2/README.md`) ->
+@dev (first pass, then second pass applying the exact 4-constant fix) -> @qa-apex (first pass
+PASS, missed the oversell defect; second pass PASS with independent worst-case
+recomputation) -> Codex GPT-5.5 (first pass FAIL with file:line-cited oversell finding; second
+pass PASS exit 0) -> @docs (`docs/f2-ticketing-workshops-field-trips.md`, README milestones
+table) -> contract gate 5/5 PASS. Mission status stays `in_progress` — M2 (F3 nav extension,
+F4 checkout wiring, which now also owns the deferred real capacity-pooling fix) still pending.
+Next up: F3.

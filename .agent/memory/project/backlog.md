@@ -48,10 +48,15 @@ Do not scope work from an entry that contradicts it.
   Symposium/WOSA/joint, 6 entries) now estimated and structured as of 2026-08-21
   (`ticketing-conferences-and-events` F1, `CONFERENCE_PRODUCTS` in `lib/provisional-figures.ts`)
   — data model done, but not yet wired into nav or checkout (that's F3/F4 of the same mission,
-  still pending). Still outstanding: vendor fees (exhibit/food), workshop/field-trip/cocktail
-  pricing and capacity, venue/workshop capacity figures generally. Her form answers (pricing
-  artifact) are still empty as of 2026-08-21 — do not wait for them to start estimating the
-  remaining categories.
+  still pending). Workshops/Field Trips/Cocktails category also now estimated and structured as
+  of 2026-08-21 (`ticketing-conferences-and-events` F2, M1 now complete) — 4 real priceable
+  products (Sunset Cocktails single/couple, Field Trip single/all-outings) with
+  structurally-safe capacities (100/50/30/30), plus a non-sellable
+  `WORKSHOP_PRICING_STRUCTURE` placeholder since individual workshop sessions genuinely cannot
+  be priced without a council-confirmed session list — do not invent specific workshops. Still
+  outstanding: vendor fees (exhibit/food), venue/workshop capacity figures generally, and the
+  real workshop session list itself. Her form answers (pricing artifact) are still empty as of
+  2026-08-21 — do not wait for them to start estimating the remaining categories.
 - [ ] **[P1] Refund and cancellation terms — draft real content ourselves for her to review/adjust
   (Brad's direction, 2026-08-21), do not wait for her answer first.** `/refunds` exists
   (`app/(marketing)/refunds/page.tsx`, 109 lines) but is deliberately figure-free — no cancellation
@@ -207,12 +212,17 @@ top-level nav item with a mega-menu whose Tickets column routes to a chooser pag
 (`/national-show/tickets`) plus direct Visitor/Exhibitor/Vendor sub-links; the ticketed-"Events"
 vs. societies-calendar-"Events" naming collision is resolved by construction. Scoped to Exhibition
 only — Conferences and Workshops/Field-Trips/Cocktails still need their own nav sub-links once
-built. **Mission Two drafted 2026-08-21, not yet started/dispatched**:
-`.agent/memory/project/missions/2026-08-21-ticketing-conferences-and-events.md` — F1 Conferences
-estimation/structure, F2 Workshops/Field-Trips/Cocktails estimation/structure, F3 nav extension,
-F4 checkout wiring; 2 milestones, status `pending`. `active.json` still points at
-`leeann-content-corrections` (not yet complete) — confirm with Brad which mission has priority
-before the chain dispatch.
+built. **Mission Two: M1 (F1 Conferences + F2 Workshops/Field-Trips/Cocktails estimation/structure)
+is DONE as of 2026-08-21** —
+`.agent/memory/project/missions/2026-08-21-ticketing-conferences-and-events.md`, `active.json`
+checkpoint now `M1/F2`. Mission `status` stays `in_progress`; M2 (F3 nav extension, F4 checkout
+wiring) still pending. F2 also carries a known future item: it shipped a structurally-safe
+interim fix (resized capacity constants) for a real oversell defect Codex GPT-5.5 caught
+(multi-head products and shared capacity pools not modelled by the checkout's per-slug-only
+capacity enforcement) — the real fix (multi-head- and shared-pool-aware capacity enforcement in
+`lib/checkout-reservation.ts`) is explicitly deferred to F4, not yet built. Workshops themselves
+remain unpriced/unbuilt pending a real council-confirmed session list — F2 deliberately did not
+invent specific sessions.
 - [ ] **[P2] Day Visitor's chosen day is not shown on the ticket confirmation page.** Verified
   2026-08-21: `chosenDay` is correctly captured and persisted (`"2027-09-18"` confirmed in
   Firestore against a real purchase), but `/tickets/confirmation` only shows
@@ -782,3 +792,5 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-scoped-staging-commits.md
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-compaction-nudge-template-propagation.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-gate-contract-mismatch-guard.md

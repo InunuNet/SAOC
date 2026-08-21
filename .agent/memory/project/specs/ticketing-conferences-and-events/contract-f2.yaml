@@ -1,0 +1,88 @@
+schema: athanor.contract/v1
+slug: ticketing-conferences-and-events
+goal: >
+  F2 (M1): add the four priceable Workshops/Field Trips/Cocktails products (Sunset Cocktails
+  Single/Couple, Field Trip Single/All-Outings) as a new WORKSHOP_FIELD_TRIP_PRODUCTS sibling
+  array, reusing the F4/F1 schema and provisional-figures discipline verbatim — plus a separate,
+  deliberately non-sellable WORKSHOP_PRICING_STRUCTURE export documenting the per-session
+  pricing model for Workshops, which is NOT instantiated as a real ticketType document since no
+  actual workshop session is defined. No schema changes. REVISED 2026-08-21: capacity numbers
+  changed from 200/200/60/60 to 100/50/30/30 to close a real oversell defect (Codex GPT-5.5
+  cross-model review) — checkout enforces capacity per-slug only, so an unweighted couple
+  product and two independently-capped slugs sharing one physical pool could jointly exceed
+  real venue/pool limits. See contracts/golden/ticketing-workshops-f2/README.md "Capacity
+  revision" for the full record.
+created_at: '2026-08-21'
+autonomy: high
+features:
+  - id: F2
+    name: Estimate and structure the Workshops/Field Trips/Cocktails category
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-conferences-and-events/goldens/f2-workshops-field-trips-cocktails.golden.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        [F2] WORKSHOP_FIELD_TRIP_PRODUCTS in lib/provisional-figures.ts has exactly the four
+        required slugs (sunset-cocktails-single/couple, field-trip-single/all-outings), each
+        structurally sound (requiresDaySelection false, requiresAttendeeNames true, provisional
+        true, positive price/capacity), the couple/all-outings prices forming real bundles
+        (cheaper than the naive multiple, pricier than a single alone), and proves NO fifth
+        "workshop" product was invented — no slug/name/description in the array may contain the
+        word "workshop." Also proves WORKSHOP_PRICING_STRUCTURE is a plain per-session-pricing
+        object (model/estimatedSessionPrice/note/provisional), never ticketType-shaped (no
+        slug/capacity fields) — the structural proof that Workshops was deliberately NOT
+        instantiated as a fabricated sellable product.
+        REVISED 2026-08-21 (Codex GPT-5.5 cross-model review, real oversell defect, exit 1 FAIL
+        against the original numbers): also computes, from the ACTUAL exported capacity
+        numbers, the worst-case simultaneous-sellout headcount/seat totals for two pairs of
+        slugs checkout enforces with independent, unweighted, per-slug-only capacity counters
+        (confirmed by reading lib/checkout-reservation.ts's effectiveCapacity() and
+        lib/data/tickets.ts's getSoldCountsByTicketType() — no pooling, no occupancy-weighting
+        across slugs anywhere in that path) — sunset-cocktails-single.capacity +
+        2 * sunset-cocktails-couple.capacity <= 200 (real venue head capacity; a couple ticket
+        is 2 heads per unit sold but only 1 unit against its own counter), and
+        field-trip-single.capacity + field-trip-all-outings.capacity <= 60 (real bus/trip pool,
+        shared by both slugs with zero pooling in checkout code). See
+        contracts/golden/ticketing-workshops-f2/README.md "Capacity revision" for the full
+        defect, the options considered, and why this is a numbers fix, not a checkout-code fix,
+        this pass. Imports and inspects the actual exported values, not source text. Negatively
+        verified against five deliberately broken fixtures (an invented 5th workshop product;
+        couple priced above 2x single; bare "Events" in product copy; WORKSHOP_PRICING_STRUCTURE
+        carrying slug/capacity fields; the ORIGINAL 200/200/60/60 capacity numbers, confirmed
+        via the live pre-fix repo state to fail both new oversell invariants for the right
+        reason) — each confirmed to fail for the right reason before this check was accepted.
+      command: npx tsx contracts/checks/ticketing-workshops-f2/check-workshop-products.mjs
+    - id: A2
+      description: >
+        [F2] No bare word "Events" anywhere in lib/provisional-figures.ts — consistency with
+        ticketing-nav-restructure F2's naming-collision resolution and this feature's own
+        required qualified form ("Workshops & Field Trips"), same invariant F1's A5 enforces.
+      command: '! grep -n "\bEvents\b" lib/provisional-figures.ts'
+    - id: A3
+      description: >
+        [F2] scripts/seed-ticketing.ts wires in WORKSHOP_FIELD_TRIP_PRODUCTS the same way it
+        already wires in ADMISSION_PRODUCTS and CONFERENCE_PRODUCTS (single source of truth,
+        not a re-typed copy) — AND does NOT wire in WORKSHOP_PRICING_STRUCTURE, proving the
+        seed script correctly treats it as non-sellable rather than accidentally seeding a
+        fake Sanity document from it.
+      command: grep -q "WORKSHOP_FIELD_TRIP_PRODUCTS" scripts/seed-ticketing.ts && ! grep -q "WORKSHOP_PRICING_STRUCTURE" scripts/seed-ticketing.ts
+    - id: A4
+      description: >
+        [F2] Sanity schema is reused, not extended with a bespoke parallel model for this
+        category — no cocktail/field-trip/workshop-named field was added to ticketType.ts
+        (e.g. no age-restriction or session-selection field), and no new schema document file
+        for this category was created. Proves the "18+ restriction is copy-only this pass,
+        enforcement deferred to F4" and "schema reuse" decisions held in the actual
+        implementation, not just the golden's stated intent.
+      command: '! grep -iE "cocktail|field.?trip|workshop|minimumAge|ageRestriction" sanity/schemas/documents/ticketType.ts && ! (find sanity/schemas -iname "*cocktail*" -o -iname "*fieldtrip*" -o -iname "*workshop*" | grep -q .)'
+    - id: A5
+      description: >
+        [F2] None of the four product prices (250/450/300/750) or the workshop per-session
+        anchor (120) are re-typed as literals anywhere in the seed script, the tickets pages,
+        or components/tickets/ — the single-source-of-truth discipline F1's A3 already enforces
+        for its own numbers, applied to this feature's numbers. Scoped to ticket-relevant paths
+        only to avoid unrelated numeric-literal false positives (Tailwind classes, OG widths).
+      command: '! grep -rEn "\b(250|450|300|750|120)\b" scripts/seed-ticketing.ts components/tickets "app/(marketing)/tickets" "app/(marketing)/national-show" 2>/dev/null | grep -q .'

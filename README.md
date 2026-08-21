@@ -102,6 +102,7 @@ types/            — TypeScript interfaces
 | Admin navigation menu | Done | Persistent, capability-aware nav on every `/admin/*` surface, plus a real sign-out. See [docs/admin-nav-menu.md](docs/admin-nav-menu.md). |
 | Ticketing Navigation M1 | Done | National Show becomes the one top-level nav item with a mega-menu. Tickets column heading routes to a chooser page; direct sub-links go to Visitor/Exhibitor/Vendor entry. Exhibition category only (Visitor, Exhibitor, Vendor tickets). See [docs/f1-ticketing-nav-restructure.md](docs/f1-ticketing-nav-restructure.md). |
 | Ticketing Conferences M1-F1 | Done | Conferences category: six ticket types (SAOC Symposium, WOSA Conference, Joint — each Early-Bird/Normal), provisional estimates, reusing the existing admission-products schema and single-source-of-truth discipline. See [docs/f1-ticketing-conferences.md](docs/f1-ticketing-conferences.md). |
+| Ticketing Workshops & Field Trips M1-F2 | Done | Workshops & Field Trips category: four priceable ticket types (Sunset Cocktails Single/Couple, Field Trip Single/All-Outings) with provisional estimates. Capacity numbers resized to close an oversell defect caught by Codex review. Workshops pricing structure documented but not yet sellable (no council-confirmed sessions). See [docs/f2-ticketing-workshops-field-trips.md](docs/f2-ticketing-workshops-field-trips.md). |
 
 Full milestone docs are in [`docs/`](docs/).
 

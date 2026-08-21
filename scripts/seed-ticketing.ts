@@ -39,7 +39,11 @@ import path from 'node:path';
 
 import { createClient, type SanityClient } from '@sanity/client';
 
-import { ADMISSION_PRODUCTS, CONFERENCE_PRODUCTS } from '../lib/provisional-figures';
+import {
+  ADMISSION_PRODUCTS,
+  CONFERENCE_PRODUCTS,
+  WORKSHOP_FIELD_TRIP_PRODUCTS,
+} from '../lib/provisional-figures';
 
 // ---------------------------------------------------------------------------
 // Env — parsed directly from .env.local (see file header).
@@ -113,7 +117,11 @@ async function fetchActiveShowId(): Promise<string> {
 
 async function seedTicketTypes(showId: string): Promise<void> {
   console.log('  ticketType documents (new, from lib/provisional-figures.ts):');
-  const allProducts = [...ADMISSION_PRODUCTS, ...CONFERENCE_PRODUCTS];
+  const allProducts = [
+    ...ADMISSION_PRODUCTS,
+    ...CONFERENCE_PRODUCTS,
+    ...WORKSHOP_FIELD_TRIP_PRODUCTS,
+  ];
   for (const [index, product] of allProducts.entries()) {
     await client.createIfNotExists({
       _id: `ticketType-${product.slug}`,
