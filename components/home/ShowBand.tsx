@@ -59,12 +59,12 @@ function CountdownBox({ target, edition }: { target: Date | null; edition?: numb
   return (
     <div className={BOX_CLASSES}>
       <div
-        className="flex gap-8"
+        className="flex gap-3 sm:gap-8"
         aria-label={`Countdown to the ${showLabelWithEdition(edition)}`}
       >
         {cells.map((cell) => (
           <div key={cell.label} className="flex flex-col items-center">
-            <span className="font-serif text-[42px] text-accent-soft leading-none">
+            <span className="font-serif text-[clamp(26px,7vw,42px)] text-accent-soft leading-none">
               {cell.value}
             </span>
             <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/60 mt-1">
@@ -95,7 +95,7 @@ export function ShowBand({ show }: ShowBandProps) {
     <section className="bg-primary-800">
       <div className="max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-2">
         {/* Image left */}
-        <div className="relative aspect-[4/3] md:aspect-auto min-h-[400px]">
+        <div className="relative w-full max-w-full aspect-[4/3] md:aspect-auto md:w-auto md:max-w-none min-h-[400px]">
           <Image
             src="/images/orchid-yellow.jpg"
             alt="Yellow orchid on the show bench"

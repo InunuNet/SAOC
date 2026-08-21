@@ -59,7 +59,7 @@ export function MegaMenu({ item }: MegaMenuProps) {
         aria-haspopup="true"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="relative font-sans text-[14px] text-ink transition-colors duration-150 hover:text-primary"
+        className="relative rounded-sm font-sans text-[14px] text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
       >
         {item.label}
       </button>
@@ -78,7 +78,7 @@ export function MegaMenu({ item }: MegaMenuProps) {
                     <Link
                       href={column.headingHref}
                       onClick={() => setOpen(false)}
-                      className="font-serif text-[16px] font-medium text-ink hover:text-primary transition-colors duration-150"
+                      className="rounded-sm font-serif text-[16px] font-medium text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                     >
                       {column.heading}
                     </Link>
@@ -93,7 +93,7 @@ export function MegaMenu({ item }: MegaMenuProps) {
                         <Link
                           href={link.href}
                           onClick={() => setOpen(false)}
-                          className="font-sans text-[14px] text-ink/80 hover:text-primary transition-colors duration-150"
+                          className="rounded-sm font-sans text-[14px] text-ink/80 hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                         >
                           {link.label}
                         </Link>
@@ -107,7 +107,7 @@ export function MegaMenu({ item }: MegaMenuProps) {
             <Link
               href={item.href}
               onClick={() => setOpen(false)}
-              className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150"
+              className="rounded-sm font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
             >
               Visit National Show &rarr;
             </Link>

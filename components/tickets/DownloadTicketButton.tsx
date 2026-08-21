@@ -107,7 +107,7 @@ export function DownloadTicketButton({
         onClick={handleDownload}
         disabled={status === 'preparing'}
         aria-label={`Download ticket for ${attendeeName} as an image`}
-        className="rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ivory transition-colors hover:bg-accent-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ivory transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-60"
       >
         {status === 'preparing' ? 'Preparing download…' : label}
       </button>

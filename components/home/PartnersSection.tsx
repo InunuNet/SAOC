@@ -69,9 +69,12 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
               <>
                 <span className="font-serif text-lg text-ink leading-snug">{card.name}</span>
                 {card.description ? (
-                  <span className="mt-3 block text-[15px] text-muted leading-relaxed">
-                    {card.description}
-                  </span>
+                  <>
+                    {' '}
+                    <span className="mt-3 block text-[15px] text-muted leading-relaxed">
+                      {card.description}
+                    </span>
+                  </>
                 ) : null}
               </>
             );

@@ -73,7 +73,7 @@ export function Header() {
           {/* Zone 1 — logo lockup */}
           <Link
             href="/"
-            className="flex items-center gap-3"
+            className="flex items-center gap-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
             aria-label="South African Orchid Council — home"
           >
             <Image src="/images/saoc-logo-ink-paper.png" alt="" width={48} height={48} priority />
@@ -113,7 +113,7 @@ export function Header() {
                   key={n.id}
                   href={n.href}
                   className={[
-                    'relative font-sans text-[14px] text-ink transition-colors duration-150 hover:text-primary',
+                    'relative rounded-sm font-sans text-[14px] text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
                     active ? 'text-primary' : '',
                   ].join(' ')}
                 >
@@ -134,7 +134,7 @@ export function Header() {
             <button
               type="button"
               aria-label="Open search"
-              className="p-2 text-ink hover:text-primary transition-colors duration-150"
+              className="rounded-sm p-2 text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
               onClick={() => setSearchOpen(true)}
             >
               <Search size={18} strokeWidth={1.5} />
@@ -142,7 +142,7 @@ export function Header() {
 
             <Link
               href="/contact"
-              className="hidden sm:inline-block rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory hover:bg-primary-800 transition-colors duration-150"
+              className="hidden sm:inline-block rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory hover:bg-primary-800 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
             >
               Contact
             </Link>
@@ -150,7 +150,7 @@ export function Header() {
             <button
               type="button"
               aria-label="Open menu"
-              className="p-2 text-ink min-[1240px]:hidden hover:text-primary transition-colors duration-150"
+              className="rounded-sm p-2 text-ink min-[1240px]:hidden hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
               onClick={() => setMobileOpen(true)}
             >
               <Menu size={22} strokeWidth={1.5} />

@@ -1929,3 +1929,35 @@ possibly in-flight change from another agent into this mission's commit. Correct
 finish all mission-file/memory content edits (which don't need git), leave the final
 close-out commit for a retry once the shared file is clean, and report the blocker rather
 than forcing it.
+
+## `backlog-a11y-ui-quickfixes` — three adversarial rounds to close one focus-ring fix (2026-08-21/22)
+
+F2 (invisible focus-ring fix on cream-background buttons) needed three separate @dev↔@qa
+rounds before clean, reinforcing the project's standing "same defect class recurring across
+rounds" lesson (see the 2026-08-12 overnight session entries above) with a fresh, concrete
+instance: round 1 fixed the pattern but missed the Header.tsx/MegaMenu.tsx mega-menu trigger
+button; round 2 fixed that but missed five more elements inside MobileMenu.tsx; round 3 was
+clean. A single-pass QA would have shipped the fix genuinely incomplete — sitewide claims
+("fixed the focus ring token") need a sitewide sweep of every affected component, not just the
+two originally-confirmed instances, before @qa is trusted to sign off in one round.
+
+## Playwright `:focus-visible` verification — use real keyboard traversal, not `.focus()` (2026-08-21/22)
+
+Calling `.focus()` on an element does NOT reliably trigger `:focus-visible` in Chromium once a
+prior pointer/mouse click has happened in the same page session — Chromium's focus-visible
+heuristic is input-modality-aware and a preceding click can suppress it even for a
+programmatically-focused element afterward. Independently discovered by @dev and confirmed by
+@qa this mission. For any future accessibility/focus-ring contract check or QA verification on
+this codebase, drive real `page.keyboard.press('Tab')` traversal to reach the target element
+before asserting on `:focus-visible` state — do not use `.focus()` as a shortcut, it produces
+false negatives (or false positives, if the assertion is written to expect no ring).
+
+## Focus-visible ring pattern is now the site default (2026-08-21/22)
+
+`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40
+focus-visible:ring-offset-2 focus-visible:ring-offset-{parchment|ivory|matching-bg}` (offset
+colour matched to the element's actual background) was reused across 8 components in this
+mission (Header, MegaMenu, MobileMenu, ContactForm, TicketPurchaseForm, DownloadTicketButton,
+TicketTypeCard, VendorRegisterForm). Treat this as the default focus-ring treatment for any
+new interactive element on this project — do not invent a different focus treatment or reach
+for the browser default `outline`.

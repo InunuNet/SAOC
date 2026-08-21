@@ -399,16 +399,13 @@ flat-over-nested-submenu pattern.
 
 ## Accessibility & UI defects
 
-- [ ] **[P2, WCAG 2.4.7] Button focus rings are invisible on cream backgrounds, site-wide.**
-  Buttons render their focus outline as `rgb(244,243,236)` — the same colour as the body — with a
-  2px offset. Elements are focusable and keyboard-operable; a keyboard user simply cannot see where
-  focus is. Confirmed on "Buy Ticket" (`/tickets`, the primary purchase CTA) and "Download ticket".
-  Header/footer nav links already do this correctly with a near-black outline, so the right pattern
-  exists in the codebase — it was never applied to buttons on cream. Single token change; audit all
-  buttons afterwards with a browser, not a grep.
-- [ ] **[P2, WCAG] `ContactForm` and `TicketPurchaseForm` render error text as `text-accent`** —
-  2.94:1 on ivory, fails AA, public-facing. The admin pages already use a bordered callout at
-  13.6:1; apply the same pattern.
+- [ ] **[P2] MobileMenu.tsx drawer has no focus trap** — Tab escapes onto background page content
+  while the drawer is open. Flagged real by @qa during `backlog-a11y-ui-quickfixes` (2026-08-21/22)
+  while verifying the focus-ring fix below; needs its own fix, not folded into that mission.
+- [ ] **[P2] Form-error-contrast fix (bordered-callout pattern) only applied to
+  ContactForm/TicketPurchaseForm** by `backlog-a11y-ui-quickfixes` F3 (2026-08-21/22) — the same
+  low-contrast `text-accent` error-text issue is still present on `CartDayPicker`,
+  `TicketFormField`, and `DownloadTicketButton`. Needs the same bordered-callout treatment.
 - [ ] **[P2, HELD for Brad's design call] WCAG accent-token contrast audit.** 30-row audit and
   contract identify real accent-contrast failures on live public pages. Remedy fully specified in
   `contracts/golden/wcag-accent-contrast/remedy.md`, deliberately not applied — it is a design-token
@@ -454,12 +451,6 @@ flat-over-nested-submenu pattern.
   First check whether the treatment is scoped to the vendor components or shared site-wide; a fix
   must not silently diverge the vendor form's typography from the rest of the site. Recommendation:
   keep the mono/letter-spacing character, drop `uppercase` for sentence case.
-- [ ] **[P3] 375px horizontal overflow in `ShowBand.tsx:35`** (`aspect-[4/3]`). Pre-existing.
-- [ ] **[P3, a11y] Partners card accessible name concatenates** — the name and description spans in
-  `PartnersSection.tsx` are JSX-adjacent with no whitespace text node, so the anchor reads
-  "…Southern AfricaPartner organisation hosting…". Fix with an `aria-label` or a `{' '}` separator.
-- [ ] **[P3] `components/chrome/Footer.tsx:117` links the dead `wosa.org.za`** — site-wide, every
-  page. The live site is `https://wildorchids.co.za`. One-line fix.
 
 ---
 
@@ -836,3 +827,9 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-quota-mirror-partial-write.md
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-codex-qa-timeout.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-gemini-agent-model-drift.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-idempotency-check-repo-mutation.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-mission-abandon-clear-active-fix.md

@@ -50,7 +50,7 @@ export function MobileMenu({ open, onClose, nav }: MobileMenuProps) {
           <button
             type="button"
             aria-label="Close menu"
-            className="p-2 text-ink hover:text-primary transition-colors duration-150"
+            className="rounded-sm p-2 text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
             onClick={onClose}
           >
             <X size={22} strokeWidth={1.5} />
@@ -69,7 +69,7 @@ export function MobileMenu({ open, onClose, nav }: MobileMenuProps) {
                       type="button"
                       aria-expanded={isExpanded}
                       onClick={() => setExpandedId(isExpanded ? null : n.id)}
-                      className="flex w-full items-center justify-between px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150"
+                      className="flex w-full items-center justify-between px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                     >
                       {n.label}
                       <ChevronDown
@@ -83,7 +83,7 @@ export function MobileMenu({ open, onClose, nav }: MobileMenuProps) {
                         <Link
                           href={n.href}
                           onClick={onClose}
-                          className="block px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150"
+                          className="block px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                         >
                           Visit National Show &rarr;
                         </Link>
@@ -93,7 +93,7 @@ export function MobileMenu({ open, onClose, nav }: MobileMenuProps) {
                               <Link
                                 href={column.headingHref}
                                 onClick={onClose}
-                                className="block px-3 py-2 font-serif text-[14px] font-medium text-ink hover:text-primary transition-colors duration-150"
+                                className="block px-3 py-2 font-serif text-[14px] font-medium text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                               >
                                 {column.heading}
                               </Link>
@@ -108,7 +108,7 @@ export function MobileMenu({ open, onClose, nav }: MobileMenuProps) {
                                   <Link
                                     href={link.href}
                                     onClick={onClose}
-                                    className="block px-6 py-2 font-sans text-[14px] text-ink/80 hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150"
+                                    className="block px-6 py-2 font-sans text-[14px] text-ink/80 hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                                   >
                                     {link.label}
                                   </Link>
@@ -142,7 +142,7 @@ export function MobileMenu({ open, onClose, nav }: MobileMenuProps) {
                   <Link
                     href={n.href}
                     onClick={onClose}
-                    className="flex items-center px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150"
+                    className="flex items-center px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                   >
                     {n.label}
                   </Link>
@@ -156,7 +156,7 @@ export function MobileMenu({ open, onClose, nav }: MobileMenuProps) {
         <div className="mt-8 pt-6 border-t border-rule flex flex-col gap-1">
           <a
             href="mailto:council@saoc.co.za"
-            className="font-mono text-[12px] text-muted hover:text-primary transition-colors duration-150"
+            className="font-mono text-[12px] text-muted hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
           >
             council@saoc.co.za
           </a>

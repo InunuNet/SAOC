@@ -330,3 +330,13 @@ via `mission.py gate --milestone M1`; close-out staging blocked mid-session by a
 dirty `.claude/settings.json` from concurrent harness work in this session — see `learned.md`
 and the maintainer's report to `main` for detail; mission content (features/milestone status)
 is `done`, only the final wrap-mission commit step is pending.
+
+### 2026-08-22 — `backlog-a11y-ui-quickfixes` M1 (F1-F5) DONE
+
+~~`backlog-a11y-ui-quickfixes` M1 (F1 footer dead link, F2 invisible focus rings, F3 low-contrast
+form error text, F4 ShowBand overflow, F5 PartnersSection accessible name)~~ ✅ **DONE**, all 5
+features, contract gate 14/14 green, @qa PASS, Codex GPT-5.5 cross-model pass PASS. F2 needed
+three @dev↔@qa rounds to reach full sitewide coverage (see `learned.md`). The reused
+focus-visible ring pattern is now the site default for interactive elements. Two follow-up items
+surfaced but left out of scope, added to `backlog.md`: MobileMenu.tsx has no focus trap; the
+form-error-contrast fix needs extending to CartDayPicker/TicketFormField/DownloadTicketButton.

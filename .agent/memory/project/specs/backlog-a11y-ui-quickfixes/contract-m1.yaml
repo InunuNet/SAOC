@@ -1,0 +1,169 @@
+schema: athanor.contract/v1
+slug: backlog-a11y-ui-quickfixes
+goal: >
+  Five small, independently-scoped accessibility/UI-defect fixes pulled from
+  backlog.md's "Accessibility & UI defects" section, none blocked on Brad/council:
+  dead footer link, invisible button focus rings, low-contrast form error text,
+  a 375px horizontal-overflow bug, and a concatenated accessible name. All five
+  reuse an existing in-codebase pattern rather than inventing a new one.
+created_at: '2026-08-21'
+autonomy: high
+features:
+  - id: F1
+    name: Footer dead link — wosa.org.za to wildorchids.co.za
+    status: pending
+  - id: F2
+    name: Invisible focus rings on cream-background buttons — reuse the existing near-black ring-ink/40 token
+    status: pending
+  - id: F3
+    name: Low-contrast form error text on ContactForm/TicketPurchaseForm — reuse the admin bordered-callout pattern
+    status: pending
+  - id: F4
+    name: ShowBand.tsx 375px horizontal overflow
+    status: pending
+  - id: F5
+    name: PartnersSection.tsx accessible-name concatenation
+    status: pending
+goldens:
+  - .agent/memory/project/specs/backlog-a11y-ui-quickfixes/goldens/m1-golden.md
+assertions:
+  phase: 4
+  checks:
+    # --- F1: footer dead link ---
+    - id: A1
+      description: >
+        Footer.tsx no longer references the dead wosa.org.za domain anywhere in the
+        file (not just the visible href — a stray reference in a comment or an old
+        fallback would still be a defect).
+      command: '! grep -q "wosa\.org\.za" components/chrome/Footer.tsx'
+
+    - id: A2
+      description: >
+        Footer.tsx's WOSA link literally points at the live wildorchids.co.za
+        domain over https.
+      command: 'grep -q ''href="https://wildorchids\.co\.za"'' components/chrome/Footer.tsx'
+
+    # --- F2: invisible focus rings ---
+    - id: A3
+      description: >
+        The near-black focus-ring token this feature must reuse (ring-ink/40)
+        genuinely pre-exists elsewhere in the codebase (vendor form fields) —
+        proves F2 is reusing an established token, not inventing a new colour.
+        False-pass risk: this only proves the token exists somewhere, not that F2
+        uses the SAME token — A4/A5 close that gap by requiring it verbatim in the
+        two target files.
+      command: 'grep -q "ring-ink/40" components/vendors/VendorCheckboxField.tsx'
+
+    - id: A4
+      description: >
+        TicketPurchaseForm's "Buy Ticket" submit button now carries a visible
+        focus-visible ring using the SAME near-black token as A3, not a new colour.
+      command: 'grep -q "focus-visible:ring-ink/40" components/tickets/TicketPurchaseForm.tsx'
+
+    - id: A5
+      description: >
+        DownloadTicketButton's "Download ticket" button now carries a visible
+        focus-visible ring using the SAME near-black token as A3, not a new colour
+        (replacing or supplementing its prior brass outline-accent token, which did
+        not match the rest of the site).
+      command: 'grep -q "focus-visible:ring-ink/40" components/tickets/DownloadTicketButton.tsx'
+
+    - id: A6
+      description: >
+        Neither button introduces a brand-new focus colour token (e.g. an
+        arbitrary hex/rgb value or a fresh custom colour name) — the fix must be a
+        pure reuse of ring-ink/40, not a new design decision. False-pass risk: this
+        only catches arbitrary-value Tailwind syntax (square-bracket colours); a
+        differently-named but equally new *named* token would slip through. Judged
+        acceptable given A4/A5 already pin the required token verbatim.
+      command: '! grep -E "focus-visible:(ring|outline)-\[#" components/tickets/TicketPurchaseForm.tsx components/tickets/DownloadTicketButton.tsx'
+
+    # --- F3: low-contrast form error text ---
+    - id: A7
+      description: >
+        ContactForm.tsx's inline error paragraph no longer uses the low-contrast
+        accent colour for error text (neither the text-accent utility class nor the
+        equivalent CSS-var form) anywhere in the file.
+      command: '! grep -E "text-accent|text-\[var\(--accent\)\]" components/contact/ContactForm.tsx'
+
+    - id: A8
+      description: >
+        ContactForm.tsx's error paragraph now reuses the admin bordered-callout
+        signature (bg-bone + text-primary-800 + a border), matching
+        DoorResultBanner.tsx/LoginFormFields.tsx's existing pattern rather than a
+        new design. False-pass risk: presence of these three substrings anywhere
+        in the file, not necessarily combined on the error element — acceptable
+        given the file is small and single-purpose (its only error-rendering block)
+        and A7 already proves the old low-contrast colour was removed from it.
+      command: 'grep -q "bg-bone" components/contact/ContactForm.tsx && grep -q "text-primary-800" components/contact/ContactForm.tsx && grep -q "border" components/contact/ContactForm.tsx'
+
+    - id: A9
+      description: >
+        TicketPurchaseForm.tsx no longer uses the low-contrast accent colour for
+        error text anywhere in the file (both its error paragraphs — cartError and
+        errorMessage — are in scope).
+      command: '! grep -q "text-accent" components/tickets/TicketPurchaseForm.tsx'
+
+    - id: A10
+      description: >
+        TicketPurchaseForm.tsx's error paragraphs now reuse the admin
+        bordered-callout signature, same reasoning/caveat as A8.
+      command: 'grep -q "bg-bone" components/tickets/TicketPurchaseForm.tsx && grep -q "text-primary-800" components/tickets/TicketPurchaseForm.tsx && grep -q "border" components/tickets/TicketPurchaseForm.tsx'
+
+    # --- F4: ShowBand.tsx overflow ---
+    - id: A11
+      description: >
+        ShowBand.tsx's image column no longer relies on a bare, unguarded
+        aspect-[4/3] below the md: breakpoint — some width-bounding class
+        (max-w-full / w-full / overflow-hidden, or the aspect utility itself moved
+        behind a min-width guard) is present on that element. This is a necessary,
+        not sufficient, proxy for "no overflow" — grep cannot prove a rendered
+        layout doesn't overflow; A12 (browser check) proves the real property.
+      command: 'grep -E "aspect-\[4/3\]" components/home/ShowBand.tsx | grep -qE "max-w-full|w-full|overflow-hidden"'
+
+    - id: A12
+      description: >
+        Desktop (md: and up) visual intent is unchanged — the md:aspect-auto
+        escape hatch for the image column still exists verbatim.
+      command: 'grep -q "md:aspect-auto" components/home/ShowBand.tsx'
+
+    # --- F5: PartnersSection accessible name ---
+    - id: A13
+      description: >
+        PartnersSection.tsx's card content fragment now has either a whitespace
+        separator between the name and description spans, or an aria-label
+        supplying a pre-composed accessible name — either fix closes the
+        concatenation gap. False-pass risk: matching "{' '}" also matches an
+        unrelated occurrence elsewhere in the file — acceptable given the file is
+        small (one content-rendering block) and PartnersSection has no other JSX
+        needing a manual space today.
+      command: "grep -qE \"\\{' '\\}|aria-label=\\{\" components/home/PartnersSection.tsx"
+
+    # --- Cross-cutting ---
+    - id: A14
+      description: TypeScript compiles clean after all five fixes.
+      command: pnpm exec tsc --noEmit
+
+  agent_review:
+    - id: H1
+      description: >
+        F2's full site-wide sweep ("every button, not just the two confirmed
+        instances") and F4's overflow fix are both rendered-layout/visual
+        properties a grep cannot fully prove, per this project's coding.md
+        verification hierarchy (automated UI over agent_review, but this repo has
+        no existing Playwright harness wired for viewport/focus-visibility
+        assertions and building one is out of scope for a quickfix batch — logged
+        as the honest reason this step isn't a shell check). Do NOT treat A4/A5/A11
+        passing as proof either property actually holds when rendered.
+      instruction: >
+        Before marking F2/F4 done, browser-verify directly (devtools or a
+        Playwright script run ad hoc, not necessarily committed): (a) tab through
+        the site's buttons — nav, "Buy Ticket", "Download ticket", vendor form
+        controls, admin buttons — confirming a visible near-black ring appears on
+        every one of them at focus, not only the two confirmed instances; (b) load
+        the home page at 320px, 375px, and 1440px viewport widths and confirm no
+        horizontal scrollbar/overflow appears at any of them, and that ShowBand's
+        desktop layout is visually unchanged from before the fix. Record the
+        outcome (pass/fail per width and per button swept) in the mission's
+        checkpoint notes or a needs-human.md entry if a genuine ambiguity turns up
+        that needs Brad's call.

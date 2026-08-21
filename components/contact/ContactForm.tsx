@@ -163,7 +163,7 @@ export function ContactForm() {
 
       {/* Inline error */}
       {status === 'error' && errorMessage ? (
-        <p role="alert" className="font-sans text-[14px] text-[var(--accent)]">
+        <p role="alert" className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800">
           {errorMessage}
         </p>
       ) : null}
@@ -171,7 +171,7 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={status === 'submitting'}
-        className="rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ivory hover:bg-accent-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        className="rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ivory hover:bg-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {status === 'submitting' ? 'Sending…' : 'Send message'}
       </button>

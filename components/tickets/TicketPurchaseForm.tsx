@@ -72,13 +72,13 @@ export function TicketPurchaseForm({
       />
 
       {cart.cartError ? (
-        <p role="alert" className="font-sans text-[13px] text-accent">
+        <p role="alert" className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[13px] text-primary-800">
           {cart.cartError}
         </p>
       ) : null}
 
       {cart.status === 'error' && cart.errorMessage ? (
-        <p role="alert" className="font-sans text-[14px] text-accent">
+        <p role="alert" className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800">
           {cart.errorMessage}
         </p>
       ) : null}
@@ -86,7 +86,7 @@ export function TicketPurchaseForm({
       <button
         type="submit"
         disabled={cart.status === 'submitting'}
-        className="rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ivory transition-colors hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ivory transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-60"
       >
         {cart.status === 'submitting' ? 'Redirecting to PayFast…' : buyButtonLabel}
       </button>

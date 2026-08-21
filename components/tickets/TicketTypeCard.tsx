@@ -91,7 +91,7 @@ export function TicketTypeCard({
             onClick={decrease}
             disabled={soldOut || quantity === 0}
             aria-label={`${decreaseLabel} ${name}`}
-            className="flex h-8 w-8 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-8 w-8 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
           >
             −
           </button>
@@ -116,7 +116,7 @@ export function TicketTypeCard({
             onClick={increase}
             disabled={soldOut}
             aria-label={`${increaseLabel} ${name}`}
-            className="flex h-8 w-8 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-8 w-8 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
           >
             +
           </button>
