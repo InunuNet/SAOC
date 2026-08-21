@@ -8,8 +8,10 @@ goal: 'National Show mega-menu restructure: surface About-the-Show content pages
   2026-08-21. QA-apex confirmed via real browser: deploy is live and correct, no misrouted
   links — this is a menu-structure and page-messaging gap, not a bug.'
 created_at: '2026-08-21T20:29:26.306594+00:00'
-started_at: null
-status: close_out
+started_at: '2026-08-21T20:31:00+00:00'
+completed_at: '2026-08-21T20:50:00+00:00'
+last_active_at: '2026-08-21T20:50:00+00:00'
+status: done
 cost_estimate:
   features: 0
   milestones: 0
@@ -74,6 +76,7 @@ milestones:
   gate_ran_at: '2026-08-21T20:48:50.134555+00:00'
   gate_result: pass
 ---
+
 
 
 
