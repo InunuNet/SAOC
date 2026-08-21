@@ -189,6 +189,24 @@ Do not scope work from an entry that contradicts it.
 
 ## Ticketing — open work (read `Plans/valiant-squishing-thimble.md` first)
 
+**Category structure, per Lee-Ann's spec (Drive `1fegrT9UKObJ71tUjUme_kFtqieSOsYca`):
+"Orchid Exhibition" (with Visitor and Exhibitor/Vendor ticket types), Conferences, and
+Workshops/Field Trips/Cocktails are three distinct top-level categories, not variants of one
+flow.** Status as of 2026-08-21: **Orchid Exhibition — Visitor is SHIPPED** — multi-line-item
+cart, the five real admission products (Early-Bird/Day Visitor/Early-Bird Weekend/Weekend/VIP),
+day selection, named attendees, checkout, PayFast payment, confirmation — proven with a real
+end-to-end purchase against the deployed site 2026-08-21 (both positions correctly `paid`,
+`chosenDay` correctly persisted). **Exhibitor/Vendor ticketing, Conferences, and
+Workshops/Field Trips/Cocktails are NOT built** — vendor registration (a separate, already-
+built flow for booth applications) is not the same as an Exhibitor ticket/pass. Next mission
+after the nav fix is scoping and building these remaining categories. The site navigation does
+not yet distinguish or route between these categories — see the nav-fix mission
+(2026-08-21, next up) for the immediate work.
+- [ ] **[P2] Day Visitor's chosen day is not shown on the ticket confirmation page.** Verified
+  2026-08-21: `chosenDay` is correctly captured and persisted (`"2027-09-18"` confirmed in
+  Firestore against a real purchase), but `/tickets/confirmation` only shows
+  "day-visitor · R150.00" — no date. A buyer has no way to see which day they're confirmed for
+  after checkout. Minor completeness gap in F5 (ticketing-f5-day-attendees), not a data-loss bug.
 - [ ] **[P1] Verify the reserved-seat release path actually fires.** `buildReservationDocs` now
   writes `expiresAt` onto the position document as well as the order (`lib/checkout-reservation.ts`
   lines 56 and 81), which was the missing field that made lazy expiry-release unreachable — every
@@ -252,20 +270,22 @@ Do not scope work from an entry that contradicts it.
   nothing linking the two. PayFast exposes a Refunds API (same MD5+passphrase auth as the ITN), so
   this is buildable. Needed before high refund volume.
 - [ ] **[P2] `createOrderWithPosition()` uses idempotent `transaction.set()`, not `.create()`** —
-  a colliding `bookingRef` silently overwrites instead of failing. Inert today (~60 bits of CSPRNG
-  entropy per ref), but any flow reusing this primitive must confirm collision detection is not
-  load-bearing. `[verify against new brief]` — the multi-line-item reservation transaction rewrites
-  this path.
+  a colliding `bookingRef` silently overwrites instead of failing. **Verified 2026-08-21: the main
+  checkout path no longer uses this** — `buildMultiReservationDocs()`/`writeMultiReservationPair()`
+  (multi-line-item-cart mission) use `transaction.create()` (fail-loud on collision), confirmed by
+  reading the code. `createOrderWithPosition()` is now ONLY used by the admin comp-ticket route
+  (`app/api/admin/tickets/comp/route.ts`) — narrower blast radius than originally scoped, still a
+  real gap there, lower urgency (comp tickets are a low-volume admin action, not public checkout).
 - [ ] **[P2] `amount`/`purchasedAt`/`m_payment_id`/`pf_payment_id` are duplicated on both `Order`
-  and `Ticket`**, deliberately, and nothing detects divergence between the copies. The position
-  copies were meant to be removed with a backfill once checkout/ITN stop writing them.
-  `[verify against new brief]`.
-- [ ] **[P2] Recovery-token wiring has no owner.** `lib/recovery-token.ts` ships the primitives;
-  something must CALL `mintRecoveryToken()` at order creation and persist it, or there is nothing
-  for a recovery link to verify against. Same shape: the guest-order-claiming backfill (a guest's
-  existing orders' `buyerUid` backfilled when they later register) is owned by nobody.
-  `[verify against new brief]` — the booking-contact block rewrites order creation and may absorb
-  or obsolete both.
+  and `Ticket`**, deliberately, and nothing detects divergence between the copies. **Confirmed still
+  true 2026-08-21** against a real live purchase (both fields present and populated on the order
+  doc and on each of its two position docs). The position copies were meant to be removed with a
+  backfill once checkout/ITN stop writing them.
+- [x] ~~Recovery-token wiring has no owner~~ **RESOLVED, verified 2026-08-21.** `mintRecoveryToken()`
+  is called in checkout (`app/api/tickets/checkout/route.ts:739`) and `recoveryToken`/
+  `recoveryTokenExpiresAt` are confirmed present on a real order doc. Still genuinely open: the
+  guest-order-claiming backfill (a guest's existing orders' `buyerUid` backfilled when they later
+  register) — not re-verified, may still be owned by nobody.
 - [ ] **[P3] `RECOVERY_TOKEN_DEFAULT_TTL_MS` is a 180-day working placeholder**, not a
   council-approved value. Real security/usability tradeoff: too short locks buyers out of tickets
   they paid for, too long keeps a leaked link live for months.
