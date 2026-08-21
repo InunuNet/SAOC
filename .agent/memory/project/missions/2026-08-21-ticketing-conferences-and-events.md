@@ -14,7 +14,7 @@ cost_estimate:
   total_calls: 0
 last_checkpoint:
   milestone: M2
-  feature: F3
+  feature: F5
   ts: '2026-08-21T00:00:00+00:00'
 features:
 - id: F1
@@ -74,7 +74,7 @@ features:
     apex - new Sanity schema field, new query, new page(s), same risk class as F4/F5 in
     multi-line-item-cart.'
 - id: F4
-  status: pending
+  status: done
   tier: standard
   title: Extend the National Show mega-menu''s Tickets column to include both new categories
   inline_brief: 'Mission One (`ticketing-nav-restructure`, shipped commit `3b83471`)
@@ -266,3 +266,31 @@ table) -> contract gate 14/14 PASS.
 Mission status stays `in_progress` — M2 also has F4 (nav wiring, was blocked on F3's routes
 existing, now unblocked) and F5 (checkout capacity-pooling fix, deferred from F2) still
 pending. Next up: F4.
+
+## Closeout — F4 (2026-08-21)
+
+F4 (Extend the National Show mega-menu's Tickets column to include Conferences and Workshops &
+Field Trips) done, contract gate 8/8 green. Confirmed Mission One's data-driven design held up
+exactly as intended: `components/chrome/nav-config.ts`'s Tickets column is a plain data array,
+so this was a pure append — two new entries (Conferences, Workshops & Field Trips) added
+alongside the existing Visitor/Exhibitor/Vendor pattern, no structural change to
+Header.tsx/MegaMenu.tsx/MobileMenu.tsx.
+
+**Notable pitfall, orchestrator-caught, not a design/scope issue:** the architect-authored
+`contract-f4-nav-wiring.yaml` had a YAML syntax bug — 5 of 8 shell `command:` values used a
+shell-style `'"'"'` quote-splice inside a YAML single-quoted scalar, which YAML doesn't
+understand (illegal "mapping values are not allowed here" or unbalanced quotes). Caught when
+`execution/contract.py gate` failed to parse the file; fixed by switching to YAML's native `''`
+single-quote-doubling escape, validated with `python3 -c "import yaml; yaml.safe_load(...)"`
+before re-running the gate, which then passed 8/8 clean. See `learned.md` for the reusable
+lesson — future architect passes should use YAML's own escaping, not shell idiom, when a
+contract assertion's shell command needs literal single quotes.
+
+Chain: @architect (contract-f4-nav-wiring.yaml + golden) -> @dev (`components/chrome/nav-
+config.ts` append) -> @qa PASS, no defects -> Codex GPT-5.5 cross-model review PASS, no defects
+-> @docs (`docs/f4-ticketing-nav-wiring.md`, README ticketing table) -> contract gate 8/8 PASS
+(after the orchestrator's YAML fix).
+
+**M2 is now 2 of 3 features done (F3, F4).** Only **F5** (checkout support for Conference and
+Workshop/Field-Trip/Cocktail ticket types, plus the multi-head/shared-pool capacity-pooling fix
+deferred from F2) remains before this mission closes. Next up: F5.

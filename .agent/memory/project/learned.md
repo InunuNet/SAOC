@@ -1846,3 +1846,16 @@ the third confirmed instance this mission of the mandatory Codex gate catching a
 a same-model Claude pass missed entirely (see the two F2 entries above) — continues to reinforce
 that the gate is not a formality, especially for anything touching data models, capacity, or
 scripts that write live data.
+
+## YAML contract authoring: shell-style `'"'"'` quote-splicing breaks the file, not just one assertion (2026-08-21)
+
+`ticketing-conferences-and-events` F4 (nav wiring): the architect-authored
+`contract-f4-nav-wiring.yaml` used the shell-idiom `'"'"'` splice (for escaping a literal single
+quote inside a single-quoted shell string) directly inside a YAML single-quoted scalar for 5 of
+its 8 `command:` values (A2-A5, A7). That's a YAML syntax error, not a shell one — it either
+produces an unquoted plain scalar containing `: ` (illegal — "mapping values are not allowed
+here") or unbalanced quotes, and `execution/contract.py gate` fails to parse the whole file, not
+just those assertions. Fix: use YAML's own single-quote-doubling escape (`''` inside a `'...'`
+scalar) for a literal single quote, not shell-style splicing. Validate any contract with literal
+quotes in its shell commands via `python3 -c "import yaml; yaml.safe_load(open('contract.yaml'))"`
+before running the gate.

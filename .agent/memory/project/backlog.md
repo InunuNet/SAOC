@@ -47,8 +47,8 @@ Do not scope work from an entry that contradicts it.
   our best estimate, flagged provisional, same discipline as F4. Conference tickets (SAOC
   Symposium/WOSA/joint, 6 entries) now estimated and structured as of 2026-08-21
   (`ticketing-conferences-and-events` F1, `CONFERENCE_PRODUCTS` in `lib/provisional-figures.ts`)
-  — data model done, purchase pages now shipped in F3 (2026-08-21), not yet wired into nav (F4)
-  or checkout (F5) of the same mission, both still pending. Workshops/Field Trips/Cocktails category also now estimated and structured as
+  — data model done, purchase pages shipped in F3 (2026-08-21), nav wired in F4 (2026-08-21).
+  Checkout (F5) of the same mission still pending. Workshops/Field Trips/Cocktails category also now estimated and structured as
   of 2026-08-21 (`ticketing-conferences-and-events` F2, M1 now complete) — 4 real priceable
   products (Sunset Cocktails single/couple, Field Trip single/all-outings) with
   structurally-safe capacities (100/50/30/30), plus a non-sellable
@@ -215,8 +215,8 @@ only — Conferences and Workshops/Field-Trips/Cocktails still need their own na
 built. **Mission Two: M1 (F1 Conferences + F2 Workshops/Field-Trips/Cocktails estimation/structure)
 is DONE as of 2026-08-21** —
 `.agent/memory/project/missions/2026-08-21-ticketing-conferences-and-events.md`, `active.json`
-checkpoint now `M2/F3`. Mission `status` stays `in_progress`; M2 (F3 nav extension, F4 checkout
-wiring) still pending. F2 also carries a known future item: it shipped a structurally-safe
+checkpoint now `M2/F5`. Mission `status` stays `in_progress`; M2's F3 and F4 are done, only F5
+(checkout wiring) remains. F2 also carries a known future item: it shipped a structurally-safe
 interim fix (resized capacity constants) for a real oversell defect Codex GPT-5.5 caught
 (multi-head products and shared capacity pools not modelled by the checkout's per-slug-only
 capacity enforcement) — the real fix (multi-head- and shared-pool-aware capacity enforcement in
@@ -229,10 +229,11 @@ deliberately did not invent specific sessions.
 reachable from the nav chooser (`/national-show/tickets`) and directly
 (`/national-show/conferences`, `/national-show/workshops`). Needed three defect-repair cycles
 (a real production-data hazard, a seed-script gap, and an import-safety hazard — see the mission
-file's Closeout — F3 note for detail) before shipping. Two items remain in M2: **F4** (extend the
-mega-menu's Tickets column with these two categories — was blocked on F3's routes existing, now
-unblocked) and **F5** (checkout capacity-pooling fix deferred from F2, plus general checkout
-support for these ticket types).
+file's Closeout — F3 note for detail) before shipping. **F4 (extend the mega-menu's Tickets
+column with Conferences and Workshops & Field Trips) is DONE as of 2026-08-21** — gate 8/8,
+@qa PASS, Codex GPT-5.5 PASS, `components/chrome/nav-config.ts` extended by append only, no
+structural changes to Header/MegaMenu/MobileMenu. One item remains in M2: **F5** (checkout
+capacity-pooling fix deferred from F2, plus general checkout support for these ticket types).
 - [ ] **[P2] `scripts/migrate-ticket-type-category.ts` has only ever run `--dry-run`.** The 5 live
   admission `ticketType` docs in production Sanity still have `category: null`. This is
   protected by F3's admission-only null-category read-time fallback in the GROQ query, so it is

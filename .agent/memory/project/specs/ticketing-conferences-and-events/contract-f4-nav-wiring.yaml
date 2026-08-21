@@ -1,0 +1,71 @@
+schema: athanor.contract/v1
+slug: ticketing-conferences-and-events
+goal: >
+  F4 (M2): Extend components/chrome/nav-config.ts's Tickets column (in the "National Show"
+  mega-menu) to add two more direct-link entries — "Conferences" -> /national-show/conferences
+  and "Workshops & Field Trips" -> /national-show/workshops — alongside the three existing
+  entries (Visitor Tickets, Exhibitor Entry, Vendor Registration). F3 (done, commit shipped
+  2026-08-21) built both real routes as thin pages wrapping the shared
+  components/tickets/CategoryTicketsPage.tsx, reading category-filtered ticketType docs via
+  sanity/queries.ts `activeTicketTypesByCategoryQuery($category)` — so the premise this was
+  previously blocked on ("nothing live to link to") no longer holds. This supersedes
+  contract-f3.yaml / goldens/f3-nav-deferred.golden.md, which recorded the DEFERRAL decision
+  under the mission's old feature numbering (this work was "F3" before a mid-mission
+  restructure renumbered it to F4) — those files are retained for history but no longer
+  gate anything; this file is the live contract. Per Mission One's design
+  (nav-config.ts:1-9, "a future mission can append... without touching Header.tsx,
+  MegaMenu.tsx, or MobileMenu.tsx"), this must be a plain data append to the `links` array —
+  no structural changes to nav-config.ts's shape, Header.tsx, MegaMenu.tsx, or MobileMenu.tsx.
+created_at: '2026-08-21'
+autonomy: high
+features:
+  - id: F4
+    name: Extend the National Show mega-menu's Tickets column to include both new categories
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-conferences-and-events/goldens/f4-nav-wiring.golden.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        Both new routes exist (re-proves F4 is actually unblocked before wiring nav to them —
+        if this ever goes red, the nav change would be pointing at a 404 and must not ship).
+      command: 'test -f "app/(marketing)/national-show/conferences/page.tsx" && test -f "app/(marketing)/national-show/workshops/page.tsx"'
+    - id: A2
+      description: >
+        nav-config.ts's Tickets column now has a "conferences" NavLeaf pointing at
+        /national-show/conferences.
+      command: 'grep -A2 "id: ''conferences''" components/chrome/nav-config.ts | grep -q "href: ''/national-show/conferences''"'
+    - id: A3
+      description: >
+        nav-config.ts's Tickets column now has a "workshops" NavLeaf pointing at
+        /national-show/workshops.
+      command: 'grep -A2 "id: ''workshops''" components/chrome/nav-config.ts | grep -q "href: ''/national-show/workshops''"'
+    - id: A4
+      description: >
+        The three pre-existing Tickets-column entries (visitor, exhibitor, vendor) are still
+        present and unchanged — this must be a pure append, not a rewrite.
+      command: '[ "$(grep -cE "id: ''visitor''|id: ''exhibitor''|id: ''vendor''" components/chrome/nav-config.ts)" = "3" ]'
+    - id: A5
+      description: >
+        The Tickets column now has exactly five links total (3 pre-existing + 2 new) — guards
+        against a duplicate entry or an accidental extra being introduced.
+      command: '[ "$(sed -n "/id: ''tickets'',/,/^      },$/p" components/chrome/nav-config.ts | grep -cE "^\s*\{ id:")" = "5" ]'
+    - id: A6
+      description: >
+        No structural change was made to Header.tsx, MegaMenu.tsx, or MobileMenu.tsx — this
+        must be a data-only append per nav-config.ts's own design comment. Compares each
+        file's current line count against its pre-F4 baseline (captured at contract-authoring
+        time); any diff in line count fails the check, since a pure nav-config.ts data edit
+        touches none of these three files at all.
+      command: 'git diff --stat -- components/chrome/Header.tsx components/chrome/MegaMenu.tsx components/chrome/MobileMenu.tsx | grep -q . && exit 1 || exit 0'
+    - id: A7
+      description: >
+        Labels use "Workshops & Field Trips", never a bare "Events" label, per the naming
+        collision resolved in ticketing-nav-restructure F2 (a top-level "Events" nav item
+        already exists and points elsewhere).
+      command: '! grep -A2 "id: ''workshops''" components/chrome/nav-config.ts | grep -qE "label: ''Events''"'
+    - id: A8
+      description: TypeScript compiles clean after the nav-config.ts edit.
+      command: pnpm exec tsc --noEmit
