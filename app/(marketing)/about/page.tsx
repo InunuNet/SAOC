@@ -123,7 +123,7 @@ export default async function AboutPage() {
             SAOC focuses on orchids in cultivation. For wild orchid identification, habitat,
             and conservation, visit our partner organisation{' '}
             <a
-              href="https://wosa.co.za"
+              href="https://wildorchids.co.za"
               target="_blank"
               rel="noopener noreferrer"
               className="text-ink underline underline-offset-2"

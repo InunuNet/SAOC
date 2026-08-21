@@ -1,0 +1,198 @@
+schema: athanor.contract/v1
+slug: backlog-sweep-2-dead-links-and-a11y
+goal: >
+  Five small, independently-scoped fixes from a completed QA sweep, none blocked on
+  Brad/product: a wrong WOSA link on /about, a 404'ing public /events.ics URL, a
+  missing legal-disclaimer block on /constitution, non-interactive archive-index
+  cards, and a vendor form with no email-format validation feedback. All five reuse
+  an existing in-codebase pattern rather than inventing a new one.
+created_at: '2026-08-22'
+autonomy: high
+features:
+  - id: F1
+    name: /about WOSA link points at wosa.co.za instead of wildorchids.co.za
+    status: pending
+  - id: F2
+    name: Public /events.ics 404s — add a redirect onto the working /api/events.ics feed
+    status: pending
+  - id: F3
+    name: /constitution missing the AI-draft/not-legal-advice disclaimer present on /privacy, /terms, /refunds
+    status: pending
+  - id: F4
+    name: /national-show/archive index cards are non-interactive, unlinked divs — convert to real Link elements
+    status: pending
+  - id: F5
+    name: Vendor registration form has no email-format validation and no visible error feedback
+    status: pending
+goldens:
+  - .agent/memory/project/specs/backlog-sweep-2-dead-links-and-a11y/goldens/m1-golden.md
+assertions:
+  phase: 4
+  checks:
+    # --- F1: /about WOSA link ---
+    - id: A1
+      description: >
+        about/page.tsx no longer references the wrong wosa.co.za domain anywhere in
+        the file (not just the visible href — a stray reference in a comment or an
+        old fallback would still be a defect).
+      command: '! grep -q "wosa\.co\.za" "app/(marketing)/about/page.tsx"'
+
+    - id: A2
+      description: >
+        about/page.tsx's WOSA link literally points at the real wildorchids.co.za
+        domain over https.
+      command: 'grep -q ''href="https://wildorchids\.co\.za"'' "app/(marketing)/about/page.tsx"'
+
+    # --- F2: public /events.ics redirect ---
+    - id: A3
+      description: >
+        next.config.ts declares a redirects() function at all (necessary precondition
+        for A4/A5 — a bare grep for the source/destination strings elsewhere in the
+        file without a real redirects() entry would be a false pass).
+      command: 'grep -qE "async +redirects *\(" next.config.ts'
+
+    - id: A4
+      description: next.config.ts's redirect source is literally '/events.ics'.
+      command: "grep -q \"source: '/events.ics'\" next.config.ts"
+
+    - id: A5
+      description: >
+        next.config.ts's redirect destination is literally '/api/events.ics' — proves
+        the alias targets the real feed, not a duplicated or renamed implementation.
+      command: "grep -q \"destination: '/api/events.ics'\" next.config.ts"
+
+    - id: A6
+      description: >
+        The feed implementation itself is untouched — one implementation, the public
+        path is only an alias onto it.
+      command: 'test -f app/api/events.ics/route.ts'
+
+    # --- F3: /constitution disclaimer ---
+    - id: A7
+      description: >
+        /constitution now contains the exact "Draft pending legal review" disclaimer
+        sentence, verbatim.
+      command: 'grep -q "Draft pending legal review" "app/(marketing)/constitution/page.tsx"'
+
+    - id: A8
+      description: >
+        /constitution's added block carries the rest of the disclaimer copy verbatim
+        too, not just the opening phrase (proves the whole sentence was copied, not a
+        paraphrase).
+      command: 'grep -q "does not constitute legal advice" "app/(marketing)/constitution/page.tsx"'
+
+    - id: A9
+      description: >
+        The added block reuses the same container markup as /privacy, /terms, /refunds
+        (bg-primary/5 callout), not a new visual treatment.
+      command: 'grep -q "bg-primary/5" "app/(marketing)/constitution/page.tsx"'
+
+    - id: A10
+      description: >
+        Cross-check: the same disclaimer sentence still exists on all three prior
+        pages — proves this feature added a fourth copy rather than moving the
+        existing ones.
+      command: 'grep -l "Draft pending legal review" "app/(marketing)/privacy/page.tsx" "app/(marketing)/terms/page.tsx" "app/(marketing)/refunds/page.tsx" | wc -l | grep -q 3'
+
+    # --- F4: archive index cards ---
+    - id: A11
+      description: >
+        The show grid's outer per-card element is no longer a bare div keyed on
+        show.year — the old non-interactive wrapper is gone.
+      command: '! grep -q "div key={show.year}" "app/(marketing)/national-show/archive/page.tsx"'
+
+    - id: A12
+      description: >
+        Each card is now a real Link element carrying a template-literal href to the
+        year-specific archive detail route.
+      command: 'grep -qE ''<Link[^>]*key=\{show\.year\}'' "app/(marketing)/national-show/archive/page.tsx" && grep -qE ''href=\{`/national-show/archive/\$\{show\.year\}`\}'' "app/(marketing)/national-show/archive/page.tsx"'
+
+    - id: A13
+      description: >
+        The new Link carries the site's standard focus-visible ring token
+        (ring-ink/40), not a new colour or an omitted focus style.
+      command: 'grep -q "focus-visible:ring-ink/40" "app/(marketing)/national-show/archive/page.tsx"'
+
+    - id: A14
+      description: >
+        The detail route this links to already exists and is unmodified by this
+        feature (F4 is index-page markup only).
+      command: 'test -f "app/(marketing)/national-show/archive/[year]/page.tsx"'
+
+    # --- F5: vendor form email validation ---
+    - id: A15
+      description: >
+        Client-side validator (lib/vendor-register-form-validation.ts) now rejects a
+        malformed contactEmail with the exact error string the golden specifies.
+      command: 'grep -q "contactEmail must be a valid email address" lib/vendor-register-form-validation.ts'
+
+    - id: A16
+      description: >
+        Server-side validator (lib/vendor-submissions.ts) rejects the same condition
+        with the identical error string — defense in depth, not client-only.
+      command: 'grep -q "contactEmail must be a valid email address" lib/vendor-submissions.ts'
+
+    - id: A17
+      description: >
+        The chosen error wording does not collide with any of humaniseFieldError's
+        special-cased substrings, so it is guaranteed to fall through to the existing
+        generic "is invalid." branch with zero changes to
+        lib/vendor-register-response.ts — proves this feature didn't need to (and
+        didn't) touch that file.
+      command: 'grep "contactEmail must be a valid email address" lib/vendor-register-form-validation.ts | grep -qvE "must be true|is required and must be a non-empty string|invalid value"'
+
+    - id: A18
+      description: >
+        VendorRegisterStatusBanner.tsx no longer uses the low-contrast accent-based
+        error styling (neither the border/background nor the heading-text variant).
+      command: '! grep -E "border-accent/40|bg-accent/5|text-accent" components/vendors/VendorRegisterStatusBanner.tsx'
+
+    - id: A19
+      description: >
+        VendorRegisterStatusBanner.tsx now reuses the exact bordered-callout signature
+        already applied to ContactForm.tsx/TicketPurchaseForm.tsx — border-primary-800,
+        bg-bone, and text-primary-800 all present in the file.
+      command: 'grep -q "border-primary-800" components/vendors/VendorRegisterStatusBanner.tsx && grep -q "bg-bone" components/vendors/VendorRegisterStatusBanner.tsx && grep -q "text-primary-800" components/vendors/VendorRegisterStatusBanner.tsx'
+
+    # --- Cross-cutting ---
+    - id: A20
+      description: TypeScript compiles clean after all five fixes.
+      command: pnpm exec tsc --noEmit
+
+  agent_review:
+    - id: H1
+      description: >
+        F2's redirect and F4's link conversion are both request/render-time behaviors
+        a grep on source text cannot fully prove, per this project's coding.md
+        verification hierarchy (automated UI over agent_review is preferred, but this
+        repo has no Playwright harness wired for a redirect-following or
+        keyboard-navigation assertion, and building one is out of scope for a
+        quickfix batch — logged as the honest reason these two steps aren't shell
+        checks). Do NOT treat A3-A6/A11-A14 passing as proof either property actually
+        holds at runtime.
+      instruction: >
+        Before marking F2/F4 done: (a) run the dev server and request /events.ics
+        directly (curl -I or a browser), confirming it actually redirects to (or
+        transparently serves) /api/events.ics with a text/calendar response, not a
+        404 or a redirect loop; (b) load /national-show/archive in a real browser,
+        confirm each of the 5 edition cards is keyboard-focusable (Tab reaches it,
+        visible ring appears), is announced as a link by the accessibility tree
+        (devtools Accessibility panel), and Enter/click actually navigates to the
+        correct /national-show/archive/{year} detail page for that card. Record the
+        outcome in the mission's checkpoint notes; log to needs-human.md only if a
+        genuine ambiguity turns up that needs Brad's call.
+
+    - id: H2
+      description: >
+        F5's email-format check is a UX-legibility judgment (does a plainly
+        malformed address like "notanemail" or "a@b" now show a clear, legible
+        error, and does a real address like "secretary@saoc.co.za" still submit
+        cleanly) that a grep on validator source cannot confirm end-to-end through
+        the rendered banner.
+      instruction: >
+        Before marking F5 done, browser-verify: submit the vendor registration form
+        with a malformed contactEmail and confirm the restyled bordered-callout
+        error appears, is legible (dark text on bone, not the old faint accent
+        tint), and correctly labels the email field via humaniseFieldError's
+        generic "Email address is invalid." fallback. Then submit with a valid
+        email and confirm no false-positive error appears.

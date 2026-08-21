@@ -6,8 +6,8 @@ interface VendorRegisterStatusBannerProps {
   descriptor: VendorRegisterResponseDescription;
 }
 
-const bannerClass = 'space-y-2 rounded-sm border border-accent/40 bg-accent/5 p-4';
-const headingClass = 'font-sans text-[15px] font-medium text-accent';
+const bannerClass = 'space-y-2 rounded-sm border border-primary-800 bg-bone p-4';
+const headingClass = 'font-sans text-[15px] font-medium text-primary-800';
 const listClass = 'list-disc space-y-1 pl-5 font-sans text-[14px] text-ink/80';
 
 export function VendorRegisterStatusBanner({ descriptor }: VendorRegisterStatusBannerProps) {

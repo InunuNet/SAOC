@@ -97,7 +97,9 @@ export default async function ShowArchivePage() {
       <section className="mx-auto max-w-[1280px] px-8 py-24">
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {pastShows.map((show) => (
-            <div key={show.year} className="flex flex-col border border-rule bg-parchment">
+            <Link key={show.year} href={`/national-show/archive/${show.year}`}
+              className="flex flex-col border border-rule bg-parchment focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            >
               <div className="relative aspect-[3/2] bg-primary-800 overflow-hidden">
                 <Image
                   src="/images/orchid-purple.jpg"
@@ -153,7 +155,7 @@ export default async function ShowArchivePage() {
                   <p className="font-serif text-[14px] italic text-muted">{show.note}</p>
                 )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 

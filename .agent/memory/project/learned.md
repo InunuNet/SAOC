@@ -389,6 +389,26 @@ it is the reason work feels like "perpetual loops of bug fixing" rather than pro
   claimed completion the gate then contradicted. Verify with the gate; never accept a self-report.
   Reconfirmed alongside this: `ListAgents` reporting "no reachable agents" is not proof of death.
 
+## backlog-sweep-2-dead-links-and-a11y (2026-08-21/22)
+
+- (2026-08-22) **Codex GPT-5.5 caught another real cross-file consistency bug both @dev and @qa
+  missed on first pass — third confirmed instance this project has logged.** F5 added email-format
+  validation to the vendor registration form, but the fix landed inconsistently across three files:
+  `lib/vendor-register-form-validation.ts` trimmed `contactEmail` before format-checking it
+  client-side, `lib/vendor-register-form-payload.ts` sent the RAW untrimmed value to the API, and
+  `lib/vendor-submissions.ts` validated that raw untrimmed string server-side. A whitespace-padded
+  but otherwise-valid email (e.g. a leading/trailing space from a copy-paste) would pass client
+  validation and then fail server validation on the round trip — a confusing, silent-looking
+  failure for a real buyer. This is exactly the "weak-check/inconsistency class Claude's own QA
+  doesn't reliably catch" rationale `.claude/rules/workflow.md` already cites for why the Codex pass
+  is mandatory, now with a fresh concrete instance to point at.
+- (2026-08-22) The fix was a single line in a single file — trim `contactEmail` in
+  `lib/vendor-register-form-payload.ts`'s payload builder, matching how that file already normalizes
+  every other optional field before sending. No restructuring, no touching the two files that were
+  already correct. Good example of "surgical fix, don't rearchitect" (`.claude/rules/behavior.md`)
+  working as intended when a genuine cross-file defect surfaces late in the chain — the temptation
+  to "fix validation properly" everywhere was there and was correctly avoided.
+
 ## Incident 4 — orchestrator-caused dataset corruption, and a false-negative sweep (2026-08-12 06:07)
 
 **What happened.** I sent SIGTERM to a long-running `contract.py gate` (pid 41308) to tidy up

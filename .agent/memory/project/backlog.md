@@ -833,3 +833,7 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-idempotency-check-repo-mutation.md
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-mission-abandon-clear-active-fix.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-pulse-launchctl-rc-113.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-contract-py-hygiene-fixes.md

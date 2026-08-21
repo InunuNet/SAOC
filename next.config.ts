@@ -18,6 +18,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/events.ics',
+        destination: '/api/events.ics',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -102,7 +102,7 @@ export function buildVendorRegistrationPayload(state: VendorRegisterFormState): 
     tradingName: omitBlank(state.tradingName),
     contactPersonName: state.contactPersonName,
     contactCellPhone: state.contactCellPhone,
-    contactEmail: state.contactEmail,
+    contactEmail: state.contactEmail.trim(),
     physicalAddress: omitBlank(state.physicalAddress),
     cipcNumber: omitBlank(state.cipcNumber),
     vatNumber: omitBlank(state.vatNumber),

@@ -42,6 +42,8 @@ const VENDOR_PAYMENT_METHODS: readonly VendorPaymentMethod[] = [
   'not-applicable',
 ];
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // Caller-supplied subset of VendorSubmission — id/status/submittedAt are structurally
 // absent, not merely optional, so a caller cannot smuggle a self-approved status or a
 // backdated submittedAt through the type system (see A5/the golden README).
@@ -69,6 +71,14 @@ export function validateVendorSubmissionInput(input: unknown): {
   requireNonEmptyString(record, 'contactCellPhone', errors);
   requireNonEmptyString(record, 'contactEmail', errors);
   requireNonEmptyString(record, 'productDescription', errors);
+
+  if (
+    typeof record.contactEmail === 'string' &&
+    record.contactEmail.length > 0 &&
+    !EMAIL_PATTERN.test(record.contactEmail)
+  ) {
+    errors.push('contactEmail must be a valid email address');
+  }
 
   validateVendorCategory(record.vendorCategory, errors);
   validateBoothType(record.boothType, errors);

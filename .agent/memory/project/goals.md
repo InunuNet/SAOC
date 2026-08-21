@@ -340,3 +340,13 @@ three @dev↔@qa rounds to reach full sitewide coverage (see `learned.md`). The 
 focus-visible ring pattern is now the site default for interactive elements. Two follow-up items
 surfaced but left out of scope, added to `backlog.md`: MobileMenu.tsx has no focus trap; the
 form-error-contrast fix needs extending to CartDayPicker/TicketFormField/DownloadTicketButton.
+
+### 2026-08-22 — `backlog-sweep-2-dead-links-and-a11y` M1 (F1-F5) DONE
+
+~~`backlog-sweep-2-dead-links-and-a11y` M1 (F1 /about WOSA link fix, F2 public /events.ics
+redirect, F3 /constitution legal-disclaimer, F4 archive index cards made real links, F5 vendor
+form email validation + feedback)~~ ✅ **DONE**, all 5 features, @qa PASS, Codex GPT-5.5 pass
+caught a real cross-file trim-mismatch bug in F5 (dev fixed it, Codex re-pass clean), @docs wrote
+`docs/f2-backlog-sweep-2-dead-links-and-a11y.md` + README.md, contract gate 20/20 green. See
+`learned.md` for the reusable lesson (third confirmed instance of Codex catching a cross-file
+consistency bug Claude's own chain missed).
