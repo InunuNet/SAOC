@@ -330,7 +330,13 @@ Four checks in this contract write to the real Sanity dataset during a gate run:
   SENTINEL-\d+/` — a poisoned baseline is a hard failure, never something to restore;
 - takes an exclusive file lock for the whole mutate → verify → restore window (with dead-pid
   reaping so a SIGKILLed check's lock doesn't block every later run for 20 minutes, and
-  SIGTERM/SIGINT handlers that release the lock before re-raising the signal);
+  SIGTERM/SIGINT handlers that release the lock before re-raising the signal). **As of 2026-08-22,
+  this lock is now document-scoped and shared:** the lock path is computed via
+  `contracts/checks/_shared/doc-lock-path.mjs`'s `docLockPath('nationalShow')` helper, so
+  `check-show-identity-sweep.mjs` (which mutates `nationalShow`) now actually serializes against
+  `contracts/checks/cms-loop-f3-national-show/check-headline-round-trip.mjs` (A1), which mutates
+  the same singleton. Before this date, the two checks used separate lock files and could corrupt
+  each other's mutations. See `docs/fix-live-sentinel-residue-cms-loop-f3.md` for the history.
 - restores with `ifRevisionID` set, so a concurrent write makes the restore throw instead of
   silently overwriting someone else's change, and emits a `RESIDUE ALERT` (exit code 2) if
   verification fails.

@@ -1,0 +1,186 @@
+schema: athanor.contract/v1
+slug: fix-live-sentinel-residue-cms-loop-f3
+goal: >
+  Close the confirmed root cause of live production Sanity corruption from
+  contracts/cms-loop-f3-national-show.yaml's A1 (check-headline-round-trip.mjs) — it
+  writes real sentinel values into the live nationalShow singleton via the Studio UI and
+  has no cross-process lock, no poisoned-baseline rejection, and no revision-guarded
+  restore, unlike its sibling mutating checks under contracts/checks/show-visitor-info/
+  and contracts/checks/show-exhibitor-info/, which were hardened with exactly those three
+  defenses on 2026-08-12 (commit c5240ed) — a hardening pass that never actually touched
+  A1 despite that commit's own message claiming it did. Worse, show-visitor-info's
+  check-show-identity-sweep.mjs mutates the SAME nationalShow document under a DIFFERENT,
+  non-shared lock file, so the two checks have never actually serialized against each
+  other. F1: retrofit A1 with a shared, document-scoped lock (docLockPath('nationalShow'))
+  that both contracts adopt, plus poisoned-baseline rejection and a revision-guarded
+  cleanup restore. F2: wire scripts/scan-dataset-residue.ts into execution/contract.py's
+  gate_cmd as a pre-flight and post-flight check, so residue can never again sit
+  undetected in a GitHub Actions tab nobody is watching — any local gate run now refuses
+  to proceed against a poisoned dataset and hard-fails loudly if a run introduces new
+  residue. F3 (already performed during architecture/investigation): live production
+  nationalShow.title/location, found freshly re-corrupted with F3-*-SENTINEL values
+  during this investigation, were restored via a targeted patch; a full live sweep of
+  nationalShow, show-19-2027, and societyEvent-15-19th-south-african-national-orchid-show
+  confirmed clean (scripts/scan-dataset-residue.ts: "ALL CLEAR — scanned 148 document(s),
+  no residue found").
+created_at: '2026-08-22'
+autonomy: high
+features:
+  - id: F1
+    name: Shared doc-scoped lock + poisoned-baseline rejection + revision-guarded restore for A1
+    status: pending
+  - id: F2
+    name: Wire dataset-residue-guard into contract.py gate_cmd as pre/post-flight, loud and blocking
+    status: pending
+  - id: F3
+    name: Live production sweep and restore (performed during investigation — verified here)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/fix-live-sentinel-residue-cms-loop-f3/goldens/m1-golden.md
+assertions:
+  phase: 4
+  checks:
+    # --- F1: shared lock ---
+    - id: A1
+      description: >
+        A doc-scoped shared lock-path helper exists, keyed by document id, rooted under
+        the same tmp convention the existing show-visitor-info lock already uses (so both
+        old and new callers land in the same directory).
+      command: >-
+        test -f contracts/checks/_shared/doc-lock-path.mjs &&
+        grep -q "docId" contracts/checks/_shared/doc-lock-path.mjs &&
+        grep -q "saoc-contract-locks" contracts/checks/_shared/doc-lock-path.mjs &&
+        grep -q "os.tmpdir()" contracts/checks/_shared/doc-lock-path.mjs
+
+    - id: A2
+      description: >
+        check-headline-round-trip.mjs (A1's own check script) imports the shared helper
+        and locks on 'nationalShow' specifically, not an unparameterised/generic path.
+      command: >-
+        grep -rq "doc-lock-path" contracts/checks/cms-loop-f3-national-show/*.mjs &&
+        grep -rq "docLockPath('nationalShow')" contracts/checks/cms-loop-f3-national-show/*.mjs
+
+    - id: A3
+      description: >
+        show-visitor-info's mutation guard now resolves its lock through the SAME shared
+        helper and docId, replacing its old hardcoded contract-local lock filename — proves
+        the two contracts that both mutate nationalShow now actually share one lock file,
+        not two independent ones.
+      command: >-
+        grep -q "docLockPath('nationalShow')" contracts/checks/show-visitor-info/_mutation-guard.mjs &&
+        ! grep -q "show-visitor-info-dataset.lock" contracts/checks/show-visitor-info/_mutation-guard.mjs
+
+    - id: A4
+      description: >
+        check-headline-round-trip.mjs rejects a poisoned baseline (a sentinel-shaped
+        title/location/countdownDate already present) before attempting any mutation, for
+        all three fields it round-trips — not just checking existence/non-emptiness like
+        the current precondition, but specifically rejecting sentinel-shaped content.
+      command: >-
+        [ "$(grep -c 'assertUsableBaseline\|PoisonedBaselineError' contracts/checks/cms-loop-f3-national-show/check-headline-round-trip.mjs)" -ge 3 ]
+
+    - id: A5
+      description: >
+        The check's full mutate/verify/restore body runs inside the shared exclusive lock
+        — not just the write step — so a concurrent show-visitor-info sweep cannot
+        interleave with any part of A1's own round trip.
+      command: 'grep -q "withDatasetLock" contracts/checks/cms-loop-f3-national-show/check-headline-round-trip.mjs'
+
+    - id: A6
+      description: >
+        The cleanup/restore step writes with a revision precondition (ifRevisionID) tied
+        to the revision A1's own sentinel write produced, so a concurrent writer between
+        A1's mutation and its cleanup causes a loud failure instead of a silent clobber —
+        replacing the old unconditional Studio-UI re-publish restore.
+      command: 'grep -rq "ifRevisionID" contracts/checks/cms-loop-f3-national-show/'
+
+    - id: A7
+      description: >
+        Negative check: A2-A6's grep-based structural checks are not satisfiable by dead
+        code — the check script still actually imports and calls (not merely mentions in a
+        comment) withDatasetLock as a real function call, i.e. followed by an opening
+        paren immediately or via await.
+      command: 'grep -Eq "(await )?withDatasetLock\(" contracts/checks/cms-loop-f3-national-show/check-headline-round-trip.mjs'
+
+    - id: A8
+      description: >
+        Behavioral, negative-verified lock-safety test (same pattern as show-exhibitor-
+        info's check-lock-safety.mjs): two concurrent acquirers of docLockPath('nationalShow')
+        — one from the cms-loop-f3-national-show side, one from the show-visitor-info side
+        — actually serialize (the second blocks until the first releases), proving the
+        shared-lock migration in A2/A3 produces real mutual exclusion across contracts, not
+        just two files that happen to compute the same string.
+      command: 'node contracts/checks/cms-loop-f3-national-show/check-lock-safety.mjs'
+
+    - id: A9
+      description: >
+        Behavioral, negative-verified poisoned-baseline test: with a fixture/stub
+        simulating nationalShow.title already holding a sentinel-shaped value (matching
+        the dataset-residue-guard marker catalogue, not just this contract's own F3-
+        prefix), the check refuses to start and never reaches a mutation call — proven by
+        running the actual guard logic against the fixture, not by grepping the word
+        "sentinel".
+      command: 'node contracts/checks/cms-loop-f3-national-show/check-poisoned-baseline-rejected.mjs'
+
+    # --- F2: gate-level residue backstop ---
+    - id: A10
+      description: >
+        execution/contract.py's gate_cmd invokes the dataset residue scanner before
+        running any assertion phase (pre-flight) — a poisoned dataset makes every mutating
+        check's captured baseline untrustworthy, so no assertion should run against one.
+      command: 'grep -q "scan-dataset-residue" execution/contract.py'
+
+    - id: A11
+      description: >
+        The residue scan runs BOTH pre-flight and post-flight (catches residue the gate
+        run itself introduces, not just residue that pre-existed it) — two distinct call
+        sites, not one shared helper invoked from a single location that a grep for the
+        string alone couldn't distinguish.
+      command: '[ "$(grep -c "scan-dataset-residue" execution/contract.py)" -ge 2 ]'
+
+    - id: A12
+      description: >
+        Behavioral, negative-verified: pointing the scanner at the existing known-bad
+        fixture (contracts/golden/dataset-residue-guard/fixture-all-patterns.json) via a
+        test-only override makes `contract.py gate` itself refuse to run and exit with a
+        distinct, documented residue exit code BEFORE any assertion's own output appears —
+        proving this is a real pre-flight gate, not a cosmetic log line. Positive control:
+        the same invocation against a known-clean fixture must exit through the normal
+        gate path instead.
+      command: 'python3 execution/checks/verify_gate_residue_preflight.py'
+
+    # --- F3: live sweep (already performed; verified here) ---
+    - id: A13
+      description: >
+        Live production Sanity is clean of residue right now, at gate time — re-proves the
+        restoration performed during this mission's investigation and doubles as ongoing
+        regression coverage for F3's sweep.
+      command: 'node --import tsx/esm scripts/scan-dataset-residue.ts'
+
+    - id: A14
+      description: >
+        Behavioral, negative-verified: A1's cleanup FALLBACK path (baselineRev unset —
+        Step 3 never confirmed the sentinel publish landed) is revision-guarded on
+        baseline._rev, not an unconditioned patch. Against a fixture simulating a
+        legitimate concurrent write landing between baseline capture and the fallback
+        running, the fixed logic throws (raising the residue/conflict alert path) instead
+        of clobbering; the same fixture replayed against the pre-fix unconditioned-patch
+        logic is proven to silently clobber the concurrent write, so this check
+        discriminates old (broken) from new (fixed) behavior rather than passing
+        unconditionally.
+      command: 'node contracts/checks/cms-loop-f3-national-show/check-fallback-cleanup-revision-guard.mjs'
+
+    - id: A15
+      description: >
+        Behavioral, negative-verified: A1's DRAFT-residue cleanup (the block that deletes
+        a stray drafts.${TARGET_DOC_ID} left by a partially-landed Studio autosave, since
+        setFieldsAndPublish fills title/location/countdownDate sequentially) matches on
+        ANY field looking sentinel-shaped, not the old all-three-fields-exact-match
+        condition. Against a fixture simulating a partial-match draft (one field
+        sentinel-shaped, others still baseline), the fixed logic recognises it as residue
+        and attempts cleanup/alert; a sentinel-shaped field mixed with unattributable
+        foreign content raises the alert rather than deleting; the same partial-match
+        fixture replayed against the pre-fix all-three-exact predicate is proven to
+        silently skip it (the bug — ordinary FAIL, no alert), so this check discriminates
+        old (broken) from new (fixed) behavior.
+      command: 'node contracts/checks/cms-loop-f3-national-show/check-draft-partial-match-cleanup.mjs'

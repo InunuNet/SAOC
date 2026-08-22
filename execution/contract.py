@@ -249,6 +249,8 @@ def validate_cmd(args):
         errors.append(f"Unknown schema: {contract.get('schema')}")
 
     assertions = contract.get("assertions", [])
+    if len(assertions) == 0:
+        errors.append("assertions list is empty -- a contract must declare at least one assertion")
     ids = set()
     binary_kinds = {"shell", "file_exists", "file_contains", "json_path", "handoff_field"}
     binary_count = 0
@@ -486,6 +488,20 @@ def check_cmd(args):
     sys.exit(0 if verdict in ("pass", "skip") else 1)
 
 
+def _phase_sort_key(pid):
+    """Sort key for phase ids that tolerates a mix of int and str types.
+
+    Int-valued ids (or ints-in-string-form) sort first, in numeric order;
+    any id that can't be parsed as an int sorts after, alphabetically. This
+    lets `gate --phase all`/`max` order phases without ever raising
+    TypeError on a contract that mixes int and str phase ids.
+    """
+    try:
+        return (0, int(pid))
+    except (TypeError, ValueError):
+        return (1, str(pid))
+
+
 def _phase_matches(phase_id, target_str: str) -> bool:
     if str(phase_id) == target_str:
         return True
@@ -521,6 +537,9 @@ def _gate_single_phase(contract: dict, args) -> bool:
         return False
 
     phase_assertions = phase.get("assertions", [])
+    if not phase_assertions:
+        print(f"ERROR: phase {phase_n} has zero assertions -- nothing to gate", file=sys.stderr)
+        return False
     allow_skips = getattr(args, "allow_skips", False)
     assertions_by_id = {a["id"]: a for a in contract.get("assertions", [])}
 
@@ -623,22 +642,135 @@ def _gate_single_phase(contract: dict, args) -> bool:
         return True
 
 
-def gate_cmd(args):
-    contract = load_contract(args.contract)
+# Dataset-residue-guard wiring (mission fix-live-sentinel-residue-cms-loop-f3, 2026-08-22).
+#
+# scripts/scan-dataset-residue.ts already existed and already caught two live incidents of
+# contract checks leaving sentinel/test residue in the live Sanity dataset — but only as a
+# nightly GitHub Actions cron nobody was watching, the same "log nobody reads" gap project
+# memory project_contract_checks_mutate_live_content already warned about, just one layer
+# down. Wiring the scanner directly into `gate` puts the finding in the one place every
+# mission's dev/QA/architect already looks: the gate command's own output.
+#
+# RESIDUE_EXIT_CODE is deliberately distinct from every other gate exit code (0/1/2) so a
+# caller can never mistake a poisoned dataset for an ordinary assertion failure or a codex_qa
+# finding. It is reserved EXCLUSIVELY for "the scanner ran successfully and found real
+# residue" — never for "the scanner itself could not run" (see RESIDUE_SCAN_ERROR_EXIT_CODE).
+RESIDUE_EXIT_CODE = 4
 
-    # Pre-flight: reject prohibited multiline python3 -c assertions before running
-    for _a in contract.get("assertions", []):
-        _cmd = _a.get("verify", {}).get("cmd", "")
-        if "python3" in _cmd and "-c" in _cmd and ("\n" in _cmd or "\\n" in _cmd):
-            print(f"ERROR: Assertion {_a['id']}: multiline python3 -c is prohibited — "
-                  f"rewrite as a single-line command or a script file.", file=sys.stderr)
-            sys.exit(1)
+# RESIDUE_SCAN_ERROR_EXIT_CODE identifies the scanner-infrastructure-failure case (subprocess
+# crash, timeout, tsx/esm import failure, transient Sanity network blip) — distinct from
+# RESIDUE_EXIT_CODE so a caller branching on exit code can never conflate "confirmed live
+# residue, stop everything" with "the residue-check tooling itself had a hiccup". By design
+# this code is NOT what the gate exits with today: a scanner-infrastructure failure fails
+# OPEN (loud warning, gate proceeds on its normal exit code) rather than fail-closed, because
+# blocking every concurrent agent's unrelated gate run on a transient tooling error is itself
+# a real availability cost, whereas a confirmed real residue finding must still hard-block
+# unconditionally. The constant exists so the failure mode has a stable, greppable identity
+# in logs/output even though it is not currently used as a process exit code.
+RESIDUE_SCAN_ERROR_EXIT_CODE = 5
 
+# scan-dataset-residue.ts exits nonzero for both a confirmed residue finding AND an uncaught
+# script-level crash (see scripts/scan-dataset-residue.ts's report() vs its top-level
+# main().catch()) — the exit code alone cannot distinguish them. This marker string only
+# appears on stdout when report() actually found and printed real hits, so its presence is
+# the ground truth for "dirty" vs "error".
+RESIDUE_CONFIRMED_MARKER = "FAIL: found"
+
+# CONTRACT_GATE_RESIDUE_FIXTURE is a TEST-ONLY override: when set, both the pre-flight and
+# post-flight scans run scan-dataset-residue.ts's --fixture mode against that local JSON file
+# instead of fetching the live Sanity dataset. Real gate runs never set this. It exists so
+# this behaviour can be proven (execution/checks/verify_gate_residue_preflight.py) against the
+# existing contracts/golden/dataset-residue-guard/ fixtures without touching live credentials.
+RESIDUE_FIXTURE_ENV_VAR = "CONTRACT_GATE_RESIDUE_FIXTURE"
+
+
+def _preflight_residue_guard() -> str:
+    """Runs scan-dataset-residue.ts BEFORE any assertion phase executes.
+
+    A poisoned dataset makes every mutating check's captured baseline untrustworthy — a check
+    that captures a leftover sentinel as its "baseline" will faithfully restore that garbage and
+    report a clean cleanup. Returns "clean", "dirty", or "error" (scanner itself could not run —
+    see RESIDUE_SCAN_ERROR_EXIT_CODE).
+    """
+    return _run_dataset_residue_scan("pre-flight")
+
+
+def _postflight_residue_guard() -> str:
+    """Runs scan-dataset-residue.ts AFTER the gate's own assertion phase(s) finish.
+
+    Catches residue this gate run itself just introduced (e.g. a mutating check whose cleanup
+    silently failed), not only residue that pre-existed the run. Returns "clean", "dirty", or
+    "error" (scanner itself could not run — see RESIDUE_SCAN_ERROR_EXIT_CODE).
+    """
+    return _run_dataset_residue_scan("post-flight")
+
+
+def _run_dataset_residue_scan(stage: str) -> str:
+    """Returns "clean" (scanner ran, found nothing), "dirty" (scanner ran, found real
+    residue — must hard-block), or "error" (the scanner itself could not run — subprocess
+    crash, timeout, tsx/esm import failure, transient network blip). "error" is deliberately
+    NOT treated as "dirty" by callers: conflating the two would mean a transient tooling
+    hiccup hard-blocks the gate with the same signal as confirmed live production corruption.
+    """
+    fixture = os.environ.get(RESIDUE_FIXTURE_ENV_VAR)
+    cmd = ["node", "--import", "tsx/esm", "scripts/scan-dataset-residue.ts"]
+    if fixture:
+        cmd += ["--fixture", fixture]
+    print(f"\n--- Dataset residue guard ({stage}): scan-dataset-residue.ts ---")
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    except Exception as e:
+        print("=" * 78, file=sys.stderr)
+        print(f"RESIDUE GUARD ERROR ({stage}) [code {RESIDUE_SCAN_ERROR_EXIT_CODE}]: "
+              f"scan-dataset-residue.ts could not run — {e}", file=sys.stderr)
+        print("This is a scanner-infrastructure failure, NOT a confirmed residue finding — "
+              "the gate proceeds (fail-open) rather than blocking unrelated work on a "
+              "transient tooling error. If this persists, investigate the scanner directly.",
+              file=sys.stderr)
+        print("=" * 78, file=sys.stderr)
+        return "error"
+    if result.stdout:
+        print(result.stdout.rstrip())
+    if result.stderr:
+        print(result.stderr.rstrip(), file=sys.stderr)
+    if result.returncode != 0:
+        # scan-dataset-residue.ts exits 1 for BOTH a confirmed residue finding (report()
+        # returning 1 after printing "FAIL: found N residue hit(s)...") AND an uncaught
+        # script-level crash (its top-level main().catch() printing "Residue scan failed:"
+        # and exiting 1 too) — same exit code, two entirely different situations. Only the
+        # former is a real "dirty" result; anything else is a scanner-infrastructure failure.
+        if RESIDUE_CONFIRMED_MARKER in result.stdout:
+            print("=" * 78)
+            print(f"RESIDUE ALERT ({stage}) — the live dataset holds sentinel/test residue. "
+                  "The gate refuses to proceed against a poisoned dataset.")
+            print("Restore by hand from scripts/seed-page-singletons.ts (or the relevant seed "
+                  "script), re-run scan-dataset-residue.ts to confirm clean, then re-run the "
+                  "gate.")
+            print("=" * 78)
+            return "dirty"
+        print("=" * 78, file=sys.stderr)
+        print(f"RESIDUE GUARD ERROR ({stage}) [code {RESIDUE_SCAN_ERROR_EXIT_CODE}]: "
+              f"scan-dataset-residue.ts exited {result.returncode} without confirming a real "
+              "residue finding — treating as a scanner-infrastructure failure, not confirmed "
+              "residue.", file=sys.stderr)
+        print("This is a scanner-infrastructure failure, NOT a confirmed residue finding — "
+              "the gate proceeds (fail-open) rather than blocking unrelated work on a "
+              "transient tooling error. If this persists, investigate the scanner directly.",
+              file=sys.stderr)
+        print("=" * 78, file=sys.stderr)
+        return "error"
+    return "clean"
+
+
+def _gate_dispatch(contract: dict, args) -> int:
+    """Runs the phase-gating logic for `gate` and returns the exit code it would use, without
+    calling sys.exit() itself — split out of gate_cmd so the post-flight residue guard can run
+    exactly once, after this completes, regardless of which phase path was taken."""
     if args.phase == "all":
-        phases_data = sorted(contract.get("phases", []), key=lambda p: p.get("id", 0))
+        phases_data = sorted(contract.get("phases", []), key=lambda p: _phase_sort_key(p.get("id", 0)))
         if not phases_data:
             print("No phases found in contract to gate.")
-            sys.exit(0)
+            return 0
 
         for phase_def in phases_data:
             phase_id = phase_def['id']
@@ -654,17 +786,17 @@ def gate_cmd(args):
             )
             if not _gate_single_phase(contract, single_phase_args):
                 print(f"\nFAIL: Phase {phase_id} failed. Stopping all-phase gate.")
-                sys.exit(2) # Exit on first failure
+                return 2  # Exit on first failure
         print("\nPASS All phases gated successfully.")
-        sys.exit(0)
+        return 0
     elif args.phase == "max":
         phases = contract.get("phases", [])
-        phase_n = max((p["id"] for p in phases), default=1)
-        args.phase = str(phase_n) # Update args for _gate_single_phase
+        phase_n = sorted(phases, key=lambda p: _phase_sort_key(p["id"]))[-1]["id"] if phases else 1
+        args.phase = str(phase_n)  # Update args for _gate_single_phase
         if not _gate_single_phase(contract, args):
-            sys.exit(2)
-        sys.exit(0)
-    else: # Specific phase number
+            return 2
+        return 0
+    else:  # Specific phase number
         if not _gate_single_phase(contract, args):
             # Exit code contract for the specific-phase gate path:
             #   1 = reserved specifically for "a real codex_qa adversarial
@@ -679,8 +811,37 @@ def gate_cmd(args):
             # A caller checking the exit code must never mistake a wrapper
             # crash or a plain assertion failure for an adversarial finding,
             # or vice versa (see F2's BLOCKED-vs-GATE-ERROR verdict split).
-            sys.exit(1 if getattr(args, "gate_codex_qa_failure", False) else 2)
-        sys.exit(0)
+            return 1 if getattr(args, "gate_codex_qa_failure", False) else 2
+        return 0
+
+
+def gate_cmd(args):
+    contract = load_contract(args.contract)
+
+    # Pre-flight: reject prohibited multiline python3 -c assertions before running
+    for _a in contract.get("assertions", []):
+        _cmd = _a.get("verify", {}).get("cmd", "")
+        if "python3" in _cmd and "-c" in _cmd and ("\n" in _cmd or "\\n" in _cmd):
+            print(f"ERROR: Assertion {_a['id']}: multiline python3 -c is prohibited — "
+                  f"rewrite as a single-line command or a script file.", file=sys.stderr)
+            sys.exit(1)
+
+    # Dataset-residue pre-flight: a poisoned dataset makes every mutating check's captured
+    # baseline untrustworthy, so no assertion should run against one. This runs before any
+    # phase, regardless of --phase all/max/N. Only a confirmed "dirty" result blocks; an
+    # "error" result (scanner infrastructure failure) fails open — see RESIDUE_SCAN_ERROR_EXIT_CODE.
+    if _preflight_residue_guard() == "dirty":
+        sys.exit(RESIDUE_EXIT_CODE)
+
+    exit_code = _gate_dispatch(contract, args)
+
+    # Dataset-residue post-flight: catches residue THIS gate run itself introduced. Runs even
+    # when the gate otherwise passed — a mutating check can pass its own assertion while still
+    # leaving residue behind if its cleanup silently failed. Same fail-open handling as above.
+    if _postflight_residue_guard() == "dirty":
+        sys.exit(RESIDUE_EXIT_CODE)
+
+    sys.exit(exit_code)
 
 
 

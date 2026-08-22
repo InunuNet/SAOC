@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-08-22T00:11Z_
+_Generated: 2026-08-22T01:47Z_
 
 ## What happened last session
-Closed show-dates-purge-16-19-sept-2027 mission (F1-F3, 21/21 gate, QA+Codex pass): purged the never-confirmed 18-21 Sept 2027 placeholder in favour of confirmed 16-19 Sept 2027 across seed scripts, three live Sanity docs, and docs; fixed 4 stale pre-existing goldens; caught and fixed a second live 'contract mutates production data' incident (countdownDate test-sentinel), logged as new P1 backlog item for a dedicated future mission. Committed c22bc92, pushed to origin/main.
+Closed fix-live-sentinel-residue-cms-loop-f3: root cause was A1 and show-visitor-info's mutation guard mutating the live nationalShow singleton under two different, non-shared lock files, so they never actually serialized — plus three related draft-cleanup data-loss bugs found across Codex rounds 6-9. Shipped a shared docLockPath(docId), retrofitted A1 with poisoned-baseline rejection + revision-guarded restore, wired the dataset-residue scanner into contract.py's gate_cmd as a blocking pre/post-flight check, and swept/restored live production. Gate 15/15 green, qa-apex PASS, 10 Codex GPT-5.5 rounds (final clean).

@@ -25,8 +25,9 @@
 // prevents it against writers that never take our lock. All three are needed.
 
 import { mkdirSync, openSync, closeSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+
+import { docLockPath, makeLockToken } from '../_shared/doc-lock-path.mjs';
 
 export const EXIT_CODE_RESIDUE_ALERT = 2;
 // A check that could not run because another check legitimately held the dataset lock has NOT
@@ -87,15 +88,23 @@ export function assertUsableBaseline(field, value) {
 // Defence 2 — exclusive lock
 // ---------------------------------------------------------------------------
 
-const LOCK_DIR = path.join(os.tmpdir(), 'saoc-contract-locks');
-// SCOPE, KNOWN AND DELIBERATE: this lock serialises THIS contract's checks against each other,
-// which is the collision that actually happened. It does NOT serialise against other contracts —
-// the exhibitor stream keeps its own lock beside this one in the same directory, and both
-// streams can write nationalShow. Cross-contract safety rests on defence 3, the revision guard,
-// which makes such a collision fail loudly instead of silently. Promoting these to one shared
-// `saoc-sanity-dataset.lock` needs both streams to adopt it in the same change; raised with the
-// team lead rather than done unilaterally, since a half-adopted rename is worse than neither.
-const LOCK_PATH = path.join(LOCK_DIR, 'show-visitor-info-dataset.lock');
+// SHARED LOCK, migrated 2026-08-22 (fix-live-sentinel-residue-cms-loop-f3): this contract's
+// check-show-identity-sweep.mjs mutates the live `nationalShow` singleton, and so does
+// cms-loop-f3-national-show's check-headline-round-trip.mjs — but until this migration each
+// locked on a different, contract-scoped file, so the two never actually serialised against
+// each other. That gap is the confirmed root cause behind two live `nationalShow` residue
+// incidents (see .agent/memory/project/specs/fix-live-sentinel-residue-cms-loop-f3/goldens/
+// m1-golden.md). Both contracts now resolve their lock through the same
+// `docLockPath('nationalShow')` helper, so a real file-system lock actually serialises them.
+// This intentionally widens THIS lock's scope beyond just nationalShow writers: every mutating
+// check in this contract (including ones that write showVisitorInfo, a different document)
+// still shares one lock file, exactly as before — only the path computation moved to the
+// shared helper so the nationalShow-writing check here and cms-loop-f3-national-show's
+// nationalShow-writing check land on the identical file. show-exhibitor-info is NOT part of
+// this migration — confirmed via grep it targets a different document (showExhibitorInfo/
+// INFO_DOC_ID) and does not collide with nationalShow writers.
+const LOCK_PATH = docLockPath('nationalShow');
+const LOCK_DIR = path.dirname(LOCK_PATH);
 // THE INVARIANT: every mutating assertion's `timeout_seconds` >= LOCK_WAIT_TIMEOUT_MS + that
 // check's measured worst-case runtime. If the wait can outlast the ceiling, `contract.py`
 // SIGKILLs the check while it is still queuing — a false RED indistinguishable from a real one.
@@ -127,7 +136,7 @@ function ownerIsAlive(pid) {
   }
 }
 
-function readLock() {
+export function readLock() {
   try {
     return JSON.parse(readFileSync(LOCK_PATH, 'utf8'));
   } catch {
@@ -135,14 +144,7 @@ function readLock() {
   }
 }
 
-// A token unique to one acquisition, so a release can only ever remove OUR lock. Without it,
-// a process whose lock was legitimately reaped (say it was paused past the stale window) would
-// delete the successor's lock on its way out and hand the dataset to two writers at once.
-function makeToken() {
-  return `${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function tryAcquire(owner, token) {
+export function tryAcquire(owner, token) {
   mkdirSync(LOCK_DIR, { recursive: true });
   try {
     // 'wx' fails if the path exists — the atomicity this whole mechanism rests on.
@@ -156,11 +158,17 @@ function tryAcquire(owner, token) {
   }
 }
 
-// Releases only if the lock on disk is still the one we took. Safe to call more than once,
-// which matters because it runs from both the `finally` and the signal handlers.
-function releaseLock(token) {
+// Releases only if the lock on disk is still the one we took. FAIL CLOSED: a lock file with no
+// readable token, or a token that isn't ours, is NEVER treated as ours to delete — only an exact
+// token match is. Before this was fail-closed, a lock file lacking a `token` field (as
+// cms-loop-f3-national-show's guard used to write) fell through the old `current.token &&`
+// short-circuit and got deleted unconditionally, which meant a delayed release from a reaped
+// show-visitor-info lock could delete a live, unrelated cms-loop-f3 lock that had since taken
+// over the same shared path. Safe to call more than once, which matters because it runs from
+// both the `finally` and the signal handlers.
+export function releaseLock(token) {
   const current = readLock();
-  if (current && current.token && current.token !== token) return false;
+  if (!current || current.token !== token) return false;
   rmSync(LOCK_PATH, { force: true });
   return true;
 }
@@ -176,7 +184,7 @@ function releaseLock(token) {
 // `waitTimeoutMs` because they are cheap to retry; mutators use the default.
 export async function withDatasetLock(owner, fn, { waitTimeoutMs = LOCK_WAIT_TIMEOUT_MS } = {}) {
   const start = Date.now();
-  const token = makeToken();
+  const token = makeLockToken();
   let held = false;
   let waits = 0;
 

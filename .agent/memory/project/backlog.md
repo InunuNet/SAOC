@@ -557,18 +557,6 @@ flat-over-nested-submenu pattern.
 
 ## Contract & test infrastructure
 
-- [ ] **[P1] A contract is writing test sentinels into LIVE production Sanity with no cleanup —
-  second confirmed occurrence, needs a dedicated mission.** Mid-`show-dates-purge-16-19-sept-2027`
-  (2026-08-22), the orchestrator independently found `nationalShow.countdownDate` had drifted to
-  `2098-12-31` — a test-sentinel value, almost certainly written by a concurrent run of
-  `contracts/cms-loop-f3-national-show.yaml`'s own live-data test assertions (A1/A5, per
-  @dev/@qa's investigation this mission) without rollback/cleanup after the check completes. This
-  is the SECOND independently-confirmed live occurrence of this project's "contract checks mutate
-  live content" defect class (see memory `project_contract_checks_mutate_live_content`; first
-  occurrence was the `/national-show` H1 sentinel served for ~3 days, logged 2026-08-16). Fix
-  needs its own dedicated mission: find and fix whichever assertion(s) in
-  `contracts/cms-loop-f3-national-show.yaml` write to live production without teardown — likely
-  A1/A5 — and add negative verification that a re-run doesn't leave residue.
 - [ ] **[P1] Five stale sha256 pins across two files — same defect, two instances.** In both cases
   a pinned file changed for a reviewed, deliberate reason and the pin was never re-cut, so the
   assertion went quietly red. **The current content IS the intended baseline in both cases** — this

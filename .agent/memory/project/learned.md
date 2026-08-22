@@ -2021,3 +2021,39 @@ were fine; the real gap was two NEW hits that only appeared after later rounds a
 historically). **Lesson: always reproduce a contract assertion failure by running the actual gate
 command (`contract.py check`/`gate`), never a hand-simulated equivalent in a different shell
 context (aliases, interactive-shell built-ins) — the two can disagree.**
+
+## Mutating contract checks need a document-scoped lock, not a contract-scoped one — root cause of the recurring live sentinel residue (2026-08-22)
+
+`fix-live-sentinel-residue-cms-loop-f3` found the actual root cause of the `nationalShow`
+sentinel-residue incidents logged 2026-08-16 and 2026-08-22 above: A1
+(`contracts/checks/cms-loop-f3-national-show/check-headline-round-trip.mjs`) and
+`show-visitor-info`'s `check-show-identity-sweep.mjs` both mutate the SAME live `nationalShow`
+singleton but held locks at **different, non-shared lock file paths** (one keyed off its own
+contract name) — they never actually serialized against each other despite both claiming to be
+lock-protected, and A1 had never received the poisoned-baseline-rejection / revision-guarded-
+restore hardening its sibling got in commit `c5240ed` (2026-08-12) despite that commit's own
+message claiming it covered A1 too. **Lesson: a lock keyed by contract/check name is not a real
+mutual-exclusion guarantee for shared live documents — key the lock by the actual document being
+mutated** (`contracts/checks/_shared/doc-lock-path.mjs`'s `docLockPath(docId)`, now shared by
+both checks against `nationalShow`). When auditing "is this check safe to run concurrently with
+that one," check what document each lock path actually derives from, not whether each check
+individually claims to hold a lock.
+
+Separately, three distinct draft-cleanup data-loss bugs were found and fixed in the same code
+area across this mission's Codex rounds 6-9, all variations on one defect class: cleanup/restore
+logic that captures and reverts fields must explicitly distinguish **"this draft document is
+wholly ours, safe to fully delete"** from **"this draft has other unrelated content on it, must
+targeted-restore-to-baseline instead"** — blindly deleting or `unset`-ing fields on a draft that
+someone else is concurrently editing destroys their unrelated work. Treat this as a repeatable
+defect class for any future mutating-check design, not a one-off: before writing draft-cleanup
+logic, ask explicitly which of the two cases applies, and prove the targeted-restore path with a
+negative test where the draft has extra fields the check doesn't own.
+
+Fix shipped this mission: shared `docLockPath(docId)` (`contracts/checks/_shared/doc-lock-path.mjs`),
+A1 retrofitted with poisoned-baseline rejection + `withDatasetLock` + revision-guarded
+`client.patch(...).set(baseline).commit()` restore, and `execution/contract.py`'s `gate_cmd`
+now runs `execution/checks/verify_gate_residue_preflight.py`-backed pre-flight AND post-flight
+dataset-residue scans (loud, blocking, distinct exit code) so any future mutating check's residue
+is caught by the one place every mission's chain already looks — the gate command's own output —
+instead of a nightly CI cron nobody watches. Gate: 15/15 green (A1-A15). 10 rounds of Codex
+GPT-5.5 review ran across the mission; the final round came back clean.

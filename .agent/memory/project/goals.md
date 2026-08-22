@@ -374,3 +374,21 @@ stale dates — deliberately left untouched per standing scope rule, flagged in 
 him to sync later. See `learned.md` for the three reusable lessons from this mission (live-data
 drift during multi-round QA, stale cross-mission fixtures, and reproducing contract-assertion
 failures via the real gate command, not a hand-simulated shell).
+
+### 2026-08-22 — `fix-live-sentinel-residue-cms-loop-f3` M1 (F1-F3) DONE — active mission closed
+
+~~`fix-live-sentinel-residue-cms-loop-f3` M1 (F1 shared doc-scoped lock + poisoned-baseline
+rejection + revision-guarded restore for A1, F2 pre/post-flight residue gate wired into
+`contract.py`'s `gate_cmd`, F3 live production sweep and restore)~~ ✅ **DONE**, contract gate
+15/15 green (A1-A15), pre-flight and post-flight dataset residue scans both "ALL CLEAR — 148
+documents", @qa-apex PASS, 10 rounds of Codex GPT-5.5 review (final round clean). Root cause of
+both the 2026-08-16 and 2026-08-22 live `nationalShow` sentinel-residue incidents confirmed:
+A1 and `show-visitor-info`'s mutation guard mutated the same live singleton under two different,
+non-shared lock file paths and never actually serialized against each other. Fix: a shared
+`docLockPath(docId)` (`contracts/checks/_shared/doc-lock-path.mjs`) both checks now key off,
+A1 retrofitted with the poisoned-baseline/revision-guard hardening its siblings got in commit
+`c5240ed` but never actually received, and the dataset-residue scanner promoted from a nightly
+CI cron nobody watched into a blocking pre/post-flight gate check. This mission is now closed —
+see `learned.md` "Mutating contract checks need a document-scoped lock, not a contract-scoped
+one" for the full reusable lesson, including three related draft-cleanup data-loss bug variants
+found across Codex rounds 6-9.

@@ -123,7 +123,9 @@ The scanner also detects these markers split across Portable Text block spans (c
 
 For complete details on every pattern and its source, see `contracts/golden/dataset-residue-guard/marker-catalogue.md`.
 
-## CI wiring
+## CI and gate wiring
+
+### GitHub Actions (daily and per-push coverage)
 
 The scanner runs as its own dedicated job in `.github/workflows/ci.yml`, separate from the main `ci:` build job:
 
@@ -152,6 +154,25 @@ It triggers on:
 - A daily schedule: `0 3 * * *` (03:00 UTC) — a backstop for residue written outside a PR
 
 The job is separate (not a step inside `ci:`) because it needs `SANITY_API_TOKEN`, a RUNTIME-only credential that the build job explicitly excludes from its documented env block. Keeping them separate also makes a residue finding fail loudly under its own job name in the GitHub UI.
+
+### Contract gate (local and every mission)
+
+As of 2026-08-22, every local `pnpm gate` run (and every mission's CI contract invocation) now executes the scanner twice — **pre-flight** (before running any assertion) and **post-flight** (after all assertions complete). This closes a critical observability gap: the nightly GitHub Actions job is surveillance-only, available only if someone happens to check the CI tab. A residue finding during a local gate run is loud and immediate.
+
+**Why pre-flight:** A poisoned dataset (one already holding residue) makes every mutating check's captured baseline untrustworthy. A check that reads "parking info is SVI-PARKING-SENTINEL-..." as its baseline, then writes a new sentinel value, then reads the new value back, will report "baseline and restored value match" — a false clean — because both are sentinels. Pre-flight scan catches and blocks this before it can happen.
+
+**Why post-flight:** Catches residue a gate run itself just introduced, making failure immediate and local rather than delaying discovery to the next nightly scan.
+
+**How to test the gate integration** (proving the gate refuses to run against poisoned data without hitting live credentials):
+
+```bash
+# Against a known-bad fixture, the gate must refuse to proceed
+python3 execution/checks/verify_gate_residue_preflight.py
+```
+
+This test runs the actual `execution/contract.py gate` command against a fixture pointing to `contracts/golden/dataset-residue-guard/fixture-all-patterns.json` (containing every known sentinel pattern), then verifies the gate exited with the residue-specific exit code before any assertion's own output appeared. A positive control in the same test verifies that pointing the gate at a known-clean fixture proceeds normally.
+
+If the test script is missing or the fixture path is stale, see `contracts/golden/dataset-residue-guard/README.md` for the fixture inventory and structure.
 
 ## Honest limits
 
