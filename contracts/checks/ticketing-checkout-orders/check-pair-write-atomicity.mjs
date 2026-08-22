@@ -81,6 +81,7 @@ function buildDocsFor(orderId, bookingRef) {
   return buildReservationDocs({
     orderId,
     bookingRef,
+    gateway: 'payfast',
     showId: 'nationalShow',
     attendeeName: 'Test Attendee',
     attendeeEmail: 'attendee@example.com',

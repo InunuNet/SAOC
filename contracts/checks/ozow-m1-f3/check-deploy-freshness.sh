@@ -43,8 +43,12 @@ if [ -z "$BACKEND_UPDATE_TIME" ]; then
   exit 1
 fi
 
+# -u is required on the BSD `date -j` fallback: stripping the fractional seconds also drops
+# the trailing 'Z', and without -u this parses the remaining timestamp as LOCAL time (SAST,
+# UTC+2) instead of UTC, silently shifting the computed epoch back 2 hours and producing false
+# FAILs on genuinely-fresh rollouts.
 BACKEND_UPDATE_EPOCH=$(date -d "$BACKEND_UPDATE_TIME" +%s 2>/dev/null \
-  || date -j -f "%Y-%m-%dT%H:%M:%S" "${BACKEND_UPDATE_TIME%%.*}" +%s 2>/dev/null) \
+  || date -j -u -f "%Y-%m-%dT%H:%M:%S" "${BACKEND_UPDATE_TIME%%.*}" +%s 2>/dev/null) \
   || { echo "FAIL: could not parse backend updateTime '$BACKEND_UPDATE_TIME'"; exit 1; }
 
 if [ "$BACKEND_UPDATE_EPOCH" -lt "$HEAD_COMMIT_EPOCH" ]; then

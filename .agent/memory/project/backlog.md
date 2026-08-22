@@ -581,6 +581,20 @@ flat-over-nested-submenu pattern.
   while still reporting green overall. All five were found by an architect who happened to be
   reading, which is luck, not a control. @architect is drafting a standing drift-detection check
   across ALL contracts. **This is worth more than any individual re-pin.**
+- [ ] **[P1] `contracts/contract-ticketing-checkout-orders.yaml` A4/A5 are stale — checkout no
+  longer calls `writeReservationPair()` directly.** Both assert a *structural, source-level* shape
+  ("`writeReservationPair()` called exactly once in `app/api/tickets/checkout/route.ts`, inside
+  the transaction, after the idempotency guard"; "a `RECOVERY_TOKEN_SECRET` fail-closed guard sits
+  textually before that call site"). Commit `6046bc0` (M2-F5, pooled-capacity checkout — predates
+  `ozow-payment-provider`, unrelated) replaced the direct call with a `reserveTicket()` wrapper
+  that calls it internally; confirmed via `git show 6046bc0:app/api/tickets/checkout/route.ts` —
+  the direct call was already gone before Ozow's mission even started. Found 2026-08-22 by Codex
+  GPT-5.5's full-mission-diff pass on `ozow-payment-provider` (which also found and fixed a real,
+  in-scope regression in the same contract's A3 — a test fixture missing F2's new required
+  `gateway` field — now fixed). A4/A5 need re-scoping to assert the same invariants (atomic
+  write-inside-transaction, fail-closed missing-secret guard) against `reserveTicket()`'s current
+  shape, not the pre-refactor one; not fixed here — out of scope for `ozow-payment-provider`,
+  which never touched this call site.
 - [ ] **[P2] The `vendor-f3-showcase-page` golden has never been evaluated by any assertion.** It
   is correctly formatted and currently accurate — @architect's initial "drifted" report was its own
   false negative, self-corrected. The defect is that no assertion in any contract runs it: a green
