@@ -247,6 +247,8 @@ F10's assertions keep asserting exactly what they asserted, against the same fun
 
 **Status:** F1 complete (2026-08-22), F2b complete (2026-08-22). Additive code only — no changes to the seam interface. Implements all five interface members per the design above.
 
+**F3 live-purchase testing:** Identified a vendor-side blocker. See [`contracts/golden/ozow-m1-f3/README-addendum-blocked.md`](../contracts/golden/ozow-m1-f3/README-addendum-blocked.md) for the investigation trail, Brad's action items, and confirmation steps with Ozow support.
+
 **Code:** [`lib/ozow.ts`](../lib/ozow.ts) (signature builder), [`lib/payments/ozow.ts`](../lib/payments/ozow.ts)
 (PaymentProvider adapter).
 
