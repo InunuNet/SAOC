@@ -24,7 +24,7 @@
       "countryCode": "ZA",
       "currencyCode": "ZAR",
       "isTest": "true",
-      "note": "BankReference and ErrorUrl have no InitiateInput equivalent. Adapter design decision (this contract): BankReference = input.reference (identical to TransactionReference); ErrorUrl = input.cancelUrl (InitiateInput carries no separate error URL). Customer is left empty (no name field on InitiateInput)."
+      "note": "BankReference and ErrorUrl have no InitiateInput equivalent. Adapter design decision (amended F3, 2026-08-22): BankReference = the reference's random segment only, with BOOKING_REF_PREFIX ('SAOC-2027-') stripped (deriveOzowBankReference in lib/payments/ozow.ts) -- Ozow documents BankReference as String(20), and the full reference is always 22 chars (10-char prefix + 12-char random segment), so reusing it verbatim overflowed the cap and Ozow's sandbox silently rejected every real transaction before offering a payment method. ErrorUrl = input.cancelUrl (InitiateInput carries no separate error URL). Customer is left empty (no name field on InitiateInput)."
     },
     "fieldOrder": [
       "SiteCode",
@@ -51,7 +51,7 @@
       "CurrencyCode": "ZAR",
       "Amount": "250.00",
       "TransactionReference": "SAOC-2027-OZOW-GOLDEN0001",
-      "BankReference": "SAOC-2027-OZOW-GOLDEN0001",
+      "BankReference": "OZOW-GOLDEN0001",
       "Optional1": "",
       "Optional2": "",
       "Optional3": "",
@@ -64,10 +64,10 @@
       "NotifyUrl": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/api/tickets/ozow-itn",
       "IsTest": "true"
     },
-    "concatenatedString": "TESTSITE0000000000AZAZAR250.00SAOC-2027-OZOW-GOLDEN0001SAOC-2027-OZOW-GOLDEN0001https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/cancelled?ref=SAOC-2027-OZOW-GOLDEN0001https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/cancelled?ref=SAOC-2027-OZOW-GOLDEN0001https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/confirmation?ref=SAOC-2027-OZOW-GOLDEN0001https://saoc-prod--saoc-webapp.europe-west4.hosted.app/api/tickets/ozow-itntrue",
-    "hashCheck": "7c69e95fb7489d5ff3471433b579e747dca87260455c31cf9ad59d3a5e190a613e19a2b9a8296fd7b28260ab6426aae85b0cd6c89986ef5dd9d364af69f5e6fd",
-    "hashCheckWithFieldsReversed": "35cf6a82eddc76c42dbfa0b60de628892d0cded1b80042538c02b200684e7685dc5ae71728afdd535b405612eaccb5d1a998a09c6c9c7396d173b1a967e7902c",
-    "hmacShaHashWrongAlgorithm": "ee712a5be220660ac6e0b323616853a27020774fdf768b67ae1b1cd329ba2b0014f4fbefbd04713134209d24102b7a98636eb271e9d1113d7159e782f750a104"
+    "concatenatedString": "TESTSITE0000000000AZAZAR250.00SAOC-2027-OZOW-GOLDEN0001OZOW-GOLDEN0001https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/cancelled?ref=SAOC-2027-OZOW-GOLDEN0001https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/cancelled?ref=SAOC-2027-OZOW-GOLDEN0001https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/confirmation?ref=SAOC-2027-OZOW-GOLDEN0001https://saoc-prod--saoc-webapp.europe-west4.hosted.app/api/tickets/ozow-itntrue",
+    "hashCheck": "4cf218ce794d1e07ef65dc31635dca685c153dc70c279c54eb4837c2a1efd4fb88f367447d5c947df2a05c5529d6e0b268e5996a65c12ec4fc63623b7c397b1e",
+    "hashCheckWithFieldsReversed": "c11f03fbe96b3f1adc4e48f7c837e08b7fddde876e0035a2b9326712942fec7b540343603142710db50e4aed1806e612d71f3517da19d6fabe9e4347d690df3f",
+    "hmacShaHashWrongAlgorithm": "d30b1481ea9d3348536946a3cb8000e85c78bee16838e77a3c4bbf7d5f69c2349d00ea25113dc9f81c2b57101ecc58b7e0396e48cae65b0c9717283070fcc1e3"
   },
   "inbound": {
     "complete": {

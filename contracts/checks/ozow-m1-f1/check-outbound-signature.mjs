@@ -17,6 +17,7 @@
 
 import { buildOzowConcatString, generateOzowHash, OZOW_OUTBOUND_FIELD_ORDER, OZOW_PAY_URL } from '../../../lib/ozow.ts';
 import { createOzowProvider } from '../../../lib/payments/ozow.ts';
+import { BOOKING_REF_PREFIX, generateBookingRef } from '../../../lib/booking-ref.ts';
 import { golden, makeReporter } from './_golden.mjs';
 
 const r = makeReporter('A1 outbound signature equivalence');
@@ -56,7 +57,18 @@ if (result.ok) {
   r.eq('case 4: CurrencyCode', result.fields.CurrencyCode, g.adapterOwnedConstants.currencyCode);
   r.eq('case 4: Amount', result.fields.Amount, g.inputs.amountFormatted);
   r.eq('case 4: TransactionReference', result.fields.TransactionReference, g.inputs.reference);
-  r.eq('case 4: BankReference == reference (this contract\'s decision)', result.fields.BankReference, g.inputs.reference);
+  r.eq(
+    'case 4: BankReference == reference with BOOKING_REF_PREFIX stripped (F3 amendment)',
+    result.fields.BankReference,
+    g.inputs.reference.startsWith(BOOKING_REF_PREFIX)
+      ? g.inputs.reference.slice(BOOKING_REF_PREFIX.length)
+      : g.inputs.reference
+  );
+  r.ok(
+    'case 4: BankReference is at most 20 chars (Ozow\'s documented String(20) cap)',
+    result.fields.BankReference.length <= 20,
+    `BankReference was ${result.fields.BankReference.length} chars: "${result.fields.BankReference}"`
+  );
   r.eq('case 4: SuccessUrl == input.returnUrl', result.fields.SuccessUrl, g.inputs.returnUrl);
   r.eq('case 4: CancelUrl == input.cancelUrl', result.fields.CancelUrl, g.inputs.cancelUrl);
   r.eq('case 4: ErrorUrl == input.cancelUrl (this contract\'s decision)', result.fields.ErrorUrl, g.inputs.cancelUrl);
@@ -66,5 +78,38 @@ if (result.ok) {
   // itemName must not appear on the wire — Ozow has no line-item-name field (spec §1).
   r.ok('case 4: no stray itemName field on the wire', !('itemName' in result.fields) && !('ItemName' in result.fields));
 }
+
+// Case 5 — REVERT-AND-CONFIRM-RED for the F3 BankReference overflow fix. Every real booking
+// reference is BOOKING_REF_PREFIX (10 chars) + a 12-char random segment = 22 chars, always, which
+// is 2 chars OVER Ozow's documented String(20) cap for BankReference — the old
+// `BankReference: input.reference` behaviour ships an over-length value on EVERY real purchase,
+// not just an edge case. Proven across 20 freshly generated real-format references (not one
+// example) plus the golden fixture's differently-shaped reference, so this is not overfit to a
+// single length.
+const realFormatReferences = Array.from({ length: 20 }, () => generateBookingRef());
+const allReferencesToCheck = [...realFormatReferences, g.inputs.reference];
+for (const reference of allReferencesToCheck) {
+  r.ok(
+    `case 5: OLD behaviour (BankReference = full reference) would overflow for "${reference}"`,
+    reference.length > 20,
+    `full reference was only ${reference.length} chars — this reference does not demonstrate the bug`
+  );
+  const derived = reference.startsWith(BOOKING_REF_PREFIX)
+    ? reference.slice(BOOKING_REF_PREFIX.length)
+    : reference;
+  r.ok(
+    `case 5: NEW behaviour (BankReference = derived) stays within the 20-char cap for "${reference}"`,
+    derived.length <= 20,
+    `derived BankReference was ${derived.length} chars: "${derived}"`
+  );
+}
+// All 20 freshly generated real-format references must actually be 22 chars — otherwise case 5's
+// "old behaviour overflows" assertion above would be vacuously true/false by construction rather
+// than by genuinely exercising BOOKING_REF_PREFIX's real length.
+r.ok(
+  'case 5: real-format references are genuinely 22 chars (10-char prefix + 12-char segment)',
+  realFormatReferences.every((reference) => reference.length === 22),
+  `lengths seen: ${JSON.stringify(realFormatReferences.map((r) => r.length))}`
+);
 
 r.done();

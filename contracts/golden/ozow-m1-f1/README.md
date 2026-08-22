@@ -80,9 +80,18 @@ makes the golden a genuine algorithm proof rather than a secret-dependent one.
 or `ErrorUrl`. Per the architect spec's own walkthrough (§1), these are adapter-internal choices,
 not interface gaps. This contract fixes them concretely so the golden is well-defined:
 
-- `BankReference = input.reference` (identical to `TransactionReference` — there is no other
-  candidate value on `InitiateInput`, and reusing the order reference is what appears on the
-  buyer's bank statement, which is the field's documented purpose).
+- **Amended F3 (2026-08-22):** `BankReference = input.reference` was F1's original decision and is
+  now known to be wrong. Ozow's own docs (`https://ozow.com/integrations`) document `BankReference`
+  as `String(20)` — a hard 20-character cap. `input.reference` is always `BOOKING_REF_PREFIX`
+  (`lib/booking-ref.ts`, 10 chars: `"SAOC-2027-"`) + a 12-char Crockford-base32 random segment = 22
+  characters, on every real booking reference, with no exception — 2 characters over the cap on
+  every single transaction, not an edge case. F3 diagnosed this as the cause of every live Ozow
+  sandbox purchase failing at `pay.ozow.com/request-error` before ever offering a payment method.
+  The corrected decision: `BankReference = deriveOzowBankReference(input.reference)`
+  (`lib/payments/ozow.ts`), which strips `BOOKING_REF_PREFIX` and sends only the 12-char random
+  segment — unique on its own, and safely under the 20-char cap. `TransactionReference` is
+  UNAFFECTED by this change; it keeps the full `input.reference` (Ozow documents it as `String(50)`,
+  well within bounds at 22 chars).
 - `ErrorUrl = input.cancelUrl` (no separate error URL exists on `InitiateInput`; treating "cancel"
   and "error" as the same return destination is the simplest correct choice given the input shape).
 - `CountryCode = 'ZA'`, `CurrencyCode = 'ZAR'`, `IsTest = 'true'` are adapter-owned constants

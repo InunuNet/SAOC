@@ -6,6 +6,7 @@ import {
   OZOW_PAY_URL,
   OZOW_TRANSACTION_STATUS_URL,
 } from '@/lib/ozow';
+import { BOOKING_REF_PREFIX } from '@/lib/booking-ref';
 
 import type {
   ConfirmResult,
@@ -158,6 +159,21 @@ function fieldOrNull(fields: Record<string, string>, key: string): string | null
   return value === undefined ? null : value;
 }
 
+/**
+ * Ozow documents BankReference as String(20) — a hard cap. The full booking reference
+ * (BOOKING_REF_PREFIX + a 12-char random segment) is always 22 characters, 2 over that
+ * cap, and Ozow's sandbox silently rejects an over-length value before ever offering a
+ * payment method (contracts/golden/ozow-m1-f1/README.md §4 amendment, F3). Strip the
+ * prefix and send only the random segment, which is unique on its own and safely under
+ * the limit. TransactionReference is unaffected — it keeps the full reference, well
+ * within its own 50-char limit.
+ */
+function deriveOzowBankReference(reference: string): string {
+  return reference.startsWith(BOOKING_REF_PREFIX)
+    ? reference.slice(BOOKING_REF_PREFIX.length)
+    : reference;
+}
+
 export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
   // Every accessor below is called PER REQUEST, not at construction — see OzowProviderDeps.env.
   const readEnv = (): Record<string, string | undefined> => deps?.env ?? process.env;
@@ -191,18 +207,20 @@ export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
         return { ok: false, reason: 'not-configured' };
       }
 
-      // Field mapping decisions fixed by this contract (README §4): InitiateInput has no direct
-      // equivalent for BankReference or ErrorUrl. BankReference = reference (appears on the
-      // buyer's bank statement, and there is no other candidate value on InitiateInput). ErrorUrl
-      // = cancelUrl (InitiateInput carries no separate error URL). itemName is NOT sent — Ozow has
-      // no line-item-name concept in its post variables.
+      // Field mapping decisions fixed by this contract (README §4, amended F3): InitiateInput has
+      // no direct equivalent for BankReference or ErrorUrl. BankReference = the reference's random
+      // segment only (deriveOzowBankReference) — Ozow documents BankReference as String(20), and
+      // the full reference is always 22 chars, so reusing it verbatim overflowed the cap and
+      // silently failed every live transaction. ErrorUrl = cancelUrl (InitiateInput carries no
+      // separate error URL). itemName is NOT sent — Ozow has no line-item-name concept in its post
+      // variables.
       const signedFields: Record<string, string> = {
         SiteCode: siteCode,
         CountryCode: OZOW_COUNTRY_CODE,
         CurrencyCode: OZOW_CURRENCY_CODE,
         Amount: input.amountFormatted,
         TransactionReference: input.reference,
-        BankReference: input.reference,
+        BankReference: deriveOzowBankReference(input.reference),
         Optional1: '',
         Optional2: '',
         Optional3: '',
