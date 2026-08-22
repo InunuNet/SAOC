@@ -104,6 +104,21 @@ env:
     secret: PAYFAST_SANDBOX_PASSPHRASE
     availability:
       - RUNTIME
+  # Ozow SANDBOX credentials. Same rationale as the PayFast block above: without these the
+  # deployed checkout route returns "Payment gateway is not configured" for Ozow specifically.
+  # RUNTIME only: signatures are computed per request.
+  - variable: OZOW_SANDBOX_SITE_CODE
+    secret: OZOW_SANDBOX_SITE_CODE
+    availability:
+      - RUNTIME
+  - variable: OZOW_SANDBOX_PRIVATE_KEY
+    secret: OZOW_SANDBOX_PRIVATE_KEY
+    availability:
+      - RUNTIME
+  - variable: OZOW_SANDBOX_API_KEY
+    secret: OZOW_SANDBOX_API_KEY
+    availability:
+      - RUNTIME
   - variable: RECOVERY_TOKEN_SECRET
     secret: RECOVERY_TOKEN_SECRET
     availability:
