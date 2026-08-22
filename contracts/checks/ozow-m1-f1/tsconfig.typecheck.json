@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/ozow.ts",
+    "../../../lib/payments/ozow.ts",
+    "../../../lib/payments/types.ts",
+    "fixtures/ozow-typecheck.ts"
+  ],
+  "exclude": []
+}

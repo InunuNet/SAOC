@@ -43,6 +43,7 @@ const input: BuildReservationDocsInput = {
   attendeeEmail: 'attendee@example.com',
   ticketType: 'general-admission',
   amount: 250,
+  gateway: 'payfast',
   idempotencyKey: 'idem-key-1',
   expiresAt: NOW,
   recoveryToken: 'fake.token.value',

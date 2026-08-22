@@ -257,8 +257,15 @@ export type MarkOrderPaidOutcome =
         | 'order-not-found'
         | 'order-vanished'
         | 'order-payment-id-mismatch'
+        | 'order-gateway-mismatch'
         | 'order-not-reserved'
         | 'position-not-found';
+      /** Only set when reason is 'order-gateway-mismatch' — the order's actual stored gateway,
+       *  for loud diagnostic logging alongside expectedGateway. */
+      storedGateway?: string | null;
+      /** Only set when reason is 'order-gateway-mismatch' — the provider currently processing
+       *  this notification (input.expectedGateway echoed back), for the same logging. */
+      expectedGateway?: string;
     };
 
 export interface MarkOrderAndPositionPaidInput {
@@ -273,6 +280,17 @@ export interface MarkOrderAndPositionPaidInput {
    * notification. The query survives only as a fallback for callers that supply no id.
    */
   orderId?: string;
+  /**
+   * F2 (ozow-payment-provider, Codex GPT-5.5 cross-model review, 2026-08-22) — the id of the
+   * provider CURRENTLY processing this notification (paymentProvider.id from the caller's
+   * shared handler). A notification's own m_payment_id/orderId only proves it references SOME
+   * order; without also checking that order's stored `gateway` against the provider that is
+   * actually confirming it, a notification arriving on the wrong gateway's route (id
+   * collision, replay, or any reference overlap across providers) could settle an order that
+   * was created under a different gateway using this notification's data. Checked inside the
+   * transaction, same place and same reasoning as the existing order-payment-id-mismatch guard.
+   */
+  expectedGateway: string;
 }
 
 /**
@@ -328,6 +346,19 @@ export async function markOrderAndPositionPaidByPaymentId(
     // so a mismatched-identity order is never misdiagnosed as merely "already settled".
     if (order?.m_payment_id !== input.m_payment_id) {
       return { committed: false, reason: 'order-payment-id-mismatch' };
+    }
+    // F2 (ozow-payment-provider, Codex GPT-5.5 cross-model review, 2026-08-22) — the order this
+    // notification resolved to (by payment reference, just revalidated above) must also have
+    // been CREATED under the provider that is currently confirming it. Checked before the
+    // status check below, same reasoning as order-payment-id-mismatch: a mismatched-gateway
+    // order must never be misdiagnosed as merely "already settled".
+    if (order?.gateway !== input.expectedGateway) {
+      return {
+        committed: false,
+        reason: 'order-gateway-mismatch',
+        storedGateway: (order?.gateway as string | null | undefined) ?? null,
+        expectedGateway: input.expectedGateway,
+      };
     }
     if (order?.status !== 'reserved') {
       return { committed: false, reason: 'order-not-reserved' };

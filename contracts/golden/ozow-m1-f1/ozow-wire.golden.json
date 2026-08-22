@@ -1,0 +1,184 @@
+{
+  "_meta": {
+    "purpose": "Ozow adapter (lib/ozow.ts + lib/payments/ozow.ts) signature golden. All values here are SELF-CONSISTENTLY COMPUTED via the documented Ozow algorithm (plain SHA512: ordered concat + private key appended + lowercase + sha512), independently verified via Alembic against https://ozow.com/integrations and https://api.i-pay.co.za/guide/payment on 2026-08-22, and cross-checked against a third-party Laravel integration example computing the identical response-side hash. NOT captured from a live successful transaction: a real POST to https://pay.ozow.com/ with real INU-INU-002 sandbox credentials (OZOW_SANDBOX_SITE_CODE/PRIVATE_KEY from .env.local) was made as part of writing this contract and returned HTTP 200 -> redirect to /request-error?errors=An%20error%20has%20occurred. for BOTH a correctly-computed hash and a deliberately wrong one (128 zero chars) -- Ozow's pay.ozow.com response layer includes device/browser fingerprinting (aegis-node.v1.2.0.min.js, Datadog RUM) ahead of hash validation and does not distinguish signature correctness over raw HTTP without a real browser session. A genuine happy-path round-trip therefore requires BrowserAgent-driven interaction, which is this mission's F3 scope, not F1's. See README.md in this directory for the full observed request/response record.",
+    "credentials": "SiteCode and PrivateKey below are FABRICATED test values, not SAOC's real Ozow sandbox credentials. The real credentials in .env.local were used only for the live connectivity probe recorded in README.md, never committed to this golden.",
+    "algorithm_sources_verified_via_alembic": [
+      "https://ozow.com/integrations",
+      "https://api.i-pay.co.za/guide/payment"
+    ]
+  },
+  "credentials": {
+    "siteCode": "TESTSITE0000000000A",
+    "privateKey": "test-ozow-private-key-not-real-0001"
+  },
+  "outbound": {
+    "inputs": {
+      "reference": "SAOC-2027-OZOW-GOLDEN0001",
+      "amountFormatted": "250.00",
+      "itemName": "SAOC 2027 National Show Ticket",
+      "returnUrl": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/confirmation?ref=SAOC-2027-OZOW-GOLDEN0001",
+      "cancelUrl": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/cancelled?ref=SAOC-2027-OZOW-GOLDEN0001",
+      "notifyUrl": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/api/tickets/ozow-itn"
+    },
+    "adapterOwnedConstants": {
+      "countryCode": "ZA",
+      "currencyCode": "ZAR",
+      "isTest": "true",
+      "note": "BankReference and ErrorUrl have no InitiateInput equivalent. Adapter design decision (this contract): BankReference = input.reference (identical to TransactionReference); ErrorUrl = input.cancelUrl (InitiateInput carries no separate error URL). Customer is left empty (no name field on InitiateInput)."
+    },
+    "fieldOrder": [
+      "SiteCode",
+      "CountryCode",
+      "CurrencyCode",
+      "Amount",
+      "TransactionReference",
+      "BankReference",
+      "Optional1",
+      "Optional2",
+      "Optional3",
+      "Optional4",
+      "Optional5",
+      "Customer",
+      "CancelUrl",
+      "ErrorUrl",
+      "SuccessUrl",
+      "NotifyUrl",
+      "IsTest"
+    ],
+    "signedFields": {
+      "SiteCode": "TESTSITE0000000000A",
+      "CountryCode": "ZA",
+      "CurrencyCode": "ZAR",
+      "Amount": "250.00",
+      "TransactionReference": "SAOC-2027-OZOW-GOLDEN0001",
+      "BankReference": "SAOC-2027-OZOW-GOLDEN0001",
+      "Optional1": "",
+      "Optional2": "",
+      "Optional3": "",
+      "Optional4": "",
+      "Optional5": "",
+      "Customer": "",
+      "CancelUrl": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/cancelled?ref=SAOC-2027-OZOW-GOLDEN0001",
+      "ErrorUrl": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/cancelled?ref=SAOC-2027-OZOW-GOLDEN0001",
+      "SuccessUrl": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/confirmation?ref=SAOC-2027-OZOW-GOLDEN0001",
+      "NotifyUrl": "https://saoc-prod--saoc-webapp.europe-west4.hosted.app/api/tickets/ozow-itn",
+      "IsTest": "true"
+    },
+    "concatenatedString": "TESTSITE0000000000AZAZAR250.00SAOC-2027-OZOW-GOLDEN0001SAOC-2027-OZOW-GOLDEN0001https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/cancelled?ref=SAOC-2027-OZOW-GOLDEN0001https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/cancelled?ref=SAOC-2027-OZOW-GOLDEN0001https://saoc-prod--saoc-webapp.europe-west4.hosted.app/tickets/confirmation?ref=SAOC-2027-OZOW-GOLDEN0001https://saoc-prod--saoc-webapp.europe-west4.hosted.app/api/tickets/ozow-itntrue",
+    "hashCheck": "7c69e95fb7489d5ff3471433b579e747dca87260455c31cf9ad59d3a5e190a613e19a2b9a8296fd7b28260ab6426aae85b0cd6c89986ef5dd9d364af69f5e6fd",
+    "hashCheckWithFieldsReversed": "35cf6a82eddc76c42dbfa0b60de628892d0cded1b80042538c02b200684e7685dc5ae71728afdd535b405612eaccb5d1a998a09c6c9c7396d173b1a967e7902c",
+    "hmacShaHashWrongAlgorithm": "ee712a5be220660ac6e0b323616853a27020774fdf768b67ae1b1cd329ba2b0014f4fbefbd04713134209d24102b7a98636eb271e9d1113d7159e782f750a104"
+  },
+  "inbound": {
+    "complete": {
+      "fields": {
+        "SiteCode": "TESTSITE0000000000A",
+        "TransactionId": "OZW-TXN-GOLDEN-0001",
+        "TransactionReference": "SAOC-2027-OZOW-GOLDEN0001",
+        "Amount": "250.00",
+        "Status": "Complete",
+        "Optional1": "",
+        "Optional2": "",
+        "Optional3": "",
+        "Optional4": "",
+        "Optional5": "",
+        "CurrencyCode": "ZAR",
+        "IsTest": "true",
+        "StatusMessage": ""
+      },
+      "hashCheck": "a4aba3f48670d5128548778816272dbbbe773fccfb23e99bd3a1b72a0a3161f0938bccc47a87e7bbe92448d82176e8c2f15dddcddbb9e9bf68f3b31df3ca9a58"
+    },
+    "cancelled": {
+      "fields": {
+        "SiteCode": "TESTSITE0000000000A",
+        "TransactionId": "OZW-TXN-GOLDEN-0002",
+        "TransactionReference": "SAOC-2027-OZOW-GOLDEN0001",
+        "Amount": "250.00",
+        "Status": "Cancelled",
+        "Optional1": "",
+        "Optional2": "",
+        "Optional3": "",
+        "Optional4": "",
+        "Optional5": "",
+        "CurrencyCode": "ZAR",
+        "IsTest": "true",
+        "StatusMessage": ""
+      },
+      "hashCheck": "8898c5ffc07f3dafc82e9034b77bc58742f79ef520b720257456f2c982a74490b2a4369fb52b3d708c251d59184bba8fb00deb62ea067956eeae3e4613e9f161"
+    },
+    "error": {
+      "fields": {
+        "SiteCode": "TESTSITE0000000000A",
+        "TransactionId": "OZW-TXN-GOLDEN-0003",
+        "TransactionReference": "SAOC-2027-OZOW-GOLDEN0001",
+        "Amount": "250.00",
+        "Status": "Error",
+        "Optional1": "",
+        "Optional2": "",
+        "Optional3": "",
+        "Optional4": "",
+        "Optional5": "",
+        "CurrencyCode": "ZAR",
+        "IsTest": "true",
+        "StatusMessage": "Bank declined"
+      },
+      "hashCheck": "bff01fd6f6d1aa04d94ec138a42cf391d5d089357740bba87917678c66e7f983ab58db1d6d0e9e303c694909f53d61062f5a5ed525ba5c1e01b796ed3b1f5d92"
+    },
+    "tamperedAmount": {
+      "fields": {
+        "SiteCode": "TESTSITE0000000000A",
+        "TransactionId": "OZW-TXN-GOLDEN-0001",
+        "TransactionReference": "SAOC-2027-OZOW-GOLDEN0001",
+        "Amount": "999999.00",
+        "Status": "Complete",
+        "Optional1": "",
+        "Optional2": "",
+        "Optional3": "",
+        "Optional4": "",
+        "Optional5": "",
+        "CurrencyCode": "ZAR",
+        "IsTest": "true",
+        "StatusMessage": ""
+      },
+      "hashCheck": "a4aba3f48670d5128548778816272dbbbe773fccfb23e99bd3a1b72a0a3161f0938bccc47a87e7bbe92448d82176e8c2f15dddcddbb9e9bf68f3b31df3ca9a58"
+    },
+    "reversedFieldOrderHash": "dfd62bf7840a24e984f3bc9889c0a2b75c05fee00b65ac638a951c0d814adff7a88f26b5d659a0e7100fc55434cbbc8652c866ade923b31076eeaded4c137d78",
+    "wrongSecretHash": "7ea81d9faf0a5dd7eef97f6dd5e7f45630ec3efee3d670cf89dc475d4388638aae5ad5972ca385c2f13784af1395ea67bcc6082c321cacd43c25560eb25a0307",
+    "fieldOrder": [
+      "SiteCode",
+      "TransactionId",
+      "TransactionReference",
+      "Amount",
+      "Status",
+      "Optional1",
+      "Optional2",
+      "Optional3",
+      "Optional4",
+      "Optional5",
+      "CurrencyCode",
+      "IsTest",
+      "StatusMessage"
+    ]
+  },
+  "statusMapping": {
+    "expected": {
+      "Complete": "paid",
+      "Cancelled": "cancelled",
+      "Error": "failed"
+    },
+    "nonPaidInputs": [
+      "complete",
+      "COMPLETE",
+      "Complete ",
+      " Complete",
+      "",
+      "Cancelled",
+      "Error",
+      "Pending",
+      "PENDING",
+      "pending"
+    ],
+    "paidInput": "Complete",
+    "unknownFallback": "unknown"
+  }
+}

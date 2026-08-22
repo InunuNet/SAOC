@@ -1,0 +1,272 @@
+schema: athanor.contract/v1
+slug: ozow-payment-provider
+goal: >-
+  Mission ozow-payment-provider M1/F1 — build lib/ozow.ts (Ozow's outbound/inbound signature
+  primitives: plain SHA512, ordered concat + private key appended + lowercase + sha512, verified
+  independently via Alembic against Ozow's own docs, NOT HMAC-SHA512 as
+  docs/payment-gateway-research-2026-08.md incorrectly states today) and lib/payments/ozow.ts
+  (createOzowProvider()/ozowProvider implementing the existing, UNCHANGED PaymentProvider from
+  lib/payments/types.ts). Status vocabulary is a 3-value enum (Complete/Cancelled/Error, no
+  Pending) — mapStatus must handle it correctly. refund() and confirmNotification() are both
+  DECLARED STUBS in this feature (not-supported / not-configured respectively) — their real APIs
+  exist but their field-level shapes are open vendor/documentation questions out of scope here,
+  same discipline contract-payment-seam-f1.yaml A7 already established for PayFast's refund().
+  Entirely additive: zero changes to checkout wiring, lib/payments/index.ts, lib/payments/types.ts,
+  or any PayFast file — that is F2's job. Full decision record, the live sandbox connectivity
+  probe actually made against real INU-INU-002 credentials, and why this feature does not claim a
+  captured successful sandbox transaction: contracts/golden/ozow-m1-f1/README.md.
+created_at: '2026-08-22'
+autonomy: high
+
+# ⚠️ THIS FEATURE IS ADDITIVE ONLY. app/api/tickets/checkout/route.ts, app/api/tickets/itn/route.ts,
+# lib/payments/index.ts, lib/payments/types.ts, lib/payments/payfast.ts and lib/payfast.ts are all
+# sha256-pinned by A8 to their pre-feature state. At the end of this feature the Ozow adapter is
+# production code that no route calls yet — that is correct and deliberate (checkout wiring +
+# provider registry is the mission's F2/M2).
+#
+# ⚠️ THE SIGNATURE ALGORITHM CLAIM WAS RE-VERIFIED, NOT INHERITED. The mission brief and an earlier
+# architect spec (.agent/memory/project/specs/ozow-payment-provider/spec.md) both already state
+# Ozow uses plain SHA512, not HMAC-SHA512. Before writing this contract that was independently
+# re-confirmed via Alembic against https://ozow.com/integrations and https://api.i-pay.co.za/
+# guide/payment (2026-08-22) rather than trusted secondhand — see README.md §1 for the exact
+# fetched text and a third corroborating source (a public Laravel integration snippet showing the
+# response-side hash() call, not hash_hmac()).
+#
+# ⚠️ NO CAPTURED SUCCESSFUL SANDBOX TRANSACTION. A real POST was made to https://pay.ozow.com using
+# the real OZOW_SANDBOX_SITE_CODE/OZOW_SANDBOX_PRIVATE_KEY already staged in .env.local (account
+# INU-INU-002), built with the exact verified algorithm. It returned HTTP 200 -> redirect to
+# /request-error?errors=An%20error%20has%20occurred. — and an IDENTICAL response was returned when
+# the HashCheck was deliberately replaced with 128 zero characters. pay.ozow.com's response layer
+# loads device/browser fingerprinting (aegis-node.v1.2.0.min.js, Datadog RUM) ahead of whatever
+# server-side hash check exists, and does not distinguish a correct signature from an incorrect
+# one over raw, non-browser HTTP. This is real, observed, documented evidence — not a shortcut —
+# and it is exactly why the mission's own plan puts the full browser-driven happy-path proof at F3
+# (BrowserAgent against the deployed dev site), not here. See README.md §2 for the full record.
+# This feature's goldens are therefore an ALGORITHM proof (independently verified against Ozow's
+# docs, self-consistently computed, offline, reproducible), not a captured-transaction proof.
+
+features:
+  - id: F1
+    name: >-
+      Ozow signature primitives + PaymentProvider adapter, offline-verifiable against a
+      documented-and-independently-checked algorithm.
+
+      (1) lib/ozow.ts (new, mirrors lib/payfast.ts's category) — exports OZOW_PAY_URL
+      ('https://pay.ozow.com'), OZOW_OUTBOUND_FIELD_ORDER (the 17 documented post-variable names,
+      excluding HashCheck), OZOW_NOTIFY_FIELD_ORDER (the 13 documented notification-response field
+      names, excluding Hash), buildOzowConcatString(fields, order) (bare-value concatenation in
+      order — NOT key=value pairs, this is NOT PayFast's param-string shape), and
+      generateOzowHash(fields, order, privateKey) (append privateKey, lowercase, sha512 hex).
+      ONE shared hash function serves BOTH directions — unlike lib/payfast.ts, which genuinely
+      needs two separate builders because PayFast's outbound and inbound algorithms differ
+      (trim/blank-skip behaviour); Ozow's own docs describe exactly one procedure for both
+      directions over two different field sets (A3 proves both halves of this: same digest
+      function, genuinely different field-set contents).
+
+      (2) lib/payments/ozow.ts (new) — createOzowProvider(deps?) and the default instance
+      ozowProvider, implementing PaymentProvider from lib/payments/types.ts UNCHANGED (per the
+      architect spec's own method-by-method walkthrough, §1 — this feature does not reopen that
+      file, A8 pins it). deps carries env, fetch and an injectable clock/etc. as needed, mirroring
+      PayfastProviderDeps, all optional and defaulting to the real thing so every check below runs
+      offline and credential-free. Env read PER CALL, never captured at construction (A4 case 6),
+      same reasoning as payment-seam-f1 A4 case 5 (Firebase App Hosting supplies these variables
+      with RUNTIME availability only).
+
+      Field mapping decisions this feature fixes concretely (README.md §4, since InitiateInput has
+      no Ozow-shaped equivalent for two of Ozow's fields): reference->TransactionReference,
+      amountFormatted->Amount, returnUrl->SuccessUrl, cancelUrl->CancelUrl, notifyUrl->NotifyUrl,
+      BankReference = input.reference (no other candidate on InitiateInput), ErrorUrl =
+      input.cancelUrl (InitiateInput carries no separate error URL), CountryCode='ZA',
+      CurrencyCode='ZAR', IsTest='true' (hardcoded — this mission is sandbox-only throughout, going
+      live is a future feature's job), Optional1-5 and Customer sent empty (no InitiateInput
+      equivalent, same category as PayFast's itemName having no wire field — spec §1). itemName is
+      NOT sent (Ozow has no line-item-name concept, same as spec's finding).
+
+      mapStatus: 'Complete'->paid, 'Cancelled'->cancelled, 'Error'->failed, anything else (incl.
+      null, empty string, any casing/whitespace variant of 'Complete')->unknown. Never 'pending' —
+      Ozow's enum has no such state and this feature must not invent one.
+
+      refund(): always { ok: false, reason: 'not-supported' }, zero network calls — Ozow's refund
+      API is real but its field-level contract and float/fee mechanics remain open vendor
+      questions per docs/payment-gateway-research-2026-08.md, explicitly out of scope here per the
+      dispatch brief.
+
+      confirmNotification(): always { confirmed: false, reason: 'not-configured' }, zero network
+      calls — Ozow's REST status-check endpoint (ApiKey-authed) is what this would eventually call,
+      but its field-level shape could not be independently verified: oldhub.ozow.com (the domain
+      the prior spec cited for this) no longer resolves as of 2026-08-22 (checked via Alembic,
+      NXDOMAIN — README.md §5). Wiring a REST call whose shape has never been observed would be
+      the exact unverifiable-behaviour risk contract-payment-seam-f1.yaml A7 already refused to
+      take for PayFast's refund() — same call, same reasoning, flagged not silently narrowed.
+
+      (3) lib/payments/types.ts, lib/payments/index.ts, lib/payments/payfast.ts, lib/payfast.ts,
+      app/api/tickets/checkout/route.ts, app/api/tickets/itn/route.ts — NOT TOUCHED (A8). Provider
+      registry + route wiring is the mission's F2/M2.
+    status: pending
+
+goldens:
+  - contracts/golden/ozow-m1-f1/README.md
+  - contracts/golden/ozow-m1-f1/ozow-wire.golden.json
+  - contracts/checks/ozow-m1-f1/_golden.mjs
+  - contracts/checks/ozow-m1-f1/tsconfig.typecheck.json
+  - contracts/checks/ozow-m1-f1/fixtures/ozow-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        OUTBOUND SIGNATURE MATCHES OZOW'S DOCUMENTED ALGORITHM, checked at the primitive level
+        (lib/ozow.ts's builder directly, offline) AND through the real adapter's initiate() (so a
+        correct primitive wired up wrong still fails). Case 1 pins field order; case 2 pins the
+        concatenated string and HashCheck against the algorithm-golden; case 3 proves order is
+        load-bearing (reversing it produces a different, independently pinned digest); case 4
+        exercises the full initiate() call and pins every field on the wire, including this
+        contract's own BankReference/ErrorUrl mapping decisions. FAILS ON: either module not
+        existing; any field renamed, added, dropped or reordered; the private key prepended
+        instead of appended or folded in as a query param; the string not lowercased; HashCheck
+        computed over key=value pairs (PayFast's shape, not Ozow's); itemName leaking onto the
+        wire (Ozow has no such field).
+      command: npx tsx contracts/checks/ozow-m1-f1/check-outbound-signature.mjs
+
+    - id: A2
+      description: >-
+        INBOUND NOTIFICATION VERIFICATION + TAMPER SUITE, the assertion deciding whether someone
+        can forge a paid-order notification. Seven cases over three genuine notifications
+        (Complete/Cancelled/Error, all verify — authenticity is separate from outcome, README §1):
+        a tampered amount rejected against its now-stale original hash; a reversed-field-order
+        replay rejected even though it is a real SHA512 digest; a wrong-secret digest rejected;
+        missing and empty Hash fields both fail closed before any digest comparison; a missing
+        private key fails closed even against a genuinely correct notification. FAILS ON: the
+        module not existing; any tampered field still verifying; the outbound field order/algorithm
+        being reused for inbound verification (the Ozow-specific analogue of the PayFast
+        ticketing-F10 defect); posted field order not preserved into `raw`.
+      command: npx tsx contracts/checks/ozow-m1-f1/check-inbound-verify.mjs
+
+    - id: A3
+      description: >-
+        THE ALGORITHM IS PLAIN SHA512, NOT HMAC-SHA512 — the specific correction this feature
+        makes against docs/payment-gateway-research-2026-08.md, independently re-verified via
+        Alembic before this contract was written (see the file-level annotation above and README
+        §1) rather than trusted secondhand from the mission brief or prior spec. Case 1 pins the
+        shipped generateOzowHash against the plain-SHA512 golden; case 2 computes an HMAC-SHA512
+        digest over the SAME inputs INDEPENDENTLY (not read from shipped code) and proves it both
+        matches the golden's own pre-recorded HMAC negative control AND differs from the shipped
+        function's output — so an accidental HMAC implementation is directly observable, not
+        inferred from a comment. Case 3 proves outbound and inbound field orders are genuinely
+        different documented tables (not the same list reused), which the shared hash function
+        must correctly discriminate between. FAILS ON: the module not existing; generateOzowHash
+        using createHmac instead of a plain createHash fed the pre-appended secret; outbound and
+        inbound orders being unified into one list or swapped.
+      command: npx tsx contracts/checks/ozow-m1-f1/check-algorithm-not-hmac.mjs
+
+    - id: A4
+      description: >-
+        FAIL-CLOSED CREDENTIAL GUARDS + readiness() + PER-CALL ENV READ. Missing
+        OZOW_SANDBOX_SITE_CODE/PRIVATE_KEY refuse initiation by RETURN VALUE (never throwing),
+        carrying no fields and no processUrl. readiness('initiate') and
+        readiness('verify-notification') report the same not-ready verdict synchronously, before
+        any call, with a populated `missing` list. Case 6 is the highest-stakes case: the SAME
+        provider instance is called twice against a mutated env object and must refuse then
+        succeed, proving env is read per call, not snapshotted at construction (which would refuse
+        every real App Hosting purchase while passing every offline test). FAILS ON: the module
+        not existing; a throw instead of a refusal; a refusal carrying fields; empty strings
+        treated as present; config snapshotted at construction.
+      command: npx tsx contracts/checks/ozow-m1-f1/check-fail-closed-config.mjs
+
+    - id: A5
+      description: >-
+        mapStatus HANDLES OZOW'S 3-VALUE ENUM CORRECTLY, WITH NO PENDING CASE — unlike PayFast,
+        Ozow's Status field is documented as exactly Complete/Cancelled/Error, and there is no raw
+        value meaning "pending". Case 1 is the positive control; case 3 runs case/whitespace
+        near-misses of 'Complete' ('complete', 'COMPLETE', 'Complete ', ' Complete') plus null and
+        requires none map to 'paid'; case 4 proves NOTHING ever maps to 'pending', including literal
+        attempts ('Pending', 'PENDING', 'pending'); case 5 proves unrecognised input and null both
+        fall back to 'unknown', never to a settled state. FAILS ON: the module not existing; a
+        case/whitespace "improvement" causing a near-miss to map to 'paid'; 'Error' or an
+        unrecognised string falling through to 'paid'; the adapter inventing a 'pending' output for
+        any input; null mapping to anything but 'unknown'.
+      command: npx tsx contracts/checks/ozow-m1-f1/check-map-status.mjs
+
+    - id: A6
+      description: >-
+        refund() IS A DECLARED SIGNATURE, NOT AN INVENTED INTEGRATION. Ozow's refund API is real
+        (unlike PayFast's, which has none at all — spec §0), but its field-level shape and
+        float/fee mechanics are explicitly out of scope per the dispatch brief. The adapter must
+        return { ok: false, reason: 'not-supported' } by value and make ZERO network calls (the
+        injected fetch throws if touched). FAILS ON: the module not existing; refund() throwing;
+        refund() returning ok:true (a silent lie a caller would treat as a completed refund);
+        refund() calling any network endpoint.
+      command: npx tsx contracts/checks/ozow-m1-f1/check-refund-declared-unsupported.mjs
+
+    - id: A7
+      description: >-
+        ORIGINALLY (F1): confirmNotification() IS A DECLARED STUB — its real REST call was
+        deferred because the endpoint's field-level contract could not be independently verified
+        at F1 time (the domain the prior spec cited for it, oldhub.ozow.com, no longer resolves —
+        README §5). SUPERSEDED 2026-08-22 by F2b (contract-m1-f2b.yaml A1,
+        contracts/golden/ozow-m1-f2b/README.md): Ozow's own current integrations page documents a
+        LIVE GetTransactionByReference status API, and confirmNotification is now a real,
+        fail-closed call against it. This assertion still holds a narrower property: given a real
+        ProviderNotification (produced by a genuine verifyNotification() call first) and a FULLY
+        CONFIGURED environment whose injected fetch always throws, confirmNotification must fail
+        closed ({ confirmed: false, reason: 'request-failed' }) rather than ever return
+        confirmed:true or throw uncaught — the zero-network-calls property no longer holds for a
+        configured environment, by design, and is not re-asserted here. FAILS ON: the module not
+        existing; confirmNotification() throwing; ever returning confirmed:true when fetch always
+        rejects.
+      command: npx tsx contracts/checks/ozow-m1-f1/check-confirm-declared-stub.mjs
+
+    - id: A8
+      description: >-
+        THIS FEATURE IS ADDITIVE ONLY — neither route, nor the provider registry, nor any PayFast
+        file is touched. ⚠️ GOES RED THE MOMENT F2 LEGITIMATELY BEGINS, by design: F2's whole job
+        is provider-registry wiring and route changes. A red A8 after F2 has started is the
+        assertion working, not a regression — evaluate it only against a tree where F2 has not yet
+        landed. sha256 pins taken from the working tree on 2026-08-22, before any Ozow code was
+        written: lib/payments/index.ts 5529c240…, lib/payments/types.ts 3d72fe89…,
+        lib/payments/payfast.ts 6f161448…, lib/payfast.ts b5ab57a2…, checkout route 35b4a37e…, ITN
+        route dba77f9d…. @qa must observe this failing by appending a blank line to any one of the
+        six files and re-running. FAILS ON: @dev touching checkout/ITN routing or the provider
+        registry inside this feature; any edit to lib/payments/types.ts (would mean the architect
+        spec's "interface holds unchanged" claim was wrong and nobody flagged it); any edit to
+        PayFast's adapter or lib.
+      command: bash contracts/checks/ozow-m1-f1/check-regression-untouched.sh
+
+    - id: A9
+      description: >-
+        lib/ozow.ts AND lib/payments/ozow.ts NAME NOTHING PAYFAST-RELATED AND IMPORT NOTHING FROM
+        IT — the two gateways are genuinely independent implementations (different fields, digest,
+        secret-placement convention), and any coupling here would be the second-gateway-wearing-
+        PayFast's-coat failure contract-payment-seam-f1.yaml's own interface exists to prevent.
+        Case-insensitive, matching that contract's own finding that camelCase is the likelier leak
+        shape in TypeScript. Step 1 hard-fails if either file is absent, so this cannot pass
+        vacuously; the self-check proves the ban pattern can actually fire against a synthetic
+        fixture that does name PayFast. FAILS ON: 'payfast'/'PayFast'/'PAYFAST' appearing anywhere
+        in either file; an import from any payfast module path in either file.
+      command: bash contracts/checks/ozow-m1-f1/check-payfast-vocabulary-boundary.sh
+
+    - id: A10
+      description: >-
+        COMPILER-DRIVEN proof of the adapter's exported shape — not a grep, which would be
+        satisfied by a method with the wrong arity or a result union whose arms leak into each
+        other. Mirrors payment-seam-f1 A11's discipline for the new gateway: the factory and
+        default instance both structurally satisfy PaymentProvider; readiness is proven
+        SYNCHRONOUS and its argument proven to be the ProviderOperation union (not an arbitrary
+        string) via @ts-expect-error; InitiateResult and VerifyNotificationResult narrow by their
+        discriminant with the wrong-arm field proven inaccessible; refund's and
+        confirmNotification's DECLARED-STUB shapes for this feature are type-checked directly (a
+        success arm's fields proven inaccessible on the refusal arm). Runs under its own scoped
+        tsconfig because the root tsconfig excludes contracts/ from `pnpm type-check`. FAILS ON:
+        either module not existing (unresolved imports); any method renamed or given a different
+        arity; readiness turning async or accepting an arbitrary string; a result union collapsed
+        into one non-discriminated shape.
+      command: npx tsc --noEmit -p contracts/checks/ozow-m1-f1/tsconfig.typecheck.json
+
+    - id: A11
+      description: >-
+        HYGIENE GATE, DELIBERATELY NOT A PROPERTY ASSERTION — pnpm lint and pnpm type-check both
+        pass today and must still pass after this feature; neither distinguishes correct Ozow
+        behaviour from incorrect, and neither may be cited as evidence the adapter works. Every
+        behavioural claim rests on A1-A10.
+      command: pnpm lint && pnpm type-check

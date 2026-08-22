@@ -243,6 +243,157 @@ F10's assertions keep asserting exactly what they asserted, against the same fun
 
 ---
 
+## Ozow adapter — `lib/payments/ozow.ts`
+
+**Status:** F1 complete (2026-08-22), F2b complete (2026-08-22). Additive code only — no changes to the seam interface. Implements all five interface members per the design above.
+
+**Code:** [`lib/ozow.ts`](../lib/ozow.ts) (signature builder), [`lib/payments/ozow.ts`](../lib/payments/ozow.ts)
+(PaymentProvider adapter).
+
+**Signature algorithm** ([verified against Ozow's own docs via Alembic](../contracts/golden/ozow-m1-f1/README.md#1-the-algorithm-claim-was-independently-verified-not-trusted-secondhand)):
+Plain SHA512 (not HMAC-SHA512). **Correction note:** `docs/payment-gateway-research-2026-08.md`
+(2026-08-14) incorrectly states Ozow uses HMAC-SHA512; this was corrected on 2026-08-22. Ozow's
+actual algorithm is: concatenate post variables in order, append the private key, convert to lowercase,
+generate SHA512 hash. Independently verified against `https://ozow.com/integrations`,
+`https://api.i-pay.co.za/guide/payment`, and public Laravel integration examples.
+
+**Field mapping** (from `InitiateInput`):
+- `BankReference` = `input.reference` (identical to `TransactionReference`)
+- `ErrorUrl` = `input.cancelUrl` (no separate error URL on the interface)
+- `CountryCode` = `'ZA'`, `CurrencyCode` = `'ZAR'` (constants)
+- `IsTest` = `'true'` (sandbox only; going live is a future feature)
+- `Optional1–5`, `Customer` (empty — no equivalent data on `InitiateInput`)
+
+**`confirmNotification` implementation (F2b):**
+`confirmNotification` calls Ozow's live `GetTransactionByReference` anti-spoofing status API
+(`api.ozow.com`) with an `ApiKey` header rather than a form POST. Returns `{ confirmed: true }`
+on a successful match, `{ confirmed: false, reason: 'not-valid' }` if the status does not match a
+known successful transaction, `{ confirmed: false, reason: 'request-failed' }` on a network error
+(never throws or rethrows), and `{ confirmed: false, reason: 'not-configured' }` if
+`OZOW_SANDBOX_API_KEY` is unset. The lookup also handles duplicate `TransactionReference` values by
+falling back to `TransactionId` for disambiguation, or fails closed to ambiguous if neither is
+reliable. Fail-closed on every malformed/unexpected response shape, including JSON-parse-safety
+fixes for non-JSON 2xx bodies. `readiness()` now also requires `OZOW_SANDBOX_API_KEY` alongside the
+sign-and-send credentials.
+
+**Status vocabulary** — `mapStatus` recognizes Ozow's three values:
+- `'Complete'` → `'paid'`
+- `'Cancelled'` → `'cancelled'`
+- Anything else (including `'Error'` or unrecognised strings) → `'unknown'` (no `'failed'` for
+  Ozow; the transaction state is opaque without the confirmed status call)
+
+---
+
+## Checkout wiring — `lib/payments/index.ts`, routes, and order-level gateway tracking (F2)
+
+**Status:** F2 complete (2026-08-22). Wires provider selection into checkout and ITN handling.
+Refactors the single hardcoded `paymentProvider` const into a provider registry, validates buyer
+selection in the checkout route, and extracts shared notification logic into a helper both
+(unchanged) PayFast and (new) Ozow notification routes call. No behaviour change to PayFast's
+existing path — regression-proven by re-running existing PayFast ITN assertion suites unmodified.
+
+**Code:** [`lib/payments/index.ts`](../lib/payments/index.ts) (provider registry and resolver),
+[`app/api/tickets/checkout/route.ts`](../app/api/tickets/checkout/route.ts) (provider selection and
+validation), [`lib/tickets-notification.ts`](../lib/tickets-notification.ts) (shared 11-step handler),
+[`app/api/tickets/itn/route.ts`](../app/api/tickets/itn/route.ts) (PayFast's thin route),
+[`app/api/tickets/ozow-itn/route.ts`](../app/api/tickets/ozow-itn/route.ts) (new Ozow thin route),
+[`lib/checkout-reservation.ts`](../lib/checkout-reservation.ts) (order.gateway field),
+[`components/tickets/ProviderChoice.tsx`](../components/tickets/ProviderChoice.tsx) (buyer-facing
+radio control), [`lib/payments-ui.ts`](../lib/payments-ui.ts) (provider-neutral UI helpers).
+
+### The provider registry — replacing a hardcoded const with a map
+
+**Before F2:** `lib/payments/index.ts` exported a single const `paymentProvider: PaymentProvider =
+payfastProvider;`. Selection was a module-load decision with no notion of "which provider for this
+particular checkout."
+
+**After F2:** The same module exports a registry:
+
+```typescript
+export const paymentProviders: Readonly<Record<string, PaymentProvider>> = {
+  payfast: payfastProvider,
+  ozow: ozowProvider,
+};
+
+export function resolveProvider(id: string): PaymentProvider | null {
+  return Object.prototype.hasOwnProperty.call(paymentProviders, id) ? paymentProviders[id] : null;
+}
+```
+
+The `Object.prototype.hasOwnProperty.call()` check is load-bearing, not decoration: a naive bracket
+lookup resolves prototype members (`'constructor'`, `'__proto__'`) to inherited `Object.prototype`
+values, which are truthy and NOT `null`. A caller checking `if (provider)` would treat a poisoned
+lookup as a valid provider. The registry is deliberately small and static — no dynamic imports, no
+env-driven plugin loading. Two hardcoded entries are appropriate for exactly two known providers;
+when a real third gateway needs to coexist with the first two, the selection design can evolve with
+two concrete examples in hand rather than guesses.
+
+### Checkout validation — `providerId` from request body, validated against an allow-list
+
+**Buyer-facing selection:** Before checkout, a radio control (`components/tickets/ProviderChoice.tsx`)
+lets the buyer choose "Pay with Ozow" or "Pay with PayFast" (Ozow listed first, reflecting Brad's
+direction that Ozow is the client's actually-preferred option). The buyer's choice becomes a
+`providerId` field in the form POST body.
+
+**Server-side authority:** `app/api/tickets/checkout/route.ts` validates `providerId` against an
+enumerated allow-list (`'payfast'` or `'ozow'`) **immediately**, alongside other request-validation
+gates and **strictly before any Sanity CMS access**. A missing or invalid `providerId` returns 400
+with an error message; anything else is a silent PayFast default (the exact inversion the payment-
+provider-seam F2 fixed). The resolver is called once the validation passes, and the resolved
+`PaymentProvider` is what `readiness('initiate')` and `.initiate(...)` are called on, replacing the
+hardcoded `paymentProvider` import.
+
+**Order-level tracking:** The chosen `providerId` is stored as `order.gateway` in Firestore
+(new field, additive, not a schema break). `lib/checkout-reservation.ts`'s `buildReservationDocs()`
+and `buildMultiReservationDocs()` now accept a required `gateway: string` field and write it to the
+order, replacing the old hardcoded `PAYFAST_GATEWAY` constant. This ensures every order records which
+provider was actually selected at purchase time, not a retroactive guess.
+
+### Shared notification handler — extracting the 11-step sequence
+
+**Before F2:** The entire 11-step ITN verification, status writing, and confirmation path lived
+inline in `app/api/tickets/itn/route.ts`'s `POST()` handler.
+
+**After F2:** The sequence is extracted into `lib/tickets-notification.ts`'s `handleProviderNotification(provider, request)` helper. Both routes import and call it:
+
+- `app/api/tickets/itn/route.ts` (unchanged path, PayFast-only) `POST()` → calls `handleProviderNotification(payfast, request)`
+- `app/api/tickets/ozow-itn/route.ts` (new path) `POST()` → calls `handleProviderNotification(ozow, request)`
+
+The routing is **trivially separate** (Ozow's URL cannot collide with PayFast's), while the
+verification logic is **shared once** (no copy-pasted duplicate of the 11-step body). This avoids
+the risk of a future PayFast-only golden-file change accidentally altering Ozow's behaviour through
+shared code that was never meant to be shared at that granularity. Each route is a thin pass-through,
+delegating entirely to the provider-agnostic helper.
+
+### Settlement gateway check — order.gateway must match the notifying provider
+
+Both routes (and therefore the shared handler) read the `order.gateway` field from Firestore. During
+settlement, after all other gates pass (signature, amount, PayFast/Ozow server-confirm), the handler
+verifies that the notifying provider's id matches the order's stored `gateway` value. A mismatch
+means a notification from one gateway is trying to settle an order that belongs to the other — the
+handler refuses with a non-2xx response and logs the incident. This prevents a cross-provider
+replay attack where an attacker captures an Ozow ITN and replays it against a PayFast order (or
+vice versa).
+
+### Provider-neutral UI helpers — `lib/payments-ui.ts`
+
+`providerLabel(providerId: string): string` returns a display-friendly name for a provider:
+`'payfast'` → `'PayFast'`, `'ozow'` → `'Ozow'`, anything else → `'Unknown provider'` (fail-closed).
+Used in UI copy like `"Redirecting to {providerLabel}…"` instead of hardcoded `"Redirecting to PayFast…"`.
+The checkout response now includes a provider-neutral `amount` field (number, in ZAR) so the
+redirect notice displays correctly regardless of each provider's internal field-casing convention
+(PayFast: `fields.amount`; Ozow: `fields.Amount`).
+
+### Idempotent replay with provider matching
+
+`app/api/tickets/checkout/route.ts` already guarded replays on `Idempotency-Key` + buyer email +
+ticket type (F3 of ticketing-hardening). F2 adds one more requirement: a replay whose `providerId`
+doesn't match the order's originally-stored gateway returns 409 (conflict), not a re-initiation
+through the different provider. This prevents a buyer from using an idempotency-key capture to swap
+payment methods mid-purchase.
+
+---
+
 ## Adding a second gateway
 
 Provider selection is **a single const**:

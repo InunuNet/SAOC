@@ -1,0 +1,57 @@
+{
+  "_comment": "ozow-payment-provider mission, M2/F2 (checkout wiring). Pins the exact wire shapes @dev must produce, so @qa can diff observed responses against fixed values rather than re-deriving them. See README.md in this directory for the full decision record.",
+
+  "registry": {
+    "module": "lib/payments/index.ts",
+    "exports": {
+      "paymentProviders": "Readonly<Record<string, PaymentProvider>>, keys exactly ['ozow','payfast'] (order-insensitive)",
+      "resolveProvider": "(id: string) => PaymentProvider | null — null for ANY id not a hasOwnProperty key of paymentProviders, never a thrown error, never a fallback provider"
+    },
+    "replaces": "export const paymentProvider: PaymentProvider = payfastProvider; — this single-const export is REMOVED, not kept alongside the registry as a deprecated alias (every caller must move to resolveProvider/paymentProviders)"
+  },
+
+  "checkoutRequestBody": {
+    "route": "POST /api/tickets/checkout",
+    "newField": {
+      "name": "providerId",
+      "type": "string",
+      "allowedValues": ["payfast", "ozow"],
+      "required": true,
+      "onMissingOrInvalid": {
+        "status": 400,
+        "bodyShape": { "error": "string, MUST mention 'providerId' (case-insensitive substring match) so it is distinguishable from the pre-existing showId/lineItems 400" }
+      },
+      "validationMustRunBefore": "the `if (!client)` Sanity-configured guard — see contracts/checks/ozow-m1-f2/check-providerid-fail-closed.mjs, whose offline proof depends on this exact ordering"
+    }
+  },
+
+  "orderDocument": {
+    "field": "gateway",
+    "priorBehaviour": "always the module constant PAYFAST_GATEWAY ('payfast'), regardless of any input — a real defect this feature fixes, see contracts/checks/ozow-m1-f2/check-gateway-threading.mjs",
+    "requiredBehaviour": "equal to the resolved providerId ('payfast' or 'ozow') that checkout/route.ts validated and used for the actual gateway hand-off — never re-derived, never re-guessed",
+    "threadedVia": {
+      "BuildReservationDocsInput.gateway": "string, required, new field",
+      "BuildMultiReservationDocsInput.gateway": "string, required, new field — THIS is the one checkout/route.ts's reserveTicket() actually calls in production; buildReservationDocs()'s sibling fix alone would NOT have covered the live call path"
+    }
+  },
+
+  "notificationRouting": {
+    "payfastRoute": {
+      "path": "app/api/tickets/itn/route.ts",
+      "mustStayAt": "this exact path — Ozow's own account has nothing to do with this constraint; PayFast's live sandbox NotifyUrl is already registered against it",
+      "referencesExactlyOneProvider": "payfast"
+    },
+    "ozowRoute": {
+      "path": "app/api/tickets/ozow-itn/route.ts",
+      "isNew": true,
+      "referencesExactlyOneProvider": "ozow"
+    },
+    "sharedHelper": {
+      "module": "lib/tickets-notification.ts",
+      "exportsOneFunction": true,
+      "bothRoutesImportTheSameSymbolFromTheSameModule": true,
+      "rejectedShape": "one shared route resolving the provider from a query param (?provider=ozow) or a [provider] dynamic path segment — see contracts/checks/ozow-m1-f2/check-notification-routing-shape.sh part (g)"
+    },
+    "landmarkOrderReuse": "the extracted helper's internal step order is verified by RE-RUNNING the existing contracts/checks/payment-seam-f2/check-sequence-and-ownership.sh with ITN_PATH_OVERRIDE=lib/tickets-notification.ts — that script already supports a path override (built for check-ordering-mutations.sh) and its 11-landmark assertion applies unchanged to wherever the logic now lives"
+  }
+}

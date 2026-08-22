@@ -70,6 +70,7 @@ const input: BuildMultiReservationDocsInput = {
   reference: 'SAOC-2027-TYPECHECK01',
   showId: 'nationalShow',
   lineItems: [linePlan],
+  gateway: 'payfast',
   idempotencyKey: 'idem-key-1',
   expiresAt: NOW,
   recoveryToken: 'fake.token.value',

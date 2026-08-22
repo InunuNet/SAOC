@@ -1,0 +1,101 @@
+schema: athanor.contract/v1
+slug: ozow-payment-provider
+goal: >-
+  Mission ozow-payment-provider M1/F2b — close the confirmNotification() stub-vs-selectable gap a
+  Codex GPT-5.5 cross-model review found against F2: Ozow is now the DEFAULT-selected checkout
+  provider (F2), but lib/payments/ozow.ts's confirmNotification() (F1) is a permanent,
+  unconditional stub, and lib/tickets-notification.ts rejects BEFORE the paid-write step on any
+  failed confirmNotification() call — every real Ozow payment would be verified, amount-matched,
+  then silently never marked paid, with no retry. Decision: Ozow's own current
+  https://ozow.com/integrations page documents a LIVE, currently-resolving anti-spoofing
+  transaction-status API (api.ozow.com/GetTransactionByReference, ApiKey-authed) — a genuinely
+  different situation than F1's oldhub.ozow.com (dead domain, NXDOMAIN). OZOW_SANDBOX_API_KEY is
+  already staged in .env.local. confirmNotification() must become a real, fail-closed call against
+  that endpoint instead of a permanent stub. Full decision record, evidence, and mutation-test
+  transcript: contracts/golden/ozow-m1-f2b/README.md.
+created_at: '2026-08-22'
+autonomy: high
+
+# ⚠️ THIS SUPERSEDES F1's confirmNotification() STUB DECISION, NOT F1's OTHER DECISIONS. F1's own
+# golden (contracts/golden/ozow-m1-f1/README.md §5) was correct when written — it was gated on
+# oldhub.ozow.com, which is dead. api.ozow.com/GetTransactionByReference is a different, live,
+# currently-documented endpoint on the SAME page F1 already trusted for the hash algorithm. F1's
+# golden record is not being revised or contradicted; this is a later decision responding to new
+# evidence F1 did not have reason to look for (nothing called confirmNotification() at F1 time).
+#
+# ⚠️ NO PROVIDER-SELECTABILITY CHANGE IN THIS FEATURE. Ozow stays the default/preferred provider
+# (Brad's explicit direction, ProviderChoice.tsx / useTicketCart.ts, unchanged by this feature).
+# The fail-closed design (§2/§3 of the README) means a residual response-shape mismatch degrades to
+# EXACTLY today's stub behaviour (never a false confirm) — see README §2-3 for why this makes
+# gating Ozow out unnecessary rather than merely convenient.
+#
+# ⚠️ refund() IS UNTOUCHED. Still a declared stub, unrelated to this decision — do not conflate the
+# two just because both were F1 stubs.
+
+features:
+  - id: F2b
+    name: >-
+      confirmNotification() becomes a real, fail-closed call to Ozow's documented
+      GetTransactionByReference API instead of a permanent stub.
+
+      (1) lib/ozow.ts: add `export const OZOW_TRANSACTION_STATUS_URL =
+      'https://api.ozow.com/GetTransactionByReference';`, alongside the existing OZOW_PAY_URL.
+
+      (2) lib/payments/ozow.ts: createOzowProvider gains a `readFetch()` accessor
+      (`deps?.fetch ?? globalThis.fetch`), mirroring createPayfastProvider's own. confirmNotification
+      replaces its stub body: read OZOW_SANDBOX_SITE_CODE + OZOW_SANDBOX_API_KEY from env (per-call);
+      either missing -> confirmed:false/reason:'not-configured', ZERO fetch calls. Otherwise GET
+      OZOW_TRANSACTION_STATUS_URL with siteCode + transactionReference query params and an ApiKey
+      header (+ Accept: application/json), find the response array's element whose
+      TransactionReference exactly matches notification.reference, require its Status to be
+      exactly 'Complete' (strict equality, same discipline as mapStatus) to return confirmed:true;
+      every other outcome (non-2xx, non-array body, no matching element, non-Complete Status, or a
+      thrown fetch error) fails closed with the appropriate reason ('not-valid' for a
+      response-shaped rejection, 'request-failed' for a thrown/network error). Full parsing
+      specification: contracts/golden/ozow-m1-f2b/README.md §4.
+
+      (3) OzowProviderDeps.fetch's doc comment ("neither refund() nor confirmNotification() call
+      it in this feature") is corrected — confirmNotification now does.
+
+      (4) The file's top-of-file doc comment and F1 mission-boundary note are updated to no longer
+      claim confirmNotification() is a declared stub (refund() still is).
+
+goldens: []
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        confirmNotification() IS A REAL, FAIL-CLOSED CALL — NEVER THE PERMANENT F1 STUB. Proves,
+        offline, against the REAL createOzowProvider() (env/fetch deps-injected, no network),
+        7 cases: (1) missing OZOW_SANDBOX_SITE_CODE -> not-configured, zero fetch calls;
+        (2) missing OZOW_SANDBOX_API_KEY -> not-configured, zero fetch calls; (3) a response array
+        containing an element whose TransactionReference matches and Status is 'Complete' ->
+        confirmed:true; (4) a matching element with Status 'Cancelled' -> confirmed:false/
+        not-valid; (5) a response array with NO element matching the notification's reference ->
+        confirmed:false/not-valid (an unrelated real transaction must never confirm a different
+        reference — the core anti-spoofing property this endpoint exists for); (6) a non-2xx HTTP
+        response -> confirmed:false/not-valid; (7) a thrown fetch/network error ->
+        confirmed:false/request-failed; and that the real request sent carries
+        'GetTransactionByReference' in the URL, the real siteCode and transactionReference as query
+        params, and the real key under an 'ApiKey' header.
+        OBSERVED FAILING (RED) on 2026-08-22 against the pre-F2b tree (F1's permanent stub): 6 of
+        7 cases fail — every case requiring a real network attempt, because the stub makes zero
+        fetch calls ever (the two config-missing cases pass only because an unconditionally-failing
+        stub trivially satisfies "reject when unconfigured", not because the stub is correct).
+        OBSERVED PASSING (GREEN) on 2026-08-22: a throwaway reference implementation matching this
+        assertion's specification exactly was built directly in lib/payments/ozow.ts, all 7 cases
+        passed, then the file was restored to its exact tracked F1-stub state and re-confirmed RED.
+        MUTATION-CAUGHT on 2026-08-22: with the reference implementation in place, the
+        TransactionReference match predicate was mutated to accept ANY array element regardless of
+        reference — reproducing the exact spoofing scenario this endpoint exists to prevent — and
+        the check correctly failed (case 5, "no matching TransactionReference" now wrongly
+        confirmed:true). The mutation was reverted before this pass finished. Full transcript:
+        contracts/golden/ozow-m1-f2b/README.md §5.
+        FAILS ON: confirmNotification remaining a hardcoded/unconditional stub; confirming without
+        a strict Status==='Complete' check; confirming a transaction whose TransactionReference
+        does not match; confirming on non-2xx or non-array responses; calling fetch before the
+        config guard; omitting the ApiKey header or siteCode/transactionReference params from the
+        real request.
+      command: npx tsx contracts/checks/ozow-m1-f2b/check-confirm-notification-real.mjs

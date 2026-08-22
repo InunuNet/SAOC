@@ -4,7 +4,9 @@ import { TicketTypeCard, type TicketTypeCardData } from '@/components/tickets/Ti
 import { CartAttendeeFields } from '@/components/tickets/CartAttendeeFields';
 import { CartDayPicker } from '@/components/tickets/CartDayPicker';
 import { CheckoutRedirectNotice } from '@/components/tickets/CheckoutRedirectNotice';
+import { ProviderChoice } from '@/components/tickets/ProviderChoice';
 import { useTicketCart } from '@/components/tickets/useTicketCart';
+import { providerLabel } from '@/lib/payments-ui';
 
 interface TicketPurchaseFormProps {
   ticketTypes: TicketTypeCardData[];
@@ -22,7 +24,14 @@ export function TicketPurchaseForm({
   const cart = useTicketCart(ticketTypes);
 
   if (cart.redirect) {
-    return <CheckoutRedirectNotice processUrl={cart.redirect.processUrl} fields={cart.redirect.fields} />;
+    return (
+      <CheckoutRedirectNotice
+        processUrl={cart.redirect.processUrl}
+        fields={cart.redirect.fields}
+        amount={cart.redirect.amount}
+        providerId={cart.redirect.providerId}
+      />
+    );
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -83,12 +92,18 @@ export function TicketPurchaseForm({
         </p>
       ) : null}
 
+      <ProviderChoice
+        value={cart.providerId}
+        onChange={cart.setProviderId}
+        disabled={cart.status === 'submitting'}
+      />
+
       <button
         type="submit"
         disabled={cart.status === 'submitting'}
         className="rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ivory transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {cart.status === 'submitting' ? 'Redirecting to PayFast…' : buyButtonLabel}
+        {cart.status === 'submitting' ? `Redirecting to ${providerLabel(cart.providerId)}…` : buyButtonLabel}
       </button>
     </form>
   );

@@ -13,10 +13,6 @@ import type { Order, Ticket, TicketType } from '@/types/index';
  * lib/recovery-token.ts's own pattern.
  */
 
-/** The sole gateway checkout ever writes — distinguishes a real PayFast order from a comp
- *  order (lib/comp-tickets.ts's `COMP_GATEWAY`) on reconciliation. */
-export const PAYFAST_GATEWAY = 'payfast';
-
 export interface BuildReservationDocsInput {
   orderId: string;
   bookingRef: string;
@@ -30,6 +26,10 @@ export interface BuildReservationDocsInput {
   recoveryToken: string;
   recoveryTokenExpiresAt: Timestamp;
   now: Timestamp;
+  /** F2 (ozow-payment-provider) — the RESOLVED providerId the caller validated (checkout/route.ts's
+   *  own gate), never re-derived and never defaulted here. Replaces the formerly hardcoded
+   *  PAYFAST_GATEWAY constant — see contracts/golden/ozow-m1-f2/README.md §3. */
+  gateway: string;
 }
 
 export interface ReservationDocs {
@@ -56,7 +56,7 @@ export function buildReservationDocs(input: BuildReservationDocsInput): Reservat
     expiresAt: input.expiresAt,
     idempotencyKey: input.idempotencyKey,
     purchasedAt: null,
-    gateway: PAYFAST_GATEWAY,
+    gateway: input.gateway,
     gatewayPaymentId: null,
     m_payment_id: input.bookingRef,
     pf_payment_id: null,
@@ -228,6 +228,10 @@ export interface BuildMultiReservationDocsInput {
   recoveryToken: string;
   recoveryTokenExpiresAt: Timestamp;
   now: Timestamp;
+  /** F2 (ozow-payment-provider) — see BuildReservationDocsInput.gateway. THIS is the builder
+   *  checkout/route.ts's reserveTicket() actually calls in production — fixing only the
+   *  single-item sibling above would not have covered the live call path. */
+  gateway: string;
 }
 
 export interface MultiReservationDocs {
@@ -260,7 +264,7 @@ export function buildMultiReservationDocs(
     expiresAt: input.expiresAt,
     idempotencyKey: input.idempotencyKey,
     purchasedAt: null,
-    gateway: PAYFAST_GATEWAY,
+    gateway: input.gateway,
     gatewayPaymentId: null,
     m_payment_id: input.reference,
     pf_payment_id: null,

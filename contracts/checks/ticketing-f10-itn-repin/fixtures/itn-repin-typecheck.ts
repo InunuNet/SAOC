@@ -95,6 +95,7 @@ function narrowMarkOutcome(outcome: MarkOrderPaidOutcome): string | null {
     | 'order-not-found'
     | 'order-vanished'
     | 'order-payment-id-mismatch'
+    | 'order-gateway-mismatch'
     | 'order-not-reserved'
     | 'position-not-found' = outcome.reason;
   return reason;
@@ -106,6 +107,7 @@ async function callMarkPaid() {
     m_payment_id: 'SAOC-2027-TYPECHECK01',
     gatewayPaymentId: 'pf-typecheck-01',
     now: new Date() as unknown as import('firebase-admin/firestore').Timestamp,
+    expectedGateway: 'payfast',
   });
 }
 void callMarkPaid;
@@ -143,6 +145,7 @@ async function injectedRwDbCalls() {
       m_payment_id: 'SAOC-2027-TYPECHECK01',
       gatewayPaymentId: null,
       now: new Date() as unknown as import('firebase-admin/firestore').Timestamp,
+      expectedGateway: 'payfast',
     },
     { db: fakeRwDb }
   );

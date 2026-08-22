@@ -18,8 +18,8 @@ import {
 } from '@/lib/checkout-reservation';
 import { initAdmin } from '@/lib/firebase-admin';
 import { ORDERS_COLLECTION } from '@/lib/orders';
-import { paymentProvider } from '@/lib/payments';
-import type { ProviderReadiness } from '@/lib/payments';
+import { resolveProvider } from '@/lib/payments';
+import type { PaymentProvider, ProviderReadiness } from '@/lib/payments';
 import { mintRecoveryToken } from '@/lib/recovery-token';
 import { buildShowWindow, isValidChosenDay } from '@/lib/show-window-lookup';
 import { client } from '@/sanity/lib/client';
@@ -222,6 +222,7 @@ interface SanityNationalShowSales {
 interface CheckoutRequestBody {
   showId: unknown;
   lineItems: unknown;
+  providerId: unknown;
 }
 
 export interface CheckoutLineItemInput {
@@ -286,6 +287,37 @@ function isValidShowId(showId: unknown): showId is string {
 }
 
 /**
+ * F2 (ozow-payment-provider) — the enumerated allow-list, same posture as isValidShowId: the
+ * request body is never the authority. Missing/invalid providerId is a 400, NEVER a silent
+ * PayFast default — see contracts/golden/ozow-m1-f2/README.md §2 for why this gate must run
+ * HERE, strictly before the `if (!client)` guard below, rather than merely "somewhere before the
+ * reservation write".
+ */
+const KNOWN_PROVIDER_IDS = ['payfast', 'ozow'] as const;
+
+function isValidProviderId(providerId: unknown): providerId is (typeof KNOWN_PROVIDER_IDS)[number] {
+  return typeof providerId === 'string' && (KNOWN_PROVIDER_IDS as readonly string[]).includes(providerId);
+}
+
+/**
+ * Idempotent-replay guard (Codex GPT-5.5 review, 2026-08-22, F2). The ORIGINAL stored
+ * order.gateway must win over a replaying request's own providerId — a retry that resubmits
+ * with a different providerId (browser back-button, network retry) must never hand an
+ * already-created order off to a different gateway than the one it was created under, while
+ * `gateway` in Firestore still reads the original value. `storedGateway === undefined` (an
+ * order predating this field) is NOT a mismatch — there is nothing to compare against, so the
+ * pre-F2 behaviour of trusting the request's providerId is unchanged for those orders. Pure and
+ * exported so it can be exercised directly, without a live Firestore round trip.
+ */
+export function replayGatewayMatches(
+  storedGateway: string | undefined,
+  requestedGateway: string
+): boolean {
+  if (storedGateway === undefined) return true;
+  return storedGateway === requestedGateway;
+}
+
+/**
  * Outcome of the reservation transaction. `over-capacity` is an ordinary business
  * outcome, so it comes back as a sentinel rather than a thrown error — the caller needs
  * to fetch Sanity copy for the 409, and Sanity must never be called from inside a
@@ -298,7 +330,11 @@ type ReservationOutcome =
   | { kind: 'replayed'; reference: string; amount: number; positions: ReservationPosition[] }
   | { kind: 'over-capacity'; ticketTypes: string[] }
   | { kind: 'key-payload-mismatch' }
-  | { kind: 'key-not-payable'; reason: 'status' | 'expired' };
+  | { kind: 'key-not-payable'; reason: 'status' | 'expired' }
+  // F2 Codex GPT-5.5 review (2026-08-22): a replay whose request providerId disagrees with
+  // the order's ALREADY-STORED `gateway` field must never silently hand the order off to the
+  // new provider — see the guard in reserveTicket() below.
+  | { kind: 'key-provider-mismatch' };
 
 interface ReservationInput {
   showId: string;
@@ -309,7 +345,20 @@ interface ReservationInput {
   poolConfigByType: Record<string, CapacityPoolConfig>;
   idempotencyKey: string;
   recoveryTokenSecret: string;
+  /** F2 (ozow-payment-provider) — the resolved providerId, threaded onto the order's own
+   *  `gateway` field. Never re-derived, never defaulted — see checkout-reservation.ts's
+   *  BuildMultiReservationDocsInput.gateway. */
+  gateway: string;
 }
+
+/** F2 (ozow-payment-provider) — each provider's own NotifyUrl path. Ozow's NotifyUrl is set by
+ *  this app at initiate() time and is under no obligation to match PayFast's; two dedicated
+ *  routes (app/api/tickets/itn, app/api/tickets/ozow-itn) exist for exactly this reason — see
+ *  contracts/golden/ozow-m1-f2/README.md §4. */
+const NOTIFY_PATH_BY_PROVIDER_ID: Readonly<Record<string, string>> = {
+  payfast: '/api/tickets/itn',
+  ozow: '/api/tickets/ozow-itn',
+};
 
 /**
  * Visitor-facing copy comes from Sanity (ticketsPage.soldOutMessage), the same field
@@ -363,6 +412,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { status: 400 }
     );
   }
+
+  // F2 (ozow-payment-provider): validated BEFORE the client/CMS guard below — see
+  // contracts/golden/ozow-m1-f2/README.md §2 for why this exact positioning is load-bearing,
+  // not merely a convenience. Resolved via the SAME registry lookup this validation trusts;
+  // resolveProvider() never throws and never falls back to a default provider.
+  if (!isValidProviderId(body.providerId)) {
+    return NextResponse.json(
+      { error: 'A valid providerId (payfast or ozow) is required.' },
+      { status: 400 }
+    );
+  }
+  const providerId = body.providerId;
+  const paymentProvider = resolveProvider(providerId) as PaymentProvider;
 
   if (!client) {
     console.error('[tickets/checkout] Sanity client is not configured (missing project id).');
@@ -633,6 +695,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       poolConfigByType,
       idempotencyKey,
       recoveryTokenSecret,
+      gateway: providerId,
     });
   } catch (error) {
     console.error('[tickets/checkout] Failed to reserve ticket:', error);
@@ -666,6 +729,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { status: 409 }
     );
   }
+  if (outcome.kind === 'key-provider-mismatch') {
+    return NextResponse.json(
+      {
+        error: `This ${IDEMPOTENCY_KEY_HEADER} was already used to start checkout with a different payment method.`,
+      },
+      { status: 409 }
+    );
+  }
 
   // A replay is re-authenticated here from the STORED, server-derived amount — never from a
   // stored hand-off payload and never from the request body.
@@ -683,7 +754,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     itemName: TICKET_ITEM_LABEL,
     returnUrl: `${siteUrl}/tickets/confirmation?ref=${reference}`,
     cancelUrl: `${siteUrl}/tickets/cancelled?ref=${reference}`,
-    notifyUrl: `${siteUrl}/api/tickets/itn`,
+    notifyUrl: `${siteUrl}${NOTIFY_PATH_BY_PROVIDER_ID[providerId]}`,
   });
 
   // The gateway credential guard again, and this is DEFENCE IN DEPTH rather than redundancy:
@@ -718,6 +789,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       positions,
       processUrl: initiation.processUrl,
       fields: initiation.fields,
+      // F2 Codex GPT-5.5 review (2026-08-22): a provider-neutral echo of the server-derived
+      // amount, kept OUTSIDE `fields` — `fields` is each provider's own wire-format payload
+      // (PayFast's `amount`, Ozow's `Amount`, signature/hash order load-bearing per adapter)
+      // and must never be read for display. This is the same `amountFormatted` string already
+      // passed into paymentProvider.initiate() above, not re-derived.
+      amount: amountFormatted,
+      providerId,
     },
     // A fresh reservation is 201, an idempotent replay is 200, so the two remain
     // distinguishable to a client that wants to know whether it actually created one.
@@ -799,6 +877,18 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
           return { kind: 'key-not-payable', reason: 'expired' };
         }
 
+        // Rule 3 (Codex GPT-5.5 review, 2026-08-22): the ORIGINAL stored order.gateway wins,
+        // never the new request's providerId. Without this, a retry that resubmits with a
+        // different providerId (browser back-button, network retry) could hand an order off
+        // to a DIFFERENT gateway than the one it was created under, while `gateway` in
+        // Firestore still reads the original value — a money-routing integrity bug, not a
+        // legitimate use case. A genuine provider switch is a new checkout attempt and must
+        // mint a new idempotency key, not reuse this one.
+        const storedGateway = orderData['gateway'] as string | undefined;
+        if (!replayGatewayMatches(storedGateway, input.gateway)) {
+          return { kind: 'key-provider-mismatch' };
+        }
+
         return {
           kind: 'replayed',
           reference: orderData['m_payment_id'] as string,
@@ -862,6 +952,7 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         recoveryToken: minted.token,
         recoveryTokenExpiresAt: Timestamp.fromDate(minted.expiresAt),
         now: Timestamp.fromDate(now),
+        gateway: input.gateway,
       });
 
       writeMultiReservationPair(transaction, { orderRef, positionRefs }, docs);

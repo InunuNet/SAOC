@@ -149,6 +149,7 @@ function makeFakeStore({ orderId, mPaymentId, positionIds }) {
       gatewayPaymentId: 'pf-payment-a7',
       now: /** @type {any} */ ({ toMillis: () => 1_700_000_000_000 }),
       orderId,
+      expectedGateway: 'payfast',
     },
     { db: /** @type {any} */ (db) }
   );
@@ -184,6 +185,7 @@ function makeFakeStore({ orderId, mPaymentId, positionIds }) {
       gatewayPaymentId: 'pf-payment-a8',
       now: /** @type {any} */ ({ toMillis: () => 1_700_000_000_000 }),
       orderId,
+      expectedGateway: 'payfast',
     },
     { db: /** @type {any} */ (db) }
   );
@@ -218,6 +220,7 @@ function makeFakeStore({ orderId, mPaymentId, positionIds }) {
       gatewayPaymentId: 'pf-payment-single',
       now: /** @type {any} */ ({ toMillis: () => 1_700_000_000_000 }),
       orderId,
+      expectedGateway: 'payfast',
     },
     { db: /** @type {any} */ (db) }
   );

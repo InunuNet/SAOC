@@ -1,0 +1,180 @@
+schema: athanor.contract/v1
+slug: ozow-payment-provider
+goal: >-
+  Mission ozow-payment-provider M3/F3 — end-to-end sandbox proof, final cross-model review, docs
+  close-out. F1 (Ozow adapter), F2 (checkout wiring/provider registry) and F2b (real
+  confirmNotification()) are all done and gated. F3 has NO new production code — it proves the
+  whole thing works via a REAL browser purchase through Ozow's sandbox on the deployed dev site,
+  proves PayFast's purchase path is unaffected on the SAME build (the actual regression proof for
+  everything F2 touched), runs one final Codex GPT-5.5 pass across the FULL mission diff (not
+  just the latest round), and confirms docs are complete. Full protocol, the BrowserAgent
+  artifact schema, and why a deploy-freshness check is its own assertion (there is no manual
+  deploy step, but this mission's code is currently uncommitted and therefore not yet live):
+  contracts/golden/ozow-m1-f3/README.md.
+created_at: '2026-08-22'
+autonomy: high
+
+# ⚠️ F3 IS VERIFICATION, NOT IMPLEMENTATION. No feature-level code changes are expected. If a live
+# run in A1/A2 fails for a real reason (not an artifact-schema mistake), that is a genuine defect
+# in F1/F2/F2b's shipped code and must go back through @dev + the normal chain — it does NOT mean
+# this contract is wrong.
+#
+# ⚠️ DEPLOY IS AUTOMATIC ON PUSH TO main (Firebase App Hosting backend `saoc-prod`, project
+# `saoc-webapp`, europe-west4 — docs/a7-firebase-checklist.md). There is no separate deploy script
+# to run. The prerequisite is: commit the full F1+F2+F2b+F3 diff, push to `main`, THEN run A1/A2/
+# A6 — see README §0 for why A6 (deploy freshness) exists as its own gate rather than being
+# assumed. As of 2026-08-22 this mission's code is uncommitted (`git status --short` shows
+# lib/ozow.ts, lib/payments/ozow.ts, lib/tickets-notification.ts, app/api/tickets/ozow-itn/,
+# components/tickets/ProviderChoice.tsx, and F2/F2b's route changes all untracked/modified) — the
+# orchestrator must commit+push before A1/A2/A6 can pass; A3-A5 (offline docs/artifact-shape
+# checks) do not require this, but A6 will correctly fail until it happens.
+#
+# ⚠️ THE LIVE-PURCHASE ASSERTIONS (A1/A2) DO NOT RUN A BROWSER THEMSELVES. They validate a
+# structured JSON artifact a BrowserAgent dispatch writes (README §1 has the exact schema and the
+# eight required step names), then independently re-read the resulting order from LIVE Firestore
+# — the Firestore readback, not the artifact's own claims, is what actually proves 'paid'. This is
+# the automated-verification instrument for what would otherwise be an agent_review assertion,
+# per .claude/rules/coding.md's "can this be automated?" challenge.
+#
+# ⚠️ A4 (the final full-diff Codex pass) is a real, runnable command but is meant to be run ONCE by
+# the orchestrator directly via Bash, per .claude/rules/workflow.md's "Codex is not a
+# chain-dispatched subagent" — see README §3. Do not have @dev or @qa run it.
+
+features:
+  - id: F3
+    name: >-
+      End-to-end live sandbox proof (Ozow purchase, PayFast regression purchase), final
+      full-mission-diff Codex GPT-5.5 pass, docs completeness confirmation.
+
+      (1) BrowserAgent dispatch performs a real purchase through the deployed dev site
+      (https://saoc-prod--saoc-webapp.europe-west4.hosted.app) selecting Ozow as the payment
+      provider, completes the real Ozow sandbox payment flow, and writes a structured JSON
+      artifact to .agent/memory/scratch/ozow-f3-live-runs/ozow-<timestamp>.json matching the
+      schema in contracts/golden/ozow-m1-f3/README.md §1 (A1).
+
+      (2) A second BrowserAgent dispatch performs the same purchase flow selecting PayFast,
+      against the SAME deployed build, writing payfast-<timestamp>.json (A2) — the non-regression
+      proof for F2's shared checkout/notification refactor.
+
+      (3) Both orders' order.gateway fields are cross-checked against each other and against their
+      own expected provider (A3) — guards against both orders accidentally landing under the same
+      gateway despite each individually reaching 'paid'.
+
+      (4) Orchestrator runs `git diff main...HEAD | execution/codex_qa.sh` (or the equivalent
+      staged-diff form if already committed) across the ENTIRE mission diff as one pass, not
+      per-round (A4) — see README §3 for why this is additional to, not a repeat of, F1/F2/F2b's
+      already-completed per-round Codex passes.
+
+      (5) docs/payment-gateway-research-2026-08.md's HMAC-SHA512 correction and
+      docs/payment-seam.md's Ozow coverage are confirmed still present (A5) — both were already
+      written during F1/F2/F2b; this is a regression guard, not new writing.
+
+      (6) The deployed backend is confirmed to actually carry this mission's pushed commit before
+      A1/A2 are trusted (A6).
+    status: pending
+
+goldens:
+  - contracts/golden/ozow-m1-f3/README.md
+  - contracts/golden/ozow-m1-f2b/README.md
+  - contracts/golden/ozow-m1-f2/README.md
+  - contracts/golden/ozow-m1-f1/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A6
+      description: >-
+        THE DEPLOYED saoc-prod BACKEND ACTUALLY CARRIES HEAD, NOT A STALE ROLLOUT — the
+        prerequisite gate for A1/A2 (README §0). Confirms (1) HEAD is reachable from
+        origin/main (git merge-base --is-ancestor), i.e. actually pushed, not merely
+        committed locally, and (2) firebase apphosting:backends:list's reported updateTime for
+        backend 'saoc-prod' (project saoc-webapp) is AFTER HEAD's own commit timestamp — proof
+        App Hosting has rolled out a build including this commit, not an earlier one still
+        mid-flight. Both conditions independently observed FAILING against the pre-push state on
+        2026-08-22 (HEAD not on origin/main at all, since this mission's diff is entirely
+        uncommitted). FAILS ON: HEAD absent from origin/main; the backend's updateTime older than
+        HEAD's commit time; the firebase CLI or jq unavailable; the backend lookup erroring.
+      command: bash contracts/checks/ozow-m1-f3/check-deploy-freshness.sh
+
+    - id: A1
+      description: >-
+        A REAL, LIVE OZOW SANDBOX PURCHASE REACHES status:'paid' UNDER gateway:'ozow' —
+        VERIFIED AGAINST THE ARTIFACT'S OWN STRUCTURED STEP RECORD, THEN INDEPENDENTLY AGAINST
+        LIVE FIRESTORE, NEVER AGAINST A BROWSERAGENT'S PROSE SUMMARY (README §1). Requires the
+        artifact at the path passed as $ARTIFACT to declare provider:'ozow', a non-empty orderId,
+        allStepsPassed:true, and ALL EIGHT required steps (load-checkout-page, select-provider,
+        submit-checkout-initiate, redirect-to-gateway-sandbox, complete-sandbox-payment,
+        gateway-notification-received, order-reaches-paid, confirmation-page-shows-paid) present
+        with pass:true — a run missing any one step, or with any step marked failed, fails here
+        before Firestore is touched. THEN reads orders/{orderId} from live Firestore and asserts
+        status==='paid' and gateway==='ozow' by strict equality — the artifact's own claims are
+        never trusted for the final verdict. NEGATIVE-VERIFIED 2026-08-22 against synthetic
+        malformed artifacts: a run missing 7 of 8 steps correctly fails naming every missing step;
+        a nonexistent artifact path fails with a clear ENOENT-derived message; an artifact
+        declaring provider:'ozow' checked against expected-gateway 'payfast' correctly fails on
+        the provider mismatch before ever reading Firestore. FAILS ON: the artifact missing, not
+        valid JSON, or provider mismatched; any required step absent or pass!==true;
+        allStepsPassed!==true; the order not found in Firestore; status!=='paid';
+        gateway!=='ozow'.
+      command: node contracts/checks/ozow-m1-f3/check-live-purchase.mjs "$OZOW_LIVE_RUN_ARTIFACT" ozow
+
+    - id: A2
+      description: >-
+        A REAL, LIVE PAYFAST SANDBOX PURCHASE ALSO REACHES status:'paid' UNDER gateway:'payfast',
+        ON THE SAME DEPLOYED BUILD AS A1 — THE ACTUAL REGRESSION PROOF FOR F2's SHARED
+        CHECKOUT/NOTIFICATION REFACTOR, not merely a repeat of F2's own offline behavioural
+        assertions. Same artifact schema and same two-stage verification method as A1 (structured
+        step record first, then an independent live Firestore readback), run against a SEPARATE
+        artifact with provider:'payfast'. This is not optional and must not be skipped even though
+        PayFast's flow was already proven live once before, in the original payment-provider-seam
+        mission — F2 subsequently extracted app/api/tickets/itn/route.ts's logic into
+        lib/tickets-notification.ts and changed how lib/checkout-reservation.ts writes
+        order.gateway, both on PayFast's live path, and neither has been proven end-to-end through
+        a real browser since. FAILS ON: the artifact missing, not valid JSON, or provider
+        mismatched; any required step absent or pass!==true; allStepsPassed!==true; the order not
+        found in Firestore; status!=='paid'; gateway!=='payfast'.
+      command: node contracts/checks/ozow-m1-f3/check-live-purchase.mjs "$PAYFAST_LIVE_RUN_ARTIFACT" payfast
+
+    - id: A3
+      description: >-
+        THE TWO LIVE ORDERS' gateway FIELDS ARE CORRECTLY ATTRIBUTED TO THE RIGHT PROVIDER, NOT
+        JUST BOTH INDIVIDUALLY "PAID" — guards against the specific failure mode where both A1 and
+        A2's purchases land under the SAME gateway value despite each independently reaching
+        'paid' (e.g. a stale provider selection carried over between the two runs, or a caching
+        bug that makes the second purchase silently inherit the first's provider). Reads BOTH
+        orderIds from their respective artifacts, re-reads both orders from Firestore, and asserts
+        the Ozow order's gateway==='ozow', the PayFast order's gateway==='payfast', AND the two
+        values are NOT equal to each other. FAILS ON: either order's gateway not matching its own
+        expected provider; the two orders' gateway values being equal to each other (both 'ozow'
+        or both 'payfast').
+      command: node contracts/checks/ozow-m1-f3/check-live-purchase.mjs "$OZOW_LIVE_RUN_ARTIFACT" ozow && node contracts/checks/ozow-m1-f3/check-live-purchase.mjs "$PAYFAST_LIVE_RUN_ARTIFACT" payfast
+
+    - id: A4
+      description: >-
+        FINAL FULL-MISSION-DIFF CODEX GPT-5.5 PASS — ACROSS THE ENTIRE MISSION AS ONE UNIT, NOT
+        THE LATEST ROUND ALONE. F1/F2/F2b each already had a per-round Codex pass (all found and
+        fixed real bugs: F2b's readiness stub, F2's amount-display casing bug and the
+        replay/settlement gateway-mismatch bugs) — a per-round review cannot see interactions
+        BETWEEN rounds, which this pass exists to catch. Per .claude/rules/workflow.md, Codex is
+        explicitly "not a chain-dispatched subagent" — this command is meant to be run ONCE,
+        directly, by the orchestrator (README §3), not dispatched to @dev or @qa. Exit 0 = PASS,
+        exit 1 = FAIL (findings printed after line 1), exit 2 = wrapper usage error. FAILS ON: any
+        exit code other than 0; findings that identify a real, file:line-cited defect (per
+        .claude/rules/workflow.md's standing instruction, findings must be verified, not
+        auto-applied or auto-dismissed).
+      command: git diff main...HEAD -- lib/ozow.ts lib/payments/ lib/tickets-notification.ts lib/checkout-reservation.ts app/api/tickets/ components/tickets/ | execution/codex_qa.sh
+
+    - id: A5
+      description: >-
+        DOCS COMPLETENESS — REGRESSION GUARD, NOT NEW WRITING. Both docs/payment-gateway-
+        research-2026-08.md's HMAC-SHA512 -> plain SHA512 correction note and docs/payment-
+        seam.md's Ozow adapter section (confirmNotification, the provider registry/providerId
+        wiring, and continued PayFast coverage) were already written during F1/F2/F2b. This
+        confirms they are STILL present and still name the right content. NEGATIVE-VERIFIED
+        2026-08-22: mutating the research doc's "plain SHA512" text to a nonsense string
+        reproduces a real failure naming exactly that omission; restored and re-confirmed passing.
+        VERIFIED PASSING against the current tree on 2026-08-22. FAILS ON: either doc missing;
+        the correction note's before/after algorithm claims no longer both present; the seam doc
+        missing its Ozow adapter section, confirmNotification coverage, registry/providerId
+        coverage, or PayFast coverage.
+      command: bash contracts/checks/ozow-m1-f3/check-docs-complete.sh

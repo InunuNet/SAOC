@@ -30,6 +30,12 @@ Ozow is materially cheaper — **roughly R8 per R500 ticket, across every paymen
 
 ## 2. Ozow — Examined First, and on Its Merits
 
+**CORRECTION (2026-08-22): This document previously stated that Ozow uses HMAC-SHA512 for signature
+verification. This is incorrect. Ozow uses plain SHA512 (concatenate post variables, append secret
+key, lowercase, hash). This correction was verified independently against Ozow's current public
+documentation at https://ozow.com/integrations and https://api.i-pay.co.za/guide/payment on
+2026-08-22. The signature algorithm has been implemented in `lib/ozow.ts` per this verified method.**
+
 Ozow launched in 2014 and operates as a PASA-licensed Systems Operator and Third-Party Payments Provider. It is examined here first and in the greatest depth because it has been raised as a likely candidate; this prominence reflects investigative thoroughness, not a Council preference or endorsement.
 
 ### Pricing — the decisive advantage

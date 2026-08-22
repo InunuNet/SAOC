@@ -1,0 +1,400 @@
+schema: athanor.contract/v1
+slug: ozow-payment-provider
+goal: >-
+  Mission ozow-payment-provider M2/F2 — checkout wiring. lib/payments/index.ts becomes a provider
+  registry (Record<string, PaymentProvider> keyed by id) replacing the single hardcoded
+  paymentProvider const F1 left untouched. app/api/tickets/checkout/route.ts validates providerId
+  against an enumerated allow-list ('payfast'|'ozow') and stores the RESOLVED provider on the
+  order — missing/invalid providerId is a 400, NEVER a silent PayFast default. The eleven-step
+  notification-handling logic in app/api/tickets/itn/route.ts is extracted into a shared helper
+  (lib/tickets-notification.ts) both PayFast's UNCHANGED-PATH route and a new, thin
+  app/api/tickets/ozow-itn/route.ts call — two dedicated routes, never one route branching on a
+  query param or path segment. A provider-choice UI ships as copy/markup only, existing design
+  tokens, no Claude Design handoff required per CLAUDE.md's own carve-out for a plain control.
+  Full decision record, including one real defect found while writing this contract that neither
+  the mission brief nor the architect spec named (order.gateway is hardcoded today, not merely
+  "a new field to add" as the spec assumed), and the observed-failing/observed-passing/
+  mutation-caught transcripts for every check below: contracts/golden/ozow-m1-f2/README.md.
+created_at: '2026-08-22'
+autonomy: high
+
+# ⚠️ F1 IS DONE AND MUST STAY BEHAVIOURALLY UNTOUCHED. lib/ozow.ts and lib/payments/ozow.ts are
+# real, additive, previously-gated code (contract-m1-f1.yaml, 11/11, qa-apex PASS, Codex PASS).
+# This feature is the FIRST one that references them from anything reachable — do not reopen their
+# internals; createOzowProvider()/ozowProvider are consumed exactly as F1 shipped them.
+#
+# ⚠️ ORDER.GATEWAY IS AN EXISTING FIELD BEING FIXED, NOT A NEW FIELD BEING ADDED. The architect
+# spec's §2 point 3 describes storing the chosen provider on the order as "a new field, additive,
+# not a schema break." That undersells what was actually found while writing this contract:
+# types/index.ts:207 already declares `gateway: string | null` on Order, and BOTH
+# buildReservationDocs() and buildMultiReservationDocs() in lib/checkout-reservation.ts write it as
+# the hardcoded module constant PAYFAST_GATEWAY today, ignoring any input entirely. A3 is the
+# assertion for this — see contracts/golden/ozow-m1-f2/README.md §3 for the full finding, including
+# the exact `case 1 ... actual: "payfast"` failure observed against the pre-F2 tree on 2026-08-22.
+#
+# ⚠️ THE PAYFAST REGRESSION CLAIM IS BEHAVIOURAL, NOT BYTE-IDENTICAL. "PayFast's route stays at its
+# EXACT current path, completely unchanged" cannot mean the FILE is byte-identical after this
+# refactor extracts its logic into a shared helper — see README §5 for exactly which existing
+# assertions are re-run unmodified as the regression proof (A4) and which pre-F2 assertions
+# (the sha256 pin, the in-route landmark-order check) are deliberately NOT re-asserted because they
+# pin a shape this feature intentionally changes.
+
+features:
+  - id: F2
+    name: >-
+      Provider registry replaces the hardcoded const; checkout validates and stores providerId
+      fail-closed; notification handling splits into two dedicated routes sharing one extracted
+      helper; the order's existing gateway field is threaded from the real resolved provider
+      instead of a hardcoded constant; the checkout UI sends providerId and stops hardcoding
+      PayFast's name unconditionally.
+
+      (1) lib/payments/index.ts: `export const paymentProvider = payfastProvider;` is REMOVED (not
+      kept as a deprecated alias) and replaced with `paymentProviders: Readonly<Record<string,
+      PaymentProvider>>` (keys exactly 'payfast' and 'ozow') and `resolveProvider(id: string):
+      PaymentProvider | null`, using `Object.prototype.hasOwnProperty.call` — never a bare bracket
+      lookup, which resolves prototype-pollution-shaped ids ('constructor', '__proto__') to
+      truthy Object.prototype members instead of null (A1).
+
+      (2) app/api/tickets/checkout/route.ts: providerId is validated against the same allow-list,
+      positioned immediately alongside the existing showId/lineItems checks — strictly BEFORE the
+      route's pre-existing `if (!client)` Sanity-configuration guard, which is what makes A2
+      provable entirely offline (README §2). Missing, empty, wrong-case, non-string, or
+      unrecognised providerId all 400 with an error message that mentions "providerId" (so it is
+      distinguishable from the pre-existing showId/lineItems 400); 'payfast' and 'ozow' both walk
+      past the gate. The resolved provider (via resolveProvider(providerId)) replaces the current
+      `paymentProvider` import for both `readiness('initiate')` and `.initiate(...)`.
+
+      (3) lib/checkout-reservation.ts: BuildReservationDocsInput and BuildMultiReservationDocsInput
+      both gain a required `gateway: string` field; both builders write `order.gateway:
+      input.gateway`, replacing the hardcoded PAYFAST_GATEWAY literal (A3). checkout/route.ts
+      passes the SAME resolved providerId A2 validated — never re-derived, never defaulted.
+
+      (4) lib/tickets-notification.ts (NEW): the shared verify/confirm/write-paid helper extracted
+      from app/api/tickets/itn/route.ts's current 11-step body, parametrised by the
+      PaymentProvider instance it is called with. app/api/tickets/itn/route.ts becomes a thin
+      pass-through calling it with the payfast provider (path UNCHANGED — see the file-level
+      annotation above); app/api/tickets/ozow-itn/route.ts (NEW) is a thin pass-through calling it
+      with the ozow provider. Neither route names the other's provider (A5/A6); no query-param or
+      `[provider]`-segment routing survives anywhere under app/api/tickets/ (the explicitly
+      rejected alternative — spec §2 point 4).
+
+      (5) components/tickets/useTicketCart.ts's checkout POST body includes `providerId`; a
+      provider-choice control (radio/segmented, Ozow listed first per Brad's direction that it is
+      now the client's preferred option — spec §2 point 1) exists somewhere in the checkout flow
+      before submission, using only existing design tokens (no hex literals, no inline styles, no
+      Tailwind arbitrary color values) under components/tickets/. CheckoutRedirectNotice.tsx's
+      "...via PayFast…" copy and TicketPurchaseForm.tsx's "Redirecting to PayFast…" submit-button
+      label — both found hardcoded while writing this contract, neither named in the mission brief
+      — must become provider-aware rather than left unconditionally naming PayFast now that a
+      second gateway is selectable (A9).
+    status: pending
+
+goldens:
+  - contracts/golden/ozow-m1-f2/README.md
+  - contracts/golden/ozow-m1-f2/wire-shapes.golden.json
+  - contracts/golden/payment-seam-f1/interface.golden.md
+  - contracts/golden/payment-seam-f2/README.md
+  - contracts/golden/ozow-m1-f1/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        THE REGISTRY REPLACES THE HARDCODED CONST, WITH A FAIL-CLOSED LOOKUP — not merely "both
+        providers exist somewhere importable." paymentProviders has exactly the two keys
+        'payfast'/'ozow', each entry's own `.id` matches its key, and resolveProvider resolves both
+        to the SAME instances the map holds. Unknown ids (empty string, wrong case, an
+        unrecognised name, whitespace-padded) all resolve to null — never throw, never fall back to
+        a default provider. Prototype-pollution-shaped lookups ('__proto__', 'constructor',
+        'toString', 'hasOwnProperty') are asserted SEPARATELY and explicitly, because a bare
+        `paymentProviders[id]` bracket lookup (no hasOwnProperty guard) resolves these to inherited
+        Object.prototype members — truthy, and NOT null — which a caller checking `if (provider)`
+        would silently treat as a valid provider. MUTATION-VERIFIED 2026-08-22 (scratch, discarded):
+        a naive bracket-lookup implementation fails exactly the 4 prototype-pollution cases; a
+        "registry" where the ozow key is silently aliased back to the payfast instance fails 14
+        cases including every unknown-id case (since the disguised const treats unknown ids as
+        payfast too). FAILS ON: either key absent or misspelled; resolveProvider throwing;
+        resolveProvider returning a truthy value for any id not a genuine own key of the map; the
+        two providers resolving to the same underlying instance.
+      command: npx tsx contracts/checks/ozow-m1-f2/check-registry.mjs
+
+    - id: A2
+      description: >-
+        providerId VALIDATION IS FAIL-CLOSED — THE EXPLICIT @architect DECISION THE MISSION BRIEF
+        DEMANDS AS "a positive contract assertion" (proof it 400s, not merely that valid ids work).
+        Six invalid-providerId shapes (omitted, empty string, unrecognised string, wrong case,
+        null, non-string) each MUST 400 with error text mentioning "providerId" — case 7 asserts
+        the message specifically, so this 400 is distinguishable from the pre-existing
+        showId/lineItems 400 rather than reusing its generic text. TWO CONTROL CASES (providerId
+        'payfast' and 'ozow', both otherwise-valid) MUST walk PAST the gate and reach the route's
+        OWN PRE-EXISTING "CMS is not configured" 500 (triggered by leaving
+        NEXT_PUBLIC_SANITY_PROJECT_ID unset) — without this control, six 400s could just as easily
+        mean "this route 400s on everything" as "providerId specifically discriminates." Runs
+        ENTIRELY OFFLINE: no Firestore credentials, no Sanity project, calling the REAL exported
+        POST() from app/api/tickets/checkout/route.ts with real Idempotency-Key headers and JSON
+        bodies. OBSERVED FAILING on 2026-08-22 against the pre-F2 route: all 6 invalid cases return
+        500 "CMS is not configured" (no providerId concept exists yet), so the control cases pass
+        vacuously and the invalid cases wrongly succeed to the same code path. MUTATION-VERIFIED
+        (scratch git worktree, discarded): a reference fix placing the gate at the required
+        position (before the `client` check) passes cleanly; a mutation that silently resolves any
+        invalid providerId to 'payfast' instead of 400ing — the EXACT defect this assertion exists
+        to name — was caught (4 of 6 invalid cases collapse onto the same 500 a genuine 'payfast'
+        control case produces, which is the dangerous, hard-to-notice form of this defect: it looks
+        like a passing control, not an obvious break). FAILS ON: any invalid providerId returning
+        anything but 400; the 400 text not mentioning providerId; either 'payfast' or 'ozow' being
+        rejected; either control case failing to reach the CMS-not-configured 500 (meaning the gate
+        never ran, or wrongly rejected a valid id).
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID= npx tsx contracts/checks/ozow-m1-f2/check-providerid-fail-closed.mjs
+
+    - id: A3
+      description: >-
+        THE ORDER'S order.gateway FIELD REFLECTS THE RESOLVED PROVIDER, NOT A HARDCODED CONSTANT —
+        a real defect found while writing this contract, not named in the mission brief or the
+        architect spec (README §3). types/index.ts already declares `gateway: string | null` on
+        Order; lib/checkout-reservation.ts's buildReservationDocs() AND buildMultiReservationDocs()
+        (the one checkout/route.ts's reserveTicket() actually calls in production) both write it as
+        the module constant PAYFAST_GATEWAY, unconditionally, as of 2026-08-22. Both builders'
+        input interfaces must gain a required `gateway: string` field and both must write
+        `order.gateway: input.gateway` in their returned order object. Case 1/3 pass 'ozow' and
+        require the OUTPUT to say 'ozow' (not merely that the call didn't throw); case 2/4 pass
+        'payfast' and require regression continuity for the live gateway. OBSERVED FAILING on
+        2026-08-22 against the pre-F2 tree — real command output: `case 1: ... actual: "payfast"`
+        and `case 3: ... actual: "payfast"`, both against a value of 'ozow' that was passed in and
+        silently discarded. MUTATION-VERIFIED (scratch copy, discarded): a fix threading `gateway`
+        through both builders passes cleanly (4/4); a mutation that adds the field to the input
+        TYPE but leaves buildMultiReservationDocs()'s body reading the old constant is caught (case
+        3 alone fails) — proving this assertion catches "accepted the field, dropped it on the
+        floor," not merely "the field exists somewhere in the type." FAILS ON: `order.gateway` not
+        matching `input.gateway` for either builder; PAYFAST_GATEWAY (or any other literal)
+        surviving as the value regardless of input; buildMultiReservationDocs specifically (the
+        real call path) left unfixed while buildReservationDocs alone is patched.
+      command: npx tsx contracts/checks/ozow-m1-f2/check-gateway-threading.mjs
+
+    - id: A4
+      description: >-
+        PAYFAST'S OBSERVABLE ITN BEHAVIOUR IS PROVABLY UNCHANGED — BEHAVIOURALLY, NOT BYTE-
+        IDENTICALLY (README §5 explains why a byte pin is the wrong instrument for a feature that
+        deliberately extracts the route's logic into a shared helper). Re-runs, UNMODIFIED, six
+        EXISTING suites that already exercise the real exported POST() through real signed bodies
+        and real Firestore writes: contracts/checks/payment-seam-f2/check-itn-behaviour-
+        unchanged.sh, check-reject-paths-behavioural.mts, and the four payfast-m1 ITN scripts
+        (check-itn-amount-tamper-rejected.mts, check-itn-atomic-idempotent-write.mts,
+        check-itn-server-confirm-and-status-gating.mts, check-itn-source-ip-validation.mts). None
+        of the six assert anything about the route FILE's shape — only what a real POST to the
+        real /api/tickets/itn path does — which is why they are reused rather than re-derived.
+        ⚠️ REQUIRES LIVE FIRESTORE CREDENTIALS AND NETWORK, same posture payment-seam-f2's own A6
+        already carried; not an offline gate. Deliberately does NOT re-assert
+        check-repin-ceremony.sh's sha256 pin or check-sequence-and-ownership.sh's IN-ROUTE landmark
+        ordering against app/api/tickets/itn/route.ts — both pin the PRE-refactor route's exact
+        file contents, which this feature intentionally changes; re-running them there would assert
+        the refactor didn't happen. FAILS ON: any of the six scripts exiting non-zero, which would
+        mean some observable PayFast behaviour actually changed.
+      command: bash contracts/checks/payment-seam-f2/check-itn-behaviour-unchanged.sh && npx tsx contracts/checks/payment-seam-f2/check-reject-paths-behavioural.mts && npx tsx contracts/checks/payfast-m1/check-itn-amount-tamper-rejected.mts && npx tsx contracts/checks/payfast-m1/check-itn-atomic-idempotent-write.mts && npx tsx contracts/checks/payfast-m1/check-itn-server-confirm-and-status-gating.mts && npx tsx contracts/checks/payfast-m1/check-itn-source-ip-validation.mts
+
+    - id: A4b
+      description: >-
+        THE EXTRACTED HELPER'S INTERNAL STEP ORDER IS THE SAME 11-LANDMARK SEQUENCE payment-seam-f2
+        A4 already proved load-bearing — verified by RE-RUNNING that exact script against the
+        helper's new location, not by hand-copying its landmark list into a second, divergence-
+        prone script. contracts/checks/payment-seam-f2/check-sequence-and-ownership.sh already
+        supports an ITN_PATH_OVERRIDE env var (built for check-ordering-mutations.sh's mutation
+        harness — confirmed by reading its own source on 2026-08-22, not assumed), so pointing it at
+        lib/tickets-notification.ts re-asserts verification → source-IP logging → order lookup →
+        settled short-circuit → amount match → server confirmation → status check → atomic write →
+        post-commit email in that order, wherever the logic now actually lives. FAILS ON: any
+        landmark reordered, removed, or migrated back into either thin route.
+      command: ITN_PATH_OVERRIDE=lib/tickets-notification.ts bash contracts/checks/payment-seam-f2/check-sequence-and-ownership.sh
+
+    - id: A5
+      description: >-
+        TWO DEDICATED NOTIFICATION ROUTES SHARE ONE HELPER — THE STRUCTURE THE SPEC ACTUALLY
+        DEMANDS (§2 point 4), not merely "some refactor happened." PayFast's route exists at its
+        EXACT current path (app/api/tickets/itn/route.ts, never renamed — its NotifyUrl is already
+        registered against the live sandbox account); a new app/api/tickets/ozow-itn/route.ts
+        exists; both import the SAME exported symbol from the SAME lib/tickets-notification.ts
+        module (not two independently-written copies); each route's own body is ≤40 non-comment,
+        non-blank lines (a thin pass-through, not a duplicated reimplementation). OBSERVED FAILING
+        on 2026-08-22 (pre-F2 tree: neither the Ozow route nor the shared module exist).
+        MUTATION-VERIFIED (scratch git worktree, discarded): a correct two-route/shared-helper
+        reference implementation passes cleanly; mutating PayFast's route into a query-param-
+        resolved single route was caught by check A6's part (g) below, and separately failed this
+        check's static-provider-reference requirement, since the mutated route no longer names
+        payfast alone. FAILS ON: either route missing or at the wrong path; the shared module
+        missing or not exporting a locatable function; either route not importing that function
+        from that module.
+      command: bash contracts/checks/ozow-m1-f2/check-notification-routing-shape.sh
+
+    - id: A6
+      description: >-
+        NEITHER NOTIFICATION ROUTE NAMES THE OTHER'S PROVIDER, AND THE REJECTED
+        QUERY-PARAM/PATH-SEGMENT ROUTING SHAPE HAS ZERO FOOTPRINT — the "unknown provider" state
+        the spec's rejected alternative (§2 point 4) would make reachable is instead structurally
+        impossible: app/api/tickets/itn/route.ts references the payfast provider and NEVER the
+        ozow provider (and vice versa for ozow-itn/route.ts), and no `searchParams.get('provider')`
+        or `[provider]` dynamic segment survives anywhere under app/api/tickets/.
+        MUTATION-VERIFIED 2026-08-22 (same scratch worktree as A5, discarded after verification):
+        mutating PayFast's route to resolve its provider from `?provider=` was caught on BOTH
+        independent grounds this check tests — the route no longer statically names payfast alone,
+        and the query-param pattern itself is directly detected — real command output: `FAIL: (e)
+        app/api/tickets/itn/route.ts never references the payfast provider` and `FAIL: (g)
+        query-param provider routing found under app/api/tickets/`. FAILS ON: a route naming both
+        providers; any query-param or `[provider]`-segment routing surviving anywhere in
+        app/api/tickets/.
+      command: bash contracts/checks/ozow-m1-f2/check-notification-routing-shape.sh
+
+    - id: A7
+      description: >-
+        THE REGISTRY'S ALLOW-LIST REJECTS NONSENSE, NOT MERELY ACCEPTS VALID IDS — this project's
+        own dominant defect class (an assertion satisfiable by something that isn't the real
+        property), called out by name in the spec's own M2 gate description. This assertion is the
+        explicit combination of A1's offline resolveProvider('stripe')/('')/('__proto__') negative
+        cases with A2's route-level 'stripe'/''/null/non-string negative cases — re-run together so
+        a fix that makes ONLY the offline registry fail-closed while the route-level gate stays
+        permissive (or vice versa) cannot pass by only running one half. FAILS ON: either component
+        check failing.
+      command: npx tsx contracts/checks/ozow-m1-f2/check-registry.mjs && NEXT_PUBLIC_SANITY_PROJECT_ID= npx tsx contracts/checks/ozow-m1-f2/check-providerid-fail-closed.mjs
+
+    - id: A8
+      description: >-
+        THE PROVIDER-CHOICE UI INVENTS NO BRAND ASSETS — CLAUDE.md's standing rule, which the spec
+        (§4) explicitly permits F2 to satisfy with a plain, unstyled control rather than waiting on
+        a Claude Design handoff, PROVIDED it uses only existing tokens. Scoped to the specific files
+        this feature touches (the checkout hand-off UI, plus anything matching `*provider*` under
+        components/tickets/) rather than the whole directory — a directory-wide scan
+        false-positives on DownloadTicketButton.tsx's unrelated <canvas> ctx.fillStyle hex literals
+        (observed 2026-08-22, not simulated; see README §6). Bans literal hex colors, inline style
+        attributes, and Tailwind arbitrary COLOR values (bg-[#...] etc. — arbitrary SIZE values like
+        text-[11px] are an established pattern elsewhere in this codebase and are NOT banned). A
+        self-check fixture proves the three ban patterns actually fire against a synthetic
+        violation, so a future edit to the grep that silently stops matching is caught rather than
+        passing vacuously. VERIFIED PASSING against the current pre-F2 files on 2026-08-22 (nothing
+        to fix yet, but the scoped file list and self-check both run and succeed). FAILS ON: any hex
+        literal, inline style, or Tailwind arbitrary color value in the scoped files; the self-check
+        fixture failing to trigger its own ban patterns.
+      command: bash contracts/checks/ozow-m1-f2/check-no-new-brand-tokens.sh
+
+    - id: A9
+      description: >-
+        THE UI ACTUALLY SENDS providerId, AND STOPS HARDCODING "PayFast" UNCONDITIONALLY — A2 only
+        proves the ROUTE rejects a missing providerId; this proves the BUYER can actually supply
+        one. Also catches two pre-existing strings found while reading these files for this
+        contract, neither named in the mission brief: CheckoutRedirectNotice.tsx's "...via
+        PayFast…" hand-off copy and TicketPurchaseForm.tsx's "Redirecting to PayFast…" submit-button
+        label (inside a ternary between two UNRELATED strings, not parametrised by provider name —
+        the check deliberately does not exempt bare ternaries, only lines that reference
+        `providerId` or a `${...}` interpolation). OBSERVED FAILING on 2026-08-22 against the
+        pre-F2 tree — real output: useTicketCart.ts's body never mentions providerId, and both UI
+        strings are flagged as hardcoded. FAILS ON: useTicketCart.ts's checkout POST body omitting
+        providerId; either UI string still containing the bare literal "PayFast" with no
+        provider-name parametrisation on the same line.
+      command: bash contracts/checks/ozow-m1-f2/check-ui-provider-aware.sh
+
+    - id: A10
+      description: >-
+        HYGIENE GATE, DELIBERATELY NOT A PROPERTY ASSERTION — pnpm lint and pnpm type-check pass
+        before and after this feature; neither distinguishes correct wiring from incorrect, and
+        neither may be cited as evidence the registry, the routes, or the gateway threading work.
+        Every behavioural claim rests on A1-A9.
+      command: pnpm lint && pnpm type-check
+
+    - id: A11
+      description: >-
+        THE CHECKOUT HAND-OFF DISPLAYS A PROVIDER-NEUTRAL AMOUNT — NEVER `fields.amount`/
+        `fields.Amount`. Codex GPT-5.5 cross-model review (2026-08-22) found
+        CheckoutRedirectNotice.tsx:20 rendering `fields.amount` (lowercase) unconditionally.
+        PayFast's initiate() result carries the money value under `fields.amount` (its own signed
+        wire-format key); Ozow's carries it under `fields.Amount` (capital A, per
+        lib/ozow.ts's OZOW_OUTBOUND_FIELD_ORDER) — reading the lowercase key against an Ozow
+        checkout silently renders "R undefined". Fixed at the interface/response level, not by
+        having the component special-case each provider's casing: checkout/route.ts's JSON
+        response now carries a dedicated, provider-neutral `amount: amountFormatted` field
+        (the SAME string already passed into paymentProvider.initiate(), never re-derived),
+        threaded through useTicketCart.ts's CheckoutRedirect type and TicketPurchaseForm.tsx into
+        CheckoutRedirectNotice.tsx's own `amount` prop — `fields` itself stays exactly the signed,
+        provider-owned wire payload PayfastRedirectForm posts, untouched. PROVEN OFFLINE against
+        the REAL createPayfastProvider()/createOzowProvider() adapters (deps-injected env, no
+        network): case 1 confirms PayFast's fields has `amount` and not `Amount`; case 2 confirms
+        Ozow's has `Amount` and not `amount` — the mismatch this assertion exists to catch is
+        real, not hypothetical. REVERT-AND-CONFIRM-RED (2026-08-22, this session): reverting
+        CheckoutRedirectNotice.tsx alone reproduces two real failures — "reads fields.amount/
+        fields.Amount for display" and "no longer declares a dedicated `amount` prop" — proving
+        this check actually catches the original defect, not merely a shape it was written to
+        pass. FAILS ON: either adapter's fields shape losing its documented casing; the checkout
+        route response losing `amount` or deriving it from `fields`; CheckoutRedirectNotice.tsx
+        reading `fields.amount`/`fields.Amount`/`fields['amount']` for its displayed value.
+      command: npx tsx contracts/checks/ozow-m1-f2/check-amount-display-provider-neutral.mjs
+
+    - id: A12
+      description: >-
+        AN IDEMPOTENT REPLAY WHOSE providerId DISAGREES WITH THE ORDER'S STORED gateway IS
+        REJECTED, NEVER SILENTLY RE-ROUTED. Codex GPT-5.5 cross-model review (2026-08-22) found
+        reserveTicket()'s replay branch (app/api/tickets/checkout/route.ts, ~line 844 pre-fix)
+        re-initiating an existing order using the NEW request's providerId rather than the
+        order's ALREADY-STORED `gateway` field — a buyer who starts checkout under Ozow
+        (order.gateway='ozow' persisted), then retries (browser back-button, network retry) with
+        providerId=payfast, could have that SAME order re-initiated through PayFast while
+        Firestore's `gateway` field still read 'ozow': a genuine money-routing integrity bug, not
+        a legitimate use case. FIXED by a pure, exported guard —
+        replayGatewayMatches(storedGateway, requestedGateway) — that rejects (false) whenever
+        storedGateway is DEFINED and disagrees with the request's providerId;
+        `storedGateway === undefined` (an order predating this field) is deliberately NOT a
+        mismatch, so pre-F2 orders keep their pre-existing behaviour. reserveTicket() calls this
+        guard and returns `{ kind: 'key-provider-mismatch' }` — mapped by POST() to a 409, before
+        any payment hand-off is initiated — strictly BEFORE its 'replayed' return (source-position
+        proof, same technique as check-fail-closed-secret-guard.sh). Two-part check, matching this
+        project's established pure-function-plus-wiring pattern
+        (ticketing-f5-day-attendees/check-chosen-day-stripped-for-non-day-types.mjs): the -pure
+        script proves the decision (mismatch both directions rejected; same-provider replay and
+        gateway-less orders unaffected); the -wiring script proves reserveTicket() actually calls
+        it, in the right order, and POST() actually branches on the new outcome kind.
+        REVERT-AND-CONFIRM-RED (2026-08-22, this session): reverting route.ts alone reproduces a
+        real module-resolution SyntaxError on the -pure script (the export no longer exists) and
+        two real failures on the -wiring script ("replay branch never calls
+        replayGatewayMatches", "never returns key-provider-mismatch") — proving both checks
+        actually catch the original defect. FAILS ON: a mismatched-provider replay reaching
+        'replayed'/a live payment hand-off; the mismatch rejection appearing after (or never
+        reached before) the 'replayed' return; POST() not branching on
+        outcome.kind === 'key-provider-mismatch'; a gateway-less (pre-F2) order being wrongly
+        rejected.
+      command: npx tsx contracts/checks/ozow-m1-f2/check-replay-provider-mismatch-pure.mjs && bash contracts/checks/ozow-m1-f2/check-replay-provider-mismatch-wiring.sh
+
+    - id: A13
+      description: >-
+        A SETTLEMENT NOTIFICATION WHOSE CURRENTLY-PROCESSING PROVIDER DISAGREES WITH THE ORDER'S
+        STORED gateway IS REJECTED, NEVER SETTLED. Codex GPT-5.5 cross-model review (2026-08-22)
+        found markOrderAndPositionPaidByPaymentId (lib/orders.ts) settling an order using only its
+        payment reference (m_payment_id/orderId) and the notification's own data — it never
+        checked that the resolved order was actually CREATED under the same provider that is
+        currently confirming it. A PayFast ITN notification referencing an m_payment_id/orderId
+        that resolves to an order actually created with gateway:'ozow' (an id collision, a
+        replayed/forged notification, or any reference overlap across providers) would settle
+        that Ozow order using the PayFast notification's data — a money/state integrity bug
+        distinct from A12 (which guards the CHECKOUT-time replay path, before any payment
+        hand-off; this guards the SETTLEMENT path, where money has actually moved). FIXED by a
+        required `expectedGateway` field on MarkOrderAndPositionPaidInput — the id of the
+        provider CURRENTLY processing this notification (lib/tickets-notification.ts passes
+        `expectedGateway: paymentProvider.id`, the same instance its caller — PayFast's or
+        Ozow's dedicated route — supplied). Inside the transaction, immediately after the
+        existing order-payment-id-mismatch identity check and before the order-not-reserved
+        status check, `order.gateway` is compared against `input.expectedGateway`; a
+        disagreement returns `{ committed: false, reason: 'order-gateway-mismatch',
+        storedGateway, expectedGateway }` with zero Firestore writes, and
+        lib/tickets-notification.ts logs both values loudly, matching the existing
+        order-payment-id-mismatch rejection pattern in that file. PROVEN OFFLINE against the
+        REAL markOrderAndPositionPaidByPaymentId (lib/orders.ts) via a fake Firestore, same
+        harness pattern as ticketing-f10-itn-repin's check-idempotent-duplicate-itn.mjs: cases
+        (1a)/(1b) prove both directions of the core defect are rejected with zero writes and the
+        order/position left 'reserved'; case (2) is a negative control proving a genuine
+        same-provider settlement for BOTH PayFast and Ozow still commits and marks 'paid' exactly
+        as before, so the fix cannot be satisfied by a check that rejects everything.
+        REVERT-AND-CONFIRM-RED (2026-08-22, this session): reverting lib/orders.ts's gateway
+        guard alone reproduces exactly the failure this check exists to catch — cases (1a)/(1b)
+        both flip to committed:true with a real Firestore write to each collection (8 concrete
+        assertion failures), while the negative control (2) stays green throughout, proving this
+        check discriminates the defect rather than failing on unrelated noise. FAILS ON: either
+        direction of a mismatched-gateway settlement reaching committed:true; a Firestore write
+        occurring on the rejection path; the rejection reason not being
+        'order-gateway-mismatch'; a genuine same-provider settlement (either provider) being
+        wrongly rejected.
+      command: npx tsx contracts/checks/ozow-m1-f2/check-settlement-gateway-mismatch.mjs

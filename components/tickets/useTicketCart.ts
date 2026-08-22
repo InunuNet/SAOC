@@ -24,7 +24,16 @@ export type CheckoutStatus = 'idle' | 'submitting' | 'error';
 export interface CheckoutRedirect {
   processUrl: string;
   fields: Record<string, string>;
+  /** Provider-neutral, server-derived amount (route's own `amountFormatted`) — NEVER read
+   *  off `fields`, whose keys are each provider's own wire format (PayFast's `amount`,
+   *  Ozow's `Amount`). See CheckoutRedirectNotice's doc comment. */
+  amount: string;
+  providerId: string;
 }
+
+// F2 (ozow-payment-provider) — Ozow is the default: Brad's direction is that it is now the
+// client's preferred gateway, not merely equal to PayFast. See components/tickets/ProviderChoice.
+const DEFAULT_PROVIDER_ID = 'ozow';
 
 export function useTicketCart(ticketTypes: TicketTypeCardData[]) {
   const typesOrder = ticketTypes.map((t) => t.slug);
@@ -37,6 +46,7 @@ export function useTicketCart(ticketTypes: TicketTypeCardData[]) {
   const [status, setStatus] = useState<CheckoutStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [redirect, setRedirect] = useState<CheckoutRedirect | null>(null);
+  const [providerId, setProviderId] = useState(DEFAULT_PROVIDER_ID);
   // One key per form instance — see the original single-item form's note on why this is
   // never persisted across a PayFast Back navigation. Unchanged convention.
   const [idempotencyKey] = useState(() => crypto.randomUUID());
@@ -112,22 +122,29 @@ export function useTicketCart(ticketTypes: TicketTypeCardData[]) {
       const res = await fetch('/api/tickets/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
-        body: JSON.stringify({ showId: NATIONAL_SHOW_ID, lineItems }),
+        body: JSON.stringify({ showId: NATIONAL_SHOW_ID, lineItems, providerId }),
       });
 
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
         processUrl?: string;
         fields?: Record<string, string>;
+        amount?: string;
+        providerId?: string;
       };
 
-      if (!res.ok || !data.processUrl || !data.fields) {
+      if (!res.ok || !data.processUrl || !data.fields || !data.amount) {
         setStatus('error');
         setErrorMessage(data.error ?? 'Failed to start checkout. Please try again.');
         return;
       }
 
-      setRedirect({ processUrl: data.processUrl, fields: data.fields });
+      setRedirect({
+        processUrl: data.processUrl,
+        fields: data.fields,
+        amount: data.amount,
+        providerId: data.providerId ?? providerId,
+      });
     } catch {
       setStatus('error');
       setErrorMessage('Network error. Please check your connection and try again.');
@@ -144,6 +161,8 @@ export function useTicketCart(ticketTypes: TicketTypeCardData[]) {
     status,
     errorMessage,
     redirect,
+    providerId,
+    setProviderId,
     estimatedTotal: computeCartTotal(quantities, ticketTypes),
     updateQuantity,
     updateAttendeeField,

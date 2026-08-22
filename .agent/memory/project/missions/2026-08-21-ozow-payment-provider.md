@@ -9,20 +9,20 @@ goal: 'Add Ozow as a second PaymentProvider alongside PayFast (lib/payments/ sea
   Ozow''s own initiate/verify/confirm/refund per the PaymentProvider interface in
   lib/payments/types.ts, preserving PayFast''s existing behaviour untouched.'
 created_at: '2026-08-21T20:05:20.175843+00:00'
-started_at: null
-last_active_at: '2026-08-21T20:29:21.786446+00:00'
-status: paused
+started_at: '2026-08-22T02:15:00+00:00'
+last_active_at: '2026-08-22T02:15:00+00:00'
+status: in_progress
 cost_estimate:
   features: 0
   milestones: 0
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M1
+  feature: F1
+  ts: '2026-08-22T02:15:00+00:00'
 features:
 - id: F1
-  status: pending
+  status: done
   tier: apex
   title: Ozow adapter skeleton — signature builder + PaymentProvider implementation,
     proven against sandbox in isolation
@@ -43,7 +43,7 @@ features:
   contract: null
   golden_files: []
 - id: F2
-  status: pending
+  status: done
   tier: apex
   title: Checkout wiring — provider registry, providerId selection, split notification
     routes

@@ -228,6 +228,9 @@ export async function createOrderAndPosition(fields: CreateOrderAndPositionField
     recoveryToken: randomBytes(16).toString('hex'),
     recoveryTokenExpiresAt: expiresAt,
     now,
+    // F2 (ozow-payment-provider) — buildReservationDocs now requires the resolved gateway;
+    // this fixture is PayFast-scoped throughout, so 'payfast' is the real value, not a stub.
+    gateway: 'payfast',
   });
 
   // Manifest write happens BEFORE each corresponding Firestore write — same "manifest

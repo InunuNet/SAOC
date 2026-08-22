@@ -2,7 +2,7 @@
 
 ## Overview
 
-The ticketing system allows visitors to purchase tickets for the 2027 National Show through `/tickets`. The flow is end-to-end: price discovery from Sanity → buyer form → PayFast sandbox payment → confirmation landing. All visitor-facing copy is editable content in Sanity; the payment machinery is a verified security boundary that never imports Sanity.
+The ticketing system allows visitors to purchase tickets for the 2027 National Show through `/tickets`. The flow is end-to-end: price discovery from Sanity → buyer form → **provider selection (Ozow or PayFast)** → sandbox payment → confirmation landing. All visitor-facing copy is editable content in Sanity; the payment machinery is a verified security boundary that never imports Sanity. See [docs/payment-seam.md](payment-seam.md) for the multi-gateway architecture.
 
 **Critical**: Prices and capacities seeded in the dataset are **invented placeholders** pending council confirmation. Ticket sales default to CLOSED (`nationalShow.salesOpen = false`), and every seeded ticket type is explicitly marked "Provisional price — pending council confirmation."
 
@@ -35,31 +35,38 @@ today** — Firebase Auth is not provisioned on `saoc-webapp`; see that document
    - ELSE IF allSoldOut → "Sold out" banner
    - ELSE → TicketPurchaseForm
    ↓
-5. Buyer selects type, enters name + email, clicks buyButtonLabel
+5. Buyer selects type, enters name + email, and **selects payment provider**
+   (Ozow or PayFast), clicks buyButtonLabel
    ↓
-6. TicketPurchaseForm POSTs /api/tickets/checkout
+6. TicketPurchaseForm POSTs /api/tickets/checkout with providerId
+   - Server: validates providerId against allow-list; missing/invalid → 400
    - Server: validates input, fetches fresh Sanity price for type
    - Server: derives amount (never from request body)
    - Server: checks capacity (TOCTOU gap noted below)
-   - Server: writes reserved ticket to Firestore
-   - Returns signed PayFast field set + booking ref
+   - Server: **resolves the PaymentProvider** from the registry
+   - Server: writes reserved order + ticket to Firestore with gateway field set to chosen provider
+   - Returns provider-specific signed field set + booking ref
    ↓
-7. Browser auto-submits to PayFast sandbox (PAYFAST_SANDBOX_PROCESS_URL)
+7. Browser auto-submits to provider sandbox (Ozow or PayFast)
    ↓
-8. PayFast payment page renders; buyer pays
+8. Provider payment page renders; buyer pays
    ↓
-9. PayFast completes, redirects browser to return_url:
+9. Provider completes, redirects browser to return_url:
    /tickets/confirmation?ref=<bookingRef>
    ↓
 10. /tickets/confirmation (Client Component) lands
     - Shows "Confirming your payment" (honest pending state)
     - Polls /api/tickets/status?ref=<bookingRef> every 3 seconds
-    - Waits for payment confirmation from PayFast's ITN (max 20 attempts, ~1 min)
+    - Waits for payment confirmation from provider's notification webhook (max 20 attempts, ~1 min)
     ↓
-11. Simultaneously, PayFast POSTs /api/tickets/itn (server-to-server)
-    - Signature check, source-IP allowlist, amount match, PayFast server confirm
+11. Simultaneously, **the provider (Ozow or PayFast) POSTs the appropriate notification route**:
+    - **PayFast → /api/tickets/itn** (unchanged path)
+    - **Ozow → /api/tickets/ozow-itn** (new path)
+    - Both routes call the shared notification handler: signature check, amount match, provider-specific
+      server confirmation, then atomic write guarded positively on `status === 'reserved'`.
+    - Settlement also verifies order.gateway matches the notifying provider (prevents cross-gateway replay)
     - Atomic write, guarded positively on `status === 'reserved'` (not merely
-      `!== 'paid'`) so a late/duplicate ITN can never resurrect a `checked-in` or
+      `!== 'paid'`) so a late/duplicate notification can never resurrect a `checked-in` or
       `cancelled` ticket — see docs/ticketing-hardening.md's "ITN write guard" section
     ↓
 12. /tickets/confirmation polling resolves to "confirmed" state
@@ -90,7 +97,7 @@ The status endpoint returns **only `{ status }`** — no name, email, amount, or
 
 ### If the Buyer Cancels (F4)
 
-Clicking PayFast's "Cancel" button redirects to `/tickets/cancelled?ref=<bookingRef>`. The route:
+Clicking the payment provider's "Cancel" button (PayFast or Ozow) redirects to `/tickets/cancelled?ref=<bookingRef>`. The route:
 
 - Fetches the `ticketsPage` copy singleton (cancelledHeading, cancelledMessage, cancelledButtonLabel)
 - Explains nothing was charged
@@ -112,8 +119,9 @@ Clicking PayFast's "Cancel" button redirects to `/tickets/cancelled?ref=<booking
 | **MONEY: The payment machinery** | | No |
 | Amount derivation logic | `app/api/tickets/checkout/route.ts` | No |
 | Capacity checking | `app/api/tickets/checkout/route.ts` | No |
-| ITN verification & payment write | `app/api/tickets/itn/route.ts` | No, SHA-256 pinned |
-| PayFast signature generation | `lib/payfast.ts` | No |
+| Provider selection & validation | `app/api/tickets/checkout/route.ts` | No |
+| Notification verification & payment write | `app/api/tickets/itn/route.ts` (PayFast) or `app/api/tickets/ozow-itn/route.ts` (Ozow) | No, shared handler in `lib/tickets-notification.ts`, routes SHA-256 pinned |
+| Signature generation | `lib/payfast.ts` (PayFast) or `lib/ozow.ts` (Ozow) | No |
 | **GATE: Functional switches** | | |
 | Sales open/closed | `nationalShow.salesOpen` boolean | Yes, Lee-Ann toggles in Studio |
 
@@ -382,7 +390,7 @@ interface Order {
   expiresAt: Timestamp | null;    // Reservation TTL for 'reserved' orders
   idempotencyKey: string;  // Deduplication key
   purchasedAt: Timestamp | null;  // Set when payment confirmed
-  gateway: string | null;  // Payment provider (e.g., 'payfast')
+  gateway: string | null;  // Payment provider (e.g., 'payfast' or 'ozow')
   gatewayPaymentId: string | null;  // Payment processor's transaction ID
   m_payment_id: string | null;  // PayFast's own payment reference
   pf_payment_id: string | null;  // PayFast's internal ID (set by webhook)

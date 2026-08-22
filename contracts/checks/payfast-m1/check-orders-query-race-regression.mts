@@ -169,7 +169,7 @@ async function runR2(): Promise<void> {
   db.orders.forceWhereEmpty = true; // the exact observed condition — index miss, doc present by ref
 
   const withoutOrderId = await markOrderAndPositionPaidByPaymentId(
-    { m_payment_id: 'race-regression-ref', gatewayPaymentId: 'pf-1', now: Timestamp.now() },
+    { m_payment_id: 'race-regression-ref', gatewayPaymentId: 'pf-1', now: Timestamp.now(), expectedGateway: 'payfast' },
     { db }
   );
   if (withoutOrderId.committed) {
@@ -181,7 +181,7 @@ async function runR2(): Promise<void> {
   }
 
   const withOrderId = await markOrderAndPositionPaidByPaymentId(
-    { m_payment_id: 'race-regression-ref', gatewayPaymentId: 'pf-1', now: Timestamp.now(), orderId: orderRef.id },
+    { m_payment_id: 'race-regression-ref', gatewayPaymentId: 'pf-1', now: Timestamp.now(), orderId: orderRef.id, expectedGateway: 'payfast' },
     { db }
   );
   if (!withOrderId.committed) {
@@ -204,7 +204,7 @@ async function runR1(): Promise<void> {
   db.tickets.store.set('RACE-REGRESSION', reservedPosition(orderRef.id));
 
   const outcome = await markOrderAndPositionPaidByPaymentId(
-    { m_payment_id: 'race-regression-ref', gatewayPaymentId: 'pf-1', now: Timestamp.now(), orderId: orderRef.id },
+    { m_payment_id: 'race-regression-ref', gatewayPaymentId: 'pf-1', now: Timestamp.now(), orderId: orderRef.id, expectedGateway: 'payfast' },
     { db }
   );
 
@@ -254,7 +254,7 @@ async function runR4(): Promise<void> {
   // Cause 1: query miss — no order ever existed for this reference.
   const queryMissDb = new FakeDb();
   const queryMissOutcome = await markOrderAndPositionPaidByPaymentId(
-    { m_payment_id: 'no-such-reference', gatewayPaymentId: 'pf-1', now: Timestamp.now() },
+    { m_payment_id: 'no-such-reference', gatewayPaymentId: 'pf-1', now: Timestamp.now(), expectedGateway: 'payfast' },
     { db: queryMissDb }
   );
 
@@ -268,6 +268,7 @@ async function runR4(): Promise<void> {
       gatewayPaymentId: 'pf-1',
       now: Timestamp.now(),
       orderId: 'resolved-but-now-gone',
+      expectedGateway: 'payfast',
     },
     { db: vanishedDb }
   );
@@ -319,6 +320,7 @@ async function runR5(): Promise<void> {
       gatewayPaymentId: 'pf-1',
       now: Timestamp.now(),
       orderId: orderRef.id,
+      expectedGateway: 'payfast',
     },
     { db }
   );
