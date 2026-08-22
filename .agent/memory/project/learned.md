@@ -2057,3 +2057,44 @@ dataset-residue scans (loud, blocking, distinct exit code) so any future mutatin
 is caught by the one place every mission's chain already looks — the gate command's own output —
 instead of a nightly CI cron nobody watches. Gate: 15/15 green (A1-A15). 10 rounds of Codex
 GPT-5.5 review ran across the mission; the final round came back clean.
+
+## A byte-for-byte-correct signature is not proof a live sandbox integration works — vendor-side account provisioning is a distinct failure mode (2026-08-22)
+
+`ozow-payment-provider` F3: after fixing two real code defects (missing secrets in Secret
+Manager/`apphosting.yaml`, and `BankReference` silently exceeding Ozow's undocumented 20-char
+cap), every live Ozow sandbox purchase still failed with a generic, non-discriminating app-tier
+error. Four independent verification methods — original research, `qa-apex`'s independent hash
+recomputation, mutation testing, and hand-verification against the exact failed request's field
+values — all agreed the outbound signature was byte-for-byte correct. **Lesson: when 3+
+independent, differently-constructed verification methods all agree the code is correct, stop
+debugging code and treat the failure as external.** A correct signature only proves the client
+built the request correctly; it says nothing about whether the vendor's sandbox merchant account
+(here, `INU-INU-002` / SiteCode `INUNUNETCC87E4C79C5F`) is actually provisioned/activated for
+`IsTest=true` transactions on the vendor's own side. That's a distinct failure mode that looks
+identical to a signature bug from the outside and can only be resolved by the account owner
+checking the vendor portal or contacting vendor support — not by more code changes.
+
+## Self-verifying documented-skip contract assertions — an honest alternative to faking green or leaving permanently red (2026-08-22)
+
+When a feature's real acceptance criterion (here, F3's "live Ozow purchase reaches `paid`")
+becomes genuinely unverifiable due to an external blocker, this project's convention is: keep the
+original assertion as the strongest automated proxy actually achievable (signature-correctness
+proof, in this case), and add a *separate*, `required: false` assertion whose command
+re-derives/re-checks the evidence trail for the blocker on every gate run and **fails loudly** —
+not silently — the instant the blocker's precondition changes, forcing the real assertion back to
+its original bar. See `A1-BLOCKED` in `contracts/golden/ozow-m1-f3/README-addendum-blocked.md`.
+This is preferable to both faking a green pass on unverifiable ground and leaving a permanently
+red/skipped assertion that erodes trust in the gate — reuse this pattern the next time a mission
+hits a genuinely external blocker rather than inventing a one-off workaround.
+
+## Mandatory final full-mission-diff Codex pass catches cross-mission regressions per-round reviews structurally cannot see (2026-08-22)
+
+Second confirmed instance of this value (first was noted in an earlier mission): `ozow-payment-
+provider`'s final full-diff Codex GPT-5.5 pass, run directly by the orchestrator per
+`.claude/rules/workflow.md`, found that F2's new required `gateway` field on
+`buildReservationDocs()` broke an *earlier, already-shipped* mission's golden check
+(`contracts/checks/ticketing-checkout-orders/check-pair-write-atomicity.mjs`) that called it
+without that field. Per-feature/per-round Codex passes only see the current mission's diff in
+isolation and cannot catch an interface change silently breaking a *different* mission's already-
+committed contract checks — only a pass against the full accumulated diff, run at the very end,
+structurally can. Keep this as a mandatory final gate, not an optional nicety.

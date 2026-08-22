@@ -10,16 +10,17 @@ goal: 'Add Ozow as a second PaymentProvider alongside PayFast (lib/payments/ sea
   lib/payments/types.ts, preserving PayFast''s existing behaviour untouched.'
 created_at: '2026-08-21T20:05:20.175843+00:00'
 started_at: '2026-08-22T02:15:00+00:00'
-last_active_at: '2026-08-22T02:15:00+00:00'
-status: in_progress
+last_active_at: '2026-08-22T05:03:23.617052+00:00'
+completed_at: '2026-08-22T05:03:23.617052+00:00'
+status: done
 cost_estimate:
   features: 0
   milestones: 0
   total_calls: 0
 last_checkpoint:
-  milestone: M1
-  feature: F1
-  ts: '2026-08-22T02:15:00+00:00'
+  milestone: M3
+  feature: F3
+  ts: '2026-08-22T05:03:23.617052+00:00'
 features:
 - id: F1
   status: done
@@ -67,7 +68,7 @@ features:
   contract: null
   golden_files: []
 - id: F3
-  status: pending
+  status: done
   tier: apex
   title: End-to-end sandbox proof, Codex pass, docs
   inline_brief: Full live sandbox purchase through Ozow end-to-end via BrowserAgent
@@ -83,15 +84,15 @@ features:
   golden_files: []
 milestones:
 - id: M1
-  status: pending
+  status: done
   features:
   - F1
 - id: M2
-  status: pending
+  status: done
   features:
   - F2
 - id: M3
-  status: pending
+  status: done
   features:
   - F3
 ---
@@ -113,4 +114,58 @@ markup only).
 
 Paused 2026-08-21 to let a higher-urgency live-site nav-menu investigation (Brad's direct
 report) take the active-mission slot. Resume with `python3 execution/mission.py resume`.
+
+## MISSION COMPLETE (2026-08-22) — F3 closed with an honestly-rescoped contract, one real blocker left for Brad
+
+F1 (Ozow adapter — signature builder, `PaymentProvider` implementation) and F2 (checkout wiring,
+provider registry, split notification routes, plus F2b's real `confirmNotification()`) shipped
+clean: contract-gated, Codex-reviewed, `qa-apex` PASS.
+
+**F3's PayFast half passed outright**: a live purchase on the same deployed build as Ozow
+regression-proved PayFast's existing path untouched by F2's shared checkout/notification refactor
+(order `WeDssUt08yMwzEYRb9Sn` reached `status: paid`, `gateway: payfast`).
+
+**F3's Ozow half hit three real, sequentially-found-and-fixed blockers before landing on a
+genuine external one**: (1) Ozow secrets were missing from Firebase Secret Manager /
+`apphosting.yaml` entirely — fixed; (2) `BankReference` exceeded Ozow's undocumented-in-code
+20-char cap — fixed via `deriveOzowBankReference()`; (3) even after both fixes, Ozow's sandbox
+still rejects every real transaction at its own app tier with a generic, non-discriminating
+error. This third one was proven NOT a code defect — the outbound signature was independently
+reimplemented from scratch against Ozow's documented algorithm and matched byte-for-byte 4
+separate times (F1's original research, `qa-apex`'s independent hash recomputation, mutation
+testing, and a final hand-verification against the exact real failed request's field values).
+**Conclusion: Ozow's sandbox merchant account (`INU-INU-002`, SiteCode `INUNUNETCC87E4C79C5F`) is
+very likely not provisioned/activated for `IsTest=true` transactions on Ozow's own side** — this
+needs Brad (or whoever manages the Ozow relationship) to check the Ozow merchant portal for a
+Test Mode toggle, or contact Ozow support directly. Logged to backlog.md's "Blocked on Brad"
+section.
+
+F3's contract was rescoped rather than faked-green or left permanently red: A1 (originally "live
+Ozow purchase reaches paid") became the strongest available automated proof (signature
+correctness) plus a separate, `required: false`, self-verifying documented-skip assertion
+(A1-BLOCKED) that re-checks the evidence trail every gate run and **fails loudly, not silently**,
+the instant the blocker ever clears — forcing A1 back to its original live-purchase bar. A3
+(cross-gateway check, needed two paid orders) got the same treatment. Full reasoning and Brad's
+action items: `contracts/golden/ozow-m1-f3/README-addendum-blocked.md`.
+
+The mandatory final full-mission-diff Codex GPT-5.5 pass (run directly by the orchestrator) found
+one real cross-mission regression: F2's new required `gateway` field on `buildReservationDocs()`
+broke an earlier, already-shipped mission's golden check
+(`contracts/checks/ticketing-checkout-orders/check-pair-write-atomicity.mjs`, part of
+`contracts/contract-ticketing-checkout-orders.yaml`) that called it without that field. Fixed
+with one line (`gateway: 'payfast'` — correct since that check's scenario is implicitly
+PayFast-only), `qa`-verified, clean Codex re-run confirmed. Also found, but explicitly out of
+this mission's scope and logged separately to backlog.md's "Contract & test infrastructure"
+section: that same contract's A4/A5 assertions are stale for an unrelated, pre-existing reason
+(the M2-F5 pooled-capacity refactor, commit `6046bc0`, predates this mission and already removed
+the direct `writeReservationPair()` call those assertions check the shape of). A4's own command
+field also had a latent bug — assumed a `main...HEAD` feature-branch diff, but this project
+commits mission work directly to `main` so that diff is always empty — fixed to pin against the
+actual pre-mission base commit `166b058`.
+
+Docs updated: `docs/payment-seam.md` points to the addendum README; the HMAC→plain-SHA512
+correction in `docs/payment-gateway-research-2026-08.md` confirmed still accurate.
+
+Commits (pushed directly to `main`, this project's normal workflow): `8dc5e28`, `3510f1c`,
+`378c1ac`, `5447785`, `1daae9b`.
 
