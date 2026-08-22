@@ -85,7 +85,7 @@ function createCountdownStore(targetMs: number) {
  *
  * Example:
  *   const { days, hours, minutes, seconds } = useCountdown(
- *     new Date('2027-09-18T09:00:00+02:00')
+ *     new Date('2027-09-16T09:00:00+02:00')
  *   );
  */
 export function useCountdown(targetDate: Date): CountdownParts {

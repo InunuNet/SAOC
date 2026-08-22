@@ -138,7 +138,7 @@ Below header on `--parchment`, 16px padding, `--rule` bottom border, 13px. Forma
 
 **Nav blocks:** "Four ways into SAOC" — 4-col grid of image cards (`aspect 4/5` photo with mono badge top-left, then serif title, muted body, meta row with count + brass arrow). Hover: lift 4px + brass border + shadow + arrow shifts right. Links to societies / show / judging / about.
 
-**Next-show band:** full-bleed `--primary` dark. 2-col (1 / 1.1): left image (`bench`), right content — eyebrow-light "Flagship event", `h2` light "The 19th South African National Orchid Show", 4-up meta grid (Dates/Host/Venue/Duration), **live countdown** (days/hours/min/sec, serif 42px brass-soft numbers, mono labels), two CTAs (accent + ghost-light). Countdown target: 2027-09-18T09:00+02:00.
+**Next-show band:** full-bleed `--primary` dark. 2-col (1 / 1.1): left image (`bench`), right content — eyebrow-light "Flagship event", `h2` light "The 19th South African National Orchid Show", 4-up meta grid (Dates/Host/Venue/Duration), **live countdown** (days/hours/min/sec, serif 42px brass-soft numbers, mono labels), two CTAs (accent + ghost-light). Countdown target: 2027-09-16T09:00+02:00.
 
 **Upcoming events strip:** "What's on" head + "Full calendar" link. 5 event rows (see Event Row component).
 
@@ -197,7 +197,7 @@ Below header on `--parchment`, 16px padding, `--rule` bottom border, 13px. Forma
 
 - **Hash routing** → convert to real routes. `window.__saoc_nav(id)` scrolls to top on navigate.
 - **Hero crossfade:** 4 images, opacity fade 1400ms, auto-advance 5.5s, clickable dots.
-- **Countdown:** live `setInterval` to 2027-09-18T09:00+02:00, padded 2-digit.
+- **Countdown:** live `setInterval` to 2027-09-16T09:00+02:00, padded 2-digit.
 - **Societies filter:** province chips (single-select) + free-text search, combined, live count + empty state.
 - **Events filter:** kind chips + month select + list/timeline view toggle; list groups by month.
 - **Search overlay:** ⌘K / Ctrl-K / "/" open; Esc/backdrop close; live filter over societies + events.

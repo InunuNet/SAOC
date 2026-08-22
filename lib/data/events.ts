@@ -168,8 +168,8 @@ export const events: SocietyEvent[] = [
   },
   {
     id: 15,
-    date: '2027-09-18',
-    endDate: '2027-09-21',
+    date: '2027-09-16',
+    endDate: '2027-09-19',
     title: '19th South African National Orchid Show',
     host: 'Cape Orchid Society',
     venue: 'The Hangar, Stellenbosch Flying Club',

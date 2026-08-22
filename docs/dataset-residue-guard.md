@@ -80,7 +80,7 @@ Example: `nationalShow (nationalShow) . countdownDate = 2098-12-31T22:00:00.000Z
 For `nationalShow`, the authoritative baseline is in `scripts/seed-page-singletons.ts` (lines 211–216):
 ```typescript
 location: 'The Hangar, Stellenbosch Flying Club',
-countdownDate: '2027-09-18T09:00:00+02:00',
+countdownDate: '2027-09-16T09:00:00+02:00',
 ```
 
 **Do NOT use the baseline recorded in a check's own header comment** — the 2026-08-15 incident's comments mentioned `location = "Cape Town International Convention Centre"`, the invented placeholder that has since been corrected everywhere else. Trust the seed script, not the check comment.

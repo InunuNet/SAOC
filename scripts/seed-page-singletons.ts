@@ -213,7 +213,7 @@ async function seedNationalShow(): Promise<void> {
     // showDate: absent — only a non-parseable display string exists (golden gap).
     location: 'The Hangar, Stellenbosch Flying Club',
     hero,
-    countdownDate: '2027-09-18T09:00:00+02:00',
+    countdownDate: '2027-09-16T09:00:00+02:00',
     // exhibitorStages: absent — no hardcoded copy to migrate (golden gap).
   });
   console.log(

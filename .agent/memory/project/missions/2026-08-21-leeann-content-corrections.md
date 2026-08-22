@@ -19,8 +19,13 @@ last_checkpoint:
   ts: null
 features:
 - id: F1
-  status: pending
+  status: superseded
   title: Purge the invented 18-21 September placeholder; re-seed with the confirmed 16-19 September 2027 dates
+  superseded_by: 'Mission show-dates-purge-16-19-sept-2027 (created 2026-08-22) covers this in
+    full and more thoroughly — its @architect pass found two additional live Sanity documents
+    (show-19-2027, societyEvent-15-...) this brief did not enumerate. Do not dispatch @dev against
+    this F1; when show-dates-purge-16-19-sept-2027 completes, mark this F1 done-by-reference
+    rather than re-doing the work.'
   inline_brief: 'The 2027 National Show dates are CONFIRMED: Thursday 16 - Sunday 19 September 2027
     (stated as flat fact by a prior session in the pricing artifact,
     https://claude.ai/code/artifact/1b5729ed-46f5-497b-8070-63a025330e5a, "Show dates" note box -

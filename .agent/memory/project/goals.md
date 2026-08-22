@@ -350,3 +350,27 @@ caught a real cross-file trim-mismatch bug in F5 (dev fixed it, Codex re-pass cl
 `docs/f2-backlog-sweep-2-dead-links-and-a11y.md` + README.md, contract gate 20/20 green. See
 `learned.md` for the reusable lesson (third confirmed instance of Codex catching a cross-file
 consistency bug Claude's own chain missed).
+
+### 2026-08-22 — `show-dates-purge-16-19-sept-2027` M1 (F1-F3) DONE
+
+~~`show-dates-purge-16-19-sept-2027` M1 (F1 fix seed/data-script source of truth, F2 patch the
+three live Sanity documents holding stale dates, F3 docs sweep)~~ ✅ **DONE**, all 3 features,
+contract gate 21/21 green, @qa PASS (two full rounds, incl. a final comprehensive
+re-verification), Codex GPT-5.5 pass clean after 4 rounds of real findings and fixes. Purged the
+never-council-confirmed 18–21 September 2027 placeholder in favour of the confirmed 16–19
+September 2027 dates everywhere they were hardcoded: seed/data scripts
+(`scripts/seed-page-singletons.ts`, `scripts/seed-show-visitor-info.ts`, `lib/data/events.ts`),
+three live production Sanity documents (`nationalShow`, `show-19-2027`, `societyEvent-15-...`)
+patched via new idempotent one-off scripts, and docs. Mid-mission, the orchestrator independently
+caught a SECOND live occurrence of this project's "contract checks mutate live content" defect
+class (`nationalShow.countdownDate` had drifted to the `2098-12-31` test-sentinel) — fixed as
+part of this mission's re-verification, and logged as a new P1 backlog item for a dedicated
+future mission (see `backlog.md` and `learned.md`). Codex also caught cross-mission staleness in
+four pre-existing goldens/contracts from earlier missions still pinning the old dates as their
+expected values — all four corrected. Docs: `docs/f3-show-dates-purge-16-19-sept-2027.md`,
+`README.md`. Brad's own active design-prototype workstream
+(`design/design_handoff_saoc/src/data.js`, `src/pages-show-events-contact.jsx`) still carries the
+stale dates — deliberately left untouched per standing scope rule, flagged in `backlog.md` for
+him to sync later. See `learned.md` for the three reusable lessons from this mission (live-data
+drift during multi-round QA, stale cross-mission fixtures, and reproducing contract-assertion
+failures via the real gate command, not a hand-simulated shell).

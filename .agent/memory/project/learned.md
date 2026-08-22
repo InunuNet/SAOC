@@ -1981,3 +1981,43 @@ mission (Header, MegaMenu, MobileMenu, ContactForm, TicketPurchaseForm, Download
 TicketTypeCard, VendorRegisterForm). Treat this as the default focus-ring treatment for any
 new interactive element on this project — do not invent a different focus treatment or reach
 for the browser default `outline`.
+
+## Live-data test-sentinel corruption — second confirmed occurrence, now a P1 (2026-08-22)
+
+Mid-`show-dates-purge-16-19-sept-2027`, the orchestrator independently discovered
+`nationalShow.countdownDate` had drifted to the test-sentinel value `2098-12-31` in LIVE
+PRODUCTION Sanity — almost certainly written by a concurrent run of
+`contracts/cms-loop-f3-national-show.yaml`'s own live-data test assertions (A1/A5, per
+@dev/@qa's investigation this mission) with no cleanup/rollback after the check completes. This
+is the SECOND independently-confirmed live occurrence of this project's "contract checks mutate
+live content" defect class (see project memory `project_contract_checks_mutate_live_content`,
+and the original `/national-show` H1 sentinel incident logged 2026-08-16 above) — it is not a
+one-off, it is a recurring live hazard that corrupts what the public sees during ordinary working
+sessions. **This needs its own dedicated mission, not just another memory note** — logged as a
+P1 in `backlog.md`.
+
+## Fixing live data can leave the project's own regression fixtures stale (2026-08-22)
+
+When this mission corrected the National Show dates, four pre-existing goldens/contracts from
+EARLIER missions (`contracts/contract-venue-seed-truth.yaml`,
+`contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json`,
+`contracts/golden/f4-seed-page-singletons/nationalShow.golden.json`,
+`contracts/golden/venue-seed-truth/expected-venue.json`) still pinned the OLD 18–21 September
+dates as their expected/correct values — a "fix the data" mission silently made the project's own
+regression suite assert the wrong thing was right. Neither @dev's nor @qa's mission-scoped
+contract could have caught this — it's outside their contract's scope by definition. Codex GPT-5.5
+caught it only on round 3, reviewing a wide diff. **Lesson: for "fix real-world data" missions,
+run the Codex cross-model pass against a reasonably wide diff scope (not just the narrowest file
+list), and treat cross-mission golden/contract staleness as an expected side effect to audit for,
+not a surprise.**
+
+## Reproduce contract-assertion failures via the real gate command, not a hand-simulated shell (2026-08-22)
+
+@architect's first attempt to fix contract assertion A21 misdiagnosed the problem — tested via an
+interactive shell with a wrapped `grep` alias, which behaves differently from the
+`#!/usr/bin/env bash` subprocess `contract.py` actually spawns. The original directory excludes
+were fine; the real gap was two NEW hits that only appeared after later rounds added more docs
+(this mission's own retrospective + README changelog entries mentioning the old dates
+historically). **Lesson: always reproduce a contract assertion failure by running the actual gate
+command (`contract.py check`/`gate`), never a hand-simulated equivalent in a different shell
+context (aliases, interactive-shell built-ins) — the two can disagree.**

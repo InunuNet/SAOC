@@ -186,7 +186,7 @@ by contract check A24. Runnable as `pnpm seed:visitor` (added this round; previo
 runnable via `npx tsx`).
 
 Seeded venue (client-confirmed 2026-08-12): **The Hangar, Stellenbosch Flying Club**,
-Stellenbosch, Western Cape, edition 19, 18–21 September 2027, host region Western Cape. Every one
+Stellenbosch, Western Cape, edition 19, 16–19 September 2027, host region Western Cape. Every one
 of these values is a Studio-editable field, not a code literal — see the venue-change guarantee
 above. Travel/accommodation prose for this venue is deliberately unresearched (see
 `contracts/golden/venue-prose-residue/README.md`) — those blocks stay `pending`, not `research`.

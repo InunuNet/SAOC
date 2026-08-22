@@ -54,7 +54,7 @@ never merged — as soon as Sanity returns at least one document the static list
 National Show opening. The target date is hardcoded in the module:
 
 ```ts
-const TARGET_MS = new Date('2027-09-18T09:00:00+02:00').getTime();
+const TARGET_MS = new Date('2027-09-16T09:00:00+02:00').getTime();
 ```
 
 The component initialises its state to zero and starts a one-second `setInterval` inside

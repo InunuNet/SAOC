@@ -121,12 +121,12 @@ const VENUE = {
     'https://www.openstreetmap.org/?mlat=-33.9794&mlon=18.8196#map=15/-33.9794/18.8196',
 };
 
-// The dates mirror the countdownDate already in the dataset, so they introduce no new
-// claim — but they are NOT committee-confirmed. confirmations.dates below seeds pending,
-// and the landing page renders that marker beside the hero meta grid.
+// Dates are committee-confirmed (Lee-Ann, 2027-09-16 to 2027-09-19). confirmations.dates
+// below seeds 'confirmed', and the landing page renders that marker beside the hero meta
+// grid.
 const SHOW_IDENTITY = {
-  showDate: '2027-09-18T09:00:00+02:00',
-  showEndDate: '2027-09-21T17:00:00+02:00',
+  showDate: '2027-09-16T09:00:00+02:00',
+  showEndDate: '2027-09-19T17:00:00+02:00',
   edition: 19,
   hostRegion: 'Western Cape',
 };
@@ -204,14 +204,15 @@ const OPENING_HOURS = [
   },
 ];
 
-// One status per content block. The venue is now client-confirmed (2026-08-12);
-// everything else is still pending — the travel/accommodation research done against
-// the previous working venue no longer applies to the new one and has not been
-// redone, so those blocks are pending, not research.
+// One status per content block. The venue is client-confirmed (2026-08-12) and the
+// show dates are client-confirmed (Lee-Ann, 2027-09-16 to 2027-09-19); everything
+// else is still pending — the travel/accommodation research done against the
+// previous working venue no longer applies to the new one and has not been redone,
+// so those blocks are pending, not research.
 const CONFIRMATIONS = {
   _type: 'confirmationStatuses',
   venue: 'confirmed',
-  dates: 'pending',
+  dates: 'confirmed',
   openingHours: 'pending',
   admission: 'pending',
   parking: 'pending',
@@ -451,11 +452,10 @@ const FAQS: SeedFaq[] = [
     id: 'showFaq-general-3',
     category: 'general',
     order: 3,
-    status: 'pending',
+    status: 'confirmed',
     question: 'When is the show?',
     answer:
-      'The dates have not been formally confirmed by the show committee. The countdown on the ' +
-      'show page reflects our current working dates.',
+      'Thursday 16 to Sunday 19 September 2027, confirmed by the show committee.',
   },
 ];
 

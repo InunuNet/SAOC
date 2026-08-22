@@ -23,8 +23,8 @@
     },
     "countdownDate": {
       "kind": "exact",
-      "value": "2027-09-18T09:00:00+02:00",
-      "note": "Migrated verbatim from ShowBand.tsx's DEFAULT_COUNTDOWN_DATE constant."
+      "value": "2027-09-16T09:00:00+02:00",
+      "note": "Originally migrated verbatim from ShowBand.tsx's DEFAULT_COUNTDOWN_DATE constant as 2027-09-18T09:00:00+02:00. AMENDED by the show-dates-purge-16-19-sept-2027 mission: the show committee confirmed the real dates (Lee-Ann, 2027-09-16 to 2027-09-19), the stale 2027-09-18/2027-09-21 placeholder was purged, and scripts/seed-page-singletons.ts now seeds this value as 2027-09-16T09:00:00+02:00. DEFAULT_COUNTDOWN_DATE itself has since been removed from ShowCountdown.tsx entirely — the component renders the absence of a countdown date rather than falling back to an invented one."
     },
     "exhibitorStages": {
       "kind": "absent",

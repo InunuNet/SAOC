@@ -20,6 +20,11 @@ Do not scope work from an entry that contradicts it.
 
 - **Leave `branding/`, `design spec/`, `design/Claude Design HTML/` alone** (Brad, 2026-08-12).
   He is reorganising them by hand. Do not read, move, edit or "tidy" anything inside them.
+- **`design/design_handoff_saoc/src/data.js:444` and `src/pages-show-events-contact.jsx:24`
+  still carry the stale 18–21 September show dates** (found during `show-dates-purge-16-19-sept-2027`,
+  2026-08-22) — deliberately left untouched, same reason as above (Brad's active design-prototype
+  workstream, not this project's own missions to edit). Flag for him to sync once he's done with
+  that workstream; not an action item for any SAOC mission.
 - **No invented brand assets** — colours, logos, type, semantic feedback colours. Ask Brad.
 - **Scope = SAOC only.** Not WOSA (separate developer), not Athanor R&D. Dogfood the harness and
   file every harness bug upstream at `InunuNet/Athanor` rather than working around it silently.
@@ -32,15 +37,6 @@ Do not scope work from an entry that contradicts it.
 
 ## Blocked on the council / Lee-Ann
 
-- [x] ~~Real show dates~~ **CONFIRMED 2026-08-2x, verified 2026-08-21: Thursday 16 – Sunday 19
-  September 2027.** Stated as flat fact (not a fillable answer) in the pricing artifact
-  (`https://claude.ai/code/artifact/1b5729ed-46f5-497b-8070-63a025330e5a`) by a prior session —
-  never propagated here or purged from code. **Remaining real work (P1, not blocked anymore):**
-  the OLD `18–21 September` / `2027-09-18T09:00+02:00` placeholder is still what's actually seeded
-  in Sanity and drives the live home-page countdown — re-grep before acting (list goes stale fast)
-  but as of the 2026-08-19 audit it touched `scripts/seed-page-singletons.ts`,
-  `scripts/seed-show-visitor-info.ts`, `lib/data/events.ts`, and several docs. Purge to 16–19 Sept
-  in one pass and re-seed Sanity. See memory `project_show_dates_placeholder` for full detail.
 - [ ] **[P1] Ticket prices and capacities — estimate now, correct later (Brad's standing
   instruction, already the pattern used for the ticketing admission products in
   `lib/provisional-figures.ts`/F4).** Do not leave figures blank waiting on the council; put in
@@ -561,6 +557,18 @@ flat-over-nested-submenu pattern.
 
 ## Contract & test infrastructure
 
+- [ ] **[P1] A contract is writing test sentinels into LIVE production Sanity with no cleanup —
+  second confirmed occurrence, needs a dedicated mission.** Mid-`show-dates-purge-16-19-sept-2027`
+  (2026-08-22), the orchestrator independently found `nationalShow.countdownDate` had drifted to
+  `2098-12-31` — a test-sentinel value, almost certainly written by a concurrent run of
+  `contracts/cms-loop-f3-national-show.yaml`'s own live-data test assertions (A1/A5, per
+  @dev/@qa's investigation this mission) without rollback/cleanup after the check completes. This
+  is the SECOND independently-confirmed live occurrence of this project's "contract checks mutate
+  live content" defect class (see memory `project_contract_checks_mutate_live_content`; first
+  occurrence was the `/national-show` H1 sentinel served for ~3 days, logged 2026-08-16). Fix
+  needs its own dedicated mission: find and fix whichever assertion(s) in
+  `contracts/cms-loop-f3-national-show.yaml` write to live production without teardown — likely
+  A1/A5 — and add negative verification that a re-run doesn't leave residue.
 - [ ] **[P1] Five stale sha256 pins across two files — same defect, two instances.** In both cases
   a pinned file changed for a reviewed, deliberate reason and the pin was never re-cut, so the
   assertion went quietly red. **The current content IS the intended baseline in both cases** — this
@@ -837,3 +845,7 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-pulse-launchctl-rc-113.md
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-contract-py-hygiene-fixes.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-mission-contract-lookup-cwd-anchor.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-full-boot-redaction-regex.md

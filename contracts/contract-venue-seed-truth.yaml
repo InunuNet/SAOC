@@ -161,13 +161,17 @@ assertions:
 
     - id: A11
       description: >-
-        show-identity fields (showDate/showEndDate/edition/hostRegion), which were
-        already correct before this fix and are NOT part of the venue correction,
-        are still present and untouched in scripts/seed-show-visitor-info.ts — this
-        fix must not collaterally disturb them.
+        show-identity fields (showDate/showEndDate/edition/hostRegion), which are
+        NOT part of the venue correction, are still present and untouched in
+        scripts/seed-show-visitor-info.ts — this fix must not collaterally disturb
+        them. AMENDED by the show-dates-purge-16-19-sept-2027 mission: the dates
+        were corrected from the stale 2027-09-18/2027-09-21 placeholder to the
+        client-confirmed 2027-09-16/2027-09-19 range (Lee-Ann, 2027-09-16 to
+        2027-09-19) — this assertion now pins the confirmed values, not the
+        placeholder this A11 originally locked in.
       command: >-
-        grep -qF "2027-09-18T09:00:00+02:00" scripts/seed-show-visitor-info.ts &&
-        grep -qF "2027-09-21T17:00:00+02:00" scripts/seed-show-visitor-info.ts &&
+        grep -qF "2027-09-16T09:00:00+02:00" scripts/seed-show-visitor-info.ts &&
+        grep -qF "2027-09-19T17:00:00+02:00" scripts/seed-show-visitor-info.ts &&
         grep -Eq "edition:\s*19" scripts/seed-show-visitor-info.ts &&
         grep -qF "hostRegion: 'Western Cape'" scripts/seed-show-visitor-info.ts
       timeout_seconds: 30

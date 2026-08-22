@@ -48,12 +48,12 @@
         "anything an editor has already set.",
         "See show-identity-wiring.golden.md."
       ],
-      "showDate": "2027-09-18T09:00:00+02:00",
-      "showEndDate": "2027-09-21T17:00:00+02:00",
+      "showDate": "2027-09-16T09:00:00+02:00",
+      "showEndDate": "2027-09-19T17:00:00+02:00",
       "edition": 19,
       "hostRegion": "Western Cape",
       "location": "leave entirely alone; it already holds 'Cape Town International Convention Centre'",
-      "datesAreNotConfirmed": "confirmations.dates seeds as 'pending' and the landing page MUST render the pending marker beside the hero meta grid. Seeding a plausible date range without that marker is exactly the invention this mission forbids; seeding it with the marker makes an inert field live and honestly labelled at the same time. The dates mirror the countdownDate already in the dataset — they introduce no new claim."
+      "datesAreNotConfirmed": "AMENDED by the show-dates-purge-16-19-sept-2027 mission: the show committee has since confirmed the dates (Lee-Ann, 2027-09-16 to 2027-09-19), so confirmations.dates now seeds as 'confirmed' and the pending marker no longer applies to this block. Originally: confirmations.dates seeded as 'pending' and the landing page rendered a pending marker beside the hero meta grid, because the dates then mirrored the countdownDate already in the dataset without being a committee-confirmed claim."
     }
   },
 
@@ -103,18 +103,19 @@
     "faqContactNote": "Not answered here? We would rather hear the question than have you guess.",
 
     "confirmations": {
-      "venue": "research",
-      "dates": "pending",
+      "_comment": "AMENDED by the show-dates-purge-16-19-sept-2027 mission to match scripts/seed-show-visitor-info.ts's current CONFIRMATIONS constant: venue and dates are now client-confirmed, and the travel/accommodation/attractions blocks are 'pending' (not 'research') because that research was against the previous CTICC venue and no longer applies to The Hangar, Stellenbosch Flying Club.",
+      "venue": "confirmed",
+      "dates": "confirmed",
       "openingHours": "pending",
       "admission": "pending",
       "parking": "pending",
-      "publicTransport": "research",
+      "publicTransport": "pending",
       "accessibility": "pending",
       "photography": "pending",
       "cloakroom": "pending",
       "food": "pending",
-      "accommodation": "research",
-      "attractions": "research",
+      "accommodation": "pending",
+      "attractions": "pending",
       "emergencyContacts": "pending"
     }
   },
@@ -137,7 +138,7 @@
 
     { "_id": "showFaq.general.1", "category": "general", "order": 1, "status": "pending", "question": "May I take photographs?", "answer": "The photography policy has not been confirmed. Personal photography is normally welcome; tripods, flash near the benches and any commercial or press photography usually need prior arrangement." },
     { "_id": "showFaq.general.2", "category": "general", "order": 2, "status": "pending", "question": "Will there be food and drink available?", "answer": "Catering arrangements have not been confirmed." },
-    { "_id": "showFaq.general.3", "category": "general", "order": 3, "status": "pending", "question": "When is the show?", "answer": "The dates have not been formally confirmed by the show committee. The countdown on the show page reflects our current working dates." }
+    { "_id": "showFaq.general.3", "category": "general", "order": 3, "status": "confirmed", "question": "When is the show?", "answer": "Thursday 16 to Sunday 19 September 2027, confirmed by the show committee." }
   ],
 
   "seedNotes": [

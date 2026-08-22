@@ -115,4 +115,4 @@ step 4 previously told her to keep `homePage.countdownDate` in sync with the Nat
 page's countdown — since `homePage.countdownDate` has no consumer in the code (gap #2
 above), that instruction has been corrected to explain the field is inert and point her to
 the National Show page instead, which is the field that actually drives the countdown shown
-to visitors (`nationalShow.countdownDate`, seeded here as `2027-09-18T09:00:00+02:00`).
+to visitors (`nationalShow.countdownDate`, seeded here as `2027-09-16T09:00:00+02:00`).

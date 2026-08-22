@@ -1,0 +1,160 @@
+schema: athanor.contract/v1
+slug: show-dates-purge-16-19-sept-2027
+goal: >
+  Purge the stale, never-confirmed '18-21 September 2027' National Show placeholder and
+  replace it everywhere with Lee-Ann's confirmed real dates, Thursday 16 - Sunday 19
+  September 2027: three source-of-truth seed/data scripts (F1), three live Sanity
+  documents including the ticketing-critical show-19-2027 (F2), and two editor-facing docs
+  presenting the old date as current fact (F3).
+created_at: '2026-08-22'
+autonomy: high
+features:
+  - id: F1
+    name: Fix seed-page-singletons.ts, seed-show-visitor-info.ts, lib/data/events.ts source literals
+    status: pending
+  - id: F2
+    name: Patch the three live Sanity documents (nationalShow, show-19-2027, societyEvent-15) and verify live
+    status: pending
+  - id: F3
+    name: Docs sweep — fix show-visitor-info.md and show-visitor-info-for-editors.md present-tense date claims
+    status: pending
+goldens:
+  - .agent/memory/project/specs/show-dates-purge-16-19-sept-2027/goldens/m1-golden.md
+assertions:
+  phase: 4
+  checks:
+    # --- F1: source-of-truth code literals ---
+    - id: A1
+      description: >
+        seed-page-singletons.ts no longer sets countdownDate to the stale 2027-09-18 literal.
+      command: '! grep -q "2027-09-18T09:00:00+02:00" scripts/seed-page-singletons.ts'
+
+    - id: A2
+      description: seed-page-singletons.ts sets countdownDate to the corrected 2027-09-16 literal.
+      command: 'grep -q "countdownDate: ''2027-09-16T09:00:00+02:00''" scripts/seed-page-singletons.ts'
+
+    - id: A3
+      description: >
+        seed-show-visitor-info.ts no longer contains either stale literal (showDate or
+        showEndDate).
+      command: '! grep -qE "2027-09-18T09:00:00\+02:00|2027-09-21T17:00:00\+02:00" scripts/seed-show-visitor-info.ts'
+
+    - id: A4
+      description: seed-show-visitor-info.ts's SHOW_IDENTITY carries the corrected showDate.
+      command: 'grep -q "showDate: ''2027-09-16T09:00:00+02:00''" scripts/seed-show-visitor-info.ts'
+
+    - id: A5
+      description: seed-show-visitor-info.ts's SHOW_IDENTITY carries the corrected showEndDate.
+      command: 'grep -q "showEndDate: ''2027-09-19T17:00:00+02:00''" scripts/seed-show-visitor-info.ts'
+
+    - id: A6
+      description: >
+        The SHOW_IDENTITY comment no longer claims the dates "mirror the countdownDate already
+        in the dataset" — that relationship is broken once F2 patches nationalShow
+        independently, so the stale justification must not survive verbatim.
+      command: '! grep -q "mirror the countdownDate already in the dataset" scripts/seed-show-visitor-info.ts'
+
+    - id: A7
+      description: lib/data/events.ts's event id 15 (19th National Show) no longer holds either stale literal.
+      command: '! grep -qE "date: .2027-09-18.|endDate: .2027-09-21." lib/data/events.ts'
+
+    - id: A8
+      description: lib/data/events.ts's event id 15 carries the corrected date/endDate pair.
+      command: 'grep -q "date: ''2027-09-16''" lib/data/events.ts && grep -q "endDate: ''2027-09-19''" lib/data/events.ts'
+
+    - id: A9
+      description: >
+        lib/show-identity.ts's illustrative JSDoc example is explicitly out of scope and must
+        be untouched — confirms the architect's scope call was respected, not silently
+        overridden.
+      command: "grep -q '18–21 September 2027' lib/show-identity.ts"
+
+    # --- F2: live Sanity documents + verification script ---
+    - id: A10
+      description: >
+        A new one-off patch script exists for the three-document fix (name is dev's choice;
+        this checks for the documented convention name from the golden).
+      command: "test -f scripts/fix-show-dates-2027.ts"
+
+    - id: A11
+      description: >
+        The patch script reads Sanity credentials from .env.local directly, matching every
+        other script in this project (never a hardcoded token).
+      command: 'grep -q "readFileSync" scripts/fix-show-dates-2027.ts && grep -q "SANITY_API_TOKEN" scripts/fix-show-dates-2027.ts'
+
+    - id: A12
+      description: >
+        The patch script uses .set(), not .setIfMissing(), for the show-19-2027 date fields —
+        setIfMissing would silently no-op since those fields are already populated with the
+        stale values (migrate-show-sales-fields.ts set them). This is the specific bug class
+        this feature exists to avoid.
+      command: 'grep -q "show-19-2027" scripts/fix-show-dates-2027.ts && grep -q "\.set(" scripts/fix-show-dates-2027.ts'
+
+    - id: A13
+      description: The patch script supports --dry-run, matching this project's script conventions.
+      command: 'grep -q "dry-run" scripts/fix-show-dates-2027.ts'
+
+    - id: A14
+      description: >
+        LIVE VERIFICATION — queries the production Sanity dataset directly and asserts all
+        three documents (nationalShow, show-19-2027, societyEvent-15-...) hold the exact
+        corrected date fields. This is the real proof of F2, not a proxy: a grep on script
+        source only proves the script's intent, not that it actually ran successfully against
+        production. Exits non-zero on any mismatch.
+      command: "node --import tsx/esm scripts/fix-show-dates-2027.ts --verify"
+
+    - id: A15
+      description: >
+        TypeScript compiles clean after the new script and the F1 edits — a broken script
+        would still pass a shell grep, this is the real language-level check.
+      command: "pnpm exec tsc --noEmit"
+
+    # --- F3: docs sweep ---
+    - id: A16
+      description: >
+        show-visitor-info.md no longer states the stale 18-21 September date as current fact.
+      command: '! grep -q "18–21 September 2027" docs/show-visitor-info.md'
+
+    - id: A17
+      description: show-visitor-info.md states the corrected 16-19 September date.
+      command: 'grep -q "16–19 September 2027" docs/show-visitor-info.md'
+
+    - id: A18
+      description: >
+        show-visitor-info-for-editors.md no longer presents the stale date to editors as
+        already-confirmed (the "doubly wrong" instance the mission brief calls out by name).
+      command: '! grep -q "18–21 September" docs/show-visitor-info-for-editors.md'
+
+    - id: A19
+      description: show-visitor-info-for-editors.md now states the corrected 16-19 September date.
+      command: 'grep -q "16–19 September 2027" docs/show-visitor-info-for-editors.md'
+
+    - id: A20
+      description: >
+        The four historical/illustrative docs are explicitly left unchanged — this project has
+        a standing rule against rewriting incident history, and an overzealous sweep deleting
+        the CTICC/18-21 incident narrative would itself be a defect. Confirms all four still
+        carry their historical reference.
+      command: 'grep -q "18–21 September 2027" docs/payment-seam.md && grep -q "18–21 vs. 16–19 Sept 2027" docs/f1-ticketing-conferences.md && grep -q "CTICC venue, 18–21 September 2027" docs/f4-admission-products.md && grep -q "18–21 September" docs/f5-day-selection-attendees.md'
+
+    - id: A21
+      description: >
+        Full-tree residue check — no stray '2027-09-18' or '2027-09-21' literal survives
+        anywhere in checked-in source or docs outside the legitimate historical-record
+        directories (memory, Plans/, contracts/golden/ — see golden for the exclusion
+        rationale) and this purge's own retrospective doc
+        docs/f3-show-dates-purge-16-19-sept-2027.md (whole-file excluded: like the four
+        docs in A20, it is entirely a historical account of the fix, not a live date
+        claim). Contract gate execution shells out via a plain '#!/usr/bin/env bash'
+        script, which resolves 'grep' to the real /usr/bin/grep binary (confirmed: BSD
+        grep) — recursive matches from '.' ARE prefixed with './', so the directory
+        excludes below keep that leading './' anchor. Two further individual lines are
+        exempted rather than their whole file, so a genuine future regression elsewhere
+        in either surrounding file is still caught: docs/f5-day-selection-attendees.md's
+        computeShowDays() example array (the 18th is a valid day WITHIN the correct
+        16-19 range, not a date claim), and docs/show-visitor-info.md's past-tense
+        incident narrative describing a deleted DEFAULT_COUNTDOWN_DATE constant.
+        README.md's mission changelog line is exempted the same way — it reports the
+        historical 18-21→16-19 correction, not a live claim.
+      command: >-
+        test -z "$(grep -rnE '2027-09-18|2027-09-21' --include=*.ts --include=*.tsx --include=*.md . 2>/dev/null | grep -v node_modules | grep -v .claude/worktrees | grep -v '^./Plans/' | grep -v '^./contracts/golden/' | grep -v '^./.agent/memory/project/' | grep -v '^./docs/f3-show-dates-purge-16-19-sept-2027.md:' | grep -v "'2027-09-16', '2027-09-17', '2027-09-18', '2027-09-19'" | grep -v "DEFAULT_COUNTDOWN_DATE = '2027-09-18T09:00:00+02:00'" | grep -v '(2027-09-18/21 → 2027-09-16/19)')"
