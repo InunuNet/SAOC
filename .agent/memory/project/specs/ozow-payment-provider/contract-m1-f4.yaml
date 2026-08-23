@@ -1,0 +1,121 @@
+schema: athanor.contract/v1
+slug: ozow-payment-provider
+goal: >-
+  Mission ozow-payment-provider M1/F4 — apex tier. F3's live sandbox retest reached Ozow's real
+  test-outcome picker for the first time and completed a real, hash-verified, Status=Complete,
+  IsTest=true transaction (reference SAOC-2027-74NG1P6W9RKK) — but confirmNotification()'s status
+  API call (GetTransactionByReference) returned 404 for it, ~5 seconds after Ozow's own ITN fired,
+  so the order never reached 'paid'. ROOT CAUSE (confirmed via Alembic against the current, live
+  https://ozow.com/integrations page, Step 3's own parameter table): GetTransactionByReference
+  documents an optional `IsTest` query parameter — "Defaults to false. Use true only to get
+  results for test requests." — that lib/payments/ozow.ts never sent. Omitting it silently scoped
+  every status lookup to real (non-test) transactions only, so the real IsTest=true transaction
+  this bug was found against was invisible to its own status check. Fix: send `IsTest=true` on the
+  GetTransactionByReference call if and only if the already-hash-verified notification's own
+  `raw.IsTest` field is exactly the string `'true'` — real transactions' requests are
+  byte-identical to before this fix. No retry loop, no second endpoint, no last-resort
+  notification-trust fallback — an earlier architecture pass (contracts/golden/ozow-m1-f4/
+  README.md §1-§7) explored that heavier design before this root cause was found; it is superseded
+  in full by §8 and NOT implemented. Full diagnosis, both research passes, and the
+  why-the-heavier-design-was-rejected reasoning: contracts/golden/ozow-m1-f4/README.md.
+created_at: '2026-08-23'
+autonomy: high
+
+# ⚠️ THIS CONTRACT IMPLEMENTS README §8 ONLY. §1-§7 of the README record a superseded,
+# heavier design (bounded retry + a second GetTransaction-by-id endpoint + a narrowly-gated
+# last-resort trust of the notification's own hash-verified fields) that a later, same-day
+# research pass made unnecessary — see README §8.1-§8.2 for why. That design is NOT implemented:
+# no `sleep` dependency, no OZOW_TRANSACTION_STATUS_BY_ID_URL, no retry/fallback layers. Do not
+# reintroduce it without a new architecture decision.
+#
+# ⚠️ verifyNotification() IS NOT TOUCHED BY THIS FEATURE. Hash verification — the actual
+# anti-spoofing gate deciding whether confirmNotification() is ever called — has zero changes
+# here. A forged/bad-hash notification is rejected there, before confirmNotification() (and this
+# feature's IsTest-param logic) ever runs. A1 case 6 (below) proves this directly.
+#
+# ⚠️ mapStatus()'s 3-value switch vs Ozow's own documented 6-value Status enum (Abandoned,
+# PendingInvestigation, Pending are unhandled today, falling through to 'unknown') is a real,
+# separate gap found during this feature's doc research. NOT fixed here — README §6.
+
+features:
+  - id: F4
+    name: >-
+      confirmNotification()'s GetTransactionByReference call sends `IsTest=true` when (and only
+      when) the already-hash-verified notification claims `raw.IsTest === 'true'` — fixing the
+      404-against-a-real-test-transaction bug at its documented root cause, with zero change to
+      any transaction that does not explicitly claim IsTest.
+
+      (1) lib/payments/ozow.ts, inside confirmNotification(): before building the
+      GetTransactionByReference URL, read `const isTest = notification.raw.IsTest === 'true';`
+      (strict string equality, no truthy-string shortcut — same discipline as mapStatus()). Append
+      `&IsTest=true` to the query string only when `isTest` is true; when false (absent, 'false',
+      or any other value), the URL is unchanged from today — no IsTest param, which Ozow's own
+      docs state defaults to false. No other change to confirmNotification(): the existing
+      fail-closed matching/disambiguation/Status==='Complete' check (F2b) is reused verbatim.
+
+      (2) lib/ozow.ts: NO CHANGE. OZOW_TRANSACTION_STATUS_URL is reused as-is.
+
+      (3) verifyNotification(), mapStatus(), refund(), and the F2b matching/disambiguation logic
+      are UNTOUCHED by this feature.
+
+      Full spec: contracts/golden/ozow-m1-f4/README.md §8.3-§8.5.
+
+goldens:
+  - contracts/golden/ozow-m1-f4/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        confirmNotification() sends IsTest=true on GetTransactionByReference if and only if the
+        hash-verified notification claims raw.IsTest==='true', and every existing fail-closed
+        guarantee is preserved — proven offline, against the REAL createOzowProvider()
+        (env/fetch deps-injected, zero real network), 9 cases:
+        (1) THE REPRODUCED BUG — raw.IsTest==='true', a matching Status:'Complete' row in the
+        response -> confirmed:true, AND the actual request URL sent carries IsTest=true;
+        (2) a real transaction (raw.IsTest absent) with a matching Complete row -> confirmed:true,
+        AND the request URL carries NO IsTest param at all (byte-identical to pre-fix behaviour —
+        this is the assertion proving real transactions are unaffected, not just that the bug
+        scenario now passes); (2b) raw.IsTest==='false' explicitly -> same, no IsTest param;
+        (2c) a real transaction (IsTest absent) whose status check still 404s -> confirmed:false/
+        not-valid (fail-closed fully preserved for real transactions, exactly as before this fix);
+        (3) raw.IsTest==='true' but the matched row's Status is 'Cancelled', not 'Complete' ->
+        confirmed:false/not-valid (the IsTest param never bypasses the Status check);
+        (4) raw.IsTest==='true' but no row in the (correctly IsTest-scoped) response matches the
+        reference -> confirmed:false/not-valid (the fix changes WHAT population is searched, never
+        WHETHER an unmatched reference confirms); (5) raw.IsTest set to 'TRUE', '1', or 'yes' (not
+        the exact string 'true') -> treated as NOT test, no IsTest param sent (strict equality, no
+        truthy-string shortcut); (6) SECURITY REGRESSION GUARD — a forged notification with a
+        deliberately wrong Hash (even though it claims IsTest=true and a plausible-looking payload)
+        is rejected by verifyNotification() itself (verified:false, reason:'signature-mismatch')
+        and never reaches confirmNotification() at all — proving this fix does not touch or weaken
+        the hash-verification gate.
+        OBSERVED FAILING (RED) on 2026-08-23 against the pre-fix tree (confirmed by temporarily
+        reverting lib/payments/ozow.ts to its last-committed state and re-running this exact
+        command): 3 of 9 cases fail — cases 1, 3, and 4, every case that requires the request URL
+        to actually carry IsTest=true. Cases 2/2b/2c/5/6 pass even pre-fix, which is expected and
+        correct: they assert "no IsTest param sent" or "hash verification unaffected", both
+        already true before this feature exists — they are not evidence the fix is unnecessary,
+        only that this fix must not regress them.
+        OBSERVED PASSING (GREEN) on 2026-08-23 against the in-progress dev implementation of
+        README §8.3 (confirmed by re-running the same command against the working tree with the
+        fix applied): all 9 cases pass.
+        FAILS ON: never adding an IsTest param for a real IsTest='true' notification (the bug
+        staying unfixed); adding IsTest=true unconditionally regardless of the notification (would
+        change real-transaction requests, which case 2/2b/2c exist to catch); a non-strict IsTest
+        comparison that sends the param for truthy-but-not-'true' values (case 5); bypassing or
+        loosening the Status==='Complete' check for IsTest transactions specifically (case 3);
+        confirming an unmatched reference just because IsTest scoping changed (case 4); any change
+        to verifyNotification()'s hash-rejection behaviour (case 6).
+      command: npx tsx contracts/checks/ozow-m1-f4/check-confirm-notification-istest-param.mjs
+    - id: A2
+      description: >-
+        Regression guard for the confirmation-page "hardcodes PayFast" defect (README §10) —
+        already fixed by commit a850b1f, predating this feature, but recorded here as a light
+        static guard so it cannot silently come back while this feature's changes are in flight.
+        Confirms the string "PayFast" does not appear in user-facing copy in the ticket
+        confirmation page (comments referencing the gateway by name for developer context are
+        fine; a literal gateway name baked into buyer-facing text regardless of which provider the
+        buyer actually paid through is not).
+      command: '! grep -v "^\s*//" "app/(marketing)/tickets/confirmation/page.tsx" | grep -q "PayFast"'

@@ -10,17 +10,15 @@ goal: 'Add Ozow as a second PaymentProvider alongside PayFast (lib/payments/ sea
   lib/payments/types.ts, preserving PayFast''s existing behaviour untouched.'
 created_at: '2026-08-21T20:05:20.175843+00:00'
 started_at: '2026-08-22T02:15:00+00:00'
-last_active_at: '2026-08-22T05:03:23.617052+00:00'
-completed_at: '2026-08-22T05:03:23.617052+00:00'
 status: done
 cost_estimate:
   features: 0
   milestones: 0
   total_calls: 0
 last_checkpoint:
-  milestone: M3
-  feature: F3
-  ts: '2026-08-22T05:03:23.617052+00:00'
+  milestone: M4
+  feature: F4
+  ts: '2026-08-23T07:40:46.123190+00:00'
 features:
 - id: F1
   status: done
@@ -82,6 +80,16 @@ features:
     still work unaffected (non-regression, real purchase not just a contract assertion).
   contract: null
   golden_files: []
+- id: F4
+  status: done
+  tier: apex
+  title: Fix confirmNotification() GetTransactionByReference 404 blocking IsTest=true
+    orders from reaching paid
+  inline_brief: null
+  contract: .agent/memory/project/specs/ozow-payment-provider/contract-m1-f4.yaml
+  golden_files: []
+  spec: contracts/golden/ozow-m1-f4/README.md
+  completed_at: '2026-08-23T07:40:46.123039+00:00'
 milestones:
 - id: M1
   status: done
@@ -95,7 +103,21 @@ milestones:
   status: done
   features:
   - F3
+- id: M4
+  status: done
+  features:
+  - F4
+  gate_ran_at: '2026-08-23T07:40:52.807986+00:00'
+  gate_result: pass
+completed_at: '2026-08-23T07:43:18.613068+00:00'
+last_active_at: '2026-08-23T07:43:18.613292+00:00'
 ---
+
+
+
+
+
+
 
 
 # Mission: Add Ozow as a second PaymentProvider alongside PayFast (lib/payments/ seam) — sandbox credentials already staged in .env.local, merchant account INU-INU-002 already Active. Brad's explicit P1 direction 2026-08-21: Ozow is the client's preferred gateway, not just a candidate. Design must resolve concurrent-provider selection (today's seam is a single hardcoded const, not a registry) and implement Ozow's own initiate/verify/confirm/refund per the PaymentProvider interface in lib/payments/types.ts, preserving PayFast's existing behaviour untouched.
