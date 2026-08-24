@@ -107,3 +107,6 @@ scripts/output/
 
 # Run-time generated mutation scratch (contracts/checks/payment-seam-f2/check-reject-path-mutations.sh)
 contracts/checks/**/_mutants/
+
+# QA agent scratch (debug scripts, session state, screenshots) — local-only, never committed
+.qa_scratch/
