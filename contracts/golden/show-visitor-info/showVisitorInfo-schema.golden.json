@@ -32,7 +32,7 @@
       "name": "researchLabel",
       "title": "Research Label",
       "type": "string",
-      "description": "Shown beside any block whose confirmation status is Research — verified by the web team against the working venue, but not confirmed by the committee."
+      "description": "Shown beside any block whose confirmation status is Research — verified by the web team, but not confirmed by the committee."
     },
 
     { "group": "plan", "name": "planTitle", "title": "Plan Your Visit — Page Title", "type": "string" },

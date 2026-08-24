@@ -206,9 +206,8 @@ const OPENING_HOURS = [
 
 // One status per content block. The venue is client-confirmed (2026-08-12) and the
 // show dates are client-confirmed (Lee-Ann, 2027-09-16 to 2027-09-19); everything
-// else is still pending — the travel/accommodation research done against the
-// previous working venue no longer applies to the new one and has not been redone,
-// so those blocks are pending, not research.
+// else is still pending — travel and accommodation research for the venue has not
+// been done yet, so those blocks are pending, not research.
 const CONFIRMATIONS = {
   _type: 'confirmationStatuses',
   venue: 'confirmed',
@@ -238,27 +237,21 @@ async function seedVisitorInfo(): Promise<void> {
 
     pendingLabel: 'To be confirmed by the show committee',
     researchLabel:
-      'Researched by the web team against the working venue — not yet confirmed by the show ' +
-      'committee',
+      'Researched by the web team — not yet confirmed by the show committee',
 
     planTitle: 'Plan your visit',
     planIntro:
-      'Everything you need to get to the National Orchid Show and make a day of it. Travel and ' +
-      'accommodation guidance below is our own research against the working venue; the show ' +
-      'committee will confirm the final details.',
+      'Everything you need to get to the National Orchid Show and make a day of it. ' +
+      'Travel and accommodation guidance for the venue is still being put together; the show committee will confirm the final details.',
     gettingThereIntro:
-      'The show venue has changed to the Stellenbosch Flying Club. Travel, parking and ' +
-      'accommodation guidance for the new venue has not been worked out yet — the previous ' +
-      'guidance was written for a Cape Town city-centre venue and no longer applies.',
+      'Travel, parking and accommodation guidance for the Stellenbosch Flying Club has not been worked out yet. It will be published here once it is ready.',
     airportRoutes: keyed(VISITOR_INFO_ID, 'route', AIRPORT_ROUTES),
 
-    parking: 'Parking arrangements have not been confirmed for the new venue.',
+    parking: 'Parking arrangements have not been confirmed.',
     publicTransport: 'Public transport options to Stellenbosch Airfield have not been confirmed.',
 
     accommodationIntro:
-      'Accommodation guidance for the Stellenbosch area is still being put together. The ' +
-      'previous list was written for a Cape Town city-centre venue and has been removed rather ' +
-      'than left to mislead.',
+      'Accommodation guidance for the Stellenbosch area is still being put together.',
     accommodation: keyed(VISITOR_INFO_ID, 'stay', ACCOMMODATION),
     attractions: keyed(VISITOR_INFO_ID, 'attraction', ATTRACTIONS),
     emergencyContacts: keyed(VISITOR_INFO_ID, 'emergency', EMERGENCY_CONTACTS),
@@ -287,7 +280,7 @@ async function seedVisitorInfo(): Promise<void> {
       'Cloakroom and plant-holding arrangements have not been confirmed. If you buy plants at ' +
       'the show, we expect a holding area will be available so you need not carry them for the ' +
       'rest of your visit — this will be confirmed.',
-    accessibility: 'Accessibility details have not been confirmed for the new venue.',
+    accessibility: 'Accessibility details have not been confirmed.',
 
     faqTitle: 'Frequently asked questions',
     faqIntro:

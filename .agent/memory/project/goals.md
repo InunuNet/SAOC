@@ -425,3 +425,19 @@ ambiguous state are always treated as OFF. The separate, still-open Ozow R0.01 s
 transaction cap (external, vendor-side, support ticket still unsent) is unrelated and not
 resolved by this mission. Full record: `docs/f1-ozow-sandbox-toggle.md`, `docs/payment-seam.md`,
 `contracts/golden/ozow-sandbox-toggle-f1/README.md`.
+
+### 2026-08-24 — `admin-settings-deploy-and-chrome-fix` M1 (F1) DONE — mission complete
+
+~~`admin-settings-deploy-and-chrome-fix` (F1: fix `/admin/settings` 404ing on beta and rendering
+with no site chrome, a defect `ozow-sandbox-toggle` shipped without ever opening the page in a
+real browser)~~ ✅ **DONE**, 6/6 contract gate passed, Codex GPT-5.5 cross-model review PASS,
+deployed to beta.saoc.co.za and confirmed live. `app/admin/settings/layout.tsx` now wraps the
+page in the standard chrome stack (UtilityBar/Header/AdminNav/Footer); `AdminNav.tsx` gained a
+required `canManagePaymentSettings` prop gating a new Settings nav link, all call sites updated.
+New gate assertion A6 (`check-live-chrome.mjs`) verifies rendered chrome at 1440px/375px against
+the actual deployed URL, not a structural grep — this is what caught the bug this time, the
+third instance of this project's "green gate, unverified pixels" failure mode (see 2026-08-15
+admin-login and this page's own first shipment). See `learned.md` "Live-deployed-URL BrowserAgent
+check as a contract gate assertion" for the reusable pattern — worth defaulting into any future
+admin/UI mission touching chrome, nav, or routing. Commits `df50555` (feature), `1724d1b`
+(mission close-out).

@@ -2172,3 +2172,27 @@ without that field. Per-feature/per-round Codex passes only see the current miss
 isolation and cannot catch an interface change silently breaking a *different* mission's already-
 committed contract checks — only a pass against the full accumulated diff, run at the very end,
 structurally can. Keep this as a mandatory final gate, not an optional nicety.
+
+## Live-deployed-URL BrowserAgent check as a contract gate assertion — third recurrence of "green gate, unverified pixels" (2026-08-24)
+
+`admin-settings-deploy-and-chrome-fix` fixed `/admin/settings`, which `ozow-sandbox-toggle`
+shipped 404ing on beta with no site chrome — the page was never opened in a real browser before
+that mission closed. Same defect class as the 2026-08-15 admin-login incident, now a **third**
+confirmed instance on this project of a structurally-green contract gate shipping a page nobody
+actually looked at. This time the fix wasn't just patching the page (`app/admin/settings/
+layout.tsx` now wraps it in the standard chrome stack; `AdminNav.tsx` gained a required
+`canManagePaymentSettings` prop gating the Settings link) — it was making the *gate itself*
+incapable of passing without visual proof: `contracts/checks/admin-settings-deploy-and-chrome-
+fix-f1/check-live-chrome.mjs` runs as assertion A6 and verifies rendered chrome at 1440px and
+375px against the actual deployed beta URL, not a structural grep of the source. This is what
+caught the bug class this time. @qa also found and fixed a real DOM-order locator bug inside
+that same check script during review — a bug in the *check* would have made A6 fail forever on
+mobile even once the feature genuinely worked, which is its own reminder that a new
+browser-check script needs the same adversarial scrutiny as production code, not a pass because
+it "looks like a test."
+
+**Standing lesson**: any future admin/UI page mission should default to including a live-
+deployed-URL BrowserAgent-style check as a contract gate assertion (not a manual post-hoc
+follow-up) whenever the mission touches page chrome, navigation, or routing — those are exactly
+the properties a structural/grep-based check cannot see and that have now caused three separate
+production-visible incidents on this project.

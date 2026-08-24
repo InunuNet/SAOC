@@ -41,7 +41,7 @@ export const showVisitorInfo = defineType({
       validation: (Rule) => Rule.required(),
       description:
         'Shown beside any block whose confirmation status is Research — verified by the web ' +
-        'team against the working venue, but not confirmed by the committee.',
+        'team, but not confirmed by the committee.',
     }),
 
     defineField({ group: 'plan', name: 'planTitle', title: 'Plan Your Visit — Page Title', type: 'string' }),

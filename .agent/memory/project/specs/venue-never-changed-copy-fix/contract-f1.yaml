@@ -1,0 +1,143 @@
+schema: athanor.contract/v1
+slug: venue-never-changed-copy-fix
+goal: >-
+  Remove the "venue changed" narrative framing from every place it appears — the venue never
+  changed, CTICC was an early incorrect placeholder never actually committed to, and the site
+  currently narrates it as something that "changed away from" ("the show venue has changed
+  to...", "the previous guidance... no longer applies", "researched... against the working
+  venue", "for the new venue"). Verified across three artifacts independently
+  (scripts/seed-show-visitor-info.ts, the live Sanity showVisitorInfo document, and
+  contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json): all three are
+  byte-identical on the six affected prose fields (researchLabel, planIntro, gettingThereIntro,
+  parking, accommodationIntro, accessibility) plus two source-code comments. All 14 live showFaq
+  documents were checked directly and are already clean (negative control). One dev-facing doc
+  (docs/show-visitor-info-for-editors.md) quotes the old researchLabel verbatim and must move in
+  lockstep. This is a distinct defect from contracts/golden/venue-prose-residue/ (which purges
+  CTICC-identifying phrases) — this contract's denylist is the "change" narrative itself, a
+  different, non-overlapping phrase list; see
+  contracts/golden/venue-never-changed-copy-fix-f1/README.md "Coordination with
+  venue-prose-residue" for why neither contract fights the other despite touching the same
+  fields. nationalShowVenuePatch.venue.directionsNote in the golden JSON is explicitly OUT of
+  scope — owned by venue-prose-residue's A13, a pre-existing unresolved defect there, flagged
+  for that contract's owners rather than absorbed here (see README "Explicitly out of scope").
+created_at: '2026-08-24'
+autonomy: high
+
+# ⚠️ SCOPE: this feature touches exactly these files/fields —
+#   EDIT scripts/seed-show-visitor-info.ts — six prose fields (researchLabel, planIntro,
+#        gettingThereIntro, parking, accommodationIntro, accessibility) inside the
+#        seedVisitorInfo() object literal, plus the two comments above AIRPORT_ROUTES and
+#        CONFIRMATIONS. Exact old/new text for every one of these:
+#        contracts/golden/venue-never-changed-copy-fix-f1/corrected-fields.golden.md.
+#   EDIT contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json — the same six
+#        fields under showVisitorInfoDocument, to match #1 verbatim. Do NOT touch
+#        nationalShowVenuePatch, airportRoutes, accommodation, attractions, or any FAQ entry in
+#        this file — out of scope, owned elsewhere.
+#   EDIT docs/show-visitor-info-for-editors.md — the one line (~63) quoting the old
+#        researchLabel tag text, to match the new researchLabel exactly.
+#   WRITE a new one-off idempotent patch script, e.g. scripts/fix-venue-never-changed-copy.ts,
+#        modelled VERBATIM on scripts/fix-visitor-info-dates-confirmed.ts (same env-reading
+#        pattern, same --dry-run/--verify flags, same .patch(VISITOR_INFO_ID).set() — never
+#        .setIfMissing(), never createOrReplace) that patches the same six fields on the live
+#        showVisitorInfo document (_id: "showVisitorInfo") to the corrected text. This is
+#        necessary because seedVisitorInfo() uses createIfNotExists and the document already
+#        exists — re-running the seed script will NOT update the live document (same situation
+#        fix-visitor-info-dates-confirmed.ts already solved for the dates field on this same
+#        document). RUN this script (not just write it) — A6 checks the live document, not the
+#        source.
+# Untouched: any showFaq-* document (already clean, negative control A4), the venue-prose-residue
+# contract's own goldens/checks/CTICC-phrase denylist, and
+# nationalShowVenuePatch.venue.directionsNote (see README "Explicitly out of scope" — owned by
+# venue-prose-residue's A13, a pre-existing unresolved defect there, not this contract's to fix).
+#
+# LIVE-DATASET DISCIPLINE: per this repo's own dataset-mutation-safety.golden.md incident record
+# (a mutating "cleanup" check left sentinel residue live on the deployed site for 3 days), no
+# assertion in this contract writes to Sanity — A6/A4 are read-only GETs. The live-document fix
+# is applied once, out-of-band, by the patch script above, run by the orchestrator (or @dev under
+# orchestrator direction) before the gate is expected to go green — not by any contract check.
+
+features:
+  - id: F1
+    name: >-
+      Remove the "venue changed" narrative framing from scripts/seed-show-visitor-info.ts, its
+      golden copy-source JSON, the live Sanity showVisitorInfo document (via a one-off patch
+      script), and the one dev-facing doc quoting it verbatim — the venue reads as simply always
+      having been The Hangar, Stellenbosch Flying Club. Full spec:
+      contracts/golden/venue-never-changed-copy-fix-f1/README.md.
+
+goldens:
+  - contracts/golden/venue-never-changed-copy-fix-f1/README.md
+  - contracts/golden/venue-never-changed-copy-fix-f1/corrected-fields.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        scripts/seed-show-visitor-info.ts contains none of the "venue changed" denylist phrases
+        anywhere in the file (file-scoped grep, never grep -r) AND contains the exact corrected
+        text for all six prose fields plus both code comments, per corrected-fields.golden.md.
+        FAILS ON: any denylist phrase present (case-insensitive); any required corrected string
+        absent.
+      command: bash contracts/checks/venue-never-changed-copy-fix-f1/check-seed-script.sh
+    - id: A2
+      description: >-
+        contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json's
+        showVisitorInfoDocument holds byte-identical corrected text (no denylist phrases) for
+        the same six fields as A1, read from named JSON fields only — never a whole-file scan,
+        and never touches nationalShowVenuePatch.venue.directionsNote (see A3). FAILS ON: any
+        field missing, containing a denylist phrase, or not matching the exact expected string.
+      command: python3 contracts/checks/venue-never-changed-copy-fix-f1/check_golden_json.py
+    - id: A3
+      description: >-
+        Structural proof this contract's own checks never assert against
+        nationalShowVenuePatch.venue.directionsNote or nationalShowVenuePatch as a live
+        assertion target (comment/docstring mentions explaining the exclusion are allowed) —
+        same "never referenced = never touched" mechanism venue-prose-residue's own A19 uses,
+        applied here to respect that contract's ownership of the field instead of fighting it.
+        FAILS ON: any *.py file in this contract's checks directory containing a live key-access
+        or list-membership reference to the string "directionsNote" outside a comment/docstring.
+      command: bash contracts/checks/venue-never-changed-copy-fix-f1/check-directionsnote-untouched.sh
+    - id: A4
+      description: >-
+        Negative controls, read-only: all four live showFaq-* documents already known clean
+        (showFaq-getting-there-1/2/3, showFaq-accessibility-1) remain byte-identical to their
+        2026-08-24-verified text (catches a regression where fixing showVisitorInfo
+        accidentally disturbs the FAQs); docs/show-visitor-info.md and
+        docs/show-visitor-info-for-editors.md keep their legitimate, forward-looking
+        descriptions of the Studio single-source venue mechanism intact (this fix must not
+        overreact and strip real documentation containing the word "change"/"changes"). FAILS
+        ON: any of the four FAQ answers drifting or gaining denylist phrases; either preserved
+        doc phrase going missing.
+      command: python3 contracts/checks/venue-never-changed-copy-fix-f1/check_negative_controls.py
+    - id: A5
+      description: >-
+        docs/show-visitor-info-for-editors.md no longer quotes the old researchLabel text
+        ("against the working venue") and instead quotes the corrected researchLabel verbatim.
+        FAILS ON: old quote still present; corrected quote absent.
+      command: bash contracts/checks/venue-never-changed-copy-fix-f1/check-editors-doc.sh
+    - id: A6
+      description: >-
+        READ-ONLY GET against the live production Sanity showVisitorInfo document
+        (_id: "showVisitorInfo", project 26yfbug4, dataset production) — proves the one-off
+        patch script was actually run against production, not just source changed. All six
+        fields must hold the exact corrected text, no denylist phrases. Never writes — per
+        dataset-mutation-safety.golden.md, the live fix is applied once, out-of-band, by the
+        patch script named in this contract's scope header, before this assertion is expected
+        to pass. FAILS ON: any field missing, containing a denylist phrase, or not matching the
+        exact expected string; Sanity env vars missing from .env.local.
+      command: python3 contracts/checks/venue-never-changed-copy-fix-f1/check_live_doc.py
+    - id: A7
+      description: >-
+        Full TypeScript compilation succeeds — proves the new one-off patch script (and any
+        edit to scripts/seed-show-visitor-info.ts) is syntactically and structurally valid.
+        FAILS ON: any tsc error.
+      command: npx tsc --noEmit
+    - id: A8
+      description: >-
+        The DENYLIST regex source is byte-identical across check-seed-script.sh,
+        check_golden_json.py, check_live_doc.py and check_negative_controls.py — proves this
+        contract cannot suffer the exact drift bug venue-prose-residue's v2 found in itself
+        (a documented phrase list wider than what the checker actually implemented, gate green
+        while the defect stayed open). FAILS ON: any of the four DENYLIST definitions differing.
+      command: python3 contracts/checks/venue-never-changed-copy-fix-f1/check_denylist_conformance.py

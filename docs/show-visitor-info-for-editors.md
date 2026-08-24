@@ -59,8 +59,8 @@ one-place-change above is how you fix the venue everywhere if it ever changes ag
 
 ## The "To Be Confirmed" Tags — What They Mean and How They Work
 
-You will see small tags like *"To be confirmed by the show committee"* or *"Researched by the web
-team against the working venue — not yet confirmed by the show committee"* next to many pieces of
+You will see small tags like *"To be confirmed by the show committee"* or
+*"Researched by the web team — not yet confirmed by the show committee"* next to many pieces of
 information across these pages. That is deliberate — same idea as the "Provisional price" note on
 the ticket pages.
 

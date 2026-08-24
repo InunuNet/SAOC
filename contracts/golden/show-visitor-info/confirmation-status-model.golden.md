@@ -13,7 +13,7 @@ the content three ways, and the model must too:
 | Status | Means | Example |
 |--------|-------|---------|
 | `pending` | Placeholder. We made it up as scaffolding. The committee must supply the real value. | Opening hours, parking specifics, admission conditions, photography policy, cloakroom, most FAQ answers |
-| `research` | Real, verified by us against the CTICC working assumption — but *our* research, not committee-confirmed. Correct today, invalid the day the venue changes. | Airport routes, public transport, accommodation, attractions |
+| `research` | Real, verified by us — but *our* research, not committee-confirmed. | Airport routes, public transport, accommodation, attractions |
 | `confirmed` | The committee supplied or signed off this value. Renders with no marker. | Nothing yet. |
 
 Conflating `pending` and `research` would be dishonest in both directions: it would label
@@ -26,7 +26,7 @@ Two schema pieces, both on `showVisitorInfo`:
 
 1. **Two label strings**, so the wording is editable in one place and reused everywhere:
    - `pendingLabel`, seeded `"To be confirmed by the show committee"`
-   - `researchLabel`, seeded `"Researched by the web team against the working venue — not yet confirmed by the show committee"`
+   - `researchLabel`, seeded `"Researched by the web team — not yet confirmed by the show committee"`
 2. **A `confirmations` object**, one `string` field per content block, each with
    `options.list: ['pending', 'research', 'confirmed']`, `initialValue: 'pending'`.
 

@@ -895,22 +895,6 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-24-template-mirror-missing-files.md
 
-- [ ] SAOC (Bug, P1): ozow-sandbox-toggle F1 QA verification testing (2026-08-24) found:
-  1. `/admin/settings` is unreachable on beta.saoc.co.za (404) — feature was never deployed to
-     Firebase App Hosting after mission close-out; only exists on localhost.
-  2. `app/admin/settings/page.tsx` renders with no site chrome — missing `<UtilityBar>`,
-     `<Header>`, and `<AdminNav>`, which every other admin page (`app/admin/page.tsx`,
-     `app/admin/vendors/page.tsx`) includes explicitly. Page is a bare unstyled `<main>`
-     floating with no nav, same defect class as the 2026-08-15 admin-login incident
-     (`.claude/rules/behavior.md` "Visual work is not done until a browser has seen it").
-  3. `components/admin/AdminNav.tsx`'s `buildLinks()` was never updated to add a Settings
-     entry — the page is only reachable by typing the URL directly, no discoverable nav link
-     for admins (should likely be capability-gated on `manage-payment-settings` the same way
-     Vendors is gated on `review-vendor-applications`).
-  Root cause: F1's dev/QA chain never opened the page in a real browser — contract gate was
-  green (12/12) but nobody looked at rendered pixels. Fix via architect→dev→qa→Codex chain,
-  then deploy.
-
 - [ ] SAOC (Feature, P2): early-bird / regular ticket display gating (Brad, 2026-08-24, tested
   at /tickets). `earlyBirdCutoff` exists per ticket type today but is ONLY enforced server-side
   at checkout (409 if you try to buy after cutoff) — see docs/f4-admission-products.md line 88.
