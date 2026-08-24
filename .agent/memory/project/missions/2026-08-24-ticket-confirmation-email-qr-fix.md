@@ -14,7 +14,7 @@ goal: 'Fix the ticket confirmation email''s QR code rendering as a broken-image 
   @architect for a contract before implementation.'
 created_at: '2026-08-24T19:40:12.047879+00:00'
 started_at: '2026-08-24T19:48:09.740626+00:00'
-status: close_out
+status: done
 cost_estimate:
   features: 0
   milestones: 0

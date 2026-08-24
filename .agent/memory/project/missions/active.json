@@ -1,9 +1,5 @@
 {
-  "mission": ".agent/memory/project/missions/2026-08-24-ticket-confirmation-email-qr-fix.md",
-  "checkpoint": {
-    "milestone": "M1",
-    "feature": "F1",
-    "ts": "2026-08-24T19:57:51.127317+00:00"
-  },
-  "activated_at": "2026-08-24T19:57:51.127529+00:00"
+  "mission": null,
+  "checkpoint": null,
+  "note": "mission complete"
 }
