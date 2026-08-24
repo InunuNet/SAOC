@@ -5,6 +5,22 @@ cannot currently be completed in this environment, and that this is a genuine ex
 Ozow's side — not a defect in this project's code. This document is the artifact a future session
 (or Brad directly) should read before re-attempting A1 in its original live-purchase form.
 
+---
+
+## CORRECTION NOTE (2026-08-23) — The original conclusion was inaccurate; see F4 README §8 for the real root causes
+
+The conclusion in the sections below that "Ozow's sandbox merchant account is very likely not
+provisioned/activated for IsTest=true transactions" was **incorrect**. Live retesting after F4's
+investigation (2026-08-23) found three distinct root causes:
+
+1. **SiteCode misconfiguration** — was using Ozow's Merchant Code instead of Site Code. **Fixed** and verified live.
+2. **F4 fix — a missing query parameter on the status-check endpoint** — `GetTransactionByReference` takes an `IsTest` query parameter (defaults to false). This codebase was never sending it, so sandbox transactions returned 404 even after a genuinely successful payment. **Fixed** in F4 by appending `&IsTest=true` to the query string when the notification's `raw.IsTest === 'true'`. See [`contracts/golden/ozow-m1-f4/README.md`](../ozow-m1-f4/README.md) §8 for the full decision record and developer specification.
+3. **R0.01 sandbox cap** — Ozow's sandbox enforces a real ZAR 0.01 minimum transaction amount on this merchant account, confirmed via Ozow's own error message. This remains **external/vendor-side and still requires Ozow support** to raise the cap — a support email was drafted but not yet sent. See `contracts/golden/ozow-m1-f3/README-addendum-blocked.md` (this file, historical record below) for the investigation trail.
+
+The sections below (written 2026-08-22) are preserved as historical record and decision trail.
+
+---
+
 ## What A1 originally required, and why it can't pass right now
 
 A1, as originally written, required a real BrowserAgent purchase through Ozow's sandbox to reach

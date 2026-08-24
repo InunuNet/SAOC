@@ -245,9 +245,12 @@ F10's assertions keep asserting exactly what they asserted, against the same fun
 
 ## Ozow adapter — `lib/payments/ozow.ts`
 
-**Status:** F1 complete (2026-08-22), F2b complete (2026-08-22). Additive code only — no changes to the seam interface. Implements all five interface members per the design above.
+**Status:** F1 complete (2026-08-22), F2b complete (2026-08-22), F4 complete (2026-08-23). Additive code only — no changes to the seam interface. Implements all five interface members per the design above.
 
-**F3 live-purchase testing:** Identified a vendor-side blocker. See [`contracts/golden/ozow-m1-f3/README-addendum-blocked.md`](../contracts/golden/ozow-m1-f3/README-addendum-blocked.md) for the investigation trail, Brad's action items, and confirmation steps with Ozow support.
+**F3 live-purchase testing (2026-08-22–23):** Three root causes found and addressed:
+1. **SiteCode misconfiguration** — was using Ozow's Merchant Code instead of Site Code. Fixed and verified live.
+2. **F4 fix (2026-08-23)** — `GetTransactionByReference` endpoint takes an `IsTest` query parameter (defaults to `false`). The adapter was never sending it, so sandbox (`IsTest=true`) transactions returned 404 on status confirmation. Fixed by appending `&IsTest=true` when the notification's `raw.IsTest === 'true'`. See [`contracts/golden/ozow-m1-f4/README.md`](../contracts/golden/ozow-m1-f4/README.md) §8 for the decision record.
+3. **Ozow sandbox R0.01 transaction cap** — Ozow's sandbox enforces a real ZAR 0.01 minimum transaction amount on this merchant account, confirmed via Ozow's own error message. This is external/vendor-side and still requires Ozow support to raise the cap — a support email was drafted but not yet sent.
 
 **Code:** [`lib/ozow.ts`](../lib/ozow.ts) (signature builder), [`lib/payments/ozow.ts`](../lib/payments/ozow.ts)
 (PaymentProvider adapter).
