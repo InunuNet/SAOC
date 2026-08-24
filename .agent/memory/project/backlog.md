@@ -416,9 +416,6 @@ flat-over-nested-submenu pattern.
 
 ## Accessibility & UI defects
 
-- [ ] **[P2] MobileMenu.tsx drawer has no focus trap** — Tab escapes onto background page content
-  while the drawer is open. Flagged real by @qa during `backlog-a11y-ui-quickfixes` (2026-08-21/22)
-  while verifying the focus-ring fix below; needs its own fix, not folded into that mission.
 - [ ] **[P2] Form-error-contrast fix (bordered-callout pattern) only applied to
   ContactForm/TicketPurchaseForm** by `backlog-a11y-ui-quickfixes` F3 (2026-08-21/22) — the same
   low-contrast `text-accent` error-text issue is still present on `CartDayPicker`,

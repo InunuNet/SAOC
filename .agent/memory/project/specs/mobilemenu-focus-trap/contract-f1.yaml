@@ -1,0 +1,114 @@
+schema: athanor.contract/v1
+slug: mobilemenu-focus-trap
+goal: >-
+  Fix MobileMenu.tsx: the mobile nav drawer (components/chrome/MobileMenu.tsx) has no focus
+  trap. Opening it does not move focus in, Tab/Shift+Tab escape onto background page content
+  behind the overlay, closing it does not return focus to the hamburger trigger, and the
+  background is not inert/aria-hidden while open. Flagged real by @qa during
+  backlog-a11y-ui-quickfixes (2026-08-21/22). Fix by hand-rolling a useFocusTrap hook (no
+  focus-trap/radix/headlessui/react-aria dependency exists in package.json — do not add one).
+  Full spec: contracts/golden/mobilemenu-focus-trap-f1/README.md and
+  contracts/golden/mobilemenu-focus-trap-f1/mobile-menu-spec.golden.md.
+created_at: '2026-08-25'
+autonomy: high
+
+# SCOPE: this feature touches exactly these files —
+#   ADD  lib/hooks/useFocusTrap.ts — new hook implementing the trap/return-focus/inert
+#        behavior. No new npm dependency.
+#   EDIT components/chrome/MobileMenu.tsx — wire useFocusTrap to the outer role="dialog"
+#        container; apply inert (aria-hidden="true" fallback) to background siblings while
+#        open; accept the hamburger trigger element so focus can return to it.
+#   EDIT components/chrome/Header.tsx — thread a ref to the hamburger
+#        <button aria-label="Open menu"> down to MobileMenu (or an equivalent mechanism).
+#        No other change to Header.tsx permitted.
+# Untouched / explicitly out of scope (see README "What this contract does NOT do"):
+#   - components/chrome/SearchOverlay.tsx, components/chrome/MegaMenu.tsx,
+#     components/chrome/nav-config.ts
+#   - package.json (no new dependency)
+#   - the drawer's visual design/animation, and the /contact link from contact-mobile-nav-fix
+#   - desktop nav, desktop search, desktop Contact CTA in Header.tsx
+
+features:
+  - id: F1
+    name: >-
+      The MobileMenu drawer traps focus while open (Tab/Shift+Tab cycle only within its
+      focusable set), moves focus in on open (to the close button) and back to the hamburger
+      trigger on close (Escape or any existing close path), and marks background page content
+      inert/aria-hidden while open — proven with real Playwright keyboard interaction, not
+      DOM-attribute presence alone. Full spec:
+      contracts/golden/mobilemenu-focus-trap-f1/README.md and
+      contracts/golden/mobilemenu-focus-trap-f1/mobile-menu-spec.golden.md.
+    status: pending
+
+goldens:
+  - contracts/golden/mobilemenu-focus-trap-f1/README.md
+  - contracts/golden/mobilemenu-focus-trap-f1/mobile-menu-spec.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        lib/hooks/useFocusTrap.ts exists and components/chrome/MobileMenu.tsx imports and
+        calls it. FAILS ON: file missing, or MobileMenu.tsx has no reference to
+        useFocusTrap/useFocusTrap.ts.
+      command: bash contracts/checks/mobilemenu-focus-trap-f1/check-hook-wired.sh
+
+    - id: A2
+      description: >-
+        No focus-trap dependency was added — regression guard per README "No focus-trap
+        dependency exists". FAILS ON: package.json gaining any of
+        focus-trap/focus-trap-react/@radix-ui/@headlessui/react-aria as a new dependency (git
+        diff against HEAD on package.json/pnpm-lock.yaml shows one of these added).
+      command: bash contracts/checks/mobilemenu-focus-trap-f1/check-no-new-dep.sh
+
+    - id: A3
+      description: >-
+        components/chrome/Header.tsx's desktop nav (Zone 2), search button, and Contact CTA
+        (Zone 3) markup are unchanged apart from the hamburger-ref wiring — regression guard.
+        FAILS ON: the desktop <nav aria-label="Primary"> block content differing from its
+        pre-fix committed state, or the "Open search"/desktop Contact CTA buttons/links
+        missing.
+      command: bash contracts/checks/mobilemenu-focus-trap-f1/check-header-regression.sh
+
+    - id: A4
+      description: pnpm lint and pnpm exec tsc --noEmit both pass with zero errors after the edit.
+      command: pnpm lint && pnpm exec tsc --noEmit
+
+    - id: A5
+      description: >-
+        MANDATORY automated Playwright pass (not agent_review — this project's standing rule
+        that "DOM presence alone does not satisfy this" is met here by real keyboard input,
+        matching the house pattern in contracts/checks/show-visitor-info/check-faq-keyboard.mjs)
+        against a running dev server at http://localhost:3333 (override with
+        MMFT_CHECK_BASE_URL). Using real page.keyboard.press calls — no synthetic
+        dispatchEvent/KeyboardEvent construction — confirm on a public marketing page at a
+        desktop-hidden mobile viewport (375x812): (a) clicking the hamburger
+        (aria-label="Open menu") opens the drawer and moves focus to the close button
+        (aria-label="Close menu"); (b) repeatedly pressing Tab from that point cycles through
+        exactly the drawer's own focusable set per
+        contracts/golden/mobilemenu-focus-trap-f1/mobile-menu-spec.golden.md "Focusable set"
+        and wraps back to the close button without ever landing on an element outside the
+        drawer's DOM subtree (verify via closest('[role="dialog"]') on
+        document.activeElement at every step, and independently confirm the search button
+        and any header/footer link are never document.activeElement while the drawer is
+        open); (c) Shift+Tab from the close button wraps to the last focusable element in the
+        drawer; (d) pressing Escape closes the drawer (drawer subtree removed/hidden) and
+        returns focus to the hamburger trigger button (document.activeElement is the
+        aria-label="Open menu" button); (e) while open, every element that is a sibling of
+        the drawer's root (i.e. not inside its role="dialog" subtree) is inert or
+        aria-hidden="true", and none of those attributes remain once closed. FAILS ON: focus
+        not moved on open; Tab reaching any element outside the drawer's subtree at any point
+        in a full cycle; Shift+Tab from the first element not wrapping to the last; Escape not
+        closing the drawer or not returning focus to the hamburger button; background content
+        missing inert/aria-hidden while open, or still carrying it after close.
+      command: node contracts/checks/mobilemenu-focus-trap-f1/check-focus-trap.mjs
+
+    - id: A6
+      description: >-
+        Regression, automated Playwright: mouse/tap-only interaction still works exactly as
+        before — opening via hamburger click, closing via the X button and via backdrop
+        click, and clicking through a plain nav Link, the /contact Link, and the mailto link
+        (each still navigates/fires onClose as expected). FAILS ON: any of these interactions
+        failing to open/close the drawer or to navigate as expected.
+      command: node contracts/checks/mobilemenu-focus-trap-f1/check-mouse-regression.mjs

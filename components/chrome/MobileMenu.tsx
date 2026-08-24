@@ -6,21 +6,58 @@
 // Rendered by Header; receives the same NAV array.
 // =============================================================
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronDown, X } from 'lucide-react';
 
+import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
 import type { NavItem } from './nav-config';
 
 interface MobileMenuProps {
   open: boolean;
   onClose: () => void;
   nav: ReadonlyArray<NavItem>;
+  triggerRef?: React.RefObject<HTMLElement | null>;
 }
 
-export function MobileMenu({ open, onClose, nav }: MobileMenuProps) {
+export function MobileMenu({ open, onClose, nav, triggerRef }: MobileMenuProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Marks every other <body> child (header, main, footer, the SearchOverlay root, etc.)
+  // inert while the drawer is open, so background content is unreachable by keyboard/screen
+  // reader — not just visually covered. `aria-hidden` is set alongside `inert` as a fallback
+  // for environments without inert support. Declared before useFocusTrap so its cleanup
+  // (clearing `inert`) runs before the trap's cleanup tries to focus the trigger button —
+  // otherwise the trigger can live inside a still-inert <header> and silently refuse focus.
+  useEffect(() => {
+    if (!open) return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    const hidden: HTMLElement[] = [];
+    for (const child of Array.from(document.body.children)) {
+      if (child === container || !(child instanceof HTMLElement)) continue;
+      child.setAttribute('inert', '');
+      child.setAttribute('aria-hidden', 'true');
+      hidden.push(child);
+    }
+
+    return () => {
+      for (const el of hidden) {
+        el.removeAttribute('inert');
+        el.removeAttribute('aria-hidden');
+      }
+    };
+  }, [open]);
+
+  useFocusTrap({
+    active: open,
+    containerRef,
+    onEscape: onClose,
+    returnFocusRef: triggerRef,
+  });
 
   if (!open) return null;
 
@@ -30,6 +67,7 @@ export function MobileMenu({ open, onClose, nav }: MobileMenuProps) {
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       className="fixed inset-0 z-50 bg-black/45"

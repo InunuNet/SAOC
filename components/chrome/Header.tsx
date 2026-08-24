@@ -8,7 +8,7 @@
 // Below 1240px: nav + Sign in hide, hamburger appears.
 // =============================================================
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Search, Menu } from 'lucide-react';
@@ -24,6 +24,7 @@ export function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
   const [prevPathname, setPrevPathname] = useState(pathname);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
 
   // Close the mobile menu when the route changes. Adjusted during render
   // (rather than in an effect) per https://react.dev/learn/you-might-not-need-an-effect
@@ -148,6 +149,7 @@ export function Header() {
             </Link>
 
             <button
+              ref={hamburgerRef}
               type="button"
               aria-label="Open menu"
               className="rounded-sm p-2 text-ink min-[1240px]:hidden hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
@@ -159,7 +161,12 @@ export function Header() {
         </div>
       </header>
 
-      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} nav={NAV} />
+      <MobileMenu
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        nav={NAV}
+        triggerRef={hamburgerRef}
+      />
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
