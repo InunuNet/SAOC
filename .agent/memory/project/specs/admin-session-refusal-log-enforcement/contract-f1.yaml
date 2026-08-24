@@ -1,0 +1,117 @@
+schema: athanor.contract/v1
+slug: admin-session-refusal-log-enforcement
+goal: >-
+  Mechanically enforce that a real refused POST /api/admin/session actually produces the
+  documented ops-debugging log line (classifyRefusal's `[admin-auth] refused` WARNING with
+  the correct reason + attempted email — lib/admin-auth.ts:64-87), while the HTTP response the
+  browser receives stays the generic 403 { error: 'Forbidden' } with no reason/email leaked.
+  Nothing today mechanically proves the app/api/admin/session/route.ts:29 call site exists or
+  fires — a future refactor could delete or gut it and every grep/type-check-based safeguard
+  would still pass, silently reintroducing the exact "documented but non-functional debugging
+  path" defect this project has already paid for once. Full decision record, including why
+  this is a real HTTP + real-process-log round trip and not a grep or a mocked
+  classifyRefusal, and exactly which three refusal cases were chosen and why:
+  contracts/golden/admin-session-refusal-log-enforcement-f1/README.md
+
+created_at: '2026-08-24'
+autonomy: high
+
+# ⚠️ SCOPE: this feature adds ONLY a check harness — no production code changes.
+#   ADD contracts/checks/admin-session-refusal-log-enforcement-f1/_shared.mjs — owns a
+#        dedicated `next start` child process on port 3411 (ADMIN_SESSION_REFUSAL_CHECK_PORT
+#        overrides), built via `pnpm build` if `.next/BUILD_ID` is absent, with its stdout/stderr
+#        piped into an in-memory buffer the checks can read a slice of (mark a buffer position
+#        before a request, read only what was appended after). Also owns real Identity Platform
+#        REST account creation/claim-setting/idToken-minting/deletion helpers (same technique as
+#        contracts/checks/admin-auth-hardening/_shared.mjs's signUpProbeAccount /
+#        setCustomClaims / setEmailVerified / mintIdTokenForUid / deleteAccountByIdToken /
+#        assertAccountGone — reuse that file's approach, do not import it directly since goldens
+#        for each contract are owned exclusively by that contract) and a postSession(idToken)
+#        helper hitting the spawned server's real HTTP surface. Full technical rationale for why
+#        this contract spawns its own server instead of reusing admin-auth-hardening's
+#        already-running-server convention: see the README's "Why this reuses, and departs
+#        from" section.
+#   ADD contracts/checks/admin-session-refusal-log-enforcement-f1/check-no-claim.mjs (A1)
+#   ADD contracts/checks/admin-session-refusal-log-enforcement-f1/check-email-unverified.mjs (A2)
+#   ADD contracts/checks/admin-session-refusal-log-enforcement-f1/check-not-allowlisted.mjs (A3)
+#   ADD contracts/checks/admin-session-refusal-log-enforcement-f1/check-eligible-no-leak.mjs (A4)
+#   Each of A1-A4 creates exactly one probe account, deletes it in a `finally` (self-delete via
+#   accounts:delete, same as admin-auth-hardening/_shared.mjs's deleteAccountByIdToken), and
+#   confirms via accounts:lookup that it is actually gone before exiting — no separate
+#   cross-process residue-sweep script; each check owns and proves its own cleanup, since A1-A4
+#   run as four independent `node` processes with no shared in-memory state between them.
+# Untouched: app/api/admin/session/route.ts, lib/admin-auth.ts, docs/admin-access.md, and every
+# other contract's checks/ or golden/ directory (in particular admin-auth-hardening's — read its
+# _shared.mjs for the pattern, never import or modify it).
+
+features:
+  - id: F1
+    name: >-
+      A real, self-contained round-trip check harness proving classifyRefusal's ops-debugging
+      log line actually fires with the correct reason + email on each of three distinct real
+      refused-session HTTP requests, that the browser-visible response never leaks refusal
+      detail, and that a genuinely eligible session request produces no such log line at all.
+      Full spec: contracts/golden/admin-session-refusal-log-enforcement-f1/README.md.
+    status: pending
+
+goldens:
+  - contracts/golden/admin-session-refusal-log-enforcement-f1/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        A freshly signed-up Identity Platform account with NO custom claims (admin absent)
+        POSTs to /api/admin/session and is refused. Asserts: (1) the HTTP response is exactly
+        403 with body { "error": "Forbidden" } — no reason, no email, no extra field; (2) the
+        spawned server's real stdout/stderr, in the window after this specific request, contains
+        a "[admin-auth] refused" line whose logged reason is 'no-claim' and whose logged email
+        is this exact probe account's email — not merely that some refusal line appeared.
+      command: node contracts/checks/admin-session-refusal-log-enforcement-f1/check-no-claim.mjs
+
+    - id: A2
+      description: >-
+        An account with admin:true but emailVerified:false POSTs to /api/admin/session and is
+        refused. Asserts the same 403-with-no-leak response shape as A1, and that the captured
+        log window for this specific request contains "[admin-auth] refused" with reason
+        'email-unverified' and this exact probe account's email — proving this is a genuinely
+        distinct branch from A1's 'no-claim', not the same line reused.
+      command: >-
+        node contracts/checks/admin-session-refusal-log-enforcement-f1/check-email-unverified.mjs
+
+    - id: A3
+      description: >-
+        An account with admin:true AND emailVerified:true, but whose email (a randomly
+        generated @saoc-contract-check.invalid address) is certainly not on
+        ADMIN_EMAIL_ALLOWLIST, POSTs to /api/admin/session and is refused. Asserts the same
+        403-with-no-leak response shape, and that the captured log window contains
+        "[admin-auth] refused" with reason 'not-allowlisted' and this exact probe account's
+        email — proving all three classifyRefusal branches are independently reachable and
+        produce distinct reason values, not just two of three.
+      command: >-
+        node contracts/checks/admin-session-refusal-log-enforcement-f1/check-not-allowlisted.mjs
+
+    - id: A4
+      description: >-
+        The converse of A1-A3 — a genuinely eligible account (admin:true, emailVerified:true,
+        AND actually present on ADMIN_EMAIL_ALLOWLIST for the duration of this one check) POSTs
+        to /api/admin/session and succeeds (200, session cookie set). Asserts the captured log
+        window for this specific request contains ZERO occurrences of "[admin-auth] refused".
+        Without this check, a classifyRefusal that logged unconditionally on every request
+        (success or failure) would pass A1-A3 by coincidence — this is what proves the log is
+        actually conditioned on a real refusal. This check's own probe account is deleted (and
+        additionally removed from ADMIN_EMAIL_ALLOWLIST-equivalent test state, if the allowlist
+        env var itself was mutated to include it — see README "Refusal cases chosen" for how
+        eligibility is granted for this one check only) and confirmed gone via accounts:lookup
+        before the script exits, and its spawned server child process is confirmed no longer
+        running (process exit code observed, not just a kill signal sent) before the script
+        exits — each of A1-A4 proves its own cleanup individually; there is no separate
+        cross-process residue sweep, since each assertion runs as its own independent `node`
+        process with no shared in-memory state.
+      command: >-
+        node contracts/checks/admin-session-refusal-log-enforcement-f1/check-eligible-no-leak.mjs
+
+    - id: A5
+      description: pnpm lint passes with zero errors after the check-harness files are added.
+      command: pnpm lint

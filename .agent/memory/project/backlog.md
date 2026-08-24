@@ -379,16 +379,11 @@ flat-over-nested-submenu pattern.
 
 ## Security & admin auth
 
-- [ ] **[P1] Confirm `/admin/door` has a server-side gate.** It was a client component with no
-  server gate and no middleware — UI exposure only (check-in POSTs correctly 403), but a
-  self-registered account could render the scanner. Self-signup itself is now closed by the
-  `guardSelfSignup` Cloud Function. Verify the page gate specifically.
-- [ ] **[P1] F5's debug-log claim is not mechanically enforced.**
-  `app/api/admin/session/route.ts:29` calls `classifyRefusal()` purely for its logging side effect
-  and discards the return value. Nothing asserts the call site exists or that the log fires on a
-  refusal — a refactor could silently delete it and reintroduce the exact "documented but
-  non-functional debugging path" defect this fixed. Fix is a real refusal round trip that validates
-  the log line, not a grep for the function name.
+- [x] **[P1] F5's debug-log claim is not mechanically enforced.** DONE 2026-08-24 (mission
+  `admin-session-refusal-log-enforcement`) — `contracts/checks/admin-session-refusal-log-enforcement-f1/`
+  now runs a real refused POST /api/admin/session round trip and asserts the `classifyRefusal`
+  reason/email log line actually fires, plus that refusal detail never leaks to the response.
+  Gate passed 5/5, Codex GPT-5.5 clean after one fix round.
 - [ ] **[P2] Empty-allowlist behaviour is reasoned about, not proven live.** No test restarts the
   server with an empty/unset/whitespace-only/trailing-comma `ADMIN_EMAIL_ALLOWLIST`. Residual risk
   is low (`parseAllowlist()` is a deterministic trimmed split) but this is exactly the

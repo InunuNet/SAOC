@@ -1,0 +1,11 @@
+{
+  "schema": "athanor.mission-touched-files/v1",
+  "slug": "admin-session-refusal-log-enforcement",
+  "pending_baselines": {},
+  "paths": [
+    ".agent/memory/project/missions/admin-session-refusal-log-enforcement.touched.json",
+    "contracts/checks/admin-session-refusal-log-enforcement-f1/",
+    "contracts/golden/admin-session-refusal-log-enforcement-f1/",
+    "docs/admin-access.md"
+  ]
+}

@@ -87,6 +87,17 @@ that failed verification outright); if you need to debug one of those two, you'r
 for the absence of any `[admin-auth]` log line for that request, not a line with that
 reason string in it.
 
+## Verifying refusal logging actually happens
+
+The logging described in the section above is enforced by a regression-proof contract check
+at `contracts/checks/admin-session-refusal-log-enforcement-f1/`. This check spawns its own
+Next.js server (rebuilt fresh every run), drives real Firebase Auth accounts through all three
+refusal paths (`no-claim`, `email-unverified`, `not-allowlisted`), and verifies that:
+- Each refused request produces exactly one server-side log line with the correct reason + email
+- An eligible request produces zero such log lines
+
+See [`contracts/golden/admin-session-refusal-log-enforcement-f1/README.md`](../contracts/golden/admin-session-refusal-log-enforcement-f1/README.md) for the decision record and full verification methodology.
+
 ## Traps that will cost you a day if you don't know about them
 
 ### 1. The lockout trap — email/password signup does not verify email

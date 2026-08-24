@@ -1,3 +1,24 @@
+## A check harness that spawns its own server must always rebuild fresh (2026-08-24)
+
+`admin-session-refusal-log-enforcement` F1 Codex round: the check harness's `ensureBuilt()`
+conditionally skipped a rebuild if a prior build artifact already existed, so it could reuse a
+stale build that predated the very fix the check exists to enforce — silently defeating
+regression-enforcement (the check would pass against old code even after a real regression).
+**Generalize**: any check harness that spawns its own server to exercise real behavior must
+always rebuild fresh before spawning, never conditionally skip based on artifact presence — a
+stale-build shortcut in a regression check is worse than no check, because it reports green
+while enforcing nothing.
+
+## Nest cleanup try/finally in check-harness teardown — a flat sequential finally lets one throw skip the rest (2026-08-24)
+
+Same mission, same Codex round: the harness's cleanup ran account-deletion and
+spawned-server-stop as two sequential steps inside one flat `finally` block. A throw during
+account cleanup (e.g. Firebase Admin delete failure) skipped the server-stop step entirely,
+orphaning the spawned process. **Generalize**: in a check harness's teardown, nest
+`try { cleanupA() } finally { cleanupB() }` (or run each step in its own guarded block) so a
+throw in one cleanup step can never suppress another — never chain multiple cleanup actions
+sequentially in one flat `finally`.
+
 ## Gmail strips/mishandles `data:` URI images in HTML email — use CID inline attachments instead (2026-08-24)
 
 `ticket-confirmation-email-qr-fix` F1: the confirmation email's QR code rendered fine in a browser
