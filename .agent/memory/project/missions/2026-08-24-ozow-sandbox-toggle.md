@@ -11,7 +11,7 @@ goal: 'Add an admin-gated Ozow sandbox test-mode toggle: when on, only the amoun
   for a real (non-flagged) customer to pay R0.01 for a real-priced ticket.'
 created_at: '2026-08-24T08:33:03.558257+00:00'
 started_at: null
-status: close_out
+status: done
 cost_estimate:
   features: 0
   milestones: 0
@@ -55,7 +55,10 @@ milestones:
   - F1
   gate_ran_at: '2026-08-24T09:42:32.622788+00:00'
   gate_result: pass
+completed_at: '2026-08-24T09:45:22.456562+00:00'
+last_active_at: '2026-08-24T09:45:22.456731+00:00'
 ---
+
 
 
 
