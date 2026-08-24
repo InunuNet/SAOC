@@ -1,0 +1,152 @@
+schema: athanor.contract/v1
+slug: gateway-picker-admin-only
+goal: >-
+  Remove the customer-facing "Pay with: Ozow / PayFast" gateway picker from the ticket checkout
+  flow. Add adminSettings/activePaymentGateway (a new Firestore doc, sibling to
+  ozow-sandbox-toggle F1's adminSettings/ozowSandboxTestMode, same 'manage-payment-settings'
+  capability) so an admin picks the active gateway once, and checkout resolves it server-side —
+  no client-supplied providerId is trusted at all. Missing/invalid setting fails closed: the
+  checkout route refuses the charge (500, same message as the existing "gateway not configured"
+  refusal) rather than guessing a default gateway. Full design rationale:
+  contracts/golden/gateway-picker-admin-only-f1/README.md.
+created_at: '2026-08-24'
+autonomy: high
+
+# SCOPE: this feature touches exactly these files —
+#   NEW  lib/payments/active-gateway.ts (GATEWAY_IDS, isValidGatewayId, resolveActiveGateway) —
+#        README §2, golden active-gateway-lib.golden.md
+#   NEW  app/api/admin/settings/active-payment-gateway/route.ts (GET/PUT, admin-gated, REUSES
+#        'manage-payment-settings' — no new capability) — README §6, golden admin-route.golden.md
+#   EDIT app/admin/settings/page.tsx — add gateway radio control alongside the existing sandbox
+#        checkbox, same page, same layout gate — README §6, golden admin-settings-ui.golden.md
+#   EDIT app/api/tickets/checkout/route.ts — delete providerId/isValidProviderId/
+#        KNOWN_PROVIDER_IDS; call resolveActiveGateway() in the same textual position; fail
+#        closed (500) when it returns null, before any Firestore write — README §3-4, golden
+#        checkout-route-diff.golden.md
+#   EDIT components/tickets/useTicketCart.ts — drop providerId state/setProviderId/
+#        DEFAULT_PROVIDER_ID; POST body drops providerId — README §5, golden
+#        checkout-ui-diff.golden.md
+#   EDIT components/tickets/TicketPurchaseForm.tsx — drop <ProviderChoice/> and its submit-label
+#        branch — README §5, golden checkout-ui-diff.golden.md
+#   DELETE components/tickets/ProviderChoice.tsx — README §5
+#
+# Explicitly UNCHANGED (README §7): lib/payments/index.ts (resolveProvider, paymentProviders),
+# lib/payments-ui.ts (providerLabel), lib/payments/payfast.ts, lib/payments/ozow.ts,
+# lib/ozow-sandbox-test-mode*.ts, components/tickets/CheckoutRedirectNotice.tsx,
+# replayGatewayMatches() behaviour, ticket type/quantity/attendee/day-selection UI and logic.
+
+features:
+  - id: F1
+    name: >-
+      Move payment-gateway selection from a customer-facing checkout picker to an admin-only
+      Firestore setting; checkout resolves the gateway server-side and fails closed when unset.
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/gateway-picker-admin-only/goldens/README.md
+  - contracts/golden/gateway-picker-admin-only-f1/README.md
+  - contracts/golden/gateway-picker-admin-only-f1/active-gateway-lib.golden.md
+  - contracts/golden/gateway-picker-admin-only-f1/admin-route.golden.md
+  - contracts/golden/gateway-picker-admin-only-f1/checkout-route-diff.golden.md
+  - contracts/golden/gateway-picker-admin-only-f1/checkout-ui-diff.golden.md
+  - contracts/golden/gateway-picker-admin-only-f1/admin-settings-ui.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The customer-facing gateway picker component is deleted.
+      command: test ! -f components/tickets/ProviderChoice.tsx
+
+    - id: A2
+      description: TicketPurchaseForm no longer renders or imports ProviderChoice.
+      command: >-
+        ! grep -q "ProviderChoice" components/tickets/TicketPurchaseForm.tsx
+
+    - id: A3
+      description: >-
+        useTicketCart no longer tracks or sends a client-chosen providerId (state, setter,
+        default, or POST body key all removed together). The server-echoed `data.providerId`
+        read from the checkout response, and the `providerId: string` field it feeds into the
+        CheckoutRedirect state, are explicitly OUT of scope — per golden
+        checkout-ui-diff.golden.md, that display-only value stays.
+      command: >-
+        ! grep -qE "DEFAULT_PROVIDER_ID|setProviderId|useState\(.*[Pp]rovider"
+        components/tickets/useTicketCart.ts
+
+    - id: A4
+      description: >-
+        The checkout route no longer reads, validates, or trusts a client-supplied providerId —
+        isValidProviderId/KNOWN_PROVIDER_IDS are deleted, not repurposed, and CheckoutRequestBody
+        no longer declares a providerId field.
+      command: >-
+        ! grep -qE "isValidProviderId|KNOWN_PROVIDER_IDS|body\.providerId|providerId:\s*unknown"
+        app/api/tickets/checkout/route.ts
+
+    - id: A5
+      description: >-
+        The checkout route resolves the gateway server-side via resolveActiveGateway(), wired in
+        the correct source position (before the CMS guard and before the reservation
+        transaction), with downstream usages (reserveTicket gateway field, notify-path lookup)
+        still keyed off the resolved id. Structural, by source position — not behaviour alone.
+      command: node contracts/checks/gateway-picker-admin-only-f1/check-checkout-route-wiring.mjs
+
+    - id: A6
+      description: >-
+        resolveActiveGateway() is fail-closed: every non-valid Firestore doc shape (missing doc,
+        missing field, invalid value, non-string value, a thrown read) resolves to null, and only
+        an exact 'ozow'|'payfast' value resolves to that value. Never guesses a default.
+      command: >-
+        npx tsx contracts/checks/gateway-picker-admin-only-f1/check-fail-closed-gateway-read.mjs
+
+    - id: A7
+      description: >-
+        The admin setting is persisted in the SAME adminSettings collection ozow-sandbox-toggle
+        F1 already established (no second, drifting settings mechanism), as a sibling doc keyed
+        activePaymentGateway.
+      command: >-
+        grep -q "ACTIVE_GATEWAY_COLLECTION = 'adminSettings'" lib/payments/active-gateway.ts &&
+        grep -q "ACTIVE_GATEWAY_DOC_ID = 'activePaymentGateway'" lib/payments/active-gateway.ts
+
+    - id: A8
+      description: >-
+        The gateway value is constrained to the actual two integrated providers only — no
+        arbitrary string is accepted as a gateway id anywhere in the write path.
+      command: >-
+        grep -qE "GATEWAY_IDS\s*=\s*\['ozow',\s*'payfast'\]" lib/payments/active-gateway.ts
+
+    - id: A9
+      description: >-
+        The admin write route validates the PUT body's gateway against isValidGatewayId before
+        writing, rejecting anything else with 400.
+      command: >-
+        grep -q "isValidGatewayId" app/api/admin/settings/active-payment-gateway/route.ts
+
+    - id: A10
+      description: >-
+        The admin route reuses the EXISTING 'manage-payment-settings' capability — no new,
+        narrower or wider capability was introduced for this setting.
+      command: >-
+        grep -q "manage-payment-settings" app/api/admin/settings/active-payment-gateway/route.ts
+
+    - id: A11
+      description: >-
+        No new capability string was added to the CAPABILITIES allow-list for this feature — the
+        admin route above must be gated by a capability that already existed before this feature.
+      command: >-
+        test "$(grep -c "'manage-payment-settings'," lib/admin-roles.ts)" = "1"
+
+    - id: A12
+      description: >-
+        The admin settings page gained a gateway control wired to the new route (structural
+        presence — the visual/aesthetic result is out of scope for automated checks per this
+        project's coding.md).
+      command: >-
+        grep -q "active-payment-gateway" app/admin/settings/page.tsx
+
+    - id: A13
+      description: >-
+        TypeScript compiles cleanly after the removal/addition (catches any stray reference to
+        the deleted ProviderChoice import, providerId prop, or KNOWN_PROVIDER_IDS/isValidProviderId
+        identifiers left behind).
+      command: npx tsc --noEmit -p tsconfig.json
