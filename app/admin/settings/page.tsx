@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 
+import type { GatewayId } from '@/lib/payments/active-gateway';
+
 /**
- * /admin/settings -- owner-only Ozow sandbox test-mode toggle (mission ozow-sandbox-toggle F1).
- * Sits inside app/admin/settings/layout.tsx's capability gate. Client component: reads/writes
- * the flag via the admin GET/PUT route, same fetch-from-client pattern as this project's other
+ * /admin/settings -- owner-only Ozow sandbox test-mode toggle (mission ozow-sandbox-toggle F1)
+ * plus the active-payment-gateway picker (mission gateway-picker-admin-only F1). Sits inside
+ * app/admin/settings/layout.tsx's capability gate. Client component: reads/writes each setting
+ * via its own admin GET/PUT route, same fetch-from-client pattern as this project's other
  * interactive admin surfaces (e.g. VendorReviewTable's approve/reject actions).
  */
 export default function AdminSettingsPage() {
@@ -13,6 +16,49 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [gateway, setGateway] = useState<GatewayId | null>(null);
+  const [gatewayLoading, setGatewayLoading] = useState(true);
+  const [gatewaySaving, setGatewaySaving] = useState(false);
+  const [gatewayError, setGatewayError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/admin/settings/active-payment-gateway')
+      .then((res) => res.json())
+      .then((data: { gateway?: GatewayId | null }) => {
+        if (!cancelled) setGateway(data.gateway ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setGatewayError('Failed to load current setting.');
+      })
+      .finally(() => {
+        if (!cancelled) setGatewayLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleGatewayChange(next: GatewayId) {
+    setGatewaySaving(true);
+    setGatewayError(null);
+    const previous = gateway;
+    setGateway(next);
+    try {
+      const res = await fetch('/api/admin/settings/active-payment-gateway', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gateway: next }),
+      });
+      if (!res.ok) throw new Error('Request failed');
+    } catch {
+      setGateway(previous);
+      setGatewayError('Failed to save. Please try again.');
+    } finally {
+      setGatewaySaving(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -81,6 +127,38 @@ export default function AdminSettingsPage() {
           {error ? (
             <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.16em] text-red-700">
               {error}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="mt-6 max-w-[520px] border border-rule bg-bone px-6 py-6">
+          <span className="block font-sans text-[15px] text-ink">Active payment gateway</span>
+          <span className="mt-1 block font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+            Customers no longer choose a gateway at checkout — this is used for every purchase.
+          </span>
+          <div className="mt-3 flex gap-4">
+            {(['ozow', 'payfast'] as const).map((option) => (
+              <label key={option} className="flex items-center gap-2 font-sans text-[15px] text-ink">
+                <input
+                  type="radio"
+                  name="activeGateway"
+                  value={option}
+                  checked={gateway === option}
+                  disabled={gatewayLoading || gatewaySaving}
+                  onChange={() => void handleGatewayChange(option)}
+                />
+                {option === 'ozow' ? 'Ozow' : 'PayFast'}
+              </label>
+            ))}
+          </div>
+          {gateway === null && !gatewayLoading ? (
+            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.16em] text-red-700">
+              No gateway is set — checkout will refuse purchases until one is chosen.
+            </p>
+          ) : null}
+          {gatewayError ? (
+            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.16em] text-red-700">
+              {gatewayError}
             </p>
           ) : null}
         </div>

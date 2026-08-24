@@ -561,6 +561,35 @@ The navigation menu itself is presentation only and grants nothing — see
 [docs/admin-nav-menu.md](admin-nav-menu.md)'s "The nav is never the access boundary" section.
 Every route gate documented above in this file is unchanged by it.
 
+## Admin Settings
+
+Admin settings are operational configuration stored in the `adminSettings` Firestore collection. Each setting is a separate document, written and read by admin-gated API routes under `/api/admin/settings/`.
+
+### Active Payment Gateway (`adminSettings/activePaymentGateway`)
+
+**Capability:** `manage-payment-settings`
+
+Determines which payment gateway (Ozow or PayFast) processes ticket purchases. Stored shape:
+```typescript
+{ gateway: 'ozow' | 'payfast'; updatedAt: Timestamp; updatedByEmail: string | null }
+```
+
+**Access:** `GET /api/admin/settings/active-payment-gateway` (read), `PUT /api/admin/settings/active-payment-gateway` (write).
+
+**UI:** `/admin/settings` radio group. When changed, checkout routes the next order to the new gateway.
+
+**Fail-closed behavior:** checkout refuses (HTTP 500) if this setting is missing or invalid.
+
+**Full documentation:** [docs/payment-gateway-selection.md](payment-gateway-selection.md)
+
+### Ozow Sandbox Test Mode (`adminSettings/ozowSandboxTestMode`)
+
+**Capability:** `manage-payment-settings`
+
+Toggles Ozow's sandbox environment for testing purchases without real charges. Independent of the active-gateway setting — an admin can test sandbox mode on either Ozow or PayFast.
+
+**Full documentation:** see the `ozow-sandbox-toggle` contract (mission F1).
+
 ## Out of scope here (F4 / M2)
 
 The human end-to-end door-scanner proof is later work (mission `admin-auth-hardening`,
