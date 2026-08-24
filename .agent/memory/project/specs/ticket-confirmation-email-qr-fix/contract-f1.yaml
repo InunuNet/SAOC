@@ -1,0 +1,179 @@
+schema: athanor.contract/v1
+slug: ticket-confirmation-email-qr-fix
+goal: >-
+  Fix the ticket confirmation email's QR code rendering as a broken-image placeholder in Gmail.
+  Confirmed by reading the actual code: emails/OrderConfirmation.tsx currently renders each
+  position's QR via `<Img src={position.qrDataUri} .../>`, where qrDataUri is a genuine
+  `data:image/png;base64,...` URI from lib/qr.ts's generateBookingRefQrDataUri — exactly the
+  "likely cause" the backlog named, not merely assumed. QR generation itself is correct; the
+  same data URI renders fine on /tickets/confirmation and in the canvas-composited download,
+  because those are same-origin browser renders, never proxied by an email client. This is
+  purely an email-delivery defect in one template.
+
+  Fix: switch the email's QR from an inline data: URI to a Resend attachment with a `content_id`
+  (Resend's Node SDK — resend@6.12.4, confirmed by reading its own .d.mts — already supports
+  `attachments: Attachment[]` with an optional `contentId` field, referenced via `cid:` in HTML),
+  so the QR travels as part of the email payload itself rather than as an embedded data: blob
+  Gmail's image handling mishandles. Full decision record, including why this reverses (for a
+  documented, evidence-based reason) the F11 contract's earlier "attachments rejected" call:
+  contracts/golden/ticket-confirmation-email-qr-fix-f1/README.md
+
+created_at: '2026-08-24'
+autonomy: high
+
+# ⚠️ SCOPE: this feature touches exactly these files —
+#   EDIT lib/qr.ts — ADD generateBookingRefQrPngBuffer(bookingRef: string): Promise<Buffer>
+#        (uses the already-declared `qrcode` package's toBuffer(), PNG-only by default, no
+#        `type` option needed). Do NOT touch, rename, or remove generateBookingRefQrDataUri —
+#        lib/orders.ts (confirmation-page render) and components/tickets/DownloadTicketButton.tsx
+#        both still depend on it and are OUT OF SCOPE for this fix.
+#   EDIT lib/email.ts — ADD `export interface EmailAttachment { content: Buffer; filename:
+#        string; contentType: string; contentId: string }` (field names matching Resend's own
+#        Attachment interface exactly). Both buildEmailPayload and sendEmail gain an OPTIONAL
+#        `attachments?: EmailAttachment[]` parameter, threaded verbatim into
+#        getResend().emails.send({ ..., attachments }). When omitted, the built payload must NOT
+#        contain an `attachments` key at all (not even an empty array) — every existing caller
+#        (ContactConfirmation, VendorApprovalConfirmation, VendorRegistrationConfirmation,
+#        ReconciliationAlert) must see a byte-identical payload to before this change, with zero
+#        edits at those call sites.
+#   EDIT lib/confirmation-email.ts —
+#        - SendConfirmationEmailDeps: REPLACE `generateQrDataUri?: (bookingRef: string) =>
+#          Promise<string>` with `generateQrPngBuffer?: (bookingRef: string) => Promise<Buffer>`,
+#          defaulting to generateBookingRefQrPngBuffer.
+#        - ConfirmationEmailMailer.send's argument type gains an optional `attachments?:
+#          EmailAttachment[]` field (import the type from lib/email.ts).
+#        - sendConfirmationEmail's body: for each position, generate the PNG buffer via
+#          generateQrPngBuffer(position.bookingRef); build a content id
+#          `` `qr-${position.bookingRef}` `` (bookingRef is always SAOC-2027- + 12 Crockford-
+#          base32 chars per lib/booking-ref.ts — safe, unique-per-position, no escaping needed);
+#          push `{ content: buffer, filename: `qr-${bookingRef}.png`, contentType: 'image/png',
+#          contentId }` onto an `attachments` array (length always === positions.length, same
+#          order); pass `qrContentId: contentId` (bare id, no `cid:` prefix) into
+#          OrderConfirmationPosition instead of qrDataUri. Call mailer.send({ to, subject, react,
+#          attachments }) exactly once per order, unchanged from today otherwise. Every other
+#          F10/F11-proven property (empty-positions refusal BEFORE any QR/mailer work, faithful
+#          error propagation from either dependency, never logging recoveryToken, one email per
+#          order addressed to the buyer, the F6 recovery link) is UNCHANGED — re-asserted here
+#          because the function body changed, not because the property is new.
+#   EDIT emails/OrderConfirmation.tsx — `OrderConfirmationPosition.qrDataUri: string` becomes
+#        `qrContentId: string`. The QR image becomes
+#        `<Img src={`cid:${position.qrContentId}`} alt={...} width="200" height="200" />`. The
+#        visible bookingRef text block, attendeeName, ticketType, and the recovery-link section
+#        are UNCHANGED.
+# Untouched: app/api/tickets/itn/route.ts (pinned by F10 — its call site,
+# `sendConfirmationEmail({...})` with one argument, is unaffected and requires no edit),
+# lib/orders.ts, components/tickets/DownloadTicketButton.tsx, app/(marketing)/tickets/confirmation/,
+# emails/TicketConfirmation.tsx (existing, unused, single-position email — left alone, as F11
+# already established), and every non-QR Resend-sending module.
+
+features:
+  - id: F1
+    name: >-
+      Switch the confirmation email's QR from an inline data: URI to a Resend CID-referenced
+      inline attachment, so Gmail (and any other client mishandling data: URIs in HTML email)
+      displays the real QR instead of a broken-image placeholder. Full spec:
+      contracts/golden/ticket-confirmation-email-qr-fix-f1/README.md.
+    status: pending
+
+goldens:
+  - contracts/golden/ticket-confirmation-email-qr-fix-f1/README.md
+  - contracts/checks/ticket-confirmation-email-qr-fix-f1/tsconfig.typecheck.json
+  - contracts/checks/ticket-confirmation-email-qr-fix-f1/fixtures/qr-cid-email-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after lib/qr.ts, lib/email.ts,
+        lib/confirmation-email.ts, and emails/OrderConfirmation.tsx are edited.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof (not a grep) of every new/changed exported shape:
+        generateBookingRefQrPngBuffer's (string)=>Promise<Buffer> signature alongside the
+        untouched, still-string-returning generateBookingRefQrDataUri; lib/email.ts's
+        EmailAttachment shape and buildEmailPayload/sendEmail both compiling with and without an
+        attachments argument; SendConfirmationEmailDeps carrying generateQrPngBuffer (NOT
+        generateQrDataUri, which must be gone from this interface); ConfirmationEmailMailer.send
+        accepting an optional attachments array via a zero-lib/email.ts-touching fake; and
+        OrderConfirmationProps requiring qrContentId (not qrDataUri) on every position.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/ticket-confirmation-email-qr-fix-f1/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        generateBookingRefQrPngBuffer produces a genuinely decodable QR (real jsQR decode of the
+        raw PNG Buffer, not byte-presence), exactly round-tripping multiple distinct real
+        bookingRef values, and refuses an empty bookingRef rather than silently encoding it.
+      command: >-
+        node --import tsx/esm contracts/checks/ticket-confirmation-email-qr-fix-f1/check-qr-png-buffer-roundtrip.mjs
+
+    - id: A4
+      description: >-
+        THE central mission assertion — proves the ACTUAL outbound payload, not merely a
+        rendered-HTML preview. Calls the real sendConfirmationEmail() with an injected fake
+        mailer, captures the attachments array AND the react element it receives, decodes every
+        attachment's PNG bytes with jsQR against that position's exact bookingRef, renders the
+        react element to real HTML, and cross-checks every position's <img src="cid:..."> against
+        its matching attachment's contentId, in order, for both a 1-position and a 3-position
+        order. Also asserts the rendered HTML contains ZERO "data:image/png;base64," occurrences
+        (the fix genuinely removed the old mechanism, not merely added a new one alongside it),
+        and that the attendeeName/bookingRef visible-text fallback is intact.
+      command: >-
+        npx tsx contracts/checks/ticket-confirmation-email-qr-fix-f1/check-cid-attachment-fanout.mjs
+
+    - id: A5
+      description: >-
+        Regression: sendConfirmationEmail still refuses an empty positions array SYNCHRONOUSLY,
+        before any QR generation or mailer call — re-verified against the new
+        generateQrPngBuffer/attachments call path, not just the old one.
+      command: >-
+        npx tsx contracts/checks/ticket-confirmation-email-qr-fix-f1/check-zero-position-refusal.mjs
+
+    - id: A6
+      description: >-
+        Regression: sendConfirmationEmail never writes recoveryToken's value to console output or
+        into a thrown error's message/stack, on the success path or a QR-generation-failure path.
+      command: >-
+        npx tsx contracts/checks/ticket-confirmation-email-qr-fix-f1/check-credential-safety.mjs
+
+    - id: A7
+      description: >-
+        sendConfirmationEmail faithfully propagates the SAME error instance from either
+        generateQrPngBuffer or mailer.send (not swallowed/wrapped/replaced), and resolves cleanly
+        — with a correctly-shaped attachments array — when both succeed.
+      command: >-
+        npx tsx contracts/checks/ticket-confirmation-email-qr-fix-f1/check-error-propagation.mjs
+
+    - id: A8
+      description: >-
+        lib/email.ts's buildEmailPayload threads `attachments` verbatim into the exact object
+        shape sendEmail hands to Resend's real emails.send() call — proven by calling the pure
+        buildEmailPayload directly (no network, no API key) and inspecting field-for-field
+        (content/filename/contentType/contentId) against Resend's own Attachment interface,
+        including that omitting attachments injects nothing (byte-identical payload to every
+        existing non-QR caller today).
+      command: >-
+        npx tsx contracts/checks/ticket-confirmation-email-qr-fix-f1/check-email-payload-attachments.mjs
+
+    - id: A9
+      description: pnpm lint passes with zero errors after all four files are edited.
+      command: pnpm lint
+
+    - id: A10
+      description: >-
+        MANDATORY, MANUAL, non-automatable (per this project's coding.md agent_review rule — the
+        one property genuinely irreplaceable by any offline check above): send a real order
+        confirmation email — via a real test purchase against the sandbox payment flow, or by
+        directly invoking sendConfirmationEmail against the real Resend sender with dev's own
+        inbox as the recipient — to a real Gmail inbox, and confirm (a) the QR image actually
+        displays, not a broken-image placeholder; (b) scanning the displayed QR with a phone
+        camera reads back the exact booking reference shown as visible text in the same email.
+        Repeat once against Apple Mail or Outlook if convenient, not required to pass. This is
+        the only check that can observe Gmail's real CID-attachment rendering behaviour — every
+        assertion above proves the payload SHAPE is correct, not that Gmail specifically displays
+        it, which is exactly the gap the mission brief called out ("renders in a browser preview"
+        is not proof).
+      kind: agent_review

@@ -1,0 +1,19 @@
+{
+  "schema": "athanor.mission-touched-files/v1",
+  "slug": "ticket-confirmation-email-qr-fix",
+  "pending_baselines": {},
+  "paths": [
+    ".agent/memory/project/missions/ticket-confirmation-email-qr-fix.touched.json",
+    ".agent/memory/project/missions/2026-08-24-ticket-confirmation-email-qr-fix.md",
+    ".agent/memory/project/missions/active.json",
+    ".agent/memory/project/specs/ticket-confirmation-email-qr-fix",
+    "contracts/checks/ticket-confirmation-email-qr-fix-f1",
+    "contracts/golden/ticket-confirmation-email-qr-fix-f1",
+    "docs/ticket-confirmation-email-qr-fix.md",
+    "docs/ticketing.md",
+    "emails/OrderConfirmation.tsx",
+    "lib/confirmation-email.ts",
+    "lib/email.ts",
+    "lib/qr.ts"
+  ]
+}

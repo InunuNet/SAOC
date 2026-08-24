@@ -30,18 +30,44 @@ export function resolveReplyTo(): string {
   return raw ? raw : DEFAULT_REPLY_TO;
 }
 
+// ticket-confirmation-email-qr-fix (F1) — attachment shape matching Resend's own Attachment
+// interface field-for-field (content/filename/contentType/contentId), so it threads straight
+// into getResend().emails.send() with no adapter layer to keep in sync.
+export interface EmailAttachment {
+  content: Buffer;
+  filename: string;
+  contentType: string;
+  contentId: string;
+}
+
 export function buildEmailPayload({
   to,
   subject,
   react,
   from,
+  attachments,
 }: {
   to: string;
   subject: string;
   react: JSX.Element;
   from: string;
-}): { to: string; subject: string; react: JSX.Element; from: string; replyTo: string } {
-  return { to, subject, react, from, replyTo: resolveReplyTo() };
+  attachments?: EmailAttachment[];
+}): {
+  to: string;
+  subject: string;
+  react: JSX.Element;
+  from: string;
+  replyTo: string;
+  attachments?: EmailAttachment[];
+} {
+  return {
+    to,
+    subject,
+    react,
+    from,
+    replyTo: resolveReplyTo(),
+    ...(attachments !== undefined ? { attachments } : {}),
+  };
 }
 
 export async function sendEmail({
@@ -49,12 +75,16 @@ export async function sendEmail({
   subject,
   react,
   from,
+  attachments,
 }: {
   to: string;
   subject: string;
   react: JSX.Element;
   from: string;
+  attachments?: EmailAttachment[];
 }): Promise<void> {
-  const { error } = await getResend().emails.send(buildEmailPayload({ to, subject, react, from }));
+  const { error } = await getResend().emails.send(
+    buildEmailPayload({ to, subject, react, from, attachments })
+  );
   if (error) throw new Error(`Resend send failed: ${error.message}`);
 }

@@ -75,11 +75,12 @@ today** — Firebase Auth is not provisioned on `saoc-webapp`; see that document
     - Displays ticketIncludesNote
     ↓
 13. (F11) Confirmation email sent with QR code(s) per position
-    - One inline data-URI QR per position, encoding the booking ref
-    - Visible booking ref text (fallback for clients that strip data-URIs)
+    - One inline CID-referenced QR per position, encoding the booking ref
+    - Visible booking ref text (fallback for clients that fail to render inline images)
     - Recovery link when recovery token is present (F6 primitive)
     - Email send is isolated from ITN — cannot break payment
     - Door scanner (app/admin/door) reads QR for check-in
+    - See [docs/ticket-confirmation-email-qr-fix.md](ticket-confirmation-email-qr-fix.md) for the CID pattern explanation and Gmail rendering fix
     - **KNOWN BLOCKER:** Checkout does not create orders, so this email
       is never reached by real ITN today (queued for ownership decision)
 ```

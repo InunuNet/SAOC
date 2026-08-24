@@ -1,3 +1,19 @@
+## Gmail strips/mishandles `data:` URI images in HTML email — use CID inline attachments instead (2026-08-24)
+
+`ticket-confirmation-email-qr-fix` F1: the confirmation email's QR code rendered fine in a browser
+preview of the email template (and on the ticket-confirmation page, and in the downloaded ticket
+file — QR generation itself was never broken) but showed as a broken-image placeholder in real
+Gmail inboxes. Root cause: the email embedded the QR as an inline `data:image/png;base64,...` URI,
+which Gmail's image-proxy/sanitisation pipeline strips or mishandles in HTML email — a client-specific
+defect invisible to any template-render check. Fix: switch to a Resend CID-referenced inline
+attachment (`attachments: [{ filename, content, cid }]` + `<img src="cid:...">` in the template) so
+the QR ships as a real MIME part of the message instead of an inline data URI. Verified only by a
+real send to a real Gmail inbox and reading the delivered message back (via `gws`), not by any
+browser preview of the React email template — that already passed before the fix and proved nothing
+about actual delivery. **Lesson: for any future inline image in HTML email (QR codes, badges,
+signatures, etc.), always use CID attachments, never `data:` URIs — and verify any email-rendering
+fix against a real delivered message in the target client, not a template preview.**
+
 ## Checkpoint-ledger fix confirmed working; ledger still misses post-checkpoint artifacts (2026-08-24)
 
 `ticketing-flow-redesign` (full mission, F1-F3) ran `mission.py checkpoint --status in_progress`

@@ -16,17 +16,18 @@ import {
  * existing, unused, single-position emails/TicketConfirmation.tsx — that file is left untouched.
  *
  * One salutation for the ORDER's buyer; one section per POSITION, each carrying its own QR
- * (rendered inline as a data URI, never re-hosted or attached — spec §6's explicit
- * "reintroduces the guessable-URL problem" rationale) and its bookingRef as visible text, so a
- * client that strips `data:` images (see the golden README's "Inline data-URI vs. attachment")
- * still leaves the buyer/door-volunteer able to use the reference directly.
+ * (rendered as a Resend CID-referenced inline attachment, embedded in the email payload itself
+ * rather than fetched/proxied — see contracts/golden/ticket-confirmation-email-qr-fix-f1/README.md
+ * for why this replaced the earlier data: URI, which Gmail renders as a broken image) and its
+ * bookingRef as visible text, so a client that fails to render the inline image at all still
+ * leaves the buyer/door-volunteer able to use the reference directly.
  */
 
 export interface OrderConfirmationPosition {
   bookingRef: string;
   attendeeName: string;
   ticketType: string;
-  qrDataUri: string;
+  qrContentId: string;
 }
 
 export interface OrderConfirmationProps {
@@ -65,7 +66,7 @@ export default function OrderConfirmation({
                 <strong>Booking reference:</strong> {position.bookingRef}
               </Text>
               <Img
-                src={position.qrDataUri}
+                src={`cid:${position.qrContentId}`}
                 alt={`QR code for booking reference ${position.bookingRef}`}
                 width="200"
                 height="200"

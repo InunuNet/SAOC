@@ -1,4 +1,4 @@
-import { toDataURL } from 'qrcode';
+import { toBuffer, toDataURL } from 'qrcode';
 
 /**
  * F11 (ticketing-foundation) — QR generation for the confirmation email (spec §6, §7.1).
@@ -14,4 +14,20 @@ export async function generateBookingRefQrDataUri(bookingRef: string): Promise<s
     throw new Error('generateBookingRefQrDataUri: bookingRef must not be empty');
   }
   return toDataURL(bookingRef, { type: 'image/png' });
+}
+
+/**
+ * ticket-confirmation-email-qr-fix (F1) — QR generation for the confirmation EMAIL only.
+ *
+ * Same bookingRef-verbatim encoding as generateBookingRefQrDataUri above, but returns a raw
+ * PNG Buffer for use as a Resend CID-referenced inline attachment, not a data: URI — Gmail (and
+ * likely other clients) mishandles data: URIs in HTML email. lib/orders.ts's confirmation-page
+ * render and DownloadTicketButton.tsx's canvas download are unaffected and keep using
+ * generateBookingRefQrDataUri.
+ */
+export async function generateBookingRefQrPngBuffer(bookingRef: string): Promise<Buffer> {
+  if (bookingRef.trim().length === 0) {
+    throw new Error('generateBookingRefQrPngBuffer: bookingRef must not be empty');
+  }
+  return toBuffer(bookingRef, { type: 'png' });
 }

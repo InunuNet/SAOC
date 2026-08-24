@@ -1,8 +1,8 @@
 import type { ReactElement } from 'react';
 
-import { generateBookingRefQrDataUri } from '@/lib/qr';
+import { generateBookingRefQrPngBuffer } from '@/lib/qr';
 import { buildRecoveryUrl } from '@/lib/recovery-url';
-import { sendEmail, TICKETS_FROM_ADDRESS } from '@/lib/email';
+import { sendEmail, TICKETS_FROM_ADDRESS, type EmailAttachment } from '@/lib/email';
 import OrderConfirmation, { type OrderConfirmationPosition } from '@/emails/OrderConfirmation';
 import type { TicketType } from '@/types/index';
 
@@ -47,12 +47,17 @@ export interface SendConfirmationEmailInput {
  *  structurally, same injectable-fake pattern as F8/F10's `deps.db`, so a fixture mailer needs
  *  zero adapter code and never touches Resend. */
 export interface ConfirmationEmailMailer {
-  send(args: { to: string; subject: string; react: ReactElement }): Promise<void>;
+  send(args: {
+    to: string;
+    subject: string;
+    react: ReactElement;
+    attachments?: EmailAttachment[];
+  }): Promise<void>;
 }
 
 export interface SendConfirmationEmailDeps {
   mailer?: ConfirmationEmailMailer;
-  generateQrDataUri?: (bookingRef: string) => Promise<string>;
+  generateQrPngBuffer?: (bookingRef: string) => Promise<Buffer>;
   siteUrl?: string;
 }
 
@@ -81,17 +86,25 @@ export async function sendConfirmationEmail(
   }
 
   const mailer = deps.mailer ?? { send: sendEmail };
-  const generateQrDataUri = deps.generateQrDataUri ?? generateBookingRefQrDataUri;
+  const generateQrPngBuffer = deps.generateQrPngBuffer ?? generateBookingRefQrPngBuffer;
   const siteUrl = deps.siteUrl ?? resolveSiteUrl();
 
   const positions: OrderConfirmationPosition[] = [];
+  const attachments: EmailAttachment[] = [];
   for (const position of input.positions) {
-    const qrDataUri = await generateQrDataUri(position.bookingRef);
+    const buffer = await generateQrPngBuffer(position.bookingRef);
+    const contentId = `qr-${position.bookingRef}`;
+    attachments.push({
+      content: buffer,
+      filename: `qr-${position.bookingRef}.png`,
+      contentType: 'image/png',
+      contentId,
+    });
     positions.push({
       bookingRef: position.bookingRef,
       attendeeName: position.attendeeName,
       ticketType: position.ticketType,
-      qrDataUri,
+      qrContentId: contentId,
     });
   }
 
@@ -102,6 +115,7 @@ export async function sendConfirmationEmail(
     subject: 'Your SAOC National Show order is confirmed',
     react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl }),
     from: TICKETS_FROM_ADDRESS,
+    attachments,
   });
 }
 
