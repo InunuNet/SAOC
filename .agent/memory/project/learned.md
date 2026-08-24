@@ -2196,3 +2196,37 @@ deployed-URL BrowserAgent-style check as a contract gate assertion (not a manual
 follow-up) whenever the mission touches page chrome, navigation, or routing — those are exactly
 the properties a structural/grep-based check cannot see and that have now caused three separate
 production-visible incidents on this project.
+
+## Two contracts disagreeing about the same file/line is a contract-layer conflict, not a dev bug (2026-08-24)
+
+`venue-never-changed-copy-fix` hit a genuine conflict mid-review: the new mission's contract
+wanted a "venue changed" comment in `scripts/seed-show-visitor-info.ts` rewritten, while a
+pre-existing, unrelated contract (`contract-venue-prose-residue.yaml` A10) had a negative
+control requiring that exact comment preserved verbatim as historical record. Repeatedly
+dispatching @dev to toggle the same line back and forth would loop forever — the correct fix was
+amending the *new* contract's checker to explicitly exclude the protected block, with a
+documented cross-reference to the older contract's assertion ID. **Generalize**: when two
+contracts disagree about the same file/line, resolve it in the contract layer (scope one
+checker around the other's protected region), never by having @dev repeatedly flip the
+implementation to satisfy whichever contract ran last.
+
+## Codex GPT-5.5 found a real content-accuracy defect in the architect's own golden text, not just a dev deviation (2026-08-24)
+
+Same mission, third Codex round: `planIntro`'s rewritten golden copy claimed "our own research"
+while sibling fields and the confirmation-status data model still said the same content was
+`pending`/unresearched — a genuine logical inconsistency Codex caught that neither @architect's
+own drafting nor Claude's own @qa pass had. Reinforces `[[feedback_codex_mandatory_qa]]`: Codex
+review is catching defects the architect introduces in golden files, not only defects dev
+introduces relative to golden files — treat architect output as reviewable, not as ground truth
+immune from the same adversarial pass.
+
+## Dry-run-diff-against-golden immediately before any live write, even after the fix feels settled (2026-08-24)
+
+Same mission: the one-off live-write script's `CORRECTED_FIELDS` constant drifted out of sync
+with the golden file mid-flight — one field got updated in the golden text but the change was
+never propagated to the script that actually writes to production Sanity. Caught only by a
+final `--verify`/dry-run diff check run immediately before the real write, not by any earlier
+review round. **Standing practice for any one-off live-content-write script**: run a dry-run
+diff against the current golden file as the last step before executing the real write, every
+time, even when the fix already passed QA and Codex — drift can be introduced after review, not
+just before it.

@@ -441,3 +441,21 @@ admin-login and this page's own first shipment). See `learned.md` "Live-deployed
 check as a contract gate assertion" for the reusable pattern — worth defaulting into any future
 admin/UI mission touching chrome, nav, or routing. Commits `df50555` (feature), `1724d1b`
 (mission close-out).
+
+### 2026-08-24 — `venue-never-changed-copy-fix` M1 (F1) DONE — mission complete
+
+~~`venue-never-changed-copy-fix` (F1: remove all "venue changed"/"previous venue no longer
+applies" framing from live site copy — Brad's correction that the venue never actually changed,
+CTICC was only ever a wrong early placeholder)~~ ✅ **DONE**, 8/8 contract gate passed, Codex
+GPT-5.5 cross-model review across 3 rounds (schema-description leftover, stale docs golden, and
+a real content-accuracy inconsistency in the architect's own golden `planIntro` text — see
+`learned.md`). Six live prose fields on the `showVisitorInfo` Sanity singleton rewritten
+(researchLabel, planIntro, gettingThereIntro, parking, accommodationIntro, accessibility), plus
+the Studio schema field description, a docs quote, and a status-model doc that named CTICC
+directly. Live production Sanity doc patched via `scripts/fix-venue-never-changed-copy.ts`
+(idempotent, `--verify` flag) and verified written correctly. Deliberately left untouched: a
+dev-only, never-rendered code comment at `scripts/seed-show-visitor-info.ts` ~line 163,
+protected by pre-existing `contract-venue-prose-residue.yaml` A10 as historical record — see
+`learned.md` "Two contracts disagreeing about the same file/line". Small P3 follow-up
+(line-105 sibling comment + `directionsNote` field) added to `backlog.md`, not urgent. Commits
+`a700174` (feature), `897ba3b` (mission close-out).

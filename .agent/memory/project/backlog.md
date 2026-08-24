@@ -37,27 +37,17 @@ Do not scope work from an entry that contradicts it.
 
 ## Next up (queued, not yet a mission — dispatch as soon as current mission closes)
 
-- [ ] **[P1] Remove all "venue has changed" / "previous venue no longer applies" narrative
-  (Brad, 2026-08-24, live screenshot of `/national-show/plan-your-visit`).** Brad's correction:
-  **the venue never changed** — CTICC was an incorrect early placeholder that got corrected to
-  the real venue (The Hangar, Stellenbosch Flying Club); the site should never have implied a
-  change happened. This is NOT the same defect as the already-closed `venue-prose-residue`
-  contract (which purged literal CTICC/Cape-Town-city phrases) — this is the "change" framing
-  itself, which survived that pass because it never named CTICC. Confirmed source:
-  `scripts/seed-show-visitor-info.ts` (feeds the live Sanity `showVisitorInfo` doc) —
-  line 163 comment "The venue changed from the previous working-venue assumption...", line 210
-  comment "previous working venue no longer applies to the new one and has not been redone",
-  line 250-252 live prose: *"The show venue has changed to the Stellenbosch Flying Club. Travel,
-  parking and accommodation guidance for the new venue has not been worked out yet — the
-  previous guidance was written for a Cape Town city-centre venue and no longer applies."*
-  Rewrite this (and any sibling fields in the same file/doc using "changed"/"previous
-  venue"/"new venue" framing) to state the venue plainly, as if it was always the Hangar — while
-  preserving genuinely-still-true content (travel/parking/accommodation guidance genuinely not
-  yet worked out is fine to say, just not framed as a consequence of a change). Given this repo's
-  history on this exact topic (`contracts/golden/venue-prose-residue/` — three adversarial QA
-  passes, live-vs-golden-copy divergence bugs, scoped denylist to avoid false-positiving on real
-  unrelated venues like Kirstenbosch/Civic Centre), route this through @architect for a proper
-  contract before @dev touches it — do not hand-edit.
+(none currently queued)
+
+---
+
+- [ ] **[P3] Leftover "previous venue's values" comment at `scripts/seed-show-visitor-info.ts`
+  ~line 105 (in `patchNationalShow()`), plus the still-open `nationalShowVenuePatch.venue.
+  directionsNote` field** — flagged by @qa during `venue-never-changed-copy-fix` (2026-08-24) as
+  real but out of that mission's scope. Not the same line as the protected line-163 comment
+  (that one is deliberately preserved as historical record under `contract-venue-prose-residue.yaml`
+  A10 — dev-only, never rendered). Route to whoever owns `venue-prose-residue` follow-up work;
+  not urgent.
 
 ---
 
