@@ -7,10 +7,10 @@ import {
   buildMultiReservationDocs,
   effectiveCapacity,
   isNamedAttendeeSatisfied,
-  isWithinEarlyBirdWindow,
   lineItemsMatchExistingPositions,
   planPooledCapacity,
   resolveChosenDayForPosition,
+  resolveEffectivePrice,
   writeMultiReservationPair,
   type CapacityPoolConfig,
   type CheckoutLineItemInputLike,
@@ -20,6 +20,7 @@ import { initAdmin } from '@/lib/firebase-admin';
 import { ORDERS_COLLECTION } from '@/lib/orders';
 import { resolveProvider } from '@/lib/payments';
 import type { PaymentProvider, ProviderReadiness } from '@/lib/payments';
+import { resolveActiveGateway } from '@/lib/payments/active-gateway';
 import {
   isOzowSandboxTestModeEnabled,
   resolveExpectedGatewayAmount,
@@ -102,6 +103,7 @@ interface SanityTicketType {
   _id: string;
   name: string;
   price: unknown;
+  regularPrice: unknown;
   capacity: unknown;
   show: { _ref: string } | null | undefined;
   releasedQuantity: unknown;
@@ -178,6 +180,13 @@ function isUsableEarlyBirdCutoff(value: unknown): value is string | null {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+// F1 (ticketing-flow-redesign, M1): `regularPrice` is optional — null/undefined means this
+// ticket type has no post-cutoff price (sale simply closes at the cutoff).
+function isUsableRegularPrice(value: unknown): value is number | null {
+  if (value === null || value === undefined) return true;
+  return typeof value === 'number' && value >= 0;
+}
+
 // F5 (ticketing-conferences-and-events, M2): `capacityPool` is optional — null/undefined means
 // this ticket type is its own singleton pool.
 function isUsableCapacityPool(value: unknown): value is string | null {
@@ -204,6 +213,7 @@ function unusableTicketType(
   field:
     | 'capacity'
     | 'price'
+    | 'regularPrice'
     | 'show'
     | 'releasedQuantity'
     | 'earlyBirdCutoff'
@@ -227,7 +237,6 @@ interface SanityNationalShowSales {
 interface CheckoutRequestBody {
   showId: unknown;
   lineItems: unknown;
-  providerId: unknown;
 }
 
 export interface CheckoutLineItemInput {
@@ -289,19 +298,6 @@ export function parseLineItems(raw: unknown): CheckoutLineItemInput[] | null {
  */
 function isValidShowId(showId: unknown): showId is string {
   return typeof showId === 'string' && showId === NATIONAL_SHOW_ID;
-}
-
-/**
- * F2 (ozow-payment-provider) — the enumerated allow-list, same posture as isValidShowId: the
- * request body is never the authority. Missing/invalid providerId is a 400, NEVER a silent
- * PayFast default — see contracts/golden/ozow-m1-f2/README.md §2 for why this gate must run
- * HERE, strictly before the `if (!client)` guard below, rather than merely "somewhere before the
- * reservation write".
- */
-const KNOWN_PROVIDER_IDS = ['payfast', 'ozow'] as const;
-
-function isValidProviderId(providerId: unknown): providerId is (typeof KNOWN_PROVIDER_IDS)[number] {
-  return typeof providerId === 'string' && (KNOWN_PROVIDER_IDS as readonly string[]).includes(providerId);
 }
 
 /**
@@ -440,17 +436,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // F2 (ozow-payment-provider): validated BEFORE the client/CMS guard below — see
-  // contracts/golden/ozow-m1-f2/README.md §2 for why this exact positioning is load-bearing,
-  // not merely a convenience. Resolved via the SAME registry lookup this validation trusts;
-  // resolveProvider() never throws and never falls back to a default provider.
-  if (!isValidProviderId(body.providerId)) {
+  // gateway-picker-admin-only F1: the gateway is resolved server-side from the admin-set
+  // Firestore doc, never trusted from the client — validated BEFORE the client/CMS guard
+  // below, same positioning the old client-supplied providerId validation occupied. See
+  // contracts/golden/gateway-picker-admin-only-f1/README.md §3-4.
+  const activeGateway = await resolveActiveGateway();
+  if (!activeGateway) {
+    console.error('[tickets/checkout] No active payment gateway is configured.');
     return NextResponse.json(
-      { error: 'A valid providerId (payfast or ozow) is required.' },
-      { status: 400 }
+      { error: 'Payment gateway is not configured. Please try again later.' },
+      { status: 500 }
     );
   }
-  const providerId = body.providerId;
+  const providerId = activeGateway;
   const paymentProvider = resolveProvider(providerId) as PaymentProvider;
 
   if (!client) {
@@ -535,10 +533,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 500, not 400: the request was well-formed and the CMS document is misconfigured, so
     // a 4xx would tell the buyer to fix something they cannot see.
-    const { capacity, price, releasedQuantity, earlyBirdCutoff, capacityPool, headcountPerUnit } =
-      ticketTypeDoc;
+    const {
+      capacity,
+      price,
+      regularPrice,
+      releasedQuantity,
+      earlyBirdCutoff,
+      capacityPool,
+      headcountPerUnit,
+    } = ticketTypeDoc;
     if (!isUsableCapacity(capacity)) return unusableTicketType(slug, 'capacity');
     if (!isUsableAmount(price)) return unusableTicketType(slug, 'price');
+    if (!isUsableRegularPrice(regularPrice)) return unusableTicketType(slug, 'regularPrice');
     if (!ticketTypeMatchesActiveShow(ticketTypeDoc, activeShowId)) {
       return unusableTicketType(slug, 'show');
     }
@@ -555,10 +561,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return unusableTicketType(slug, 'headcountPerUnit');
     }
 
-    // F4: a released quantity greater than physical capacity never raises the ceiling — see
-    // lib/checkout-reservation.ts's effectiveCapacity(). This is the entire integration point
-    // with planPooledCapacity()/aggregateRequestedQuantities().
-    amountByType[slug] = price;
     // F5: capacityByType is keyed by resolved POOL KEY, not always by slug. Math.min against
     // any value already present at that key is a defensive floor — the pool-data invariant
     // (contracts/checks/ticketing-conferences-and-events-f5/check-pool-data-invariant.mjs)
@@ -575,16 +577,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     requiresDaySelectionByType[slug] = ticketTypeDoc.requiresDaySelection === true;
     requiresAttendeeNamesByType[slug] = ticketTypeDoc.requiresAttendeeNames === true;
 
-    // F4: a closed early-bird window refuses the WHOLE cart, same "any one bad type refuses
-    // the whole request" posture as the capacity/price/show checks above — with a 409 (a
-    // legitimate, time-based business state, not a 500 misconfiguration and not a 400 client
-    // error), before any Firestore write is attempted.
-    if (earlyBirdCutoff !== null && !isWithinEarlyBirdWindow(new Date(), earlyBirdCutoff)) {
+    // F1 (ticketing-flow-redesign, M1): a closed early-bird window with no regularPrice
+    // refuses the WHOLE cart, same "any one bad type refuses the whole request" posture as
+    // the capacity/price/show checks above — with a 409 (a legitimate, time-based business
+    // state, not a 500 misconfiguration and not a 400 client error), before any Firestore
+    // write is attempted. See lib/checkout-reservation.ts's resolveEffectivePrice().
+    const effectivePrice = resolveEffectivePrice({
+      price,
+      regularPrice,
+      earlyBirdCutoff,
+      now: new Date(),
+    });
+    if (effectivePrice === null) {
       return NextResponse.json(
         { error: 'Early-bird pricing for this ticket type has closed.' },
         { status: 409 }
       );
     }
+    amountByType[slug] = effectivePrice;
   }
 
   // F5 defect repair (ticketing-conferences-and-events, M2, Codex GPT-5.5 cross-model review

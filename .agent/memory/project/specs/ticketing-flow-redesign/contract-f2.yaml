@@ -1,0 +1,120 @@
+schema: athanor.contract/v1
+slug: ticketing-flow-redesign
+goal: >-
+  Redesign the Admission ticket purchase flow (/tickets only — Conferences/Workshops unchanged)
+  into vertical ticket-type cards that link to a dedicated per-type buy screen
+  (/tickets/[slug]), replacing the shared multi-select cart+single-buy-button flow for Admission.
+  Cards use real orchid photos (public/images/orchid-*.jpg) instead of placeholder icons. Depends
+  on F1 (displays F1's resolved price/regularPrice). Full design rationale:
+  contracts/golden/ticketing-flow-redesign-f2/README.md.
+created_at: '2026-08-24'
+autonomy: high
+
+# SCOPE: this feature touches exactly these files —
+#   NEW  lib/tickets-orchid-image.ts — getOrchidImageForTicketType() — README §4, golden
+#        ticket-type-card.golden.md
+#   EDIT components/tickets/TicketTypeCard.tsx — vertical layout, mode: 'list' | 'buy' prop,
+#        orchid photo via next/image — README §3-4, golden ticket-type-card.golden.md
+#   NEW  components/tickets/AdmissionTicketsList.tsx — vertical list of mode="list" cards linking
+#        to /tickets/[slug] — README §2, golden dedicated-screen.golden.md
+#   EDIT app/(marketing)/tickets/page.tsx — renders AdmissionTicketsList instead of
+#        CategoryTicketsPage/TicketPurchaseForm — README §2, golden dedicated-screen.golden.md
+#   NEW  app/(marketing)/tickets/[slug]/page.tsx — dedicated single-type buy screen, reuses
+#        TicketPurchaseForm with a single-element ticketTypes array — README §2, golden
+#        dedicated-screen.golden.md
+#
+# Explicitly UNCHANGED (README §1, §5): components/tickets/CategoryTicketsPage.tsx,
+# app/(marketing)/national-show/conferences/page.tsx, .../workshops/page.tsx,
+# components/tickets/TicketPurchaseForm.tsx internals, useTicketCart.ts, CartAttendeeFields.tsx,
+# CartDayPicker.tsx (F3's scope to change), checkout route/pricing (F1, already shipped),
+# CheckoutRedirectNotice.tsx, PayfastRedirectForm.tsx.
+
+features:
+  - id: F2
+    name: >-
+      Vertical ticket-type cards with real orchid photos; one dedicated buy screen per Admission
+      ticket type instead of a shared cart with a single buy button.
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/ticketing-flow-redesign/goldens/README.md
+  - contracts/golden/ticketing-flow-redesign-f2/README.md
+  - contracts/golden/ticketing-flow-redesign-f2/ticket-type-card.golden.md
+  - contracts/golden/ticketing-flow-redesign-f2/dedicated-screen.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The dedicated per-type buy screen route exists.
+      command: test -f "app/(marketing)/tickets/[slug]/page.tsx"
+
+    - id: A2
+      description: The new vertical list component exists and is used by the /tickets page.
+      command: >-
+        test -f components/tickets/AdmissionTicketsList.tsx &&
+        grep -q "AdmissionTicketsList" "app/(marketing)/tickets/page.tsx"
+
+    - id: A3
+      description: >-
+        /tickets/page.tsx no longer renders the shared multi-select CategoryTicketsPage/
+        TicketPurchaseForm flow directly (Conferences/Workshops pages are explicitly exempt from
+        this check — only /tickets/page.tsx is asserted).
+      command: >-
+        ! grep -q "CategoryTicketsPage" "app/(marketing)/tickets/page.tsx"
+
+    - id: A4
+      description: >-
+        Conferences and Workshops pages are unchanged — still built on CategoryTicketsPage, per
+        README §1's explicit scope boundary.
+      command: >-
+        grep -q "CategoryTicketsPage" "app/(marketing)/national-show/conferences/page.tsx" &&
+        grep -q "CategoryTicketsPage" "app/(marketing)/national-show/workshops/page.tsx"
+
+    - id: A5
+      description: >-
+        TicketTypeCard supports a list/buy mode split and no longer hardcodes a single
+        always-horizontal layout as its only render path.
+      command: >-
+        grep -qE "mode:\s*'list'\s*\|\s*'buy'|mode:\s*\"list\"\s*\|\s*\"buy\"" components/tickets/TicketTypeCard.tsx
+
+    - id: A6
+      description: >-
+        Real orchid photos are wired in via the explicit per-slug map, reusing only the five
+        existing site-wide images — no new image assets referenced.
+      command: >-
+        test -f lib/tickets-orchid-image.ts &&
+        grep -q "orchid-pink.jpg" lib/tickets-orchid-image.ts &&
+        grep -q "orchid-yellow.jpg" lib/tickets-orchid-image.ts &&
+        grep -q "orchid-purple.jpg" lib/tickets-orchid-image.ts &&
+        grep -q "orchid-violet.jpg" lib/tickets-orchid-image.ts &&
+        grep -q "getOrchidImageForTicketType" components/tickets/TicketTypeCard.tsx
+
+    - id: A7
+      description: Every referenced orchid image file actually exists in public/images/.
+      command: >-
+        for f in orchid-pink orchid-yellow orchid-purple orchid-violet orchid-dark; do
+        test -f "public/images/${f}.jpg" || exit 1; done
+
+    - id: A8
+      description: >-
+        The dedicated buy screen returns notFound() for a non-admission-category or missing
+        ticketType, so Conferences/Workshops products are not reachable through this route.
+      command: >-
+        grep -q "notFound" "app/(marketing)/tickets/[slug]/page.tsx" &&
+        grep -qE "category\s*!==\s*'admission'" "app/(marketing)/tickets/[slug]/page.tsx"
+
+    - id: A9
+      description: TypeScript compiles cleanly after the routing/component changes.
+      command: npx tsc --noEmit -p tsconfig.json
+
+    - id: A10
+      description: >-
+        MANUAL, visual-only (per this project's coding.md — automated checks above already prove
+        the structural facts: route exists, mode prop exists, real image filenames are wired,
+        Conferences/Workshops untouched). A human or browser agent must load /tickets and confirm:
+        (a) ticket-type cards render in a VERTICAL stack, not the old horizontal row; (b) each
+        card shows a real orchid photograph, not a placeholder icon; (c) clicking a card navigates
+        to /tickets/{slug} and that screen shows a working quantity stepper + buy button for ONLY
+        that one ticket type.
+      kind: agent_review

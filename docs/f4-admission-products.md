@@ -10,15 +10,14 @@
 
 ## The Five Products
 
-| Slug | Name | Price | Capacity | Released | Early-Bird Cutoff | Day Select | Attendee Names |
-|---|---|---|---|---|---|---|---|
-| `early-bird` | Early-Bird Exhibition Ticket | R130 | 400 | 400 | 2027-07-31 | ✗ | ✗ |
-| `day-visitor` | Day Visitor Ticket | R150 | 800 | ∅ | ∅ | ✓ | ✗ |
-| `early-bird-weekend-pass` | Early-Bird Weekend Pass | R380 | 150 | 150 | 2027-07-31 | ✗ | ✗ |
-| `weekend-pass` | Weekend Pass | R400 | 300 | ∅ | ∅ | ✗ | ✗ |
-| `vip` | VIP Ticket | R300 | 120 | ∅ | ∅ | ✗ | ✓ |
+| Slug | Name | Price | Regular Price | Capacity | Released | Early-Bird Cutoff | Day Select | Attendee Names |
+|---|---|---|---|---|---|---|---|---|
+| `early-bird` | Early-Bird Exhibition Ticket | R130 | — | 400 | 400 | 2027-07-31 | ✗ | ✗ |
+| `day-visitor` | Day Visitor Ticket | R150 | — | 800 | ∅ | ∅ | ✓ | ✗ |
+| `weekend-pass` | Weekend Pass | R380 | R400 | 300 | ∅ | 2027-07-31 | ✗ | ✗ |
+| `vip` | VIP Ticket | R480 | — | 120 | ∅ | ∅ | ✗ | ✓ |
 
-All figures are transcribed verbatim from `.agent/memory/project/provisional-figures.md` — see the "Replacement procedure" section below. The VIP ticket is Thursday-only (17:00–18:30 reception); Day Visitor is a per-day admission, not concurrent occupancy (see "Known scope gap" below).
+All figures are transcribed verbatim from `.agent/memory/project/provisional-figures.md` — see the "Replacement procedure" section below. The VIP ticket (R480) is the top tier, priced above the Weekend Pass (R380 early-bird, R400 regular) to reflect its reception access. The Weekend Pass is now one product that changes price at the cutoff; the separate early-bird-weekend-pass document is retired (F1, see below). VIP is Thursday-only (17:00–18:30 reception); Day Visitor is a per-day admission, not concurrent occupancy (see "Known scope gap" below).
 
 ---
 
@@ -50,7 +49,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[];
 
 ## Sanity Schema: `sanity/schemas/documents/ticketType.ts`
 
-Five new fields, all additive (no removals, no renames):
+Six new fields, all additive (no removals, no renames):
 
 | Field | Type | Required | Purpose |
 |---|---|---|---|
@@ -59,6 +58,7 @@ Five new fields, all additive (no removals, no renames):
 | `releasedQuantity` | number | No (allows 0) | How many seats are *currently on sale*. Independent from physical `capacity` for future staged-release features. Early-bird types: equals `capacity` today. Others: `null` |
 | `requiresDaySelection` | boolean | No (default `false`) | Day Visitor only; checkout must prompt for chosen day (F5 enforces this, F4 only sets the flag) |
 | `requiresAttendeeNames` | boolean | No (default `false`) | VIP only; checkout must collect attendee names (F5 enforces this, F4 only sets the flag) |
+| `regularPrice` | number | No | **(F1)** Price after `earlyBirdCutoff` passes. `null` (default) = sale closes at cutoff. When set, the product stays purchasable at this higher price after early-bird window ends. See [F1: Ticketing Pricing Migration](f1-ticketing-pricing-migration.md) for decision record. |
 
 Every pre-existing field (`name`, `slug`, `price`, `description`, `capacity`, `active`, `order`, `show`, `demo`) is unchanged.
 

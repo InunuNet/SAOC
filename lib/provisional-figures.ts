@@ -33,6 +33,10 @@ export interface ProvisionalAdmissionProduct {
   /** Always `true` in this file today — literal, not computed — see golden README "The
    *  provisional flag is per-value, not per-file". */
   provisional: true;
+  /** F1 (ticketing-flow-redesign, M1): optional. Price after `earlyBirdCutoff` passes.
+   *  Unset = sale closes at cutoff (unchanged legacy behavior) — see
+   *  contracts/golden/ticketing-flow-redesign-f1/README.md §2. */
+  regularPrice?: number | null;
   /** F5 (ticketing-conferences-and-events, M2): the shared physical pool this product's sold
    *  units draw from. `null`/unset (the default for every Admission/Conference product) means
    *  the product is its own singleton pool — byte-identical to today's per-slug behavior. See
@@ -73,27 +77,15 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     provisional: true,
   },
   {
-    slug: 'early-bird-weekend-pass',
-    name: 'Early-Bird Weekend Pass',
-    category: 'admission',
-    description: 'Full-weekend admission to the National Show during the early-bird window.',
-    price: 380,
-    capacity: 150,
-    releasedQuantity: 150,
-    earlyBirdCutoff: EARLY_BIRD_CUTOFF,
-    requiresDaySelection: false,
-    requiresAttendeeNames: false,
-    provisional: true,
-  },
-  {
     slug: 'weekend-pass',
     name: 'Weekend Pass',
     category: 'admission',
     description: 'Full-weekend admission to the National Show.',
-    price: 400,
+    price: 380,
+    regularPrice: 400,
     capacity: 300,
     releasedQuantity: null,
-    earlyBirdCutoff: null,
+    earlyBirdCutoff: EARLY_BIRD_CUTOFF,
     requiresDaySelection: false,
     requiresAttendeeNames: false,
     provisional: true,
@@ -103,7 +95,7 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     name: 'VIP Ticket',
     category: 'admission',
     description: 'Reception access plus full-weekend admission to the National Show.',
-    price: 300,
+    price: 480,
     capacity: 120,
     releasedQuantity: null,
     earlyBirdCutoff: null,

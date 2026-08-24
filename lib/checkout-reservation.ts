@@ -357,6 +357,23 @@ export function isWithinEarlyBirdWindow(
   return now.getTime() < cutoffEndExclusive.getTime();
 }
 
+/**
+ * ticketing-flow-redesign (F1) — the sole source of price-selection logic for a ticket type
+ * carrying an early-bird cutoff. See
+ * contracts/golden/ticketing-flow-redesign-f1/pricing-model.golden.md for the full truth
+ * table this must match.
+ */
+export function resolveEffectivePrice(input: {
+  price: number;
+  regularPrice: number | null;
+  earlyBirdCutoff: string | null;
+  now: Date;
+}): number | null {
+  if (!input.earlyBirdCutoff) return input.price;
+  if (isWithinEarlyBirdWindow(input.now, input.earlyBirdCutoff)) return input.price;
+  return input.regularPrice;
+}
+
 // ---------------------------------------------------------------------------------------------
 // ticketing-f5-day-attendees (F5) — additive pure export. See
 // contracts/golden/ticketing-f5-day-attendees/README.md for the full decision record.

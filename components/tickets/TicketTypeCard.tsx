@@ -8,6 +8,9 @@ export interface TicketTypeCardData {
   slug: string;
   name: string;
   price: number;
+  /** F1 (ticketing-flow-redesign, M1) — read-path wiring only; F2 displays it. See
+   *  contracts/golden/ticketing-flow-redesign-f1/README.md §8. */
+  regularPrice?: number | null;
   description: string;
   soldOut: boolean;
   /** F4 (multi-line-item-cart, M2) — gates a real, visible "provisional" text marker. See

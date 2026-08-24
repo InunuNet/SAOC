@@ -1,0 +1,134 @@
+schema: athanor.contract/v1
+slug: ticketing-flow-redesign
+goal: >-
+  Migrate the ticketType pricing model so early-bird and regular pricing live on ONE Sanity
+  document per product (price changes at earlyBirdCutoff instead of two separate documents), and
+  fix the VIP price bug (R300 -> R480, VIP must stay the top tier above Weekend Pass's R400). Adds
+  one additive `regularPrice` field, a new pure `resolveEffectivePrice()` price-selection
+  function, merges `early-bird-weekend-pass` into `weekend-pass` (retiring, never deleting, the
+  old document), and a one-off `--dry-run`/`--verify` patch script for the live Sanity dataset.
+  Full design rationale: contracts/golden/ticketing-flow-redesign-f1/README.md.
+created_at: '2026-08-24'
+autonomy: high
+
+# SCOPE: this feature touches exactly these files —
+#   EDIT sanity/schemas/documents/ticketType.ts — add optional `regularPrice: number` field —
+#        README §2, golden pricing-model.golden.md
+#   EDIT lib/checkout-reservation.ts — add resolveEffectivePrice() pure export — README §2,
+#        golden pricing-model.golden.md
+#   EDIT lib/provisional-figures.ts — ProvisionalAdmissionProduct gains optional regularPrice;
+#        vip.price 300->480; early-bird-weekend-pass entry removed; weekend-pass entry gains
+#        regularPrice/earlyBirdCutoff and price 400->380, capacity stays 300 — README §4-5,
+#        golden pricing-model.golden.md
+#   EDIT sanity/queries.ts — regularPrice added to activeTicketTypesQuery,
+#        activeTicketTypesByCategoryQuery, ticketTypeBySlugQuery projections — README §8, golden
+#        pricing-model.golden.md
+#   EDIT app/api/tickets/checkout/route.ts — SanityTicketType gains regularPrice; new
+#        isUsableRegularPrice() validator; unusableTicketType field union gains 'regularPrice';
+#        amountByType assignment + early-bird 409 refusal replaced by resolveEffectivePrice() call
+#        — README §7, golden checkout-route-diff.golden.md
+#   EDIT components/tickets/CategoryTicketsPage.tsx — local SanityTicketType interface and
+#        cardData mapping gain regularPrice (read-path wiring only; F2 displays it) — README §8
+#   NEW  scripts/fix-vip-and-weekend-pass-pricing.ts — --dry-run/--verify one-off patch script for
+#        the live Sanity dataset — README §6, golden migration-script.golden.md
+#
+# Explicitly UNCHANGED (README §9): early-bird (Exhibition) product structure, capacity/
+# requiresDaySelection/requiresAttendeeNames/capacityPool/headcountPerUnit on any product,
+# CONFERENCE_PRODUCTS/WORKSHOP_FIELD_TRIP_PRODUCTS arrays, scripts/seed-ticketing.ts.
+
+features:
+  - id: F1
+    name: >-
+      Merge early-bird/regular pricing into one ticketType document per product via a new
+      regularPrice field, and fix the VIP price bug (R300 -> R480).
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/ticketing-flow-redesign/goldens/README.md
+  - contracts/golden/ticketing-flow-redesign-f1/README.md
+  - contracts/golden/ticketing-flow-redesign-f1/pricing-model.golden.md
+  - contracts/golden/ticketing-flow-redesign-f1/checkout-route-diff.golden.md
+  - contracts/golden/ticketing-flow-redesign-f1/migration-script.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The Sanity schema declares an optional, non-required regularPrice number field.
+      command: >-
+        grep -q "name: 'regularPrice'" sanity/schemas/documents/ticketType.ts &&
+        ! grep -A6 "name: 'regularPrice'" sanity/schemas/documents/ticketType.ts | grep -q "Rule.required()"
+
+    - id: A2
+      description: >-
+        resolveEffectivePrice() exists and matches the golden truth table for every case (no
+        cutoff, within window, past window with/without regularPrice).
+      command: npx tsx contracts/checks/ticketing-flow-redesign-f1/check-resolve-effective-price.mjs
+
+    - id: A3
+      description: >-
+        VIP's price in the source of truth is exactly 480 — not merely "greater than Weekend
+        Pass's price" (satisfiable by any wrong-but-larger number).
+      command: >-
+        node -e "const m=require('fs').readFileSync('lib/provisional-figures.ts','utf8');
+        const vip=m.slice(m.indexOf(\"slug: 'vip'\"), m.indexOf(\"slug: 'vip'\")+400);
+        if (!/price:\s*480\b/.test(vip)) { console.error('VIP price is not exactly 480'); process.exit(1); }
+        console.log('PASS: VIP price is exactly 480');"
+
+    - id: A4
+      description: >-
+        No early-bird-weekend-pass entry remains in ADMISSION_PRODUCTS (source of truth reflects
+        the merged go-forward model, not the retired document).
+      command: >-
+        ! grep -q "slug: 'early-bird-weekend-pass'" lib/provisional-figures.ts
+
+    - id: A5
+      description: >-
+        weekend-pass carries the merged shape: early-bird price 380, regularPrice 400, and a real
+        earlyBirdCutoff (not null/unset).
+      command: >-
+        node -e "const m=require('fs').readFileSync('lib/provisional-figures.ts','utf8');
+        const i=m.indexOf(\"slug: 'weekend-pass'\"); const wp=m.slice(i, i+500);
+        const ok = /price:\s*380\b/.test(wp) && /regularPrice:\s*400\b/.test(wp) && /earlyBirdCutoff:\s*EARLY_BIRD_CUTOFF/.test(wp);
+        if (!ok) { console.error('weekend-pass does not match the merged golden shape:', wp); process.exit(1); }
+        console.log('PASS: weekend-pass matches the merged golden shape');"
+
+    - id: A6
+      description: >-
+        The checkout route no longer assigns amountByType[slug] = price directly, nor refuses on
+        earlyBirdCutoff alone — it routes through resolveEffectivePrice() and refuses only on a
+        null result.
+      command: >-
+        grep -q "resolveEffectivePrice" app/api/tickets/checkout/route.ts &&
+        ! grep -qE "^\s*amountByType\[slug\]\s*=\s*price;\s*$" app/api/tickets/checkout/route.ts
+
+    - id: A7
+      description: >-
+        The checkout route validates regularPrice via isUsableRegularPrice before trusting it,
+        same fail-closed posture as every other ticketType field it reads.
+      command: >-
+        grep -q "isUsableRegularPrice" app/api/tickets/checkout/route.ts
+
+    - id: A8
+      description: >-
+        The three ticketType-reading GROQ queries select regularPrice alongside price.
+      command: >-
+        node contracts/checks/ticketing-flow-redesign-f1/check-queries-select-regular-price.mjs
+
+    - id: A9
+      description: >-
+        The live-dataset patch script exists, follows the --dry-run/--verify pattern (no raw
+        one-off mutation), and touches exactly the three documents this feature's data change
+        requires — never a client.delete() call.
+      command: >-
+        test -f scripts/fix-vip-and-weekend-pass-pricing.ts &&
+        grep -q -- "--dry-run" scripts/fix-vip-and-weekend-pass-pricing.ts &&
+        grep -q -- "--verify" scripts/fix-vip-and-weekend-pass-pricing.ts &&
+        grep -q "ticketType-vip" scripts/fix-vip-and-weekend-pass-pricing.ts &&
+        grep -q "ticketType-weekend-pass" scripts/fix-vip-and-weekend-pass-pricing.ts &&
+        grep -q "ticketType-early-bird-weekend-pass" scripts/fix-vip-and-weekend-pass-pricing.ts &&
+        ! grep -q "\.delete(" scripts/fix-vip-and-weekend-pass-pricing.ts
+
+    - id: A10
+      description: TypeScript compiles cleanly after the schema/type/route changes.
+      command: npx tsc --noEmit -p tsconfig.json

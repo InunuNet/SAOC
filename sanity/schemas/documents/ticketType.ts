@@ -80,6 +80,20 @@ export const ticketType = defineType({
       type: 'datetime',
       description: 'Last day this ticket type is on sale at its early-bird rate. Optional.',
     }),
+    // F1 (ticketing-flow-redesign, M1): additive post-cutoff price. Ignored when
+    // earlyBirdCutoff is unset; unset itself means the product simply closes at the cutoff
+    // (unchanged legacy behavior). See
+    // contracts/golden/ticketing-flow-redesign-f1/pricing-model.golden.md.
+    defineField({
+      name: 'regularPrice',
+      title: 'Regular Price (post-cutoff, ZAR)',
+      type: 'number',
+      description:
+        'Price this ticket type switches to once earlyBirdCutoff passes. Leave unset if this ' +
+        'product has no post-cutoff price (sale simply closes at the cutoff). Ignored when ' +
+        'earlyBirdCutoff is unset.',
+      validation: (Rule) => Rule.min(0),
+    }),
     // F4: staged-release lever, conceptually distinct from `capacity` (see golden README
     // "releasedQuantity: why it's a field at all"). Deliberately NOT required — most
     // products never set it — and 0 is a valid, real value (not "unset").

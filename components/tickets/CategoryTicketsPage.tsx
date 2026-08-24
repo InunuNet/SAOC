@@ -42,6 +42,7 @@ interface SanityTicketType {
   name: string;
   slug: string;
   price: number;
+  regularPrice?: number | null;
   description: string;
   capacity: number;
   releasedQuantity?: number | null;
@@ -184,6 +185,7 @@ export async function CategoryTicketsPage({
       slug: t.slug,
       name: t.name,
       price: t.price,
+      regularPrice: t.regularPrice ?? null,
       description: t.description,
       soldOut: poolCheck.kind === 'over-capacity',
       provisional: t.provisional === true,
