@@ -11,7 +11,9 @@ goal: 'Fix /contact unreachable from the header on mobile. Verified live at 375p
   for contract + goldens.'
 created_at: '2026-08-24T22:56:36.759500+00:00'
 started_at: null
-status: close_out
+status: done
+completed_at: '2026-08-25T00:00:00.000000+00:00'
+last_active_at: '2026-08-25T00:00:00.000000+00:00'
 cost_estimate:
   features: 0
   milestones: 0
