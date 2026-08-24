@@ -9,6 +9,7 @@ type TorchFeature = ReturnType<CameraCapabilities['torchFeature']>;
 
 const SCANNER_ELEMENT_ID = 'qr-reader';
 const SCAN_CONFIG = { fps: 10, qrbox: { width: 250, height: 250 } };
+const SUCCESS_AUTO_DISMISS_MS = 3000;
 
 // Camera lifecycle, surfaced to the volunteer instead of a blank box on failure.
 type CameraStatus = 'starting' | 'running' | 'permission-denied' | 'no-camera' | 'error';
@@ -45,6 +46,29 @@ export function DoorScannerClient() {
   const [torchOn, setTorchOn] = useState(false);
   const scanningRef = useRef<boolean>(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function clearDismissTimer() {
+    if (dismissTimerRef.current !== null) {
+      clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
+    }
+  }
+
+  function applyResult(data: CheckInResult) {
+    clearDismissTimer();
+    setResult(data);
+    if (data.success) {
+      dismissTimerRef.current = setTimeout(() => {
+        dismissTimerRef.current = null;
+        setResult(null);
+      }, SUCCESS_AUTO_DISMISS_MS);
+    }
+  }
+
+  useEffect(() => {
+    return () => clearDismissTimer();
+  }, []);
 
   async function handleCheckIn(bookingRef: string): Promise<void> {
     if (scanningRef.current) return;
@@ -59,9 +83,9 @@ export function DoorScannerClient() {
         body: JSON.stringify({ bookingRef: trimmed }),
       });
       const data = (await res.json()) as CheckInResult;
-      setResult(data);
+      applyResult(data);
     } catch {
-      setResult({ success: false, error: 'Network error — try again' });
+      applyResult({ success: false, error: 'Network error — try again' });
     } finally {
       scanningRef.current = false;
     }
@@ -208,9 +232,13 @@ export function DoorScannerClient() {
         </form>
 
         {result && (
-          <div className="mt-5">
-            <DoorResultBanner result={result} />
-          </div>
+          <DoorResultBanner
+            result={result}
+            onDismiss={() => {
+              clearDismissTimer();
+              setResult(null);
+            }}
+          />
         )}
       </div>
     </div>

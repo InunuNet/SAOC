@@ -1,0 +1,109 @@
+schema: athanor.contract/v1
+slug: door-checkin-success-feedback
+goal: >-
+  Fix door check-in: a successful scan produces no visible feedback. Investigation (see
+  contracts/golden/door-checkin-success-feedback-f1/README.md "Root cause") confirmed this is a
+  pure layout/positioning bug, not a rendering-logic or timing bug — the success branch renders
+  and persists correctly, it is simply appended after content tall enough (camera box + manual
+  entry form) to push it below the fold on 375px/320px viewports. Fix: turn the result banner
+  into a fixed, full-viewport overlay (not in-flow content) so it is visible without scrolling
+  regardless of what renders above it, reusing only existing brand tokens (bg-primary/text-ivory
+  for success, bg-bone/border-primary-800/text-primary-800 for failure — the same accessible
+  pairing already in use today), with a large checkmark/name for success and an auto-dismiss so
+  the screen returns to the live camera for the next attendee; failure holds until overwritten by
+  the next scan.
+
+created_at: '2026-08-25'
+autonomy: high
+
+# SCOPE: this feature touches exactly these files —
+#   EDIT components/admin/DoorResultBanner.tsx — success/failure branches become a fixed,
+#        inset-0, z-stacked, full-viewport overlay. Same tokens as today (bg-primary/text-ivory,
+#        bg-bone/border-primary-800/text-primary-800), larger success icon/glyph, role="status"/
+#        role="alert" preserved, attendeeName and result.error still rendered.
+#   EDIT components/admin/DoorScannerClient.tsx — add a setTimeout-based auto-dismiss
+#        (setResult(null)) on success only, cleared with clearTimeout on unmount or when a
+#        newer result arrives before it fires; the beginScan effect's dependency array stays
+#        [beginScan] — the camera lifecycle must not restart when a result is set or cleared.
+# Untouched / explicitly out of scope (see README "What this contract does NOT do"):
+#   - app/admin/door/page.tsx, app/admin/door/layout.tsx (nav/auth, unrelated)
+#   - app/api/admin/checkin/route.ts, lib/checkin.ts (server-side admission logic, already correct)
+#   - The "Door check-in is not one-handed" backlog item (Check In button thumb-reach, whole-page
+#     dvh layout) — separate P1, separate contract.
+#   - app/globals.css — no new color tokens.
+#   - CheckInResult's failure shape (types/index.ts or wherever it's declared) — no bookingRef
+#     added to the failure variant.
+
+features:
+  - id: F1
+    name: >-
+      Door check-in result banner renders as a fixed, full-viewport overlay so success (and
+      failure) is visible without scrolling at 375px and 320px, with a polished full-bleed
+      success state (large checkmark, attendee name) that auto-dismisses back to the live camera
+      view, and a failure state that holds until the next scan. Full spec:
+      contracts/golden/door-checkin-success-feedback-f1/README.md and
+      contracts/golden/door-checkin-success-feedback-f1/overlay-spec.golden.md.
+    status: pending
+
+goldens:
+  - contracts/golden/door-checkin-success-feedback-f1/README.md
+  - contracts/golden/door-checkin-success-feedback-f1/overlay-spec.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        components/admin/DoorResultBanner.tsx renders its result content inside a fixed,
+        full-viewport (inset-0), z-stacked overlay — not a block appended to normal document
+        flow — and uses dvh/dvw (never bare vh/vw) for any explicit viewport-relative sizing.
+        This is the structural core of the fix: it guarantees visibility regardless of how tall
+        the scanner box + manual-entry form render above it. FAILS ON: no `fixed` class; no
+        full-coverage inset; no z-index utility; any bare vh/vw unit present.
+      command: bash contracts/checks/door-checkin-success-feedback-f1/check-overlay-structure.sh
+
+    - id: A2
+      description: >-
+        Success and failure branches reuse only existing brand tokens (bg-primary/text-ivory,
+        bg-bone/border-primary-800/text-primary-800 — no new hex/rgb literal introduced), keep
+        role="status"/role="alert", keep rendering attendeeName and result.error, and the success
+        state's icon/glyph is visibly larger (>= 48px, or an <svg>) than the pre-fix 22-26px
+        text treatment — proving this is a genuinely polished, unmistakable success state, not a
+        technically-visible-but-tiny toast. FAILS ON: any raw hex/rgb color; any expected token
+        missing; either role attribute missing; attendeeName or result.error no longer rendered;
+        no large icon found.
+      command: bash contracts/checks/door-checkin-success-feedback-f1/check-tokens-and-content.sh
+
+    - id: A3
+      description: >-
+        Success auto-dismisses (setResult(null)) after a fixed delay via a setTimeout that is
+        cleared with clearTimeout (on unmount or when a newer result arrives) so a stale timer
+        can never clear a NEWER scan's result out from under the operator; failure sets no such
+        timer and holds until overwritten by the next scan; the camera-start effect's dependency
+        array stays [beginScan] — proving the scan lifecycle is never restarted by a result being
+        set or cleared. FAILS ON: no setTimeout; no clearTimeout; no setResult(null); the
+        beginScan effect's dependency array including `result` or anything beyond [beginScan].
+      command: bash contracts/checks/door-checkin-success-feedback-f1/check-behavior.sh
+
+    - id: A4
+      description: pnpm lint and pnpm exec tsc --noEmit both pass with zero errors after both files are edited.
+      command: pnpm lint && pnpm exec tsc --noEmit
+
+    - id: A5
+      description: >-
+        MANDATORY, MANUAL, non-automatable (per this project's coding.md agent_review rule — the
+        one property genuinely irreplaceable by any shell/structural check above, since this is a
+        real-device-adjacent rendered-pixel judgment call): a real BrowserAgent pass, at BOTH a
+        375px and a 320px viewport width, that performs (or simulates via direct DOM/state
+        manipulation if a live camera scan isn't feasible headlessly) the exact state transition
+        a successful scan produces — result becomes the success shape — and confirms, with a
+        screenshot at each width: (a) the success overlay is fully visible with NO scrolling
+        required, full-bleed color fill covering the viewport, a large checkmark, and the
+        attendee name legible at a glance; (b) after ~3 seconds the overlay auto-dismisses back
+        to the live camera view; (c) repeating with a failure-shape result shows the failure
+        overlay, also fully visible with no scrolling, holding on screen (does not auto-dismiss).
+        This is the only check that can observe real rendered layout/timing on an actual mobile
+        viewport — every assertion above proves the code SHAPE is correct, not that a phone at
+        375px/320px actually shows it without scrolling, which is the exact gap that let this
+        defect reach Brad's live test undetected the first time.
+      kind: agent_review

@@ -1,0 +1,12 @@
+{
+  "schema": "athanor.mission-touched-files/v1",
+  "slug": "door-checkin-success-feedback",
+  "pending_baselines": {},
+  "paths": [
+    ".agent/memory/project/missions/door-checkin-success-feedback.touched.json",
+    ".qa_scratch/",
+    "components/admin/DoorResultBanner.tsx",
+    "components/admin/DoorScannerClient.tsx",
+    "docs/f4-door-checkin-manual-protocol.md"
+  ]
+}

@@ -91,6 +91,43 @@ This confirms:
 
 ---
 
+## Success Feedback Overlay — Design and Implementation
+
+### What you see
+
+When a check-in succeeds (step 5 above), the result banner renders as a **full-viewport overlay** — it fills the entire screen, not a small card or banner. The overlay:
+
+- **Success state:** solid sage-green background (`bg-primary`), large checkmark icon, attendee name in bold, ticket type and booking reference below. The overlay **auto-dismisses after 3 seconds**, returning to the live camera view ready for the next attendee.
+- **Failure state:** solid cream background (`bg-bone`), border and text in dark sage (`primary-800`), large ✕ icon, and the specific refusal reason (e.g., "Already checked in", "Unpaid", "Not found"). The failure overlay **persists until the next scan**, giving the steward time to read and decide what to do.
+
+### Why an overlay (root cause and fix)
+
+**The problem:** before this fix, the success and failure banners were appended to the bottom of the page's normal document flow, after:
+- the page header (~70px)
+- the live camera scanner box (300-400px, depending on device aspect ratio and the QR library's letterboxing)
+- a torch button for low-light scanning (~50px)
+- the manual-entry form (label + input/button ~130px)
+
+This positioned the banner **below the fold** at typical mobile viewports (320px–375px height). The result rendered correctly and persisted correctly — it was purely a layout problem: a below-the-fold element that the operator never scrolled down to see is functionally the same defect as one that never renders at all.
+
+**The fix:** the banner now renders as a `position: fixed` full-viewport overlay (`inset: 0`, using `dvh` for mobile viewport-height correctness). This guarantees visibility regardless of how tall the content above it is or where the user has scrolled. The overlay is rendered conditionally the same way (`result && <Overlay .../>`), just positioned differently.
+
+**Key lesson for mobile admin tools:** any result, confirmation, or error UI must be verified against the **actual viewport height of your target device**, not just "does it render in the DOM." A correctly-rendering element below the fold is invisible to the user — measure twice, render to the viewport.
+
+### Visual design (reusing existing tokens)
+
+The overlay uses only existing design tokens from this project:
+- **Success background:** `bg-primary` (the sage green already established as the site's primary brand color)
+- **Success text:** `text-ivory` (the established light text color)
+- **Failure background:** `bg-bone` (the established light neutral)
+- **Failure border/text:** `primary-800` (dark sage, already in use as an accessible-contrast pair with `bg-bone` elsewhere in the site)
+
+No new brand colors were invented for this fix — the palette reuses the existing precedent.
+
+For full implementation details and the decision record, see `contracts/golden/door-checkin-success-feedback-f1/README.md`.
+
+---
+
 ## The Test: Step 6 (duplicate refusal)
 
 ### Repeat the same booking reference immediately
