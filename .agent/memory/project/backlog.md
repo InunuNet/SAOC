@@ -770,6 +770,20 @@ flat-over-nested-submenu pattern.
   `app/api/tickets/itn/route.ts:34`, `lib/payments/payfast.ts` for the adapter-side
   `grossAmountCents` parse) — the float-tolerance version it replaces accepted a genuine 1-cent
   underpayment. Docs task, not code.
+- [ ] **[P2] `check-idempotency-bound-to-payload.mjs` A26/A27 has a latent fixture-selection
+  bug.** `otherActiveTicketTypeSlug` can pick a ticket type that requires `chosenDay`, which the
+  check never supplies — pre-existing, confirmed to fail identically before and after
+  `verify-reservation-release-path`'s changes (2026-08-24), so out of scope there. Needs the
+  fixture selection to filter out `requiresDaySelection: true` types, or supply `chosenDay`.
+- [ ] **[P3] `check-missing-capacity-fails-closed.mjs` A29 hangs on Sanity CDN propagation in
+  this environment.** Documented as already-known-red by `verify-reservation-release-path`
+  (2026-08-24); not a regression from that mission's changes.
+- [ ] **[P1] `contracts/checks/ticketing-hardening/` (~18 files) is orphaned from every active
+  `contract.yaml`'s `assertions`.** Nothing currently wires the suite into `mission.py gate`, so
+  a break in it raises no alert — `verify-reservation-release-path` (2026-08-24) only caught the
+  `_shared.mjs` postCheckout-payload staleness because its own F1 happened to depend on that one
+  file. Needs a future mission to either wire the suite into an active contract or formally
+  retire it; leaving it silently unreachable is worse than either.
 
 ## Code quality & housekeeping
 

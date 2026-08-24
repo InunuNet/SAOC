@@ -2336,3 +2336,30 @@ review round. **Standing practice for any one-off live-content-write script**: r
 diff against the current golden file as the last step before executing the real write, every
 time, even when the fix already passed QA and Codex — drift can be introduced after review, not
 just before it.
+
+## Never toggle a real content document for test purposes — use a fully-converging dedicated fixture (2026-08-24)
+
+`verify-reservation-release-path` mission originally verified the release path by flipping
+`ticketType-exhibitor.active` on and off — a real, live Sanity document — which leaked onto the
+production `/tickets` page mid-mission (the exact live regression this mission's own
+methodology caused). Fix: a dedicated, permanently-excluded fixture document
+(`ticketType-qa-fixture`, `category: 'qa-fixture-only'`, `demo: true`) with an idempotent seed
+script (`scripts/seed-qa-fixture-ticket-type.ts`) that converges the fixture's *entire*
+schema-derived field set every run — including explicitly unsetting stray fields left over from
+a previous shape — not a hand-maintained allowlist of fields to set. A hand-maintained allowlist
+silently stops converging the moment the schema gains a field the allowlist doesn't know about.
+**Generalize**: any test/check harness that needs a live Sanity (or Firestore) object to exercise
+real code paths must use its own dedicated, clearly-marked, permanently-excluded fixture with a
+fully-converging idempotent seeder — never toggle flags on a real content document, even
+"temporarily."
+
+## Shared test helpers can silently drift from the real route shape they mock (2026-08-24)
+
+Same mission: `contracts/checks/ticketing-hardening/_shared.mjs` built a checkout-helper request
+payload that had gone stale relative to `postCheckout`'s real request shape after a prior,
+unrelated route change — nothing currently sweeps `contracts/*.yaml` / `contracts/checks/*` for
+staleness against production code changes, so the drift sat undetected until this mission
+happened to depend on that exact helper. See backlog's "re-pin discipline has no enforcement"
+item — same root pattern: shared test/check infra has no CI-style trigger tying it back to the
+production code it mirrors, so route/schema changes silently orphan it. Fixed reactively here;
+not solved structurally.
