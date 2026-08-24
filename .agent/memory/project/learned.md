@@ -2434,3 +2434,20 @@ past this — that's an operator override meant for genuinely-intentional out-of
 a workaround for concurrent-session noise. Instead replicate the wrap script's later steps
 manually (`brain.py wrap-up`, then `scoped_stage.py` staging, then a plain `git commit`) so the
 denylisted file is never touched or staged.
+
+## `mission_complete.py`'s status parse matches ANY nested `status:` line, not just the top-level one (2026-08-25)
+
+`contact-mobile-nav-fix` close-out: `parse_frontmatter_status()` in
+`execution/skills/lib/mission_complete.py` strips leading whitespace on every line before checking
+`startswith("status:")`, so it matches nested `features[].status` and `milestones[].status` keys
+inside the YAML frontmatter too, not just the mission-level `status:` field — and keeps overwriting
+on each match, so whichever `status:` line comes *last* in the file wins. Here the mission-level
+field correctly read `close_out` (a prior automated close-out attempt had rolled it back after
+`wrap_mission.sh` aborted on the shared-infra denylist guard — see entry above), but the script
+still returned rc=0 / printed `done`, because the milestone's `status: done` line happened to sit
+after it. A caller trusting rc=0 at face value would have cleared `active.json` while the mission's
+real top-level status was still `close_out` — silently orphaning the mission record. **Generalize**:
+don't trust this script's output as a substitute for reading the mission file's actual top-level
+`status:` field yourself when replicating `wrap_mission.sh`'s steps manually; grep/read the
+frontmatter directly and confirm which `status:` line is the mission-level one (first, right after
+`slug:`/`goal:`, before `cost_estimate:`) rather than relying on line order coincidence.
