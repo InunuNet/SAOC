@@ -1,0 +1,14 @@
+{
+  "schema": "athanor.mission-touched-files/v1",
+  "slug": "door-checkin-one-handed",
+  "pending_baselines": {},
+  "paths": [
+    ".agent/memory/project/backlog.md",
+    ".agent/memory/project/learned.md",
+    ".agent/memory/project/missions/door-checkin-one-handed.touched.json",
+    "components/admin/DoorScannerClient.tsx",
+    "contracts/checks/door-checkin-one-handed-f1/",
+    "contracts/golden/door-checkin-one-handed-f1/",
+    "docs/door-checkin-one-handed.md"
+  ]
+}

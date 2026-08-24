@@ -164,48 +164,50 @@ export function DoorScannerClient() {
   const cameraFailed = cameraStatus !== 'starting' && cameraStatus !== 'running';
 
   return (
-    <div className="min-h-screen bg-parchment px-4 py-6">
-      <div className="mx-auto max-w-[480px]">
-        <span className="eyebrow">SAOC</span>
-        <h1 className="mt-3 font-serif text-[26px] font-semibold leading-tight text-ink">
-          Door Check-in
-        </h1>
+    <div className="flex h-dvh min-h-dvh flex-col overflow-hidden bg-parchment px-4 py-6">
+      <div className="mx-auto flex min-h-0 w-full max-w-[480px] flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <span className="eyebrow">SAOC</span>
+          <h1 className="mt-3 font-serif text-[26px] font-semibold leading-tight text-ink">
+            Door Check-in
+          </h1>
 
-        <div className="mt-5 border border-rule bg-ivory p-4">
-          <div id={SCANNER_ELEMENT_ID} />
+          <div className="mt-5 border border-rule bg-ivory p-4">
+            <div id={SCANNER_ELEMENT_ID} />
 
-          {cameraStatus === 'starting' && (
-            <p className="mt-3 font-sans text-[15px] text-muted">Starting camera…</p>
-          )}
+            {cameraStatus === 'starting' && (
+              <p className="mt-3 font-sans text-[15px] text-muted">Starting camera…</p>
+            )}
 
-          {cameraFailed && (
-            <div className="mt-3 space-y-3">
-              <p className="font-sans text-[15px] text-ink">
-                {CAMERA_STATUS_MESSAGE[cameraStatus]}
-              </p>
+            {cameraFailed && (
+              <div className="mt-3 space-y-3">
+                <p className="font-sans text-[15px] text-ink">
+                  {CAMERA_STATUS_MESSAGE[cameraStatus]}
+                </p>
+                <button
+                  type="button"
+                  onClick={retryCamera}
+                  className="w-full rounded-sm border border-rule bg-ivory px-4 py-3 font-sans text-[15px] font-semibold text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  Try camera again
+                </button>
+              </div>
+            )}
+
+            {cameraStatus === 'running' && torchFeature && (
               <button
                 type="button"
-                onClick={retryCamera}
-                className="w-full rounded-sm border border-rule bg-ivory px-4 py-3 font-sans text-[15px] font-semibold text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                onClick={() => void toggleTorch()}
+                aria-pressed={torchOn}
+                className="mt-3 w-full rounded-sm border border-rule bg-ivory px-4 py-3 font-sans text-[15px] font-semibold text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
-                Try camera again
+                {torchOn ? 'Turn off torch' : 'Turn on torch'}
               </button>
-            </div>
-          )}
-
-          {cameraStatus === 'running' && torchFeature && (
-            <button
-              type="button"
-              onClick={() => void toggleTorch()}
-              aria-pressed={torchOn}
-              className="mt-3 w-full rounded-sm border border-rule bg-ivory px-4 py-3 font-sans text-[15px] font-semibold text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            >
-              {torchOn ? 'Turn off torch' : 'Turn on torch'}
-            </button>
-          )}
+            )}
+          </div>
         </div>
 
-        <form onSubmit={handleManualSubmit} className="mt-5 space-y-2">
+        <form onSubmit={handleManualSubmit} className="mt-5 flex-none space-y-2">
           <label
             htmlFor="manual-ref"
             className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted"

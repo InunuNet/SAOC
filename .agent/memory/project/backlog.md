@@ -323,12 +323,6 @@ flat-over-nested-submenu pattern.
   Verify on a real phone with a real unscanned ticket — a DOM assertion cannot see this, and the
   existing suite never asserted that a successful scan shows the operator anything.
   `[verify against new brief]` — the verdict taxonomy changes when check-in becomes per-day.
-- [ ] **[P1] Door check-in is not one-handed.** The operator must scroll past the camera viewport
-  with their thumb to reach "Check In"; on Android Chrome only the top ~8px of the button clears
-  the system nav bar. Primary action and result panel must be visible without scrolling at 375px
-  and 320px. Use `dvh`/`svh`, not `vh` — mobile browser chrome makes `vh` wrong. The nav on this
-  page stays `variant="minimal"` so it does not obstruct the camera; the same reasoning applies to
-  whatever layout lands. Must be verified on a real device.
 - [ ] **[P2] Manual entry should take only the unique suffix.** Staff should never type
   `SAOC-2027-`; show it as a fixed affix. Must still accept a full pasted reference and normalise
   it (a scanner app, an email copy-paste and a typing steward must all work) — Brad's input had a

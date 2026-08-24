@@ -1,0 +1,95 @@
+schema: athanor.contract/v1
+slug: door-checkin-one-handed
+goal: >-
+  Fix door check-in: the primary action ("Check In" — manual-entry submit) renders below
+  the fold at 375px and 320px viewport widths, requiring the operator to scroll to reach it
+  while scanning tickets one-handed at the door. Root cause (see
+  contracts/golden/door-checkin-one-handed-f1/README.md "Root cause"): the page's root
+  container is `min-h-screen` (bare `vh`, wrong unit family on mobile — see
+  door-checkin-success-feedback's identical fix to DoorResultBanner.tsx) with no viewport
+  height budget, so the heading + camera box + manual-entry form stack in normal flow until
+  they overflow the visible viewport, with the primary action at the bottom of that
+  overgrown flow. Fix: restructure the root layout as a dvh-budgeted flex column so the
+  manual-entry form is structurally pinned inside the visible viewport, never inside a
+  scrollable region, per contracts/golden/door-checkin-one-handed-f1/layout-spec.golden.md.
+  This is a real live defect Brad confirmed operating the scanner himself.
+created_at: '2026-08-25'
+autonomy: high
+
+# SCOPE: this feature touches exactly these files —
+#   EDIT components/admin/DoorScannerClient.tsx — root container becomes a dvh-budgeted
+#        flex column (min-h-dvh, flex flex-col) with two regions: a flex-1 min-h-0
+#        (optionally internally-scrollable) upper region holding the heading + camera box,
+#        and a flex-none pinned lower region holding the manual-entry form (input + "Check
+#        In" button) that is never a descendant of any overflow-y-auto/scroll element. No
+#        bare vh/vw/min-h-screen/h-screen anywhere in the file after the fix. Camera
+#        lifecycle (beginScan, torch, retry), handleCheckIn, and the CheckInResult shape are
+#        untouched.
+# Untouched / explicitly out of scope (see README "What this contract does NOT do"):
+#   - app/admin/door/page.tsx (AdminNav variant="minimal" — regression-checked by A2, not a
+#     change target)
+#   - components/admin/DoorResultBanner.tsx (already dvh-correct, fixed by
+#     door-checkin-success-feedback)
+#   - components/admin/AdminNav.tsx
+#   - app/api/admin/checkin/route.ts, camera scanning/torch logic
+
+features:
+  - id: F1
+    name: >-
+      Door check-in's manual-entry "Check In" button is structurally guaranteed to render
+      inside the visible viewport at 375px and 320px widths, with no page-level scroll
+      required, via a dvh-budgeted flex layout (never bare vh). Full spec:
+      contracts/golden/door-checkin-one-handed-f1/README.md and
+      contracts/golden/door-checkin-one-handed-f1/layout-spec.golden.md.
+    status: pending
+
+goldens:
+  - contracts/golden/door-checkin-one-handed-f1/README.md
+  - contracts/golden/door-checkin-one-handed-f1/layout-spec.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        components/admin/DoorScannerClient.tsx's root container uses a dvh-based height
+        (min-h-dvh or equivalent) with flex-col, contains no bare vh/vw utility
+        (min-h-screen, h-screen, 100vh, 100vw, or a literal `vh`/`vw` unit) anywhere in the
+        file, and the manual-entry <form> (containing the "Check In" submit button) is
+        structurally flex-none / not nested inside any element carrying
+        overflow-y-auto/overflow-y-scroll/overflow-auto/overflow-scroll. FAILS ON: any bare
+        vh/vw class or literal unit present; no dvh-based root height; the manual-entry form
+        found inside a scrollable ancestor.
+      command: bash contracts/checks/door-checkin-one-handed-f1/check-layout-structure.sh
+
+    - id: A2
+      description: >-
+        app/admin/door/page.tsx still passes variant="minimal" to <AdminNav> — regression
+        guard, this fix must not touch nav variant or introduce a persistent bar. FAILS ON:
+        variant="minimal" absent, or variant="bar" present, on the <AdminNav> call in
+        app/admin/door/page.tsx.
+      command: grep -q 'variant="minimal"' app/admin/door/page.tsx
+
+    - id: A3
+      description: pnpm lint and pnpm exec tsc --noEmit both pass with zero errors after the edit.
+      command: pnpm lint && pnpm exec tsc --noEmit
+
+    - id: A4
+      description: >-
+        MANDATORY, MANUAL, non-automatable (per this project's coding.md agent_review rule —
+        the one property genuinely irreplaceable by the structural checks above, since this
+        is a real-device-adjacent rendered-pixel judgment call): a real BrowserAgent pass, at
+        BOTH 375x667 and 320x568 viewports, against the live /admin/door route in an
+        authenticated admin session, per
+        contracts/golden/door-checkin-one-handed-f1/layout-spec.golden.md "Verification
+        viewports". At each width, with no scroll performed, capture a full-viewport
+        screenshot AND read getBoundingClientRect() on the "Check In" submit button,
+        confirming: (a) the button's bounding box is fully within [0, viewportHeight]
+        (rect.top >= 0 and rect.bottom <= viewportHeight); (b) the outer page does not
+        require scrolling to reach it (document.scrollingElement.scrollHeight <=
+        clientHeight + 1px). A best-effort BEFORE capture against the pre-fix code
+        (documenting rect.bottom > viewportHeight) is encouraged but not gating — Brad's live
+        confirmation of the defect is the primary evidence for BEFORE; AFTER passing at both
+        widths is what closes this mission. DOM presence alone (e.g. grep for a class name)
+        does NOT satisfy this — it must be a rendered-pixel + real bounding-box check.
+      kind: agent_review
