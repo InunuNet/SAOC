@@ -1,8 +1,9 @@
 {
-  "mission": ".agent/memory/project/missions/2026-08-22-fix-live-sentinel-residue-cms-loop-f3.md",
+  "mission": ".agent/memory/project/missions/2026-08-24-ozow-sandbox-toggle.md",
   "checkpoint": {
-    "milestone": null,
-    "feature": null
+    "milestone": "M1",
+    "feature": "F1",
+    "ts": "2026-08-24T09:42:21.085973+00:00"
   },
-  "activated_at": "2026-08-22T00:12:37.658307+00:00"
+  "activated_at": "2026-08-24T09:42:21.086242+00:00"
 }

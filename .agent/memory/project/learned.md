@@ -1,3 +1,43 @@
+## Ozow F4 — GetTransactionByReference needs an explicit IsTest param, and an "external blocker" verdict held too long (2026-08-23)
+
+`ozow-payment-provider` F4: `confirmNotification()` in `lib/payments/ozow.ts` 404'd on
+`GetTransactionByReference` for real, hash-verified `IsTest=true` sandbox transactions, silently
+blocking every order from reaching `paid` despite a genuinely successful payment. Root cause found
+via Alembic research of Ozow's own docs: the endpoint has an optional `IsTest` query param
+(defaults to `false`) that the code never sent, scoping every lookup to real transactions only.
+Fix: send `&IsTest=true` only when the notification's hash-verified `raw.IsTest === 'true'` — a
+2-line change, byte-identical requests for real transactions, zero new trust surface.
+Full record: `contracts/golden/ozow-m1-f4/README.md` §8.
+
+- **Pitfall — dispatch race across a compaction boundary.** Two independent architect instances
+  ran on F4 concurrently (a leftover pre-compaction dispatch plus a fresh one), producing two
+  different designs. The first, more complex design (bounded retry + a second Ozow endpoint +
+  a last-resort hash-trust fallback) had already been ~80% implemented by dev before the conflict
+  surfaced — required a full revert and reimplementation against the simpler, better-evidenced
+  fix. The complex design would have made hash-trust the ROUTINE confirmation path for every
+  sandbox transaction (since `OZOW_IS_TEST` is hardcoded true for every transaction this adapter
+  sends) — caught by asking "why is this more complex than needed," not by any rule that would
+  have prevented the race itself. **When two subagents with the same name-prefix are dispatched
+  close together, especially across a context-compaction boundary, verify no stale/duplicate
+  dispatch is still running before assuming a single line of work.**
+- **Pitfall — "external blocker" conclusions held too provisionally, or not provisionally enough.**
+  The mission's original F3 close-out (2026-08-22) concluded the Ozow sandbox was blocked by an
+  "unprovisioned merchant account, external vendor blocker." That conclusion was WRONG. Real root
+  causes were (1) a SiteCode misconfiguration, (2) a genuine external R0.01 transaction cap (Ozow
+  support ticket needed, still open), and (3) this F4 `confirmNotification()` bug — not external at
+  all. An "external blocker, not our bug" verdict reached after only 1-2 investigation rounds should
+  be held more provisionally; this one cost a full extra live-test-and-diagnose cycle to correct.
+  `docs/payment-seam.md` and `contracts/golden/ozow-m1-f3/README-addendum-blocked.md` now carry the
+  corrected findings.
+- **Recurrence — `mission.py close-out` blocked by a dirty shared `.claude/settings.json`.** Same
+  guard that blocked `national-show-menu-restructure`'s close-out (2026-08-21) fired again here:
+  `wrap_mission.sh` refuses to stage/commit when `.claude/settings.json` is dirty from concurrent
+  harness work in the same session (this time a one-line `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` change,
+  45→30). Correct handling, confirmed twice now: do NOT set `WRAP_ALLOW_OUT_OF_SCOPE=1` to force
+  it — that risks clobbering a concurrent session's live edit. Leave the mission at `close_out`
+  with feature/milestone content already `done`, and report the pending final wrap-commit step
+  to the orchestrator rather than forcing past the guard.
+
 ## Dataset Residue Guard — Green Gate ≠ Proven Property (2026-08-16)
 
 Built `scripts/scan-dataset-residue.ts` + CI job to catch sentinel/placeholder values (like
@@ -2086,6 +2126,40 @@ its original bar. See `A1-BLOCKED` in `contracts/golden/ozow-m1-f3/README-addend
 This is preferable to both faking a green pass on unverifiable ground and leaving a permanently
 red/skipped assertion that erodes trust in the gate — reuse this pattern the next time a mission
 hits a genuinely external blocker rather than inventing a one-off workaround.
+
+## Codex GPT-5.5 cross-model review caught four distinct real bugs across five rounds on `ozow-sandbox-toggle` F1 — strongest evidence yet for the mandatory-review rule (2026-08-24)
+
+`ozow-sandbox-toggle` F1 (admin-gated Ozow demo-amount override) is the first feature on this
+project where the mandatory Codex GPT-5.5 cross-model review (`.claude/rules/workflow.md`) caught
+**four separate real, distinct bugs across five review rounds**, each one missed by Claude's own
+@architect-apex + @dev + @qa-apex cycle before Codex found it:
+
+- **Round 1**: `lib/tickets-notification.ts`'s amount-match check compared a test-mode Ozow
+  payment against the *real* order price instead of the amount actually sent to the gateway —
+  successful test payments would never have reached `paid`.
+- **Round 2**: the checkout route's idempotency-replay path re-derived the `initiate()` amount
+  from a *fresh read* of the admin flag instead of the value the *original* order was created
+  with — a flag flip between reservation and replay could desync the two.
+- **Round 3**: a `'use client'` banner component imported a constant from a module with a
+  top-level `firebase-admin/firestore` import — would have broken the production Next.js build by
+  pulling server-only code into the client bundle.
+- **Round 4**: a new required field on the shared `Order` type broke another, already-shipped
+  mission's typed golden fixture (cross-mission regression) — fixed by making it optional,
+  following the existing `buyerUid?:` precedent already in the codebase for the same class of
+  problem.
+
+This is the **second** feature on this project (after vendor registration, referenced directly in
+`.claude/rules/workflow.md`'s rationale) where an independent-model pass found real defects an
+all-Claude review chain missed. Same model writing and reviewing its own code does not reliably
+catch this bug class — reinforces, don't relitigate, the mandatory-Codex-review rule.
+
+**Useful pattern that emerged and is worth reusing**: for A2/A3/A10, `@architect-apex` proved each
+contract assertion actually tests the real property — not something coincidentally satisfied — by
+running it a second time against a *deliberately broken* temp copy of the source and confirming it
+fails. This project has its own audited "assertion satisfiable by something that isn't the real
+property" defect class (see `project_secret_corruption_class` and prior contract-scoring
+lessons) — negative verification against a broken variant is a cheap, repeatable way to catch that
+class before it ships, not just at architect-design time.
 
 ## Mandatory final full-mission-diff Codex pass catches cross-mission regressions per-round reviews structurally cannot see (2026-08-22)
 

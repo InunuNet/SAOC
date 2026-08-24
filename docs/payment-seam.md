@@ -252,6 +252,9 @@ F10's assertions keep asserting exactly what they asserted, against the same fun
 2. **F4 fix (2026-08-23)** — `GetTransactionByReference` endpoint takes an `IsTest` query parameter (defaults to `false`). The adapter was never sending it, so sandbox (`IsTest=true`) transactions returned 404 on status confirmation. Fixed by appending `&IsTest=true` when the notification's `raw.IsTest === 'true'`. See [`contracts/golden/ozow-m1-f4/README.md`](../contracts/golden/ozow-m1-f4/README.md) §8 for the decision record.
 3. **Ozow sandbox R0.01 transaction cap** — Ozow's sandbox enforces a real ZAR 0.01 minimum transaction amount on this merchant account, confirmed via Ozow's own error message. This is external/vendor-side and still requires Ozow support to raise the cap — a support email was drafted but not yet sent.
 
+**Demo mode — testing with small amounts (F1 of mission `ozow-sandbox-toggle`, 2026-08-24):**
+To test Ozow transactions without requiring support to raise the R0.01 cap, use the new admin-controlled **Ozow Sandbox Test Mode** toggle (mission `ozow-sandbox-toggle` F1). When enabled via `/admin/settings`, the checkout forces the amount sent to Ozow's `initiate()` call to R0.01 for that single purchase, while preserving the real ticket price in your order records, refund/reconciliation systems, and the buyer's receipt. PayFast is completely unaffected by this flag. See [`docs/f1-ozow-sandbox-toggle.md`](f1-ozow-sandbox-toggle.md) for how to turn it on, what it guarantees, and the `expectedGatewayAmount` mechanism that tracks what the gateway was actually told to expect. This replaces the manual Sanity price-edit workaround used during F3/F4 testing — the new mechanism is reversible, auditable, and keeps real prices intact for reconciliation.
+
 **Code:** [`lib/ozow.ts`](../lib/ozow.ts) (signature builder), [`lib/payments/ozow.ts`](../lib/payments/ozow.ts)
 (PaymentProvider adapter).
 

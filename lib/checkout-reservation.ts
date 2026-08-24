@@ -62,6 +62,10 @@ export function buildReservationDocs(input: BuildReservationDocsInput): Reservat
     pf_payment_id: null,
     recoveryToken: input.recoveryToken,
     recoveryTokenExpiresAt: input.recoveryTokenExpiresAt,
+    // ozow-sandbox-toggle F1 — this builder is not the live checkout call path (see
+    // BuildMultiReservationDocsInput's own comment above); always null, same as every
+    // pre-F1 order.
+    expectedGatewayAmount: null,
   };
 
   const position: Omit<Ticket, 'id'> & { idempotencyKey: string } = {
@@ -232,6 +236,10 @@ export interface BuildMultiReservationDocsInput {
    *  checkout/route.ts's reserveTicket() actually calls in production — fixing only the
    *  single-item sibling above would not have covered the live call path. */
   gateway: string;
+  /** ozow-sandbox-toggle F1 — what we told the gateway to expect at initiate() time; `null`
+   *  for PayFast or Ozow with the sandbox test-mode flag off. See
+   *  contracts/golden/ozow-sandbox-toggle-f1/README.md §3b. */
+  expectedGatewayAmount: number | null;
 }
 
 export interface MultiReservationDocs {
@@ -270,6 +278,7 @@ export function buildMultiReservationDocs(
     pf_payment_id: null,
     recoveryToken: input.recoveryToken,
     recoveryTokenExpiresAt: input.recoveryTokenExpiresAt,
+    expectedGatewayAmount: input.expectedGatewayAmount,
   };
 
   const positions: (Omit<Ticket, 'id'> & { idempotencyKey: string })[] = input.lineItems.map(

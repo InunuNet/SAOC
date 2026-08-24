@@ -44,6 +44,26 @@ function acknowledge(): NextResponse {
   return NextResponse.json({ received: true }, { status: 200 });
 }
 
+/**
+ * Pure amount-match comparison, extracted from step 7 below so it is testable with zero I/O
+ * (see contracts/checks/ozow-sandbox-toggle-f1/check-notification-amount-match-test-mode.mjs).
+ *
+ * ozow-sandbox-toggle F1 (README §3b) — compares against `lookup.expectedGatewayAmount` when
+ * set (an Ozow order created while the sandbox test-mode flag was on, where we ourselves told
+ * the gateway to expect a different amount than the real price), falling back to `lookup.amount`
+ * for every other order (PayFast, Ozow with the flag off, any order predating this field) —
+ * byte-identical to pre-F1 behaviour in every one of those cases.
+ */
+export function notificationAmountMatches(
+  lookup: { amount: number; expectedGatewayAmount?: number | null },
+  grossAmountCents: number | null
+): boolean {
+  const orderAmount = lookup.expectedGatewayAmount ?? lookup.amount;
+  const orderAmountCents = Number.isNaN(orderAmount) ? null : Math.round(orderAmount * 100);
+  if (grossAmountCents === null || orderAmountCents === null) return false;
+  return Math.abs(grossAmountCents - orderAmountCents) < AMOUNT_MATCH_TOLERANCE_CENTS;
+}
+
 export async function POST(
   paymentProvider: PaymentProvider,
   request: NextRequest
@@ -151,25 +171,18 @@ export async function POST(
   // is acceptably close to our own stored figure is OUR decision and stays here. A provider that
   // decided whether an amount was acceptable would be deciding, on our behalf, whether we had
   // been paid.
+  //
+  // notificationAmountMatches() (above) is the pure comparison, extracted so it is testable
+  // with zero I/O; it already implements the ozow-sandbox-toggle F1 (README §3b)
+  // expectedGatewayAmount fallback.
   const grossAmount = notification.grossAmount;
-  const orderAmount = lookup.amount;
-  // Integer-cents comparison throughout. orderAmount is already a JS number
-  // (Number(order.amount) in lib/orders.ts); its sub-cent floating-point noise is many orders
-  // of magnitude below 0.5 cent, so Math.round recovers the exact integer cent value it was
-  // always meant to represent. grossAmountCents comes pre-parsed from the adapter, WITHOUT
-  // going through a Number(x) * 100 float round-trip — see the adapter's own parser.
   const grossAmountCents = notification.grossAmountCents;
-  const orderAmountCents = Number.isNaN(orderAmount) ? null : Math.round(orderAmount * 100);
-  if (
-    grossAmountCents === null ||
-    orderAmountCents === null ||
-    Math.abs(grossAmountCents - orderAmountCents) >= AMOUNT_MATCH_TOLERANCE_CENTS
-  ) {
+  if (!notificationAmountMatches(lookup, grossAmountCents)) {
     console.error('[tickets/itn] Gross amount does not match reserved order — rejecting notification', {
       provider: paymentProvider.id,
       reference,
       grossAmount,
-      orderAmount,
+      orderAmount: lookup.expectedGatewayAmount ?? lookup.amount,
     });
     return acknowledge();
   }

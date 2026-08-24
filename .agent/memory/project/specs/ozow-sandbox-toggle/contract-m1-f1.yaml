@@ -1,0 +1,398 @@
+schema: athanor.contract/v1
+slug: ozow-sandbox-toggle
+goal: >-
+  Mission ozow-sandbox-toggle M1/F1 — apex tier. Add a single admin-controlled Firestore flag,
+  `adminSettings/ozowSandboxTestMode.enabled`, that overrides ONLY the amount sent to Ozow's own
+  initiate() API to a fixed 0.01 when turned on, for Ozow transactions only. Cart total,
+  displayed price, Firestore order.amount, and PayFast are completely unaffected. OFF by default,
+  fails closed on any read error or ambiguous value. Replaces the manual live-Sanity-price-edit
+  workaround Brad used during ozow-payment-provider F3/F4 to demo Ozow to the SAOC council.
+  Full design rationale: contracts/golden/ozow-sandbox-toggle-f1/README.md.
+created_at: '2026-08-24'
+autonomy: high
+
+# ⚠️ SCOPE: this feature touches exactly these files/additions —
+#   NEW  lib/ozow-sandbox-test-mode-shared.ts (client-safe, zero server-only imports:
+#        resolveOzowInitiateAmount, resolveExpectedGatewayAmount, OZOW_SANDBOX_TEST_MODE_BANNER_TEXT,
+#        OZOW_SANDBOX_TEST_MODE_COLLECTION/DOC_ID constants) — README §3d (2026-08-24 THIRD
+#        revision, Codex GPT-5.5 third cross-model review: a 'use client' component importing the
+#        old single-file module pulled firebase-admin/firestore into the browser bundle)
+#   EDIT lib/ozow-sandbox-test-mode.ts (keeps ONLY isOzowSandboxTestModeEnabled; re-exports the
+#        shared module's full surface via `export * from './ozow-sandbox-test-mode-shared'` so
+#        server-side importers keep importing everything from this path unchanged) — README §3d
+#   NEW  app/api/admin/settings/ozow-sandbox-test-mode/route.ts (GET/PUT, admin-gated,
+#        'manage-payment-settings' capability)
+#   NEW  app/api/tickets/ozow-sandbox-test-mode/route.ts (GET, public, unauthenticated)
+#   EDIT lib/admin-roles.ts — add 'manage-payment-settings' to CAPABILITIES only (owner inherits
+#        via existing derivation; do NOT hand-list it under manager)
+#   EDIT app/api/tickets/checkout/route.ts — read isOzowSandboxTestModeEnabled() ONCE, moved to
+#        BEFORE the reserveTicket() call (not after, as originally implemented). Feed that one
+#        boolean into BOTH resolveExpectedGatewayAmount(providerId, testModeEnabled) — passed into
+#        reserveTicket()'s input as a new `expectedGatewayAmount` field — and
+#        resolveOzowInitiateAmount(providerId, amountFormatted, testModeEnabled), bound to a new
+#        `initiateAmountFormatted` local used ONLY in the paymentProvider.initiate({...}) call.
+#        Every other use of `amountFormatted` (response `amount:` echo) is UNCHANGED. See README
+#        §3b for why this must be one read feeding two functions, not two independent reads.
+#   EDIT reserveTicket()/ReservationInput (same file) — thread `expectedGatewayAmount: number |
+#        null` through to buildMultiReservationDocs so it is written onto the order document in
+#        the SAME transaction as the rest of the reservation. Order-only, NOT duplicated onto the
+#        position (same category as `gateway`/`gatewayPaymentId`).
+#   EDIT types/index.ts — Order gains `expectedGatewayAmount?: number | null` (OPTIONAL — see
+#        README §3e; matches the existing `buyerUid?:` precedent on the same type so pre-existing
+#        typed Order literals, e.g. ticketing-f5-buyers's legacyOrder fixture, keep compiling).
+#   EDIT lib/orders.ts — findReservedOrderByPaymentId's 'reserved' result variant gains
+#        `expectedGatewayAmount: number | null`, read off the order doc, defaulting to null.
+#   EDIT lib/tickets-notification.ts — step 7's amount-match compares against
+#        `lookup.expectedGatewayAmount ?? lookup.amount` instead of `lookup.amount` unconditionally.
+#        This is the ONLY behavioural change to this shared PayFast+Ozow file; every existing case
+#        has expectedGatewayAmount === null and falls through to lookup.amount, unchanged.
+#        The comparison itself is extracted into a new EXPORTED pure function,
+#        `notificationAmountMatches(lookup: { amount: number; expectedGatewayAmount?: number | null },
+#        grossAmountCents: number | null): boolean`, so A9 can test step 7's actual logic offline
+#        against a plain object — no live Firestore, no full eleven-step handler. POST()'s step 7
+#        becomes a thin call to this function; the tolerance constant and the null/NaN guards move
+#        inside it unchanged. See README §3b.
+#   NEW  a checkout-UI file (path is @dev's choice, under app/(marketing)/tickets/ or
+#        components/tickets/) importing OZOW_SANDBOX_TEST_MODE_BANNER_TEXT and rendering it when
+#        the public status route reports enabled:true — MUST import from
+#        lib/ozow-sandbox-test-mode-shared, never lib/ozow-sandbox-test-mode, if the component is
+#        'use client' (README §3d)
+#   NEW  an admin settings UI surface (path is @dev's choice, e.g. app/admin/settings/) with a
+#        checkbox calling the admin PUT route — not covered by an automated assertion below
+#        (visual/interactive UI); @dev should still build it per the mission brief.
+# lib/payments/ozow.ts, lib/payments/payfast.ts, and lib/payments/types.ts are UNTOUCHED — see
+# README §6.
+#
+# 2026-08-24 REVISION (Codex GPT-5.5 cross-model review): the first implementation correctly sent
+# Ozow '0.01' in test mode but left lib/tickets-notification.ts comparing the notification against
+# the untouched, real order.amount — rejecting every test-mode notification and defeating the
+# feature's entire purpose. README §3b and A8/A9 below are the fix. A3 is revised accordingly.
+#
+# 2026-08-24 SECOND REVISION (Codex GPT-5.5 second cross-model review, after the §3b fix had
+# already shipped and passed QA): the replay path (idempotency-key duplicate detection,
+# `kind: 'replayed'`) returned only { reference, amount, positions } from the EXISTING order —
+# never its stored expectedGatewayAmount — so the handoff code re-derived the initiate() amount
+# from a FRESH read of the admin flag regardless of whether this was a brand-new reservation or a
+# replay. If the flag changed between the original request and a retried one for the same
+# idempotency key, the amount sent to Ozow's initiate() could disagree with the order's own
+# stored expectedGatewayAmount, and notificationAmountMatches() (§3b) would then compare against
+# the wrong value. README §3c and A10 below are the fix; resolveOzowInitiateAmount's
+# signature changes (README §3c), so A2 and A3 are revised accordingly.
+#   EDIT lib/ozow-sandbox-test-mode.ts — resolveOzowInitiateAmount's signature changes from
+#        (providerId, realAmountFormatted, testModeEnabled) to (expectedGatewayAmount: number |
+#        null, realAmountFormatted: string): string. See README §3c.
+#   EDIT app/api/tickets/checkout/route.ts — ReservationOutcome gains expectedGatewayAmount on
+#        BOTH 'created' and 'replayed'. 'created' sources it from input.expectedGatewayAmount
+#        (already written onto the order in the same transaction); 'replayed' sources it from
+#        the EXISTING order's own stored field, orderData['expectedGatewayAmount'] ?? null. The
+#        handoff code destructures expectedGatewayAmount off `outcome` and passes THAT into
+#        resolveOzowInitiateAmount(...) — never ozowSandboxTestModeEnabled directly, which after
+#        this revision is used ONLY to feed resolveExpectedGatewayAmount(...) ahead of
+#        reserveTicket(). See README §3c.
+#
+# 2026-08-24 FOURTH REVISION (Codex GPT-5.5 fourth cross-model review): types/index.ts's Order
+# gained `expectedGatewayAmount: number | null` as a REQUIRED field, breaking a pre-existing typed
+# Order literal from an earlier, already-shipped mission (ticketing-f5-buyers's
+# buyers-typecheck.ts legacyOrder fixture, which deliberately omits later-added fields to prove
+# old order shapes still compile — the same reason Order.buyerUid is itself optional). Fix:
+# `expectedGatewayAmount` becomes optional (`expectedGatewayAmount?:`), following the buyerUid
+# precedent. Every read site in this feature's own code already defaults on absence
+# (lib/orders.ts:249's `order?.expectedGatewayAmount ?? null`, lib/tickets-notification.ts's
+# already-optional `lookup.expectedGatewayAmount?`), so this is a pure type-widening with no
+# runtime behaviour change. See README §3e and new assertion A12.
+#
+# 2026-08-24 THIRD REVISION (Codex GPT-5.5 third cross-model review): components/tickets/
+# OzowSandboxTestModeBanner.tsx ('use client') imported OZOW_SANDBOX_TEST_MODE_BANNER_TEXT from
+# lib/ozow-sandbox-test-mode.ts, which has a top-level `firebase-admin/firestore` import (for
+# isOzowSandboxTestModeEnabled) — pulling Firebase Admin into the client bundle and breaking the
+# production build. README §3d and A11 below are the fix: the pure/constant exports move to a
+# new client-safe lib/ozow-sandbox-test-mode-shared.ts; the banner imports from there; the
+# original file keeps only isOzowSandboxTestModeEnabled and re-exports the shared surface for
+# server-side callers. A2 and A8 (which test the moved pure functions directly) are revised to
+# import from the new file.
+
+features:
+  - id: F1
+    name: >-
+      Admin-gated Ozow sandbox-amount override: a Firestore flag, read fail-closed and OFF by
+      default, that forces the amount sent to Ozow's initiate() to 0.01 for Ozow transactions
+      only, with zero effect on PayFast, order.amount, or the checkout response's price echo, and
+      a visible TEST MODE banner on checkout whenever it is on.
+      Full spec: contracts/golden/ozow-sandbox-toggle-f1/README.md.
+
+goldens:
+  - contracts/golden/ozow-sandbox-toggle-f1/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        isOzowSandboxTestModeEnabled() (lib/ozow-sandbox-test-mode.ts) fails closed on every
+        non-affirmative case, proven offline against a fake deps-injected Firestore db (no live
+        Firestore, no network) — 8 cases: (1) doc does not exist -> false (this IS "OFF by
+        default"); (2) doc exists, `enabled` field absent -> false; (3) `enabled === true`
+        (the literal boolean) -> the ONLY case returning true; (4) `enabled === false` -> false;
+        (5) `enabled` is the STRING 'true' -> false, no truthy-string shortcut; (6) `enabled` is
+        the number 1 -> false, no numeric coercion; (7) the Firestore read itself throws
+        (network/permission error) -> false, and the function does not throw/propagate the
+        error to its caller; (8) `enabled` is null -> false.
+        FAILS ON: the doc-missing case defaulting to true (breaks "OFF by default"); any truthy
+        coercion of a non-boolean `enabled` value; a thrown read error propagating out instead of
+        being caught and treated as false (would force every caller to independently remember to
+        fail closed, which this project's prior secret-corruption incidents show does not
+        reliably happen); any code path that can return true other than doc-exists-and-enabled-
+        is-exactly-true.
+      command: npx tsx contracts/checks/ozow-sandbox-toggle-f1/check-fail-closed-flag-read.mjs
+    - id: A2
+      description: >-
+        REVISED 2026-08-24 (third Codex cross-model review, README §3d): resolveOzowInitiateAmount
+        now lives in lib/ozow-sandbox-test-mode-shared.ts (moved out of lib/ozow-sandbox-test-mode.ts
+        so a 'use client' importer never pulls in that file's firebase-admin/firestore import); the
+        check imports it directly from the new file to prove it at its real post-split location.
+        REVISED 2026-08-24 (second Codex cross-model review, README §3c): resolveOzowInitiateAmount
+        now takes (expectedGatewayAmount: number | null,
+        realAmountFormatted: string) — no providerId, no testModeEnabled. This is the POSITIVE
+        proof that the initiate() amount is a pure function of an ALREADY-RESOLVED
+        expectedGatewayAmount (fresh for a new reservation, the order's own stored value for a
+        replay — see A10), never of a second independent flag read. 4 cases:
+        (1) expectedGatewayAmount=null, realAmountFormatted='250.00' -> '250.00' unchanged (this
+        single null case now covers BOTH "PayFast, any flag state" and "Ozow, flag off" — both
+        collapse to null one level up, in resolveExpectedGatewayAmount, which A8 already proves);
+        (2) expectedGatewayAmount=0.01, realAmountFormatted='250.00' -> '0.01'; (3)
+        expectedGatewayAmount=0.01, realAmountFormatted='9999.99' -> still exactly '0.01',
+        proving the override is a fixed constant, not derived from realAmountFormatted; (4)
+        expectedGatewayAmount=null, realAmountFormatted='0.01' (coincidentally already a cent) ->
+        unchanged via the pass-through path, not the override path, distinguishing "coincidentally
+        1 cent" from "test-mode override".
+        FAILS ON: the override not firing for a non-null expectedGatewayAmount; the override
+        amount scaling with or otherwise depending on realAmountFormatted rather than being the
+        fixed '0.01'; the null case being overridden; the function regaining a providerId or
+        testModeEnabled parameter (would reopen the door to a second, independently-derived
+        "should I override" decision instead of trusting the caller's already-resolved value).
+        NEGATIVELY VERIFIED 2026-08-24: against a temp copy where the override branch is removed
+        (the function unconditionally returns realAmountFormatted), this correctly FAILS on
+        cases 2 and 3 ("expected 0.01" but got the pass-through value) — confirmed via
+        `npx tsx contracts/checks/ozow-sandbox-toggle-f1/check-resolve-initiate-amount.mjs`
+        against the mutated temp copy; against the current (correct) tree, all 4 cases PASS.
+      command: npx tsx contracts/checks/ozow-sandbox-toggle-f1/check-resolve-initiate-amount.mjs
+    - id: A3
+      description: >-
+        REVISED 2026-08-24 (second Codex cross-model review, README §3c). app/api/tickets/
+        checkout/route.ts wires the override to ONLY the paymentProvider.initiate() call, never to
+        order.amount or the response's own price echo, and derives the initiate() amount from the
+        RESERVATION OUTCOME, never from a second fresh flag read — proven by source-position/
+        identifier reference (same technique as this repo's existing
+        contracts/checks/ticketing-checkout-orders/check-fail-closed-secret-guard.sh), since
+        observing order.amount or a live replay directly would require a live Firestore
+        transaction this project's checks avoid. Confirms: (1) isOzowSandboxTestModeEnabled() is
+        called exactly ONCE in this file, and that call site is textually BEFORE the
+        reserveTicket() call; (2) resolveExpectedGatewayAmount(...) is called exactly once in this
+        file and its result is passed as the `expectedGatewayAmount` field of reserveTicket()'s
+        input object; (3) `expectedGatewayAmount` is destructured off `outcome` (alongside
+        `reference`, `amount`, `positions`); (4) resolveOzowInitiateAmount(...) is called with that
+        destructured `expectedGatewayAmount` as its first argument — NOT `ozowSandboxTestModeEnabled`
+        and NOT `providerId`; (5) its result is bound to the exact mandated local
+        `initiateAmountFormatted`; (6) paymentProvider.initiate({...})'s `amountFormatted:` field is
+        `initiateAmountFormatted`, not the bare `amountFormatted` identifier; (7) the JSON
+        response's own `amount:` field still reads `amount: amountFormatted` (the REAL,
+        un-overridden value), unchanged from today; (8) the identifier `ozowSandboxTestModeEnabled`
+        does not appear anywhere in the file AFTER the `resolveExpectedGatewayAmount(...)` call
+        that feeds `reserveTicket()`'s input — in particular it must not appear in or after the
+        `paymentProvider.initiate(...)` call construction, which is the source-position proof that
+        the handoff no longer re-reads the live flag state (the exact second-review gap).
+        NEGATIVELY VERIFIED 2026-08-24 (case (8) implemented and re-verified against a temp copy
+        of the CURRENT, @dev-implemented tree, which already has the §3c fix wired correctly):
+        mutating the temp copy so `initiateAmountFormatted` is derived from
+        `ozowSandboxTestModeEnabled` directly (`resolveOzowInitiateAmount(ozowSandboxTestModeEnabled
+        ? 0.01 : null, amountFormatted)` — the exact second-review regression) correctly FAILS
+        case (8) with "ozowSandboxTestModeEnabled is referenced in code AFTER the
+        resolveExpectedGatewayAmount(...) call" — confirmed via `node contracts/checks/
+        ozow-sandbox-toggle-f1/check-checkout-route-wiring.mjs` against the mutated temp copy,
+        then reverted and confirmed clean via diff. Case (8)'s check strips comments before
+        scanning for the identifier, specifically because the CORRECT tree legitimately mentions
+        `ozowSandboxTestModeEnabled` by name in an explanatory comment near the initiate() call
+        (documenting why it is no longer re-read there) — a naive raw-text scan would have
+        false-failed the correct implementation on that comment; the comment-stripped tree
+        correctly PASSES. Original review's cases (1)-(7) re-verified PASS against the current
+        tree; a temp copy where the override is (incorrectly) also used for the response's
+        `amount:` field correctly FAILS case (4)/(7) with "leaks test-mode price into the
+        response".
+        FAILS ON: the override never being applied to the initiate() call (feature not wired at
+        all); the override leaking into the response's `amount:` echo; using a different local
+        name than `initiateAmountFormatted`; a second, independent call to
+        isOzowSandboxTestModeEnabled() anywhere in the file; reserveTicket()'s input missing the
+        `expectedGatewayAmount` field entirely; resolveOzowInitiateAmount(...) being called with
+        `ozowSandboxTestModeEnabled` or `providerId` instead of `outcome.expectedGatewayAmount`
+        (the exact second-review regression this revision exists to close).
+      command: node contracts/checks/ozow-sandbox-toggle-f1/check-checkout-route-wiring.mjs
+    - id: A8
+      description: >-
+        REVISED 2026-08-24 (third Codex cross-model review, README §3d): resolveExpectedGatewayAmount
+        now lives in lib/ozow-sandbox-test-mode-shared.ts (moved out of lib/ozow-sandbox-test-mode.ts
+        so a 'use client' importer never pulls in that file's firebase-admin/firestore import); the
+        check imports it directly from the new file to prove it at its real post-split location.
+        resolveExpectedGatewayAmount(providerId, testModeEnabled)
+        is the POSITIVE proof of what gets stored on the order as the gateway's expected amount —
+        same testable-with-zero-I/O style as A2's resolveOzowInitiateAmount. 5 cases:
+        (1) providerId='payfast', flag OFF -> null; (2) providerId='payfast', flag ON -> STILL
+        null — PayFast is never affected by this flag even if it were somehow left on;
+        (3) providerId='ozow', flag OFF -> null, meaning "compare against order.amount, unchanged";
+        (4) providerId='ozow', flag ON -> 0.01 (the number, not a string), matching the fixed
+        constant resolveOzowInitiateAmount sends the gateway; (5) an unrecognised providerId, flag
+        ON -> null — only the literal 'ozow' string ever triggers the override, same as A2.
+        FAILS ON: the override firing for providerId='payfast' under any flag state; the override
+        firing for providerId='ozow' when the flag is off; returning a value other than exactly
+        the number 0.01 for the ozow+flag-on case; the function taking a realAmount parameter and
+        using it (README §3b — the override must stay a fixed constant independent of price, and
+        must not create a path for a future edit to silently reintroduce the pre-fix bug by
+        deriving this value from the real amount again).
+      command: npx tsx contracts/checks/ozow-sandbox-toggle-f1/check-resolve-expected-gateway-amount.mjs
+    - id: A9
+      description: >-
+        lib/tickets-notification.ts's exported `notificationAmountMatches(lookup, grossAmountCents)`
+        (the extracted step-7 amount-match logic, used by BOTH the PayFast and Ozow notification
+        routes) is proven, offline by calling it directly with a plain object
+        (no live Firestore, no network, no full eleven-step handler — same offline style as A1),
+        to resolve the Codex-found gap:
+        a test-mode Ozow order's notification now reaches 'paid', while every existing
+        rejection/acceptance case is unchanged. 4 cases against the amount-match comparison alone
+        (isolate this from the rest of the eleven-step handler — construct the lookup result
+        directly, do not require a full live transaction): (1) expectedGatewayAmount=null,
+        amount=250.00, notification grossAmountCents=25000 -> amount-match PASSES (today's normal
+        case, unchanged); (2) expectedGatewayAmount=0.01, amount=250.00 (a real Ozow test-mode
+        order — amount is NEVER touched, per README §3), notification grossAmountCents=1
+        (Ozow actually charged R0.01) -> amount-match PASSES — THIS is the exact scenario Codex
+        found broken, and it must now succeed; (3) expectedGatewayAmount=null, amount=250.00,
+        notification grossAmountCents=1 (a mismatch, NOT test mode) -> amount-match still FAILS,
+        proving the fraud-prevention guard is not weakened for the normal case; (4)
+        expectedGatewayAmount=undefined (PayFast orders never set this field), amount=250.00,
+        notification grossAmountCents=1 -> amount-match still FAILS, proving PayFast's path is
+        completely unaffected.
+        FAILS ON: case 2 still rejecting (the exact bug this assertion exists to close — a
+        test-mode purchase Brad could not complete because the notification path still expected
+        the full real price); case 3 or case 4 now passing (the amount-match guard silently
+        weakened for orders that were never actually told to expect a different amount — a real
+        fraud-prevention regression); the comparison reading anything other than
+        `lookup.expectedGatewayAmount ?? lookup.amount` (e.g. reading expectedGatewayAmount alone
+        and dropping the fallback, which would break every non-Ozow-test-mode order the moment the
+        field is undefined rather than explicitly null).
+      command: npx tsx contracts/checks/ozow-sandbox-toggle-f1/check-notification-amount-match-test-mode.mjs
+    - id: A10
+      description: >-
+        NEW 2026-08-24 (second Codex cross-model review, README §3c). Source-position/identifier
+        check on `reserveTicket()` in app/api/tickets/checkout/route.ts, proving BOTH
+        ReservationOutcome branches source `expectedGatewayAmount` correctly and neither branch
+        re-derives it independently: (1) the `kind: 'created'` return object includes
+        `expectedGatewayAmount: input.expectedGatewayAmount` — the SAME value already threaded
+        into `buildMultiReservationDocs` for this transaction's order write, not a second,
+        independently-computed value; (2) the `kind: 'replayed'` return object includes an
+        `expectedGatewayAmount` field sourced from `orderData['expectedGatewayAmount']` (with a
+        `?? null` fallback for orders written before this field existed) — `orderData` being the
+        EXISTING order doc already fetched in this branch for the status/expiry/gateway checks,
+        never the `input.expectedGatewayAmount` local (which reflects the CURRENT request's flag
+        read, not the original request's); (3) no call to `resolveExpectedGatewayAmount(...)`
+        appears anywhere inside the replay branch (`duplicate.empty` false path) — that function
+        is called exactly once in the whole file, in POST(), before reserveTicket() is invoked at
+        all, per A3.
+        FAILS ON: the 'created' branch's return object omitting `expectedGatewayAmount` entirely
+        (would leave A3's destructuring reading `undefined`, silently reverting initiate() to the
+        bare-amount pass-through path even in test mode); the 'replayed' branch sourcing
+        `expectedGatewayAmount` from `input.expectedGatewayAmount` instead of `orderData[...]`
+        (this IS the exact second-review bug — a fresh flag read leaking into a replay); a fresh
+        `resolveExpectedGatewayAmount(...)` call appearing inside the replay branch (a second,
+        independently-computed value that could disagree with what's actually stored on the
+        order).
+        NEGATIVELY VERIFIED 2026-08-24 against three separately-mutated temp copies of
+        app/api/tickets/checkout/route.ts, each reverted and confirmed clean via diff afterward:
+        (a) the 'replayed' branch's `expectedGatewayAmount:` changed to
+        `input.expectedGatewayAmount` (the exact second-review bug) — correctly FAILS with "the
+        exact second-review bug: a fresh flag read ... leaking into a replay"; (b) the 'created'
+        branch's `expectedGatewayAmount: input.expectedGatewayAmount,` line removed entirely —
+        correctly FAILS with "does not include `expectedGatewayAmount: input.expectedGatewayAmount`";
+        (c) a fresh `resolveExpectedGatewayAmount(input.gateway, true)` call inserted inside the
+        replay branch, after the provider-mismatch guard — correctly FAILS with
+        "resolveExpectedGatewayAmount(...) is called inside the replay branch". Against the
+        current (correct) tree, all three checks PASS — confirmed via `node contracts/checks/
+        ozow-sandbox-toggle-f1/check-reservation-outcome-expected-amount-sourcing.mjs`.
+      command: node contracts/checks/ozow-sandbox-toggle-f1/check-reservation-outcome-expected-amount-sourcing.mjs
+    - id: A4
+      description: >-
+        app/api/admin/settings/ozow-sandbox-test-mode/route.ts (the PUT/GET toggle route) checks
+        getAdminSession() and hasCapability(..., 'manage-payment-settings', ...) BEFORE any
+        Firestore .doc(...).set(...) write — mirroring app/api/admin/vendors/route.ts's existing
+        gate ordering. Source-position check: any write appearing textually before the session/
+        capability check fails this assertion.
+        FAILS ON: the route missing entirely; the route not importing getAdminSession from
+        lib/admin-auth; the route not checking the 'manage-payment-settings' capability
+        specifically (e.g. checking a different/no capability, which would let any authenticated
+        admin — not just an owner — flip a payment-affecting flag); a write positioned before the
+        gate (defence-in-depth ordering this project's admin routes already follow).
+      command: node contracts/checks/ozow-sandbox-toggle-f1/check-admin-route-gate.mjs
+    - id: A5
+      description: >-
+        app/api/tickets/ozow-sandbox-test-mode/route.ts (the PUBLIC status route the checkout
+        page polls to decide whether to show the banner) is deliberately NOT admin-gated (any
+        buyer's browser must be able to read it pre-authentication), calls the shared
+        isOzowSandboxTestModeEnabled() helper rather than reimplementing its own Firestore read,
+        and contains no non-2xx status code literal — a Firestore read failure must fail closed
+        to `{ enabled: false }` inside the 200 response, never surface an error to a buyer
+        mid-checkout.
+        FAILS ON: the route missing; the route importing getAdminSession/hasCapability (would
+        block ordinary buyers from ever seeing the banner); the route not using the shared helper
+        (risking a second, divergent fail-closed implementation); any 3xx/4xx/5xx status literal
+        in the file (an error surfacing to the buyer instead of failing closed).
+      command: node contracts/checks/ozow-sandbox-toggle-f1/check-public-status-route-fails-closed.mjs
+    - id: A6
+      description: >-
+        'manage-payment-settings' is added to lib/admin-roles.ts's CAPABILITIES array (so owner
+        inherits it automatically via the file's own existing derivation, `new Set(CAPABILITIES)`)
+        and is explicitly NOT added to manager's hand-listed capability Set — a payment-test-mode
+        toggle is owner-tier, same risk class as issue-refund, not day-of-show desk-staff tier.
+        NEGATIVELY VERIFIED 2026-08-24: against a temp copy with the capability added only to
+        CAPABILITIES, this PASSES; against a temp copy with it ALSO hand-listed under manager,
+        this correctly FAILS with "must NOT be hand-listed in manager's capability set" (confirmed
+        via `node contracts/checks/ozow-sandbox-toggle-f1/check-capability-owner-only.mjs` on both
+        temp copies).
+        FAILS ON: the capability missing from CAPABILITIES entirely (admin route A4 would then be
+        ungrantable to anyone); the capability being hand-listed under manager (widens who can
+        flip the flag beyond the owner-only intent); owner's Set stopping being the derived
+        `new Set(CAPABILITIES)` form (would silently stop granting new capabilities, including
+        this one, without any code change visible at this call site).
+      command: node contracts/checks/ozow-sandbox-toggle-f1/check-capability-owner-only.mjs
+    - id: A7
+      description: >-
+        REVISED 2026-08-24 (third Codex cross-model review, README §3d): the checkout UI's TEST
+        MODE banner text is imported as the shared OZOW_SANDBOX_TEST_MODE_BANNER_TEXT constant
+        from lib/ozow-sandbox-test-mode OR lib/ozow-sandbox-test-mode-shared (a 'use client'
+        component must use the latter — see A11), from some file under app/ or components/,
+        rather than hardcoded as a second, independently-typed copy of the string — so the banner
+        copy and the flag it depends on can never drift apart.
+      command: node contracts/checks/ozow-sandbox-toggle-f1/check-banner-constant-used.mjs
+    - id: A11
+      description: >-
+        NEW 2026-08-24 (third Codex cross-model review, README §3d). Static grep-based check
+        proving lib/ozow-sandbox-test-mode-shared.ts — the module client components are required
+        to import from — contains no server-only import (firebase-admin, next/headers,
+        next/server, the server-only package, node:fs, node:path). This is the actual proof that
+        the client/server boundary violation Codex found cannot recur: a client component that
+        only ever imports from this file can never pull Firebase Admin into its bundle, no matter
+        what lib/ozow-sandbox-test-mode.ts itself imports.
+        FAILS ON: lib/ozow-sandbox-test-mode-shared.ts missing entirely (the split not done); the
+        file gaining any of the listed server-only import patterns (e.g. someone "helpfully"
+        moving isOzowSandboxTestModeEnabled back in, or adding a new helper that reads Firestore
+        directly in this file instead of the server-only one).
+      command: node contracts/checks/ozow-sandbox-toggle-f1/check-shared-module-client-safe.mjs
+    - id: A12
+      description: >-
+        NEW 2026-08-24 (fourth Codex cross-model review, README §3e). Static grep-based check
+        proving types/index.ts declares Order.expectedGatewayAmount with the optional `?` marker
+        (`expectedGatewayAmount?: number | null;`), never the required form. This is the proof
+        that the regression Codex found cannot recur: a required expectedGatewayAmount breaks
+        every pre-existing typed Order literal that predates this feature (e.g. ticketing-f5-buyers's
+        legacyOrder fixture), the same class of breakage the existing `buyerUid?:` precedent on
+        this type already guards against.
+        FAILS ON: expectedGatewayAmount declared without `?` anywhere in types/index.ts (the
+        regression this assertion exists to close); the field renamed or removed without updating
+        this check (existsSync guard on the file itself catches wholesale file loss).
+      command: node contracts/checks/ozow-sandbox-toggle-f1/check-order-field-optional.mjs

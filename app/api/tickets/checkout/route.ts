@@ -20,6 +20,11 @@ import { initAdmin } from '@/lib/firebase-admin';
 import { ORDERS_COLLECTION } from '@/lib/orders';
 import { resolveProvider } from '@/lib/payments';
 import type { PaymentProvider, ProviderReadiness } from '@/lib/payments';
+import {
+  isOzowSandboxTestModeEnabled,
+  resolveExpectedGatewayAmount,
+  resolveOzowInitiateAmount,
+} from '@/lib/ozow-sandbox-test-mode';
 import { mintRecoveryToken } from '@/lib/recovery-token';
 import { buildShowWindow, isValidChosenDay } from '@/lib/show-window-lookup';
 import { client } from '@/sanity/lib/client';
@@ -326,14 +331,32 @@ export function replayGatewayMatches(
 type ReservationPosition = { bookingRef: string; ticketType: string };
 
 type ReservationOutcome =
-  | { kind: 'created'; reference: string; amount: number; positions: ReservationPosition[] }
-  | { kind: 'replayed'; reference: string; amount: number; positions: ReservationPosition[] }
+  | {
+      kind: 'created';
+      reference: string;
+      amount: number;
+      positions: ReservationPosition[];
+      /** ozow-sandbox-toggle F1 (README §3c) — the SAME value already written onto the order
+       *  in this transaction (input.expectedGatewayAmount), surfaced here so the handoff below
+       *  never needs a second, independent flag read to compute the initiate() amount. */
+      expectedGatewayAmount: number | null;
+    }
+  | {
+      kind: 'replayed';
+      reference: string;
+      amount: number;
+      positions: ReservationPosition[];
+      /** ozow-sandbox-toggle F1 (README §3c) — sourced from the EXISTING order's own stored
+       *  field, never from a fresh flag read: the order was created under whatever flag state
+       *  was true THEN, and a replay must send Ozow the same amount as the original request. */
+      expectedGatewayAmount: number | null;
+    }
   | { kind: 'over-capacity'; ticketTypes: string[] }
   | { kind: 'key-payload-mismatch' }
   | { kind: 'key-not-payable'; reason: 'status' | 'expired' }
   // F2 Codex GPT-5.5 review (2026-08-22): a replay whose request providerId disagrees with
   // the order's ALREADY-STORED `gateway` field must never silently hand the order off to the
-  // new provider — see the guard in reserveTicket() below.
+  // new provider — see the guard in the reservation transaction below.
   | { kind: 'key-provider-mismatch' };
 
 interface ReservationInput {
@@ -349,6 +372,10 @@ interface ReservationInput {
    *  `gateway` field. Never re-derived, never defaulted — see checkout-reservation.ts's
    *  BuildMultiReservationDocsInput.gateway. */
   gateway: string;
+  /** ozow-sandbox-toggle F1 — resolveExpectedGatewayAmount's result, from the same
+   *  sandbox-test-mode flag read that also feeds resolveOzowInitiateAmount below. See
+   *  README §3b. */
+  expectedGatewayAmount: number | null;
 }
 
 /** F2 (ozow-payment-provider) — each provider's own NotifyUrl path. Ozow's NotifyUrl is set by
@@ -636,7 +663,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // The gateway credential guard, BEFORE any Firestore write — the position
   // contracts/golden/payment-seam-f1/fail-closed-guards.golden.md pins. initiate() cannot serve
   // here: it needs the booking reference and the server-derived amount, which only exist after
-  // reserveTicket(), so refusing there would already have burned a seat that nobody can pay for
+  // the reservation transaction runs, so refusing there would already have burned a seat that nobody can pay for
   // until its TTL expires. readiness('initiate') asks the same question with nothing but config,
   // so the route refuses early without ever reading a gateway credential itself.
   //
@@ -677,6 +704,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
+  // ozow-sandbox-toggle F1 (README section 3b) — read ONCE, here, before the reservation
+  // transaction below, so the single resulting boolean can feed both
+  // resolveExpectedGatewayAmount (written onto the order in the same transaction as the rest
+  // of the reservation) and resolveOzowInitiateAmount (for the initiate() call, further
+  // below). A second, independent read of the flag here would let the order's stored
+  // expectation and what we actually send the gateway disagree if the flag changed between
+  // the two reads.
+  const ozowSandboxTestModeEnabled = await isOzowSandboxTestModeEnabled();
+
   let outcome: ReservationOutcome;
   try {
     outcome = await reserveTicket({
@@ -696,6 +732,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       idempotencyKey,
       recoveryTokenSecret,
       gateway: providerId,
+      expectedGatewayAmount: resolveExpectedGatewayAmount(providerId, ozowSandboxTestModeEnabled),
     });
   } catch (error) {
     console.error('[tickets/checkout] Failed to reserve ticket:', error);
@@ -740,7 +777,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // A replay is re-authenticated here from the STORED, server-derived amount — never from a
   // stored hand-off payload and never from the request body.
-  const { reference, amount, positions } = outcome;
+  const { reference, amount, positions, expectedGatewayAmount } = outcome;
   const amountFormatted = amount.toFixed(2);
 
   // F2 (payment-provider-seam): this route no longer knows which gateway it is handing off to.
@@ -748,9 +785,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // (lib/payments/); what stays here is the reference, the server-derived amount and our own
   // callback URLs. Nothing below may reach for a gateway-specific field name again.
   const siteUrl = resolveSiteUrl();
+  // ozow-sandbox-toggle F1 (README §3c) — derived from the RESERVATION OUTCOME's own
+  // expectedGatewayAmount, never from ozowSandboxTestModeEnabled (whose only remaining use is
+  // the resolveExpectedGatewayAmount(...) call above, before reserveTicket()). This is what
+  // guarantees a replay sends Ozow the same amount already committed to its order.
+  const initiateAmountFormatted = resolveOzowInitiateAmount(expectedGatewayAmount, amountFormatted);
   const initiation = await paymentProvider.initiate({
     reference,
-    amountFormatted,
+    amountFormatted: initiateAmountFormatted,
     itemName: TICKET_ITEM_LABEL,
     returnUrl: `${siteUrl}/tickets/confirmation?ref=${reference}`,
     cancelUrl: `${siteUrl}/tickets/cancelled?ref=${reference}`,
@@ -897,6 +939,10 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
             bookingRef: doc.id,
             ticketType: doc.data()['ticketType'] as string,
           })),
+          // ozow-sandbox-toggle F1 (README §3c) — the ORIGINAL request's stored expectation,
+          // never input.expectedGatewayAmount (which reflects THIS request's fresh flag read).
+          expectedGatewayAmount:
+            (orderData['expectedGatewayAmount'] as number | null | undefined) ?? null,
         };
       }
 
@@ -953,6 +999,7 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         recoveryTokenExpiresAt: Timestamp.fromDate(minted.expiresAt),
         now: Timestamp.fromDate(now),
         gateway: input.gateway,
+        expectedGatewayAmount: input.expectedGatewayAmount,
       });
 
       writeMultiReservationPair(transaction, { orderRef, positionRefs }, docs);
@@ -966,6 +1013,9 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
           bookingRef: lineItemPlan.bookingRef,
           ticketType: lineItemPlan.ticketType,
         })),
+        // ozow-sandbox-toggle F1 (README §3c) — the same value already written onto the order
+        // above via buildMultiReservationDocs, not a second, independently-computed value.
+        expectedGatewayAmount: input.expectedGatewayAmount,
       };
     },
     { maxAttempts: TRANSACTION_MAX_ATTEMPTS }

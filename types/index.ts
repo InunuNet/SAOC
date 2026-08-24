@@ -219,6 +219,12 @@ export interface Order {
    *  signal of payment status, and never written anywhere else. See
    *  .agent/memory/project/specs/order-reconciliation/goldens/README.md. */
   reconciliationAlertedAt?: Timestamp | null;
+  /** ozow-sandbox-toggle F1 — what we told the gateway to expect at initiate() time, separate
+   *  from `amount` (which always keeps the real price). `null` means "compare notifications
+   *  against `amount`, unchanged"; non-null (only ever 0.01) means an Ozow order created while
+   *  the sandbox test-mode flag was on. See contracts/golden/ozow-sandbox-toggle-f1/README.md
+   *  §3b. */
+  expectedGatewayAmount?: number | null;
 }
 
 // ---------------------------------------------------------------------------

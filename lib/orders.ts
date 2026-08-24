@@ -134,6 +134,9 @@ export async function createOrderWithPosition(
       gatewayPaymentId: input.gatewayPaymentId,
       m_payment_id: input.m_payment_id,
       pf_payment_id: input.pf_payment_id,
+      // ozow-sandbox-toggle F1 — this creation primitive predates the flag and is not the
+      // live checkout call path; always null, same as every pre-F1 order.
+      expectedGatewayAmount: null,
     };
     transaction.set(orderRef, order);
 
@@ -205,7 +208,7 @@ export interface OrdersFirestoreRwLike {
 export type FindReservedOrderResult =
   | { status: 'not-found' }
   | { status: 'already-settled'; orderStatus: OrderStatus }
-  | { status: 'reserved'; amount: number; orderId: string };
+  | { status: 'reserved'; amount: number; orderId: string; expectedGatewayAmount: number | null };
 
 /**
  * Read-only, NOT transactional — an optimisation and amount-check path only, mirroring the
@@ -239,7 +242,12 @@ export async function findReservedOrderByPaymentId(
     return { status: 'already-settled', orderStatus: orderStatus as OrderStatus };
   }
 
-  return { status: 'reserved', amount: Number(order?.amount), orderId: orderDoc.id };
+  return {
+    status: 'reserved',
+    amount: Number(order?.amount),
+    orderId: orderDoc.id,
+    expectedGatewayAmount: order?.expectedGatewayAmount ?? null,
+  };
 }
 
 export type MarkOrderPaidOutcome =

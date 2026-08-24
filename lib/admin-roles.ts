@@ -15,6 +15,7 @@ export const CAPABILITIES = [
   'issue-refund',
   'export-buyer-data',
   'review-vendor-applications',
+  'manage-payment-settings',
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];

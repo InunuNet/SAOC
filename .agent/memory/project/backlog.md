@@ -113,25 +113,32 @@ Do not scope work from an entry that contradicts it.
 
 ## Blocked on Brad (human action, not dispatchable)
 
-- [ ] **[P1] Ozow F3 live-purchase blocker — external vendor-side issue requiring Brad's action.**
-  Ozow is now built as a second `PaymentProvider` alongside PayFast (mission
-  `ozow-payment-provider`, F1 adapter + F2 checkout wiring/provider registry + F2b real
-  `confirmNotification()`, all done and gated) — Brad's 2026-08-21 direction that Ozow is the
-  client's preferred gateway is implemented. F3's live sandbox purchase testing then found that
-  Ozow's sandbox merchant account (`SiteCode INUNUNETCC87E4C79C5F`) appears not to be provisioned
-  to accept `IsTest=true` transactions — every real, correctly-signed transaction is rejected at
-  Ozow's own app tier (confirmed NOT a code defect: the outbound signature was independently
-  reimplemented and matched byte-for-byte against Ozow's documented algorithm 4 separate times).
-  PayFast's own live-purchase path was regression-proved unaffected on the same deployed build.
-  See [`contracts/golden/ozow-m1-f3/README-addendum-blocked.md`](../contracts/golden/ozow-m1-f3/README-addendum-blocked.md)
-  for the full investigation and exactly what Brad needs to do with Ozow support/merchant portal
-  to resolve it. Outstanding follow-ups from `docs/payment-gateway-research-2026-08.md` §10 still
-  apply once live: PayFast Clause 9.8 fund-hold commitment in writing before sales open;
-  PCI-DSS/ISO 27001 certificates verified via IAF CertSearch; POPIA operator agreement; attorney
-  review of the refund policy; disclosure to the council of our conflict of interest (we built the
-  custom system) and the thin-evidence spots. Card payments must be explicitly activated on
-  whichever provider's merchant account — not always on by default — or international attendees
-  cannot pay at all (confirmed again in the pricing artifact's payment note to Lee-Ann).
+- [ ] **[P1] Ozow — mission `ozow-payment-provider` DONE (F1-F4, all gated, M4 gate passed
+  2026-08-23); one external item remains for Brad.** Ozow is now a fully working second
+  `PaymentProvider` alongside PayFast — adapter, checkout wiring/provider registry, and a real
+  `confirmNotification()` fix (F4: `GetTransactionByReference` needs an explicit `IsTest=true`
+  query param for sandbox transactions, which the code never sent — see `learned.md` "Ozow F4").
+  The originally-logged "unprovisioned merchant account" blocker was WRONG (see `learned.md`) —
+  real causes were a SiteCode misconfiguration (fixed) and this F4 bug (fixed). **Still open,
+  external and genuinely Brad's to resolve:** a real Ozow-side R0.01 transaction cap on the
+  sandbox account — support ticket needed with Ozow to raise/remove it before a full-value live
+  purchase can be proven end to end (Ozow support email still unsent). PayFast's own live-purchase
+  path remains regression-proved unaffected. **Demo-readiness gap now closed** — mission
+  `ozow-sandbox-toggle` (F1, gated 2026-08-24, 12/12 PASS) shipped an admin-toggleable
+  `ozowSandboxTestMode` flag (`/admin/settings`) that forces only the amount sent to Ozow's
+  `initiate()` to R0.01 while leaving cart/display/order/PayFast untouched, with a visible TEST
+  MODE banner; this replaces the manual, revert-dependent live-Sanity-price-edit workaround as
+  the documented demo method (`docs/payment-seam.md`). The R0.01 sandbox cap above is a separate,
+  still-open, vendor-side issue — do not conflate the two. See
+  [`contracts/golden/ozow-m1-f3/README-addendum-blocked.md`](../contracts/golden/ozow-m1-f3/README-addendum-blocked.md)
+  and `contracts/golden/ozow-m1-f4/README.md` for the full investigation. Outstanding follow-ups
+  from `docs/payment-gateway-research-2026-08.md` §10 still apply once live: PayFast Clause 9.8
+  fund-hold commitment in writing before sales open; PCI-DSS/ISO 27001 certificates verified via
+  IAF CertSearch; POPIA operator agreement; attorney review of the refund policy; disclosure to
+  the council of our conflict of interest (we built the custom system) and the thin-evidence
+  spots. Card payments must be explicitly activated on whichever provider's merchant account — not
+  always on by default — or international attendees cannot pay at all (confirmed again in the
+  pricing artifact's payment note to Lee-Ann).
 - [ ] **[P1] Go-live: live payment credentials.** In order: obtain live Merchant ID/Key/Passphrase;
   store in Secret Manager with `printf '%s' | --data-file=-` (**never `echo`** — see the secret
   corruption class); flip `lib/payfast.ts` off the sandbox constants; point `SITE_URL` at the real
@@ -853,3 +860,11 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-mission-contract-lookup-cwd-anchor.md
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-full-boot-redaction-regex.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-23-contract-gate-cache-staleness.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-24-template-mirror-sync-f7.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-24-template-mirror-missing-files.md

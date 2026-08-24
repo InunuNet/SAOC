@@ -392,3 +392,36 @@ CI cron nobody watched into a blocking pre/post-flight gate check. This mission 
 see `learned.md` "Mutating contract checks need a document-scoped lock, not a contract-scoped
 one" for the full reusable lesson, including three related draft-cleanup data-loss bug variants
 found across Codex rounds 6-9.
+
+### 2026-08-23 — `ozow-payment-provider` DONE (F1-F4, M4 gate passed) — mission complete
+
+~~`ozow-payment-provider` (F1 adapter skeleton, F2 checkout wiring/provider registry, F3
+end-to-end sandbox proof + docs, F4 fix `confirmNotification()`'s `GetTransactionByReference`
+404 on real `IsTest=true` transactions)~~ ✅ **DONE**, all 4 features, M4 gate passed. Ozow now
+works as a second `PaymentProvider` alongside PayFast. F4's fix: `GetTransactionByReference` has
+an optional `IsTest` query param (defaults false) the adapter never sent, silently scoping every
+status lookup to real transactions only — fixed by sending `&IsTest=true` only when the
+notification's hash-verified `raw.IsTest === 'true'`, a 2-line change with zero new trust
+surface. The mission's original F3 close-out conclusion ("blocked by an unprovisioned Ozow
+merchant account, external vendor blocker") was WRONG — real causes were a SiteCode
+misconfiguration and this F4 bug, both fixed this session; a genuine external R0.01 transaction
+cap remains open (Ozow support ticket needed, Brad's to raise). See `learned.md` "Ozow F4" for
+the dispatch-race pitfall (two concurrent architect instances producing competing designs,
+caught mid-implementation) and the "external blocker held too loosely" lesson. Full record:
+`contracts/golden/ozow-m1-f4/README.md`, `docs/payment-seam.md`,
+`contracts/golden/ozow-m1-f3/README-addendum-blocked.md`.
+
+### 2026-08-24 — `ozow-sandbox-toggle` M1 (F1) DONE — admin-gated Ozow demo flag, mission complete
+
+~~`ozow-sandbox-toggle` (F1: admin-toggleable `ozowSandboxTestMode` flag, gated through
+`lib/admin-auth.ts`, that overrides only the amount sent to Ozow's `initiate()` call to R0.01
+while leaving cart/display/order/PayFast untouched, plus a visible TEST MODE checkout banner)~~
+✅ **DONE**, M1 gate passed 12/12 (A1-A12), Codex GPT-5.5 cross-model review clean after 5 rounds
+(4 real bugs found and fixed across rounds — see `learned.md`). Closes the demo-readiness gap
+Brad raised: replaces the manual, revert-dependent live-Sanity-price-edit workaround from
+`ozow-payment-provider` F3/F4 with a safe, reversible, admin-controlled flag at `/admin/settings`
+(`manage-payment-settings` capability, owner-only). Fails closed by design — flag-read errors or
+ambiguous state are always treated as OFF. The separate, still-open Ozow R0.01 sandbox
+transaction cap (external, vendor-side, support ticket still unsent) is unrelated and not
+resolved by this mission. Full record: `docs/f1-ozow-sandbox-toggle.md`, `docs/payment-seam.md`,
+`contracts/golden/ozow-sandbox-toggle-f1/README.md`.

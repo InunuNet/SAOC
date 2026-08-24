@@ -4,6 +4,7 @@ import { TicketTypeCard, type TicketTypeCardData } from '@/components/tickets/Ti
 import { CartAttendeeFields } from '@/components/tickets/CartAttendeeFields';
 import { CartDayPicker } from '@/components/tickets/CartDayPicker';
 import { CheckoutRedirectNotice } from '@/components/tickets/CheckoutRedirectNotice';
+import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
 import { ProviderChoice } from '@/components/tickets/ProviderChoice';
 import { useTicketCart } from '@/components/tickets/useTicketCart';
 import { providerLabel } from '@/lib/payments-ui';
@@ -41,6 +42,7 @@ export function TicketPurchaseForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+      <OzowSandboxTestModeBanner />
       <fieldset className="space-y-3">
         <legend className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">Ticket types</legend>
         {ticketTypes.map((t) => (
