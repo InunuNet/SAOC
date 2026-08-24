@@ -1,0 +1,97 @@
+schema: athanor.contract/v1
+slug: contact-mobile-nav-fix
+goal: >-
+  Fix /contact unreachable from the header on mobile. Confirmed live at 375px viewport
+  (see contracts/golden/contact-mobile-nav-fix-f1/README.md "The defect"): the header's
+  Contact CTA is `hidden sm:inline-block` (components/chrome/Header.tsx:143-148) and
+  MobileMenu.tsx renders only the `NAV` array (components/chrome/nav-config.ts) plus a
+  `mailto:` link — zero `a[href="/contact"]` anywhere in the header before or after
+  opening the mobile menu. The footer is the only current path to /contact on mobile.
+  Fix by adding a dedicated /contact link inside components/chrome/MobileMenu.tsx (not
+  by adding /contact to the shared NAV array, which also drives the desktop Zone 2
+  primary nav, and not by unhiding the desktop Contact CTA button). Full spec:
+  contracts/golden/contact-mobile-nav-fix-f1/README.md and
+  contracts/golden/contact-mobile-nav-fix-f1/mobile-menu-spec.golden.md.
+created_at: '2026-08-25'
+autonomy: high
+
+# SCOPE: this feature touches exactly these files —
+#   EDIT components/chrome/MobileMenu.tsx — add one additional /contact <Link> inside the
+#        "Mobile primary" <nav>, styled and behaving like the existing plain NAV link
+#        items (same classes, calls onClose on click), rendered outside the nav.map(...)
+#        loop. Full markup shape:
+#        contracts/golden/contact-mobile-nav-fix-f1/mobile-menu-spec.golden.md.
+# Untouched / explicitly out of scope (see README "What this contract does NOT do"):
+#   - components/chrome/Header.tsx (desktop Contact CTA button and Zone 2 primary nav —
+#     regression-checked by A3, not a change target)
+#   - components/chrome/nav-config.ts (the shared NAV array — must not gain a new
+#     'contact' entry, since NAV also drives the desktop Zone 2 primary nav at >=1240px)
+#   - components/chrome/MegaMenu.tsx, components/chrome/SearchOverlay.tsx
+#   - the site footer's existing /contact link and the mailto: link in MobileMenu.tsx
+
+features:
+  - id: F1
+    name: >-
+      /contact is reachable from the mobile menu at 375px via a visible, tappable
+      /contact link that is not part of the shared NAV array, with the desktop header
+      unchanged. Full spec: contracts/golden/contact-mobile-nav-fix-f1/README.md and
+      contracts/golden/contact-mobile-nav-fix-f1/mobile-menu-spec.golden.md.
+    status: pending
+
+goldens:
+  - contracts/golden/contact-mobile-nav-fix-f1/README.md
+  - contracts/golden/contact-mobile-nav-fix-f1/mobile-menu-spec.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        components/chrome/MobileMenu.tsx renders a real next/link Link with
+        href="/contact" inside the "Mobile primary" nav, distinct from the nav.map(...)
+        loop's output (i.e. not sourced from the NAV array), that calls onClose on
+        click. FAILS ON: no href="/contact" Link found in the file; the only
+        /contact-shaped href is a plain <a> (not next/link); the link found does not
+        wire onClick to onClose.
+      command: bash contracts/checks/contact-mobile-nav-fix-f1/check-contact-link.sh
+
+    - id: A2
+      description: >-
+        components/chrome/nav-config.ts's NAV array gains no new entry — regression
+        guard, since NAV also drives the desktop Zone 2 primary nav at >=1240px and must
+        not pick up a duplicate "Contact" link there. FAILS ON: any new object literal
+        added to the NAV array (id, label, or href referencing "contact"/"/contact"
+        anywhere in nav-config.ts).
+      command: bash contracts/checks/contact-mobile-nav-fix-f1/check-navconfig-unchanged.sh
+
+    - id: A3
+      description: >-
+        components/chrome/Header.tsx is unchanged by this feature — regression guard for
+        the desktop Contact CTA button and the Zone 2 primary nav. FAILS ON: the file's
+        content differing from its pre-fix committed state (git diff against HEAD is
+        non-empty for this path), OR the `hidden sm:inline-block` Contact CTA
+        (Header.tsx:143-148) missing/altered, OR the `<MobileMenu ... nav={NAV} />` call
+        site changed.
+      command: bash contracts/checks/contact-mobile-nav-fix-f1/check-header-unchanged.sh
+
+    - id: A4
+      description: pnpm lint and pnpm exec tsc --noEmit both pass with zero errors after the edit.
+      command: pnpm lint && pnpm exec tsc --noEmit
+
+    - id: A5
+      description: >-
+        MANDATORY, MANUAL, non-automatable (per this project's coding.md agent_review
+        rule — DOM presence alone does not prove a real, visible, tappable interaction):
+        a real BrowserAgent pass against the live site at a 375x667 viewport. Steps: (1)
+        load any public marketing page, (2) tap the header's hamburger/menu trigger
+        (aria-label="Open menu"), (3) confirm the opened mobile menu panel contains a
+        visible /contact link (not scrolled out of view, not hidden), (4) tap that link,
+        (5) confirm the browser navigates to /contact and the mobile menu panel is
+        closed. Also, at a 1440x900 viewport (regression, gating): confirm the desktop
+        header's Zone 2 primary nav (About / Societies / Judging & Awards / National Show
+        / Events / Learn) and the separate filled "Contact" CTA button in the actions
+        zone both render exactly as before — no duplicate "Contact" entry in the primary
+        nav row. FAILS ON: no visible /contact link found in the opened mobile menu at
+        375px; tapping it does not navigate to /contact; the desktop primary nav at
+        1440px shows a second/duplicate "Contact" entry.
+      kind: agent_review

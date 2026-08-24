@@ -2414,6 +2414,14 @@ ledger bug above, but the missing-file case rather than the wrong-contents case.
 filtered to the mission's own component/contract/docs paths — an empty or short ledger is not
 evidence the mission touched nothing, it's evidence the ledger was never populated.
 
+**Reinforced (2026-08-25, `contact-mobile-nav-fix`)**: third occurrence in one session (after
+`door-checkin-success-feedback` and `door-checkin-one-handed`). `scoped_stage.py --dry-run`
+again resolved to only the mission file + spec dir; real touched set (`components/chrome/
+MobileMenu.tsx`, `contracts/checks/<slug>/`, `contracts/golden/<slug>/`, `docs/<slug>.md`) had
+to be hand-built from `git status --porcelain`. This is now a pattern, not an outlier — worth a
+harness-level fix (checkpoint transitions not firing the baseline/diff mechanism reliably) rather
+than continuing to patch it per close-out.
+
 ## `WRAP_ALLOW_OUT_OF_SCOPE` denylist guard aborts on unrelated dirty files from other concurrent sessions (2026-08-25)
 
 `wrap_mission.sh`'s pre-check (`DENYLIST=(.claude/settings.json ...)`, added after GH incident

@@ -427,11 +427,6 @@ flat-over-nested-submenu pattern.
   contract identify real accent-contrast failures on live public pages. Remedy fully specified in
   `contracts/golden/wcag-accent-contrast/remedy.md`, deliberately not applied — it is a design-token
   decision. This is a live accessibility failure on public pages and should not sit indefinitely.
-- [ ] **[P2] `/contact` is unreachable from the header on mobile.** Verified live at 375px: the
-  header's Contact button is `hidden sm:inline-block` (`Header.tsx:150`) and `MobileMenu.tsx`
-  renders only the NAV array plus a `mailto:` link. Zero `a[href="/contact"]` in the header before
-  or after opening the menu. Footer is the only path. Fix by adding `/contact` to MobileMenu, not
-  by unhiding the button.
 - [ ] **[P2] Vendor form has no client-side validation gating submission.** `checkValidity()`
   correctly flags empty required fields and whitespace-only text, but nothing in the submit handler
   checks it before firing the network request — a fully empty form POSTs. All rejection is
