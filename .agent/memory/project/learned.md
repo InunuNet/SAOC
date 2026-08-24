@@ -1,3 +1,72 @@
+## Checkpoint-ledger fix confirmed working; ledger still misses post-checkpoint artifacts (2026-08-24)
+
+`ticketing-flow-redesign` (full mission, F1-F3) ran `mission.py checkpoint --status in_progress`
+before each feature's @dev dispatch and `--status done` right after each gate, unlike the
+`gateway-picker-admin-only` incident below. Result: `ticketing-flow-redesign.touched.json` had a
+real 15-path ledger at close-out, and `scoped_stage.py --dry-run` correctly resolved almost all of
+it — the checkpoint discipline works when actually followed. One gap remained: 3 paths
+(`contracts/golden/ticketing-flow-redesign-f{2,3}/`, `contracts/checks/ticketing-flow-redesign-f3/`)
+were created by QA/browser-verification rounds *after* each feature's `--status done` checkpoint
+already ran, so they were never captured in the completion diff. Caught by comparing
+`scoped_stage.py --dry-run` output against `git status --short`, confirmed as this mission's own
+files (mtimes inside the mission window, contract slug matches), then added manually to the ledger
+before close-out. **Lesson: if QA/browser verification produces new contract artifacts (goldens,
+check scripts) after a feature is checkpointed done, they won't auto-land in the ledger — diff
+`scoped_stage.py --dry-run` against full `git status` before close-out and manually append any
+mission-owned gaps, don't assume `--status done` was the last dirty-producing event.**
+
+## Missing checkpoint calls left approved implementation code uncommitted (2026-08-24)
+
+`gateway-picker-admin-only` and `ticketing-flow-redesign` F1 both passed the full chain
+(@dev + @qa PASS + Codex GPT-5.5 PASS + docs + green contract gate) but the orchestrator never
+called `python3 execution/mission.py checkpoint --feature <FID> --status in_progress` before
+dispatching @dev, nor `--status done` right after each feature's gate passed. That checkpoint
+call is what snapshots a baseline and diffs newly-dirty files into `<slug>.touched.json`, which
+`execution/skills/lib/scoped_stage.py` (via `wrap_mission.sh`) reads to decide what to stage at
+close-out. With no ledger entries it only staged the mission file and its own spec dir, silently
+skipping every real implementation file — both missions "closed" with only metadata committed
+while the actual code sat uncommitted in the working tree for a full session. This is not a
+`scoped_stage.py` bug — its under-staging default is deliberate (2026-08-18 incident, GH commit
+59e70a11) to avoid sweeping unrelated dirty files into a mission commit. **Lesson: run the
+checkpoint call before dispatching @dev for a feature, and again right after that feature's gate
+passes — every time, not just at mission close-out — or the commit step silently drops the code
+it was supposed to capture.** Recovered via manual `git add -- <exact paths>` from each mission's
+verified QA file manifest, in commits `0a9febf` (gateway-picker-admin-only) and `698d2f6`
+(ticketing-flow-redesign F1).
+
+## Cart/checkout UI needs multiple QA rounds, not one — 3 real bugs found across passes (2026-08-24)
+
+`ticketing-flow-redesign` F3 (Day Visitor per-day quantity picker) took three full QA rounds plus
+one browser-verification round before reaching a clean state, and each round found a real bug the
+previous one missed: (1) a shared-identity data-loss bug where multiple attendees' names/emails
+were silently collapsed into one shared identity; (2) a subtler interleaved-edit bug where
+attendee identities got zipped to the wrong day when a buyer revisited an earlier day's quantity
+after already filling a later day's — fixed only via a structural `attendeesByDay` per-day state
+redesign, not a patch; (3) a stale "select at least one ticket" validation message that never
+cleared, caught only by actual browser verification after QA rounds 1-3 had already passed.
+**Lesson: for cart/checkout-adjacent state (anything keying user data by index/position across
+multiple interacting dimensions — day × attendee here), do not stop at the first PASS-looking QA
+pass. Re-derive adversarially each round rather than trusting the prior round's self-report, and
+always follow a clean QA pass with real browser verification — QA reasoning about state transitions
+missed a UI-only symptom that browser interaction caught immediately.** Reinforces this project's
+existing adversarial-QA-until-clean discipline specifically for this defect class.
+
+## Gateway picker admin-only — check-script false positives from blunt greps and unscoped anchors (2026-08-24)
+
+`gateway-picker-admin-only` F1: two check-script bugs surfaced mid-flight, both caught by @dev
+correctly escalating instead of silently reinterpreting or working around them. (1) A3's check
+did a blanket grep for `providerId` to assert the customer-facing field was fully removed, but the
+golden explicitly called for keeping a server-echoed `providerId` display field while removing the
+input control — the blunt substring grep contradicted the golden's own instruction. **Lesson:
+when a check and its golden disagree, the golden is the source of truth — fix the check, not the
+code**, especially for "keep for display, remove for input" splits that a blanket grep can't
+distinguish. (2) A5's check anchored on `if (!client)` to verify structural ordering inside the
+checkout route, but that exact guard clause also appears in an unrelated helper function earlier
+in the file, so the anchor matched the wrong occurrence. **Lesson: anchor structural-ordering
+checks (indexOf/lastIndexOf on a guard clause, marker line, etc.) to the specific function being
+checked — e.g. search from the function's `export async function POST` declaration onward — not
+to the whole file, when the same guard clause text can plausibly appear in more than one function.**
+
 ## Ozow F4 — GetTransactionByReference needs an explicit IsTest param, and an "external blocker" verdict held too long (2026-08-23)
 
 `ozow-payment-provider` F4: `confirmNotification()` in `lib/payments/ozow.ts` 404'd on

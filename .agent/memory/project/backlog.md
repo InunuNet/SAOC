@@ -272,10 +272,12 @@ carry honest "not yet open" static messaging instead of reading as a silent purc
 See `docs/f1-national-show-menu-restructure.md` and `learned.md` for the reusable two-column-
 flat-over-nested-submenu pattern.
 - [ ] **[P2] `scripts/migrate-ticket-type-category.ts` has only ever run `--dry-run`.** The 5 live
-  admission `ticketType` docs in production Sanity still have `category: null`. This is
-  protected by F3's admission-only null-category read-time fallback in the GROQ query, so it is
-  not urgent, but the docs should be backfilled with a real category for real eventually rather
-  than relying on the fallback indefinitely.
+  admission `ticketType` docs in production Sanity still have `category: null`. A server warning logs
+  for each during Admission ticket page renders (spotted during `ticketing-flow-redesign` F2 QA,
+  2026-08-24). This is protected by F3's admission-only null-category read-time fallback in the GROQ
+  query, so it is not urgent, but the docs should be backfilled with a real category for real
+  eventually rather than relying on the fallback indefinitely. Recommend: `scripts/migrate-ticket-type-category.ts --apply`
+  to clear the warning.
 - [ ] **[P2] Day Visitor's chosen day is not shown on the ticket confirmation page.** Verified
   2026-08-21: `chosenDay` is correctly captured and persisted (`"2027-09-18"` confirmed in
   Firestore against a real purchase), but `/tickets/confirmation` only shows
@@ -472,6 +474,12 @@ flat-over-nested-submenu pattern.
   First check whether the treatment is scoped to the vendor components or shared site-wide; a fix
   must not silently diverge the vendor form's typography from the rest of the site. Recommendation:
   keep the mono/letter-spacing character, drop `uppercase` for sentence case.
+- [ ] **[P2] Admission ticket list-mode card `<Link>` lacks custom focus ring.** `TicketTypeCard.tsx`'s
+  list-mode wrapper has no `focus-visible:ring-*` class and falls back to the default browser outline.
+  Still visible and accessible, but visually inconsistent with custom focus rings on the quantity
+  stepper buttons in the same file and elsewhere on the site. Surfaces during `ticketing-flow-redesign`
+  F2 (browser verification, 2026-08-24). Recommend adding `focus-visible:ring-primary` or matching token
+  to `components/tickets/TicketTypeCard.tsx` where the list-mode `<Link>` renders.
 
 ---
 
@@ -916,37 +924,49 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   Still needs the pairing mechanism (early-bird ↔ regular ticket) resolved before @dev — no
   schema field links the two today, only category/description similarity.
 
-- [ ] SAOC (Feature, P1): remove buyer-facing "Pay with: Ozow / PayFast" gateway picker from
-  public checkout (Brad, 2026-08-24, tested at /tickets checkout). Currently
-  `components/tickets/ProviderChoice.tsx` (shipped in mission ozow-payment-provider F2) renders
-  a visible radio group letting any visitor choose the payment gateway — Brad's call: this is
-  an operational decision, not a customer one, and should move to an admin-only setting instead
-  (same pattern as the ozow-sandbox-test-mode toggle at /admin/settings — likely lives right
-  next to it as e.g. "Active payment gateway"). Checkout should silently use whichever gateway
-  admin has selected; TicketPurchaseForm's `providerId` in the checkout POST body would need to
-  come from the admin-configured value server-side rather than user radio-button input. Needs
-  architect spec: single global gateway setting vs. per-ticket-type, and whether the checkout
-  API route should stop trusting a client-supplied `providerId` at all (currently does, per
-  ProviderChoice.tsx — likely also a minor trust-boundary issue worth flagging to @qa/Codex).
+- [x] SAOC (Feature, P1): remove buyer-facing "Pay with: Ozow / PayFast" gateway picker from
+  public checkout — DONE 2026-08-24, mission `gateway-picker-admin-only`, gate 13/13 + QA PASS +
+  Codex PASS. `ProviderChoice.tsx` removed; admin-only `activePaymentGateway` Firestore setting
+  added at `/admin/settings` (same `manage-payment-settings` capability gate as the Ozow sandbox
+  toggle); checkout route resolves the gateway server-side only and fails closed (500) if
+  unset/invalid — no client-supplied `providerId` is trusted for gateway selection anymore.
 
-- [ ] SAOC (Feature, P2): ticketing flow redesign — Brad reviewed the vertical-card /
-  per-ticket-detail-screen prototype (artifact "Ticket Selection Flow",
-  https://claude.ai/code/artifact/66ff35b1-d393-4ab0-8f78-f54f803c3660) and approved the overall
-  flow/sizing/all-three-ticket-types walkthrough, with two remaining changes before this becomes
-  a real spec:
-  1. Replace the abstract geometric icons on the card banners with real orchid photography —
-     Brad found the icons "weird" and "a little bit plain." Real orchid photo assets already
-     exist and ship on the live site today at `public/images/orchid-{pink,purple,yellow,violet,
-     dark}.jpg` (used across app/(marketing)/tickets, /about, /societies, etc.) — reuse those
-     rather than commissioning new art.
-  2. VIP Ticket price is wrong relative to the rest of the lineup: currently R300, cheaper than
-     the regular Weekend Pass (R400), which makes no sense for the top tier. Brad's proposed fix:
-     R480 (must stay above every other ticket type's price, including Weekend Pass's regular
-     R400 and any future early-bird pricing).
-  This is on top of two earlier rounds of feedback already reflected in the same prototype:
-  early-bird tickets merged into a single ticket per type (price changes at the cutoff date,
-  not two separate tickets — see the "early-bird / regular ticket display gating" item above,
-  now superseded by this merged-ticket model) and Day Visitor Ticket needing a per-day quantity
-  picker (not single-day-only) for buyers wanting tickets across multiple show days.
-  Needs architect spec once the artifact is finalized — do not implement directly against the
-  prototype; the prototype is a discussion aid, not a golden file.
+- [x] SAOC (Feature, P2): ticketing flow redesign — DONE 2026-08-24, mission
+  `ticketing-flow-redesign` (F1-F3, both milestones gate-green: M1/F1 10/10, M2/F2 10/10,
+  M2/F3 10/10), commit `6ae483b`. Delivered: (1) vertical ticket-type cards with real orchid
+  photos (`public/images/orchid-{pink,purple,yellow,violet,dark}.jpg`), replacing the abstract
+  geometric icons; (2) one dedicated buy screen per Admission ticket type
+  (`/tickets/[slug]`) instead of a shared cart+buy button; (3) early-bird and regular merged
+  into ONE ticket per type via a new `regularPrice` field + `resolveEffectivePrice()` — price
+  changes at `earlyBirdCutoff` instead of two separate products, which supersedes and closes the
+  "early-bird / regular ticket display gating" item above (that item's pairing-mechanism problem
+  no longer exists — there is only one ticket per type now); (4) VIP price fixed R300 → R480 so
+  it stays the top tier above Weekend Pass's R400; (5) Day Visitor per-day quantity picker
+  (`DayQuantityPicker.tsx`) for buyers wanting tickets across multiple show days. QA found and
+  fixed 3 real bugs across 3 QA rounds + 1 browser-verification round on F3 alone (shared-identity
+  attendee data loss, interleaved-edit day-misassignment, stale validation message) — see
+  learned.md "Cart/checkout UI needs multiple QA rounds, not one" for the detail. Live-dataset
+  price migration script is written but dry-run only, not yet applied to production Sanity data.
+
+- [ ] SAOC (Chore, P3): early-bird / regular ticket display gating item above (line 896) is now
+  OBSOLETE — F1 of `ticketing-flow-redesign` merged early-bird/regular into a single ticket per
+  type via `regularPrice` + `resolveEffectivePrice()`, so the pairing-mechanism problem that item
+  was blocked on no longer applies. Leaving the original entry in place with this note rather than
+  deleting, per this project's backlog-hygiene convention of not silently removing history — but
+  no further action needed on it.
+
+- [ ] SAOC (Chore, P3): `ticketing-flow-redesign` non-blocking follow-ups flagged by @docs during
+  F2/F3, not yet actioned:
+  1. Focus-ring styling gap on the ticket-type card in list-mode (visible keyboard-focus outline
+     missing/incomplete) — accessibility polish, not a functional bug.
+  2. A migration script exists for the F1 `regularPrice` schema field's live-dataset rollout, but
+     it's dry-run only — needs to actually be run against the live Sanity dataset once Brad signs
+     off (see project_sanity_dataset_not_live memory: site is pre-production, safe to edit, but
+     keep the careful method).
+  3. Day-of-week/date labels in the Day Visitor per-day quantity picker are currently raw values,
+     not friendly-formatted (e.g. "Thu 17 Sep" instead of an ISO date or raw day index) — cosmetic,
+     not functional.
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-24-close-bash-file-write-bypass-of-require-.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-24-make-backlog-hygiene-self-enforcing-acro.md
