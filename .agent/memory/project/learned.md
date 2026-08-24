@@ -2363,3 +2363,39 @@ happened to depend on that exact helper. See backlog's "re-pin discipline has no
 item — same root pattern: shared test/check infra has no CI-style trigger tying it back to the
 production code it mirrors, so route/schema changes silently orphan it. Fixed reactively here;
 not solved structurally.
+
+## Mobile result/confirmation UI must be verified at real viewport height, not just DOM presence (2026-08-24)
+
+`door-checkin-success-feedback` mission: Brad's live scanner test found a real defect (correct
+scan, invisible feedback) that no structural check would have caught — the success banner
+rendered and persisted correctly in the DOM, it was just pushed below the fold at 375px/320px
+by taller content above it (camera box + manual-entry form). A below-the-fold element is
+functionally the same defect as one that never renders. **Generalize**: any result/confirmation
+UI on a mobile-first surface (admin tools especially — often used one-handed, in the field, with
+real device chrome eating vertical space) needs a real BrowserAgent visual pass at real
+breakpoints (375px/320px here), not just "does the assertion find it in markup." Fix here: turn
+the banner into a `fixed inset-0` overlay instead of trusting document flow.
+
+## A full-viewport blocking overlay needs an explicit dismiss path (2026-08-24)
+
+Same mission, caught by the mandatory Codex GPT-5.5 cross-model pass after Claude's own @qa
+had already passed it: the new fixed-overlay failure state auto-dismissed on success but had no
+way out if it *didn't* auto-dismiss (e.g. a network hiccup on the transition) — no tap, no
+button, nothing. Fixed with a Dismiss button + tap-anywhere. **Generalize**: any full-screen/
+full-viewport blocking overlay or modal needs both halves designed together — "how does it
+appear" and "how does it go away" — before it ships. Don't assume auto-dismiss alone is
+sufficient; design the manual-dismiss path even when the automatic one is expected to be the
+common case.
+
+## Mission touched-files ledgers can omit contract/golden artifacts and wrongly include scratch dirs (2026-08-24)
+
+Same mission's close-out: `.agent/memory/project/missions/door-checkin-success-feedback.touched.json`
+listed `.qa_scratch/` (a QA agent's local debug scripts + screenshots, never meant to be
+tracked — no entry existed in `.gitignore` for it) and omitted `contracts/checks/<slug>/` and
+`contracts/golden/<slug>/` entirely, so `scoped_stage.py` committed the wrong things: scratch
+debug output went into git history, and the mission's own contract check scripts + golden files
+did not. Fixed post-hoc with a follow-up commit (`.qa_scratch/` added to `.gitignore` and
+untracked; contract/golden dirs added). **Generalize**: when closing out a mission, don't trust
+the touched-files ledger blindly — diff the actual commit's file list against what the mission
+*should* contain (contract, golden, checks, source files) before reporting done, and check any
+newly-introduced scratch directory has a `.gitignore` entry before an agent writes into it.
