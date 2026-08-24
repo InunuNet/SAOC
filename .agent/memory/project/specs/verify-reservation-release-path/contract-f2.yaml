@@ -1,0 +1,73 @@
+schema: athanor.contract/v1
+slug: verify-reservation-release-path
+goal: >
+  Fix stale postCheckout() shape in contracts/checks/ticketing-hardening/_shared.mjs
+  before F1 is verified. Investigation (2026-08-24) confirmed postCheckout() still POSTs
+  the pre-6046bc0 flat body { showId, ticketType, attendeeName, attendeeEmail } to
+  /api/tickets/checkout, but the route has required { showId, lineItems: [...] } since
+  commit 6046bc0 (2026-08-21, "M2-F5 — pooled-capacity checkout"). Every call through
+  this helper unconditionally 400s. This is not merely orphaned suite decay: F1's own
+  golden (check-lazy-release-frees-and-resells.mjs) imports postCheckout and asserts a
+  real 201, so F1 cannot be genuinely verified until this is fixed. Full severity
+  assessment, affected-check inventory, and why this is real-but-currently-invisible
+  (no cached result file anywhere claims this suite is green) is in
+  goldens/README-f2.md. F2 blocks F1's completion.
+created_at: '2026-08-24'
+autonomy: high
+features:
+  - id: F2
+    name: >
+      Fix contracts/checks/ticketing-hardening/_shared.mjs's postCheckout() to send the
+      current route's required shape ({ showId, lineItems: [{ ticketType, attendeeName,
+      attendeeEmail }] }) instead of the stale flat shape. Keep the existing call
+      signature (ticketType/email/name/idempotencyKey/showId params) unchanged so none of
+      the ~18 existing call sites across contracts/checks/ticketing-hardening/*.mjs (and
+      this mission's own F1 golden) need editing — see
+      goldens/postCheckout-corrected.mjs for the exact fix. Do not touch
+      app/api/tickets/checkout/route.ts — it is already correct; only the stale check
+      helper is being fixed.
+    status: pending
+goldens:
+  - .agent/memory/project/specs/verify-reservation-release-path/goldens/README-f2.md
+  - .agent/memory/project/specs/verify-reservation-release-path/goldens/postCheckout-corrected.mjs
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        postCheckout() in _shared.mjs now builds a lineItems array and no longer sends a
+        bare top-level attendeeName/attendeeEmail/ticketType alongside showId. Structural
+        proof only — A2-A4 below are the real behavioural proof.
+      command: >-
+        grep -q "lineItems: \[{ ticketType, attendeeName: name, attendeeEmail: email }\]"
+        contracts/checks/ticketing-hardening/_shared.mjs
+    - id: A2
+      description: >-
+        BEHAVIOURAL. Representative plain-success call path. Pre-fix RED: every checkout
+        400s with "showId, lineItems (1-20 valid line items) are required." because
+        parseLineItems(undefined) fails the Array.isArray check. Post-fix: a real HTTP
+        POST through the corrected helper succeeds end to end.
+      command: node contracts/checks/ticketing-hardening/check-capacity-admits-when-free.mjs
+      timeout_seconds: 240
+    - id: A3
+      description: >-
+        BEHAVIOURAL. Representative idempotency-key call path — a distinct calling
+        pattern from A2 (asserts on the Idempotency-Key header round trip, not just
+        checkout success). Pre-fix RED for the same 400 reason.
+      command: node contracts/checks/ticketing-hardening/check-idempotency-key-required.mjs
+      timeout_seconds: 240
+    - id: A4
+      description: >-
+        BEHAVIOURAL. Representative multi-POST / high-volume call path (booking-ref
+        entropy requires many successful checkouts to sample ref randomness). Pre-fix RED
+        for the same 400 reason — proves the fix holds under repeated calls, not just a
+        single one.
+      command: node contracts/checks/ticketing-hardening/check-booking-ref-entropy.mjs
+      timeout_seconds: 240
+    - id: A5
+      description: >-
+        F1's own dependency on postCheckout is unblocked: its golden checkout call now
+        gets past the 400 and reaches real checkout logic. Runs F1's own check as a
+        regression guard that F2 actually unblocks F1, not just the wider suite.
+      command: npx tsx .agent/memory/project/specs/verify-reservation-release-path/goldens/check-lazy-release-frees-and-resells.mjs
+      timeout_seconds: 240

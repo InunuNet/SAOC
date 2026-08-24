@@ -1,5 +1,5 @@
 // ticketing-hardening: shared helpers for BEHAVIOURAL checks against the running dev
-// server (default http://localhost:3333) and the real Firestore/Sanity backends.
+// server (default http://localhost:3002) and the real Firestore/Sanity backends.
 //
 // WHY BEHAVIOURAL, NOT GREP
 // The previous session's contract produced three FALSE GREENS from source greps: a
@@ -42,17 +42,36 @@ import { SENTINEL_DOMAINS } from '../_shared/sentinel-domains.mjs';
 
 config({ path: new URL('../../../.env.local', import.meta.url).pathname, quiet: true });
 
-export const BASE_URL = (process.env.CHECK_BASE_URL ?? 'http://localhost:3333').replace(/\/+$/, '');
+export const BASE_URL = (process.env.CHECK_BASE_URL ?? 'http://localhost:3002').replace(/\/+$/, '');
 
 /** Pinned nationalShow singleton id — must match lib/tickets-constants.ts. */
 export const NATIONAL_SHOW_ID = 'nationalShow';
 
 /**
- * Ticket type used by the capacity / idempotency round trips. 'exhibitor' is chosen
- * deliberately: price 0, so no check in this suite ever creates a non-zero-value
- * reservation, and its capacity (50) is small enough to fill quickly.
+ * Ticket type used by the capacity / idempotency round trips. 'qa-fixture-ticket' is a
+ * DEDICATED Sanity ticketType document (Studio id `ticketType-qa-fixture`) — seeded
+ * idempotently by `node --import tsx/esm scripts/seed-qa-fixture-ticket-type.ts`, not a
+ * one-off manual mutation. If this doc is missing (deleted, or the suite is pointed at
+ * a fresh/staging dataset), sanityCapacity() below throws pointing at that script — run
+ * it and re-run the check. price 0, capacity 50 (small enough to fill quickly), and
+ * `category: 'qa-fixture-only'`, a value none of the real /tickets, /national-show/
+ * conferences, or /national-show/workshops pages ever query for (they use only
+ * 'admission' / 'conference' / 'workshop-field-trip' — see sanity/schemas/documents/
+ * ticketType.ts). It also carries `demo: true` as defense-in-depth (excludes it from
+ * filterPubliclyListableTicketTypes on the public listing, same mechanism F9's real
+ * demo-purchase ticket type relies on).
+ *
+ * This suite previously toggled the REAL 'exhibitor' product's `active` flag as its
+ * fixture. On 2026-08-24 an F2 dev-work cleanup left it stuck `active: true`; because
+ * that pre-F3 document predates the `category` field (so it's `undefined`, not just
+ * `false`), it matched activeTicketTypesByCategoryQuery's `!defined(category) &&
+ * $category == 'admission'` fallback and rendered as a real 6th, R0-priced "Exhibitor"
+ * ticket on the live /tickets page. A dedicated fixture with a category value that can
+ * never match a real query is the fix: no future toggle of THIS doc's `active` flag,
+ * however mistimed, can make it appear on any real page — unlike relying on `active:
+ * false` staying set on a document that also serves as live product data.
  */
-export const TARGET_TICKET_TYPE = 'exhibitor';
+export const TARGET_TICKET_TYPE = 'qa-fixture-ticket';
 
 /**
  * Every document and auth user this suite creates carries this domain in its email.
@@ -446,7 +465,10 @@ export async function postCheckout({
   const res = await fetch(`${BASE_URL}/api/tickets/checkout`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ showId, ticketType, attendeeName: name, attendeeEmail: email }),
+    body: JSON.stringify({
+      showId,
+      lineItems: [{ ticketType, attendeeName: name, attendeeEmail: email }],
+    }),
   });
   const body = await res.json().catch(() => ({}));
   return { status: res.status, body };
@@ -461,7 +483,15 @@ export async function sanityCapacity(slug = TARGET_TICKET_TYPE) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Sanity capacity read failed (HTTP ${res.status}).`);
   const { result } = await res.json();
-  if (!result) throw new Error(`Ticket type '${slug}' not found or inactive in Sanity.`);
+  if (!result) {
+    throw new Error(
+      `Ticket type '${slug}' not found or inactive in Sanity (dataset "${dataset}"). ` +
+        (slug === TARGET_TICKET_TYPE
+          ? 'FIXTURE MISSING: run `node --import tsx/esm scripts/seed-qa-fixture-ticket-type.ts` ' +
+            'to (re-)create it, then re-run this check.'
+          : 'Not the QA fixture — check the real ticketType data for this slug.')
+    );
+  }
   return result;
 }
 
@@ -622,7 +652,9 @@ export async function withCleanup(name, body, { deleteUser = false, afterCleanup
   // cleaned even if this run never manages to take the lock).
   const preflightSwept = await sweepManifestFromPriorRun();
   if (preflightSwept > 0) {
-    console.log(`preflight: swept ${preflightSwept} manifest entr${preflightSwept === 1 ? 'y' : 'ies'} from a prior run`);
+    console.log(
+      `preflight: swept ${preflightSwept} manifest entr${preflightSwept === 1 ? 'y' : 'ies'} from a prior run`
+    );
   }
   currentRunRecordedIds = [];
   await acquireSuiteLock();

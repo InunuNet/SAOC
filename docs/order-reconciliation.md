@@ -51,6 +51,10 @@ structurally enforced, not just a convention: `lib/reconciliation.ts` and the ro
 `markOrderAndPositionPaidByPaymentId` (the only function in this codebase that can flip an
 order's `status` to `'paid'`) and make no PayFast HTTP call of any kind.
 
+**See [docs/verify-reservation-release-path.md](verify-reservation-release-path.md) for
+clarification on how expired reservations are actually released** (lazy-on-read in
+`lib/data/tickets.ts`, not via reconciliation) and why that mechanism is the correct design.
+
 **Why not auto-settle a gateway-confirmed order?** Investigated and explicitly rejected for this
 phase — see the golden README's "Recovery — deliberately NOT built in this contract" for the
 full reasoning. In short: the ITN handler's PayFast round trip requires the exact ITN field set

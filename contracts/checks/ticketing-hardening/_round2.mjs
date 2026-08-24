@@ -20,6 +20,7 @@ import {
   db,
   NATIONAL_SHOW_ID,
   sentinelEmail,
+  TARGET_TICKET_TYPE,
   TICKETS_COLLECTION,
 } from './_shared.mjs';
 
@@ -47,7 +48,7 @@ export function liveUntil() {
  */
 export async function fillSeats({ count, label, status = 'reserved', expiresAt, ticketType }) {
   const database = db();
-  const type = ticketType ?? 'exhibitor';
+  const type = ticketType ?? TARGET_TICKET_TYPE;
   let created = 0;
   const refs = [];
   while (created < count) {
@@ -214,7 +215,8 @@ export async function withEphemeralTicketType({ slug, price, capacity }, body) {
     _type: 'ticketType',
     name: 'ZZ DO NOT SELL — automated check',
     slug: { _type: 'slug', current: slug },
-    description: 'Temporary fixture created by contracts/checks/ticketing-hardening. Safe to delete.',
+    description:
+      'Temporary fixture created by contracts/checks/ticketing-hardening. Safe to delete.',
     active: true,
     order: 999,
     ...(price === undefined ? {} : { price }),
@@ -236,7 +238,7 @@ export async function withEphemeralTicketType({ slug, price, capacity }, body) {
  * idempotency-binding check to replay a key with a different product. Read live rather
  * than hardcoded so a Studio rename cannot turn the check into a silent no-op.
  */
-export async function otherActiveTicketTypeSlug(exclude = 'exhibitor') {
+export async function otherActiveTicketTypeSlug(exclude = TARGET_TICKET_TYPE) {
   const { projectId, dataset } = sanityEnv();
   const query = `*[_type=="ticketType" && active==true && slug.current!="${exclude}"][0].slug.current`;
   const url = `https://${projectId}.apicdn.sanity.io/${SANITY_API_VERSION}/data/query/${dataset}?query=${encodeURIComponent(query)}`;

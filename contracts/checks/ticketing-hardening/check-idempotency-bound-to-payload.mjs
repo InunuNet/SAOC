@@ -1,8 +1,8 @@
 // A26 (S2) — an Idempotency-Key is bound to the product it first bought.
 //
 // @qa measured: the same key replayed with a different `ticketType` returns HTTP 200 and
-// the ORIGINAL exhibitor ticket at amount 0.00 — a signed PayFast payload for a product
-// the caller did not ask for, at a price that is not that product's price.
+// the ORIGINAL TARGET_TICKET_TYPE ticket at amount 0.00 — a signed PayFast payload for a
+// product the caller did not ask for, at a price that is not that product's price.
 //
 // Currently RED: 200 with the wrong ticket's amount.
 

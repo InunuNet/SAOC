@@ -1,0 +1,14 @@
+{
+  "schema": "athanor.mission-touched-files/v1",
+  "slug": "verify-reservation-release-path",
+  "pending_baselines": {},
+  "paths": [
+    "contracts/checks/ticketing-hardening/_shared.mjs",
+    ".agent/memory/project/missions/verify-reservation-release-path.touched.json",
+    "contracts/checks/ticketing-hardening/_round2.mjs",
+    "contracts/checks/ticketing-hardening/check-idempotency-bound-to-payload.mjs",
+    "docs/order-reconciliation.md",
+    "docs/verify-reservation-release-path.md",
+    "scripts/seed-qa-fixture-ticket-type.ts"
+  ]
+}

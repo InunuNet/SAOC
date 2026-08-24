@@ -1,0 +1,85 @@
+schema: athanor.contract/v1
+slug: verify-reservation-release-path
+goal: >
+  Verify the reserved-seat release path actually fires end to end, against real Firestore and
+  the real production checkout route, not just assumed. Investigation (architect, 2026-08-24)
+  found the release mechanism is LAZY-ON-READ: lib/data/tickets.ts's stillHoldsSeat(), called
+  from getSoldCountsByTicketType(), simply stops counting a `reserved` position the instant its
+  expiresAt passes — no sweeper, no cron, no status write. app/api/admin/reconcile-orders/route.ts
+  is NOT the release mechanism; it is alert-only by explicit, structurally-enforced design (see
+  docs/order-reconciliation.md). This contract proves: (1) the lazy exclusion genuinely frees a
+  seat for a real subsequent buyer through the real HTTP checkout route, not just in an isolated
+  counting-function call; (2) a paid position with a stale past expiresAt is never released,
+  regardless of how old that timestamp is; (3) reconcile-orders is structurally incapable of
+  being the release mechanism. See goldens/README.md for the full decision record.
+created_at: '2026-08-24'
+autonomy: high
+features:
+  - id: F1
+    name: >
+      Automated, real-Firestore proof of the reservation release path. Two live .mjs checks
+      (reusing contracts/checks/ticketing-hardening/_shared.mjs's existing sentinel/lock/manifest
+      /sweep infrastructure — no new cleanup mechanism) plus one structural shell check: A2 fills
+      a ticket type to capacity-1 with ordinary reservations, adds one already-expired reserved
+      position simulating an abandoned cart, confirms the count still excludes it, then sends a
+      real HTTP POST /api/tickets/checkout for the same type and asserts it succeeds (201) —
+      proving the freed seat is genuinely resellable through the production path a buyer uses.
+      A3 is the negative control the mission explicitly calls out: a PAID position with expiresAt
+      24 hours in the past must still be counted as held. A4 proves, via grep against
+      lib/reconciliation.ts and app/api/admin/reconcile-orders/route.ts, that the reconcile-orders
+      endpoint never imports the status-flipping settle function and never deletes/overwrites a
+      tickets/ position doc — structurally alert-only, not a release mechanism, without
+      triggering a real alert email as a side effect.
+    status: pending
+goldens:
+  - .agent/memory/project/specs/verify-reservation-release-path/goldens/README.md
+  - .agent/memory/project/specs/verify-reservation-release-path/goldens/check-lazy-release-frees-and-resells.mjs
+  - .agent/memory/project/specs/verify-reservation-release-path/goldens/check-paid-order-not-released-by-expiry.mjs
+  - .agent/memory/project/specs/verify-reservation-release-path/goldens/check-reconcile-orders-alert-only-not-release.sh
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        The app still compiles/builds — no check script in this contract changes production
+        code, so this is a baseline sanity gate, not a regression proof. False-pass risk: none
+        realistic — a real next build failure is a hard compiler error.
+      command: pnpm exec next build
+    - id: A2
+      description: >
+        Live, real-HTTP proof against a running dev server and real Firestore. Fills
+        TARGET_TICKET_TYPE ('exhibitor') to capacity-1 with ordinary unexpired reservations, adds
+        one reserved-but-already-expired sentinel position (simulating an abandoned cart holding
+        the last seat), confirms getSoldCountsByTicketType still reads capacity-1 (excludes the
+        expired one), then POSTs a real checkout request for the same ticket type and asserts
+        HTTP 201. False-pass risk: a version where the exclusion works in
+        getSoldCountsByTicketType but the live checkout route reads a stale or different count
+        would still pass an isolated count-only assertion but is caught here specifically by the
+        real HTTP round trip against the actual production route.
+      command: npx tsx .agent/memory/project/specs/verify-reservation-release-path/goldens/check-lazy-release-frees-and-resells.mjs
+      timeout_seconds: 150
+    - id: A3
+      description: >
+        Live Firestore negative control (no dev server required): a position written with
+        status='paid' and expiresAt 24 hours in the past must still be counted as held by the
+        real, unmodified getSoldCountsByTicketType — proving stillHoldsSeat's status-before-expiry
+        branch order holds against real data, not just by reading the source. False-pass risk: a
+        refactor that checks expiry before status (the exact regression
+        docs/ticketing-position-expiry-write.md warns against) would silently un-sell a real
+        paid buyer's seat and is caught directly here.
+      command: npx tsx .agent/memory/project/specs/verify-reservation-release-path/goldens/check-paid-order-not-released-by-expiry.mjs
+      timeout_seconds: 60
+    - id: A4
+      description: >
+        Structural proof (grep-based, no live side effects) that
+        app/api/admin/reconcile-orders/route.ts and lib/reconciliation.ts never import
+        markOrderAndPositionPaidByPaymentId and never delete/overwrite a tickets/ position
+        document directly — reconcile-orders is structurally incapable of being the release
+        mechanism, it can only alert. Deliberately does not call the live route with a real
+        secret, which would send a real Resend email as a side effect on every gate run.
+        False-pass risk: low but non-zero — a release mechanism added via some other write
+        pattern this grep doesn't match (e.g. a batch update targeting a different field) would
+        not be caught; A2/A3 above are the primary proof of the real mechanism, this is a
+        structural guard against reconcile-orders specifically being mistaken for it.
+      command: bash .agent/memory/project/specs/verify-reservation-release-path/goldens/check-reconcile-orders-alert-only-not-release.sh
+      timeout_seconds: 30
