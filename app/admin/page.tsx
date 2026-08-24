@@ -32,6 +32,12 @@ export default async function AdminPage() {
     'review-vendor-applications',
     { now, lookupShowWindow },
   );
+  const canManagePaymentSettings = hasCapability(
+    session.decodedToken,
+    NATIONAL_SHOW_ID,
+    'manage-payment-settings',
+    { now, lookupShowWindow },
+  );
 
   const [show, tickets] = await Promise.all([
     sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
@@ -42,7 +48,11 @@ export default async function AdminPage() {
     <>
       <UtilityBar show={show} />
       <Header />
-      <AdminNav variant="bar" canReviewVendors={canReviewVendors} />
+      <AdminNav
+        variant="bar"
+        canReviewVendors={canReviewVendors}
+        canManagePaymentSettings={canManagePaymentSettings}
+      />
       <main>
         <div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-8 sm:py-16">
           <span className="eyebrow">Admin</span>

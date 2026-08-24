@@ -1,0 +1,107 @@
+// GOLDEN — target shape of app/admin/settings/page.tsx after this feature.
+// Not a literal file to copy-paste (the existing toggle UI, useState/useEffect fetch logic,
+// and 'use client' directive from the current file are UNCHANGED) — this shows the required
+// chrome wrapper and the new capability-derivation that page.tsx must gain, in the same shape
+// app/admin/page.tsx and app/admin/vendors/page.tsx already use.
+//
+// THE CORE PROBLEM THIS GOLDEN FIXES: app/admin/settings/page.tsx is 'use client' (it needs
+// useState/useEffect for the toggle). UtilityBar/Header/Footer/AdminNav's canManagePaymentSettings
+// derivation are SERVER-side concerns (sanityFetch, hasCapability, getAdminSession — none of
+// which may run in a client component). app/admin/page.tsx and app/admin/vendors/page.tsx are
+// both `async function` Server Components that fetch and render chrome directly because a
+// shared app/admin/layout.tsx would also wrap /admin/login and /admin/door (see the existing
+// comment in app/admin/page.tsx). The settings page cannot become a Server Component itself
+// without ripping out its client-side toggle logic, which is out of scope (structural fix only,
+// per the mission brief). The fix is therefore a NEW server wrapper, not a change to the
+// existing client component's directive:
+//
+//   app/admin/settings/page.tsx        <- stays 'use client', UNCHANGED apart from losing its
+//                                          own top-level <main> (see below) — this is now the
+//                                          form/toggle body only, rendered as a child.
+//   app/admin/settings/page.tsx's default export is renamed/kept as the client toggle component,
+//   OR (equally acceptable — @dev's choice) the existing default export is kept as-is and a new
+//   Server Component wrapper file is introduced. Either way, exactly ONE of the following two
+//   layouts must exist on disk; A1's structural check accepts either:
+//
+// LAYOUT OPTION A — page.tsx becomes a thin async Server Component that renders chrome plus a
+// separately-named client component:
+//
+//   app/admin/settings/page.tsx (Server Component, async, no 'use client'):
+//
+import { redirect } from 'next/navigation';
+import { getAdminSession, hasCapability } from '@/lib/admin-auth';
+import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
+import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
+import { UtilityBar, Header, Footer } from '@/components/chrome';
+import { sanityFetch } from '@/sanity/lib/fetch';
+import { nationalShowQuery } from '@/sanity/queries';
+import { AdminNav } from '@/components/admin/AdminNav';
+import { OzowSandboxTestModeToggle } from '@/components/admin/OzowSandboxTestModeToggle'; // the existing toggle body, moved verbatim
+import type { ShowIdentity } from '@/types';
+
+export const dynamic = 'force-dynamic'; // same reasoning as app/admin/vendors/page.tsx: this
+// page never reads cookies/headers itself once the toggle body is extracted, so Next has no
+// signal to treat it as dynamic and would otherwise prerender it at build time.
+
+export default async function AdminSettingsPage() {
+  const session = await getAdminSession();
+  if (!session.ok) {
+    redirect('/admin/login');
+  }
+
+  const now = new Date();
+  const lookupShowWindow = await resolveShowWindowLookup(NATIONAL_SHOW_ID, now);
+  const canReviewVendors = hasCapability(
+    session.decodedToken,
+    NATIONAL_SHOW_ID,
+    'review-vendor-applications',
+    { now, lookupShowWindow },
+  );
+  const canManagePaymentSettings = hasCapability(
+    session.decodedToken,
+    NATIONAL_SHOW_ID,
+    'manage-payment-settings',
+    { now, lookupShowWindow },
+  );
+
+  const show = await sanityFetch<ShowIdentity>({
+    query: nationalShowQuery,
+    tags: ['nationalShow', 'sanity'],
+  });
+
+  return (
+    <>
+      <UtilityBar show={show} />
+      <Header />
+      <AdminNav
+        variant="bar"
+        canReviewVendors={canReviewVendors}
+        canManagePaymentSettings={canManagePaymentSettings}
+      />
+      <OzowSandboxTestModeToggle />
+      <Footer />
+    </>
+  );
+}
+
+// LAYOUT OPTION B — the existing default export in page.tsx stays the 'use client' toggle
+// component verbatim (no rename), and app/admin/settings/layout.tsx (which ALREADY exists and
+// already does the capability-gated redirect — see current file) is the one that grows the
+// chrome, becoming `async` and rendering `<UtilityBar/><Header/><AdminNav .../>{children}<Footer/>`
+// around `children`. This is the LOWER-RISK option: layout.tsx already has `session` and
+// `lookupShowWindow` in scope from its existing gate, so canReviewVendors/canManagePaymentSettings
+// cost two more hasCapability() calls, zero new files, and the toggle component's <main> wrapper
+// in the current page.tsx (line 56) simply becomes the page's own content inside <>{children}</>.
+//
+// Either layout is acceptable. What A1 (the structural assertion) actually requires, regardless
+// of which file the chrome lives in:
+//   - `import { UtilityBar, Header, Footer } from '@/components/chrome'` present in
+//     EITHER app/admin/settings/page.tsx OR app/admin/settings/layout.tsx
+//   - `import { AdminNav } from '@/components/admin/AdminNav'` present in the same file
+//   - `<UtilityBar` , `<Header` , `<AdminNav` , `<Footer` all present as JSX in that file
+//   - `variant="bar"` on the `<AdminNav` usage (never "minimal" — this is a persistent-bar admin
+//     surface like /admin and /admin/vendors, not the door-scanner's single-icon overlay)
+//   - `canManagePaymentSettings` passed as a prop to `<AdminNav`, sourced from a
+//     `hasCapability(..., 'manage-payment-settings', ...)` call in the SAME file, not hardcoded
+//     `true`/`false` — mirrors vendors/page.tsx's own comment on why canReviewVendors is
+//     re-derived rather than trusted from the layout's gate having already proven it true once.

@@ -35,6 +35,32 @@ Do not scope work from an entry that contradicts it.
 
 ---
 
+## Next up (queued, not yet a mission — dispatch as soon as current mission closes)
+
+- [ ] **[P1] Remove all "venue has changed" / "previous venue no longer applies" narrative
+  (Brad, 2026-08-24, live screenshot of `/national-show/plan-your-visit`).** Brad's correction:
+  **the venue never changed** — CTICC was an incorrect early placeholder that got corrected to
+  the real venue (The Hangar, Stellenbosch Flying Club); the site should never have implied a
+  change happened. This is NOT the same defect as the already-closed `venue-prose-residue`
+  contract (which purged literal CTICC/Cape-Town-city phrases) — this is the "change" framing
+  itself, which survived that pass because it never named CTICC. Confirmed source:
+  `scripts/seed-show-visitor-info.ts` (feeds the live Sanity `showVisitorInfo` doc) —
+  line 163 comment "The venue changed from the previous working-venue assumption...", line 210
+  comment "previous working venue no longer applies to the new one and has not been redone",
+  line 250-252 live prose: *"The show venue has changed to the Stellenbosch Flying Club. Travel,
+  parking and accommodation guidance for the new venue has not been worked out yet — the
+  previous guidance was written for a Cape Town city-centre venue and no longer applies."*
+  Rewrite this (and any sibling fields in the same file/doc using "changed"/"previous
+  venue"/"new venue" framing) to state the venue plainly, as if it was always the Hangar — while
+  preserving genuinely-still-true content (travel/parking/accommodation guidance genuinely not
+  yet worked out is fine to say, just not framed as a consequence of a change). Given this repo's
+  history on this exact topic (`contracts/golden/venue-prose-residue/` — three adversarial QA
+  passes, live-vs-golden-copy divergence bugs, scoped denylist to avoid false-positiving on real
+  unrelated venues like Kirstenbosch/Civic Centre), route this through @architect for a proper
+  contract before @dev touches it — do not hand-edit.
+
+---
+
 ## Blocked on the council / Lee-Ann
 
 - [ ] **[P1] Ticket prices and capacities — estimate now, correct later (Brad's standing
@@ -868,3 +894,85 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-24-template-mirror-missing-files.md
+
+- [ ] SAOC (Bug, P1): ozow-sandbox-toggle F1 QA verification testing (2026-08-24) found:
+  1. `/admin/settings` is unreachable on beta.saoc.co.za (404) — feature was never deployed to
+     Firebase App Hosting after mission close-out; only exists on localhost.
+  2. `app/admin/settings/page.tsx` renders with no site chrome — missing `<UtilityBar>`,
+     `<Header>`, and `<AdminNav>`, which every other admin page (`app/admin/page.tsx`,
+     `app/admin/vendors/page.tsx`) includes explicitly. Page is a bare unstyled `<main>`
+     floating with no nav, same defect class as the 2026-08-15 admin-login incident
+     (`.claude/rules/behavior.md` "Visual work is not done until a browser has seen it").
+  3. `components/admin/AdminNav.tsx`'s `buildLinks()` was never updated to add a Settings
+     entry — the page is only reachable by typing the URL directly, no discoverable nav link
+     for admins (should likely be capability-gated on `manage-payment-settings` the same way
+     Vendors is gated on `review-vendor-applications`).
+  Root cause: F1's dev/QA chain never opened the page in a real browser — contract gate was
+  green (12/12) but nobody looked at rendered pixels. Fix via architect→dev→qa→Codex chain,
+  then deploy.
+
+- [ ] SAOC (Feature, P2): early-bird / regular ticket display gating (Brad, 2026-08-24, tested
+  at /tickets). `earlyBirdCutoff` exists per ticket type today but is ONLY enforced server-side
+  at checkout (409 if you try to buy after cutoff) — see docs/f4-admission-products.md line 88.
+  Nothing hides cards on the /tickets page: Early-Bird Exhibition Ticket and Day Visitor Ticket
+  (its regular-price equivalent) both show simultaneously right now, regardless of date. Two
+  gaps:
+  1. Once `earlyBirdCutoff` passes, the early-bird card should disappear (currently stays
+     listed and only fails at checkout — bad UX, buyer gets to fill in details before erroring).
+  2. While still inside the early-bird window, the paired regular-price ticket should be
+     hidden/disabled too — right now a buyer could choose the pricier regular ticket during the
+     early-bird window when only the cheaper early-bird option should be available. No pairing
+     field exists between an early-bird product and its regular equivalent (matched only by
+     category/description today) — needs either a schema addition or an agreed naming
+     convention before this can be built correctly.
+  Brad's proposed rule: early-bird tickets sold up to ~9 months before the show; after that,
+  only normal tickets show. Recommendation (Claude, 2026-08-24): make this presentational,
+  driven off the existing `earlyBirdCutoff` field, not just the checkout-time 409. Needs
+  architect spec work on the pairing mechanism before @dev.
+
+  REFINED 2026-08-24 (Brad, second pass): NOT a hide/show toggle after all —
+  1. `earlyBirdCutoff` is already Sanity-editable per ticket type
+     (sanity/schemas/documents/ticketType.ts:78, via /studio) — no new admin surface needed,
+     Brad just didn't know it was already there. Confirmed, no action needed on this point.
+  2. Display behaviour: once early-bird has closed, don't hide the early-bird card — GREY IT
+     OUT instead, so visitors can still see what they would have saved by buying early (social
+     proof / FOMO for the next show's early-bird window). Same idea likely applies to the
+     regular-price card during the early-bird window (grey out + show early-bird savings),
+     though Brad specifically called out the "closed early-bird, show what you missed" case.
+  Still needs the pairing mechanism (early-bird ↔ regular ticket) resolved before @dev — no
+  schema field links the two today, only category/description similarity.
+
+- [ ] SAOC (Feature, P1): remove buyer-facing "Pay with: Ozow / PayFast" gateway picker from
+  public checkout (Brad, 2026-08-24, tested at /tickets checkout). Currently
+  `components/tickets/ProviderChoice.tsx` (shipped in mission ozow-payment-provider F2) renders
+  a visible radio group letting any visitor choose the payment gateway — Brad's call: this is
+  an operational decision, not a customer one, and should move to an admin-only setting instead
+  (same pattern as the ozow-sandbox-test-mode toggle at /admin/settings — likely lives right
+  next to it as e.g. "Active payment gateway"). Checkout should silently use whichever gateway
+  admin has selected; TicketPurchaseForm's `providerId` in the checkout POST body would need to
+  come from the admin-configured value server-side rather than user radio-button input. Needs
+  architect spec: single global gateway setting vs. per-ticket-type, and whether the checkout
+  API route should stop trusting a client-supplied `providerId` at all (currently does, per
+  ProviderChoice.tsx — likely also a minor trust-boundary issue worth flagging to @qa/Codex).
+
+- [ ] SAOC (Feature, P2): ticketing flow redesign — Brad reviewed the vertical-card /
+  per-ticket-detail-screen prototype (artifact "Ticket Selection Flow",
+  https://claude.ai/code/artifact/66ff35b1-d393-4ab0-8f78-f54f803c3660) and approved the overall
+  flow/sizing/all-three-ticket-types walkthrough, with two remaining changes before this becomes
+  a real spec:
+  1. Replace the abstract geometric icons on the card banners with real orchid photography —
+     Brad found the icons "weird" and "a little bit plain." Real orchid photo assets already
+     exist and ship on the live site today at `public/images/orchid-{pink,purple,yellow,violet,
+     dark}.jpg` (used across app/(marketing)/tickets, /about, /societies, etc.) — reuse those
+     rather than commissioning new art.
+  2. VIP Ticket price is wrong relative to the rest of the lineup: currently R300, cheaper than
+     the regular Weekend Pass (R400), which makes no sense for the top tier. Brad's proposed fix:
+     R480 (must stay above every other ticket type's price, including Weekend Pass's regular
+     R400 and any future early-bird pricing).
+  This is on top of two earlier rounds of feedback already reflected in the same prototype:
+  early-bird tickets merged into a single ticket per type (price changes at the cutoff date,
+  not two separate tickets — see the "early-bird / regular ticket display gating" item above,
+  now superseded by this merged-ticket model) and Day Visitor Ticket needing a per-day quantity
+  picker (not single-day-only) for buyers wanting tickets across multiple show days.
+  Needs architect spec once the artifact is finalized — do not implement directly against the
+  prototype; the prototype is a discussion aid, not a golden file.

@@ -17,6 +17,7 @@ import { DoorScannerClient } from '@/components/admin/DoorScannerClient';
 export default async function DoorPage() {
   const session = await getAdminSession();
   let canReviewVendors = false;
+  let canManagePaymentSettings = false;
   if (session.ok) {
     const now = new Date();
     const lookupShowWindow = await resolveShowWindowLookup(NATIONAL_SHOW_ID, now);
@@ -26,11 +27,21 @@ export default async function DoorPage() {
       'review-vendor-applications',
       { now, lookupShowWindow },
     );
+    canManagePaymentSettings = hasCapability(
+      session.decodedToken,
+      NATIONAL_SHOW_ID,
+      'manage-payment-settings',
+      { now, lookupShowWindow },
+    );
   }
 
   return (
     <>
-      <AdminNav variant="minimal" canReviewVendors={canReviewVendors} />
+      <AdminNav
+        variant="minimal"
+        canReviewVendors={canReviewVendors}
+        canManagePaymentSettings={canManagePaymentSettings}
+      />
       <DoorScannerClient />
     </>
   );

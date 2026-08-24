@@ -30,6 +30,7 @@ export type AdminNavVariant = 'bar' | 'minimal';
 interface AdminNavProps {
   variant: AdminNavVariant;
   canReviewVendors: boolean;
+  canManagePaymentSettings: boolean;
 }
 
 interface NavLink {
@@ -43,14 +44,15 @@ interface NavLink {
 const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2';
 
-function buildLinks(canReviewVendors: boolean): NavLink[] {
+function buildLinks(canReviewVendors: boolean, canManagePaymentSettings: boolean): NavLink[] {
   // Dashboard and Door Scanner are unconditional — they mirror what
   // app/admin/page.tsx and app/admin/door/layout.tsx actually gate on today
-  // (an ok admin session, nothing more). Vendors is the one destination
-  // that is genuinely capability-gated at its route, so it's the only link
-  // conditioned here. Deliberately not gated on the two dashboard/scanner
-  // capabilities defined in lib/admin-roles.ts — no route checks either of
-  // those yet, so gating the nav on them would hide a reachable link.
+  // (an ok admin session, nothing more). Vendors and Settings are the
+  // destinations that are genuinely capability-gated at their routes, so
+  // they're the only links conditioned here. Deliberately not gated on the
+  // two dashboard/scanner capabilities defined in lib/admin-roles.ts — no
+  // route checks either of those yet, so gating the nav on them would hide
+  // a reachable link.
   const links: NavLink[] = [
     { id: 'dashboard', label: 'Dashboard', href: '/admin' },
     { id: 'door', label: 'Door Scanner', href: '/admin/door' },
@@ -58,14 +60,17 @@ function buildLinks(canReviewVendors: boolean): NavLink[] {
   if (canReviewVendors) {
     links.push({ id: 'vendors', label: 'Vendors', href: '/admin/vendors' });
   }
+  if (canManagePaymentSettings) {
+    links.push({ id: 'settings', label: 'Settings', href: '/admin/settings' });
+  }
   return links;
 }
 
-export function AdminNav({ variant, canReviewVendors }: AdminNavProps) {
+export function AdminNav({ variant, canReviewVendors, canManagePaymentSettings }: AdminNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const links = buildLinks(canReviewVendors);
+  const links = buildLinks(canReviewVendors, canManagePaymentSettings);
 
   useEffect(() => {
     if (!open) return;

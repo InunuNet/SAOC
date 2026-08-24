@@ -1,0 +1,136 @@
+schema: athanor.contract/v1
+slug: admin-settings-deploy-and-chrome-fix
+goal: >-
+  Fix /admin/settings: (1) add the missing site chrome (UtilityBar/Header/AdminNav/Footer) to
+  match every other admin page, (2) add a capability-gated Settings entry to
+  AdminNav.buildLinks(), gated on the existing 'manage-payment-settings' capability the same way
+  Vendors is gated on 'review-vendor-applications', and (3) prove the fix is actually deployed
+  and live on beta.saoc.co.za via a real browser, not just a structural source grep — a green
+  structural check on this exact page is what caused the original bug (mission
+  ozow-sandbox-toggle F1 shipped and gated locally but was never confirmed live). Full design
+  rationale: contracts/golden/admin-settings-deploy-and-chrome-fix-f1/README.md.
+created_at: '2026-08-24'
+autonomy: high
+
+# ⚠️ SCOPE: this feature touches exactly these files —
+#   EDIT app/admin/settings/page.tsx and/or app/admin/settings/layout.tsx — add the chrome
+#        wrapper. Either LAYOUT OPTION A (page.tsx becomes an async Server Component wrapper
+#        around a separately-named client toggle component) or LAYOUT OPTION B (layout.tsx grows
+#        the chrome around {children}, page.tsx's client toggle component is untouched) is
+#        acceptable — see contracts/golden/admin-settings-deploy-and-chrome-fix-f1/
+#        page-structure.golden.tsx.txt for both options in full and exactly what A1 checks for
+#        regardless of which option is chosen.
+#   EDIT components/admin/AdminNav.tsx — AdminNavProps gains `canManagePaymentSettings: boolean`
+#        (required, not optional); buildLinks() gains the same param and pushes a
+#        { id: 'settings', label: 'Settings', href: '/admin/settings' } link when true. See
+#        contracts/golden/admin-settings-deploy-and-chrome-fix-f1/adminnav-settings-link.golden.md
+#        for the exact diff.
+#   EDIT app/admin/page.tsx, app/admin/vendors/page.tsx, app/admin/door/page.tsx — every existing
+#        <AdminNav .../> call site must derive and pass the new required
+#        canManagePaymentSettings prop (hasCapability(..., 'manage-payment-settings', ...), same
+#        pattern as their existing canReviewVendors derivation). This is enforced by TypeScript
+#        itself (A4) since the prop is required, not optional.
+# lib/admin-auth.ts, lib/admin-roles.ts, app/admin/settings/layout.tsx's existing capability gate,
+# and the toggle's own fetch/PUT logic are UNTOUCHED — 'manage-payment-settings' already exists
+# and the layout already gates on it (contracts/golden/.../README.md "Scope boundaries").
+#
+# DEPLOYMENT IS PART OF DONE, NOT A SEPARATE STEP: per .claude/rules/workflow.md, only the
+# orchestrator commits/pushes (never @dev/@architect/@qa). A5/A6 below cannot pass until the
+# orchestrator has committed this feature's diff and pushed to `main` and the Firebase App
+# Hosting rollout has picked it up — this is a real gate, not a formality, because A6 tests the
+# LIVE beta.saoc.co.za site, not localhost.
+
+features:
+  - id: F1
+    name: >-
+      Add missing chrome + capability-gated nav link to /admin/settings, and prove the fix is
+      live on beta.saoc.co.za via a real authenticated browser session (desktop + mobile), not
+      just a structural source check. Full spec:
+      contracts/golden/admin-settings-deploy-and-chrome-fix-f1/README.md.
+
+goldens:
+  - contracts/golden/admin-settings-deploy-and-chrome-fix-f1/README.md
+  - contracts/golden/admin-settings-deploy-and-chrome-fix-f1/page-structure.golden.tsx.txt
+  - contracts/golden/admin-settings-deploy-and-chrome-fix-f1/adminnav-settings-link.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The chrome wrapper exists in either app/admin/settings/page.tsx or
+        app/admin/settings/layout.tsx (LAYOUT OPTION A or B — golden covers both): imports
+        UtilityBar, Header, Footer from '@/components/chrome' and AdminNav from
+        '@/components/admin/AdminNav'; renders <UtilityBar, <Header, <AdminNav, and <Footer as
+        JSX; the <AdminNav usage has variant="bar" (never "minimal"). FAILS ON: neither file
+        containing all four chrome imports+JSX; variant set to "minimal"; the imports present
+        but not actually rendered (JSX tags missing even though the import line exists — the
+        check greps for both independently).
+      command: bash contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-chrome-structural.sh
+    - id: A2
+      description: >-
+        The same file from A1 passes canManagePaymentSettings to <AdminNav, sourced from a
+        hasCapability(..., 'manage-payment-settings', ...) call present in that file — not a
+        hardcoded true/false literal and not omitted (which would fail TypeScript compilation
+        per A4 anyway, since the prop becomes required, but this is a faster, more specific
+        signal than waiting for a full tsc run). FAILS ON: canManagePaymentSettings absent from
+        the <AdminNav call; the value being a literal `true`/`false` token rather than an
+        identifier; 'manage-payment-settings' capability string absent from the file.
+      command: bash contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-capability-wiring.sh
+    - id: A3
+      description: >-
+        components/admin/AdminNav.tsx: AdminNavProps interface declares
+        `canManagePaymentSettings: boolean` (required — no `?`); buildLinks() signature takes a
+        second boolean param and its body conditionally pushes exactly
+        { id: 'settings', label: 'Settings', href: '/admin/settings' } when that param is true.
+        FAILS ON: the prop declared optional (`canManagePaymentSettings?:`); buildLinks() not
+        updated to accept/use the second param; the pushed link object missing or using a
+        different id/label/href than specified.
+      command: bash contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-adminnav-link.sh
+    - id: A4
+      description: >-
+        Full TypeScript compilation succeeds with the new required AdminNavProps field wired
+        through EVERY existing <AdminNav call site (app/admin/page.tsx, app/admin/vendors/
+        page.tsx, app/admin/door/page.tsx, plus the new/edited settings surface). This is the
+        assertion that structurally forces every caller to be updated, not just the new one —
+        a required (non-optional) prop left unpassed anywhere is a compile error, not a runtime
+        surprise. FAILS ON: any tsc error, including "Property 'canManagePaymentSettings' is
+        missing" at any call site.
+      command: npx tsc --noEmit
+    - id: A5
+      description: >-
+        Deploy-freshness gate: HEAD is reachable from origin/main (this feature's diff has
+        actually been pushed, not just committed locally) AND Firebase App Hosting backend
+        'saoc-prod' (project 'saoc-webapp')'s most recent rollout updateTime is AFTER HEAD's own
+        commit time — proof the live beta.saoc.co.za site is actually running this feature's
+        code, not a stale rollout from before it. A6 (the live BrowserAgent check) is
+        meaningless if this fails first, so it is asserted explicitly rather than assumed — same
+        reasoning and same script mechanics as contracts/checks/ozow-m1-f3/
+        check-deploy-freshness.sh (copied verbatim). Run this ONLY after the orchestrator has
+        committed and pushed this feature's diff — per .claude/rules/workflow.md, @dev/@architect
+        never push. FAILS ON: HEAD not present on origin/main; the backend's updateTime older
+        than HEAD's commit time; the firebase CLI or jq unavailable.
+      command: bash contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-deploy-freshness.sh
+    - id: A6
+      description: >-
+        Live BrowserAgent verification against https://beta.saoc.co.za/admin/settings, gated
+        behind A5 passing first. Two independent runs — desktop (1440px) and mobile (375px) —
+        each authenticated via a server-minted session cookie (see README "Authenticating the
+        BrowserAgent session against a live admin-gated route" — a real existing allowlisted
+        admin's uid, custom-token mint + Identity Toolkit exchange + POST to
+        /api/admin/session, never the login UI, never a new sentinel Firebase Auth user). Each
+        run writes a JSON artifact to .agent/memory/scratch/admin-settings-chrome-runs/
+        <viewport>-<ISO-timestamp>.json per the exact 7-check schema in the README's "The
+        BrowserAgent artifact schema" section (page-loads-200, utility-bar-present,
+        header-present, admin-nav-present, settings-link-in-nav, footer-present,
+        toggle-still-functions) — each check's pass/fail derived from a real Playwright DOM
+        locator assertion, NEVER from the agent's own visual/prose judgment of a screenshot
+        (screenshots are captured as supporting evidence alongside the JSON, not as the
+        pass/fail source). check-live-chrome.mjs re-derives the final verdict independently from
+        both artifacts' contents — never from the BrowserAgent's chat summary. FAILS ON: either
+        artifact missing; any of the 7 named checks absent or pass !== true in either artifact;
+        allChecksPassed !== true in either artifact; page-loads-200's detail showing a 404 or a
+        redirect to /admin/login (session cookie invalid/expired) or /admin (capability not
+        granted); settings-link-in-nav failing on mobile specifically (the link must be reachable
+        through the hamburger overlay, not just present in unrendered markup).
+      command: node contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-live-chrome.mjs

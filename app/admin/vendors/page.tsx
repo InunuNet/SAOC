@@ -36,6 +36,7 @@ export default async function VendorsAdminPage() {
   // hardcoded prop (see this feature's golden).
   const session = await getAdminSession();
   let canReviewVendors = false;
+  let canManagePaymentSettings = false;
   if (session.ok) {
     const now = new Date();
     const lookupShowWindow = await resolveShowWindowLookup(NATIONAL_SHOW_ID, now);
@@ -43,6 +44,12 @@ export default async function VendorsAdminPage() {
       session.decodedToken,
       NATIONAL_SHOW_ID,
       'review-vendor-applications',
+      { now, lookupShowWindow },
+    );
+    canManagePaymentSettings = hasCapability(
+      session.decodedToken,
+      NATIONAL_SHOW_ID,
+      'manage-payment-settings',
       { now, lookupShowWindow },
     );
   }
@@ -56,7 +63,11 @@ export default async function VendorsAdminPage() {
     <>
       <UtilityBar show={show} />
       <Header />
-      <AdminNav variant="bar" canReviewVendors={canReviewVendors} />
+      <AdminNav
+        variant="bar"
+        canReviewVendors={canReviewVendors}
+        canManagePaymentSettings={canManagePaymentSettings}
+      />
       <main>
         <div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-8 sm:py-16">
           <span className="eyebrow">Admin</span>
