@@ -14,22 +14,37 @@ autonomy: high
 # SCOPE: this feature touches exactly these files —
 #   NEW  components/tickets/DayQuantityPicker.tsx — one row per show day, own quantity stepper —
 #        README §2, golden day-quantity-picker.golden.md
-#   EDIT lib/cart.ts — new pure expandDayQuantitiesToLineItems() export — README §5, golden
-#        day-quantity-picker.golden.md
-#   EDIT components/tickets/useTicketCart.ts — quantitiesByDay state, updateDayQuantity setter,
-#        submit-time expansion via expandDayQuantitiesToLineItems() when useDayQuantityPicker —
-#        README §5, golden day-quantity-picker.golden.md
+#   EDIT lib/cart.ts — REMOVE expandDayQuantitiesToLineItems (flat-array shape); ADD
+#        AttendeesByDay type + updateAttendeesByDay(), flattenAttendeesByDay(),
+#        locateFlatAttendeeIndex(), updateAttendeeFieldByFlatIndex(),
+#        expandAttendeesByDayToLineItems() pure exports — README §5.1, golden
+#        day-quantity-picker.golden.md §1
+#   EDIT components/tickets/useTicketCart.ts — takes a new showDays param; attendeesByDay state
+#        (source of truth, replaces quantitiesByDay as tracked state — quantitiesByDay is now a
+#        DERIVED read), updateDayQuantity/updateAttendeeField route through the new lib/cart.ts
+#        per-day helpers, submit-time expansion via expandAttendeesByDayToLineItems() when
+#        useDayQuantityPicker — README §5.1, golden day-quantity-picker.golden.md §2
 #   EDIT components/tickets/TicketPurchaseForm.tsx — renders DayQuantityPicker XOR CartDayPicker
 #        by the derived useDayQuantityPicker condition; hides TicketTypeCard's own stepper for
-#        that branch — README §3, golden day-quantity-picker.golden.md
+#        that branch; passes showDays into useTicketCart() — README §3, §5.1, golden
+#        day-quantity-picker.golden.md §2-3
 #   EDIT components/tickets/TicketTypeCard.tsx — optional hideQuantityStepper prop (mode="buy"
 #        only) — README §3, golden day-quantity-picker.golden.md
 #
 # Explicitly UNCHANGED (README §1, §3-4, §6): app/api/tickets/checkout/route.ts (per-line-item
 # chosenDay validation already works against any correctly-shaped array),
 # components/tickets/CartDayPicker.tsx (generic multi-type day-picker, still used by
-# Conferences/Workshops carts), CartAttendeeFields.tsx, chosenDayByType/updateChosenDay state,
-# per-day capacity enforcement (still whole-show, per F4/F5 scope notes).
+# Conferences/Workshops carts), CartAttendeeFields.tsx (same onAttendeeChange(slug, index, field,
+# value) signature; useTicketCart routes internally, the component itself is untouched),
+# chosenDayByType/updateChosenDay state, per-day capacity enforcement (still whole-show, per
+# F4/F5 scope notes).
+#
+# CORRECTION (2026-08-24, README §5.1): QA's re-verification found a second real bug distinct
+# from the first correction (identity-collapsing) — attendee identities got zipped to the WRONG
+# day whenever a buyer edited an earlier day's quantity AFTER already entering a later day's
+# quantity (interaction-ordered quantitiesByDay + tail-append attendeesByType vs. showDays-ordered
+# flatten at submit time). Fixed by tracking attendee rows per-day (attendeesByDay) instead of a
+# flat array + a separately-tracked quantity map. See A10 below.
 
 features:
   - id: F3
@@ -48,9 +63,25 @@ assertions:
   checks:
     - id: A1
       description: >-
-        expandDayQuantitiesToLineItems() exists and matches the golden truth table (empty map,
-        zero-quantity day, mixed multi-day quantities all expand to the right line items).
+        expandAttendeesByDayToLineItems() exists and matches the golden truth table (golden §1):
+        empty map, a day entry with an empty array, mixed multi-day quantities each carrying
+        their OWN distinct attendee row's identity, and output order following the showDays
+        argument rather than the attendeesByDay object's own key-insertion order. The old flat
+        expandDayQuantitiesToLineItems({ attendees, quantitiesByDay }) export must be GONE — its
+        flat-array input shape is what made the A10 bug possible to write.
       command: npx tsx contracts/checks/ticketing-flow-redesign-f3/check-expand-day-quantities.mjs
+
+    - id: A9
+      description: >-
+        useTicketCart's day-quantity-picker submit branch passes attendeesByDay/showDays directly
+        into expandAttendeesByDayToLineItems — never a single row, never row 0 only. Guards against
+        both the original identity-collapsing regression (README §5 "Correction") and a reversion
+        to the flat attendees/quantitiesByDay shape the second correction (§5.1) removed.
+      command: >-
+        grep -qE "attendeesByDay(,|\s*:\s*attendeesByDay)" components/tickets/useTicketCart.ts &&
+        ! grep -qE "attendeesByType\[slug\]\?\.\[0\]" components/tickets/useTicketCart.ts &&
+        ! grep -q "expandDayQuantitiesToLineItems" components/tickets/useTicketCart.ts &&
+        ! grep -q "expandDayQuantitiesToLineItems" lib/cart.ts
 
     - id: A2
       description: The new per-day quantity picker component exists.
@@ -82,17 +113,35 @@ assertions:
 
     - id: A6
       description: >-
-        useTicketCart exposes quantitiesByDay state and an updateDayQuantity setter, and still
+        useTicketCart still exposes a quantitiesByDay read (now DERIVED from attendeesByDay,
+        README §5.1 — not independently tracked state) and an updateDayQuantity setter, still
         exposes the pre-existing chosenDayByType/updateChosenDay pair unchanged (both models
-        coexist, per README §3).
+        coexist, per README §3), and takes attendeesByDay as its per-day source of truth.
       command: >-
         grep -q "quantitiesByDay" components/tickets/useTicketCart.ts &&
         grep -q "updateDayQuantity" components/tickets/useTicketCart.ts &&
-        grep -q "chosenDayByType" components/tickets/useTicketCart.ts
+        grep -q "chosenDayByType" components/tickets/useTicketCart.ts &&
+        grep -q "attendeesByDay" components/tickets/useTicketCart.ts
 
     - id: A7
       description: TypeScript compiles cleanly after the cart/component changes.
       command: npx tsc --noEmit -p tsconfig.json
+
+    - id: A10
+      description: >-
+        BEHAVIORAL regression check for the interleaved-edit attendee/day mixup QA found on
+        re-verification (README §5.1): drives the REAL exported state-update primitives
+        (updateAttendeesByDay, updateAttendeeFieldByFlatIndex, expandAttendeesByDayToLineItems)
+        through an interleaved sequence — 1 Monday ticket filled in, then 1 Wednesday ticket
+        filled in, then Monday bumped to 2 and the new row filled in — an ordinary "add one more"
+        revisit AFTER a later day was already entered. Asserts the resulting line items keep
+        every named attendee zipped to the day the buyer actually meant
+        (Alice->Mon, Bob->Wed, Carla->Mon), not the interaction/tail-append order the old flat
+        quantitiesByDay + attendeesByType design produced (Alice->Mon, Bob->Mon, Carla->Wed —
+        confirmed by re-running this exact sequence against the pre-fix code's logic). This is a
+        behavioral test through the real state-transition functions, not a static grep and not a
+        hand-built map.
+      command: npx tsx contracts/checks/ticketing-flow-redesign-f3/check-interleaved-day-edit.mjs
 
     - id: A8
       description: >-

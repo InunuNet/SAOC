@@ -153,6 +153,7 @@ export const activeTicketTypesByCategoryQuery = defineQuery(`
     description,
     capacity,
     releasedQuantity,
+    earlyBirdCutoff,
     order,
     demo,
     provisional,
@@ -170,18 +171,27 @@ export const activeTicketTypesByCategoryQuery = defineQuery(`
 // F5 (ticketing-f5-day-attendees): `requiresDaySelection,`/`requiresAttendeeNames,` are
 // additive — checkout's per-line-item loop enforces both server-side. See
 // contracts/golden/ticketing-f5-day-attendees/README.md.
+// F2 (ticketing-flow-redesign, M2): `"slug": slug.current,`/`description,`/`provisional,`/
+// `category,` are additive — the dedicated /tickets/[slug] buy screen re-uses this exact
+// query for display (not a second query) and needs these fields to render the card and to
+// reject a non-admission slug via notFound(). Checkout's own fields above are untouched. See
+// contracts/golden/ticketing-flow-redesign-f2/dedicated-screen.golden.md.
 export const ticketTypeBySlugQuery = defineQuery(`
   *[_type == "ticketType" && slug.current == $slug && active == true][0]{
     _id,
     name,
+    "slug": slug.current,
     price,
     regularPrice,
+    description,
     capacity,
     show,
     releasedQuantity,
     earlyBirdCutoff,
     requiresDaySelection,
     requiresAttendeeNames,
+    provisional,
+    category,
     capacityPool,
     headcountPerUnit
   }

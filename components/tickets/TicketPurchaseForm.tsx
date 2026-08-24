@@ -3,6 +3,7 @@
 import { TicketTypeCard, type TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
 import { CartAttendeeFields } from '@/components/tickets/CartAttendeeFields';
 import { CartDayPicker } from '@/components/tickets/CartDayPicker';
+import { DayQuantityPicker } from '@/components/tickets/DayQuantityPicker';
 import { CheckoutRedirectNotice } from '@/components/tickets/CheckoutRedirectNotice';
 import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
 import { useTicketCart } from '@/components/tickets/useTicketCart';
@@ -20,7 +21,10 @@ export function TicketPurchaseForm({
   soldOutMessage,
   showDays,
 }: TicketPurchaseFormProps) {
-  const cart = useTicketCart(ticketTypes);
+  const cart = useTicketCart(ticketTypes, showDays);
+  // F3 (ticketing-flow-redesign) — same derived condition used in useTicketCart.submit():
+  // exactly one day-selection type in this screen's cart (README §3).
+  const useDayQuantityPicker = ticketTypes.length === 1 && ticketTypes[0].requiresDaySelection === true;
 
   if (cart.redirect) {
     return (
@@ -47,11 +51,13 @@ export function TicketPurchaseForm({
           <TicketTypeCard
             key={t.slug}
             ticketType={t}
+            mode="buy"
             quantity={cart.quantities[t.slug] ?? 0}
             onQuantityChange={cart.updateQuantity}
             soldOutLabel={soldOutMessage}
             decreaseLabel="Decrease quantity of"
             increaseLabel="Increase quantity of"
+            hideQuantityStepper={useDayQuantityPicker}
           />
         ))}
       </fieldset>
@@ -70,15 +76,24 @@ export function TicketPurchaseForm({
         onAttendeeChange={cart.updateAttendeeField}
       />
 
-      <CartDayPicker
-        ticketTypes={ticketTypes}
-        quantities={cart.quantities}
-        showDays={showDays}
-        chosenDayByType={cart.chosenDayByType}
-        errors={cart.chosenDayErrors}
-        disabled={cart.status === 'submitting'}
-        onChosenDayChange={cart.updateChosenDay}
-      />
+      {useDayQuantityPicker ? (
+        <DayQuantityPicker
+          showDays={showDays}
+          quantitiesByDay={cart.quantitiesByDay}
+          onQuantityChange={cart.updateDayQuantity}
+          disabled={cart.status === 'submitting'}
+        />
+      ) : (
+        <CartDayPicker
+          ticketTypes={ticketTypes}
+          quantities={cart.quantities}
+          showDays={showDays}
+          chosenDayByType={cart.chosenDayByType}
+          errors={cart.chosenDayErrors}
+          disabled={cart.status === 'submitting'}
+          onChosenDayChange={cart.updateChosenDay}
+        />
+      )}
 
       {cart.cartError ? (
         <p role="alert" className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[13px] text-primary-800">

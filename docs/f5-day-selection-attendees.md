@@ -68,16 +68,23 @@ No per-day capacity counting, no per-day confirmation email, no per-day check-in
 
 ## UI: Day Picker, Single-Source-of-Truth Days
 
+### Per-Unit Model: `CartDayPicker.tsx` (Conferences/Workshops)
+
 New component `components/tickets/CartDayPicker.tsx`:
 
 - Renders one row per unit of any `requiresDaySelection` type with quantity > 0.
 - Grouped by ticket type, same precedent as `CartAttendeeFields.tsx`.
 - The list of selectable days comes ONLY from the `showDays: string[]` prop — no literal date anywhere in this component.
 - Renders ISO `YYYY-MM-DD` format only (day-of-week display, if added later, must be computed from the Date object at render time, not typed as a separate string).
+- Used by the shared-cart flow (Conferences/Workshops multi-type screens), unchanged by later features.
 
-**Single-source-of-truth enforcement:** Both the `/tickets` page (server component) and the checkout route call the same three functions in the same order: `fetchActiveShowWindow()` → `buildShowWindow()` → `computeShowDays()`. They cannot drift — one computation path, two call sites, same result every time. If the active show's dates change via Sanity, both the UI and server validation see the new days on next load/request.
+### Per-Day Model: `DayQuantityPicker.tsx` (Day Visitor Dedicated Screen, F3)
 
-`TicketTypeCardData` gains `requiresDaySelection: boolean` (required, not optional), so the picker never silently fails to render if the flag is missing or misconfigured.
+**F3 (`ticketing-flow-redesign`)** introduced an alternative UI for single-type screens: `components/tickets/DayQuantityPicker.tsx`, which renders one quantity stepper per DAY instead of per unit. This is used exclusively on Day Visitor's dedicated `/tickets/day-visitor` buy screen (F2's single-type layout). See `docs/f3-day-visitor-quantity-picker.md` for the full design, state model (`attendeesByDay`), and rationale. **Do not use `DayQuantityPicker` for multi-type carts** — the per-day-quantity model only composes cleanly when day-selection is the cart's only concern.
+
+**Single-source-of-truth enforcement:** Both UI paths (per-unit `CartDayPicker` and per-day `DayQuantityPicker`) and the checkout route call the same three functions in the same order: `fetchActiveShowWindow()` → `buildShowWindow()` → `computeShowDays()`. They cannot drift — one computation path, three call sites (two UI, one server), same result every time. If the active show's dates change via Sanity, all three see the new days on next load/request.
+
+`TicketTypeCardData` gains `requiresDaySelection: boolean` (required, not optional), so day pickers never silently fail to render if the flag is missing or misconfigured.
 
 ---
 

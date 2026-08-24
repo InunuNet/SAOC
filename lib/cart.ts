@@ -135,3 +135,110 @@ export function buildLineItemsFromCart(
 
   return lineItems;
 }
+
+/**
+ * F3 (ticketing-flow-redesign) — per-day attendee-row state for the Day Visitor per-day
+ * quantity picker screen. Each day's array length IS that day's quantity — no
+ * separately-tracked quantity number to drift out of sync with it. See
+ * contracts/golden/ticketing-flow-redesign-f3/day-quantity-picker.golden.md §0-1
+ * (second correction, 2026-08-24) for the root-cause analysis this replaces the prior
+ * flat-array line-item expansion design to fix.
+ */
+export type AttendeesByDay = Record<string, CartAttendee[]>;
+
+/**
+ * Resizes ONLY `attendeesByDay[day]`'s own row array to `quantity` — appending
+ * `makeAttendee()` rows at that day's own tail, or truncating that day's own tail. Every
+ * OTHER day's array is untouched, so editing Monday's stepper can never shift which rows
+ * belong to Wednesday, no matter what order the buyer visits days in.
+ */
+export function updateAttendeesByDay(
+  attendeesByDay: AttendeesByDay,
+  day: string,
+  quantity: number,
+  makeAttendee: () => CartAttendee
+): AttendeesByDay {
+  const current = attendeesByDay[day] ?? [];
+  if (quantity === current.length) return attendeesByDay;
+  const nextRows =
+    quantity < current.length
+      ? current.slice(0, quantity)
+      : [...current, ...Array.from({ length: quantity - current.length }, makeAttendee)];
+  return { ...attendeesByDay, [day]: nextRows };
+}
+
+/**
+ * Flattens `attendeesByDay` into the SAME row order `CartAttendeeFields` renders and
+ * `expandAttendeesByDayToLineItems` expands — `showDays` order (chronological), NEVER
+ * `Object.entries(attendeesByDay)` order (interaction order). This is the single
+ * chronological-ordering authority both the render path and the submit path must share.
+ */
+export function flattenAttendeesByDay(attendeesByDay: AttendeesByDay, showDays: string[]): CartAttendee[] {
+  return showDays.flatMap((day) => attendeesByDay[day] ?? []);
+}
+
+/**
+ * Maps a flat row index (the `i`-th panel `CartAttendeeFields` renders, 0-indexed, in
+ * `flattenAttendeesByDay` order) back to which day's array — and which local index within
+ * it — that panel belongs to. Returns `null` for an out-of-range index (defensive; should
+ * not happen if the caller only passes indices `CartAttendeeFields` actually rendered).
+ */
+export function locateFlatAttendeeIndex(
+  attendeesByDay: AttendeesByDay,
+  showDays: string[],
+  flatIndex: number
+): { day: string; localIndex: number } | null {
+  let remaining = flatIndex;
+  for (const day of showDays) {
+    const rows = attendeesByDay[day] ?? [];
+    if (remaining < rows.length) return { day, localIndex: remaining };
+    remaining -= rows.length;
+  }
+  return null;
+}
+
+/**
+ * Writes one field on one attendee row, addressed by FLAT index (the index
+ * `CartAttendeeFields`'s `onAttendeeChange` callback reports), by first resolving it to
+ * (day, localIndex) via `locateFlatAttendeeIndex` and updating only that day's array. A
+ * no-op (returns `attendeesByDay` unchanged) if the index doesn't resolve.
+ */
+export function updateAttendeeFieldByFlatIndex(
+  attendeesByDay: AttendeesByDay,
+  showDays: string[],
+  flatIndex: number,
+  field: keyof CartAttendee,
+  value: string
+): AttendeesByDay {
+  const loc = locateFlatAttendeeIndex(attendeesByDay, showDays, flatIndex);
+  if (!loc) return attendeesByDay;
+  const rows = attendeesByDay[loc.day] ?? [];
+  const nextRows = rows.map((row, i) => (i === loc.localIndex ? { ...row, [field]: value } : row));
+  return { ...attendeesByDay, [loc.day]: nextRows };
+}
+
+/**
+ * Expands `attendeesByDay` into a flat, ORDERED array of line items — `showDays` order,
+ * NOT `Object.entries()` order (the bug the second correction fixes). Each day's own
+ * quantity is that day's own array length, so there is no separate quantity value that
+ * could disagree with the row count.
+ */
+export function expandAttendeesByDayToLineItems(input: {
+  ticketType: string;
+  attendeesByDay: AttendeesByDay;
+  showDays: string[];
+}): { ticketType: string; attendeeName: string; attendeeEmail: string; chosenDay: string }[] {
+  const lineItems: { ticketType: string; attendeeName: string; attendeeEmail: string; chosenDay: string }[] = [];
+  for (const day of input.showDays) {
+    const rows = input.attendeesByDay[day] ?? [];
+    for (const attendee of rows) {
+      lineItems.push({
+        ticketType: input.ticketType,
+        attendeeName: attendee.attendeeName,
+        attendeeEmail: attendee.attendeeEmail,
+        chosenDay: day,
+      });
+    }
+  }
+  return lineItems;
+}
