@@ -1,8 +1,5 @@
 {
-  "mission": ".agent/memory/project/missions/2026-08-24-venue-never-changed-copy-fix.md",
-  "checkpoint": {
-    "milestone": null,
-    "feature": null
-  },
-  "activated_at": "2026-08-24T11:45:17.733270+00:00"
+  "mission": null,
+  "checkpoint": null,
+  "note": "mission complete"
 }
