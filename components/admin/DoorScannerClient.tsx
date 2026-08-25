@@ -210,7 +210,7 @@ export function DoorScannerClient() {
         <form onSubmit={handleManualSubmit} className="mt-5 flex-none space-y-2">
           <label
             htmlFor="manual-ref"
-            className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted"
+            className="font-mono text-[11px] tracking-[0.16em] text-muted"
           >
             Manual entry
           </label>

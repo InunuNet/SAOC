@@ -75,8 +75,8 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
               aria-label={p.name}
               className={
                 active
-                  ? 'rounded-full border border-ink bg-ink px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-ivory'
-                  : 'rounded-full border border-rule bg-parchment px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-muted hover:border-ink/40'
+                  ? 'rounded-full border border-ink bg-ink px-3.5 py-1.5 font-mono text-[11px] tracking-[0.16em] text-ivory'
+                  : 'rounded-full border border-rule bg-parchment px-3.5 py-1.5 font-mono text-[11px] tracking-[0.16em] text-muted hover:border-ink/40'
               }
             >
               {p.code === 'ALL' ? 'All' : p.code}

@@ -58,7 +58,7 @@ export function ExhibitorKeyDates({
       <div className="mt-6 overflow-x-auto">
         <table className="w-full min-w-[560px] border-collapse text-left">
           {caption ? (
-            <caption className="mb-3 text-left font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+            <caption className="mb-3 text-left font-mono text-[11px] tracking-[0.16em] text-muted">
               {caption}
             </caption>
           ) : null}
@@ -66,19 +66,19 @@ export function ExhibitorKeyDates({
             <tr className="border-b border-rule">
               <th
                 scope="col"
-                className="py-3 pr-4 font-mono text-[11px] uppercase tracking-[0.16em] text-muted"
+                className="py-3 pr-4 font-mono text-[11px] tracking-[0.16em] text-muted"
               >
                 Milestone
               </th>
               <th
                 scope="col"
-                className="py-3 pr-4 font-mono text-[11px] uppercase tracking-[0.16em] text-muted"
+                className="py-3 pr-4 font-mono text-[11px] tracking-[0.16em] text-muted"
               >
                 When
               </th>
               <th
                 scope="col"
-                className="py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-muted"
+                className="py-3 font-mono text-[11px] tracking-[0.16em] text-muted"
               >
                 Detail
               </th>

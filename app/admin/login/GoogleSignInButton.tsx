@@ -61,7 +61,7 @@ export function GoogleSignInButton({ onClick, disabled, loading }: GoogleSignInB
     <>
       <div className="my-6 flex items-center gap-3" aria-hidden="true">
         <span className="h-px flex-1 bg-rule" />
-        <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">or</span>
+        <span className="font-mono text-[11px] tracking-[0.16em] text-muted">or</span>
         <span className="h-px flex-1 bg-rule" />
       </div>
       <button

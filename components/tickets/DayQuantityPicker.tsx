@@ -17,7 +17,7 @@ export function DayQuantityPicker({
 }: DayQuantityPickerProps) {
   return (
     <fieldset className="space-y-3">
-      <legend className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+      <legend className="font-mono text-[11px] tracking-[0.16em] text-muted">
         Tickets per day
       </legend>
       {showDays.map((day) => {

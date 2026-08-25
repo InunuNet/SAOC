@@ -56,7 +56,7 @@ export function ExhibitorSteps({
                 {step.title}
               </h3>
               {step.when ? (
-                <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+                <p className="mt-1 font-mono text-[11px] tracking-[0.16em] text-muted">
                   {step.when}
                 </p>
               ) : null}

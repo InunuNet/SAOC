@@ -352,7 +352,7 @@ export default async function NationalShowPage() {
               <div className="font-serif text-[48px] font-medium leading-none text-primary">
                 {value}
               </div>
-              <div className="mt-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+              <div className="mt-2 font-mono text-[11px] tracking-[0.16em] text-muted">
                 {label}
               </div>
             </div>

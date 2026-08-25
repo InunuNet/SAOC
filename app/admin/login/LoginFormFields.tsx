@@ -17,7 +17,7 @@ interface LoginFormFieldsProps {
 // plus a visible focus ring — the site's own inputs otherwise rely on border colour alone.
 const inputClass =
   'w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60';
-const labelClass = 'font-mono text-[11px] uppercase tracking-[0.16em] text-muted';
+const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 
 /**
  * Presentational only — the password sign-in submit handler and the mintSession()

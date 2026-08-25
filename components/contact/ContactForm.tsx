@@ -68,7 +68,7 @@ export function ContactForm() {
 
   const inputClass =
     'w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none focus:border-ink/40 transition-colors disabled:opacity-60';
-  const labelClass = 'font-mono text-[11px] uppercase tracking-[0.16em] text-muted';
+  const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>

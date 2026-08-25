@@ -119,13 +119,13 @@ export default function AdminSettingsPage() {
               <span className="block font-sans text-[15px] text-ink">
                 Ozow sandbox test mode
               </span>
-              <span className="mt-1 block font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+              <span className="mt-1 block font-mono text-[11px] tracking-[0.16em] text-muted">
                 When on, Ozow charges R0.01 instead of the displayed price. PayFast is unaffected.
               </span>
             </span>
           </label>
           {error ? (
-            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.16em] text-red-700">
+            <p className="mt-3 font-mono text-[11px] tracking-[0.16em] text-red-700">
               {error}
             </p>
           ) : null}
@@ -133,7 +133,7 @@ export default function AdminSettingsPage() {
 
         <div className="mt-6 max-w-[520px] border border-rule bg-bone px-6 py-6">
           <span className="block font-sans text-[15px] text-ink">Active payment gateway</span>
-          <span className="mt-1 block font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+          <span className="mt-1 block font-mono text-[11px] tracking-[0.16em] text-muted">
             Customers no longer choose a gateway at checkout — this is used for every purchase.
           </span>
           <div className="mt-3 flex gap-4">
@@ -152,12 +152,12 @@ export default function AdminSettingsPage() {
             ))}
           </div>
           {gateway === null && !gatewayLoading ? (
-            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.16em] text-red-700">
+            <p className="mt-3 font-mono text-[11px] tracking-[0.16em] text-red-700">
               No gateway is set — checkout will refuse purchases until one is chosen.
             </p>
           ) : null}
           {gatewayError ? (
-            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.16em] text-red-700">
+            <p className="mt-3 font-mono text-[11px] tracking-[0.16em] text-red-700">
               {gatewayError}
             </p>
           ) : null}

@@ -16,7 +16,7 @@ interface VendorFormFieldProps {
   pattern?: string;
 }
 
-const labelClass = 'font-mono text-[11px] uppercase tracking-[0.16em] text-muted';
+const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 const inputClass =
   'w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60';
 

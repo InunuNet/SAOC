@@ -44,7 +44,7 @@ export function CartAttendeeFields({
         const rows = attendeesByType[type.slug] ?? [];
         return (
           <fieldset key={type.slug} className="space-y-3">
-            <legend className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+            <legend className="font-mono text-[11px] tracking-[0.16em] text-muted">
               {type.name} attendees
             </legend>
             {rows.map((row, index) => {

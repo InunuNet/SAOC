@@ -22,7 +22,7 @@ export function TicketFormField({
 }: TicketFormFieldProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+      <label htmlFor={id} className="font-mono text-[11px] tracking-[0.16em] text-muted">
         {label}
       </label>
       <input

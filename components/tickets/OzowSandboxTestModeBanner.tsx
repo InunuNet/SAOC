@@ -34,7 +34,7 @@ export function OzowSandboxTestModeBanner() {
   return (
     <div
       role="status"
-      className="border border-rule bg-bone px-4 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-ink"
+      className="border border-rule bg-bone px-4 py-3 font-mono text-[11px] tracking-[0.16em] text-ink"
     >
       {OZOW_SANDBOX_TEST_MODE_BANNER_TEXT}
     </div>

@@ -2,7 +2,7 @@ import type { Ticket } from '@/types/index';
 import { StatusPill } from './StatusPill';
 
 const HEADER_CELL_CLASS =
-  'whitespace-nowrap border-b border-rule bg-bone px-4 py-3 text-left font-mono text-[11px] uppercase tracking-[0.16em] text-muted';
+  'whitespace-nowrap border-b border-rule bg-bone px-4 py-3 text-left font-mono text-[11px] tracking-[0.16em] text-muted';
 const BODY_CELL_CLASS = 'whitespace-nowrap border-b border-rule-soft px-4 py-3 font-sans text-[14px] text-ink';
 
 interface TicketsTableProps {

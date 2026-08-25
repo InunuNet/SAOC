@@ -95,7 +95,7 @@ export default async function JudgingPage() {
             {data.stats.map((stat, i) => (
               <div key={`${stat.label}-${i}`}>
                 <p className="font-serif text-[32px] font-medium text-ink">{stat.value}</p>
-                <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+                <p className="mt-1 font-mono text-[11px] tracking-[0.16em] text-muted">
                   {stat.label}
                 </p>
               </div>

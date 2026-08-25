@@ -1,0 +1,92 @@
+schema: athanor.contract/v1
+slug: vendor-form-label-readability
+goal: >-
+  Mission vendor-form-label-readability F1 (full detail:
+  contracts/golden/vendor-form-label-readability-f1/README.md). The exact class string
+  `font-mono text-[11px] uppercase tracking-[0.16em]` is used site-wide (30 files, 40
+  locations -- not vendor-scoped, confirmed by architect investigation), including the 4
+  vendor form field components Brad originally flagged. Per backlog.md's own unconditional
+  wording ("a fix must not silently diverge... from the rest of the site"), remove the
+  `uppercase` utility class from all 40 locations listed in the golden, keeping `font-mono`
+  and `tracking-[0.16em]` and every colour/contrast class untouched. No label/legend/caption
+  text strings need editing -- all are already sentence case in source; `uppercase` was a
+  pure CSS transform. Do not touch occurrences of the same treatment at a different tracking
+  value (0.1em/0.14em/0.18em/0.2em/0.22em) -- those are a different, unrelated visual
+  treatment and out of scope. Do not touch .agent/golden/** or contracts/golden/** (frozen
+  historical snapshots).
+created_at: '2026-08-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: Site-wide removal of uppercase from font-mono text-[11px] tracking-[0.16em] labels
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-form-label-readability-f1/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        Structural: zero remaining occurrences of the exact literal string
+        "font-mono text-[11px] uppercase tracking-[0.16em]" in live .tsx/.ts source, excluding
+        the frozen golden snapshot directories.
+        FAILS ON: any of the 40 golden-listed locations still carrying the old string; a
+        partial fix that leaves any file untouched.
+      command: >-
+        test -z "$(grep -rl 'font-mono text-\[11px\] uppercase tracking-\[0.16em\]' --include='*.tsx' --include='*.ts' . | grep -v '/node_modules/' | grep -v '\.agent/golden/' | grep -v 'contracts/golden/' | grep -v '\.claude/worktrees/')"
+    - id: A2
+      description: >-
+        Structural: exactly 40 occurrences of "font-mono text-[11px] tracking-[0.16em]"
+        (uppercase removed, font-mono + tracking-[0.16em] preserved) in the same live-source
+        scope as A1. Proves the fix landed everywhere the golden lists, not a subset, and that
+        nothing besides `uppercase` was altered in the string.
+        FAILS ON: fewer than 40 matches (fix incomplete or a class other than `uppercase` was
+        also removed, e.g. font-mono or tracking-[0.16em] accidentally dropped); more than 40
+        matches (would imply a false-positive match or an unrelated string coincidentally
+        matching -- investigate rather than assume correct).
+      command: >-
+        test "$(grep -rl 'font-mono text-\[11px\] tracking-\[0.16em\]' --include='*.tsx' --include='*.ts' . | grep -v '/node_modules/' | grep -v '\.agent/golden/' | grep -v 'contracts/golden/' | grep -v '\.claude/worktrees/' | xargs grep -c 'font-mono text-\[11px\] tracking-\[0.16em\]' | awk -F: '{sum+=$2} END {print sum}')" = "40"
+    - id: A3
+      description: >-
+        Structural, pairwise diff comparison across all 40 changed lines (not a sample). For
+        every removed/added line pair in the working-tree diff that touches
+        `font-mono text-[11px]`, strips the literal token "uppercase " from the old (removed)
+        line and asserts the result is byte-identical to the new (added) line. This proves the
+        ONLY change on each of the 40 lines is the uppercase removal -- no colour/contrast
+        class, no tracking value, no other token was added, removed, or reordered.
+        Superseded an earlier same-line-token grep approach (matching e.g. "text-muted" on
+        both - and + lines) that always matched regardless of whether a colour actually
+        changed, since an unchanged colour token is present on both sides of a line that only
+        dropped "uppercase " -- that grep could never fail on a correct implementation, so it
+        was not exercising the real property. This pairwise-diff check is the replacement.
+        FAILS ON: any of the 40 line pairs differing by anything other than the "uppercase "
+        token (e.g. a colour class or the tracking value also changed); fewer or more than 40
+        pairs found (fix incomplete, or an unrelated font-mono text-[11px] line was touched).
+      command: bash contracts/checks/vendor-form-label-readability-f1/check-uppercase-only-diff.sh
+    - id: A4
+      description: >-
+        Behavioral, real headless browser (Playwright), no auth required. Load
+        /national-show/vendors/register, /contact, and /national-show (all public pages from
+        the golden's location list). On each page, find a label/legend element that previously
+        carried the treatment (e.g. the vendor form's first field label on the register page,
+        the ContactForm label on /contact, an eyebrow label on /national-show) and assert via
+        getComputedStyle: textTransform === 'none' (uppercase removed), fontFamily still
+        matches the mono stack (font-mono preserved), and letterSpacing is a non-zero value
+        consistent with tracking-[0.16em] (not stripped to 'normal'/0). Screenshot each page's
+        label area to
+        contracts/checks/vendor-form-label-readability-f1/screenshots/{register,contact,national-show}-labels.png.
+        FAILS ON: textTransform still 'uppercase' on any of the 3 pages; fontFamily no longer
+        monospace; letterSpacing reset to normal/0; any of the 3 screenshots missing or
+        zero-byte.
+      command: node contracts/checks/vendor-form-label-readability-f1/check-labels-not-uppercase.mjs
+    - id: A5
+      description: >-
+        Durable evidence check: all three A4 screenshots exist on disk and are non-empty.
+        FAILS ON: any of the three screenshot files missing or zero bytes.
+      command: >-
+        test -s contracts/checks/vendor-form-label-readability-f1/screenshots/register-labels.png
+        && test -s contracts/checks/vendor-form-label-readability-f1/screenshots/contact-labels.png
+        && test -s contracts/checks/vendor-form-label-readability-f1/screenshots/national-show-labels.png

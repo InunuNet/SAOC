@@ -100,7 +100,7 @@ export default function RefundsPage() {
           </p>
         </section>
 
-        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted pt-4 border-t border-rule">
+        <p className="font-mono text-[11px] tracking-[0.16em] text-muted pt-4 border-t border-rule">
           Last updated: August 2026
         </p>
       </div>

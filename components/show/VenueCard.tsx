@@ -87,7 +87,7 @@ export function VenueCard({
           href={venue.mapsUrl}
           target="_blank"
           rel="noreferrer noopener"
-          className="mt-5 inline-block font-mono text-[11px] uppercase tracking-[0.16em] text-ink underline underline-offset-4 hover:text-accent"
+          className="mt-5 inline-block font-mono text-[11px] tracking-[0.16em] text-ink underline underline-offset-4 hover:text-accent"
         >
           Open in a map ↗
         </a>

@@ -74,7 +74,7 @@ export default async function ContactPage() {
               {contacts.map((c, i) => (
                 <li key={i} className="border-b border-rule pb-5 last:border-0">
                   {c.role ? (
-                    <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+                    <p className="font-mono text-[11px] tracking-[0.16em] text-muted">
                       {c.role}
                     </p>
                   ) : null}
