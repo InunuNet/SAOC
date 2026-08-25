@@ -1,0 +1,88 @@
+schema: athanor.contract/v1
+slug: vendor-form-input-focus-indicators
+goal: >-
+  Give the vendor registration form's shared text/tel/email/url/number/textarea input style
+  (VendorFormField.tsx's inputClass, 24 usages) the site-default focus-visible ring treatment
+  already used sitewide on buttons/links, so keyboard-Tab focus is visibly indicated. Note: the
+  mission brief's premise that ContactForm/TicketFormField inputs already have this ring is
+  incorrect (verified in code) — reuse the button/link ring token set instead, unchanged. Full
+  defect, correction, and fix detail: contracts/golden/vendor-form-input-focus-indicators-f1/README.md.
+created_at: '2026-08-25'
+autonomy: high
+
+# SCOPE: this feature touches exactly this file —
+#   EDIT components/vendors/VendorFormField.tsx — the `inputClass` constant only: append
+#        "focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2
+#        focus-visible:ring-offset-ivory" (optionally also "focus-visible:outline-none",
+#        redundant but harmless alongside the existing unconditional outline-none). Do not
+#        remove any existing class in inputClass. No other file, no other className, no new
+#        colour/width/offset invented.
+#
+# Explicitly UNCHANGED: VendorCheckboxField.tsx's checkboxClass; VendorRadioGroupField.tsx's
+# radioClass; VendorBooleanRadioField.tsx; VendorCheckboxGroupField.tsx; VendorRegisterForm.tsx's
+# submit button; ContactForm.tsx; TicketFormField.tsx; CartDayPicker.tsx (all three share the
+# same underlying defect but are out of scope for this mission — separate follow-up).
+
+features:
+  - id: F1
+    name: >-
+      Vendor form text-type inputs (VendorFormField.tsx) get the site-default focus-visible ring.
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-form-input-focus-indicators-f1/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        VendorFormField.tsx's inputClass constant contains all four ring tokens verbatim,
+        matching the site-default ring token set exactly (not a different color/width/offset).
+      command: >-
+        awk '/const inputClass/,/;/' components/vendors/VendorFormField.tsx |
+        grep -q "focus-visible:ring-2" &&
+        awk '/const inputClass/,/;/' components/vendors/VendorFormField.tsx |
+        grep -q "focus-visible:ring-ink/40" &&
+        awk '/const inputClass/,/;/' components/vendors/VendorFormField.tsx |
+        grep -q "focus-visible:ring-offset-2" &&
+        awk '/const inputClass/,/;/' components/vendors/VendorFormField.tsx |
+        grep -q "focus-visible:ring-offset-ivory"
+
+    - id: A2
+      description: >-
+        Regression guard: VendorCheckboxField.tsx's checkboxClass and VendorRadioGroupField.tsx's
+        radioClass remain byte-identical to their pre-fix values (checkbox/radio focus treatment
+        is untouched by this fix).
+      command: >-
+        grep -q "h-4 w-4 rounded-sm border border-rule outline-none focus:ring-2 focus:ring-ink/40 disabled:opacity-60" components/vendors/VendorCheckboxField.tsx &&
+        grep -q "h-4 w-4 border border-rule outline-none focus:ring-2 focus:ring-ink/40 disabled:opacity-60" components/vendors/VendorRadioGroupField.tsx
+
+    - id: A3
+      description: >-
+        Regression guard: the existing non-focus inputClass tokens (border colour, background,
+        padding, text size, the pre-existing focus:border-ink/40 colour shift) are still present
+        — this is an additive change only.
+      command: >-
+        awk '/const inputClass/,/;/' components/vendors/VendorFormField.tsx | grep -q "border-rule bg-ivory" &&
+        awk '/const inputClass/,/;/' components/vendors/VendorFormField.tsx | grep -q "focus:border-ink/40"
+
+    - id: A4
+      description: >-
+        TypeScript compiles cleanly after the className change.
+      command: npx tsc --noEmit -p tsconfig.json
+
+    - id: A5
+      description: >-
+        MANUAL, visual-only (per this project's coding.md — A1/A3 already prove the exact token
+        set structurally). A BrowserAgent must load the vendor registration form, use real
+        keyboard Tab navigation (never .focus()) to reach one representative input of each
+        affected type (text, email, tel, number, url, textarea), and for each read the computed
+        `getComputedStyle(el).boxShadow` to confirm a real, non-none ring renders (not just that
+        the class string is present in the DOM — a transition-timing or specificity bug can
+        leave the class attached with no rendered ring, as happened earlier this session on the
+        sibling tickettypecard-focus-ring mission). Also confirm a checkbox and a radio option in
+        the same form still show their pre-existing ring (regression guard), and that at least
+        two inputs' non-focused rendering is visually unchanged. Full procedure:
+        contracts/golden/vendor-form-input-focus-indicators-f1/README.md "Manual/visual proof".
+      kind: agent_review

@@ -451,9 +451,14 @@ flat-over-nested-submenu pattern.
 - [ ] **[P2] `vendorCategory` claims `aria-required="true"` but enforces nothing** — none of its 8
   checkboxes has `required`, and the client wouldn't block on it regardless. A screen-reader user is
   told the group is required; nothing backs that up.
-- [ ] **[P2] No visible focus indicator on ~24 of ~40 vendor-form interactive elements** — every
+- [x] **[P2] No visible focus indicator on ~24 of ~40 vendor-form interactive elements.** ~~Every
   text/number/email/tel/url/textarea input relies on a barely-perceptible border-colour shift with
-  `outline: none`. Checkboxes, radios, submit and nav links are correct; isolated to text inputs.
+  `outline: none`. Checkboxes, radios, submit and nav links are correct; isolated to text inputs.~~
+  Fixed 2026-08-25 via `vendor-form-input-focus-indicators` mission F1 — shared `inputClass` in
+  `components/vendors/VendorFormField.tsx` now carries
+  `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2
+  focus-visible:ring-offset-ivory`. Gate 5/5 pass, QA PASS, Codex GPT-5.5 PASS. See
+  `docs/vendor-form-input-focus-indicators.md`.
 - [ ] **[P2] No `maxlength` on any of the 25 vendor form fields** (5000 chars accepted into
   `businessName` with no truncation or warning) **and no `pattern` on the phone field** —
   `type="tel"` accepts `"not a phone number !!"` verbatim.

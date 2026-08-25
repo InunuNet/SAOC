@@ -1,3 +1,14 @@
+## wrap_mission.sh out-of-scope abort recurs on any dirty shared `.claude/settings.json` (2026-08-25)
+
+Recurred again on `vendor-form-input-focus-indicators` F1 close-out (~8th time this session).
+`.claude/settings.json` was already dirty from unrelated harness work at session start and
+`wrap_mission.sh` refuses to stage/commit past it, aborting the whole close-out even though the
+mission's own changes are unrelated and clean. Per standing instruction, do not use
+`WRAP_ALLOW_OUT_OF_SCOPE=1` — instead hand-verify the touched-files set via `git status`/`git diff
+--stat` scoped to the mission's known files and commit those directly. The underlying fix belongs
+in Athanor's `wrap_mission.sh` (should skip/ignore pre-existing dirty shared files it didn't
+touch), not in this project.
+
 ## A check harness that spawns its own server must always rebuild fresh (2026-08-24)
 
 `admin-session-refusal-log-enforcement` F1 Codex round: the check harness's `ensureBuilt()`
