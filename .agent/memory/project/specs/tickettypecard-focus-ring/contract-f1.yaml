@@ -1,0 +1,71 @@
+schema: athanor.contract/v1
+slug: tickettypecard-focus-ring
+goal: >-
+  Give TicketTypeCard's list-mode <Link> wrapper the same focus-visible ring treatment already
+  used on its own quantity stepper buttons, so keyboard-Tab focus renders consistently across
+  both modes. Match exactly — do not invent a new ring color/width/offset. Full defect and fix
+  detail: contracts/golden/tickettypecard-focus-ring-f1/README.md.
+created_at: '2026-08-25'
+autonomy: high
+
+# SCOPE: this feature touches exactly this file —
+#   EDIT components/tickets/TicketTypeCard.tsx — mode==='list' branch only: add
+#        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40
+#        focus-visible:ring-offset-2" to the list-mode <Link>'s className. No other file, no
+#        other className, no other visual token changes.
+#
+# Explicitly UNCHANGED: cardClassName's soldOut/quantity/border/background conditional logic;
+# the stepper buttons' own className strings (mode==='buy' branch); card-mode and grid-mode
+# rendering of either mode; all other components.
+
+features:
+  - id: F1
+    name: >-
+      List-mode Link focus ring matches stepper button focus ring in TicketTypeCard.
+    status: pending
+
+goldens:
+  - contracts/golden/tickettypecard-focus-ring-f1/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The list-mode <Link>'s className (the JSX element rendered when mode==='list') contains
+        all four focus-visible ring tokens verbatim, matching the stepper buttons' token set
+        exactly (not a different color/width/offset).
+      command: >-
+        awk '/mode === .list./,/^  }/' components/tickets/TicketTypeCard.tsx |
+        grep -q "focus-visible:outline-none" &&
+        awk '/mode === .list./,/^  }/' components/tickets/TicketTypeCard.tsx |
+        grep -q "focus-visible:ring-2" &&
+        awk '/mode === .list./,/^  }/' components/tickets/TicketTypeCard.tsx |
+        grep -q "focus-visible:ring-ink/40" &&
+        awk '/mode === .list./,/^  }/' components/tickets/TicketTypeCard.tsx |
+        grep -q "focus-visible:ring-offset-2"
+
+    - id: A2
+      description: >-
+        Regression guard: the stepper buttons (mode==='buy' branch) still carry their own
+        identical, unmodified focus-visible ring token set — this fix did not remove or alter
+        them.
+      command: >-
+        test "$(grep -c "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2" components/tickets/TicketTypeCard.tsx)" -eq 3
+
+    - id: A3
+      description: >-
+        TypeScript compiles cleanly after the className change.
+      command: npx tsc --noEmit -p tsconfig.json
+
+    - id: A4
+      description: >-
+        MANUAL, visual-only (per this project's coding.md — A1/A2 already prove the exact token
+        set structurally). A BrowserAgent must load a page rendering TicketTypeCard in
+        mode="list" (e.g. /tickets), use real keyboard Tab navigation to focus the ticket-type
+        Link, and screenshot the rendered focus ring; then load a page rendering TicketTypeCard
+        in mode="buy" (e.g. /tickets/<slug>), Tab to a stepper button, and screenshot its focus
+        ring. Confirm both screenshots show a visually identical ring treatment (color, width,
+        offset), and that unfocused card rendering in both modes is otherwise unchanged. Full
+        procedure: contracts/golden/tickettypecard-focus-ring-f1/README.md "Manual/visual proof".
+      kind: agent_review

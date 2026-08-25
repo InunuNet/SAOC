@@ -72,7 +72,7 @@ export function TicketTypeCard({
     onQuantityChange(slug, quantity + 1);
   }
 
-  const cardClassName = `flex flex-col gap-3 border p-5 transition ${
+  const cardClassName = `flex flex-col gap-3 border p-5 transition-colors ${
     soldOut
       ? 'border-rule bg-bone/60 opacity-60'
       : quantity > 0
@@ -117,7 +117,10 @@ export function TicketTypeCard({
 
   if (mode === 'list') {
     return (
-      <Link href={`/tickets/${slug}`} className={cardClassName}>
+      <Link
+        href={`/tickets/${slug}`}
+        className={`${cardClassName} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2`}
+      >
         {cardContent}
         <span className="mt-1 font-sans text-[14px] font-medium text-accent underline-offset-2">
           View tickets →

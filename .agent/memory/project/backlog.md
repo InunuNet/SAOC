@@ -469,12 +469,16 @@ flat-over-nested-submenu pattern.
   First check whether the treatment is scoped to the vendor components or shared site-wide; a fix
   must not silently diverge the vendor form's typography from the rest of the site. Recommendation:
   keep the mono/letter-spacing character, drop `uppercase` for sentence case.
-- [ ] **[P2] Admission ticket list-mode card `<Link>` lacks custom focus ring.** `TicketTypeCard.tsx`'s
-  list-mode wrapper has no `focus-visible:ring-*` class and falls back to the default browser outline.
-  Still visible and accessible, but visually inconsistent with custom focus rings on the quantity
-  stepper buttons in the same file and elsewhere on the site. Surfaces during `ticketing-flow-redesign`
-  F2 (browser verification, 2026-08-24). Recommend adding `focus-visible:ring-primary` or matching token
-  to `components/tickets/TicketTypeCard.tsx` where the list-mode `<Link>` renders.
+- [x] **[P2] Admission ticket list-mode card `<Link>` lacks custom focus ring.** ~~`TicketTypeCard.tsx`'s
+  list-mode wrapper has no `focus-visible:ring-*` class and falls back to the default browser outline.~~
+  Fixed 2026-08-25 via `tickettypecard-focus-ring` mission F1 — list-mode `<Link>` now carries the same
+  `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2`
+  token set as the stepper buttons. Gate 4/4 pass, QA PASS, Codex GPT-5.5 PASS. See
+  `docs/tickettypecard-focus-ring.md`.
+- [ ] **[P3] TicketTypeCard sold-out cards use `opacity` alone, no `aria-disabled`/state token.**
+  Flagged as non-blocking during the F1 focus-ring QA pass, not a real defect — the inert
+  `opacity`/`soldOut` styling works but doesn't carry a semantic disabled state. Low-priority
+  forward-looking cleanup, not urgent.
 
 ---
 
