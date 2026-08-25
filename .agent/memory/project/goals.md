@@ -459,3 +459,14 @@ protected by pre-existing `contract-venue-prose-residue.yaml` A10 as historical 
 `learned.md` "Two contracts disagreeing about the same file/line". Small P3 follow-up
 (line-105 sibling comment + `directionsNote` field) added to `backlog.md`, not urgent. Commits
 `a700174` (feature), `897ba3b` (mission close-out).
+
+### 2026-08-25 — `form-error-contrast-remaining-components` M1 (F1) DONE — mission complete
+
+~~`form-error-contrast-remaining-components` (F1: extend the `backlog-a11y-ui-quickfixes` F3
+bordered-callout error-contrast pattern to `CartDayPicker.tsx`, `TicketFormField.tsx`,
+`DownloadTicketButton.tsx` — the same low-contrast `text-accent` error text left unfixed on
+these three components)~~ ✅ **DONE**, 14/14 contract gate passed, QA PASS, Codex GPT-5.5 PASS.
+Docs at `docs/form-error-contrast-remaining-components.md`. Known caveat carried to
+`backlog.md`: `CartDayPicker`'s fix was verified by source-read only — its error branch is
+currently unreachable because no live Sanity ticket type sets `requiresDaySelection: true`, not
+because of a code guard.

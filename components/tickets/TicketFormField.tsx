@@ -35,7 +35,14 @@ export function TicketFormField({
         aria-invalid={Boolean(error)}
         className="w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted transition-colors focus:border-ink/40 disabled:opacity-60"
       />
-      {error ? <p className="font-sans text-[13px] text-accent">{error}</p> : null}
+      {error ? (
+        <p
+          role="alert"
+          className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[13px] text-primary-800"
+        >
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

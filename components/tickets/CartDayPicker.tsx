@@ -73,7 +73,14 @@ export function CartDayPicker({
                       </option>
                     ))}
                   </select>
-                  {error ? <p className="font-sans text-[13px] text-accent">{error}</p> : null}
+                  {error ? (
+                    <p
+                      role="alert"
+                      className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[13px] text-primary-800"
+                    >
+                      {error}
+                    </p>
+                  ) : null}
                 </div>
               );
             })}

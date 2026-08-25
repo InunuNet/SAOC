@@ -416,10 +416,14 @@ flat-over-nested-submenu pattern.
 
 ## Accessibility & UI defects
 
-- [ ] **[P2] Form-error-contrast fix (bordered-callout pattern) only applied to
-  ContactForm/TicketPurchaseForm** by `backlog-a11y-ui-quickfixes` F3 (2026-08-21/22) — the same
-  low-contrast `text-accent` error-text issue is still present on `CartDayPicker`,
-  `TicketFormField`, and `DownloadTicketButton`. Needs the same bordered-callout treatment.
+- [ ] **[P3] `CartDayPicker`'s bordered-callout error-contrast fix is verified by source-read
+  only, not live render.** `form-error-contrast-remaining-components` F1 (2026-08-24/25) applied the
+  fix, but its error branch is unreachable today only because no current Sanity conference/workshop
+  ticket type has `requiresDaySelection: true` set — a content fact, not a code guard.
+  `CategoryTicketsPage` (used by `/national-show/conferences` and `/national-show/workshops`) CAN
+  render `CartDayPicker` if an editor sets that flag on a multi-item category product. Recommend
+  either a regression test forcing this path, or explicit documentation of the constraint, so it
+  doesn't silently break if triggered later. Agent-actionable whenever picked up.
 - [ ] **[P2, HELD for Brad's design call] WCAG accent-token contrast audit.** 30-row audit and
   contract identify real accent-contrast failures on live public pages. Remedy fully specified in
   `contracts/golden/wcag-accent-contrast/remedy.md`, deliberately not applied — it is a design-token
@@ -970,3 +974,5 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-24-close-bash-file-write-bypass-of-require-.md
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-24-make-backlog-hygiene-self-enforcing-acro.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-update-template-write-safety-hardening.md

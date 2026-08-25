@@ -112,7 +112,10 @@ export function DownloadTicketButton({
         {status === 'preparing' ? 'Preparing download…' : label}
       </button>
       {status === 'error' ? (
-        <p role="alert" className="mt-2 font-sans text-[13px] text-accent">
+        <p
+          role="alert"
+          className="mt-2 border border-primary-800 bg-bone px-4 py-3 font-sans text-[13px] text-primary-800"
+        >
           Couldn&apos;t prepare the download. Please try again, or use the QR code above.
         </p>
       ) : null}

@@ -1,0 +1,153 @@
+schema: athanor.contract/v1
+slug: form-error-contrast-remaining-components
+goal: >
+  Extend the already-approved bordered-callout error-contrast fix (F3,
+  backlog-a11y-ui-quickfixes, 2026-08-21/22) verbatim to the three remaining
+  components still rendering low-contrast text-accent error text:
+  CartDayPicker, TicketFormField, DownloadTicketButton. Reuse the exact
+  pattern, do not invent a new treatment.
+created_at: '2026-08-25'
+autonomy: high
+features:
+  - id: F1
+    name: Apply the F3 bordered-callout error pattern to CartDayPicker, TicketFormField,
+      DownloadTicketButton
+    status: pending
+goldens:
+  - .agent/memory/project/specs/form-error-contrast-remaining-components/goldens/f1-golden.md
+  - contracts/golden/form-error-contrast-remaining-components-f1/pattern.md
+  - contracts/golden/form-error-contrast-remaining-components-f1/check_bordered_callout_contrast.py
+assertions:
+  phase: 4
+  checks:
+    # --- CartDayPicker ---
+    - id: A1
+      description: >
+        CartDayPicker.tsx no longer uses the low-contrast text-accent utility
+        anywhere in the file.
+      command: '! grep -q "text-accent" components/tickets/CartDayPicker.tsx'
+
+    - id: A2
+      description: >
+        CartDayPicker.tsx's error paragraph now reuses the bordered-callout
+        signature verbatim (bg-bone + text-primary-800 + border), matching the
+        F3 precedent in ContactForm.tsx/TicketPurchaseForm.tsx. False-pass
+        risk: presence of these three substrings anywhere in the file, not
+        necessarily combined on the error element — acceptable given the file
+        has exactly one error-rendering block and A1 already proves the old
+        low-contrast colour is gone.
+      command: 'grep -q "bg-bone" components/tickets/CartDayPicker.tsx && grep -q "text-primary-800" components/tickets/CartDayPicker.tsx && grep -q "border" components/tickets/CartDayPicker.tsx'
+
+    - id: A3
+      description: >
+        CartDayPicker.tsx's error paragraph carries role="alert", matching the
+        precedent's full markup (this file had no role="alert" before the fix
+        — net-new, not a regression check).
+      command: 'grep -q "role=\"alert\"" components/tickets/CartDayPicker.tsx'
+
+    # --- TicketFormField ---
+    - id: A4
+      description: >
+        TicketFormField.tsx no longer uses the low-contrast text-accent
+        utility anywhere in the file.
+      command: '! grep -q "text-accent" components/tickets/TicketFormField.tsx'
+
+    - id: A5
+      description: >
+        TicketFormField.tsx's error paragraph now reuses the bordered-callout
+        signature verbatim, same reasoning/caveat as A2.
+      command: 'grep -q "bg-bone" components/tickets/TicketFormField.tsx && grep -q "text-primary-800" components/tickets/TicketFormField.tsx && grep -q "border" components/tickets/TicketFormField.tsx'
+
+    - id: A6
+      description: >
+        TicketFormField.tsx's error paragraph carries role="alert" (net-new,
+        matching the precedent's full markup).
+      command: 'grep -q "role=\"alert\"" components/tickets/TicketFormField.tsx'
+
+    # --- DownloadTicketButton ---
+    - id: A7
+      description: >
+        DownloadTicketButton.tsx no longer uses the low-contrast text-accent
+        utility anywhere in the file.
+      command: '! grep -q "text-accent" components/tickets/DownloadTicketButton.tsx'
+
+    - id: A8
+      description: >
+        DownloadTicketButton.tsx's error paragraph now reuses the
+        bordered-callout signature verbatim, same reasoning/caveat as A2.
+      command: 'grep -q "bg-bone" components/tickets/DownloadTicketButton.tsx && grep -q "text-primary-800" components/tickets/DownloadTicketButton.tsx && grep -q "border" components/tickets/DownloadTicketButton.tsx'
+
+    - id: A9
+      description: >
+        DownloadTicketButton.tsx's error paragraph still carries role="alert"
+        (regression guard — it already had this before the fix; must not be
+        dropped while restyling).
+      command: 'grep -q "role=\"alert\"" components/tickets/DownloadTicketButton.tsx'
+
+    # --- Contrast math ---
+    - id: A10
+      description: >
+        The text-primary-800-on-bg-bone token pairing this fix depends on
+        genuinely meets WCAG AA (>=4.5:1), computed from the real hex values
+        in app/globals.css, not asserted by fiat. Adapted from the existing
+        contracts/golden/wcag-accent-contrast/check_contrast.py math per this
+        project's coding.md verification hierarchy (real check over grep
+        alone for a rendered-contrast property).
+      command: 'python3 contracts/golden/form-error-contrast-remaining-components-f1/check_bordered_callout_contrast.py app/globals.css'
+
+    # --- Regression guard: F3-fixed files untouched ---
+    - id: A11
+      description: >
+        ContactForm.tsx (already fixed by F3) still carries the bordered-callout
+        pattern unchanged — this mission must not touch it.
+      command: 'grep -q "border border-primary-800 bg-bone px-4 py-3 font-sans text-\[14px\] text-primary-800" components/contact/ContactForm.tsx'
+
+    - id: A12
+      description: >
+        TicketPurchaseForm.tsx (already fixed by F3) still carries both
+        bordered-callout error paragraphs unchanged — this mission must not
+        touch it.
+      command: 'grep -q "border border-primary-800 bg-bone px-4 py-3 font-sans text-\[13px\] text-primary-800" components/tickets/TicketPurchaseForm.tsx && grep -q "border border-primary-800 bg-bone px-4 py-3 font-sans text-\[14px\] text-primary-800" components/tickets/TicketPurchaseForm.tsx'
+
+    # --- No new tokens invented ---
+    - id: A13
+      description: >
+        None of the three target files introduce a brand-new colour token
+        (arbitrary hex/rgb Tailwind syntax) as part of this fix — must be a
+        pure reuse of the existing bg-bone/text-primary-800/border-primary-800
+        tokens, not a new design decision.
+      command: '! grep -E "(bg|text|border)-\[#" components/tickets/CartDayPicker.tsx components/tickets/TicketFormField.tsx components/tickets/DownloadTicketButton.tsx'
+
+    # --- Cross-cutting ---
+    - id: A14
+      description: TypeScript compiles clean after all three fixes.
+      command: pnpm exec tsc --noEmit
+
+  agent_review:
+    - id: H1
+      description: >
+        Rendered visual consistency and real reachability of each error state
+        are properties grep/tsc cannot prove, per this project's coding.md
+        verification hierarchy. Do NOT treat A1-A14 passing as proof the
+        callouts actually render correctly and consistently in the browser.
+      instruction: >
+        Using a real BrowserAgent pass (not a synthetic DOM injection) against
+        the running app, trigger each of the three real error states and
+        screenshot at 375px (mobile) and a desktop width (>=1280px):
+        (a) CartDayPicker — in the ticket purchase flow, select a
+        requiresDaySelection ticket type, increase its quantity, and submit
+        without choosing a day for at least one unit; (b) TicketFormField —
+        submit the ticket purchase form with an empty or invalid name/email;
+        (c) DownloadTicketButton — trigger its error path (devtools-forced
+        acceptable, e.g. temporarily breaking qrDataUri, since a real
+        end-to-end trigger is harder to force than the two form fields — see
+        contracts/golden/form-error-contrast-remaining-components-f1/pattern.md).
+        For each, confirm the bordered-callout box (bone background, dark
+        bordered rule, dark readable text, role="alert") renders and is
+        visually consistent with the already-fixed ContactForm/
+        TicketPurchaseForm treatment. Also confirm each component's non-error
+        state (labels, inputs, selects, the download button itself) is
+        visually unchanged from before the fix. Record pass/fail per
+        component per width in the mission's checkpoint notes or a
+        needs-human.md entry if a genuine ambiguity turns up that needs
+        Brad's call.
