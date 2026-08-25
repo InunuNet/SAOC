@@ -28,7 +28,7 @@ last_checkpoint:
   ts: null
 features:
 - id: F1
-  status: pending
+  status: done
   title: Regression-lock and BrowserAgent verification of the existing vendor form
     client-side validation gate
   inline_brief: 'Investigation (@architect, 2026-08-25) found the defect described
