@@ -92,6 +92,7 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
           disabled={disabled}
           required={false}
           placeholder="e.g. 15A / 3.5kW"
+          maxLength={100}
         />
       ) : null}
       <VendorBooleanRadioField
@@ -123,6 +124,7 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
         disabled={disabled}
         required={false}
         placeholder="e.g. CA 123-456"
+        maxLength={150}
       />
       <VendorFormField
         fieldKey="loadInSlot"
@@ -133,6 +135,7 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
         disabled={disabled}
         required={false}
         placeholder="e.g. Friday 14:00–16:00"
+        maxLength={100}
       />
       <VendorFormField
         fieldKey="loadOutSlot"
@@ -143,6 +146,7 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
         disabled={disabled}
         required={false}
         placeholder="e.g. Sunday 16:00–18:00"
+        maxLength={100}
       />
     </div>
   );

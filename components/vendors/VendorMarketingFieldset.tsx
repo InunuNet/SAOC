@@ -25,6 +25,7 @@ export function VendorMarketingFieldset({ state, onFieldChange, disabled }: Vend
         onChange={(v) => onFieldChange('bio', v)}
         disabled={disabled}
         required={false}
+        maxLength={1000}
       />
     </div>
   );

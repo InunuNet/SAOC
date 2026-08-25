@@ -1,3 +1,34 @@
+## Orchestrator direct-edit near-miss recurrence — caught and self-corrected mid-mission (2026-08-25)
+
+`vendor-form-maxlength-and-phone-pattern` F1: the orchestrator (session `main`) made ONE direct
+one-line edit to production source (`components/vendors/VendorContactFieldset.tsx:59`, syncing the
+HTML `pattern` attribute's regex with an already-fixed JS validator) — a violation of the standing
+"orchestrator never implements directly" hard rule (`feedback_orchestrator_only_hard_rule`). The
+orchestrator caught its own mistake immediately, disclosed it, and routed the same change back
+through a fresh `@dev` dispatch, which verified it matched the golden spec exactly before it went
+through the normal QA/Codex gate. No harm resulted, but this is a real recurrence of the
+near-miss pattern, not a new/different failure — the fix being "only a one-line sync" is exactly
+the rationalization the hard rule exists to block. **Lesson: catching and disclosing your own
+violation immediately is the right recovery, but the discipline is to never make the edit in the
+first place — dispatch even a one-line, obviously-correct-looking sync fix.**
+
+## Regex character classes that include whitespace without requiring real content — recurring subtle validation bug (2026-08-25)
+
+`vendor-form-maxlength-and-phone-pattern` F1, caught by Codex GPT-5.5: the phone regex
+`^[0-9+\-() ]{7,20}$` allowed an all-whitespace string (e.g. 7+ spaces) to pass validation, because
+space was in the allowed character class with no requirement that at least one digit be present. A
+direct POST bypassing the client UI could have persisted a garbage phone number server-side. Fixed
+by adding a positive lookahead requiring at least one digit — `^(?=.*[0-9])[0-9+\-() ]{7,20}$` —
+applied identically across the client validator (`lib/vendor-register-form-validation.ts`), the
+server validator (`lib/vendor-submissions.ts`), and the HTML `pattern` attribute hint
+(`components/vendors/VendorContactFieldset.tsx`). **This is the THIRD Codex catch this session in
+the same defect class** (after the boothCount and vendorCategory findings): a permissive character
+class that admits "technically matches the pattern" input which is semantically empty/meaningless.
+**Generalize: any regex validating free-text human input (names, phone numbers, addresses) that
+includes whitespace or other low-information characters in its allowed set needs an explicit
+positive-content requirement (lookahead for a required character class, or a trim+non-empty check)
+— never assume the character-class bound alone rules out garbage.**
+
 ## wrap_mission.sh out-of-scope abort recurs on any dirty shared `.claude/settings.json` (2026-08-25)
 
 Recurred again on `vendor-form-input-focus-indicators` F1 close-out (~8th time this session).
@@ -2510,3 +2541,21 @@ below — fixed with `>-` block scalars, same as prior repros. Given 7+ occurren
 scoped-staging bug specifically, this is well past the threshold for an upstream PR to
 `execution/skills/lib/scoped_stage.py` rather than continued per-mission logging — flagged to
 the orchestrator/user, not acted on directly (out of this agent's scope).
+
+(2026-08-25) 8th/9th repro: `vendorcategory-aria-required-enforcement` close-out hit the same
+`wrap_mission.sh` abort on dirty `.claude/settings.json` again. No new information — logging the
+count only, per standing instruction not to PR upstream mid-session without sign-off.
+
+(2026-08-25) NEW gate-integrity bug: `mission.py`'s gate silently reports "0 ran, 0 skipped" as a
+PASS when a milestone's `M1.features:` list omits a feature id — a hand-authored mission file
+that leaves out that exact key causes the gate to skip all of that feature's assertions while
+still reporting green, rather than erroring on the malformed/incomplete milestone structure. Hit
+on `vendorcategory-aria-required-enforcement`: @architect's mission file was missing
+`M1.features: [F1]`; the first gate run silently reported 0/0 pass and the orchestrator only
+caught it by comparing structure against a correctly-authored mission file (e.g.
+`vendor-form-input-focus-indicators`'s). After the orchestrator added the missing key and
+re-ran, all 8 assertions actually ran and passed. This is a real verification-integrity gap: a
+mission could close with zero assertions ever executed if nobody double-checks the "N ran"
+count against the expected assertion total. Worth an upstream fix (gate should hard-error, not
+silently pass, when a milestone references features that were never listed) — flagged, not
+acted on directly (out of this agent's scope).

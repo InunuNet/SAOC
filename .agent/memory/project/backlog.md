@@ -448,9 +448,13 @@ flat-over-nested-submenu pattern.
   was fixed in `f7c5f6f`; the 45-minute lockout on a form this error-prone is the remaining issue.)
   Two BrowserAgent tests were blocked by this and remain unrun: the exact error-banner text repro,
   and one clean valid submission.
-- [ ] **[P2] `vendorCategory` claims `aria-required="true"` but enforces nothing** — none of its 8
-  checkboxes has `required`, and the client wouldn't block on it regardless. A screen-reader user is
-  told the group is required; nothing backs that up.
+- [x] **[P2] `vendorCategory` claims `aria-required="true"` but enforces nothing** — none of its 8
+  ~~checkboxes has `required`, and the client wouldn't block on it regardless. A screen-reader user is
+  told the group is required; nothing backs that up.~~ Resolved as a side effect of the
+  `vendor-form-client-validation-gate` mission (client + server now genuinely enforce
+  at-least-one-category). `vendorcategory-aria-required-enforcement` mission (2026-08-25) added a
+  regression-lock Playwright check suite (`contracts/checks/vendorcategory-aria-required-enforcement-f1/`)
+  to keep it that way — no production source changed by that mission, check suite only.
 - [x] **[P2] No visible focus indicator on ~24 of ~40 vendor-form interactive elements.** ~~Every
   text/number/email/tel/url/textarea input relies on a barely-perceptible border-colour shift with
   `outline: none`. Checkboxes, radios, submit and nav links are correct; isolated to text inputs.~~
@@ -459,9 +463,15 @@ flat-over-nested-submenu pattern.
   `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2
   focus-visible:ring-offset-ivory`. Gate 5/5 pass, QA PASS, Codex GPT-5.5 PASS. See
   `docs/vendor-form-input-focus-indicators.md`.
-- [ ] **[P2] No `maxlength` on any of the 25 vendor form fields** (5000 chars accepted into
+- [x] ~~**[P2] No `maxlength` on any of the 25 vendor form fields** (5000 chars accepted into
   `businessName` with no truncation or warning) **and no `pattern` on the phone field** —
-  `type="tel"` accepts `"not a phone number !!"` verbatim.
+  `type="tel"` accepts `"not a phone number !!"` verbatim.~~ RESOLVED 2026-08-25 via
+  `vendor-form-maxlength-and-phone-pattern` mission F1 — per-field `maxLength` added across all
+  25 fields (`VendorFormField.tsx` + the five fieldset components) and a phone format validator
+  (`^(?=.*[0-9])[0-9+\-() ]{7,20}$`, requires at least one digit) wired identically into the client
+  validator, the server validator, and the HTML `pattern` hint. Gate 8/8 pass, QA PASS, Codex
+  GPT-5.5 found and confirmed the fix for a whitespace-only bypass mid-mission, re-ran clean. See
+  `docs/vendor-form-maxlength-and-phone-pattern.md`.
 - [ ] **[P2] Vendor form all-caps labels are hard to read.** `font-mono text-[11px] uppercase
   tracking-[0.16em]` across five shared components. Contrast passes at 5.24:1 — the problem is
   11px + uppercase + 1.76px letter-spacing combined, not colour. Brad found it genuinely hard to

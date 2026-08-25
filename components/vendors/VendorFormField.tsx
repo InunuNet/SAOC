@@ -12,6 +12,8 @@ interface VendorFormFieldProps {
   min?: number;
   step?: number;
   placeholder?: string;
+  maxLength?: number;
+  pattern?: string;
 }
 
 const labelClass = 'font-mono text-[11px] uppercase tracking-[0.16em] text-muted';
@@ -29,6 +31,8 @@ export function VendorFormField({
   min,
   step,
   placeholder,
+  maxLength,
+  pattern,
 }: VendorFormFieldProps) {
   const id = `vendor-register-${fieldKey}`;
 
@@ -47,6 +51,7 @@ export function VendorFormField({
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
           placeholder={placeholder}
+          maxLength={maxLength}
           className={`${inputClass} resize-y`}
         />
       ) : (
@@ -61,6 +66,8 @@ export function VendorFormField({
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
           placeholder={placeholder}
+          maxLength={maxLength}
+          pattern={pattern}
           className={inputClass}
         />
       )}

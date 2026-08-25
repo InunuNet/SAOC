@@ -2,6 +2,7 @@ import type { VendorRegisterFormState } from '@/lib/vendor-register-form-payload
 
 const STRICT_INTEGER_PATTERN = /^\d+$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^(?=.*[0-9])[0-9+\-() ]{7,20}$/;
 
 /**
  * Pure client-side pre-submit validator. Mirrors validateVendorSubmissionInput()'s error
@@ -23,8 +24,11 @@ export function validateVendorRegisterFormClientSide(state: VendorRegisterFormSt
   if (state.contactPersonName.trim() === '') {
     errors.push('contactPersonName is required and must be a non-empty string');
   }
-  if (state.contactCellPhone.trim() === '') {
+  const contactCellPhone = state.contactCellPhone.trim();
+  if (contactCellPhone === '') {
     errors.push('contactCellPhone is required and must be a non-empty string');
+  } else if (!PHONE_PATTERN.test(contactCellPhone)) {
+    errors.push('contactCellPhone must be a valid phone number');
   }
   const contactEmail = state.contactEmail.trim();
   if (contactEmail === '') {

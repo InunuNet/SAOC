@@ -25,6 +25,7 @@ export function VendorContactFieldset({ state, onFieldChange, disabled }: Vendor
         onChange={(v) => onFieldChange('businessName', v)}
         disabled={disabled}
         required
+        maxLength={200}
       />
       <VendorFormField
         fieldKey="tradingName"
@@ -34,6 +35,7 @@ export function VendorContactFieldset({ state, onFieldChange, disabled }: Vendor
         onChange={(v) => onFieldChange('tradingName', v)}
         disabled={disabled}
         required={false}
+        maxLength={200}
       />
       <VendorFormField
         fieldKey="contactPersonName"
@@ -43,6 +45,7 @@ export function VendorContactFieldset({ state, onFieldChange, disabled }: Vendor
         onChange={(v) => onFieldChange('contactPersonName', v)}
         disabled={disabled}
         required
+        maxLength={150}
       />
       <VendorFormField
         fieldKey="contactCellPhone"
@@ -52,6 +55,8 @@ export function VendorContactFieldset({ state, onFieldChange, disabled }: Vendor
         onChange={(v) => onFieldChange('contactCellPhone', v)}
         disabled={disabled}
         required
+        maxLength={30}
+        pattern="^(?=.*[0-9])[0-9+\-() ]{7,20}$"
       />
       <VendorFormField
         fieldKey="contactEmail"
@@ -61,6 +66,7 @@ export function VendorContactFieldset({ state, onFieldChange, disabled }: Vendor
         onChange={(v) => onFieldChange('contactEmail', v)}
         disabled={disabled}
         required
+        maxLength={254}
       />
       <VendorFormField
         fieldKey="physicalAddress"
@@ -70,6 +76,7 @@ export function VendorContactFieldset({ state, onFieldChange, disabled }: Vendor
         onChange={(v) => onFieldChange('physicalAddress', v)}
         disabled={disabled}
         required={false}
+        maxLength={500}
       />
       <VendorFormField
         fieldKey="cipcNumber"
@@ -80,6 +87,7 @@ export function VendorContactFieldset({ state, onFieldChange, disabled }: Vendor
         disabled={disabled}
         required={false}
         placeholder="e.g. 2019/123456/07"
+        maxLength={50}
       />
       <VendorFormField
         fieldKey="vatNumber"
@@ -90,6 +98,7 @@ export function VendorContactFieldset({ state, onFieldChange, disabled }: Vendor
         disabled={disabled}
         required={false}
         placeholder="e.g. 4123456789"
+        maxLength={50}
       />
       <VendorFormField
         fieldKey="website"
@@ -99,6 +108,7 @@ export function VendorContactFieldset({ state, onFieldChange, disabled }: Vendor
         onChange={(v) => onFieldChange('website', v)}
         disabled={disabled}
         required={false}
+        maxLength={300}
       />
       <VendorFormField
         fieldKey="socialMediaHandle"
@@ -108,6 +118,7 @@ export function VendorContactFieldset({ state, onFieldChange, disabled }: Vendor
         onChange={(v) => onFieldChange('socialMediaHandle', v)}
         disabled={disabled}
         required={false}
+        maxLength={200}
       />
     </div>
   );

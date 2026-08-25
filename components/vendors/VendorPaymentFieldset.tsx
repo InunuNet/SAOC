@@ -43,6 +43,7 @@ export function VendorPaymentFieldset({ state, onFieldChange, disabled }: Vendor
         onChange={(v) => onFieldChange('paymentReference', v)}
         disabled={disabled}
         required={false}
+        maxLength={200}
       />
       <VendorCheckboxField
         fieldKey="termsAccepted"

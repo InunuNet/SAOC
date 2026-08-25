@@ -43,6 +43,34 @@ const VENDOR_PAYMENT_METHODS: readonly VendorPaymentMethod[] = [
 ];
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^(?=.*[0-9])[0-9+\-() ]{7,20}$/;
+
+// Mirrors the golden's field -> maxLength table (contracts/golden/vendor-form-maxlength-and-
+// phone-pattern-f1/README.md). Independent of the client's VendorFormField maxLength props --
+// a direct POST bypassing the browser must be rejected the same way a truncated keystroke is.
+const FIELD_MAX_LENGTHS: Record<string, number> = {
+  businessName: 200,
+  tradingName: 200,
+  contactPersonName: 150,
+  contactCellPhone: 30,
+  contactEmail: 254,
+  physicalAddress: 500,
+  cipcNumber: 50,
+  vatNumber: 50,
+  website: 300,
+  socialMediaHandle: 200,
+  productDescription: 2000,
+  phytosanitaryPermitNumber: 100,
+  citesPermitNumber: 100,
+  foodHandlingCertificateNumber: 100,
+  foodItemList: 1000,
+  electricalLoad: 100,
+  vehicleRegistrations: 150,
+  loadInSlot: 100,
+  loadOutSlot: 100,
+  bio: 1000,
+  paymentReference: 200,
+};
 
 // Caller-supplied subset of VendorSubmission — id/status/submittedAt are structurally
 // absent, not merely optional, so a caller cannot smuggle a self-approved status or a
@@ -66,11 +94,16 @@ export function validateVendorSubmissionInput(input: unknown): {
   }
   const record = input as Record<string, unknown>;
 
-  requireNonEmptyString(record, 'businessName', errors);
-  requireNonEmptyString(record, 'contactPersonName', errors);
-  requireNonEmptyString(record, 'contactCellPhone', errors);
-  requireNonEmptyString(record, 'contactEmail', errors);
-  requireNonEmptyString(record, 'productDescription', errors);
+  requireNonEmptyString(record, 'businessName', errors, FIELD_MAX_LENGTHS.businessName);
+  requireNonEmptyString(record, 'contactPersonName', errors, FIELD_MAX_LENGTHS.contactPersonName);
+  requireNonEmptyString(record, 'contactCellPhone', errors, FIELD_MAX_LENGTHS.contactCellPhone);
+  requireNonEmptyString(record, 'contactEmail', errors, FIELD_MAX_LENGTHS.contactEmail);
+  requireNonEmptyString(
+    record,
+    'productDescription',
+    errors,
+    FIELD_MAX_LENGTHS.productDescription,
+  );
 
   if (
     typeof record.contactEmail === 'string' &&
@@ -78,6 +111,14 @@ export function validateVendorSubmissionInput(input: unknown): {
     !EMAIL_PATTERN.test(record.contactEmail)
   ) {
     errors.push('contactEmail must be a valid email address');
+  }
+
+  if (
+    typeof record.contactCellPhone === 'string' &&
+    record.contactCellPhone.length > 0 &&
+    !PHONE_PATTERN.test(record.contactCellPhone)
+  ) {
+    errors.push('contactCellPhone must be a valid phone number');
   }
 
   validateVendorCategory(record.vendorCategory, errors);
@@ -88,6 +129,63 @@ export function validateVendorSubmissionInput(input: unknown): {
   validateOptionalNonNegativeInteger(record.tableCount, 'tableCount', errors);
   validateOptionalNonNegativeInteger(record.chairCount, 'chairCount', errors);
   validateOptionalNonNegativeInteger(record.staffPerDay, 'staffPerDay', errors);
+
+  validateOptionalStringMaxLength(record, 'tradingName', errors, FIELD_MAX_LENGTHS.tradingName);
+  validateOptionalStringMaxLength(
+    record,
+    'physicalAddress',
+    errors,
+    FIELD_MAX_LENGTHS.physicalAddress,
+  );
+  validateOptionalStringMaxLength(record, 'cipcNumber', errors, FIELD_MAX_LENGTHS.cipcNumber);
+  validateOptionalStringMaxLength(record, 'vatNumber', errors, FIELD_MAX_LENGTHS.vatNumber);
+  validateOptionalStringMaxLength(record, 'website', errors, FIELD_MAX_LENGTHS.website);
+  validateOptionalStringMaxLength(
+    record,
+    'socialMediaHandle',
+    errors,
+    FIELD_MAX_LENGTHS.socialMediaHandle,
+  );
+  validateOptionalStringMaxLength(
+    record,
+    'phytosanitaryPermitNumber',
+    errors,
+    FIELD_MAX_LENGTHS.phytosanitaryPermitNumber,
+  );
+  validateOptionalStringMaxLength(
+    record,
+    'citesPermitNumber',
+    errors,
+    FIELD_MAX_LENGTHS.citesPermitNumber,
+  );
+  validateOptionalStringMaxLength(
+    record,
+    'foodHandlingCertificateNumber',
+    errors,
+    FIELD_MAX_LENGTHS.foodHandlingCertificateNumber,
+  );
+  validateOptionalStringMaxLength(record, 'foodItemList', errors, FIELD_MAX_LENGTHS.foodItemList);
+  validateOptionalStringMaxLength(
+    record,
+    'electricalLoad',
+    errors,
+    FIELD_MAX_LENGTHS.electricalLoad,
+  );
+  validateOptionalStringMaxLength(
+    record,
+    'vehicleRegistrations',
+    errors,
+    FIELD_MAX_LENGTHS.vehicleRegistrations,
+  );
+  validateOptionalStringMaxLength(record, 'loadInSlot', errors, FIELD_MAX_LENGTHS.loadInSlot);
+  validateOptionalStringMaxLength(record, 'loadOutSlot', errors, FIELD_MAX_LENGTHS.loadOutSlot);
+  validateOptionalStringMaxLength(record, 'bio', errors, FIELD_MAX_LENGTHS.bio);
+  validateOptionalStringMaxLength(
+    record,
+    'paymentReference',
+    errors,
+    FIELD_MAX_LENGTHS.paymentReference,
+  );
 
   if (typeof record.powerRequired !== 'boolean') {
     errors.push('powerRequired is required and must be a boolean');
@@ -104,10 +202,34 @@ function requireNonEmptyString(
   record: Record<string, unknown>,
   field: string,
   errors: string[],
+  maxLength?: number,
 ): void {
   const value = record[field];
   if (typeof value !== 'string' || value.length === 0) {
     errors.push(`${field} is required and must be a non-empty string`);
+    return;
+  }
+  if (maxLength !== undefined && value.length > maxLength) {
+    errors.push(`${field} must be at most ${maxLength} characters`);
+  }
+}
+
+function validateOptionalStringMaxLength(
+  record: Record<string, unknown>,
+  field: string,
+  errors: string[],
+  maxLength: number,
+): void {
+  const value = record[field];
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value !== 'string') {
+    errors.push(`${field} must be a string`);
+    return;
+  }
+  if (value.length > maxLength) {
+    errors.push(`${field} must be at most ${maxLength} characters`);
   }
 }
 

@@ -1,0 +1,125 @@
+schema: athanor.contract/v1
+slug: vendor-form-maxlength-and-phone-pattern
+goal: >-
+  Mission vendor-form-maxlength-and-phone-pattern F1 (full detail:
+  contracts/golden/vendor-form-maxlength-and-phone-pattern-f1/README.md). None of the vendor
+  registration form's 21 text/textarea/tel/email/url fields carries a maxLength (businessName
+  accepts 5000 chars verbatim), and the phone field (contactCellPhone, type=tel) has no format
+  check -- it accepts "not a phone number !!" verbatim. Add: (1) a maxLength prop on
+  VendorFormField.tsx, threaded through to both the <input> and <textarea> branches, with each
+  of the 21 fieldset call sites across VendorContactFieldset.tsx, VendorCategoryFieldset.tsx,
+  VendorBoothFieldset.tsx, VendorMarketingFieldset.tsx, VendorPaymentFieldset.tsx passing the
+  exact per-field limit from the golden's table; (2) a pattern attribute (HTML5 hint only) plus
+  a real client-side phone validator wired into validateVendorRegisterFormClientSide in
+  lib/vendor-register-form-validation.ts, using the exact regex and error string in the golden
+  (the form renders noValidate, so pattern alone is inert -- see golden for why); (3) matching
+  server-side length caps and phone-format rejection in lib/vendor-submissions.ts as a
+  regression guard against a client-bypassing POST. The four number-typed fields (boothCount,
+  tableCount, chairCount, staffPerDay) are explicitly OUT of scope -- maxlength is a no-op on
+  type=number inputs. Do not touch unrelated fields/components; no new visual/brand treatment.
+created_at: '2026-08-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: Vendor form field maxLength caps + phone format validation (client + server)
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-form-maxlength-and-phone-pattern-f1/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        Structural: VendorFormField.tsx accepts a maxLength prop and forwards it as the
+        maxLength attribute on both the <input> element and the <textarea> element (the
+        component renders one or the other depending on htmlType -- both branches must receive
+        it, not just one).
+        FAILS ON: the prop existing but only being wired to one of the two branches; the prop
+        not existing at all.
+      command: node contracts/checks/vendor-form-maxlength-and-phone-pattern-f1/check-formfield-maxlength-prop.mjs
+    - id: A2
+      description: >-
+        Structural: every one of the 21 fieldset call sites listed in the golden's table passes
+        a maxLength prop to VendorFormField with exactly the value in the table (e.g.
+        businessName=200, contactEmail=254, productDescription=2000, bio=1000). Reads each of
+        the five fieldset source files and checks the maxLength value on the named fieldKey's
+        VendorFormField invocation against the golden table.
+        FAILS ON: any of the 21 fields missing maxLength; any value differing from the golden
+        table; any of the 4 number-typed fields (boothCount, tableCount, chairCount,
+        staffPerDay) having a maxLength added (out of scope, would be a wasted/no-op diff the
+        golden explicitly says not to make).
+      command: node contracts/checks/vendor-form-maxlength-and-phone-pattern-f1/check-fieldset-maxlength-values.mjs
+    - id: A3
+      description: >-
+        Structural: lib/vendor-register-form-validation.ts defines a phone-format check (regex
+        matching the golden's ^[0-9+\-() ]{7,20}$ pattern, or behaviourally equivalent) and
+        validateVendorRegisterFormClientSide pushes the exact error string
+        'contactCellPhone must be a valid phone number' when contactCellPhone is non-empty and
+        fails that check -- wired into the SAME function/errors array as the existing checks,
+        not a second validator called separately from VendorRegisterForm.tsx.
+        FAILS ON: the error string differing from the golden (breaks humaniseFieldError mapping
+        in lib/vendor-register-response.ts); the check firing when contactCellPhone is empty
+        (double-erroring on top of the existing required-field error); a new standalone
+        validator function invoked outside validateVendorRegisterFormClientSide.
+      command: node contracts/checks/vendor-form-maxlength-and-phone-pattern-f1/check-phone-validator-wired.mjs
+    - id: A4
+      description: >-
+        Structural: lib/vendor-submissions.ts independently enforces (a) the same per-field max
+        lengths as the golden table for businessName, contactPersonName, contactEmail,
+        productDescription at minimum, and (b) the same phone-format rejection using the same
+        error string as A3 -- rejecting oversized/malformed input (valid: false, error pushed),
+        never silently truncating. Proves server-side caps exist independent of the client and
+        cannot be bypassed by a direct POST to /api/vendors/register.
+        FAILS ON: no length enforcement found server-side for any of the four fields named
+        above; a truncate-instead-of-reject implementation (value silently shortened rather
+        than an error returned); the server accepting a value longer than the client's
+        maxLength for any checked field.
+      command: node contracts/checks/vendor-form-maxlength-and-phone-pattern-f1/check-server-side-caps.mjs
+    - id: A5
+      description: >-
+        Behavioral, real headless browser (Playwright), real network layer intercepted via
+        page.route() (never a JS-level mock). Load /national-show/vendors/register, focus the
+        businessName input, and type or fill a string longer than 200 characters. Read
+        page.locator(...).evaluate(el => el.value.length) after the fill and assert it is
+        exactly 200 -- the browser's native maxLength enforcement truncated it at the DOM level,
+        not merely at some later JS validation step. Also submit the form with only businessName
+        filled (leave other required fields empty) and assert zero requests reach
+        /api/vendors/register (existing required-field gate still works -- not this contract's
+        job to fix, but must not have regressed). Screenshot saved to
+        contracts/checks/vendor-form-maxlength-and-phone-pattern-f1/screenshots/businessname-maxlength-enforced.png.
+        FAILS ON: el.value.length !== 200 after the fill; the screenshot not being written.
+      command: node contracts/checks/vendor-form-maxlength-and-phone-pattern-f1/check-maxlength-enforced-in-browser.mjs
+    - id: A6
+      description: >-
+        Behavioral, same Playwright harness as A5, real network interception. Fill every
+        required field of the vendor registration form with otherwise-valid data EXCEPT
+        contactCellPhone, which is filled with "not a phone number !!". Submit and assert: (a)
+        zero requests to /api/vendors/register are observed; (b) the page shows a visible
+        role="alert" (or equivalent existing error-banner) validation error after submit.
+        Screenshot saved to
+        contracts/checks/vendor-form-maxlength-and-phone-pattern-f1/screenshots/invalid-phone-blocked.png.
+        FAILS ON: any request reaching /api/vendors/register; no visible error appearing; the
+        screenshot not being written.
+      command: node contracts/checks/vendor-form-maxlength-and-phone-pattern-f1/check-invalid-phone-blocked.mjs
+    - id: A7
+      description: >-
+        Regression guard, same Playwright harness. Fill every required field with fully valid
+        data, including a valid contactCellPhone (e.g. "+27 82 123 4567"), and submit. Assert
+        exactly one POST request to /api/vendors/register is observed (proves the new phone
+        validator does not false-positive-reject a genuinely valid number). Screenshot saved to
+        contracts/checks/vendor-form-maxlength-and-phone-pattern-f1/screenshots/valid-phone-posts.png.
+        FAILS ON: zero requests observed; more than one request; the screenshot not being
+        written.
+      command: node contracts/checks/vendor-form-maxlength-and-phone-pattern-f1/check-valid-phone-posts.mjs
+    - id: A8
+      description: >-
+        Durable evidence check: all three screenshots from A5/A6/A7 exist on disk and are
+        non-empty files.
+        FAILS ON: any of the three screenshot files missing or zero bytes.
+      command: >-
+        test -s contracts/checks/vendor-form-maxlength-and-phone-pattern-f1/screenshots/businessname-maxlength-enforced.png
+        && test -s contracts/checks/vendor-form-maxlength-and-phone-pattern-f1/screenshots/invalid-phone-blocked.png
+        && test -s contracts/checks/vendor-form-maxlength-and-phone-pattern-f1/screenshots/valid-phone-posts.png

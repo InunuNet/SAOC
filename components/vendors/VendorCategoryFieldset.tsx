@@ -47,6 +47,7 @@ export function VendorCategoryFieldset({ state, onFieldChange, disabled }: Vendo
         onChange={(v) => onFieldChange('productDescription', v)}
         disabled={disabled}
         required
+        maxLength={2000}
       />
       <VendorFormField
         fieldKey="phytosanitaryPermitNumber"
@@ -57,6 +58,7 @@ export function VendorCategoryFieldset({ state, onFieldChange, disabled }: Vendo
         disabled={disabled}
         required={false}
         placeholder="Permit reference number, if issued"
+        maxLength={100}
       />
       <VendorFormField
         fieldKey="citesPermitNumber"
@@ -67,6 +69,7 @@ export function VendorCategoryFieldset({ state, onFieldChange, disabled }: Vendo
         disabled={disabled}
         required={false}
         placeholder="Permit reference number, if issued"
+        maxLength={100}
       />
       {isFoodRetailer(state) ? (
         <VendorFormField
@@ -78,6 +81,7 @@ export function VendorCategoryFieldset({ state, onFieldChange, disabled }: Vendo
           disabled={disabled}
           required={false}
           placeholder="Certificate reference number"
+          maxLength={100}
         />
       ) : null}
       {isFoodRetailer(state) ? (
@@ -89,6 +93,7 @@ export function VendorCategoryFieldset({ state, onFieldChange, disabled }: Vendo
           onChange={(v) => onFieldChange('foodItemList', v)}
           disabled={disabled}
           required={false}
+          maxLength={1000}
         />
       ) : null}
     </div>
