@@ -1,0 +1,146 @@
+schema: athanor.contract/v1
+slug: vendor-boothcount-guarded-parse
+goal: >-
+  Mission vendor-boothcount-guarded-parse F1. lib/vendor-register-form-payload.ts:117
+  builds boothCount with a raw Number.parseInt(state.boothCount, 10) instead of the
+  toOptionalInt() helper every other numeric field in the same function uses. Fix:
+  change that one line to boothCount: toOptionalInt(state.boothCount). Full defect
+  analysis, why this is a consistency/defense-in-depth fix rather than a live functional
+  bug (client-side STRICT_INTEGER_PATTERN validation already blocks malformed values
+  before this line ever runs), and how each of the 4 Codex findings from the abandoned
+  prior attempt applies: contracts/golden/vendor-boothcount-guarded-parse-f1/README.md.
+  Expected diff: contracts/golden/vendor-boothcount-guarded-parse-f1/boothCount.expected.ts.txt.
+created_at: '2026-08-25'
+autonomy: high
+
+# SCOPE: exactly one line changes in lib/vendor-register-form-payload.ts (line 117).
+# No other production file should need to change. New files only under
+# contracts/checks/vendor-boothcount-guarded-parse-f1/ (check scripts + screenshots/).
+
+features:
+  - id: F1
+    name: Route boothCount through toOptionalInt() for parse-path consistency; prove
+      no regression in rejection, error display, or focus management
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-boothcount-guarded-parse-f1/README.md
+  - contracts/golden/vendor-boothcount-guarded-parse-f1/boothCount.expected.ts.txt
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        Structural: lib/vendor-register-form-payload.ts's boothCount property now
+        calls toOptionalInt(state.boothCount), and the raw Number.parseInt(state.boothCount
+        call is gone. Matches contracts/golden/vendor-boothcount-guarded-parse-f1/boothCount.expected.ts.txt.
+        FAILS ON: the raw Number.parseInt(state.boothCount call still present, or
+        toOptionalInt(state.boothCount) absent.
+      command: >-
+        grep -q "boothCount: toOptionalInt(state.boothCount)" lib/vendor-register-form-payload.ts && ! grep -q "boothCount: Number.parseInt(state.boothCount" lib/vendor-register-form-payload.ts
+    - id: A2
+      description: >-
+        Regression guard: the other three numeric fields in the same function
+        (tableCount, chairCount, staffPerDay) still route through toOptionalInt()
+        unchanged -- this fix must not touch their lines.
+        FAILS ON: any of the three no longer calling toOptionalInt() on its own state field.
+      command: >-
+        grep -q "tableCount: toOptionalInt(state.tableCount)" lib/vendor-register-form-payload.ts && grep -q "chairCount: toOptionalInt(state.chairCount)" lib/vendor-register-form-payload.ts && grep -q "staffPerDay: toOptionalInt(state.staffPerDay)" lib/vendor-register-form-payload.ts
+    - id: A3
+      description: >-
+        Regression guard: server-side validation (lib/vendor-submissions.ts) stays
+        authoritative and untouched -- validatePositiveInteger is still called on
+        record.boothCount unconditionally. toOptionalInt('') returning undefined
+        (vs. Number.parseInt('')'s NaN) must still be rejected server-side exactly
+        as NaN was: validatePositiveInteger's typeof value !== 'number' check catches
+        undefined the same way !Number.isInteger(value) caught NaN.
+        FAILS ON: the validatePositiveInteger(record.boothCount, 'boothCount', errors)
+        call being removed, altered to accept undefined, or made conditional.
+      command: >-
+        grep -q "validatePositiveInteger(record.boothCount, 'boothCount', errors)" lib/vendor-submissions.ts
+    - id: A4
+      description: >-
+        Codex finding 2 (codified, static): the client-side guard against "1.5" /
+        "1e3" coercing to a valid integer is untouched. lib/vendor-register-form-validation.ts's
+        boothCount branch still tests the raw trimmed string against STRICT_INTEGER_PATTERN
+        (/^\d+$/) before any numeric coercion happens, and STRICT_INTEGER_PATTERN itself
+        is unchanged.
+        FAILS ON: the boothCount branch no longer calling STRICT_INTEGER_PATTERN.test(boothCount),
+        or the pattern being loosened (e.g. to allow a decimal point or 'e').
+      command: grep -q "STRICT_INTEGER_PATTERN = /\^\\\\d+\\$/" lib/vendor-register-form-validation.ts && grep -q "STRICT_INTEGER_PATTERN.test(boothCount)" lib/vendor-register-form-validation.ts
+    - id: A5
+      description: >-
+        Codex finding 3 (codified, static, reused from the already-passing
+        vendor-form-client-validation-gate-f1 contract -- these checks assert
+        CONDITIONALITY, not mere presence of the word "return"): (a) in
+        components/vendors/VendorRegisterForm.tsx, the first call to
+        validateVendorRegisterFormClientSide(state) occurs at an earlier line number
+        than the fetch('/api/vendors/register', ...) call inside the same handleSubmit
+        function; (b) the `if (clientErrors.length > 0)` block contains a `return`
+        statement within its own body (not merely present somewhere else in the file).
+        FAILS ON: ordering reversed, the validateVendorRegisterFormClientSide call
+        removed, the return removed/moved outside the if-block, or the block deleted.
+      command: node contracts/checks/vendor-form-client-validation-gate-f1/check-validation-precedes-fetch.mjs && node contracts/checks/vendor-form-client-validation-gate-f1/check-early-return-blocks-submit.mjs
+    - id: A6
+      description: >-
+        Behavioral, real headless browser (Playwright), real network layer intercepted
+        (not mocked at the fetch/JS level). Load /national-show/vendors/register, fill
+        every OTHER required field with valid data, then for boothCount in turn try
+        "1.5", "1e3", "e1", and "abc": for each, submit and assert (a) zero requests
+        to /api/vendors/register are observed, (b) a visible role="alert" error
+        containing the humanised boothCount message appears. Screenshot the "1.5" case
+        to contracts/checks/vendor-boothcount-guarded-parse-f1/screenshots/malformed-boothcount-blocked.png.
+        Defends Codex finding 2 live in the real browser (not just statically).
+        FAILS ON: any request reaching /api/vendors/register for any of the four
+        values; no visible error text for any of the four; the screenshot not written.
+      command: node contracts/checks/vendor-boothcount-guarded-parse-f1/check-malformed-boothcount-blocked.mjs
+    - id: A7
+      description: >-
+        Behavioral, same Playwright harness as A6. Codex finding 1: after the FIRST
+        invalid submission in A6 produces a visible error, without reloading the page,
+        change boothCount to a SECOND, different invalid value ("e1" if A6's screenshot
+        case was "1.5", or vice versa) and submit again. Assert the role="alert" error
+        is still visible after this second submission (query the live DOM state after
+        the second submit completes -- do not just assert the effect fired once and
+        infer the second case from that). Screenshot to
+        contracts/checks/vendor-boothcount-guarded-parse-f1/screenshots/second-invalid-submit-still-errors.png.
+        FAILS ON: no role="alert" element present/visible in the DOM after the second
+        submission (i.e. the banner failed to reappear/rerender on the second failure).
+      command: node contracts/checks/vendor-boothcount-guarded-parse-f1/check-second-invalid-submit-still-errors.mjs
+    - id: A8
+      description: >-
+        Behavioral, same Playwright harness. Codex finding 4: after an invalid
+        submission, resolve the SPECIFIC ref'd banner root element -- the ancestor
+        div with tabindex="-1" that directly wraps the role="alert" node (i.e.
+        `role="alert"`'s closest ancestor matching `[tabindex="-1"]`), not any
+        tabindex="-1" element anywhere on the page. Assert that specific element (a)
+        exists, (b) is document.activeElement after the post-submit effect settles.
+        FAILS ON: no such ancestor-scoped element found; a check that instead passes
+        merely because SOME element on the page (e.g. an unrelated modal, skip-link,
+        or nav item) has tabindex="-1"; the resolved element not being the focused
+        element.
+      command: node contracts/checks/vendor-boothcount-guarded-parse-f1/check-banner-tabindex-target.mjs
+    - id: A9
+      description: >-
+        Behavioral, same Playwright harness. Regression guard against the fix being
+        too strict: fill every required field including a genuine positive whole
+        number for boothCount (e.g. "3"), submit, and assert exactly one request to
+        /api/vendors/register is observed (POST method). A client-side check that
+        blocks a genuinely valid submission is as serious a regression as accepting
+        a malformed one.
+        FAILS ON: zero requests observed; more than one request (double-submit).
+      command: node contracts/checks/vendor-boothcount-guarded-parse-f1/check-valid-boothcount-posts.mjs
+    - id: A10
+      description: >-
+        Durable evidence: all three screenshots from A6/A7 (malformed-boothcount-blocked.png,
+        second-invalid-submit-still-errors.png) exist on disk and are non-empty,
+        proving the real-browser verification pass actually happened.
+        FAILS ON: either screenshot file missing or zero bytes.
+      command: test -s contracts/checks/vendor-boothcount-guarded-parse-f1/screenshots/malformed-boothcount-blocked.png && test -s contracts/checks/vendor-boothcount-guarded-parse-f1/screenshots/second-invalid-submit-still-errors.png
+    - id: A11
+      description: >-
+        Whole-project type safety is unaffected by the payload's boothCount field
+        narrowing from number (possibly NaN) to number | undefined.
+        FAILS ON: any TypeScript error.
+      command: pnpm type-check

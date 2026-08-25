@@ -1,0 +1,1 @@
+    boothCount: toOptionalInt(state.boothCount),

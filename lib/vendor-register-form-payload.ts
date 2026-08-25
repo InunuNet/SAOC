@@ -114,7 +114,7 @@ export function buildVendorRegistrationPayload(state: VendorRegisterFormState): 
     citesPermitNumber: omitBlank(state.citesPermitNumber),
     foodHandlingCertificateNumber: isFoodRetailer(state) ? omitBlank(state.foodHandlingCertificateNumber) : undefined,
     foodItemList: isFoodRetailer(state) ? omitBlank(state.foodItemList) : undefined,
-    boothCount: Number.parseInt(state.boothCount, 10),
+    boothCount: toOptionalInt(state.boothCount),
     boothType: omitBlank(state.boothType) as VendorBoothType | undefined,
     tableCount: toOptionalInt(state.tableCount),
     chairCount: toOptionalInt(state.chairCount),

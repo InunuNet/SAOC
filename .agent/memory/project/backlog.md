@@ -437,17 +437,12 @@ flat-over-nested-submenu pattern.
   (`contracts/checks/vendor-form-client-validation-gate-f1/`) to prevent the defect from being
   reintroduced. Gate 7/7 PASS, QA PASS, Codex GPT-5.5 clean. Docs:
   `docs/vendor-form-client-validation-gate.md`.
-- [ ] **[P2] `boothCount` still bypasses the form's own guarded-parse pattern.**
-  `lib/vendor-register-form-payload.ts:117` is a raw `Number.parseInt`; every other numeric field
-  routes through `toOptionalInt()`. Garbage parses to `NaN` → `null` in the body → correct but
-  invisible server rejection. Note the field is `type="number"`, so Chromium silently discards
-  non-numeric keystrokes as you type — "e1" never reaches state as a literal, it ends up empty with
-  no inline feedback. Four Codex findings on the abandoned scratch design are worth reading before
-  reusing any of it: React batches same-event `setDescriptor` calls so an
-  unmount/remount-dependent banner effect never reruns on a second failure; `"1.5"` and `"1e3"`
-  coerce to `1` and must not be treated as valid; a wiring check must prove the return is
-  conditional on validation failing, not merely that some return exists; and a `tabindex="-1"`
-  check must target the ref'd root element, not scan the whole rendered HTML.
+- [x] ~~**[P2] `boothCount` still bypasses the form's own guarded-parse pattern.**~~ RESOLVED
+  2026-08-25 — mission `vendor-boothcount-guarded-parse` (F1) routed `boothCount` through
+  `toOptionalInt()` in `lib/vendor-register-form-payload.ts:117`, matching every other numeric
+  field. A check suite covering all 4 historical Codex findings was added under
+  `contracts/checks/vendor-boothcount-guarded-parse-f1/`. Gate 11/11 PASS, QA PASS (independently
+  re-verified all 4 findings), Codex GPT-5.5 PASS. Docs: `docs/vendor-boothcount-guarded-parse.md`.
 - [ ] **[P2] Vendor registration rate-limits after ~4 attempts for 45 minutes.** A vendor fumbling
   the form while genuinely trying to fix it gets locked out. (The human-readable countdown itself
   was fixed in `f7c5f6f`; the 45-minute lockout on a form this error-prone is the remaining issue.)

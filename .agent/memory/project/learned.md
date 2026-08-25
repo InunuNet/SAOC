@@ -2482,3 +2482,20 @@ source touched at all — the claimed defect never existed), which makes the emp
 visible since almost everything needing staging was contracts/checks/docs. Same manual workaround
 applied: hand-built the real file set from `git status --porcelain`, replicated wrap steps
 manually.
+
+(2026-08-25) 7th repro: `vendor-boothcount-guarded-parse` close-out hit both again —
+`scoped_stage.py --dry-run` returned only the mission file + spec dir (missing
+`lib/vendor-register-form-payload.ts`, `contracts/checks/vendor-boothcount-guarded-parse-f1/`,
+`contracts/golden/vendor-boothcount-guarded-parse-f1/`, and the docs file), and
+`wrap_mission.sh` aborted on dirty `.claude/settings.json` (from concurrent unrelated missions
+running in the same session). Same manual workaround: hand-built the file set from `git status
+--porcelain`, replicated wrap steps directly. Two upstream fixes this mission also needed, both
+already documented elsewhere rather than new patterns: (1) @architect had not run `mission.py
+attach-spec` to link the contract to F1 — orchestrator ran it manually, reinforcing the item 4
+entry above ("A feature's own contract can be on disk, gate green, and still fail the milestone
+gate for pure bookkeeping reasons"); (2) the contract YAML had 3 occurrences (A1, A2, A3) of the
+unquoted-colon-in-`command:` bug documented at the "produces an unquoted plain scalar..." entry
+below — fixed with `>-` block scalars, same as prior repros. Given 7+ occurrences of the
+scoped-staging bug specifically, this is well past the threshold for an upstream PR to
+`execution/skills/lib/scoped_stage.py` rather than continued per-mission logging — flagged to
+the orchestrator/user, not acted on directly (out of this agent's scope).
