@@ -2559,3 +2559,20 @@ mission could close with zero assertions ever executed if nobody double-checks t
 count against the expected assertion total. Worth an upstream fix (gate should hard-error, not
 silently pass, when a milestone references features that were never listed) — flagged, not
 acted on directly (out of this agent's scope).
+
+(2026-08-25) `checkin-attempts-write-verification` mission: @qa + Codex GPT-5.5 found and @dev
+fixed 3 real bugs in `scripts/verify-checkin-audit-write.ts`'s own join logic (not production
+code). Two are general lessons worth carrying to other cross-reference/reconciliation scripts:
+1. **Shared foreign keys make unsafe primary join keys.** The script originally joined
+   checked-in tickets to `checkinAttempts` records primarily on `orderId`, with `bookingRef` as
+   fallback. That's backwards: `orderId` is shared across every sibling position in a multi-item
+   order, but check-in scans and admits by `bookingRef` (the unique per-position identifier). An
+   orderId-primary join can silently match a ticket to the WRONG sibling's audit record and mask
+   a real orphan. Before joining two collections, verify which candidate key is actually unique
+   per record being joined — don't assume the more "parent-looking" ID is more specific.
+2. **A script's offline fixture mode must replicate every filter the live query silently
+   applies.** `hasMatchingAudit()` didn't itself filter `outcome === 'admit'` in fixture mode —
+   it relied on the live Firestore query doing that pre-filtering, which the fixture-mode code
+   path never got. Fixtures passed while the equivalent live bug (a non-admit outcome masking a
+   missing write) would have been invisible. Any dual-mode (live query / offline fixture) script
+   needs the fixture path to duplicate every predicate the live path relies on, not just the

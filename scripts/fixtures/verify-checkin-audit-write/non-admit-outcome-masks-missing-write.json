@@ -1,0 +1,18 @@
+{
+  "tickets": [
+    {
+      "id": "ticketDoc4",
+      "bookingRef": "SAOC-2027-NONADMIT1",
+      "orderId": "order-nonadmit-1",
+      "checkedInAt": "2026-08-23T09:15:00.000Z"
+    }
+  ],
+  "checkinAttempts": [
+    {
+      "id": "attemptDoc-nonadmit",
+      "bookingRef": "SAOC-2027-NONADMIT1",
+      "orderId": "order-nonadmit-1",
+      "outcome": "already-checked-in"
+    }
+  ]
+}

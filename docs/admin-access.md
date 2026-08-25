@@ -45,6 +45,20 @@ expired/revoked session — **fails closed**. There is no default-allow branch a
 gating `/admin` itself, because `/admin` also has to serve `/admin/login`, and gating the
 login route would brick sign-in entirely.
 
+### Door check-in audit trail verification
+
+When a ticket is admitted at the door (`POST /api/admin/checkin`), two things should happen in parallel:
+1. The ticket position's `status` is set to `'checked-in'`
+2. A `checkinAttempts` audit record is written with `outcome: 'admit'`
+
+To verify that audit records are actually landing in Firestore (not just that the code path exists), use the read-only verification script:
+
+```bash
+pnpm exec tsx scripts/verify-checkin-audit-write.ts
+```
+
+See [docs/verify-checkin-audit-write.md](verify-checkin-audit-write.md) for full details, including fixture mode for offline testing. The script cross-references every `status: 'checked-in'` ticket against `checkinAttempts` records and reports any orphans (checked-in tickets with no matching admit record).
+
 ### `/admin/login` is deliberately ungated
 
 `app/admin/login/page.tsx` has no server-side gate in front of it. This is intentional,

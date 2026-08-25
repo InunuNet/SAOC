@@ -1,0 +1,152 @@
+schema: athanor.contract/v1
+slug: checkin-attempts-write-verification
+goal: >-
+  Mission checkin-attempts-write-verification F1 (full detail:
+  contracts/golden/checkin-attempts-write-verification-f1/README.md). Backlog P2 defect: does a
+  real door scan actually write a `checkinAttempts` document to live Firestore? Architect
+  investigation (2026-08-25) read the current write path end to end and found it correct: the
+  route awaits recordCheckinAttempt() on every outcome branch including admit,
+  recordCheckinAttempt() never silently swallows a failure (it returns {recorded:false, error}
+  and the route logs it loudly via logAuditWriteFailure()), and the Firestore adapter is a
+  6-line .add()-only wrapper going through the Admin SDK (security rules cannot be the failure
+  mode). This is F7 of mission ticketing-foundation
+  (contracts/golden/ticketing-f7-checkin-audit/README.md), whose own "What this contract does
+  NOT prove" section already names this exact gap: all of F7's assertions run offline against a
+  fabricated store, none prove a document lands in live Firestore on a real call. This mission
+  closes that gap empirically: add a read-only script that cross-references tickets with
+  status=='checked-in' (set by lib/checkin.ts in the same transaction as the admission
+  decision, independent of whether the audit write succeeds) against checkinAttempts for a
+  matching outcome=='admit' record. Do NOT modify app/api/admin/checkin/route.ts,
+  lib/checkin-audit.ts, or lib/checkin-audit-store.ts unless the live run in A6 finds a real
+  mismatch -- source investigation found nothing wrong there.
+created_at: '2026-08-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: Read-only live verification script for checkinAttempts writes + regression locks
+    status: pending
+
+goldens:
+  - contracts/golden/checkin-attempts-write-verification-f1/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        Structural: the verification script exists at the required path.
+        FAILS ON: script missing, renamed, or placed elsewhere.
+      command: test -f scripts/verify-checkin-audit-write.ts
+
+    - id: A2
+      description: >-
+        Structural: the script is read-only by construction -- no Firestore mutation method
+        (.set(, .update(, .delete(, .add(, .commit(, batch(, runTransaction() appears anywhere
+        in the file. A script that queries live Firestore must never be able to write to it.
+        FAILS ON: any mutation call present, even if unreachable/dead code -- the guarantee
+        must be structural, not behavioural.
+      command: >-
+        test -z "$(grep -nE '\.(set|update|delete|add|commit)\(|batch\(|runTransaction\(' scripts/verify-checkin-audit-write.ts)"
+
+    - id: A3
+      description: >-
+        Structural regression-lock: app/api/admin/checkin/route.ts still awaits the local
+        audit(...) closure at every outcome branch, including the terminal admit case at the
+        bottom of the file. Proves the wiring this mission's investigation found correct has
+        not regressed by the time the gate runs.
+        FAILS ON: fewer than 4 occurrences of "await audit(" -- the current source has exactly
+        4 distinct call sites: malformed (request-body parse-error catch), infra-error
+        (checkInByBookingRef's own catch), a single shared refusal branch covering all 4
+        refusal outcomes (not-found/wrong-show/unpaid/already-checked-in) as ONE call site, and
+        admit. (An earlier draft of this assertion said "-ge 5", conflating the 4 refusal
+        *outcomes* with 4 separate refusal call sites -- they share one call site. Corrected
+        2026-08-25 after @dev flagged the off-by-one against unmodified route.ts.) Any outcome
+        branch rewritten to call recordCheckinAttempt directly instead of via the audited
+        closure would also fail this.
+      command: >-
+        test "$(grep -c 'await audit(' app/api/admin/checkin/route.ts)" -ge 4
+
+    - id: A4
+      description: >-
+        Structural regression-lock: lib/checkin-audit.ts still logs a failed write rather than
+        dropping it. logAuditWriteFailure must still be exported and still be a console.error
+        call, and the route must still call it whenever recorded is false.
+        FAILS ON: logAuditWriteFailure removed or renamed; its console.error call removed
+        (e.g. replaced with console.log or deleted); the route's call to it on
+        auditResult.recorded === false removed.
+      command: >-
+        grep -q "export function logAuditWriteFailure" lib/checkin-audit.ts && grep -q "console.error" lib/checkin-audit.ts && grep -q "logAuditWriteFailure(" app/api/admin/checkin/route.ts
+
+    - id: A5
+      description: >-
+        Behavioural, offline via --fixture (no live credentials required, mirrors
+        scan-firestore-residue.ts's own --fixture pattern): given a fixture with one
+        checked-in ticket and a matching checkinAttempts admit record, the script exits 0.
+        Given a second fixture with a checked-in ticket and no matching record, the script
+        exits 1. Proves the script's own pass/fail logic is correct before its live output
+        (A6) is trusted. @dev must create both fixture JSON files under
+        scripts/fixtures/verify-checkin-audit-write/ (matching-pair.json and
+        orphaned-checkin.json, or equivalent names documented in the script's own header
+        comment) as part of this feature -- they are test inputs, not golden files, so they
+        are not pre-supplied by this contract.
+        A third fixture, non-admit-outcome-masks-missing-write.json, locks a regression Codex
+        GPT-5.5 cross-model review found 2026-08-25: hasMatchingAudit() matched on
+        orderId/bookingRef alone without itself checking outcome === 'admit', relying on live
+        mode's Firestore .where('outcome', '==', 'admit') query to pre-filter -- a guarantee
+        fixture mode does not get, since it reads raw JSON with no such pre-filter. A
+        checked-in ticket whose only matching checkinAttempts record has a non-admit outcome
+        (e.g. 'already-checked-in') must still be reported as an orphan (exit 1), proving the
+        real admit-outcome audit write never landed. The buggy version passed this fixture
+        incorrectly (exit 0).
+        A fourth fixture, orderid-shared-across-siblings-masks-orphan.json, locks a second,
+        more fundamental regression Codex GPT-5.5 cross-model review found 2026-08-25: joining
+        primarily on orderId is unsafe because orderId is shared across every sibling ticket
+        position in the same multi-line-item order (lib/checkout-reservation.ts:284,297),
+        while check-in itself scans and admits by bookingRef specifically -- the unique
+        identifier of ONE ticket position (checkInByBookingRef(),
+        app/api/admin/checkin/route.ts:87). Two checked-in tickets sharing one orderId, where
+        only ONE has its own genuine admit record (matched by its own bookingRef), must report
+        the OTHER as an orphan (exit 1). The orderId-primary version of hasMatchingAudit()
+        passed this fixture incorrectly (exit 0) -- confirmed by temporarily reverting to the
+        orderId-primary join and re-running against this exact fixture, which reported ALL
+        CLEAR when it should have reported one orphan. The corrected join makes bookingRef the
+        PRIMARY match key, with orderId only as a fallback for a legacy/malformed ticket
+        document with no bookingRef at all -- a case not known to be reachable against real
+        data, since bookingRef is a required, non-nullable field on every Ticket
+        (types/index.ts) and doubles as the ticket's own Firestore document ID
+        (app/api/tickets/checkout/route.ts:986).
+        A fifth fixture, bookingref-match-wins-despite-orderid-mismatch.json (renamed from
+        bookingref-collision-masks-orderid-miss.json; see repo history for the prior name),
+        was originally written under orderId-primary matching to prove the OPPOSITE claim --
+        that a bookingRef match should NOT override an orderId mismatch. That premise no
+        longer holds now that bookingRef is the correct primary key: bookingRef uniquely
+        identifies a single ticket position, so any admit-outcome record carrying that exact
+        bookingRef IS definitive proof that position was admitted, regardless of what orderId
+        happens to be recorded on the attempt. This fixture is kept as a locked positive case
+        -- a checked-in ticket whose bookingRef matches an admit record's bookingRef, even
+        though the two records' orderId fields differ, must be reported as matched (exit 0),
+        not as an orphan.
+        FAILS ON: matching-pair fixture does not exit 0; orphaned-checkin fixture does not
+        exit 1; non-admit-outcome-masks-missing-write fixture does not exit 1;
+        orderid-shared-across-siblings-masks-orphan fixture does not exit 1;
+        bookingref-match-wins-despite-orderid-mismatch fixture does not exit 0; script requires
+        live credentials even in --fixture mode.
+      command: >-
+        pnpm exec tsx scripts/verify-checkin-audit-write.ts --fixture scripts/fixtures/verify-checkin-audit-write/matching-pair.json && ! pnpm exec tsx scripts/verify-checkin-audit-write.ts --fixture scripts/fixtures/verify-checkin-audit-write/orphaned-checkin.json && ! pnpm exec tsx scripts/verify-checkin-audit-write.ts --fixture scripts/fixtures/verify-checkin-audit-write/non-admit-outcome-masks-missing-write.json && ! pnpm exec tsx scripts/verify-checkin-audit-write.ts --fixture scripts/fixtures/verify-checkin-audit-write/orderid-shared-across-siblings-masks-orphan.json && pnpm exec tsx scripts/verify-checkin-audit-write.ts --fixture scripts/fixtures/verify-checkin-audit-write/bookingref-match-wins-despite-orderid-mismatch.json
+
+    - id: A6
+      description: >-
+        Live, read-only: run the script against the real Firestore project (credentials
+        already present in .env.local per reference_saoc_credentials_inventory memory -- no
+        new secret needed). This is the actual empirical answer to the backlog's question --
+        does a real door scan's checkinAttempts write land in live Firestore. A pass here means
+        every currently checked-in ticket has a matching admit audit record (including the
+        trivial zero-checked-in-tickets case, which the script must report explicitly rather
+        than passing by silence). If this fails, the mission is not done -- the failing
+        ticket(s) printed by the script are the lead for a follow-up investigation, and @dev
+        must report them back through the chain rather than attempting a blind fix.
+        FAILS ON: non-zero exit; script errors out on live credentials that A5 already proved
+        are readable (a credential/init problem here is itself a finding to report, not to
+        paper over).
+      command: pnpm exec tsx scripts/verify-checkin-audit-write.ts

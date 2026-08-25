@@ -1,0 +1,11 @@
+{
+  "tickets": [
+    {
+      "id": "ticketDoc2",
+      "bookingRef": "SAOC-2027-ORPHAN1",
+      "orderId": "order-orphan-1",
+      "checkedInAt": "2026-08-21T14:42:00.000Z"
+    }
+  ],
+  "checkinAttempts": []
+}

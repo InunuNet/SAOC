@@ -1,0 +1,18 @@
+{
+  "tickets": [
+    {
+      "id": "ticketDoc1",
+      "bookingRef": "SAOC-2027-MATCHOK1",
+      "orderId": "order-matching-1",
+      "checkedInAt": "2026-08-20T09:15:00.000Z"
+    }
+  ],
+  "checkinAttempts": [
+    {
+      "id": "attemptDoc1",
+      "bookingRef": "SAOC-2027-MATCHOK1",
+      "orderId": "order-matching-1",
+      "outcome": "admit"
+    }
+  ]
+}

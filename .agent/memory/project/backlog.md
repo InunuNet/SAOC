@@ -364,12 +364,18 @@ flat-over-nested-submenu pattern.
 - [ ] **[P3] `RECOVERY_TOKEN_DEFAULT_TTL_MS` is a 180-day working placeholder**, not a
   council-approved value. Real security/usability tradeoff: too short locks buyers out of tickets
   they paid for, too long keeps a leaked link live for months.
-- [ ] **[P2] Confirm a `checkinAttempts` document is actually written on a real scan.** The path is
+- [x] **[P2] Confirm a `checkinAttempts` document is actually written on a real scan.** The path is
   wired (`app/api/admin/checkin/route.ts:60` → `recordCheckinAttempt`), but the paused mission
   `prove-ticket-purchase-works-end-to-end-b` M1 gate observed no document after a live scan.
   Agent-actionable: query Firestore directly, do not queue a human scan. If the write genuinely
   fails, it fails silently — `lib/checkin-audit.ts:143` logs and swallows. Must survive the Stage 5
   per-day check-in rewrite: re-verify after it lands.
+  **DONE 2026-08-25** — built read-only `scripts/verify-checkin-audit-write.ts`, cross-referencing
+  checked-in tickets against `checkinAttempts` admit records (bookingRef-primary join, orderId
+  fallback). Live run against real Firestore (verified twice): 0 orphans — the write path works
+  correctly right now. No production code changed; a regression-locked verification tool now
+  exists for future checks. Gate 6/6 pass, QA + Codex GPT-5.5 found and fixed 3 real bugs in the
+  script's own join logic mid-mission. See `docs/verify-checkin-audit-write.md`.
 - [ ] **[P2] `docs/firestore-ticket-schema.md` is stale on `TicketType`** — still documents the
   retired `'general' | 'member' | 'vip'` union and a 6-digit `bookingRef`. Reality: free-form
   string keyed by Sanity slug, 60-bit Crockford base32 refs.

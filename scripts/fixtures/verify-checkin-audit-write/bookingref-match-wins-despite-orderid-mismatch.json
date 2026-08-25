@@ -1,0 +1,18 @@
+{
+  "tickets": [
+    {
+      "id": "ticketDoc3",
+      "bookingRef": "SAOC-2027-COLLIDE1",
+      "orderId": "order-real-checkin",
+      "checkedInAt": "2026-08-22T10:05:00.000Z"
+    }
+  ],
+  "checkinAttempts": [
+    {
+      "id": "attemptDoc-unrelated",
+      "bookingRef": "SAOC-2027-COLLIDE1",
+      "orderId": "order-unrelated-attempt",
+      "outcome": "admit"
+    }
+  ]
+}
