@@ -1,0 +1,125 @@
+schema: athanor.contract/v1
+slug: vendorcategory-aria-required-enforcement
+goal: >-
+  Mission vendorcategory-aria-required-enforcement F1. Investigation finding (full detail:
+  contracts/golden/vendorcategory-aria-required-enforcement-f1/README.md): the defect described
+  in the mission brief -- "vendorCategory group claims aria-required=true but none of its 8
+  checkboxes has required and client-side validation doesn't block on an empty selection" --
+  does NOT exist in current committed source as of commit d74bfc1. It was already fixed as a
+  side effect of the closed vendor-form-client-validation-gate mission:
+  validateVendorRegisterFormClientSide (lib/vendor-register-form-validation.ts:38-40) rejects an
+  empty vendorCategory array, handleSubmit (components/vendors/VendorRegisterForm.tsx:89-98)
+  calls it and returns before the fetch(), the error is humanised via
+  VENDOR_FIELD_LABELS.vendorCategory (lib/vendor-register-response.ts) and rendered through the
+  form's one role="alert" banner (components/vendors/VendorRegisterStatusBanner.tsx), and the
+  server independently re-validates the same field (lib/vendor-submissions.ts).
+  DO NOT IMPLEMENT A FIX. This is a regression-lock and verification contract: no production
+  source file should need to change. @dev writes the check scripts below (structural + Playwright
+  behavioral, real browser, real network interception via page.route()) and runs a real
+  BrowserAgent pass proving both the blocked-empty-category-submit and
+  successful-one-category-selected-submit paths, screenshotted. If any check fails, that is a
+  genuine new regression to report -- not something to patch around by loosening the assertion.
+created_at: '2026-08-25'
+autonomy: high
+
+# SCOPE: no edits expected under app/, components/, or lib/. New files only, all under
+# contracts/checks/vendorcategory-aria-required-enforcement-f1/ (check scripts + screenshots/).
+
+features:
+  - id: F1
+    name: Verify vendorCategory required-group enforcement; add regression-lock suite
+    status: pending
+
+goldens:
+  - contracts/golden/vendorcategory-aria-required-enforcement-f1/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        Structural: lib/vendor-register-form-validation.ts contains the vendorCategory
+        empty-array check inside validateVendorRegisterFormClientSide -- i.e. a conditional on
+        state.vendorCategory.length === 0 that pushes an error string containing "vendorCategory"
+        into the returned errors array.
+        FAILS ON: the check being removed, weakened (e.g. only warning, not erroring), or moved
+        out of the pure validator into something that can be bypassed.
+      command: node contracts/checks/vendorcategory-aria-required-enforcement-f1/check-validator-rejects-empty-category.mjs
+    - id: A2
+      description: >-
+        Structural: in components/vendors/VendorRegisterForm.tsx, the call to
+        validateVendorRegisterFormClientSide(state) inside handleSubmit occurs at an earlier line
+        number than the fetch('/api/vendors/register', ...) call in the same function, and the
+        `if (clientErrors.length > 0)` block contains a `return` statement. Proves an empty
+        vendorCategory (which the validator now flags) genuinely halts submission rather than
+        merely setting error state and falling through.
+        FAILS ON: the ordering being reversed, the return being removed or moved outside the
+        if-block, or the validator call being deleted.
+      command: node contracts/checks/vendorcategory-aria-required-enforcement-f1/check-early-return-blocks-submit.mjs
+    - id: A3
+      description: >-
+        Structural: lib/vendor-register-response.ts's VENDOR_FIELD_LABELS map contains a
+        'vendorCategory' key with a non-empty human-readable label, and
+        components/vendors/VendorRegisterStatusBanner.tsx still renders the 'validation-error'
+        descriptor kind's fieldErrors through humaniseFieldError inside a role="alert" container.
+        FAILS ON: the vendorCategory label being removed from VENDOR_FIELD_LABELS (causing the
+        raw internal error string to leak to users); the banner's role="alert" attribute being
+        removed or replaced with a non-live-region element; a second/duplicate error-rendering
+        path being introduced for this field.
+      command: node contracts/checks/vendorcategory-aria-required-enforcement-f1/check-error-display-pattern.mjs
+    - id: A4
+      description: >-
+        Structural: lib/vendor-submissions.ts's validateVendorSubmissionInput independently
+        rejects an empty vendorCategory array server-side (i.e. the server does not rely solely
+        on the client-side gate). Proves defence-in-depth stays intact.
+        FAILS ON: the server-side vendorCategory check being removed, or the server trusting a
+        client-supplied "already validated" flag instead of re-checking the field itself.
+      command: node contracts/checks/vendorcategory-aria-required-enforcement-f1/check-server-validates-category.mjs
+    - id: A5
+      description: >-
+        Structural: components/vendors/VendorCategoryFieldset.tsx passes required to its
+        VendorCheckboxGroupField for the vendorCategory field, and
+        components/vendors/VendorCheckboxGroupField.tsx renders aria-required="true" on the
+        outer <fieldset> when required is true. Proves the ARIA contract stays truthful given A1
+        through A4 above now genuinely back it with enforcement on both sides of the form.
+        FAILS ON: aria-required being removed, hardcoded to a value that no longer reflects the
+        required prop, or VendorCategoryFieldset no longer passing required for vendorCategory.
+      command: node contracts/checks/vendorcategory-aria-required-enforcement-f1/check-aria-required-backed.mjs
+    - id: A6
+      description: >-
+        Behavioral, real headless browser (Playwright), real network layer intercepted via
+        page.route() (never a real POST -- abort the route so no live Firestore document can ever
+        be created by re-running this check). Load /national-show/vendors/register, fill every
+        other required field (businessName, contactPersonName, contactCellPhone, contactEmail,
+        productDescription, boothCount, powerRequired, termsAccepted) with valid data, leave all
+        8 vendorCategory checkboxes unchecked, and submit. Assert: (a) zero requests reach
+        /api/vendors/register; (b) a visible [role="alert"] region renders text mentioning
+        vendor category (case-insensitive match on "vendor category" or "vendorCategory"); (c) a
+        screenshot is saved to
+        contracts/checks/vendorcategory-aria-required-enforcement-f1/screenshots/empty-category-blocked.png.
+        FAILS ON: any request reaching /api/vendors/register; no visible alert text, or alert
+        text that does not mention the category field; the screenshot not being written.
+      command: node contracts/checks/vendorcategory-aria-required-enforcement-f1/check-empty-category-blocked.mjs
+    - id: A7
+      description: >-
+        Regression guard, same Playwright harness as A6 (network intercepted and fulfilled
+        locally with a mocked 201 -- never a real POST reaching the live server). Same valid form
+        as A6, but check exactly ONE vendorCategory checkbox (e.g. "plant-sales") before
+        submitting. Assert: (a) exactly one request reaches /api/vendors/register; (b) the
+        request method is POST; (c) the client-side "Please check the highlighted fields."
+        validation-error banner is NOT visible after submit (i.e. the gate does not
+        over-trigger when exactly one category is selected); (d) a screenshot is saved to
+        contracts/checks/vendorcategory-aria-required-enforcement-f1/screenshots/one-category-posts.png.
+        This is the "gate too aggressive" failure mode -- must not be too strict.
+        FAILS ON: zero requests observed; more than one request (double-submit); the
+        validation-error banner still showing; the screenshot not being written.
+      command: node contracts/checks/vendorcategory-aria-required-enforcement-f1/check-one-category-posts.mjs
+    - id: A8
+      description: >-
+        Durable evidence check: both BrowserAgent screenshots from A6/A7 exist on disk and are
+        non-empty files, proving the real-browser verification pass documented in the mission
+        goal actually happened.
+        FAILS ON: either screenshot file missing or zero bytes.
+      command: >-
+        test -s contracts/checks/vendorcategory-aria-required-enforcement-f1/screenshots/empty-category-blocked.png
+        && test -s contracts/checks/vendorcategory-aria-required-enforcement-f1/screenshots/one-category-posts.png
