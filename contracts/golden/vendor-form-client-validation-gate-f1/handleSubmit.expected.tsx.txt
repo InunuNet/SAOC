@@ -1,0 +1,39 @@
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (status === 'submitting') return;
+
+    if (hp.trim() !== '') {
+      setStatus('error');
+      setDescriptor({ kind: 'error', message: 'Something went wrong. Please try again.' });
+      return;
+    }
+
+    const clientErrors = validateVendorRegisterFormClientSide(state);
+    if (clientErrors.length > 0) {
+      setStatus('error');
+      setDescriptor({
+        kind: 'validation-error',
+        message: 'Please check the highlighted fields.',
+        fieldErrors: clientErrors,
+      });
+      return;
+    }
+
+    setStatus('submitting');
+    setDescriptor(null);
+
+    try {
+      const res = await fetch('/api/vendors/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildVendorRegistrationPayload(state)),
+      });
+      const body = await res.json().catch(() => undefined);
+      const result = describeVendorRegistrationResponse(res.status, body);
+      setDescriptor(result);
+      setStatus(result.kind === 'success' ? 'success' : 'error');
+    } catch {
+      setDescriptor(describeVendorRegistrationResponse(0, undefined));
+      setStatus('error');
+    }
+  }

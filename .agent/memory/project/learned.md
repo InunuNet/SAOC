@@ -2472,3 +2472,13 @@ component files, contract goldens/checks, and docs) and the `wrap_mission.sh` de
 dirty `.claude/settings.json`. Same workaround applied: hand-built the real file set from `git
 status --porcelain`, replicated the wrap steps manually. Not PR'd upstream this session per
 standing instruction — just logging the count.
+
+
+(2026-08-25) 6th repro: `vendor-form-client-validation-gate` close-out hit the same
+`scoped_stage.py --dry-run` empty-ledger bug (returned only the mission file + spec dir, missing
+the 6 check scripts, 2 screenshots, 2 golden files, and docs) and the `wrap_mission.sh` denylist
+abort on dirty `.claude/settings.json`. This mission was regression-lock-only (no production
+source touched at all — the claimed defect never existed), which makes the empty-ledger bug more
+visible since almost everything needing staging was contracts/checks/docs. Same manual workaround
+applied: hand-built the real file set from `git status --porcelain`, replicated wrap steps
+manually.

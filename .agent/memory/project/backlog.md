@@ -428,10 +428,15 @@ flat-over-nested-submenu pattern.
   contract identify real accent-contrast failures on live public pages. Remedy fully specified in
   `contracts/golden/wcag-accent-contrast/remedy.md`, deliberately not applied — it is a design-token
   decision. This is a live accessibility failure on public pages and should not sit indefinitely.
-- [ ] **[P2] Vendor form has no client-side validation gating submission.** `checkValidity()`
-  correctly flags empty required fields and whitespace-only text, but nothing in the submit handler
-  checks it before firing the network request — a fully empty form POSTs. All rejection is
-  server-side with no client backstop.
+- [x] ~~**[P2] Vendor form has no client-side validation gating submission.**~~ RESOLVED
+  2026-08-25 — investigation (mission `vendor-form-client-validation-gate`, F1) found the described
+  defect did not exist in current committed source: `handleSubmit()` in
+  `components/vendors/VendorRegisterForm.tsx` already runs client-side validation before the fetch,
+  blocks on any error, and reuses the existing error-display path. No production fix was needed; a
+  6-script Playwright regression-lock suite was added instead
+  (`contracts/checks/vendor-form-client-validation-gate-f1/`) to prevent the defect from being
+  reintroduced. Gate 7/7 PASS, QA PASS, Codex GPT-5.5 clean. Docs:
+  `docs/vendor-form-client-validation-gate.md`.
 - [ ] **[P2] `boothCount` still bypasses the form's own guarded-parse pattern.**
   `lib/vendor-register-form-payload.ts:117` is a raw `Number.parseInt`; every other numeric field
   routes through `toOptionalInt()`. Garbage parses to `NaN` → `null` in the body → correct but

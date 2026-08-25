@@ -1,0 +1,116 @@
+schema: athanor.contract/v1
+slug: vendor-form-client-validation-gate
+goal: >-
+  Mission vendor-form-client-validation-gate F1. Investigation finding (full detail:
+  contracts/golden/vendor-form-client-validation-gate-f1/README.md): the defect described in the
+  dispatch brief -- "nothing in the submit handler checks client validation before firing the
+  POST, a fully empty form currently POSTs" -- does NOT exist in current committed source
+  (components/vendors/VendorRegisterForm.tsx, HEAD as of commit a23bbac). handleSubmit() already
+  runs validateVendorRegisterFormClientSide(state) before the fetch('/api/vendors/register', ...)
+  call, returns early on any client error, and renders those errors through the form's one
+  existing error-display surface (VendorRegisterStatusBanner + humaniseFieldError) -- no
+  duplicate/invented error pattern. Server-side validation (lib/vendor-submissions.ts) remains
+  untouched and authoritative.
+  DO NOT IMPLEMENT A FIX. This is a regression-lock and verification contract: no production
+  source file should need to change. @dev writes the check scripts below (structural + Playwright
+  behavioral, real browser, real network interception) and runs a real BrowserAgent pass proving
+  both the blocked-empty-submit and successful-valid-submit paths, screenshotted. If any check
+  fails, that is a genuine new regression to report -- not something to patch around by loosening
+  the assertion.
+created_at: '2026-08-25'
+autonomy: high
+
+# SCOPE: no edits expected under app/, components/, or lib/. New files only, all under
+# contracts/checks/vendor-form-client-validation-gate-f1/ (check scripts + screenshots/).
+
+features:
+  - id: F1
+    name: Regression-lock and BrowserAgent verification of the existing vendor form client-side
+      validation gate
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-form-client-validation-gate-f1/README.md
+  - contracts/golden/vendor-form-client-validation-gate-f1/handleSubmit.expected.tsx.txt
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        Structural: in components/vendors/VendorRegisterForm.tsx, the first call to
+        validateVendorRegisterFormClientSide(state) occurs at an earlier line number than the
+        fetch('/api/vendors/register', ...) call inside the same handleSubmit function. Proves
+        the validity check is wired ahead of the network call, not merely present somewhere in
+        the file.
+        FAILS ON: the ordering being reversed or the validateVendorRegisterFormClientSide call
+        being removed entirely (grep finds zero matches -> script must fail closed, not pass on
+        absence).
+      command: node contracts/checks/vendor-form-client-validation-gate-f1/check-validation-precedes-fetch.mjs
+    - id: A2
+      description: >-
+        Structural: the `if (clientErrors.length > 0)` block in handleSubmit contains a `return`
+        statement within its body (i.e. an invalid form genuinely halts execution rather than
+        merely setting error state and falling through to the fetch call below it).
+        FAILS ON: the return being removed, moved outside the if-block, or the block itself
+        deleted.
+      command: node contracts/checks/vendor-form-client-validation-gate-f1/check-early-return-blocks-submit.mjs
+    - id: A3
+      description: >-
+        Behavioral, real headless browser (Playwright), real network layer intercepted (not
+        mocked at the fetch/JS level -- intercept at the browser network layer so a real request
+        would be observed even if some future refactor bypassed the fetch() wrapper). Load
+        /national-show/vendors/register, submit the form completely empty (no fields filled),
+        and assert: (a) zero requests to /api/vendors/register are observed; (b) the page shows
+        visible validation error text (e.g. a humanised field-error message) after submit; (c) a
+        screenshot is saved to
+        contracts/checks/vendor-form-client-validation-gate-f1/screenshots/empty-submit-blocked.png.
+        FAILS ON: any request reaching /api/vendors/register; no visible error text appearing;
+        the screenshot not being written.
+      command: node contracts/checks/vendor-form-client-validation-gate-f1/check-empty-submit-blocked.mjs
+    - id: A4
+      description: >-
+        Regression guard, same Playwright harness as A3. Fill every required field of the vendor
+        registration form with valid data (business name, contact name, cell phone, valid email,
+        product description, at least one vendor category, a positive integer booth count,
+        powerRequired answered, termsAccepted checked) and submit. Assert: (a) exactly one
+        request to /api/vendors/register is observed; (b) the request method is POST; (c) the
+        form reaches a non-error state (success banner/screen, or if run against a real dev
+        server without seeded Firestore, at minimum the request is NOT blocked client-side --
+        i.e. it left the browser); (d) a screenshot is saved to
+        contracts/checks/vendor-form-client-validation-gate-f1/screenshots/valid-submit-posts.png.
+        This is the "gate too aggressive" failure mode -- a client-side check that blocks a
+        genuinely valid submission is exactly as serious a regression as the empty-form case.
+        FAILS ON: zero requests observed for a fully valid form; more than one request (double-
+        submit); the screenshot not being written.
+      command: node contracts/checks/vendor-form-client-validation-gate-f1/check-valid-submit-posts.mjs
+    - id: A5
+      description: >-
+        Regression guard: server-side validation stays authoritative and untouched. Structural
+        check that app/api/vendors/register/route.ts (or the handler it delegates to) still calls
+        validateVendorSubmissionInput (lib/vendor-submissions.ts) unconditionally on every
+        request body -- i.e. the server never trusts a client-side-only validity flag or skips
+        its own validation because the client already checked.
+        FAILS ON: validateVendorSubmissionInput no longer being called from the register route
+        path; any conditional that skips server validation based on a request header/body flag.
+      command: node contracts/checks/vendor-form-client-validation-gate-f1/check-server-validation-untouched.mjs
+    - id: A6
+      description: >-
+        Regression guard: no duplicate/invented error-display pattern. Structural check that
+        client-side validation errors (the 'validation-error' descriptor kind) are still rendered
+        exclusively through VendorRegisterStatusBanner + humaniseFieldError (the same path used
+        for server-side/rate-limit/network errors) -- i.e. no second error-rendering component or
+        inline error UI was introduced anywhere under components/vendors/ for this purpose.
+        FAILS ON: a new component/JSX block that renders fieldErrors independently of
+        VendorRegisterStatusBanner; humaniseFieldError no longer being used for the
+        'validation-error' kind.
+      command: node contracts/checks/vendor-form-client-validation-gate-f1/check-error-display-pattern-reused.mjs
+    - id: A7
+      description: >-
+        Durable evidence check: both BrowserAgent screenshots from A3/A4 exist on disk and are
+        non-empty files, proving the real-browser verification pass documented in the mission
+        goal actually happened (not just claimed in a chat message).
+        FAILS ON: either screenshot file missing or zero bytes.
+      command: >-
+        test -s contracts/checks/vendor-form-client-validation-gate-f1/screenshots/empty-submit-blocked.png
+        && test -s contracts/checks/vendor-form-client-validation-gate-f1/screenshots/valid-submit-posts.png
