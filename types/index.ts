@@ -491,6 +491,42 @@ export type VendorPaymentMethod = 'cash' | 'card' | 'eft' | 'not-applicable';
 
 export type VendorSubmissionStatus = 'submitted' | 'under-review' | 'approved' | 'rejected';
 
+// F1 (vendor-registration-form-rebuild) — five new closed unions for the source document's
+// additional multi-choice fields. See contract-f1.yaml / the F1 golden README for provenance.
+export type VendorBusinessEntityType =
+  | 'company'
+  | 'close-corporation'
+  | 'sole-proprietor'
+  | 'partnership'
+  | 'individual'
+  | 'other';
+
+export type VendorLivePlantType =
+  | 'orchids'
+  | 'other-plants'
+  | 'bulbs-tubers'
+  | 'seeds'
+  | 'cut-flowers'
+  | 'tissue-culture'
+  | 'other';
+
+export type VendorVehicleType =
+  | 'car'
+  | 'suv-bakkie'
+  | 'panel-van'
+  | 'delivery-van'
+  | 'truck'
+  | 'trailer'
+  | 'other';
+
+export type VendorWasteType =
+  | 'general'
+  | 'cardboard-packaging'
+  | 'plant-material'
+  | 'food-waste'
+  | 'wastewater'
+  | 'other';
+
 export interface VendorSubmission {
   id: string;
 
@@ -500,11 +536,30 @@ export interface VendorSubmission {
   contactPersonName: string;
   contactCellPhone: string;
   contactEmail: string;
-  physicalAddress?: string;
+  physicalAddress: string;
   cipcNumber?: string;
   vatNumber?: string;
   website?: string;
   socialMediaHandle?: string;
+
+  // F1 (vendor-registration-form-rebuild) — Section 1 additions, purely additive; see
+  // contract-f1.yaml.
+  tradingNameSameAsBusiness?: boolean;
+  businessEntityType?: VendorBusinessEntityType;
+  businessEntityTypeOther?: string;
+  vatRegistered?: boolean;
+  countryOfBusinessRegistration?: string;
+  postalAddressSameAsPhysical?: boolean;
+  postalAddress?: string;
+  contactPosition?: string;
+  alternativeContactNumber?: string;
+  accountsContactName?: string;
+  accountsContactEmail?: string;
+
+  // F1 (vendor-registration-form-rebuild) — Section 2, Emergency Contact, entirely new.
+  emergencyContactName: string;
+  emergencyContactRelationship?: string;
+  emergencyContactCellPhone: string;
 
   // Section 2 — products & regulatory permits (fields 11-16).
   vendorCategory: VendorCategory[];
@@ -513,6 +568,16 @@ export interface VendorSubmission {
   citesPermitNumber?: string;
   foodHandlingCertificateNumber?: string;
   foodItemList?: string;
+
+  // F1 (vendor-registration-form-rebuild) — Section 3 additions, purely additive; vendorCategory
+  // enum stays untouched here (see contract-f1.yaml's sequencing rule, deferred to F3).
+  sellsLivePlants?: boolean;
+  livePlantTypes?: VendorLivePlantType[];
+  livePlantTypesOther?: string;
+  plantsImportedForEvent?: boolean;
+  importCountryOfOrigin?: string;
+  citesListedSpecies?: boolean;
+  foodHealthTradingDocumentation?: string;
 
   // Section 3 — booth & logistics requirements (fields 17-27).
   boothCount: number;
@@ -527,10 +592,70 @@ export interface VendorSubmission {
   loadInSlot?: string;
   loadOutSlot?: string;
 
+  // F1 (vendor-registration-form-rebuild) — Section 4 additions, purely additive; boothType
+  // enum stays untouched here (see contract-f1.yaml's sequencing rule, deferred to F4).
+  boothPositionRequest?: string;
+  adjacentBoothRequested?: boolean;
+  adjacentBoothVendorName?: string;
+  specialDisplayRequirements?: string;
+
+  // F1 (vendor-registration-form-rebuild) — Section 6 additions.
+  electricalOutletsRequired?: number;
+  electricalEquipmentList?: string;
+  electricalEquipmentContinuousOperation?: boolean;
+  electricalEquipmentContinuousDetails?: string;
+  waterIntendedUse?: string;
+  wastewaterDrainageRequired?: boolean;
+  wastewaterDrainageDetails?: string;
+
+  // F1 (vendor-registration-form-rebuild) — Section 7, Gas/Cooking/Heat, entirely new.
+  gasOrHeatEquipmentUsed?: boolean;
+  gasEquipmentType?: string;
+  gasFuelType?: string;
+  gasCylinderSize?: string;
+  gasCylinderCount?: number;
+  gasSafetyInformation?: string;
+
+  // F1 (vendor-registration-form-rebuild) — Section 8 additions; existing
+  // foodHandlingCertificateNumber/foodItemList stay untouched.
+  foodPreparationOnSite?: boolean;
+  foodCookingOnSite?: boolean;
+
+  // F1 (vendor-registration-form-rebuild) — Section 9 additions, alongside the still-live
+  // staffPerDay (see contract-f1.yaml's sequencing rule, deferred removal to F6).
+  staffCountSetupDay?: number;
+  staffCountDay1?: number;
+  staffCountDay2?: number;
+  staffCountDay3?: number;
+  staffCountBreakdownDay?: number;
+  exhibitorPassesRequired?: boolean;
+  exhibitorPassesCount?: number;
+
+  // F1 (vendor-registration-form-rebuild) — Section 10 additions; existing
+  // vehicleRegistrations/loadInSlot/loadOutSlot stay untouched.
+  vehicleType?: VendorVehicleType;
+  vehicleTypeOther?: string;
+  vehicleHeight?: string;
+  vehicleLength?: string;
+  trailerAttached?: boolean;
+
+  // F1 (vendor-registration-form-rebuild) — Section 11, Storage & Security, entirely new. NOT
+  // forced true — the source places no asterisk on this acknowledgement, unlike termsAccepted.
+  storageRiskAcknowledged?: boolean;
+
+  // F1 (vendor-registration-form-rebuild) — Section 12, Waste & Cleaning, entirely new.
+  wasteTypes?: VendorWasteType[];
+  wasteTypesOther?: string;
+  specialWasteRequirements?: string;
+
   // Section 4 — bio & payment (fields 28-30).
   bio?: string;
   paymentMethodsAccepted?: VendorPaymentMethod[];
   paymentReference?: string;
+
+  // F1 (vendor-registration-form-rebuild) — Section 15, Insurance, entirely new.
+  hasPublicLiabilityInsurance?: boolean;
+  productLiabilityInsuranceStatus?: 'yes' | 'no' | 'not-applicable';
 
   // Section 5 — terms & conditions (field 31).
   termsAccepted: boolean;

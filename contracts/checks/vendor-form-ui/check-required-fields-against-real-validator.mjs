@@ -27,6 +27,9 @@ const BASE_VALID_PAYLOAD = {
   contactPersonName: 'Jane Doe',
   contactCellPhone: '0821234567',
   contactEmail: 'jane@acme.co.za',
+  physicalAddress: '10 Main Road, Johannesburg, 2000',
+  emergencyContactName: 'John Doe',
+  emergencyContactCellPhone: '0839876543',
   productDescription: 'Cattleya hybrids',
   vendorCategory: ['plant-sales'],
   boothCount: 2,
@@ -70,10 +73,13 @@ if (JSON.stringify(fromFields) !== JSON.stringify(requiredKeysSorted)) {
   );
 }
 
-// --- A3d: exactly 9 required fields, matching F4's own validator body (5 requireNonEmptyString
-// calls + vendorCategory + boothCount + powerRequired + termsAccepted). ---
-if (golden.requiredKeys.length !== 9) {
-  failures.push(`expected exactly 9 required fields, golden.requiredKeys has ${golden.requiredKeys.length}`);
+// --- A3d: exactly 10 required fields, matching F4's own validator body (6 requireNonEmptyString
+// calls -- F2 (vendor-registration-form-rebuild) added physicalAddress -- + vendorCategory +
+// boothCount + powerRequired + termsAccepted). emergencyContactName/emergencyContactCellPhone
+// are also required by the real validator but are not public-form fields tracked in this
+// golden's 31-key subset -- see field-spec.golden.json's own scope note. ---
+if (golden.requiredKeys.length !== 10) {
+  failures.push(`expected exactly 10 required fields, golden.requiredKeys has ${golden.requiredKeys.length}`);
 }
 
 if (failures.length > 0) {

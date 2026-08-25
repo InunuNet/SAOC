@@ -1,5 +1,6 @@
 import type {
   VendorBoothType,
+  VendorBusinessEntityType,
   VendorCategory,
   VendorPaymentMethod,
 } from '@/types/index';
@@ -15,14 +16,28 @@ import type {
 export interface VendorRegisterFormState {
   businessName: string;
   tradingName: string;
+  tradingNameSameAsBusiness: boolean;
+  businessEntityType: string;
+  businessEntityTypeOther: string;
   contactPersonName: string;
+  contactPosition: string;
   contactCellPhone: string;
+  alternativeContactNumber: string;
   contactEmail: string;
+  accountsContactName: string;
+  accountsContactEmail: string;
   physicalAddress: string;
+  postalAddressSameAsPhysical: boolean;
+  postalAddress: string;
   cipcNumber: string;
+  vatRegistered: '' | 'true' | 'false';
   vatNumber: string;
+  countryOfBusinessRegistration: string;
   website: string;
   socialMediaHandle: string;
+  emergencyContactName: string;
+  emergencyContactRelationship: string;
+  emergencyContactCellPhone: string;
   vendorCategory: string[];
   productDescription: string;
   phytosanitaryPermitNumber: string;
@@ -89,6 +104,33 @@ export function isFoodRetailer(state: VendorRegisterFormState): boolean {
 }
 
 /**
+ * F2 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for
+ * tradingName. Same leak-proofing rationale as isElectricalLoadApplicable above: when the "same
+ * as business name" checkbox is ticked, the trading-name input is hidden and the payload omits
+ * tradingName regardless of any stale typed value.
+ */
+export function isTradingNameFieldApplicable(state: VendorRegisterFormState): boolean {
+  return !state.tradingNameSameAsBusiness;
+}
+
+/**
+ * F2 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for
+ * postalAddress. Same pattern: ticking "same as physical address" hides the postal-address
+ * textarea and the payload omits postalAddress.
+ */
+export function isPostalAddressFieldApplicable(state: VendorRegisterFormState): boolean {
+  return !state.postalAddressSameAsPhysical;
+}
+
+/**
+ * F2 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for the
+ * existing vatNumber field, newly gated on the "VAT registered" Yes/No radio.
+ */
+export function isVatNumberFieldApplicable(state: VendorRegisterFormState): boolean {
+  return state.vatRegistered === 'true';
+}
+
+/**
  * Coerces a VendorRegisterFormState into the wire payload the real
  * validateVendorSubmissionInput() (lib/vendor-submissions.ts, F4) expects: string form values
  * become number/boolean where the API requires it, and every optional field left blank by the
@@ -99,15 +141,30 @@ export function isFoodRetailer(state: VendorRegisterFormState): boolean {
 export function buildVendorRegistrationPayload(state: VendorRegisterFormState): unknown {
   return {
     businessName: state.businessName,
-    tradingName: omitBlank(state.tradingName),
+    tradingName: isTradingNameFieldApplicable(state) ? omitBlank(state.tradingName) : undefined,
+    tradingNameSameAsBusiness: state.tradingNameSameAsBusiness,
+    businessEntityType: omitBlank(state.businessEntityType) as VendorBusinessEntityType | undefined,
+    businessEntityTypeOther:
+      state.businessEntityType === 'other' ? omitBlank(state.businessEntityTypeOther) : undefined,
     contactPersonName: state.contactPersonName,
-    contactCellPhone: state.contactCellPhone,
+    contactPosition: omitBlank(state.contactPosition),
+    contactCellPhone: state.contactCellPhone.trim(),
+    alternativeContactNumber: omitBlank(state.alternativeContactNumber.trim()),
     contactEmail: state.contactEmail.trim(),
-    physicalAddress: omitBlank(state.physicalAddress),
+    accountsContactName: omitBlank(state.accountsContactName),
+    accountsContactEmail: omitBlank(state.accountsContactEmail.trim()),
+    physicalAddress: state.physicalAddress,
+    postalAddressSameAsPhysical: state.postalAddressSameAsPhysical,
+    postalAddress: isPostalAddressFieldApplicable(state) ? omitBlank(state.postalAddress) : undefined,
     cipcNumber: omitBlank(state.cipcNumber),
-    vatNumber: omitBlank(state.vatNumber),
+    vatRegistered: toOptionalBoolean(state.vatRegistered),
+    vatNumber: isVatNumberFieldApplicable(state) ? omitBlank(state.vatNumber) : undefined,
+    countryOfBusinessRegistration: omitBlank(state.countryOfBusinessRegistration),
     website: omitBlank(state.website),
     socialMediaHandle: omitBlank(state.socialMediaHandle),
+    emergencyContactName: state.emergencyContactName,
+    emergencyContactRelationship: omitBlank(state.emergencyContactRelationship),
+    emergencyContactCellPhone: state.emergencyContactCellPhone.trim(),
     vendorCategory: state.vendorCategory as VendorCategory[],
     productDescription: state.productDescription,
     phytosanitaryPermitNumber: omitBlank(state.phytosanitaryPermitNumber),

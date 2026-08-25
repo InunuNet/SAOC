@@ -62,6 +62,9 @@ await fillText('vendor-register-businessName', 'Test Orchid Traders');
 await fillText('vendor-register-contactPersonName', 'Jane Test');
 await fillText('vendor-register-contactCellPhone', '0821234567');
 await fillText('vendor-register-contactEmail', 'jane.test@example.com');
+await fillText('vendor-register-physicalAddress', '12 Orchid Lane, Stellenbosch, Western Cape, 7600');
+await fillText('vendor-register-emergencyContactName', 'Peter Test');
+await fillText('vendor-register-emergencyContactCellPhone', '0829876543');
 await fillText('vendor-register-productDescription', 'Assorted cymbidium and cattleya orchids.');
 
 // vendorCategory — check one checkbox option.

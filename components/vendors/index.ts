@@ -8,6 +8,7 @@ export { VendorBooleanRadioField } from './VendorBooleanRadioField';
 export { VendorRadioGroupField } from './VendorRadioGroupField';
 export { VendorCheckboxField } from './VendorCheckboxField';
 export { VendorContactFieldset } from './VendorContactFieldset';
+export { VendorEmergencyContactFieldset } from './VendorEmergencyContactFieldset';
 export { VendorCategoryFieldset } from './VendorCategoryFieldset';
 export { VendorBoothFieldset } from './VendorBoothFieldset';
 export { VendorMarketingFieldset } from './VendorMarketingFieldset';

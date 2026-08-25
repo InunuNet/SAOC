@@ -1,0 +1,9 @@
+{
+  "extends": "../../../../../../tsconfig.json",
+  "include": [
+    "../../../../../../lib/vendor-submissions.ts",
+    "../../../../../../types/index.ts",
+    "fixtures/vendor-submission-f1-typecheck.ts"
+  ],
+  "exclude": []
+}

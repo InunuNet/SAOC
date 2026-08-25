@@ -3,7 +3,8 @@
 // field's rejection is checked independently (not "some error occurred"), every closed-union
 // field's out-of-set rejection is checked, and boothCount's positive-integer requirement is
 // checked with 0, -1, and 1.5 specifically (catches a `> 0`-only check that forgets
-// Number.isInteger()). A minimal payload with only the nine required fields must be accepted.
+// Number.isInteger()). A minimal payload with only the twelve required fields must be
+// accepted.
 //
 // Run as: node --import tsx/esm contracts/checks/vendor-f4-submissions-model/check-required-field-rejection.mjs
 
@@ -16,6 +17,9 @@ const MINIMAL = {
   contactPersonName: 'Jane Vendor',
   contactCellPhone: '0821234567',
   contactEmail: 'jane@capeorchid.example',
+  physicalAddress: '1 Orchid Way, Stellenbosch',
+  emergencyContactName: 'Peter Vendor',
+  emergencyContactCellPhone: '0829876543',
   vendorCategory: ['plant-sales'],
   productDescription: 'Cattleya and Cymbidium hybrids.',
   boothCount: 1,
@@ -67,6 +71,9 @@ const REQUIRED_FIELDS = [
   'contactPersonName',
   'contactCellPhone',
   'contactEmail',
+  'physicalAddress',
+  'emergencyContactName',
+  'emergencyContactCellPhone',
   'vendorCategory',
   'productDescription',
   'boothCount',

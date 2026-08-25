@@ -2560,6 +2560,36 @@ count against the expected assertion total. Worth an upstream fix (gate should h
 silently pass, when a milestone references features that were never listed) — flagged, not
 acted on directly (out of this agent's scope).
 
+(2026-08-25) 10th repro: `vendor-form-label-readability` close-out hit the same `wrap_mission.sh`
+abort on dirty `.claude/settings.json` again (concurrent unrelated missions in the same session).
+Same manual workaround: hand-built the exact 39-file staging set from the golden README's file
+list + `git status --porcelain`, verified zero `.claude/worktrees/` leakage and zero unrelated
+harness/other-mission files staged before committing directly. No new information beyond the
+count — well past the threshold logged at the item above for an upstream PR, still not acted on
+without sign-off per standing instruction.
+
+(2026-08-25) Two contract-check defect classes caught by Codex GPT-5.5, both worth checking for
+in OTHER contracts in this project, not just this mission's:
+1. **Tautological same-line-token grep in a diff-based assertion.** A check that greps a diff for
+   a colour/class token to prove "nothing else changed" can match on BOTH the `-` and `+` side of
+   a line that only dropped one unrelated token (e.g. `uppercase `) — the token that's actually
+   unchanged appears on both sides regardless of correctness, so the assertion can never fail even
+   on a broken implementation. Fix: pairwise diff per changed line — strip the known-removed token
+   from the `-` side and assert byte-identity with the `+` side, not a diff-wide substring grep.
+2. **Environment-dependent `grep` aliasing masked a real gitignored-path leak.** This session's
+   interactive shell aliases `grep` to a gitignore-aware `ugrep` wrapper, which silently excluded
+   `.claude/worktrees/` (a gitignored directory holding stale copies from past sessions, containing
+   the OLD pre-fix string) from every manual verification grep. A contract check script or CI
+   subprocess using plain `/bin/grep`/`/usr/bin/grep` would NOT get that exclusion and could see
+   the stale worktree copy as a false "fix not applied everywhere" failure, or — worse — a
+   structural assertion could pass by accident while actually scanning the wrong tree. Recommend:
+   contract shell assertions that scan the filesystem should always use an explicit absolute-path
+   binary (`/usr/bin/grep`, not bare `grep`) and explicit path exclusions
+   (`--exclude-dir=worktrees` or equivalent), never rely on an interactive shell's aliases being
+   present in the non-interactive execution context. Worth a future audit pass across this
+   project's other `contracts/checks/*` scripts for the same unscoped-grep pattern — not just this
+   mission's.
+
 (2026-08-25) `checkin-attempts-write-verification` mission: @qa + Codex GPT-5.5 found and @dev
 fixed 3 real bugs in `scripts/verify-checkin-audit-write.ts`'s own join logic (not production
 code). Two are general lessons worth carrying to other cross-reference/reconciliation scripts:
@@ -2576,3 +2606,27 @@ code). Two are general lessons worth carrying to other cross-reference/reconcili
    path never got. Fixtures passed while the equivalent live bug (a non-admit outcome masking a
    missing write) would have been invisible. Any dual-mode (live query / offline fixture) script
    needs the fixture path to duplicate every predicate the live path relies on, not just the
+   shape of the returned data.
+
+(2026-08-26) `vendor-registration-form-rebuild` M1 (F1+F2): tightening a shared type's
+required-ness — even when correct and deliberate (F2 made `physicalAddress`,
+`emergencyContactName`, `emergencyContactCellPhone` required on `VendorSubmission` /
+`VendorRegisterFormState`, per the real source document) — broke fixtures in 9 OTHER
+pre-existing, unrelated contracts (`vendor-f4-submissions-model`, `vendor-form-ui`,
+`vendor-f6-review-workflow`, `vendor-f7-payment-path`, `vendor-f5-register-route`,
+`vendor-form-client-validation-gate-f1`, `vendor-boothcount-guarded-parse-f1`,
+`vendor-form-maxlength-and-phone-pattern-f1`, `vendorcategory-aria-required-enforcement-f1`)
+across 3 separate Codex+QA rounds before it was fully caught. Codex's diff-scoped review only
+catches fixtures that happen to touch changed lines — it does NOT catch every fixture across the
+repo that constructs a "valid" instance of the changed type without exercising the real
+validator at test-authoring time. Before declaring a required-ness change done, grep for every
+constructor of the shared type across `contracts/` (fixtures, goldens, typecheck files) as a
+deliberate sweep — don't rely on Codex's diff scope or one pass of @qa to surface all of them.
+Also caught in the same milestone: a real crash bug (`.trim()` on `undefined` in a stale
+fixture) and a real trim-mismatch bug — the client validated a trimmed value but the payload
+builder (`lib/vendor-register-form-payload.ts`) submitted the untrimmed raw value, so
+whitespace-padded input silently passed client-side validation then failed server-side
+validation on submit, across 4 pattern-validated fields. Any form pipeline that validates a
+trimmed value must apply that same trim in the payload-building step before submission — trim
+policy has to be consistent across validate-then-submit, not just applied wherever it's
+convenient to check.

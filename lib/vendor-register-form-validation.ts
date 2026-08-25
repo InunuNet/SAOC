@@ -24,6 +24,9 @@ export function validateVendorRegisterFormClientSide(state: VendorRegisterFormSt
   if (state.contactPersonName.trim() === '') {
     errors.push('contactPersonName is required and must be a non-empty string');
   }
+  if (state.physicalAddress.trim() === '') {
+    errors.push('physicalAddress is required and must be a non-empty string');
+  }
   const contactCellPhone = state.contactCellPhone.trim();
   if (contactCellPhone === '') {
     errors.push('contactCellPhone is required and must be a non-empty string');
@@ -35,6 +38,24 @@ export function validateVendorRegisterFormClientSide(state: VendorRegisterFormSt
     errors.push('contactEmail is required and must be a non-empty string');
   } else if (!EMAIL_PATTERN.test(contactEmail)) {
     errors.push('contactEmail must be a valid email address');
+  }
+  const alternativeContactNumber = state.alternativeContactNumber.trim();
+  if (alternativeContactNumber !== '' && !PHONE_PATTERN.test(alternativeContactNumber)) {
+    errors.push('alternativeContactNumber must be a valid phone number');
+  }
+  const accountsContactEmail = state.accountsContactEmail.trim();
+  if (accountsContactEmail !== '' && !EMAIL_PATTERN.test(accountsContactEmail)) {
+    errors.push('accountsContactEmail must be a valid email address');
+  }
+  const emergencyContactName = state.emergencyContactName.trim();
+  if (emergencyContactName === '') {
+    errors.push('emergencyContactName is required and must be a non-empty string');
+  }
+  const emergencyContactCellPhone = state.emergencyContactCellPhone.trim();
+  if (emergencyContactCellPhone === '') {
+    errors.push('emergencyContactCellPhone is required and must be a non-empty string');
+  } else if (!PHONE_PATTERN.test(emergencyContactCellPhone)) {
+    errors.push('emergencyContactCellPhone must be a valid phone number');
   }
   if (state.productDescription.trim() === '') {
     errors.push('productDescription is required and must be a non-empty string');

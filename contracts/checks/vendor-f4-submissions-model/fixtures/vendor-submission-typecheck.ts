@@ -23,19 +23,24 @@ import {
 
 const collectionName: 'vendorSubmissions' = VENDOR_SUBMISSIONS_COLLECTION;
 
-// --- Positive case 1: a minimal submission carrying only the nine required fields. ---
+// --- Positive case 1: a minimal submission carrying only the required fields. ---
 // If this fails to compile, a required field was mistakenly typed as required when the
-// source form marks it optional (over-strict).
+// source form marks it optional (over-strict). physicalAddress/emergencyContactName/
+// emergencyContactCellPhone joined the required set in F2 (vendor-registration-form-rebuild);
+// see contract-f2.yaml's deploy-safety sequencing rule.
 const minimal: VendorSubmissionDraft = {
   businessName: 'Cape Orchid Nursery',
   contactPersonName: 'Jane Vendor',
   contactCellPhone: '0821234567',
   contactEmail: 'jane@capeorchid.example',
+  physicalAddress: '1 Orchid Way, Stellenbosch',
   vendorCategory: ['plant-sales'],
   productDescription: 'Cattleya and Cymbidium hybrids.',
   boothCount: 1,
   powerRequired: true,
   termsAccepted: true,
+  emergencyContactName: 'John Vendor',
+  emergencyContactCellPhone: '0827654321',
 };
 
 // --- Positive case 2: every one of the 31 fields populated, plus all four closed unions
@@ -73,6 +78,9 @@ const full: VendorSubmissionDraft = {
   paymentMethodsAccepted: ['card', 'eft'],
   paymentReference: 'EFT-REF-00123',
   termsAccepted: true,
+  emergencyContactName: 'John Vendor',
+  emergencyContactRelationship: 'Spouse',
+  emergencyContactCellPhone: '0827654321',
 };
 
 const builtMinimal: Omit<VendorSubmission, 'id'> = buildVendorSubmission(minimal, new Date());

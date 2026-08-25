@@ -1,0 +1,128 @@
+schema: athanor.contract/v1
+slug: vendor-registration-form-rebuild-f1
+goal: >-
+  Mission vendor-registration-form-rebuild F1 -- a deploy-safe, purely additive data-model
+  foundation for the 2027 National Show vendor registration form's real source document
+  (docs/leeann-source/2027-vendor-registration-form_2026-08-25.md, 18 sections / ~90 fields),
+  which supersedes the older, wrong document the live 31-field form was actually built from.
+  Adds fifty-eight new OPTIONAL fields (plus five new closed-union types) to
+  `VendorSubmission`/`VendorSubmissionDraft` (types/index.ts) and extends
+  `validateVendorSubmissionInput()`/`buildVendorSubmission()` (lib/vendor-submissions.ts) to
+  cover them, spanning source Sections 1 (additive parts only), 2 (Emergency Contact, new), 3
+  (additive parts only), 4 (additive parts only), 6, 7 (new), 8 (additive parts only), 9
+  (additive parts only, staffPerDay untouched), 10 (additive parts only), 11 (new), 12 (new),
+  15 (new). Deliberately does NOT touch any existing field's required-ness or any existing
+  closed enum (vendorCategory, boothType, paymentMethodsAccepted) -- those changes are deferred
+  to the specific downstream feature (F2/F3/F4/F6/F8) that ships the matching UI change in the
+  SAME deploy, because the live public API stays deployed and accepting real submissions
+  between every feature merge. No UI file, no route, no Storage path, no admin-only field is
+  touched. Full decision record, the sequencing rule this contract exists to enforce, and every
+  field's provenance: .agent/memory/project/specs/vendor-registration-form-rebuild/goldens/f1-data-model-foundation.md
+created_at: '2026-08-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Two files touched: (1) types/index.ts -- adds five new closed unions
+      (VendorBusinessEntityType: 'company' | 'close-corporation' | 'sole-proprietor' |
+      'partnership' | 'individual' | 'other'; VendorLivePlantType: 'orchids' | 'other-plants' |
+      'bulbs-tubers' | 'seeds' | 'cut-flowers' | 'tissue-culture' | 'other'; VendorVehicleType:
+      'car' | 'suv-bakkie' | 'panel-van' | 'delivery-van' | 'truck' | 'trailer' | 'other';
+      VendorWasteType: 'general' | 'cardboard-packaging' | 'plant-material' | 'food-waste' |
+      'wastewater' | 'other'; and an inline 3-member union for productLiabilityInsuranceStatus:
+      'yes' | 'no' | 'not-applicable') and fifty-eight new OPTIONAL fields on VendorSubmission,
+      grouped by source section with a comment citing this contract, exactly as listed in the
+      golden README's "Field-by-field additions" section verbatim -- every field name, type,
+      and (for strings) max length must match that list exactly. NO existing VendorSubmission
+      field's type or optionality changes; NO existing union (VendorCategory, VendorBoothType,
+      VendorPaymentMethod, VendorSubmissionStatus) gains, loses, or renames a member. (2)
+      lib/vendor-submissions.ts -- FIELD_MAX_LENGTHS gains an entry for every new string field
+      (using validateOptionalStringMaxLength, the existing helper, never a bespoke inline
+      length check); five new VENDOR_* frozen array/union constants + five new
+      validate<Name>(value, errors) helper functions, mirroring validateVendorCategory/
+      validateBoothType/validatePaymentMethodsAccepted's existing shape exactly, wired into
+      validateVendorSubmissionInput(); buildVendorSubmission() extends its explicit
+      field-by-field copy (NEVER a `{ ...input }` spread) to include all fifty-eight new fields;
+      status/submittedAt/id remain forced/excluded exactly as today. NO existing validation
+      rule is loosened OR tightened -- the exact old 31-field shape (F4's own golden minimal
+      and full payloads) must continue to validate byte-for-byte identically after this
+      feature, proven by A3. lib/vendor-register-form-payload.ts and
+      lib/vendor-register-form-validation.ts are NOT touched by this feature -- they are
+      UI-state-coupled files extended by each downstream UI feature together with its own
+      fieldset, never pre-staged here. Zero authorization meaning preserved: no import of
+      lib/admin-auth.ts or lib/admin-roles.ts, and no new or existing field is ever read by any
+      capability/role/admin-grant decision anywhere in the codebase.
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/vendor-registration-form-rebuild/goldens/f1-data-model-foundation.md
+  - .agent/memory/project/specs/vendor-registration-form-rebuild/checks/tsconfig.typecheck.json
+  - .agent/memory/project/specs/vendor-registration-form-rebuild/checks/fixtures/vendor-submission-f1-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The whole project still type-checks under strict TypeScript after types/index.ts's five new unions + fifty-eight new fields, and lib/vendor-submissions.ts's extensions, are added.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof (not source-grep) of the new type shapes: the OLD 31-field
+        VendorSubmissionDraft shape (mentioning none of F1's new fields) still compiles
+        unmodified; a full literal populating every one of F1's fifty-eight new fields plus
+        every existing field compiles; each new closed union rejects an out-of-set literal via
+        `@ts-expect-error` in the SAME passing tsc run (defeats widening any new union to
+        `string`). tsc fails the whole run if any `@ts-expect-error` line does NOT actually
+        error, or if any valid literal fails to compile.
+      command: >-
+        npx tsc --noEmit -p .agent/memory/project/specs/vendor-registration-form-rebuild/checks/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        THE DEPLOY-SAFETY REGRESSION, NARROWED AS OF F2 -- F2 (per its own contract-f2.yaml and
+        goldens/f2-ui-vendor-business-emergency-contact.md) has since legitimately superseded
+        part of this assertion by design: it tightened physicalAddress, emergencyContactName,
+        and emergencyContactCellPhone from optional to required, in the same deploy as the UI
+        that collects them, per F1's own documented sequencing rule. F2's own A3
+        (check-f2-required-fields.mjs) is now the load-bearing proof for that specific
+        tightening. This assertion instead proves real validateVendorSubmissionInput() calls
+        show the OLD 31-field shape PLUS those 3 now-required fields (F4's own minimal/full
+        golden payloads, mentioning none of F1's OTHER 55 new fields, using the OLD
+        boothType/vendorCategory/paymentMethodsAccepted values) still validates as valid:true
+        with zero errors -- i.e. no field or union beyond F2's own documented 3-field tightening
+        was ever touched. Also documents (without re-proving F2's own load-bearing case) that the
+        bare pre-F2 shape is now correctly rejected, naming physicalAddress. Also proves a
+        representative sample of new string fields' max-length bounds and every new closed
+        union's out-of-set rejection, each named in the resulting error, and that a payload using
+        every new field with valid values is accepted. Defeating mutation: making any field
+        beyond the 3 F2 named required, or narrowing/renaming any EXISTING enum member.
+      command: >-
+        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-new-fields-additive-and-validated.mjs
+
+    - id: A4
+      description: >-
+        Real buildVendorSubmission() calls prove every one of F1's fifty-eight new fields,
+        present on the input, survives verbatim onto the built document (defeats a
+        field-list-extension that silently drops a field); a field genuinely OMITTED from the
+        input is undefined on the output, never defaulted to some other value; and
+        status/submittedAt stay forced while a forged status/submittedAt/id on the raw input is
+        still ignored, unweakened by F1's additions (re-proves F4's own forgery-resistance
+        property). Defeating mutation: replacing the explicit field-by-field copy with a
+        `{ ...input }` spread anywhere in the function.
+      command: >-
+        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-build-submission-copy-through.mjs
+
+    - id: A5
+      description: >-
+        Zero-authorization proof, mirroring F4/F6/F7's own: lib/vendor-submissions.ts imports
+        neither '@/lib/admin-auth' nor '@/lib/admin-roles' (or any relative-path spelling of
+        either); a VendorSubmission built with every new F1 field populated, JSON
+        round-tripped, carries no admin/roles/capability/grant-flavoured key.
+      command: >-
+        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-zero-authorization.mjs
+
+    - id: A6
+      description: pnpm lint passes with zero errors after both changed files.
+      command: pnpm lint

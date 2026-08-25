@@ -61,9 +61,12 @@ async function fillText(id, value) {
 }
 
 await fillText('vendor-register-businessName', 'Test Orchid Traders');
+await fillText('vendor-register-physicalAddress', '123 Orchid Lane, Cape Town');
 await fillText('vendor-register-contactPersonName', 'Jane Test');
 await fillText('vendor-register-contactCellPhone', '0821234567');
 await fillText('vendor-register-contactEmail', 'jane.test@example.com');
+await fillText('vendor-register-emergencyContactName', 'John Test');
+await fillText('vendor-register-emergencyContactCellPhone', '0837654321');
 await fillText('vendor-register-productDescription', 'Assorted cymbidium and cattleya orchids.');
 
 // vendorCategory — exactly one checkbox checked.

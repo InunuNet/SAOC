@@ -12,6 +12,7 @@ import {
 } from '@/lib/vendor-register-response';
 import { validateVendorRegisterFormClientSide } from '@/lib/vendor-register-form-validation';
 import { VendorContactFieldset } from './VendorContactFieldset';
+import { VendorEmergencyContactFieldset } from './VendorEmergencyContactFieldset';
 import { VendorCategoryFieldset } from './VendorCategoryFieldset';
 import { VendorBoothFieldset } from './VendorBoothFieldset';
 import { VendorMarketingFieldset } from './VendorMarketingFieldset';
@@ -24,14 +25,28 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
 const INITIAL_STATE: VendorRegisterFormState = {
   businessName: '',
   tradingName: '',
+  tradingNameSameAsBusiness: false,
+  businessEntityType: '',
+  businessEntityTypeOther: '',
   contactPersonName: '',
+  contactPosition: '',
   contactCellPhone: '',
+  alternativeContactNumber: '',
   contactEmail: '',
+  accountsContactName: '',
+  accountsContactEmail: '',
   physicalAddress: '',
+  postalAddressSameAsPhysical: false,
+  postalAddress: '',
   cipcNumber: '',
+  vatRegistered: '',
   vatNumber: '',
+  countryOfBusinessRegistration: '',
   website: '',
   socialMediaHandle: '',
+  emergencyContactName: '',
+  emergencyContactRelationship: '',
+  emergencyContactCellPhone: '',
   vendorCategory: [],
   productDescription: '',
   phytosanitaryPermitNumber: '',
@@ -131,6 +146,7 @@ export function VendorRegisterForm() {
       ) : null}
 
       <VendorContactFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
+      <VendorEmergencyContactFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
       <VendorCategoryFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
       <VendorBoothFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
       <VendorMarketingFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />

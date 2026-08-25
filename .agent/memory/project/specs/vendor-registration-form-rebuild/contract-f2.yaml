@@ -1,0 +1,146 @@
+schema: athanor.contract/v1
+slug: vendor-registration-form-rebuild-f2
+goal: >-
+  Mission vendor-registration-form-rebuild F2 -- UI for source Section 1 (Vendor & Business
+  Details, full) and Section 2 (Emergency Contact, entirely new) of the 2027 National Show
+  vendor registration form. Expands components/vendors/VendorContactFieldset.tsx to collect
+  every F1-added Section 1 field (tradingNameSameAsBusiness, businessEntityType +
+  businessEntityTypeOther, vatRegistered gating vatNumber, countryOfBusinessRegistration,
+  postalAddressSameAsPhysical + postalAddress, contactPosition, alternativeContactNumber,
+  accountsContactName, accountsContactEmail) and adds a new
+  components/vendors/VendorEmergencyContactFieldset.tsx (emergencyContactName,
+  emergencyContactRelationship, emergencyContactCellPhone). Wires both into
+  components/vendors/VendorRegisterForm.tsx's state/payload/client-validation against F1's real
+  types -- never a parallel validation path. In the SAME deploy, tightens physicalAddress,
+  emergencyContactName, and emergencyContactCellPhone from optional to required in
+  types/index.ts, lib/vendor-submissions.ts's validateVendorSubmissionInput(), and
+  lib/vendor-register-form-validation.ts's client check, per F1's deploy-safety sequencing
+  rule. No route/handler change is needed -- app/api/vendors/register passes rawInput straight
+  through to the real validator/builder, which F1 already extended. Full decision record, every
+  file touched, the field reorder judgement call, and the "same as" gate-reuse rationale:
+  .agent/memory/project/specs/vendor-registration-form-rebuild/goldens/f2-ui-vendor-business-emergency-contact.md
+created_at: '2026-08-25'
+autonomy: high
+
+features:
+  - id: F2
+    name: >-
+      Eight files touched. (1) types/index.ts -- physicalAddress, emergencyContactName,
+      emergencyContactCellPhone drop their `?` (become required, matching businessName/
+      contactPersonName/contactCellPhone/contactEmail's existing required-field convention on
+      VendorSubmission); remove the now-stale "F2 tightens them" comment F1 left there; no other
+      field's optionality or any enum changes. (2) lib/vendor-submissions.ts -- moves
+      physicalAddress, emergencyContactName, emergencyContactCellPhone out of their current
+      validateOptionalStringMaxLength calls and into requireNonEmptyString(record, '<field>',
+      errors, FIELD_MAX_LENGTHS.<field>) calls grouped with the other required-field checks;
+      FIELD_MAX_LENGTHS values (150/500/30) unchanged; the existing validateOptionalPattern
+      phone-format check on emergencyContactCellPhone (from F1) is left in place unmodified.
+      (3) lib/vendor-register-form-payload.ts -- VendorRegisterFormState gains 14 new fields
+      (tradingNameSameAsBusiness: boolean, businessEntityType: string,
+      businessEntityTypeOther: string, vatRegistered: '' | 'true' | 'false' -- mirrors
+      powerRequired/waterRequired's existing controlled-string convention, coerced via the
+      existing toOptionalBoolean, countryOfBusinessRegistration: string,
+      postalAddressSameAsPhysical: boolean, postalAddress: string, contactPosition: string,
+      alternativeContactNumber: string, accountsContactName: string, accountsContactEmail:
+      string, emergencyContactName: string, emergencyContactRelationship: string,
+      emergencyContactCellPhone: string); exports three new leak-proof render-gate +
+      payload-exclusion guard functions mirroring isElectricalLoadApplicable/isFoodRetailer's
+      existing shape exactly -- isTradingNameFieldApplicable(state) => !state.
+      tradingNameSameAsBusiness (omits tradingName from the payload when true, regardless of any
+      stale typed value), isPostalAddressFieldApplicable(state) => !state.
+      postalAddressSameAsPhysical (omits postalAddress when true), isVatNumberFieldApplicable
+      (state) => state.vatRegistered === 'true' (omits the existing vatNumber field when not
+      'true'); buildVendorRegistrationPayload's explicit field-by-field literal (never a spread)
+      extends to all 14 new fields, applying omitBlank/toOptionalBoolean and these three gates
+      exactly as every existing optional/gated field already does. (4)
+      lib/vendor-register-form-validation.ts -- adds required (non-empty, `.trim() === ''`)
+      checks for physicalAddress, emergencyContactName, emergencyContactCellPhone, plus a
+      PHONE_PATTERN check on emergencyContactCellPhone once non-empty (mirrors
+      contactCellPhone's own two-step required-then-pattern check); adds optional-only format
+      checks (fire only when non-empty) for alternativeContactNumber (PHONE_PATTERN) and
+      accountsContactEmail (EMAIL_PATTERN); no required check added for businessEntityType,
+      vatRegistered, countryOfBusinessRegistration, contactPosition, accountsContactName, or
+      emergencyContactRelationship -- the source has no asterisk on any of them. (5)
+      components/vendors/VendorContactFieldset.tsx -- expanded and reordered to follow the
+      source document's own Section 1 structure (see the golden README's "Files touched" #5 for
+      the exact target order and the reorder judgement call); businessEntityType uses the
+      existing VendorRadioGroupField primitive (6 options: company/close-corporation/
+      sole-proprietor/partnership/individual/other) with businessEntityTypeOther via
+      VendorFormField gated on state.businessEntityType === 'other'; vatRegistered uses the
+      existing VendorBooleanRadioField primitive (Yes/No, mirroring powerRequired) gating
+      vatNumber via isVatNumberFieldApplicable; the two "same as" checkboxes
+      (tradingNameSameAsBusiness, postalAddressSameAsPhysical) use the existing
+      VendorCheckboxField primitive and gate their dependent field's render via
+      isTradingNameFieldApplicable/isPostalAddressFieldApplicable -- NO new leaf primitive
+      component is introduced anywhere in this feature; physicalAddress becomes required=true.
+      (6) components/vendors/VendorEmergencyContactFieldset.tsx (new, ≤150 lines, same
+      props/file-header convention as every existing fieldset) -- emergencyContactName
+      (required), emergencyContactRelationship (optional), emergencyContactCellPhone (required,
+      tel, PHONE_PATTERN), all via the existing VendorFormField primitive, plus the source's own
+      advisory note as helper text (never enforced by validation). (7)
+      components/vendors/index.ts -- exports VendorEmergencyContactFieldset. (8)
+      components/vendors/VendorRegisterForm.tsx -- INITIAL_STATE gains the 14 new keys (empty
+      string/false per type); mounts <VendorEmergencyContactFieldset .../> directly after
+      <VendorContactFieldset .../> and before <VendorCategoryFieldset .../>. No change to
+      app/api/vendors/register/route.ts or lib/vendor-registration-handler.ts -- both already
+      pass rawInput through generically to the real validator/builder.
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/vendor-registration-form-rebuild/goldens/f2-ui-vendor-business-emergency-contact.md
+  - .agent/memory/project/specs/vendor-registration-form-rebuild/goldens/f1-data-model-foundation.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The whole project still type-checks under strict TypeScript after types/index.ts's required-ness flip and every new field/component/state key this feature adds.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Real buildVendorRegistrationPayload() calls prove the three new leak-proof gates
+        (trading name / postal address / VAT number) actually exclude their dependent field's
+        stale value from the wire payload when the controlling checkbox/radio says "same as" /
+        "not registered", and include it otherwise; every new Section 1/2 field survives onto
+        the payload when populated. Defeating mutation: gating render only (hiding the input)
+        without also excluding the value in the payload builder, or vice versa.
+      command: >-
+        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f2-payload-gates.mjs
+
+    - id: A3
+      description: >-
+        THE DEPLOY-SAFETY TIGHTENING PROOF -- real calls to BOTH validateVendorSubmissionInput()
+        (server) and validateVendorRegisterFormClientSide() (client) prove physicalAddress,
+        emergencyContactName, and emergencyContactCellPhone are now required on both (the exact
+        old-shaped minimal payload is rejected, naming all three fields; the same payload with
+        all three filled in is accepted), emergencyContactRelationship stays optional on both,
+        and emergencyContactCellPhone's phone-format check still fires once the field is
+        mandatory. Defeating mutation: tightening only one of the two validators, or tightening
+        emergencyContactRelationship.
+      command: >-
+        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f2-required-fields.mjs
+
+    - id: A4
+      description: >-
+        Structural proof that VendorEmergencyContactFieldset.tsx exists, reuses the existing
+        VendorFormField primitive (no new leaf-input component invented), renders all three
+        Section 2 fields, stays under the project's 150-line component limit, is exported from
+        the barrel and actually mounted in VendorRegisterForm.tsx; VendorContactFieldset.tsx
+        renders every new Section 1 field by name; no unexpected new file lands in
+        components/vendors/ beyond the one new fieldset.
+      command: >-
+        bash .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f2-fieldset-structure.sh
+
+    - id: A5
+      description: types/index.ts no longer marks physicalAddress, emergencyContactName, or emergencyContactCellPhone optional (the `?:` is gone from all three declarations).
+      command: >-
+        ! grep -E "^\s*(physicalAddress|emergencyContactName|emergencyContactCellPhone)\?:" types/index.ts
+
+    - id: A6
+      description: The public vendor registration API route and its handler are untouched by this feature -- confirms F2 required no route/handler wiring, per the golden README's "Why no route/handler change is needed" section.
+      command: 'git diff --stat -- app/api/vendors/register/route.ts lib/vendor-registration-handler.ts | grep -q . && exit 1 || exit 0'
+
+    - id: A7
+      description: pnpm lint passes with zero errors after every changed/new file.
+      command: pnpm lint

@@ -92,10 +92,21 @@ export function formatRetryAfter(ms: number): string {
 const VENDOR_FIELD_LABELS: Record<string, string> = {
   businessName: 'Business name',
   tradingName: 'Trading name',
+  businessEntityType: 'Business entity type',
+  businessEntityTypeOther: 'Business entity type (other)',
+  countryOfBusinessRegistration: 'Country of business registration',
   contactPersonName: 'Contact person name',
+  contactPosition: 'Contact person position',
   contactCellPhone: 'Cell phone number',
   contactEmail: 'Email address',
   physicalAddress: 'Physical address',
+  postalAddress: 'Postal address',
+  alternativeContactNumber: 'Alternative contact number',
+  accountsContactName: 'Accounts contact name',
+  accountsContactEmail: 'Accounts contact email address',
+  emergencyContactName: 'Emergency contact full name',
+  emergencyContactRelationship: 'Emergency contact relationship',
+  emergencyContactCellPhone: 'Emergency contact cell phone number',
   cipcNumber: 'CIPC number',
   vatNumber: 'VAT number',
   website: 'Website',
@@ -133,7 +144,7 @@ const VENDOR_FIELD_KEYS_LONGEST_FIRST = Object.keys(VENDOR_FIELD_LABELS).sort(
  * Turns one raw validateVendorSubmissionInput() error string (schema-flavoured, camelCase --
  * e.g. "businessName is required and must be a non-empty string") into a short, legible
  * British-English sentence keyed on the field name prefix of the message -- e.g. "Business name
- * is required." An error whose field prefix is not one of the 31 known keys (or whose wording
+ * is required." An error whose field prefix is not one of the 35 known keys (or whose wording
  * this function does not recognise) falls through to a generic instruction rather than
  * fabricating a guess.
  */
