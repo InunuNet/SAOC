@@ -660,6 +660,64 @@ assertions:
         the exported validation function.
       command: >-
         ! sed -n '/export function validateVendorSubmissionInput/,/^}/p' lib/vendor-submissions.ts | grep -q "vendorCategoryOther"
+    - id: A40
+      description: >-
+        ADDED 2026-09-01 (architect review pass): closes the gap A26 left open. A26 only proves
+        the validator no longer NAMES vendorCategoryOther -- that assertion was green over a
+        28/28 gate at the exact moment buildVendorSubmission still WROTE an unvalidated,
+        unbounded, attacker-supplied vendorCategoryOther string into the persisted document
+        (Codex GPT-5.5 found it; the gate did not). "The validator doesn't mention the field"
+        and "the builder doesn't persist the field" are two independently defeatable
+        properties, and this is the fourth time on this mission a narrow assertion stayed green
+        over the real defect (see A17/A18/A25's own rewrite notes). BEHAVIOURAL, not a grep:
+        drives the real, fully-injectable handleVendorRegistration() end to end with an
+        injected write() that captures the exact document handed to Firestore, POSTing an
+        otherwise-valid body carrying vendorCategoryOther: 'X'.repeat(50000) -- same injection
+        technique as A17's check-single-use-claim-is-atomic.mjs and A21's
+        check-application-approval-email-copy.mjs.
+        FAILS ON: the captured document containing a 'vendorCategoryOther' key at all, or the
+        fixture submission being rejected for an unrelated reason (which would mean the check
+        is not exercising the real success path and proves nothing).
+      command: >-
+        npx tsx contracts/checks/vendor-gated-registration-flow-m2/check-vendor-category-other-not-persisted.mjs
+    - id: A41
+      description: >-
+        ADDED 2026-09-01 (architect review pass). waterRequired (typed `waterRequired?:
+        boolean` at types/index.ts) is copied into the persisted document by
+        buildVendorSubmission but was never named by validateVendorSubmissionInput -- confirmed
+        pre-existing and not caused by this mission (`git log -S "'waterRequired'"` on
+        lib/vendor-submissions.ts returns nothing: never validated at any point in the repo's
+        history). A direct POST could persist any non-boolean value under that key. Fixed with
+        the same validateOptionalBoolean(record, 'waterRequired', errors) pattern already used
+        elsewhere in this file. BEHAVIOURAL: drives the real, exported
+        validateVendorSubmissionInput() directly -- a non-boolean waterRequired must now be
+        rejected with an error naming the field, while true/false/omitted (every value the real
+        form can send) must still be accepted.
+        FAILS ON: waterRequired: 'yes' being accepted, its rejection not naming 'waterRequired'
+        in the returned errors, or any of true/false/undefined being wrongly rejected.
+      command: >-
+        npx tsx contracts/checks/vendor-gated-registration-flow-m2/check-water-required-validated.mjs
+    - id: A42
+      description: >-
+        ADDED 2026-09-01 (architect review pass). STANDING regression guard generalising the
+        defect class behind both A40 and A41: every field buildVendorSubmission copies from raw
+        `input` into the persisted document must be referenced somewhere in
+        validateVendorSubmissionInput's body. @dev found the current gap set (vendorCategoryOther,
+        waterRequired) by programmatically diffing the 89 written fields against the validator's
+        source -- this makes that diff a permanent, automated tripwire instead of a one-off
+        manual sweep, so the next field added to buildVendorSubmission without matching
+        validation fails the gate immediately rather than waiting for another Codex pass to
+        catch it. Source-level by design (a behavioural check cannot anticipate a field that
+        does not exist yet); A40/A41 remain the behavioural proofs for the two fields this
+        check already found. `status` and `submittedAt` are correctly excluded -- both are
+        always system-forced and never read from `input` at all, so they never enter the
+        parsed written-fields set in the first place.
+        FAILS ON: any field written by buildVendorSubmission from raw input that is not also
+        referenced (as a quoted string literal or `record.<field>` access) anywhere in
+        validateVendorSubmissionInput's body, or the parser matching zero written fields (would
+        mean the check is passing vacuously).
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m2/check-every-persisted-field-is-validated.mjs
     - id: A39
       description: >-
         ADDED 2026-09-01 (architect review pass): closes a gap flagged in review -- @dev's fix

@@ -521,6 +521,7 @@ export function validateVendorSubmissionInput(input: unknown): {
   validateOptionalBoolean(record, 'adjacentBoothRequested', errors);
   validateOptionalBoolean(record, 'electricalEquipmentContinuousOperation', errors);
   validateOptionalBoolean(record, 'wastewaterDrainageRequired', errors);
+  validateOptionalBoolean(record, 'waterRequired', errors);
   validateOptionalBoolean(record, 'gasOrHeatEquipmentUsed', errors);
   validateOptionalBoolean(record, 'foodPreparationOnSite', errors);
   validateOptionalBoolean(record, 'foodCookingOnSite', errors);
