@@ -70,6 +70,40 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
     }
   }
 
+  // F25 (vendor-gated-registration-flow, M4) -- ONE operator action covers both "vendor is
+  // locked out" and "vendor lost the email"; there is deliberately no separate unlock action.
+  // See contracts/golden/vendor-gated-registration-flow-m4/README.md's "Reissue, not unlock".
+  async function handleReissueCode(id: string) {
+    setPendingId(id);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/admin/vendors/applications/${id}/reissue-code`, {
+        method: 'POST',
+      });
+
+      const body = (await res.json()) as { success?: boolean; registrationCodeId?: string; error?: string };
+
+      if (!res.ok || !body.success || !body.registrationCodeId) {
+        setError(body.error ?? 'Failed to reissue a registration code.');
+        return;
+      }
+
+      const nextCodeId = body.registrationCodeId;
+      setRows((current) =>
+        current.map((row) =>
+          row.id === id
+            ? { ...row, registrationCodeId: nextCodeId, registrationCodeLockedAt: null }
+            : row,
+        ),
+      );
+    } catch {
+      setError('Failed to reach the server. Please try again.');
+    } finally {
+      setPendingId(null);
+    }
+  }
+
   if (rows.length === 0) {
     return (
       <div className="border border-rule bg-ivory px-6 py-16 text-center">
@@ -106,6 +140,9 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
                 Status
               </th>
               <th scope="col" className={HEADER_CELL_CLASS}>
+                Code
+              </th>
+              <th scope="col" className={HEADER_CELL_CLASS}>
                 Actions
               </th>
             </tr>
@@ -135,8 +172,22 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
                     </span>
                   </td>
                   <td className={BODY_CELL_CLASS}>
+                    {row.status === 'approved' ? (
+                      <span className="flex items-center gap-2 font-mono text-[13px] tracking-[0.08em]">
+                        {row.registrationCodeId ?? '—'}
+                        {row.registrationCodeLockedAt ? (
+                          <span className="inline-flex items-center rounded-pill border border-primary-800 bg-bone px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-primary-800">
+                            Locked
+                          </span>
+                        ) : null}
+                      </span>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </td>
+                  <td className={BODY_CELL_CLASS}>
                     <div className="flex gap-2">
-                      {actions.length === 0 && <span className="text-muted">—</span>}
+                      {actions.length === 0 && row.status !== 'approved' && <span className="text-muted">—</span>}
                       {actions.map((action) => (
                         <button
                           key={action}
@@ -148,6 +199,16 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
                           {pendingId === row.id ? 'Saving…' : ACTION_LABELS[action]}
                         </button>
                       ))}
+                      {row.status === 'approved' ? (
+                        <button
+                          type="button"
+                          disabled={pendingId === row.id}
+                          onClick={() => handleReissueCode(row.id)}
+                          className="rounded-sm border border-rule bg-ivory px-3 py-1.5 font-sans text-[13px] font-medium text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {pendingId === row.id ? 'Saving…' : 'Reissue code'}
+                        </button>
+                      ) : null}
                     </div>
                   </td>
                 </tr>

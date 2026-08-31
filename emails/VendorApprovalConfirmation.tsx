@@ -30,10 +30,32 @@ interface VendorApprovalConfirmationProps {
   waterRequired?: boolean | null;
   loadInSlot?: string | null;
   loadOutSlot?: string | null;
-  /** F6 (vendor-gated-registration-flow) -- when present, rendered as the single-use link to
+  /** F6 (vendor-gated-registration-flow) -- when present, rendered as the convenience link to
    *  the full registration form. Omitted/undefined for the existing full-VendorSubmission
-   *  approval call site, which renders exactly as before. */
+   *  approval call site, which renders exactly as before. Since M4/F24 this is a
+   *  `?name=&code=` prefill link (replacing the old `?token=` link shape) -- the vendor still
+   *  must submit through the rate-limited verify-code endpoint; the link is not itself a
+   *  bypass. */
   registrationLink?: string | null;
+  /** F24 (vendor-gated-registration-flow, M4) -- the 4-digit human-readable code, rendered
+   *  read-aloud formatted (e.g. "4 8 2 1", never run together as "4821"). Only meaningful
+   *  alongside registrationLink. */
+  registrationCode?: string | null;
+}
+
+/**
+ * Formats a 4-digit code for reading aloud -- space-grouped, one digit at a time (e.g.
+ * "4 8 2 1"), never the unbroken run "4821". F24's call site always supplies a real code
+ * alongside registrationLink, so missing/malformed input here would indicate an upstream data
+ * bug -- rendered as an empty string (never the literal word "undefined", and deliberately NOT
+ * LOGISTICS_NOT_SPECIFIED_LABEL, which is reserved for the unrelated full-registration
+ * logistics recap and must never appear on the application-approval branch).
+ */
+export function formatRegistrationCodeForReadAloud(value: string | null | undefined): string {
+  if (!value || !/^\d+$/.test(value)) {
+    return '';
+  }
+  return value.split('').join(' ');
 }
 
 /**
@@ -81,6 +103,7 @@ export default function VendorApprovalConfirmation({
   loadInSlot,
   loadOutSlot,
   registrationLink,
+  registrationCode,
 }: VendorApprovalConfirmationProps) {
   return (
     <Html>
@@ -104,10 +127,16 @@ export default function VendorApprovalConfirmation({
                 Good news -- your vendor application for <strong>{businessName}</strong> at the
                 SAOC National Show has been approved.
               </Text>
+              <Heading as="h2" style={{ fontSize: '18px', color: '#1a1a1a' }}>
+                Your registration code
+              </Heading>
+              <Text style={{ fontSize: '24px', color: '#1a1a1a', letterSpacing: '2px' }}>
+                {businessName}-{formatRegistrationCodeForReadAloud(registrationCode)}
+              </Text>
               <Text style={{ fontSize: '16px', color: '#333' }}>
-                Next step: complete your full vendor registration and agreement using the
-                single-use link below. This link can only be used once, so please complete the
-                form in one sitting.
+                Go to the full registration form and enter your business name and this 4-digit
+                code to continue. Keep this code -- you (or the show office) may need to read it
+                aloud.
               </Text>
               <Text style={{ fontSize: '16px', color: '#333' }}>
                 <a href={registrationLink}>{registrationLink}</a>

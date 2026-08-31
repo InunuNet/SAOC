@@ -25,7 +25,7 @@ import { constantTimeEqual } from './recovery-token';
  * register route) is responsible for checking/setting `registrationTokenConsumedAt` on the
  * `VendorApplication` doc.
  *
- * Token shape: `${base64url(JSON.stringify({a: applicationId, e: expiresAtEpochMs}))}.${hmacSha256Hex}`.
+ * Token shape: `${base64url(JSON.stringify({a: applicationId, e: expiresAtEpochMs, g?: codeGeneration}))}.${hmacSha256Hex}`.
  * The payload key `a` (vs. lib/recovery-token.ts's `o`) is deliberate -- a token minted by
  * either module fails to parse under the other's payload shape, giving free domain separation
  * even before the distinct secrets are considered.
@@ -40,6 +40,10 @@ export interface MintVendorRegistrationTokenInput {
   secret: string;
   now: Date;
   ttlMs?: number;
+  /** Generation of the registration code this session was minted from -- see the `g` payload
+   *  key below. Omitted only by callers that pre-date code generations (the F3 token-security
+   *  contract check); every production mint site supplies it. */
+  generation?: number;
 }
 
 export interface MintedVendorRegistrationToken {
@@ -47,9 +51,19 @@ export interface MintedVendorRegistrationToken {
   expiresAt: Date;
 }
 
+/**
+ * `g` (M4 fix pass) binds a minted session to the GENERATION of the registration code it came
+ * from. Reissuing a code (POST /api/admin/vendors/applications/[id]/reissue-code) bumps
+ * `registrationCodeGeneration` on the application, so every session minted from an older code
+ * carries a stale `g` and is refused at use -- reissue therefore revokes outstanding sessions
+ * by construction, rather than leaving them valid for the rest of their 30-minute life. The key
+ * is OPTIONAL in the payload so a token minted without a generation still parses; such a token
+ * verifies with `generation: null`, and the register route refuses it (fail closed).
+ */
 interface VendorRegistrationTokenPayload {
   a: string;
   e: number;
+  g?: number;
 }
 
 function encodePayload(payload: VendorRegistrationTokenPayload): string {
@@ -65,7 +79,11 @@ export function mintVendorRegistrationToken(
 ): MintedVendorRegistrationToken {
   const ttlMs = input.ttlMs ?? VENDOR_REGISTRATION_TOKEN_DEFAULT_TTL_MS;
   const expiresAtEpochMs = input.now.getTime() + ttlMs;
-  const payloadSegment = encodePayload({ a: input.applicationId, e: expiresAtEpochMs });
+  const payloadSegment = encodePayload(
+    input.generation === undefined
+      ? { a: input.applicationId, e: expiresAtEpochMs }
+      : { a: input.applicationId, e: expiresAtEpochMs, g: input.generation },
+  );
   const signature = signPayload(payloadSegment, input.secret);
 
   return {
@@ -75,7 +93,7 @@ export function mintVendorRegistrationToken(
 }
 
 export type VendorRegistrationTokenVerification =
-  | { ok: true; applicationId: string; expiresAt: Date }
+  | { ok: true; applicationId: string; expiresAt: Date; generation: number | null }
   | { ok: false; reason: 'malformed' | 'bad-signature' | 'expired' };
 
 export interface VerifyVendorRegistrationTokenInput {
@@ -117,6 +135,17 @@ function parseToken(
     return null;
   }
 
+  // `g` is optional, but a PRESENT `g` that is not a finite number is malformed -- never
+  // silently coerced to "no generation", which would downgrade a generation-bound session
+  // into an unbound one.
+  const rawGeneration = (decoded as Record<string, unknown>).g;
+  if (
+    rawGeneration !== undefined &&
+    (typeof rawGeneration !== 'number' || !Number.isFinite(rawGeneration))
+  ) {
+    return null;
+  }
+
   const payload = decoded as VendorRegistrationTokenPayload;
   return { payloadSegment, signatureSegment, payload };
 }
@@ -152,5 +181,10 @@ export function verifyVendorRegistrationToken(
     return { ok: false, reason: 'expired' };
   }
 
-  return { ok: true, applicationId: payload.a, expiresAt };
+  return {
+    ok: true,
+    applicationId: payload.a,
+    expiresAt,
+    generation: typeof payload.g === 'number' ? payload.g : null,
+  };
 }

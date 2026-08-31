@@ -25,6 +25,13 @@ autonomy: high
 #   M3 -- Stand Booking Payment as its own explicitly-non-ticket payment path; whether
 #         lib/vendor-payment.ts needs to change to make that separation more explicit than it
 #         is today. NOT contract-designed yet, same reason as M2.
+#   M4 -- ARCHITECTED 2026-09-01 (architect pass 3, F22-F25). Replaces M1/F3+F7's opaque HMAC
+#         link with a human-readable "{BusinessName}-{4 digits}" code (Brad, 2026-08-31),
+#         engineered so 10,000 possibilities is never the only barrier: per-application
+#         transactional lockout, CSPRNG generation, constant-time comparison, enumeration-blind
+#         verify response. F3's HMAC token module is reused, not rewritten, as an internal
+#         post-verification session artifact. Full decision record:
+#         contracts/golden/vendor-gated-registration-flow-m4/README.md.
 
 features:
   # ---------------------------------------------------------------------------------------
@@ -355,6 +362,111 @@ features:
     milestone: M3
     contract: null
 
+  # ---------------------------------------------------------------------------------------
+  # M4 -- ARCHITECTED 2026-08-31/09-01 (architect pass 3). Replaces M1/F3+F7's opaque HMAC
+  # link with a human-readable "{BusinessName}-{4 digits}" code (Brad, 2026-08-31), engineered
+  # so a 4-digit code is safe by construction: per-application transactional lockout, a
+  # secondary per-IP throttle, CSPRNG generation, constant-time comparison, and an
+  # enumeration-blind verify response. Full decision record, threshold reasoning, the POPIA
+  # finding (the full form does NOT prefill from the application -- verified, not assumed), and
+  # the migration decision (replace the vendor-facing mechanism outright; REUSE, don't rewrite,
+  # F3's HMAC module as the internal post-verification session artifact):
+  # contracts/golden/vendor-gated-registration-flow-m4/README.md.
+  # ---------------------------------------------------------------------------------------
+  - id: F22
+    name: >-
+      Core mechanism, no I/O. New lib/vendor-registration-code.ts: normalizeVendorCodeName()
+      (deterministic slug -- lowercase, NFD-strip accents, strip every non-alphanumeric
+      character; see the golden's normalisation table), generateVendorRegistrationCodeId()
+      (zero-argument, node:crypto randomInt(0, 10000), zero-padded to 4 digits -- never
+      sequential, never derived from applicationId), VENDOR_REGISTRATION_CODE_LOCK_THRESHOLD =
+      5 and VENDOR_REGISTRATION_CODE_DEFAULT_TTL_MS (reuses the same 14-day value as
+      VENDOR_REGISTRATION_TOKEN_DEFAULT_TTL_MS), verifyVendorRegistrationCode() (pure function
+      over caller-supplied candidates, constant-time code comparison reusing
+      constantTimeEqual from lib/recovery-token.ts, returns {ok:true, applicationId} or a
+      single {ok:false} shape identical across every failure reason -- no such name slug,
+      wrong code, locked, consumed, expired, not-approved), and
+      recordFailedVendorRegistrationCodeAttempt() (transactional, same
+      db.runTransaction()-wrapped read-check-write shape as
+      lib/vendor-registration-token-claim.ts's claimRegistrationToken(), increments
+      registrationCodeFailedAttempts and sets registrationCodeLockedAt on crossing the
+      threshold, race-safe under concurrent failed attempts). Also extends types/index.ts's
+      VendorApplication with registrationCodeId/registrationCodeNameSlug/
+      registrationCodeIssuedAt/registrationCodeExpiresAt/registrationCodeConsumedAt/
+      registrationCodeFailedAttempts/registrationCodeLockedAt (all optional, additive) --
+      registrationTokenIssuedAt/Expires/ConsumedAt stay on the type, deprecated-in-place, not
+      removed.
+    status: pending
+    milestone: M4
+    contract: contracts/golden/vendor-gated-registration-flow-m4/README.md
+  - id: F23
+    name: >-
+      Public verify + gate. New pure handler lib/vendor-registration-code-verify-handler.ts,
+      handleVendorRegistrationCodeVerification(input, deps) -- same injected-deps shape as
+      lib/vendor-registration-handler.ts (F5/M1), so rate-limit-shields-I/O and response-shape
+      are provable without a Firestore instance -- called by new route POST
+      /api/vendors/register/verify-code: accepts {businessName, codeId} (two structured fields,
+      not one parsed string -- see the golden's "Format" section for why), rate-limits by IP
+      first (reusing decideRateLimit() via a new vendor-register-code-verify-ip:* key
+      namespace, 10/hour -- mirrors lib/vendor-registration-rate-limit.ts's existing pattern, a
+      new sibling module/constants, not a mutation of the F5/M1 register-route limiter), runs
+      ONE Firestore query by
+      registrationCodeNameSlug + status=='approved' regardless of outcome (no query-skipping
+      branch -- see "Enumeration blindness"), calls F22's verifyVendorRegistrationCode() against
+      every candidate, and on success mints F3's mintVendorRegistrationToken() with a SHORT
+      ttlMs override (30 minutes, not the 14-day default) as an internal session artifact,
+      delivered via an HttpOnly cookie -- NEVER in the JSON response body (POPIA finding: the
+      response body is byte-identical in shape on success ({ok:true}) and failure (the one
+      generic error string), never containing any VendorApplication field). On failure, calls
+      F22's recordFailedVendorRegistrationCodeAttempt() against every matched candidate.
+      app/(marketing)/national-show/vendors/register/page.tsx is rewritten: no longer reads a
+      `?token=` search param as its gate (F7/M1's mechanism is retired at the page level, not
+      deleted at the module level -- see F22's note); instead renders a two-field code-entry
+      form (business name + 4-digit code) that POSTs to verify-code, prefillable from
+      `?name=&code=` query params carried by the approval email's convenience link, but always
+      requiring an explicit submit through the rate-limited endpoint. POST /api/vendors/register
+      (F7/M1's existing route) stops accepting a vendor-typed token/code in its body and instead
+      re-verifies the session cookie via F3's verifyVendorRegistrationToken(), unchanged --
+      F7's already-proven single-use claim transaction (lib/vendor-registration-token-claim.ts)
+      is reused without modification.
+    status: pending
+    milestone: M4
+    contract: contracts/golden/vendor-gated-registration-flow-m4/README.md
+  - id: F24
+    name: >-
+      Approval mints a code, not a token. POST /api/admin/vendors/applications/[id]/review's
+      'approve' action (F5/M1) stops calling mintVendorRegistrationToken() at approval time;
+      instead generates registrationCodeId (F22's generateVendorRegistrationCodeId()) +
+      registrationCodeNameSlug (F22's normalizeVendorCodeName(businessName)), writes them plus
+      registrationCodeIssuedAt/registrationCodeExpiresAt in the same additive ref.update()
+      patch F5 already uses (mint-before-commit ordering unchanged -- a failed generation still
+      leaves the application pending and recoverable, same fail-closed rule as F5's own token
+      minting). lib/vendor-approval-confirmation.ts's VendorApprovalConfirmationInput and
+      emails/VendorApprovalConfirmation.tsx gain the code, read-aloud formatted (digits
+      space- or hyphen-grouped, e.g. "4 8 2 1", never run together), plus the new
+      ?name=&code= convenience link -- replacing, not adding alongside, the old token-bearing
+      registrationLink prop shape (same optional-prop pattern F6 established, still a single
+      prop rename/repurpose, not a new required prop).
+    status: pending
+    milestone: M4
+    contract: contracts/golden/vendor-gated-registration-flow-m4/README.md
+  - id: F25
+    name: >-
+      Admin visibility + reissue. VendorApplicationReviewTable.tsx gains a "Code" column
+      (registrationCodeId, or "--" pre-approval) and a locked badge when
+      registrationCodeLockedAt is set. New POST
+      /api/admin/vendors/applications/[id]/reissue-code, gated identically to the existing
+      review route (getAdminSession() -> hasCapability(..., 'review-vendor-applications', ...)),
+      available any time status === 'approved' (not conditioned on being locked): mints a fresh
+      registrationCodeId, resets registrationCodeFailedAttempts to 0 and
+      registrationCodeLockedAt to null, refreshes registrationCodeIssuedAt/
+      registrationCodeExpiresAt -- one operator action covers both "vendor is locked out" and
+      "vendor lost the email" (see the golden's "Reissue, not unlock"). No separate unlock
+      action exists.
+    status: pending
+    milestone: M4
+    contract: contracts/golden/vendor-gated-registration-flow-m4/README.md
+
 goldens:
   - contracts/golden/vendor-gated-registration-flow-f1/README.md
   - contracts/golden/vendor-gated-registration-flow-f1/vendor-application-categories.expected.ts.txt
@@ -362,6 +474,8 @@ goldens:
   - contracts/golden/vendor-gated-registration-flow-m2/README.md
   - contracts/golden/vendor-gated-registration-flow-m2/vendor-categories-14.expected.ts.txt
   - contracts/golden/vendor-gated-registration-flow-m2/removed-field-ledger.expected.md
+  - contracts/golden/vendor-gated-registration-flow-m4/README.md
+  - contracts/golden/vendor-gated-registration-flow-m4/vendor-registration-code-name-normalization.expected.md
 
 assertions:
   phase: 4
@@ -475,15 +589,23 @@ assertions:
         grep -q "getAdminSession" app/api/admin/vendors/applications/route.ts && grep -q "'review-vendor-applications'" app/api/admin/vendors/applications/route.ts && grep -q "resolveShowWindowLookup" app/api/admin/vendors/applications/route.ts && grep -q "getAdminSession" "app/api/admin/vendors/applications/[id]/review/route.ts" && grep -q "'review-vendor-applications'" "app/api/admin/vendors/applications/[id]/review/route.ts"
     - id: A12
       description: >-
-        The approve action mints a token via mintVendorRegistrationToken (F3) and calls
-        sendVendorApprovalConfirmationEmail (F6, extended) with a registrationLink -- and the
-        review-transition decision itself is delegated to decideVendorApplicationTransition
-        (F2), never reimplemented inline in the route.
+        REWRITTEN 2026-09-01 (architect pass 3, M4). The original form asserted the M1 token
+        mechanism (mintVendorRegistrationToken + a registrationLink prop) -- both went stale as
+        DIRECT, EXPECTED collateral of F24 replacing that mechanism outright with a
+        human-readable code (see the M4 golden README's "Migration": the vendor-facing
+        mechanism is replaced, not run alongside). The property this assertion protects is
+        unchanged and still matters: the review-transition decision is delegated to
+        decideVendorApplicationTransition (F2), never reimplemented inline, and the approve
+        action mints a registration credential (now F22's generateVendorRegistrationCodeId(),
+        not F3's mintVendorRegistrationToken) and sends it via
+        sendVendorApprovalConfirmationEmail (F6, extended) -- now as registrationCode, not
+        merely a registrationLink.
         FAILS ON: the route reimplementing the pending/approved/declined logic itself instead
-        of calling decideVendorApplicationTransition, or approve not minting a token / not
-        sending an email with registrationLink.
+        of calling decideVendorApplicationTransition, approve not calling
+        generateVendorRegistrationCodeId, approve still calling the retired
+        mintVendorRegistrationToken, or the email call not passing registrationCode.
       command: >-
-        grep -q "decideVendorApplicationTransition" "app/api/admin/vendors/applications/[id]/review/route.ts" && grep -q "mintVendorRegistrationToken" "app/api/admin/vendors/applications/[id]/review/route.ts" && grep -q "registrationLink" "app/api/admin/vendors/applications/[id]/review/route.ts"
+        grep -q "decideVendorApplicationTransition" "app/api/admin/vendors/applications/[id]/review/route.ts" && grep -q "generateVendorRegistrationCodeId" "app/api/admin/vendors/applications/[id]/review/route.ts" && grep -q "registrationCode:" "app/api/admin/vendors/applications/[id]/review/route.ts" && ! grep -q "mintVendorRegistrationToken" "app/api/admin/vendors/applications/[id]/review/route.ts"
     - id: A13
       description: >-
         ref.update() is used for both the F2 decision patch and the token-issued-timestamps
@@ -518,17 +640,26 @@ assertions:
     # --- F7: gate on the full registration route ---
     - id: A16
       description: >-
-        app/(marketing)/national-show/vendors/register/page.tsx reads a token search param,
-        calls verifyVendorRegistrationToken, and renders VendorRegisterForm only inside the
-        success branch of that check -- with a generic invalid-link message as the fallback
-        (fail closed: the default path is refusal, not the form).
-        FAILS ON: the page rendering VendorRegisterForm unconditionally (no token gate), or
-        not calling verifyVendorRegistrationToken at all.
+        REWRITTEN 2026-09-01 (architect pass 3, M4). The original form asserted a public
+        `?token=` search-param gate and a literal "invalid or has expired" fallback message --
+        both retired at the page level by F23 (see the M4 golden README's "Migration"): the
+        page no longer reads a vendor-facing token from the URL at all, and the fallback is now
+        a real code-entry FORM (VendorRegistrationCodeEntryForm), not a dead-end message. The
+        fail-closed property this assertion protects is unchanged and still matters: the page
+        reuses F3's verifyVendorRegistrationToken internally (against the session cookie, not a
+        search param -- see A49 for the session-only proof) and renders the full
+        VendorRegisterForm ONLY inside the success branch, with the code-entry form as the
+        default/fallback branch -- refusal, not the gated form, is still what a visitor gets by
+        default.
+        FAILS ON: the page rendering VendorRegisterForm unconditionally (no gate), not calling
+        verifyVendorRegistrationToken at all, or not rendering VendorRegistrationCodeEntryForm
+        as the fallback branch.
       command: >-
-        grep -q "verifyVendorRegistrationToken" "app/(marketing)/national-show/vendors/register/page.tsx" && grep -q "invalid or has expired" "app/(marketing)/national-show/vendors/register/page.tsx"
+        grep -q "verifyVendorRegistrationToken" "app/(marketing)/national-show/vendors/register/page.tsx" && grep -q "VendorRegistrationCodeEntryForm" "app/(marketing)/national-show/vendors/register/page.tsx" && grep -q "usable ?" "app/(marketing)/national-show/vendors/register/page.tsx" && grep -q "<VendorRegisterForm" "app/(marketing)/national-show/vendors/register/page.tsx"
     - id: A17
       description: >-
-        REWRITTEN 2026-08-31 (architect pass, post-QA/Codex fix). The original form of this
+        REWRITTEN 2026-08-31 (architect pass, post-QA/Codex fix); UPDATED 2026-09-01 (architect
+        pass 4, team-lead item 2, post-second-Codex-pass-on-M4). The original form of this
         assertion only grepped for the identifiers verifyVendorRegistrationToken /
         registrationTokenConsumedAt being present in app/api/vendors/register/route.ts -- it
         stayed green through a genuine read-then-write race (@qa and Codex both found it
@@ -544,13 +675,28 @@ assertions:
         concurrency semantics, and additionally proves the fake itself is not vacuous by
         confirming a control run of the OLD read-then-write shape produces two winners), plus a
         structural check that the route calls the real module rather than re-implementing the
-        check inline.
+        check inline. M4 ADDITION: a second Codex pass on the finished M4 fix pass found
+        `expectedGeneration` is OPTIONAL on ClaimRegistrationTokenOptions (kept optional only so
+        this check's own pre-generation call shapes keep working) and nothing mechanically
+        enforced that the one production call site actually supplies it -- exactly this
+        mission's recurring "field written under one name/behaviour, silently not read/enforced
+        under another" defect class. check-single-use-claim-is-atomic.mjs is strengthened
+        (still real execution, same fake) to prove claimRegistrationToken() refuses a mismatched
+        registrationCodeGeneration, that an absent field normalises to 0 on BOTH sides of the
+        comparison, and that omitting expectedGeneration entirely still means "do not check"
+        (back-compat); this assertion's own command additionally source-checks that
+        app/api/vendors/register/route.ts's production call site actually passes
+        expectedGeneration (not merely that the module is imported). That single-file check is
+        deliberately ALSO generalised into its own standing invariant, A54, which scans every
+        claimRegistrationToken(...) call site in the tracked source tree (not just this one
+        file) -- see A54 for why a per-instance check here was not enough on its own.
         FAILS ON: the route not importing/calling claimRegistrationToken from
-        lib/vendor-registration-token-claim.ts, re-verifying the token itself without also
-        claiming atomically, or check-single-use-claim-is-atomic.mjs failing (including its own
-        control-arm sanity check).
+        lib/vendor-registration-token-claim.ts, the production call site not passing
+        expectedGeneration, re-verifying the token itself without also claiming atomically, or
+        check-single-use-claim-is-atomic.mjs failing (including its own control-arm sanity
+        check and the new generation-mismatch/absent-field/omitted-option cases).
       command: >-
-        grep -q "verifyVendorRegistrationToken" app/api/vendors/register/route.ts && grep -qE "claimRegistrationToken" app/api/vendors/register/route.ts && grep -qE "from ['\"]@/lib/vendor-registration-token-claim['\"]" app/api/vendors/register/route.ts && node --import tsx/esm contracts/checks/vendor-gated-registration-flow/check-single-use-claim-is-atomic.mjs
+        grep -q "verifyVendorRegistrationToken" app/api/vendors/register/route.ts && grep -qE "claimRegistrationToken" app/api/vendors/register/route.ts && grep -qE "from ['\"]@/lib/vendor-registration-token-claim['\"]" app/api/vendors/register/route.ts && grep -q "expectedGeneration:" app/api/vendors/register/route.ts && node --import tsx/esm contracts/checks/vendor-gated-registration-flow/check-single-use-claim-is-atomic.mjs
 
     # --- F8: nav link ---
     - id: A18
@@ -580,27 +726,21 @@ assertions:
     # --- M1 fix-pass checks folded into the contract (previously orphaned @dev deliverables) ---
     - id: A20
       description: >-
-        ADDED 2026-08-31 (architect pass). Folds in @dev's fix-pass check for the F5 approval
-        route's mint-before-commit ordering defect (@qa/Codex-found): the review-approve status
-        transition to 'approved' was being committed BEFORE the registration secret was read and
-        the token minted, so an unset VENDOR_REGISTRATION_TOKEN_SECRET left an application
-        permanently 'approved' with no link ever sent, and the closed review machine (correctly)
-        refuses to re-approve an approved application -- no operator could recover it from the
-        admin UI. STATED LIMITATION (carried from the check's own header, not glossed over
-        here): this is a SOURCE-ORDER assertion, not a behavioural one -- exercising the real
-        route needs a Firebase Admin credential and an authenticated admin session cookie,
-        neither available in this environment. Accepted as the contract's evidence for this
-        defect because (a) the closed-machine behaviour it depends on IS proven behaviourally by
-        A5/check-application-review-transitions.mjs, (b) the ordering itself is a small,
-        mechanically-checkable fact (mint call precedes every ref.update() call) that is hard to
-        satisfy by accident once true, and (c) a stronger, live-route form needs the same
-        Firestore-seeding + authenticated-session infrastructure already logged as a P1 backlog
-        item for the four historical /register Playwright suites -- not worth building tonight
-        as a one-off for this single defect. Revisit if that infrastructure gets built anyway.
-        FAILS ON: mintVendorRegistrationToken/the VENDOR_REGISTRATION_TOKEN_SECRET read
-        occurring at or after the first ref.update() call, or either call missing entirely.
+        [RETIRED 2026-09-01, architect pass 3, M4] Was: source-order proof that the F5 approval
+        route minted the registration TOKEN (F3, mintVendorRegistrationToken) and read
+        VENDOR_REGISTRATION_TOKEN_SECRET before its first ref.update() -- guarding against a
+        generation/minting failure leaving an application permanently 'approved' with no
+        credential ever issued. That mechanism is retired outright by F24 (see the M4 golden
+        README's "Migration"): the route no longer calls mintVendorRegistrationToken at all, so
+        this assertion's own grep now fails as direct, expected collateral -- not a regression.
+        The underlying property (a failed mint must never leave an application terminally
+        approved with no way to issue a credential -- the exact M1 dead-end defect Codex found)
+        still matters and is NOT dropped: it is re-proven, for the new code mechanism, by A50
+        (check-approval-mints-code-atomically.mjs), which additionally proves something A20
+        never could -- that the decision patch and the credential fields land in a SINGLE
+        ref.update() call, not two separate writes that could land apart.
       command: >-
-        node contracts/checks/vendor-gated-registration-flow/check-approval-mints-before-commit.mjs
+        echo "SUPERSEDED: A20 retired 2026-09-01 -- the M1 HMAC-token mint-before-commit ordering it checked is retired outright by F24/M4 (see contracts/golden/vendor-gated-registration-flow-m4/README.md 'Migration'). The same class of defect, for the new registration-code mechanism, is now proven by A50 (contracts/checks/vendor-gated-registration-flow-m4/check-approval-mints-code-atomically.mjs)." >&2; exit 77
     - id: A21
       description: >-
         ADDED 2026-08-31 (architect pass). Folds in @dev's fix-pass check for the approval email
@@ -927,3 +1067,232 @@ assertions:
         and pages added in M1.
         FAILS ON: any TypeScript error or lint error.
       command: pnpm type-check && pnpm lint
+
+    # --- F22: core code mechanism (generation, normalisation, verification, lockout) ---
+    - id: A43
+      description: >-
+        normalizeVendorCodeName() matches every case/spacing/punctuation/accent row in
+        contracts/golden/vendor-gated-registration-flow-m4/vendor-registration-code-name-normalization.expected.md,
+        and never collapses two genuinely different names to the same slug.
+        FAILS ON: any golden row mismatched, or 'Fynbos Pottery'/'Fynbos Potter' normalising to
+        the same value.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m4/check-name-normalization.mjs
+    - id: A44
+      description: >-
+        generateVendorRegistrationCodeId() takes zero arguments, always returns a 4-digit
+        zero-padded string, is CSPRNG-shaped over 5000 draws (spread across all 10 deciles of
+        the 0-9999 range, not monotonic, not a fixed value), and the module calls node:crypto's
+        randomInt -- never Math.random.
+        FAILS ON: wrong format, nonzero arity, a narrow/clustered/monotonic/fixed distribution,
+        or Math.random present in the source.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m4/check-code-generation-csprng-format.mjs
+    - id: A45
+      description: >-
+        Behavioral, real execution: verifyVendorRegistrationCode() succeeds ONLY for an
+        approved/unlocked/unconsumed/unexpired candidate whose code matches, and every failure
+        path (no candidate, wrong code, locked, consumed, expired, not-approved, never-issued)
+        returns a byte-identical {ok:false} shape -- no reason field. Also source-checks that
+        constantTimeEqual is imported from lib/recovery-token.ts, not redefined.
+        FAILS ON: any failure path with a distinguishing key/shape, a wrong-outcome case, or a
+        locally redefined constant-time comparison.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m4/check-code-verification-enumeration-blind.mjs
+    - id: A46
+      description: >-
+        Behavioral, real execution, same optimistic-concurrency fake as this mission's own F1
+        single-use-claim check: recordFailedVendorRegistrationCodeAttempt() locks exactly at
+        the 5th failed attempt (VENDOR_REGISTRATION_CODE_LOCK_THRESHOLD), and the counter
+        increments atomically under two concurrent failed attempts (no lost update) -- a CONTROL
+        arm proves the fake can express a lost-update defect before the FIX arm proves the real
+        function avoids it.
+        FAILS ON: locking at the wrong attempt count, a lost update under concurrency, or the
+        CONTROL arm failing to demonstrate the defect (which would mean this check proves
+        nothing).
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m4/check-attempt-lockout-transactional.mjs
+    - id: A47
+      description: >-
+        types/index.ts's VendorApplication gains registrationCodeId/registrationCodeNameSlug/
+        registrationCodeIssuedAt/registrationCodeExpiresAt/registrationCodeConsumedAt/
+        registrationCodeFailedAttempts/registrationCodeLockedAt, and the M1 registrationToken*
+        fields are still present (deprecated-in-place, never deleted).
+        FAILS ON: any new field missing, or any registrationToken* field removed from the
+        interface body.
+      command: >-
+        sed -n '/interface VendorApplication /,/^}/p' types/index.ts > /tmp/vendor-application-m4-check.txt && for f in registrationCodeId registrationCodeNameSlug registrationCodeIssuedAt registrationCodeExpiresAt registrationCodeConsumedAt registrationCodeFailedAttempts registrationCodeLockedAt registrationTokenIssuedAt registrationTokenExpiresAt registrationTokenConsumedAt; do grep -q "$f" /tmp/vendor-application-m4-check.txt || exit 1; done
+
+    # --- F23: public verify route + gate ---
+    - id: A48
+      description: >-
+        Behavioral, real execution, same technique as vendor-f5-register-route's own
+        rate-limit-shields-write check: a pre-seeded rate-limited key is refused with 429
+        BEFORE the Firestore candidate lookup runs (zero calls to findCandidates); every
+        non-rate-limited failure branch returns an identical response body containing only an
+        'error' key with the fixed generic message (no PII, no distinguishing reason); a
+        successful match returns exactly {ok:true} in the body with the session artifact
+        delivered ONLY via a separate result field, never serialised into the body; and a
+        failed match records a failed attempt against the matched candidate.
+        FAILS ON: the Firestore lookup running before the rate-limit check, any two failure
+        bodies differing, the session token appearing inside the JSON body, or a failed match
+        not recording an attempt.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m4/check-verify-handler-rate-limit-and-response-shape.mjs
+    - id: A49
+      description: >-
+        PROMOTED to phase 4 2026-09-01 (architect pass 3) -- F23 is now implemented.
+        app/(marketing)/national-show/vendors/register/page.tsx no longer gates on a `?token=`
+        search param, and POST /api/vendors/register no longer accepts a vendor-typed
+        token/code field in its body -- both now depend on the internal session cookie only.
+        Source-based (not a bare grep): verifies the session-cookie constant and `cookies()` are
+        referenced on both surfaces, that verifyVendorRegistrationToken is called with the
+        cookie-derived value (never a search-param/body value), and that the register route
+        reads no token/code property off the parsed request body.
+        FAILS ON: either surface still reading/accepting a public-facing token/code value
+        directly (as opposed to the internal HttpOnly session cookie).
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m4/check-register-page-and-route-session-only.mjs
+
+    # --- F24: approval mints a code ---
+    - id: A50
+      description: >-
+        PROMOTED to phase 4 2026-09-01 (architect pass 3) -- F24 is now implemented; also
+        SUPERSEDES A20 (see A20's retirement note). UPDATED 2026-09-01 (architect pass 5,
+        team-lead review, post-Codex). The 'approve' action in POST
+        /api/admin/vendors/applications/[id]/review generates the code BEFORE any write and
+        persists registrationCodeId/registrationCodeNameSlug/registrationCodeIssuedAt/
+        registrationCodeExpiresAt in the SAME, single additive ref.update() call as F5's
+        existing 3-key decision (never a separate, laggable write -- proving more than A20 ever
+        could, since A20's M1 shape used two separate update calls), and -- behaviourally, via a
+        real call to sendVendorApprovalConfirmationEmail() -- the approval email renders the
+        code digit-grouped ("4 8 2 1"), never as an unbroken 4-digit run.
+
+        THIS ASSERTION WAS GREEN OVER A REAL DEFECT: Codex found that F24 moved the vendor's
+        actual redemption dependency (VENDOR_REGISTRATION_TOKEN_SECRET, needed by
+        POST /api/vendors/register/verify-code to mint the session cookie) to a DIFFERENT file
+        without carrying forward a precondition check -- an approval could commit, the code
+        would be emailed, and every redemption attempt would fail forever behind the
+        (deliberately) generic 403, with the operator seeing nothing wrong. This is the M1
+        dead-end (A20's original concern) reincarnated in a new file, precisely because A50's
+        original form asserted "code generated before ref.update()" -- a fact about the OLD
+        implementation's SHAPE that happened to still be true, not the actual property ("nothing
+        the vendor needs to redeem the credential may be unverified before the application
+        leaves pending"). A per-instance patch ("and also check the secret") would have the same
+        blind spot the next time a precondition moves file -- which is what just happened once
+        already. So this is now EXPRESSED AS A GENERAL, MECHANICALLY-EXTRACTED INVARIANT (A42
+        spirit, per the team lead's explicit direction), not a named instance: a second script,
+        check-redemption-preconditions-verified-before-approval-commits.mjs, performs static
+        analysis of the REAL redemption route (app/api/vendors/register/verify-code/route.ts) to
+        extract (a) every `process.env.NAME` reference there guarded by an `if (!x) { ...
+        return }` refusal, and (b) every Firestore `.where('field', '==', expr)` in its
+        candidate lookup where `expr` is a vendor-input-derived variable, not a constant literal
+        -- then asserts the approval route's 'approve' branch references each such env var name,
+        and guards-for-truthiness the exact expression it writes for each such match-key field,
+        before its commit. This is DATA-driven, not hardcoded to
+        VENDOR_REGISTRATION_TOKEN_SECRET/registrationCodeNameSlug by name -- a future
+        precondition added to (or moved into) the redemption route, of either shape, is picked
+        up automatically. Verified non-vacuous by independently reverting each of @dev's two
+        fixes (the secret precheck, and the empty-slug precheck it additionally found while
+        fixing the first) and confirming the new script fails on each, with the correct message,
+        before restoring.
+
+        STATED LIMITATION, told plainly rather than glossed over (per the team lead's ask):
+        this general form only sees preconditions expressed as (a) an env-var refusal guard or
+        (b) a vendor-input-derived Firestore `.where()` equality match, BOTH inside the one
+        redemption route file this script reads. A precondition enforced a different way --
+        inside a transitively-imported helper rather than the route itself, via a non-`.where()`
+        Firestore query shape (e.g. `.get()` + in-memory filter), via a third file the
+        redemption path calls into, or via infrastructure outside this route entirely (a Cloud
+        Scheduler job, a Storage bucket policy) -- would still slip past this check. Widening
+        the scan to the redemption route's transitive imports, or to non-`.where()` filter
+        shapes, is future work if either pattern is ever used.
+        FAILS ON: the retired mintVendorRegistrationToken still being called, more than one
+        ref.update() call site, the code generated after ref.update(), the code fields written
+        in a separate call than the decision patch, a generation failure not refusing the whole
+        approval, the email rendering the raw unbroken 4-digit string, any env-var refusal guard
+        in the redemption route not mirrored by a reference to the same name in the approval
+        route's pre-commit approve branch, or any vendor-input-derived match-key field in the
+        redemption route's lookup whose corresponding written expression in the approval patch
+        is not guarded for truthiness before the commit.
+      command: >-
+        npx tsx contracts/checks/vendor-gated-registration-flow-m4/check-approval-mints-code-atomically.mjs && node contracts/checks/vendor-gated-registration-flow-m4/check-redemption-preconditions-verified-before-approval-commits.mjs
+
+    # --- F25: admin visibility + reissue ---
+    - id: A51
+      description: >-
+        PROMOTED to phase 4 2026-09-01 (architect pass 3) -- F25 is now implemented. UPDATED
+        2026-09-01 (architect pass 4, team-lead item 3) to also cover @dev's fix for the second
+        Codex-found M4 defect: a reissue previously minted a new code without revoking a
+        session already minted from the OLD one. POST
+        /api/admin/vendors/applications/[id]/reissue-code is gated by the same
+        getAdminSession()/hasCapability('review-vendor-applications') check as the existing
+        review route, is callable regardless of current lock state (not conditioned on
+        registrationCodeLockedAt being set), and its single additive patch resets
+        registrationCodeFailedAttempts to 0, registrationCodeLockedAt to null, calls the real
+        generateVendorRegistrationCodeId()/normalizeVendorCodeName() to mint a fresh code, AND
+        increments registrationCodeGeneration (an actual increment operation -- FieldValue.
+        increment(...) or equivalent -- not merely the field name appearing) -- the write that
+        makes a reissue an actual revocation, since
+        lib/vendor-registration-token-claim.ts's claimRegistrationToken() (see the strengthened
+        A17/check-single-use-claim-is-atomic.mjs) refuses a claim whose session generation no
+        longer matches. Source-based (same stated Firebase-Admin-credential limitation as
+        A20/A50 -- exercising the live route needs infrastructure this environment does not
+        have).
+        FAILS ON: a missing/weaker capability gate, a lock-state precondition blocking the
+        route, more than one update call site, the counters not resetting, the code not
+        freshly generated (no call to generateVendorRegistrationCodeId()), or
+        registrationCodeGeneration not incremented in that same patch.
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m4/check-reissue-route-resets-lock.mjs
+    - id: A52
+      description: >-
+        PROMOTED to phase 4 2026-09-01 (architect pass 3) -- F25 is now implemented. Behavioural
+        (real react-dom/server output, same technique as A9/check-provisional-badge-gated.mjs):
+        VendorApplicationReviewTable.tsx renders a "Code" column populated from
+        registrationCodeId only for approved applications -- including a negative-control
+        fixture, a DECLINED application carrying a stale registrationCodeId, which must NOT
+        render the code (proves the gate is status === 'approved', not merely field presence) --
+        and a locked marker driven by registrationCodeLockedAt (present when set, absent when
+        null on an otherwise-identical approved fixture).
+        FAILS ON: the code rendered for a non-approved application (including the stale-field
+        negative control), or the locked marker missing/always-on regardless of
+        registrationCodeLockedAt.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m4/check-admin-table-code-column.mjs
+
+    # --- whole-mission regression gate, M4 ---
+    - id: A53
+      description: >-
+        Whole-project type safety and lint are unaffected by the new types, modules, routes,
+        and pages added in M4.
+        FAILS ON: any TypeScript error or lint error.
+      command: pnpm type-check && pnpm lint
+
+    - id: A54
+      description: >-
+        ADDED 2026-09-01 (architect pass 4, team-lead item 2 -- expressed as a general
+        invariant, A42-style, per the team lead's explicit suggestion). STANDING regression
+        guard, not a one-off instance check: `expectedGeneration` is OPTIONAL on
+        ClaimRegistrationTokenOptions (lib/vendor-registration-token-claim.ts) purely so
+        check-single-use-claim-is-atomic.mjs's own pre-generation call shapes keep compiling --
+        omitting it means "do not check the generation", never "any generation matches". A42
+        generalised "every field buildVendorSubmission writes must be validated" by
+        programmatically diffing a MANY-fields-vs-one-validator relationship; this assertion's
+        relationship is one-function-vs-its-call-sites, currently size 1 (only
+        app/api/vendors/register/route.ts calls claimRegistrationToken in production), so
+        rather than a diff it scans the tracked .ts/.tsx source tree with `git grep` for every
+        `claimRegistrationToken(` call expression (excluding the defining module and this
+        mission's own contracts/checks/** fixtures, which deliberately exercise the
+        pre-generation/omitted-option shapes as test cases) and asserts EACH ONE supplies
+        expectedGeneration -- so a SECOND call site added later, which A17's own hardcoded
+        single-file check would be blind to, is caught the same way. Also asserts the scan
+        finds at least one real call site, so it cannot pass by finding nothing to check (the
+        same vacuous-scan trap A42 itself guards against). Verified non-vacuous by removing
+        the production call site's expectedGeneration locally and re-running -- fails with the
+        expected message; restored and reruns clean.
+        FAILS ON: any claimRegistrationToken(...) call site (present or future) in the tracked
+        .ts/.tsx tree, outside the defining module and contracts/checks/**, that does not
+        supply expectedGeneration, or the scan finding zero call sites.
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m4/check-every-claim-call-site-supplies-generation.mjs

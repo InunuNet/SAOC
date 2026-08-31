@@ -43,8 +43,14 @@ export interface VendorApprovalConfirmationInput {
    *  form, rendered when present. The EXISTING call site
    *  (app/api/admin/vendors/[id]/review/route.ts, full-VendorSubmission approval) never
    *  passes this -- it stays undefined there, unchanged behavior. The NEW call site
-   *  (app/api/admin/vendors/applications/[id]/review/route.ts's 'approve' action) sets it. */
+   *  (app/api/admin/vendors/applications/[id]/review/route.ts's 'approve' action) sets it.
+   *  Since M4/F24, this carries a `?name=&code=` convenience link (not a `?token=` link) --
+   *  see emails/VendorApprovalConfirmation.tsx's own prop comment. */
   registrationLink?: string | null;
+  /** F24 (vendor-gated-registration-flow, M4) -- the 4-digit human-readable code, rendered
+   *  read-aloud formatted (digit-grouped) alongside registrationLink. Optional/undefined for
+   *  every call site that predates M4 or omits registrationLink -- never rendered alone. */
+  registrationCode?: string | null;
 }
 
 /** Deliberately narrow -- matches only what lib/email.ts's real `sendEmail` already satisfies
@@ -79,6 +85,7 @@ export async function sendVendorApprovalConfirmationEmail(
       loadInSlot: input.loadInSlot ?? null,
       loadOutSlot: input.loadOutSlot ?? null,
       registrationLink: input.registrationLink ?? null,
+      registrationCode: input.registrationCode ?? null,
     }),
     from: FORMS_FROM_ADDRESS,
   });

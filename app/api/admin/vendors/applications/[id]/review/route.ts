@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { getAdminSession, hasCapability } from '@/lib/admin-auth';
 import { initAdmin } from '@/lib/firebase-admin';
@@ -10,7 +10,11 @@ import {
   decideVendorApplicationTransition,
   type VendorApplicationReviewAction,
 } from '@/lib/vendor-application-review';
-import { mintVendorRegistrationToken } from '@/lib/vendor-registration-token';
+import {
+  generateVendorRegistrationCodeId,
+  normalizeVendorCodeName,
+  VENDOR_REGISTRATION_CODE_DEFAULT_TTL_MS,
+} from '@/lib/vendor-registration-code';
 import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
 import { sendVendorApprovalConfirmationEmail } from '@/lib/vendor-approval-confirmation';
 import type { VendorApplicationStatus } from '@/types/index';
@@ -24,19 +28,22 @@ import type { VendorApplicationStatus } from '@/types/index';
  * is used for every write -- never a full-document overwrite -- so each patch can only ADD to
  * the document.
  *
- * On 'approve': the registration secret is resolved and the token MINTED FIRST, BEFORE any
- * write -- a missing secret or a minting failure must fail the whole operation with the
- * application still `pending`, since the review machine (correctly) refuses to re-approve an
- * already-approved application and an approved-with-no-link application would otherwise be a
- * terminal dead end no operator could clear from the UI. Only once a token exists is a SINGLE
- * additive patch applied, spreading F2's own 3-key patch alongside the token's issued/expires
- * timestamps (F2's decideVendorApplicationTransition contract is untouched -- it still returns
- * exactly {status, reviewedBy, reviewedAt}; this route merely writes them together so approval
- * and token issuance can never land apart). THEN the approval confirmation email (F6,
- * extended) is sent with a registrationLink built from the minted token, and no
- * booth/logistics fields at all -- none has been asked of the vendor yet, so every one of them
- * (powerRequired included, now nullable) is omitted and renders "Not specified" rather than
- * asserting an answer the vendor never gave.
+ * On 'approve': REPOINTED 2026-09-01 (mission vendor-gated-registration-flow, M4/F24) from
+ * minting an opaque HMAC token to generating a human-readable code -- see
+ * contracts/golden/vendor-gated-registration-flow-m4/README.md for the full decision record.
+ * The code is generated FIRST, BEFORE any write -- a generation failure must fail the whole
+ * operation with the application still `pending`, since the review machine (correctly) refuses
+ * to re-approve an already-approved application and an approved-with-no-code application would
+ * otherwise be a terminal dead end no operator could clear from the UI. Only once a code exists
+ * is a SINGLE additive patch applied, spreading F2's own 3-key patch alongside the code's
+ * issued/expires timestamps and the code itself (F2's decideVendorApplicationTransition
+ * contract is untouched -- it still returns exactly {status, reviewedBy, reviewedAt}; this
+ * route merely writes them together so approval and code issuance can never land apart). THEN
+ * the approval confirmation email (F6/F24, extended) is sent with the code (read-aloud
+ * formatted) and a `?name=&code=` convenience link, and no booth/logistics fields at all --
+ * none has been asked of the vendor yet, so every one of them (powerRequired included, now
+ * nullable) is omitted and renders "Not specified" rather than asserting an answer the vendor
+ * never gave.
  *
  * On 'decline': F2's decision only -- no email in M1 (a decline notification is a reasonable
  * M2 addition, not blocking the demo). See
@@ -116,57 +123,100 @@ export async function POST(
     return NextResponse.json({ error: decision.error }, { status: 409 });
   }
 
-  // Mint BEFORE committing anything. A missing secret or a minting failure here leaves the
-  // application `pending` and recoverable -- the operator can retry the same approval once the
-  // secret is configured. Never a silent fallback secret, never a partial approval.
-  let minted: ReturnType<typeof mintVendorRegistrationToken> | null = null;
+  // Generate BEFORE committing anything. A generation failure here leaves the application
+  // `pending` and recoverable -- the operator can retry the same approval. Never a partial
+  // approval left `approved` with no code issued against it.
+  let minted: { codeId: string; nameSlug: string; expiresAt: Date } | null = null;
   if (body.action === 'approve') {
-    const secret = process.env.VENDOR_REGISTRATION_TOKEN_SECRET;
-    if (!secret) {
+    // M4 fix pass -- EVERY precondition the vendor will need in order to REDEEM the code has to
+    // hold before the application leaves `pending`, not just the preconditions of generating it.
+    // F24 moved the secret dependency from mint-time to verify-time
+    // (app/api/vendors/register/verify-code/route.ts mints the session cookie) and this precheck
+    // did not move with it, reintroducing M1's dead end in a new form: the approval commits, the
+    // code is emailed, and every redemption fails with the deliberately generic 403 that hides
+    // the real cause. The secret is only READ here (never used) precisely because this route no
+    // longer mints anything -- it is an availability precondition, checked at the point of no
+    // return. Fails closed with an operator-facing 503, application untouched and still pending.
+    if (!process.env.VENDOR_REGISTRATION_TOKEN_SECRET) {
       console.error(
-        '[admin/vendors/applications/review] VENDOR_REGISTRATION_TOKEN_SECRET is unset; refusing to approve (application left pending).',
+        '[admin/vendors/applications/review] VENDOR_REGISTRATION_TOKEN_SECRET is unset; approval refused (application left pending).',
       );
       return NextResponse.json(
         {
           error:
-            'Cannot approve: VENDOR_REGISTRATION_TOKEN_SECRET is not configured, so no registration link can be issued. The application is unchanged and still pending.',
+            'Cannot approve: VENDOR_REGISTRATION_TOKEN_SECRET is not configured, so the registration code could never be redeemed. The application is unchanged and still pending.',
         },
         { status: 503 },
       );
     }
 
     try {
-      minted = mintVendorRegistrationToken({ applicationId: id, secret, now });
+      minted = {
+        codeId: generateVendorRegistrationCodeId(),
+        nameSlug: normalizeVendorCodeName(String(data.businessName ?? '')),
+        expiresAt: new Date(now.getTime() + VENDOR_REGISTRATION_CODE_DEFAULT_TTL_MS),
+      };
     } catch (error) {
       console.error(
-        '[admin/vendors/applications/review] Failed to mint a registration token; approval refused (application left pending):',
+        '[admin/vendors/applications/review] Failed to generate a registration code; approval refused (application left pending):',
         error instanceof Error ? error.message : 'unknown error',
       );
       return NextResponse.json(
         {
           error:
-            'Cannot approve: failed to issue a registration link. The application is unchanged and still pending.',
+            'Cannot approve: failed to issue a registration code. The application is unchanged and still pending.',
         },
         { status: 500 },
+      );
+    }
+
+    // Second precondition of the SAME class, found while checking for one. The vendor is looked
+    // up at verify time by `registrationCodeNameSlug` (an equality match on the slug of whatever
+    // they type). normalizeVendorCodeName() strips everything outside [a-z0-9], so a business
+    // name that is entirely non-Latin or punctuation -- or a document with no businessName at
+    // all -- normalises to the empty string. That commits an approval whose code no realistic
+    // typed name can ever match: the same permanent, silent dead end. Refused before the
+    // commit; the operator can correct the business name and approve again.
+    if (!minted.nameSlug) {
+      console.error(
+        '[admin/vendors/applications/review] Business name normalises to an empty code slug; approval refused (application left pending).',
+      );
+      return NextResponse.json(
+        {
+          error:
+            'Cannot approve: this business name contains no letters or digits, so the registration code could never be matched to it. Correct the business name first. The application is unchanged and still pending.',
+        },
+        { status: 409 },
       );
     }
   }
 
   try {
-    // One additive patch: F2's 3-key decision plus, on approval, the token timestamps -- so an
-    // application can never be left `approved` with no token issued against it.
+    // One additive patch: F2's 3-key decision plus, on approval, the code fields -- so an
+    // application can never be left `approved` with no code issued against it.
     await ref.update(
       minted
         ? {
             ...decision.patch,
-            registrationTokenIssuedAt: Timestamp.fromDate(now),
-            registrationTokenExpiresAt: Timestamp.fromDate(minted.expiresAt),
+            registrationCodeId: minted.codeId,
+            registrationCodeNameSlug: minted.nameSlug,
+            registrationCodeIssuedAt: Timestamp.fromDate(now),
+            registrationCodeExpiresAt: Timestamp.fromDate(minted.expiresAt),
+            registrationCodeFailedAttempts: 0,
+            registrationCodeLockedAt: null,
+            // Every code mint bumps the generation, so a session minted against an earlier
+            // code can never be claimed. FieldValue.increment is atomic and creates the field
+            // at 1 on an application that has never held a code.
+            registrationCodeGeneration: FieldValue.increment(1),
           }
         : decision.patch,
     );
 
     if (minted) {
-      const registrationLink = `${resolveSiteUrl()}/national-show/vendors/register?token=${minted.token}`;
+      // Captured into a const so the closure below keeps TypeScript's narrowing -- `minted`
+      // itself is a `let`, which loses narrowing inside a nested function expression.
+      const mintedCode = minted;
+      const registrationLink = `${resolveSiteUrl()}/national-show/vendors/register?name=${encodeURIComponent(String(data.businessName ?? ''))}&code=${mintedCode.codeId}`;
 
       await deliverConfirmationEmailAfterCommit(
         () =>
@@ -174,6 +224,7 @@ export async function POST(
             businessName: data.businessName,
             contactPersonName: data.contactPersonName,
             contactEmail: data.contactEmail,
+            registrationCode: mintedCode.codeId,
             registrationLink,
           }),
         (error) => {

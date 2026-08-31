@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { VENDOR_APPLICATIONS_COLLECTION } from '@/lib/vendor-applications';
 import { verifyVendorRegistrationToken } from '@/lib/vendor-registration-token';
+import { VENDOR_REGISTRATION_SESSION_COOKIE_NAME } from '@/lib/vendor-registration-code-verify-handler';
 import {
   claimRegistrationToken,
   releaseRegistrationTokenClaim,
@@ -22,14 +24,19 @@ import { sendVendorRegistrationConfirmationEmail } from '@/lib/vendor-registrati
  * contracts/golden/vendor-f5-register-route/README.md for the original decision record and
  * contracts/golden/vendor-gated-registration-flow-f1/README.md for the F7 gating addition.
  *
- * F7: this route additionally requires a `token` in the request body and RE-VERIFIES it here,
- * server-side -- never trusting that the page-level check
+ * F7/M1, REPOINTED by F23/M4: this route no longer accepts a vendor-typed token/code in its
+ * request body. It instead requires the internal, HttpOnly `vendor_registration_session`
+ * cookie (minted by POST /api/vendors/register/verify-code the moment the human-readable code
+ * verifies -- see contracts/golden/vendor-gated-registration-flow-m4/README.md's "Migration")
+ * and RE-VERIFIES it here, server-side -- never trusting that the page-level check
  * (app/(marketing)/national-show/vendors/register/page.tsx) already ran, since a direct POST
  * bypassing the browser must be gated exactly like the page. Every failure mode -- missing
- * token, malformed, bad signature, expired, application not found, wrong status, already
+ * cookie, malformed, bad signature, expired, application not found, wrong status, already
  * consumed -- returns the SAME generic message, never a distinguishing error (same fail-closed
- * posture as lib/admin-auth.ts's unenumerated-state handling). A stateless HMAC token is
- * replayable until expiry by construction, so single-use is enforced by a server-side
+ * posture as lib/admin-auth.ts's unenumerated-state handling). F3's HMAC module itself is
+ * unchanged by this repointing -- only the transport (cookie, not a body/query field) and the
+ * caller (the verify-code route, not the vendor's browser directly) changed. A stateless HMAC
+ * token is replayable until expiry by construction, so single-use is enforced by a server-side
  * `registrationTokenConsumedAt` timestamp on the linked VendorApplication doc -- not by the
  * token format.
  *
@@ -101,15 +108,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Malformed JSON body.' }, { status: 400 });
   }
 
-  if (
-    typeof rawBody !== 'object' ||
-    rawBody === null ||
-    typeof (rawBody as Record<string, unknown>).token !== 'string'
-  ) {
+  if (typeof rawBody !== 'object' || rawBody === null) {
     return invalidTokenResponse();
   }
 
-  const { token, ...vendorSubmissionInput } = rawBody as Record<string, unknown> & { token: string };
+  const vendorSubmissionInput = rawBody as Record<string, unknown>;
 
   const secret = process.env.VENDOR_REGISTRATION_TOKEN_SECRET;
   if (!secret) {
@@ -119,9 +122,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return invalidTokenResponse();
   }
 
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get(VENDOR_REGISTRATION_SESSION_COOKIE_NAME)?.value;
+  if (!sessionToken) {
+    return invalidTokenResponse();
+  }
+
   const now = new Date();
-  const verification = verifyVendorRegistrationToken({ token, secret, now });
+  const verification = verifyVendorRegistrationToken({ token: sessionToken, secret, now });
   if (!verification.ok) {
+    return invalidTokenResponse();
+  }
+
+  // A session must name the code generation it was minted from. A token without one predates
+  // generation binding and cannot be checked against a reissue, so it is refused -- fail
+  // closed, same generic response as every other refusal.
+  if (verification.generation === null) {
     return invalidTokenResponse();
   }
 
@@ -131,6 +147,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const claimed = await claimRegistrationToken(db, applicationRef, {
     consumedAt: Timestamp.fromDate(now),
+    // Checked inside the claim transaction: a session minted from a code that has since been
+    // reissued names a stale generation and is refused before any write happens.
+    expectedGeneration: verification.generation,
     onError: (error) => {
       console.error(
         '[vendors/register/route] Failed to claim the registration token:',
@@ -172,6 +191,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         error instanceof Error ? error.message : 'unknown error',
       );
     });
+  } else {
+    // The session cookie's one job is done -- clear it so a stray reload of the (now
+    // consumed) register page falls back to the code-entry form instead of a stale cookie
+    // lingering for its full 30-minute life. registrationTokenConsumedAt is what actually
+    // enforces single-use; this is hygiene, not the security boundary.
+    cookieStore.delete(VENDOR_REGISTRATION_SESSION_COOKIE_NAME);
   }
 
   return toResponse(result);

@@ -1,0 +1,33 @@
+schema: athanor.contract/v1
+slug: vendor-gated-registration-flow
+goal: >-
+  Pointer only -- the real, canonical contract for this mission lives at
+  contracts/contract-vendor-gated-registration-flow.yaml (repo-root contracts/ convention,
+  matching this mission's own F1 pointer file). This pass (M4, F22-F25) replaces M1/F3+F7's
+  opaque HMAC registration link with a human-readable "{BusinessName}-{4 digits}" code (Brad,
+  2026-08-31), engineered so a 4-digit code is never the sole barrier: per-application
+  transactional lockout (5 failed attempts), a secondary per-IP throttle, CSPRNG generation,
+  constant-time comparison, and an enumeration-blind verify response. Do NOT implement against
+  this file -- @dev must read
+  contracts/contract-vendor-gated-registration-flow.yaml (features F22-F25 = M4) and its golden
+  decision record at contracts/golden/vendor-gated-registration-flow-m4/README.md.
+created_at: '2026-09-01'
+autonomy: high
+features:
+  - id: F22
+    name: See contracts/contract-vendor-gated-registration-flow.yaml (F22 -- core code mechanism)
+    status: pending
+goldens:
+  - contracts/golden/vendor-gated-registration-flow-m4/README.md
+  - contracts/golden/vendor-gated-registration-flow-m4/vendor-registration-code-name-normalization.expected.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The canonical contract this pointer refers to exists and is valid YAML with at least
+        one M4 feature (F22) and its assertions -- proves the pointer target is real, not a
+        broken link.
+        FAILS ON: the canonical contract missing, F22 absent from its features list, or its
+        assertions/checks list empty.
+      command: python3 -c "import yaml,sys; d=yaml.safe_load(open('contracts/contract-vendor-gated-registration-flow.yaml')); fids=[f.get('id') for f in d.get('features',[])]; sys.exit(0 if 'F22' in fids and d.get('assertions',{}).get('checks') else 1)"

@@ -14,6 +14,17 @@
 // the callers by construction and proves nothing, and this check fails loudly for that reason
 // rather than reporting a green it did not earn.
 //
+// M4 fix pass addition (architect pass 4, 2026-09-01): claimRegistrationToken() also gained an
+// OPTIONAL `expectedGeneration` -- when supplied, the claim additionally refuses unless it
+// equals the application's `registrationCodeGeneration` (absent normalised to 0). This is what
+// makes a code REISSUE an actual revocation of any session minted from the prior code, not just
+// a new code alongside a still-valid old session. @dev flagged this as the weakest point of its
+// own fix: the option is optional purely so this file's own pre-generation call shapes above
+// keep working, and nothing mechanically stops a future call site from forgetting to pass it
+// (which would silently lose revocation). The cases below exercise match / mismatch / the
+// absent-field-normalises-to-0 rule in BOTH directions / and the omitted-option back-compat
+// path, all against the real function and the same transactional fake used above.
+//
 // Run as: node --import tsx/esm contracts/checks/vendor-gated-registration-flow/check-single-use-claim-is-atomic.mjs
 
 import { claimRegistrationToken } from '../../../lib/vendor-registration-token-claim.ts';
@@ -152,6 +163,73 @@ for (const [label, doc, exists] of [
 }
 
 // ---------------------------------------------------------------------------------------------
+// M4 fix pass -- expectedGeneration. Codex-flagged as the weakest point of the reissue-
+// revocation fix: `expectedGeneration` is OPTIONAL on ClaimRegistrationTokenOptions purely so
+// this check's own pre-generation calls above keep compiling/passing -- omitting it must mean
+// "do not check the generation", never "any generation matches". The one production call site
+// (app/api/vendors/register/route.ts) always supplies it, but nothing mechanically enforces
+// that; a future call site that forgets it would silently lose revocation. These cases exercise
+// the REAL function, inside the SAME transactional fake as the concurrency proof above -- not a
+// grep for the field name.
+// ---------------------------------------------------------------------------------------------
+{
+  // Matching generation: claim succeeds.
+  const store = createStore({ status: 'approved', registrationCodeGeneration: 2 });
+  const claimed = await claimRegistrationToken(createDb(store), { update: async () => {} }, {
+    consumedAt: CONSUMED_AT,
+    expectedGeneration: 2,
+  });
+  if (!claimed) failures.push('expectedGeneration: a claim with a MATCHING generation (2 === 2) was refused; expected success.');
+  if (!store.data.registrationTokenConsumedAt) failures.push('expectedGeneration: a successful matching-generation claim did not write registrationTokenConsumedAt.');
+}
+{
+  // Mismatched generation (session minted from an old code, since reissued): claim refused,
+  // and refusal writes nothing -- a reissue must actually revoke, not merely look like it does.
+  const store = createStore({ status: 'approved', registrationCodeGeneration: 3 });
+  const before = store.version;
+  const claimed = await claimRegistrationToken(createDb(store), { update: async () => {} }, {
+    consumedAt: CONSUMED_AT,
+    expectedGeneration: 2, // stale -- the application has moved on to generation 3
+  });
+  if (claimed) failures.push('expectedGeneration: a claim with a MISMATCHED generation (2 !== 3) was NOT refused -- a reissued code fails to revoke the prior session.');
+  if (store.version !== before) failures.push('expectedGeneration: a generation-mismatch refusal still wrote to the document.');
+}
+{
+  // Absent registrationCodeGeneration normalises to 0 on BOTH sides of the comparison: a
+  // pre-generation application (approved before this field existed) is generation 0, and a
+  // session that carries expectedGeneration: 0 must still be claimable against it.
+  const store = createStore({ status: 'approved' }); // no registrationCodeGeneration field at all
+  const claimed = await claimRegistrationToken(createDb(store), { update: async () => {} }, {
+    consumedAt: CONSUMED_AT,
+    expectedGeneration: 0,
+  });
+  if (!claimed) failures.push('expectedGeneration: a claim with expectedGeneration: 0 against a document with NO registrationCodeGeneration field was refused; an absent field must normalise to 0, matching a session minted before generations existed.');
+}
+{
+  // The same absent-field-normalises-to-0 rule, but proving the MISMATCH direction: a document
+  // with no registrationCodeGeneration field (generation 0) must refuse a session claiming a
+  // later generation (e.g. 1) -- catches an implementation that normalises the document's side
+  // but not the comparison, or vice versa.
+  const store = createStore({ status: 'approved' });
+  const claimed = await claimRegistrationToken(createDb(store), { update: async () => {} }, {
+    consumedAt: CONSUMED_AT,
+    expectedGeneration: 1,
+  });
+  if (claimed) failures.push('expectedGeneration: a claim with expectedGeneration: 1 against a document with NO registrationCodeGeneration field (normalised generation 0) was NOT refused; expected a mismatch refusal.');
+}
+{
+  // Omitting expectedGeneration entirely means "do not check" -- must still succeed against a
+  // document whose generation has since moved on, which is the exact back-compat shape this
+  // check's own earlier cases (and any future non-generation-aware caller) depend on.
+  const store = createStore({ status: 'approved', registrationCodeGeneration: 5 });
+  const claimed = await claimRegistrationToken(createDb(store), { update: async () => {} }, {
+    consumedAt: CONSUMED_AT,
+    // expectedGeneration deliberately omitted
+  });
+  if (!claimed) failures.push('expectedGeneration: omitting expectedGeneration entirely must mean "do not check the generation", but the claim was refused against a document at generation 5.');
+}
+
+// ---------------------------------------------------------------------------------------------
 // A transaction failure is a refusal (fail closed), never a claim.
 // ---------------------------------------------------------------------------------------------
 {
@@ -175,6 +253,8 @@ console.log(
   'PASS: claimRegistrationToken() admits exactly ONE of two concurrent claims that both read ' +
     'before either committed (the same harness reproduces two winners against the pre-fix ' +
     'read-then-write shape, so it can express the defect), refuses every ineligible ' +
-    'application state without writing, and fails closed on a transaction error.',
+    'application state without writing, fails closed on a transaction error, and (M4) refuses ' +
+    'a mismatched registrationCodeGeneration -- with an absent field normalising to 0 on both ' +
+    'sides -- while a claim that omits expectedGeneration entirely still succeeds unchecked.',
 );
 process.exit(0);

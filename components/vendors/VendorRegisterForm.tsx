@@ -89,16 +89,13 @@ const INITIAL_STATE: VendorRegisterFormState = {
   termsAccepted: false,
 };
 
-// F7 (vendor-gated-registration-flow) -- token is caller-supplied (from the page's already-
-// verified `?token=` search param), included verbatim in the POST body alongside the existing
-// buildVendorRegistrationPayload() output. Never merged into buildVendorRegistrationPayload()
-// itself -- that function's return shape (and every golden/check that pins it) stays
-// untouched; the token is gate metadata, not a VendorSubmission field.
-interface VendorRegisterFormProps {
-  token: string;
-}
-
-export function VendorRegisterForm({ token }: VendorRegisterFormProps) {
+// F23 (vendor-gated-registration-flow, M4) -- no vendor-typed token/code is threaded through
+// this component any more. Gating now happens entirely via the internal, HttpOnly-cookie-
+// delivered session artifact (minted by POST /api/vendors/register/verify-code): the gated
+// registration page only renders this component once that cookie already verifies
+// server-side, and POST /api/vendors/register re-verifies that same cookie itself -- never a
+// body field the browser controls.
+export function VendorRegisterForm() {
   const [state, setState] = useState<VendorRegisterFormState>(INITIAL_STATE);
   const [hp, setHp] = useState(''); // honeypot -- never sent to the API
   const [status, setStatus] = useState<Status>('idle');
@@ -147,10 +144,7 @@ export function VendorRegisterForm({ token }: VendorRegisterFormProps) {
       const res = await fetch('/api/vendors/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...(buildVendorRegistrationPayload(state) as Record<string, unknown>),
-          token,
-        }),
+        body: JSON.stringify(buildVendorRegistrationPayload(state) as Record<string, unknown>),
       });
       const body = await res.json().catch(() => undefined);
       const result = describeVendorRegistrationResponse(res.status, body);

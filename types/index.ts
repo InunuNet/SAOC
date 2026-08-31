@@ -770,6 +770,26 @@ export interface VendorApplication {
   registrationTokenIssuedAt?: Date | null;
   registrationTokenExpiresAt?: Date | null;
   registrationTokenConsumedAt?: Date | null;
+
+  // F22-F25 (vendor-gated-registration-flow, M4) -- human-readable registration code
+  // ("{BusinessName}-{4 digits}"), replacing the vendor-facing use of registrationToken*
+  // above (which stays deprecated-in-place, not removed -- see the M4 golden README's
+  // "Migration"). Issued by app/api/admin/vendors/applications/[id]/review/route.ts's
+  // 'approve' action (F24); verified by lib/vendor-registration-code.ts (F22) via
+  // POST /api/vendors/register/verify-code (F23); reissued (fresh code, lockout cleared) by
+  // POST /api/admin/vendors/applications/[id]/reissue-code (F25).
+  registrationCodeId?: string | null;
+  registrationCodeNameSlug?: string | null;
+  registrationCodeIssuedAt?: Date | null;
+  registrationCodeExpiresAt?: Date | null;
+  registrationCodeConsumedAt?: Date | null;
+  registrationCodeFailedAttempts?: number | null;
+  registrationCodeLockedAt?: Date | null;
+  /** M4 fix pass -- monotonically increasing counter, bumped by EVERY code mint (the 'approve'
+   *  action and every reissue). A verify-code session carries the generation it was minted
+   *  from, and POST /api/vendors/register re-checks it, so reissuing a code revokes every
+   *  session already handed out against the old one. Absent means generation 0. */
+  registrationCodeGeneration?: number | null;
 }
 
 // Caller-supplied subset of VendorApplication -- id/status/submittedAt/reviewedBy/reviewedAt/
@@ -786,4 +806,12 @@ export type VendorApplicationDraft = Omit<
   | 'registrationTokenIssuedAt'
   | 'registrationTokenExpiresAt'
   | 'registrationTokenConsumedAt'
+  | 'registrationCodeId'
+  | 'registrationCodeNameSlug'
+  | 'registrationCodeIssuedAt'
+  | 'registrationCodeExpiresAt'
+  | 'registrationCodeConsumedAt'
+  | 'registrationCodeFailedAttempts'
+  | 'registrationCodeLockedAt'
+  | 'registrationCodeGeneration'
 >;

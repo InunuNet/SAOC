@@ -42,12 +42,36 @@ export interface ClaimRegistrationTokenOptions {
    *  `now` into whatever Firestore representation it uses -- this module never constructs a
    *  Timestamp itself, keeping it free of a firebase-admin import. */
   consumedAt: unknown;
+  /**
+   * M4 fix pass -- the registration-code generation the caller's session was minted from. When
+   * supplied, the claim ALSO refuses unless it equals the application's current
+   * `registrationCodeGeneration` (absent field normalised to 0), so a session minted from a
+   * code that has since been reissued cannot be claimed. Checked INSIDE the transaction, on
+   * the snapshot the claim already reads -- no extra read, and no window between the check and
+   * the claim.
+   *
+   * Optional only because the M1 atomicity contract check
+   * (contracts/checks/vendor-gated-registration-flow/check-single-use-claim-is-atomic.mjs)
+   * calls this function with the pre-generation option shape; omitting it means "do not check
+   * the generation", never "any generation matches". Every production call site
+   * (app/api/vendors/register/route.ts) supplies it.
+   */
+  expectedGeneration?: number;
   onError?: (error: unknown) => void;
 }
 
+/** Absent/non-numeric `registrationCodeGeneration` normalises to 0 -- an application approved
+ *  before generations existed is generation 0, and its first reissue bumps it to 1. */
+function readGeneration(data: Record<string, unknown> | undefined): number {
+  const raw = data?.['registrationCodeGeneration'];
+  return typeof raw === 'number' && Number.isFinite(raw) ? raw : 0;
+}
+
 /**
- * Reads the application, re-checks that it exists, is `approved`, and has NOT already been
- * consumed, and writes `registrationTokenConsumedAt` -- all inside one transaction. Additive
+ * Reads the application, re-checks that it exists, is `approved`, has NOT already been
+ * consumed, and (when `expectedGeneration` is supplied) still carries the registration-code
+ * generation the caller's session was minted from, then writes `registrationTokenConsumedAt`
+ * -- all inside one transaction. Additive
  * only: a single-key `transaction.update()`, never a full-document overwrite.
  *
  * Returns `true` for the one winner; `false` for every loser and every ineligible application.
@@ -68,6 +92,13 @@ export async function claimRegistrationToken(
         !snapshot.exists ||
         data?.['status'] !== 'approved' ||
         Boolean(data?.['registrationTokenConsumedAt'])
+      ) {
+        return false;
+      }
+
+      if (
+        options.expectedGeneration !== undefined &&
+        readGeneration(data) !== options.expectedGeneration
       ) {
         return false;
       }

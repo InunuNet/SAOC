@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-08-31T21:19Z_
+_Generated: 2026-08-31T22:33Z_
 
 ## What happened last session
-M1 of vendor-gated-registration-flow shipped: replaced backwards public-form-then-approve flow with application -> committee approve -> single-use tokenised link -> gated full form. Rebaselined source of truth after Lee-Ann replaced the vendor doc 2026-08-26 (17 sections, restructured). Chain caught 4 real defects (nav bypass, false approval email, non-atomic single-use race, approve-before-mint dead end); 2 found by Codex, 3 by QA, race found independently by both. Two contract assertions (A17/A18) were green over real defects — weak-assertion class again — since strengthened. Gate 21/21.
+M2 F13 shipped: vendor category list corrected to the 26 Aug source doc (14 items, no Other). Codex caught a hole a green 28/28 gate missed — F13 removed vendorCategoryOther's validation but left its write, so a direct POST could persist an unbounded unvalidated string. Fixed by dropping the write. Sweep found waterRequired had NEVER been validated in repo history; fixed. Key outcome: A42 now asserts the general invariant (every persisted field must be validated), turning a manual sweep into a permanent gate check. Four green-over-defect incidents this mission (A17/A18/A25/A26 blind spot); two caught only by Codex, not the gate.
