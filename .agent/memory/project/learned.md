@@ -2630,3 +2630,65 @@ validation on submit, across 4 pattern-validated fields. Any form pipeline that 
 trimmed value must apply that same trim in the payload-building step before submission — trim
 policy has to be consistent across validate-then-submit, not just applied wherever it's
 convenient to check.
+
+## `contract.py gate` without `--run-checks` reads stale cached results, not a live measurement (2026-08-31)
+
+`python3 execution/contract.py gate <contract> --phase N` WITHOUT `--run-checks` executes
+nothing — it reads cached per-assertion result files from disk and prints them. A stale FAIL
+survives a real fix; a stale PASS survives a real regression, silently. A true reading requires
+`--run-checks`, or `contract.py check --assertion <id>` per assertion. Any gate summary quoted
+as evidence of current state without `--run-checks` is history, not measurement. Same failure
+shape as `feedback_unchanged_detector_reading` (identical output does not mean clean — it may
+mean the detector is blind), now confirmed at the harness's own gate primitive. Filed upstream:
+[InunuNet/Athanor#1376](https://github.com/InunuNet/Athanor/issues/1376), proposing
+`--run-checks` become the default rather than opt-in. Until that lands: always pass
+`--run-checks` when a gate result is going to be acted on or reported as current.
+
+## Weak assertions keep passing over real defects unless they attack a class, not an instance (2026-08-31, vendor-gated-registration-flow M1–M4)
+
+The gate went green over a real defect **seven times** across this mission's four commits
+(`fd518136`, `67d63ff`, `e439827`, `5e3c9e6`):
+- A17 — grep-only, missed a read-then-write race on single-use token consumption
+- A18 — scoped to `app/(marketing)/**/*.tsx`, blind to `components/chrome/nav-config.ts`, which
+  linked past the registration gate on every page of the site
+- A25 — matched an unrelated `'other'` in a live-plant-types array
+- A26 — forbade *validating* `vendorCategoryOther` while its write survived, so an unbounded
+  unvalidated string could still be persisted
+- verify-code read `registrationCodeConsumedAt` while registration wrote
+  `registrationTokenConsumedAt` — a field renamed on one side of a read/write pair
+- reissuing a code did not revoke sessions minted from the old one
+- A50 — written specifically to supersede A20 and prove the approval precondition, and it still
+  passed on the defective code
+
+**Four of the seven were caught only by the mandatory Codex GPT-5.5 cross-model pass**, not by
+this project's own @qa. Every one is a cross-file behavioural property: a field written under
+one name and read under another, an ordering, a race, a stale session, a precondition that
+migrated to a different file when the mechanism changed. None were catchable by a grep for an
+identifier in one file. Twice, an assertion written specifically to prevent a recurrence did not
+prevent it — because it followed the old implementation's *shape* rather than the underlying
+property.
+
+**Counter-pattern that worked — attack the class, not the instance:** `A42` (every persisted
+field must be validated, not just the ones named today), `A54` (every `claimRegistrationToken`
+call site supplies `expectedGeneration`, checked structurally across all call sites rather than
+naming them), and the rewritten `A50` (extracts redemption preconditions by shape — env guards,
+vendor-input-derived `.where()` keys — with no field/file name hardcoded, so a future
+precondition of either shape is caught wherever it moves). Also: prove a check is non-vacuous by
+deliberately reintroducing the defect and confirming the assertion actually fails — an assertion
+that has never been watched to fail is unverified. Cross-link: `feedback_contract_scoring_principles`.
+
+## The route-runner harness makes real Next.js route handlers testable in-process (2026-08-31)
+
+`contracts/harness/route-runner/` proves the real Next.js route handlers CAN be run in-process
+with only infrastructure (Firestore, email) faked — several earlier passes on this mission
+wrongly believed otherwise and settled for source-order/grep assertions instead, which is
+exactly why A50 (above) was blind. Two non-obvious implementation traps, now solved:
+1. tsx transpiles route `.ts` files to CommonJS, so an ESM `module.register()` resolve hook
+   never fires. `Module._load` interception via `NODE_OPTIONS --require` is the point that
+   actually works.
+2. Fixtures must be loaded via `createRequire(import.meta.url)`, not a plain ESM `import` —
+   otherwise the fixture module resolves as a second module instance holding an empty store,
+   disconnected from the one the route handler under test actually reads/writes.
+This unblocks real behavioural assertions (not just structural/grep ones) across the whole
+project, not just vendor registration — worth reaching for whenever a future contract needs to
+prove a cross-file property in an actual route handler rather than infer it from source shape.

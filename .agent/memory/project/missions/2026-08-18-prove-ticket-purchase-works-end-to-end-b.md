@@ -1,4 +1,5 @@
----schema: athanor.mission/v1
+---
+schema: athanor.mission/v1
 slug: prove-ticket-purchase-works-end-to-end-b
 goal: 'Prove ticket purchase works end-to-end: browse -> checkout -> PayFast sandbox payment
   -> ITN confirmation -> confirmation email/QR -> door check-in. Checkout and ITN were both

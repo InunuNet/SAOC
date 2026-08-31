@@ -2,6 +2,7 @@
 
 Organised by **priority and subject**, not by session. Rebuilt 2026-08-19 from a 2,677-line
 session diary (pre-cleanup copy: `archive/backlog-2026-08-19-pre-cleanup.md`).
+_Last compacted: 2026-09-01 by backlog_trim.py. Full history: git log on this file._
 
 **Rules for this file.** One line of stale information here misleads every agent, every session.
 Completed items are deleted, not ticked — git history is the record. Plan steps live in
@@ -100,6 +101,27 @@ Do not scope work from an entry that contradicts it.
   Stellenbosch-area content. There is no scheduled public transport to the airfield, so arrival
   is drive/e-hail only, which changes the shape of the advice. Pre-change values backed up at
   `.agent/memory/scratch/venue-change-2026-08-12/before.json`.
+- [ ] **[P1] Ticketing source document changed on 2026-08-26 (same day as the vendor doc) and is
+  NOT yet mirrored locally.** Lee-Ann replaced the vendor registration source in place on
+  2026-08-26 (same Drive file id, content replaced — `docs/leeann-source/2027-vendor-registration-form_2026-08-26.md`
+  is now canonical, the 25 Aug snapshot superseded and marked as such in
+  `docs/leeann-source/README.md`). The ticketing document changed the same day but has not been
+  re-pulled into `docs/leeann-source/` — this is a live risk of the exact "built against a
+  superseded document" failure the vendor mission just had to work around twice. Re-mirror it
+  before starting or resuming any ticketing work.
+- [ ] **[P1, council-blocked] Two vendor-registration contradictions between the written source
+  document and Lee-Ann's voice note remain unresolved — do not guess, ask her directly.**
+  (1) Cancellation window: the written T&Cs say 90 days, the voice note says 2 months. (2)
+  Tables/chairs: priced as a line item in the written document, described as "no extra charge"
+  in the voice note. Both found during `vendor-gated-registration-flow` (2026-08-31); the code
+  currently follows the written document for both since it's the more authoritative source, but
+  this needs her explicit confirmation, not a permanent default.
+- [ ] **[P2] Two vendor-registration form ambiguities need Lee-Ann's answer before the relevant
+  M2 feature (F5, Gas/Cooking/Heat Equipment + Food Vendors cluster) is built:** (1) should food
+  certifications be collected as a pick-list of specific certification types, or as one blanket
+  attestation checkbox; (2) can a non-food vendor legitimately declare gas/heat equipment (the
+  source document's structure implies gas questions are food-vendor-only, but nothing confirms
+  that a non-food vendor with e.g. a heater or generator is excluded from disclosing it).
 - [ ] **[P2] Vendor Terms & Conditions document does not exist.**
   `VendorPaymentFieldset.tsx:49` makes vendors agree to a document with no page, route or text
   behind it — an agreement checkbox binding to nothing. Content is Lee-Ann's to write; do not
@@ -356,7 +378,6 @@ flat-over-nested-submenu pattern.
   true 2026-08-21** against a real live purchase (both fields present and populated on the order
   doc and on each of its two position docs). The position copies were meant to be removed with a
   backfill once checkout/ITN stop writing them.
-- [x] ~~Recovery-token wiring has no owner~~ **RESOLVED, verified 2026-08-21.** `mintRecoveryToken()`
   is called in checkout (`app/api/tickets/checkout/route.ts:739`) and `recoveryToken`/
   `recoveryTokenExpiresAt` are confirmed present on a real order doc. Still genuinely open: the
   guest-order-claiming backfill (a guest's existing orders' `buyerUid` backfilled when they later
@@ -364,7 +385,6 @@ flat-over-nested-submenu pattern.
 - [ ] **[P3] `RECOVERY_TOKEN_DEFAULT_TTL_MS` is a 180-day working placeholder**, not a
   council-approved value. Real security/usability tradeoff: too short locks buyers out of tickets
   they paid for, too long keeps a leaked link live for months.
-- [x] **[P2] Confirm a `checkinAttempts` document is actually written on a real scan.** The path is
   wired (`app/api/admin/checkin/route.ts:60` → `recordCheckinAttempt`), but the paused mission
   `prove-ticket-purchase-works-end-to-end-b` M1 gate observed no document after a live scan.
   Agent-actionable: query Firestore directly, do not queue a human scan. If the write genuinely
@@ -384,7 +404,6 @@ flat-over-nested-submenu pattern.
 
 ## Security & admin auth
 
-- [x] **[P1] F5's debug-log claim is not mechanically enforced.** DONE 2026-08-24 (mission
   `admin-session-refusal-log-enforcement`) — `contracts/checks/admin-session-refusal-log-enforcement-f1/`
   now runs a real refused POST /api/admin/session round trip and asserts the `classifyRefusal`
   reason/email log line actually fires, plus that refusal detail never leaks to the response.
@@ -434,7 +453,6 @@ flat-over-nested-submenu pattern.
   contract identify real accent-contrast failures on live public pages. Remedy fully specified in
   `contracts/golden/wcag-accent-contrast/remedy.md`, deliberately not applied — it is a design-token
   decision. This is a live accessibility failure on public pages and should not sit indefinitely.
-- [x] ~~**[P2] Vendor form has no client-side validation gating submission.**~~ RESOLVED
   2026-08-25 — investigation (mission `vendor-form-client-validation-gate`, F1) found the described
   defect did not exist in current committed source: `handleSubmit()` in
   `components/vendors/VendorRegisterForm.tsx` already runs client-side validation before the fetch,
@@ -443,7 +461,6 @@ flat-over-nested-submenu pattern.
   (`contracts/checks/vendor-form-client-validation-gate-f1/`) to prevent the defect from being
   reintroduced. Gate 7/7 PASS, QA PASS, Codex GPT-5.5 clean. Docs:
   `docs/vendor-form-client-validation-gate.md`.
-- [x] ~~**[P2] `boothCount` still bypasses the form's own guarded-parse pattern.**~~ RESOLVED
   2026-08-25 — mission `vendor-boothcount-guarded-parse` (F1) routed `boothCount` through
   `toOptionalInt()` in `lib/vendor-register-form-payload.ts:117`, matching every other numeric
   field. A check suite covering all 4 historical Codex findings was added under
@@ -454,14 +471,12 @@ flat-over-nested-submenu pattern.
   was fixed in `f7c5f6f`; the 45-minute lockout on a form this error-prone is the remaining issue.)
   Two BrowserAgent tests were blocked by this and remain unrun: the exact error-banner text repro,
   and one clean valid submission.
-- [x] **[P2] `vendorCategory` claims `aria-required="true"` but enforces nothing** — none of its 8
   ~~checkboxes has `required`, and the client wouldn't block on it regardless. A screen-reader user is
   told the group is required; nothing backs that up.~~ Resolved as a side effect of the
   `vendor-form-client-validation-gate` mission (client + server now genuinely enforce
   at-least-one-category). `vendorcategory-aria-required-enforcement` mission (2026-08-25) added a
   regression-lock Playwright check suite (`contracts/checks/vendorcategory-aria-required-enforcement-f1/`)
   to keep it that way — no production source changed by that mission, check suite only.
-- [x] **[P2] No visible focus indicator on ~24 of ~40 vendor-form interactive elements.** ~~Every
   text/number/email/tel/url/textarea input relies on a barely-perceptible border-colour shift with
   `outline: none`. Checkboxes, radios, submit and nav links are correct; isolated to text inputs.~~
   Fixed 2026-08-25 via `vendor-form-input-focus-indicators` mission F1 — shared `inputClass` in
@@ -469,7 +484,6 @@ flat-over-nested-submenu pattern.
   `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2
   focus-visible:ring-offset-ivory`. Gate 5/5 pass, QA PASS, Codex GPT-5.5 PASS. See
   `docs/vendor-form-input-focus-indicators.md`.
-- [x] ~~**[P2] No `maxlength` on any of the 25 vendor form fields** (5000 chars accepted into
   `businessName` with no truncation or warning) **and no `pattern` on the phone field** —
   `type="tel"` accepts `"not a phone number !!"` verbatim.~~ RESOLVED 2026-08-25 via
   `vendor-form-maxlength-and-phone-pattern` mission F1 — per-field `maxLength` added across all
@@ -478,7 +492,6 @@ flat-over-nested-submenu pattern.
   validator, the server validator, and the HTML `pattern` hint. Gate 8/8 pass, QA PASS, Codex
   GPT-5.5 found and confirmed the fix for a whitespace-only bypass mid-mission, re-ran clean. See
   `docs/vendor-form-maxlength-and-phone-pattern.md`.
-- [x] **[P2] Vendor form all-caps labels are hard to read.** `font-mono text-[11px] uppercase
   tracking-[0.16em]` across five shared components. Contrast passes at 5.24:1 — the problem is
   11px + uppercase + 1.76px letter-spacing combined, not colour. Brad found it genuinely hard to
   read at length, and he is the decision-maker, so this is authorised, not invented brand work.
@@ -489,7 +502,6 @@ flat-over-nested-submenu pattern.
   occurrences, no shared label component). Fixed site-wide per the item's own constraint above.
   Gate 5/5 pass, QA PASS, Codex GPT-5.5 PASS after two real fix rounds (broken contract-check
   scripts, not the production fix). See `docs/vendor-form-label-readability.md`, commit 574238f.
-- [x] **[P2] Admission ticket list-mode card `<Link>` lacks custom focus ring.** ~~`TicketTypeCard.tsx`'s
   list-mode wrapper has no `focus-visible:ring-*` class and falls back to the default browser outline.~~
   Fixed 2026-08-25 via `tickettypecard-focus-ring` mission F1 — list-mode `<Link>` now carries the same
   `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2`
@@ -531,6 +543,16 @@ flat-over-nested-submenu pattern.
   Must also add the fixture's applicationId to `scripts/scan-firestore-residue.ts`'s exemption
   list the same way the door-test-qr fixtures are exempted — skipping that step would repeat the
   sentinel-corruption defect class already logged under "Contract checks mutate live content."
+  **UPDATE 2026-08-31 (M4, `vendor-gated-registration-flow` F22/F23):** the gate mechanism named
+  above no longer exists — the pasted `?token=` link was replaced by a two-field human-readable
+  code entry (`?name=&code=`, e.g. "Fynbos Pottery-4821", see `app/(marketing)/national-show/vendors/register/page.tsx`
+  and `VendorRegisterPage`'s `searchParams`), with `mintVendorRegistrationToken`/
+  `VENDOR_REGISTRATION_TOKEN_SECRET` retained only as an invisible post-code-entry session cookie,
+  not the thing a check would navigate with. The prescribed fix above needs rewriting against the
+  new mechanism (seed a fixture `vendorApplications` doc with a known plaintext code, or call the
+  verify-code route first to mint the session cookie and inject it, then `page.goto` the register
+  URL) before it can be implemented — do not implement the token-URL version literally described
+  above, it targets a mechanism this project no longer has.
 - [ ] **[P2] Permit fields ask for a number but should collect the actual document.** Brad:
   "when we ask for a document it needs to actually upload a document, save it and email it as an
   attachment." Affects `phytosanitaryPermitNumber`, `citesPermitNumber`,
@@ -636,6 +658,25 @@ flat-over-nested-submenu pattern.
 
 ## Contract & test infrastructure
 
+- [ ] **[P1] `active.json`'s mission checkpoint is stale and no longer matches real progress —
+  the `vendor-gated-registration-flow` work has no mission `.md` file at all.** As of 2026-08-31,
+  `.agent/memory/project/missions/active.json` still points at
+  `2026-08-25-vendor-registration-form-rebuild.md` checkpointed at `M2/F3`. But three real commits
+  landed since then (`fd518136`, `67d63ff`+`e439827`, `5e3c9e6`) implementing a differently-scoped
+  "gated registration flow" (apply → committee approval → human-readable code → full form) that
+  pivoted away from that mission's original F1–F11 plan, tracked under its own M1/M2/M4 milestones
+  reaching at least F22/F23/F26 (per agent dispatch names this session, e.g.
+  `Arch_Son5_M3-F26_VendorStandPayment`, `Dev_Opu5_M4-F22_VendorHumanReadableCode`) — but no
+  mission `.md` file for `vendor-gated-registration-flow` exists anywhere under
+  `.agent/memory/project/missions/`, only two contract specs
+  (`.agent/memory/project/specs/vendor-gated-registration-flow/contract-f1.yaml`,
+  `contract-f22.yaml`). A resumed session reading `active.json`/`mission.py resume` today would
+  reconstruct the WRONG picture of what's done. Needs: either author the missing mission `.md`
+  file retroactively from the actual commit history and re-point `active.json` at it, or confirm
+  with Brad that the pivot deliberately superseded the original rebuild plan and archive/close the
+  old mission file explicitly rather than leaving it silently stale. Do not guess at the milestone
+  numbering — read the four commits' full messages first, they document the M1/M2/M4 structure in
+  detail.
 - [ ] **[P1] Five stale sha256 pins across two files — same defect, two instances.** In both cases
   a pinned file changed for a reviewed, deliberate reason and the pin was never re-cut, so the
   assertion went quietly red. **The current content IS the intended baseline in both cases** — this
@@ -687,7 +728,6 @@ flat-over-nested-submenu pattern.
 - [ ] **[P1] Audit remaining contracts for the weak-assertion defect class** — an assertion
   satisfiable by something that is not the real property. The 2026-08-16 audit cleared four
   contracts and found no live vulnerability; the sweep is not exhaustive.
-- [x] ~~**[P1] `contract-payfast-m1` A18 asserts a security property the system deliberately no
   longer has.**~~ ✅ **Retired 2026-08-20 by `payment-provider-seam` F2** — removed from
   `check-itn-behaviour-unchanged.sh` (suite hard-counted `EXPECTED_SUITE_SIZE=3` so a silent
   re-add goes red). Note: the original "proven pre-existing via differential" method was itself
@@ -984,14 +1024,12 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   Still needs the pairing mechanism (early-bird ↔ regular ticket) resolved before @dev — no
   schema field links the two today, only category/description similarity.
 
-- [x] SAOC (Feature, P1): remove buyer-facing "Pay with: Ozow / PayFast" gateway picker from
   public checkout — DONE 2026-08-24, mission `gateway-picker-admin-only`, gate 13/13 + QA PASS +
   Codex PASS. `ProviderChoice.tsx` removed; admin-only `activePaymentGateway` Firestore setting
   added at `/admin/settings` (same `manage-payment-settings` capability gate as the Ozow sandbox
   toggle); checkout route resolves the gateway server-side only and fails closed (500) if
   unset/invalid — no client-supplied `providerId` is trusted for gateway selection anymore.
 
-- [x] SAOC (Feature, P2): ticketing flow redesign — DONE 2026-08-24, mission
   `ticketing-flow-redesign` (F1-F3, both milestones gate-green: M1/F1 10/10, M2/F2 10/10,
   M2/F3 10/10), commit `6ae483b`. Delivered: (1) vertical ticket-type cards with real orchid
   photos (`public/images/orchid-{pink,purple,yellow,violet,dark}.jpg`), replacing the abstract
