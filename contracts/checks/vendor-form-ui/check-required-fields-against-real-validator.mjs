@@ -31,7 +31,7 @@ const BASE_VALID_PAYLOAD = {
   emergencyContactName: 'John Doe',
   emergencyContactCellPhone: '0839876543',
   productDescription: 'Cattleya hybrids',
-  vendorCategory: ['plant-sales'],
+  vendorCategory: ['orchids'],
   boothCount: 2,
   powerRequired: true,
   termsAccepted: true,

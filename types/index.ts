@@ -475,18 +475,26 @@ export type ShowIdentity = {
 // submitter-supplied).
 // ---------------------------------------------------------------------------
 
+// M2 F13 (vendor-gated-registration-flow) — replaced (not widened) with the 26 Aug source
+// doc's 14-item "VENDOR CATEGORY & PRODUCTS" list, byte-identical in value and order to
+// VendorApplicationCategory below. A genuine breaking rename of the union's members, not an
+// additive widening -- see contracts/golden/vendor-gated-registration-flow-m2/README.md "Why
+// this one enum may break." No 'other' member.
 export type VendorCategory =
-  | 'plant-sales'
-  | 'other-plant-sales'
-  | 'rare-exotic-plants'
-  | 'product-sales'
-  | 'hardware'
+  | 'orchids'
+  | 'cites-listed-plants'
+  | 'indoor-plants'
+  | 'succulents'
+  | 'rare-plants'
+  | 'exotic-plants'
+  | 'indigenous-plants'
+  | 'orchid-growing-supplies'
+  | 'greenhouse-hardware-infrastructure'
   | 'fertilisers-growing-media'
-  | 'books'
+  | 'books-publications'
   | 'art'
-  | 'pottery-ceramics'
-  | 'food-retailer'
-  | 'other';
+  | 'ceramics'
+  | 'food-beverage-retailer';
 
 // F4 (vendor-registration-form-rebuild) — 'standard' renamed to 'standard-in-row' (matching
 // source 4.2's "Standard / In-row" label exactly) and 'no-preference' added; 'corner' and
@@ -571,8 +579,10 @@ export interface VendorSubmission {
 
   // Section 2 — products & regulatory permits (fields 11-16).
   vendorCategory: VendorCategory[];
-  // F3 (vendor-registration-form-rebuild) — vendorCategory enum corrected (widened, not
-  // renamed) and vendorCategoryOther added; see contract-f3.yaml.
+  // F3 (vendor-registration-form-rebuild) — added. M2 F13 (vendor-gated-registration-flow) —
+  // deprecated in place: the 14-item VendorCategory replacement has no 'Other' member, so this
+  // field is no longer rendered or required, but stays on the type unchanged (same name, same
+  // type, still optional) per the golden's "Deprecate-in-place, never delete."
   vendorCategoryOther?: string;
   productDescription: string;
   phytosanitaryPermitNumber?: string;

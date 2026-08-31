@@ -20,7 +20,7 @@ const MINIMAL = {
   physicalAddress: '1 Orchid Way, Stellenbosch',
   emergencyContactName: 'Peter Vendor',
   emergencyContactCellPhone: '0829876543',
-  vendorCategory: ['plant-sales'],
+  vendorCategory: ['orchids'],
   productDescription: 'Cattleya and Cymbidium hybrids.',
   boothCount: 1,
   powerRequired: true,

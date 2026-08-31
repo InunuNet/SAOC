@@ -55,7 +55,7 @@ const fullState: VendorRegisterFormState = {
   emergencyContactName: 'Thandiwe Nkosi',
   emergencyContactRelationship: 'Spouse',
   emergencyContactCellPhone: '0827654321',
-  vendorCategory: ['plant-sales'],
+  vendorCategory: ['orchids'],
   vendorCategoryOther: '',
   productDescription: 'Cattleya and Cymbidium hybrids.',
   phytosanitaryPermitNumber: '',

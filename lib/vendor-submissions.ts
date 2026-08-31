@@ -26,21 +26,25 @@ import type {
 
 export const VENDOR_SUBMISSIONS_COLLECTION = 'vendorSubmissions';
 
-// F3 (vendor-registration-form-rebuild) — widened with 3 new members
-// ('other-plant-sales', 'fertilisers-growing-media', 'pottery-ceramics'); all 8 pre-existing
-// values kept unmodified, same spelling. See contract-f3.yaml.
+// M2 F13 (vendor-gated-registration-flow) — replaced (not widened) with the 26 Aug source
+// doc's 14-item list, byte-identical in value and order to VENDOR_APPLICATION_CATEGORIES in
+// lib/vendor-applications.ts -- see contracts/golden/vendor-gated-registration-flow-m2/
+// README.md "Reconciling the two category lists." No 'other' member.
 const VENDOR_CATEGORIES: readonly VendorCategory[] = [
-  'plant-sales',
-  'other-plant-sales',
-  'rare-exotic-plants',
-  'product-sales',
-  'hardware',
+  'orchids',
+  'cites-listed-plants',
+  'indoor-plants',
+  'succulents',
+  'rare-plants',
+  'exotic-plants',
+  'indigenous-plants',
+  'orchid-growing-supplies',
+  'greenhouse-hardware-infrastructure',
   'fertilisers-growing-media',
-  'books',
+  'books-publications',
   'art',
-  'pottery-ceramics',
-  'food-retailer',
-  'other',
+  'ceramics',
+  'food-beverage-retailer',
 ];
 
 // F4 (vendor-registration-form-rebuild) — 'standard' renamed to 'standard-in-row', 'no-preference'
@@ -324,13 +328,10 @@ export function validateVendorSubmissionInput(input: unknown): {
     FIELD_MAX_LENGTHS.paymentReference,
   );
 
-  // F3 (vendor-registration-form-rebuild) — new optional string field. See contract-f3.yaml.
-  validateOptionalStringMaxLength(
-    record,
-    'vendorCategoryOther',
-    errors,
-    FIELD_MAX_LENGTHS.vendorCategoryOther,
-  );
+  // M2 F13 (vendor-gated-registration-flow) — vendorCategoryOther deprecated in place (no
+  // 'Other' vendorCategory member remains to gate it); validateVendorSubmissionInput stops
+  // checking it. See contracts/golden/vendor-gated-registration-flow-m2/README.md
+  // "Deprecate-in-place, never delete."
 
   // F1 (vendor-registration-form-rebuild) — new optional string fields.
   validateOptionalStringMaxLength(
@@ -730,7 +731,12 @@ export function buildVendorSubmission(
     website: input.website,
     socialMediaHandle: input.socialMediaHandle,
     vendorCategory: input.vendorCategory,
-    vendorCategoryOther: input.vendorCategoryOther,
+    // M2 F13 (vendor-gated-registration-flow) — vendorCategoryOther is deprecated in place:
+    // it stays on VendorSubmission so existing documents stay readable, but it is no longer
+    // offered by the form and no longer validated by validateVendorSubmissionInput (A26), so
+    // new submissions must not persist it. Copying it here would write an unvalidated,
+    // unbounded attacker-supplied string. See contracts/golden/
+    // vendor-gated-registration-flow-m2/README.md "Deprecate-in-place, never delete."
     productDescription: input.productDescription,
     phytosanitaryPermitNumber: input.phytosanitaryPermitNumber,
     citesPermitNumber: input.citesPermitNumber,

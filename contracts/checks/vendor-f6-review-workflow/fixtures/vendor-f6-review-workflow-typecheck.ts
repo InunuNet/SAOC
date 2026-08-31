@@ -60,7 +60,7 @@ const submission: VendorSubmission = {
   physicalAddress: '4 Kloof Street, Cape Town, 8001',
   emergencyContactName: 'Peter Vendor',
   emergencyContactCellPhone: '0837654321',
-  vendorCategory: ['plant-sales'],
+  vendorCategory: ['orchids'],
   productDescription: 'Cattleya and Cymbidium hybrids.',
   boothCount: 1,
   powerRequired: true,

@@ -4,7 +4,6 @@ import {
   isImportCountryOfOriginFieldApplicable,
   isLivePlantTypesFieldApplicable,
   isLivePlantTypesOtherFieldApplicable,
-  isVendorCategoryOtherFieldApplicable,
   type VendorRegisterFieldChangeHandler,
   type VendorRegisterFormState,
 } from '@/lib/vendor-register-form-payload';
@@ -12,9 +11,12 @@ import { VendorFormField } from './VendorFormField';
 import { VendorCheckboxGroupField } from './VendorCheckboxGroupField';
 import { VendorBooleanRadioField } from './VendorBooleanRadioField';
 
-// Lee-Ann's source form, section 3 ("Vendor category & products"), fields 3.1-3.9 -- see
-// goldens/f3-ui-vendor-category-products.md for the full enum mapping table and every
-// judgement call.
+// M2 F13 (vendor-gated-registration-flow) -- Lee-Ann's 26 Aug source form, "VENDOR CATEGORY &
+// PRODUCTS" section, 14-item closed set, no 'Other'. Byte-identical (value + order) to
+// CATEGORY_LABELS/VENDOR_APPLICATION_CATEGORIES in VendorApplyForm.tsx -- see
+// contracts/golden/vendor-gated-registration-flow-m2/README.md "Reconciling the two category
+// lists." Superseded the stale 25 Aug-derived 11-item list previously here (see
+// goldens/f3-ui-vendor-category-products.md for that earlier mapping, now historical).
 interface VendorCategoryFieldsetProps {
   state: VendorRegisterFormState;
   onFieldChange: VendorRegisterFieldChangeHandler;
@@ -22,17 +24,20 @@ interface VendorCategoryFieldsetProps {
 }
 
 const VENDOR_CATEGORY_OPTIONS = [
-  { value: 'plant-sales', label: 'Orchid plant sales' },
-  { value: 'other-plant-sales', label: 'Other plant sales' },
-  { value: 'rare-exotic-plants', label: 'Rare / exotic plants' },
-  { value: 'product-sales', label: 'Orchid growing products / supplies' },
-  { value: 'hardware', label: 'Greenhouse / hardware / infrastructure' },
-  { value: 'fertilisers-growing-media', label: 'Fertilisers / growing media / plant care products' },
-  { value: 'books', label: 'Books / publications' },
-  { value: 'art', label: 'Art / crafts' },
-  { value: 'pottery-ceramics', label: 'Pottery / ceramics' },
-  { value: 'food-retailer', label: 'Food / beverage retailer' },
-  { value: 'other', label: 'Other (please specify below)' },
+  { value: 'orchids', label: 'Orchids' },
+  { value: 'cites-listed-plants', label: 'CITES listed plants' },
+  { value: 'indoor-plants', label: 'Indoor plants' },
+  { value: 'succulents', label: 'Succulents' },
+  { value: 'rare-plants', label: 'Rare plants' },
+  { value: 'exotic-plants', label: 'Exotic plants' },
+  { value: 'indigenous-plants', label: 'Indigenous plants' },
+  { value: 'orchid-growing-supplies', label: 'Orchid growing products and supplies' },
+  { value: 'greenhouse-hardware-infrastructure', label: 'Greenhouse, hardware and infrastructure' },
+  { value: 'fertilisers-growing-media', label: 'Fertilisers, growing media, plant care products' },
+  { value: 'books-publications', label: 'Books, publications' },
+  { value: 'art', label: 'Art' },
+  { value: 'ceramics', label: 'Ceramics' },
+  { value: 'food-beverage-retailer', label: 'Food and beverage retailer' },
 ];
 
 const LIVE_PLANT_TYPE_OPTIONS = [
@@ -64,18 +69,6 @@ export function VendorCategoryFieldset({ state, onFieldChange, disabled }: Vendo
         disabled={disabled}
         required
       />
-      {isVendorCategoryOtherFieldApplicable(state) ? (
-        <VendorFormField
-          fieldKey="vendorCategoryOther"
-          label="Other vendor category (please specify)"
-          htmlType="text"
-          value={state.vendorCategoryOther}
-          onChange={(v) => onFieldChange('vendorCategoryOther', v)}
-          disabled={disabled}
-          required={false}
-          maxLength={100}
-        />
-      ) : null}
       <VendorFormField
         fieldKey="productDescription"
         label="Brief description of products/plants to be sold"

@@ -117,10 +117,13 @@ export function isElectricalLoadApplicable(state: VendorRegisterFormState): bool
 /**
  * Shared render-gate + payload-exclusion guard for the two food-retailer-only fields
  * (foodHandlingCertificateNumber, foodItemList). Same leak-proofing rationale as
- * isElectricalLoadApplicable above.
+ * isElectricalLoadApplicable above. M2 F13 (vendor-gated-registration-flow) — gate value
+ * updated from the retired 'food-retailer' VendorCategory member to its replacement,
+ * 'food-beverage-retailer'; without this fix the food-only fields would become permanently
+ * unreachable once VENDOR_CATEGORY_OPTIONS stopped offering the old value.
  */
 export function isFoodRetailer(state: VendorRegisterFormState): boolean {
-  return state.vendorCategory.includes('food-retailer');
+  return state.vendorCategory.includes('food-beverage-retailer');
 }
 
 /**

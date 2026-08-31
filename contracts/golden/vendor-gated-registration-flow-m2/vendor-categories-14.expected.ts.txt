@@ -1,0 +1,20 @@
+// Expected literal contents of VENDOR_CATEGORIES in lib/vendor-submissions.ts, post-M2.
+// Order matches the 26 Aug source doc's "VENDOR CATEGORY & PRODUCTS" section exactly, and is
+// byte-identical (value + order) to VENDOR_APPLICATION_CATEGORIES in lib/vendor-applications.ts
+// -- see the M2 golden README "Reconciling the two category lists". No 'other' member.
+const VENDOR_CATEGORIES: readonly VendorCategory[] = [
+  'orchids',
+  'cites-listed-plants',
+  'indoor-plants',
+  'succulents',
+  'rare-plants',
+  'exotic-plants',
+  'indigenous-plants',
+  'orchid-growing-supplies',
+  'greenhouse-hardware-infrastructure',
+  'fertilisers-growing-media',
+  'books-publications',
+  'art',
+  'ceramics',
+  'food-beverage-retailer',
+];

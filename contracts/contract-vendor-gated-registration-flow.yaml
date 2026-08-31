@@ -18,16 +18,10 @@ autonomy: high
 #   M1 -- demoable tomorrow morning: short public application, admin approve/decline, single-use
 #         tokenised approval email, and the gate closing the full registration form. Every M1
 #         feature below has real assertions and is ready for @dev now.
-#   M2 -- correct the full registration form's field set against the 26 Aug source doc (Online
-#         Presence section, 14-item vendor category list replacing the stale 11-item one incl.
-#         VendorCategoryFieldset.tsx, entity-type Partnership/Individual, VAT Vendor split,
-#         fixed booth sizes, table/chair charges (flagged, no invented rand figure), the
-#         repeating electricity table, 7 typed vehicle fields, waste-type checkboxes, exact-3-
-#         photo marketing rule + permission radio, food vendor 6-item certification list, gas
-#         table, two insurance policy numbers, full 14-clause T&Cs prose incl. the 90-day
-#         cancellation rule, signature block). NOT contract-designed yet -- features below are
-#         placeholders for a follow-up architect pass once M1 ships and the gated shape is
-#         proven live.
+#   M2 -- ARCHITECTED 2026-08-31 (architect pass 2, F13-F21). Correct the full registration
+#         form's field set against the 26 Aug source doc. F13 (the vendor category list) is
+#         independently shippable ahead of F14-F21 -- ship it alone if the demo runs out of
+#         time. Full decision record: contracts/golden/vendor-gated-registration-flow-m2/README.md.
 #   M3 -- Stand Booking Payment as its own explicitly-non-ticket payment path; whether
 #         lib/vendor-payment.ts needs to change to make that separation more explicit than it
 #         is today. NOT contract-designed yet, same reason as M2.
@@ -170,19 +164,187 @@ features:
     contract: null
 
   # ---------------------------------------------------------------------------------------
-  # M2 -- full-form field-set correction against the 26 Aug source doc. Placeholders only;
-  # architect a follow-up contract once M1 has shipped and the gated shape is proven live.
+  # M2 -- full-form field-set correction against the 26 Aug source doc. Architected
+  # 2026-08-31 (architect pass 2). Supersedes the F9/F10 placeholders. Full decision record,
+  # every judgement call, and the two flagged ambiguities:
+  # contracts/golden/vendor-gated-registration-flow-m2/README.md. F13 is independently
+  # shippable ahead of F14-F21 -- ship it alone if time runs short before the demo.
   # ---------------------------------------------------------------------------------------
-  - id: F9
-    name: 'M2 placeholder: correct VendorCategoryFieldset.tsx + VENDOR_CATEGORIES/VendorCategory against the 26 Aug doc''s 14-item list (no "Other"); reconcile with F1''s new, separate VendorApplicationCategory set rather than merging the two.'
+  - id: F13
+    name: >-
+      PRIORITY 1 -- demoable alone if time runs short. Correct the live vendor category list:
+      VENDOR_CATEGORIES (lib/vendor-submissions.ts) and the VendorCategory union
+      (types/index.ts) replaced (not widened) with the 26 Aug doc's 14-item list, byte-identical
+      in value and order to F1's existing VENDOR_APPLICATION_CATEGORIES/VendorApplicationCategory
+      (lib/vendor-applications.ts) -- see golden "Reconciling the two category lists".
+      VendorCategoryFieldset.tsx renders the new 14 items, drops the 'Other' checkbox option and
+      the vendorCategoryOther text field entirely. vendorCategoryOther stays in VendorSubmission
+      as an optional, deprecated-in-place field (never rendered, never required) -- see golden
+      "Deprecate-in-place, never delete". validateVendorSubmissionInput stops requiring/checking
+      vendorCategoryOther. This is a genuine breaking rename of VendorCategory's members (not an
+      additive widening) -- justified because the vendorSubmissions collection is pre-launch
+      with zero real documents (see golden "Why this one enum may break") -- unlike every other
+      M2 change, which is additive-only per the mission's hard constraint.
     status: pending
     milestone: M2
-    contract: null
-  - id: F10
-    name: 'M2 placeholder: add the 26 Aug doc''s new full-form sections (Online Presence; entity-type Partnership/Individual; VAT Vendor split from VAT number; fixed booth sizes; table/chair charges -- flagged, no invented rand figure per contradiction #2; repeating electricity equipment table + wastewater/drainage; 7 typed vehicle fields; waste-type checkboxes; Marketing''s 150-200 word description + logo + EXACTLY 3 photos + permission radio; food vendor 6-item certification list; gas/oil equipment table; two insurance policy numbers; full 14-clause T&Cs prose incl. the 90-day cancellation rule per contradiction #1; signature block).'
+    contract: contracts/golden/vendor-gated-registration-flow-m2/README.md
+  - id: F14
+    name: >-
+      Data model: every NEW field the 26 Aug doc requires, added to VendorSubmission
+      (types/index.ts) and lib/vendor-submissions.ts, purely additive (no field removed, no
+      existing field's type changed). Online Presence: facebookHandle, instagramHandle,
+      tiktokHandle, youtubeHandle, otherSocialMediaHandle (all optional strings; UI label reads
+      "TikTok", correcting the source's own "Ticktok" typo -- see golden "The Ticktok typo").
+      Booth size tier: boothSize: 'single' | 'double' | 'triple' (new closed union
+      VendorBoothSize, required) -- a DIFFERENT concept from the existing boothType (booth
+      POSITION: standard-in-row/corner/end-of-row/no-preference), which is unchanged. Repeating
+      electricity table: electricalEquipmentRows: VendorElectricalEquipmentRow[] (new interface:
+      equipment: string, quantity: number, wattage: string, runningTimePerDay: string).
+      Repeating gas table: gasEquipmentRows: VendorGasEquipmentRow[] (new interface:
+      equipmentType: string, gasType: string, cylinderSize: string, cylinderCount: number).
+      Vehicles: 7 new optional string fields -- carRegistrationNumber, suvBakkieRegistrationNumber,
+      panelVanRegistrationNumber, deliveryVanRegistrationNumber, truckRegistrationNumber,
+      trailerRegistrationNumber, otherVehicleRegistrationNumber (+ otherVehicleDescription).
+      Insurance: publicLiabilityInsurancePolicyNumber, productLiabilityInsurancePolicyNumber
+      (both optional strings, alongside the existing M1 hasPublicLiabilityInsurance/
+      productLiabilityInsuranceStatus booleans/enum, unchanged). Food certification:
+      foodVendorCertifications: VendorFoodCertification[] (new closed union, 6 literal values --
+      see golden "Food certification: checklist, not blanket attestation" for the ambiguity and
+      the chosen default). Marketing: logoPath/logoUploadedAt (string | null / Date | null,
+      mirrors proofOfPaymentPath's shape exactly), productPhoto1Path/2Path/3Path +
+      matching UploadedAt fields (three discrete optional fields, not an array -- see golden
+      "Why three fields, not an array" for why this is the exactly-3 enforcement mechanism),
+      marketingPermission: 'full' | 'listing-only' (new closed union, optional). Signature
+      block: signatureFullName: string (optional) -- see golden "The signature block" for why
+      Position/Business Name/Date are NOT re-collected as new fields.
     status: pending
     milestone: M2
-    contract: null
+    contract: contracts/golden/vendor-gated-registration-flow-m2/README.md
+  - id: F15
+    name: >-
+      Deprecate-in-place the fields the 26 Aug doc's shape changes superseded: boothCount,
+      electricalLoad, electricalEquipmentList, electricalEquipmentContinuousOperation,
+      electricalEquipmentContinuousDetails, gasEquipmentType, gasFuelType, gasCylinderSize,
+      gasCylinderCount, vehicleType, vehicleTypeOther, vehicleRegistrations, vehicleHeight,
+      vehicleLength, trailerAttached, socialMediaHandle, sellsLivePlants, livePlantTypes,
+      livePlantTypesOther, plantsImportedForEvent, importCountryOfOrigin,
+      foodPreparationOnSite, foodCookingOnSite. Every one stays in VendorSubmission as-is
+      (already optional; zero type change) but is removed from validateVendorSubmissionInput's
+      active checks where it previously had any, and is no longer rendered by any fieldset
+      component after F16-F19 land -- see golden "Deprecate-in-place, never delete" for the
+      full removed-field ledger and why the admin review UI (app/admin/vendors/page.tsx) must
+      keep rendering these gracefully if present on a pre-M2 document. New validation added for
+      the new F14 fields: bio 150-200 word count enforced server-side (word-count, not
+      character-count -- see golden "Word count, not character count"); boothSize is one of the
+      3 closed values when present; electricalEquipmentRows/gasEquipmentRows entries validated
+      per-row (quantity/cylinderCount positive integers, string fields maxLength-checked); the
+      7 vehicle registration fields maxLength-checked individually; foodVendorCertifications
+      items are a subset of the 6 closed values.
+    status: pending
+    milestone: M2
+    contract: contracts/golden/vendor-gated-registration-flow-m2/README.md
+  - id: F16
+    name: >-
+      UI: VendorContactFieldset.tsx gains the 5 Online Presence fields (Website already
+      present; add Facebook/Instagram/TikTok/YouTube/Other) and absorbs
+      VendorEmergencyContactFieldset.tsx's 3 fields inline (no new "Emergency contact" <h2>
+      section heading -- the fields render under "Contact & business details", matching the 26
+      Aug doc's fold-in). VendorEmergencyContactFieldset.tsx component and its standalone
+      import/render in VendorRegisterForm.tsx are deleted -- this is a UI-composition change
+      only, emergencyContact* fields in VendorSubmission are untouched (still required, per
+      existing type). Entity-type Partnership/Individual and the VAT Vendor/VAT Number split
+      are ALREADY correct in current UI (verified live against F1 of vendor-registration-form-
+      rebuild) -- no change needed there; golden records this as a verified no-op, not an
+      oversight.
+    status: pending
+    milestone: M2
+    contract: contracts/golden/vendor-gated-registration-flow-m2/README.md
+  - id: F17
+    name: >-
+      UI: VendorBoothFieldset.tsx -- replace the boothCount number input with a boothSize radio
+      group (3 fixed options, labels verbatim "Single Booth – 2.5m x 3m" / "2 Booths (Double) –
+      5m x 3m" / "3 Booths (Triple) – 7m x 3m"). Table/chair section keeps tableCount/chairCount
+      inputs but the surrounding copy states charges apply with NO rand figure ("at an
+      additional charge per table and per chair -- rate to be confirmed by the Show Organising
+      Committee") -- council-blocked, do not invent a figure, see golden "Table/chair rate:
+      council-blocked, not provisional". Electricity: replace the single electricalLoad text
+      input with a repeating-row editor for electricalEquipmentRows (add/remove row, 4 fields
+      per row); wastewaterDrainageRequired/-Details unchanged. Gas: new repeating-row editor for
+      gasEquipmentRows (add/remove row, 4 fields per row), rendered only
+      isFoodRetailer(state)-gated per golden "Gas equipment gating". Vehicles: replace the
+      single vehicleType radio + vehicleRegistrations text input with 7 discrete labeled text
+      inputs (Car / SUV-Bakkie / Panel Van / <1 ton Delivery Van / >1 ton Truck / Trailer /
+      Other, the last paired with the existing otherVehicleDescription-style free text).
+    status: pending
+    milestone: M2
+    contract: contracts/golden/vendor-gated-registration-flow-m2/README.md
+  - id: F18
+    name: >-
+      UI + upload plumbing: VendorMarketingFieldset.tsx -- bio textarea gets a live word-count
+      indicator and client-side 150-200 word validation (mirrors the existing maxLength client
+      pattern). New logo upload (single file) and exactly-3 product-photo upload widgets, reusing
+      F7's public-upload pattern exactly: new lib/vendor-marketing-upload.ts
+      (planMarketingAssetUpload(), MIME allowlist restricted to image types --
+      image/jpeg,image/png,image/webp -- size cap mirroring PROOF_OF_PAYMENT_MAX_BYTES's 5MB,
+      extension derived solely from validated mimeType, storage paths
+      `vendor-marketing/{submissionId}/logo.{ext}` and
+      `vendor-marketing/{submissionId}/product-photo-{1,2,3}.{ext}`), new
+      lib/vendor-marketing-upload-handler.ts (mirrors lib/vendor-proof-of-payment-handler.ts's
+      shape: injected time, rate-limit-first, non-enumerable existence posture, overwrite
+      semantics), new PUBLIC POST /api/vendors/[id]/marketing-asset route (unauthenticated,
+      rate-limited, mirrors app/api/vendors/[id]/proof-of-payment/route.ts as a thin wrapper).
+      Client-side, the 3 product-photo slots are 3 separate upload controls (slot: 1|2|3), not
+      an add-many-photos widget -- this IS the exactly-3 enforcement (see golden "Why three
+      fields, not an array"). Permission radio: marketingPermission, 2 options, labels verbatim
+      from the doc's two sentences.
+    status: pending
+    milestone: M2
+    contract: contracts/golden/vendor-gated-registration-flow-m2/README.md
+  - id: F19
+    name: >-
+      UI: food vendor 6-item certification checklist (VendorCheckboxGroupField, gated
+      isFoodRetailer(state), rendered in VendorCategoryFieldset.tsx alongside the existing food-
+      retailer-gated fields) for foodVendorCertifications -- labels verbatim: "Mobile
+      certificate of acceptability", "Perishable Foodstuff Licence", "Hawker/Informal Trading
+      Permit", "Mobile gas certificate of compliance", "Fire safety compliance", "Certificate of
+      fitness for vehicles". Insurance: two new text inputs (Public Liability / Product
+      Liability policy numbers) added to the existing insurance section, alongside the
+      unmodified M1 hasPublicLiabilityInsurance/productLiabilityInsuranceStatus fields.
+    status: pending
+    milestone: M2
+    contract: contracts/golden/vendor-gated-registration-flow-m2/README.md
+  - id: F20
+    name: >-
+      Declaration/T&Cs/signature copy: replace the form's 12-point declaration list with the 26
+      Aug doc's 6 points (verbatim); add the full 14-clause prose Terms & Conditions block
+      (verbatim, INCLUDING the written 90-day cancellation/no-refund clause under "Cancellation
+      and Refunds" -- per the mission's hard constraint, implement what the WRITTEN document
+      says even though it conflicts with Lee-Ann's voice-note "2 months," and flag both places:
+      inline HTML comment at the clause AND the golden's contradiction ledger); add the
+      signature block (Full Name -> new signatureFullName field per F14; Position -> reads
+      existing contactPosition; Business Name -> reads existing businessName; Signature -> a
+      typed-name affirmation, no canvas/drawn signature -- signatureFullName IS the signature
+      field, not a duplicate; Date -> NOT re-collected, displays "submitted on {submittedAt}"
+      read-only after submit, never an editable input). Remove any residual "Supporting
+      Documentation Checklist" / standalone "Booth Fees & Payment" copy blocks if present in the
+      current form (verified: neither exists as a distinct rendered section today per golden
+      "What was never actually there" -- likely a no-op, confirm during implementation rather
+      than skip).
+    status: pending
+    milestone: M2
+    contract: contracts/golden/vendor-gated-registration-flow-m2/README.md
+  - id: F21
+    name: >-
+      Regression safety net: app/admin/vendors/page.tsx (the submission review UI) renders
+      every pre-M2 VendorSubmission document (one with none of F14's new fields and every one
+      of F15's deprecated fields populated) without a crash, a blank field-value render, or a
+      TypeScript error -- proves the additive-only/deprecate-in-place decision is actually
+      deploy-safe, not just asserted in prose. See golden "F21: the regression proof, not just
+      the promise" for the two fixture documents (pre-M2 shape, post-M2 shape) this feature's
+      assertions render against.
+    status: pending
+    milestone: M2
+    contract: contracts/golden/vendor-gated-registration-flow-m2/README.md
 
   # ---------------------------------------------------------------------------------------
   # M3 -- Stand Booking Payment as an explicitly non-ticket path. Placeholder only.
@@ -197,6 +359,9 @@ goldens:
   - contracts/golden/vendor-gated-registration-flow-f1/README.md
   - contracts/golden/vendor-gated-registration-flow-f1/vendor-application-categories.expected.ts.txt
   - contracts/golden/vendor-gated-registration-flow-f1/vendor-application-review-transitions.expected.ts.txt
+  - contracts/golden/vendor-gated-registration-flow-m2/README.md
+  - contracts/golden/vendor-gated-registration-flow-m2/vendor-categories-14.expected.ts.txt
+  - contracts/golden/vendor-gated-registration-flow-m2/removed-field-ledger.expected.md
 
 assertions:
   phase: 4
@@ -453,6 +618,249 @@ assertions:
         asserting any logistics fact (power/booth/etc.) the vendor was never asked.
       command: >-
         npx tsx contracts/checks/vendor-gated-registration-flow/check-application-approval-email-copy.mjs
+
+    # --- F13: vendor category list correction (PRIORITY 1) ---
+    - id: A22
+      description: >-
+        VENDOR_CATEGORIES in lib/vendor-submissions.ts matches the golden exactly -- 14 members,
+        exact order, exact spelling, no 'other' member.
+        FAILS ON: any member missing, extra, reordered, or 'other' still present.
+      command: >-
+        diff <(sed -n '/const VENDOR_CATEGORIES/,/^\];/p' lib/vendor-submissions.ts) <(sed -n '/const VENDOR_CATEGORIES/,/^\];/p' contracts/golden/vendor-gated-registration-flow-m2/vendor-categories-14.expected.ts.txt)
+    - id: A23
+      description: >-
+        The VendorCategory union in types/index.ts is set-identical to VENDOR_CATEGORIES's 14
+        values (every literal in the union appears as a quoted string in VENDOR_CATEGORIES and
+        vice versa) -- catches the type and the runtime constant drifting apart.
+        FAILS ON: 'other' still present in either, or a value present in one but not the other.
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m2/check-category-set-equality.mjs
+    - id: A24
+      description: >-
+        VENDOR_CATEGORIES and VENDOR_APPLICATION_CATEGORIES (lib/vendor-applications.ts) are
+        byte-identical in value and order -- the two lists the mission deliberately keeps
+        structurally separate must not silently diverge in content.
+        FAILS ON: any member differing in spelling, order, or count between the two arrays.
+      command: >-
+        diff <(sed -n '/const VENDOR_CATEGORIES/,/^\];/p' lib/vendor-submissions.ts | grep "  '") <(sed -n '/const VENDOR_APPLICATION_CATEGORIES/,/^\];/p' lib/vendor-applications.ts | grep "  '")
+    - id: A25
+      description: >-
+        VendorCategoryFieldset.tsx no longer renders an 'Other' vendor-category option or the
+        vendorCategoryOther text field.
+        FAILS ON: the literal string "'other'" as a VENDOR_CATEGORY_OPTIONS value, or a
+        vendorCategoryOther fieldKey reference, still present in the component.
+      command: >-
+        ! sed -n '/const VENDOR_CATEGORY_OPTIONS/,/^\];/p' components/vendors/VendorCategoryFieldset.tsx | grep -qE "value: 'other'" && ! grep -q "vendorCategoryOther" components/vendors/VendorCategoryFieldset.tsx
+    - id: A26
+      description: >-
+        validateVendorSubmissionInput (lib/vendor-submissions.ts) no longer requires or
+        maxLength-checks vendorCategoryOther -- it is deprecated-in-place, never rejected if
+        absent.
+        FAILS ON: any requireNonEmptyString/maxLength call keyed on 'vendorCategoryOther' inside
+        the exported validation function.
+      command: >-
+        ! sed -n '/export function validateVendorSubmissionInput/,/^}/p' lib/vendor-submissions.ts | grep -q "vendorCategoryOther"
+    - id: A39
+      description: >-
+        ADDED 2026-09-01 (architect review pass): closes a gap flagged in review -- @dev's fix
+        to isFoodRetailer() (lib/vendor-register-form-payload.ts), changing the string it checks
+        from the retired 'food-retailer' to F13's replacement 'food-beverage-retailer', had no
+        assertion covering it. Without that fix every food-vendor-only field
+        (foodHandlingCertificateNumber, foodItemList, foodHealthTradingDocumentation) becomes
+        permanently unreachable once VENDOR_CATEGORY_OPTIONS stops offering 'food-retailer'.
+        Real behavioural calls against the production function, plus a check that the category
+        it looks for is actually offered through VENDOR_CATEGORY_OPTIONS (correct gate logic is
+        worthless if the value is unreachable through the UI).
+        FAILS ON: isFoodRetailer() not opening for 'food-beverage-retailer', opening for the
+        retired 'food-retailer', or 'food-beverage-retailer' missing from
+        VENDOR_CATEGORY_OPTIONS.
+      command: >-
+        npx tsx contracts/checks/vendor-gated-registration-flow-m2/check-food-retailer-gate-tracks-f13-rename.mjs
+
+    # --- F14/F15: data model additions + deprecations ---
+    # A27 and A29 are pinned to phase 5 (architect pass, 2026-08-31/09-01): both test F14/F15
+    # behaviour (new fields on VendorSubmission; the bio word-count validator) that is NOT YET
+    # IMPLEMENTED -- F13 is the only M2 feature @dev has built so far. Per-check `phase:`
+    # routing (see execution/contract.py) means `contract.py gate --phase 4` -- F13's own gate
+    # -- never touches these two; they stay pending, not expected-red, until F14/F15 land, at
+    # which point @dev/@architect promote them back to phase 4 (or a dedicated phase-5 gate is
+    # run explicitly). Do not delete or point-at-nonexistent-file these -- they are honestly
+    # deferred, not orphaned. A28 stays at phase 4 (default, no phase field) because every one
+    # of its ledger fields already exists pre-M2 -- it is a regression guard runnable today,
+    # not a proof of new F14/F15 behaviour.
+    - id: A27
+      description: >-
+        Every F14 new type/field compiles against its real production module -- compiler-driven
+        proof, not source-grep, mirroring vendor-f8-approval-email's fixture pattern.
+        FAILS ON: any TypeScript error in the fixture (a missing field, wrong type, or a
+        deprecated field's type having actually changed).
+        PENDING: F14 is not implemented yet (M2 scope beyond F13) -- this check's fixture and
+        tsconfig do not exist yet either. Deliberately routed to phase 5, not phase 4, so it
+        cannot block F13's gate. Write the fixture + tsconfig when F14 lands.
+      phase: 5
+      command: >-
+        npx tsc --noEmit -p contracts/checks/vendor-gated-registration-flow-m2/tsconfig.typecheck.json
+    - id: A28
+      description: >-
+        Every field named in the golden's removed-field ledger is still present in the
+        VendorSubmission interface in types/index.ts (deprecate-in-place, never delete) --
+        catches a future edit accidentally deleting one instead of merely un-rendering it.
+        Runnable today: every ledger field is a pre-M2 field, not one F14/F15 introduces.
+        FAILS ON: any ledger field missing from the interface body.
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m2/check-deprecated-fields-present.mjs
+    - id: A29
+      description: >-
+        The bio word-count validator rejects an 149-word and a 201-word input and accepts a
+        175-word input -- a real boundary proof, not a grep for the numbers 150/200 appearing
+        anywhere in the file (which would pass even if the check compared the wrong variable).
+        FAILS ON: either boundary case passing when it should fail, or the valid case failing.
+        PENDING: F15 (the bio word-count validator itself) is not implemented yet. Deliberately
+        routed to phase 5, not phase 4, so it cannot block F13's gate. Write the check when F15
+        lands.
+      phase: 5
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m2/check-bio-word-count-boundaries.mjs
+
+    # --- F16/F17: contact + booth/logistics UI ---
+    - id: A30
+      description: >-
+        VendorEmergencyContactFieldset.tsx is deleted and no longer imported/rendered by
+        VendorRegisterForm.tsx; VendorContactFieldset.tsx renders all 3 former emergency-contact
+        fieldKeys (emergencyContactName, emergencyContactRelationship,
+        emergencyContactCellPhone) plus all 5 Online Presence fieldKeys (facebookHandle,
+        instagramHandle, tiktokHandle, youtubeHandle, otherSocialMediaHandle), and the literal
+        label text is "TikTok", never "Ticktok".
+        FAILS ON: the emergency-contact component file still existing, still imported, any of
+        the 8 fieldKeys missing from VendorContactFieldset.tsx, or the label "Ticktok" present
+        anywhere in components/vendors/.
+        PENDING: F16 is not implemented yet (M2 scope beyond F13) -- this
+        check script does not exist yet either. Deliberately routed to phase 5, not
+        phase 4, so it cannot block F13's gate. Write the script when F16 lands.
+      phase: 5
+      command: >-
+        test ! -f components/vendors/VendorEmergencyContactFieldset.tsx && ! grep -q "VendorEmergencyContactFieldset" components/vendors/VendorRegisterForm.tsx && grep -q "emergencyContactName" components/vendors/VendorContactFieldset.tsx && grep -q "facebookHandle" components/vendors/VendorContactFieldset.tsx && grep -q "tiktokHandle" components/vendors/VendorContactFieldset.tsx && grep -q "TikTok" components/vendors/VendorContactFieldset.tsx && ! grep -rq "Ticktok" components/vendors/
+    - id: A31
+      description: >-
+        VendorBoothFieldset.tsx renders the boothSize radio group (3 fixed values: single,
+        double, triple) instead of a free numeric boothCount input, and no longer renders a
+        rand-figure table/chair charge (no digit-only currency figure adjacent to the word
+        "table" or "chair" in the fieldset's JSX text content) -- proves the council-blocked
+        figure was never invented.
+        FAILS ON: boothSize options missing any of the 3 values, or a "R" followed by digits
+        appearing near table/chair copy in the file.
+        PENDING: F17 is not implemented yet (M2 scope beyond F13) -- this
+        check script does not exist yet either. Deliberately routed to phase 5, not
+        phase 4, so it cannot block F13's gate. Write the script when F17 lands.
+      phase: 5
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m2/check-booth-fieldset-no-invented-rand-figure.mjs
+    - id: A32
+      description: >-
+        VendorBoothFieldset.tsx renders the 7 discrete vehicle registration inputs
+        (carRegistrationNumber, suvBakkieRegistrationNumber, panelVanRegistrationNumber,
+        deliveryVanRegistrationNumber, truckRegistrationNumber, trailerRegistrationNumber,
+        otherVehicleRegistrationNumber) and no longer renders the single vehicleType radio group
+        or the vehicleRegistrations free-text input.
+        FAILS ON: any of the 7 fieldKeys missing, or vehicleType/vehicleRegistrations still
+        referenced as a rendered fieldKey.
+        PENDING: F17 is not implemented yet (M2 scope beyond F13) -- this
+        check script does not exist yet either. Deliberately routed to phase 5, not
+        phase 4, so it cannot block F13's gate. Write the script when F17 lands.
+      phase: 5
+      command: >-
+        for k in carRegistrationNumber suvBakkieRegistrationNumber panelVanRegistrationNumber deliveryVanRegistrationNumber truckRegistrationNumber trailerRegistrationNumber otherVehicleRegistrationNumber; do grep -q "$k" components/vendors/VendorBoothFieldset.tsx || exit 1; done && ! grep -q "fieldKey=\"vehicleType\"" components/vendors/VendorBoothFieldset.tsx && ! grep -q "fieldKey=\"vehicleRegistrations\"" components/vendors/VendorBoothFieldset.tsx
+
+    # --- F18/F19: marketing uploads + food/insurance ---
+    - id: A33
+      description: >-
+        lib/vendor-marketing-upload.ts's planMarketingAssetUpload() rejects a non-image MIME
+        type, rejects a file over the size cap, and derives the storage extension solely from
+        the validated mimeType (never the caller-supplied fileName) -- same technique as F7's
+        own check for planProofOfPaymentUpload(), run against the real function.
+        FAILS ON: any of the 3 boundary cases behaving wrong.
+        PENDING: F18 is not implemented yet (M2 scope beyond F13) -- this
+        check script does not exist yet either. Deliberately routed to phase 5, not
+        phase 4, so it cannot block F13's gate. Write the script when F18 lands.
+      phase: 5
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m2/check-marketing-upload-plan-boundaries.mjs
+    - id: A34
+      description: >-
+        POST /api/vendors/[id]/marketing-asset is rate-limited before any Firestore/Storage
+        call and returns a byte-identical response whether or not the submission id exists --
+        same non-enumerable-existence proof technique as
+        contracts/checks/vendor-f7-payment-path's own handler check, run against
+        lib/vendor-marketing-upload-handler.ts directly.
+        FAILS ON: the rate-limit check happening after any I/O, or the 202 response body/status
+        differing between an existing and a non-existent submission id.
+        PENDING: F18 is not implemented yet (M2 scope beyond F13) -- this
+        check script does not exist yet either. Deliberately routed to phase 5, not
+        phase 4, so it cannot block F13's gate. Write the script when F18 lands.
+      phase: 5
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m2/check-marketing-upload-handler-existence-blind.mjs
+    - id: A35
+      description: >-
+        VendorCategoryFieldset.tsx renders all 6 food-vendor certification checkbox labels,
+        gated behind isFoodRetailer(state), and VendorContactFieldset.tsx (or wherever the
+        insurance section lands) renders both new policy-number text inputs
+        (publicLiabilityInsurancePolicyNumber, productLiabilityInsurancePolicyNumber).
+        FAILS ON: any of the 6 certification labels missing, or either policy-number fieldKey
+        missing from the codebase.
+        PENDING: F19 is not implemented yet (M2 scope beyond F13) -- this
+        check script does not exist yet either. Deliberately routed to phase 5, not
+        phase 4, so it cannot block F13's gate. Write the script when F19 lands.
+      phase: 5
+      command: >-
+        for l in "Mobile certificate of acceptability" "Perishable Foodstuff Licence" "Hawker/Informal Trading Permit" "Mobile gas certificate of compliance" "Fire safety compliance" "Certificate of fitness for vehicles"; do grep -qF "$l" components/vendors/VendorCategoryFieldset.tsx || exit 1; done && grep -rq "publicLiabilityInsurancePolicyNumber" components/vendors/ && grep -rq "productLiabilityInsurancePolicyNumber" components/vendors/
+
+    # --- F20: declaration/T&Cs/signature ---
+    - id: A36
+      description: >-
+        The rendered form contains exactly 6 declaration points (not 12) and the 90-day
+        cancellation clause's exact wording ("will not qualify for a refund" within 90 days),
+        proving the WRITTEN document's figure shipped, not the voice-note's "2 months" figure.
+        FAILS ON: a 12-point declaration list still present, the 90-day clause missing, or the
+        string "2 months" appearing anywhere near cancellation copy (would mean the voice-note
+        figure leaked in instead).
+        PENDING: F20 is not implemented yet (M2 scope beyond F13) -- this
+        check script does not exist yet either. Deliberately routed to phase 5, not
+        phase 4, so it cannot block F13's gate. Write the script when F20 lands.
+      phase: 5
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m2/check-declaration-and-cancellation-copy.mjs
+    - id: A37
+      description: >-
+        The signature block renders Full Name (signatureFullName, a real editable input),
+        Position and Business Name as READ-ONLY reflections of contactPosition/businessName (no
+        second editable input for either), and Date as a read-only "submitted on" string, never
+        an editable date input.
+        FAILS ON: a second editable Position or Business Name input, or an editable Date input,
+        anywhere in the signature block's markup.
+        PENDING: F20 is not implemented yet (M2 scope beyond F13) -- this
+        check script does not exist yet either. Deliberately routed to phase 5, not
+        phase 4, so it cannot block F13's gate. Write the script when F20 lands.
+      phase: 5
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m2/check-signature-block-no-duplicate-inputs.mjs
+
+    # --- F21: regression safety net ---
+    - id: A38
+      description: >-
+        app/admin/vendors/page.tsx renders both a pre-M2 fixture VendorSubmission document (F15
+        deprecated fields populated, F14 new fields absent) and a post-M2 fixture document (F14
+        fields populated, deprecated fields absent) without throwing -- proves additive-only/
+        deprecate-in-place is deploy-safe against the actual review UI, not just asserted in
+        prose.
+        FAILS ON: either fixture render throwing, or the admin page's TypeScript compile
+        failing against either fixture's shape.
+        PENDING: F21 is not implemented yet (M2 scope beyond F13) -- this
+        check script does not exist yet either. Deliberately routed to phase 5, not
+        phase 4, so it cannot block F13's gate. Write the script when F21 lands.
+      phase: 5
+      command: >-
+        npx tsc --noEmit -p contracts/checks/vendor-gated-registration-flow-m2/tsconfig.typecheck.json && node contracts/checks/vendor-gated-registration-flow-m2/check-admin-page-renders-both-fixtures.mjs
 
     # --- whole-mission regression gate ---
     - id: A19
