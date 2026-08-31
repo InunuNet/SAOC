@@ -2,6 +2,7 @@ import type {
   VendorBoothType,
   VendorBusinessEntityType,
   VendorCategory,
+  VendorLivePlantType,
   VendorPaymentMethod,
 } from '@/types/index';
 
@@ -39,18 +40,37 @@ export interface VendorRegisterFormState {
   emergencyContactRelationship: string;
   emergencyContactCellPhone: string;
   vendorCategory: string[];
+  vendorCategoryOther: string;
   productDescription: string;
   phytosanitaryPermitNumber: string;
   citesPermitNumber: string;
   foodHandlingCertificateNumber: string;
   foodItemList: string;
+  sellsLivePlants: '' | 'true' | 'false';
+  livePlantTypes: string[];
+  livePlantTypesOther: string;
+  plantsImportedForEvent: '' | 'true' | 'false';
+  importCountryOfOrigin: string;
+  citesListedSpecies: '' | 'true' | 'false';
+  foodHealthTradingDocumentation: string;
   boothCount: string;
   boothType: string;
+  boothPositionRequest: string;
+  adjacentBoothRequested: '' | 'true' | 'false';
+  adjacentBoothVendorName: string;
+  specialDisplayRequirements: string;
   tableCount: string;
   chairCount: string;
   powerRequired: '' | 'true' | 'false';
   electricalLoad: string;
+  electricalOutletsRequired: string;
+  electricalEquipmentList: string;
+  electricalEquipmentContinuousOperation: '' | 'true' | 'false';
+  electricalEquipmentContinuousDetails: string;
   waterRequired: '' | 'true' | 'false';
+  waterIntendedUse: string;
+  wastewaterDrainageRequired: '' | 'true' | 'false';
+  wastewaterDrainageDetails: string;
   staffPerDay: string;
   vehicleRegistrations: string;
   loadInSlot: string;
@@ -71,15 +91,15 @@ function omitBlank(value: string): string | undefined {
   return value === '' ? undefined : value;
 }
 
-function toOptionalInt(value: string): number | undefined {
-  if (value === '') {
+function toOptionalInt(value: string | undefined): number | undefined {
+  if (value === undefined || value === '') {
     return undefined;
   }
   return Number.parseInt(value, 10);
 }
 
-function toOptionalBoolean(value: '' | 'true' | 'false'): boolean | undefined {
-  if (value === '') {
+function toOptionalBoolean(value: ('' | 'true' | 'false') | undefined): boolean | undefined {
+  if (value === undefined || value === '') {
     return undefined;
   }
   return value === 'true';
@@ -131,6 +151,94 @@ export function isVatNumberFieldApplicable(state: VendorRegisterFormState): bool
 }
 
 /**
+ * F3 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for
+ * vendorCategoryOther, gated on the 'other' vendorCategory checkbox being selected.
+ */
+export function isVendorCategoryOtherFieldApplicable(state: VendorRegisterFormState): boolean {
+  return state.vendorCategory.includes('other');
+}
+
+/**
+ * F3 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for the
+ * livePlantTypes checkbox group (and its payload keys), gated on the "sells live plants" Yes/No
+ * radio.
+ */
+export function isLivePlantTypesFieldApplicable(state: VendorRegisterFormState): boolean {
+  return state.sellsLivePlants === 'true';
+}
+
+/**
+ * F3 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for
+ * livePlantTypesOther, gated on the 'other' livePlantTypes checkbox being selected. Only
+ * relevant once isLivePlantTypesFieldApplicable is already true.
+ */
+export function isLivePlantTypesOtherFieldApplicable(state: VendorRegisterFormState): boolean {
+  return state.livePlantTypes.includes('other');
+}
+
+/**
+ * F3 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for
+ * importCountryOfOrigin, gated on the "plants imported for event" Yes/No radio.
+ */
+export function isImportCountryOfOriginFieldApplicable(state: VendorRegisterFormState): boolean {
+  return state.plantsImportedForEvent === 'true';
+}
+
+/**
+ * F3 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for the
+ * pre-existing citesPermitNumber field, newly gated on the "CITES-listed species" Yes/No radio.
+ * The field's type/optionality/validation is unchanged -- only its visibility becomes
+ * conditional. See goldens/f3-ui-vendor-category-products.md's judgement-call note.
+ */
+export function isCitesPermitNumberFieldApplicable(state: VendorRegisterFormState): boolean {
+  return state.citesListedSpecies === 'true';
+}
+
+/**
+ * F4 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for
+ * adjacentBoothVendorName, gated on the "adjacent booth requested" Yes/No radio.
+ */
+export function isAdjacentBoothVendorNameFieldApplicable(
+  state: VendorRegisterFormState,
+): boolean {
+  return state.adjacentBoothRequested === 'true';
+}
+
+/**
+ * F4 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for
+ * electricalEquipmentContinuousDetails. Nested under the existing isElectricalLoadApplicable
+ * gate: electricity must be requested at all AND the equipment must run continuously, not just
+ * the inner condition alone -- flipping powerRequired back off must also hide/exclude this
+ * field even if electricalEquipmentContinuousOperation is still 'true'.
+ */
+export function isElectricalEquipmentContinuousDetailsFieldApplicable(
+  state: VendorRegisterFormState,
+): boolean {
+  return (
+    isElectricalLoadApplicable(state) && state.electricalEquipmentContinuousOperation === 'true'
+  );
+}
+
+/**
+ * F4 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for
+ * wastewaterDrainageDetails, gated on its own independent "wastewater/drainage required"
+ * Yes/No radio (not nested under waterRequired).
+ */
+export function isWastewaterDrainageDetailsFieldApplicable(
+  state: VendorRegisterFormState,
+): boolean {
+  return state.wastewaterDrainageRequired === 'true';
+}
+
+/**
+ * F4 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for
+ * waterIntendedUse, gated on the existing waterRequired Yes/No radio.
+ */
+export function isWaterIntendedUseFieldApplicable(state: VendorRegisterFormState): boolean {
+  return state.waterRequired === 'true';
+}
+
+/**
  * Coerces a VendorRegisterFormState into the wire payload the real
  * validateVendorSubmissionInput() (lib/vendor-submissions.ts, F4) expects: string form values
  * become number/boolean where the API requires it, and every optional field left blank by the
@@ -166,18 +274,66 @@ export function buildVendorRegistrationPayload(state: VendorRegisterFormState): 
     emergencyContactRelationship: omitBlank(state.emergencyContactRelationship),
     emergencyContactCellPhone: state.emergencyContactCellPhone.trim(),
     vendorCategory: state.vendorCategory as VendorCategory[],
+    vendorCategoryOther: isVendorCategoryOtherFieldApplicable(state)
+      ? omitBlank(state.vendorCategoryOther)
+      : undefined,
     productDescription: state.productDescription,
     phytosanitaryPermitNumber: omitBlank(state.phytosanitaryPermitNumber),
-    citesPermitNumber: omitBlank(state.citesPermitNumber),
+    citesPermitNumber: isCitesPermitNumberFieldApplicable(state)
+      ? omitBlank(state.citesPermitNumber)
+      : undefined,
     foodHandlingCertificateNumber: isFoodRetailer(state) ? omitBlank(state.foodHandlingCertificateNumber) : undefined,
     foodItemList: isFoodRetailer(state) ? omitBlank(state.foodItemList) : undefined,
+    sellsLivePlants: toOptionalBoolean(state.sellsLivePlants),
+    livePlantTypes: isLivePlantTypesFieldApplicable(state)
+      ? (state.livePlantTypes as VendorLivePlantType[])
+      : undefined,
+    livePlantTypesOther:
+      isLivePlantTypesFieldApplicable(state) && isLivePlantTypesOtherFieldApplicable(state)
+        ? omitBlank(state.livePlantTypesOther)
+        : undefined,
+    plantsImportedForEvent: toOptionalBoolean(state.plantsImportedForEvent),
+    importCountryOfOrigin: isImportCountryOfOriginFieldApplicable(state)
+      ? omitBlank(state.importCountryOfOrigin)
+      : undefined,
+    citesListedSpecies: toOptionalBoolean(state.citesListedSpecies),
+    foodHealthTradingDocumentation: isFoodRetailer(state)
+      ? omitBlank(state.foodHealthTradingDocumentation)
+      : undefined,
     boothCount: toOptionalInt(state.boothCount),
     boothType: omitBlank(state.boothType) as VendorBoothType | undefined,
+    boothPositionRequest: omitBlank(state.boothPositionRequest),
+    adjacentBoothRequested: toOptionalBoolean(state.adjacentBoothRequested),
+    adjacentBoothVendorName: isAdjacentBoothVendorNameFieldApplicable(state)
+      ? omitBlank(state.adjacentBoothVendorName)
+      : undefined,
+    specialDisplayRequirements: omitBlank(state.specialDisplayRequirements),
     tableCount: toOptionalInt(state.tableCount),
     chairCount: toOptionalInt(state.chairCount),
     powerRequired: toOptionalBoolean(state.powerRequired),
     electricalLoad: isElectricalLoadApplicable(state) ? omitBlank(state.electricalLoad) : undefined,
+    electricalOutletsRequired: isElectricalLoadApplicable(state)
+      ? toOptionalInt(state.electricalOutletsRequired)
+      : undefined,
+    electricalEquipmentList: isElectricalLoadApplicable(state)
+      ? omitBlank(state.electricalEquipmentList)
+      : undefined,
+    electricalEquipmentContinuousOperation: isElectricalLoadApplicable(state)
+      ? toOptionalBoolean(state.electricalEquipmentContinuousOperation)
+      : undefined,
+    electricalEquipmentContinuousDetails: isElectricalEquipmentContinuousDetailsFieldApplicable(
+      state,
+    )
+      ? omitBlank(state.electricalEquipmentContinuousDetails)
+      : undefined,
     waterRequired: toOptionalBoolean(state.waterRequired),
+    waterIntendedUse: isWaterIntendedUseFieldApplicable(state)
+      ? omitBlank(state.waterIntendedUse)
+      : undefined,
+    wastewaterDrainageRequired: toOptionalBoolean(state.wastewaterDrainageRequired),
+    wastewaterDrainageDetails: isWastewaterDrainageDetailsFieldApplicable(state)
+      ? omitBlank(state.wastewaterDrainageDetails)
+      : undefined,
     staffPerDay: toOptionalInt(state.staffPerDay),
     vehicleRegistrations: omitBlank(state.vehicleRegistrations),
     loadInSlot: omitBlank(state.loadInSlot),

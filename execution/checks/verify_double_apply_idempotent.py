@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 """A8: running update_template.py --apply twice on an already-current workspace is a no-op
-on the second run — target tree content is byte-identical before and after the second run."""
+on the second run — target tree content is byte-identical before and after the second run.
+
+--allow-skips is passed on both runs: the shared sandbox deliberately contains a
+locally-modified HARNESS file that the #104 baseline guard withholds, which is a
+non-zero exit under delivery-integrity F1. The flag acknowledges the withheld
+delivery and restores exit 0 without changing what is delivered, so this check
+keeps asserting idempotency rather than accidentally asserting an exit code it
+never meant to pin.
+"""
 import hashlib
 import pathlib
 import subprocess
@@ -30,7 +38,8 @@ def main():
     target = DEST / "target"
 
     r1 = subprocess.run(
-        ["python3", "execution/update_template.py", "--apply", "--source", str(DEST / "template")],
+        ["python3", "execution/update_template.py", "--apply", "--allow-skips",
+         "--source", str(DEST / "template")],
         cwd=str(target), capture_output=True, text=True,
     )
     if r1.returncode != 0:
@@ -39,7 +48,8 @@ def main():
     hash_after_first = tree_hash(target)
 
     r2 = subprocess.run(
-        ["python3", "execution/update_template.py", "--apply", "--source", str(DEST / "template")],
+        ["python3", "execution/update_template.py", "--apply", "--allow-skips",
+         "--source", str(DEST / "template")],
         cwd=str(target), capture_output=True, text=True,
     )
     if r2.returncode != 0:

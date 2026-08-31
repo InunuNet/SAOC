@@ -6,6 +6,10 @@ source_modified_time: 2026-08-10T17:39:44.000Z
 snapshot_pulled: 2026-08-25
 ---
 
+**SUPERSEDED 2026-08-26** by [`2027-vendor-registration-form_2026-08-26.md`](2027-vendor-registration-form_2026-08-26.md)
+(same Drive file ID, replaced content). Do not use this snapshot as a build reference — see the
+26 Aug snapshot's header for the verified delta. Retained for history only.
+
 2027 SAOC NATIONAL ORCHID SHOW
 VENDOR REGISTRATION FORM
 Please complete all applicable sections in full. Fields marked * are required to process your vendor application. Please submit the completed form together with all required supporting documentation. Submission of this form does not constitute confirmation of a booth. Booth allocation is subject to approval by the Show Organising Committee and receipt of the required payment.

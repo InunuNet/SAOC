@@ -25,7 +25,7 @@ const fullInput: VendorApprovalConfirmationInput = {
   contactPersonName: 'Jane Vendor',
   contactEmail: 'jane@example.com',
   boothNumber: 'A12',
-  boothType: 'standard',
+  boothType: 'standard-in-row',
   staffPerDay: 3,
   powerRequired: true,
   waterRequired: true,

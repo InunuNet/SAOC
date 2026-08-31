@@ -33,10 +33,18 @@ export interface VendorApprovalConfirmationInput {
   boothNumber?: string | null;
   boothType?: VendorBoothType | null;
   staffPerDay?: number | null;
-  powerRequired: boolean;
+  /** Nullable since vendor-gated-registration-flow M1 -- see the same prop on
+   *  emails/VendorApprovalConfirmation.tsx for why. */
+  powerRequired?: boolean | null;
   waterRequired?: boolean | null;
   loadInSlot?: string | null;
   loadOutSlot?: string | null;
+  /** F6 (vendor-gated-registration-flow) -- optional single-use link to the full registration
+   *  form, rendered when present. The EXISTING call site
+   *  (app/api/admin/vendors/[id]/review/route.ts, full-VendorSubmission approval) never
+   *  passes this -- it stays undefined there, unchanged behavior. The NEW call site
+   *  (app/api/admin/vendors/applications/[id]/review/route.ts's 'approve' action) sets it. */
+  registrationLink?: string | null;
 }
 
 /** Deliberately narrow -- matches only what lib/email.ts's real `sendEmail` already satisfies
@@ -57,17 +65,20 @@ export async function sendVendorApprovalConfirmationEmail(
 
   await mailer.send({
     to: input.contactEmail,
-    subject: 'Your SAOC vendor registration has been approved',
+    subject: input.registrationLink
+      ? 'Your SAOC vendor application has been approved'
+      : 'Your SAOC vendor registration has been approved',
     react: React.createElement(VendorApprovalConfirmation, {
       businessName: input.businessName,
       contactPersonName: input.contactPersonName,
       boothNumber: input.boothNumber ?? null,
       boothType: input.boothType ?? null,
       staffPerDay: input.staffPerDay ?? null,
-      powerRequired: input.powerRequired,
+      powerRequired: input.powerRequired ?? null,
       waterRequired: input.waterRequired ?? null,
       loadInSlot: input.loadInSlot ?? null,
       loadOutSlot: input.loadOutSlot ?? null,
+      registrationLink: input.registrationLink ?? null,
     }),
     from: FORMS_FROM_ADDRESS,
   });

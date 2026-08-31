@@ -36,7 +36,8 @@ app/
 │   ├── societies/         # 21 affiliated societies + [slug] individual pages
 │   ├── judging/           # Judging system overview
 │   ├── events/            # Events calendar + [slug] detail
-│   ├── national-show/     # Show overview + upcoming + archive/[year] + vendors showcase + vendors register form
+│   ├── national-show/     # Show overview + upcoming + archive/[year] + vendors showcase + gated registration flow
+│   │   ├── vendors/       # Vendor showcase (public) + application form (public) + registration form (gated by token, M1)
 │   ├── media-kit/         # Media kit
 │   ├── sponsors/          # Sponsors
 │   ├── constitution/      # Constitution
@@ -44,14 +45,15 @@ app/
 │   ├── terms/             # Terms
 │   └── contact/           # Contact form
 ├── admin/                # Firebase Auth-gated admin (login, door check-in scanner, vendor review)
-│   └── vendors/           # Vendor application review workflow (capability-gated: review-vendor-applications)
+│   └── vendors/           # Vendor management (application review + full submission review; gated: review-vendor-applications)
+│       └── applications/  # Vendor applications (short form, M1)
 ├── studio/               # Sanity Studio, mounted at /studio (see sanity.config.ts)
 ├── api/
 │   ├── contact/           # Contact form POST handler → Firestore + Resend
 │   ├── events/             # Event submission + per-event .ics export
 │   ├── events.ics/         # Combined events feed
 │   ├── tickets/            # PayFast checkout + ITN webhook → Firestore `tickets`
-│   ├── vendors/            # Vendor registration submission → Firestore `vendorSubmissions` (F5); proof-of-payment upload (F7)
+│   ├── vendors/            # Vendor application (short form, M1) → `vendorApplications`; full registration (gated by token, M1) → `vendorSubmissions`; proof-of-payment upload
 │   ├── admin/               # Session (Firebase Auth), check-in, CSV export; vendor review and payment routes
 │   │   ├── vendors/        # Vendor review workflow (F6) and payment/booth allocation (F7)
 │   │   └── reconcile-orders/ # Cloud Scheduler-triggered: alerts on orders stranded `reserved` past expiry (docs/order-reconciliation.md)
@@ -105,6 +107,8 @@ The `FIREBASE_PRIVATE_KEY` contains literal `\n` characters in the JSON — past
 | `nationalShows` | Past and upcoming national shows — add as Firestore docs |
 | `contactSubmissions` | Written by the `/api/contact` route — do not edit manually |
 | `adminSettings` | Operational settings written and read by admin-only API routes. Contains one doc per named setting (e.g. `activePaymentGateway`, `ozowSandboxTestMode`). See [docs/payment-gateway-selection.md](docs/payment-gateway-selection.md) and the `ozow-sandbox-toggle` contract for the stored shapes and access patterns. |
+| `vendorApplications` | Short vendor application form submissions (M1, mission vendor-gated-registration-flow). Status: `pending` / `approved` / `declined`. Single-use registration tokens are issued on approval and claimed on full-registration submission. See [docs/vendor-gated-registration-flow.md](docs/vendor-gated-registration-flow.md) |
+| `vendorSubmissions` | Full vendor registration form submissions (gated by token, M1+). Same `vendorSubmissions` collection pre-M1, now reachable only via approved-application link. See [docs/vendor-registration.md](docs/vendor-registration.md) and [docs/vendor-gated-registration-flow.md](docs/vendor-gated-registration-flow.md) |
 | `orders` / `tickets` | Ticket orders and their positions. Requires a deployed Firestore composite index on `orders(status, expiresAt)` (`firestore.indexes.json`) for `POST /api/admin/reconcile-orders` to query stranded orders — see [docs/order-reconciliation.md](docs/order-reconciliation.md). Positions carry `chosenDay: string \| null` (F5) validated server-side against the active show's window — see [docs/f5-day-selection-attendees.md](docs/f5-day-selection-attendees.md) |
 | `ticketType` (Sanity) | The five admission products (Early-Bird Exhibition, Day Visitor, Early-Bird Weekend Pass, Weekend Pass, VIP). F4 adds five schema fields: `provisional`, `earlyBirdCutoff`, `releasedQuantity`, `requiresDaySelection`, `requiresAttendeeNames` — see [docs/f4-admission-products.md](docs/f4-admission-products.md) |
 

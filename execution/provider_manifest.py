@@ -12,7 +12,7 @@ from typing import Any
 
 
 PROVIDERS_DIR = Path(".agent") / "providers"
-KNOWN_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity", "opencode")
+KNOWN_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity", "opencode", "grok-cli")
 REQUIRED_KEYS = {
     "provider",
     "display_name",

@@ -36,7 +36,7 @@ export default async function VendorsPage() {
 
         <p className="font-sans text-[15px] text-ink/80">
           Interested in exhibiting at the 2027 SAOC National Show?{' '}
-          <Link href="/national-show/vendors/register" className="underline hover:text-accent">
+          <Link href="/national-show/vendors/apply" className="underline hover:text-accent">
             Register as a vendor
           </Link>
           .

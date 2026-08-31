@@ -1,0 +1,28 @@
+schema: athanor.contract/v1
+slug: vendor-gated-registration-flow
+goal: >-
+  Pointer only -- the real, canonical contract for this mission lives at
+  contracts/contract-vendor-gated-registration-flow.yaml (repo-root contracts/ convention,
+  matching this project's other multi-feature/multi-milestone contracts such as
+  contracts/contract-vendor-f6-review-workflow.yaml), per the orchestrator's explicit path
+  instruction for this dispatch. Do NOT implement against this file -- @dev must read
+  contracts/contract-vendor-gated-registration-flow.yaml (features F1-F8 = M1, the demoable
+  slice; F9-F11 = M2/M3 placeholders, not yet architected) and its goldens under
+  contracts/golden/vendor-gated-registration-flow-f1/.
+created_at: '2026-08-31'
+autonomy: high
+features:
+  - id: F1
+    name: See contracts/contract-vendor-gated-registration-flow.yaml
+    status: pending
+goldens:
+  - contracts/golden/vendor-gated-registration-flow-f1/README.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The canonical contract this pointer refers to exists and is valid YAML with at least
+        one feature and one assertion -- proves the pointer target is real, not a broken link.
+        FAILS ON: the canonical contract missing, or empty of features/assertions.
+      command: python3 -c "import yaml,sys; d=yaml.safe_load(open('contracts/contract-vendor-gated-registration-flow.yaml')); sys.exit(0 if d.get('features') and d.get('assertions',{}).get('checks') else 1)"

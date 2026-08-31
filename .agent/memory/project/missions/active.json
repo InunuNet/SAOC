@@ -1,8 +1,9 @@
 {
   "mission": ".agent/memory/project/missions/2026-08-25-vendor-registration-form-rebuild.md",
   "checkpoint": {
-    "milestone": null,
-    "feature": null
+    "milestone": "M2",
+    "feature": "F3",
+    "ts": "2026-08-26T22:23:18.930076+00:00"
   },
-  "activated_at": "2026-08-25T20:38:23.419776+00:00"
+  "activated_at": "2026-08-26T22:23:18.930186+00:00"
 }

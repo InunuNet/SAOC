@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Archive closed [x] backlog items to brain, remove them, and cap open items at 20."""
+"""Archive closed [x] backlog items to brain, remove them, and cap open items at MAX_OPEN (default 50, env override via BACKLOG_TRIM_MAX_OPEN)."""
 
 import os
 import re
@@ -8,7 +8,7 @@ import subprocess
 from datetime import date
 from pathlib import Path
 
-MAX_OPEN = 20
+MAX_OPEN = int(os.environ.get("BACKLOG_TRIM_MAX_OPEN", "50"))
 MAX_ITEM_LEN = 280
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
@@ -85,6 +85,7 @@ def main() -> None:
         sys.exit(1)
 
     content = BACKLOG_PATH.read_text(encoding="utf-8")
+    had_header = bool(re.search(r"^_Last compacted:", content, re.MULTILINE))
     lines = content.splitlines(keepends=True)
 
     closed_pattern = re.compile(r"^- \[x\]")
@@ -118,21 +119,29 @@ def main() -> None:
         collapsed.append(line)
         prev_blank = is_blank
 
-    # Cap open items at MAX_OPEN
+    # Cap open items at MAX_OPEN — but never on a project's first-ever trim run
+    # (no pre-existing header): that would silently delete real, never-reviewed
+    # backlog items the instant enforcement first turns on. First run: archive +
+    # sidecar-extract + stamp header as normal, skip truncation, just warn.
     open_indices = [i for i, l in enumerate(collapsed) if open_pattern.match(l)]
     truncated_count = 0
     if len(open_indices) > MAX_OPEN:
-        truncated_count = len(open_indices) - MAX_OPEN
-        cutoff_index = open_indices[MAX_OPEN]
-        # Remove lines from cutoff_index onward that are open items
-        indices_to_remove = set(open_indices[MAX_OPEN:])
-        collapsed = [l for i, l in enumerate(collapsed) if i not in indices_to_remove]
-        today_str = date.today().isoformat()
-        truncation_marker = f"> Truncated {truncated_count} items at trim time ({today_str}). Restore from git history if needed.\n"
-        # Strip trailing blank lines, append marker, then single newline
-        while collapsed and collapsed[-1].strip() == "":
-            collapsed.pop()
-        collapsed.append(truncation_marker)
+        if not had_header:
+            print(f"NOTE: first trim run — {len(open_indices)} open items exceed "
+                  f"MAX_OPEN={MAX_OPEN}, not auto-truncating. Raise BACKLOG_TRIM_MAX_OPEN "
+                  "or curate manually before next run.")
+        else:
+            truncated_count = len(open_indices) - MAX_OPEN
+            cutoff_index = open_indices[MAX_OPEN]
+            # Remove lines from cutoff_index onward that are open items
+            indices_to_remove = set(open_indices[MAX_OPEN:])
+            collapsed = [l for i, l in enumerate(collapsed) if i not in indices_to_remove]
+            today_str = date.today().isoformat()
+            truncation_marker = f"> Truncated {truncated_count} items at trim time ({today_str}). Restore from git history if needed.\n"
+            # Strip trailing blank lines, append marker, then single newline
+            while collapsed and collapsed[-1].strip() == "":
+                collapsed.pop()
+            collapsed.append(truncation_marker)
 
     # Update _Last compacted: header
     today_str = date.today().isoformat()

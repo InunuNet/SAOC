@@ -1,0 +1,463 @@
+schema: athanor.contract/v1
+slug: vendor-gated-registration-flow
+goal: >-
+  Invert the National Show vendor registration flow from "full 90-field form public, review
+  after" to "short public application first, committee review, single-use tokenised link to
+  the full registration + agreement, then stand payment" (Brad, 2026-08-30; independently
+  confirmed by Lee-Ann's 26 Aug voice note: invite-only, no random person applies). Full
+  decision record, every judgement call, the two flagged voice-note/written-doc
+  contradictions, and what is deliberately out of scope for M1:
+  contracts/golden/vendor-gated-registration-flow-f1/README.md. New canonical source doc for
+  the full registration form's eventual field-set correction (M2 scope, NOT touched in M1):
+  docs/leeann-source/2027-vendor-registration-form_2026-08-26.md (supersedes the 25 Aug
+  mirror -- same Drive file, content replaced in place, verified section-by-section).
+created_at: '2026-08-31'
+autonomy: high
+
+# MILESTONES
+#   M1 -- demoable tomorrow morning: short public application, admin approve/decline, single-use
+#         tokenised approval email, and the gate closing the full registration form. Every M1
+#         feature below has real assertions and is ready for @dev now.
+#   M2 -- correct the full registration form's field set against the 26 Aug source doc (Online
+#         Presence section, 14-item vendor category list replacing the stale 11-item one incl.
+#         VendorCategoryFieldset.tsx, entity-type Partnership/Individual, VAT Vendor split,
+#         fixed booth sizes, table/chair charges (flagged, no invented rand figure), the
+#         repeating electricity table, 7 typed vehicle fields, waste-type checkboxes, exact-3-
+#         photo marketing rule + permission radio, food vendor 6-item certification list, gas
+#         table, two insurance policy numbers, full 14-clause T&Cs prose incl. the 90-day
+#         cancellation rule, signature block). NOT contract-designed yet -- features below are
+#         placeholders for a follow-up architect pass once M1 ships and the gated shape is
+#         proven live.
+#   M3 -- Stand Booking Payment as its own explicitly-non-ticket payment path; whether
+#         lib/vendor-payment.ts needs to change to make that separation more explicit than it
+#         is today. NOT contract-designed yet, same reason as M2.
+
+features:
+  # ---------------------------------------------------------------------------------------
+  # M1 -- demoable now
+  # ---------------------------------------------------------------------------------------
+  - id: F1
+    name: >-
+      New vendorApplications data model. types/index.ts: VendorApplication,
+      VendorApplicationStatus ('pending'|'approved'|'declined'), VendorApplicationCategory (14
+      literal values, see golden), VendorApplicationDraft (submitter-writable subset,
+      structurally excludes status/submittedAt/reviewedBy/reviewedAt/registrationToken* --
+      mirrors VendorSubmissionDraft's existing pattern). New lib/vendor-applications.ts:
+      VENDOR_APPLICATIONS_COLLECTION = 'vendorApplications', VENDOR_APPLICATION_CATEGORIES
+      (golden-exact literal list), validateVendorApplicationInput(), buildVendorApplication().
+      Does NOT touch VendorSubmission, VENDOR_CATEGORIES, or vendorSubmissions in any way.
+    status: pending
+    milestone: M1
+  - id: F2
+    name: >-
+      Pure application review status machine. New lib/vendor-application-review.ts,
+      decideVendorApplicationTransition(), mirroring lib/vendor-review.ts's injected-time,
+      additive-only-patch, closed-machine pattern exactly: pending--approve-->approved,
+      pending--decline-->declined, every other (status, action) pair refused.
+    status: pending
+    milestone: M1
+  - id: F3
+    name: >-
+      Single-use registration token. New lib/vendor-registration-token.ts:
+      mintVendorRegistrationToken/verifyVendorRegistrationToken, structurally identical to
+      lib/recovery-token.ts's mint/verify shape (applicationId in place of orderId), reusing
+      (importing, not redefining) constantTimeEqual from lib/recovery-token.ts, signed with a
+      NEW env var VENDOR_REGISTRATION_TOKEN_SECRET (added to .env.local.example following the
+      existing one-secret-per-purpose convention -- never reuses RECOVERY_TOKEN_SECRET).
+      Default TTL 14 days, exported as a named constant, doc-commented as a provisional
+      engineering default exactly like RECOVERY_TOKEN_DEFAULT_TTL_MS's own comment. The token
+      itself is never persisted anywhere -- only registrationTokenIssuedAt/
+      registrationTokenExpiresAt/registrationTokenConsumedAt timestamps are stored on the
+      VendorApplication doc for single-use enforcement (stateless HMAC verification alone is
+      replayable until expiry and is NOT single-use by itself).
+    status: pending
+    milestone: M1
+  - id: F4
+    name: >-
+      Public application surface. New POST /api/vendors/register -> renamed/kept as-is (full
+      form route, unchanged in M1); NEW POST /api/vendors/apply builds+validates+writes a
+      vendorApplications doc (status 'pending') using F1's buildVendorApplication(), same
+      request/response/error-shape conventions as app/api/vendors/register/route.ts. NEW
+      app/(marketing)/national-show/vendors/apply/page.tsx + a client form component (reusing
+      VendorFormField/VendorCheckboxGroupField -- no new field primitive needed) collecting
+      exactly: businessName, tradingName (optional), contactPersonName, contactEmail,
+      contactCellPhone, vendorCategory (checkbox group, F1's 14-item closed set), and
+      indicativeBoothCount ("indicative number of stands", positive integer). No terms
+      acceptance at this stage -- that belongs to the full registration + agreement, not the
+      application.
+    status: pending
+    milestone: M1
+  - id: F5
+    name: >-
+      Admin application review surface. NEW GET /api/admin/vendors/applications (list) and
+      POST /api/admin/vendors/applications/[id]/review (action: 'approve'|'decline'), same
+      getAdminSession()-then-hasCapability(..., 'review-vendor-applications', ...) gate as the
+      existing app/api/admin/vendors/route.ts / .../[id]/review/route.ts -- reuses the SAME
+      capability, no lib/admin-roles.ts change. On 'approve': F2's
+      decideVendorApplicationTransition() decides the patch, ref.update(patch) (never a full-
+      document overwrite), THEN F3's mintVendorRegistrationToken() mints a token scoped to
+      this applicationId, registrationTokenIssuedAt/registrationTokenExpiresAt are recorded via
+      a second additive patch, THEN F6's extended sendVendorApprovalConfirmationEmail() is
+      called with registrationLink set to
+      `${SITE_URL}/national-show/vendors/register?token=<token>` and no boothNumber/logistics
+      fields. On 'decline': F2's decision only, no email in M1 (a decline notification is a
+      reasonable M2 addition, not blocking the demo). NEW
+      app/admin/vendors/applications/page.tsx + VendorApplicationReviewTable.tsx (mirrors
+      VendorReviewTable.tsx), sitting under the EXISTING app/admin/vendors/layout.tsx
+      capability gate (no new layout needed).
+    status: pending
+    milestone: M1
+  - id: F6
+    name: >-
+      Extend, don't duplicate, the approval email. lib/vendor-approval-confirmation.ts's
+      VendorApprovalConfirmationInput and emails/VendorApprovalConfirmation.tsx's props gain
+      ONE new optional field, registrationLink?: string | null, rendered as the single-use
+      registration link when present. The EXISTING call site
+      (app/api/admin/vendors/[id]/review/route.ts, full-VendorSubmission approval) is left
+      wired exactly as-is -- unchanged behavior, no registrationLink ever passed there. F5's
+      NEW call site passes registrationLink and omits boothNumber/boothType/staffPerDay/
+      powerRequired/etc, which the template already renders gracefully via
+      BOOTH_NUMBER_PENDING_LABEL/LOGISTICS_NOT_SPECIFIED_LABEL -- no new conditional rendering
+      branch that could diverge from the existing, already-tested path.
+    status: pending
+    milestone: M1
+  - id: F7
+    name: >-
+      Gate the full registration route, fail closed. app/(marketing)/national-show/vendors/
+      register/page.tsx becomes a server component reading a `?token=` search param:
+      verifies it via F3's verifyVendorRegistrationToken() (signature + not-expired), THEN
+      looks up the VendorApplication by the token's applicationId and checks
+      status === 'approved' AND registrationTokenConsumedAt is unset. The form
+      (VendorRegisterForm) renders ONLY on that exact success path; every other outcome --
+      missing token, malformed, bad signature, expired, application not found, wrong status,
+      already consumed -- renders one generic "This registration link is invalid or has
+      expired." message, never the form and never a distinguishing error. POST
+      /api/vendors/register (existing route) additionally requires the same token in its
+      request body, RE-verifies it server-side (never trusts the page already checked), and on
+      a successful write sets registrationTokenConsumedAt on the linked VendorApplication doc
+      in the same handler -- so a second POST with the same token, or a POST past expiry, is
+      refused with the same generic message. M1 does not change any field the full form
+      collects -- that correction is M2.
+    status: pending
+    milestone: M1
+  - id: F8
+    name: >-
+      Public nav: the showcase page's "Register as a vendor" link
+      (app/(marketing)/national-show/vendors/page.tsx) now points to
+      /national-show/vendors/apply, not /national-show/vendors/register. The gated
+      /register route is deliberately reachable ONLY via the emailed token link -- never
+      linked from any public page, nav, or sitemap.
+    status: pending
+    milestone: M1
+  - id: F12
+    name: >-
+      RECORDED 2026-08-31 (architect pass, judgment call #3 from the M1 fix-pass brief). POST
+      /api/vendors/apply (F4) is a new unauthenticated public write endpoint, and unlike its
+      sibling POST /api/vendors/register it ships M1 with NEITHER per-IP rate limiting NOR a
+      submitter confirmation email -- @qa and @dev both independently flagged this as reasonable
+      for M1 (it is a short 7-field form, not the 31-field registration, and committee review
+      gates anything from it reaching the full form) but worth a deliberate follow-up rather
+      than silent, undocumented asymmetry between two public vendor-facing POST routes. M2 scope
+      -- NOT contract-designed yet, same reason as F9/F10: extend
+      lib/vendor-registration-rate-limit.ts's createInMemoryVendorRegistrationRateLimitStore
+      pattern (or a dedicated applications-scoped store, TBD in the M2 architect pass) to
+      /api/vendors/apply, and add a submitter-facing confirmation email mirroring
+      lib/vendor-registration-confirmation.ts's sendVendorRegistrationConfirmationEmail shape --
+      "we received your application, the committee will review it" copy, explicitly NOT implying
+      approval.
+    status: pending
+    milestone: M2
+    contract: null
+
+  # ---------------------------------------------------------------------------------------
+  # M2 -- full-form field-set correction against the 26 Aug source doc. Placeholders only;
+  # architect a follow-up contract once M1 has shipped and the gated shape is proven live.
+  # ---------------------------------------------------------------------------------------
+  - id: F9
+    name: 'M2 placeholder: correct VendorCategoryFieldset.tsx + VENDOR_CATEGORIES/VendorCategory against the 26 Aug doc''s 14-item list (no "Other"); reconcile with F1''s new, separate VendorApplicationCategory set rather than merging the two.'
+    status: pending
+    milestone: M2
+    contract: null
+  - id: F10
+    name: 'M2 placeholder: add the 26 Aug doc''s new full-form sections (Online Presence; entity-type Partnership/Individual; VAT Vendor split from VAT number; fixed booth sizes; table/chair charges -- flagged, no invented rand figure per contradiction #2; repeating electricity equipment table + wastewater/drainage; 7 typed vehicle fields; waste-type checkboxes; Marketing''s 150-200 word description + logo + EXACTLY 3 photos + permission radio; food vendor 6-item certification list; gas/oil equipment table; two insurance policy numbers; full 14-clause T&Cs prose incl. the 90-day cancellation rule per contradiction #1; signature block).'
+    status: pending
+    milestone: M2
+    contract: null
+
+  # ---------------------------------------------------------------------------------------
+  # M3 -- Stand Booking Payment as an explicitly non-ticket path. Placeholder only.
+  # ---------------------------------------------------------------------------------------
+  - id: F11
+    name: 'M3 placeholder: Stand Booking Payment (booth fee) as its own explicitly-non-ticket payment path -- reassess whether lib/vendor-payment.ts needs changes to make the separation from the ticket/order model more explicit than the current proof-of-payment/office-confirms flow already provides.'
+    status: pending
+    milestone: M3
+    contract: null
+
+goldens:
+  - contracts/golden/vendor-gated-registration-flow-f1/README.md
+  - contracts/golden/vendor-gated-registration-flow-f1/vendor-application-categories.expected.ts.txt
+  - contracts/golden/vendor-gated-registration-flow-f1/vendor-application-review-transitions.expected.ts.txt
+
+assertions:
+  phase: 4
+  checks:
+    # --- F1: data model ---
+    - id: A1
+      description: >-
+        VendorApplication/VendorApplicationStatus/VendorApplicationCategory/
+        VendorApplicationDraft are defined in types/index.ts, and VendorApplicationDraft
+        structurally excludes every system-owned field (status, submittedAt, reviewedBy,
+        reviewedAt, registrationTokenIssuedAt, registrationTokenExpiresAt,
+        registrationTokenConsumedAt) -- same pattern as the existing VendorSubmissionDraft.
+        FAILS ON: any of these types missing, or VendorApplicationDraft's own type body
+        containing a 'status' field (would let a submitter smuggle their own status).
+      command: >-
+        grep -q "VendorApplicationStatus" types/index.ts && grep -q "VendorApplicationCategory" types/index.ts && grep -q "VendorApplicationDraft" types/index.ts && ! sed -n '/interface VendorApplicationDraft/,/^}/p' types/index.ts | grep -q "status:"
+    - id: A2
+      description: >-
+        lib/vendor-applications.ts's VENDOR_APPLICATION_CATEGORIES constant matches the golden
+        exactly -- all 14 members, exact order, exact spelling, no 'other' member.
+        FAILS ON: any member added, removed, reordered, or misspelled relative to the golden.
+      command: >-
+        diff <(sed -n '/const VENDOR_APPLICATION_CATEGORIES/,/^\];/p' lib/vendor-applications.ts) <(sed -n '/const VENDOR_APPLICATION_CATEGORIES/,/^\];/p' contracts/golden/vendor-gated-registration-flow-f1/vendor-application-categories.expected.ts.txt)
+    - id: A3
+      description: >-
+        lib/vendor-applications.ts exports VENDOR_APPLICATIONS_COLLECTION = 'vendorApplications'
+        (a genuinely new, separate collection -- not a reuse of VENDOR_SUBMISSIONS_COLLECTION),
+        and does not import lib/admin-auth.ts or lib/admin-roles.ts (authorization-blind, same
+        rule as lib/vendor-submissions.ts).
+        FAILS ON: the collection name missing/wrong, or an admin-auth/admin-roles import present.
+      command: >-
+        grep -q "VENDOR_APPLICATIONS_COLLECTION = 'vendorApplications'" lib/vendor-applications.ts && ! grep -qE "from '@/lib/admin-(auth|roles)'" lib/vendor-applications.ts
+
+    # --- F2: review machine ---
+    - id: A4
+      description: >-
+        lib/vendor-application-review.ts's TRANSITIONS table matches the golden exactly --
+        pending maps to {approve: approved, decline: declined} and nothing else.
+        FAILS ON: any extra transition, missing transition, or a different next-status.
+      command: >-
+        diff <(sed -n '/const TRANSITIONS/,/^};/p' lib/vendor-application-review.ts) <(sed -n '/const TRANSITIONS/,/^};/p' contracts/golden/vendor-gated-registration-flow-f1/vendor-application-review-transitions.expected.ts.txt)
+    - id: A5
+      description: >-
+        Behavioral, real execution (mirrors lib/vendor-review.ts's own proof style): every legal
+        transition succeeds with an additive-only 3-key patch; every transition from a terminal
+        state (approved/declined) is refused; an unknown action is refused.
+        FAILS ON: any legal transition refused, any illegal transition allowed, or a patch
+        containing keys beyond status/reviewedBy/reviewedAt.
+      command: node --import tsx/esm contracts/checks/vendor-gated-registration-flow/check-application-review-transitions.mjs
+
+    # --- F3: token security ---
+    - id: A6
+      description: >-
+        lib/vendor-registration-token.ts imports constantTimeEqual FROM lib/recovery-token.ts
+        (reuse, not a redefinition) and is signed by a distinct env var,
+        VENDOR_REGISTRATION_TOKEN_SECRET -- never RECOVERY_TOKEN_SECRET.
+        FAILS ON: constantTimeEqual redefined locally instead of imported, or
+        RECOVERY_TOKEN_SECRET referenced anywhere in this file.
+      command: >-
+        grep -q "constantTimeEqual" lib/vendor-registration-token.ts && grep -qE "import.*constantTimeEqual.*from ['\"]\./recovery-token['\"]" lib/vendor-registration-token.ts && grep -q "VENDOR_REGISTRATION_TOKEN_SECRET" lib/vendor-registration-token.ts && ! grep -q "RECOVERY_TOKEN_SECRET" lib/vendor-registration-token.ts
+    - id: A7
+      description: >-
+        Behavioral, real crypto (mirrors contracts/checks/ticketing-f6-recovery-token/check-
+        forgery-resistance.mjs's method exactly): real-secret round trip succeeds; every
+        guessed-secret forgery strategy fails; an expired token is refused with reason
+        'expired'; a lib/recovery-token.ts order-recovery token does NOT verify as a vendor
+        registration token even under a shared secret (domain separation).
+        FAILS ON: any forgery succeeding, expiry not enforced, or cross-domain token reuse
+        succeeding.
+      command: node --import tsx/esm contracts/checks/vendor-gated-registration-flow/check-registration-token-security.mjs
+    - id: A8
+      description: >-
+        VENDOR_REGISTRATION_TOKEN_SECRET is documented in .env.local.example (so a fresh
+        deploy doesn't silently fall back to an undefined secret).
+        FAILS ON: the env var absent from .env.local.example.
+      command: grep -q "VENDOR_REGISTRATION_TOKEN_SECRET" .env.local.example
+
+    # --- F4: public application route + page ---
+    - id: A9
+      description: >-
+        POST /api/vendors/apply exists, imports buildVendorApplication/
+        validateVendorApplicationInput from lib/vendor-applications.ts, and writes with
+        status 'pending' -- never accepting a caller-supplied status (VendorApplicationDraft
+        structurally forbids it per A1, but the route itself must also never assign anything
+        other than the literal 'pending').
+        FAILS ON: the route missing, not importing the F1 builder/validator, or status not
+        hardcoded to 'pending'.
+      command: >-
+        test -f app/api/vendors/apply/route.ts && grep -q "buildVendorApplication" app/api/vendors/apply/route.ts && grep -q "'pending'" app/api/vendors/apply/route.ts
+    - id: A10
+      description: >-
+        The public application page exists at app/(marketing)/national-show/vendors/apply/
+        page.tsx and its form posts to /api/vendors/apply, collecting vendorCategory as a
+        checkbox group sourced from F1's 14-item VENDOR_APPLICATION_CATEGORIES (not the
+        unrelated 11-item VENDOR_CATEGORIES).
+        FAILS ON: the page missing, posting to a different endpoint, or sourcing options from
+        VENDOR_CATEGORIES instead of VENDOR_APPLICATION_CATEGORIES.
+      command: >-
+        test -f "app/(marketing)/national-show/vendors/apply/page.tsx" && grep -rq "/api/vendors/apply" "app/(marketing)/national-show/vendors/apply" components/vendors && grep -rq "VENDOR_APPLICATION_CATEGORIES\|VendorApplicationCategory" components/vendors
+
+    # --- F5: admin application review ---
+    - id: A11
+      description: >-
+        GET /api/admin/vendors/applications and POST /api/admin/vendors/applications/[id]/
+        review both call getAdminSession() THEN hasCapability(..., 'review-vendor-
+        applications', ...) with an awaited resolveShowWindowLookup() result -- same gate
+        wiring as the existing app/api/admin/vendors/route.ts, no new capability invented.
+        FAILS ON: either route missing the gate, gating on a different/new capability string,
+        or hasCapability called without a real resolveShowWindowLookup() result.
+      command: >-
+        grep -q "getAdminSession" app/api/admin/vendors/applications/route.ts && grep -q "'review-vendor-applications'" app/api/admin/vendors/applications/route.ts && grep -q "resolveShowWindowLookup" app/api/admin/vendors/applications/route.ts && grep -q "getAdminSession" "app/api/admin/vendors/applications/[id]/review/route.ts" && grep -q "'review-vendor-applications'" "app/api/admin/vendors/applications/[id]/review/route.ts"
+    - id: A12
+      description: >-
+        The approve action mints a token via mintVendorRegistrationToken (F3) and calls
+        sendVendorApprovalConfirmationEmail (F6, extended) with a registrationLink -- and the
+        review-transition decision itself is delegated to decideVendorApplicationTransition
+        (F2), never reimplemented inline in the route.
+        FAILS ON: the route reimplementing the pending/approved/declined logic itself instead
+        of calling decideVendorApplicationTransition, or approve not minting a token / not
+        sending an email with registrationLink.
+      command: >-
+        grep -q "decideVendorApplicationTransition" "app/api/admin/vendors/applications/[id]/review/route.ts" && grep -q "mintVendorRegistrationToken" "app/api/admin/vendors/applications/[id]/review/route.ts" && grep -q "registrationLink" "app/api/admin/vendors/applications/[id]/review/route.ts"
+    - id: A13
+      description: >-
+        ref.update() is used for both the F2 decision patch and the token-issued-timestamps
+        patch -- never a full-document overwrite (ref.set() without merge) that could wipe
+        other VendorApplication fields.
+        FAILS ON: any ref.set( call in this route not passing { merge: true }.
+      command: >-
+        ! grep -qE "ref\.set\(" "app/api/admin/vendors/applications/[id]/review/route.ts" || grep -qE "ref\.set\([^)]*\{\s*merge:\s*true" "app/api/admin/vendors/applications/[id]/review/route.ts"
+
+    # --- F6: email extension, regression-safe ---
+    - id: A14
+      description: >-
+        VendorApprovalConfirmationInput (lib/vendor-approval-confirmation.ts) and its email
+        component's props (emails/VendorApprovalConfirmation.tsx) both gain an optional
+        registrationLink field, and the EXISTING call site
+        (app/api/admin/vendors/[id]/review/route.ts) is unchanged -- it still never passes
+        registrationLink, proving F5/F6 did not have to touch the already-shipped full-
+        registration approval path.
+        FAILS ON: registrationLink missing from either the input interface or the component
+        props, or the existing review route now passing registrationLink (would mean it was
+        edited when the brief says leave it as-is).
+      command: >-
+        grep -q "registrationLink" lib/vendor-approval-confirmation.ts && grep -q "registrationLink" emails/VendorApprovalConfirmation.tsx && ! grep -q "registrationLink" app/api/admin/vendors/[id]/review/route.ts
+    - id: A15
+      description: >-
+        Regression: the existing vendor-f8-approval-email contract's own typecheck fixture
+        still compiles after F6's edit (proves the extension is additive, not a breaking
+        signature change to the fields the F8 golden already depends on).
+        FAILS ON: any TypeScript error in the existing fixture.
+      command: npx tsc --noEmit -p contracts/checks/vendor-f8-approval-email/tsconfig.typecheck.json
+
+    # --- F7: gate on the full registration route ---
+    - id: A16
+      description: >-
+        app/(marketing)/national-show/vendors/register/page.tsx reads a token search param,
+        calls verifyVendorRegistrationToken, and renders VendorRegisterForm only inside the
+        success branch of that check -- with a generic invalid-link message as the fallback
+        (fail closed: the default path is refusal, not the form).
+        FAILS ON: the page rendering VendorRegisterForm unconditionally (no token gate), or
+        not calling verifyVendorRegistrationToken at all.
+      command: >-
+        grep -q "verifyVendorRegistrationToken" "app/(marketing)/national-show/vendors/register/page.tsx" && grep -q "invalid or has expired" "app/(marketing)/national-show/vendors/register/page.tsx"
+    - id: A17
+      description: >-
+        REWRITTEN 2026-08-31 (architect pass, post-QA/Codex fix). The original form of this
+        assertion only grepped for the identifiers verifyVendorRegistrationToken /
+        registrationTokenConsumedAt being present in app/api/vendors/register/route.ts -- it
+        stayed green through a genuine read-then-write race (@qa and Codex both found it
+        independently: the old shape read registrationTokenConsumedAt outside a transaction,
+        checked it, then wrote it afterwards, so two concurrent POSTs with the same token could
+        both pass the check and both write). That is this project's own audited "assertion
+        satisfiable by something that isn't the real property" defect class. The fix moved
+        single-use enforcement into a dedicated lib/vendor-registration-token-claim.ts
+        (claimRegistrationToken), which the route now calls, using a Firestore transaction so
+        the claim is atomic. This assertion now depends on the BEHAVIOURAL proof of that
+        atomicity (check-single-use-claim-is-atomic.mjs, which drives the real
+        claimRegistrationToken() against a version-stamped fake Firestore with real optimistic-
+        concurrency semantics, and additionally proves the fake itself is not vacuous by
+        confirming a control run of the OLD read-then-write shape produces two winners), plus a
+        structural check that the route calls the real module rather than re-implementing the
+        check inline.
+        FAILS ON: the route not importing/calling claimRegistrationToken from
+        lib/vendor-registration-token-claim.ts, re-verifying the token itself without also
+        claiming atomically, or check-single-use-claim-is-atomic.mjs failing (including its own
+        control-arm sanity check).
+      command: >-
+        grep -q "verifyVendorRegistrationToken" app/api/vendors/register/route.ts && grep -qE "claimRegistrationToken" app/api/vendors/register/route.ts && grep -qE "from ['\"]@/lib/vendor-registration-token-claim['\"]" app/api/vendors/register/route.ts && node --import tsx/esm contracts/checks/vendor-gated-registration-flow/check-single-use-claim-is-atomic.mjs
+
+    # --- F8: nav link ---
+    - id: A18
+      description: >-
+        WIDENED 2026-08-31 (architect pass, post-QA/Codex fix). The original form of this
+        assertion greped only app/(marketing)/**/*.tsx and stayed green throughout while the
+        site-wide nav (components/chrome/nav-config.ts -- a .ts file entirely outside that
+        scope) linked straight to the gated /national-show/vendors/register route from the mega
+        menu on every page of the site. This is the same weak-assertion class as the old A17:
+        the check proved a narrower thing than its own description claimed. Widened to scan
+        every reachable-by-a-visitor source location: all of app/(marketing), plus
+        components/chrome (site-wide nav/mega-menu) and components/vendors (the vendor UI
+        components themselves), plus execution/checks/verify_nav_mega_menu.ts's own fixture of
+        expected nav hrefs (the structural nav-shape check @dev also had to fix alongside the
+        source file). A real Playwright run (27/27, see @dev's fix-pass report) is currently the
+        only END-TO-END behavioural proof that a visitor cannot click through to the gated
+        route from anywhere in the live-rendered site; this assertion is the fast structural
+        gate, not a replacement for that run.
+        FAILS ON: the showcase link not pointing at /national-show/vendors/apply; any file under
+        app/(marketing), components/chrome, or components/vendors (other than the apply and
+        register pages' own internal/self links) linking directly to
+        /national-show/vendors/register; or execution/checks/verify_nav_mega_menu.ts's vendor
+        entry not matching /national-show/vendors/apply.
+      command: >-
+        grep -q "/national-show/vendors/apply" "app/(marketing)/national-show/vendors/page.tsx" && ! grep -rq "/national-show/vendors/register" "app/(marketing)" --include="*.tsx" --exclude-dir=register && ! grep -rq "/national-show/vendors/register" components/chrome components/vendors --include="*.ts" --include="*.tsx" && grep -q "/national-show/vendors/apply" execution/checks/verify_nav_mega_menu.ts && ! grep -q "/national-show/vendors/register" execution/checks/verify_nav_mega_menu.ts
+
+    # --- M1 fix-pass checks folded into the contract (previously orphaned @dev deliverables) ---
+    - id: A20
+      description: >-
+        ADDED 2026-08-31 (architect pass). Folds in @dev's fix-pass check for the F5 approval
+        route's mint-before-commit ordering defect (@qa/Codex-found): the review-approve status
+        transition to 'approved' was being committed BEFORE the registration secret was read and
+        the token minted, so an unset VENDOR_REGISTRATION_TOKEN_SECRET left an application
+        permanently 'approved' with no link ever sent, and the closed review machine (correctly)
+        refuses to re-approve an approved application -- no operator could recover it from the
+        admin UI. STATED LIMITATION (carried from the check's own header, not glossed over
+        here): this is a SOURCE-ORDER assertion, not a behavioural one -- exercising the real
+        route needs a Firebase Admin credential and an authenticated admin session cookie,
+        neither available in this environment. Accepted as the contract's evidence for this
+        defect because (a) the closed-machine behaviour it depends on IS proven behaviourally by
+        A5/check-application-review-transitions.mjs, (b) the ordering itself is a small,
+        mechanically-checkable fact (mint call precedes every ref.update() call) that is hard to
+        satisfy by accident once true, and (c) a stronger, live-route form needs the same
+        Firestore-seeding + authenticated-session infrastructure already logged as a P1 backlog
+        item for the four historical /register Playwright suites -- not worth building tonight
+        as a one-off for this single defect. Revisit if that infrastructure gets built anyway.
+        FAILS ON: mintVendorRegistrationToken/the VENDOR_REGISTRATION_TOKEN_SECRET read
+        occurring at or after the first ref.update() call, or either call missing entirely.
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow/check-approval-mints-before-commit.mjs
+    - id: A21
+      description: >-
+        ADDED 2026-08-31 (architect pass). Folds in @dev's fix-pass check for the approval email
+        copy defect (@qa/Codex-found): the application-approval path (registrationLink present)
+        was rendering the full-registration heading, the entire "your submitted logistics"
+        recap, and -- because powerRequired was a non-nullable boolean -- the literal claim
+        "Power required: No" to a vendor who was never asked that question at the application
+        stage. Behavioural, real execution: renders BOTH branches (application-approval vs. the
+        existing full-registration approval) through the REAL
+        sendVendorApprovalConfirmationEmail() with an injected fixture mailer, same technique as
+        contracts/checks/vendor-f8-approval-email/check-full-logistics-render.mjs. ENV QUIRK:
+        must run under `npx tsx`, not `node --import tsx/esm` -- this file's chained @/lib alias
+        imports break under the latter in this environment.
+        FAILS ON: the application-approval branch rendering the full-logistics heading/recap, or
+        asserting any logistics fact (power/booth/etc.) the vendor was never asked.
+      command: >-
+        npx tsx contracts/checks/vendor-gated-registration-flow/check-application-approval-email-copy.mjs
+
+    # --- whole-mission regression gate ---
+    - id: A19
+      description: >-
+        Whole-project type safety and lint are unaffected by the new types, modules, routes,
+        and pages added in M1.
+        FAILS ON: any TypeScript error or lint error.
+      command: pnpm type-check && pnpm lint

@@ -3,7 +3,7 @@ AUDIT_SKIP_LOG := .agent/memory/scratch/.audit-skips.tmp
 
 # Athanor v$(VERSION) Makefile
 
-.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy set-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse fleet-install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit backlog-trim bump-version stay-awake allow-sleep comms-status comms-trim comms-watch provider-validate job dispatch-once
+.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy set-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse fleet-install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit backlog-trim bump-version stay-awake allow-sleep comms-status comms-trim comms-watch provider-validate job dispatch-once gate-all
 
 help:
 	@echo "🏭 Athanor v$(VERSION)"
@@ -53,6 +53,9 @@ help:
 	@echo "  make pulse-start       Manually start the Pulse service"
 	@echo "  make pulse-stop        Manually stop the Pulse service"
 	@echo "  make pulse-logs        Tail the Pulse service logs"
+	@echo ""
+	@echo "  Gate Sweep"
+	@echo "  make gate-all           Run every spec's Phase 4 gate, live, repo-wide (JOBS=4 for parallelism)"
 
 
 sync: sync-autonomy sync-agents
@@ -216,6 +219,8 @@ audit:
 	@echo "  OK: manifest coverage complete"
 	@python3 execution/audit_gates.py
 	@python3 execution/checks/verify_version_fields_match.py && echo "✅ version fields match" || (echo "❌ version fields diverged"; exit 1)
+	@echo "  [delivery-integrity, F7] every non-retired contract*.yaml passes contract.py validate..."
+	@python3 execution/checks/verify_all_contracts_validate.py
 	@echo "  [alembic-propagation, F2] installed skill vs. canonical (intra-project only)..."
 	@python3 execution/checks/verify_skill_propagation.py
 	@echo "  [alembic-drift, F3] skill's alembic_version vs. running proxy (SKIPs if proxy down)..."
@@ -227,6 +232,9 @@ audit:
 	@python3 execution/checks/verify_free_model_catalog.py catalog_live; rc=$$?; if [ $$rc -eq 77 ]; then echo "  SKIP [free-model-catalog-live, F4]: not verified — see message above; does not count as pass or fail"; echo "free-model-catalog-live" >> $(AUDIT_SKIP_LOG); elif [ $$rc -ne 0 ]; then exit $$rc; fi
 	@if [ -s $(AUDIT_SKIP_LOG) ]; then n=$$(wc -l < $(AUDIT_SKIP_LOG) | tr -d ' '); echo "⚠️  $$n check(s) skipped (not verified this run) — see SKIP lines above"; fi
 	@rm -f $(AUDIT_SKIP_LOG)
+
+token-report:
+	@python3 execution/token_report.py
 
 backlog-audit:
 	@bash execution/backlog_audit.sh
@@ -250,6 +258,9 @@ test-handoff:
 	@echo "🧪 Testing structured handoff parsing..."
 	@python3 execution/tests/test_handoff.py
 	@echo "✅ Handoff tests passed."
+
+gate-all: ## Run every contract*.yaml's Phase 4 gate, live, repo-wide (JOBS=N for parallelism, default 1)
+	@python3 execution/gate_sweep.py --jobs $(or $(JOBS),1)
 
 ## Test Suite (Factory Architecture)
 test-static: ## Run Layer 1 static invariant tests
@@ -287,17 +298,29 @@ contract-check:
 
 update-template:
 	@# Manifest-driven update — delegates to update_template.py for safe HARNESS/WORKSPACE/DERIVED/MERGE boundary enforcement
-	@python3 execution/update_template.py --apply
-	@echo "🔄 Regenerating DERIVED files from updated HARNESS sources..."
-	@$(MAKE) sync || echo "⚠️  make sync failed — DERIVED files may be stale. Run 'make sync' manually."
+	@# delivery-integrity F1: the updater exits non-zero on a partial delivery, so
+	@# the apply and the DERIVED regeneration run in ONE shell with the exit code
+	@# captured. Letting make abort on the apply would mean a downstream carrying a
+	@# single permanent local divergence silently stops regenerating DERIVED files
+	@# on every future update. Both properties survive: sync always runs, and
+	@# automation still sees the non-zero code.
+	@python3 execution/update_template.py --apply; rc=$$?; \
+	echo "🔄 Regenerating DERIVED files from updated HARNESS sources..."; \
+	$(MAKE) sync || echo "⚠️  make sync failed — DERIVED files may be stale. Run 'make sync' manually."; \
+	exit $$rc
 
 self-update:
 	@echo "⬇️  Fetching latest update_template.py from Athanor..."
 	@bash -o pipefail -c 'gh api repos/InunuNet/Athanor/contents/execution/update_template.py --jq ".content" | base64 -d > execution/update_template.py'
 	@echo "✅ Updater refreshed. Running full update..."
-	@FORCE_UPDATE=true python3 execution/update_template.py --apply
-	@cp .agent/version template/.agent/version
-	@$(MAKE) sync || echo "⚠️  make sync failed — run 'make sync' manually."
+	@# Same capture-run-propagate shape as update-template above. FORCE_UPDATE only
+	@# bypasses the self-update workspace guard — it does NOT suppress the withheld
+	@# exit code, so aborting here would skip the mirror `cp` and `make sync` and
+	@# leave template/.agent/version stale, re-breaking the bookkeeping b663bd9a fixed.
+	@FORCE_UPDATE=true python3 execution/update_template.py --apply; rc=$$?; \
+	cp .agent/version template/.agent/version; \
+	$(MAKE) sync || echo "⚠️  make sync failed — run 'make sync' manually."; \
+	exit $$rc
 
 
 

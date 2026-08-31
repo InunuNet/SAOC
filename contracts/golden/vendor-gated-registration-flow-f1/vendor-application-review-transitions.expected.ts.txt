@@ -1,0 +1,11 @@
+// Expected literal TRANSITIONS table in lib/vendor-application-review.ts. Closed machine:
+// pending --approve--> approved, pending --decline--> declined. Every other (status, action)
+// pair is refused. Mirrors lib/vendor-review.ts's TRANSITIONS shape exactly.
+const TRANSITIONS: Partial<
+  Record<VendorApplicationStatus, Partial<Record<VendorApplicationReviewAction, VendorApplicationStatus>>>
+> = {
+  pending: {
+    approve: 'approved',
+    decline: 'declined',
+  },
+};

@@ -23,10 +23,17 @@ interface VendorApprovalConfirmationProps {
   boothNumber?: string | null;
   boothType?: VendorBoothType | null;
   staffPerDay?: number | null;
-  powerRequired: boolean;
+  /** Nullable since vendor-gated-registration-flow M1: the application-approval call site has
+   *  no logistics answers to report, and a non-nullable boolean forced it to assert a `false`
+   *  the vendor was never asked for. Omitted/null renders LOGISTICS_NOT_SPECIFIED_LABEL. */
+  powerRequired?: boolean | null;
   waterRequired?: boolean | null;
   loadInSlot?: string | null;
   loadOutSlot?: string | null;
+  /** F6 (vendor-gated-registration-flow) -- when present, rendered as the single-use link to
+   *  the full registration form. Omitted/undefined for the existing full-VendorSubmission
+   *  approval call site, which renders exactly as before. */
+  registrationLink?: string | null;
 }
 
 /**
@@ -73,56 +80,81 @@ export default function VendorApprovalConfirmation({
   waterRequired,
   loadInSlot,
   loadOutSlot,
+  registrationLink,
 }: VendorApprovalConfirmationProps) {
   return (
     <Html>
       <Head />
-      <Preview>Your SAOC vendor registration has been approved</Preview>
+      <Preview>
+        {registrationLink
+          ? 'Your SAOC vendor application has been approved'
+          : 'Your SAOC vendor registration has been approved'}
+      </Preview>
       <Body style={{ fontFamily: 'sans-serif', backgroundColor: '#f9f9f9', margin: '0', padding: '0' }}>
         <Container style={{ maxWidth: '600px', margin: '0 auto', padding: '24px', backgroundColor: '#ffffff' }}>
           <Heading style={{ fontSize: '24px', color: '#1a1a1a' }}>
-            Vendor Registration Approved
+            {registrationLink ? 'Vendor Application Approved' : 'Vendor Registration Approved'}
           </Heading>
           <Text style={{ fontSize: '16px', color: '#333' }}>
             Dear {contactPersonName},
           </Text>
-          <Text style={{ fontSize: '16px', color: '#333' }}>
-            Good news -- your vendor registration for <strong>{businessName}</strong> at the
-            SAOC National Show has been approved.
-          </Text>
-          <Text style={{ fontSize: '16px', color: '#333' }}>
-            Your booth number: <strong>{formatBoothNumber(boothNumber)}</strong>
-          </Text>
-          <Hr />
-          <Heading as="h2" style={{ fontSize: '18px', color: '#1a1a1a' }}>
-            Your submitted logistics (please verify)
-          </Heading>
-          <Text style={{ fontSize: '16px', color: '#333' }}>
-            Please check the details below against what you submitted, and let us know as soon
-            as possible if anything needs correcting before show day.
-          </Text>
-          <Text style={{ fontSize: '16px', color: '#333' }}>
-            Booth number: {formatBoothNumber(boothNumber)}
-          </Text>
-          <Text style={{ fontSize: '16px', color: '#333' }}>
-            Booth type: {formatOptionalField(boothType)}
-          </Text>
-          <Text style={{ fontSize: '16px', color: '#333' }}>
-            Staff per day: {formatOptionalField(staffPerDay)}
-          </Text>
-          <Text style={{ fontSize: '16px', color: '#333' }}>
-            Power required: {formatOptionalField(powerRequired)}
-          </Text>
-          <Text style={{ fontSize: '16px', color: '#333' }}>
-            Water required: {formatOptionalField(waterRequired)}
-          </Text>
-          <Text style={{ fontSize: '16px', color: '#333' }}>
-            Load-in slot: {formatOptionalField(loadInSlot)}
-          </Text>
-          <Text style={{ fontSize: '16px', color: '#333' }}>
-            Load-out slot: {formatOptionalField(loadOutSlot)}
-          </Text>
-          <Hr />
+          {registrationLink ? (
+            <>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                Good news -- your vendor application for <strong>{businessName}</strong> at the
+                SAOC National Show has been approved.
+              </Text>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                Next step: complete your full vendor registration and agreement using the
+                single-use link below. This link can only be used once, so please complete the
+                form in one sitting.
+              </Text>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                <a href={registrationLink}>{registrationLink}</a>
+              </Text>
+              <Hr />
+            </>
+          ) : (
+            <>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                Good news -- your vendor registration for <strong>{businessName}</strong> at the
+                SAOC National Show has been approved.
+              </Text>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                Your booth number: <strong>{formatBoothNumber(boothNumber)}</strong>
+              </Text>
+              <Hr />
+              <Heading as="h2" style={{ fontSize: '18px', color: '#1a1a1a' }}>
+                Your submitted logistics (please verify)
+              </Heading>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                Please check the details below against what you submitted, and let us know as
+                soon as possible if anything needs correcting before show day.
+              </Text>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                Booth number: {formatBoothNumber(boothNumber)}
+              </Text>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                Booth type: {formatOptionalField(boothType)}
+              </Text>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                Staff per day: {formatOptionalField(staffPerDay)}
+              </Text>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                Power required: {formatOptionalField(powerRequired)}
+              </Text>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                Water required: {formatOptionalField(waterRequired)}
+              </Text>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                Load-in slot: {formatOptionalField(loadInSlot)}
+              </Text>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                Load-out slot: {formatOptionalField(loadOutSlot)}
+              </Text>
+              <Hr />
+            </>
+          )}
           <Text style={{ fontSize: '12px', color: '#999', marginTop: '24px' }}>
             South African Orchid Council — saoc.co.za
           </Text>

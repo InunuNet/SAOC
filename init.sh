@@ -159,6 +159,32 @@ except Exception:
         fi
     fi
 
+    # Preserve workspace identity (project_type, soul_type, tech_stack) across the
+    # template-seed cp below. The template sentinel ships these fields neutral
+    # ("" / "" / []); a wholesale cp of it over an existing profile blanks whatever
+    # was already there (GH: reported by Omarchy, traced to this cp). Capture
+    # whichever of these keys the EXISTING profile carries — including an
+    # explicitly empty value, which must carry forward as empty, never be
+    # "restored" to something else — into a temp file before the cp overwrites it.
+    local identity_snapshot
+    identity_snapshot=$(mktemp)
+    if [ -f "$target" ]; then
+        python3 -c "
+import json
+out = {}
+try:
+    p = json.load(open('$target'))
+    for k in ('project_type', 'soul_type', 'tech_stack'):
+        if k in p:
+            out[k] = p[k]
+except Exception:
+    pass
+json.dump(out, open('$identity_snapshot', 'w'))
+" 2>/dev/null
+    else
+        printf '{}' > "$identity_snapshot"
+    fi
+
     cp "$template_profile" "$target"
 
     local created_at
@@ -180,10 +206,20 @@ p['identity'] = {
     'agent_name': 'Athanor Agent',
     'project_role': 'project coordinator'
 }
+# Restore whatever the existing profile carried for these identity fields
+# (including legitimately-empty values). Never fills in a default for a key
+# that was absent from the snapshot.
+try:
+    with open("$identity_snapshot") as sf:
+        preserved = json.load(sf)
+except Exception:
+    preserved = {}
+p.update(preserved)
 with open(path, 'w') as f:
     json.dump(p, f, indent=2)
     f.write('\n')
 PYEOF
+    rm -f "$identity_snapshot"
 }
 
 # ── Core structure ────────────────────────────────────────────────────────────
@@ -309,15 +345,31 @@ EOF
     if [ -d "$SCRIPT_DIR/execution/hooks" ]; then
         cp "$SCRIPT_DIR/execution/hooks/"*.sh "$PROJECT_PATH/"         2>/dev/null || true
         cp "$SCRIPT_DIR/execution/hooks/"*.sh "$PROJECT_PATH/execution/hooks/" 2>/dev/null || true
+        # execution/hooks/lib/ holds non-.sh files (e.g. context_window.py) that
+        # the glob above never reaches since it doesn't recurse. Copy it
+        # recursively so any current or future file under lib/ ships too,
+        # instead of patching this line again per file.
+        if [ -d "$SCRIPT_DIR/execution/hooks/lib" ]; then
+            mkdir -p "$PROJECT_PATH/execution/hooks/lib" 2>/dev/null || true
+            cp -R "$SCRIPT_DIR/execution/hooks/lib/." "$PROJECT_PATH/execution/hooks/lib/" 2>/dev/null || true
+        fi
     fi
 
     # settings.json last — hooks must exist before Claude Code processes this file
     cp "$SCRIPT_DIR/.claude/settings.json"  "$PROJECT_PATH/.claude/settings.json"  2>/dev/null || true
 
     # Copy execution scripts
-    for f in brain.py sync_agents.sh sync_skills.sh sync_rules.sh discovery.sh pulse_runner.sh ingest_pulse.sh get_pulse_status.sh manage_pulse.sh commit_helper.py ki_recall.py overlay_all.sh overlay_template.sh onboard_fill.py com.athanor.pulse.plist doc2md.py mission.py contract.py handoff_check.py handoffs.py; do
+    for f in brain.py sync_agents.sh sync_skills.sh sync_rules.sh discovery.sh pulse_runner.sh ingest_pulse.sh get_pulse_status.sh manage_pulse.sh commit_helper.py ki_recall.py overlay_all.sh overlay_template.sh onboard_fill.py com.athanor.pulse.plist doc2md.py mission.py contract.py handoff_check.py handoffs.py browser_qa.py; do
         [ -f "$SCRIPT_DIR/execution/$f" ] && cp "$SCRIPT_DIR/execution/$f" "$PROJECT_PATH/execution/$f" 2>/dev/null || true
     done
+
+    # Copy browser_qa.py's self-test fixtures (execution/checks/ is not copied
+    # wholesale elsewhere — only individual scripts/dirs are whitelisted)
+    if [ -d "$SCRIPT_DIR/execution/checks/fixtures" ]; then
+        mkdir -p "$PROJECT_PATH/execution/checks/fixtures"
+        cp "$SCRIPT_DIR/execution/checks/fixtures/browser_qa_sample.html" "$PROJECT_PATH/execution/checks/fixtures/browser_qa_sample.html" 2>/dev/null || true
+        cp "$SCRIPT_DIR/execution/checks/verify_browser_qa_fixture.sh"   "$PROJECT_PATH/execution/checks/verify_browser_qa_fixture.sh"   2>/dev/null || true
+    fi
 
     # Copy .agent config files (handoff manifest, update manifest, protected-files list)
     [ -f "$SCRIPT_DIR/.agent/handoffs.yaml" ]        && cp "$SCRIPT_DIR/.agent/handoffs.yaml"        "$PROJECT_PATH/.agent/handoffs.yaml"        2>/dev/null || true

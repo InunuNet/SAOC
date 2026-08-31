@@ -22,7 +22,13 @@ fi
 if command -v gh >/dev/null 2>&1; then
     if gh auth status >/dev/null 2>&1; then
         # gh CLI is available and authenticated
-        REPO_SLUG=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+        # `|| true` is load-bearing: under `set -e`, a failing command substitution aborts the
+        # script outright, so a transient `gh` API failure (e.g. a GitHub 503) killed the run
+        # before the git-remote fallback below could ever be reached. The fallback needs no
+        # network and answers instantly, so it must stay reachable. `2>/dev/null` also means
+        # the abort surfaced with an EMPTY stderr, which is why callers reported a bare
+        # "could not resolve --repo:" with nothing after the colon.
+        REPO_SLUG=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || true)
         if [ -n "$REPO_SLUG" ]; then
             echo "$REPO_SLUG"
             exit 0

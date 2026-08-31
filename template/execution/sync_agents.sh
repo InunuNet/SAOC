@@ -10,6 +10,7 @@ set -euo pipefail
 CANONICAL_DIR=".agent/agents"
 CLAUDE_DIR=".claude/agents"
 GEMINI_DIR=".gemini/agents"
+GROK_DIR=".grok/agents"
 
 # Mapping functions (avoids associative array issues across shells)
 map_claude_model() {
@@ -58,6 +59,18 @@ map_gemini_tool() {
   esac
 }
 
+# GH #1367's Grok tool-name remap table. read/shell/agent+task are the only
+# mappings GH #1367 specifies; remaining tokens default-passthrough.
+map_grok_tool() {
+  case "$1" in
+    read) echo "read_file" ;;
+    shell) echo "run_terminal_command" ;;
+    agent) echo "spawn_subagent" ;;
+    task) echo "spawn_subagent" ;;
+    *) echo "$1" ;;
+  esac
+}
+
 map_tools() {
   local platform="$1"
   local tools_csv="${2:-}"
@@ -71,6 +84,8 @@ map_tools() {
     [ -z "$tool_item" ] && continue
     if [ "$platform" = "claude" ]; then
       mapped=$(map_claude_tool "$tool_item")
+    elif [ "$platform" = "grok" ]; then
+      mapped=$(map_grok_tool "$tool_item")
     else
       mapped=$(map_gemini_tool "$tool_item")
     fi
@@ -83,7 +98,52 @@ map_tools() {
   echo "$result"
 }
 
-mkdir -p "$CLAUDE_DIR" "$GEMINI_DIR"
+if [ "${1:-}" = "--check" ]; then
+  drift=0
+  checked=0
+  for canonical in "$CANONICAL_DIR"/*.md; do
+    [ ! -f "$canonical" ] && continue
+    filename=$(basename "$canonical")
+    name="${filename%.md}"
+    checked=$((checked + 1))
+
+    model_tier=$(sed -n '/^---$/,/^---$/p' "$canonical" | grep '^model_tier:' | awk '{print $2}' || true)
+    expected_claude=$(map_claude_model "$model_tier")
+    expected_gemini=$(map_gemini_model "$model_tier")
+
+    CLAUDE_TARGET="$CLAUDE_DIR/$filename"
+    if [ ! -f "$CLAUDE_TARGET" ]; then
+      echo "MISSING claude $name: $CLAUDE_TARGET does not exist"
+    else
+      actual_claude=$(sed -n '/^---$/,/^---$/p' "$CLAUDE_TARGET" | grep '^model:' | awk '{print $2}' || true)
+      if [ "$actual_claude" != "$expected_claude" ]; then
+        echo "DRIFT claude $name: expected=$expected_claude actual=$actual_claude"
+        drift=$((drift + 1))
+      fi
+    fi
+
+    GEMINI_TARGET="$GEMINI_DIR/$filename"
+    if [ ! -f "$GEMINI_TARGET" ]; then
+      echo "MISSING gemini $name: $GEMINI_TARGET does not exist"
+    else
+      actual_gemini=$(sed -n '/^---$/,/^---$/p' "$GEMINI_TARGET" | grep '^model:' | awk '{print $2}' || true)
+      if [ "$actual_gemini" != "$expected_gemini" ]; then
+        echo "DRIFT gemini $name: expected=$expected_gemini actual=$actual_gemini"
+        drift=$((drift + 1))
+      fi
+    fi
+  done
+
+  if [ "$drift" -eq 0 ]; then
+    echo "✅ sync_agents --check: no drift found ($checked agents checked)"
+    exit 0
+  else
+    echo "❌ sync_agents --check: $drift drift(s) found ($checked agents checked)"
+    exit 1
+  fi
+fi
+
+mkdir -p "$CLAUDE_DIR" "$GEMINI_DIR" "$GROK_DIR"
 
 created=0
 skipped=0
@@ -104,6 +164,7 @@ for canonical in "$CANONICAL_DIR"/*.md; do
   # Map tools
   claude_denied=$(map_tools "claude" "$tools_denied_line")
   gemini_tools=$(map_tools "gemini" "$tools_line")
+  grok_tools=$(map_tools "grok" "$tools_line")
 
   # Get body (everything after second ---)
   body=$(awk 'BEGIN{n=0} /^---$/{n++; if(n==2) next} n>=2{print}' "$canonical")
@@ -143,6 +204,24 @@ for canonical in "$CANONICAL_DIR"/*.md; do
       echo "$body"
     } > "$GEMINI_TARGET"
     echo "create: $GEMINI_TARGET"
+    created=$((created + 1))
+  fi
+
+  # --- Grok agent (non-destructive) ---
+  GROK_TARGET="$GROK_DIR/$filename"
+  if [ -f "$GROK_TARGET" ]; then
+    echo "SKIP (exists): $GROK_TARGET"
+    skipped=$((skipped + 1))
+  else
+    {
+      echo "---"
+      echo "name: ${filename%.md}"
+      echo "description: $description"
+      [ -n "$grok_tools" ] && echo "tools: [$grok_tools]"
+      echo "---"
+      echo "$body"
+    } > "$GROK_TARGET"
+    echo "create: $GROK_TARGET"
     created=$((created + 1))
   fi
 

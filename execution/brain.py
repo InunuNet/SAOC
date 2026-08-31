@@ -28,7 +28,9 @@ Database: .agent/memory/brain/ (project-local, persistent)
 import argparse
 import json
 import os
+import re
 import shutil
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -202,13 +204,60 @@ def stats():
     print(f"   Path: {brain_path.resolve()}")
 
 
+# The exact two-line header write_reboot() stamps on every file it generates.
+# Provenance is decided by matching this in full (not just the title line) —
+# see contract-f2.yaml notes.design_decision_guard for why an mtime guard was
+# rejected in favor of this.
+REBOOT_AUTO_HEADER_RE = re.compile(
+    r"\A# Reboot Context\n_Generated: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z_\n"
+)
+
+
+def _write_never_clobber(target: Path, content: str) -> Path:
+    """Write `content` to `target` without ever overwriting an existing file.
+
+    If `target` already exists (two writes landing on the same intended name —
+    e.g. a frozen clock producing the same timestamp twice, as under test), keep
+    appending a numeric suffix (`<stem>-1<suffix>`, `-2`, ...) until a free name
+    is found. Returns the path actually written to. Callers that want the
+    filename itself to carry a timestamp compute one into `target` before
+    calling this; this function's own fallback is deliberately plain so it
+    never stacks a second timestamp onto an already-timestamped name.
+    """
+    candidate = target
+    n = 1
+    while candidate.exists():
+        candidate = target.with_name(f"{target.stem}-{n}{target.suffix}")
+        n += 1
+    candidate.write_text(content)
+    return candidate
+
+
+def _reboot_utc_stamp() -> str:
+    """Microsecond-precision UTC timestamp for sibling filenames — fine enough
+    that two writes landing on the same one is rare even without the
+    collision guard in _write_never_clobber, which handles it regardless."""
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f") + "Z"
+
+
 def write_reboot(summary: str, next_items: list = None, facts: list = None, do_not_touch: list = None,
-                  closure_candidates: list = None, path=None):
-    """Write a lightweight reboot.md so the next session has instant context (<20 lines)."""
+                  closure_candidates: list = None, path=None, force_reboot: bool = False):
+    """Write a lightweight reboot.md so the next session has instant context (<20 lines).
+
+    reboot.md is the file agents read first at context-compaction/boot time, so an
+    unconditional overwrite risks destroying a hand-authored handoff (GH incident:
+    Omarchy v3.7.148). Provenance is decided from the file's own bytes: only a file
+    that carries write_reboot's own two-line header (or is absent) is safe to
+    overwrite silently. Anything else — hand-authored content, a near-miss title
+    without the stamp, or a present-but-empty file — is preserved untouched; the
+    auto summary is instead written to reboot.auto.md, and a loud WARN is emitted.
+    Pass force_reboot=True to opt into overwriting anyway; the prior content is
+    copied to a timestamped reboot.preserved-<UTC>.md sibling first.
+    """
     path = Path(path) if path else Path(".agent/memory/project/reboot.md")
     lines = [
         "# Reboot Context",
-        f"_Generated: {__import__('datetime').datetime.now(__import__('datetime').timezone.utc).strftime('%Y-%m-%dT%H:%M')}Z_",
+        f"_Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M')}Z_",
         "",
         "## What happened last session",
         summary,
@@ -223,8 +272,52 @@ def write_reboot(summary: str, next_items: list = None, facts: list = None, do_n
     if closure_candidates:
         lines += ["## Closure candidates (needs sign-off)",
                    *[f"- {item}" for item in closure_candidates[:5]], ""]
+    content = "\n".join(lines)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines))
+
+    existing_text = path.read_text() if path.exists() else None
+    is_provenanced = existing_text is not None and bool(REBOOT_AUTO_HEADER_RE.match(existing_text))
+
+    if existing_text is not None and not is_provenanced and not force_reboot:
+        # Absent (existing_text is None) is the only case exempt from this guard —
+        # present-but-unrecognized (hand-authored, near-miss header, or empty) must
+        # never be silently overwritten.
+        #
+        # The sidecar itself must never be clobbered either: nothing in the repo
+        # reads reboot.auto.md automatically, so a second (or Nth) diverted wrap-up
+        # silently overwriting it would destroy every summary between the first
+        # divert and whenever someone notices — trading one-time data loss for
+        # ongoing silent staleness, which is worse. The first divert writes
+        # reboot.auto.md itself; every one after that lands on a fresh
+        # reboot.auto-<UTC>.md sibling instead, so nothing already on disk is ever
+        # replaced and the newest file sorts last by name.
+        sidecar_base = path.parent / "reboot.auto.md"
+        if sidecar_base.exists():
+            sidecar = _write_never_clobber(
+                path.parent / f"reboot.auto-{_reboot_utc_stamp()}.md", content)
+        else:
+            sidecar = _write_never_clobber(sidecar_base, content)
+        print(
+            f"⚠️  WARN: {path} does not carry write_reboot's provenance header — "
+            f"it looks hand-authored, so it was left untouched. The auto-generated "
+            f"session summary was written to {sidecar} instead. Run "
+            f"`brain.py wrap-up --force-reboot` to overwrite {path} anyway (the "
+            f"current content is preserved to a timestamped reboot.preserved-*.md "
+            f"copy first)."
+        )
+        return
+
+    if existing_text is not None and not is_provenanced and force_reboot:
+        preserved = _write_never_clobber(
+            path.parent / f"reboot.preserved-{_reboot_utc_stamp()}.md", existing_text)
+        path.write_text(content)
+        print(f"⚠️  WARN: --force-reboot overwrote {path}; prior content preserved to {preserved}")
+        return
+
+    # existing_text is None (absent), or the existing file already carries our own
+    # provenance header (the everyday wrap-up-to-wrap-up path) — write in place,
+    # exactly as before, with no sidecar and no WARN.
+    path.write_text(content)
     print(f"📝 Reboot context written to {path}")
 
 
@@ -232,40 +325,80 @@ def write_reboot(summary: str, next_items: list = None, facts: list = None, do_n
 # subsystems are designed to keep in .agent/memory/scratch/. Exempt from
 # wrap_up()'s scratch purge unconditionally (including under --force).
 # Fixed filename set only — never a substring/regex match.
-SCRATCH_PURGE_EXEMPT = {"template_baselines.json", "compaction-hint.json"}
+SCRATCH_PURGE_EXEMPT = {"template_baselines.json", "compaction-hint.json", ".quota_status.json"}
+
+
+def _main_worktree_root(cwd: Path = None) -> Path:
+    """Resolve the main git worktree root, even when cwd is inside a linked worktree
+    (whose own active.json is a stale, branch-frozen snapshot — see golden doc F2).
+    Falls back to cwd itself when git resolution is unavailable (not a repo, git
+    missing, timeout, non-zero exit) — this preserves today's behavior for the
+    common single-worktree case and never raises."""
+    cwd = cwd or Path.cwd()
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(cwd), "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode != 0 or not result.stdout.strip():
+            return cwd
+        return Path(result.stdout.strip()).parent
+    except Exception:
+        return cwd
+
+
+def _should_skip_scratch_purge(cwd: Path = None) -> tuple:
+    """Decide whether wrap_up() should skip the scratch purge. Returns (skip, reason).
+
+    Reads active.json from the MAIN worktree root (see _main_worktree_root), and
+    resolves the mission path it names relative to that same root — never relative to
+    cwd, and never trusting a linked worktree's own (possibly stale) active.json copy.
+
+    Fail-safe: any read/parse failure once active.json is known to exist returns
+    skip=True (do NOT purge) rather than silently proceeding — ambiguous state must
+    fail toward not destroying scratch, matching the fail-safe direction already
+    established for clear_active()/GH #1333.
+    """
+    root = _main_worktree_root(cwd)
+    active_path = root / ".agent/memory/project/missions/active.json"
+    if not active_path.exists():
+        return False, None
+    try:
+        active_data = json.loads(active_path.read_text())
+        mission_rel = active_data.get("mission", "")
+        if not mission_rel:
+            return False, None
+        mission_file = root / mission_rel
+        if not mission_file.exists():
+            return False, None
+        mission_text = mission_file.read_text()
+        m = re.search(r'^status:\s*(\S+)', mission_text, re.MULTILINE)
+        if m and m.group(1) in ("in_progress", "pending"):
+            return True, f"active mission in progress: {mission_rel}"
+        return False, None
+    except Exception as e:
+        return True, f"could not verify active-mission state ({e}) — failing safe"
 
 
 def wrap_up(summary: str, tags: str = "", blockers: str = "", force: bool = False,
             next_items: list = None, facts: list = None, do_not_touch: list = None,
-            closure_candidates: list = None):
+            closure_candidates: list = None, force_reboot: bool = False):
     """End-of-session wrap-up: store summary + clear scratch."""
     # Write lightweight reboot context for next session
     write_reboot(summary, next_items=next_items, facts=facts, do_not_touch=do_not_touch,
-                 closure_candidates=closure_candidates)
+                 closure_candidates=closure_candidates, force_reboot=force_reboot)
     # Store the session summary
     mem_id = remember(summary, tags=tags or "session,wrap-up", source="wrap-up", blockers=blockers)
 
     # Guard: skip scratch purge if an active in-progress mission exists
     if not force:
-        import re as _re
-        import json as _json
-        active_path = Path(".agent/memory/project/missions/active.json")
-        if active_path.exists():
-            try:
-                active_data = _json.loads(active_path.read_text())
-                mission_path = active_data.get("mission", "")
-                if mission_path and Path(mission_path).exists():
-                    mission_text = Path(mission_path).read_text()
-                    # Extract status from YAML frontmatter
-                    m = _re.search(r'^status:\s*(\S+)', mission_text, _re.MULTILINE)
-                    if m and m.group(1) in ("in_progress", "pending"):
-                        print(
-                            "Warning:  Active mission detected — skipping scratch purge. "
-                            "Run brain.py wrap-up after mission close-out."
-                        )
-                        return mem_id
-            except Exception:
-                pass  # if we can't read active.json, proceed normally
+        skip, reason = _should_skip_scratch_purge()
+        if skip:
+            print(
+                "Warning:  Active mission detected — skipping scratch purge. "
+                f"({reason}) Run brain.py wrap-up after mission close-out."
+            )
+            return mem_id
 
     # Clear scratch files. SCRATCH_PURGE_EXEMPT is an explicit filename
     # allowlist for durable system state that legitimately lives in scratch
@@ -556,6 +689,9 @@ def main():
     p_wrap.add_argument("--blockers", "-b", default="", help="Comma-separated blocker tags")
     p_wrap.add_argument("--force", action="store_true",
                         help="Bypass active-mission guard and purge scratch unconditionally")
+    p_wrap.add_argument("--force-reboot", action="store_true", dest="force_reboot",
+                        help="Overwrite reboot.md even if it looks hand-authored "
+                             "(prior content is preserved to reboot.preserved-*.md first)")
     p_wrap.add_argument("--next", nargs="*", metavar="ITEM", dest="next_items",
                         help="Top priority items for next session (written to reboot.md)")
     p_wrap.add_argument("--facts", nargs="*", metavar="FACT",
@@ -608,7 +744,8 @@ def main():
                 next_items=getattr(args, "next_items", None),
                 facts=getattr(args, "facts", None),
                 do_not_touch=getattr(args, "do_not_touch", None),
-                closure_candidates=getattr(args, "closure_candidates", None))
+                closure_candidates=getattr(args, "closure_candidates", None),
+                force_reboot=getattr(args, "force_reboot", False))
     elif args.action == "last-session":
         last_session(args.quiet)
     elif args.action == "export":

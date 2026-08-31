@@ -12,6 +12,7 @@ CLAUDE_RULES_DIR=".agent/rules/claude"
 GEMINI_RULES_DIR=".agent/rules/gemini"
 CLAUDE_DEST_DIR=".claude/rules"
 GEMINI_DEST_DIR=".gemini/rules"
+GROK_DEST_DIR=".grok/rules"
 
 # Safety: refuse to run if no canonical source exists.
 # Without this guard, the find -delete below would wipe destinations with nothing to restore.
@@ -21,12 +22,13 @@ if [ ! -d "$CORE_RULES_DIR" ] && [ ! -d "$CLAUDE_RULES_DIR" ]; then
     exit 1
 fi
 
-mkdir -p "$CLAUDE_DEST_DIR" "$GEMINI_DEST_DIR"
+mkdir -p "$CLAUDE_DEST_DIR" "$GEMINI_DEST_DIR" "$GROK_DEST_DIR"
 
 # Sync core rules → all platforms
 if [ -d "$CORE_RULES_DIR" ] && ls "$CORE_RULES_DIR"/*.md >/dev/null 2>&1; then
     rsync -a --delete --include="*.md" --exclude="*" "$CORE_RULES_DIR/" "$CLAUDE_DEST_DIR/"
     rsync -a           --include="*.md" --exclude="*" "$CORE_RULES_DIR/" "$GEMINI_DEST_DIR/"
+    rsync -a           --include="*.md" --exclude="*" "$CORE_RULES_DIR/" "$GROK_DEST_DIR/"
 fi
 
 # Sync Claude-specific rules (added on top of core)

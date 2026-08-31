@@ -478,13 +478,17 @@ flat-over-nested-submenu pattern.
   validator, the server validator, and the HTML `pattern` hint. Gate 8/8 pass, QA PASS, Codex
   GPT-5.5 found and confirmed the fix for a whitespace-only bypass mid-mission, re-ran clean. See
   `docs/vendor-form-maxlength-and-phone-pattern.md`.
-- [ ] **[P2] Vendor form all-caps labels are hard to read.** `font-mono text-[11px] uppercase
+- [x] **[P2] Vendor form all-caps labels are hard to read.** `font-mono text-[11px] uppercase
   tracking-[0.16em]` across five shared components. Contrast passes at 5.24:1 — the problem is
   11px + uppercase + 1.76px letter-spacing combined, not colour. Brad found it genuinely hard to
   read at length, and he is the decision-maker, so this is authorised, not invented brand work.
   First check whether the treatment is scoped to the vendor components or shared site-wide; a fix
   must not silently diverge the vendor form's typography from the rest of the site. Recommendation:
   keep the mono/letter-spacing character, drop `uppercase` for sentence case.
+  **DONE 2026-08-25** — treatment was NOT vendor-scoped, it was site-wide (30 files/40
+  occurrences, no shared label component). Fixed site-wide per the item's own constraint above.
+  Gate 5/5 pass, QA PASS, Codex GPT-5.5 PASS after two real fix rounds (broken contract-check
+  scripts, not the production fix). See `docs/vendor-form-label-readability.md`, commit 574238f.
 - [x] **[P2] Admission ticket list-mode card `<Link>` lacks custom focus ring.** ~~`TicketTypeCard.tsx`'s
   list-mode wrapper has no `focus-visible:ring-*` class and falls back to the default browser outline.~~
   Fixed 2026-08-25 via `tickettypecard-focus-ring` mission F1 — list-mode `<Link>` now carries the same
@@ -500,6 +504,33 @@ flat-over-nested-submenu pattern.
 
 ## Vendor registration
 
+- [ ] **[P1] F7's registration-token gate (vendor-gated-registration-flow, 2026-08-31) blocks
+  ~20 pre-existing Playwright checks across four already-shipped, closed mission contracts from
+  ever reaching `/national-show/vendors/register` again.** Every one of these checks does a bare
+  `page.goto('${BASE_URL}/national-show/vendors/register')` with no `?token=`; F7 now renders only
+  the generic "This registration link is invalid or has expired." message on that path, so every
+  `#vendor-register-<field>` locator times out regardless of what the check is actually trying to
+  prove. Affected: `.agent/memory/project/specs/vendor-form-client-validation-gate/contract-f1.yaml`
+  (6 checks), `.agent/memory/project/specs/vendor-boothcount-guarded-parse/contract-f1.yaml` (4
+  checks), `.agent/memory/project/specs/vendorcategory-aria-required-enforcement/contract-f1.yaml`
+  (3 checks), `.agent/memory/project/specs/vendor-form-maxlength-and-phone-pattern/contract-f1.yaml`
+  (2 checks) — file lists in each yaml's `command:` lines. None of these four contracts are wired
+  into `contract-vendor-gated-registration-flow.yaml`'s own gate (confirmed: `grep -l` across
+  `contracts/*.yaml` for each check-directory name returns nothing), so this does NOT block that
+  mission's demo gate — but leaving it unrecorded would repeat exactly the "silently unreachable
+  is worse than red" mistake already flagged above for `ticketing-hardening/`.
+  **Prescribed fix** (not built yet — deliberately deferred past the 2026-08-31 demo, this is real
+  new engineering, not a same-night patch): a single shared seed/mint/teardown fixture helper,
+  mirroring `door-test-qr-seeder`'s already-proven real-Firestore pattern (see
+  `contracts/contract-door-test-qr-seeder.yaml`) — writes one recognisable-fixture
+  `vendorApplications` doc (`status: 'approved'`, no `registrationTokenConsumedAt`, an
+  obviously-fixture email like `fixture@vendor-registration-check.invalid`), mints a real token
+  for it via `mintVendorRegistrationToken` (real `VENDOR_REGISTRATION_TOKEN_SECRET`, no emulator
+  needed — this only needs a live Firestore write, not the HTTP-authenticated admin review route),
+  hands each check `?token=<minted>` to navigate with, and tears the doc down after every run.
+  Must also add the fixture's applicationId to `scripts/scan-firestore-residue.ts`'s exemption
+  list the same way the door-test-qr fixtures are exempted — skipping that step would repeat the
+  sentinel-corruption defect class already logged under "Contract checks mutate live content."
 - [ ] **[P2] Permit fields ask for a number but should collect the actual document.** Brad:
   "when we ask for a document it needs to actually upload a document, save it and email it as an
   attachment." Affects `phytosanitaryPermitNumber`, `citesPermitNumber`,
@@ -1001,3 +1032,105 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-24-make-backlog-hygiene-self-enforcing-acro.md
 
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-update-template-write-safety-hardening.md
+
+- [ ] SAOC (Feature, P2): approved 2027 vendors need a public-facing vendor directory. Brad,
+  2026-08-25: once a vendor application is approved by the council in admin (existing F6/F7
+  vendor review workflow, app/admin/vendors), that approval should also make the vendor visible
+  on the front end of the website as part of a public vendor database/directory — not just
+  internal admin state as it is today. Not yet specced or built. Relates to the still-open
+  vendor↔ticket-linkage question above (backlog entry same day) — worth resolving both together
+  since both concern what "approved" triggers.
+  Addendum, Brad 2026-08-25: the vendor registration form should also let the vendor upload a
+  logo and possibly marketing/product photos, so the front-end directory entry shows imagery,
+  not just text. Confirmed against the newer source doc (2027_SAOC_National_Show_Vendor_
+  Registration_Form.docx) — its "Marketing" section already asks for a logo upload and photo/
+  marketing-use permission, which the live 31-field form does not currently collect at all. This
+  should be picked up together with the vendor-form rebuild against that document (see the
+  line-by-line comparison note above) rather than bolted on separately.
+
+- [ ] SAOC (Open Question, P1): vendor/exhibitor registration ↔ ticket purchase relationship —
+  needs discussion with Lia before any build. Raised 2026-08-25. Current state: the two systems
+  are fully disconnected — `vendorSubmissions` (booth application → admin review → manual
+  approval/booth assignment) has no link to `orders`/`tickets` or any Sanity `ticketType`, and no
+  exhibitor/vendor ticket category exists yet (nav entries are placeholder "not yet open").
+  Brad's open questions, unresolved: (1) does a vendor/exhibitor need to complete registration
+  AND buy a ticket, or does registering serve as the "application" for a ticket the council
+  issues afterward? (2) should approval trigger SAOC sending the vendor a payment request/invoice
+  rather than the vendor self-serving a straight checkout like a regular attendee? (3) if
+  approval-gated, what happens if a vendor is declined after registering — refund/no-charge path
+  needs defining. Do not build anything here until this is resolved with Lia — this is a
+  commercial/process decision, not an engineering one.
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-harness-overwrite-guard-104-baseline-fix.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-yaml-authoring-guardrails.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-symlink-guard-init-golden.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-2-mission-nudge-slug-gate.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-3-glob-force-multiline.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-4-mission-file-audit-script-fixes.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-5-gate-path-quota-flock-fixes.md
+
+- [ ] SAOC (Contract decay, P2): `contracts/checks/vendor-form-ui/` A2 (`check-field-spec-key-completeness.mjs`)
+  is stale, unrelated to `vendor-registration-form-rebuild` F2 — found and confirmed pre-existing
+  2026-08-25 during F2's Codex-fix round. `field-spec.golden.json` was written when
+  `buildVendorSubmission()` returned exactly 31 fields (Aug-18 creation commit); it now returns 86
+  (31 original + 55 added since, mostly by F1 of this mission). A2 mechanically regexes the ENTIRE
+  return-object literal with no code boundary separating public-form fields from admin/logistics
+  fields the public form never renders (confirmed via A4, which renders the real fieldset
+  components — dozens of the 55 added fields, e.g. gasCylinderSize/wasteTypes/
+  hasPublicLiabilityInsurance, are never rendered by VendorRegisterForm at all). So the fix is NOT
+  "fill in the golden's 55 missing entries" (that would assert something false about what the
+  public form renders) — it's a scoping bug in A2's derivation logic itself: it should derive its
+  "real keys" from `VendorRegisterFormState` (the actual public-form shape, currently 45 fields),
+  not from `buildVendorSubmission()`'s full draft type. Needs an @architect pass to re-scope A2 (or
+  split it: one check for public-form completeness against `VendorRegisterFormState`, a separate
+  one — if wanted — for admin/logistics field coverage). Not blocking any current mission; this
+  contract predates and is independent of `vendor-registration-form-rebuild`.
+  Related, same discovery pass: `.agent/memory/project/specs/vendor-registration-form-rebuild/
+  checks/fixtures/vendor-submission-f1-typecheck.ts`'s `oldMinimal` fixture (an archived snapshot
+  proving "F1 made nothing newly required") now legitimately fails to compile because F2
+  correctly made physicalAddress/emergencyContactName/emergencyContactCellPhone required. Not
+  wired into Makefile/execution as a live gate, so it's not currently failing anything — but it's
+  now a stale/misleading artifact and should be retired or annotated as superseded-by-F2 rather
+  than silently left to rot.
+  Also, pre-existing and unrelated to F2 (found same pass, not fixed): `vendor-form-ui`'s A4
+  (`check-fieldset-render-completeness`) fails on foodHandlingCertificateNumber/foodItemList
+  because its full-state fixture's `vendorCategory` never includes `'food-retailer'`, so those
+  conditionally-gated fields never render in the check. Traces to the original Aug-18 commit, not
+  introduced by this mission.
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-6-checkpoint-autofind-stale-assertion-docs.
+
+- [ ] SAOC (Contract decay, P3): 4 more pre-existing, unrelated-to-`vendor-registration-form-rebuild`
+  contract failures found and confirmed (via diff-stash re-run, failures identical before/after)
+  during F2's QA sweep, 2026-08-25/26:
+  1. `vendor-f6-review-workflow/check-capability-added-and-role-bundles.mjs` — CAPABILITIES array
+     count/order drift, unrelated feature.
+  2. `vendor-f5-register-route/check-env-scrub-effective.mjs` — env-scrub test-harness issue,
+     unrelated to vendor fields.
+  3. `vendor-f3-showcase-page/check-untouched-scope.mjs` — unrelated file-hash drift on the
+     exhibitors page / tickets ITN route.
+  4. `vendor-form-ui/check-fieldset-render-completeness.mjs` — missing labels for
+     `foodHandlingCertificateNumber`/`foodItemList` (same pre-existing gap already logged above
+     under "Contract decay, P2" for this contract's A2).
+  None block any current mission's gate (each contract lives outside `vendor-registration-form-
+  rebuild`'s own contract-f1/f2.yaml). Worth a dedicated contract-decay audit pass at some point —
+  see the existing P1 backlog item "Audit remaining contracts for the weak-assertion defect
+  class."
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-7-gate-autofind-frontmatter-guard-fixes.md
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-8-contract-mask-hotfix1298-symlink-parity.m
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-9-fetch-order-agent-drift-crossmodel-docs.m
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-10-fullboot-redaction-checkpoint-surfacing.
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-11-negation-attachment-pollkill-procgroup.m
+
+- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-26-grok-cli-provider-support.md

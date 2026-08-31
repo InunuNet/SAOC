@@ -27,11 +27,33 @@ fi
 unset _HARNESS_MISSING _critical_file
 
 # Auto-update check: compare local template_version to upstream
-# Prefer .agent/.template_state (updater-owned, written on every fully
-# successful --apply run) over profile.json, which can lag or never move if
-# a prior run bailed early — falls back to profile.json when state file is
-# missing or unparsable (issue #1295/#1312).
-CURRENT_VER=$(python3 -c "import json; print(json.load(open('.agent/.template_state')).get('template_version','0'))" 2>/dev/null || python3 -c "import json; print(json.load(open('.agent/profile.json')).get('template_version','0'))" 2>/dev/null || echo "0")
+# Prefer .agent/.template_state (updater-owned, rewritten by every --apply run
+# and carrying its own delivery=complete|partial field) over profile.json,
+# which can lag or never move if a prior run bailed early — falls back to
+# profile.json when the state file is missing, unparsable, or carries no
+# usable template_version (issue #1295/#1312, delivery-integrity F4b).
+#
+# Each resolver EXITS NON-ZERO rather than printing a sentinel when its source
+# yields nothing usable. `||` is an exit-status operator, so the old
+# .get('template_version','0') could never trigger the fallback: on a stamp
+# that existed and parsed but whose key was absent, empty, null or
+# whitespace-only, python printed "0" and exited 0, the profile.json fallback
+# was unreachable, and "0" sorts below every real version — a permanent
+# "update available" that no update could ever clear. The final fallback is an
+# EMPTY string, never a fabricated version, so an undetermined version is
+# reported as undetermined instead of compared.
+#
+# The first resolver also requires the stamp's workspace_id to match THIS
+# workspace (delivery-integrity F4b). .agent/.template_state is a tracked
+# file, so every clone and fork inherits the upstream workspace's stamp and
+# would otherwise display an inherited version as its own in the banner — the
+# most-read surface in the harness. A foreign stamp is an unusable SOURCE,
+# exactly like a missing or unparseable one, so it falls through to the
+# profile.json fallback rather than abandoning resolution. The identity
+# formula is duplicated from _workspace_identity() in update_template.py by
+# necessity: boot must resolve the version without importing the updater (it
+# may not exist yet in a half-delivered workspace). Keep the two in step.
+CURRENT_VER=$(python3 -c "import hashlib,json,os,sys; d=json.load(open('.agent/.template_state')); v=str(d.get('template_version') or '').strip(); sys.exit(1) if not v or d.get('workspace_id') != hashlib.sha256(os.path.realpath(os.getcwd()).encode('utf-8')).hexdigest()[:16] else print(v)" 2>/dev/null || python3 -c "import json,sys; v=str(json.load(open('.agent/profile.json')).get('template_version') or '').strip(); sys.exit(1) if not v else print(v)" 2>/dev/null || echo "")
 _UPDATE_CHECK_ERR=$(mktemp)
 _UPDATE_CHECK_OUT=$(mktemp)
 # Bound the `gh api` call so a blackholed call can never hang boot. `timeout`/
@@ -46,14 +68,24 @@ _GH_TIMEOUT_BIN="$(command -v timeout 2>/dev/null || command -v gtimeout 2>/dev/
 if [ -n "$_GH_TIMEOUT_BIN" ]; then
   LATEST_VER=$("$_GH_TIMEOUT_BIN" 3 gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' 2>"$_UPDATE_CHECK_ERR" | base64 -d 2>>"$_UPDATE_CHECK_ERR" | tr -d '\n' || echo "")
 else
-  gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' >"$_UPDATE_CHECK_OUT" 2>"$_UPDATE_CHECK_ERR" &
-  _GH_PID=$!
+  # ATHANOR_POLL_KILL_FALLBACK_BEGIN
+  _GH_SETSID_BIN="$(command -v setsid 2>/dev/null || echo "")"
+  if [ -n "$_GH_SETSID_BIN" ]; then
+    "$_GH_SETSID_BIN" gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' >"$_UPDATE_CHECK_OUT" 2>"$_UPDATE_CHECK_ERR" &
+    _GH_PID=$!
+  else
+    set -m
+    gh api repos/InunuNet/Athanor/contents/.agent/version --jq '.content' >"$_UPDATE_CHECK_OUT" 2>"$_UPDATE_CHECK_ERR" &
+    _GH_PID=$!
+    set +m
+  fi
   _WAITED=0
   while kill -0 "$_GH_PID" 2>/dev/null && [ "$_WAITED" -lt 3 ]; do
     sleep 1
     _WAITED=$((_WAITED + 1))
   done
   if kill -0 "$_GH_PID" 2>/dev/null; then
+    kill -9 -- -"$_GH_PID" 2>/dev/null
     kill -9 "$_GH_PID" 2>/dev/null
     wait "$_GH_PID" 2>/dev/null
     echo "gh api timed out after ${_WAITED}s (no timeout/gtimeout on PATH — bounded via background poll-kill fallback)" >> "$_UPDATE_CHECK_ERR"
@@ -62,13 +94,14 @@ else
     wait "$_GH_PID" 2>/dev/null
     LATEST_VER=$(base64 -d <"$_UPDATE_CHECK_OUT" 2>>"$_UPDATE_CHECK_ERR" | tr -d '\n')
   fi
-  unset _GH_PID _WAITED
+  unset _GH_PID _WAITED _GH_SETSID_BIN
+  # ATHANOR_POLL_KILL_FALLBACK_END
 fi
 if [ -z "$LATEST_VER" ] && [ -s "$_UPDATE_CHECK_ERR" ]; then
   # Redact token-shaped substrings and cap length before echoing gh's raw
   # stderr into boot output — an unbounded/unredacted blob must never reach
   # session output verbatim.
-  _ERR_MSG=$(tail -c 500 "$_UPDATE_CHECK_ERR" 2>/dev/null | tr -d '\n' | sed -E 's/[A-Za-z0-9_]{20,}/[redacted]/g' | cut -c1-100)
+  _ERR_MSG=$(tail -c 500 "$_UPDATE_CHECK_ERR" 2>/dev/null | tr -d '\n' | sed -E 's#[A-Za-z0-9_./+=-]{20,}#[redacted]#g' | cut -c1-100)
   echo "⚠️  update check failed: $_ERR_MSG"
   unset _ERR_MSG
 fi
@@ -78,28 +111,45 @@ ACTIVE_MISSION=$(python3 -c "import json,pathlib; d=json.loads(pathlib.Path('.ag
 # Detect-and-prompt only — boot never applies template updates itself, in either
 # the mission-active or no-mission case. See .claude/rules/behavior.md "Ask
 # Before Destructive Actions" and mission harness-integrity-hardening F5.
-if [[ -n "$LATEST_VER" && "$CURRENT_VER" != "$LATEST_VER" ]]; then
+# The banner reads TWO different files: the session header above displays
+# `cat .agent/version`, while this comparison uses CURRENT_VER from
+# .template_state. Both can be individually correct and jointly incoherent —
+# the shape a consumer hit as header "v3.7.149" beside "template 3.7.123 → ..."
+# (delivery-integrity F4b). Resolve the displayed version here and say so when
+# the two sites disagree, rather than quietly presenting two installed
+# versions as one. The note is printed from EVERY branch of the chain below,
+# including the no-update-available one: divergence is a property of the local
+# records alone, so gating it on "an update is available" hid it in the most
+# common fleet state -- workspace up to date, or `gh` offline and LATEST_VER
+# empty -- which is precisely when nothing else surfaces the incoherence.
+_VER_NOTE_LF=$'\n'
+DISPLAY_VER=$(tr -d '[:space:]' < .agent/version 2>/dev/null || echo "")
+VER_DIVERGENCE_NOTE=$(if [[ -n "$DISPLAY_VER" && -n "$CURRENT_VER" && "$DISPLAY_VER" != "$CURRENT_VER" ]]; then printf '   \xe2\x9a\xa0\xef\xb8\x8f  Version records diverge: this session displays v%s (.agent/version) but the last recorded delivery is %s (.agent/.template_state) — run "make update-template" to review and converge them.\n' "$DISPLAY_VER" "$CURRENT_VER"; fi)
+if [[ -n "$LATEST_VER" && -z "$CURRENT_VER" ]]; then
+  echo "⚠️  Harness update check: the installed template version is UNKNOWN — cannot determine it from .agent/.template_state or .agent/profile.json, so upstream $LATEST_VER is not being compared against a fabricated number."
+  printf '%s' "${VER_DIVERGENCE_NOTE:+$VER_DIVERGENCE_NOTE$_VER_NOTE_LF}"
+elif [[ -n "$LATEST_VER" && "$CURRENT_VER" != "$LATEST_VER" ]]; then
   echo "⬆️  HARNESS UPDATE AVAILABLE: template $CURRENT_VER → $LATEST_VER"
   echo "   Run 'make update-template' to review and apply it (boot never applies updates automatically)."
+  printf '%s' "${VER_DIVERGENCE_NOTE:+$VER_DIVERGENCE_NOTE$_VER_NOTE_LF}"
+else
+  printf '%s' "${VER_DIVERGENCE_NOTE:+$VER_DIVERGENCE_NOTE$_VER_NOTE_LF}"
 fi
 
 python3 execution/checks/verify_model_env_boot.py boot_report || true  # Model-env boot guard (#1332), non-fatal
 python3 execution/checks/verify_all_contracts_parse.py || true  # Contract-parse boot canary (assertion-shape-sweep F4), non-fatal
 
-# Step 0.5: Quota-death warm restart — one-shot checkpoint left by quota_death_checkpoint.sh (StopFailure)
-QUOTA_CP=".agent/memory/scratch/.quota_death_checkpoint.json"
-if [ -f "$QUOTA_CP" ]; then
-  echo "--- QUOTA RECOVERY ---"
-  jq -r '.recovery_message // "⚡ QUOTA RECOVERY: prior session died — see .quota_death_checkpoint.json"' "$QUOTA_CP" 2>/dev/null || echo "⚡ QUOTA RECOVERY: prior session died"
-  MISSION_NAME="$(jq -r '.active_mission // empty' "$QUOTA_CP" 2>/dev/null || true)"
-  if [ -n "$MISSION_NAME" ] && [ "$MISSION_NAME" != "null" ]; then
-    echo "   Active mission at death: $MISSION_NAME"
-  fi
-  rm -f "$QUOTA_CP" 2>/dev/null || true   # one-shot: consume so we never replay
-  echo ""
-fi
+# Step 0.5: Quota-death warm restart — one-shot checkpoint left by quota_death_checkpoint.sh
+# (StopFailure) or inject_pressure.sh (proactive, >=90% quota). quota_death_detect
+# disambiguates a genuine crash from a proactive checkpoint followed by a clean exit
+# by comparing the checkpoint's timestamp against the SessionEnd clean-exit marker
+# (ATHANOR_QUOTA_DEATH_CHECKPOINT_PATH / ATHANOR_SESSION_CLEAN_EXIT_MARKER_PATH overridable).
+# shellcheck source=execution/hooks/lib/quota_death_detect.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/quota_death_detect.sh"
+quota_death_detect
 
 echo "--- ACTIVE MISSION ---"
+python3 execution/checks/print_active_checkpoint.py .agent/memory/project/missions/active.json 2>/dev/null || true
 # wrap_mission.sh's own clear step (post close-out) writes active.json as
 # {"mission": null, ...} rather than unlinking it -- so gate on the "mission"
 # field being non-null/non-empty, not merely on the file existing, or a
@@ -336,6 +386,18 @@ else
   fi
 fi
 
+# Step 4.1: Diverted-reboot warning — write_reboot() (execution/brain.py) refuses to
+# overwrite a reboot.md it doesn't recognize as its own (hand-authored / near-miss /
+# empty) and instead writes the session summary to reboot.auto.md beside it. If that
+# sidecar is newer than reboot.md, wrap-up has been writing there — possibly for
+# several sessions — while this boot keeps serving the older, unreplaced reboot.md
+# above. Surface it every session until resolved, not just once at divert time.
+AUTO_SIDECAR=".agent/memory/project/reboot.auto.md"
+if [ -f "$AUTO_SIDECAR" ] && { [ ! -f "$REBOOT_FILE" ] || [ "$AUTO_SIDECAR" -nt "$REBOOT_FILE" ]; }; then
+  echo "⚠️  WARN: $AUTO_SIDECAR is newer than $REBOOT_FILE — reboot.md is not being updated by wrap-up (provenance check keeps failing). Review $AUTO_SIDECAR and its reboot.auto-*.md history, then run \`brain.py wrap-up --force-reboot\` to resume writing reboot.md directly."
+  echo ""
+fi
+
 # Step 4.5: Inbox Processing
 INBOX_DIR=".agent/memory/project/inbox"
 # Check if there are any non-directory files in INBOX_DIR
@@ -357,6 +419,18 @@ BLOCKER_OUTPUT=$(python3 execution/brain.py scan-blockers 2>&1)
 echo "$BLOCKER_OUTPUT"
 if ! echo "$BLOCKER_OUTPUT" | grep -q "No recurring blockers detected."; then
   echo "⚠️  Recurring blockers detected! Run /pain-point-monitor for root cause analysis."
+fi
+echo ""
+
+echo "--- BACKLOG HYGIENE ---"
+if [ -f .agent/memory/project/backlog.md ]; then
+  bash execution/backlog_audit.sh || true
+  _OPEN_COUNT=$(grep -c '^- \[ \]' .agent/memory/project/backlog.md 2>/dev/null || echo 0)
+  _MAX_OPEN_CFG="${BACKLOG_TRIM_MAX_OPEN:-50}"
+  if [ "$_OPEN_COUNT" -gt "$_MAX_OPEN_CFG" ] 2>/dev/null; then
+    echo "⚠️  BACKLOG: $_OPEN_COUNT open items exceeds MAX_OPEN=$_MAX_OPEN_CFG — run 'make backlog-trim' or close out the active mission soon."
+  fi
+  unset _OPEN_COUNT _MAX_OPEN_CFG
 fi
 echo ""
 
@@ -438,5 +512,13 @@ echo ""
 echo "--- GIT REMOTES ---"
 git remote -v 2>/dev/null || echo "(not a git repo)"
 echo ""
+
+# Loud-not-silent boot detection (GH #1366 P0): downstream commands
+# (mission.py resume, contract.py) consult this marker via
+# execution/checks/verify_boot_ran.py to warn when a session proceeded
+# without boot context ever being injected (e.g. Grok, which discards
+# SessionStart stdout).
+mkdir -p .agent/memory/scratch 2>/dev/null
+date +%s > .agent/memory/scratch/.last_full_boot_ts 2>/dev/null || true
 
 echo "════ BOOT COMPLETE — all context loaded ════"

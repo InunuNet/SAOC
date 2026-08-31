@@ -25,6 +25,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import NamedTuple
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -107,18 +108,36 @@ def parse_mission_file(path: str) -> tuple[dict, str]:
     if not content.startswith("---"):
         print(f"ERROR: {path} has no YAML frontmatter", file=sys.stderr)
         sys.exit(1)
-    # Split on second ---
-    parts = content.split("---", 2)
-    if len(parts) < 3:
+    # Locate the frontmatter boundaries: exact, column-0, delimiter-only lines.
+    # A raw substring split would miscount if "---" appears embedded inside a
+    # YAML scalar value in the frontmatter (e.g. a quoted notes/inline_brief field).
+    boundary_offsets = []
+    offset = 0
+    for line in content.splitlines(keepends=True):
+        if line.rstrip("\n").rstrip("\r") == "---":
+            boundary_offsets.append(offset)
+            if len(boundary_offsets) == 2:
+                break
+        offset += len(line)
+    if len(boundary_offsets) < 2:
         print(f"ERROR: {path} frontmatter is not closed with ---", file=sys.stderr)
         sys.exit(1)
-    raw_fm = parts[1].strip()
-    body = parts[2] if len(parts) > 2 else ""
+    start, end = boundary_offsets
+    raw_fm = content[start + 3:end].strip()
+    body = content[end + 3:]
 
     yaml = _load_yaml()
     if yaml:
         try:
             fm = yaml.safe_load(raw_fm)
+        except yaml.YAMLError as e:
+            from yaml_safe import diagnose_scalar_break
+            msg = f"ERROR: YAML parse error in {path}: {e}"
+            hint = diagnose_scalar_break(raw_fm, e)
+            if hint:
+                msg += f"\n  hint: {hint}"
+            print(msg, file=sys.stderr)
+            sys.exit(1)
         except Exception as e:
             print(f"ERROR: YAML parse error in {path}: {e}", file=sys.stderr)
             sys.exit(1)
@@ -135,7 +154,7 @@ def parse_mission_file(path: str) -> tuple[dict, str]:
 
 def write_mission_file(path: str, fm: dict, body: str):
     """Atomically write mission file."""
-    content = _dump_frontmatter(fm) + body
+    content = _dump_frontmatter(fm) + "\n" + body.lstrip("\n")
     tmp = path + ".tmp"
     Path(tmp).write_text(content)
     os.replace(tmp, path)
@@ -175,14 +194,43 @@ def clear_active(mission_path: str | None = None):
     field resolves to the same path — this is the fix for GH #1333, where
     an unconditional clear let pausing one mission wipe another's active
     pointer.
+
+    If active.json exists but cannot be parsed as a JSON object, this is distinct
+    from "no active mission": a warning is printed to stderr and the file
+    is left untouched (returns False) so a human can inspect it.
     """
     if not ACTIVE_JSON.exists():
         return False
     if mission_path is not None:
-        active = read_active()
+        try:
+            active = json.loads(ACTIVE_JSON.read_text())
+        except (json.JSONDecodeError, OSError) as e:
+            print(
+                f"WARNING: active.json exists but is corrupted ({e}) -- "
+                "could not confirm clear; manual inspection needed",
+                file=sys.stderr,
+            )
+            return False
+        if not isinstance(active, dict):
+            print(
+                f"WARNING: active.json exists but is corrupted (expected a JSON "
+                f"object, got {type(active).__name__}) -- could not confirm "
+                "clear; manual inspection needed",
+                file=sys.stderr,
+            )
+            return False
         if not active or not active.get("mission"):
             return False
-        if Path(active["mission"]).resolve() != Path(mission_path).resolve():
+        mission_value = active["mission"]
+        if not isinstance(mission_value, str):
+            print(
+                f"WARNING: active.json exists but is corrupted (expected \"mission\" "
+                f"to be a string, got {type(mission_value).__name__}) -- could not "
+                "confirm clear; manual inspection needed",
+                file=sys.stderr,
+            )
+            return False
+        if Path(mission_value).resolve() != Path(mission_path).resolve():
             return False
     ACTIVE_JSON.unlink()
     return True
@@ -202,6 +250,29 @@ def emit_compaction_hint(trigger: str, reason: str) -> None:
 
 # ── Subcommands ────────────────────────────────────────────────────────────────
 
+_SLUG_INJECTION_ACTION_WORDS = {"ignore", "disregard", "override"}
+_SLUG_INJECTION_TARGET_WORDS = {"previous", "prior", "instructions", "instruction", "system", "prompt"}
+_SLUG_INJECTION_STRONG_PAIRS = {
+    frozenset({"system", "prompt"}),
+    frozenset({"previous", "instructions"}),
+    frozenset({"previous", "instruction"}),
+    frozenset({"prior", "instructions"}),
+    frozenset({"prior", "instruction"}),
+}
+
+
+def _slug_looks_like_injection(slug: str) -> bool:
+    tokens = [t for t in re.split(r"[^a-z0-9]+", slug.lower()) if t]
+    for a, b in zip(tokens, tokens[1:]):
+        if a in _SLUG_INJECTION_ACTION_WORDS and b in _SLUG_INJECTION_TARGET_WORDS:
+            return True
+        if b in _SLUG_INJECTION_ACTION_WORDS and a in _SLUG_INJECTION_TARGET_WORDS:
+            return True
+        if frozenset({a, b}) in _SLUG_INJECTION_STRONG_PAIRS:
+            return True
+    return False
+
+
 TERMINAL_MISSION_STATUS = {"done", "abandoned"}
 
 
@@ -213,7 +284,7 @@ def cmd_new(args):
         prior_path = Path(active["mission"])
         if prior_path.exists():
             try:
-                prior_fm, _ = parse_mission_file(str(prior_path))
+                prior_fm, prior_body = parse_mission_file(str(prior_path))
             except SystemExit:
                 if not getattr(args, "force", False):
                     print(
@@ -249,9 +320,17 @@ def cmd_new(args):
                     f"(status={prior_fm.get('status')!r}): {prior_path}",
                     file=sys.stderr,
                 )
+                prior_fm["force_orphaned_at"] = now_iso()
+                write_mission_file(str(prior_path), prior_fm, prior_body)
 
     goal = args.goal
     slug = args.slug if args.slug else re.sub(r"[^a-z0-9]+", "-", goal.lower()).strip("-")[:40]
+
+    if _slug_looks_like_injection(slug):
+        print(f"ERROR: mission slug '{slug}' looks like a prompt-injection payload, not a technical slug", file=sys.stderr)
+        print("Use a plain technical slug (e.g. 'fix-widget-loader') instead.", file=sys.stderr)
+        sys.exit(1)
+
     date_prefix = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     filename = f"{date_prefix}-{slug}.md"
     out_path = MISSIONS_DIR / filename
@@ -313,7 +392,7 @@ def cmd_new(args):
     print(f"Active:  {ACTIVE_JSON}")
     print(f"Next:    Edit {out_path} to add features and milestones, then run:")
     print(f"           python3 execution/mission.py validate {out_path}")
-    print("ACTION_REQUIRED: /compact")
+    emit_compaction_hint("mission_new", slug)
 
 
 def cmd_validate(args):
@@ -598,6 +677,12 @@ def cmd_checkpoint(args):
 
     feature["status"] = new_status
 
+    slug = fm.get("slug", Path(args.mission).stem)
+    if new_status == "in_progress" and old_status != "in_progress":
+        _record_feature_baseline(slug, fid)
+    if new_status == "done":
+        _record_feature_completion(slug, fid)
+
     if new_status == "in_progress" and not feature.get("started_at"):
         feature["started_at"] = now_iso()
     if new_status == "done" and not feature.get("completed_at"):
@@ -621,15 +706,118 @@ def cmd_checkpoint(args):
         if not fm.get("started_at"):
             fm["started_at"] = ts
 
-    # Update active.json checkpoint
+    # Update active.json checkpoint — only if it still points at a real mission.
+    # A cleared active.json (mission: null, written by wrap_mission.sh at close-out)
+    # is a truthy dict, so a bare `if active:` guard here rewrote the literal
+    # Python None into the string "None" via write_active's str(mission_path).
+    # Guard on the mission value itself, not just the dict's presence.
     active = read_active()
-    if active:
+    if active and active.get("mission"):
         write_active(active["mission"], fm["last_checkpoint"])
 
     write_mission_file(args.mission, fm, body)
     if new_status == "done":
         emit_compaction_hint("checkpoint", fid)
     print(f"Checkpoint: {fid} {old_status} → {new_status}")
+
+
+TOUCHED_LEDGER_SCHEMA = "athanor.mission-touched-files/v1"
+
+
+def _touched_ledger_path(slug: str) -> Path:
+    return MISSIONS_DIR / f"{slug}.touched.json"
+
+
+def _read_touched_ledger(slug: str) -> dict:
+    path = _touched_ledger_path(slug)
+    if not path.exists():
+        return {"schema": TOUCHED_LEDGER_SCHEMA, "slug": slug, "pending_baselines": {}, "paths": []}
+    try:
+        data = json.loads(path.read_text())
+    except Exception:
+        return {"schema": TOUCHED_LEDGER_SCHEMA, "slug": slug, "pending_baselines": {}, "paths": []}
+    data.setdefault("schema", TOUCHED_LEDGER_SCHEMA)
+    data.setdefault("slug", slug)
+    data.setdefault("pending_baselines", {})
+    data.setdefault("paths", [])
+    return data
+
+
+def _write_touched_ledger(slug: str, ledger: dict) -> None:
+    path = _touched_ledger_path(slug)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = str(path) + ".tmp"
+    Path(tmp).write_text(json.dumps(ledger, indent=2) + "\n")
+    os.replace(tmp, str(path))
+
+
+def _git_status_porcelain() -> list[str]:
+    """Return the current dirty paths via `git status --porcelain -z`.
+
+    The -z (NUL-terminated) form emits raw, unquoted paths — unlike the
+    line-based form, which C-quotes paths containing spaces, non-ASCII
+    bytes, or backslashes (e.g. `"file with spaces.txt"`), corrupting
+    any path that gets fed back into `git add --` verbatim. -z also
+    reports renames as two NUL-separated fields (new path, then old
+    path) instead of a " -> " separated string, so we skip the old-path
+    field rather than mis-parsing it as its own dirty path.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain", "-z"],
+            capture_output=True, text=True, check=True,
+        )
+    except Exception:
+        return []
+    return _parse_porcelain_z(result.stdout)
+
+
+def _parse_porcelain_z(output: str) -> list[str]:
+    tokens = output.split("\0")
+    paths: list[str] = []
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if not tok:
+            i += 1
+            continue
+        status = tok[:2]
+        path = tok[3:]
+        paths.append(path)
+        if status[0] in ("R", "C") or status[1] in ("R", "C"):
+            i += 2  # skip the old-path field that follows a rename/copy entry
+        else:
+            i += 1
+    return paths
+
+
+def _record_feature_baseline(slug: str, fid: str) -> None:
+    """Snapshot current git-status dirty set as fid's baseline (transition to in_progress)."""
+    ledger = _read_touched_ledger(slug)
+    ledger["pending_baselines"][fid] = sorted(_git_status_porcelain())
+    _write_touched_ledger(slug, ledger)
+
+
+def _record_feature_completion(slug: str, fid: str) -> None:
+    """Diff current git status against fid's recorded baseline and append newly-dirty
+    paths to the ledger. A feature with no recorded baseline (never went through
+    in_progress) gets nothing attributed to it — silently under-staging is fine,
+    silently over-staging unrelated files is the bug this ledger prevents.
+    """
+    ledger = _read_touched_ledger(slug)
+    baseline_paths_list = ledger["pending_baselines"].pop(fid, None)
+    if baseline_paths_list is None:
+        _write_touched_ledger(slug, ledger)
+        return
+    baseline_paths = set(baseline_paths_list)
+    current_paths = set(_git_status_porcelain())
+    newly_dirty = sorted(current_paths - baseline_paths)
+    existing = set(ledger["paths"])
+    for p in newly_dirty:
+        if p and p not in existing:
+            ledger["paths"].append(p)
+            existing.add(p)
+    _write_touched_ledger(slug, ledger)
 
 
 def _find_milestone_for_feature(fm: dict, fid: str) -> str | None:
@@ -659,6 +847,15 @@ def cmd_attach_spec(args):
 
 
 def cmd_gate(args):
+    if not args.mission:
+        active = read_active()
+        mission_path = active.get("mission") if active else None
+        if not mission_path:
+            print("ERROR: no active mission and no mission path given. Run: "
+                  "python3 execution/mission.py activate <mission.md>", file=sys.stderr)
+            sys.exit(1)
+        args.mission = mission_path
+
     fm, body = parse_mission_file(args.mission)
 
     mid = args.milestone
@@ -694,10 +891,33 @@ def cmd_gate(args):
             # disk (same derivation cmd_resume uses) and run it. A feature
             # must never be certified PASS purely on its status field while
             # a real, discoverable contract was never executed.
-            contract = _existing_contract_for_feature(fm, fid)
+            lookup = _existing_contract_for_feature(fm, fid)
+            if lookup.invalid_path:
+                print(
+                    f"  FAIL {fid}: contract fails to validate: {lookup.invalid_path}"
+                )
+                any_fail = True
+                ran += 1
+                continue
+            contract = lookup.path
 
         if not contract:
-            # Truly no contract anywhere for this feature.
+            if f.get("spec"):
+                # A contract was genuinely intended (spec set) but couldn't be
+                # discovered on disk — this is a real spec/contract mismatch,
+                # not a legitimate no-contract feature. Fail loud, unconditionally
+                # (never suppressible by --allow-skips), and never reuse the
+                # generic "no contract found anywhere" wording used below.
+                print(
+                    f"  FAIL {fid}: spec/contract mismatch in mission "
+                    f"{fm.get('slug')!r} — feature declares spec={f.get('spec')!r} "
+                    "but no matching contract file was found on disk"
+                )
+                any_fail = True
+                ran += 1
+                continue
+
+            # Truly no contract anywhere for this feature (inline_brief).
             if f["status"] in ("pending", "in_progress"):
                 print(f"  FAIL {fid}: status={f['status']} (not done, no contract)")
                 any_fail = True
@@ -715,8 +935,9 @@ def cmd_gate(args):
             ran += 1
             continue
 
+        gate_script_path = str(Path(__file__).parent / "contract.py")
         result = subprocess.run(
-            [sys.executable, "execution/contract.py", "gate", contract_path, "--phase", "all", "--run-checks"],
+            [sys.executable, gate_script_path, "gate", contract_path, "--phase", "all", "--run-checks"],
             capture_output=True, text=True
         )
         print(f"  {'PASS' if result.returncode == 0 else 'FAIL'} {fid} (contract gate exit={result.returncode}):")
@@ -762,8 +983,20 @@ def cmd_gate(args):
             )
 
 
-def _existing_contract_for_feature(fm: dict, fid: str) -> str | None:
-    """Return the path to feature `fid`'s contract if it exists on disk and validates.
+class ContractLookup(NamedTuple):
+    """Result of resolving a feature's contract on disk.
+
+    `invalid_path` is set only when a per-feature contract-f<N>.yaml exists but
+    fails validation — that case must never fall through to the shared
+    contract.yaml, since falling through would mask a genuinely broken contract
+    behind a false "no contract found" verdict.
+    """
+    path: str | None
+    invalid_path: str | None
+
+
+def _existing_contract_for_feature(fm: dict, fid: str) -> ContractLookup:
+    """Resolve the path to feature `fid`'s contract if it exists on disk.
 
     Derives specs/<slug>/contract-f<N>.yaml from the mission's slug and the feature
     id's numeric suffix, independent of whether attach-spec was ever run — some
@@ -771,25 +1004,42 @@ def _existing_contract_for_feature(fm: dict, fid: str) -> str | None:
     """
     match = re.match(r"^F([0-9]+)$", fid)
     if not match:
-        return None
+        return ContractLookup(None, None)
     slug = fm.get("slug")
     if not slug:
-        return None
-    contract_path = Path(".agent/memory/project/specs") / slug / f"contract-f{match.group(1)}.yaml"
-    if not contract_path.exists():
-        return None
-
+        return ContractLookup(None, None)
+    specs_base = Path(__file__).parent.parent / ".agent/memory/project/specs"
     contract_script = Path(__file__).parent / "contract.py"
+
+    contract_path = specs_base / slug / f"contract-f{match.group(1)}.yaml"
+    if contract_path.exists():
+        result = subprocess.run(
+            [sys.executable, str(contract_script), "validate", str(contract_path)],
+            capture_output=True, text=True,
+        )
+        if result.returncode == 0:
+            return ContractLookup(str(contract_path), None)
+        # Exists but invalid — do NOT fall through to the shared contract.yaml.
+        return ContractLookup(None, str(contract_path))
+
+    # Fall back to the shared/cumulative contract.yaml form used by many
+    # existing missions (e.g. mission-closeout-gate, quota-aware-autonomy).
+    shared_path = specs_base / slug / "contract.yaml"
+    if not shared_path.exists():
+        return ContractLookup(None, None)
+
     result = subprocess.run(
-        [sys.executable, str(contract_script), "validate", str(contract_path)],
+        [sys.executable, str(contract_script), "validate", str(shared_path)],
         capture_output=True, text=True,
     )
     if result.returncode != 0:
-        return None
-    return str(contract_path)
+        return ContractLookup(None, None)
+    return ContractLookup(str(shared_path), None)
 
 
 def cmd_resume(args):
+    _boot_check = Path(__file__).parent / "checks" / "verify_boot_ran.py"
+    subprocess.run([sys.executable, str(_boot_check)], check=False)
     mission_path = None
     if args.mission:
         mission_path = args.mission
@@ -834,13 +1084,18 @@ def cmd_resume(args):
                     print(_quota_block_message(quota_data), file=sys.stderr)
                     sys.exit(3)
 
-            contract_path = _existing_contract_for_feature(fm, fid)
-            if contract_path:
+            lookup = _existing_contract_for_feature(fm, fid)
+            if lookup.path:
                 print(
                     f"RESUME: dispatch @dev against existing contract for {fid} "
-                    f"'{feat.get('title', '')}' (milestone {mid}): {contract_path}"
+                    f"'{feat.get('title', '')}' (milestone {mid}): {lookup.path}"
                 )
             else:
+                if lookup.invalid_path:
+                    print(
+                        f"ADVISORY: contract for {fid} fails to validate: "
+                        f"{lookup.invalid_path} — fix it before dispatching"
+                    )
                 print(f"RESUME: run /spec for {fid} '{feat.get('title', '')}' (milestone {mid})")
             return
 
@@ -870,23 +1125,31 @@ def cmd_resume(args):
             print(f"RESUME: run mission.py gate --milestone {remaining[0]['id']} for remaining milestones")
 
 
-def _secret_guard_preflight() -> list[str]:
+def _secret_guard_preflight(mission_path: str) -> list[str]:
     """Return the secret-looking paths that wrap_mission.sh's own guard would see,
     WITHOUT staging anything ourselves. wrap_mission.sh checks `git diff --cached
-    --name-only` AFTER its own `git add -A` -- so its real guard sees the union of
-    (a) paths not yet staged that `git add -A` would newly stage, and (b) paths
-    already staged in the index before close-out even ran (e.g. an operator's own
-    prior `git add`). `git add -A -n` alone only reports (a) -- it is silent about
-    (b), which would let a pre-staged secret slip past this pre-flight and only
-    get caught by wrap_mission.sh's guard, after its unconditional brain call
-    (line ~51) has already fired. So we check the union of both sets here, making
-    this pre-flight a strict superset of wrap_mission.sh's real guard."""
-    dry_run = subprocess.run(["git", "add", "-A", "-n"], capture_output=True, text=True)
-    would_stage = {
-        m.group(1)
-        for line in dry_run.stdout.splitlines()
-        if (m := re.match(r"^(?:add|remove) '(.*)'$", line))
-    }
+    --name-only` AFTER its own scoped-stage call -- so its real guard sees the
+    union of (a) paths not yet staged that scoped_stage.py would newly stage, and
+    (b) paths already staged in the index before close-out even ran (e.g. an
+    operator's own prior `git add`). scoped_stage.py's --dry-run alone only
+    reports (a) -- it is silent about (b), which would let a pre-staged secret
+    slip past this pre-flight and only get caught by wrap_mission.sh's guard,
+    after its unconditional brain call (line ~51) has already fired. So we check
+    the union of both sets here, making this pre-flight a strict superset of
+    wrap_mission.sh's real guard. Delegating (a)'s resolution to scoped_stage.py
+    -- the same helper wrap_mission.sh calls to actually stage -- keeps this
+    prediction from drifting out of sync with what really gets staged."""
+    dry_run = subprocess.run(
+        ["python3", "execution/skills/lib/scoped_stage.py", "--mission", mission_path, "--dry-run"],
+        capture_output=True, text=True,
+    )
+    if dry_run.returncode != 0:
+        raise RuntimeError(
+            "scoped_stage.py --dry-run failed (rc="
+            f"{dry_run.returncode}), cannot verify what would be staged:\n"
+            f"{dry_run.stderr.strip()}"
+        )
+    would_stage = {p for p in dry_run.stdout.splitlines() if p.strip()}
     already_staged = subprocess.run(
         ["git", "diff", "--cached", "--name-only"], capture_output=True, text=True
     )
@@ -906,6 +1169,15 @@ def _secret_guard_preflight() -> list[str]:
 
 
 def cmd_close_out(args):
+    if not args.mission:
+        active = read_active()
+        mission_path = active.get("mission") if active else None
+        if not mission_path:
+            print("ERROR: no active mission and no mission path given. Run: "
+                  "python3 execution/mission.py activate <mission.md>", file=sys.stderr)
+            sys.exit(1)
+        args.mission = mission_path
+
     fm, body = parse_mission_file(args.mission)
     if fm.get("status") != "close_out":
         print(
@@ -920,7 +1192,15 @@ def cmd_close_out(args):
     # brain wrap-up call (line ~51) -- by then a brain entry already exists,
     # so catching the failure here is what actually prevents the stuck-state
     # / duplicate-entry bug, rather than merely cleaning up after it.
-    secrets = _secret_guard_preflight()
+    try:
+        secrets = _secret_guard_preflight(args.mission)
+    except RuntimeError as exc:
+        print(
+            f"ERROR: secret-guard pre-flight could not run -- refusing to close out "
+            f"(no mission-state change, no brain wrap-up):\n{exc}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     if secrets:
         print(
             "ERROR: secret-looking file(s) would be staged by the close-out "
@@ -1017,11 +1297,11 @@ def cmd_abandon(args):
     fm["notes"] = (fm.get("notes", "") + f"\nAbandoned: {args.reason}").strip()
     write_mission_file(args.mission, fm, body)
 
-    active = read_active()
-    if active and active.get("mission") == args.mission:
-        clear_active()
+    cleared = clear_active(args.mission)
     print(f"Abandoned: {args.mission}")
     print(f"Reason: {args.reason}")
+    if cleared:
+        print("active.json cleared.")
 
 
 def cmd_skip(args):
@@ -1090,7 +1370,7 @@ def main():
 
     # gate
     p_gate = sub.add_parser("gate", help="Run milestone gate")
-    p_gate.add_argument("mission", help="Path to mission .md file")
+    p_gate.add_argument("mission", nargs="?", help="Path to mission .md (defaults to active.json)")
     p_gate.add_argument("--milestone", required=True, help="Milestone ID (e.g. M1)")
     p_gate.add_argument("--allow-skips", action="store_true", default=False,
                          help="Do not fail the gate solely because a feature had no "
@@ -1124,7 +1404,7 @@ def main():
 
     # close-out
     p_co = sub.add_parser("close-out", help="Complete @maintainer wrap-up and mark mission done")
-    p_co.add_argument("mission", help="Path to mission .md file")
+    p_co.add_argument("mission", nargs="?", help="Path to mission .md (defaults to active.json)")
 
     # close-stub
     p_cs = sub.add_parser(

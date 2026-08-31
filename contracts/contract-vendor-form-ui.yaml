@@ -178,11 +178,15 @@ assertions:
 
     - id: A9
       description: >-
-        The existing showcase page links to the new registration route, AND every one of F3's own
-        assertion commands (contract-vendor-f3-showcase-page.yaml) still passes against the
-        current repo state -- a real regression re-run of F3's shipped checks, not a re-derivation
-        of F3's logic. Defeating mutation: a missing/broken cross-link; any edit that regresses
-        F3's query, grid, empty state, intro prose, or revalidate behaviour.
+        UPDATED 2026-08-31 (vendor-gated-registration-flow F8): the showcase page links to the
+        current public vendor entry route, /national-show/vendors/apply, and NOT to
+        /national-show/vendors/register (gated behind a single-use token since F7 -- see
+        contract-vendor-gated-registration-flow.yaml), AND every one of F3's own assertion
+        commands (contract-vendor-f3-showcase-page.yaml) still passes against the current repo
+        state -- a real regression re-run of F3's shipped checks, not a re-derivation of F3's
+        logic. Defeating mutation: the showcase page linking to /register instead of /apply, or
+        any edit that regresses F3's query, grid, empty state, intro prose, or revalidate
+        behaviour.
       command: >-
         bash contracts/checks/vendor-form-ui/check-showcase-link-and-f3-regression.sh
 

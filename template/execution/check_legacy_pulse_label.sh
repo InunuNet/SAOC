@@ -23,8 +23,15 @@ UID_NUM="$(id -u)"
 for LABEL in com.athanor.pulse com.athanor.pulse.heartbeat; do
     OUTPUT="$(launchctl print "gui/$UID_NUM/$LABEL" 2>&1)"
     RC=$?
+    if [ "$RC" -eq 113 ]; then
+        # Genuinely not registered -- nothing to report for this label.
+        continue
+    fi
     if [ "$RC" -ne 0 ]; then
-        # Not registered -- nothing to report for this label.
+        # Ambiguous failure (not 113) -- do NOT silently treat as absent.
+        # Report it so a caller folding this output in (get_pulse_status.sh)
+        # surfaces the ambiguity instead of showing a clean not-installed.
+        echo "WARNING: label=$LABEL launchctl print exited $RC (ambiguous -- not confirmed absent, expected 113 for not-registered)"
         continue
     fi
     WORKDIR="$(printf '%s\n' "$OUTPUT" | awk -F'= ' '/^[ \t]*working directory = /{ print $2; exit }')"

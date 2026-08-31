@@ -25,7 +25,7 @@ const OPTIONS = [
     heading: "I'm a nursery or trader",
     body: 'Register a trade booth to sell plants and supplies at the show.',
     cta: 'Vendor registration',
-    href: '/national-show/vendors/register',
+    href: '/national-show/vendors/apply',
   },
   {
     id: 'conferences',

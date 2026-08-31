@@ -41,9 +41,12 @@ await page.route('**/api/vendors/register', async (route) => {
 await page.goto(`${BASE_URL}/national-show/vendors/register`, { waitUntil: 'networkidle' });
 
 await fillText(page, 'vendor-register-businessName', 'Test Orchid Traders');
+await fillText(page, 'vendor-register-physicalAddress', '123 Orchid Lane, Cape Town');
 await fillText(page, 'vendor-register-contactPersonName', 'Jane Test');
 await fillText(page, 'vendor-register-contactCellPhone', '0821234567');
 await fillText(page, 'vendor-register-contactEmail', 'jane.test@example.com');
+await fillText(page, 'vendor-register-emergencyContactName', 'John Test');
+await fillText(page, 'vendor-register-emergencyContactCellPhone', '0837654321');
 await fillText(page, 'vendor-register-productDescription', 'Assorted cymbidium and cattleya orchids.');
 await page.locator('#vendor-register-vendorCategory-plant-sales').check();
 await page.locator('#vendor-register-powerRequired-false').check();

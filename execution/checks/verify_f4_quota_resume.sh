@@ -505,8 +505,34 @@ case "$CASE" in
     echo "PASS: flag_generalized_malformed_values_are_off"
     ;;
 
+  # --- F1 hardening #3: internal whitespace must not collapse to ON -------
+
+  flag_internal_whitespace_value_is_off)
+    # QA-found gap: a full-string whitespace strip (tr -d '[:space:]')
+    # deletes whitespace ANYWHERE in the value, not just leading/trailing,
+    # so an internally-spaced malformed value like "t r u e" collapses to
+    # "true" and wrongly resolves ON. The trim must be edge-only (leading/
+    # trailing whitespace), leaving internal whitespace intact so a value
+    # like this fails the exact-match allowlist and stays OFF.
+    tmpdir="$(mktemp -d)"
+    trap 'rm -rf "$tmpdir"' EXIT
+    build_common_fixtures "$tmpdir" 0 -60
+
+    fail=0
+    set +e
+    ATHANOR_PULSE_QUOTA_RESUME="t r u e" run_f4
+    exit_code=$?
+    set -e
+    [ "$exit_code" -eq 0 ] || { echo "FAIL: script exited $exit_code with ATHANOR_PULSE_QUOTA_RESUME='t r u e'"; fail=1; }
+    n="$(count_queue_files)"
+    [ "$n" -eq 0 ] || { echo "FAIL: $n ticket(s) written with ATHANOR_PULSE_QUOTA_RESUME='t r u e' -- internal whitespace must not be stripped away to falsely match the 'true' allowlist entry; the trim must be edge-only (leading/trailing), not a full-string whitespace delete"; fail=1; }
+
+    [ "$fail" -eq 1 ] && exit 1
+    echo "PASS: flag_internal_whitespace_value_is_off"
+    ;;
+
   *)
-    echo "ERROR: unknown case '$CASE'. Valid: static_flag_env_var_gates_script, static_uses_quota_py_oracle, static_uses_pulse_ticket_enqueue, static_never_touches_service_lifecycle, flag_off_is_inert_even_with_perfect_trigger, flag_on_fresh_checkpoint_reset_passed_enqueues_ticket, boundary_resets_at_not_yet_passed_no_ticket, stale_checkpoint_no_ticket, dedupe_key_stable_across_repeated_ticks, budget_cap_still_applies_to_resume_ticket, provider_backoff_still_applies_to_resume_ticket, fail_safe_malformed_checkpoint_no_crash, fail_safe_unknown_quota_state_no_crash, future_dated_checkpoint_no_ticket, flag_generalized_malformed_values_are_off" >&2
+    echo "ERROR: unknown case '$CASE'. Valid: static_flag_env_var_gates_script, static_uses_quota_py_oracle, static_uses_pulse_ticket_enqueue, static_never_touches_service_lifecycle, flag_off_is_inert_even_with_perfect_trigger, flag_on_fresh_checkpoint_reset_passed_enqueues_ticket, boundary_resets_at_not_yet_passed_no_ticket, stale_checkpoint_no_ticket, dedupe_key_stable_across_repeated_ticks, budget_cap_still_applies_to_resume_ticket, provider_backoff_still_applies_to_resume_ticket, fail_safe_malformed_checkpoint_no_crash, fail_safe_unknown_quota_state_no_crash, future_dated_checkpoint_no_ticket, flag_generalized_malformed_values_are_off, flag_internal_whitespace_value_is_off" >&2
     exit 1
     ;;
 esac

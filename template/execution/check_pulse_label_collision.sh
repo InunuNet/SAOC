@@ -40,9 +40,21 @@ UID_NUM="$(id -u)"
 OUTPUT="$(launchctl print "gui/$UID_NUM/$CANDIDATE_LABEL" 2>&1)"
 RC=$?
 
-if [ "$RC" -ne 0 ]; then
-    # Not registered at all -- no collision.
+if [ "$RC" -eq 113 ]; then
+    # Genuinely not registered at all -- no collision.
     exit 0
+fi
+
+if [ "$RC" -ne 0 ]; then
+    # Ambiguous failure (not 113, not success) -- this is the highest-stakes
+    # script of the three: its whole job is collision safety. Do NOT exit 0
+    # (safe/no-collision) on an unconfirmed result -- that would let a REAL
+    # collision through during a transient launchctl/launchd failure. Fail
+    # closed with a distinct exit code (2, vs 1 for a confirmed collision)
+    # so install-pulse's unguarded Makefile call still aborts, and operators
+    # can tell "confirmed collision" from "could not confirm" in logs.
+    echo "REFUSE: could not confirm collision status for label '$CANDIDATE_LABEL' -- launchctl print exited $RC (expected 113 for not-registered). Refusing to proceed; resolve manually and retry." >&2
+    exit 2
 fi
 
 REGISTERED_WORKDIR="$(printf '%s\n' "$OUTPUT" | awk -F'= ' '/^[ \t]*working directory = /{ print $2; exit }')"

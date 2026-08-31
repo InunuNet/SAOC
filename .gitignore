@@ -110,3 +110,7 @@ contracts/checks/**/_mutants/
 
 # QA agent scratch (debug scripts, session state, screenshots) — local-only, never committed
 .qa_scratch/
+# Transient agent worktrees — never commit (they get recorded as bogus gitlinks)
+# Transient F5 containment-test bait dir; created and torn down by
+# goldens/verify_gate_sweep_isolation.py, must never be committed
+.agent/memory/project/specs/repo-wide-gate-sweep/goldens/fixture_specs_f5r2/escape-bait/

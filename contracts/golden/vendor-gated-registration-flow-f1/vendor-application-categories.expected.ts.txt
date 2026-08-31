@@ -1,0 +1,19 @@
+// Expected literal contents of VENDOR_APPLICATION_CATEGORIES in lib/vendor-applications.ts.
+// Order matches the 26 Aug source doc's "VENDOR CATEGORY & PRODUCTS" section exactly.
+// No 'other' member -- the source doc has none for this list.
+const VENDOR_APPLICATION_CATEGORIES: readonly VendorApplicationCategory[] = [
+  'orchids',
+  'cites-listed-plants',
+  'indoor-plants',
+  'succulents',
+  'rare-plants',
+  'exotic-plants',
+  'indigenous-plants',
+  'orchid-growing-supplies',
+  'greenhouse-hardware-infrastructure',
+  'fertilisers-growing-media',
+  'books-publications',
+  'art',
+  'ceramics',
+  'food-beverage-retailer',
+];

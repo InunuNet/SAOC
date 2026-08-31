@@ -30,6 +30,7 @@ If you discover a template/workflow bug during a session:
    - **Non-checkbox format?** If backlog uses tables, prose bullets, or `~~struck~~` instead of `- [ ]`, identify what was completed from `git log --oneline -10` and the session summary, then prepend a dated note at the top of the file: `> ⚠️ YYYY-MM-DD: [item] completed — backlog not in checkbox format, manual review needed`
    - **Verify**: after editing, confirm `git diff .agent/memory/project/backlog.md` is non-empty when commits exist this session. If unchanged despite commits this session, that is a bug — leave a visible warning at the top of backlog.md.
    - **Audit**: run `make backlog-audit` — must exit 0 before continuing. If it fails, fix the stale rows before any other wrap-up step.
+     (`wrap_mission.sh` already runs this audit automatically as a hard-fail gate at mission close-out — this manual run is the fallback for non-mission maintainer sessions, per Step 7 below.)
 2. **Scan for GitHub issue closure candidates** — `python3 execution/gh_closure_scan.py --format lines`
    - Cross-references this session's shipped commits and completed missions against currently-open GitHub issues.
    - ⛔ Never run `gh issue close` yourself. Closing is a write to a shared external system and requires
@@ -49,7 +50,8 @@ If you discover a template/workflow bug during a session:
 7. **Auto-trim closed backlog items** — `make backlog-trim` (runs `python3 execution/backlog_trim.py`).
    - Archives every `- [x]` row to the brain memory store with tags `backlog,archive` and source `backlog-autotrim`, then removes the lines from `backlog.md`.
    - Caps remaining open items at 20; truncated overflow gets a one-line marker. Updates the `_Last compacted:` header to today's date.
-   - **Always run after Step 6 (backlog updates) and BEFORE Step 8 (brain wrap-up).** The wrap-up can then reference the trim count.
+   - ⚙️ **Already automatic at mission close-out**: `execution/skills/wrap_mission.sh` runs `backlog_audit.sh` + this trim as a hard-fail gate before brain wrap-up. For mission-based sessions this step has already run — treat it as a no-op check, not a step you re-trigger.
+   - **For non-mission maintainer runs** (direct/trivial work per the CLAUDE.md decision tree, with no `wrap_mission.sh` close-out): run it manually here, after Step 6 (backlog updates) and BEFORE Step 8 (brain wrap-up), so the wrap-up can reference the trim count.
    - If the script exits non-zero, stop — do not proceed to the brain wrap-up. Surface the stderr message; the user will rerun once fixed.
 8. **Store in brain** — `python3 execution/brain.py wrap-up --summary "SUMMARY" --tags "TAGS" --closure-candidates "GH #N — evidence" ...` (pass every candidate found in Step 2)
 9. **Bump version** — `bash execution/bump_version.sh && make sync`

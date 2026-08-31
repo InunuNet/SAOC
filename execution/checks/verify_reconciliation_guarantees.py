@@ -97,7 +97,16 @@ def _run_reconcile_fixture():
         Path("handedit.txt").write_text("SOMETHING THE USER TYPED THEMSELVES")
 
         Path(".agent").mkdir(parents=True, exist_ok=True)
-        Path(".agent/.template_state").write_text(json.dumps({"template_version": "1.2.3"}))
+        # The stamp must carry THIS workspace's provenance. delivery-integrity
+        # F4c made an identity-less stamp read as INHERITED (the file is
+        # tracked, so every clone receives the upstream workspace's receipt),
+        # and cmd_reconcile_from_history() declines to resolve and deliver
+        # against an inherited version record. Fixture-only: it asks the
+        # implementation for whatever provenance fields it records rather than
+        # reconstructing a field name or a hash here.
+        _state = {"template_version": "1.2.3"}
+        _state.update(ut._stamp_identity_fields())
+        Path(".agent/.template_state").write_text(json.dumps(_state))
 
         old_tree = work / "old_tree"
         new_tree = work / "new_tree"

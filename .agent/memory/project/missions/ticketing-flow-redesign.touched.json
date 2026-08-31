@@ -1,0 +1,25 @@
+{
+  "schema": "athanor.mission-touched-files/v1",
+  "slug": "ticketing-flow-redesign",
+  "pending_baselines": {},
+  "paths": [
+    "app/(marketing)/tickets/[slug]/",
+    "app/(marketing)/tickets/page.tsx",
+    "components/tickets/AdmissionTicketsList.tsx",
+    "components/tickets/TicketPurchaseForm.tsx",
+    "components/tickets/TicketTypeCard.tsx",
+    "components/tickets/index.ts",
+    "docs/f2-ticketing-vertical-cards.md",
+    "lib/tickets-orchid-image.ts",
+    "sanity/queries.ts",
+    ".agent/memory/project/specs/ticketing-flow-redesign/contract-f3.yaml",
+    "components/tickets/DayQuantityPicker.tsx",
+    "components/tickets/useTicketCart.ts",
+    "docs/f3-day-visitor-quantity-picker.md",
+    "docs/f5-day-selection-attendees.md",
+    "lib/cart.ts",
+    "contracts/golden/ticketing-flow-redesign-f2/",
+    "contracts/golden/ticketing-flow-redesign-f3/",
+    "contracts/checks/ticketing-flow-redesign-f3/"
+  ]
+}

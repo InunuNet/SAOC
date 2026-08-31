@@ -60,7 +60,7 @@ if [ "$stale_count" -gt 0 ]; then
   echo ""
   printf '%s' "$stale_report"
   echo ""
-  echo "Fix: edit $BACKLOG and change `- [ ]` → `- [x]` for the rows above, then re-run \`make backlog-audit\`."
+  echo "Fix: edit $BACKLOG and change \`- [ ]\` → \`- [x]\` for the rows above, then re-run \`make backlog-audit\`."
   exit 1
 fi
 

@@ -1,5 +1,9 @@
 import {
+  isAdjacentBoothVendorNameFieldApplicable,
+  isElectricalEquipmentContinuousDetailsFieldApplicable,
   isElectricalLoadApplicable,
+  isWastewaterDrainageDetailsFieldApplicable,
+  isWaterIntendedUseFieldApplicable,
   type VendorRegisterFieldChangeHandler,
   type VendorRegisterFormState,
 } from '@/lib/vendor-register-form-payload';
@@ -8,17 +12,22 @@ import { VendorRadioGroupField } from './VendorRadioGroupField';
 import { VendorBooleanRadioField } from './VendorBooleanRadioField';
 
 // Lee-Ann's source form, section 3 ("Booth & logistics"), fields 17-27 -- labels verbatim
-// from contracts/golden/vendor-form-ui/field-spec.golden.json (section: "booth").
+// from contracts/golden/vendor-form-ui/field-spec.golden.json (section: "booth"). F4
+// (vendor-registration-form-rebuild) adds Section 4 (booth requirements) and Section 6
+// (electricity & water) fields -- see contract-f4.yaml.
 interface VendorBoothFieldsetProps {
   state: VendorRegisterFormState;
   onFieldChange: VendorRegisterFieldChangeHandler;
   disabled: boolean;
 }
 
+// F4 (vendor-registration-form-rebuild) -- 'standard' renamed to 'standard-in-row',
+// 'no-preference' added, matching source 4.2's 4-option list. See contract-f4.yaml.
 const BOOTH_TYPE_OPTIONS = [
-  { value: 'standard', label: 'Standard' },
+  { value: 'standard-in-row', label: 'Standard / In-row' },
   { value: 'corner', label: 'Corner' },
   { value: 'end-of-row', label: 'End-of-row' },
+  { value: 'no-preference', label: 'No preference' },
 ];
 
 const YES_NO_OPTIONS = [
@@ -50,6 +59,47 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
         onChange={(v) => onFieldChange('boothType', v)}
         disabled={disabled}
         required={false}
+      />
+      <VendorFormField
+        fieldKey="boothPositionRequest"
+        label="Booth position request"
+        htmlType="text"
+        value={state.boothPositionRequest}
+        onChange={(v) => onFieldChange('boothPositionRequest', v)}
+        disabled={disabled}
+        required={false}
+        maxLength={300}
+      />
+      <VendorBooleanRadioField
+        fieldKey="adjacentBoothRequested"
+        label="Adjacent booth requested?"
+        options={YES_NO_OPTIONS}
+        value={state.adjacentBoothRequested}
+        onChange={(v) => onFieldChange('adjacentBoothRequested', v)}
+        disabled={disabled}
+        required={false}
+      />
+      {isAdjacentBoothVendorNameFieldApplicable(state) ? (
+        <VendorFormField
+          fieldKey="adjacentBoothVendorName"
+          label="Adjacent vendor's business name"
+          htmlType="text"
+          value={state.adjacentBoothVendorName}
+          onChange={(v) => onFieldChange('adjacentBoothVendorName', v)}
+          disabled={disabled}
+          required={false}
+          maxLength={200}
+        />
+      ) : null}
+      <VendorFormField
+        fieldKey="specialDisplayRequirements"
+        label="Special display requirements"
+        htmlType="text"
+        value={state.specialDisplayRequirements}
+        onChange={(v) => onFieldChange('specialDisplayRequirements', v)}
+        disabled={disabled}
+        required={false}
+        maxLength={1000}
       />
       <VendorFormField
         fieldKey="tableCount"
@@ -95,6 +145,54 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
           maxLength={100}
         />
       ) : null}
+      {isElectricalLoadApplicable(state) ? (
+        <VendorFormField
+          fieldKey="electricalOutletsRequired"
+          label="Number of electrical outlets required"
+          htmlType="number"
+          min={0}
+          step={1}
+          value={state.electricalOutletsRequired}
+          onChange={(v) => onFieldChange('electricalOutletsRequired', v)}
+          disabled={disabled}
+          required={false}
+        />
+      ) : null}
+      {isElectricalLoadApplicable(state) ? (
+        <VendorFormField
+          fieldKey="electricalEquipmentList"
+          label="List of electrical equipment"
+          htmlType="text"
+          value={state.electricalEquipmentList}
+          onChange={(v) => onFieldChange('electricalEquipmentList', v)}
+          disabled={disabled}
+          required={false}
+          maxLength={1000}
+        />
+      ) : null}
+      {isElectricalLoadApplicable(state) ? (
+        <VendorBooleanRadioField
+          fieldKey="electricalEquipmentContinuousOperation"
+          label="Does equipment run continuously?"
+          options={YES_NO_OPTIONS}
+          value={state.electricalEquipmentContinuousOperation}
+          onChange={(v) => onFieldChange('electricalEquipmentContinuousOperation', v)}
+          disabled={disabled}
+          required={false}
+        />
+      ) : null}
+      {isElectricalEquipmentContinuousDetailsFieldApplicable(state) ? (
+        <VendorFormField
+          fieldKey="electricalEquipmentContinuousDetails"
+          label="Continuous operation details"
+          htmlType="text"
+          value={state.electricalEquipmentContinuousDetails}
+          onChange={(v) => onFieldChange('electricalEquipmentContinuousDetails', v)}
+          disabled={disabled}
+          required={false}
+          maxLength={500}
+        />
+      ) : null}
       <VendorBooleanRadioField
         fieldKey="waterRequired"
         label="Water access required?"
@@ -104,6 +202,39 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
         disabled={disabled}
         required={false}
       />
+      {isWaterIntendedUseFieldApplicable(state) ? (
+        <VendorFormField
+          fieldKey="waterIntendedUse"
+          label="Intended use of water"
+          htmlType="text"
+          value={state.waterIntendedUse}
+          onChange={(v) => onFieldChange('waterIntendedUse', v)}
+          disabled={disabled}
+          required={false}
+          maxLength={300}
+        />
+      ) : null}
+      <VendorBooleanRadioField
+        fieldKey="wastewaterDrainageRequired"
+        label="Wastewater / drainage requirement?"
+        options={YES_NO_OPTIONS}
+        value={state.wastewaterDrainageRequired}
+        onChange={(v) => onFieldChange('wastewaterDrainageRequired', v)}
+        disabled={disabled}
+        required={false}
+      />
+      {isWastewaterDrainageDetailsFieldApplicable(state) ? (
+        <VendorFormField
+          fieldKey="wastewaterDrainageDetails"
+          label="Wastewater / drainage details"
+          htmlType="text"
+          value={state.wastewaterDrainageDetails}
+          onChange={(v) => onFieldChange('wastewaterDrainageDetails', v)}
+          disabled={disabled}
+          required={false}
+          maxLength={500}
+        />
+      ) : null}
       <VendorFormField
         fieldKey="staffPerDay"
         label="Number of staff attending per day"

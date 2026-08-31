@@ -1,0 +1,165 @@
+schema: athanor.contract/v1
+slug: vendor-registration-form-rebuild-f3
+goal: >-
+  Mission vendor-registration-form-rebuild F3 -- UI for source Section 3 (Vendor Category &
+  Products, full) of the 2027 National Show vendor registration form. Corrects the live
+  8-member VendorCategory enum to the source's real 11-member list by WIDENING it (adding
+  'other-plant-sales', 'fertilisers-growing-media', 'pottery-ceramics'; all 8 existing values
+  keep their exact spelling, only 5 get a corrected display label) -- a purely additive change,
+  not a breaking rename like F4's boothType. Adds one genuinely new field,
+  vendorCategoryOther, and gives real UI to every Section 3 field F1 already staged as optional
+  (sellsLivePlants + livePlantTypes + livePlantTypesOther, plantsImportedForEvent +
+  importCountryOfOrigin, citesListedSpecies, foodHealthTradingDocumentation), wired into
+  components/vendors/VendorCategoryFieldset.tsx (rebuilt in place, no new fieldset file),
+  lib/vendor-register-form-payload.ts (5 new leak-proof gate functions), and
+  lib/vendor-submissions.ts (widened closed-set + one new max-length check). Because the
+  vendorCategory change is additive rather than breaking, no two-phase deploy sequencing is
+  required -- but a MANDATORY, contract-enforced ripple sweep (not diff-scoped Codex review
+  alone) proves every other already-shipped contract with a VendorCategory-typed fixture still
+  compiles and that no old literal value's spelling changed, per the hard lesson recorded in
+  F2's own golden README. Full decision record, the enum mapping table, every file touched, and
+  the citesPermitNumber gating judgement call:
+  .agent/memory/project/specs/vendor-registration-form-rebuild/goldens/f3-ui-vendor-category-products.md
+created_at: '2026-08-26'
+autonomy: high
+
+features:
+  - id: F3
+    name: >-
+      Six files touched. (1) types/index.ts -- VendorCategory gains 3 new members
+      ('other-plant-sales' | 'fertilisers-growing-media' | 'pottery-ceramics'); all 8 existing
+      members ('plant-sales' | 'product-sales' | 'rare-exotic-plants' | 'food-retailer' |
+      'hardware' | 'books' | 'art' | 'other') keep their EXACT current spelling -- this is a
+      widening, never a rename or removal. Adds one new field, vendorCategoryOther?: string,
+      directly after the vendorCategory field. Replaces the stale F1 comment ("vendorCategory
+      enum stays untouched here ... deferred to F3") with an F3 provenance comment. No other
+      field's optionality or type changes. (2) lib/vendor-submissions.ts -- VENDOR_CATEGORIES
+      gains the 3 new members (all 8 old members unmodified, same spelling); FIELD_MAX_LENGTHS
+      gains vendorCategoryOther: 100; one new validateOptionalStringMaxLength call for
+      vendorCategoryOther; buildVendorSubmission()'s explicit field-by-field copy (never a
+      spread) gains vendorCategoryOther. validateVendorCategory's own logic is unchanged --
+      only the array it checks membership against grows. No existing validation rule is
+      loosened or tightened. (3) lib/vendor-register-form-payload.ts -- VendorRegisterFormState
+      gains 8 new fields (vendorCategoryOther: string, sellsLivePlants: '' | 'true' | 'false',
+      livePlantTypes: string[], livePlantTypesOther: string, plantsImportedForEvent: '' |
+      'true' | 'false', importCountryOfOrigin: string, citesListedSpecies: '' | 'true' |
+      'false', foodHealthTradingDocumentation: string); exports 5 new leak-proof render-gate +
+      payload-exclusion guard functions mirroring isElectricalLoadApplicable/isFoodRetailer's
+      existing shape exactly -- isVendorCategoryOtherFieldApplicable(state) =>
+      state.vendorCategory.includes('other'); isLivePlantTypesFieldApplicable(state) =>
+      state.sellsLivePlants === 'true'; isLivePlantTypesOtherFieldApplicable(state) =>
+      state.livePlantTypes.includes('other'); isImportCountryOfOriginFieldApplicable(state) =>
+      state.plantsImportedForEvent === 'true'; isCitesPermitNumberFieldApplicable(state) =>
+      state.citesListedSpecies === 'true' (this NEWLY gates the pre-existing citesPermitNumber
+      field's render+payload, matching source 3.5's conditional structure -- its
+      type/optionality/validation is unchanged, only visibility becomes conditional, per the
+      golden README's judgement-call note). foodHealthTradingDocumentation is gated by the
+      EXISTING isFoodRetailer(state), not a new function.
+      buildVendorRegistrationPayload's explicit field-by-field literal (never a spread) extends
+      to all 8 new fields, applying omitBlank/toOptionalBoolean and the gates above exactly as
+      every existing optional/gated field already does. (4) lib/vendor-register-form-validation.ts
+      -- NO CHANGES (no new required or format check; source has no asterisk on any Section 3
+      field beyond the already-required vendorCategory/productDescription). (5)
+      components/vendors/VendorCategoryFieldset.tsx -- rebuilt in place (no new fieldset file)
+      to render, in source order: vendorCategory (11-option VendorCheckboxGroupField, still
+      required) + vendorCategoryOther (gated); productDescription (unchanged); sellsLivePlants
+      (new VendorBooleanRadioField) gating livePlantTypes (new 7-option
+      VendorCheckboxGroupField: orchids/other-plants/bulbs-tubers/seeds/cut-flowers/
+      tissue-culture/other) + livePlantTypesOther (gated further on 'other' selected);
+      plantsImportedForEvent (new VendorBooleanRadioField) gating importCountryOfOrigin;
+      citesListedSpecies (new VendorBooleanRadioField) gating the existing citesPermitNumber;
+      phytosanitaryPermitNumber (unchanged, still ungated); foodHandlingCertificateNumber +
+      foodItemList (unchanged, still gated on isFoodRetailer); foodHealthTradingDocumentation
+      (new, gated on isFoodRetailer). Does NOT reintroduce source 3.8 (food prepared/cooked on
+      site) -- that is Section 8's foodPreparationOnSite/foodCookingOnSite, F5's job per F1's
+      own dedup judgement call. No new primitive component is introduced; reuses
+      VendorFormField/VendorCheckboxGroupField/VendorBooleanRadioField exactly as they exist
+      today. (6) components/vendors/VendorRegisterForm.tsx -- INITIAL_STATE gains the 8 new
+      keys ('' for strings, [] for livePlantTypes). No mount-order change.
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/vendor-registration-form-rebuild/goldens/f3-ui-vendor-category-products.md
+  - .agent/memory/project/specs/vendor-registration-form-rebuild/goldens/f1-data-model-foundation.md
+  - .agent/memory/project/specs/vendor-registration-form-rebuild/checks/tsconfig.f3.typecheck.json
+  - .agent/memory/project/specs/vendor-registration-form-rebuild/checks/fixtures/vendor-submission-f3-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The whole project still type-checks under strict TypeScript after types/index.ts's widened VendorCategory union + new vendorCategoryOther field, and every other changed file.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof (not source-grep) that VendorCategory is now an 11-member union:
+        all 8 pre-existing literal values compile as a single array literal completely
+        unmodified; the 3 new members compile; a 12th, invented member ('flowers') is rejected
+        via @ts-expect-error in the SAME passing tsc run; the old 31-field-plus-F2-required
+        minimal VendorSubmissionDraft shape still compiles unmodified; a shape using only the 3
+        new category members plus vendorCategoryOther compiles. tsc fails the whole run if any
+        @ts-expect-error line does NOT actually error, or if any valid literal fails to compile.
+      command: >-
+        npx tsc --noEmit -p .agent/memory/project/specs/vendor-registration-form-rebuild/checks/tsconfig.f3.typecheck.json
+
+    - id: A3
+      description: >-
+        THE ENUM-WIDENING + RIPPLE PROOF, runtime half. Real calls to
+        validateVendorSubmissionInput() prove (a) each of the 8 pre-existing vendorCategory
+        values still validates individually with zero errors; (b) each of the 3 new values now
+        validates individually with zero errors; (c) all 11 combined validate; (d) a genuinely
+        invalid value is still rejected, naming "category"; (e) vendorCategoryOther validates
+        within its 100-char bound and is rejected over it; (f) F2's own two golden
+        VendorRegisterFormState JSON fixtures (form-state-full.fixture.json,
+        form-state-minimal.fixture.json), built via the REAL buildVendorRegistrationPayload(),
+        still validate as valid:true with zero errors after this feature -- the concrete
+        ripple-sweep proof against real previously-passing golden payloads. Defeating mutation:
+        renaming/removing any of the 8 old values, failing to add the 3 new ones, or widening
+        validateVendorCategory to accept anything.
+      command: >-
+        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f3-category-enum-widened-and-validated.mjs
+
+    - id: A4
+      description: >-
+        MANDATORY RIPPLE SWEEP (baked into this contract per F2's own hard lesson -- a
+        diff-scoped Codex pass only catches fixtures overlapping the literal diff; this must
+        not be left to chance). Re-runs the scoped tsconfig.typecheck.json of every OTHER
+        already-shipped contract with a VendorCategory-typed compiler fixture
+        (vendor-f4-submissions-model, vendor-f6-review-workflow, vendor-f7-payment-path,
+        vendor-form-ui), confirms all 8 pre-existing VendorCategory literal values still appear
+        verbatim in types/index.ts, and confirms the 'plant-sales' option value -- the one 4
+        live Playwright contracts click by DOM id (#vendor-register-vendorCategory-plant-sales)
+        -- still exists in the rebuilt VendorCategoryFieldset.tsx. Defeating mutation: any of
+        those 4 downstream contracts' fixtures failing to compile after this feature, or any
+        old literal value's spelling changing.
+      command: >-
+        bash .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f3-ripple-sweep.sh
+
+    - id: A5
+      description: >-
+        Real calls to buildVendorRegistrationPayload() prove the 5 new leak-proof gates
+        (vendorCategoryOther / livePlantTypes / livePlantTypesOther / importCountryOfOrigin /
+        citesPermitNumber) actually exclude their dependent field's stale value from the wire
+        payload when the controlling boolean/checkbox says "no"/"not selected", and include it
+        otherwise; foodHealthTradingDocumentation is proven gated by the EXISTING
+        isFoodRetailer(), not a new function. Defeating mutation: gating render only without
+        also excluding the value in the payload builder, or vice versa; wiring any gate to the
+        wrong controlling field.
+      command: >-
+        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f3-payload-gates.mjs
+
+    - id: A6
+      description: >-
+        Structural proof that VendorCategoryFieldset.tsx renders all 11 vendorCategory option
+        values (by value, not just label), every new Section 3 field by name, the 3
+        pre-existing food-retailer-gated fields (unremoved), and explicitly does NOT
+        reintroduce foodPreparationOnSite/foodCookingOnSite (F5's Section 8 fields); confirms
+        the fieldset is still exported and mounted; confirms no unexpected new file lands in
+        components/vendors/ (this feature rebuilds an existing fieldset, it does not add one).
+      command: >-
+        bash .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f3-fieldset-structure.sh
+
+    - id: A7
+      description: pnpm lint passes with zero errors after every changed file.
+      command: pnpm lint

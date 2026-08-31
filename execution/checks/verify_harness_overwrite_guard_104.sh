@@ -18,9 +18,11 @@
 #
 # Required behavior per HARNESS file, evaluated BEFORE any overwrite:
 #   - No baseline entry for this path (missing key, missing file, missing directory, or the
-#     baseline file is corrupt/unreadable) => treat as "not locally modified". Proceed with
-#     the update normally (do NOT block forever just because nothing was ever recorded) and
-#     record a new baseline entry (hash of the freshly-written content) after the copy.
+#     baseline file is corrupt/unreadable) AND local content matches incoming => nothing to
+#     protect; proceed with the update normally and record a new baseline entry after the copy.
+#     If local content DIFFERS from incoming with no recorded baseline, this is treated as
+#     diverged (GH-1343-informed policy, superseding this script's original wording): WARN,
+#     SKIP the overwrite, leave local content byte-for-byte untouched, do not write a baseline.
 #   - Baseline entry present and sha256(current local file) == baseline hash => file is
 #     untouched since last sync. Proceed with the update normally and refresh the baseline
 #     entry to hash of the freshly-written content.
@@ -42,9 +44,9 @@
 # Usage: verify_harness_overwrite_guard_104.sh <case>
 #   no_baseline               - HARNESS file has no stored baseline at all (and the entire
 #                                .agent/memory/ tree is absent -- first-ever run) and its
-#                                content differs from the template. Must update normally
-#                                and record a new baseline. No WARN. No crash despite the
-#                                missing baseline directory.
+#                                content differs from the template. Per GH-1343, must WARN,
+#                                SKIP the overwrite, and leave local content byte-for-byte
+#                                untouched. No crash despite the missing baseline directory.
 #   match_baseline            - HARNESS file's stored baseline matches its current content
 #                                (untouched since last sync); template changed upstream.
 #                                Must update normally to the new template content and
@@ -59,9 +61,10 @@
 #                                unaffected by the new guard: unchanged content, no WARN, and
 #                                the pre-existing skip messages still print.
 #   corrupt_baseline          - The baseline JSON file exists but is malformed. Must degrade
-#                                gracefully (treat as no-baseline: proceed with the update,
-#                                no crash) rather than raising or permanently blocking, and
-#                                should self-heal by rewriting a valid baseline file.
+#                                gracefully (treat as no-baseline, no crash) rather than
+#                                raising or permanently blocking; since local content differs
+#                                from incoming, this collapses to the same GH-1343 SKIP-and-
+#                                WARN outcome as no_baseline, not auto-overwrite.
 #   dir_entry_mismatch        - Real-world reproduction: a locally-modified HARNESS file
 #                                living INSIDE a directory-category manifest entry (mirrors
 #                                the real `category: HARNESS, path: execution/` entry
@@ -181,6 +184,8 @@ case "$CASE" in
     printf 'SRC-DERIVED-SHOULD-NEVER-BE-USED' > "$SRC/derived_file.txt"
     ;;
   corrupt_baseline)
+    # Corrupt baseline collapses to no-record; local differs from incoming,
+    # so the run must WARN and SKIP (GH-1343-informed), not auto-overwrite.
     mkdir -p "$WS/.agent/memory/scratch"
     printf '{not-valid-json' > "$BASELINE_FILE"
     printf '%s' "$TEMPLATE_V1" > "$WS/harness_file.txt"
@@ -231,11 +236,59 @@ esac
 OUT="$(cd "$WS" && python3 "$TARGET" --source "$SRC" --apply 2>&1)"
 RC=$?
 
-if [ "$RC" -ne 0 ]; then
-  echo "FAIL: update_template.py exited $RC for case '$CASE'" >&2
+# delivery-integrity F1 changed how a withheld delivery is SIGNALLED, not
+# whether it happens: --apply now exits 1 when the run carried content it did
+# not deliver, and prints a terminal "WITHHELD" block naming every undelivered
+# path plus the two remedies that clear it. Five of this script's seven cases
+# exist precisely to make the guard withhold something, so the original blanket
+# `exit != 0 => FAIL` reads that feature as a crash and reports the guard broken
+# at the exact moment it is working.
+#
+# The fix is here, in the verifier, NOT in the exit contract: this script's
+# assertion -- the overwrite guard protects local edits -- is still correct, and
+# only the mechanism that signals it changed. Distinguishing the two matters,
+# because "exited non-zero" must keep catching a real crash. Exit 1 is tolerated
+# ONLY when the run also printed the WITHHELD report; every other non-zero exit
+# is still a hard failure, and the per-case assertions below (local content
+# preserved byte-for-byte, WARN naming the file, baseline not advanced) remain
+# the actual evidence. require_withheld() additionally pins the path into the
+# WITHHELD block, so a run that exits 1 for some unrelated reason cannot pass.
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q "^WITHHELD"; then
+  : # intentional loud partial delivery -- per-case assertions below decide
+elif [ "$RC" -ne 0 ]; then
+  echo "FAIL: update_template.py exited $RC for case '$CASE' with no WITHHELD report -- a crash or an unrelated refusal, not the intentional partial-delivery exit" >&2
   echo "$OUT" >&2
   exit 1
 fi
+
+require_withheld() {
+  # $1 = path that this case expects to be named as undelivered.
+  if [ "$RC" -ne 1 ]; then
+    echo "FAIL: case '$CASE' withheld $1 but the run exited $RC -- a partial delivery must exit non-zero so automated callers cannot read it as success (delivery-integrity F1)" >&2
+    echo "$OUT" >&2
+    exit 1
+  fi
+  if ! echo "$OUT" | sed -n '/^WITHHELD/,$p' | grep -qF -- "- $1"; then
+    echo "FAIL: case '$CASE' did not name $1 in the WITHHELD report, so the operator is never told which path was not delivered" >&2
+    echo "$OUT" >&2
+    exit 1
+  fi
+  if ! echo "$OUT" | grep -q -- "--force-path"; then
+    echo "FAIL: case '$CASE' printed a WITHHELD report with no remedy naming --force-path" >&2
+    echo "$OUT" >&2
+    exit 1
+  fi
+}
+
+require_exit_zero() {
+  # Cases that withhold NOTHING must still exit 0 -- the tolerance added above
+  # must not let a genuine regression hide behind a WITHHELD block.
+  if [ "$RC" -ne 0 ]; then
+    echo "FAIL: case '$CASE' delivered everything it carried but exited $RC" >&2
+    echo "$OUT" >&2
+    exit 1
+  fi
+}
 
 if echo "$OUT" | grep -qi "Traceback"; then
   echo "FAIL: update_template.py raised an unhandled exception for case '$CASE'" >&2
@@ -245,27 +298,21 @@ fi
 
 case "$CASE" in
   no_baseline)
+    # GH-1343-informed policy: no recorded baseline AND local content differs
+    # from incoming => treated as diverged, same as a confirmed mismatch.
+    # WARN + SKIP, preserving local content byte-for-byte, no baseline write.
     NEW_CONTENT="$(cat "$WS/harness_file.txt" 2>/dev/null || true)"
-    if [ "$NEW_CONTENT" != "$TEMPLATE_V1" ]; then
-      echo "FAIL: harness_file.txt is '$NEW_CONTENT', expected update to '$TEMPLATE_V1' (no baseline should not block the update)" >&2
+    if [ "$NEW_CONTENT" != "PRE-EXISTING-LOCAL-V0" ]; then
+      echo "FAIL: harness_file.txt is '$NEW_CONTENT', expected it to stay 'PRE-EXISTING-LOCAL-V0' (no-baseline-and-differs must SKIP the overwrite and preserve local content, per GH-1343)" >&2
       exit 1
     fi
-    if [ ! -f "$BASELINE_FILE" ]; then
-      echo "FAIL: no baseline file was recorded at $BASELINE_FILE after syncing a file with no prior baseline" >&2
-      exit 1
-    fi
-    RECORDED="$(baseline_value "harness_file.txt")"
-    EXPECTED_HASH="$(sha256_of "$WS/harness_file.txt")"
-    if [ "$RECORDED" != "$EXPECTED_HASH" ]; then
-      echo "FAIL: baseline for harness_file.txt is '$RECORDED', expected '$EXPECTED_HASH' (new baseline not recorded after first sync)" >&2
-      exit 1
-    fi
-    if echo "$OUT" | grep -qi "warn" && echo "$OUT" | grep -i "warn" | grep -q "harness_file.txt"; then
-      echo "FAIL: unexpected WARN for harness_file.txt when there was no prior baseline to diverge from" >&2
+    if ! (echo "$OUT" | grep -qi "warn" && echo "$OUT" | grep -i "warn" | grep -q "harness_file.txt"); then
+      echo "FAIL: no WARN naming harness_file.txt was printed for the no-baseline-and-differs case (GH-1343 regression: silently destroying un-tracked local content)" >&2
       echo "$OUT" >&2
       exit 1
     fi
-    echo "PASS: no_baseline case -- update proceeded normally and a new baseline was recorded"
+    require_withheld "harness_file.txt"
+    echo "PASS: no_baseline case -- local content preserved, WARN printed, no baseline silently written"
     ;;
 
   match_baseline)
@@ -285,6 +332,7 @@ case "$CASE" in
       echo "$OUT" >&2
       exit 1
     fi
+    require_exit_zero
     echo "PASS: match_baseline case -- untouched file updated normally, baseline refreshed"
     ;;
 
@@ -311,6 +359,7 @@ case "$CASE" in
       echo "FAIL: baseline for harness_file.txt was changed to '$RECORDED' (expected it to stay at the original '$ORIGINAL_HASH' -- a silently-advanced baseline hides the divergence)" >&2
       exit 1
     fi
+    require_withheld "harness_file.txt"
     echo "PASS: mismatch_baseline case -- locally modified file preserved untouched, WARN printed, baseline left unchanged"
     ;;
 
@@ -340,26 +389,31 @@ case "$CASE" in
       echo "$OUT" >&2
       exit 1
     fi
+    require_exit_zero
     echo "PASS: workspace_derived_untouched case -- WORKSPACE/DERIVED files unaffected by the new guard, even with poisoned baseline entries"
     ;;
 
   corrupt_baseline)
+    # A corrupt baseline file collapses to the same no-record status as
+    # no_baseline. Local content differs from incoming, so this degrades to
+    # the same GH-1343-informed SKIP-and-WARN outcome -- not auto-overwrite.
     NEW_CONTENT="$(cat "$WS/harness_file.txt" 2>/dev/null || true)"
-    if [ "$NEW_CONTENT" != "$TEMPLATE_V2" ]; then
-      echo "FAIL: harness_file.txt is '$NEW_CONTENT', expected update to '$TEMPLATE_V2' (a corrupt baseline file must degrade to no-baseline, not block the update)" >&2
+    if [ "$NEW_CONTENT" != "$TEMPLATE_V1" ]; then
+      echo "FAIL: harness_file.txt is '$NEW_CONTENT', expected it to stay '$TEMPLATE_V1' (a corrupt baseline must degrade to no-record-and-differs, which SKIPs the overwrite, not auto-overwrite)" >&2
       exit 1
     fi
-    if ! python3 -c "import json; json.load(open('$BASELINE_FILE'))" 2>/dev/null; then
-      echo "FAIL: baseline file at $BASELINE_FILE is still not valid JSON after the run (must self-heal by rewriting it)" >&2
+    if echo "$OUT" | grep -qi "Traceback"; then
+      echo "FAIL: update_template.py raised an unhandled exception reading the corrupt baseline file" >&2
+      echo "$OUT" >&2
       exit 1
     fi
-    RECORDED="$(baseline_value "harness_file.txt")"
-    EXPECTED_HASH="$(sha256_of "$WS/harness_file.txt")"
-    if [ "$RECORDED" != "$EXPECTED_HASH" ]; then
-      echo "FAIL: baseline for harness_file.txt is '$RECORDED', expected '$EXPECTED_HASH' after recovering from a corrupt baseline file" >&2
+    if ! (echo "$OUT" | grep -qi "warn" && echo "$OUT" | grep -i "warn" | grep -q "harness_file.txt"); then
+      echo "FAIL: no WARN naming harness_file.txt was printed for the corrupt-baseline-and-differs case" >&2
+      echo "$OUT" >&2
       exit 1
     fi
-    echo "PASS: corrupt_baseline case -- malformed baseline file did not crash the run and was self-healed"
+    require_withheld "harness_file.txt"
+    echo "PASS: corrupt_baseline case -- malformed baseline file did not crash the run; local content preserved with WARN"
     ;;
 
   dir_entry_mismatch)
@@ -390,6 +444,7 @@ case "$CASE" in
       echo "FAIL: dirfiles/other_file.txt (untouched sibling in the same directory entry) is '$SIBLING_CONTENT', expected update to '$TEMPLATE_V2' -- an unmodified file in the same directory entry must still update normally" >&2
       exit 1
     fi
+    require_withheld "dirfiles/pulse_mission_loop.sh"
     echo "PASS: dir_entry_mismatch case -- locally modified file nested in a directory-category HARNESS entry preserved with WARN, untouched sibling still updated"
     ;;
 
@@ -416,6 +471,7 @@ case "$CASE" in
       echo "FAIL: baseline for orderdir/target_file.txt was changed to '$RECORDED' (expected it to stay at the original '$ORIGINAL_HASH')" >&2
       exit 1
     fi
+    require_withheld "orderdir/target_file.txt"
     echo "PASS: dir_and_file_entry_order case -- guard is order-independent; nested file preserved regardless of directory-entry-before-file-entry ordering"
     ;;
 esac

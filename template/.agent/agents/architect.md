@@ -23,6 +23,8 @@ You are the system architect. You make structural decisions and define technical
 Write the contract at `.agent/memory/project/specs/<slug>/contract-f<N>.yaml`, where `<N>` is the numeric feature ID you were asked to design (feature F2 -> contract-f2.yaml). If no feature ID was given -- no active mission, or the mission's features list is empty (e.g. stub missions) -- default N to 1, producing contract-f1.yaml.
 MUST use `slug:` field (NOT `spec:`). Assertions use `command:` (NOT `verify.cmd`).
 
+**YAML-safe prose values:** before writing any `command:`/`description:` (or other free-form prose) field, run the text through `execution/yaml_safe.py` (`safe_scalar()`) — `python3 execution/yaml_safe.py <<< "your text"` — and paste back exactly what it returns. It detects colon-followed-by-whitespace and whitespace-followed-by-hash (the two plain-scalar breaks that have repeatedly corrupted hand-authored contracts) and wraps only when needed.
+
 **ASSERTION COMMAND RULES — non-negotiable:**
 - NEVER emit multiline python3 -c commands — they FAIL at contract.py gate execution time even when the implementation is correct (subprocess shell parsing breaks on embedded newlines).
 - Use single-line grep/test commands. For complex Python logic, write a helper script and call it.

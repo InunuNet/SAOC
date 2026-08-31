@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { getAdminSession, hasCapability } from '@/lib/admin-auth';
@@ -75,6 +76,12 @@ export default async function VendorsAdminPage() {
             <h1 className="font-serif text-[28px] font-semibold leading-tight text-ink sm:text-[34px]">
               Vendor Applications
             </h1>
+            <Link
+              href="/admin/vendors/applications"
+              className="font-sans text-[13px] font-medium text-ink underline hover:text-accent"
+            >
+              View new applications →
+            </Link>
           </div>
 
           <div className="mt-8">

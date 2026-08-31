@@ -12,11 +12,14 @@ Default mode is --dry-run (safe, read-only). Pass --apply to write changes.
 """
 import argparse
 import base64
+import errno
 import fnmatch
 import hashlib
 import json
 import os
+import shlex
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -31,11 +34,57 @@ from pathlib import Path
 # sync before silently clobbering it.
 TEMPLATE_BASELINES_PATH = Path(".agent/memory/scratch/template_baselines.json")
 
+# Operator opt-in allow-list for the symlink guard (update-template-write-
+# safety-hardening F2). Plain-text, one fnmatch pattern per line, same
+# comment/blank-line-skipping convention as .agent/no-update. Off by default
+# -- when this file doesn't exist, _refuse_symlinked_write() behaves exactly
+# as before this feature.
+ALLOWED_SYMLINKS_PATH = Path(".agent/allowed-symlinks")
+
+# Populated once by main() (persistent file + any --allow-symlink CLI
+# values) before the first write-capable guard call in a real --apply run.
+# _refuse_symlinked_write() reads this module-level list directly so the
+# opt-in is enforced at the single shared choke-point without touching any
+# of its ~15 call sites individually.
+_ALLOWED_SYMLINK_PATTERNS: list[str] = []
+
 # Applied-version state file (issue #1293 follow-on) — direct-write updater-owned
 # state, tracked outside .agent/update-manifest.yaml entirely (same pattern as
-# .agent/version itself). Written only on a fully successful --apply run so a
-# partial-failure run never reports a false "current" state to full_boot.sh.
+# .agent/version itself). Written on EVERY --apply run (delivery-integrity F4b),
+# carrying a "delivery" field of "complete" or "partial" plus the withheld/failed
+# paths, so the stamp describes what actually landed instead of freezing at an
+# old value on exactly the runs that delivered most of their content.
 TEMPLATE_STATE_PATH = Path(".agent/.template_state")
+
+# Workspace-provenance field inside .agent/.template_state (delivery-integrity
+# F4b addendum). The stamp is a TRACKED file, so every clone and fork of a
+# harness repo inherits the upstream workspace's stamp as its own: a checkout
+# that has never applied anything starts life asserting that it has, and the
+# receipt looks perfectly current because bump_version.sh keeps it moving. An
+# inherited stamp reads as HIGH confidence to _stamp_is_high_confidence() and
+# can drive a hard refusal on a workspace it says nothing about.
+#
+# Gitignoring the file was rejected: it makes an inherited stamp less likely
+# while leaving it exactly as undetectable, and does nothing about the stamps
+# already sitting in every existing clone. Identity flags those on the very
+# next read, with no migration.
+#
+# ABSENCE OF IDENTITY IS THE INHERITED SIGNATURE, not a compatibility
+# exemption. Every stamp written before this feature — including the one
+# committed in this repo — carries no identity, which is exactly the
+# population that must stop being trusted. There is deliberately no
+# "unstamped means local" escape hatch.
+WORKSPACE_IDENTITY_FIELD = "workspace_id"
+
+# How far .agent/.template_state may trail local .agent/version, in patch
+# releases, before it stops being trustworthy evidence about upstream
+# (delivery-integrity F4). Consulted ONLY when the incoming version sorts
+# BELOW the stamp: a healthy consumer restamps on every --apply, so more than
+# a handful of patch releases of drift means deliveries are not landing or not
+# stamping — which is a fact about this workspace, not about upstream. Its
+# only effect is to DOWNGRADE a hard refusal to a warning, so erring generous
+# is the safe direction.
+STAMP_STALENESS_PATCH_LIMIT = 5
 
 
 def _sha256_of_file(path: Path) -> str:
@@ -79,7 +128,10 @@ def save_template_baselines(baselines: dict, store_path: Path = TEMPLATE_BASELIN
     if _refuse_symlinked_write(store_path, "template baseline store"):
         return
     store_path.parent.mkdir(parents=True, exist_ok=True)
-    store_path.write_text(json.dumps(baselines, indent=2, sort_keys=True) + "\n")
+    _write_text_nofollow(
+        store_path, json.dumps(baselines, indent=2, sort_keys=True) + "\n",
+        "template baseline store",
+    )
 
 
 # Critical harness files that MUST exist in any onboarded workspace.
@@ -121,10 +173,14 @@ def _contains_symlink_component(path: Path, stop_at: Path) -> tuple[bool, Path |
         stop_resolved = stop_at if stop_at.is_absolute() else Path.cwd() / stop_at
 
     for comp in [p] + list(p.parents):
+        try:
+            comp_resolved = comp.resolve()
+        except OSError:
+            comp_resolved = comp
+        if comp_resolved == stop_resolved:
+            break
         if comp.is_symlink():
             return True, comp
-        if comp == stop_resolved:
-            break
     return False, None
 
 
@@ -134,6 +190,51 @@ def _describe_symlink_target(offending: Path) -> str:
         return str(offending.resolve())
     except OSError:
         return f"{os.readlink(offending)} (unresolvable)"
+
+
+def _load_allowed_symlinks(path: Path = ALLOWED_SYMLINKS_PATH) -> list[str]:
+    """Load the operator opt-in allow-list for _refuse_symlinked_write()
+    (update-template-write-safety-hardening F2), following the same
+    comment/blank-line-skipping plain-text convention as the .agent/no-update
+    loader in main(). Returns an empty list when the file doesn't exist --
+    the opt-in is off by default, and default (opt-in-unset) behavior stays
+    byte-for-byte unchanged.
+    """
+    patterns: list[str] = []
+    if path.exists():
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#"):
+                patterns.append(line)
+    return patterns
+
+
+def _is_allowed_symlink(offending: Path, patterns: list[str], stop_at: Path) -> bool:
+    """Check whether `offending` -- the actual symlinked ancestor component
+    _contains_symlink_component() flagged, not necessarily the leaf write
+    target -- matches an operator-declared allow-list pattern.
+
+    Matches `offending`'s path relative to `stop_at` (the same relative form
+    operators write in .agent/allowed-symlinks, e.g. ".agent/memory/scratch")
+    against each pattern with the same fnmatch-or-exact-match rule main()'s
+    is_protected() already uses for .agent/no-update. Because `offending` is
+    the symlinked component itself, an allow-listed ancestor still matches
+    when a deeper file under it is the real write target.
+    """
+    if not patterns:
+        return False
+    try:
+        stop_resolved = stop_at.resolve()
+    except OSError:
+        stop_resolved = stop_at if stop_at.is_absolute() else Path.cwd() / stop_at
+    try:
+        rel_str = str(offending.relative_to(stop_resolved))
+    except ValueError:
+        rel_str = str(offending)
+    for pattern in patterns:
+        if fnmatch.fnmatch(rel_str, pattern) or rel_str == pattern:
+            return True
+    return False
 
 
 def _refuse_symlinked_write(path: Path, label: str, stop_at: Path | None = None) -> bool:
@@ -156,6 +257,13 @@ def _refuse_symlinked_write(path: Path, label: str, stop_at: Path | None = None)
     if not contains_symlink:
         return False
     target_desc = _describe_symlink_target(offending)
+    if _is_allowed_symlink(offending, _ALLOWED_SYMLINK_PATTERNS, stop_at):
+        print(
+            f"  INFO  {label} is reached through a symlink at {offending} -> "
+            f"{target_desc} — proceeding (allow-listed via "
+            f"{ALLOWED_SYMLINKS_PATH} or --allow-symlink)."
+        )
+        return False
     print(
         f"  WARN  {label} is reached through a symlink at {offending} -> "
         f"{target_desc} — REFUSING to write through a symlinked "
@@ -164,6 +272,95 @@ def _refuse_symlinked_write(path: Path, label: str, stop_at: Path | None = None)
         "symlink manually, then re-run, if this path should hold "
         "canonical content."
     )
+    return True
+
+
+def _open_fd_nofollow(path: Path, label: str, stop_at: Path | None = None) -> int | None:
+    """Fd-pinned successor to _refuse_symlinked_write() (update-template-
+    write-safety-hardening F3) that closes the check-then-write TOCTOU
+    window: the ancestor-walk check and the write now happen against the
+    SAME open() syscall/fd instead of a path-string check followed by a
+    separately re-resolved write call.
+
+    Runs the identical ancestor-walk check _refuse_symlinked_write() uses
+    (same helper, same messages, same F2 allow-list consultation):
+      - Symlink found, NOT allow-listed -> WARN, return None (refused).
+      - Symlink found, allow-listed -> INFO, open the leaf WITHOUT
+        O_NOFOLLOW (follows the symlink, writes through it) -- required so
+        F2's operator-authorized escape hatch keeps working unchanged.
+      - No symlink found at check time -> open the leaf WITH O_NOFOLLOW.
+        If the leaf was swapped for a symlink in the race window between
+        the check above and this exact syscall, the kernel refuses to
+        follow it and raises OSError(errno.ELOOP) -- caught explicitly and
+        treated as a refusal, same as a normal symlink-refusal WARN. Any
+        other OSError is a real, unrelated filesystem error and propagates.
+
+    Returns a writable fd on success, or None if refused.
+    """
+    stop_at = stop_at if stop_at is not None else Path.cwd()
+    contains_symlink, offending = _contains_symlink_component(path, stop_at=stop_at)
+    if contains_symlink:
+        target_desc = _describe_symlink_target(offending)
+        if _is_allowed_symlink(offending, _ALLOWED_SYMLINK_PATTERNS, stop_at):
+            print(
+                f"  INFO  {label} is reached through a symlink at {offending} -> "
+                f"{target_desc} — proceeding (allow-listed via "
+                f"{ALLOWED_SYMLINKS_PATH} or --allow-symlink)."
+            )
+            return os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
+        print(
+            f"  WARN  {label} is reached through a symlink at {offending} -> "
+            f"{target_desc} — REFUSING to write through a symlinked "
+            "destination (would write content to an external, potentially "
+            "attacker- or operator-controlled path). Replace or remove the "
+            "symlink manually, then re-run, if this path should hold "
+            "canonical content."
+        )
+        return None
+
+    try:
+        return os.open(
+            str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o644
+        )
+    except OSError as e:
+        if e.errno == errno.ELOOP:
+            print(
+                f"  WARN  {label} was swapped for a symlink between the "
+                "ancestor check and the write (race window) — REFUSING to "
+                "write through a symlinked destination."
+            )
+            return None
+        raise
+
+
+def _write_text_nofollow(path: Path, text: str, label: str, stop_at: Path | None = None) -> bool:
+    """Fd-pinned replacement for the "_refuse_symlinked_write() then
+    Path.write_text()" pattern. Returns True on success, False if refused
+    (symlinked destination, not allow-listed, or swapped mid-race)."""
+    fd = _open_fd_nofollow(path, label, stop_at=stop_at)
+    if fd is None:
+        return False
+    with os.fdopen(fd, "w") as f:
+        f.write(text)
+    return True
+
+
+def _copy2_nofollow(src: Path, dst: Path, label: str, stop_at: Path | None = None) -> bool:
+    """Fd-pinned replacement for the "_refuse_symlinked_write() then
+    shutil.copy2()" pattern. Preserves shutil.copy2()'s mode/mtime copy
+    semantics via fchmod/utime on the already-open fd. Returns True on
+    success, False if refused (symlinked destination, not allow-listed, or
+    swapped mid-race)."""
+    fd = _open_fd_nofollow(dst, label, stop_at=stop_at)
+    if fd is None:
+        return False
+    src_stat = os.stat(src)
+    with os.fdopen(fd, "wb") as f:
+        with open(src, "rb") as sf:
+            shutil.copyfileobj(sf, f)
+        f.flush()
+        os.fchmod(f.fileno(), stat.S_IMODE(src_stat.st_mode))
+        os.utime(f.fileno(), ns=(src_stat.st_atime_ns, src_stat.st_mtime_ns))
     return True
 
 
@@ -206,6 +403,8 @@ def _create_guarded_backup_dir(prefix: str) -> Path:
 def _sync_file_with_guard(
     src_file: Path, dst_file: Path, backup_dir: Path | None, baseline_key: str,
     force: bool = False, predict: bool = False,
+    refused_out: list[str] | None = None,
+    untracked_out: list[str] | None = None,
 ) -> str:
     """Single point of write for one HARNESS file (issue #104, round 2; force=
     True path is issue #1348's remediation / F6).
@@ -251,6 +450,17 @@ def _sync_file_with_guard(
     re-deriving a second, independently maintained guess from
     src_path.exists(), which is how the preview and the real --apply
     outcome silently drifted apart in the first place.
+
+    untracked_out (baseline-guard-clearability F1/D1) is an optional
+    accumulator, parallel to refused_out: every baseline_key withheld
+    because it carries NO recorded baseline (as opposed to a real baseline
+    mismatch) is appended to it. "No record of whether this file ever
+    diverged" is a state distinct from "this file was locally modified" --
+    conflating the two is exactly what made Omarchy's byte-identical,
+    never-edited execution/bump_version.sh read as a local hand-edit and
+    get withheld forever. main() uses this list to annotate the WITHHELD
+    report honestly and to decide whether .agent/.template_state needs a
+    `reconcile_from` anchor written (see write_template_state()).
     """
     guard_bypassed = False
 
@@ -275,6 +485,12 @@ def _sync_file_with_guard(
     # resolved target so the operator can act explicitly.
     if _refuse_symlinked_write(dst_file, baseline_key):
         print(f"  ({baseline_key}: refusal above is NOT overridable via --force-path)")
+        # delivery-integrity F4c-2: recorded in its OWN bucket, not merged into
+        # the ordinary withheld one. This is a security event about the write
+        # PATH, not a content disagreement, and the two must stay separable all
+        # the way to the terminal report and the exit code.
+        if refused_out is not None and baseline_key not in refused_out:
+            refused_out.append(baseline_key)
         return "skipped"
 
     if dst_file.exists() and dst_file.is_file():
@@ -357,21 +573,66 @@ def _sync_file_with_guard(
 
         if diverged:
             if not force:
-                reason = (
-                    "has local modifications since the last template sync"
-                    if not no_record else
-                    "has no recorded baseline (no prior sync tracked this file, "
-                    "or the baseline store is missing/corrupt) and differs from "
-                    "incoming content -- treated as diverged, not as safe to "
-                    "overwrite"
-                )
-                print(
-                    f"  WARN  {baseline_key} {reason} — SKIPPING overwrite "
-                    "(baseline mismatch; see .agent/memory/scratch/"
-                    "template_baselines.json). To deliberately clear local "
-                    f"modifications and restore canonical content, re-run "
-                    f"with: --force-path {baseline_key}"
-                )
+                # Shell-quoted for the "Re-run with ..." suggestions below: a
+                # manifest path containing a space would otherwise be pasted
+                # back as two wrong targets. Ordinary paths are unchanged.
+                quoted_key = shlex.quote(baseline_key)
+                if no_record:
+                    # baseline-guard-clearability F1/F2: this state must never
+                    # be reported as a local edit -- the operator has no
+                    # evidence one happened, and a careful operator who reads
+                    # a false "local modifications" claim correctly declines
+                    # the remedy and stays broken forever (the live Omarchy
+                    # report). Named "no baseline recorded" (the literal
+                    # phrase the goldens key on), and the remedy is ordered
+                    # by evidence -- reconcile first, since it can prove the
+                    # file was never edited -- then force, then adopt, with
+                    # the force/adopt asymmetry stated here at the point of
+                    # offer, not only in --help.
+                    if untracked_out is not None and baseline_key not in untracked_out:
+                        untracked_out.append(baseline_key)
+                    print(
+                        f"  WARN  {baseline_key} has no baseline recorded "
+                        "(this workspace has no record that it was ever "
+                        "synced) and differs from incoming content -- "
+                        "SKIPPING overwrite. Recovery: --reconcile-from-history "
+                        "checks this path against the release this workspace "
+                        "records and delivers it only if the bytes match. "
+                        "--force-path delivers the incoming content NOW, "
+                        "this run, and prints a loud FORCE line naming what "
+                        "it destroyed (a backup is taken first) -- the "
+                        "overwrite is visible immediately. --adopt-baseline "
+                        "does not touch this file now, but the NEXT --apply "
+                        "after it delivers the incoming content silently, "
+                        "with no further warning -- adopt is only safe when "
+                        "you are confident this file was never edited; if "
+                        "you cannot tell, treat it as one that was. Re-run "
+                        f"with --reconcile-from-history {quoted_key}, "
+                        f"--force-path {quoted_key}, or --adopt-baseline "
+                        f"{quoted_key} as appropriate."
+                    )
+                else:
+                    print(
+                        f"  WARN  {baseline_key} has local modifications "
+                        "since the last template sync -- SKIPPING overwrite "
+                        "(baseline mismatch; see .agent/memory/scratch/"
+                        "template_baselines.json). Recovery: "
+                        "--reconcile-from-history checks this path against "
+                        "the release this workspace records and delivers it "
+                        "only if the bytes match (unlikely for a real edit). "
+                        "--force-path delivers the incoming content NOW, "
+                        "this run, discarding these local modifications, "
+                        "and prints a loud FORCE line naming what it "
+                        "destroyed (a backup is taken first) -- the "
+                        "overwrite is visible immediately. --adopt-baseline "
+                        "does not touch this file now, but the NEXT --apply "
+                        "after it delivers the incoming content silently, "
+                        "with no further warning -- adopt is only safe when "
+                        "you are confident this file was never edited; if "
+                        "you cannot tell, treat it as one that was. Re-run "
+                        f"with --force-path {quoted_key} or "
+                        f"--adopt-baseline {quoted_key} as appropriate."
+                    )
                 return "skipped"
             # Explicit opt-in via --force-path for this exact path. State
             # what is about to be overwritten BEFORE overwriting it —
@@ -381,10 +642,14 @@ def _sync_file_with_guard(
             # bypass (a real baseline mismatch OR a no-record divergence),
             # so this is the one and only place "forced" may be reported.
             guard_bypassed = True
+            divergence_desc = (
+                "no baseline recorded for it" if no_record else
+                "local modifications detected (baseline mismatch)"
+            )
             print(
-                f"  FORCE {baseline_key} — local modifications detected "
-                "(baseline mismatch); overwriting with canonical content "
-                "because --force-path was passed explicitly for this path"
+                f"  FORCE {baseline_key} — {divergence_desc}; overwriting "
+                "with canonical content because --force-path was passed "
+                "explicitly for this path"
                 + (f" (backup: {backup_dir / dst_file})" if backup_dir is not None else " (no backup_dir configured)")
             )
 
@@ -400,14 +665,19 @@ def _sync_file_with_guard(
         # dst_file's pre-overwrite content.
         backup_path = backup_dir / dst_file
         if _refuse_symlinked_write(backup_path, f"{baseline_key} backup target"):
+            # Also a refusal, and a sharper one: a symlink in the BACKUP path
+            # redirects the user's existing content outward, which is an
+            # exfiltration primitive rather than merely a write one.
+            if refused_out is not None and baseline_key not in refused_out:
+                refused_out.append(baseline_key)
             return "skipped"
         if not predict:
             backup_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(dst_file, backup_path)
+            _copy2_nofollow(dst_file, backup_path, f"{baseline_key} backup target")
 
     if not predict:
         dst_file.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src_file, dst_file)
+        _copy2_nofollow(src_file, dst_file, baseline_key)
 
         try:
             new_hash = _sha256_of_file(dst_file)
@@ -421,9 +691,79 @@ def _sync_file_with_guard(
     return "forced" if guard_bypassed else "copied"
 
 
+def _workspace_identity() -> str:
+    """Opaque, offline identity for the workspace rooted at the current
+    directory (delivery-integrity F4b).
+
+    Truncated sha256 of the workspace root's real path. Properties this must
+    hold, in the order they matter:
+
+      unique per checkout -- two checkouts on one machine, and a fork on
+        another, never collide, so an inherited stamp is DISTINGUISHABLE
+        rather than merely less likely;
+      stable across applies -- derived from the path alone, so repeated
+        --apply runs in one workspace agree and a local bump never turns a
+        trusted stamp into a foreign-looking one;
+      offline -- no subprocess, no `git`, no network. The stamp must be
+        writable with PATH stripped to an empty directory;
+      opaque -- the stamp is committed to public repos, so a raw path would
+        publish a username and directory layout. A hash publishes nothing.
+
+    A workspace that is legitimately MOVED reads as foreign afterwards. That
+    is deliberate and safe: foreign only ever DOWNGRADES confidence to
+    warn-and-proceed, never to a refusal, and the next --apply restamps it.
+    """
+    return hashlib.sha256(
+        os.path.realpath(os.getcwd()).encode("utf-8")
+    ).hexdigest()[:16]
+
+
+def _stamp_identity_fields() -> dict:
+    """The provenance fields every stamp writer must record. Single source of
+    truth for both writers -- execution/bump_version.sh obtains these through
+    `update_template.py --print-workspace-identity` rather than recomputing
+    them, so the two can never drift (delivery-integrity F4b B15).
+    """
+    return {WORKSPACE_IDENTITY_FIELD: _workspace_identity()}
+
+
+def _stamp_is_from_this_workspace(state: dict) -> bool:
+    """Was this stamp written by an --apply/bump IN this workspace?
+
+    False for a stamp carrying another workspace's identity AND for one
+    carrying no identity at all -- see WORKSPACE_IDENTITY_FIELD's note on why
+    absence is the inherited signature rather than an exemption.
+    """
+    if not isinstance(state, dict):
+        return False
+    return state.get(WORKSPACE_IDENTITY_FIELD) == _workspace_identity()
+
+
+def _paths_have_identical_content(src: Path, dst: Path) -> bool:
+    """True iff both are regular files with byte-identical content.
+
+    Used to retract a withheld-delivery claim (delivery-integrity F1): a key
+    the baseline guard refused to write may still have been delivered by a
+    later direct writer in the same run (update_profile_version() writes
+    .agent/version itself), and claiming a file was withheld when the
+    workspace demonstrably holds the canonical content is the same false
+    report, inverted. Never raises -- an unreadable side means "cannot prove
+    delivery", which keeps the withheld claim.
+    """
+    try:
+        if not (src.is_file() and dst.is_file()):
+            return False
+        return _sha256_of_file(src) == _sha256_of_file(dst)
+    except OSError:
+        return False
+
+
 def copy_harness(
     src: Path, dst: Path, backup_dir: Path, path_key: str | None = None,
     force_paths: frozenset[str] = frozenset(),
+    withheld_out: list[str] | None = None,
+    refused_out: list[str] | None = None,
+    untracked_out: list[str] | None = None,
 ) -> tuple[str, bool]:
     """Copy a HARNESS path (file or directory) with backup.
 
@@ -468,6 +808,22 @@ def copy_harness(
     an explicit --force-path argument, never inferred, and is validated for
     manifest membership AND real-path containment before this function is ever
     called (see _collect_valid_harness_keys / main()).
+
+    withheld_out (delivery-integrity F1) is an optional accumulator: every
+    per-file baseline key whose _sync_file_with_guard() call returned
+    "skipped" — i.e. content this run was carrying but did NOT deliver — is
+    appended to it, in the same key format force_paths uses. This is the
+    STRUCTURAL report of a partial delivery; main() drives its exit code and
+    its WITHHELD summary block off this list, never off the returned message
+    string (F9's rule: a directory entry's message reads "update (dir) ..."
+    whether it delivered everything or nothing). The parameter is an
+    accumulator rather than a third return element deliberately — the return
+    shape (message, changed) is unpacked by existing golden verifiers.
+
+    untracked_out (baseline-guard-clearability F1) is passed straight through
+    to every _sync_file_with_guard() call this function makes -- the subset
+    of withheld_out withheld because no baseline was ever recorded, as
+    opposed to a real local edit. See _sync_file_with_guard()'s own docstring.
     """
     if path_key is None:
         path_key = str(dst)
@@ -487,6 +843,8 @@ def copy_harness(
         # front instead.
         if _refuse_symlinked_write(dst, f"{path_key} entry root"):
             print(f"  ({path_key}: refusal above is NOT overridable via --force-path)")
+            if refused_out is not None and path_key not in refused_out:
+                refused_out.append(path_key)
             return f"  SKIP  (symlinked entry root) {dst}", False
 
         dst.mkdir(parents=True, exist_ok=True)
@@ -502,7 +860,8 @@ def copy_harness(
             dst_file = dst / rel
             file_key = f"{base_key}/{rel.as_posix()}"
             status = _sync_file_with_guard(
-                src_file, dst_file, backup_dir, file_key, force=file_key in force_paths
+                src_file, dst_file, backup_dir, file_key, force=file_key in force_paths,
+                refused_out=refused_out, untracked_out=untracked_out,
             )
             if status == "copied":
                 copied.append(str(rel))
@@ -512,6 +871,11 @@ def copy_harness(
                 unchanged_count += 1
             else:
                 guarded.append(str(rel))
+                # A refusal already claimed this key; it must not ALSO be
+                # reported as an ordinary withholding.
+                if withheld_out is not None and not (
+                        refused_out is not None and file_key in refused_out):
+                    withheld_out.append(file_key)
         detail = f"copied {len(copied)}, unchanged {unchanged_count}"
         if forced:
             detail += f", FORCED {forced}"
@@ -520,13 +884,19 @@ def copy_harness(
         changed = bool(copied or forced)
         return f"  update (dir)  {dst}  [{detail}]", changed
     else:
-        status = _sync_file_with_guard(src, dst, backup_dir, path_key, force=path_key in force_paths)
+        status = _sync_file_with_guard(src, dst, backup_dir, path_key,
+                                       force=path_key in force_paths,
+                                       refused_out=refused_out,
+                                       untracked_out=untracked_out)
         if status == "copied":
             return f"  update (file) {dst}", True
         if status == "forced":
             return f"  FORCE (file)  {dst}", True
         if status == "unchanged":
             return f"  unchanged     {dst}", False
+        if withheld_out is not None and not (
+                refused_out is not None and path_key in refused_out):
+            withheld_out.append(path_key)
         return f"  SKIP  (guarded) {dst}", False
 
 
@@ -571,6 +941,13 @@ def predict_harness(
         return []
 
     if src.is_dir():
+        # Entry-root symlink refusal, mirrored from copy_harness() (see the
+        # matching check there) so the dry-run preview matches the real
+        # --apply outcome instead of walking into a symlinked directory and
+        # emitting one WARN + one result tuple per file.
+        if _refuse_symlinked_write(dst, f"{path_key} entry root"):
+            return [(path_key, "skipped")]
+
         base_key = path_key.rstrip("/")
         results: list[tuple[str, str]] = []
         for src_file in sorted(src.rglob("*")):
@@ -623,20 +1000,81 @@ def merge_line_union(src: Path, dst: Path, backup_dir: Path) -> str:
         if _refuse_symlinked_write(backup_path, f"{dst} backup target"):
             return f"  SKIP  (symlinked backup target) {dst}"
         backup_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(dst, backup_path)
+        _copy2_nofollow(dst, backup_path, f"{dst} backup target")
 
     merged = dst_lines + new_lines
     dst.parent.mkdir(parents=True, exist_ok=True)
-    dst.write_text("\n".join(merged) + "\n")
+    _write_text_nofollow(dst, "\n".join(merged) + "\n", f"{dst} (MERGE destination)")
     return f"  merge  (line_union, +{len(new_lines)} lines): {dst}"
 
 
+def merge_list_union(base_list: list, override_list: list) -> list:
+    """Union two JSON lists, preserving base order, then appending anything
+    from override not already present.
+
+    Claude Code hook-group entries have the shape
+    {"matcher": ..., "hooks": [...]}. For lists made entirely of that shape
+    on both sides, union by "matcher": a matcher present on both sides gets
+    its inner "hooks" list unioned recursively (so a local-only hook
+    *inside* an existing matcher group -- the exact incident this fixes --
+    is preserved instead of the whole group being replaced); a matcher only
+    present on one side is kept as-is.
+
+    Every other list shape (permissions.allow/deny/ask string arrays,
+    plain hook-command dicts, scalars) is unioned by exact-value dedup,
+    preserving first-seen order -- base items first, then novel override
+    items.
+    """
+
+    def _is_hook_group_list(lst):
+        return len(lst) > 0 and all(
+            isinstance(e, dict) and "matcher" in e and "hooks" in e for e in lst
+        )
+
+    if _is_hook_group_list(base_list) and _is_hook_group_list(override_list):
+        result = [dict(e) for e in base_list]
+        by_matcher = {e["matcher"]: e for e in result}
+        for entry in override_list:
+            matcher = entry["matcher"]
+            if matcher in by_matcher:
+                existing = by_matcher[matcher]
+                existing["hooks"] = merge_list_union(
+                    existing.get("hooks", []), entry.get("hooks", [])
+                )
+            else:
+                new_entry = dict(entry)
+                result.append(new_entry)
+                by_matcher[matcher] = new_entry
+        return result
+
+    # Generic order-preserving dedup union. dict/list elements are compared
+    # by their JSON-serialized form (sort_keys, so key order never causes a
+    # spurious duplicate); scalars compare by value directly.
+    import json as _json
+
+    def _dedupe_key(e):
+        return _json.dumps(e, sort_keys=True) if isinstance(e, (dict, list)) else e
+
+    seen = set()
+    result = []
+    for e in list(base_list) + list(override_list):
+        k = _dedupe_key(e)
+        if k not in seen:
+            seen.add(k)
+            result.append(e)
+    return result
+
+
 def deep_merge(base: dict, override: dict) -> dict:
-    """Deep merge: override values take priority; nested dicts are merged recursively."""
+    """Deep merge: override values take priority; nested dicts are merged
+    recursively; lists present on both sides are unioned (see
+    merge_list_union) instead of replaced."""
     result = dict(base)
     for key, val in override.items():
         if key in result and isinstance(result[key], dict) and isinstance(val, dict):
             result[key] = deep_merge(result[key], val)
+        elif key in result and isinstance(result[key], list) and isinstance(val, list):
+            result[key] = merge_list_union(result[key], val)
         else:
             result[key] = val
     return result
@@ -678,10 +1116,10 @@ def merge_json_deep(src: Path, dst: Path, backup_dir: Path) -> str:
         if _refuse_symlinked_write(backup_path, f"{dst} backup target"):
             return f"  SKIP  (symlinked backup target) {dst}"
         backup_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(dst, backup_path)
+        _copy2_nofollow(dst, backup_path, f"{dst} backup target")
 
     dst.parent.mkdir(parents=True, exist_ok=True)
-    dst.write_text(json.dumps(merged, indent=2) + "\n")
+    _write_text_nofollow(dst, json.dumps(merged, indent=2) + "\n", f"{dst} (MERGE destination)")
     return f"  merge  (json_deep_merge): {dst}"
 
 
@@ -824,7 +1262,7 @@ def apply_retractions(
             if _refuse_symlinked_write(backup_path, f"{rel_path} backup target", stop_at=project_root):
                 continue
             backup_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(dst, backup_path)
+            _copy2_nofollow(dst, backup_path, f"{rel_path} backup target", stop_at=project_root)
 
         if action == "remove":
             del parent[leaf]
@@ -837,12 +1275,36 @@ def apply_retractions(
             continue
 
         try:
-            dst.write_text(json.dumps(data, indent=2) + "\n")
+            wrote = _write_text_nofollow(
+                dst, json.dumps(data, indent=2) + "\n",
+                f"{rel_path} (retraction target)", stop_at=project_root,
+            )
         except OSError as e:
             print(f"  retraction SKIP   {rel_path}::{key_path} (write failed: {e})", file=sys.stderr)
             continue
+        if not wrote:
+            print(
+                f"  retraction SKIP   {rel_path}::{key_path} "
+                "(write refused: symlinked destination)",
+                file=sys.stderr,
+            )
+            continue
 
         print(f"  retraction FIRED  {rel_path}::{key_path} -- {action} (was {current_value!r}) -- {reason}")
+
+        # Retraction only edits the on-disk settings file -- it cannot un-export
+        # a variable a running process already inherited into its own environment
+        # (delivered-value-retraction cannot self-heal a live session, see
+        # .agent/memory/project/data/p2-env-var-retraction-cannot-self-heal-a.md).
+        # If this process's own environment still carries the retracted var, the
+        # session that spawned this run needs a restart before the fix applies.
+        env_var_name = key_path.split(".", 1)[1] if key_path.startswith("env.") else None
+        if env_var_name is not None and env_var_name in os.environ:
+            print(
+                f"  ⚠️  RESTART REQUIRED: {env_var_name} was retracted from {rel_path} but is "
+                "still set in this process's live environment -- it will not take effect until "
+                "you restart your Claude Code session."
+            )
 
         fired.append({
             "path": rel_path,
@@ -867,7 +1329,10 @@ def apply_retractions(
                 existing = []
             existing.extend(fired)
             log_path.parent.mkdir(parents=True, exist_ok=True)
-            log_path.write_text(json.dumps(existing, indent=2) + "\n")
+            _write_text_nofollow(
+                log_path, json.dumps(existing, indent=2) + "\n",
+                "retraction audit log", stop_at=project_root,
+            )
 
     return fired
 
@@ -908,7 +1373,7 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
         )
         if old_local_version != new_version:
             local_version_path.parent.mkdir(parents=True, exist_ok=True)
-            local_version_path.write_text(new_version + "\n")
+            _write_text_nofollow(local_version_path, new_version + "\n", "local .agent/version")
             changes.append(
                 f".agent/version: {old_local_version if old_local_version is not None else 'missing'} → {new_version}"
             )
@@ -953,7 +1418,7 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
         if _refuse_symlinked_write(profile_path, "profile.json"):
             changes.append("WARN profile.json is symlinked — skipping template_version update")
         else:
-            profile_path.write_text(json.dumps(profile, indent=2) + "\n")
+            _write_text_nofollow(profile_path, json.dumps(profile, indent=2) + "\n", "profile.json")
 
     if not changes:
         return f"  unchanged template_version ({new_version})"
@@ -961,13 +1426,67 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
     return f"  updated: {'; '.join(changes)}"
 
 
-def write_template_state(source: Path, state_path: Path = TEMPLATE_STATE_PATH) -> str:
+def write_template_state(
+    source: Path, state_path: Path = TEMPLATE_STATE_PATH,
+    delivery: str = "complete", withheld: list[str] | None = None,
+    failed: list[str] | None = None, refused: list[str] | None = None,
+    untracked: list[str] | None = None,
+    prior_local_version: str | None = None,
+) -> str:
     """Persist the applied template_version to .agent/.template_state.
 
-    Only called from the full-success path in main() (never from a partial-failure
-    run — see A6). Only rewrites when the version actually changed, so a no-op
-    second --apply run leaves the file byte-identical (see A8) instead of
-    refreshing applied_at every time.
+    Called on EVERY --apply run, including one that withheld or failed paths
+    (delivery-integrity F4b). Gating the write on a clean run was rejected
+    deliberately: a partial run has still delivered most of its content, so
+    freezing the stamp at the old version understates delivery and produces
+    exactly the frozen-stamp ambiguity that destroys the version guard's
+    discriminator. The run's honesty lives in the `delivery` field instead —
+    "complete" or "partial", accompanied by the withheld/failed keys on a
+    partial run — so a later reader can tell WHICH content is missing rather
+    than only that the number moved.
+
+    Rewrites when the version OR the recorded delivery outcome changed, so a
+    no-op second --apply run leaves the file byte-identical instead of
+    refreshing applied_at every time, while a partial run at an unchanged
+    version can never leave a stale "complete" behind.
+
+    untracked (baseline-guard-clearability F1/D3, the keystone fix) is the
+    subset of `withheld` that carries NO recorded baseline. Whenever this run
+    leaves at least one such path undelivered, `reconcile_from` is written
+    (or preserved, if already set) as the version this workspace held
+    IMMEDIATELY BEFORE this run -- the one anchor an untracked file's bytes
+    can still be proven against. Without this, `template_version` below
+    advances to the version this very run just applied on every single call,
+    including this one, and --reconcile-from-history would resolve against
+    the release it just applied and never find a match again (D-B in
+    DECISIONS.md).
+
+    Three rules govern that anchor, and the first two are the whole point:
+
+    1. The pre-run version is read from the EXISTING stamp when there is one,
+       and otherwise from `prior_local_version` -- the local .agent/version
+       captured by the caller BEFORE update_profile_version() overwrote it.
+       A workspace that predates baseline tracking is exactly the population
+       this mission exists for, and it has no stamp at all; reading only the
+       stamp there yields None, drops the anchor, and mints one equal to the
+       applied version on the following run.
+    2. An anchor equal to `new_version` is NEVER minted. That value is the
+       version this run just applied, so a withheld file's bytes cannot match
+       it by construction -- recording it turns the printed remedy into the
+       trap this field was added to close, and reports a file byte-identical
+       to a real release as a hand-edit, forever. No usable anchor means no
+       anchor: absence degrades to "could not resolve", presence of a wrong
+       one degrades to a false accusation.
+    3. A run that leaves ZERO untracked paths undelivered CLEARS the anchor,
+       UNLESS a refused path (symlinked destination, F4c-2) still carries no
+       recorded baseline -- a refusal removes a path from the untracked
+       bucket without delivering it, and the anchor must survive until that
+       path is truly delivered or baselined. Otherwise the anchor has been
+       spent, and a stale anchor pointing at an ancient release would
+       send a LATER reconcile (for a file that first appears untracked at
+       some newer version) at the wrong tree, which resolves as UNRESOLVED
+       and calls a never-edited file a hand-edit. Clearing it lets the next
+       withholding run mint a correct one.
     """
     version_file = source / ".agent" / "version"
     if not version_file.exists():
@@ -977,25 +1496,114 @@ def write_template_state(source: Path, state_path: Path = TEMPLATE_STATE_PATH) -
     if not new_version:
         return "  SKIP  .template_state update (source .agent/version is empty)"
 
+    withheld = sorted(withheld or [])
+    failed = list(failed or [])
+    refused = sorted(refused or [])
+    untracked = sorted(untracked or [])
+
+    current: dict = {}
     if state_path.exists():
         try:
             current = json.loads(state_path.read_text())
         except Exception:
             current = {}
-        if current.get("template_version") == new_version:
-            return f"  unchanged .template_state ({new_version})"
+        if not isinstance(current, dict):
+            current = {}
+
+    # D3: preserve an existing reconcile_from anchor across every later run
+    # while any untracked path remains -- overwriting it with THIS run's own
+    # prior template_version one run later is the same trap with a delay.
+    # Set it fresh, from the version this workspace held before this write,
+    # only the first time an untracked path is left undelivered. See the
+    # three numbered rules in the docstring.
+    reconcile_from = current.get("reconcile_from")
+    if not untracked:
+        # Rule 3: the anchor is spent when nothing is being withheld for lack
+        # of a baseline -- with ONE narrow exception (D9/C11): a refused path
+        # (symlink at the destination, F4c-2) leaves the untracked bucket
+        # without being delivered and without a baseline, and clearing there
+        # loses the anchor permanently (once the symlink is removed the only
+        # mintable candidate equals the applied version, which rule 2
+        # correctly refuses). `paths_refused` holds real path keys -- never
+        # the decorated strings `paths_failed` carries -- so baseline
+        # membership is safe to read as debt here. The wider stamp-debt
+        # carry that once lived here was REVERTED (D17): one scalar anchor
+        # cannot serve paths of different provenance, and pinning it at an
+        # old era makes a LATER untracked path reconcile against the wrong
+        # tree and read as a hand-edit. Other undelivered exits (a failed
+        # write, a path absent from this run's source or manifest) clear the
+        # anchor; recovery for those falls back to --force-path -- an
+        # accepted, documented limitation, not a silent one.
+        owing_refused: list[str] = []
+        if refused and reconcile_from:
+            known_baselines = load_template_baselines()
+            owing_refused = [p for p in refused if p not in known_baselines]
+        if not owing_refused:
+            reconcile_from = None
+    elif not reconcile_from:
+        # Rule 1: the stamp first, then the pre-run local .agent/version --
+        # a pre-baseline-tracking workspace has no stamp, and that is the
+        # case this whole field exists to serve.
+        candidate = current.get("template_version") or prior_local_version
+        # Rule 2: an anchor equal to the version this run just applied is
+        # worse than no anchor at all.
+        reconcile_from = candidate if candidate and candidate != new_version else None
+
+    if (
+        current.get("template_version") == new_version
+        and current.get("delivery") == delivery
+        and list(current.get("withheld") or []) == withheld
+        and current.get("reconcile_from") == reconcile_from
+        # F4b: an inherited stamp must be REPLACED by a local one on the
+        # first apply here, even when every other field already matches
+        # — otherwise a fresh clone whose incoming version equals the
+        # inherited one keeps the foreign receipt forever.
+        and _stamp_is_from_this_workspace(current)
+    ):
+        return f"  unchanged .template_state ({new_version}, delivery={delivery})"
 
     # F10 (#9): same fixed-workspace-relative-path caveat as
     # update_profile_version()'s local .agent/version write above.
     if _refuse_symlinked_write(state_path, ".agent/.template_state"):
-        return "  SKIP  .template_state update (destination is symlinked)"
+        return (
+            "  WARN  .template_state NOT updated (destination is symlinked) — "
+            f"the recorded template version does not describe this workspace's "
+            f"delivered content ({new_version} was applied)"
+        )
 
     applied_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     state_path.parent.mkdir(parents=True, exist_ok=True)
-    state_path.write_text(
-        json.dumps({"template_version": new_version, "applied_at": applied_at}, indent=2) + "\n"
+    record = {
+        "template_version": new_version,
+        "applied_at": applied_at,
+        "delivery": delivery,
+    }
+    # Provenance (F4b): records WHERE this delivery happened, so a clone that
+    # inherits this file through git cannot present it as its own receipt.
+    record.update(_stamp_identity_fields())
+    if withheld:
+        record["withheld"] = withheld
+    if failed:
+        record["failed"] = failed
+    if refused:
+        record["refused"] = refused
+    if untracked:
+        record["untracked"] = untracked
+    if reconcile_from:
+        record["reconcile_from"] = reconcile_from
+    _write_text_nofollow(
+        state_path,
+        json.dumps(record, indent=2) + "\n",
+        ".agent/.template_state",
     )
-    return f"  updated .template_state: template_version → {new_version}"
+    return (
+        f"  updated .template_state: template_version → {new_version} "
+        f"(delivery={delivery}"
+        + (f", withheld={len(withheld)}" if withheld else "")
+        + (f", failed={len(failed)}" if failed else "")
+        + (f", refused={len(refused)}" if refused else "")
+        + ")"
+    )
 
 
 def apply_missing_file_backstop(
@@ -1378,6 +1986,33 @@ def _validate_force_paths(
         )
         sys.exit(2)
 
+    # D20 (baseline-guard-clearability round 5): a key that IS a real HARNESS
+    # manifest entry but is ABSENT from this payload is the same class of
+    # unsatisfiable request as the unknown-key case above -- an explicit,
+    # destructive-intent flag naming exactly one path must never complete
+    # with exit 0 having delivered nothing, its only trace a "SKIP (source
+    # missing: ...)" line lumped among ordinary skips. That is non-delivery
+    # reporting success, the exact shape delivery-integrity closed. Only
+    # single-file manifest entries can reach here: directory-derived keys are
+    # enumerated FROM the source-side rglob above, so a source-missing file
+    # under a directory entry is already refused as unknown. Ordinary --apply
+    # skips of source-missing paths are untouched -- this fires only for
+    # explicitly requested --force-path values.
+    missing_from_payload = sorted(
+        key for key in force_paths if not (source / key).is_file()
+    )
+    if missing_from_payload:
+        print(
+            "ERROR: --force-path given for path(s) that ARE in the HARNESS "
+            "manifest but are ABSENT from this payload (nothing can be "
+            f"forced from a payload that does not carry them): {missing_from_payload}\n"
+            "The local file was NOT touched. Re-run once the update source "
+            "actually ships these path(s) — with the default fetch, or with "
+            "a --source that contains them.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
 
 # --- F6: baseline reconciliation for already-stale workspaces -------------
 # (template-update-actually-updates F6). Two strictly opt-in affordances,
@@ -1484,7 +2119,12 @@ def cmd_adopt_baseline(targets: list[str]) -> int:
             skipped.append(key)
             continue
         if not p.exists() or not p.is_file():
-            print(f"  SKIP  {key}: not found on disk (or not a regular file) — nothing to adopt")
+            # D19 family: .exists() is False for a MISSING path and for one
+            # that cannot be stat'd (e.g. EACCES on a parent) alike, so this
+            # message must not assert the file is not there — that sends an
+            # operator hunting for a missing file that is sitting on disk
+            # with a permission problem.
+            print(f"  SKIP  {key}: no readable regular file at this path (missing, not a regular file, or not readable) — nothing to adopt")
             skipped.append(key)
             continue
         try:
@@ -1503,20 +2143,42 @@ def cmd_adopt_baseline(targets: list[str]) -> int:
     print()
     print(f"--adopt-baseline: adopted {len(adopted)}, skipped {len(skipped)}")
     if adopted:
+        # baseline-guard-clearability F2/B11 -- the FOURTH offer point. This
+        # summary used to end "ONLY a subsequent real upstream change delivers
+        # normally", which is false for exactly the case adopt is invoked in:
+        # the incoming content ALREADY differs, so adopt puts these files on
+        # the "local matches baseline, incoming differs" row -- the DELIVER
+        # FREELY row -- and the next plain --apply delivers this very payload.
+        # An operator told nothing will happen until upstream moves again is
+        # precisely the operator who will not read the next run's output.
         print(
-            "  The NEXT --apply will treat these as an ordinary 'local matches "
-            "baseline' file -- ONLY a subsequent real upstream change delivers "
-            "normally; nothing about the file itself was touched by this run."
+            "  Nothing about these files was touched by this run -- only the "
+            "baseline store was. The NEXT --apply DELIVERS the incoming "
+            "content over them, silently: no FORCE line, no warning, no "
+            "acknowledgement that a divergence was ever cleared. That is the "
+            "intended outcome for a file that truly was never edited. For a "
+            "file that WAS edited, it is a deferred overwrite of that edit, "
+            "one run later, in a run that reports success."
         )
     return 0
 
 
 def _read_recorded_template_version() -> str | None:
     """Recorded version this workspace last knew itself to be at. Prefers
-    .agent/.template_state (updater-owned, written only on a fully
-    successful --apply run) over profile.json's template_version -- the
-    same precedence full_boot.sh uses (issue #1295/#1312), since profile.json
-    can lag or never move if a prior run bailed early.
+    .agent/.template_state (updater-owned, written on every --apply run and
+    carrying its own delivery-completeness field) over profile.json's
+    template_version -- the same precedence full_boot.sh uses (issue
+    #1295/#1312), since profile.json can lag or never move if a prior run
+    bailed early.
+
+    NOTE (delivery-integrity F4): this fallback to profile.json is why this
+    helper must NOT be the evidence the version-monotonicity guard refuses
+    on. profile.json's template_version moves in lockstep with a local
+    `bump_version.sh`, so with no stamp a locally-bumped consumer would be
+    compared against its OWN bump and refused on a perfectly healthy
+    checkout. _classify_version_and_guard() reads the stamp directly and
+    treats its absence as missing evidence, never as evidence of a
+    regression.
     """
     if TEMPLATE_STATE_PATH.exists():
         try:
@@ -1536,6 +2198,367 @@ def _read_recorded_template_version() -> str | None:
         except Exception:
             pass
     return None
+
+
+def _read_reconcile_from_version() -> tuple[str | None, bool]:
+    """(version, came_from_anchor) --reconcile-from-history resolves against
+    (baseline-guard-clearability D3, the keystone half of this feature).
+
+    Prefers .agent/.template_state's `reconcile_from` field -- the version
+    the stamp held IMMEDIATELY BEFORE the run that last left an untracked
+    path undelivered -- over its `template_version` field, which a plain
+    --apply advances on EVERY run, including one that withheld files (D-B).
+    Resolving against template_version here would resolve against the
+    release this workspace just applied, which by construction is not what
+    a withheld, never-edited file's content still matches, so the recovery
+    the WITHHELD report names could never succeed. Falls back to
+    _read_recorded_template_version()'s ordinary precedence when no
+    reconcile_from is recorded (nothing was ever withheld here, the state
+    predates this field, or the field was removed by hand).
+
+    The second element says WHICH of the two was used, because the caller
+    must say so out loud: a silent fallback prints an authoritative-looking
+    "recorded version = ..." for the version this workspace just applied,
+    which is the trap this feature exists to close, wearing the fix's own
+    output as a disguise.
+    """
+    if TEMPLATE_STATE_PATH.exists():
+        try:
+            data = json.loads(TEMPLATE_STATE_PATH.read_text())
+            v = data.get("reconcile_from")
+            if v:
+                return str(v), True
+        except Exception:
+            pass
+    return _read_recorded_template_version(), False
+
+
+def _parse_dotted_version(v) -> tuple[int, ...] | None:
+    """Parse a dotted version string ("3.7.10") into a tuple of ints.
+
+    Never raises -- returns None on any unparseable input (missing,
+    non-numeric component, etc.) so callers can degrade safely.
+    """
+    if v is None:
+        return None
+    try:
+        parts = str(v).strip().split(".")
+        if not parts:
+            return None
+        return tuple(int(p) for p in parts)
+    except (ValueError, AttributeError):
+        return None
+
+
+def _compare_dotted_versions(a, b) -> int | None:
+    """Numeric (not lexicographic) comparison of two dotted version strings.
+
+    Shorter tuple is zero-padded to the longer one's length before
+    comparing, so "3.7" == "3.7.0". Returns negative/zero/positive like a
+    standard comparator, or None if either side is unparseable -- e.g.
+    "3.7.9" vs "3.7.10" must resolve as 3.7.9 < 3.7.10 numerically, not as
+    strings (lexicographically "3.7.9" > "3.7.10" because '9' > '1').
+    """
+    pa = _parse_dotted_version(a)
+    pb = _parse_dotted_version(b)
+    if pa is None or pb is None:
+        return None
+    length = max(len(pa), len(pb))
+    pa = pa + (0,) * (length - len(pa))
+    pb = pb + (0,) * (length - len(pb))
+    if pa < pb:
+        return -1
+    if pa > pb:
+        return 1
+    return 0
+
+
+def _check_version_regression(payload_version, installed_version, force) -> None:
+    """Refuse an --apply whose payload template version is older than the
+    installed one, unless --force was passed.
+
+    No-op (returns normally) when force is truthy, when either version is
+    missing/unparseable (degrade-safe -- never block on an unrelated
+    versioning defect), or when payload >= installed. Otherwise exits via
+    sys.exit(2) with a stderr message naming both version strings.
+    """
+    if force:
+        return
+    cmp_result = _compare_dotted_versions(payload_version, installed_version)
+    if cmp_result is None:
+        return
+    if cmp_result < 0:
+        print(
+            f"ERROR: refusing to apply older template version "
+            f"{payload_version!r} over installed version {installed_version!r} "
+            "-- pass --force to override.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+
+def _read_template_state_record() -> dict:
+    """Parsed .agent/.template_state, or {} when absent, unreadable or not a
+    JSON object. Never raises -- an unparseable stamp is missing evidence,
+    handled identically to an absent one.
+    """
+    if not TEMPLATE_STATE_PATH.exists():
+        return {}
+    try:
+        data = json.loads(TEMPLATE_STATE_PATH.read_text())
+    except Exception:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _stamp_is_high_confidence(stamp_version, stamp_delivery, local_version,
+                              stamp_is_local: bool = True) -> bool:
+    """Is the recorded last-delivered version trustworthy enough to REFUSE on?
+
+    Only consulted when the incoming version sorts below the stamp (see
+    _classify_version_and_guard) -- when incoming is at or above the stamp,
+    upstream demonstrably has not regressed and staleness is irrelevant.
+
+    Low confidence when the stamp was not written in THIS workspace (F4b: an
+    inherited receipt is not evidence about the workspace that inherited it),
+    when it is absent, unparseable, records a partial delivery (it names a
+    version this workspace never fully received), or has drifted from local
+    .agent/version by a different major/minor or by more than
+    STAMP_STALENESS_PATCH_LIMIT patch releases. A stamp with no `delivery`
+    field at all predates that feature and is not penalised for it --
+    staleness is the fallback confidence signal for those.
+
+    THE DRIFT WINDOW IS ONE-SIDED, DELIBERATELY (delivery-integrity F4d).
+    STAMP_STALENESS_PATCH_LIMIT applies only when the stamp is BEHIND local.
+    A stamp strictly AHEAD of local .agent/version is LOW confidence at ANY
+    distance -- ahead-ness is not a tolerance window, because no honest
+    sequence produces any ahead-ness at all. After an --apply,
+    update_profile_version() sets .agent/version to the payload version, so
+    local == stamp; local then only moves AHEAD, via bump_version.sh. Getting
+    local BELOW the stamp requires a hand-edit down, a restore from an old
+    backup, a stamp inherited from a further-ahead workspace (the F4c case),
+    or a partial run where the stamp moved and .agent/version did not -- every
+    one of them a reason to distrust the stamp, not to refuse on it. Refusing
+    there hard-bricks the workspace behind a --force-only verdict, on the
+    single record we have the most specific cause to doubt. Warn-and-proceed
+    is the safe failure direction: incoming still sorts above local, so
+    nothing regresses relative to what is actually installed.
+
+    Reading this as a SYMMETRIC window is what hid the defect: every fixture
+    that existed was stamp-behind, so `local[2] - stamp[2] <= LIMIT` -- trivially
+    true for every negative difference -- was never exercised in the other
+    direction.
+    """
+    if not stamp_is_local:
+        return False
+    stamp_parts = _parse_dotted_version(stamp_version)
+    local_parts = _parse_dotted_version(local_version)
+    if stamp_parts is None or local_parts is None:
+        return False
+    if stamp_delivery == "partial":
+        return False
+    length = max(len(stamp_parts), len(local_parts), 3)
+    stamp_parts = stamp_parts + (0,) * (length - len(stamp_parts))
+    local_parts = local_parts + (0,) * (length - len(local_parts))
+    if stamp_parts[:2] != local_parts[:2]:
+        return False
+    if stamp_parts > local_parts:
+        # Stamp AHEAD of local -- low confidence at any distance (F4d). Checked
+        # BEFORE the staleness arithmetic below, which is satisfied by every
+        # negative difference and so silently rated this state HIGH.
+        return False
+    return local_parts[2] - stamp_parts[2] <= STAMP_STALENESS_PATCH_LIMIT
+
+
+def _stamp_is_ahead_of_local(stamp_version, local_version) -> bool:
+    """Is the recorded stamp strictly AHEAD of local .agent/version?
+
+    Used only to NAME the condition in the low-confidence warning (F4d D1/D2):
+    a generic "low confidence" line leaves the operator with no idea which of
+    the two records to repair. Returns False whenever either side is missing or
+    unparseable -- an unresolvable comparison is a different report, handled by
+    the unparseable branch in _classify_version_and_guard.
+    """
+    stamp_parts = _parse_dotted_version(stamp_version)
+    local_parts = _parse_dotted_version(local_version)
+    if stamp_parts is None or local_parts is None:
+        return False
+    length = max(len(stamp_parts), len(local_parts), 3)
+    stamp_parts = stamp_parts + (0,) * (length - len(stamp_parts))
+    local_parts = local_parts + (0,) * (length - len(local_parts))
+    return stamp_parts > local_parts
+
+
+def _classify_version_and_guard(payload_version, force) -> str:
+    """Classify this --apply's version movement, report it in one line, and
+    refuse only on evidence that actually supports a refusal.
+
+    Returns the classification: UPGRADE, NO-CHANGE, RECONCILE-DOWN,
+    REGRESSION or UNKNOWN. Exits 2 (via _check_version_regression) on a
+    refused regression unless --force was passed.
+
+    ORDERING IS THE DESIGN (delivery-integrity F4). incoming-vs-STAMP is
+    consulted BEFORE stamp confidence:
+
+      incoming >= stamp -- upstream cannot have regressed below a version it
+        has already delivered here. Positive evidence, true no matter how
+        stale the stamp is, so staleness is not even consulted. A local bump
+        ahead of upstream lands here: informational, never a warning. Warning
+        on this common, healthy case is what teaches a fleet to ignore the
+        signal.
+      incoming < stamp -- a regression is possible, so confidence decides:
+        HIGH -> refuse (exit 2), naming both versions and --force.
+        LOW  -> never refuse; warn loudly, proceed, converge. An honest weak
+                guard beats a confident wrong one.
+
+    The classification itself is measured against local .agent/version,
+    because that is the number a human reads: a downward reconciliation and
+    an ordinary upgrade previously printed the same "updated: .agent/version:
+    X -> Y" line, and that ambiguity is what cost a consumer whole sessions.
+    """
+    local_version_path = Path(".agent/version")
+    local_version = None
+    if local_version_path.is_file():
+        try:
+            local_version = local_version_path.read_text().strip() or None
+        except OSError:
+            local_version = None
+
+    state = _read_template_state_record()
+    stamp_version = state.get("template_version") or None
+    stamp_delivery = state.get("delivery")
+
+    cmp_local = _compare_dotted_versions(payload_version, local_version)
+    cmp_stamp = _compare_dotted_versions(payload_version, stamp_version)
+
+    # F4b: provenance is consulted ONLY inside the decisive branch below.
+    # Announcing it on every run — including the ordinary forward upgrade that
+    # never consults the stamp at all — would put a WARN on every consumer
+    # forever, which is the same credibility burn this feature exists to end,
+    # re-entering through the door it just closed.
+    stamp_is_local = _stamp_is_from_this_workspace(state)
+
+    warning = None
+    refuse_against = None
+    if cmp_stamp is not None and cmp_stamp < 0:
+        if _stamp_is_high_confidence(stamp_version, stamp_delivery, local_version,
+                                     stamp_is_local=stamp_is_local):
+            refuse_against = stamp_version
+        elif not stamp_is_local:
+            warning = (
+                f"incoming template version {payload_version} sorts below the "
+                f"recorded last-delivered version ({stamp_version}), but that record "
+                "was NOT applied in this workspace — .agent/.template_state is a "
+                "tracked file, so it arrives inherited through git in every clone "
+                "and fork"
+                + ("" if state.get(WORKSPACE_IDENTITY_FIELD)
+                   else " (this one carries no workspace identity at all, which is "
+                        "how every stamp written before this check looks)")
+                + ". An inherited receipt is not evidence about this workspace, so "
+                "it cannot justify refusing the update — proceeding and restamping "
+                "it locally."
+            )
+        else:
+            warning = (
+                f"incoming template version {payload_version} sorts below the last "
+                f"version recorded as delivered here ({stamp_version}), but that "
+                f"record is low-confidence (delivery={stamp_delivery!r}, local "
+                f".agent/version={local_version}, staleness limit "
+                f"{STAMP_STALENESS_PATCH_LIMIT} patch releases) — proceeding "
+                "instead of refusing"
+                # F4d: name the specific inconsistency when it is ahead-ness.
+                # "Low confidence" alone does not tell the operator WHICH of the
+                # two records to repair, and this one is repairable: the stamp is
+                # ahead of a version this workspace claims to be running.
+                + (f". The recorded version {stamp_version} is AHEAD of local "
+                   f".agent/version ({local_version}), which no honest sequence "
+                   "produces — an --apply leaves them equal and bump_version.sh "
+                   "only ever moves .agent/version up — so the record is treated "
+                   "as corrupt or inherited rather than as grounds for a refusal"
+                   if _stamp_is_ahead_of_local(stamp_version, local_version) else "")
+            )
+    elif cmp_stamp is None and cmp_local is not None and cmp_local < 0:
+        warning = (
+            f"no usable last-delivered version record (.agent/.template_state is "
+            f"absent or unparseable), so the incoming version {payload_version} "
+            f"cannot be checked against what upstream actually delivered here; "
+            f"local .agent/version is {local_version}. A missing record is "
+            "missing evidence, not evidence of an upstream rollback — proceeding."
+        )
+
+    # F4d: an UNRESOLVABLE comparison must be loud, not silent. When a version
+    # string exists but does not parse, both _compare_dotted_versions() calls
+    # return None, no branch above fires, and the run proceeds having checked
+    # nothing while stdout prints an ordinary-looking classification line and
+    # the exit code says the guard ran. That is a guard quietly declining to
+    # run, which is worse than no guard.
+    #
+    # Loud, NOT refusing: refusing on an unparseable version would brick
+    # legitimate pre-release workflows (3.7.149-rc1 is a plausible thing for a
+    # consumer to be running) and would convert a reporting defect into an
+    # availability one. Scoped strictly to strings that EXIST and fail to parse
+    # -- an ABSENT stamp is already covered by the branch above, and warning on
+    # absence would put a WARN on every fresh workspace's first apply.
+    if warning is None and refuse_against is None:
+        unresolvable = [
+            (label, value)
+            for label, value in (
+                ("the incoming template version", payload_version),
+                ("local .agent/version", local_version),
+                ("the recorded version in .agent/.template_state", stamp_version),
+            )
+            if value is not None and _parse_dotted_version(value) is None
+        ]
+        if unresolvable:
+            named = "; ".join(f"{label} ({value!r})" for label, value in unresolvable)
+            warning = (
+                f"{named} could not be parsed as a dotted numeric version, so NO "
+                "monotonicity verdict was reached for this run — nothing was "
+                "compared, and neither an upstream regression nor a local "
+                "divergence would have been detected. The update proceeds (a "
+                "pre-release or build-metadata version is a legitimate thing to "
+                "be running, so this is reported rather than refused) and is "
+                "classified UNKNOWN below."
+            )
+
+    if refuse_against is not None:
+        classification = "REGRESSION"
+        detail = (
+            f"incoming {payload_version} sorts below {stamp_version}, the last "
+            "version upstream actually delivered into this workspace"
+        )
+    elif cmp_local is None:
+        classification = "UNKNOWN"
+        detail = (
+            f"cannot compare local .agent/version ({local_version!r}) with the "
+            f"incoming version ({payload_version!r}) numerically — proceeding "
+            "without a monotonicity verdict"
+        )
+    elif cmp_local > 0:
+        classification = "UPGRADE"
+        detail = f"{local_version} → {payload_version}"
+    elif cmp_local == 0:
+        classification = "NO-CHANGE"
+        detail = f"already at {payload_version}"
+    else:
+        classification = "RECONCILE-DOWN"
+        detail = (
+            f"local {local_version} is AHEAD of upstream {payload_version}: this is "
+            "a local bump ahead of upstream being reconciled downward, not an "
+            "upstream rollback (last upstream delivery recorded here: "
+            f"{stamp_version or 'none recorded'}). Converging on {payload_version}."
+        )
+
+    print(f"  version: {classification} — {detail}")
+    if warning is not None:
+        print(f"  WARN  version: {warning}", file=sys.stderr)
+    if refuse_against is not None:
+        # Reuses the existing refusal primitive verbatim: same message shape,
+        # same exit 2, same --force bypass. Only the evidence it is handed
+        # changed -- the stamp, never profile.json's local-bump-mirroring
+        # template_version.
+        _check_version_regression(payload_version, refuse_against, force=force)
+    return classification
 
 
 def _resolve_version_to_commit(version: str, repo: str = ATHANOR_REPO) -> str | None:
@@ -1637,6 +2660,21 @@ def _fetch_historical_tree(sha: str, tmpdir: Path, repo: str = ATHANOR_REPO) -> 
         return False
 
 
+# baseline-guard-clearability F2/D5 (QA Q14): every degrade path below names
+# --adopt-baseline as the next thing to try, which makes each of them an offer
+# point. An offer without its hazard is how the operator ends up authorising a
+# silent overwrite of a real edit one run later -- state it wherever the flag
+# is suggested, not only in --help.
+ADOPT_HAZARD_NOTE = (
+    "    --adopt-baseline records the CURRENT local bytes as never diverged; "
+    "the NEXT --apply then delivers the incoming content over them silently, "
+    "with no FORCE line and no further warning. That is the intended outcome "
+    "for a file you are confident was never edited, and a deferred silent "
+    "overwrite of a real edit otherwise -- and a path withheld here is one "
+    "this workspace could not tell apart."
+)
+
+
 def cmd_reconcile_from_history(targets: list[str]) -> int:
     """--reconcile-from-history PATH... handler (F6).
 
@@ -1669,22 +2707,69 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
     recovery attempt is not a failure to complete the command) and never
     writes anything.
     """
-    recorded_version = _read_recorded_template_version()
+    # baseline-guard-clearability D4: this revisits delivery-integrity F4b's
+    # refusal for THIS call site only (F4b's own version-regression guard
+    # elsewhere is untouched). The refusal's original justification -- that
+    # reconciling against the wrong upstream snapshot overwrites local
+    # content -- does not hold here: this function DELIVERS a file only when
+    # its local bytes match a real historical release byte-for-byte, so the
+    # recorded version is a hypothesis SELECTOR, not the safety gate. A wrong
+    # hypothesis degrades to UNRESOLVED below, never to an overwrite. And
+    # .agent/.template_state is a TRACKED file, so a foreign-identity stamp is
+    # exactly what every fresh clone and fork inherits -- refusing outright
+    # blocked the entire population this command exists for, while protecting
+    # against nothing. Warn that the provenance is unverified, and proceed.
+    state = _read_template_state_record()
+    if state.get("template_version") and not _stamp_is_from_this_workspace(state):
+        print(
+            "--reconcile-from-history: WARN — the recorded version in "
+            ".agent/.template_state was NOT applied in this workspace (the "
+            "file is tracked, so it arrives inherited through git in every "
+            "clone and fork) — its provenance is unverified. Proceeding "
+            "anyway: this command only ever delivers a file when its local "
+            "bytes match a real historical release byte-for-byte, so the "
+            "hash comparison below is the safety gate, not this stamp — a "
+            "wrong version hypothesis degrades to UNRESOLVED, never to an "
+            "overwrite."
+        )
+
+    recorded_version, from_anchor = _read_reconcile_from_version()
     if not recorded_version:
         print(
             "--reconcile-from-history: no recorded version to reconcile from "
             "(.agent/.template_state missing, and .agent/profile.json has no "
             f"template_version either) — {len(targets)} file(s) unreconciled; "
-            "try --adopt-baseline instead."
+            "try --adopt-baseline instead.\n" + ADOPT_HAZARD_NOTE
         )
         return 0
 
-    print(f"--reconcile-from-history: recorded version = {recorded_version!r}")
+    if from_anchor:
+        print(
+            f"--reconcile-from-history: recorded version = {recorded_version!r} "
+            "(from the `reconcile_from` anchor in .agent/.template_state — the "
+            "version this workspace held before the run that withheld these "
+            "paths)"
+        )
+    else:
+        # D5/Q13: never let a fallback look like an anchor. Without this the
+        # run prints a confident "recorded version = '9.9.9'" for the release
+        # it just applied, and the resulting UNRESOLVED reads as proof the
+        # file was hand-edited when it is only proof the anchor is missing.
+        print(
+            f"--reconcile-from-history: recorded version = {recorded_version!r} "
+            "— WARN: NO `reconcile_from` anchor is recorded in "
+            ".agent/.template_state, so this is the version this workspace "
+            "last APPLIED, not the one it held before these paths were "
+            "withheld. A never-edited file's bytes will not match a release "
+            "applied after it was withheld, so expect UNRESOLVED here; that "
+            "would be missing evidence, NOT evidence of a local edit."
+        )
     sha = _resolve_version_to_commit(recorded_version)
     if sha is None:
         print(
             f"--reconcile-from-history: could not resolve version {recorded_version!r} "
-            f"to a commit — {len(targets)} file(s) unreconciled; try --adopt-baseline instead."
+            f"to a commit — {len(targets)} file(s) unreconciled; try --adopt-baseline instead.\n"
+            + ADOPT_HAZARD_NOTE
         )
         return 0
 
@@ -1699,7 +2784,8 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
         if not _fetch_historical_tree(sha, old_tmpdir):
             print(
                 f"--reconcile-from-history: could not fetch historical tree at {sha} — "
-                f"{len(targets)} file(s) unreconciled; try --adopt-baseline instead."
+                f"{len(targets)} file(s) unreconciled; try --adopt-baseline instead.\n"
+                + ADOPT_HAZARD_NOTE
             )
             return 0
 
@@ -1748,7 +2834,11 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
                 unreconciled.append(key)
                 continue
             if not local_path.exists() or not local_path.is_file():
-                print(f"  UNRESOLVED  {key}: not found on disk (or not a regular file)")
+                # D19 family: same caveat as --adopt-baseline's SKIP — an
+                # unreadable path and a missing one are indistinguishable
+                # here, so assert neither; this is missing evidence of
+                # provenance, not evidence about the file.
+                print(f"  UNRESOLVED  {key}: no readable regular file at this path (missing, not a regular file, or not readable) — provenance could not be established")
                 unreconciled.append(key)
                 continue
 
@@ -1786,7 +2876,25 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
                         print(f"  CURRENT     {key}: already matches live upstream content — nothing to deliver, baseline recorded")
                         continue
                 unreconciled.append(key)
-                print(f"  UNRESOLVED  {key}: differs from historical content at {recorded_version!r} — likely a real hand-edit, left as-is")
+                if from_anchor:
+                    # D19: "likely a real hand-edit" is only warranted when
+                    # the anchor is known to be contemporaneous with THIS
+                    # path becoming untracked, and a single scalar anchor
+                    # cannot establish that -- one anchor serves every
+                    # untracked path, however different their eras (D14). So
+                    # even with a real anchor the mismatch is degraded to
+                    # what is actually known, reusing the fallback branch's
+                    # honest wording rather than asserting an edit nobody
+                    # may have made.
+                    print(f"  UNRESOLVED  {key}: differs from historical content at {recorded_version!r} — but a single anchor cannot prove it dates from when this path became untracked, so this is missing evidence of provenance, NOT evidence of a local edit; left as-is")
+                else:
+                    # No `reconcile_from` anchor: the version compared against
+                    # is only the one this workspace last APPLIED (the header
+                    # WARN above already conceded a never-edited file cannot
+                    # match it). Asserting a hand-edit here would contradict
+                    # that concession -- this mismatch is missing evidence,
+                    # not evidence of a local edit.
+                    print(f"  UNRESOLVED  {key}: differs from historical content at {recorded_version!r} — no `reconcile_from` anchor was available, so this is missing evidence of provenance, NOT evidence of a local edit; left as-is")
                 continue
 
             # Matches OLD exactly -- never edited. Seed the baseline to the
@@ -1817,7 +2925,8 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
         if unreconciled:
             print(f"  {len(unreconciled)} file(s) not reconciled: {unreconciled}")
             print("  These are UNCHANGED and remain protected under F5's default (skip + WARN). "
-                  "Review individually, then consider --adopt-baseline for any confirmed safe.")
+                  "Review individually, then consider --adopt-baseline for any confirmed safe.\n"
+                  + ADOPT_HAZARD_NOTE)
         return 0
     finally:
         shutil.rmtree(old_tmpdir, ignore_errors=True)
@@ -1845,18 +2954,79 @@ def main():
         help="Source directory for harness files (default: fetch from upstream GitHub, fall back to template/)",
     )
     parser.add_argument(
+        "--force",
+        action="store_true",
+        default=False,
+        help=(
+            "Bypass the pre-apply version-regression guard -- allows applying "
+            "a payload whose declared template version is older than the "
+            "installed version. Distinct from --force-path (which bypasses "
+            "the #104 baseline-hash guard for a single named path)."
+        ),
+    )
+    parser.add_argument(
         "--force-path",
         action="append",
         default=None,
         metavar="PATH",
         help=(
-            "Clear the #104 baseline-hash guard for exactly this one HARNESS "
-            "path (repeatable) and force-overwrite it with canonical content, "
-            "even if it was hand-patched locally. Never fires implicitly — "
-            "requires --apply; a bare --force-path with --dry-run only "
-            "previews what would be forced, it writes nothing. issue #1348 "
-            "remediation: the supported 'un-stick this one file' path, "
-            "narrower than FORCE_UPDATE=true (which re-applies everything)."
+            "DELIVERS the incoming content for exactly this one HARNESS path "
+            "(repeatable) NOW, this run, replacing whatever is here now, "
+            "even if it was hand-patched locally — a loud FORCE line names "
+            "what it destroyed (a backup is taken first); the overwrite is "
+            "visible immediately. Clears the #104 baseline-hash guard and "
+            "force-overwrites it with canonical content. Opposite in effect "
+            "to --adopt-baseline, which delivers nothing now — it silently "
+            "defers delivery to the NEXT --apply instead. Never fires "
+            "implicitly — requires --apply; a bare --force-path with "
+            "--dry-run only previews what would be forced, it writes "
+            "nothing. issue #1348 remediation: the supported 'un-stick this "
+            "one file' path, narrower than FORCE_UPDATE=true (which "
+            "re-applies everything)."
+        ),
+    )
+    parser.add_argument(
+        "--print-workspace-identity",
+        action="store_true",
+        default=False,
+        help=(
+            "Print this workspace's provenance fields as JSON and exit. Pure "
+            "local read — no network, no writes. Used by execution/"
+            "bump_version.sh so both stamp writers record identity the same "
+            "way, and useful for diagnosing an 'inherited stamp' warning."
+        ),
+    )
+    parser.add_argument(
+        "--allow-skips",
+        action="store_true",
+        default=False,
+        help=(
+            "Acknowledge withheld deliveries: restore exit 0 on an --apply run "
+            "that withheld or failed paths, while STILL printing the full "
+            "WITHHELD report. Changes nothing about which files are delivered. "
+            "Intended for automated loops that must keep going across a "
+            "downstream with a permanent, deliberate local divergence — "
+            "execution/fleet_update.sh (which reaches the updater indirectly, "
+            "via `make update-template`) and execution/pulse_mission_loop.sh. "
+            "NEITHER passes it today, and no caller in this repo does: it is "
+            "CLI-only, per-invocation, and cannot be set out of band by an env "
+            "var or a config file. Never implied by --force or --force-path, "
+            "and it never clears a symlink refusal (see REFUSED, below)."
+        ),
+    )
+    parser.add_argument(
+        "--allow-symlink",
+        action="append",
+        default=None,
+        metavar="PATH",
+        help=(
+            "One-shot supplement to .agent/allowed-symlinks (repeatable): "
+            "let _refuse_symlinked_write() proceed through a symlinked "
+            "ancestor at this path for THIS run only, without touching the "
+            "project's committed allow-list. Matched the same way as "
+            ".agent/allowed-symlinks entries (fnmatch pattern, or exact "
+            "match, against the offending symlinked path relative to the "
+            "workspace root)."
         ),
     )
     parser.add_argument(
@@ -1866,8 +3036,14 @@ def main():
         metavar="PATH_OR_ALL",
         help=(
             "Record baseline = sha256(CURRENT local content) for the named "
-            "no-baseline HARNESS path(s), WITHOUT touching the file itself. "
-            "Pass the single value 'all' to adopt every no-baseline HARNESS "
+            "no-baseline HARNESS path(s), WITHOUT touching the file itself "
+            "now — the NEXT plain --apply after this then delivers the "
+            "incoming content over it silently, with no further warning, "
+            "because the baseline now matches local exactly. Opposite in "
+            "effect to --force-path, which delivers now, this run, "
+            "visibly. Only safe when you are confident this path was never "
+            "edited; if you cannot tell, treat it as one that was. Pass "
+            "the single value 'all' to adopt every no-baseline HARNESS "
             "file found via the manifest. A DELIBERATE, one-time trust "
             "decision for migrating a pre-baseline-tracking workspace to "
             "F5-era operation — never invoked by --apply on its own, never "
@@ -1905,6 +3081,15 @@ def main():
     # future regression of. Checked before any of the normal --apply/--source
     # setup below, so a plain --apply invocation is byte-for-byte unaffected
     # by either flag existing.
+    # F4b: reported BEFORE every other gate (including the self-update guard),
+    # because it is a pure local read that writes nothing — and because
+    # execution/bump_version.sh, the other stamp writer, shells out to it as
+    # the single source of truth for provenance rather than reimplementing the
+    # hash. Two writers computing identity two ways is exactly the drift B15
+    # exists to catch.
+    if args.print_workspace_identity:
+        print(json.dumps(_stamp_identity_fields()))
+        sys.exit(0)
     if args.adopt_baseline is not None:
         sys.exit(cmd_adopt_baseline(args.adopt_baseline))
     if args.reconcile_from_history is not None:
@@ -1912,7 +3097,43 @@ def main():
 
     force_paths = frozenset(args.force_path or [])
 
+    # Symlink allow-list opt-in (update-template-write-safety-hardening F2):
+    # persistent .agent/allowed-symlinks file plus any one-shot --allow-symlink
+    # values, merged and loaded into the module-level list
+    # _refuse_symlinked_write() consults directly. Loaded here, before any
+    # write-capable guard call (the guarded backup-dir creation below is the
+    # first one in a real --apply run), so the opt-in covers every call site.
+    global _ALLOWED_SYMLINK_PATTERNS
+    _ALLOWED_SYMLINK_PATTERNS = _load_allowed_symlinks()
+    _ALLOWED_SYMLINK_PATTERNS.extend(args.allow_symlink or [])
+    if _ALLOWED_SYMLINK_PATTERNS:
+        print(f"Symlink allow-list active: {_ALLOWED_SYMLINK_PATTERNS}")
+
     dry_run = not args.apply
+
+    # Self-update guard: refuse to run inside the Athanor template repo itself.
+    # Checked before fetch_latest_from_github() below -- a run this guard would
+    # refuse must never perform the network fetch at all.
+    workspace_file = Path("WORKSPACE")
+    profile_file = Path(".agent/profile.json")
+    is_template_repo = False
+
+    if workspace_file.exists():
+        if workspace_file.read_text().strip() == "Athanor":
+            is_template_repo = True
+
+    # Removed: bare project_name == "Athanor" check that could self-block
+    # downstream workspaces with project_name set to "Athanor".
+    # The WORKSPACE file (lines above) is the only reliable signal.
+
+    if is_template_repo and not os.environ.get("FORCE_UPDATE") and not dry_run:
+        print(
+            "ERROR: Running inside the Athanor template repo. "
+            "This command is for downstream workspaces only.\n"
+            "Set FORCE_UPDATE=1 to proceed (development use only).",
+            file=sys.stderr,
+        )
+        sys.exit(2)
 
     # Track whether we own a temp dir so we can clean it up in finally.
     fetched_tmpdir: Path | None = None
@@ -1939,27 +3160,22 @@ def main():
         else:
             print(f"[apply] Source: {source}. Backups created before overwriting.")
 
-        # Self-update guard: refuse to run inside the Athanor template repo itself
-        workspace_file = Path("WORKSPACE")
-        profile_file = Path(".agent/profile.json")
-        is_template_repo = False
-
-        if workspace_file.exists():
-            if workspace_file.read_text().strip() == "Athanor":
-                is_template_repo = True
-
-        # Removed: bare project_name == "Athanor" check that could self-block
-        # downstream workspaces with project_name set to "Athanor".
-        # The WORKSPACE file (lines above) is the only reliable signal.
-
-        if is_template_repo and not os.environ.get("FORCE_UPDATE") and not dry_run:
-            print(
-                "ERROR: Running inside the Athanor template repo. "
-                "This command is for downstream workspaces only.\n"
-                "Set FORCE_UPDATE=1 to proceed (development use only).",
-                file=sys.stderr,
+            # Pre-apply version-regression guard: refuse to install a payload
+            # whose declared template version is older than what's already
+            # installed, unless --force was passed. Gated to real --apply
+            # runs only -- a --dry-run preview never writes anything so
+            # there's nothing to regress.
+            payload_version_file = source / ".agent" / "version"
+            payload_version = (
+                payload_version_file.read_text().strip()
+                if payload_version_file.exists()
+                else None
             )
-            sys.exit(2)
+            # delivery-integrity F4: classify the movement in one explicit
+            # line and refuse only on evidence that supports a refusal (the
+            # stamp, never profile.json's local-bump-mirroring
+            # template_version -- see _classify_version_and_guard).
+            _classify_version_and_guard(payload_version, force=args.force)
 
         # Load manifest
         manifest_path = Path(".agent/update-manifest.yaml")
@@ -2008,6 +3224,26 @@ def main():
         paths_changed = []
         paths_skipped = []
         paths_failed = []
+        # delivery-integrity F1: content this run was carrying and did NOT
+        # deliver. Deliberately NOT paths_skipped, which also collects
+        # WORKSPACE entries, DERIVED entries, .agent/no-update protected
+        # entries and every entry of a --dry-run -- keying the exit code off
+        # that bucket would make every run in the fleet exit non-zero forever,
+        # a louder version of the same lie.
+        paths_withheld: list[str] = []
+        # F4c-2: symlink refusals, kept apart from paths_withheld. A refusal is
+        # a fact about the write PATH being unsafe, not about content
+        # disagreeing, so it is exempt from the identical-content retraction
+        # below (the bytes are there because whoever controls the symlink
+        # target put them there, and they can change them a moment later) and
+        # is not clearable with --allow-skips. The sanctioned hatch is the
+        # per-path, auditable allow-list, which makes the write PROCEED.
+        paths_refused: list[str] = []
+        # baseline-guard-clearability F1: the subset of paths_withheld that
+        # carries NO recorded baseline, as opposed to a real local edit. Used
+        # to annotate the WITHHELD report honestly and to decide whether
+        # .agent/.template_state needs a `reconcile_from` anchor.
+        paths_untracked: list[str] = []
         backup_dir = None
 
         if not dry_run:
@@ -2022,6 +3258,25 @@ def main():
                 print("ERROR: refusing to run --apply with a symlinked backup directory ancestor.", file=sys.stderr)
                 sys.exit(1)
             print(f"Backup directory: {backup_dir}")
+
+        # baseline-guard-clearability D3/rule 1: capture the version this
+        # workspace held BEFORE any writer this run touches it, so
+        # write_template_state still has a real pre-run anchor to record for
+        # a workspace that carries no .agent/.template_state at all -- the
+        # pre-baseline-tracking population this feature exists for. This
+        # MUST run before the manifest loop below: .agent/version is itself
+        # a HARNESS manifest path, so on a workspace where it is
+        # tracked-clean the loop overwrites it to the payload version --
+        # reading it afterwards yields the applied version, which rule 2
+        # correctly refuses to mint, and the anchor is lost entirely.
+        prior_local_version: str | None = None
+        if not dry_run:
+            local_version_file = profile_file.parent / "version"
+            try:
+                if local_version_file.is_file():
+                    prior_local_version = local_version_file.read_text().strip() or None
+            except OSError:
+                prior_local_version = None
 
         for entry in manifest.get("paths", []):
             path = entry["path"]
@@ -2081,6 +3336,9 @@ def main():
                         msg, entry_changed = copy_harness(
                             src_path, dst_path, backup_dir, path_key=path,
                             force_paths=force_paths,
+                            withheld_out=paths_withheld,
+                            refused_out=paths_refused,
+                            untracked_out=paths_untracked,
                         )
                         print(msg)
                         # F9: classify off copy_harness()'s own changed
@@ -2171,16 +3429,71 @@ def main():
 
         # After applying all HARNESS/MERGE updates AND backstop,
         # bump template_version in profile.json
+        stamp_divergent = False
         if not dry_run:
+            # prior_local_version was captured above, BEFORE the manifest
+            # loop -- .agent/version is a HARNESS path the loop itself may
+            # have just overwritten (baseline-guard-clearability D3/rule 1).
             version_msg = update_profile_version(source, profile_file)
             print(version_msg)
-            state_msg = write_template_state(source)
+
+            # F1/F14: a key the manifest loop guarded may still have been
+            # delivered by a LATER writer in this same run --
+            # update_profile_version() writes .agent/version directly, so a
+            # consumer who locally bumped it trips the baseline guard and
+            # then receives the file anyway. Reporting it as withheld would
+            # be a false partial-delivery claim, the exact inverse of the lie
+            # this feature closes. Decided on content, not on a hardcoded
+            # exemption list: if the destination now matches the payload,
+            # it was delivered.
+            paths_withheld = [
+                key for key in paths_withheld
+                if not _paths_have_identical_content(source / key, Path(key))
+            ]
+            # Keep paths_untracked in lockstep with the same retraction --
+            # a key removed above because a later writer already delivered
+            # it must not still be reported/tracked as an untracked no-record
+            # withholding either.
+            paths_untracked = [key for key in paths_untracked if key in paths_withheld]
+
+            delivery_status = (
+                "partial" if (paths_withheld or paths_refused or paths_failed)
+                else "complete"
+            )
+            try:
+                state_msg = write_template_state(
+                    source, delivery=delivery_status,
+                    withheld=paths_withheld, failed=paths_failed,
+                    refused=paths_refused, untracked=paths_untracked,
+                    prior_local_version=prior_local_version,
+                )
+            except OSError as e:
+                state_msg = (
+                    "  ERROR .template_state update failed "
+                    f"({e.__class__.__name__}: {e})"
+                )
             print(state_msg)
+
+            # The stamp is what every downstream drift check reads. If it did
+            # not actually record the version this run applied, the workspace
+            # is left with divergent version records -- say so here, at the
+            # moment it happens, and never exit 0 on it.
+            recorded = _read_template_state_record().get("template_version")
+            if payload_version and recorded != payload_version:
+                stamp_divergent = True
+                print(
+                    "  WARN  .agent/.template_state does not record the applied "
+                    f"template version {payload_version} (reads {recorded!r}) — "
+                    "this workspace's version records are divergent",
+                    file=sys.stderr,
+                )
 
         print()
         print("Summary:")
         print(f"  paths_changed:    {len(paths_changed)}")
         print(f"  paths_skipped:    {len(paths_skipped)}")
+        print(f"  paths_withheld:   {len(paths_withheld)}")
+        print(f"  paths_refused:    {len(paths_refused)}")
         print(f"  paths_failed:     {len(paths_failed)}")
         if paths_failed:
             # Named explicitly, in the Summary block itself (F8 EDGE 2) --
@@ -2194,6 +3507,87 @@ def main():
         print(f"  retractions:      {len(retractions_fired)}")
         if backup_dir:
             print(f"  backup_dir:       {backup_dir}")
+
+        # --- Withheld-delivery report + exit code (delivery-integrity F1) ---
+        # A per-file WARN mid-run is easy to lose in scrollback, and the run
+        # exiting 0 told `make update-template` and every automated caller
+        # that a security fix had landed when it had not (GH #1319 / #1348).
+        # Name every undelivered path HERE, in the terminal block, with the
+        # two remedies that actually clear it.
+        if paths_withheld:
+            print()
+            print("WITHHELD — these paths were NOT delivered by this run:")
+            untracked_set = set(paths_untracked)
+            for key in paths_withheld:
+                tag = "no baseline recorded" if key in untracked_set else "local modifications"
+                print(f"    - {key}  [{tag}]")
+            print(
+                "  Remedy, ordered by evidence then destructiveness:\n"
+                "    1. --reconcile-from-history <path...> checks each "
+                "withheld path against the release this workspace records "
+                "and DELIVERS only the ones proven byte-identical to what "
+                "that release shipped; every other path is left untouched. "
+                "It moves a matched file FORWARD to what upstream currently "
+                "ships -- a file you deliberately pinned to an older "
+                "release is byte-identical to one never touched, so hold "
+                "intentional pins in .agent/no-update rather than relying "
+                "on this to skip them.\n"
+                "    2. --force-path <path> delivers the incoming content "
+                "NOW, this run, and prints a loud FORCE line naming what it "
+                "destroyed (a backup is taken first) -- the overwrite is "
+                "visible immediately.\n"
+                "    3. --adopt-baseline <path> does not touch the file "
+                "now, but the NEXT --apply after it delivers the incoming "
+                "content silently, with no further warning -- only safe "
+                "when you are confident the file was never edited; if you "
+                "cannot tell, treat it as one that was.\n"
+                "  Pass --allow-skips to acknowledge these and exit 0 "
+                "without changing what is delivered."
+            )
+            if paths_untracked:
+                print(
+                    "  This workspace has no baseline recorded for: "
+                    + ", ".join(sorted(paths_untracked))
+                    + " -- that is absence of a record, not evidence they "
+                    "were edited. Recover them in one step:\n"
+                    "    python3 execution/update_template.py "
+                    "--reconcile-from-history "
+                    # Shell-quoted: a manifest path containing a space would
+                    # otherwise paste as two wrong targets, and this command
+                    # exists precisely so the operator does not retype it.
+                    + " ".join(shlex.quote(p) for p in sorted(paths_untracked))
+                )
+
+        if paths_refused:
+            print()
+            print("REFUSED — symlinked destinations, nothing was written to them:")
+            for key in paths_refused:
+                print(f"    - {key}  [symlink refusal — this destination is reached "
+                      "through a symlink to an external, potentially attacker- or "
+                      "operator-controlled path]")
+            print(
+                "  This is a security refusal about the write PATH, not a content "
+                "disagreement, so it is deliberately NOT cleared by --allow-skips "
+                "and NOT retracted by the destination happening to hold matching "
+                "bytes right now. Remedy: replace or remove the symlink and re-run, "
+                "or — if the indirection is intentional — declare that exact path "
+                "in .agent/allowed-symlinks (or pass --allow-symlink), which lets "
+                "the write actually proceed instead of muting the report."
+            )
+
+        # exit 0 for every --dry-run: a preview writes nothing, so it cannot
+        # deliver partially. backstop_warns stays deliberately out of the
+        # exit code -- it describes an incomplete SOURCE payload, not a
+        # withheld local delivery.
+        if not dry_run:
+            if stamp_divergent:
+                sys.exit(1)
+            # --allow-skips acknowledges CONTENT the operator knowingly keeps;
+            # it may not mute a compromised write path (F4c-2 C12).
+            if paths_refused:
+                sys.exit(1)
+            if (paths_withheld or paths_failed) and not args.allow_skips:
+                sys.exit(1)
 
     finally:
         if fetched_tmpdir is not None:

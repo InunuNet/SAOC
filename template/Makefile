@@ -266,16 +266,27 @@ contract-check:
 	python3 execution/contract.py report "$$CONTRACT"
 
 update-template:
-	@python3 execution/update_template.py --apply
-	@echo "🔄 Regenerating DERIVED files from updated HARNESS sources..."
-	@$(MAKE) sync || echo "⚠️  make sync failed — DERIVED files may be stale. Run 'make sync' manually."
+	@# delivery-integrity F1: the updater exits non-zero on a partial delivery, so
+	@# the apply and the DERIVED regeneration run in ONE shell with the exit code
+	@# captured. Letting make abort on the apply would mean a workspace carrying a
+	@# single permanent local divergence silently stops regenerating DERIVED files
+	@# on every future update. Both properties survive: sync always runs, and
+	@# automation still sees the non-zero code.
+	@python3 execution/update_template.py --apply; rc=$$?; \
+	echo "🔄 Regenerating DERIVED files from updated HARNESS sources..."; \
+	$(MAKE) sync || echo "⚠️  make sync failed — DERIVED files may be stale. Run 'make sync' manually."; \
+	exit $$rc
 
 self-update:
 	@echo "⬇️  Fetching latest update_template.py from Athanor..."
 	@bash -o pipefail -c 'gh api repos/InunuNet/Athanor/contents/execution/update_template.py --jq ".content" | base64 -d > execution/update_template.py'
 	@echo "✅ Updater refreshed. Running full update..."
-	@FORCE_UPDATE=true python3 execution/update_template.py --apply
-	@$(MAKE) sync || echo "⚠️  make sync failed — run 'make sync' manually."
+	@# Same capture-run-propagate shape as update-template above: FORCE_UPDATE only
+	@# bypasses the self-update workspace guard, it does NOT suppress the withheld
+	@# exit code, so aborting here would skip `make sync` and leave DERIVED stale.
+	@FORCE_UPDATE=true python3 execution/update_template.py --apply; rc=$$?; \
+	$(MAKE) sync || echo "⚠️  make sync failed — run 'make sync' manually."; \
+	exit $$rc
 
 
 

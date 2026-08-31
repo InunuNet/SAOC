@@ -1,0 +1,10 @@
+{
+  "dev_fast": {
+    "default": "cohere/north-mini-code:free",
+    "fallback": "nvidia/nemotron-3-super-120b-a12b:free"
+  },
+  "qa_fast": {
+    "default": "openai/gpt-oss-20b:free",
+    "fallback": "google/gemma-4-31b-it:free"
+  }
+}

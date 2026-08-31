@@ -23,10 +23,16 @@
 set -u
 
 # --- 1. Master switch — first, before any other read or side effect -------
+# Fail-closed ALLOWLIST: only an exact "1" or "true" (after trim + lowercase)
+# means ON. Every other value -- unset, empty, malformed, whitespace-padded,
+# or simply unanticipated -- means OFF. Do not lengthen this into a blocklist.
 _flag_raw="${ATHANOR_PULSE_QUOTA_RESUME:-}"
-_flag_lower="$(printf '%s' "$_flag_raw" | tr '[:upper:]' '[:lower:]')"
+_flag_trimmed="$(printf '%s' "$_flag_raw" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+_flag_lower="$(printf '%s' "$_flag_trimmed" | tr '[:upper:]' '[:lower:]')"
 case "$_flag_lower" in
-    ""|"0"|"false")
+    "1"|"true")
+        ;;
+    *)
         exit 0
         ;;
 esac
@@ -77,6 +83,10 @@ now_epoch="$(date -u +%s)"
 
 # --- 3. Staleness bound ------------------------------------------------------
 checkpoint_age=$((now_epoch - checkpoint_epoch))
+if [ "$checkpoint_age" -lt 0 ]; then
+    echo "WARN: pulse_quota_resume: checkpoint timestamp is in the future (clock skew or impossible/corrupted state) -- rejecting" >&2
+    exit 0
+fi
 if [ "$checkpoint_age" -gt "$MAX_CHECKPOINT_AGE_SECONDS" ]; then
     exit 0
 fi

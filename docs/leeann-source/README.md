@@ -42,12 +42,17 @@ snapshot_pulled: <YYYY-MM-DD>
 | Snapshot | Source Drive filename | Source Drive folder | Source modified | Pulled |
 |---|---|---|---|---|
 | [`south-african-exhibitors_2026-08-25.md`](south-african-exhibitors_2026-08-25.md) | `South African Exhibitors.docx` | `2027 Information to be added to website` | 2026-07-11 | 2026-08-25 |
-| [`2027-vendor-registration-form_2026-08-25.md`](2027-vendor-registration-form_2026-08-25.md) | `2027_SAOC_National_Show_Vendor_Registration_Form.docx` | `Docs for Brad` | 2026-08-10 | 2026-08-25 |
+| [`2027-vendor-registration-form_2026-08-25.md`](2027-vendor-registration-form_2026-08-25.md) **SUPERSEDED** | `2027_SAOC_National_Show_Vendor_Registration_Form.docx` | `Docs for Brad` | 2026-08-10 | 2026-08-25 |
+| [`2027-vendor-registration-form_2026-08-26.md`](2027-vendor-registration-form_2026-08-26.md) **CANONICAL** | `2027_SAOC_National_Show_Vendor_Registration_Form.docx` | `Docs for Brad` | 2026-08-26 | 2026-08-26 |
 
-**Note on these two:** these are two genuinely separate Drive files (different file IDs,
-different parent folders), each with exactly one revision in Drive's revision history — not two
-edits of the same document. The live `/national-show/vendors/register` form (31 fields) matches
-the embedded 31-item form inside `South African Exhibitors.docx` (the older, July file) almost
-verbatim. The newer `2027_SAOC_National_Show_Vendor_Registration_Form.docx` (August, in the
-"Docs for Brad" folder) is a materially larger 18-section/~90-field document that the live form
-does not yet reflect.
+**Note on these two:** `south-african-exhibitors_2026-08-25.md` and the vendor registration form
+are two genuinely separate Drive files (different file IDs, different parent folders). The live
+`/national-show/vendors/register` form (31 fields) matches the embedded 31-item form inside
+`South African Exhibitors.docx` (the older, July file) almost verbatim.
+
+**Same file, revised in place, 2026-08-26:** unlike the note above, the two vendor-registration-
+form snapshots share ONE Drive file ID (`1tbA4GNbplWkW-4Pv3LPsdV5RT_ZdViBe`) — Lee-Ann replaced
+the content of the same document rather than creating a new one. The 26 Aug snapshot is now the
+canonical build reference; the 25 Aug snapshot is retained for history per this directory's
+"never delete a superseded snapshot" rule but must not be used for new work. See the 26 Aug
+snapshot's own header for the verified section-by-section delta between the two.

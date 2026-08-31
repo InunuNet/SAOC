@@ -16,3 +16,4 @@ export { VendorPaymentFieldset } from './VendorPaymentFieldset';
 export { VendorRegisterStatusBanner } from './VendorRegisterStatusBanner';
 export { VendorRegisterSuccess } from './VendorRegisterSuccess';
 export { VendorRegisterForm } from './VendorRegisterForm';
+export { VendorApplyForm } from './VendorApplyForm';

@@ -351,21 +351,6 @@ if [[ "$DRY_RUN" == "true" ]]; then
   exit 0
 fi
 
-# Quota backoff state file
-QUOTA_STAMP=".agent/memory/scratch/.quota_backoff"
-if [[ -f "$QUOTA_STAMP" ]]; then
-  BACKOFF_UNTIL=$(cat "$QUOTA_STAMP" 2>/dev/null || echo 0)
-  NOW=$(python3 -c "import time; print(int(time.time()))")
-  if [[ $NOW -lt $BACKOFF_UNTIL ]]; then
-    REMAINING=$((BACKOFF_UNTIL - NOW))
-    echo "[pulse-loop] Quota backoff active — $REMAINING seconds remaining. Skipping turn."
-    exit 0
-  else
-    rm -f "$QUOTA_STAMP"
-    echo "[pulse-loop] Quota backoff expired — resuming."
-  fi
-fi
-
 if [[ ! -x "execution/pulse_ticket.py" ]]; then
   echo "[pulse-loop] pulse_ticket.py unavailable — safe no-op; no provider launched." >&2
   exit 0

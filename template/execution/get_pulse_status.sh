@@ -46,7 +46,19 @@ UID_NUM="$(id -u)"
 PRINT_OUTPUT="$(launchctl print "gui/$UID_NUM/$SERVICE" 2>&1)"
 PRINT_RC=$?
 
-if [ "$PRINT_RC" -ne 0 ]; then
+# launchctl print exits 113 for a genuinely unregistered service (verified
+# live: `launchctl print gui/$UID/definitely.does.not.exist` -> rc 113,
+# "Could not find service ... in domain for user"). Any OTHER nonzero rc
+# (permission error, launchd daemon hiccup) is ambiguous -- it must NOT be
+# collapsed into "not installed", or a transient failure silently reports
+# a false absence.
+if [ "$PRINT_RC" -ne 0 ] && [ "$PRINT_RC" -ne 113 ]; then
+    echo "Pulse: UNKNOWN (launchctl print exited $PRINT_RC, not 113 -- ambiguous, cannot confirm not-installed)"
+    echo "   Raw output: $PRINT_OUTPUT" | head -1
+    exit 2
+fi
+
+if [ "$PRINT_RC" -eq 113 ]; then
     echo "Pulse: NOT INSTALLED"
     # F3 FINDING 1: "NOT INSTALLED" is only the truth about the NEW
     # scoped label -- a workspace that ran Pulse under the OLD, pre-F1

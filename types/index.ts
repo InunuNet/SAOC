@@ -477,15 +477,23 @@ export type ShowIdentity = {
 
 export type VendorCategory =
   | 'plant-sales'
-  | 'product-sales'
+  | 'other-plant-sales'
   | 'rare-exotic-plants'
-  | 'food-retailer'
+  | 'product-sales'
   | 'hardware'
+  | 'fertilisers-growing-media'
   | 'books'
   | 'art'
+  | 'pottery-ceramics'
+  | 'food-retailer'
   | 'other';
 
-export type VendorBoothType = 'standard' | 'corner' | 'end-of-row';
+// F4 (vendor-registration-form-rebuild) — 'standard' renamed to 'standard-in-row' (matching
+// source 4.2's "Standard / In-row" label exactly) and 'no-preference' added; 'corner' and
+// 'end-of-row' keep their exact spelling. A genuine rename, not a widening -- 'standard' is no
+// longer a valid value. See contract-f4.yaml / the F4 golden for why this ships atomically with
+// the UI change that stops emitting the old value.
+export type VendorBoothType = 'standard-in-row' | 'corner' | 'end-of-row' | 'no-preference';
 
 export type VendorPaymentMethod = 'cash' | 'card' | 'eft' | 'not-applicable';
 
@@ -563,14 +571,16 @@ export interface VendorSubmission {
 
   // Section 2 — products & regulatory permits (fields 11-16).
   vendorCategory: VendorCategory[];
+  // F3 (vendor-registration-form-rebuild) — vendorCategory enum corrected (widened, not
+  // renamed) and vendorCategoryOther added; see contract-f3.yaml.
+  vendorCategoryOther?: string;
   productDescription: string;
   phytosanitaryPermitNumber?: string;
   citesPermitNumber?: string;
   foodHandlingCertificateNumber?: string;
   foodItemList?: string;
 
-  // F1 (vendor-registration-form-rebuild) — Section 3 additions, purely additive; vendorCategory
-  // enum stays untouched here (see contract-f1.yaml's sequencing rule, deferred to F3).
+  // F1 (vendor-registration-form-rebuild) — Section 3 additions, purely additive.
   sellsLivePlants?: boolean;
   livePlantTypes?: VendorLivePlantType[];
   livePlantTypesOther?: string;
@@ -592,8 +602,7 @@ export interface VendorSubmission {
   loadInSlot?: string;
   loadOutSlot?: string;
 
-  // F1 (vendor-registration-form-rebuild) — Section 4 additions, purely additive; boothType
-  // enum stays untouched here (see contract-f1.yaml's sequencing rule, deferred to F4).
+  // F1 (vendor-registration-form-rebuild) — Section 4 additions, purely additive.
   boothPositionRequest?: string;
   adjacentBoothRequested?: boolean;
   adjacentBoothVendorName?: string;
@@ -686,3 +695,85 @@ export interface VendorSubmission {
   paymentConfirmedBy?: string | null;
   paymentConfirmedAt?: Date | null;
 }
+
+// ---------------------------------------------------------------------------
+// F1 (vendor-gated-registration-flow) — vendorApplications data model. The SHORT public
+// application stage of the gated vendor flow: application -> committee review -> single-use
+// registration link -> full VendorSubmission above. A NEW, separate Firestore collection --
+// NOT a status spliced into VendorSubmission/VendorSubmissionStatus. See
+// contracts/golden/vendor-gated-registration-flow-f1/README.md for the full decision record.
+// ---------------------------------------------------------------------------
+
+export type VendorApplicationStatus = 'pending' | 'approved' | 'declined';
+
+// 14-item closed set, read verbatim from the 26 Aug source doc's "VENDOR CATEGORY & PRODUCTS"
+// section, in document order, with no 'other' member (the source doc has none for this list).
+// Deliberately separate from VendorCategory above (the live, stale 11-item full-form list) --
+// see the golden README's "The 14-item Vendor Category & Products list."
+export type VendorApplicationCategory =
+  | 'orchids'
+  | 'cites-listed-plants'
+  | 'indoor-plants'
+  | 'succulents'
+  | 'rare-plants'
+  | 'exotic-plants'
+  | 'indigenous-plants'
+  | 'orchid-growing-supplies'
+  | 'greenhouse-hardware-infrastructure'
+  | 'fertilisers-growing-media'
+  | 'books-publications'
+  | 'art'
+  | 'ceramics'
+  | 'food-beverage-retailer';
+
+export interface VendorApplication {
+  id: string;
+
+  businessName: string;
+  tradingName?: string;
+  contactPersonName: string;
+  contactEmail: string;
+  contactCellPhone: string;
+  vendorCategory: VendorApplicationCategory[];
+  /** "Indicative number of stands" -- a rough figure only; the real booth count is collected
+   *  on the full registration form after approval. */
+  indicativeBoothCount: number;
+
+  // System-owned fields -- never submitter-supplied. VendorApplicationDraft (below)
+  // structurally excludes every field in this block, mirroring VendorSubmissionDraft's
+  // existing pattern above -- no vendor may smuggle a status or a token field.
+  status: VendorApplicationStatus;
+  submittedAt: Date;
+
+  // F2 (vendor-gated-registration-flow) -- review-workflow fields, additive-only. Set by
+  // lib/vendor-application-review.ts's decideVendorApplicationTransition() patch, applied via
+  // ref.update() -- never present on a freshly-submitted document.
+  reviewedBy?: string | null;
+  reviewedAt?: Date | null;
+
+  // F3 (vendor-gated-registration-flow) -- single-use registration token bookkeeping. The
+  // token itself is never stored (it is a stateless, self-verifying HMAC) -- only these
+  // timestamps are, for single-use enforcement and admin visibility. Issued/expires are set
+  // by app/api/admin/vendors/applications/[id]/review/route.ts's 'approve' action (F5);
+  // consumed is set by app/api/vendors/register/route.ts (F7) inside the same handler that
+  // accepts the full submission, atomically with that write.
+  registrationTokenIssuedAt?: Date | null;
+  registrationTokenExpiresAt?: Date | null;
+  registrationTokenConsumedAt?: Date | null;
+}
+
+// Caller-supplied subset of VendorApplication -- id/status/submittedAt/reviewedBy/reviewedAt/
+// registrationTokenIssuedAt/registrationTokenExpiresAt/registrationTokenConsumedAt are
+// structurally absent, not merely optional, mirroring VendorSubmissionDraft's own pattern
+// above exactly.
+export type VendorApplicationDraft = Omit<
+  VendorApplication,
+  | 'id'
+  | 'status'
+  | 'submittedAt'
+  | 'reviewedBy'
+  | 'reviewedAt'
+  | 'registrationTokenIssuedAt'
+  | 'registrationTokenExpiresAt'
+  | 'registrationTokenConsumedAt'
+>;

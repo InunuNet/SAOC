@@ -26,18 +26,31 @@ import type {
 
 export const VENDOR_SUBMISSIONS_COLLECTION = 'vendorSubmissions';
 
+// F3 (vendor-registration-form-rebuild) — widened with 3 new members
+// ('other-plant-sales', 'fertilisers-growing-media', 'pottery-ceramics'); all 8 pre-existing
+// values kept unmodified, same spelling. See contract-f3.yaml.
 const VENDOR_CATEGORIES: readonly VendorCategory[] = [
   'plant-sales',
-  'product-sales',
+  'other-plant-sales',
   'rare-exotic-plants',
-  'food-retailer',
+  'product-sales',
   'hardware',
+  'fertilisers-growing-media',
   'books',
   'art',
+  'pottery-ceramics',
+  'food-retailer',
   'other',
 ];
 
-const VENDOR_BOOTH_TYPES: readonly VendorBoothType[] = ['standard', 'corner', 'end-of-row'];
+// F4 (vendor-registration-form-rebuild) — 'standard' renamed to 'standard-in-row', 'no-preference'
+// added. See contract-f4.yaml.
+const VENDOR_BOOTH_TYPES: readonly VendorBoothType[] = [
+  'standard-in-row',
+  'corner',
+  'end-of-row',
+  'no-preference',
+];
 
 const VENDOR_PAYMENT_METHODS: readonly VendorPaymentMethod[] = [
   'cash',
@@ -92,8 +105,12 @@ const VENDOR_PRODUCT_LIABILITY_INSURANCE_STATUSES: readonly string[] = [
   'not-applicable',
 ];
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_PATTERN = /^(?=.*[0-9])[0-9+\-() ]{7,20}$/;
+// Exported (not just module-private) so lib/vendor-applications.ts (mission
+// vendor-gated-registration-flow F1) can reuse the exact same patterns for its own
+// contactEmail/contactCellPhone validation, rather than redefining them -- see that module's
+// header comment.
+export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const PHONE_PATTERN = /^(?=.*[0-9])[0-9+\-() ]{7,20}$/;
 
 // Mirrors the golden's field -> maxLength table (contracts/golden/vendor-form-maxlength-and-
 // phone-pattern-f1/README.md). Independent of the client's VendorFormField maxLength props --
@@ -110,6 +127,7 @@ const FIELD_MAX_LENGTHS: Record<string, number> = {
   website: 300,
   socialMediaHandle: 200,
   productDescription: 2000,
+  vendorCategoryOther: 100,
   phytosanitaryPermitNumber: 100,
   citesPermitNumber: 100,
   foodHandlingCertificateNumber: 100,
@@ -304,6 +322,14 @@ export function validateVendorSubmissionInput(input: unknown): {
     'paymentReference',
     errors,
     FIELD_MAX_LENGTHS.paymentReference,
+  );
+
+  // F3 (vendor-registration-form-rebuild) — new optional string field. See contract-f3.yaml.
+  validateOptionalStringMaxLength(
+    record,
+    'vendorCategoryOther',
+    errors,
+    FIELD_MAX_LENGTHS.vendorCategoryOther,
   );
 
   // F1 (vendor-registration-form-rebuild) — new optional string fields.
@@ -704,6 +730,7 @@ export function buildVendorSubmission(
     website: input.website,
     socialMediaHandle: input.socialMediaHandle,
     vendorCategory: input.vendorCategory,
+    vendorCategoryOther: input.vendorCategoryOther,
     productDescription: input.productDescription,
     phytosanitaryPermitNumber: input.phytosanitaryPermitNumber,
     citesPermitNumber: input.citesPermitNumber,

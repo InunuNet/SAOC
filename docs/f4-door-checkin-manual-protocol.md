@@ -39,6 +39,21 @@ See `docs/admin-access.md` for the full debugging guide, including what each `re
 
 ---
 
+## Layout Fixes: Mobile Viewport Responsiveness
+
+The `/admin/door` page uses a **dvh-budgeted flex column layout** to ensure all interactive elements (especially the "Check In" button) are reachable one-handed on mobile devices without scrolling. This was added to fix a defect Brad found during live testing: the manual-entry form's submit button was unreachable without scrolling on Android Chrome.
+
+**The problem with viewport-height units (vh):** On mobile Chrome and Safari, the browser's address bar show/hide changes the actual visible viewport height at runtime. Using `min-h-screen` (which uses `vh`) means the computed height is wrong — it can exceed the actual viewport, pushing interactive elements below the fold where a one-handed operator cannot reach them.
+
+**The fix:** The page structure is:
+- **Root flex container** using `h-dvh min-h-dvh` (dvh = "dynamic viewport height", updated live as the address bar show/hide changes)
+- **Upper region** (`flex-1 overflow-y-auto`) — heading, camera box, torch button. May scroll internally if needed (e.g., to reach camera "Try again" retry buttons), but the scroll is contained to this region only.
+- **Lower region** (`flex-none`) — manual-entry form, structurally guaranteed to be outside any scroll container. Pinned visible at the bottom of the real viewport on any device at 320px–375px width (typical mobile portrait).
+
+**Verification:** Real BrowserAgent/Playwright passes confirmed the button is fully in-viewport at 375×667 (iPhone SE), 320×568 (iPhone 5S), and 1440×900 (desktop sanity check). Zero outer-page scroll required. See `docs/door-checkin-one-handed.md` for details.
+
+---
+
 ## The Test: Steps 1-4 (admission)
 
 ### Step 1: Sign in
@@ -53,6 +68,7 @@ See `docs/admin-access.md` for the full debugging guide, including what each `re
 1. From the admin home page, navigate to `/admin/door` (or click the "Door Check-in" link if one is present)
 2. The page attempts to access your device's camera. Allow camera access when prompted.
 3. If camera access fails or is denied, manual entry (step 4) is the acceptable fallback.
+4. **On mobile**, the "Check In" button is always visible at the bottom of the screen in your device's real viewport — no scrolling needed to reach it one-handed.
 
 ### Step 3: Obtain a real paid booking reference
 

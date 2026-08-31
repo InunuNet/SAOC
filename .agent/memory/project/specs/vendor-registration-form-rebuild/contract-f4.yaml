@@ -1,0 +1,215 @@
+schema: athanor.contract/v1
+slug: vendor-registration-form-rebuild-f4
+goal: >-
+  Mission vendor-registration-form-rebuild F4 -- UI for source Sections 4 (Booth
+  Requirements), 5 (Tables, Chairs & Display Equipment), and 6 (Electricity & Water) of the
+  2027 National Show vendor registration form. Rebuilds
+  components/vendors/VendorBoothFieldset.tsx to collect boothPositionRequest,
+  adjacentBoothRequested + adjacentBoothVendorName, specialDisplayRequirements (Section 4,
+  all already staged optional by F1); leaves tableCount/chairCount untouched (Section 5); adds
+  UI for electricalOutletsRequired, electricalEquipmentList,
+  electricalEquipmentContinuousOperation + electricalEquipmentContinuousDetails,
+  waterIntendedUse, wastewaterDrainageRequired + wastewaterDrainageDetails (Section 6, all
+  already staged optional by F1). Also performs THE ONE BREAKING CHANGE in this feature: renames
+  VendorBoothType's 'standard' member to 'standard-in-row' and adds a new 'no-preference'
+  member, taking the union from 3 members ('standard' | 'corner' | 'end-of-row') to 4
+  ('standard-in-row' | 'corner' | 'end-of-row' | 'no-preference') to match source 4.2's real
+  4-option list. Because this is a rename (not a pure widening like F3's VendorCategory), the
+  data-model change (types/index.ts, lib/vendor-submissions.ts) and the UI change that stops
+  emitting the old 'standard' value ship in THIS SAME feature/deploy -- there is no later
+  feature in this mission to defer the data-model half to, per F1's own sequencing rule
+  (contract-f1.yaml, goldens/f1-data-model-foundation.md, "narrowing or renaming a closed enum
+  the live UI still emits values from"). Because the rename and its only UI producer land
+  atomically in one deploy, no dual-write/backwards-compatibility mapping is needed -- proven
+  safe here because the Sanity/Firestore vendorSubmissions dataset is pre-production with no
+  live third-party reader of the old 'standard' literal outside this codebase (see project
+  memory project_sanity_dataset_not_live). A MANDATORY ripple sweep (grep-and-compile-driven,
+  not left to diff-scoped Codex review alone) proves the exactly one other in-repo compiler
+  fixture that hardcodes the old 'standard' literal
+  (contracts/checks/vendor-f8-approval-email/fixtures/vendor-f8-approval-email-typecheck.ts:28)
+  is updated and still compiles, that 'corner'/'end-of-row' survive unrenamed, and that no
+  Playwright contract depends on a boothType DOM id (confirmed absent by grep -- see golden).
+  Full decision record, the exact rename mapping, the ripple-sweep evidence, and the electricity
+  gate wiring: goldens/f4-ui-booth-requirements-electricity-water.md
+created_at: '2026-08-27'
+autonomy: high
+
+features:
+  - id: F4
+    name: >-
+      Four files touched. (1) types/index.ts -- VendorBoothType changes from 'standard' |
+      'corner' | 'end-of-row' to 'standard-in-row' | 'corner' | 'end-of-row' | 'no-preference'
+      (BREAKING rename of the 'standard' member to 'standard-in-row'; 'corner' and 'end-of-row'
+      keep their exact current spelling; 'no-preference' is new). No other field's type or
+      optionality changes; the Section-4/Section-6 fields F1 already added
+      (boothPositionRequest, adjacentBoothRequested, adjacentBoothVendorName,
+      specialDisplayRequirements, electricalOutletsRequired, electricalEquipmentList,
+      electricalEquipmentContinuousOperation, electricalEquipmentContinuousDetails,
+      waterIntendedUse, wastewaterDrainageRequired, wastewaterDrainageDetails) are untouched here
+      beyond removing their now-stale "deferred to F4" provenance comment on boothType,
+      replaced with an F4 provenance comment recording the rename. (2) lib/vendor-submissions.ts
+      -- VENDOR_BOOTH_TYPES changes from ['standard', 'corner', 'end-of-row'] to
+      ['standard-in-row', 'corner', 'end-of-row', 'no-preference'] (same rename); no other
+      change to validateBoothType's logic, FIELD_MAX_LENGTHS, or buildVendorSubmission's
+      existing field-by-field copy (all ten of F1's Section-4/6 optional fields are already
+      wired there -- this feature adds no new lib/vendor-submissions.ts field, only the enum
+      rename). (3) lib/vendor-register-form-payload.ts -- VendorRegisterFormState gains eleven
+      new fields (boothPositionRequest: string, adjacentBoothRequested: '' | 'true' | 'false',
+      adjacentBoothVendorName: string, specialDisplayRequirements: string,
+      electricalOutletsRequired: string, electricalEquipmentList: string,
+      electricalEquipmentContinuousOperation: '' | 'true' | 'false',
+      electricalEquipmentContinuousDetails: string, waterIntendedUse: string,
+      wastewaterDrainageRequired: '' | 'true' | 'false', wastewaterDrainageDetails: string);
+      exports 3 new leak-proof render-gate + payload-exclusion guard functions mirroring
+      isElectricalLoadApplicable's existing shape exactly --
+      isAdjacentBoothVendorNameFieldApplicable(state) => state.adjacentBoothRequested ===
+      'true'; isElectricalEquipmentContinuousDetailsFieldApplicable(state) =>
+      isElectricalLoadApplicable(state) && state.electricalEquipmentContinuousOperation ===
+      'true' (nested under the existing electricity gate, never duplicating its condition);
+      isWastewaterDrainageDetailsFieldApplicable(state) => state.wastewaterDrainageRequired ===
+      'true'. electricalOutletsRequired and electricalEquipmentList reuse the EXISTING
+      isElectricalLoadApplicable(state) gate verbatim (same controlling boolean as the
+      pre-existing electricalLoad field -- never a second gate function duplicating the same
+      condition). waterIntendedUse reuses the EXISTING waterRequired boolean via a direct
+      inline check consistent with how electricalLoad already reads isElectricalLoadApplicable
+      (state.waterRequired === 'true'), exposed as a fourth new function
+      isWaterIntendedUseFieldApplicable(state) for symmetry with the other three gates (never
+      an inline condition duplicated between render and payload). boothPositionRequest and
+      specialDisplayRequirements are ungated (always-visible free text, matching source 4.2/4.4
+      having no controlling boolean). buildVendorRegistrationPayload's explicit field-by-field
+      literal (never a spread) extends to all eleven new fields, applying
+      omitBlank/toOptionalInt/toOptionalBoolean and the four gates above exactly as every
+      existing optional/gated field already does; boothType's existing line
+      (`omitBlank(state.boothType) as VendorBoothType | undefined`) is untouched in shape (the
+      cast target type changes automatically with the renamed union, no code edit needed beyond
+      the type itself). (4) components/vendors/VendorBoothFieldset.tsx -- rebuilt in place (no
+      new fieldset file) to render, in source order: boothCount (unchanged); boothType (existing
+      VendorRadioGroupField, options updated to the 4 new values
+      standard-in-row/corner/end-of-row/no-preference, replacing the old 3) +
+      boothPositionRequest (new, ungated free text) + adjacentBoothRequested (new
+      VendorBooleanRadioField) gating adjacentBoothVendorName + specialDisplayRequirements (new,
+      ungated free text) (Section 4); tableCount/chairCount (unchanged, Section 5);
+      powerRequired (unchanged) gating electricalLoad (unchanged) +
+      electricalOutletsRequired (new, gated on isElectricalLoadApplicable) +
+      electricalEquipmentList (new, gated on isElectricalLoadApplicable) +
+      electricalEquipmentContinuousOperation (new VendorBooleanRadioField, gated on
+      isElectricalLoadApplicable) gating electricalEquipmentContinuousDetails; waterRequired
+      (unchanged) gating waterIntendedUse (new); wastewaterDrainageRequired (new
+      VendorBooleanRadioField, ungated) gating wastewaterDrainageDetails (Section 6); the
+      remaining unchanged fields (staffPerDay, vehicleRegistrations, loadInSlot, loadOutSlot)
+      keep their current position. No new primitive component is introduced; reuses
+      VendorFormField/VendorRadioGroupField/VendorBooleanRadioField exactly as they exist today.
+      components/vendors/VendorRegisterForm.tsx's INITIAL_STATE gains the eleven new keys ('' for
+      strings, '' for the three tri-state boolean-radio fields) -- no mount-order change.
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/vendor-registration-form-rebuild/goldens/f4-ui-booth-requirements-electricity-water.md
+  - .agent/memory/project/specs/vendor-registration-form-rebuild/goldens/f1-data-model-foundation.md
+  - .agent/memory/project/specs/vendor-registration-form-rebuild/checks/tsconfig.f4.typecheck.json
+  - .agent/memory/project/specs/vendor-registration-form-rebuild/checks/fixtures/vendor-submission-f4-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The whole project still type-checks under strict TypeScript after types/index.ts's renamed 4-member VendorBoothType union and lib/vendor-register-form-payload.ts's eleven new fields + three new gates.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof (not source-grep) of the renamed union: the exact 4 new members
+        ('standard-in-row', 'corner', 'end-of-row', 'no-preference') compile as a single array
+        literal; the OLD 'standard' literal is rejected via @ts-expect-error in the SAME
+        passing tsc run (proves the rename actually happened, not an accidental widening that
+        kept 'standard' alive); a 5th, invented member ('vip') is also rejected via
+        @ts-expect-error; a VendorSubmissionDraft literal using 'no-preference' plus every one
+        of F1's ten already-staged Section 4/6 fields compiles. tsc fails the whole run if any
+        @ts-expect-error line does NOT actually error, or if any valid literal fails to compile.
+      command: >-
+        npx tsc --noEmit -p .agent/memory/project/specs/vendor-registration-form-rebuild/checks/tsconfig.f4.typecheck.json
+
+    - id: A3
+      description: >-
+        THE BREAKING-RENAME PROOF, runtime half. Real calls to validateVendorSubmissionInput()
+        prove (a) each of the 2 UNRENAMED values ('corner', 'end-of-row') still validates
+        individually with zero errors; (b) both NEW values ('standard-in-row',
+        'no-preference') now validate with zero errors; (c) the OLD 'standard' value is now
+        REJECTED, naming "boothType" in the error -- the deliberate breaking-change proof,
+        the inverse of F3's old-value-preservation proof; (d) a payload using
+        'standard-in-row' plus every one of F1's ten Section 4/6 fields (boothPositionRequest,
+        adjacentBoothRequested, adjacentBoothVendorName, specialDisplayRequirements,
+        electricalOutletsRequired, electricalEquipmentList,
+        electricalEquipmentContinuousOperation, electricalEquipmentContinuousDetails,
+        waterIntendedUse, wastewaterDrainageRequired, wastewaterDrainageDetails) validates as
+        valid:true with zero errors; (e) the two golden VendorRegisterFormState JSON fixtures
+        already living in this repo (contracts/checks/vendor-form-ui/fixtures/form-state-full
+        .fixture.json, using boothType:'corner', and form-state-minimal.fixture.json, using
+        boothType:''), run through the REAL buildVendorRegistrationPayload() then
+        validateVendorSubmissionInput(), still validate as valid:true with zero errors after
+        this feature -- the concrete ripple-sweep proof that this feature's rename did not
+        collaterally break either already-shipped golden payload (neither uses the renamed
+        'standard' value). Defeating mutation: keeping 'standard' alive alongside the new
+        values (a non-breaking widening masquerading as the rename this feature requires),
+        failing to add 'no-preference', or renaming/removing 'corner' or 'end-of-row'.
+      command: >-
+        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f4-boothtype-renamed-and-validated.mjs
+
+    - id: A4
+      description: >-
+        MANDATORY RIPPLE SWEEP for the breaking rename (baked into this contract per F2/F3's
+        own hard lesson -- a diff-scoped Codex pass only catches fixtures overlapping the
+        literal diff; a rename, unlike F3's widening, can silently break a fixture that never
+        appears in this feature's own diff). Greps the entire repo (excluding node_modules and
+        this mission's own specs/checks) for the bare string literal 'standard' immediately
+        following a boothType-typed context, confirms the exactly one known pre-existing
+        occurrence (contracts/checks/vendor-f8-approval-email/fixtures/
+        vendor-f8-approval-email-typecheck.ts) has been updated to a valid post-rename member,
+        then re-runs that fixture's own scoped tsconfig
+        (contracts/checks/vendor-f8-approval-email/tsconfig.typecheck.json) plus the other two
+        contracts with a VendorBoothType-typed compiler fixture
+        (contracts/checks/vendor-f4-submissions-model/tsconfig.typecheck.json, using 'corner' --
+        unaffected by the rename; contracts/checks/vendor-form-ui/tsconfig.typecheck.json, whose
+        VendorRegisterFormState.boothType is a plain string, not the closed union -- unaffected)
+        to confirm all three still compile. Also confirms (grep, not assumption) that no
+        Playwright-driven contract in this repo constructs a boothType DOM id
+        (vendor-register-boothType-<value>), since none did before this feature and none may be
+        silently introduced without this sweep being extended. Defeating mutation: the F8
+        fixture's stale 'standard' literal left unfixed (would fail to compile and this
+        assertion would catch it), or a future PR reintroducing 'standard' anywhere without
+        updating this sweep's known-occurrence list.
+      command: >-
+        bash .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f4-ripple-sweep.sh
+
+    - id: A5
+      description: >-
+        Real calls to buildVendorRegistrationPayload() prove the four new leak-proof gates
+        (adjacentBoothVendorName / electricalOutletsRequired+electricalEquipmentList via the
+        reused isElectricalLoadApplicable / electricalEquipmentContinuousDetails /
+        wastewaterDrainageDetails / waterIntendedUse) actually exclude their dependent field's
+        stale value from the wire payload when the controlling boolean says "no", and include
+        it otherwise; specifically proves electricalEquipmentContinuousDetails stays excluded
+        when powerRequired is 'true' AND electricalEquipmentContinuousOperation is 'true' but
+        powerRequired flips back to not-'true' (nested-gate correctness, not just the inner
+        condition alone). Defeating mutation: gating render only without also excluding the
+        value in the payload builder, or vice versa; wiring any gate to the wrong controlling
+        field; flattening the nested electricalEquipmentContinuousDetails gate to only check
+        electricalEquipmentContinuousOperation without also requiring
+        isElectricalLoadApplicable.
+      command: >-
+        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f4-payload-gates.mjs
+
+    - id: A6
+      description: >-
+        Structural proof that VendorBoothFieldset.tsx renders all 4 new boothType option values
+        (by value: standard-in-row/corner/end-of-row/no-preference, and NOT the old 'standard'
+        value), every new Section 4/6 field by name, still renders tableCount/chairCount/
+        staffPerDay/vehicleRegistrations/loadInSlot/loadOutSlot unchanged, and that no
+        unexpected new file lands in components/vendors/ (this feature rebuilds an existing
+        fieldset, it does not add one).
+      command: >-
+        bash .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f4-fieldset-structure.sh
+
+    - id: A7
+      description: pnpm lint passes with zero errors after every changed file.
+      command: pnpm lint

@@ -46,6 +46,7 @@ milestones:
 
 
 
+
 # Mission: Fix vendor registration form: no visible focus indicator on ~24 of ~40 interactive elements -- every text/number/email/tel/url/textarea input relies on a barely-perceptible border-colour shift with outline: none. Checkboxes, radios, submit and nav links are already correct. Isolated to text-type inputs. Add a visible focus-visible ring treatment matching the pattern already used elsewhere on this site (e.g. the ring classes used on ContactForm/TicketFormField inputs, or the stepper-button ring pattern fixed in a recent mission -- reuse whatever is the established site convention, do not invent a new ring style). Apply consistently across all vendor form text-type inputs. Verify with real BrowserAgent keyboard Tab-through screenshots showing the ring renders on every affected input type. Route through @architect for contract + goldens.
 
 ## Context

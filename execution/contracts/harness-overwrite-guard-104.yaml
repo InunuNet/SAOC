@@ -20,9 +20,20 @@ goal: >
   a HARNESS file:
     - No baseline entry recorded yet (missing key, missing file, missing
       .agent/memory/ tree entirely, or the baseline file is corrupt/unreadable)
-      => treat as NOT locally modified. Proceed with the update normally
-      (never permanently "protect" a file just because nothing was recorded
-      yet) and record a fresh baseline hash after the copy completes.
+      AND local content matches the incoming template content => nothing to
+      protect; proceed with the update normally and record a fresh baseline
+      hash after the copy completes.
+      NOTE (post-GH-1343 policy, superseding this contract's original
+      2026-07-01 "no baseline => not locally modified, proceed" wording): if
+      local content DIFFERS from the incoming template content and no
+      baseline is recorded, treat it as diverged — WARN, SKIP the overwrite,
+      and leave local content byte-for-byte untouched. The original
+      auto-overwrite-when-no-baseline policy was itself GH #1343's
+      regression: it silently destroyed precious, never-synced local
+      hand-edits whenever nothing had ever recorded a baseline for them.
+      _sync_file_with_guard() in execution/update_template.py was
+      deliberately changed to this conservative default; do not revert it to
+      match this file's original wording.
     - Baseline entry present and sha256(current local content) == baseline
       hash => file is untouched since the last sync. Proceed with the update
       normally and refresh the baseline to the new content's hash.
@@ -76,10 +87,11 @@ assertions:
     description: >
       GOLDEN case (a): a HARNESS file has NO stored baseline yet (first-ever
       run — the whole .agent/memory/ tree is absent) and its content differs
-      from the template. Must update normally to the template content, record
-      a new baseline hash, and must NOT crash despite the missing baseline
-      directory (doubles as the "missing baseline directory" trap). Currently
-      FAILS (no baseline is ever recorded) — must PASS after the fix.
+      from the template. Per the GH-1343-informed policy (see goal prose
+      above), this counts as diverged: must WARN naming the file, SKIP the
+      overwrite, leave local content byte-for-byte untouched, and must NOT
+      crash despite the missing baseline directory (doubles as the "missing
+      baseline directory" trap). Must PASS against current, correct code.
     verify:
       kind: shell
       cmd: bash execution/checks/verify_harness_overwrite_guard_104.sh no_baseline
@@ -122,11 +134,11 @@ assertions:
   - id: P2A5
     description: >
       TRAP: the baseline JSON file exists but is malformed/corrupt. Must
-      degrade gracefully — treat as no-baseline-recorded (proceed with the
-      update, no crash, exit 0) rather than raising or permanently blocking —
-      and self-heal by rewriting a valid baseline file with the correct hash
-      afterward. Currently FAILS (no baseline read/write/self-heal mechanism
-      exists at all yet) — must PASS after the fix.
+      degrade gracefully — treat as no-baseline-recorded (same collapse as
+      P2A1: since local content differs from the template, WARN and SKIP the
+      overwrite, leaving local content byte-for-byte untouched, no crash,
+      exit 0) rather than raising or permanently blocking. Must PASS against
+      current, correct code.
     verify:
       kind: shell
       cmd: bash execution/checks/verify_harness_overwrite_guard_104.sh corrupt_baseline

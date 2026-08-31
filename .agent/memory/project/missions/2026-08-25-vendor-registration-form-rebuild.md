@@ -23,16 +23,16 @@ goal: 'Rebuild the National Show vendor registration form (app/(marketing)/natio
   vendor-registration-form-rebuild'
 created_at: '2026-08-25T20:38:23.395516+00:00'
 started_at: null
-last_active_at: null
+last_active_at: '2026-08-26T22:23:18.930076+00:00'
 status: pending
 cost_estimate:
   features: 11
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M2
+  feature: F3
+  ts: '2026-08-26T22:23:18.930076+00:00'
 features:
 - id: F1
   title: 'Data model foundation (deploy-safe, additive-only): types/index.ts + lib/vendor-submissions.ts'
@@ -120,10 +120,11 @@ features:
     prepared/cooked on site" field here -- F1''s dedup of source 3.8 against Section
     8''s two separate booleans (foodPreparationOnSite, foodCookingOnSite) is a judgement
     call already recorded in F1''s golden README; F5 owns Section 8''s UI.'
-  status: pending
+  status: done
   milestone: M2
   spec: null
   contract: null
+  completed_at: '2026-08-26T22:23:18.929913+00:00'
 - id: F4
   title: 'UI: Booth Requirements + Tables/Chairs + Electricity & Water (Sections 4,
     5, 6)'
@@ -309,6 +310,7 @@ milestones:
   - F10
   - F11
 ---
+
 
 
 

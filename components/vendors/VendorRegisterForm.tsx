@@ -48,18 +48,37 @@ const INITIAL_STATE: VendorRegisterFormState = {
   emergencyContactRelationship: '',
   emergencyContactCellPhone: '',
   vendorCategory: [],
+  vendorCategoryOther: '',
   productDescription: '',
   phytosanitaryPermitNumber: '',
   citesPermitNumber: '',
   foodHandlingCertificateNumber: '',
   foodItemList: '',
+  sellsLivePlants: '',
+  livePlantTypes: [],
+  livePlantTypesOther: '',
+  plantsImportedForEvent: '',
+  importCountryOfOrigin: '',
+  citesListedSpecies: '',
+  foodHealthTradingDocumentation: '',
   boothCount: '',
   boothType: '',
+  boothPositionRequest: '',
+  adjacentBoothRequested: '',
+  adjacentBoothVendorName: '',
+  specialDisplayRequirements: '',
   tableCount: '',
   chairCount: '',
   powerRequired: '',
   electricalLoad: '',
+  electricalOutletsRequired: '',
+  electricalEquipmentList: '',
+  electricalEquipmentContinuousOperation: '',
+  electricalEquipmentContinuousDetails: '',
   waterRequired: '',
+  waterIntendedUse: '',
+  wastewaterDrainageRequired: '',
+  wastewaterDrainageDetails: '',
   staffPerDay: '',
   vehicleRegistrations: '',
   loadInSlot: '',
@@ -70,7 +89,16 @@ const INITIAL_STATE: VendorRegisterFormState = {
   termsAccepted: false,
 };
 
-export function VendorRegisterForm() {
+// F7 (vendor-gated-registration-flow) -- token is caller-supplied (from the page's already-
+// verified `?token=` search param), included verbatim in the POST body alongside the existing
+// buildVendorRegistrationPayload() output. Never merged into buildVendorRegistrationPayload()
+// itself -- that function's return shape (and every golden/check that pins it) stays
+// untouched; the token is gate metadata, not a VendorSubmission field.
+interface VendorRegisterFormProps {
+  token: string;
+}
+
+export function VendorRegisterForm({ token }: VendorRegisterFormProps) {
   const [state, setState] = useState<VendorRegisterFormState>(INITIAL_STATE);
   const [hp, setHp] = useState(''); // honeypot -- never sent to the API
   const [status, setStatus] = useState<Status>('idle');
@@ -119,7 +147,10 @@ export function VendorRegisterForm() {
       const res = await fetch('/api/vendors/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildVendorRegistrationPayload(state)),
+        body: JSON.stringify({
+          ...(buildVendorRegistrationPayload(state) as Record<string, unknown>),
+          token,
+        }),
       });
       const body = await res.json().catch(() => undefined);
       const result = describeVendorRegistrationResponse(res.status, body);

@@ -59,7 +59,11 @@ case "${1:-all}" in
     build_guarded_fixture "$fixture_root/proj"
     before_hash="$(shasum -a 256 "$fixture_root/proj/.agent/skills/alembic.md" | awk '{print $1}')"
 
-    ( cd "$fixture_root/proj" && python3 "$UPDATE_TEMPLATE" --apply --source "$fixture_root/proj/_source" ) > "$out_file" 2>&1
+    # --allow-skips: this fixture deliberately leaves a guarded hand-patched
+    # file undelivered, which is a non-zero exit under delivery-integrity F1.
+    # The flag acknowledges that and restores exit 0 without changing what is
+    # delivered or silencing the WARN this case asserts on.
+    ( cd "$fixture_root/proj" && python3 "$UPDATE_TEMPLATE" --apply --allow-skips --source "$fixture_root/proj/_source" ) > "$out_file" 2>&1
     after_hash="$(shasum -a 256 "$fixture_root/proj/.agent/skills/alembic.md" | awk '{print $1}')"
 
     if [ "$before_hash" != "$after_hash" ]; then
@@ -167,7 +171,7 @@ case "${1:-all}" in
     build_guarded_fixture "$fixture_root/proj"
     before_hash="$(shasum -a 256 "$fixture_root/proj/.agent/skills/alembic.md" | awk '{print $1}')"
 
-    ( cd "$fixture_root/proj" && FORCE_PATH=".agent/skills/alembic.md" HARNESS_FORCE_PATH=".agent/skills/alembic.md" python3 "$UPDATE_TEMPLATE" --apply --source "$fixture_root/proj/_source" ) > "$out_file" 2>&1
+    ( cd "$fixture_root/proj" && FORCE_PATH=".agent/skills/alembic.md" HARNESS_FORCE_PATH=".agent/skills/alembic.md" python3 "$UPDATE_TEMPLATE" --apply --allow-skips --source "$fixture_root/proj/_source" ) > "$out_file" 2>&1
     after_hash="$(shasum -a 256 "$fixture_root/proj/.agent/skills/alembic.md" | awk '{print $1}')"
 
     if [ "$before_hash" != "$after_hash" ]; then

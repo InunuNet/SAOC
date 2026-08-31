@@ -11,13 +11,17 @@ GOLDEN_MISSION="$GOLDENS_DIR/mission-with-contract.md"
 GOLDEN_CONTRACT="$GOLDENS_DIR/contract-f1.yaml"
 
 SANDBOX=$(mktemp -d)
-trap 'rm -rf "$SANDBOX"' EXIT
+# mission.py resolves specs_base from its own on-disk location (__file__),
+# independent of CWD — so the golden contract fixture must live under the
+# real repo tree, not under the CWD sandbox, or _existing_contract_for_feature()
+# will never find it.
+trap 'rm -rf "$SANDBOX" "$REPO_ROOT/.agent/memory/project/specs/golden-1298-with-contract"' EXIT
 
 mkdir -p "$SANDBOX/.agent/memory/project/missions"
-mkdir -p "$SANDBOX/.agent/memory/project/specs/golden-1298-with-contract"
+mkdir -p "$REPO_ROOT/.agent/memory/project/specs/golden-1298-with-contract"
 MISSION="$SANDBOX/.agent/memory/project/missions/mission-with-contract.md"
 cp "$GOLDEN_MISSION" "$MISSION"
-cp "$GOLDEN_CONTRACT" "$SANDBOX/.agent/memory/project/specs/golden-1298-with-contract/contract-f1.yaml"
+cp "$GOLDEN_CONTRACT" "$REPO_ROOT/.agent/memory/project/specs/golden-1298-with-contract/contract-f1.yaml"
 
 cd "$SANDBOX"
 OUTPUT=$(python3 "$REPO_ROOT/execution/mission.py" resume "$MISSION")

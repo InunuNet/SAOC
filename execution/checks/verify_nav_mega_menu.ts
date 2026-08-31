@@ -15,7 +15,7 @@
  *      aria-haspopup, reachable by Tab from page load, openable with Enter (no mouse), and its
  *      Tickets column heading link resolves to /national-show/tickets while three further,
  *      Tab-reachable, real <a href> links resolve to exactly /tickets,
- *      /national-show/exhibitors, and /national-show/vendors/register.
+ *      /national-show/exhibitors, and /national-show/vendors/apply.
  *   2. Escape closes the open menu and returns focus to the trigger.
  *   3. Mobile (375px): opening the hamburger, then expanding the National Show section inside
  *      it, reveals all three destination hrefs as real anchors in the DOM (not desktop-only).
@@ -44,7 +44,7 @@ const TICKETS_HREFS = {
   chooser: '/national-show/tickets',
   visitor: '/tickets',
   exhibitor: '/national-show/exhibitors',
-  vendor: '/national-show/vendors/register',
+  vendor: '/national-show/vendors/apply',
 };
 
 function waitForServer(): Promise<void> {

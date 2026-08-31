@@ -1,3 +1,14 @@
+# BLOCKED 2026-08-31 (vendor-gated-registration-flow F7, architect pass): every Playwright check
+# below that navigates to /national-show/vendors/register now hits F7's single-use
+# registration-token gate (contract-vendor-gated-registration-flow.yaml) and gets only the generic
+# "invalid or expired" message -- none of the #vendor-register-<field> locators these checks
+# depend on exist on that response anymore. This is NOT a regression in this contract's own
+# subject matter (client-side validation is unchanged); it is upstream navigation breakage from a
+# later, correctly-shipped mission. Not wired into any currently-gating contract (this mission is
+# closed and not referenced by contract-vendor-gated-registration-flow.yaml), so left red rather
+# than silently deleted or hand-edited to fake a token. Prescribed fix (shared Firestore-seeded
+# fixture + minted token, mirroring door-test-qr-seeder) recorded in
+# .agent/memory/project/backlog.md under "Vendor registration".
 schema: athanor.contract/v1
 slug: vendor-boothcount-guarded-parse
 goal: >-

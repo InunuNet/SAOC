@@ -55,7 +55,7 @@ export const NAV: readonly NavItem[] = [
         links: [
           { id: 'visitor', label: 'Visitor Tickets', href: '/tickets' },
           { id: 'exhibitor', label: 'Exhibitor Entry', href: '/national-show/exhibitors' },
-          { id: 'vendor', label: 'Vendor Registration', href: '/national-show/vendors/register' },
+          { id: 'vendor', label: 'Vendor Application', href: '/national-show/vendors/apply' },
           { id: 'conferences', label: 'Conferences', href: '/national-show/conferences' },
           { id: 'workshops', label: 'Workshops & Field Trips', href: '/national-show/workshops' },
         ],

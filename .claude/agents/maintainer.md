@@ -20,9 +20,17 @@ If you discover a template/workflow bug during a session:
 → Add it to **this project's backlog.md** as: `- [ ] TEMPLATE BUG: [description] — user should run /report-bug`
 → That's it. The user decides when to report it. You do not act on it.
 
+**Exception — upstream harness bugs:** Use the `report-harness-bug` skill (`/report-harness-bug`) to file confirmed harness bugs directly against InunuNet/Athanor. This is the only sanctioned path across the repo boundary. The skill handles the gh invocation and fallback. The hard-scope rules above still apply for every other interaction with that repo.
+
 ## End-of-Session Tasks
 
-1. **Summarize** — write a 2-3 sentence summary of what happened this session
+1. **Tick off completed backlog items FIRST** — `- [ ]` → `- [x]` for every item finished this session.
+   - ⛔ **BLOCKING**: Do NOT proceed to brain wrap-up until all completed items are marked. A stale `[ ]` after a compact causes the next session to redo finished work.
+   - Cross-reference `git log --oneline -20` and any mission files in `.agent/memory/project/missions/` with `status: done` / `status: complete` against open `[ ]` entries — if a mission is closed, its backlog row must be `[x]`.
+   - **Non-checkbox format?** If backlog uses tables, prose bullets, or `~~struck~~` instead of `- [ ]`, identify what was completed from `git log --oneline -10` and the session summary, then prepend a dated note at the top of the file: `> ⚠️ YYYY-MM-DD: [item] completed — backlog not in checkbox format, manual review needed`
+   - **Verify**: after editing, confirm `git diff .agent/memory/project/backlog.md` is non-empty when commits exist this session. If unchanged despite commits this session, that is a bug — leave a visible warning at the top of backlog.md.
+   - **Audit**: run `make backlog-audit` — must exit 0 before continuing. If it fails, fix the stale rows before any other wrap-up step.
+     (`wrap_mission.sh` already runs this audit automatically as a hard-fail gate at mission close-out — this manual run is the fallback for non-mission maintainer sessions, per Step 7 below.)
 2. **Scan for GitHub issue closure candidates** — `python3 execution/gh_closure_scan.py --format lines`
    - Cross-references this session's shipped commits and completed missions against currently-open GitHub issues.
    - ⛔ Never run `gh issue close` yourself. Closing is a write to a shared external system and requires
@@ -33,16 +41,25 @@ If you discover a template/workflow bug during a session:
      `- [ ] GH #N — <evidence> — confirm with Brad, then \`gh issue close N\``
    - Carry the same candidates into the brain wrap-up step below via `--closure-candidates`.
    - If none found, skip silently — do not fabricate the section.
-3. **Update learned.md** — add new patterns, gotchas, or decisions discovered
-4. **Update goals.md** — mark completed goals (`~~goal~~ ✅`), add new ones if discovered
-5. **Update backlog.md** — do ALL three:
-   - ✅ Tick off completed items: `- [ ]` → `- [x]`
-     - **Non-checkbox format?** If backlog uses tables, prose bullets, or `~~struck~~` instead of `- [ ]`, identify what was completed from `git log --oneline -10` and the session summary, then prepend a dated note at the top of the file: `> ⚠️ YYYY-MM-DD: [item] completed — backlog not in checkbox format, manual review needed`
-     - **Verify**: after editing, confirm `git diff .agent/memory/project/backlog.md` is non-empty. If unchanged despite commits this session, that is a bug — leave a visible warning at the top of backlog.md.
+3. **Summarize** — write a 2-3 sentence summary of what happened this session.
+4. **Update learned.md** — add new patterns, gotchas, or decisions discovered.
+5. **Update goals.md** — mark completed goals (`~~goal~~ ✅`), add new ones if discovered.
+6. **Update backlog.md (remaining work)** — beyond the Step 1 `[x]` ticking:
    - 🔄 Move in-progress items to `## In Progress` if partially done
    - ➕ Add new TODOs for gaps discovered
-6. **Store in brain** — `python3 execution/brain.py wrap-up --summary "SUMMARY" --tags "TAGS" --closure-candidates "GH #N — evidence" ...` (pass every candidate found in Step 2)
-7. **Check consistency** — verify agent defs in `.agent/agents/` match the work being done
+7. **Auto-trim closed backlog items** — `make backlog-trim` (runs `python3 execution/backlog_trim.py`).
+   - Archives every `- [x]` row to the brain memory store with tags `backlog,archive` and source `backlog-autotrim`, then removes the lines from `backlog.md`.
+   - Caps remaining open items at 20; truncated overflow gets a one-line marker. Updates the `_Last compacted:` header to today's date.
+   - ⚙️ **Already automatic at mission close-out**: `execution/skills/wrap_mission.sh` runs `backlog_audit.sh` + this trim as a hard-fail gate before brain wrap-up. For mission-based sessions this step has already run — treat it as a no-op check, not a step you re-trigger.
+   - **For non-mission maintainer runs** (direct/trivial work per the CLAUDE.md decision tree, with no `wrap_mission.sh` close-out): run it manually here, after Step 6 (backlog updates) and BEFORE Step 8 (brain wrap-up), so the wrap-up can reference the trim count.
+   - If the script exits non-zero, stop — do not proceed to the brain wrap-up. Surface the stderr message; the user will rerun once fixed.
+8. **Store in brain** — `python3 execution/brain.py wrap-up --summary "SUMMARY" --tags "TAGS" --closure-candidates "GH #N — evidence" ...` (pass every candidate found in Step 2)
+9. **Bump version** — `bash execution/bump_version.sh && make sync`
+   - Increments PATCH in `.agent/version` AND `template/.agent/version` (dual-write; both files must stay in sync).
+   - `make sync` regenerates provider configs so they reflect the new version.
+10. **Commit** — `git add -A && git commit -m "chore: bump version to vNEW"`
+   - Replace `NEW` with the version echoed by the bump script (format: `OLD -> NEW`).
+11. **Check consistency** — verify agent defs in `.agent/agents/` match the work being done.
 
 ## Mid-Session Trigger
 
