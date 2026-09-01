@@ -541,6 +541,43 @@ flat-over-nested-submenu pattern.
 
 ## Vendor registration
 
+- [ ] **P0 SECURITY — vendors sharing a normalized business name share a failed-attempt fate,
+  and possibly more.** Found 2026-09-01 by `QA_E2E_VendorFlow_Adversarial` during live E2E prep.
+  `verify-code` matches candidates by normalized business name, and
+  `recordFailedVendorRegistrationCodeAttempt` loops over EVERY matching candidate — so five wrong
+  guesses against one vendor lock out every other approved vendor whose name normalizes to the
+  same slug. Lockout has no auto-expiry (`VENDOR_REGISTRATION_CODE_LOCK_THRESHOLD = 5`,
+  `lib/vendor-registration-code.ts`); only an operator reissue clears it. Externally triggerable
+  by anyone who knows a business name — two "Orchid Nursery" vendors is not a hypothetical in this
+  domain. **Open question that decides severity: can a CORRECT code for one record authenticate
+  against a DIFFERENT record sharing the slug?** If yes this is an authentication bypass, not a
+  nuisance. Answer that before scoping the fix. Likely fix: scope the candidate set by record id
+  (the token/link already carries one), not by name.
+
+  **ANSWERED 2026-09-01 (same session), from source — `lib/vendor-registration-code.ts:113-130`,
+  `verifyVendorRegistrationCode`.** The caller fetches ALL approved applications matching the
+  typed slug, then the function loops over every candidate and returns success for the FIRST whose
+  stored `registrationCodeId` matches the typed 4 digits. Three consequences, in descending
+  confidence:
+  1. **The module's documented security bound is false.** Its own header claims "at most 0.05%
+     chance before locking" (5 attempts / 10,000 values). With N approved applications sharing a
+     slug, each guess is tested against N stored codes, so the real per-guess probability of
+     authenticating as SOME vendor under that name is N/10000 — linear in N. The M4 golden
+     README's "why two vendors can share a 4-digit code, safely" section reasons only about the
+     rare case of sharing slug AND identical digits, and never accounts for the loop. A stated
+     safety property that is untrue in ordinary operation.
+  2. **Identity resolves to whichever record's code matched, not to who is typing.** Where a slug
+     collision and a code collision coincide, a vendor authenticates into a stranger's
+     application. Low probability, unbounded severity.
+  3. **Lockout amplification** (the original finding): one vendor's wrong guesses burn every
+     same-slug vendor's attempt budget, externally triggerable by anyone who knows a business name.
+  NOT an authentication bypass in the strict sense — holding vendor B's code does not let you in
+  as vendor A, because B's digits will not match A's stored code. Do not overstate it in the fix
+  contract; claims 1 and 2 are strong enough and survive scrutiny.
+  **Likely fix:** scope the candidate set to a single application id (the approval link already
+  carries one) rather than to a name, and correct the documented bound. Live demonstration on
+  two disposable same-named records was authorised and is pending.
+
   ~20 pre-existing Playwright checks across four already-shipped, closed mission contracts from
   ever reaching `/national-show/vendors/register` again.** Every one of these checks does a bare
   `page.goto('${BASE_URL}/national-show/vendors/register')` with no `?token=`; F7 now renders only

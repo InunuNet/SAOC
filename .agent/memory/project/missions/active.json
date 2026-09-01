@@ -1,5 +1,8 @@
 {
-  "mission": null,
-  "checkpoint": null,
-  "note": "mission complete"
+  "mission": ".agent/memory/project/missions/2026-09-01-vendor-flow-notifications.md",
+  "checkpoint": {
+    "milestone": null,
+    "feature": null
+  },
+  "activated_at": "2026-09-01T19:32:52.660277+00:00"
 }
