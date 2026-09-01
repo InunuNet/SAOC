@@ -1534,7 +1534,7 @@ assertions:
         configured price, or the initiate route reading an amount/price field off the request
         body instead of resolveVendorStandPrice()'s return value.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m3/check-pricing-blocks-then-unblocks-initiate.mjs
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx contracts/checks/vendor-gated-registration-flow-m3/check-pricing-blocks-then-unblocks-initiate.mjs
 
     # --- F27: token mechanism ---
     - id: A56
@@ -1574,7 +1574,7 @@ assertions:
         already-paid submission, or resend returning the SAME token bytes as a prior mint
         (proving it re-read a cached value instead of minting fresh).
       command: >-
-        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m3/check-approval-mints-payment-link-and-resend.mjs
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx contracts/checks/vendor-gated-registration-flow-m3/check-approval-mints-payment-link-and-resend.mjs
 
     # --- F29: payment page ---
     - id: A58
@@ -1630,7 +1630,7 @@ assertions:
         payment creating a second document instead of overwriting, or any field on an
         already-'paid' order changing as a result of a post-payment initiate attempt.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m3/check-initiate-is-transactionally-idempotent.mjs
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx contracts/checks/vendor-gated-registration-flow-m3/check-initiate-is-transactionally-idempotent.mjs
 
     # --- F31: settlement -- duplicate notification, cross-gateway, amount tamper ---
     - id: A61
@@ -1657,7 +1657,7 @@ assertions:
         says paid and the other doesn't (partial-write proof, both must move together or
         neither moves).
       command: >-
-        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m3/check-settlement-idempotent-and-guarded.mjs
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx contracts/checks/vendor-gated-registration-flow-m3/check-settlement-idempotent-and-guarded.mjs
 
     # --- F27/F30: token is state-gated, not merely cryptographically valid ---
     - id: A62
@@ -1678,7 +1678,7 @@ assertions:
         the SAME message text used for "already paid" (proving the check can tell the two
         code paths apart, not merely that both refuse).
       command: >-
-        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m3/check-token-state-gated-not-snapshot.mjs
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx contracts/checks/vendor-gated-registration-flow-m3/check-token-state-gated-not-snapshot.mjs
 
     # --- F32: admin visibility has no write path ---
     - id: A63
