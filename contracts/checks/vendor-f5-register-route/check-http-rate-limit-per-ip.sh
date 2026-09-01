@@ -117,7 +117,7 @@ SERVER_PID=$!
 # counted IP would silently spend its 3-attempt budget before the counted sequence starts
 # (observed: POSTs #1-#3 all 429). The counted IP 203.0.113.201 must arrive at the sequence
 # below completely untouched.
-VALID_BODY='{"businessName":"Readiness Probe Nursery","contactPersonName":"Probe","contactCellPhone":"+27821111111","contactEmail":"probe@example.com","productDescription":"probe","vendorCategory":["plant-sales"],"boothCount":1,"powerRequired":true,"termsAccepted":true}'
+VALID_BODY='{"businessName":"Readiness Probe Nursery","contactPersonName":"Probe","contactCellPhone":"+27821111111","contactEmail":"probe@example.com","physicalAddress":"12 Orchid Lane, Stellenbosch, Western Cape, 7600","emergencyContactName":"Peter Grower","emergencyContactCellPhone":"+27829876543","productDescription":"probe","vendorCategory":["orchids"],"boothCount":1,"boothSize":"single","powerRequired":true,"termsAccepted":true}'
 
 ready=0
 for _ in $(seq 1 150); do

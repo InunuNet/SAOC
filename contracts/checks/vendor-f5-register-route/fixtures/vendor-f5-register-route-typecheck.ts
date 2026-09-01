@@ -68,6 +68,14 @@ const deps: VendorRegistrationHandlerDeps = {
   sendConfirmationEmail: async (input) => {
     fakeEmails.push(input);
   },
+  // G1 (vendor-flow-notifications) -- VendorRegistrationHandlerDeps gained this required dep;
+  // this typed fixture proves a fully-faked implementation of the CURRENT deps shape still
+  // type-checks (no Firestore, no Resend, no network).
+  sendAdminNotice: async (_input: {
+    businessName: string;
+    contactPersonName: string;
+    vendorSubmissionId: string;
+  }) => {},
   onEmailError: (_error: unknown) => {},
 };
 

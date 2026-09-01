@@ -121,6 +121,10 @@ state. See [`docs/admin-access.md`](docs/admin-access.md) for the policy, the de
 `reason` values, and known traps (unverified-email lockouts, an empty allowlist that
 fails closed silently).
 
+### Admin vendor notifications — vendor confirmation and admin notices
+
+Vendor flow G1 (mission vendor-flow-notifications M1/F1) wires four new notification emails: vendor-facing "we received your application" acknowledgement on application submission, and three admin notices on application submitted, full registration submitted, and stand payment received. All sends are independently wrapped in `deliverConfirmationEmailAfterCommit()` so no notification failure blocks the vendor's action. Admin recipients are resolved once per email send via `lib/vendor-admin-notify-recipients.ts:getVendorAdminNotifyRecipients()`, reading `ADMIN_EMAIL_ALLOWLIST`. See [`docs/vendor-flow-notifications.md`](docs/vendor-flow-notifications.md) for the architecture, the Firestore transaction-retry bug fix in payment notification, why early assertions were insufficient (A10 closure testing), and two accepted limitations on static-analysis boundaries.
+
 ### Admin vendor listing — Firestore Timestamp serialisation
 
 Admin pages that read Firestore collections with timestamp-shaped fields (`submittedAt`, `reviewedAt`, etc.) must convert `Timestamp` class instances to native `Date` objects before passing them to `'use client'` components. The conversion module `lib/firestore-serialization.ts` provides `serializeVendorApplication()` and `serializeVendorSubmission()` for this — both convert by structure (duck-typed `.toDate()` method), not by a hardcoded field-name allowlist, ensuring new fields are handled correctly. See [`docs/admin-vendor-listing-serialization.md`](docs/admin-vendor-listing-serialization.md) for the defect analysis, the fix rationale, and why field allowlists fail.

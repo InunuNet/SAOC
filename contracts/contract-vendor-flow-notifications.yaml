@@ -192,3 +192,20 @@ assertions:
     - id: A9
       description: pnpm lint passes with zero errors after all five new files and three edits.
       command: pnpm lint
+
+    - id: A10
+      description: >-
+        RECIPIENT-EXACT-MATCH (added 2026-09-02, architect pass after @qa proved A5-A8 vacuous
+        against `recipients.push('attacker@evil.com')` immediately after the
+        getVendorAdminNotifyRecipients() call in a consumer module -- all four stayed green).
+        Composes the REAL getVendorAdminNotifyRecipients() with each REAL admin-notice sender
+        under a fixture mailer that records every `to:` address actually passed to
+        mailer.send, and asserts that set is IDENTICAL in both membership and count to a fresh,
+        independent call of the real resolver -- no addition, no omission, no substitution.
+        RED-verified against both the exact attacker@evil.com push mutation and a
+        dropped-recipient mutation (getVendorAdminNotifyRecipients().slice(1)); A5-A8 stayed
+        green under both, A10 caught both. See
+        contracts/golden/vendor-flow-notifications/README.md "Two accepted limitations".
+        Defeating mutation: any addition, omission, or substitution of an address between the
+        resolver call and the mailer.send call in any of the three admin-notice modules.
+      command: npx tsx contracts/checks/vendor-flow-notifications/check-recipients-exact-match.mjs

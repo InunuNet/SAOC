@@ -7,6 +7,9 @@ import {
   buildVendorApplication,
   validateVendorApplicationInput,
 } from '@/lib/vendor-applications';
+import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
+import { sendVendorApplicationConfirmationEmail } from '@/lib/vendor-application-confirmation';
+import { sendVendorApplicationAdminNoticeEmail } from '@/lib/vendor-application-admin-notice';
 import type { VendorApplicationDraft } from '@/types/index';
 
 /**
@@ -20,7 +23,21 @@ import type { VendorApplicationDraft } from '@/types/index';
  * This is the SHORT application, not the full ~90-field registration -- committee review
  * happens here, before any vendor ever sees the full form (app/api/vendors/register/route.ts,
  * unchanged in M1, now gated by F7).
+ *
+ * G1 (vendor-flow-notifications) -- strictly AFTER the write below commits, fires the
+ * vendor-facing "we received your application" confirmation and an admin notice, each
+ * independently wrapped in the REAL deliverConfirmationEmailAfterCommit so a failed send never
+ * fails this route. See contracts/golden/vendor-flow-notifications/README.md.
  */
+
+/** Site URL fallback, matching lib/confirmation-email.ts's own DEFAULT_SITE_URL convention --
+ *  duplicated locally rather than imported (that fallback is private to its own module and
+ *  SITE_URL is runtime-only, not available at build time). */
+const DEFAULT_SITE_URL = 'https://saoc.co.za';
+
+function resolveSiteUrl(): string {
+  return process.env['SITE_URL'] ?? DEFAULT_SITE_URL;
+}
 export async function POST(request: NextRequest): Promise<NextResponse> {
   let rawInput: unknown;
   try {
@@ -52,6 +69,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         status: 'pending',
         submittedAt: Timestamp.fromDate(built.submittedAt),
       });
+
+    await deliverConfirmationEmailAfterCommit(
+      () =>
+        sendVendorApplicationConfirmationEmail({
+          businessName: built.businessName,
+          contactPersonName: built.contactPersonName,
+          contactEmail: built.contactEmail,
+        }),
+      (error) => {
+        console.error(
+          '[vendors/apply/route] Application confirmation email failed (non-fatal):',
+          error instanceof Error ? error.message : 'unknown error',
+        );
+      },
+    );
+
+    await deliverConfirmationEmailAfterCommit(
+      () =>
+        sendVendorApplicationAdminNoticeEmail({
+          businessName: built.businessName,
+          contactPersonName: built.contactPersonName,
+          applicationId: ref.id,
+          reviewUrl: `${resolveSiteUrl()}/admin/vendors/applications`,
+        }),
+      (error) => {
+        console.error(
+          '[vendors/apply/route] Application admin notice email failed (non-fatal):',
+          error instanceof Error ? error.message : 'unknown error',
+        );
+      },
+    );
+
     return NextResponse.json({ success: true, id: ref.id }, { status: 201 });
   } catch (error) {
     console.error(

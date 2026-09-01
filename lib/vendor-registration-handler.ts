@@ -33,6 +33,14 @@ export interface VendorRegistrationHandlerDeps {
   recordAttempt(key: string, at: Date): void;
   write(doc: Omit<VendorSubmission, 'id'>): Promise<VendorRegistrationWriteResult>;
   sendConfirmationEmail(input: VendorRegistrationConfirmationInput): Promise<void>;
+  /** G1 (vendor-flow-notifications) -- admin notice on full registration submitted. Fired
+   *  immediately after sendConfirmationEmail, through the SAME onEmailError callback -- no new
+   *  error channel. See contracts/golden/vendor-flow-notifications/README.md. */
+  sendAdminNotice(input: {
+    businessName: string;
+    contactPersonName: string;
+    vendorSubmissionId: string;
+  }): Promise<void>;
   onEmailError(error: unknown): void;
 }
 
@@ -100,6 +108,19 @@ export async function handleVendorRegistration(
         businessName: built.businessName,
         contactPersonName: built.contactPersonName,
         contactEmail: built.contactEmail,
+      }),
+    deps.onEmailError,
+  );
+
+  // 7b. G1 (vendor-flow-notifications) -- a second, independent admin notice, reusing the
+  // SAME injected onEmailError. A rejecting sendAdminNotice must never change the eventual
+  // response, same reasoning as step 7.
+  await deliverConfirmationEmailAfterCommit(
+    () =>
+      deps.sendAdminNotice({
+        businessName: built.businessName,
+        contactPersonName: built.contactPersonName,
+        vendorSubmissionId: writeResult.id,
       }),
     deps.onEmailError,
   );

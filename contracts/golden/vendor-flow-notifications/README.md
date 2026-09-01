@@ -157,3 +157,76 @@ blocks the other.
   This feature adds one new Firestore READ (`transaction.get(submissionRef)` in the payment
   notification handler) and zero new Firestore WRITE builders; every existing write in the
   three touched routes/handlers is unchanged by this feature.
+
+## Two accepted limitations (architect pass, 2026-09-02, after @qa's vacuous-check finding)
+
+@qa proved A5-A8 all stayed green under a mutation that pushed `'attacker@evil.com'` onto the
+resolved recipient list inside `lib/vendor-application-admin-notice.ts`, immediately after the
+`getVendorAdminNotifyRecipients()` call. **A10 — `check-recipients-exact-match.mjs`** was added
+specifically to close that gap: it composes the REAL resolver and each REAL admin-notice sender
+under a fixture mailer, and asserts the exact set (and count) of `to:` addresses actually sent
+to is identical to a fresh, independent resolver call — no addition, omission, or substitution.
+It was RED-verified against both the exact `recipients.push('attacker@evil.com')` mutation and a
+dropped-recipient mutation (`getVendorAdminNotifyRecipients().slice(1)`), one at a time, each
+reverted and confirmed via `md5`/`diff` before the next; A5-A8 stayed green under both, as @qa
+found, while A10 caught both. Two limitations remain even after this fix, both accepted rather
+than further chased, because closing them would need a change to a shared module used by
+several other features (`lib/email.ts`'s `sendEmail` signature) — out of this contract's scope
+per the CLAUDE.md "Minimal Scope" rule:
+
+**(a) A5's admin-auth non-import guard is a substring test, not a real static-analysis check.**
+`check-recipients-allowlist-only.mjs:125-127` is `/lib\/admin-auth|lib\/admin-roles/.test(source)`
+run against the raw file text of `lib/vendor-admin-notify-recipients.ts`. It catches a literal
+`import ... from '@/lib/admin-auth'` (or `'@/lib/admin-roles'`) string appearing anywhere in the
+file — including inside a comment, which is itself a minor false-positive risk in the other
+direction. **It does NOT catch**: a re-exported alias from a third module that itself imports
+`admin-auth`/`admin-roles`; a dynamically constructed import path (e.g. built from a template
+literal or concatenation); or any future rename of either module. This is the same class of
+"assertion satisfiable by something that isn't the real property" this project tracks in
+`.agent/memory/project/learned.md`, scoped down here to a specific known blind spot rather than
+a general defect the contract claims to have eliminated. Accepted because closing it fully would
+require either an AST-based import check (a real static-analysis tool, not a grep — a
+disproportionate build for one guard in one file) or a runtime provenance check (which A10's
+composition approach could in principle be extended to prove structurally, e.g. asserting the
+resolver module's own dependency graph at runtime contains neither module — not attempted here,
+flagged as a possible future strengthening if this guard is ever specifically targeted).
+
+**(b) The narrow mailer interfaces don't provide the excess-property protection they appear to.**
+All three admin-notice mailer interfaces (e.g.
+`VendorApplicationAdminNoticeMailer.send(args: { to: string; subject: string; react:
+ReactElement }): Promise<void>`) omit `from` from their declared parameter shape, yet every
+call site in this feature passes `from: FORMS_FROM_ADDRESS` (see
+`lib/vendor-application-admin-notice.ts`'s `mailer.send({ to, subject, react, from:
+FORMS_FROM_ADDRESS })`). TypeScript's excess-property check — which would normally reject an
+object literal carrying a property the target type doesn't declare — does NOT fire here, because
+the call-site type is not `VendorApplicationAdminNoticeMailer` directly: `deps.mailer ??
+{ send: sendEmail }` produces a UNION of the injected (narrow) type and `{ send: typeof
+sendEmail }`, and `sendEmail`'s own real parameter type DOES declare `from`. TypeScript's excess
+property check is suppressed for a value whose type is (or has been widened to, via a
+fallback expression like this) a union containing a wider member — the object literal is valid
+under at least one arm of the union, so it's accepted for all arms. **No runtime impact**
+(`from` is simply passed to the real `sendEmail` implementation on the default path, and to
+whatever a fixture mailer chooses to accept/ignore on the injected-mailer path), but this means
+the narrowness of these interfaces is NOT actually enforced by the type system in the way it
+visually appears to be — and the practical consequence is that **any injected fixture mailer
+used in a test must itself be prepared to accept a `from` property**, even though the
+interface's type signature suggests it need not be. `A1` (`pnpm type-check`) does not and cannot
+catch this — it's not a type error, it's a soundness gap in how excess-property checking
+interacts with default-fallback unions. Not fixed here because fixing it (either widening every
+narrow mailer interface to declare `from` explicitly, or restructuring the `deps.mailer ??
+{ send: sendEmail }` fallback pattern) would touch the shared shape every vendor-email sender in
+this project already uses identically — a cross-cutting change out of scope for this contract.
+
+**Also note:** `tsconfig.json` **excludes** `contracts/` from the project's TypeScript
+compilation root, so `pnpm type-check` (A1) never typechecks any fixture, check script, or
+inline payload under `contracts/checks/`. This is precisely why the F5 `check-commit-before-email.mjs`
+fixture (`contracts/checks/vendor-f5-register-route/check-commit-before-email.mjs`) went stale
+and silently red for an unknown period after M2 changed `VENDOR_CATEGORIES` and tightened
+`boothSize` to required: the fixture's `vendorCategory: ['plant-sales']` (a category M2 removed)
+and missing `boothSize` field were never caught by any typecheck, only by actually running the
+check (`npx tsx contracts/checks/vendor-f5-register-route/check-commit-before-email.mjs`), which
+this mission's architect pass did and found FAILing all five of its assertions — repaired as
+part of this same pass (see `contracts/checks/vendor-f5-register-route/check-commit-before-email.mjs`'s
+own inline "FIXTURE NOTE"). Any check-script author relying on "the build would have caught it"
+should not — nothing under `contracts/` gets that protection, and a stale fixture can sit
+silently red exactly like this one did.

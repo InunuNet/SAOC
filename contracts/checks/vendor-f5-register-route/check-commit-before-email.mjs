@@ -14,6 +14,15 @@
 // Defeating mutation: calling sendConfirmationEmail before awaiting write() (or calling it
 // regardless of write's outcome) — case (b)'s zero-calls assertion would then fail.
 //
+// FIXTURE NOTE (repaired 2026-09-02, architect pass on vendor-flow-notifications): this
+// payload dated from 2026-08-18 (commit 521a233b) and predated M2's field-set changes, so it
+// silently failed validation ('plant-sales' is no longer a member of VENDOR_CATEGORIES in
+// lib/vendor-submissions.ts, and boothSize became required) — every assertion below was
+// failing at 400 before ever reaching write()/sendConfirmationEmail(), so this check proved
+// nothing for however long it sat red. Because tsconfig.json excludes contracts/, `pnpm
+// type-check` never catches a stale fixture like this — see
+// contracts/golden/vendor-flow-notifications/README.md.
+//
 // Run as: npx tsx contracts/checks/vendor-f5-register-route/check-commit-before-email.mjs
 
 import { handleVendorRegistration } from '../../../lib/vendor-registration-handler.ts';
@@ -30,8 +39,9 @@ const VALID_PAYLOAD = {
   emergencyContactName: 'Peter Grower',
   emergencyContactCellPhone: '+27829876543',
   productDescription: 'Cymbidium and Cattleya orchids',
-  vendorCategory: ['plant-sales'],
+  vendorCategory: ['orchids'],
   boothCount: 1,
+  boothSize: 'single',
   powerRequired: true,
   termsAccepted: true,
 };
@@ -63,6 +73,12 @@ async function checkEmailFailureNonFatal() {
     sendConfirmationEmail: async () => {
       deps.callOrder.push('sendConfirmationEmail');
       throw emailError;
+    },
+    // G1 (vendor-flow-notifications) — VendorRegistrationHandlerDeps gained this required dep;
+    // a resolving fake here so this check exercises the real, current deps shape rather than a
+    // stale one TypeScript would reject at compile time but this plain-JS check would not.
+    sendAdminNotice: async () => {
+      deps.callOrder.push('sendAdminNotice');
     },
     onEmailError: (error) => {
       capturedOnEmailError = error;
@@ -106,6 +122,9 @@ async function checkWriteFailureNeverEmails() {
     sendConfirmationEmail: async () => {
       deps.callOrder.push('sendConfirmationEmail');
     },
+    sendAdminNotice: async () => {
+      deps.callOrder.push('sendAdminNotice');
+    },
     onEmailError: () => {},
   };
 
@@ -119,6 +138,16 @@ async function checkWriteFailureNeverEmails() {
     failures.push(
       `(b) deps.sendConfirmationEmail was called ${emailCallCount} time(s) after a write failure — ` +
         'a submission that was never persisted must never trigger a confirmation email.',
+    );
+  }
+  // G1 — the write-failure short-circuit must also skip the new admin-notice call, same
+  // reasoning as sendConfirmationEmail: a submission that was never persisted must never
+  // trigger ANY notification.
+  const adminNoticeCallCount = deps.callOrder.filter((entry) => entry === 'sendAdminNotice').length;
+  if (adminNoticeCallCount !== 0) {
+    failures.push(
+      `(b) deps.sendAdminNotice was called ${adminNoticeCallCount} time(s) after a write failure — ` +
+        'a submission that was never persisted must never trigger an admin notice either.',
     );
   }
 }

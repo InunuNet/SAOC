@@ -27,8 +27,9 @@ const VALID_PAYLOAD = {
   emergencyContactName: 'Peter Grower',
   emergencyContactCellPhone: '+27829876543',
   productDescription: 'Cymbidium and Cattleya orchids',
-  vendorCategory: ['plant-sales'],
+  vendorCategory: ['orchids'],
   boothCount: 1,
+  boothSize: 'single',
   powerRequired: true,
   termsAccepted: true,
 };
@@ -36,6 +37,7 @@ const VALID_PAYLOAD = {
 function makeDeps(key, priorAttempts) {
   const writeCalls = [];
   const emailCalls = [];
+  const emailErrors = [];
   return {
     now: NOW,
     rateLimitKey: key,
@@ -48,9 +50,20 @@ function makeDeps(key, priorAttempts) {
     sendConfirmationEmail: async (input) => {
       emailCalls.push(input);
     },
-    onEmailError: () => {},
+    // G1 (vendor-flow-notifications) -- VendorRegistrationHandlerDeps gained this required
+    // dep; a resolving fake here so this check exercises the real, current deps shape rather
+    // than a stale one TypeScript would reject at compile time but this plain-JS check would
+    // not.
+    sendAdminNotice: async () => {},
+    // Captured instead of ignored -- a missing/misnamed dep on a success-path run throws a
+    // TypeError that deliverConfirmationEmailAfterCommit swallows and routes here instead of
+    // rethrowing, so a silent onEmailError would let exactly that defect hide behind a PASS.
+    onEmailError: (error) => {
+      emailErrors.push(error);
+    },
     _writeCalls: writeCalls,
     _emailCalls: emailCalls,
+    _emailErrors: emailErrors,
   };
 }
 
@@ -90,6 +103,14 @@ function makeDeps(key, priorAttempts) {
   }
   if (deps._writeCalls.length !== 1) {
     failures.push(`(2) expected deps.write called exactly once for a successful submission, got ${deps._writeCalls.length}.`);
+  }
+  if (deps._emailErrors.length !== 0) {
+    failures.push(
+      `(2) onEmailError was called ${deps._emailErrors.length} time(s) on what should be a clean ` +
+        `success path -- ${deps._emailErrors.map((e) => (e instanceof Error ? e.message : String(e))).join('; ')}. ` +
+        'This means an error (e.g. a missing dep) is being swallowed instead of this check ' +
+        'proving a genuinely clean success path.',
+    );
   }
 }
 

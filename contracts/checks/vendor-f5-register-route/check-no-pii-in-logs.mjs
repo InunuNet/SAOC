@@ -33,8 +33,9 @@ const VALID_PAYLOAD = {
   emergencyContactName: 'Sipho Naidoo',
   emergencyContactCellPhone: '+27831230000',
   productDescription: 'Vanda and Phalaenopsis hybrids',
-  vendorCategory: ['plant-sales'],
+  vendorCategory: ['orchids'],
   boothCount: 1,
+  boothSize: 'single',
   powerRequired: true,
   termsAccepted: true,
 };
@@ -110,6 +111,8 @@ function assertNoPii(label, captured) {
 
 // (b) deps.sendConfirmationEmail rejects.
 {
+  const emailErrors = [];
+  const emailRejection = new Error('resend delivery failed (fixture)');
   const { captured } = await withConsoleSpy(() =>
     handleVendorRegistration(VALID_PAYLOAD, {
       now: NOW,
@@ -118,15 +121,33 @@ function assertNoPii(label, captured) {
       recordAttempt: () => {},
       write: async () => ({ id: 'write-id-b' }),
       sendConfirmationEmail: async () => {
-        throw new Error('resend delivery failed (fixture)');
+        throw emailRejection;
       },
+      // G1 (vendor-flow-notifications) -- VendorRegistrationHandlerDeps gained this required
+      // dep; a resolving fake here so the handler's step 7b (deps.sendAdminNotice, fired
+      // unconditionally right after sendConfirmationEmail) doesn't throw "deps.sendAdminNotice
+      // is not a function" into this SAME onEmailError callback, masking a real programming
+      // error as an ordinary email failure.
+      sendAdminNotice: async () => {},
       onEmailError: (error) => {
+        emailErrors.push(error);
         // Realistic caller behaviour: log the failure, but never the payload.
         console.error('confirmation email failed', error instanceof Error ? error.message : error);
       },
     }),
   );
   assertNoPii('(b) deps.sendConfirmationEmail rejection', captured);
+  // A missing/misnamed dep (e.g. this check omitting sendAdminNotice) throws a second,
+  // swallowed TypeError through the same onEmailError callback -- proving onEmailError fired
+  // EXACTLY once, with the real sendConfirmationEmail rejection and nothing else, is what
+  // makes this a genuine single-failure proof rather than a run masking a second defect.
+  if (emailErrors.length !== 1 || emailErrors[0] !== emailRejection) {
+    failures.push(
+      `(b) onEmailError should have been called exactly once with the real sendConfirmationEmail ` +
+        `rejection -- got ${emailErrors.length} call(s): ` +
+        `${JSON.stringify(emailErrors.map((e) => (e instanceof Error ? e.message : String(e))))}.`,
+    );
+  }
 }
 
 // (c) 429 rate-limit refusal.
