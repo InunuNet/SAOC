@@ -19,8 +19,8 @@ goal: 'Gated vendor registration flow for the 2027 National Show, built against 
   priced vs ''no extra charge'' voice note.'
 created_at: '2026-09-01T00:01:15.874357+00:00'
 started_at: null
-last_active_at: null
-status: pending
+last_active_at: '2026-09-01T13:05:43.337104+00:00'
+status: done
 cost_estimate:
   features: 0
   milestones: 0

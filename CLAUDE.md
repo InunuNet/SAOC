@@ -146,6 +146,7 @@ Add a document to the `nationalShows` collection. `edition` is the show number (
 - **Admin SDK in API routes** — never import `firebase-admin` in client components or pages that ship to the browser
 - **Conventional commits** — `feat:`, `fix:`, `chore:`, `docs:`, `style:`, `refactor:`, `test:`
 - **No invented brand assets** — do not add colours, logos, fonts, or visual design decisions. Wait for Claude Design handoffs.
+- **Firestore builders: coalesce optionals or strip undefined** — builders that construct Firestore documents from optional-field drafts must never leave `undefined` own-properties on the output. Either coalesce to `null` (`field: input.field ?? null`) or strip undefined keys before writing. See `docs/firestore-undefined-write-safety.md` and the safe reference pattern in `buildMultiReservationDocs()` and M3 stand-payment write.
 
 ---
 

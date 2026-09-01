@@ -14,6 +14,7 @@
  * lib/admin-auth.ts or lib/admin-roles.ts here.
  */
 
+import { stripUndefinedProperties } from './firestore-write-safety.ts';
 import { EMAIL_PATTERN, PHONE_PATTERN } from '@/lib/vendor-submissions';
 import type {
   VendorApplication,
@@ -168,7 +169,13 @@ export function buildVendorApplication(
   input: VendorApplicationDraft,
   now: Date,
 ): Omit<VendorApplication, 'id'> {
-  return {
+  // Optional fields genuinely absent from `input` are copied above as own properties with
+  // value `undefined` (by design -- see the field-by-field-copy rationale above). Stripped
+  // here, at the builder boundary, before the object can reach a Firestore write call: the
+  // Admin SDK throws synchronously on an `undefined` own-property value. See
+  // lib/firestore-write-safety.ts and contracts/golden/firestore-undefined-write-safety/
+  // README.md.
+  return stripUndefinedProperties({
     businessName: input.businessName,
     tradingName: input.tradingName,
     contactPersonName: input.contactPersonName,
@@ -180,5 +187,5 @@ export function buildVendorApplication(
     // Always system-set -- never read from `input`, see the function doc comment above.
     status: 'pending',
     submittedAt: now,
-  };
+  });
 }

@@ -1,8 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-09-01-vendor-gated-registration-flow.md",
+  "mission": ".agent/memory/project/missions/2026-09-01-firestore-undefined-write-safety.md",
   "checkpoint": {
     "milestone": null,
     "feature": null
   },
-  "activated_at": "2026-09-01T00:01:15.886310+00:00"
+  "activated_at": "2026-09-01T13:06:04.275398+00:00"
 }

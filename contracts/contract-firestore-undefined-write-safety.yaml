@@ -1,0 +1,45 @@
+schema: athanor.contract/v1
+slug: firestore-undefined-write-safety
+goal: >-
+  A payload that passes validateVendorSubmissionInput()/validateVendorApplicationInput()
+  with optional fields genuinely absent must round-trip through the real Firestore write
+  call shape without the Firebase Admin SDK throwing on an undefined own-property value.
+  Fix must sit at whichever layer (initAdmin ignoreUndefinedProperties, or stripping
+  undefined in the builders) -- these checks assert only the real, external SDK-boundary
+  behaviour and do not care which. See contracts/golden/firestore-undefined-write-safety/
+  README.md for the full decision record and sibling-builder audit.
+created_at: '2026-09-01'
+autonomy: high
+features:
+  - id: F1
+    name: >-
+      Fix the Firestore undefined-value write defect for buildVendorSubmission() and
+      buildVendorApplication(), proven by A1/A2 going green, with no change to the
+      already-safe orders/tickets and M3 stand-payment write paths.
+    status: pending
+goldens:
+  - contracts/golden/firestore-undefined-write-safety/README.md
+assertions:
+  checks:
+    - id: A1
+      description: >-
+        A minimal, valid vendorSubmissions draft with every optional field genuinely
+        absent (not '', not null, not present as a key) round-trips through the exact
+        write shape app/api/vendors/register/route.ts:172 uses, without the Firebase
+        Admin SDK's synchronous document-data validation throwing on an undefined
+        value. Credential-free and deterministic: the SDK validates data synchronously
+        before any network I/O, so this needs no live Firestore/emulator/real project
+        -- only a throwaway RSA keypair. Fix-layer agnostic by design (asserts the
+        real SDK-boundary behaviour, not how the fix was implemented).
+        CONFIRMED RED against pre-fix HEAD (2026-09-01): exits 1, reproduces
+        `Cannot use "undefined" as a Firestore value (found in field "tradingName")`.
+      command: node contracts/checks/firestore-undefined-write-safety/check-vendor-submission-undefined-roundtrip.mjs
+    - id: A2
+      description: >-
+        Same proof as A1, for the second confirmed instance of the same defect:
+        buildVendorApplication() (lib/vendor-applications.ts:167) + the write shape at
+        app/api/vendors/apply/route.ts:47. tradingName is optional and genuinely
+        absent in the minimal draft.
+        CONFIRMED RED against pre-fix HEAD (2026-09-01): exits 1, reproduces the same
+        undefined-value error for field "tradingName".
+      command: node contracts/checks/firestore-undefined-write-safety/check-vendor-application-undefined-roundtrip.mjs
