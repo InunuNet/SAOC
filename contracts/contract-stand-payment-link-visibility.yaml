@@ -1,0 +1,80 @@
+schema: athanor.contract/v1
+slug: stand-payment-link-visibility
+goal: >-
+  Hotfix (2026-09-01, demo tomorrow morning): the M3 stand-payment token
+  (lib/vendor-stand-payment-token.ts) is a pure, never-persisted HMAC value, minted and
+  emailed on approval by app/api/admin/vendors/[id]/review/route.ts, with email delivery
+  treated as non-fatal. Email is currently broken (forms.saoc.co.za unverified in Resend), so
+  an approval tonight produces a payment link nobody can ever see -- the token exists nowhere
+  else, not in Firestore, not in the admin UI. Give the committee a way to obtain a working
+  payment URL from the admin UI, independent of email, by reusing the existing (already
+  built, currently email-only) POST /api/admin/vendors/[id]/resend-payment-link route and
+  wiring components/admin/VendorReviewTable.tsx to it. Full decision record:
+  contracts/golden/vendor-stand-payment-link-visibility/README.md.
+created_at: '2026-09-01'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      app/api/admin/vendors/[id]/resend-payment-link/route.ts's success response becomes
+      `{ success: true, paymentUrl }`, built with the SAME buildVendorStandPaymentUrl() shape
+      the review route already uses. Email send becomes non-fatal (reuse
+      deliverConfirmationEmailAfterCommit) so a broken mailer never prevents returning
+      paymentUrl. Every existing gate (getAdminSession + hasCapability
+      'review-vendor-applications'), status code, and refusal path (401/403/404/409/503) is
+      unchanged. Still always mints a FRESH token per call ("reissue, not unlock" -- unchanged
+      from M3). No persistence added anywhere.
+    status: pending
+
+  - id: F2
+    name: >-
+      components/admin/VendorReviewTable.tsx: for a row with status 'approved' and
+      standPaymentStatusById[row.id] !== 'paid', add a control that POSTs to the existing
+      resend-payment-link route, reads paymentUrl from the JSON response, copies it to the
+      clipboard (guarded -- navigator.clipboard may be unavailable) and also displays it
+      inline as a manual-copy fallback. Reuses the component's existing pendingId/error state
+      pattern. No new route.
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-stand-payment-link-visibility/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        Behavioural, via the route-runner harness (extends fixture-admin-auth.mjs with a
+        FIXTURE_ADMIN_DENIED=1 toggle -- default behaviour unchanged, verified against the
+        existing M3 check). Proves, via the REAL resend-payment-link POST handler: an
+        authenticated admin gets back a "paymentUrl" whose token verifies via the REAL
+        verifyVendorStandPaymentToken() and resolves to the correct vendorSubmissionId, and
+        whose path is the real payment page (/national-show/vendors/payment) -- i.e. a
+        genuinely usable URL, obtained WITHOUT any email delivery. Also proves a non-admin/
+        unauthenticated caller (same fixture, same request) is refused 401/403 with no
+        "paymentUrl" key and no raw token anywhere in the response body, and that the route
+        file never console.logs/errors the token or URL. Confirmed RED against current code
+        (2026-09-01): "expected the JSON response to carry a 'paymentUrl' string field ...
+        got {"success":true}" -- the current route returns no paymentUrl at all; the
+        non-admin-refusal and no-log assertions already pass unchanged (existing gate, not
+        touched by this contract). DEFEATING MUTATION: returning paymentUrl only when the
+        mailer also succeeds (re-coupling the two), or widening the admin gate.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-payment-link-visibility/check-admin-obtains-url-non-admin-refused.mjs
+
+    - id: A2
+      description: >-
+        Static wiring proof (grep-based, mirrors contracts/checks/vendor-f7-payment-path's
+        admin-table wiring check style) that components/admin/VendorReviewTable.tsx calls the
+        resend-payment-link route, reads paymentUrl from its response, offers a
+        copy-to-clipboard affordance, and gates the control on the existing approved/
+        standPaymentStatusById signals (no second status source invented). Confirmed RED
+        against current code (2026-09-01): 3 failures -- no reference to
+        "resend-payment-link", no reference to "paymentUrl", no "clipboard" reference; the
+        component today has no such control at all. DEFEATING MUTATION: wiring the control to
+        a NEW route instead of the existing resend-payment-link one, or omitting the
+        approved/unpaid gate so the control shows for a rejected or already-paid submission.
+      command: >-
+        node contracts/checks/vendor-stand-payment-link-visibility/check-review-table-wires-payment-link-control.mjs

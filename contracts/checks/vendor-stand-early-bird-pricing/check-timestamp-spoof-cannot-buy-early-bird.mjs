@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-// vendor-stand-early-bird-pricing F1 (A2) -- behavioural, via the route-runner harness, PLUS a
+// vendor-stand-early-bird-pricing F1 (A3) -- behavioural, via the route-runner harness, PLUS a
 // static class assertion. A forged client-supplied timestamp field in the POST body of
 // /api/vendors/stand-payment/initiate must never influence which price tier applies -- the
 // route must derive `now` itself (it already does, for token-expiry verification) and reuse
-// that SAME value for resolveVendorStandPrice, never a body-derived one. See
-// contracts/golden/vendor-stand-early-bird-pricing/README.md "3. The tier decision is
+// that SAME value for resolveVendorStandPrice, never a body-derived one. Money is real now
+// (R1450/R1160 confirmed), so this is the property that protects it. See
+// contracts/golden/vendor-stand-early-bird-pricing/README.md "The tier decision is
 // server-side and unspoofable".
 //
 // Run as:
@@ -20,9 +21,9 @@ const { vendorSubmissions, vendorStandOrders, resetAllCollections } = require(
 );
 const { resetPaymentsFixture } = require('../../harness/route-runner/fixture-payments.mjs');
 const { setActiveGateway } = require('../../harness/route-runner/fixture-active-gateway.mjs');
+const { setShowWindowFixture } = require('../../harness/route-runner/fixture-show-window-lookup.mjs');
 
 const INITIATE = '../../../app/api/vendors/stand-payment/initiate/route.ts';
-const PRICING = '../../../lib/vendor-stand-pricing.ts';
 const TOKEN = '../../../lib/vendor-stand-payment-token.ts';
 
 const failures = [];
@@ -45,22 +46,20 @@ for (const key of forbiddenBodyTimeKeys) {
   );
 }
 assert(
-  /resolveVendorStandPrice\(\s*boothSize\s*,\s*now\s*\)/.test(routeSource),
-  'initiate route does not call resolveVendorStandPrice(boothSize, now) with the server-derived `now` it already computes for token verification -- either the two-argument call is missing, or a different (possibly body-derived) identifier is passed',
+  /resolveVendorStandPrice\(\s*boothSize\s*,\s*now\s*,/.test(routeSource),
+  'initiate route does not call resolveVendorStandPrice(boothSize, now, ...) with the server-derived `now` it already computes for token verification -- either the call is missing, or a different (possibly body-derived) identifier is passed',
 );
 
 let initiatePost;
-let pricing;
 let mintVendorStandPaymentToken;
 try {
   ({ POST: initiatePost } = await import(INITIATE));
-  pricing = await import(PRICING);
   ({ mintVendorStandPaymentToken } = await import(TOKEN));
 } catch (error) {
-  failures.push(`failed to import route/pricing/token modules: ${error.message}`);
+  failures.push(`failed to import route/token modules: ${error.message}`);
 }
 
-if (initiatePost && pricing && mintVendorStandPaymentToken) {
+if (initiatePost && mintVendorStandPaymentToken) {
   const TEST_SECRET = 'test-stand-payment-secret-not-real';
   process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET = TEST_SECRET;
 
@@ -86,21 +85,20 @@ if (initiatePost && pricing && mintVendorStandPaymentToken) {
     resetPaymentsFixture();
     setActiveGateway('payfast');
 
-    // Fixture: cutoff is 2020-01-01 -- well in the past relative to the real clock this test
-    // runs under, so the REAL server time unambiguously lands in the 'regular' tier. Any
-    // result landing in 'earlyBird' can only be explained by a forged body field winning.
-    pricing.VENDOR_STAND_EARLY_BIRD_CUTOFF.value = '2020-01-01';
-    pricing.VENDOR_STAND_PRICE_ZAR[1].earlyBird = 1000;
-    pricing.VENDOR_STAND_PRICE_ZAR[1].regular = 1500;
+    // Show opens 2027-09-16 -> real cutoff derives to 2027-06-18 (SAST). Well in the past
+    // relative to the REAL clock this test runs under (2026-09-01 or later), so the actual
+    // server time unambiguously lands in the 'regular' tier. Any result landing in
+    // 'earlyBird' can only be explained by a forged body field winning.
+    setShowWindowFixture({ startDate: new Date('2027-09-16T00:00:00Z'), endDate: new Date('2027-09-19T23:59:59Z') });
 
     seedSubmission('sub-honest');
     const honestToken = mintToken('sub-honest');
     const honestResult = await callInitiate(honestToken, 1);
     assert(
       honestResult.status === 200 &&
-        vendorStandOrders.get('sub-honest')?.amount === 1500 &&
+        vendorStandOrders.get('sub-honest')?.amount === 1450 &&
         vendorStandOrders.get('sub-honest')?.tier === 'regular',
-      `baseline (no forged field): expected amount 1500 / tier 'regular', got status ${honestResult.status}, order ${JSON.stringify(vendorStandOrders.get('sub-honest'))}`,
+      `baseline (no forged field): expected amount 1450 / tier 'regular', got status ${honestResult.status}, order ${JSON.stringify(vendorStandOrders.get('sub-honest'))}`,
     );
 
     for (const [spoofKey, spoofValue] of [
@@ -115,8 +113,8 @@ if (initiatePost && pricing && mintVendorStandPaymentToken) {
       const spoofResult = await callInitiate(spoofToken, 1, { [spoofKey]: spoofValue });
       const order = vendorStandOrders.get(submissionId);
       assert(
-        spoofResult.status === 200 && order?.amount === 1500 && order?.tier === 'regular',
-        `forged body.${spoofKey}='${spoofValue}' (a date well before the fixture cutoff) must be ignored -- expected amount 1500 / tier 'regular' exactly as the honest request got, got status ${spoofResult.status}, order ${JSON.stringify(order)}`,
+        spoofResult.status === 200 && order?.amount === 1450 && order?.tier === 'regular',
+        `forged body.${spoofKey}='${spoofValue}' (a date well before the real early-bird cutoff) must be ignored -- expected amount 1450 / tier 'regular' exactly as the honest request got, got status ${spoofResult.status}, order ${JSON.stringify(order)}`,
       );
     }
   } catch (error) {
