@@ -7,6 +7,7 @@ import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { VENDOR_STAND_ORDERS_COLLECTION } from '@/lib/vendor-stand-orders';
+import { serializeVendorSubmission } from '@/lib/firestore-serialization';
 import { UtilityBar, Header, Footer } from '@/components/chrome';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
@@ -100,13 +101,7 @@ async function fetchVendorSubmissions(): Promise<VendorSubmission[]> {
   const db = getFirestore(initAdmin());
   const snapshot = await db.collection(VENDOR_SUBMISSIONS_COLLECTION).get();
 
-  return snapshot.docs.map((doc) => {
-    const data = doc.data();
-    // Firestore's untyped document data (submittedAt/reviewedAt arrive as Timestamps, not
-    // Date) is trusted here rather than field-by-field validated — this listing page is
-    // UI-only and not itself contract-tested (see this feature's golden README).
-    return { id: doc.id, ...data } as VendorSubmission;
-  });
+  return snapshot.docs.map((doc) => serializeVendorSubmission(doc.id, doc.data()));
 }
 
 /**

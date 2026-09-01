@@ -6,6 +6,7 @@ import { initAdmin } from '@/lib/firebase-admin';
 import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
+import { serializeVendorSubmission } from '@/lib/firestore-serialization';
 
 /**
  * GET /api/admin/vendors -- admin-only list of vendorSubmissions documents (mission
@@ -31,7 +32,7 @@ export async function GET(): Promise<NextResponse> {
   try {
     const db = getFirestore(initAdmin());
     const snapshot = await db.collection(VENDOR_SUBMISSIONS_COLLECTION).get();
-    const submissions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const submissions = snapshot.docs.map((doc) => serializeVendorSubmission(doc.id, doc.data()));
     return NextResponse.json({ submissions });
   } catch (error) {
     // Generic message + error.message only -- never the submissions array or any single

@@ -6,6 +6,7 @@ import { initAdmin } from '@/lib/firebase-admin';
 import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { VENDOR_APPLICATIONS_COLLECTION } from '@/lib/vendor-applications';
+import { serializeVendorApplication } from '@/lib/firestore-serialization';
 import { UtilityBar, Header, Footer } from '@/components/chrome';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
@@ -88,12 +89,5 @@ async function fetchVendorApplications(): Promise<VendorApplication[]> {
   const db = getFirestore(initAdmin());
   const snapshot = await db.collection(VENDOR_APPLICATIONS_COLLECTION).get();
 
-  return snapshot.docs.map((doc) => {
-    const data = doc.data();
-    // Firestore's untyped document data (submittedAt/reviewedAt/registrationToken* arrive as
-    // Timestamps, not Date) is trusted here rather than field-by-field validated -- this
-    // listing page is UI-only and not itself contract-tested (see this feature's golden
-    // README), same rationale as app/admin/vendors/page.tsx's own fetchVendorSubmissions().
-    return { id: doc.id, ...data } as VendorApplication;
-  });
+  return snapshot.docs.map((doc) => serializeVendorApplication(doc.id, doc.data()));
 }

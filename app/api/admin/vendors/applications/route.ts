@@ -6,6 +6,7 @@ import { initAdmin } from '@/lib/firebase-admin';
 import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { VENDOR_APPLICATIONS_COLLECTION } from '@/lib/vendor-applications';
+import { serializeVendorApplication } from '@/lib/firestore-serialization';
 
 /**
  * GET /api/admin/vendors/applications -- admin-only list of vendorApplications documents
@@ -30,7 +31,7 @@ export async function GET(): Promise<NextResponse> {
   try {
     const db = getFirestore(initAdmin());
     const snapshot = await db.collection(VENDOR_APPLICATIONS_COLLECTION).get();
-    const applications = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const applications = snapshot.docs.map((doc) => serializeVendorApplication(doc.id, doc.data()));
     return NextResponse.json({ applications });
   } catch (error) {
     // Generic message + error.message only -- never the applications array or any single

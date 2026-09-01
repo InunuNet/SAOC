@@ -1,0 +1,167 @@
+schema: athanor.contract/v1
+slug: admin-vendor-listing-serialization
+goal: >-
+  P0 -- fix the live production crash on /admin/vendors/applications (Firestore Timestamp
+  class instances crossing the Server->Client Component RSC boundary via
+  `{ id: doc.id, ...data } as VendorApplication`), the identical, currently-unexercised twin
+  defect in app/admin/vendors/page.tsx's fetchVendorSubmissions(), and the two sibling JSON-API
+  instances (app/api/admin/vendors/applications/route.ts, app/api/admin/vendors/route.ts) found
+  by a full blast-radius sweep of every raw `doc.data()` spread under app/ -- four instances
+  total, confirmed to be the complete set. The two API routes don't crash (JSON.stringify
+  tolerates a class instance where RSC serialization refuses it) but silently leak Firestore's
+  internal `{_seconds, _nanoseconds}` wire shape instead of a date -- the more dangerous variant
+  of the same defect, since nothing signals it. Full decision record, the fix specification, the
+  RED/GREEN evidence, and what this contract cannot prove offline:
+  contracts/golden/admin-vendor-listing-serialization/README.md
+created_at: '2026-09-01'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      New pure module lib/firestore-serialization.ts (no Firebase Admin SDK import, no
+      Firestore/network I/O -- mirrors lib/firestore-write-safety.ts's existing pattern):
+      `serializeVendorApplication(id: string, data: Record<string, unknown>): VendorApplication`
+      converts every Timestamp-shaped field on VendorApplication (submittedAt, reviewedAt,
+      registrationTokenIssuedAt/ExpiresAt/ConsumedAt, registrationCodeIssuedAt/ExpiresAt/
+      ConsumedAt/LockedAt -- types/index.ts:840-889) from a Firestore Timestamp (duck-typed via
+      `typeof value.toDate === 'function'`, matching the existing pattern in
+      app/api/vendors/register/verify-code/route.ts:76-79) to a native Date; a null-valued
+      field stays null; every other field passes through unchanged.
+      `serializeVendorSubmission(id: string, data: Record<string, unknown>): VendorSubmission`
+      does the same for VendorSubmission's only two Timestamp-shaped fields, submittedAt and
+      reviewedAt (types/index.ts:786-793). app/admin/vendors/applications/page.tsx's
+      fetchVendorApplications() replaces its `return { id: doc.id, ...data } as
+      VendorApplication;` line with `return serializeVendorApplication(doc.id, doc.data());` --
+      the old line and its adjoining "UI-only and not itself contract-tested" comment are
+      REMOVED, not left alongside the new code. app/admin/vendors/page.tsx's
+      fetchVendorSubmissions() makes the identical substitution with serializeVendorSubmission.
+      fetchStandPaymentStatusById() in the same file is untouched -- it reads only
+      doc.data().status (a plain string), never spreads the raw document, and is out of scope
+      (see golden README's "Why the second instance is the important one").
+    status: pending
+
+  - id: F2
+    name: >-
+      Blast-radius widening (team-lead sweep, 2026-09-01): the two sibling JSON-API instances
+      of the identical raw spread. app/api/admin/vendors/applications/route.ts's GET handler
+      replaces `const applications = snapshot.docs.map((doc) => ({ id: doc.id,
+      ...doc.data() }));` with `const applications = snapshot.docs.map((doc) =>
+      serializeVendorApplication(doc.id, doc.data()));` -- the SAME F1 function, reused, not a
+      second conversion path. app/api/admin/vendors/route.ts's GET handler makes the identical
+      substitution with serializeVendorSubmission. No new date-formatting code is added at
+      either route: `NextResponse.json()` calls `Date.prototype.toJSON()` natively on every
+      Date value returned by the F1 functions, which yields an ISO 8601 string -- the same
+      convention already established by app/api/admin/export-csv/route.ts:27-28 and
+      components/admin/TicketsTable.tsx:13 (both `new Date(timestamp.toMillis()).toISOString()`
+      before this fix; same output format, one shared conversion path after it). Both routes
+      are orphaned today (no caller round-trips through either -- the admin pages read
+      Firestore directly) but are live and reachable with a valid admin session, so they are
+      fixed in the same pass rather than left as known-wrong endpoints behind a now-fixed UI.
+    status: pending
+
+goldens:
+  - contracts/golden/admin-vendor-listing-serialization/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        RED->GREEN: serializeVendorApplication(), given a fully-populated seeded document with
+        real Firestore Timestamp instances (submittedAt, reviewedAt,
+        registrationTokenIssuedAt/ExpiresAt/ConsumedAt all present, one null-valued field
+        included), returns a structure with zero Timestamp instances anywhere (recursive walk),
+        every converted field a genuine millisecond-exact Date, the null field still null, and
+        non-Timestamp fields preserved. A leading control assertion proves the naive
+        `{ id, ...data }` spread still carries real Timestamp instances against the current
+        firebase-admin version, so the check's premise is self-verifying, not assumed.
+      command: node --import tsx/esm contracts/checks/admin-vendor-listing-serialization/check-vendor-application-serialization.mjs
+
+    - id: A2
+      description: >-
+        RED->GREEN, the unexercised twin: serializeVendorSubmission(), given a fully-populated
+        seeded document with real Firestore Timestamp instances (submittedAt, reviewedAt) and a
+        second fixture with reviewedAt genuinely null (a submission awaiting first review),
+        returns a structure with zero Timestamp instances anywhere, every converted field a
+        genuine millisecond-exact Date, the null field still null, and non-Timestamp fields
+        preserved. Same self-verifying control as A1.
+      command: node --import tsx/esm contracts/checks/admin-vendor-listing-serialization/check-vendor-submission-serialization.mjs
+
+    - id: A3
+      description: >-
+        app/admin/vendors/applications/page.tsx's fetchVendorApplications() actually calls the
+        new helper -- A1 alone proves the helper works in isolation, not that the crashing page
+        was wired to use it.
+      command: grep -q "serializeVendorApplication(" app/admin/vendors/applications/page.tsx
+
+    - id: A4
+      description: >-
+        app/admin/vendors/page.tsx's fetchVendorSubmissions() actually calls the new helper --
+        A2 alone proves the helper works in isolation, not that the landmine page was wired to
+        use it.
+      command: grep -q "serializeVendorSubmission(" app/admin/vendors/page.tsx
+
+    - id: A5
+      description: >-
+        The old crashing spread is REMOVED from app/admin/vendors/applications/page.tsx, not
+        left alongside the new helper call (a fix that adds serializeVendorApplication but
+        keeps this line would still crash).
+      command: "sh -c '! grep -q \"{ id: doc.id, \\.\\.\\.data } as VendorApplication\" app/admin/vendors/applications/page.tsx'"
+
+    - id: A6
+      description: >-
+        The old spread is REMOVED from app/admin/vendors/page.tsx -- the unfixed twin's
+        crashing line, not left alongside the new helper call.
+      command: "sh -c '! grep -q \"{ id: doc.id, \\.\\.\\.data } as VendorSubmission\" app/admin/vendors/page.tsx'"
+
+    - id: A7
+      description: >-
+        lib/firestore-serialization.ts imports neither the Firebase Admin SDK nor
+        firebase-admin/firestore -- it must stay a pure, credential-free, directly unit-testable
+        module (mirrors lib/firestore-write-safety.ts), not a thin wrapper that re-imports
+        Admin SDK types and reintroduces a Firestore dependency into a page-agnostic helper.
+      command: sh -c '! grep -qE "from ['\''\"]firebase-admin" lib/firestore-serialization.ts'
+
+    - id: A8
+      description: >-
+        RED->GREEN, blast-radius instance 3 of 4: GET /api/admin/vendors/applications's fixed
+        response, given a fully-populated seeded document with a real Firestore Timestamp,
+        JSON-serializes submittedAt to a proper ISO 8601 string, millisecond-exact against the
+        source -- not Firestore's internal {_seconds, _nanoseconds} wire shape. A leading
+        control assertion proves the naive `{ id, ...doc.data() }` shape genuinely leaks that
+        internal shape through JSON.stringify against the current firebase-admin version, so
+        the check's premise is self-verifying, not assumed.
+      command: node --import tsx/esm contracts/checks/admin-vendor-listing-serialization/check-vendor-applications-route-json.mjs
+
+    - id: A9
+      description: >-
+        RED->GREEN, blast-radius instance 4 of 4: GET /api/admin/vendors's fixed response, same
+        proof as A8 for the vendorSubmissions JSON boundary.
+      command: node --import tsx/esm contracts/checks/admin-vendor-listing-serialization/check-vendor-submissions-route-json.mjs
+
+    - id: A10
+      description: >-
+        app/api/admin/vendors/applications/route.ts's GET handler actually calls the new helper
+        -- A8 alone proves the helper works in isolation, not that the orphaned-but-live route
+        was wired to use it.
+      command: grep -q "serializeVendorApplication(" app/api/admin/vendors/applications/route.ts
+
+    - id: A11
+      description: >-
+        app/api/admin/vendors/route.ts's GET handler actually calls the new helper -- A9 alone
+        proves the helper works in isolation, not that the orphaned-but-live route was wired to
+        use it.
+      command: grep -q "serializeVendorSubmission(" app/api/admin/vendors/route.ts
+
+    - id: A12
+      description: >-
+        The old shape-leaking spread is REMOVED from app/api/admin/vendors/applications/
+        route.ts, not left alongside the new helper call.
+      command: "sh -c '! grep -q \"{ id: doc.id, \\.\\.\\.doc\\.data() }\" app/api/admin/vendors/applications/route.ts'"
+
+    - id: A13
+      description: >-
+        The old shape-leaking spread is REMOVED from app/api/admin/vendors/route.ts, not left
+        alongside the new helper call.
+      command: "sh -c '! grep -q \"{ id: doc.id, \\.\\.\\.doc\\.data() }\" app/api/admin/vendors/route.ts'"
