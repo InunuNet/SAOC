@@ -4,22 +4,26 @@ slug: vendor-flow-notifications
 goal: vendor-flow-notifications
 created_at: '2026-09-01T19:32:52.639249+00:00'
 started_at: '2026-09-01T19:32:52.639249+00:00'
-last_active_at: '2026-09-02T00:00:00+00:00'
-status: in_progress
+last_active_at: '2026-09-01T23:13:39.735406+00:00'
+status: done
 cost_estimate:
   features: 1
   milestones: 1
   total_calls: 0
 last_checkpoint:
-  milestone: M1
+  milestone: null
   feature: F1
-  ts: '2026-09-02T00:00:00+00:00'
+  ts: '2026-09-01T23:13:31.683619+00:00'
 features:
-  - id: F1
-    status: contract_ready
+- id: F1
+  status: done
+  completed_at: '2026-09-01T23:13:31.683476+00:00'
 milestones:
-  - id: M1
-    status: in_progress
+- id: M1
+  status: done
+  gate_ran_at: '2026-09-01T23:13:35.123465+00:00'
+  gate_result: pass
+completed_at: '2026-09-01T23:13:39.734870+00:00'
 ---
 
 # Mission: vendor-flow-notifications
