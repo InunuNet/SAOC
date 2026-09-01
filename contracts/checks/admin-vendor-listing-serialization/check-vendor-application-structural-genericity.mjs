@@ -12,7 +12,7 @@
 // yet. This check instead proves the STRUCTURAL property directly: `serializeVendorApplication`
 // converts ANY value exposing a callable `.toDate()` -- at any key, at any depth, including
 // inside a nested array of objects (the shape M2's repeating equipment/vehicle tables use
-# elsewhere in this codebase) -- regardless of whether that key name is one this check, or the
+// elsewhere in this codebase) -- regardless of whether that key name is one this check, or the
 // implementation, has ever seen before. Two synthetic fields are injected with deliberately
 // invented names that appear NOWHERE in types/index.ts or in any allowlist any version of this
 // module has ever shipped with: `futureApprovalTimestamp` (top-level) and a Timestamp buried

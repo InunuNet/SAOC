@@ -22,15 +22,23 @@ features:
       New pure module lib/firestore-serialization.ts (no Firebase Admin SDK import, no
       Firestore/network I/O -- mirrors lib/firestore-write-safety.ts's existing pattern):
       `serializeVendorApplication(id: string, data: Record<string, unknown>): VendorApplication`
-      converts every Timestamp-shaped field on VendorApplication (submittedAt, reviewedAt,
-      registrationTokenIssuedAt/ExpiresAt/ConsumedAt, registrationCodeIssuedAt/ExpiresAt/
-      ConsumedAt/LockedAt -- types/index.ts:840-889) from a Firestore Timestamp (duck-typed via
-      `typeof value.toDate === 'function'`, matching the existing pattern in
-      app/api/vendors/register/verify-code/route.ts:76-79) to a native Date; a null-valued
-      field stays null; every other field passes through unchanged.
-      `serializeVendorSubmission(id: string, data: Record<string, unknown>): VendorSubmission`
-      does the same for VendorSubmission's only two Timestamp-shaped fields, submittedAt and
-      reviewedAt (types/index.ts:786-793). app/admin/vendors/applications/page.tsx's
+      and `serializeVendorSubmission(id: string, data: Record<string, unknown>):
+      VendorSubmission` MUST convert by SHAPE, not by a hardcoded field-name allowlist -- a
+      recursive `deepConvertTimestamps()` walk over the ENTIRE document (nested objects and
+      arrays included, e.g. M2's repeating equipment/vehicle tables) converting anything
+      exposing a callable `.toDate()` (duck-typed, matching the existing pattern in
+      app/api/vendors/register/verify-code/route.ts:76-79) to a native Date, regardless of key
+      name or depth; a null-valued field stays null; every other field passes through
+      unchanged. NOT a fixed list of named fields -- an earlier version of this module used
+      `VENDOR_SUBMISSION_TIMESTAMP_FIELDS = ['submittedAt', 'reviewedAt']` and silently missed
+      7 more Date fields VendorSubmission actually carries (logoUploadedAt,
+      productPhoto1-3UploadedAt, proofOfPaymentUploadedAt, paymentConfirmedAt --
+      types/index.ts:765-807); see golden README's "The Codex finding" for the full account and
+      A14/A15 for the structural (shape-based, not name-based) proof this is fixed for good.
+      VendorApplication similarly has 9 Timestamp-shaped fields, all in scope (submittedAt,
+      reviewedAt, registrationTokenIssuedAt/ExpiresAt/ConsumedAt,
+      registrationCodeIssuedAt/ExpiresAt/ConsumedAt/LockedAt -- types/index.ts:840-889).
+      app/admin/vendors/applications/page.tsx's
       fetchVendorApplications() replaces its `return { id: doc.id, ...data } as
       VendorApplication;` line with `return serializeVendorApplication(doc.id, doc.data());` --
       the old line and its adjoining "UI-only and not itself contract-tested" comment are
@@ -165,3 +173,23 @@ assertions:
         The old shape-leaking spread is REMOVED from app/api/admin/vendors/route.ts, not left
         alongside the new helper call.
       command: "sh -c '! grep -q \"{ id: doc.id, \\.\\.\\.doc\\.data() }\" app/api/admin/vendors/route.ts'"
+
+    - id: A14
+      description: >-
+        Post-Codex GPT-5.5 finding (the shipped lib/firestore-serialization.ts hardcoded
+        VENDOR_SUBMISSION_TIMESTAMP_FIELDS = ['submittedAt', 'reviewedAt'], silently missing 7
+        real Date fields on VendorSubmission -- see golden README's "The Codex finding, and why
+        A1/A2 alone were not enough"). Proves serializeVendorApplication() converts by SHAPE
+        (anything exposing a callable .toDate(), at any key, at any depth, inside arrays too),
+        not by a hardcoded field-name list -- seeds two synthetic Timestamp-shaped fields under
+        names that appear nowhere in types/index.ts or in any allowlist this module has ever
+        shipped with (one top-level, one nested inside an array of objects, matching the shape
+        M2's repeating equipment/vehicle tables use) and asserts both convert to Date. A
+        hardcoded list can never satisfy this regardless of how many real field names it names.
+      command: node --import tsx/esm contracts/checks/admin-vendor-listing-serialization/check-vendor-application-structural-genericity.mjs
+
+    - id: A15
+      description: >-
+        Same proof as A14, for serializeVendorSubmission() -- the function whose actual shipped
+        hardcoded allowlist Codex GPT-5.5 caught.
+      command: node --import tsx/esm contracts/checks/admin-vendor-listing-serialization/check-vendor-submission-structural-genericity.mjs

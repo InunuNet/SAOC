@@ -269,6 +269,93 @@ should check the implementation against) and the regression gate going forward -
 the fix already exists does not remove the need for the contract; it is the proof the fix is
 correct, not merely present.
 
+## The Codex finding, and why A1/A2 alone were not enough
+
+Codex GPT-5.5 reviewed the landed diff and returned FAIL:
+
+```
+lib/firestore-serialization.ts:54
+const VENDOR_SUBMISSION_TIMESTAMP_FIELDS = ['submittedAt', 'reviewedAt'] as const;
+```
+
+The shipped `serializeVendorSubmission()` converted only the two fields it happened to name.
+`VendorSubmission` actually carries eight Date-typed fields (`types/index.ts:765-807`):
+`submittedAt`, `reviewedAt`, `logoUploadedAt`, `productPhoto1UploadedAt`,
+`productPhoto2UploadedAt`, `productPhoto3UploadedAt`, `proofOfPaymentUploadedAt`,
+`paymentConfirmedAt`. A submission with any of the other six populated -- marketing uploads,
+proof of payment, payment confirmed: precisely the middle of the flow demoed tomorrow morning
+-- still handed a `Timestamp` class instance to `VendorReviewTable` and crashed the page in
+exactly the way this mission exists to prevent. `VendorApplication` had the analogous gap
+(9 real Timestamp-shaped fields, an early allowlist implementation named only 5).
+
+**Why A1/A2 passed anyway: the assertion was satisfiable by something that was not the real
+property.** The original fixtures seeded only `submittedAt`/`reviewedAt` (VendorSubmission) or
+a 3-field subset (VendorApplication) -- a representative pair, not the full field set. An
+implementation shaped exactly like the check's own fixture passes trivially regardless of what
+it does with fields the fixture never exercises. This is the SAME failure this golden README
+already documented as the root cause of the original production outage (an untested code path
+activating the moment real data existed) -- reproduced one level up, in the contract meant to
+prevent it.
+
+**The fix, both at the implementation and at the contract:**
+
+1. Implementation: `deepConvertTimestamps()` -- a recursive walk over the ENTIRE document
+   (nested objects and arrays included, covering M2's repeating equipment/vehicle tables) that
+   converts anything exposing a callable `.toDate()`, regardless of key name or depth. This
+   binds to SHAPE, not to a list of names someone has to remember to update -- a field added to
+   either type tomorrow is converted correctly with zero change to this module.
+2. Contract, A1/A2: fixtures widened to seed EVERY real Timestamp-shaped field on each type
+   (9 for VendorApplication, 8 for VendorSubmission), each with its own distinct source `Date`
+   so a field-swap bug is also caught, not just a missing-conversion bug.
+3. Contract, A14/A15 (new): a assertion the team lead explicitly asked for -- one that would
+   fail if a NEW Timestamp-shaped field were added to either type and left unconverted, without
+   needing to be told that field's name. Each seeds two SYNTHETIC fields under names invented
+   for this check, appearing nowhere in `types/index.ts` or in any implementation this project
+   has ever shipped (`futureApprovalTimestamp` / `futureShippingManifestTimestamp`, top-level;
+   `nestedEquipmentTable[0].calibratedAt` / `nestedVehicleTable[0].inspectedAt`, inside an
+   array of objects) and asserts both convert to `Date`. A hardcoded allowlist can never satisfy
+   this check no matter how many real field names it is given, because it was never told these
+   names -- only a shape-based (duck-typed `.toDate()`) implementation can pass it. This is the
+   check that would have caught the exact defect Codex found, and will catch its recurrence,
+   or the analogous one on `VendorApplication`, without ever being edited again as either type
+   grows.
+
+**RED proof for the widened A1/A2/A14/A15, against a reconstruction of the actual shipped
+allowlist bug** (throwaway file, written outside `lib/`, deleted immediately after -- never
+committed):
+
+```
+=== A1 vs OLD BUGGY (expect RED) ===
+FAIL: admin-vendor-listing-serialization A1 (vendor applications listing)
+ - GATE FAILED: ... result.registrationCodeIssuedAt, result.registrationCodeExpiresAt,
+   result.registrationCodeConsumedAt, result.registrationCodeLockedAt ...
+EXIT:1
+=== A2 vs OLD BUGGY (expect RED) ===
+FAIL: admin-vendor-listing-serialization A2 (vendor submissions listing -- the unexercised landmine)
+ - GATE FAILED: ... result.logoUploadedAt, result.productPhoto1UploadedAt,
+   result.productPhoto2UploadedAt, result.productPhoto3UploadedAt,
+   result.proofOfPaymentUploadedAt, result.paymentConfirmedAt ...
+EXIT:1
+=== A14 vs OLD BUGGY (expect RED) ===
+FAIL: admin-vendor-listing-serialization A14 (structural genericity -- VendorApplication)
+ - GATE FAILED: unnamed/synthetic fields still carry Timestamp instance(s) ...
+EXIT:1
+=== A15 vs OLD BUGGY (expect RED) ===
+FAIL: admin-vendor-listing-serialization A15 (structural genericity -- VendorSubmission)
+ - GATE FAILED: unnamed/synthetic fields still carry Timestamp instance(s) ...
+EXIT:1
+```
+
+**GREEN, re-verified against the real, currently-landed `lib/firestore-serialization.ts`**
+(shape-based `deepConvertTimestamps()`, not the reconstructed allowlist):
+
+```
+A1: PASS (exit 0)   A2: PASS (exit 0)   A14: PASS (exit 0)   A15: PASS (exit 0)
+```
+
+All 15 assertions (A1-A15), every `command:` executed straight out of the parsed contract YAML
+via `subprocess`, not hand-copied: 15/15 GREEN.
+
 ## A3-A7, A10-A13: wiring and removal, not just existence of the helper
 
 A1/A2/A8/A9 prove `lib/firestore-serialization.ts` behaves correctly in isolation. They prove
