@@ -38,25 +38,6 @@ Do not scope work from an entry that contradicts it.
 
 ## Next up (queued, not yet a mission — dispatch as soon as current mission closes)
 
-- [ ] **[P1] `undefined` values reach Firestore writes — validation passes, persistence throws**
-  (found 2026-09-01 by the mandatory Codex pass during M2; pre-existing, NOT introduced by M2).
-  `buildVendorSubmission()` (`lib/vendor-submissions.ts:1030`) assigns every optional input as an
-  own property, so an omitted `tradingName`/`cipcNumber`/etc. becomes `tradingName: undefined`.
-  `app/api/vendors/register/route.ts:172` spreads that object straight into `.add()`. The Firebase
-  Admin SDK **throws on undefined values** unless `ignoreUndefinedProperties` is set, and
-  `grep -rn ignoreUndefinedProperties lib/ app/` returns nothing.
-  **Why it has not blown up yet:** the registration UI posts `''` for every optional text field, so
-  the undefined path is never exercised from the browser. A direct API call, or any future caller
-  that omits a key, passes validation and then fails at persistence — the worst shape of failure,
-  because the submission looks accepted right up until the write.
-  Not M2-scoped and deliberately not fixed under time pressure. Needs the normal chain: a check
-  proving a minimal valid submission (optional fields genuinely absent) round-trips to Firestore,
-  RED first, then the fix. Check `initAdmin()` in `lib/firebase-admin.ts` — setting
-  `ignoreUndefinedProperties` there is the likely fix, but confirm it is the right layer rather
-  than stripping undefined in the builder; both are defensible and the check should not care which.
-  **Audit the other builders too** — `vendorApplications`, orders/tickets and the stand-payment
-  path all use the same build-then-spread-into-Firestore shape.
-
 - [ ] **[P2] Register Society — society profile intake + registration flow** (added 2026-09-01,
   Brad). **Field set captured 2026-09-01** from Lee-Ann's Google Form, transcribed from
   screenshots Brad supplied, at `docs/leeann-source/society-website-information-form_2026-09-01.md`.
@@ -921,26 +902,6 @@ requirement, the budget ceiling, and that no migration happens before DNS cutove
 _None currently. `execution/gh_closure_scan.py` does not run to completion (see harness section);
 `InunuNet/SAOC` last showed zero open GitHub issues._
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   at /tickets). `earlyBirdCutoff` exists per ticket type today but is ONLY enforced server-side
   at checkout (409 if you try to buy after cutoff) — see docs/f4-admission-products.md line 88.
   Nothing hides cards on the /tickets page: Early-Bird Exhibition Ticket and Day Visitor Ticket
@@ -1010,9 +971,6 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
      not friendly-formatted (e.g. "Thu 17 Sep" instead of an ISO date or raw day index) — cosmetic,
      not functional.
 
-
-
-
   2026-08-25: once a vendor application is approved by the council in admin (existing F6/F7
   vendor review workflow, app/admin/vendors), that approval should also make the vendor visible
   on the front end of the website as part of a public vendor database/directory — not just
@@ -1038,13 +996,6 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   approval-gated, what happens if a vendor is declined after registering — refund/no-charge path
   needs defining. Do not build anything here until this is resolved with Lia — this is a
   commercial/process decision, not an engineering one.
-
-
-
-
-
-
-
 
   is stale, unrelated to `vendor-registration-form-rebuild` F2 — found and confirmed pre-existing
   2026-08-25 during F2's Codex-fix round. `field-spec.golden.json` was written when
@@ -1095,7 +1046,6 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   (`check-provisional-badge-gated.mjs`) in this same contract WAS fixed by the tooling sweep
   (was erroring on `@/` module resolution, now genuinely passes) — do not conflate that fix
   with these 3, which are real, separate, pre-existing content/wiring gaps.
-
 
   contract failures found and confirmed (via diff-stash re-run, failures identical before/after)
   during F2's QA sweep, 2026-08-25/26:
