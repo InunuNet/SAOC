@@ -35,26 +35,39 @@ emails for the three mission events (application submitted, registration submitt
 payment initiated/settled), plus the previously-missing vendor-facing "we received your
 application" confirmation email, folded in as G1's fifth gap.
 
-## Status as of 2026-09-02 close-out
+## Status as of 2026-09-02 close-out — M1/F1 DONE
 
-**Contract + 7 RED-verified checks are written; NO implementation yet.**
-`contracts/contract-vendor-flow-notifications.yaml` (F1) specifies five new files
+Shipped in `a5be7d49`: admin notices at three moments (application submitted, full registration
+submitted, stand payment settled) plus the previously-missing vendor-facing "application
+received" confirmation. Five new lib modules and four React Email templates
 (`lib/vendor-admin-notify-recipients.ts`, `lib/vendor-application-confirmation.ts` +
 `emails/VendorApplicationConfirmation.tsx`, `lib/vendor-application-admin-notice.ts` +
 `emails/VendorApplicationAdminNotice.tsx`, `lib/vendor-submission-admin-notice.ts` +
 `emails/VendorSubmissionAdminNotice.tsx`, `lib/vendor-payment-admin-notice.ts` +
-`emails/VendorPaymentAdminNotice.tsx`) and three wiring edits (`app/api/vendors/apply/route.ts`;
-`lib/vendor-registration-handler.ts` + `app/api/vendors/register/route.ts`;
-`lib/vendor-stand-payment-notification.ts`). Full decision record and everything the contract
-does NOT prove: `contracts/golden/vendor-flow-notifications/README.md`.
+`emails/VendorPaymentAdminNotice.tsx`), wired into `app/api/vendors/apply/route.ts`,
+`lib/vendor-registration-handler.ts` + `app/api/vendors/register/route.ts`, and
+`lib/vendor-stand-payment-notification.ts`. Admin recipients resolve from
+`ADMIN_EMAIL_ALLOWLIST` only, deliberately not importing the `/admin` login authorization
+modules. Every send goes through `deliverConfirmationEmailAfterCommit()` and fires strictly
+after the Firestore write commits — a failed notification never fails the underlying request.
 
 Known judgement call baked into the contract: the spec names a per-application admin detail page
 that does not exist in this repo (see `backlog.md` "No per-application admin detail page exists"),
 so every review link in the notification emails points at the real, existing flat LIST pages
 instead.
 
-**Next step: @dev implementation against this contract and its golden files.** See
-`next-sprint.md` item 1.
+Four defect classes found and fixed before merge (full detail in `a5be7d49`'s commit message and
+`learned.md`): a Firestore transaction-retry stale-variable bug (`paidNotice` surviving an
+aborted attempt into a retry that took a different branch); vacuous recipient assertions
+(A5-A8 proved the resolver was called, never that its output reached the mailer unmodified — new
+A10 closes this); six stale `vendor-f5-register-route` fixtures silently broken since M2 because
+`tsconfig.json` excludes `contracts/`; and a swallowed `TypeError` where the failure-isolation
+wrapper around `sendAdminNotice` hid a programming error from four `.mjs` fixtures.
+
+Gates at close: `vendor-flow-notifications` 10/10 clean; `vendor-f5-register-route` 9 pass + A9
+environmentally blocked (long-lived `next dev` process occupying the directory); the umbrella
+`vendor-gated-registration-flow` 52 pass + 1 retired skip (A20). Codex GPT-5.5: PASS on the fifth
+pass, after four rounds of real findings on earlier passes.
 
 ## Notes
 

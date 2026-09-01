@@ -2909,3 +2909,71 @@ page verified.
 Caught the upload size cap gap, the incomplete timestamp allowlist, and independently agreed on
 A60 — three real, distinct findings in one session from the same independent-model pass. Reinforces
 the standing `workflow.md` rule: every QA pass runs Codex after Claude's own @qa, no exceptions.
+
+## A failure-isolation wrapper hid a real programming error from the checks meant to catch it (2026-09-02, vendor-flow-notifications)
+
+Adding a required `sendAdminNotice` dependency broke four `.mjs` fixtures with
+`deps.sendAdminNotice is not a function`, but `deliverConfirmationEmailAfterCommit()`'s
+catch-all swallowed it, so the checks stayed GREEN while never reaching a clean success path.
+**Apply:** a catch-all wrapper around a dependency call is only safe if every fixture's own
+`onEmailError` captures what it caught and asserts zero calls on success paths — never leaves it
+silently ignored. A green check that never exercises its success path is worse than a red one.
+
+## Fixing only what the last reviewer named guarantees whack-a-mole (2026-09-02, vendor-flow-notifications)
+
+Four consecutive Codex GPT-5.5 passes each found another instance of the SAME defect class,
+including one in a file a previous pass had already edited. The orchestrator briefed three
+rounds against reviewer-supplied file lists before finally ordering an exhaustive sweep of every
+handler-deps call site, which found no further instances and closed it in one pass. **Apply:** on
+the SECOND instance of one defect class, stop patching file-by-file from reviewer citations and
+sweep the whole tree for the pattern instead — the citation list is a sample, not a boundary.
+
+## `tsconfig.json` excludes `contracts/`, so `pnpm type-check` never typechecks a fixture (2026-09-02, vendor-flow-notifications)
+
+This is why six `vendor-f5-register-route` checks sat silently broken since M2 — a
+`vendorCategory` value M2 removed, plus fixtures missing now-required fields — rejected at
+validation before ever reaching the success path they existed to prove. A clean `pnpm
+type-check` said nothing about it. **Apply:** a clean project typecheck is not evidence of
+fixture health; fixtures under `contracts/` need their own typecheck config (or inclusion in the
+main one) or they drift invisibly, exactly like the M2 F14-F21 decay already logged above.
+
+## Firestore replays transaction callbacks on contention — reset per-attempt state before reading it after resolve (2026-09-02, vendor-flow-notifications)
+
+A variable (`paidNotice`) was assigned inside `runTransaction` and read after the call resolved.
+Firestore replays the callback on contention, so an aborted attempt's assignment could survive
+into a retry that took a different branch — a stale `paidNotice` fired a "payment received" admin
+email for an invocation that committed nothing. A duplicate gateway ITN retry was sufficient to
+trigger it. **Apply:** any variable assigned inside a `runTransaction` callback and read after it
+resolves must be reset at the top of every attempt, not just declared once outside.
+
+## Duplicate dispatch from reading a mission file as a liveness probe — again (2026-09-02, vendor-flow-notifications)
+
+The orchestrator re-dispatched @dev believing the first instance had died, because the mission
+`.md` said "no implementation yet" — but that line was a snapshot @maintainer had written at a
+prior close-out, not a liveness signal, and the first @dev was still mid-work. Two agents raced
+the same nine files. **Apply:** a mission file's status describes the moment it was written, not
+now — check the live agent list and file mtimes before re-dispatching on the strength of mission
+prose alone. This is the second confirmed violation of `feedback_verify_liveness_by_artefact`
+(project memory) despite it already being recorded from a prior incident — the rule is right, it
+keeps getting skipped under time pressure.
+
+## The mandatory Codex GPT-5.5 pass earned its place a fourth time, hardest yet (2026-09-02, vendor-flow-notifications)
+
+Five full passes, four rounds of real, distinct findings, against a diff that @dev, @qa, and a
+10/10 contract gate had all already called green. No pass was a false alarm. Reinforces
+`workflow.md`'s standing rule with the strongest evidence yet: same-model self-review does not
+reliably catch this defect class; an independent model with no shared blind spots does.
+
+## A prior maintainer's mid-file backlog insertion deleted three items' own header lines (2026-09-02, discovered during vendor-flow-notifications close-out)
+
+Commit `b18d8945` inserted new backlog items into the middle of the "Vendor registration"
+section but replaced each target item's `- [ ] **[Pn] ...` opening line instead of inserting
+before it, and `859323a5` did the same to the A60 item in "Contract & test infrastructure" —
+leaving three real, previously-recorded items (the P0 shared-slug defect, A60, and the new
+five-test-vendor-applications item) as orphaned continuation text with no checkbox or bold-open
+tag, silently unreadable as backlog entries even though `git log -p` showed the exact original
+text. Reconstructed from `git show <commit> -- backlog.md` and fixed in this session. **Apply:**
+when inserting content into a prose-style backlog section (no blank line between items), diff the
+change immediately after saving — an "insert before line N" edit that instead lands ON line N
+silently eats that line's content, and nothing but a manual re-read catches it. Prefer inserting
+after a clear boundary (a blank line or `---`) over mid-block insertion.

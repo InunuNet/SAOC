@@ -500,3 +500,19 @@ in one pass still sat in the code while the gate was green three separate times 
 the checks were fixtured against fields the implementation already handled, not against the full
 type. No mission `.md` file exists for this one (small/direct scope); see commits `ccc6a73b`,
 `4729b52b`, `c0aaa518` (deploy retrigger for the build-time secret-access fix).
+
+### 2026-09-02 — `vendor-flow-notifications` M1 (F1) DONE — mission complete
+
+~~`vendor-flow-notifications` (F1: fills G1 from the `vendor-flow-gaps` spec — admin notices at
+application-submitted, full-registration-submitted, and stand-payment-settled, plus the
+previously-missing vendor-facing "application received" confirmation)~~ ✅ **DONE**, shipped in
+`a5be7d49`. Five new lib modules + four React Email templates, wired through
+`deliverConfirmationEmailAfterCommit()` so a failed notification never fails the underlying
+vendor-facing request; admin recipients resolve from `ADMIN_EMAIL_ALLOWLIST` only. Gates:
+`vendor-flow-notifications` 10/10 clean, `vendor-f5-register-route` 9 pass + A9 environmentally
+blocked (long-lived `next dev` process), `vendor-gated-registration-flow` 52 pass + 1 retired
+skip. Codex GPT-5.5 PASS on the fifth pass, after four rounds of real findings — see `learned.md`
+for the four defect classes those rounds caught (transaction-retry stale variable, vacuous
+recipient assertions, stale contracts-excluded-from-typecheck fixtures, a swallowed `TypeError`
+in the failure-isolation wrapper). Full detail: mission file
+`.agent/memory/project/missions/2026-09-01-vendor-flow-notifications.md`.

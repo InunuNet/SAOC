@@ -657,3 +657,10 @@ it, then decides whether to revert the addition afterward.
 ## Standing constraint
 
 Never delete any Firestore or Sanity document. Deletion is Brad's decision alone.
+
+## F5 A9 blocked by a long-lived local dev server (2026-09-02)
+
+`check-http-rate-limit-per-ip.sh` (in `vendor-f5-register-route`) cannot run while PID 54163
+(`next dev`, ~24h old at close) occupies the project directory — Next.js 16 refuses a second
+instance regardless of port. Not killed here, deliberately: it is Brad's own process. Once it's
+stopped (or from a different checkout), re-run the gate to pick this check back up.
