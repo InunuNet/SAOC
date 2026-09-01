@@ -38,6 +38,25 @@ Do not scope work from an entry that contradicts it.
 
 ## Next up (queued, not yet a mission — dispatch as soon as current mission closes)
 
+- [ ] **[P1] `undefined` values reach Firestore writes — validation passes, persistence throws**
+  (found 2026-09-01 by the mandatory Codex pass during M2; pre-existing, NOT introduced by M2).
+  `buildVendorSubmission()` (`lib/vendor-submissions.ts:1030`) assigns every optional input as an
+  own property, so an omitted `tradingName`/`cipcNumber`/etc. becomes `tradingName: undefined`.
+  `app/api/vendors/register/route.ts:172` spreads that object straight into `.add()`. The Firebase
+  Admin SDK **throws on undefined values** unless `ignoreUndefinedProperties` is set, and
+  `grep -rn ignoreUndefinedProperties lib/ app/` returns nothing.
+  **Why it has not blown up yet:** the registration UI posts `''` for every optional text field, so
+  the undefined path is never exercised from the browser. A direct API call, or any future caller
+  that omits a key, passes validation and then fails at persistence — the worst shape of failure,
+  because the submission looks accepted right up until the write.
+  Not M2-scoped and deliberately not fixed under time pressure. Needs the normal chain: a check
+  proving a minimal valid submission (optional fields genuinely absent) round-trips to Firestore,
+  RED first, then the fix. Check `initAdmin()` in `lib/firebase-admin.ts` — setting
+  `ignoreUndefinedProperties` there is the likely fix, but confirm it is the right layer rather
+  than stripping undefined in the builder; both are defensible and the check should not care which.
+  **Audit the other builders too** — `vendorApplications`, orders/tickets and the stand-payment
+  path all use the same build-then-spread-into-Firestore shape.
+
 - [ ] **[P2] Register Society — society profile intake + registration flow** (added 2026-09-01,
   Brad). **Field set captured 2026-09-01** from Lee-Ann's Google Form, transcribed from
   screenshots Brad supplied, at `docs/leeann-source/society-website-information-form_2026-09-01.md`.
