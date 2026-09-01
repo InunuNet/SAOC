@@ -543,6 +543,47 @@ export type VendorWasteType =
   | 'wastewater'
   | 'other';
 
+// M2 F14 (vendor-gated-registration-flow) -- booth SIZE tier (1/2.5m x 3m single, 5m x 3m
+// double, 7m x 3m triple), a DIFFERENT concept from the existing VendorBoothType above (booth
+// POSITION preference: standard-in-row/corner/end-of-row/no-preference), which is unchanged.
+// Canonical name/shape spec is the F14 fixture, not this file's own prose --
+// contracts/checks/vendor-gated-registration-flow-m2/fixtures/f14-new-fields-typecheck.ts.
+export type VendorRegistrationBoothSize = 'single' | 'double' | 'triple';
+
+// M2 F14 -- one row of the repeating "Equipment / Quantity / Wattage / Running time per day"
+// electricity table, replacing the single free-text electricalEquipmentList (deprecated in
+// place below).
+export interface VendorElectricalEquipmentEntry {
+  equipment: string;
+  quantity: number;
+  wattage: string;
+  runningTimePerDay: string;
+}
+
+// M2 F14 -- one row of the "Type of equipment / Gas Type / Cylinder size / Number of
+// cylinders" gas/oil equipment table, replacing the four scalar gas* fields (deprecated in
+// place below).
+export interface VendorGasEquipmentEntry {
+  equipmentType: string;
+  gasType: string;
+  cylinderSize: string;
+  cylinderCount: number;
+}
+
+// M2 F14 -- the 6-item Food Vendor certification checklist. See the golden README's "Food
+// certification: checklist, not blanket attestation" for why this is a checkbox subset rather
+// than a single blanket attestation checkbox (a flagged ambiguity, not guessed silently).
+export type VendorFoodCertification =
+  | 'mobile-coa'
+  | 'perishable-foodstuff-licence'
+  | 'hawker-informal-trading-permit'
+  | 'mobile-gas-compliance-certificate'
+  | 'fire-safety-compliance'
+  | 'vehicle-fitness-certificate';
+
+// M2 F14 -- the Marketing section's permission radio (full permission vs. vendor-listing-only).
+export type VendorMarketingPermission = 'full' | 'listing-only';
+
 export interface VendorSubmission {
   id: string;
 
@@ -600,7 +641,15 @@ export interface VendorSubmission {
   foodHealthTradingDocumentation?: string;
 
   // Section 3 — booth & logistics requirements (fields 17-27).
-  boothCount: number;
+  // M2 F14/F15 (vendor-gated-registration-flow) -- boothCount is deprecated in place by
+  // boothSize above and tightened from required to OPTIONAL here. Flagged judgement call: the
+  // M2 golden README's blanket "already optional; zero type change" claim for every
+  // deprecated-in-place field does not literally hold for boothCount, which was required
+  // before this mission -- leaving it required would make a fresh, boothSize-only submission
+  // (F17 no longer collects boothCount at all) permanently unsubmittable. Loosening it to
+  // optional is the only reading under which "deprecate-in-place, never delete" and "F17
+  // replaces the boothCount input with boothSize" can both be true at once.
+  boothCount?: number;
   boothType?: VendorBoothType;
   tableCount?: number;
   chairCount?: number;
@@ -678,6 +727,58 @@ export interface VendorSubmission {
 
   // Section 5 — terms & conditions (field 31).
   termsAccepted: boolean;
+
+  // M2 F14 (vendor-gated-registration-flow) -- every NEW field the 26 Aug source doc requires,
+  // purely additive (no field above removed or retyped). See contracts/golden/
+  // vendor-gated-registration-flow-m2/README.md and the F14 fixture (canonical name/shape
+  // spec). boothSize is OPTIONAL despite F14's own feature description using the word
+  // "required" -- flagged judgement call: F15's validation text says boothSize is checked
+  // "when present", and the A27 fixture's all-fields-omitted case requires every one of these
+  // fields to be optional to compile, so the fixture (explicitly canonical per the golden
+  // README) wins over the feature-text word "required."
+  facebookHandle?: string;
+  instagramHandle?: string;
+  tiktokHandle?: string;
+  youtubeHandle?: string;
+  otherSocialMediaHandle?: string;
+
+  boothSize?: VendorRegistrationBoothSize;
+
+  electricalEquipmentEntries?: VendorElectricalEquipmentEntry[];
+  gasEquipmentEntries?: VendorGasEquipmentEntry[];
+
+  carRegistrationNumber?: string;
+  suvBakkieRegistrationNumber?: string;
+  panelVanRegistrationNumber?: string;
+  deliveryVanRegistrationNumber?: string;
+  truckRegistrationNumber?: string;
+  trailerRegistrationNumber?: string;
+  otherVehicleRegistrationNumber?: string;
+  otherVehicleDescription?: string;
+
+  // Marketing uploads -- set ONLY by the PUBLIC marketing-asset upload route
+  // (app/api/vendors/[id]/marketing-asset/route.ts) via lib/vendor-marketing-upload-handler.ts,
+  // mirroring proofOfPaymentPath/proofOfPaymentUploadedAt's shape and posture exactly (F7).
+  // Never written by buildVendorSubmission from the main registration submission -- see the
+  // golden README's "Why three fields, not an array" for logoPath/productPhoto1-3Path.
+  logoPath?: string | null;
+  logoUploadedAt?: Date | null;
+  productPhoto1Path?: string | null;
+  productPhoto1UploadedAt?: Date | null;
+  productPhoto2Path?: string | null;
+  productPhoto2UploadedAt?: Date | null;
+  productPhoto3Path?: string | null;
+  productPhoto3UploadedAt?: Date | null;
+  marketingPermission?: VendorMarketingPermission;
+
+  publicLiabilityInsurancePolicyNumber?: string;
+  productLiabilityInsurancePolicyNumber?: string;
+
+  foodVendorCertifications?: VendorFoodCertification[];
+
+  // The signature block's Full Name -- see golden "The signature block" for why Position/
+  // Business Name/Date are NOT re-collected as new fields here.
+  signatureFullName?: string;
 
   // System-owned fields — never submitter-supplied. See
   // lib/vendor-submissions.ts's buildVendorSubmission() for why these are

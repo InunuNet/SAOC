@@ -42,11 +42,14 @@ function makeDeps(now) {
 const firstNow = new Date('2027-01-05T09:00:00Z');
 const secondNow = new Date('2027-01-06T14:30:00Z');
 
+// sizeBytes must equal the real decoded byte length of fileBase64 below -- see the M2 fix
+// pass, 2026-09-01, that made this the authority (Codex GPT-5.5 finding) in
+// lib/vendor-proof-of-payment-handler.ts.
 const firstInput = {
   submissionId: SUBMISSION_ID,
   fileName: 'proof-v1.pdf',
   mimeType: 'application/pdf',
-  sizeBytes: 1024,
+  sizeBytes: 12, // 'first-upload'
   fileBase64: 'Zmlyc3QtdXBsb2Fk',
 };
 // A different original file name -- proves the stored path is mime-derived, not
@@ -55,7 +58,7 @@ const secondInput = {
   submissionId: SUBMISSION_ID,
   fileName: 'proof-corrected-v2.pdf',
   mimeType: 'application/pdf',
-  sizeBytes: 2048,
+  sizeBytes: 13, // 'second-upload'
   fileBase64: 'c2Vjb25kLXVwbG9hZA==',
 };
 

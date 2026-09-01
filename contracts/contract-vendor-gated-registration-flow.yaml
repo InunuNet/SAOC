@@ -1220,7 +1220,59 @@ assertions:
         phase 4, so it cannot block F13's gate. Write the script when F21 lands.
       phase: 5
       command: >-
-        npx tsc --noEmit -p contracts/checks/vendor-gated-registration-flow-m2/tsconfig.typecheck.json && node contracts/checks/vendor-gated-registration-flow-m2/check-admin-page-renders-both-fixtures.mjs
+        npx tsc --noEmit -p contracts/checks/vendor-gated-registration-flow-m2/tsconfig.typecheck.json && node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m2/check-admin-page-renders-both-fixtures.mjs
+
+    # --- F17 fix pass: tables/chairs charge disclosure is a proven property, not just a
+    # grep-for-absence (architect pass, 2026-09-01). A31 only proves no rand figure was
+    # invented in VendorBoothFieldset.tsx -- it cannot prove the disclosure copy itself exists,
+    # because that copy was extracted into VendorBoothPositionFieldset.tsx and is plain JSX
+    # text, not a quoted string literal A31's own scan pattern covers. Deleting the disclosure
+    # today leaves every existing check green. This closes that hole.
+    - id: A65
+      description: >-
+        VendorBoothPositionFieldset.tsx (where tableCount/chairCount actually render, after
+        F17's extraction out of VendorBoothFieldset.tsx) renders the tables/chairs charge
+        disclosure copy ("A charge applies for tables and chairs; the rate is to be confirmed
+        by the Show Organising Committee.") as real rendered JSX content, AND still renders no
+        invented rand figure ("R" followed by digits) anywhere near table/chair copy --
+        negative-tested both directions (2026-09-01): deleting the disclosure paragraph fails
+        this check ("disclosure ... is missing"); injecting "R50 per table extra charge" fails
+        this check independently ("a digit-only currency figure appears") while the disclosure
+        copy itself stays intact, proving the two halves are checked separately, not by one
+        conflated pattern.
+        FAILS ON: the disclosure copy missing, present only inside a source comment (comments
+        are stripped before the presence check runs), or any "R" followed by digits appearing
+        in JSX text content or a quoted string literal that also mentions "table" or "chair".
+      phase: 5
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m2/check-table-chair-charge-disclosure.mjs
+
+    # --- F14 fix pass: equipment-entry mass assignment (architect pass, 2026-09-01). Codex
+    # found, architect confirmed at lib/vendor-submissions.ts:1107-1108: buildVendorSubmission()
+    # persists input.electricalEquipmentEntries/input.gasEquipmentEntries straight from raw
+    # input, while validateElectricalEquipmentEntries/validateGasEquipmentEntries (~lines
+    # 714-782) only inspect the known per-row keys without stripping unknown ones. An
+    # unauthenticated caller on the public register route can attach arbitrary extra keys to
+    # each equipment row and have them written to Firestore verbatim -- the same defect class
+    # A5/A7 in contracts/contract-vendor-f4-submissions-model.yaml already guard for at the
+    # top level of the submission, one level of nesting deeper. Write-only: @dev fixes the
+    # code, this check must FAIL against the current implementation as the proof the fix is
+    # real.
+    - id: A66
+      description: >-
+        A real call to validateVendorSubmissionInput() then buildVendorSubmission() (not a
+        source grep) with an otherwise fully-valid input whose electricalEquipmentEntries and
+        gasEquipmentEntries rows each carry two forged extra keys (neither named by either
+        validator) proves those forged keys do NOT survive into the object
+        buildVendorSubmission() returns. Confirmed failing against the current implementation
+        (2026-09-01, before @dev's fix): all 4 forged keys (priority, internalNote on the
+        electrical row; approved, vendorNotes on the gas row) round-trip into the built
+        submission unchanged, exit code 1.
+        FAILS ON: any forged key on an electricalEquipmentEntries or gasEquipmentEntries row
+        surviving into the built submission.
+      phase: 5
+      command: >-
+        npx tsx contracts/checks/vendor-f4-submissions-model/check-equipment-entries-mass-assignment.mjs
 
     # --- whole-mission regression gate ---
     - id: A19

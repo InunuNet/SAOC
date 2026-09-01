@@ -59,7 +59,10 @@ const VALID_INPUT = {
   assetSlot: 'logo',
   fileName: 'logo.png',
   mimeType: 'image/png',
-  sizeBytes: 1024,
+  // sizeBytes must equal the real decoded byte length of fileBase64 below (16 bytes --
+  // 'fake-png-content') -- see the M2 fix pass, 2026-09-01, that made this the authority
+  // (Codex GPT-5.5 finding) in lib/vendor-marketing-upload-handler.ts.
+  sizeBytes: 16,
   fileBase64: 'ZmFrZS1wbmctY29udGVudA==',
 };
 

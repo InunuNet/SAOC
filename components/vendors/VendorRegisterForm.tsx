@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import {
   buildVendorRegistrationPayload,
+  type VendorRegisterFieldChangeHandler,
   type VendorRegisterFormState,
 } from '@/lib/vendor-register-form-payload';
 import {
@@ -11,83 +12,17 @@ import {
   type VendorRegisterResponseDescription,
 } from '@/lib/vendor-register-response';
 import { validateVendorRegisterFormClientSide } from '@/lib/vendor-register-form-validation';
+import { INITIAL_STATE } from '@/lib/vendor-register-form-initial-state';
 import { VendorContactFieldset } from './VendorContactFieldset';
-import { VendorEmergencyContactFieldset } from './VendorEmergencyContactFieldset';
 import { VendorCategoryFieldset } from './VendorCategoryFieldset';
 import { VendorBoothFieldset } from './VendorBoothFieldset';
 import { VendorMarketingFieldset } from './VendorMarketingFieldset';
 import { VendorPaymentFieldset } from './VendorPaymentFieldset';
+import { VendorDeclarationFieldset } from './VendorDeclarationFieldset';
 import { VendorRegisterStatusBanner } from './VendorRegisterStatusBanner';
 import { VendorRegisterSuccess } from './VendorRegisterSuccess';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
-
-const INITIAL_STATE: VendorRegisterFormState = {
-  businessName: '',
-  tradingName: '',
-  tradingNameSameAsBusiness: false,
-  businessEntityType: '',
-  businessEntityTypeOther: '',
-  contactPersonName: '',
-  contactPosition: '',
-  contactCellPhone: '',
-  alternativeContactNumber: '',
-  contactEmail: '',
-  accountsContactName: '',
-  accountsContactEmail: '',
-  physicalAddress: '',
-  postalAddressSameAsPhysical: false,
-  postalAddress: '',
-  cipcNumber: '',
-  vatRegistered: '',
-  vatNumber: '',
-  countryOfBusinessRegistration: '',
-  website: '',
-  socialMediaHandle: '',
-  emergencyContactName: '',
-  emergencyContactRelationship: '',
-  emergencyContactCellPhone: '',
-  vendorCategory: [],
-  vendorCategoryOther: '',
-  productDescription: '',
-  phytosanitaryPermitNumber: '',
-  citesPermitNumber: '',
-  foodHandlingCertificateNumber: '',
-  foodItemList: '',
-  sellsLivePlants: '',
-  livePlantTypes: [],
-  livePlantTypesOther: '',
-  plantsImportedForEvent: '',
-  importCountryOfOrigin: '',
-  citesListedSpecies: '',
-  foodHealthTradingDocumentation: '',
-  boothCount: '',
-  boothType: '',
-  boothPositionRequest: '',
-  adjacentBoothRequested: '',
-  adjacentBoothVendorName: '',
-  specialDisplayRequirements: '',
-  tableCount: '',
-  chairCount: '',
-  powerRequired: '',
-  electricalLoad: '',
-  electricalOutletsRequired: '',
-  electricalEquipmentList: '',
-  electricalEquipmentContinuousOperation: '',
-  electricalEquipmentContinuousDetails: '',
-  waterRequired: '',
-  waterIntendedUse: '',
-  wastewaterDrainageRequired: '',
-  wastewaterDrainageDetails: '',
-  staffPerDay: '',
-  vehicleRegistrations: '',
-  loadInSlot: '',
-  loadOutSlot: '',
-  bio: '',
-  paymentMethodsAccepted: [],
-  paymentReference: '',
-  termsAccepted: false,
-};
 
 // F23 (vendor-gated-registration-flow, M4) -- no vendor-typed token/code is threaded through
 // this component any more. Gating now happens entirely via the internal, HttpOnly-cookie-
@@ -112,9 +47,9 @@ export function VendorRegisterForm() {
     }
   }, [descriptor]);
 
-  function handleFieldChange(key: keyof VendorRegisterFormState, value: string | string[] | boolean) {
+  const handleFieldChange: VendorRegisterFieldChangeHandler = (key, value) => {
     setState((prev) => ({ ...prev, [key]: value }));
-  }
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -171,11 +106,11 @@ export function VendorRegisterForm() {
       ) : null}
 
       <VendorContactFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
-      <VendorEmergencyContactFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
       <VendorCategoryFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
       <VendorBoothFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
       <VendorMarketingFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
       <VendorPaymentFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
+      <VendorDeclarationFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
 
       {/* Honeypot -- visually hidden, tab-unreachable, aria-hidden. Mirrors ContactForm.tsx. */}
       <div className="hidden" aria-hidden="true">

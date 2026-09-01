@@ -2,9 +2,30 @@ import type {
   VendorBoothType,
   VendorBusinessEntityType,
   VendorCategory,
-  VendorLivePlantType,
+  VendorFoodCertification,
+  VendorMarketingPermission,
   VendorPaymentMethod,
+  VendorRegistrationBoothSize,
 } from '@/types/index';
+
+// M2 F14 (vendor-gated-registration-flow) -- controlled-input-friendly row shapes for the two
+// repeating equipment tables. Every value is a string (HTML form controls never hand back
+// anything else), including quantity/cylinderCount -- coerced to a real number only inside
+// buildVendorRegistrationPayload(), matching this file's own toOptionalInt() convention for
+// every other numeric field.
+export interface VendorElectricalEquipmentEntryFormRow {
+  equipment: string;
+  quantity: string;
+  wattage: string;
+  runningTimePerDay: string;
+}
+
+export interface VendorGasEquipmentEntryFormRow {
+  equipmentType: string;
+  gasType: string;
+  cylinderSize: string;
+  cylinderCount: string;
+}
 
 /**
  * Controlled-input-friendly state for the public vendor registration form
@@ -35,10 +56,18 @@ export interface VendorRegisterFormState {
   vatNumber: string;
   countryOfBusinessRegistration: string;
   website: string;
-  socialMediaHandle: string;
   emergencyContactName: string;
   emergencyContactRelationship: string;
   emergencyContactCellPhone: string;
+
+  // M2 F14/F16 (vendor-gated-registration-flow) -- Online Presence, replacing the single
+  // socialMediaHandle above (deprecated in place on VendorSubmission, no longer rendered).
+  facebookHandle: string;
+  instagramHandle: string;
+  tiktokHandle: string;
+  youtubeHandle: string;
+  otherSocialMediaHandle: string;
+
   vendorCategory: string[];
   vendorCategoryOther: string;
   productDescription: string;
@@ -46,14 +75,14 @@ export interface VendorRegisterFormState {
   citesPermitNumber: string;
   foodHandlingCertificateNumber: string;
   foodItemList: string;
-  sellsLivePlants: '' | 'true' | 'false';
-  livePlantTypes: string[];
-  livePlantTypesOther: string;
-  plantsImportedForEvent: '' | 'true' | 'false';
-  importCountryOfOrigin: string;
   citesListedSpecies: '' | 'true' | 'false';
   foodHealthTradingDocumentation: string;
-  boothCount: string;
+
+  // M2 F14/F19 -- the 6-item Food Vendor certification checklist, gated isFoodRetailer(state).
+  foodVendorCertifications: string[];
+
+  // M2 F14/F17 -- boothSize replaces the free-numeric boothCount above (deprecated in place).
+  boothSize: string;
   boothType: string;
   boothPositionRequest: string;
   adjacentBoothRequested: '' | 'true' | 'false';
@@ -62,29 +91,66 @@ export interface VendorRegisterFormState {
   tableCount: string;
   chairCount: string;
   powerRequired: '' | 'true' | 'false';
-  electricalLoad: string;
   electricalOutletsRequired: string;
-  electricalEquipmentList: string;
-  electricalEquipmentContinuousOperation: '' | 'true' | 'false';
-  electricalEquipmentContinuousDetails: string;
+
+  // M2 F14/F17 -- repeating electricity/gas tables, replacing the scalar electrical*/gas*
+  // fields above (deprecated in place). gasEquipmentEntries is rendered only when
+  // isFoodRetailer(state) -- see golden "Gas equipment gating".
+  electricalEquipmentEntries: VendorElectricalEquipmentEntryFormRow[];
+  gasEquipmentEntries: VendorGasEquipmentEntryFormRow[];
+
   waterRequired: '' | 'true' | 'false';
   waterIntendedUse: string;
   wastewaterDrainageRequired: '' | 'true' | 'false';
   wastewaterDrainageDetails: string;
   staffPerDay: string;
-  vehicleRegistrations: string;
+
+  // M2 F14/F17 -- 7 discrete vehicle registration fields, replacing the single free-text
+  // vehicleRegistrations above (deprecated in place).
+  carRegistrationNumber: string;
+  suvBakkieRegistrationNumber: string;
+  panelVanRegistrationNumber: string;
+  deliveryVanRegistrationNumber: string;
+  truckRegistrationNumber: string;
+  trailerRegistrationNumber: string;
+  otherVehicleRegistrationNumber: string;
+  otherVehicleDescription: string;
+
   loadInSlot: string;
   loadOutSlot: string;
   bio: string;
+
+  // M2 F14/F18 -- marketing permission radio. Logo/product-photo uploads are handled by their
+  // own dedicated upload widgets (VendorMarketingUploadField), not this string/boolean/array
+  // state shape -- they POST directly to /api/vendors/[id]/marketing-asset once a submission
+  // id exists, mirroring the F7 proof-of-payment upload's own out-of-band posture.
+  marketingPermission: string;
+
+  // M2 F14/F19 -- two new insurance policy-number fields, alongside the unmodified M1
+  // hasPublicLiabilityInsurance/productLiabilityInsuranceStatus fields (not yet rendered by any
+  // fieldset -- pre-existing gap, out of M2's scope to fix).
+  publicLiabilityInsurancePolicyNumber: string;
+  productLiabilityInsurancePolicyNumber: string;
+
   paymentMethodsAccepted: string[];
   paymentReference: string;
   termsAccepted: boolean;
+
+  // M2 F14/F20 -- the signature block's Full Name. Position/Business Name/Date are read-only
+  // reflections rendered directly from contactPosition/businessName/submittedAt -- see golden
+  // "The signature block" -- so they need no new state field here.
+  signatureFullName: string;
 }
 
 /** Shared field-change handler signature every fieldset component receives. */
 export type VendorRegisterFieldChangeHandler = (
   key: keyof VendorRegisterFormState,
-  value: string | string[] | boolean,
+  value:
+    | string
+    | string[]
+    | boolean
+    | VendorElectricalEquipmentEntryFormRow[]
+    | VendorGasEquipmentEntryFormRow[],
 ) => void;
 
 function omitBlank(value: string): string | undefined {
@@ -106,11 +172,13 @@ function toOptionalBoolean(value: ('' | 'true' | 'false') | undefined): boolean 
 }
 
 /**
- * Shared render-gate + payload-exclusion guard for electricalLoad. A hidden field can never
- * leak a stale value into the submitted document: both VendorBoothFieldset (render) and
- * buildVendorRegistrationPayload (payload) call this same function.
+ * Shared render-gate + payload-exclusion guard for the repeating electricalEquipmentEntries
+ * table (M2 F14/F17 -- replaces the deprecated-in-place electricalLoad text input, same gate).
+ * A hidden field can never leak a stale value into the submitted document: both
+ * VendorBoothFieldset (render) and buildVendorRegistrationPayload (payload) call this same
+ * function.
  */
-export function isElectricalLoadApplicable(state: VendorRegisterFormState): boolean {
+export function isElectricalEquipmentApplicable(state: VendorRegisterFormState): boolean {
   return state.powerRequired === 'true';
 }
 
@@ -124,6 +192,16 @@ export function isElectricalLoadApplicable(state: VendorRegisterFormState): bool
  */
 export function isFoodRetailer(state: VendorRegisterFormState): boolean {
   return state.vendorCategory.includes('food-beverage-retailer');
+}
+
+/**
+ * M2 F14/F17 (vendor-gated-registration-flow) — shared render-gate + payload-exclusion guard
+ * for the repeating gasEquipmentEntries table. Gated on isFoodRetailer(state), same as the
+ * food-only fields in VendorCategoryFieldset -- see golden "Gas equipment gating" for why this
+ * is a flagged judgement call, not something the source document states explicitly.
+ */
+export function isGasEquipmentApplicable(state: VendorRegisterFormState): boolean {
+  return isFoodRetailer(state);
 }
 
 /**
@@ -163,32 +241,6 @@ export function isVendorCategoryOtherFieldApplicable(state: VendorRegisterFormSt
 
 /**
  * F3 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for the
- * livePlantTypes checkbox group (and its payload keys), gated on the "sells live plants" Yes/No
- * radio.
- */
-export function isLivePlantTypesFieldApplicable(state: VendorRegisterFormState): boolean {
-  return state.sellsLivePlants === 'true';
-}
-
-/**
- * F3 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for
- * livePlantTypesOther, gated on the 'other' livePlantTypes checkbox being selected. Only
- * relevant once isLivePlantTypesFieldApplicable is already true.
- */
-export function isLivePlantTypesOtherFieldApplicable(state: VendorRegisterFormState): boolean {
-  return state.livePlantTypes.includes('other');
-}
-
-/**
- * F3 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for
- * importCountryOfOrigin, gated on the "plants imported for event" Yes/No radio.
- */
-export function isImportCountryOfOriginFieldApplicable(state: VendorRegisterFormState): boolean {
-  return state.plantsImportedForEvent === 'true';
-}
-
-/**
- * F3 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for the
  * pre-existing citesPermitNumber field, newly gated on the "CITES-listed species" Yes/No radio.
  * The field's type/optionality/validation is unchanged -- only its visibility becomes
  * conditional. See goldens/f3-ui-vendor-category-products.md's judgement-call note.
@@ -205,21 +257,6 @@ export function isAdjacentBoothVendorNameFieldApplicable(
   state: VendorRegisterFormState,
 ): boolean {
   return state.adjacentBoothRequested === 'true';
-}
-
-/**
- * F4 (vendor-registration-form-rebuild) — shared render-gate + payload-exclusion guard for
- * electricalEquipmentContinuousDetails. Nested under the existing isElectricalLoadApplicable
- * gate: electricity must be requested at all AND the equipment must run continuously, not just
- * the inner condition alone -- flipping powerRequired back off must also hide/exclude this
- * field even if electricalEquipmentContinuousOperation is still 'true'.
- */
-export function isElectricalEquipmentContinuousDetailsFieldApplicable(
-  state: VendorRegisterFormState,
-): boolean {
-  return (
-    isElectricalLoadApplicable(state) && state.electricalEquipmentContinuousOperation === 'true'
-  );
 }
 
 /**
@@ -272,7 +309,11 @@ export function buildVendorRegistrationPayload(state: VendorRegisterFormState): 
     vatNumber: isVatNumberFieldApplicable(state) ? omitBlank(state.vatNumber) : undefined,
     countryOfBusinessRegistration: omitBlank(state.countryOfBusinessRegistration),
     website: omitBlank(state.website),
-    socialMediaHandle: omitBlank(state.socialMediaHandle),
+    facebookHandle: omitBlank(state.facebookHandle),
+    instagramHandle: omitBlank(state.instagramHandle),
+    tiktokHandle: omitBlank(state.tiktokHandle),
+    youtubeHandle: omitBlank(state.youtubeHandle),
+    otherSocialMediaHandle: omitBlank(state.otherSocialMediaHandle),
     emergencyContactName: state.emergencyContactName,
     emergencyContactRelationship: omitBlank(state.emergencyContactRelationship),
     emergencyContactCellPhone: state.emergencyContactCellPhone.trim(),
@@ -287,23 +328,14 @@ export function buildVendorRegistrationPayload(state: VendorRegisterFormState): 
       : undefined,
     foodHandlingCertificateNumber: isFoodRetailer(state) ? omitBlank(state.foodHandlingCertificateNumber) : undefined,
     foodItemList: isFoodRetailer(state) ? omitBlank(state.foodItemList) : undefined,
-    sellsLivePlants: toOptionalBoolean(state.sellsLivePlants),
-    livePlantTypes: isLivePlantTypesFieldApplicable(state)
-      ? (state.livePlantTypes as VendorLivePlantType[])
-      : undefined,
-    livePlantTypesOther:
-      isLivePlantTypesFieldApplicable(state) && isLivePlantTypesOtherFieldApplicable(state)
-        ? omitBlank(state.livePlantTypesOther)
-        : undefined,
-    plantsImportedForEvent: toOptionalBoolean(state.plantsImportedForEvent),
-    importCountryOfOrigin: isImportCountryOfOriginFieldApplicable(state)
-      ? omitBlank(state.importCountryOfOrigin)
-      : undefined,
     citesListedSpecies: toOptionalBoolean(state.citesListedSpecies),
     foodHealthTradingDocumentation: isFoodRetailer(state)
       ? omitBlank(state.foodHealthTradingDocumentation)
       : undefined,
-    boothCount: toOptionalInt(state.boothCount),
+    foodVendorCertifications: isFoodRetailer(state) && state.foodVendorCertifications.length > 0
+      ? (state.foodVendorCertifications as VendorFoodCertification[])
+      : undefined,
+    boothSize: omitBlank(state.boothSize) as VendorRegistrationBoothSize | undefined,
     boothType: omitBlank(state.boothType) as VendorBoothType | undefined,
     boothPositionRequest: omitBlank(state.boothPositionRequest),
     adjacentBoothRequested: toOptionalBoolean(state.adjacentBoothRequested),
@@ -314,20 +346,14 @@ export function buildVendorRegistrationPayload(state: VendorRegisterFormState): 
     tableCount: toOptionalInt(state.tableCount),
     chairCount: toOptionalInt(state.chairCount),
     powerRequired: toOptionalBoolean(state.powerRequired),
-    electricalLoad: isElectricalLoadApplicable(state) ? omitBlank(state.electricalLoad) : undefined,
-    electricalOutletsRequired: isElectricalLoadApplicable(state)
+    electricalEquipmentEntries: isElectricalEquipmentApplicable(state)
+      ? buildElectricalEquipmentEntries(state.electricalEquipmentEntries)
+      : undefined,
+    electricalOutletsRequired: isElectricalEquipmentApplicable(state)
       ? toOptionalInt(state.electricalOutletsRequired)
       : undefined,
-    electricalEquipmentList: isElectricalLoadApplicable(state)
-      ? omitBlank(state.electricalEquipmentList)
-      : undefined,
-    electricalEquipmentContinuousOperation: isElectricalLoadApplicable(state)
-      ? toOptionalBoolean(state.electricalEquipmentContinuousOperation)
-      : undefined,
-    electricalEquipmentContinuousDetails: isElectricalEquipmentContinuousDetailsFieldApplicable(
-      state,
-    )
-      ? omitBlank(state.electricalEquipmentContinuousDetails)
+    gasEquipmentEntries: isGasEquipmentApplicable(state)
+      ? buildGasEquipmentEntries(state.gasEquipmentEntries)
       : undefined,
     waterRequired: toOptionalBoolean(state.waterRequired),
     waterIntendedUse: isWaterIntendedUseFieldApplicable(state)
@@ -338,12 +364,65 @@ export function buildVendorRegistrationPayload(state: VendorRegisterFormState): 
       ? omitBlank(state.wastewaterDrainageDetails)
       : undefined,
     staffPerDay: toOptionalInt(state.staffPerDay),
-    vehicleRegistrations: omitBlank(state.vehicleRegistrations),
+    carRegistrationNumber: omitBlank(state.carRegistrationNumber),
+    suvBakkieRegistrationNumber: omitBlank(state.suvBakkieRegistrationNumber),
+    panelVanRegistrationNumber: omitBlank(state.panelVanRegistrationNumber),
+    deliveryVanRegistrationNumber: omitBlank(state.deliveryVanRegistrationNumber),
+    truckRegistrationNumber: omitBlank(state.truckRegistrationNumber),
+    trailerRegistrationNumber: omitBlank(state.trailerRegistrationNumber),
+    otherVehicleRegistrationNumber: omitBlank(state.otherVehicleRegistrationNumber),
+    otherVehicleDescription: omitBlank(state.otherVehicleDescription),
     loadInSlot: omitBlank(state.loadInSlot),
     loadOutSlot: omitBlank(state.loadOutSlot),
     bio: omitBlank(state.bio),
+    marketingPermission: omitBlank(state.marketingPermission) as VendorMarketingPermission | undefined,
+    publicLiabilityInsurancePolicyNumber: omitBlank(state.publicLiabilityInsurancePolicyNumber),
+    productLiabilityInsurancePolicyNumber: omitBlank(state.productLiabilityInsurancePolicyNumber),
     paymentMethodsAccepted: state.paymentMethodsAccepted as VendorPaymentMethod[],
     paymentReference: omitBlank(state.paymentReference),
     termsAccepted: state.termsAccepted,
+    signatureFullName: omitBlank(state.signatureFullName),
   };
+}
+
+/**
+ * M2 F14/F17 -- coerces the electrical equipment table's string-shaped rows into the real
+ * numeric shape validateVendorSubmissionInput() expects. Blank rows (every field empty) are
+ * dropped rather than submitted as an invalid all-zero row; a partially-filled row is passed
+ * through as-is so server-side validation surfaces the specific error, matching this file's
+ * "never sanitize, only accept or reject" convention elsewhere.
+ */
+function buildElectricalEquipmentEntries(
+  rows: VendorElectricalEquipmentEntryFormRow[],
+): unknown[] | undefined {
+  const nonBlank = rows.filter(
+    (row) => row.equipment.trim() !== '' || row.quantity.trim() !== '' ||
+      row.wattage.trim() !== '' || row.runningTimePerDay.trim() !== '',
+  );
+  if (nonBlank.length === 0) {
+    return undefined;
+  }
+  return nonBlank.map((row) => ({
+    equipment: row.equipment,
+    quantity: toOptionalInt(row.quantity),
+    wattage: row.wattage,
+    runningTimePerDay: row.runningTimePerDay,
+  }));
+}
+
+/** M2 F14/F17 -- same blank-row-dropping convention as buildElectricalEquipmentEntries above. */
+function buildGasEquipmentEntries(rows: VendorGasEquipmentEntryFormRow[]): unknown[] | undefined {
+  const nonBlank = rows.filter(
+    (row) => row.equipmentType.trim() !== '' || row.gasType.trim() !== '' ||
+      row.cylinderSize.trim() !== '' || row.cylinderCount.trim() !== '',
+  );
+  if (nonBlank.length === 0) {
+    return undefined;
+  }
+  return nonBlank.map((row) => ({
+    equipmentType: row.equipmentType,
+    gasType: row.gasType,
+    cylinderSize: row.cylinderSize,
+    cylinderCount: toOptionalInt(row.cylinderCount),
+  }));
 }

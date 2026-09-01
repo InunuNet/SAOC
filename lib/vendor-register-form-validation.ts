@@ -64,9 +64,11 @@ export function validateVendorRegisterFormClientSide(state: VendorRegisterFormSt
     errors.push('vendorCategory is required and must be a non-empty array');
   }
 
-  const boothCount = state.boothCount.trim();
-  if (boothCount === '' || !STRICT_INTEGER_PATTERN.test(boothCount) || Number(boothCount) <= 0) {
-    errors.push('boothCount is required and must be a positive integer');
+  // M2 F14/F17 (vendor-gated-registration-flow) -- boothSize replaces the deprecated-in-place
+  // free-numeric boothCount above; it is a fixed 3-value radio (single/double/triple), not an
+  // integer, so no STRICT_INTEGER_PATTERN check applies here any more.
+  if (state.boothSize.trim() === '') {
+    errors.push('boothSize is required and must be a non-empty string');
   }
 
   const tableCount = state.tableCount.trim();

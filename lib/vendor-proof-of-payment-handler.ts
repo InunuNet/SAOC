@@ -1,5 +1,6 @@
 import {
   planProofOfPaymentUpload,
+  PROOF_OF_PAYMENT_MAX_BYTES,
   type ProofOfPaymentUploadPlan,
 } from '@/lib/vendor-payment';
 import {
@@ -79,6 +80,35 @@ export async function handleProofOfPaymentUpload(
 
   if (!plan.ok) {
     return { status: 400, body: { error: plan.error } };
+  }
+
+  // (b2) Codex GPT-5.5 finding, 2026-09-01 (same defect confirmed live in F18's mirrored
+  // marketing-asset route): `input.sizeBytes` above is a caller-supplied claim --
+  // planProofOfPaymentUpload() only ever validated THAT number against
+  // PROOF_OF_PAYMENT_MAX_BYTES, never the real byte length of `fileBase64` itself. A caller
+  // could send `sizeBytes: 1` alongside an arbitrarily large `fileBase64` payload and the cap
+  // would do nothing -- an unauthenticated route with an unbounded Storage write. The DECODED
+  // length is the only trustworthy figure, so it is computed here (before any existence lookup
+  // or Storage write) and: (i) must equal the claimed sizeBytes exactly -- a mismatch is
+  // rejected outright, never silently corrected, and (ii) is independently checked against
+  // PROOF_OF_PAYMENT_MAX_BYTES too, so this reject fires even if planProofOfPaymentUpload's own
+  // check above were ever weakened.
+  const decodedByteLength = Buffer.byteLength(input.fileBase64, 'base64');
+  if (decodedByteLength !== input.sizeBytes) {
+    return {
+      status: 400,
+      body: {
+        error: `sizeBytes (${input.sizeBytes}) does not match the decoded file size (${decodedByteLength} bytes).`,
+      },
+    };
+  }
+  if (decodedByteLength > PROOF_OF_PAYMENT_MAX_BYTES) {
+    return {
+      status: 400,
+      body: {
+        error: `Decoded file size (${decodedByteLength}) exceeds the ${PROOF_OF_PAYMENT_MAX_BYTES}-byte limit.`,
+      },
+    };
   }
 
   // (c) Non-enumerable existence posture: the response below is byte-for-byte identical

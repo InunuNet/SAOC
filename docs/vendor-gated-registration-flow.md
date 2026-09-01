@@ -584,19 +584,147 @@ For detailed test cases, run assertions in `contracts/golden/vendor-gated-regist
 
 ---
 
-## Next Steps (M2 and M3)
+## M2: Full Registration Form Corrections
 
-**M2** — Full registration form field-set correction against the 26 Aug source doc:
-- Add ~60 new optional fields to the form
-- Introduce new vendor category 14-item list to the form (currently hardcoded to old 11-item list)
-- Section 1-18 fieldsets, grouped logically
-- File uploads (logo, marketing photos)
-- Resolve the two documented contradictions (cancellation policy, electrical charges)
+M2 (features F13-F21, gated and passed) corrects the full registration form against the 26 Aug source document. The application form (M1's short 7-field form) is unchanged.
+
+### Field Set Changes
+
+**New fields (F14):**
+
+**Online Presence** — replaces the single deprecated `socialMediaHandle` field:
+- `facebookHandle?: string`
+- `instagramHandle?: string`
+- `tiktokHandle?: string` (source document spelled this "Ticktok"; UI corrects to "TikTok")
+- `youtubeHandle?: string`
+- `otherSocialMediaHandle?: string`
+
+**Booth Sizing** — replaces deprecated numeric `boothCount` field:
+- `boothSize?: 'single' | 'double' | 'triple'` (required on submission; UI renders radio group with exact labels "Single Booth – 2.5m x 3m", "2 Booths (Double) – 5m x 3m", "3 Booths (Triple) – 7m x 3m")
+
+**Electrical Equipment** — replaces deprecated `electricalLoad` / `electricalEquipmentList` / `electricalEquipmentContinuousOperation` / `electricalEquipmentContinuousDetails`:
+- `electricalEquipmentEntries?: Array<{ equipment: string; quantity: number; wattage: string; runningTimePerDay: string }>` (repeating-row UI; max 20 rows; all row fields required when a row exists)
+
+**Gas Equipment** — replaces deprecated `gasEquipmentType` / `gasFuelType` / `gasCylinderSize` / `gasCylinderCount`:
+- `gasEquipmentEntries?: Array<{ equipmentType: string; gasType: string; cylinderSize: string; cylinderCount: number }>` (repeating-row UI; max 20 rows; gated to food retailers only; all row fields required when a row exists)
+
+**Vehicle Registrations** — replaces deprecated `vehicleType` / `vehicleTypeOther` / `vehicleRegistrations` / `vehicleHeight` / `vehicleLength` / `trailerAttached`:
+- `carRegistrationNumber?: string`
+- `suvBakkieRegistrationNumber?: string`
+- `panelVanRegistrationNumber?: string`
+- `deliveryVanRegistrationNumber?: string`
+- `truckRegistrationNumber?: string`
+- `trailerRegistrationNumber?: string`
+- `otherVehicleRegistrationNumber?: string`
+- `otherVehicleDescription?: string` (paired with otherVehicleRegistrationNumber)
+
+**Insurance Policy Numbers** — new optional fields alongside existing insurance status fields:
+- `publicLiabilityInsurancePolicyNumber?: string`
+- `productLiabilityInsurancePolicyNumber?: string`
+
+**Food Vendor Certifications** — replaces deprecated `foodPreparationOnSite` / `foodCookingOnSite`:
+- `foodVendorCertifications?: ('mobile-coa' | 'perishable-foodstuff-licence' | 'hawker-informal-trading-permit' | 'mobile-gas-compliance-certificate' | 'fire-safety-compliance' | 'vehicle-fitness-certificate')[]` (checklist; gated to food retailers)
+
+**Marketing Assets** — new file-upload fields:
+- `logoPath?: string | null` (optional image upload)
+- `logoUploadedAt?: Date | null`
+- `productPhoto1Path?: string | null`, `productPhoto2Path?: string | null`, `productPhoto3Path?: string | null` (three discrete upload slots; all optional on the submission model; source document requires 3 product photos, disclosed to vendor on success page and tracked for admin review, but not machine-enforced)
+- `productPhoto1UploadedAt?: Date | null`, `productPhoto2UploadedAt?: Date | null`, `productPhoto3UploadedAt?: Date | null`
+- `marketingPermission?: 'full' | 'listing-only'` (radio group; optional)
+
+**Signature Block** — new field for T&Cs acceptance:
+- `signatureFullName?: string` (free-text field, not Position or Business Name, which are read-only from existing fields)
+
+**Bio Constraints (F15)** — existing `bio` field gains word-count validation:
+- `bio?: string` now must be 150–200 words (counted as whitespace-separated runs, not characters) if supplied; omitting is still valid
+
+### Deprecated-in-Place Fields (Still Present, Not Rendered)
+
+Every field superseded by an M2 field shape change **remains in the `VendorSubmission` type** as optional and unchanged in type — nothing is deleted. These fields are present for backward compatibility with pre-M2 documents but are no longer used by the form:
+
+- `boothCount` (superseded by `boothSize`)
+- `electricalLoad`, `electricalEquipmentList`, `electricalEquipmentContinuousOperation`, `electricalEquipmentContinuousDetails` (superseded by `electricalEquipmentEntries`)
+- `gasEquipmentType`, `gasFuelType`, `gasCylinderSize`, `gasCylinderCount` (superseded by `gasEquipmentEntries`)
+- `vehicleType`, `vehicleTypeOther`, `vehicleRegistrations`, `vehicleHeight`, `vehicleLength`, `trailerAttached` (superseded by 7 discrete vehicle fields)
+- `socialMediaHandle` (superseded by 5 platform-specific handles)
+- `sellsLivePlants`, `livePlantTypes`, `livePlantTypesOther`, `plantsImportedForEvent`, `importCountryOfOrigin` (dropped by source document entirely)
+- `foodPreparationOnSite`, `foodCookingOnSite` (superseded by `foodVendorCertifications`)
+- `vendorCategoryOther` (superseded by F13's corrected 14-item category list; now deprecated-in-place, not removed)
+
+**Why deprecate-in-place, not delete?**
+
+1. `app/admin/vendors/page.tsx` (the submission review UI) must still render pre-M2 documents from testing/early approvals without crashing. Deleting a field from the type would break TypeScript.
+2. Firestore writes are safer on deploy if the type still accepts old documents. A pre-M2 submission read from Firestore cannot fail to deserialize.
+3. Migration is zero-cost: the old fields are simply not populated by the new form, and they may be silently retained on pre-M2 documents that predate this feature.
+
+Full ledger: `contracts/golden/vendor-gated-registration-flow-m2/removed-field-ledger.expected.md` (machine-checked by assertion A28).
+
+### Council-Blocked Items (Deliberately Unresolved)
+
+**Stand fee** — Entirely removed from the 26 Aug source document. The source's "Booth Fees & Payment" section was deleted; no blank figure left behind. Stand booking payment is M3 scope and uses a separate `vendorStandOrders` collection, not part of `vendorSubmissions`.
+
+**Tables/Chairs rate** — The 26 Aug source document states tables and chairs carry "an additional charge per table and per chair" but leaves the rand figure blank ("R …."). No invented figure is used. The form discloses "rate to be confirmed by the Show Organising Committee" alongside the input fields but does not pre-fill a price. This remains unresolved until the Council provides the actual figure. Assertion A65 proves both that the disclosure copy is present and that no price figure was invented.
+
+**Cancellation policy** — The written T&Cs state **"90 days"** (stated twice under "Cancellation and Refunds"). Lee-Ann's voice note said "2 months," which conflicts. Per the mission's hard constraint, the **written document governs** — the form displays the 90-day clause verbatim and "2 months" does not appear anywhere in the code. Both are flagged in project memory and in the contract's golden README; resolution requires a human Council decision, not an engineering choice.
+
+### Marketing Asset Upload Path
+
+**New modules:**
+
+- `lib/vendor-marketing-upload.ts` — Pure planning (no Firebase SDK): `planMarketingAssetUpload()` validates metadata and derives deterministic `vendor-marketing/{submissionId}/{slot}.{ext}` storage paths. Mirrors `lib/vendor-proof-of-payment.ts`'s (F7) exact structure.
+- `lib/vendor-marketing-upload-handler.ts` — Pure orchestrator: `handleMarketingAssetUpload()` implements rate-limit-first, non-enumerable-existence, overwrite-not-refuse semantics. Fully injectable (no Firebase imports), proven without Firestore/Storage.
+- `lib/vendor-marketing-upload-rate-limit.ts` — Rate-limit state and `decideMarketingAssetRateLimit()` decision logic.
+
+**New route:**
+
+- `POST /api/vendors/[id]/marketing-asset` — Public, unauthenticated, rate-limited (5 uploads per day per IP). Accepts one slot per request (`slot: 'logo' | 'product-photo-1' | 'product-photo-2' | 'product-photo-3'`); a second upload to the same slot overwrites the first without refusal or versioning.
+
+**Upload specification:**
+
+- MIME types allowed: `image/jpeg`, `image/png`, `image/webp` (images only; no PDF unlike F7's proof-of-payment)
+- Max size: 5 MB per file (engineering limit, not Council-approved; same disclaimer as F7)
+- Extension derived from validated `mimeType` only, **never from user-supplied filename** (same spoofed-extension defense as F7)
+- Storage path: `vendor-marketing/{submissionId}/{slot}.{ext}` (deterministic; always recomputed and oversaved on retry)
+- Response: Always HTTP 202 `{ accepted: true }` whether submission exists or not (non-enumerable existence; only side effects differ)
+
+**Why uploads happen after submission:** Submission documents do not exist until after `POST /api/vendors/register` completes. Uploads target an already-submitted ID, so three discrete POST calls are necessary: register, then logo, then product photos (or any subset).
+
+**Admin visibility:** The vendor review table (`/admin/vendors`) displays an N/3 progress badge on the product-photo uploads so committee members see at a glance which submissions still need photos before approving. There is no server-side enforcement: a vendor can complete registration without uploading any photos, and the submission is accepted as-is. The requirement for 3 product photographs (per the source document) is disclosed on the success page and tracked for human review, not machine-enforced.
+
+### Security Properties (Fixed in This Session)
+
+All three properties were defects in F7 (`lib/vendor-proof-of-payment-handler.ts`) and are now fixed in F18's `lib/vendor-marketing-upload-handler.ts`:
+
+1. **Decoded byte length is the size authority** (not caller-supplied `sizeBytes`). The handler computes `Buffer.byteLength(fileBase64, 'base64')` and rejects any mismatch before any existence lookup or upload (lines 101–117 of vendor-marketing-upload-handler.ts). A caller cannot send `sizeBytes: 1` with an arbitrarily large base64 payload to bypass the cap.
+
+2. **Rate limit runs before body parsing on both public upload routes.** Parsing large bodies before checking limits is a resource exhaustion hole. Both F7 and F18 rate-limit first via `decideRateLimit()` on the IP key, then record the attempt, then validate/upload (lines 61–76 of vendor-marketing-upload-handler.ts). A rate-limited caller never reaches planMarketingAssetUpload or file operations.
+
+3. **Equipment rows projected to validated keys only (F14 equipment fields).** When building a submission from form input, both `buildVendorSubmission()` (in lib/vendor-submissions.ts) and the handler project repeating-table rows to their validated schema keys only. Forged extra keys in the array cannot be persisted. This prevents an attacker from smuggling undefined fields into Firestore via array-item fields (assertion A66 checks this).
+
+### UI Changes (M2 Fieldsets)
+
+The full registration form now renders:
+
+- **VendorContactFieldset** — Online presence fields (5 new social handles) added alongside existing website field; VendorEmergencyContactFieldset folded in (no separate section heading).
+- **VendorCategoryFieldset** — Food certification checklist (6 items, gated to food retailers only).
+- **VendorBoothFieldset** — Radio group for booth size (3 fixed options); tables/chairs inputs kept with rate-TBD disclosure; electrical repeating-row editor; gas repeating-row editor (food retailers only); 7 discrete vehicle-registration text inputs.
+- **VendorMarketingFieldset** — Bio textarea with live word-count indicator (150–200 word validation); logo + 3 product-photo upload controls; marketing-permission radio group (2 options).
+- **New signature block** — Displays existing fields read-only (contactPosition, businessName) + new `signatureFullName` input + read-only `submittedAt` display + 6-point declaration list (verbatim from source) + full 14-clause T&Cs block (verbatim, including 90-day clause) + declaration checkbox.
+
+---
+
+## Next Steps (M3 and M4)
 
 **M3** — Stand booking payment:
-- Separate, explicit payment path for booth fees (not ticket purchases)
-- Whether existing `lib/vendor-payment.ts` structure is sufficient or needs refactor
-- Proof-of-payment upload already exists; this is payment record/allocation
+- Separate, explicit payment path for booth fees (not ticket purchases) via new `vendorStandOrders` collection
+- Council-supplied booth-size pricing (currently all-null, 503-until-configured state)
+- 30-day payment token; idempotent, cross-gateway-guarded settlement
+- 90-day forfeiture notice displayed before payment submit
+
+**M4** — Human-readable registration code (replacing M1's opaque HMAC token):
+- Business-name-derived slug + 4-digit CSPRNG code (e.g. "Orchids-Inc-4821")
+- Per-application transactional lockout; 5-attempt threshold + reissue escape hatch
+- Approval mints code + convenience email link; vendor enters code on a simple 2-field form
 
 ---
 

@@ -26,7 +26,10 @@ const VALID_INPUT = {
   submissionId: 'sub-1',
   fileName: 'proof.pdf',
   mimeType: 'application/pdf',
-  sizeBytes: 1024,
+  // sizeBytes must equal the real decoded byte length of fileBase64 below (16 bytes --
+  // 'fake-pdf-content') -- see the M2 fix pass, 2026-09-01, that made this the authority
+  // (Codex GPT-5.5 finding) in lib/vendor-proof-of-payment-handler.ts.
+  sizeBytes: 16,
   fileBase64: 'ZmFrZS1wZGYtY29udGVudA==',
 };
 

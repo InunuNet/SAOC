@@ -17,8 +17,13 @@ import type {
   VendorBoothType,
   VendorBusinessEntityType,
   VendorCategory,
+  VendorElectricalEquipmentEntry,
+  VendorFoodCertification,
+  VendorGasEquipmentEntry,
   VendorLivePlantType,
+  VendorMarketingPermission,
   VendorPaymentMethod,
+  VendorRegistrationBoothSize,
   VendorSubmission,
   VendorVehicleType,
   VendorWasteType,
@@ -109,6 +114,32 @@ const VENDOR_PRODUCT_LIABILITY_INSURANCE_STATUSES: readonly string[] = [
   'not-applicable',
 ];
 
+// M2 F14/F15 (vendor-gated-registration-flow) -- new closed-set constants, mirroring
+// VENDOR_CATEGORIES/VENDOR_BOOTH_TYPES's shape exactly. See the M2 golden README and the F14
+// fixture (canonical name/shape spec).
+const VENDOR_REGISTRATION_BOOTH_SIZES: readonly VendorRegistrationBoothSize[] = [
+  'single',
+  'double',
+  'triple',
+];
+
+const VENDOR_FOOD_CERTIFICATIONS: readonly VendorFoodCertification[] = [
+  'mobile-coa',
+  'perishable-foodstuff-licence',
+  'hawker-informal-trading-permit',
+  'mobile-gas-compliance-certificate',
+  'fire-safety-compliance',
+  'vehicle-fitness-certificate',
+];
+
+const VENDOR_MARKETING_PERMISSIONS: readonly VendorMarketingPermission[] = ['full', 'listing-only'];
+
+// M2 F15 -- the 26 Aug source doc's "150 to 200 words" bio requirement (see the M2 golden
+// README). Word-count, not character-count: a word is a maximal run of non-whitespace
+// characters, split on any whitespace run.
+const BIO_MIN_WORDS = 150;
+const BIO_MAX_WORDS = 200;
+
 // Exported (not just module-private) so lib/vendor-applications.ts (mission
 // vendor-gated-registration-flow F1) can reuse the exact same patterns for its own
 // contactEmail/contactCellPhone validation, rather than redefining them -- see that module's
@@ -173,7 +204,32 @@ const FIELD_MAX_LENGTHS: Record<string, number> = {
   vehicleLength: 50,
   wasteTypesOther: 100,
   specialWasteRequirements: 500,
+
+  // M2 F14/F15 additions. See the M2 golden README and the F14 fixture.
+  facebookHandle: 200,
+  instagramHandle: 200,
+  tiktokHandle: 200,
+  youtubeHandle: 200,
+  otherSocialMediaHandle: 200,
+  carRegistrationNumber: 50,
+  suvBakkieRegistrationNumber: 50,
+  panelVanRegistrationNumber: 50,
+  deliveryVanRegistrationNumber: 50,
+  truckRegistrationNumber: 50,
+  trailerRegistrationNumber: 50,
+  otherVehicleRegistrationNumber: 50,
+  otherVehicleDescription: 100,
+  publicLiabilityInsurancePolicyNumber: 100,
+  productLiabilityInsurancePolicyNumber: 100,
+  signatureFullName: 150,
 };
+
+// M2 F15 -- per-row string maxLengths for the two repeating equipment tables. Kept as a
+// separate, smaller table rather than folded into FIELD_MAX_LENGTHS above, since these apply
+// to nested row fields, not top-level VendorSubmission keys.
+const ELECTRICAL_EQUIPMENT_ENTRY_MAX_LENGTHS = { equipment: 200, wattage: 50, runningTimePerDay: 100 };
+const GAS_EQUIPMENT_ENTRY_MAX_LENGTHS = { equipmentType: 200, gasType: 100, cylinderSize: 100 };
+const MAX_EQUIPMENT_ENTRIES = 20; // engineering ceiling against a pathologically large array post
 
 // Caller-supplied subset of VendorSubmission — id/status/submittedAt are structurally
 // absent, not merely optional, so a caller cannot smuggle a self-approved status or a
@@ -250,7 +306,9 @@ export function validateVendorSubmissionInput(input: unknown): {
   validateWasteTypes(record.wasteTypes, errors);
   validateProductLiabilityInsuranceStatus(record.productLiabilityInsuranceStatus, errors);
 
-  validatePositiveInteger(record.boothCount, 'boothCount', errors);
+  // M2 F15 (vendor-gated-registration-flow) -- tightened from required to optional; see
+  // types/index.ts's own flagged judgement-call comment on VendorSubmission.boothCount.
+  validateOptionalNonNegativeInteger(record.boothCount, 'boothCount', errors);
   validateOptionalNonNegativeInteger(record.tableCount, 'tableCount', errors);
   validateOptionalNonNegativeInteger(record.chairCount, 'chairCount', errors);
   validateOptionalNonNegativeInteger(record.staffPerDay, 'staffPerDay', errors);
@@ -321,6 +379,7 @@ export function validateVendorSubmissionInput(input: unknown): {
   validateOptionalStringMaxLength(record, 'loadInSlot', errors, FIELD_MAX_LENGTHS.loadInSlot);
   validateOptionalStringMaxLength(record, 'loadOutSlot', errors, FIELD_MAX_LENGTHS.loadOutSlot);
   validateOptionalStringMaxLength(record, 'bio', errors, FIELD_MAX_LENGTHS.bio);
+  validateBioWordCount(record.bio, errors);
   validateOptionalStringMaxLength(
     record,
     'paymentReference',
@@ -530,7 +589,221 @@ export function validateVendorSubmissionInput(input: unknown): {
   validateOptionalBoolean(record, 'storageRiskAcknowledged', errors);
   validateOptionalBoolean(record, 'hasPublicLiabilityInsurance', errors);
 
+  // M2 F14/F15 (vendor-gated-registration-flow) -- new field validation. See the M2 golden
+  // README and the F14 fixture (canonical name/shape spec).
+  validateOptionalStringMaxLength(record, 'facebookHandle', errors, FIELD_MAX_LENGTHS.facebookHandle);
+  validateOptionalStringMaxLength(record, 'instagramHandle', errors, FIELD_MAX_LENGTHS.instagramHandle);
+  validateOptionalStringMaxLength(record, 'tiktokHandle', errors, FIELD_MAX_LENGTHS.tiktokHandle);
+  validateOptionalStringMaxLength(record, 'youtubeHandle', errors, FIELD_MAX_LENGTHS.youtubeHandle);
+  validateOptionalStringMaxLength(
+    record,
+    'otherSocialMediaHandle',
+    errors,
+    FIELD_MAX_LENGTHS.otherSocialMediaHandle,
+  );
+
+  validateBoothSize(record.boothSize, errors);
+
+  validateOptionalStringMaxLength(
+    record,
+    'carRegistrationNumber',
+    errors,
+    FIELD_MAX_LENGTHS.carRegistrationNumber,
+  );
+  validateOptionalStringMaxLength(
+    record,
+    'suvBakkieRegistrationNumber',
+    errors,
+    FIELD_MAX_LENGTHS.suvBakkieRegistrationNumber,
+  );
+  validateOptionalStringMaxLength(
+    record,
+    'panelVanRegistrationNumber',
+    errors,
+    FIELD_MAX_LENGTHS.panelVanRegistrationNumber,
+  );
+  validateOptionalStringMaxLength(
+    record,
+    'deliveryVanRegistrationNumber',
+    errors,
+    FIELD_MAX_LENGTHS.deliveryVanRegistrationNumber,
+  );
+  validateOptionalStringMaxLength(
+    record,
+    'truckRegistrationNumber',
+    errors,
+    FIELD_MAX_LENGTHS.truckRegistrationNumber,
+  );
+  validateOptionalStringMaxLength(
+    record,
+    'trailerRegistrationNumber',
+    errors,
+    FIELD_MAX_LENGTHS.trailerRegistrationNumber,
+  );
+  validateOptionalStringMaxLength(
+    record,
+    'otherVehicleRegistrationNumber',
+    errors,
+    FIELD_MAX_LENGTHS.otherVehicleRegistrationNumber,
+  );
+  validateOptionalStringMaxLength(
+    record,
+    'otherVehicleDescription',
+    errors,
+    FIELD_MAX_LENGTHS.otherVehicleDescription,
+  );
+
+  validateElectricalEquipmentEntries(record.electricalEquipmentEntries, errors);
+  validateGasEquipmentEntries(record.gasEquipmentEntries, errors);
+
+  validateOptionalStringMaxLength(
+    record,
+    'publicLiabilityInsurancePolicyNumber',
+    errors,
+    FIELD_MAX_LENGTHS.publicLiabilityInsurancePolicyNumber,
+  );
+  validateOptionalStringMaxLength(
+    record,
+    'productLiabilityInsurancePolicyNumber',
+    errors,
+    FIELD_MAX_LENGTHS.productLiabilityInsurancePolicyNumber,
+  );
+
+  validateFoodVendorCertifications(record.foodVendorCertifications, errors);
+  validateMarketingPermission(record.marketingPermission, errors);
+
+  validateOptionalStringMaxLength(
+    record,
+    'signatureFullName',
+    errors,
+    FIELD_MAX_LENGTHS.signatureFullName,
+  );
+
   return { valid: errors.length === 0, errors };
+}
+
+// M2 F15 -- word-count, not character-count. A word is a maximal run of non-whitespace
+// characters; the bound applies only once a non-empty bio is actually supplied -- an omitted
+// bio must stay accepted (bio remains optional).
+function validateBioWordCount(value: unknown, errors: string[]): void {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return;
+  }
+  const wordCount = value.trim().split(/\s+/).length;
+  if (wordCount < BIO_MIN_WORDS || wordCount > BIO_MAX_WORDS) {
+    errors.push(`bio must be between ${BIO_MIN_WORDS} and ${BIO_MAX_WORDS} words`);
+  }
+}
+
+// M2 (vendor-gated-registration-flow) fix pass, 2026-09-01 -- the UI (VendorBoothFieldset.tsx)
+// marks boothSize required, but the validator left it optional, so a direct API call could
+// omit it entirely. Tightened to required here, the same deploy-safety move F2 already made
+// for physicalAddress (see that field's own comment above): the type stays optional
+// (deprecate-in-place -- pre-M2 documents that predate this field must still parse), only the
+// validator's acceptance of NEW submissions is tightened.
+function validateBoothSize(value: unknown, errors: string[]): void {
+  if (value === undefined) {
+    errors.push('boothSize is required');
+    return;
+  }
+  if (!VENDOR_REGISTRATION_BOOTH_SIZES.includes(value as VendorRegistrationBoothSize)) {
+    errors.push(`boothSize is invalid: ${String(value)}`);
+  }
+}
+
+function validateElectricalEquipmentEntries(value: unknown, errors: string[]): void {
+  if (value === undefined) {
+    return;
+  }
+  if (!Array.isArray(value)) {
+    errors.push('electricalEquipmentEntries must be an array');
+    return;
+  }
+  if (value.length > MAX_EQUIPMENT_ENTRIES) {
+    errors.push(`electricalEquipmentEntries must contain at most ${MAX_EQUIPMENT_ENTRIES} rows`);
+    return;
+  }
+  value.forEach((entry, index) => {
+    if (typeof entry !== 'object' || entry === null) {
+      errors.push(`electricalEquipmentEntries[${index}] must be an object`);
+      return;
+    }
+    const row = entry as Record<string, unknown>;
+    requireNonEmptyString(
+      row,
+      'equipment',
+      errors,
+      ELECTRICAL_EQUIPMENT_ENTRY_MAX_LENGTHS.equipment,
+    );
+    validatePositiveInteger(row.quantity, 'quantity', errors);
+    requireNonEmptyString(row, 'wattage', errors, ELECTRICAL_EQUIPMENT_ENTRY_MAX_LENGTHS.wattage);
+    requireNonEmptyString(
+      row,
+      'runningTimePerDay',
+      errors,
+      ELECTRICAL_EQUIPMENT_ENTRY_MAX_LENGTHS.runningTimePerDay,
+    );
+  });
+}
+
+function validateGasEquipmentEntries(value: unknown, errors: string[]): void {
+  if (value === undefined) {
+    return;
+  }
+  if (!Array.isArray(value)) {
+    errors.push('gasEquipmentEntries must be an array');
+    return;
+  }
+  if (value.length > MAX_EQUIPMENT_ENTRIES) {
+    errors.push(`gasEquipmentEntries must contain at most ${MAX_EQUIPMENT_ENTRIES} rows`);
+    return;
+  }
+  value.forEach((entry, index) => {
+    if (typeof entry !== 'object' || entry === null) {
+      errors.push(`gasEquipmentEntries[${index}] must be an object`);
+      return;
+    }
+    const row = entry as Record<string, unknown>;
+    requireNonEmptyString(
+      row,
+      'equipmentType',
+      errors,
+      GAS_EQUIPMENT_ENTRY_MAX_LENGTHS.equipmentType,
+    );
+    requireNonEmptyString(row, 'gasType', errors, GAS_EQUIPMENT_ENTRY_MAX_LENGTHS.gasType);
+    requireNonEmptyString(
+      row,
+      'cylinderSize',
+      errors,
+      GAS_EQUIPMENT_ENTRY_MAX_LENGTHS.cylinderSize,
+    );
+    validatePositiveInteger(row.cylinderCount, 'cylinderCount', errors);
+  });
+}
+
+function validateFoodVendorCertifications(value: unknown, errors: string[]): void {
+  if (value === undefined) {
+    return;
+  }
+  if (!Array.isArray(value)) {
+    errors.push('foodVendorCertifications must be an array');
+    return;
+  }
+  const invalid = value.filter(
+    (entry) => !VENDOR_FOOD_CERTIFICATIONS.includes(entry as VendorFoodCertification),
+  );
+  if (invalid.length > 0) {
+    errors.push(`foodVendorCertifications contains invalid value(s): ${invalid.join(', ')}`);
+  }
+}
+
+function validateMarketingPermission(value: unknown, errors: string[]): void {
+  if (value === undefined) {
+    return;
+  }
+  if (!VENDOR_MARKETING_PERMISSIONS.includes(value as VendorMarketingPermission)) {
+    errors.push(`marketingPermission is invalid: ${String(value)}`);
+  }
 }
 
 function requireNonEmptyString(
@@ -708,6 +981,44 @@ function validateOptionalBoolean(
   }
 }
 
+// M2 follow-up (vendor-gated-registration-flow) -- mirrors how the top-level submission is
+// protected: buildVendorSubmission() never spreads `input` field-by-field, it copies only
+// named keys. These two do the same one level of nesting down, for the two array-of-object
+// fields the top-level field-by-field copy alone can't protect (an array field-by-field copy
+// still hands over each row object whole). validateElectricalEquipmentEntries /
+// validateGasEquipmentEntries above only inspect these same named keys, so anything already
+// past validation is safe to project down to just them -- an unauthenticated caller on the
+// public register route must never be able to attach arbitrary extra keys to a row and have
+// them written to Firestore. Reject-at-the-boundary, not sanitise-in-the-validator: the
+// validators keep checking shape/presence, this is the last, narrowest gate before Firestore.
+function sanitizeElectricalEquipmentEntries(
+  value: VendorElectricalEquipmentEntry[] | undefined,
+): VendorElectricalEquipmentEntry[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  return value.map((entry) => ({
+    equipment: entry.equipment,
+    quantity: entry.quantity,
+    wattage: entry.wattage,
+    runningTimePerDay: entry.runningTimePerDay,
+  }));
+}
+
+function sanitizeGasEquipmentEntries(
+  value: VendorGasEquipmentEntry[] | undefined,
+): VendorGasEquipmentEntry[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  return value.map((entry) => ({
+    equipmentType: entry.equipmentType,
+    gasType: entry.gasType,
+    cylinderSize: entry.cylinderSize,
+    cylinderCount: entry.cylinderCount,
+  }));
+}
+
 /**
  * Builds a `vendorSubmissions/{id}` document (minus the Firestore-assigned `id`). Copies
  * each of the 31 form fields explicitly, field by field — never a `{ ...input }` spread —
@@ -819,6 +1130,35 @@ export function buildVendorSubmission(
     specialWasteRequirements: input.specialWasteRequirements,
     hasPublicLiabilityInsurance: input.hasPublicLiabilityInsurance,
     productLiabilityInsuranceStatus: input.productLiabilityInsuranceStatus,
+
+    // M2 F14 (vendor-gated-registration-flow) — new fields, copied explicitly field-by-field,
+    // never via a `{ ...input }` spread. logoPath/productPhoto1-3Path (+ their UploadedAt
+    // fields) are DELIBERATELY absent here -- they are set only by the separate public
+    // marketing-asset upload route (lib/vendor-marketing-upload-handler.ts), mirroring
+    // proofOfPaymentPath's exclusion from this function exactly. See the M2 golden README.
+    facebookHandle: input.facebookHandle,
+    instagramHandle: input.instagramHandle,
+    tiktokHandle: input.tiktokHandle,
+    youtubeHandle: input.youtubeHandle,
+    otherSocialMediaHandle: input.otherSocialMediaHandle,
+    boothSize: input.boothSize,
+    electricalEquipmentEntries: sanitizeElectricalEquipmentEntries(
+      input.electricalEquipmentEntries,
+    ),
+    gasEquipmentEntries: sanitizeGasEquipmentEntries(input.gasEquipmentEntries),
+    carRegistrationNumber: input.carRegistrationNumber,
+    suvBakkieRegistrationNumber: input.suvBakkieRegistrationNumber,
+    panelVanRegistrationNumber: input.panelVanRegistrationNumber,
+    deliveryVanRegistrationNumber: input.deliveryVanRegistrationNumber,
+    truckRegistrationNumber: input.truckRegistrationNumber,
+    trailerRegistrationNumber: input.trailerRegistrationNumber,
+    otherVehicleRegistrationNumber: input.otherVehicleRegistrationNumber,
+    otherVehicleDescription: input.otherVehicleDescription,
+    marketingPermission: input.marketingPermission,
+    publicLiabilityInsurancePolicyNumber: input.publicLiabilityInsurancePolicyNumber,
+    productLiabilityInsurancePolicyNumber: input.productLiabilityInsurancePolicyNumber,
+    foodVendorCertifications: input.foodVendorCertifications,
+    signatureFullName: input.signatureFullName,
 
     // Always system-set — never read from `input`, see the function doc comment above.
     status: 'submitted',

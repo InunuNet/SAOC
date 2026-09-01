@@ -1,15 +1,11 @@
 import {
-  isCitesPermitNumberFieldApplicable,
   isFoodRetailer,
-  isImportCountryOfOriginFieldApplicable,
-  isLivePlantTypesFieldApplicable,
-  isLivePlantTypesOtherFieldApplicable,
   type VendorRegisterFieldChangeHandler,
   type VendorRegisterFormState,
 } from '@/lib/vendor-register-form-payload';
 import { VendorFormField } from './VendorFormField';
 import { VendorCheckboxGroupField } from './VendorCheckboxGroupField';
-import { VendorBooleanRadioField } from './VendorBooleanRadioField';
+import { VendorPermitFieldset } from './VendorPermitFieldset';
 
 // M2 F13 (vendor-gated-registration-flow) -- Lee-Ann's 26 Aug source form, "VENDOR CATEGORY &
 // PRODUCTS" section, 14-item closed set, no 'Other'. Byte-identical (value + order) to
@@ -40,19 +36,16 @@ const VENDOR_CATEGORY_OPTIONS = [
   { value: 'food-beverage-retailer', label: 'Food and beverage retailer' },
 ];
 
-const LIVE_PLANT_TYPE_OPTIONS = [
-  { value: 'orchids', label: 'Orchids' },
-  { value: 'other-plants', label: 'Other Plants' },
-  { value: 'bulbs-tubers', label: 'Bulbs / Tubers' },
-  { value: 'seeds', label: 'Seeds' },
-  { value: 'cut-flowers', label: 'Cut Flowers' },
-  { value: 'tissue-culture', label: 'Tissue Culture' },
-  { value: 'other', label: 'Other' },
-];
-
-const YES_NO_OPTIONS = [
-  { value: 'true', label: 'Yes' },
-  { value: 'false', label: 'No' },
+// M2 F14/F19 (vendor-gated-registration-flow) -- the 6-item Food Vendor certification
+// checklist, labels verbatim from the 26 Aug source doc's "FOOD VENDORS" section. See the M2
+// golden README's "Food certification: checklist, not blanket attestation".
+const FOOD_VENDOR_CERTIFICATION_OPTIONS = [
+  { value: 'mobile-coa', label: 'Mobile certificate of acceptability' },
+  { value: 'perishable-foodstuff-licence', label: 'Perishable Foodstuff Licence' },
+  { value: 'hawker-informal-trading-permit', label: 'Hawker/Informal Trading Permit' },
+  { value: 'mobile-gas-compliance-certificate', label: 'Mobile gas certificate of compliance' },
+  { value: 'fire-safety-compliance', label: 'Fire safety compliance' },
+  { value: 'vehicle-fitness-certificate', label: 'Certificate of fitness for vehicles' },
 ];
 
 export function VendorCategoryFieldset({ state, onFieldChange, disabled }: VendorCategoryFieldsetProps) {
@@ -79,92 +72,7 @@ export function VendorCategoryFieldset({ state, onFieldChange, disabled }: Vendo
         required
         maxLength={2000}
       />
-      <VendorBooleanRadioField
-        fieldKey="sellsLivePlants"
-        label="Will you be selling live plants?"
-        options={YES_NO_OPTIONS}
-        value={state.sellsLivePlants}
-        onChange={(v) => onFieldChange('sellsLivePlants', v)}
-        disabled={disabled}
-        required={false}
-      />
-      {isLivePlantTypesFieldApplicable(state) ? (
-        <VendorCheckboxGroupField
-          fieldKey="livePlantTypes"
-          label="Live plant types (select all that apply)"
-          options={LIVE_PLANT_TYPE_OPTIONS}
-          value={state.livePlantTypes}
-          onChange={(v) => onFieldChange('livePlantTypes', v)}
-          disabled={disabled}
-          required={false}
-        />
-      ) : null}
-      {isLivePlantTypesFieldApplicable(state) && isLivePlantTypesOtherFieldApplicable(state) ? (
-        <VendorFormField
-          fieldKey="livePlantTypesOther"
-          label="Other live plant type (please specify)"
-          htmlType="text"
-          value={state.livePlantTypesOther}
-          onChange={(v) => onFieldChange('livePlantTypesOther', v)}
-          disabled={disabled}
-          required={false}
-          maxLength={100}
-        />
-      ) : null}
-      <VendorBooleanRadioField
-        fieldKey="plantsImportedForEvent"
-        label="Are any plants imported specifically for this event?"
-        options={YES_NO_OPTIONS}
-        value={state.plantsImportedForEvent}
-        onChange={(v) => onFieldChange('plantsImportedForEvent', v)}
-        disabled={disabled}
-        required={false}
-      />
-      {isImportCountryOfOriginFieldApplicable(state) ? (
-        <VendorFormField
-          fieldKey="importCountryOfOrigin"
-          label="Country of origin for imported plants"
-          htmlType="text"
-          value={state.importCountryOfOrigin}
-          onChange={(v) => onFieldChange('importCountryOfOrigin', v)}
-          disabled={disabled}
-          required={false}
-          maxLength={200}
-        />
-      ) : null}
-      <VendorBooleanRadioField
-        fieldKey="citesListedSpecies"
-        label="Do you sell CITES-listed / protected species?"
-        options={YES_NO_OPTIONS}
-        value={state.citesListedSpecies}
-        onChange={(v) => onFieldChange('citesListedSpecies', v)}
-        disabled={disabled}
-        required={false}
-      />
-      {isCitesPermitNumberFieldApplicable(state) ? (
-        <VendorFormField
-          fieldKey="citesPermitNumber"
-          label="CITES permit number"
-          htmlType="text"
-          value={state.citesPermitNumber}
-          onChange={(v) => onFieldChange('citesPermitNumber', v)}
-          disabled={disabled}
-          required={false}
-          placeholder="Permit reference number, if issued"
-          maxLength={100}
-        />
-      ) : null}
-      <VendorFormField
-        fieldKey="phytosanitaryPermitNumber"
-        label="Phytosanitary certificate / import permit number (rare, exotic or imported plants)"
-        htmlType="text"
-        value={state.phytosanitaryPermitNumber}
-        onChange={(v) => onFieldChange('phytosanitaryPermitNumber', v)}
-        disabled={disabled}
-        required={false}
-        placeholder="Permit reference number, if issued"
-        maxLength={100}
-      />
+      <VendorPermitFieldset state={state} onFieldChange={onFieldChange} disabled={disabled} />
       {isFoodRetailer(state) ? (
         <VendorFormField
           fieldKey="foodHandlingCertificateNumber"
@@ -200,6 +108,17 @@ export function VendorCategoryFieldset({ state, onFieldChange, disabled }: Vendo
           disabled={disabled}
           required={false}
           maxLength={500}
+        />
+      ) : null}
+      {isFoodRetailer(state) ? (
+        <VendorCheckboxGroupField
+          fieldKey="foodVendorCertifications"
+          label="I hereby certify that as a food vendor I have the following certifications"
+          options={FOOD_VENDOR_CERTIFICATION_OPTIONS}
+          value={state.foodVendorCertifications}
+          onChange={(v) => onFieldChange('foodVendorCertifications', v)}
+          disabled={disabled}
+          required={false}
         />
       ) : null}
     </div>

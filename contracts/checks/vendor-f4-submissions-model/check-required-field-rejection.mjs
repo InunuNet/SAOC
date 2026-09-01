@@ -23,6 +23,7 @@ const MINIMAL = {
   vendorCategory: ['orchids'],
   productDescription: 'Cattleya and Cymbidium hybrids.',
   boothCount: 1,
+  boothSize: 'single', // M2 fix pass, 2026-09-01: boothSize is now required (lib/vendor-submissions.ts)
   powerRequired: true,
   termsAccepted: true,
 };
@@ -66,6 +67,15 @@ function expectRejectedNaming(label, input, fieldNameFragment) {
 // (2) Each required field missing, one at a time, checked INDEPENDENTLY — a validator that
 // bails out after the first missing field would still pass every one of these individually,
 // but would fail a combined-omissions case (2b) below.
+//
+// 'boothCount' dropped from this list on the vendor-gated-registration-flow M2 fix pass
+// (2026-09-01): F14/F17 deliberately deprecate boothCount in place (see this project's own
+// deprecate-in-place rule and types/index.ts's judgement-call comment on
+// VendorSubmission.boothCount) in favour of the new closed-set boothSize field. The app is
+// correct here -- this check was stale, still encoding pre-M2 requiredness, which is why it
+// failed 2/6 rather than the app being wrong. See lib/vendor-submissions.ts's
+// validateOptionalNonNegativeInteger(record.boothCount, ...) call, which validates boothCount
+// WHEN PRESENT but no longer requires it.
 const REQUIRED_FIELDS = [
   'businessName',
   'contactPersonName',
@@ -76,7 +86,6 @@ const REQUIRED_FIELDS = [
   'emergencyContactCellPhone',
   'vendorCategory',
   'productDescription',
-  'boothCount',
   'powerRequired',
   'termsAccepted',
 ];
@@ -120,11 +129,13 @@ expectRejectedNaming(
   'payment',
 );
 
-// (6) boothCount must be a positive integer — 0, -1, and 1.5 each rejected. The 1.5 case
-// specifically defeats a `boothCount > 0` check that forgets Number.isInteger().
-expectRejectedNaming('(6a) boothCount 0', { ...MINIMAL, boothCount: 0 }, 'booth');
-expectRejectedNaming('(6b) boothCount -1', { ...MINIMAL, boothCount: -1 }, 'booth');
-expectRejectedNaming('(6c) boothCount 1.5 (non-integer)', { ...MINIMAL, boothCount: 1.5 }, 'booth');
+// (6) boothCount boundary cases REMOVED on the vendor-gated-registration-flow M2 fix pass
+// (2026-09-01) -- they assumed boothCount was a required positive integer (rejecting 0). Since
+// M2 deliberately deprecated boothCount to validateOptionalNonNegativeInteger (optional,
+// non-negative when present), 0 is now a legitimately ACCEPTED value, not a rejection case;
+// asserting otherwise would test the old, superseded requiredness this check was stale on. No
+// replacement boundary case is added here per the fix pass's own scope (do not weaken or
+// expand this check beyond dropping the stale boothCount requiredness).
 
 // (7) termsAccepted: false must be rejected (not merely "present").
 expectRejectedNaming('(7a) termsAccepted false', { ...MINIMAL, termsAccepted: false }, 'terms');
@@ -142,7 +153,8 @@ if (failures.length > 0) {
 console.log(
   'PASS: validateVendorSubmissionInput() accepts a minimal required-fields-only payload, ' +
     'rejects each missing required field by name, rejects out-of-set category/boothType/' +
-    'paymentMethod values, rejects non-positive and non-integer boothCount, and rejects any ' +
-    'termsAccepted value other than boolean true.',
+    'paymentMethod values, and rejects any termsAccepted value other than boolean true. ' +
+    '(boothCount is no longer required as of the M2 fix pass, 2026-09-01 -- see this file\'s ' +
+    'own REQUIRED_FIELDS comment.)',
 );
 process.exit(0);

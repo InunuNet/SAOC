@@ -26,6 +26,31 @@ export function VendorPaymentFieldset({ state, onFieldChange, disabled }: Vendor
     <div className="space-y-5">
       <h2 className="font-serif text-[20px] font-semibold text-ink">Payment &amp; terms</h2>
 
+      {/* M2 F14/F19 (vendor-gated-registration-flow) -- two new insurance policy-number
+          fields, alongside the unmodified M1 hasPublicLiabilityInsurance/
+          productLiabilityInsuranceStatus fields (not yet rendered by any fieldset -- pre-
+          existing gap, out of M2's scope to fix; see lib/vendor-register-form-payload.ts). */}
+      <VendorFormField
+        fieldKey="publicLiabilityInsurancePolicyNumber"
+        label="Public liability insurance policy number"
+        htmlType="text"
+        value={state.publicLiabilityInsurancePolicyNumber}
+        onChange={(v) => onFieldChange('publicLiabilityInsurancePolicyNumber', v)}
+        disabled={disabled}
+        required={false}
+        maxLength={100}
+      />
+      <VendorFormField
+        fieldKey="productLiabilityInsurancePolicyNumber"
+        label="Product liability insurance policy number"
+        htmlType="text"
+        value={state.productLiabilityInsurancePolicyNumber}
+        onChange={(v) => onFieldChange('productLiabilityInsurancePolicyNumber', v)}
+        disabled={disabled}
+        required={false}
+        maxLength={100}
+      />
+
       <VendorCheckboxGroupField
         fieldKey="paymentMethodsAccepted"
         label="On-site payment methods you will accept from customers"

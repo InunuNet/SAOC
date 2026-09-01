@@ -56,6 +56,20 @@ interface VendorReviewTableProps {
   standPaymentStatusById?: Record<string, VendorStandOrderStatus>;
 }
 
+// @qa finding, 2026-09-01 (M2 fix pass): the source doc requires exactly 3 product photos
+// (VendorRegisterSuccess.tsx's own success-page copy now says so), but nothing in the review
+// UI told the committee whether a submission's uploads were actually complete before they
+// approve it. Minimal surface: count how many of the 3 required product photo slots are
+// filled and flag anything short of 3 -- logo is optional per the source doc, so it is not
+// part of this count.
+const REQUIRED_PRODUCT_PHOTO_COUNT = 3;
+
+function countUploadedProductPhotos(row: VendorSubmission): number {
+  return [row.productPhoto1Path, row.productPhoto2Path, row.productPhoto3Path].filter(
+    (path): path is string => typeof path === 'string' && path.length > 0,
+  ).length;
+}
+
 export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: VendorReviewTableProps) {
   const [rows, setRows] = useState(submissions);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -129,6 +143,9 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
                 Stand Payment
               </th>
               <th scope="col" className={HEADER_CELL_CLASS}>
+                Marketing Uploads
+              </th>
+              <th scope="col" className={HEADER_CELL_CLASS}>
                 Actions
               </th>
             </tr>
@@ -138,6 +155,8 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
               const actions = AVAILABLE_ACTIONS[row.status] ?? [];
               const style = STATUS_STYLES[row.status] ?? 'bg-bone text-muted border border-rule';
               const standPaymentStatus = standPaymentStatusById[row.id] ?? 'not-started';
+              const uploadedProductPhotoCount = countUploadedProductPhotos(row);
+              const uploadsComplete = uploadedProductPhotoCount >= REQUIRED_PRODUCT_PHOTO_COUNT;
 
               return (
                 <tr key={row.id} className="hover:bg-parchment/60">
@@ -182,6 +201,20 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
                     >
                       {STAND_PAYMENT_LABELS[standPaymentStatus]}
                     </span>
+                  </td>
+                  <td className={BODY_CELL_CLASS}>
+                    <span
+                      className={`inline-flex items-center rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${
+                        uploadsComplete
+                          ? 'bg-primary text-ivory'
+                          : 'bg-ivory text-muted border border-rule'
+                      }`}
+                    >
+                      {uploadedProductPhotoCount}/{REQUIRED_PRODUCT_PHOTO_COUNT} photos
+                    </span>
+                    {!uploadsComplete && (
+                      <p className="mt-1 text-[11px] text-muted">Incomplete — not yet all 3 required</p>
+                    )}
                   </td>
                   <td className={BODY_CELL_CLASS}>
                     <div className="flex gap-2">

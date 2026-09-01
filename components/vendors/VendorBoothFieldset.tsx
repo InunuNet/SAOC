@@ -1,38 +1,49 @@
-import {
-  isAdjacentBoothVendorNameFieldApplicable,
-  isElectricalEquipmentContinuousDetailsFieldApplicable,
-  isElectricalLoadApplicable,
-  isWastewaterDrainageDetailsFieldApplicable,
-  isWaterIntendedUseFieldApplicable,
-  type VendorRegisterFieldChangeHandler,
-  type VendorRegisterFormState,
+import type {
+  VendorRegisterFieldChangeHandler,
+  VendorRegisterFormState,
 } from '@/lib/vendor-register-form-payload';
 import { VendorFormField } from './VendorFormField';
 import { VendorRadioGroupField } from './VendorRadioGroupField';
-import { VendorBooleanRadioField } from './VendorBooleanRadioField';
+import { VendorBoothPositionFieldset } from './VendorBoothPositionFieldset';
+import { VendorBoothUtilitiesFieldset } from './VendorBoothUtilitiesFieldset';
 
-// Lee-Ann's source form, section 3 ("Booth & logistics"), fields 17-27 -- labels verbatim
-// from contracts/golden/vendor-form-ui/field-spec.golden.json (section: "booth"). F4
-// (vendor-registration-form-rebuild) adds Section 4 (booth requirements) and Section 6
-// (electricity & water) fields -- see contract-f4.yaml.
+// Lee-Ann's 26 Aug source form, "BOOTH & LOGISTICS" section. M2 F17 (vendor-gated-registration-
+// flow) -- boothSize (fixed 3-value radio: single/double/triple, source doc's own "1 Single
+// Booth - 2.5m x 3m" / "2 Booths (Double) - 5m x 3m" / "3 Booths (Triple) - 7m x 3m") replaces
+// the deprecated-in-place free-numeric boothCount input; 7 discrete vehicle registration inputs
+// replace the single vehicleRegistrations free-text field. Both must stay in THIS file --
+// A31/A32 grep it directly, not any extracted sub-component. Everything else (booth position,
+// table/chair, power/water/gas, load slots) is extracted into VendorBoothPositionFieldset.tsx
+// and VendorBoothUtilitiesFieldset.tsx to keep this file under this project's 150-line
+// convention. No table/chair rand rate is rendered anywhere -- the source doc's Booth Fees
+// section was removed entirely; see the M2 golden README's "Table/chair rate: council-blocked".
 interface VendorBoothFieldsetProps {
   state: VendorRegisterFormState;
   onFieldChange: VendorRegisterFieldChangeHandler;
   disabled: boolean;
 }
 
-// F4 (vendor-registration-form-rebuild) -- 'standard' renamed to 'standard-in-row',
-// 'no-preference' added, matching source 4.2's 4-option list. See contract-f4.yaml.
-const BOOTH_TYPE_OPTIONS = [
-  { value: 'standard-in-row', label: 'Standard / In-row' },
-  { value: 'corner', label: 'Corner' },
-  { value: 'end-of-row', label: 'End-of-row' },
-  { value: 'no-preference', label: 'No preference' },
+const BOOTH_SIZE_OPTIONS = [
+  { value: 'single', label: '1 Single Booth — 2.5m x 3m' },
+  { value: 'double', label: '2 Booths (Double) — 5m x 3m' },
+  { value: 'triple', label: '3 Booths (Triple) — 7m x 3m' },
 ];
 
-const YES_NO_OPTIONS = [
-  { value: 'true', label: 'Yes' },
-  { value: 'false', label: 'No' },
+// M2 F14/F17 -- 7 discrete vehicle registration fields, replacing the single
+// vehicleRegistrations free-text field (deprecated in place). Data-driven so the fieldKeys
+// stay literal string values (grep-visible for A32) while keeping this file under this
+// project's 150-line convention.
+const VEHICLE_REGISTRATION_FIELDS: Array<{
+  key: keyof VendorRegisterFormState;
+  label: string;
+}> = [
+  { key: 'carRegistrationNumber', label: 'Car registration number' },
+  { key: 'suvBakkieRegistrationNumber', label: 'SUV / bakkie registration number' },
+  { key: 'panelVanRegistrationNumber', label: 'Panel van registration number' },
+  { key: 'deliveryVanRegistrationNumber', label: 'Delivery van registration number' },
+  { key: 'truckRegistrationNumber', label: 'Truck registration number' },
+  { key: 'trailerRegistrationNumber', label: 'Trailer registration number' },
+  { key: 'otherVehicleRegistrationNumber', label: 'Other vehicle registration number' },
 ];
 
 export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBoothFieldsetProps) {
@@ -40,223 +51,47 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
     <div className="space-y-5">
       <h2 className="font-serif text-[20px] font-semibold text-ink">Booth &amp; logistics</h2>
 
-      <VendorFormField
-        fieldKey="boothCount"
-        label="Number of booths required"
-        htmlType="number"
-        min={1}
-        step={1}
-        value={state.boothCount}
-        onChange={(v) => onFieldChange('boothCount', v)}
-        disabled={disabled}
-        required
-      />
       <VendorRadioGroupField
-        fieldKey="boothType"
-        label="Booth size / type preference"
-        options={BOOTH_TYPE_OPTIONS}
-        value={state.boothType}
-        onChange={(v) => onFieldChange('boothType', v)}
-        disabled={disabled}
-        required={false}
-      />
-      <VendorFormField
-        fieldKey="boothPositionRequest"
-        label="Booth position request"
-        htmlType="text"
-        value={state.boothPositionRequest}
-        onChange={(v) => onFieldChange('boothPositionRequest', v)}
-        disabled={disabled}
-        required={false}
-        maxLength={300}
-      />
-      <VendorBooleanRadioField
-        fieldKey="adjacentBoothRequested"
-        label="Adjacent booth requested?"
-        options={YES_NO_OPTIONS}
-        value={state.adjacentBoothRequested}
-        onChange={(v) => onFieldChange('adjacentBoothRequested', v)}
-        disabled={disabled}
-        required={false}
-      />
-      {isAdjacentBoothVendorNameFieldApplicable(state) ? (
-        <VendorFormField
-          fieldKey="adjacentBoothVendorName"
-          label="Adjacent vendor's business name"
-          htmlType="text"
-          value={state.adjacentBoothVendorName}
-          onChange={(v) => onFieldChange('adjacentBoothVendorName', v)}
-          disabled={disabled}
-          required={false}
-          maxLength={200}
-        />
-      ) : null}
-      <VendorFormField
-        fieldKey="specialDisplayRequirements"
-        label="Special display requirements"
-        htmlType="text"
-        value={state.specialDisplayRequirements}
-        onChange={(v) => onFieldChange('specialDisplayRequirements', v)}
-        disabled={disabled}
-        required={false}
-        maxLength={1000}
-      />
-      <VendorFormField
-        fieldKey="tableCount"
-        label="Number of tables required"
-        htmlType="number"
-        min={0}
-        step={1}
-        value={state.tableCount}
-        onChange={(v) => onFieldChange('tableCount', v)}
-        disabled={disabled}
-        required={false}
-      />
-      <VendorFormField
-        fieldKey="chairCount"
-        label="Number of chairs required"
-        htmlType="number"
-        min={0}
-        step={1}
-        value={state.chairCount}
-        onChange={(v) => onFieldChange('chairCount', v)}
-        disabled={disabled}
-        required={false}
-      />
-      <VendorBooleanRadioField
-        fieldKey="powerRequired"
-        label="Power required?"
-        options={YES_NO_OPTIONS}
-        value={state.powerRequired}
-        onChange={(v) => onFieldChange('powerRequired', v)}
+        fieldKey="boothSize"
+        label="Booth size required"
+        options={BOOTH_SIZE_OPTIONS}
+        value={state.boothSize}
+        onChange={(v) => onFieldChange('boothSize', v)}
         disabled={disabled}
         required
       />
-      {isElectricalLoadApplicable(state) ? (
+
+      <VendorBoothPositionFieldset state={state} onFieldChange={onFieldChange} disabled={disabled} />
+      <VendorBoothUtilitiesFieldset state={state} onFieldChange={onFieldChange} disabled={disabled} />
+
+      {/* M2 F14/F17 -- 7 discrete vehicle registration inputs, replacing the single
+          vehicleRegistrations free-text field (deprecated in place). Must stay inline in this
+          file -- A32 greps VendorBoothFieldset.tsx directly. */}
+      {VEHICLE_REGISTRATION_FIELDS.map(({ key, label }) => (
         <VendorFormField
-          fieldKey="electricalLoad"
-          label="Electrical load required (watts/amps)"
+          key={key}
+          fieldKey={key}
+          label={label}
           htmlType="text"
-          value={state.electricalLoad}
-          onChange={(v) => onFieldChange('electricalLoad', v)}
+          value={state[key] as string}
+          onChange={(v) => onFieldChange(key, v)}
           disabled={disabled}
           required={false}
-          placeholder="e.g. 15A / 3.5kW"
-          maxLength={100}
+          placeholder="e.g. CA 123-456"
+          maxLength={30}
         />
-      ) : null}
-      {isElectricalLoadApplicable(state) ? (
-        <VendorFormField
-          fieldKey="electricalOutletsRequired"
-          label="Number of electrical outlets required"
-          htmlType="number"
-          min={0}
-          step={1}
-          value={state.electricalOutletsRequired}
-          onChange={(v) => onFieldChange('electricalOutletsRequired', v)}
-          disabled={disabled}
-          required={false}
-        />
-      ) : null}
-      {isElectricalLoadApplicable(state) ? (
-        <VendorFormField
-          fieldKey="electricalEquipmentList"
-          label="List of electrical equipment"
-          htmlType="text"
-          value={state.electricalEquipmentList}
-          onChange={(v) => onFieldChange('electricalEquipmentList', v)}
-          disabled={disabled}
-          required={false}
-          maxLength={1000}
-        />
-      ) : null}
-      {isElectricalLoadApplicable(state) ? (
-        <VendorBooleanRadioField
-          fieldKey="electricalEquipmentContinuousOperation"
-          label="Does equipment run continuously?"
-          options={YES_NO_OPTIONS}
-          value={state.electricalEquipmentContinuousOperation}
-          onChange={(v) => onFieldChange('electricalEquipmentContinuousOperation', v)}
-          disabled={disabled}
-          required={false}
-        />
-      ) : null}
-      {isElectricalEquipmentContinuousDetailsFieldApplicable(state) ? (
-        <VendorFormField
-          fieldKey="electricalEquipmentContinuousDetails"
-          label="Continuous operation details"
-          htmlType="text"
-          value={state.electricalEquipmentContinuousDetails}
-          onChange={(v) => onFieldChange('electricalEquipmentContinuousDetails', v)}
-          disabled={disabled}
-          required={false}
-          maxLength={500}
-        />
-      ) : null}
-      <VendorBooleanRadioField
-        fieldKey="waterRequired"
-        label="Water access required?"
-        options={YES_NO_OPTIONS}
-        value={state.waterRequired}
-        onChange={(v) => onFieldChange('waterRequired', v)}
-        disabled={disabled}
-        required={false}
-      />
-      {isWaterIntendedUseFieldApplicable(state) ? (
-        <VendorFormField
-          fieldKey="waterIntendedUse"
-          label="Intended use of water"
-          htmlType="text"
-          value={state.waterIntendedUse}
-          onChange={(v) => onFieldChange('waterIntendedUse', v)}
-          disabled={disabled}
-          required={false}
-          maxLength={300}
-        />
-      ) : null}
-      <VendorBooleanRadioField
-        fieldKey="wastewaterDrainageRequired"
-        label="Wastewater / drainage requirement?"
-        options={YES_NO_OPTIONS}
-        value={state.wastewaterDrainageRequired}
-        onChange={(v) => onFieldChange('wastewaterDrainageRequired', v)}
-        disabled={disabled}
-        required={false}
-      />
-      {isWastewaterDrainageDetailsFieldApplicable(state) ? (
-        <VendorFormField
-          fieldKey="wastewaterDrainageDetails"
-          label="Wastewater / drainage details"
-          htmlType="text"
-          value={state.wastewaterDrainageDetails}
-          onChange={(v) => onFieldChange('wastewaterDrainageDetails', v)}
-          disabled={disabled}
-          required={false}
-          maxLength={500}
-        />
-      ) : null}
+      ))}
       <VendorFormField
-        fieldKey="staffPerDay"
-        label="Number of staff attending per day"
-        htmlType="number"
-        min={0}
-        step={1}
-        value={state.staffPerDay}
-        onChange={(v) => onFieldChange('staffPerDay', v)}
-        disabled={disabled}
-        required={false}
-      />
-      <VendorFormField
-        fieldKey="vehicleRegistrations"
-        label="Vehicle registration number(s)"
+        fieldKey="otherVehicleDescription"
+        label="Other vehicle description"
         htmlType="text"
-        value={state.vehicleRegistrations}
-        onChange={(v) => onFieldChange('vehicleRegistrations', v)}
+        value={state.otherVehicleDescription}
+        onChange={(v) => onFieldChange('otherVehicleDescription', v)}
         disabled={disabled}
         required={false}
-        placeholder="e.g. CA 123-456"
-        maxLength={150}
+        maxLength={200}
       />
+
       <VendorFormField
         fieldKey="loadInSlot"
         label="Preferred load-in time slot"

@@ -48,6 +48,7 @@ const rawInput = {
   emergencyContactCellPhone: '0837654321',
   vendorCategory: ['orchids'],
   boothCount: 1,
+  boothSize: 'single', // M2 fix pass, 2026-09-01: boothSize is now required (lib/vendor-submissions.ts)
   powerRequired: false,
   termsAccepted: true,
   // The field under test: an unbounded, unvalidated attacker-supplied string that a direct

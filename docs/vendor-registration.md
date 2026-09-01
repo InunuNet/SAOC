@@ -1,6 +1,8 @@
-# Vendor Registration — Features F1-F5
+# Vendor Registration — Features F1-F5 (Legacy; See M1-M2 Updates Below)
 
-The vendor-registration milestone implements the public-facing vendor registration system for the 2027 SAOC National Show. This document covers F1-F5, all gated and QA-passed.
+**Status:** F1-F5 gated and QA-passed. **Updated by M2 (features F13-F21)** which added ~60 new fields to the full registration form. This page documents the initial F1-F5 system; read [`docs/vendor-gated-registration-flow.md`](vendor-gated-registration-flow.md) for the complete current architecture including M1's application/token gate (F1-F8) and M2's field-set corrections (F13-F21).
+
+The vendor-registration milestone implements the public-facing vendor registration system for the 2027 SAOC National Show. This document covers F1-F5 baseline features, all gated and QA-passed.
 
 ## Naming convention: Internal `vendor*` vs. public "Exhibitors" copy
 
