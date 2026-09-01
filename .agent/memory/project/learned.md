@@ -1,3 +1,64 @@
+## Absence-only assertions let "correctly refused to invent X" become "shipped nothing where X was required" (2026-09-01, vendor-gated-registration-flow M2 F14-F21)
+
+Phase 5 went 11/11 green, then @qa found three real defects, all the same shape: the check
+passed, the property it existed to protect did not hold. A31 proved no rand figure was
+*invented* for the tables/chairs charge (correct — the rate is genuinely council-blocked), but
+never proved the required "a charge applies, rate to be confirmed by the Show Organising
+Committee" disclosure was actually *present* on the rendered fieldset — so refusing to invent a
+blocked figure quietly degraded into disclosing nothing, which misleads the vendor worse than
+the source document. A37 proved there was no second *editable* date input, so a read-only field
+showing `new Date()` (the browser's clock) labelled "date of submission" on the still-unsubmitted
+form passed clean. A third property — exactly 3 photos — had no assertion at all in either
+direction. **Generalisable rule: an assertion that proves an ABSENCE (no invented value, no
+duplicate input) needs a paired assertion proving the corresponding PRESENCE (the required
+disclosure text render, the field is system-owned not client-clock-derived, the count is
+enforced). Write both sides or the check only catches half the failure mode.** Same family as
+`feedback_contract_scoring_principles` (silence isn't protection) and the weak-assertion class in
+the entry below.
+
+## Testing the pure handler doesn't prove the route — request parsing and size validation can happen entirely outside the tested function (2026-09-01, vendor-gated-registration-flow M2)
+
+Codex GPT-5.5 found two defects neither Claude's @architect, @dev, nor @qa caught, because every
+check in this area targeted the extracted pure handler function, not the actual Next.js route:
+(1) `await request.json()` ran, unrate-limited, before the rate-limit check in both new M2
+routes — A34 tests the handler in isolation, so it sees the rate limit "shield" the handler call
+and passes, while the real unauthenticated endpoint parses the full body regardless of limit
+state; (2) the upload size cap validated a caller-supplied `sizeBytes` field instead of the
+actual decoded base64 payload length, so a forged small `sizeBytes` bypassed the cap entirely on
+a public unauthenticated route. **Both holes were also live in F7's already-shipped
+proof-of-payment route, which the M2 route was cloned from** — the pattern was "proven" by its
+own contract, which had the identical pure-handler-only blind spot, so cloning it faithfully
+cloned both security holes into a second route. Fixing the size cap required correcting
+`sizeBytes` in five existing F7/F18 fixtures that had silently carried values contradicting their
+own base64 payloads — meaningless on that dimension until something finally checked the
+relationship between the two. **Lesson: any contract check claiming to prove a route-level
+property (rate limiting, size caps, request-shape validation) must exercise the actual route
+handler via `contracts/harness/route-runner/` (see the entry below on that harness), not the
+pure function extracted from it — a pure-function-only check can be green while the same defect
+sits live in the real endpoint, and can propagate itself into every route cloned from that
+pattern.**
+
+## Contract checks rot silently on renames nobody propagates — caught twice in one session (2026-09-01, vendor-gated-registration-flow M2)
+
+Two pre-existing checks were found stale, unrelated to any change made this session:
+`check-required-field-rejection.mjs` (vendor-f4-submissions-model) still asserted on
+`boothCount` after it was deliberately made optional under a documented deprecate-in-place
+decision — the check was wrong, not the app. `check-regulatory-fields-unvalidated.mjs`
+similarly asserted against category values that had since been renamed. Both were caught only
+because this session's work happened to touch adjacent code, not by any scheduled audit. This is
+the second time in this project a contract check has been found silently rotted from an
+upstream rename with no process catching it — the backlog's existing contract-decay audit item
+should move up in priority rather than continuing to wait for the next accidental discovery.
+
+## An orchestrator staging slip: `git add -A` mid-dispatch can sweep a subagent's in-flight edits into an unrelated commit (2026-09-01)
+
+While a `@dev` dispatch was still mid-edit on the M2 implementation, the orchestrator ran
+`git add -A` to commit an unrelated scratch/backlog change and staged @dev's in-progress files
+along with it. Caught before the commit landed and split correctly, so no harm resulted, but
+it's a real near-miss worth naming: **when any subagent has an active dispatch that may still be
+writing files, stage explicitly by path (`git add <specific files>`) rather than `-A`/`.`, even
+for a commit that is conceptually unrelated to that agent's work.**
+
 ## Orchestrator direct-edit near-miss recurrence — caught and self-corrected mid-mission (2026-08-25)
 
 `vendor-form-maxlength-and-phone-pattern` F1: the orchestrator (session `main`) made ONE direct

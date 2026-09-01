@@ -458,34 +458,26 @@ flat-over-nested-submenu pattern.
   secret-corruption defect class: an empty allowlist fails closed for everyone and is
   indistinguishable from a working gate from outside. Assert both that everyone is refused and that
   the `parsed length: 0` log line appears.
-- [ ] **[P2] No claim-size guard on the grant path.** Firebase caps custom claims at ~1000 bytes;
   ~24 per-show `manager` grants exceed it. The operator gets a raw `auth/claims-too-large` with no
   advance warning.
-- [ ] **[P2] `/admin/login` has no path for `auth/admin-restricted-operation`**, which self-signup
   refusal now produces.
-- [ ] **[P2] No test admin credentials exist for automated visual QA.** `/admin` and `/admin/door`
   are behind Firebase Auth, so no browser agent can verify them render — only Brad can see these
   pages. Candidates: a narrowly-scoped rotatable test account, or a CI-only gate-bypass token never
   valid for production traffic.
-- [ ] **[P3] A throwing `lookupShowWindow` closure propagates out of `hasCapability()`** rather
   than returning false (`lib/admin-auth.ts:170,199` — no try/catch). Not exploitable: the shipped
   `resolveShowWindowLookup` catches internally and can never throw. Any future route that
   hand-rolls a `ShowWindowLookup` must catch internally or wrap at the boundary.
-- [ ] **[P3, convention] Every capability-gated route wires `ShowWindowLookup` itself** —
   `hasCapability()`'s default is `() => null`. New routes must call `resolveShowWindowLookup`, pass
   `{ now, lookupShowWindow }`, and land with their own wiring check. Not a task; the convention.
   Separately: `checkin`, `tickets` and `export-csv` admin routes call no capability check at all —
   the checkin one is the documented deferral above; the other two are pre-existing.
-- [ ] **[P3] OAuth consent screen shows `saoc-webapp.firebaseapp.com`** instead of the council's
   name. Needs a custom `authDomain`.
-- [ ] **[P3, untested] Concurrent grant/revoke race on the same identity** — low likelihood for a
   manual single-operator CLI.
 
 ---
 
 ## Accessibility & UI defects
 
-- [ ] **[P3] `CartDayPicker`'s bordered-callout error-contrast fix is verified by source-read
   only, not live render.** `form-error-contrast-remaining-components` F1 (2026-08-24/25) applied the
   fix, but its error branch is unreachable today only because no current Sanity conference/workshop
   ticket type has `requiresDaySelection: true` set — a content fact, not a code guard.
@@ -493,7 +485,6 @@ flat-over-nested-submenu pattern.
   render `CartDayPicker` if an editor sets that flag on a multi-item category product. Recommend
   either a regression test forcing this path, or explicit documentation of the constraint, so it
   doesn't silently break if triggered later. Agent-actionable whenever picked up.
-- [ ] **[P2, HELD for Brad's design call] WCAG accent-token contrast audit.** 30-row audit and
   contract identify real accent-contrast failures on live public pages. Remedy fully specified in
   `contracts/golden/wcag-accent-contrast/remedy.md`, deliberately not applied — it is a design-token
   decision. This is a live accessibility failure on public pages and should not sit indefinitely.
@@ -510,7 +501,6 @@ flat-over-nested-submenu pattern.
   field. A check suite covering all 4 historical Codex findings was added under
   `contracts/checks/vendor-boothcount-guarded-parse-f1/`. Gate 11/11 PASS, QA PASS (independently
   re-verified all 4 findings), Codex GPT-5.5 PASS. Docs: `docs/vendor-boothcount-guarded-parse.md`.
-- [ ] **[P2] Vendor registration rate-limits after ~4 attempts for 45 minutes.** A vendor fumbling
   the form while genuinely trying to fix it gets locked out. (The human-readable countdown itself
   was fixed in `f7c5f6f`; the 45-minute lockout on a form this error-prone is the remaining issue.)
   Two BrowserAgent tests were blocked by this and remain unrun: the exact error-banner text repro,
@@ -551,7 +541,6 @@ flat-over-nested-submenu pattern.
   `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2`
   token set as the stepper buttons. Gate 4/4 pass, QA PASS, Codex GPT-5.5 PASS. See
   `docs/tickettypecard-focus-ring.md`.
-- [ ] **[P3] TicketTypeCard sold-out cards use `opacity` alone, no `aria-disabled`/state token.**
   Flagged as non-blocking during the F1 focus-ring QA pass, not a real defect — the inert
   `opacity`/`soldOut` styling works but doesn't carry a semantic disabled state. Low-priority
   forward-looking cleanup, not urgent.
@@ -560,7 +549,6 @@ flat-over-nested-submenu pattern.
 
 ## Vendor registration
 
-- [ ] **[P1] F7's registration-token gate (vendor-gated-registration-flow, 2026-08-31) blocks
   ~20 pre-existing Playwright checks across four already-shipped, closed mission contracts from
   ever reaching `/national-show/vendors/register` again.** Every one of these checks does a bare
   `page.goto('${BASE_URL}/national-show/vendors/register')` with no `?token=`; F7 now renders only
@@ -597,7 +585,6 @@ flat-over-nested-submenu pattern.
   verify-code route first to mint the session cookie and inject it, then `page.goto` the register
   URL) before it can be implemented — do not implement the token-URL version literally described
   above, it targets a mechanism this project no longer has.
-- [ ] **[P2] Permit fields ask for a number but should collect the actual document.** Brad:
   "when we ask for a document it needs to actually upload a document, save it and email it as an
   attachment." Affects `phytosanitaryPermitNumber`, `citesPermitNumber`,
   `foodHandlingCertificateNumber`. F7's proof-of-payment path is the pattern to extend (public
@@ -607,11 +594,9 @@ flat-over-nested-submenu pattern.
   design questions: does upload replace the number field or sit alongside it; who receives the
   attachment; does it apply to all three fields. F9's "collected, not verified" stance should very
   likely carry forward regardless.
-- [ ] **[P3] CIPC and VAT numbers accept any data.** Both free-text with zero format validation.
   A real fix validates against SA's actual CIPC format and the 10-digit VAT format (starts with 4)
   — but confirm the CIPC format from an authoritative source; do not guess a registration-number
   regex.
-- [ ] **[P3, informational] No CAPTCHA on the vendor form.** Mitigation is a honeypot plus per-IP
   rate limiting. Reasonable for low-volume B2B registration, not CAPTCHA-strength against a
   determined bot. Answered for Brad; no fix implied unless he asks.
 
@@ -619,34 +604,27 @@ flat-over-nested-submenu pattern.
 
 ## CMS / content
 
-- [ ] **[P1, verify — may be resolved] The CMS→site loop may not invalidate at the CDN.** Logged
   2026-07-30: Studio publish wrote to the dataset and `POST /api/revalidate` returned 200, but the
   App Hosting CDN kept serving its cached object (`x-nextjs-cache: STALE` alongside
   `cdn-cache-status: hit`, `s-maxage=31536000`, `age` climbing). Lead, unconfirmed: `x-fah-adapter:
   nextjs-14.0.21` reported against a Next 16 app. **Content edits have since propagated and been
   verified live over HTTP more than once**, so this may be resolved — confirm before scoping work,
   and do not assume the version gap is the cause.
-- [ ] **[P1] `/events/[slug]` has an independent propagation gap.** It tags its `sanityFetch` calls
   `['events']` only — no `'sanity'` tag, and `'events'` does not match the real document `_type`
   (`societyEvent`) a webhook payload sends. Event detail pages likely will not revalidate even once
   the CDN question is settled.
-- [ ] **[P2] `scripts/seed-page-singletons.ts` still uses destructive `createOrReplace`**
   (7 occurrences). Seeds must be create-if-absent; a re-run today silently overwrites edited
   singletons.
-- [ ] **[P2] `scripts/seed-show-visitor-info.ts` still contains the CTICC copy.** Inert today
   (every write is `createIfNotExists`) but it is a stale source of truth if the dataset is ever
   rebuilt from empty.
-- [ ] **[P2] Studio has no guard against a second active show.** The `active` checkbox on `show`
   has no fieldset, `hidden` or `readOnly` condition, and `structure.ts` lists `show` as a plain
   type list. If an editor ticks Active on a past archive doc, `resolveActiveShow()` correctly fails
   closed to `null` — and `ticketTypeMatchesActiveShow()` then rejects EVERY ticket type for EVERY
   buyer with a generic 500. A sitewide sales outage from one mis-click, no warning, no alerting.
   Lee-Ann is the person who would hit this. Needs its own behavioural assertions — a Studio-side
   guard, not just the code-side fail-close.
-- [ ] **[P2] `show-19-2027`'s edition/dates/venue are a COPY of the `nationalShow` singleton**, not
   a reference. They match exactly today, verified — but a future edit to either silently diverges
   in front of buyers. Needs one document to be authoritative.
-- [ ] **[P2] Make show identity edition-scoped so a venue/date change is ONE edit.** Brad: "after
   three years they'll do a new show with a new venue — are we going to recreate all of this every
   time?" The venue fact lives in four dataset places plus four repo files; they agree only because
   they were written by hand in one sitting. What good looks like: one venue object as the single
@@ -655,46 +633,34 @@ flat-over-nested-submenu pattern.
   CTICC bug — the current `confirmations.*` flags rely on a human remembering); and a documented
   show-rollover procedure that is a content operation, never a code change. Sequence after the
   design-alignment mission, which may move these surfaces anyway.
-- [ ] **[P2] Unread schema fields teach editors that publishing does nothing.** `aboutPage.title`
   (fetched, never rendered), `aboutPage.boardIntroText`, `judgingPage.stats` (hero headings are
   hardcoded JSX), `contactPage.formRecipients` (consumed by nothing), and `show.awards` (lost its
   rendered surface in the archive merge — no live effect today since all values are null). Delete
   or wire; do not leave as-is.
-- [ ] **[P2] `membersPage` and `judge` schemas are registered with no consumer.** `membersPage` has
   no query and no `/members` route; `judge` has zero documents. Both need the same scope decision:
   build, or remove so they stop misleading editors. Related: the real Members Portal is a separate
   future build, and the spec leaves open how membership status is verified against SAOC's actual
   records — that needs a client answer first.
-- [ ] **[P2] Populate `hostSociety` on the 18 `societyEvent` documents.** 0 of 18 are set, so the
   home page's Upcoming Events strip always renders a blank host-society column. Content-entry task
   needing domain knowledge; the code side is correct.
-- [ ] **[P2] `societyEvent` slugs are empty** (confirmed on "Cape Orchid Society Autumn Show"),
   which is the direct cause of `/events/[slug]` being unverifiable in the M2 regression pass.
   Studio has a per-document "Generate" button. Other spot-checked gaps: `society` description/logo/
   website, `boardMember` email/photo, `sponsor` tier/logo/website/description, `show` date.
-- [ ] **[P2] `docs/secretary-cms-guide.md` §7 and §12 instruct the secretary to open singleton
   documents that may not exist** ("there is one document — click it to open"). Either the documents
   are seeded or the guide needs a first-time branch. `[verify]` — seeding may have happened since.
-- [ ] **[P2] No SAOC-side notification for contact-form enquiries, and no admin UI lists them.**
   Submissions land in `contactSubmissions` and nothing tells anyone; they are visible only in the
   Firebase console. Real gap before launch — worth a small authenticated list view, same pattern as
   the door scanner.
-- [ ] **[P2] Secretary CMS controls, phase 1.** Scope-narrowed deliberately: hero headings/lede on
   home/about/national-show, upcoming show details, a news block, contact details. Do NOT attempt
   full-site editability in one mission. Seed must pre-populate every new field from current
   hardcoded values so she starts with real content, not blank forms.
-- [ ] **[P3] `ticketType.show` reference picker is unfiltered** — an editor can point a ticket type
   at a 2012 archived show. Checkout fails closed, so this is wasted-editor-effort only. Add an
   `options.filter` scoping to `active == true`.
-- [ ] **[P3] Verifying the Sanity webhook end to end is impossible with the dataset-scoped
   `SANITY_API_TOKEN`** — reading webhook config needs `sanity.project.webhooks/read` (401
   confirmed). Contracts assert the direct revalidate call instead, which is a weaker claim.
-- [ ] **[P3] `@sanity/image-url` deprecated default export** fires a warning on every home-page
   render in dev. Cosmetic console noise.
-- [ ] **[P2] Sanity v6 major upgrade** — `sanity@5.31.1 → 6.3.0`, likely `next-sanity@11 → 13`.
   Requires a research pass first: v6 changelog, next-sanity v13 breaking changes, App Hosting SSR
   compatibility, React 19 peer story, schema/Studio API changes. Do NOT upgrade blind.
-- [ ] **[P3] Auto-refresh `llms.txt` / `llms-full.txt`.** `scripts/refresh-llms.ts` is built but
   Alembic blocks `localhost` by design, so it only works against the live external URL — usable
   post-cutover only, and never in CI. `public/llms.txt` stays hand-authored.
 
@@ -702,7 +668,6 @@ flat-over-nested-submenu pattern.
 
 ## Contract & test infrastructure
 
-- [ ] **[P1] `active.json`'s mission checkpoint is stale and no longer matches real progress —
   the `vendor-gated-registration-flow` work has no mission `.md` file at all.** As of 2026-08-31,
   `.agent/memory/project/missions/active.json` still points at
   `2026-08-25-vendor-registration-form-rebuild.md` checkpointed at `M2/F3`. But three real commits
@@ -721,7 +686,6 @@ flat-over-nested-submenu pattern.
   old mission file explicitly rather than leaving it silently stale. Do not guess at the milestone
   numbering — read the four commits' full messages first, they document the M1/M2/M4 structure in
   detail.
-- [ ] **[P1] Five stale sha256 pins across two files — same defect, two instances.** In both cases
   a pinned file changed for a reviewed, deliberate reason and the pin was never re-cut, so the
   assertion went quietly red. **The current content IS the intended baseline in both cases** — this
   is drift to catch up with, not a regression to revert. Each needs a re-pin ceremony: @architect
@@ -739,13 +703,11 @@ flat-over-nested-submenu pattern.
      "fix(tickets): write expiresAt onto the position, releasing abandoned seats" — the reviewed
      fix to the live capacity bug. Needs its own catch-up ceremony; explicitly **NOT** folded into
      `payment-provider-seam` F2, which does not touch this file.
-- [ ] **[P1] Re-pin discipline has no enforcement at all — five silently-red pins found in one
   evening.** Nothing fails when a pinned file changes legitimately and the pin is not updated: the
   assertion goes quietly red in a place nobody routinely looks, and the contract corpus decays
   while still reporting green overall. All five were found by an architect who happened to be
   reading, which is luck, not a control. @architect is drafting a standing drift-detection check
   across ALL contracts. **This is worth more than any individual re-pin.**
-- [ ] **[P1] `contracts/contract-ticketing-checkout-orders.yaml` A4/A5 are stale — checkout no
   longer calls `writeReservationPair()` directly.** Both assert a *structural, source-level* shape
   ("`writeReservationPair()` called exactly once in `app/api/tickets/checkout/route.ts`, inside
   the transaction, after the idempotency guard"; "a `RECOVERY_TOKEN_SECRET` fail-closed guard sits
@@ -759,19 +721,22 @@ flat-over-nested-submenu pattern.
   write-inside-transaction, fail-closed missing-secret guard) against `reserveTicket()`'s current
   shape, not the pre-refactor one; not fixed here — out of scope for `ozow-payment-provider`,
   which never touched this call site.
-- [ ] **[P2] The `vendor-f3-showcase-page` golden has never been evaluated by any assertion.** It
   is correctly formatted and currently accurate — @architect's initial "drifted" report was its own
   false negative, self-corrected. The defect is that no assertion in any contract runs it: a green
   pin that has never been evaluated. Different problem from a decayed one, and **not fixable by
   drift detection** — the hash matches; nothing ever checks it.
-- [ ] **[P1] PR the `contract.py` timeout-enforcement fix upstream BEFORE the next
   `make update-template`.** The fix for dropped `timeout_seconds` copying is shipped locally
   (8/8 green) but `make update-template` will silently revert it and reopen the fixture-leak
   vulnerability with no warning. Coordinates: `InunuNet/Athanor` → `execution/contract.py`, 4 edits
   (26 ins / 5 del). Detail: `docs/contract-timeout-enforcement-harness.md`.
-- [ ] **[P1] Audit remaining contracts for the weak-assertion defect class** — an assertion
   satisfiable by something that is not the real property. The 2026-08-16 audit cleared four
-  contracts and found no live vulnerability; the sweep is not exhaustive.
+  contracts and found no live vulnerability; the sweep is not exhaustive. **2026-09-01, M2
+  F14-F21: two more silently-rotted checks found by accident (not by any scheduled audit) —
+  `vendor-f4-submissions-model/check-required-field-rejection.mjs` still asserted on `boothCount`
+  after it was deliberately made optional, and `check-regulatory-fields-unvalidated.mjs` asserted
+  against category values since renamed. Second time in one project this class of decay has been
+  found by chance rather than by process — this audit deserves to actually get scheduled, not
+  just stay queued.**
   longer has.**~~ ✅ **Retired 2026-08-20 by `payment-provider-seam` F2** — removed from
   `check-itn-behaviour-unchanged.sh` (suite hard-counted `EXPECTED_SUITE_SIZE=3` so a silent
   re-add goes red). Note: the original "proven pre-existing via differential" method was itself
@@ -780,56 +745,44 @@ flat-over-nested-submenu pattern.
   rests on the deterministic probe (pre-rewire route + bogus IP + settle time → `status='paid'`
   anyway) and on `8476c56` predating the check's last touch. Four downstream contracts still
   reference the removed file's prose — repointed, not orphaned. See `learned.md`.
-- [ ] **[P1] `payfast-m1` A1 and A6 cannot pass as written.** A1 forbids `stripePaymentIntentId`
   anywhere under `docs/` and trips on the sentence explaining the field was removed (red since
   `e7de1e0`). A6 expects `m_payment_id` literally inside a route that now correctly delegates to
   `lib/checkin.ts`. Retire-or-rewrite with the `exit 77` / `SUPERSEDED:` pattern used on D5/D6.
-- [ ] **[P2] Two known weak assertions, unfixed.** `contract-ticketing-m1-m2.yaml` A20 (price-source
   assertion satisfiable without the real property) and `contract-ticketing-hardening.yaml` A16
   (secret-leak regex evaded by indirection or multiline formatting).
-- [ ] **[P2] `A-STRUCT-01`'s self-signup structural check is satisfied by a comment.** It greps for
   the literal `functions.auth.user().onCreate(` on one physical line; the real chain is split across
   lines, so only the JSDoc comment matches. QA proved it by swapping the whole trigger for a no-op
   HTTP handler — all four structural checks still passed. Not exploitable today (the behavioural
   checks genuinely exercise the emulator) but a future regression changing the trigger type with the
   comment intact passes silently. Strip comments before matching, or match the real multi-line shape.
-- [ ] **[P2] `A-STRUCT-01`'s Apple `addScope('email')` check is grep-based and provably defeatable**
   — it passes against a commented-out call and against an `addScope` on a dead branch. If Apple
   sign-in ever stops receiving emails, suspect this check first. A real fix needs AST parsing.
-- [ ] **[P2] F8 check A4 is blind to null.** It greps for `undefined` only, missing both
   bare-JSX interpolation of undefined (renders blank) and template-literal coercion of null
   (renders "null" — that exact regression shipped in `bcbbc03`, fixed in `cd0308d`). Widen to
   `null` plus a bare-`{boothNumber}`-as-JSX-child guard.
-- [ ] **[P2] `A-GRANT-03`'s stdout-grep assertion proves nothing** — rewrite to observe the Admin
   SDK call rather than grep stdout for "reset link".
-- [ ] **[P2] Retrofit JSX-interpolation rigour onto pre-existing contracts.** Assertions that check
   "this Sanity field is rendered" via a plain substring grep are false greens — they pass a field
   that appears only in a fetch, destructure or type annotation. That is precisely the
   `aboutPage.title` bug. The correct check requires the field inside a real JSX interpolation,
   excluding `{/* comment */}`. Also assert no reversed fallback precedence
   (`'literal' ?? data.field`), which lets a hardcoded string mask a published edit. Reference:
   A48/A49/A50/A50a in `contract-ticketing-m1-m2.yaml`.
-- [ ] **[P2] The shared contract test-server has no lock or refcount.**
   `contracts/checks/admin-auth-hardening/server-ctl.sh` claims lock/refcount handling in its
   comments and implements none — one fixed PIDFILE on port 3400, so one contract's `stop()` tears
   down a server another contract is still using. Causes intermittent failures specifically in busy
   multi-agent sessions.
-- [ ] **[P2, process trap] Running the door-test-qr-seeder gate DESTROYS live human test
   fixtures.** A4 deletes the three seeded `DOOR-QR-*` docs to prove teardown is scoped, and never
   re-seeds — on 2026-08-17 that cost a live testing session and read as a scanner failure. A4 should
   re-seed after asserting, or the gate should print a loud warning. A check's side effects on shared
   live state are part of its contract.
-- [ ] **[P2] Contract checks structurally cannot detect missing DEPLOYED configuration.** The gate
   runs against a local server reading `.env.local`, so it cannot catch a secret declared locally and
   missing from `apphosting.yaml`/Secret Manager (the `ADMIN_EMAIL_ALLOWLIST` incident). Wants a
   post-deploy smoke assertion probing the live URL for the specific failure mode.
-- [ ] **[P2, candidate contract] Secret verification guard.** After any
   `firebase apphosting:secrets:set`, read the secret back and assert SHA-256 digest match, exact
   byte length, and no leading/trailing whitespace. Four payload-corruption incidents in 16 weeks
   reached production undetected because no post-write verification ran. `gcloud` is NOT needed —
   the Firebase CLI's cached OAuth token has `cloud-platform` scope. Detail:
   `docs/secret-corruption-incidents.md`.
-- [ ] **[P2] Two live contract locations cause duplicate work.** Contracts live both in `contracts/`
   (git-tracked, legacy) and `.agent/memory/project/specs/<slug>/` (recent missions). An untracked
   contract for the boothCount bug was independently redesigned from scratch by a later architect —
   two designs, same destination, divergent APIs — and nothing caught it: the gate only runs the
@@ -837,61 +790,47 @@ flat-over-nested-submenu pattern.
   diff. Decide on ONE canonical location, or document which is for what and have @architect check
   both. At minimum, contracts must be committed when written — an untracked contract is invisible to
   every tool and unrecoverable if deleted.
-- [ ] **[P2] `contract.py` timeout validation has three unguarded ceilings** (all pre-existing):
   `validate_cmd()` is never called from `check_cmd()`/`gate_cmd()` so rejected values still reach
   the runner; no upper bound (`999999999999` causes an unhandled OverflowError); the `is not None`
   edit is correct but uncovered by any assertion. Do not claim complete validation until fixed.
-- [ ] **[P2] Contract assertions read `$MISSION_F2_BOOKING_REF`, which nothing sets** —
   `mission.py cmd_gate` and `contract.py` both pass a plain env copy, so the gate runs with an empty
   ref and fails for the wrong reason. Persist it or inline it into the assertion command.
-- [ ] **[P2] `specs/prove-ticket-purchase-works-end-to-end-b/contract-f1.yaml` is one omnibus file**
   holding all 10 assertions for F1–F4, and no feature declares a `contract:` field — so gating M1
   evaluates F3/F4 assertions outside that milestone and skips F2 entirely. Split per feature.
-- [ ] **[P2] No branch protection on `main`** (`gh api` → 404). Every CI check, including
   `dataset-residue-guard`, is advisory only; a broken push still merges. Remedy command recorded in
   `docs/dataset-residue-guard.md`.
-- [ ] **[P2, CI] Wire the two credential-free structural ITN checks into CI with a path trigger.**
   `check-paid-write-inside-transaction-scope.mjs` and
   `check-server-confirm-fetch-outside-transaction-scope.mjs` need no secrets and cost nothing, but
   run only inside the credential-gated `contract-payfast-m1.yaml` suite, which rarely runs. A job
   triggered on diffs to `app/api/tickets/itn/route.ts` or `lib/orders.ts` would have caught F4's
   entire staleness the day F10 merged instead of months later via audit.
-- [ ] **[P2] `cms-loop-f3-national-show.yaml` A5 is superseded and wants a scope review, not a
   patch.** It asserts the `nationalShow` schema declares exactly its original six fields, so it is
   already red for a sanctioned reason — the visitor stream legitimately added `showEndDate`,
   `edition`, `hostRegion`, `venue`. While in there, decide whether to delete the now-unreferenced
   `check-exhibitor-stages-round-trip.mjs`.
-- [ ] **[P2] `contracts/golden/f4-seed-page-singletons/nationalShow.golden.json` still pins CTICC.**
   The seed script's venue was corrected; the golden was not. Owned by
   `cms-loop-f3-national-show.yaml`; A19 in `contract-venue-prose-residue.yaml` deliberately leaves
   it alone as proof that fix stayed scoped. Self-detecting on the F4 contract's next run.
-- [ ] **[P2] Second pair of eyes on the venue-prose-residue checkers' scope exclusions.** One bad
   attribution was found and corrected (golden identity fields claimed as owned by a contract that
   never protected them); the audit was not exhaustive. This is the exact defect class — imprecise
   ownership claims narrowing a checker's scope — that let stale CTICC prose survive two green gates.
-- [ ] **[P3] `check-new-document-filter.mjs:17` hardcodes `MUST_SURVIVE = ['society', 'event']`**
   but `'event'` is not a real schema type — it is `societyEvent`. No false pass today, but A2 never
   exercises the real name, so a regression filtering `societyEvent` out of the create-new menu would
   go uncaught.
-- [ ] **[P3] `lib/qr.ts`'s whitespace-only `bookingRef` case is unexercised.** The empty-string
   branch is actually proven by the `qrcode` library throwing on `''`, not by the guard's own
   `.trim()` — a mutant that removed the guard still failed A3 for the wrong reason. A whitespace-only
   ref would encode silently. Add a dedicated whitespace-only case only the guard rejects.
-- [ ] **[P3] Complete or remove the orphan F6 rendered-check harness.**
   `contracts/checks/f6-home-fidelity/` has Playwright checks with no assertions invoking them
   (@architect died mid-session). Either wire them or remove the files and the unused `playwright`
   devDependency.
-- [ ] **[P3] `fleet_loop.sh` commits feature work under "chore: comms reply" labels** — twice,
   including an entire feature implementation. History truthful in content, lying in labels, and it
   races the orchestrator's staging. Gated off (`chmod -x`) 2026-08-18; needs a contract before
   re-enabling: label accuracy plus never staging outside `.agent/memory/`.
-- [ ] **[P3] `firebase apphosting:rollouts:create` reports success while creating nothing** —
   appears to dedupe on git SHA. Workaround is POSTing directly to the App Hosting REST builds
   endpoint.
 
 ---
 
-- [ ] **[P1] `contract-payfast-m1` A30/A31 (`check-itn-atomic-idempotent-write`) has a dead
   scenario-1 comparison.** It checks `position.pf_payment_id` on both sides — F10 moved payment
   identity to `order.gatewayPaymentId`, nothing writes the position field, and
   `buildReservationDocs` initialises it to `null`. Both sides are null every run regardless of
@@ -899,21 +838,17 @@ flat-over-nested-submenu pattern.
   (same shape as the retired A18 above) but explicitly left for `contract-payfast-m1`'s own pass —
   its two sibling assertions in the same block still bind, so this is a single-scenario repair,
   not a block-wide one.
-- [ ] **[P2] Docs still name the pre-`payment-provider-seam` `AMOUNT_MATCH_TOLERANCE`** —
   `docs/payment-seam.md`, `docs/payfast-integration.md`, `contracts/golden/payment-seam-f1/*`.
   The real guard is now integer-cents (`AMOUNT_MATCH_TOLERANCE_CENTS`,
   `app/api/tickets/itn/route.ts:34`, `lib/payments/payfast.ts` for the adapter-side
   `grossAmountCents` parse) — the float-tolerance version it replaces accepted a genuine 1-cent
   underpayment. Docs task, not code.
-- [ ] **[P2] `check-idempotency-bound-to-payload.mjs` A26/A27 has a latent fixture-selection
   bug.** `otherActiveTicketTypeSlug` can pick a ticket type that requires `chosenDay`, which the
   check never supplies — pre-existing, confirmed to fail identically before and after
   `verify-reservation-release-path`'s changes (2026-08-24), so out of scope there. Needs the
   fixture selection to filter out `requiresDaySelection: true` types, or supply `chosenDay`.
-- [ ] **[P3] `check-missing-capacity-fails-closed.mjs` A29 hangs on Sanity CDN propagation in
   this environment.** Documented as already-known-red by `verify-reservation-release-path`
   (2026-08-24); not a regression from that mission's changes.
-- [ ] **[P1] `contracts/checks/ticketing-hardening/` (~18 files) is orphaned from every active
   `contract.yaml`'s `assertions`.** Nothing currently wires the suite into `mission.py gate`, so
   a break in it raises no alert — `verify-reservation-release-path` (2026-08-24) only caught the
   `_shared.mjs` postCheckout-payload staleness because its own F1 happened to depend on that one
@@ -922,24 +857,17 @@ flat-over-nested-submenu pattern.
 
 ## Code quality & housekeeping
 
-- [ ] **[P2] Prettier fails repo-wide** — 28 files across `app/`, and a wider ~160-file drift noted
   earlier. Deliberately not fixed piecemeal inside feature contracts (fixing 4 of 28 leaves the rest
   inconsistent). Decide whether to run `pnpm format` repo-wide in one pass and gate it in CI.
-- [ ] **[P3] No request body-size cap on any App Router API route.** Every route calls
   `request.json()` uncapped; App Router has no default limit. Project-wide; wants one shared guard.
-- [ ] **[P3] `app/(marketing)/events/submit/page.tsx` calls `initAdmin()` at page scope without
   `force-dynamic`** — same cloud-prerender trap class as `/admin/vendors` (fixed). Has built OK so
   far; verify before it bites.
-- [ ] **[P3] `functions/src/index.ts` uses plain `console.*` instead of `firebase-functions`'
   `logger.*`**, losing structured Cloud Logging fields on a security-relevant deletion audit trail.
   The v1 import never pulls in the `console.*`-patching shim, so `{uid, email, reason}` flattens
   into the text payload. Against this project's own structured-logging rule.
-- [ ] **[P3] Pre-existing American spellings** at `docs/ticketing.md:424, 484, 488, 820`. The
   Microsoft/Entra proper nouns in `docs/admin-access.md` are correct and must NOT be "fixed".
-- [ ] **[P3] Stale header comments in `lib/confirmation-email.ts`** still describe an earlier
   "minimal stub, doesn't call Resend" state. The code genuinely calls Resend and generates real QR
   images; the comments actively mislead a reader.
-- [ ] **[P2] Favicon: revisit when the SAOC org logo lands.** The interim mark is a detailed
   full-colour illustration that loses definition at 16px, while the site chrome uses a monochrome
   line-drawing disa — the tab icon and the header mark are not yet the same identity.
 
@@ -947,7 +875,6 @@ flat-over-nested-submenu pattern.
 
 ## Harness — upstream to InunuNet/Athanor
 
-- [ ] **TEMPLATE BUG: `execution/gh_closure_scan.py` fails but exits 0.** It prints
   `ERROR: …/OVERNIGHT-PLAN-2026-07-30.md has no YAML frontmatter`, scans nothing, and returns 0 —
   so any caller gating on the exit code reads a hard failure as success, and closure scanning has
   been silently non-functional here for an unknown period. Two defects: **the exit code is the one
@@ -955,11 +882,8 @@ flat-over-nested-submenu pattern.
   class this project keeps hitting), and separately the scanner should skip non-mission files rather
   than aborting the whole directory. Fixing only the input hides the exit-code bug again. A second
   symptom seen 2026-08-17 (`ERROR: could not resolve --repo:`) appears transient/environmental.
-- [ ] **[athanor-upstream] sync-autonomy v2** — `set-autonomy LEVEL=high` should propagate to
   `.claude/settings.json` `permissionMode`. Filed 2026-06-16.
-- [ ] **[athanor-upstream] `mission.py` slug fix** — cross-date slug scan fix needs upstreaming via
   `make update-template`. Filed 2026-06-16.
-- [ ] **[P3] `SecurityValidator.hook.ts` false-positives on `rm -rf` with multiple absolute paths**
   (reads a plain `/Users/...` as recursive delete from filesystem root). Worked around with one
   relative path per command. Worth tightening if it recurs.
 
@@ -997,47 +921,26 @@ requirement, the budget ceiling, and that no migration happens before DNS cutove
 _None currently. `execution/gh_closure_scan.py` does not run to completion (see harness section);
 `InunuNet/SAOC` last showed zero open GitHub issues._
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=none
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-scoped-staging-commits.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-compaction-nudge-template-propagation.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-gate-contract-mismatch-guard.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-pulse-quota-resume-hardening.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-contract-gate-integrity-fixes.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-token-accounting-hardening.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-quota-mirror-partial-write.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-codex-qa-timeout.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-gemini-agent-model-drift.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-idempotency-check-repo-mutation.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-mission-abandon-clear-active-fix.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-pulse-launchctl-rc-113.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-contract-py-hygiene-fixes.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-mission-contract-lookup-cwd-anchor.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-21-full-boot-redaction-regex.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-23-contract-gate-cache-staleness.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-24-template-mirror-sync-f7.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: no active mission
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-24-template-mirror-missing-files.md
 
-- [ ] SAOC (Feature, P2): early-bird / regular ticket display gating (Brad, 2026-08-24, tested
   at /tickets). `earlyBirdCutoff` exists per ticket type today but is ONLY enforced server-side
   at checkout (409 if you try to buy after cutoff) — see docs/f4-admission-products.md line 88.
   Nothing hides cards on the /tickets page: Early-Bird Exhibition Ticket and Day Visitor Ticket
@@ -1090,14 +993,12 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   learned.md "Cart/checkout UI needs multiple QA rounds, not one" for the detail. Live-dataset
   price migration script is written but dry-run only, not yet applied to production Sanity data.
 
-- [ ] SAOC (Chore, P3): early-bird / regular ticket display gating item above (line 896) is now
   OBSOLETE — F1 of `ticketing-flow-redesign` merged early-bird/regular into a single ticket per
   type via `regularPrice` + `resolveEffectivePrice()`, so the pairing-mechanism problem that item
   was blocked on no longer applies. Leaving the original entry in place with this note rather than
   deleting, per this project's backlog-hygiene convention of not silently removing history — but
   no further action needed on it.
 
-- [ ] SAOC (Chore, P3): `ticketing-flow-redesign` non-blocking follow-ups flagged by @docs during
   F2/F3, not yet actioned:
   1. Focus-ring styling gap on the ticket-type card in list-mode (visible keyboard-focus outline
      missing/incomplete) — accessibility polish, not a functional bug.
@@ -1109,13 +1010,9 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
      not friendly-formatted (e.g. "Thu 17 Sep" instead of an ISO date or raw day index) — cosmetic,
      not functional.
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-24-close-bash-file-write-bypass-of-require-.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-24-make-backlog-hygiene-self-enforcing-acro.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-update-template-write-safety-hardening.md
 
-- [ ] SAOC (Feature, P2): approved 2027 vendors need a public-facing vendor directory. Brad,
   2026-08-25: once a vendor application is approved by the council in admin (existing F6/F7
   vendor review workflow, app/admin/vendors), that approval should also make the vendor visible
   on the front end of the website as part of a public vendor database/directory — not just
@@ -1130,7 +1027,6 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   should be picked up together with the vendor-form rebuild against that document (see the
   line-by-line comparison note above) rather than bolted on separately.
 
-- [ ] SAOC (Open Question, P1): vendor/exhibitor registration ↔ ticket purchase relationship —
   needs discussion with Lia before any build. Raised 2026-08-25. Current state: the two systems
   are fully disconnected — `vendorSubmissions` (booth application → admin review → manual
   approval/booth assignment) has no link to `orders`/`tickets` or any Sanity `ticketType`, and no
@@ -1143,21 +1039,13 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   needs defining. Do not build anything here until this is resolved with Lia — this is a
   commercial/process decision, not an engineering one.
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-harness-overwrite-guard-104-baseline-fix.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-yaml-authoring-guardrails.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-symlink-guard-init-golden.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-2-mission-nudge-slug-gate.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-3-glob-force-multiline.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-4-mission-file-audit-script-fixes.md
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-5-gate-path-quota-flock-fixes.md
 
-- [ ] SAOC (Contract decay, P2): `contracts/checks/vendor-form-ui/` A2 (`check-field-spec-key-completeness.mjs`)
   is stale, unrelated to `vendor-registration-form-rebuild` F2 — found and confirmed pre-existing
   2026-08-25 during F2's Codex-fix round. `field-spec.golden.json` was written when
   `buildVendorSubmission()` returned exactly 31 fields (Aug-18 creation commit); it now returns 86
@@ -1186,7 +1074,6 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   conditionally-gated fields never render in the check. Traces to the original Aug-18 commit, not
   introduced by this mission.
 
-- [ ] SAOC (Contract decay, P3): 3 pre-existing, unrelated failures found in
   `contracts/contract-ticketing-f4-admission-products.yaml` during the 2026-09-01 architect
   tooling audit (`node --import tsx/esm` -> `npx tsx` sweep). Verdict confirmed unchanged before
   and after the invocation switch — not caused by that fix, already broken:
@@ -1209,9 +1096,7 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   (was erroring on `@/` module resolution, now genuinely passes) — do not conflate that fix
   with these 3, which are real, separate, pre-existing content/wiring gaps.
 
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-6-checkpoint-autofind-stale-assertion-docs.
 
-- [ ] SAOC (Contract decay, P3): 4 more pre-existing, unrelated-to-`vendor-registration-form-rebuild`
   contract failures found and confirmed (via diff-stash re-run, failures identical before/after)
   during F2's QA sweep, 2026-08-25/26:
   1. `vendor-f6-review-workflow/check-capability-added-and-role-bundles.mjs` — CAPABILITIES array
@@ -1227,15 +1112,4 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   rebuild`'s own contract-f1/f2.yaml). Worth a dedicated contract-decay audit pass at some point —
   see the existing P1 backlog item "Audit remaining contracts for the weak-assertion defect
   class."
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-7-gate-autofind-frontmatter-guard-fixes.md
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-8-contract-mask-hotfix1298-symlink-parity.m
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-9-fetch-order-agent-drift-crossmodel-docs.m
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-10-fullboot-redaction-checkpoint-surfacing.
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-11-negation-attachment-pollkill-procgroup.m
-
-- [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-26-grok-cli-provider-support.md
+> Truncated 127 items at trim time (2026-09-01). Restore from git history if needed.

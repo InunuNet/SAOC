@@ -1,15 +1,5 @@
 {
-  "template_version": "3.7.152",
-  "applied_at": "2026-09-01T07:25:01Z",
-  "delivery": "partial",
-  "workspace_id": "0508fe91e31545b0",
-  "withheld": [
-    ".claude/agents/architect-apex.md",
-    ".claude/agents/qa-apex.md",
-    "execution/contract.py",
-    "execution/gh_closure_scan.py",
-    "execution/ingest_pulse.sh",
-    "execution/pulse_runner.sh",
-    "template/.agent/version"
-  ]
+  "template_version": "3.7.153",
+  "applied_at": "2026-09-01T11:56:51Z",
+  "workspace_id": "0508fe91e31545b0"
 }
