@@ -144,3 +144,18 @@ env:
     value: "info@saoc.co.za"
     availability:
       - RUNTIME
+
+  # Vendor flow HMAC secrets (mission vendor-gated-registration-flow). Both were missing from
+  # this file entirely until 2026-09-01, which meant application approval refused in production
+  # (the route validates the secret is configured BEFORE any write, so the application stayed
+  # `pending` and no registration code was ever issued) and no stand-payment link could mint.
+  # Created in Secret Manager 2026-09-01 with CSPRNG values; rotating either one invalidates
+  # every code/link already issued under it, which is acceptable pre-launch but not after.
+  - variable: VENDOR_REGISTRATION_TOKEN_SECRET
+    secret: VENDOR_REGISTRATION_TOKEN_SECRET
+    availability:
+      - RUNTIME
+  - variable: VENDOR_STAND_PAYMENT_TOKEN_SECRET
+    secret: VENDOR_STAND_PAYMENT_TOKEN_SECRET
+    availability:
+      - RUNTIME
