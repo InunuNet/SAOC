@@ -2777,3 +2777,38 @@ cannot express. Two non-obvious implementation traps, now solved:
 This unblocks real behavioural assertions (not just structural/grep ones) across the whole
 project, not just vendor registration — worth reaching for whenever a future contract needs to
 prove a cross-file property in an actual route handler rather than infer it from source shape.
+
+## A decision record's mechanical claims must be verified, not trusted, even when confidently stated (2026-09-01, firestore-undefined-write-safety M1 F1)
+
+@architect's golden README stated A1/A2 had been "verified both ways" — that both an
+`initAdmin()`-level `ignoreUndefinedProperties` fix and builder-side stripping were confirmed to
+satisfy the checks. @dev read the check scripts before picking an approach and found neither one
+calls `initAdmin()` at all — each mints its own isolated Firestore app directly, bypassing
+`lib/firebase-admin.ts` entirely. An `initAdmin()`-level fix could never have made these specific
+checks green; the claim was wrong on a fact anyone reading the check script could confirm in
+seconds. Fixed correctly at the builder boundary (`lib/firestore-write-safety.ts`,
+`stripUndefinedProperties()`), and the README corrected in place rather than silently
+overwritten. **Rule: verify a decision record's mechanical claims before building on them — read
+the artifact the claim is about, especially any claim of the form "verified both options work."**
+
+## A stated verification against a surface that doesn't exist reads as diligence but is fiction (2026-09-01, same mission)
+
+@docs wrote that the admin review UI and CSV export "were verified" to treat a missing key and an
+`undefined` value identically. @qa checked and found neither surface exists for these two
+collections — the admin route spreads `doc.data()` untouched with no field-level read, and the
+CSV export is tickets-only. The underlying conclusion (safe in production today) was correct, but
+the stated reasoning was invented. A false "verified" is worse than an admitted "not checked",
+because it reads as due diligence instead of a gap. Corrected to "no affected reader exists yet"
+plus a forward warning against `'field' in doc` presence checks once a reader is ever added
+(`docs/firestore-undefined-write-safety.md:139`). Consistent with the standing rule that most real
+defects on this project surface only from an independent model or an adversarial pass after the
+gate is already green (workflow.md) — this mission adds two more instances of the same pattern,
+just in prose review rather than code.
+
+## Relative imports with an explicit `.ts` extension are mandatory in modules reached by contract checks (2026-09-01, same mission)
+
+Any module imported into `lib/vendor-submissions.ts` must use a relative import with an explicit
+`.ts` extension (`import { x } from './firestore-write-safety.ts'`), never the `@/lib/...` path
+alias — contract checks execute that module tree under plain `node`, which has no path-alias
+resolution. An alias import broke A29 mid-session. Will recur on any new helper wired into that
+file; check the import style before debugging a mysterious check failure there.
