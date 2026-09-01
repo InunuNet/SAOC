@@ -697,6 +697,29 @@ flat-over-nested-submenu pattern.
 
 ## Contract & test infrastructure
 
+- [ ] **P1 — A60 is a vacuous check and must be rewritten before M3 is treated as done.**
+  Found 2026-09-01 by an independent mutation-testing pass (`QA_Son5_M3-F1_RewrittenChecksAdversarial`),
+  confirmed by Codex GPT-5.5 (`execution/codex_qa.sh`, exit 1) with identical file:line citations
+  and no disagreement. `contracts/checks/vendor-gated-registration-flow-m3/check-initiate-is-transactionally-idempotent.mjs:60-68,88-98`
+  claims to prove transactional atomicity/collision-safety on the stand-payment initiate route.
+  Two mutations both left it GREEN: (a) disabling the in-transaction "already paid" re-check
+  (`app/api/vendors/stand-payment/initiate/route.ts:175`) — a separate earlier non-transactional
+  guard at :106-109 already covers the scenario the check exercises, so the transaction's own
+  re-check is never isolated; (b) deleting `db.runTransaction()` outright and replacing it with an
+  unconditional `.set()` — still GREEN, because `contracts/harness/route-runner/fixture-firestore.mjs`
+  keys docs by `vendorSubmissionId` in a plain Map, so every write path converges to one document
+  by construction. The "concurrent calls" race a self-overwriting Map key, not a lock. The check
+  proves "doc id is deterministic," not "the write path is transactional" — zero regression
+  protection against the bug class it names.
+  **A correct rewrite needs** either a fixture that models a genuine lost-update race (track
+  whether `.get()` reads go stale against a concurrent `.set()`, or assert `runTransaction` was
+  actually invoked and its callback re-read state), or an assertion isolating the in-transaction
+  re-check — seed the paid-transition to land BETWEEN the top-level pre-check and the transaction's
+  own read, so only the in-transaction guard can catch it.
+  A55, A61, A62 were mutation-tested in the same pass and all PASS — they die when their feature
+  dies. A62's "disabling the already-paid guard alone stays green" is correct behaviour, not a
+  check bug: the in-transaction re-check is genuine defence-in-depth and catches it.
+
   the `vendor-gated-registration-flow` work has no mission `.md` file at all.** As of 2026-08-31,
   `.agent/memory/project/missions/active.json` still points at
   `2026-08-25-vendor-registration-form-rebuild.md` checkpointed at `M2/F3`. But three real commits
