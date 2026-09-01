@@ -2812,3 +2812,44 @@ Any module imported into `lib/vendor-submissions.ts` must use a relative import 
 alias — contract checks execute that module tree under plain `node`, which has no path-alias
 resolution. An alias import broke A29 mid-session. Will recur on any new helper wired into that
 file; check the import style before debugging a mysterious check failure there.
+
+## A missing secret is invisible until the exact moment it demos (2026-09-01, stand-payment-link-visibility)
+
+Both vendor HMAC secrets were absent from `apphosting.yaml` entirely. Build stayed green, boot
+stayed green, every contract gate stayed green — the flow only refused at the approval step in
+production, because that's the first codepath that actually reads `process.env.X_SECRET`. Local
+checks never exercise deployed env wiring. **Rule: when a feature reads a secret env var, verify
+it is in `apphosting.yaml` AND in Secret Manager AND granted to the service account as part of
+shipping the feature — not when someone tries to demo it.** Fixed in `d879514d`.
+
+## A stale doc produced a false blocker; prove delivery paths by exercising them (2026-09-01, same day)
+
+@qa flagged `forms.saoc.co.za` as unverified in Resend, citing `docs/email-dns-setup.md` and a
+`dig CNAME` that returned nothing. The DKIM record is published as TXT, not CNAME — the query was
+asking the wrong question, and a live send succeeded immediately. Two stacked failure modes: trust
+in a doc that had drifted from reality, and a negative DNS result treated as ground truth instead
+of as itself needing verification. **Rule: prove a delivery path (email, payment, auth) by
+exercising it end-to-end, never by inferring status from a doc or a DNS query alone.**
+
+## Concurrent agents in one working tree produce phantom gate failures (2026-09-01, same day)
+
+Two @devs working non-overlapping files still produced a torn tree mid-write: the M3 gate read
+48/1/4 at one point and 52/1/0 minutes later with no fix commit in between — the tree itself was
+inconsistent, not the code. **Rule: a gate run against a tree with in-flight agents proves
+nothing; re-run only after all concurrent agents on that tree have reported done.**
+
+## Checks rewritten to match a redesign need an independent adversarial pass (2026-09-01, same day)
+
+@architect rewrote four M3 checks (A55, A60-A62) after removing the export they were fixtured
+against, including changing A55's premise from "prices null -> set -> unblocks" to "no active
+show -> published -> unblocks." The reasoning reads sound and the gate is green, but "the checks
+were edited until they passed" is this project's own known hazard (see prior weak-assertion
+entries). Not yet independently adversarially reviewed — flagged in `next-sprint.md`.
+
+## Don't issue implementation rulings while the architect is still revising the shape (2026-09-01, same day)
+
+Orchestrator told @dev to keep a data shape while @architect was concurrently superseding it in
+the same mission, causing rework. **Rule: when an architect is mid-revision, redirect any
+implementation question back to the architect (or wait for the revision) instead of ruling on it
+directly** — reinforces the standing `workflow.md` rule that the orchestrator doesn't implement,
+but extends it: don't arbitrate design questions an architect is actively mid-flight on either.

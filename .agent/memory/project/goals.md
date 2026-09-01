@@ -470,3 +470,22 @@ Docs at `docs/form-error-contrast-remaining-components.md`. Known caveat carried
 `backlog.md`: `CartDayPicker`'s fix was verified by source-read only — its error branch is
 currently unreachable because no live Sanity ticket type sets `requiresDaySelection: true`, not
 because of a code guard.
+
+### 2026-09-01 — `vendor-stand-early-bird-pricing` M1 (F1) DONE — mission complete
+
+~~`vendor-stand-early-bird-pricing` (F1: two-tier early-bird/regular vendor stand pricing,
+server-derived and spoof-proof)~~ ✅ **DONE**, 5/5 contract gate passed. R1450/stand standard,
+early-bird 20% less, cutoff 90 days before the show opens (derived from the show's published
+start date, explicit +02:00 SAST offset) — all confirmed figures from Brad, derived from one rate
+constant times booth size rather than six stored figures, integer cents throughout.
+`resolveVendorStandPrice(boothSize, now, cutoffIso)` never reads a clock itself, so tier selection
+can't be spoofed by a client timestamp. Same-day companion fix `stand-payment-link-visibility`
+(2/2 gate) lets the admin review table mint and copy the payment link directly, so an email-send
+failure can no longer strand a vendor mid-flow. Both vendor HMAC secrets (previously entirely
+absent from `apphosting.yaml`, refusing silently at the approval step in production only) wired
+into Secret Manager + apphosting.yaml in `d879514d`. Deployed to beta.saoc.co.za. One item
+deliberately deferred, not dropped: the legacy-order (`tier`-less document) RED check — logged as
+P2 in `backlog.md`. See `learned.md` for the five session lessons (missing-secret defect class,
+stale-doc false blocker, concurrent-agent phantom gate failures, redesigned-check adversarial-pass
+gap, mid-revision ruling rework). Commits `0039c1eb`, `0ed223af`, `8c69cf1c`, `6a778009`,
+`d879514d`.
