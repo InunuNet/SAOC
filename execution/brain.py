@@ -325,7 +325,7 @@ def write_reboot(summary: str, next_items: list = None, facts: list = None, do_n
 # subsystems are designed to keep in .agent/memory/scratch/. Exempt from
 # wrap_up()'s scratch purge unconditionally (including under --force).
 # Fixed filename set only — never a substring/regex match.
-SCRATCH_PURGE_EXEMPT = {"template_baselines.json", "compaction-hint.json", ".quota_status.json"}
+SCRATCH_PURGE_EXEMPT = {"template_baselines.json", "compaction-hint.json", ".quota_status.json", ".last_activity.json"}
 
 
 def _main_worktree_root(cwd: Path = None) -> Path:

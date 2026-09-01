@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash execution/hooks/full_boot.sh && echo \"\\n🤖 ATHANOR FRAMEWORK (Athanor v$(cat .agent/version 2>/dev/null || echo '?'))\\nIdentity: $(python3 -c \\\"import json; p=json.load(open('.agent/profile.json')); print(p.get('identity',{}).get('agent_name', p.get('project_name','Agent')))\\\" 2>/dev/null || echo 'Agent') | Boot: OK\\nRead the boot context above before starting.\""
+            "command": "bash execution/hooks/full_boot.sh && echo \"\\n\ud83e\udd16 ATHANOR FRAMEWORK (Athanor v$(cat .agent/version 2>/dev/null || echo '?'))\\nIdentity: $(python3 -c \\\"import json; p=json.load(open('.agent/profile.json')); print(p.get('identity',{}).get('agent_name', p.get('project_name','Agent')))\\\" 2>/dev/null || echo 'Agent') | Boot: OK\\nRead the boot context above before starting.\""
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '\\n💾 Wrap up: python3 execution/brain.py wrap-up -s \"summary\" -t \"tags\"'"
+            "command": "echo '\\n\ud83d\udcbe Wrap up: python3 execution/brain.py wrap-up -s \"summary\" -t \"tags\"'"
           }
         ]
       }
@@ -97,24 +97,34 @@
       },
       {
         "matcher": "Write",
-        "hooks": [{
-          "type": "command",
-          "command": "fp=$(python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.gemini/MEMORY/*|*/.gemini/PAI/*|*/MEMORY/LEARNING/*|*/MEMORY/WORK/*) exit 2 ;; esac"
-        }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "fp=$(python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.gemini/MEMORY/*|*/.gemini/PAI/*|*/MEMORY/LEARNING/*|*/MEMORY/WORK/*) exit 2 ;; esac"
+          }
+        ]
       },
       {
         "matcher": "Edit",
-        "hooks": [{
-          "type": "command",
-          "command": "fp=$(python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.gemini/MEMORY/*|*/.gemini/PAI/*|*/MEMORY/LEARNING/*|*/MEMORY/WORK/*) exit 2 ;; esac"
-        }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "fp=$(python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.gemini/MEMORY/*|*/.gemini/PAI/*|*/MEMORY/LEARNING/*|*/MEMORY/WORK/*) exit 2 ;; esac"
+          }
+        ]
       },
       {
         "matcher": "Bash",
-        "hooks": [{
-          "type": "command",
-          "command": "bash execution/hooks/verify_workspace.sh"
-        }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash execution/hooks/verify_workspace.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash execution/hooks/require_maintainer.sh"
+          }
+        ]
       }
     ],
     "AfterTool": [
@@ -132,5 +142,7 @@
   "general": {
     "defaultApprovalMode": "auto_edit"
   },
-  "policyPaths": ["./.gemini/policies/autonomy.toml"]
+  "policyPaths": [
+    "./.gemini/policies/autonomy.toml"
+  ]
 }

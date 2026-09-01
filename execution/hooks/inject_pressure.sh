@@ -18,9 +18,29 @@
 set +e
 exec 2>/dev/null
 
+# --- Private per-invocation temp directory --------------------------------
+# The helper scripts below used to be created with `mktemp /tmp/athanor_hook.XXXXXX.py`.
+# BSD/macOS mktemp does NOT substitute an X-run that is not at the END of the
+# template: three consecutive calls all returned the literal path
+# `/tmp/athanor_hook.XXXXXX.py`, so every concurrent hook invocation on the
+# machine shared one filename and `rm -f`'d the scripts the others were about
+# to run (measured 2026-08-31: 3/30 mirror writes survived at 10-way
+# concurrency, the failures swallowed by the suppressed stderr).
+# `mktemp -d` with a TRAILING X-run behaves identically on BSD/macOS and GNU
+# coreutils, so the helpers get fixed names inside a private directory instead.
+# If the directory cannot be created, _TMPD is empty and EVERY helper block
+# below is skipped outright -- none of them may fall through to `cat > ""` or
+# to a path in the user's cwd. A temp-path failure that degrades silently is
+# how this defect survived since 4f023c18; the guard is what makes the degrade
+# a documented "?" instead of an invisible no-op.
+_TMPD=$(mktemp -d "${TMPDIR:-/tmp}/athanor_hook.XXXXXX")
+_cleanup_tmpd() { [ -n "$_TMPD" ] && [ -d "$_TMPD" ] && rm -rf "$_TMPD"; }
+trap _cleanup_tmpd EXIT
+
 # --- Read hook input from stdin ---
 INPUT=$(cat)
 TRANSCRIPT=$(printf '%s' "$INPUT" | jq -r '.transcript_path // empty')
+SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty')
 
 # --- Context tokens + window resolution from transcript ---
 # Resolution order (see goldens/window_resolution_spec.md): ATHANOR_CONTEXT_WINDOW env
@@ -32,9 +52,9 @@ CTX_TOKENS="0"
 CTX_PCT="?"
 CTX_WIN="?"
 CTX_MODEL="?"
-if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ]; then
-  _PY=$(mktemp /tmp/athanor_hook.XXXXXX.py)
-  _STDIN_JSON=$(mktemp /tmp/athanor_hook.XXXXXX.json)
+if [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ] && [ -n "$_TMPD" ]; then
+  _PY="$_TMPD/context_window.py"
+  _STDIN_JSON="$_TMPD/stdin.json"
   printf '%s' "$INPUT" > "$_STDIN_JSON"
   cat > "$_PY" <<'PYEOF'
 import json, os, re, sys
@@ -284,17 +304,25 @@ fi
 Q_PCT="?"
 R_HRS="?"
 RESETS_RAW=""
+# 1 only when RESETS_RAW parsed as a real timestamp. An unparseable value must
+# never reach the checkpoint verbatim: F2's resume resolver has to treat it as
+# ABSENT, and `"resets_at": "not-a-ts"` is indistinguishable from a good value
+# until it is parsed too late to matter (QA R-5, 2026-08-31).
+RESETS_OK=0
 CACHE="${ATHANOR_QUOTA_CACHE_OVERRIDE:-$HOME/.claude/MEMORY/STATE/usage-cache.json}"
 if [ "$CLAUDECODE" = "1" ] && [ -f "$CACHE" ]; then
   Q_PCT=$(jq -r '.five_hour.utilization | floor' "$CACHE")
   [ -z "$Q_PCT" ] || [ "$Q_PCT" = "null" ] && Q_PCT="?"
   RESETS_RAW=$(jq -r '.five_hour.resets_at // empty' "$CACHE")
-  _PY2=$(mktemp /tmp/athanor_hook.XXXXXX.py)
+  if [ -n "$_TMPD" ]; then
+  _PY2="$_TMPD/resets_at.py"
   cat > "$_PY2" <<'PYEOF'
+# Emits "<display>|<parsed>" -- parsed is 1 only when the raw value really is
+# a timestamp, so the caller can tell "no reset time" from "unparseable".
 import sys, datetime
 raw = sys.stdin.read().strip()
 if not raw:
-    print("?")
+    print("?|0")
     sys.exit(0)
 try:
     s = raw.replace("Z", "+00:00")
@@ -302,15 +330,18 @@ try:
     now = datetime.datetime.now(datetime.timezone.utc)
     hrs = (resets - now).total_seconds() / 3600.0
     if hrs < 0:
-        print("0.0h")
+        print("0.0h|1")
     else:
-        print(f"{round(hrs, 1)}h")
+        print(f"{round(hrs, 1)}h|1")
 except Exception:
-    print("?")
+    print("?|0")
 PYEOF
-  R_HRS=$(printf '%s' "$RESETS_RAW" | timeout 4 python3 "$_PY2")
+  _R_OUT=$(printf '%s' "$RESETS_RAW" | timeout 4 python3 "$_PY2")
   rm -f "$_PY2"
+  R_HRS="${_R_OUT%%|*}"
+  [ "${_R_OUT##*|}" = "1" ] && RESETS_OK=1
   [ -z "$R_HRS" ] && R_HRS="?"
+  fi
 fi
 
 # --- Mirror quota status to a project-local file (additive, best-effort) ---
@@ -320,8 +351,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." 2>/dev/null && pwd)"
 DEFAULT_MIRROR="${REPO_ROOT:-.}/.agent/memory/scratch/.quota_status.json"
 MIRROR_PATH="${ATHANOR_QUOTA_MIRROR_OVERRIDE:-$DEFAULT_MIRROR}"
-if [[ "$Q_PCT" =~ ^[0-9]+$ ]]; then
-  _PY3=$(mktemp /tmp/athanor_hook.XXXXXX.py)
+if [[ "$Q_PCT" =~ ^[0-9]+$ ]] && [ -n "$_TMPD" ]; then
+  _PY3="$_TMPD/quota_mirror.py"
   cat > "$_PY3" <<'PYEOF'
 import datetime, json, os, sys
 
@@ -360,16 +391,80 @@ PYEOF
   rm -f "$_PY3"
 fi
 
-# --- High-water-mark checkpoint: proactive, PRIMARY mechanism -------------
+# --- Band thresholds: single-sourced from execution/quota.py --------------
+# execution/quota.py owns BAND_TIGHT_PCT / BAND_CRITICAL_PCT / BAND_PAUSE_PCT
+# as named module-level constants. They are PARSED out of it here rather than
+# restated: the hook used to carry a second, independent copy of the literals
+# 85/90/95, and nothing in the harness could detect the two copies drifting
+# apart -- while the docs claim the thresholds live "in exactly one place"
+# (QA R-3, 2026-08-31). If the oracle is unreadable, or any constant is not a
+# plain integer, the hook reports band `unknown` and stays SILENT rather than
+# guessing a threshold -- the same fail-open the oracle itself uses, and the
+# reason no fallback literal is written here.
+QUOTA_ORACLE="${SCRIPT_DIR:-.}/../quota.py"
+_band_pct() {
+  sed -n -E "s/^$1[[:space:]]*=[[:space:]]*([0-9]+)[[:space:]]*(#.*)?$/\1/p" \
+    "$QUOTA_ORACLE" 2>/dev/null | head -1
+}
+BAND_TIGHT_PCT=""
+BAND_CRITICAL_PCT=""
+BAND_PAUSE_PCT=""
+if [ -f "$QUOTA_ORACLE" ]; then
+  BAND_TIGHT_PCT=$(_band_pct BAND_TIGHT_PCT)
+  BAND_CRITICAL_PCT=$(_band_pct BAND_CRITICAL_PCT)
+  BAND_PAUSE_PCT=$(_band_pct BAND_PAUSE_PCT)
+fi
+BANDS_OK=0
+if [[ "$BAND_TIGHT_PCT" =~ ^[0-9]+$ ]] && [[ "$BAND_CRITICAL_PCT" =~ ^[0-9]+$ ]] \
+   && [[ "$BAND_PAUSE_PCT" =~ ^[0-9]+$ ]]; then
+  BANDS_OK=1
+fi
+
+# --- Band (mission quota-aware-pause-resume F1) ---------------------------
+# Computed once, here, from Q_PCT alone. Agents branch on this WORD, never on
+# 100-Q_PCT. Boundaries inclusive at the lower bound; unresolved Q_PCT ("?")
+# fails open to "unknown", never a guessed "healthy".
+Q_BAND="unknown"
+if [ "$BANDS_OK" = "1" ] && [[ "$Q_PCT" =~ ^[0-9]+$ ]]; then
+  if [ "$Q_PCT" -ge "$BAND_PAUSE_PCT" ]; then
+    Q_BAND="pause"
+  elif [ "$Q_PCT" -ge "$BAND_CRITICAL_PCT" ]; then
+    Q_BAND="critical"
+  elif [ "$Q_PCT" -ge "$BAND_TIGHT_PCT" ]; then
+    Q_BAND="tight"
+  else
+    Q_BAND="healthy"
+  fi
+fi
+
+# --- High-water-mark / pause checkpoint: proactive, PRIMARY mechanism -----
 # Independent of Claude Code's StopFailure payload contract -- depends only
-# on this hook's own already-verified Q_PCT. Same schema, same default path,
-# as the reactive quota_death_checkpoint.sh StopFailure hook. Never fatal --
-# a UserPromptSubmit hook must always exit 0 and emit valid JSON on stdout.
-if [[ "$Q_PCT" =~ ^[0-9]+$ ]] && [ "$Q_PCT" -ge 90 ]; then
+# on this hook's own already-verified Q_PCT/Q_BAND. Same schema, same default
+# path, as the reactive quota_death_checkpoint.sh StopFailure hook. Never
+# fatal -- a UserPromptSubmit hook must always exit 0 and emit valid JSON on
+# stdout.
+#
+# 90-94 keeps stop_reason=quota_high_water VERBATIM (compaction-threshold-truth
+# A13 depends on it). >=95 is the NEW quota_pause branch (D-4). Both branches
+# additionally carry resets_at/used_pct/band -- resets_at is load-bearing: the
+# resume monitor has no other durable record of when the window reopens once
+# the live mirror goes stale (see goldens/quota_bands_spec.md §5-6).
+# CP_WRITTEN records whether the checkpoint is ACTUALLY on disk. The pause
+# wording below is conditional on it: the injected line used to promise
+# "checkpoint written" unconditionally, including on a read-only checkpoint
+# directory, an unwritable root, or a path that is itself a directory -- and a
+# pause banner that promises a checkpoint which does not exist is how work gets
+# lost (QA R-1, 2026-08-31).
+CP_WRITTEN=0
+if [ "$BANDS_OK" = "1" ] && [[ "$Q_PCT" =~ ^[0-9]+$ ]] && [ "$Q_PCT" -ge "$BAND_CRITICAL_PCT" ]; then
   CHECKPOINT="${ATHANOR_QUOTA_DEATH_CHECKPOINT_PATH:-${REPO_ROOT:-.}/.agent/memory/scratch/.quota_death_checkpoint.json}"
   ACTIVE_MISSION_PATH="${ATHANOR_ACTIVE_MISSION_PATH:-${REPO_ROOT:-.}/.agent/memory/project/missions/active.json}"
   mkdir -p "$(dirname "$CHECKPOINT")" 2>/dev/null
-  if [ -d "$(dirname "$CHECKPOINT")" ]; then
+  # A checkpoint path that already exists but is not a regular file (a directory,
+  # most often) can never hold the checkpoint -- and `mv -f tmp dir` would
+  # silently succeed by moving the temp file INSIDE it, leaving nothing at the
+  # path and littering the directory. Refuse the whole write instead.
+  if [ -d "$(dirname "$CHECKPOINT")" ] && { [ ! -e "$CHECKPOINT" ] || [ -f "$CHECKPOINT" ]; }; then
     CP_TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     CP_MISSION="null"
     CP_CHECKPOINT="null"
@@ -377,21 +472,81 @@ if [[ "$Q_PCT" =~ ^[0-9]+$ ]] && [ "$Q_PCT" -ge 90 ]; then
       CP_MISSION="$(jq -c '.mission // null' "$ACTIVE_MISSION_PATH" 2>/dev/null || echo null)"
       CP_CHECKPOINT="$(jq -c '.checkpoint // null' "$ACTIVE_MISSION_PATH" 2>/dev/null || echo null)"
     fi
-    CP_MSG="⚡ QUOTA RECOVERY: quota reached ${Q_PCT}% at ${CP_TS} (high-water mark). Resume: python3 execution/mission.py resume"
+    if [ "$Q_BAND" = "pause" ]; then
+      CP_REASON="quota_pause"
+      CP_MSG="⚡ QUOTA PAUSE: quota reached ${Q_PCT}% at ${CP_TS}. Checkpoint written; wrap up and stop: python3 execution/mission.py pause <mission>. Resume: python3 execution/mission.py resume"
+    else
+      CP_REASON="quota_high_water"
+      CP_MSG="⚡ QUOTA RECOVERY: quota reached ${Q_PCT}% at ${CP_TS} (high-water mark). Resume: python3 execution/mission.py resume"
+    fi
+    # Only a resets_at that actually PARSED is durable. An unparseable value is
+    # written as null, matching the mirror path: the resume resolver must see
+    # "absent", never "present and broken" (QA R-5).
+    CP_RESETS_ARG="null"
+    CP_RESETS_JQ_TYPE="--argjson"
+    if [ -n "$RESETS_RAW" ] && [ "$RESETS_OK" = "1" ]; then
+      CP_RESETS_ARG="$RESETS_RAW"
+      CP_RESETS_JQ_TYPE="--arg"
+    fi
     # Write to a temp file in the same directory, then rename into place, so the
     # checkpoint is only ever absent or complete -- never truncated by a mid-write kill.
     CHECKPOINT_TMP="${CHECKPOINT}.tmp.$$"
     jq -n \
       --arg ts "$CP_TS" \
-      --arg reason "quota_high_water" \
+      --arg reason "$CP_REASON" \
       --argjson mission "$CP_MISSION" \
       --argjson cp "$CP_CHECKPOINT" \
       --arg msg "$CP_MSG" \
-      '{timestamp:$ts, stop_reason:$reason, active_mission:$mission, active_checkpoint:$cp, recovery_message:$msg}' \
-      > "$CHECKPOINT_TMP" 2>/dev/null \
-      && mv -f "$CHECKPOINT_TMP" "$CHECKPOINT" 2>/dev/null \
-      || rm -f "$CHECKPOINT_TMP" 2>/dev/null
+      "$CP_RESETS_JQ_TYPE" resets_at "$CP_RESETS_ARG" \
+      --argjson used_pct "$Q_PCT" \
+      --arg band "$Q_BAND" \
+      '{timestamp:$ts, stop_reason:$reason, active_mission:$mission, active_checkpoint:$cp, recovery_message:$msg, resets_at:$resets_at, used_pct:$used_pct, band:$band}' \
+      > "$CHECKPOINT_TMP" 2>/dev/null
+    if [ -s "$CHECKPOINT_TMP" ] && mv -f "$CHECKPOINT_TMP" "$CHECKPOINT" 2>/dev/null \
+       && [ -s "$CHECKPOINT" ]; then
+      CP_WRITTEN=1
+    else
+      rm -f "$CHECKPOINT_TMP" 2>/dev/null
+    fi
   fi
+fi
+
+# --- Turn timestamps (mission turn-timestamps F1): START line -------------
+# Additive, independent channel from the additionalContext built below --
+# NEVER touches Q_SEG/INJECT or anything derived from them (D-Mechanism,
+# goldens/verify_scope_boundary.sh pins the additionalContext grammar
+# untouched). Writes this session's START epoch to a session_id-keyed file
+# (.agent/memory/scratch/.turn_ts_<session_id>.json -- session_id keying
+# avoids the Pulse-label collision class, since many concurrent sessions can
+# share one workspace) for turn_end_stamp.sh's Stop hook to read back later,
+# and touches the cross-session .last_activity.json
+# so full_boot.sh's next SessionStart can report how long the workspace was
+# idle. Every failure here (missing lib, unwritable scratch, missing
+# session_id) degrades to START_LINE staying empty -- never aborts the turn.
+START_LINE=""
+if [ -n "$_TMPD" ] && [ -f "${SCRIPT_DIR:-.}/lib/turn_timestamp.py" ]; then
+  _PY4="$_TMPD/turn_start.py"
+  cat > "$_PY4" <<'PYEOF'
+import os, sys, time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(sys.argv[1])))
+import turn_timestamp as ts
+
+session_id = sys.argv[2]
+scratch_dir = sys.argv[3]
+now = int(time.time())
+
+try:
+    if session_id:
+        ts.write_last_start_epoch(ts.session_state_path(session_id, scratch_dir), now)
+    ts.touch_last_activity(ts.last_activity_path(scratch_dir), now)
+    print(ts.format_start_line(now))
+except Exception:
+    pass
+PYEOF
+  SCRATCH_DIR="${REPO_ROOT:-.}/.agent/memory/scratch"
+  START_LINE=$(timeout 4 python3 "$_PY4" "${SCRIPT_DIR:-.}/lib/turn_timestamp.py" "$SESSION_ID" "$SCRATCH_DIR" 2>/dev/null)
+  rm -f "$_PY4"
 fi
 
 # --- Build injection string ---
@@ -401,6 +556,43 @@ fi
 Q_STR="${Q_PCT}%"
 [ "$Q_PCT" = "?" ] && Q_STR="?"
 
+# Band-aware wording (mission quota-aware-pause-resume F1,
+# goldens/quota_bands_spec.md §3). `healthy` and `unknown` are SILENT --
+# rationale (2026-08-31, Brad): agents were reading "quota used: 15%" as
+# "nearly exhausted", inventing a crisis out of a healthy window, halting
+# mid-mission and interrupting the user. Two prior mitigations
+# ("(not remaining)" suffix, then blanket suppression below 85%) both failed
+# or threw away information. The fix here is structural: the FIRST number in
+# every visible band is REMAINING (a misread of it is benign), the band WORD
+# leads (never a percentage an agent could invert), and `quota used: {pct}%`
+# survives verbatim, but only inside a labelled parenthetical -- never first,
+# never adjacent to the word REMAINING (G1-G5; compaction-threshold-truth A13
+# depends on the exact substring surviving).
+#
+# The REMAINING figure is clamped to [0,100]: a utilization above 100 (which the
+# upstream cache does emit) used to render as "-50% ... REMAINING", nonsense text
+# at the moment of maximum pressure (QA R-2). Q_PCT itself is left truthful --
+# the parenthetical reports what was actually read.
+Q_SEG=""
+if [[ "$Q_PCT" =~ ^[0-9]+$ ]]; then
+  Q_REMAIN=$(( 100 - Q_PCT ))
+  [ "$Q_REMAIN" -lt 0 ] && Q_REMAIN=0
+  [ "$Q_REMAIN" -gt 100 ] && Q_REMAIN=100
+  case "$Q_BAND" in
+    tight)
+      Q_SEG=" | quota: TIGHT — ${Q_REMAIN}% of this 5h window REMAINING — finish what is in flight; do not start a new feature (quota used: ${Q_STR}) | refresh: ${R_HRS}"
+      ;;
+    critical)
+      Q_SEG=" | quota: CRITICAL — ${Q_REMAIN}% of this 5h window REMAINING — land and push in-flight work now, checkpoint immediately (quota used: ${Q_STR}) | refresh: ${R_HRS}"
+      ;;
+    pause)
+      CP_CLAIM="checkpoint written"
+      [ "$CP_WRITTEN" = "1" ] || CP_CLAIM="CHECKPOINT WRITE FAILED, save state by hand"
+      Q_SEG=" | ⚡ QUOTA PAUSE — ${Q_REMAIN}% of this 5h window REMAINING — ${CP_CLAIM}; wrap up now and stop: python3 execution/mission.py pause <mission> (quota used: ${Q_STR}) | refresh: ${R_HRS}"
+      ;;
+  esac
+fi
+
 HIGH_FIRES=0
 if [[ "$CTX_TOKENS" =~ ^[0-9]+$ ]] && [ "$CTX_TOKENS" -ge 100000 ]; then
   HIGH_FIRES=1
@@ -408,31 +600,59 @@ fi
 CTX_K=0
 [[ "$CTX_TOKENS" =~ ^[0-9]+$ ]] && CTX_K=$(( CTX_TOKENS / 1000 ))
 
+# --- Blocker-status-line F1: additive-only context mirror + transcript-
+# signal self-clear (SPEC.md D3). Never touches Q_SEG/INJECT or anything
+# derived from them (goldens/verify_scope_boundary.sh pins the
+# additionalContext grammar built below untouched). Both calls are
+# best-effort via the blocker_status.py CLI -- never allowed to slow or
+# abort this turn.
+BLOCKER_STATUS="${SCRIPT_DIR:-.}/../blocker_status.py"
+if [ -f "$BLOCKER_STATUS" ]; then
+  CONTEXT_MIRROR="${REPO_ROOT:-.}/.agent/memory/scratch/.context_status.json"
+  timeout 4 python3 "$BLOCKER_STATUS" write-context-mirror \
+    --tokens "$CTX_TOKENS" --pct "$CTX_PCT" --window "$CTX_WIN" \
+    --mirror-path "$CONTEXT_MIRROR" >/dev/null 2>&1
+  if [ -n "$SESSION_ID" ]; then
+    timeout 4 python3 "$BLOCKER_STATUS" clear-transcript-signal \
+      --session-id "$SESSION_ID" --scratch-dir "${REPO_ROOT:-.}/.agent/memory/scratch" >/dev/null 2>&1
+  fi
+fi
+
 WIN_DISP="$CTX_WIN"
 [ "$CTX_STATE" = "exceeded" ] && WIN_DISP=">${CTX_WIN}"
 
 case "$CTX_STATE" in
   resolved|exceeded)
     if [ "$HIGH_FIRES" = "1" ]; then
-      INJECT="⚡ CONTEXT HIGH (${CTX_K}k tokens / ${CTX_PCT}% of ${WIN_DISP}) — WRAP UP: brain.py wrap-up + commit mission to disk + /compact | quota used: ${Q_STR} | refresh: ${R_HRS}"
+      INJECT="⚡ CONTEXT HIGH (${CTX_K}k tokens / ${CTX_PCT}% of ${WIN_DISP}) — WRAP UP: brain.py wrap-up + commit mission to disk + /compact${Q_SEG}"
     else
-      INJECT="[context: ${CTX_PCT}% of ${WIN_DISP} (${CTX_K}k tokens, used not remaining) | quota used: ${Q_STR} (not remaining) | refresh: ${R_HRS}]"
+      INJECT="[context: ${CTX_PCT}% of ${WIN_DISP} (${CTX_K}k tokens, used not remaining)${Q_SEG}]"
     fi
     ;;
   unresolved)
     if [ "$HIGH_FIRES" = "1" ]; then
-      INJECT="⚡ CONTEXT HIGH (${CTX_K}k tokens / window unresolved) — WRAP UP: brain.py wrap-up + commit mission to disk + /compact | quota used: ${Q_STR} | refresh: ${R_HRS}"
+      INJECT="⚡ CONTEXT HIGH (${CTX_K}k tokens / window unresolved) — WRAP UP: brain.py wrap-up + commit mission to disk + /compact${Q_SEG}"
     else
-      INJECT="[context: ? (${CTX_K}k tokens; window unresolved for model '${CTX_MODEL}', used not remaining) | quota used: ${Q_STR} (not remaining) | refresh: ${R_HRS}]"
+      INJECT="[context: ? (${CTX_K}k tokens; window unresolved for model '${CTX_MODEL}', used not remaining)${Q_SEG}]"
     fi
     ;;
   *)
-    INJECT="[context: ? (used, not remaining) | quota used: ${Q_STR} (not remaining) | refresh: ${R_HRS}]"
+    INJECT="[context: ? (used, not remaining)${Q_SEG}]"
     ;;
 esac
 
 # --- Emit JSON via jq to avoid quoting issues ---
-jq -nc --arg msg "$INJECT" '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:$msg}}' \
-  || echo '{}'
+# systemMessage (START_LINE) is a SEPARATE, additive, top-level field --
+# user-facing, independent of hookSpecificOutput.additionalContext (model-
+# only). Omitted entirely when empty (lib missing, write failed, etc.) --
+# never emitted blank.
+if [ -n "$START_LINE" ]; then
+  jq -nc --arg msg "$INJECT" --arg sysmsg "$START_LINE" \
+    '{"systemMessage":$sysmsg, hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:$msg}}' \
+    || echo '{}'
+else
+  jq -nc --arg msg "$INJECT" '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:$msg}}' \
+    || echo '{}'
+fi
 
 exit 0

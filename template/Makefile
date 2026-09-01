@@ -2,7 +2,7 @@ VERSION := $(shell cat .agent/version 2>/dev/null || echo "UNKNOWN")
 
 # Athanor v$(VERSION) Makefile
 
-.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit backlog-trim stay-awake allow-sleep comms-status comms-trim comms-watch provider-validate job dispatch-once
+.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit backlog-trim stay-awake allow-sleep comms-status comms-trim comms-watch provider-validate job dispatch-once directives directives-lint
 
 help:
 	@echo "🏭 Athanor v$(VERSION)"
@@ -213,6 +213,12 @@ audit:
 
 backlog-audit:
 	@bash execution/backlog_audit.sh
+
+directives: ## List directives published by the lead harness and addressed to this project
+	@python3 execution/directives.py list
+
+directives-lint: ## Publish-side lint for .agent/directives/ (schema, links, targets, deny-list)
+	@python3 execution/checks/verify_directives_valid.py
 
 backlog-trim:
 	@python3 execution/backlog_trim.py

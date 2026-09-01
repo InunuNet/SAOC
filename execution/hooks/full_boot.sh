@@ -259,6 +259,17 @@ if [ -f "$COMMS_FILE" ]; then
   fi
 fi
 
+# Directive channel (spec directive-channel F1): directives published by the lead
+# harness and addressed to THIS project. `list` prints nothing when nothing is
+# pending, and the whole block is guarded on the tool's existence -- a downstream
+# that has not run `make update-template` yet prints nothing and errors nothing.
+# full_boot.sh output is folded into the session context verbatim (and Grok
+# discards it entirely), so an unguarded block would degrade boot for every
+# project in order to deliver a feature none of them have yet.
+if [ -f "execution/directives.py" ]; then
+  python3 execution/directives.py list 2>/dev/null || true
+fi
+
 # Step 0: System Identity
 echo "--- SYSTEM IDENTITY ---"
 python3 -c "

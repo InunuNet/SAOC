@@ -3,7 +3,7 @@ AUDIT_SKIP_LOG := .agent/memory/scratch/.audit-skips.tmp
 
 # Athanor v$(VERSION) Makefile
 
-.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy set-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse fleet-install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit backlog-trim bump-version stay-awake allow-sleep comms-status comms-trim comms-watch provider-validate job dispatch-once gate-all
+.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy set-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse fleet-install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit backlog-trim bump-version stay-awake allow-sleep comms-status comms-trim comms-watch provider-validate job dispatch-once gate-all directives directives-lint
 
 help:
 	@echo "🏭 Athanor v$(VERSION)"
@@ -244,6 +244,12 @@ backlog-trim:
 
 bump-version:
 	@bash execution/bump_version.sh && make sync
+
+directives: ## List directives published by the lead harness and addressed to this project
+	@python3 execution/directives.py list
+
+directives-lint: ## Publish-side lint for .agent/directives/ (schema, links, targets, deny-list)
+	@python3 execution/checks/verify_directives_valid.py
 
 test: test-stress
 	@echo ""

@@ -19,6 +19,9 @@ paths:
 - category: HARNESS
   path: .agent/workflows/
 - category: HARNESS
+  comment: "Directive channel (spec directive-channel F1) \u2014 lead-to-downstream directives; HARNESS so Path A carries them, applied-state stays WORKSPACE in the receiver"
+  path: .agent/directives/
+- category: HARNESS
   path: template/
 - category: HARNESS
   path: init.sh

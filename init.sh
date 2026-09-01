@@ -359,7 +359,7 @@ EOF
     cp "$SCRIPT_DIR/.claude/settings.json"  "$PROJECT_PATH/.claude/settings.json"  2>/dev/null || true
 
     # Copy execution scripts
-    for f in brain.py sync_agents.sh sync_skills.sh sync_rules.sh discovery.sh pulse_runner.sh ingest_pulse.sh get_pulse_status.sh manage_pulse.sh commit_helper.py ki_recall.py overlay_all.sh overlay_template.sh onboard_fill.py com.athanor.pulse.plist doc2md.py mission.py contract.py handoff_check.py handoffs.py browser_qa.py; do
+    for f in brain.py sync_agents.sh sync_skills.sh sync_rules.sh discovery.sh pulse_runner.sh ingest_pulse.sh get_pulse_status.sh manage_pulse.sh commit_helper.py ki_recall.py overlay_all.sh overlay_template.sh onboard_fill.py com.athanor.pulse.plist doc2md.py mission.py contract.py handoff_check.py handoffs.py browser_qa.py quota.py; do
         [ -f "$SCRIPT_DIR/execution/$f" ] && cp "$SCRIPT_DIR/execution/$f" "$PROJECT_PATH/execution/$f" 2>/dev/null || true
     done
 

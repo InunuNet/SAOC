@@ -883,7 +883,8 @@ def _phase_matches(phase_id, target_str: str) -> bool:
 GATE_REPORT_SCHEMA = "athanor.gate-report/v1"
 
 # Worst-first, so a multi-phase run's `overall` is the most severe phase status.
-_GATE_STATUS_SEVERITY = ("INVALID", "ERROR", "BLOCKED", "FAIL", "PASS")
+_GATE_STATUS_SEVERITY = ("INVALID", "ERROR", "BLOCKED", "FAIL",
+                         "INCONCLUSIVE", "PASS")
 
 # Populated by _record_phase_result(); drained by gate_cmd's report write.
 _GATE_PHASE_RECORDS = []
@@ -911,6 +912,9 @@ def _record_phase_result(phase_n, *, status=None, reason=None, pass_count=0,
         elif skipped and not allow_skips:
             status = "FAIL"
             reason = reason or "unresolved_skips"
+        elif skipped and pass_count == 0:
+            status = "INCONCLUSIVE"
+            reason = reason or "nothing_verified"
         else:
             status = "PASS"
     _GATE_PHASE_RECORDS.append({
@@ -1137,6 +1141,14 @@ def _gate_single_phase(contract: dict, args) -> bool:
     elif skipped and not allow_skips:
         print(f"\nFAIL Phase {phase_n} gate FAILED. Skipped (use --allow-skips to permit): {', '.join(skipped)}")
         print("   Resolve before proceeding to the next phase.")
+        return False
+    elif skipped and pass_count == 0:
+        # --allow-skips means "tolerate some skips alongside real passes", never
+        # "tolerate a phase where nothing was verified at all". Zero passes plus
+        # skips is INCONCLUSIVE -- a distinct non-zero verdict, never PASS.
+        print(f"\nINCONCLUSIVE Phase {phase_n} gate INCONCLUSIVE -- every assertion skipped "
+              f"({skip_count} skip, 0 pass); nothing was verified. Skipped: {', '.join(skipped)}")
+        print("   --allow-skips does not permit a phase in which nothing passed.")
         return False
     elif skipped:
         print(f"\nPASS Phase {phase_n} gate PASSED (skips allowed). Proceed to next phase.")

@@ -34,6 +34,31 @@ STALE_SECONDS = 900
 DEFAULT_MIRROR_PATH = ".agent/memory/scratch/.quota_status.json"
 REQUIRED_FIELDS = ("used_pct", "resets_at", "seconds_to_reset", "captured_at")
 
+# Band thresholds (mission quota-aware-pause-resume F1). Named constants so
+# all three live in one place — 85 and 90 already back other load-bearing
+# behaviour (admission control, the high-water checkpoint); 95 is new.
+BAND_TIGHT_PCT = 85
+BAND_CRITICAL_PCT = 90
+BAND_PAUSE_PCT = 95
+
+
+def compute_band(state, used_pct):
+    """Return the discrete band word for a reading. Never a percentage.
+
+    Fail-open: any state other than "ok", or a missing used_pct, always
+    yields "unknown" — the oracle must not look confident about data it
+    does not have. Boundaries are inclusive at the lower bound.
+    """
+    if state != "ok" or used_pct is None:
+        return "unknown"
+    if used_pct >= BAND_PAUSE_PCT:
+        return "pause"
+    if used_pct >= BAND_CRITICAL_PCT:
+        return "critical"
+    if used_pct >= BAND_TIGHT_PCT:
+        return "tight"
+    return "healthy"
+
 
 def _unknown(reason):
     return {
@@ -45,6 +70,7 @@ def _unknown(reason):
         "captured_at": None,
         "age_seconds": None,
         "reason": reason,
+        "band": "unknown",
     }
 
 
@@ -94,31 +120,34 @@ def read_status(mirror_path):
     if age_seconds > STALE_SECONDS:
         return _unknown("stale")
 
+    state = "partial" if is_partial else "ok"
     return {
         "schema": SCHEMA,
-        "state": "partial" if is_partial else "ok",
+        "state": state,
         "used_pct": used_pct,
         "resets_at": resets_at_raw,
         "seconds_to_reset": seconds_to_reset,
         "captured_at": captured_at_raw,
         "age_seconds": age_seconds,
         "reason": None,
+        "band": compute_band(state, used_pct),
     }
 
 
 def format_text(status):
+    band = status.get("band", "unknown")
     if status["state"] == "ok":
         resets_hrs = status["seconds_to_reset"] / 3600.0
         return (
             f"quota: state=ok used={status['used_pct']}% "
-            f"resets_in={resets_hrs:.1f}h"
+            f"resets_in={resets_hrs:.1f}h band={band}"
         )
     if status["state"] == "partial":
         return (
             f"quota: state=partial used={status['used_pct']}% "
-            f"resets_in=unknown"
+            f"resets_in=unknown band={band}"
         )
-    return f"quota: state=unknown reason={status['reason']}"
+    return f"quota: state=unknown reason={status['reason']} band={band}"
 
 
 def cmd_status(args):

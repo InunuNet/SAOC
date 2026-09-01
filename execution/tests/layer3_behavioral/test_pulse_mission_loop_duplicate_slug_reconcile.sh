@@ -10,11 +10,23 @@ ACTIVE_JSON=".agent/memory/project/missions/active.json"
 OLD_MISSION=".agent/memory/project/missions/2026-05-19-test-dup-loop.md"
 NEW_MISSION=".agent/memory/project/missions/2026-05-20-test-dup-loop.md"
 QUEUE_FILE=".agent/mission_queue.txt"
+MISSIONS_DIR=".agent/memory/project/missions"
 
 ACTIVE_BACKUP="$(mktemp)"
 QUEUE_BACKUP="$(mktemp)"
 ACTIVE_EXISTS=0
 QUEUE_EXISTS=0
+
+# pulse_mission_loop.sh's fallback scan (lines ~155-190) globs the real
+# missions dir for ANY file with status: in_progress|active — not just this
+# test's fixtures. If a real mission is genuinely in progress (the harness's
+# normal operating state), the fallback finds it and repairs active.json to
+# point at it, so the script never reaches the "idle" branch this test
+# asserts on. Move any such real mission files aside for the duration of the
+# run and restore them afterward, same pattern as the active.json/queue
+# backup above.
+HOLD_DIR="$(mktemp -d)"
+MOVED_MISSIONS=()
 
 cleanup() {
   rm -f "$OLD_MISSION" "$NEW_MISSION"
@@ -29,8 +41,15 @@ cleanup() {
     rm -f "$QUEUE_FILE"
   fi
   rm -f "$ACTIVE_BACKUP" "$QUEUE_BACKUP"
+  for mf in "${MOVED_MISSIONS[@]:-}"; do
+    [ -z "$mf" ] && continue
+    if [ -f "$HOLD_DIR/$(basename "$mf")" ]; then
+      mv "$HOLD_DIR/$(basename "$mf")" "$mf"
+    fi
+  done
+  rm -rf "$HOLD_DIR"
 }
-trap cleanup EXIT
+trap cleanup EXIT INT TERM
 
 if [ -f "$ACTIVE_JSON" ]; then
   cp "$ACTIVE_JSON" "$ACTIVE_BACKUP"
@@ -41,6 +60,17 @@ if [ -f "$QUEUE_FILE" ]; then
   cp "$QUEUE_FILE" "$QUEUE_BACKUP"
   QUEUE_EXISTS=1
 fi
+
+for mf in "$MISSIONS_DIR"/*.md; do
+  [ -f "$mf" ] || continue
+  case "$mf" in
+    "$OLD_MISSION"|"$NEW_MISSION") continue ;;
+  esac
+  if grep -qE '^status:[[:space:]]*(in_progress|active)[[:space:]]*$' "$mf"; then
+    mv "$mf" "$HOLD_DIR/$(basename "$mf")"
+    MOVED_MISSIONS+=("$mf")
+  fi
+done
 
 python3 - <<'PY'
 import json

@@ -1,0 +1,11 @@
+{
+  "entries": {
+    "ATH-20260831-directive-channel-adopt": {
+      "at": "2026-09-01T10:30:04Z",
+      "harness_version": "3.7.152",
+      "note": "channel verified: update-template applied, make directives lists the id, show prints the untrusted envelope",
+      "result": "applied"
+    }
+  },
+  "schema": "athanor.directives-applied/v1"
+}
