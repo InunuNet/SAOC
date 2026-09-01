@@ -118,7 +118,7 @@ assertions:
         renaming/removing any of the 8 old values, failing to add the 3 new ones, or widening
         validateVendorCategory to accept anything.
       command: >-
-        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f3-category-enum-widened-and-validated.mjs
+        npx tsx .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f3-category-enum-widened-and-validated.mjs
 
     - id: A4
       description: >-
@@ -147,7 +147,7 @@ assertions:
         also excluding the value in the payload builder, or vice versa; wiring any gate to the
         wrong controlling field.
       command: >-
-        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f3-payload-gates.mjs
+        npx tsx .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f3-payload-gates.mjs
 
     - id: A6
       description: >-

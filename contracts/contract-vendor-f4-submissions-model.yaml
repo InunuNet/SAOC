@@ -96,7 +96,7 @@ assertions:
         the 1.5 case), (c) a category/boothType/paymentMethod check that only verifies
         "is an array/string", not membership in the closed set.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-f4-submissions-model/check-required-field-rejection.mjs
+        npx tsx contracts/checks/vendor-f4-submissions-model/check-required-field-rejection.mjs
 
     - id: A4
       description: >-
@@ -109,7 +109,7 @@ assertions:
         value, not a single deep-equal against a pre-baked expected object that could be
         wrong in the same way as the implementation).
       command: >-
-        node --import tsx/esm contracts/checks/vendor-f4-submissions-model/check-full-round-trip.mjs
+        npx tsx contracts/checks/vendor-f4-submissions-model/check-full-round-trip.mjs
 
     - id: A5
       description: >-
@@ -122,7 +122,7 @@ assertions:
         otherwise lets a caller-supplied status/submittedAt/id survive into the built
         document.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-f4-submissions-model/check-status-cannot-be-forged.mjs
+        npx tsx contracts/checks/vendor-f4-submissions-model/check-status-cannot-be-forged.mjs
 
     - id: A6
       description: >-
@@ -141,7 +141,7 @@ assertions:
         is selected (an undocumented cross-field rule the source form and mission brief do
         not specify).
       command: >-
-        node --import tsx/esm contracts/checks/vendor-f4-submissions-model/check-regulatory-fields-unvalidated.mjs
+        npx tsx contracts/checks/vendor-f4-submissions-model/check-regulatory-fields-unvalidated.mjs
 
     - id: A7
       description: >-
@@ -157,7 +157,7 @@ assertions:
         `status === 'approved'`, or importing admin-roles.ts to look up a capability keyed
         on submission status.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-f4-submissions-model/check-zero-authorization.mjs
+        npx tsx contracts/checks/vendor-f4-submissions-model/check-zero-authorization.mjs
 
     - id: A8
       description: pnpm lint passes with zero errors after types/index.ts and lib/vendor-submissions.ts are added.

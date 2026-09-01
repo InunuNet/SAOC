@@ -163,7 +163,7 @@ assertions:
         comparison, not an approximate one). Defeating mutation: removing the size-limit
         comparison, or re-deriving the extension from fileName instead of mimeType.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-f7-payment-path/check-proof-of-payment-plan.mjs
+        npx tsx contracts/checks/vendor-f7-payment-path/check-proof-of-payment-plan.mjs
 
     - id: A4
       description: >-
@@ -191,7 +191,7 @@ assertions:
         failure mode depends on the other to be real. Defeating mutation: allowing the status
         gate to pass for any status, or removing the booth-uniqueness comparison.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-f7-payment-path/check-payment-status-gate-and-booth-uniqueness.mjs
+        npx tsx contracts/checks/vendor-f7-payment-path/check-payment-status-gate-and-booth-uniqueness.mjs
 
     - id: A6
       description: >-
@@ -203,7 +203,7 @@ assertions:
         apart in wall-clock time produce identical paymentConfirmedAt; different `now` values
         produce different ones); every refused decision has EXACTLY the 2 keys {ok, error}.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-f7-payment-path/check-additive-patch-injected-time.mjs
+        npx tsx contracts/checks/vendor-f7-payment-path/check-additive-patch-injected-time.mjs
 
     - id: A7
       description: >-
@@ -215,7 +215,7 @@ assertions:
         at all -- it succeeds identically regardless of the real submission's status, since
         this pure function has no way to know it.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-f7-payment-path/check-zero-authorization.mjs
+        npx tsx contracts/checks/vendor-f7-payment-path/check-zero-authorization.mjs
 
     - id: A8
       description: >-
@@ -260,7 +260,7 @@ assertions:
         delegating to handleProofOfPaymentUpload(); importing the admin-auth/admin-roles gate
         at all; or the route itself branching on submission existence.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-f7-payment-path/check-public-proof-of-payment-route-wiring.mjs
+        npx tsx contracts/checks/vendor-f7-payment-path/check-public-proof-of-payment-route-wiring.mjs
 
     - id: A11
       description: >-

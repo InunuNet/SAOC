@@ -14,6 +14,12 @@ const OVERRIDES = {
   '@/lib/vendor-approval-confirmation': 'fixture-approval-email.mjs',
   'firebase-admin/firestore': 'fixture-firestore.mjs',
   'next/headers': 'fixture-next-headers.mjs',
+  // M3 (vendor-gated-registration-flow) additions.
+  '@/lib/payments': 'fixture-payments.mjs',
+  '@/lib/payments/payfast': 'fixture-payments.mjs',
+  '@/lib/payments/ozow': 'fixture-payments.mjs',
+  '@/lib/payments/active-gateway': 'fixture-active-gateway.mjs',
+  '@/lib/vendor-stand-payment-notice': 'fixture-vendor-stand-payment-notice.mjs',
 };
 
 const originalLoad = Module._load;

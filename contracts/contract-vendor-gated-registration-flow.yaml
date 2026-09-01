@@ -686,7 +686,7 @@ assertions:
         state (approved/declined) is refused; an unknown action is refused.
         FAILS ON: any legal transition refused, any illegal transition allowed, or a patch
         containing keys beyond status/reviewedBy/reviewedAt.
-      command: node --import tsx/esm contracts/checks/vendor-gated-registration-flow/check-application-review-transitions.mjs
+      command: npx tsx contracts/checks/vendor-gated-registration-flow/check-application-review-transitions.mjs
 
     # --- F3: token security ---
     - id: A6
@@ -1300,7 +1300,7 @@ assertions:
         bodies differing, the session token appearing inside the JSON body, or a failed match
         not recording an attempt.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m4/check-verify-handler-rate-limit-and-response-shape.mjs
+        npx tsx contracts/checks/vendor-gated-registration-flow-m4/check-verify-handler-rate-limit-and-response-shape.mjs
     - id: A49
       description: >-
         PROMOTED to phase 4 2026-09-01 (architect pass 3) -- F23 is now implemented.
@@ -1470,7 +1470,7 @@ assertions:
         negative control), or the locked marker missing/always-on regardless of
         registrationCodeLockedAt.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m4/check-admin-table-code-column.mjs
+        npx tsx contracts/checks/vendor-gated-registration-flow-m4/check-admin-table-code-column.mjs
 
     # --- whole-mission regression gate, M4 ---
     - id: A53
@@ -1591,7 +1591,7 @@ assertions:
         in DOM order, or a second inline copy of the sentence found elsewhere in the page
         component's source.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m3/check-forfeiture-notice-precedes-pay-control.mjs
+        npx tsx contracts/checks/vendor-gated-registration-flow-m3/check-forfeiture-notice-precedes-pay-control.mjs
 
     # --- F30: initiate -- server-derived amount, class assertion ---
     - id: A59

@@ -1,4 +1,4 @@
-import { applications, FakeTimestamp, INCREMENT } from './store.mjs';
+import { getCollectionMap, FakeTimestamp, INCREMENT } from './store.mjs';
 
 export const Timestamp = FakeTimestamp;
 
@@ -6,9 +6,9 @@ export const FieldValue = {
   increment: (by) => ({ [INCREMENT]: by }),
 };
 
-function applyPatch(id, patch) {
-  const current = applications.get(id);
-  if (!current) throw new Error(`no such application: ${id}`);
+function applyPatch(map, id, patch) {
+  const current = map.get(id);
+  if (!current) throw new Error(`no such doc: ${id}`);
   for (const [key, value] of Object.entries(patch)) {
     if (value && typeof value === 'object' && INCREMENT in value) {
       const prior = typeof current[key] === 'number' ? current[key] : 0;
@@ -19,28 +19,45 @@ function applyPatch(id, patch) {
   }
 }
 
-function docRef(id) {
+function snapshotOf(map, id) {
   return {
+    exists: map.has(id),
     id,
-    get: async () => ({
-      exists: applications.has(id),
-      id,
-      data: () => (applications.has(id) ? { ...applications.get(id) } : undefined),
-    }),
-    update: async (patch) => applyPatch(id, patch),
+    data: () => (map.has(id) ? { ...map.get(id) } : undefined),
   };
 }
 
-function collection() {
+function docRef(collectionName, id) {
+  const map = getCollectionMap(collectionName);
+  return {
+    id,
+    // Not a real firebase-admin field -- this harness's own way of letting runTransaction's
+    // get/set/update resolve which in-memory collection a ref belongs to, since a transaction
+    // callback here (M3) now spans MULTIPLE collections (vendorStandOrders AND
+    // vendorSubmissions), unlike the original single-collection fixture.
+    __collection: collectionName,
+    get: async () => snapshotOf(map, id),
+    set: async (data) => {
+      map.set(id, { ...data });
+    },
+    update: async (patch) => applyPatch(map, id, patch),
+  };
+}
+
+function collection(collectionName) {
+  const map = getCollectionMap(collectionName);
   const filters = [];
   const query = {
-    where(field, _op, value) { filters.push([field, value]); return query; },
+    where(field, _op, value) {
+      filters.push([field, value]);
+      return query;
+    },
     get: async () => ({
-      docs: [...applications.entries()]
+      docs: [...map.entries()]
         .filter(([, data]) => filters.every(([field, value]) => data[field] === value))
         .map(([id, data]) => ({ id, data: () => ({ ...data }) })),
     }),
-    doc: docRef,
+    doc: (id) => docRef(collectionName, id),
   };
   return query;
 }
@@ -50,8 +67,11 @@ export function getFirestore() {
     collection,
     runTransaction: async (fn) =>
       fn({
-        get: async (ref) => ({ data: () => ({ ...(applications.get(ref.id) ?? {}) }) }),
-        update: (ref, patch) => applyPatch(ref.id, patch),
+        get: async (ref) => snapshotOf(getCollectionMap(ref.__collection), ref.id),
+        set: (ref, data) => {
+          getCollectionMap(ref.__collection).set(ref.id, { ...data });
+        },
+        update: (ref, patch) => applyPatch(getCollectionMap(ref.__collection), ref.id, patch),
       }),
   };
 }

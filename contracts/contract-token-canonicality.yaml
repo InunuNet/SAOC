@@ -1,0 +1,79 @@
+schema: athanor.contract/v1
+slug: token-canonicality
+goal: >-
+  STANDING, repo-wide regression guard. Codex found (2026-09-01) that `Buffer.from(str, 'hex')`
+  does not reject malformed hex -- it silently stops decoding at the first invalid character or
+  an odd-length tail and returns whatever it managed to parse. A genuine 64-char signature with
+  arbitrary junk appended decodes to the SAME 32-byte buffer as the clean signature, so it
+  passed every affected verifier's constant-time comparison unchanged -- the mutation was
+  accepted before the comparison ever ran. Team-lead reproduced this against the shipped
+  lib/vendor-registration-token.ts; @dev then confirmed the identical defect, across five
+  mutation classes, in both that file and lib/recovery-token.ts -- both shipped, both in
+  production paths, both already through several QA passes, a dedicated forgery/expiry/
+  domain-separation check, and multiple Codex reviews. None of that caught it, because every
+  existing forgery test in this project started from an ALREADY-invalid token -- not one
+  appended junk to a token that had genuinely just been minted. The defect only surfaced when a
+  fourth token module (lib/vendor-stand-payment-token.ts, mission vendor-gated-registration-flow
+  M3) was written on the same pattern and inherited it.
+  This contract is deliberately NOT scoped to one mission or one token module. It asserts a
+  single property -- no token verifier may accept input that differs by ANY byte from what was
+  minted -- over every HMAC-signed-token module DISCOVERED in lib/ by shape (the same
+  "scan by shape, not by name" method A54 uses for claimRegistrationToken() call sites and the
+  rewritten A50 uses for extracting route preconditions), so a fifth token module inherits this
+  test automatically instead of depending on whoever writes it remembering this incident. See
+  contracts/checks/token-canonicality/check-signature-mutation-rejected.mjs's header comment for
+  the full mutation-class list and the reasoning for why only the signature segment (never the
+  base64url payload segment, which is what actually gets signed, so any byte difference there
+  already changes the expected signature regardless of decoder leniency) is mutated.
+created_at: '2026-09-01'
+autonomy: high
+
+# ============================================================================
+# SCOPE
+# ============================================================================
+# IN SCOPE:
+#   - The single class-level property: every lib/*.ts module matching this project's shared
+#     HMAC-signed-token shape (createHmac(...).digest('hex') + an exported verify function)
+#     must reject a signature segment mutated by: appended non-hex junk, trailing whitespace,
+#     one extra hex character, case variation, or an extra dot-delimited segment -- while the
+#     genuine, unmutated, freshly-minted token still verifies (proving the check itself isn't
+#     vacuously failing everything).
+#   - A vacuous-scan guard (same shape as A42/A54): the discovery must find at least the 4
+#     modules known as of 2026-09-01 (lib/recovery-token.ts, lib/supporter-registration-token.ts,
+#     lib/vendor-registration-token.ts, lib/vendor-stand-payment-token.ts), and a discovered
+#     module with no adapter registered in the check is a HARD FAILURE, never a silent skip.
+#
+# EXPLICITLY OUT OF SCOPE (already covered elsewhere, not duplicated here):
+#   - Purpose-scoping, cross-registration interchangeability, and expiry --
+#     contracts/checks/public-supporter-registration-f1/check-purpose-scoped-tokens.mjs and the
+#     equivalent per-module checks already cover those; this contract does not re-test them and
+#     that file was deliberately NOT extended with the mutation classes here (do not read its
+#     continued narrow scope as this property already being covered).
+#   - Forgery from an already-invalid or unsigned token (wrong secret, hand-crafted payload) --
+#     each module's own existing checks already cover that; this contract's property is
+#     specifically about a token that WAS genuinely minted and then had its signature mutated.
+#   - The actual patch making every discovered module pass (lib/recovery-token.ts and
+#     lib/supporter-registration-token.ts are patched and pass as of this writing;
+#     lib/vendor-registration-token.ts was patched by @dev while this contract was being
+#     written; lib/vendor-stand-payment-token.ts is NOT yet patched -- this contract is
+#     expected to fail on it until that patch lands, which is the point: it is the regression
+#     guard proving the patch, not a description of a state already achieved).
+
+goldens:
+  - contracts/checks/token-canonicality/check-signature-mutation-rejected.mjs
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        No HMAC-signed-token verifier discovered under lib/ (by shape, not by a hardcoded
+        filename list) accepts a signature segment that differs by any byte from what was
+        genuinely minted -- covering appended non-hex junk, trailing whitespace, one extra hex
+        character, case variation, and an extra dot-delimited segment, for every discovered
+        module, with the genuine unmutated token still verifying as the non-vacuous-pass proof.
+        A discovered module with no registered adapter is a hard failure, not a skip. Defeating
+        mutation: any `Buffer.from(signatureSegment, 'hex')` call not preceded by a strict
+        `/^[0-9a-f]{64}$/`-style shape check on the raw segment string.
+      command: >-
+        npx tsx contracts/checks/token-canonicality/check-signature-mutation-rejected.mjs

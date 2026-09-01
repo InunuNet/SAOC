@@ -99,7 +99,7 @@ assertions:
         every new field with valid values is accepted. Defeating mutation: making any field
         beyond the 3 F2 named required, or narrowing/renaming any EXISTING enum member.
       command: >-
-        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-new-fields-additive-and-validated.mjs
+        npx tsx .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-new-fields-additive-and-validated.mjs
 
     - id: A4
       description: >-
@@ -112,7 +112,7 @@ assertions:
         property). Defeating mutation: replacing the explicit field-by-field copy with a
         `{ ...input }` spread anywhere in the function.
       command: >-
-        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-build-submission-copy-through.mjs
+        npx tsx .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-build-submission-copy-through.mjs
 
     - id: A5
       description: >-
@@ -121,7 +121,7 @@ assertions:
         either); a VendorSubmission built with every new F1 field populated, JSON
         round-tripped, carries no admin/roles/capability/grant-flavoured key.
       command: >-
-        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-zero-authorization.mjs
+        npx tsx .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-zero-authorization.mjs
 
     - id: A6
       description: pnpm lint passes with zero errors after both changed files.

@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 
-import { constantTimeEqual } from './recovery-token';
+import { constantTimeEqual, isWellFormedHexDigest } from './recovery-token';
 
 /**
  * Signed, single-application-scoped vendor registration token (mission
@@ -13,8 +13,9 @@ import { constantTimeEqual } from './recovery-token';
  * (documented in .env.local.example), never from any other purpose's secret.
  *
  * Structurally identical to lib/recovery-token.ts's mint/verify shape (`applicationId` in
- * place of `orderId`), reusing (importing, not redefining) `constantTimeEqual` from
- * lib/recovery-token.ts -- this module never redefines its own constant-time comparison.
+ * place of `orderId`), reusing (importing, not redefining) `constantTimeEqual` AND
+ * `isWellFormedHexDigest` from lib/recovery-token.ts -- this module never redefines its own
+ * constant-time comparison or signature-shape validation.
  *
  * Pure, side-effect-free -- no Firestore, no network, no Date.now()/new Date() call anywhere
  * in this file. Time is always the caller-supplied `now`.
@@ -158,19 +159,18 @@ export function verifyVendorRegistrationToken(
 
   const { payloadSegment, signatureSegment, payload } = parsed;
 
-  const expectedSignature = signPayload(payloadSegment, input.secret);
-
-  // Signature segments may legitimately differ in length (a tampered or truncated segment) --
-  // hex-decode failures and length mismatches must fall through to a clean 'bad-signature'
-  // refusal, never an unhandled exception.
-  let signatureBuffer: Buffer;
-  let expectedBuffer: Buffer;
-  try {
-    signatureBuffer = Buffer.from(signatureSegment, 'hex');
-    expectedBuffer = Buffer.from(expectedSignature, 'hex');
-  } catch {
+  // Reject any segment that is not EXACTLY a 64-character lowercase hex digest before ever
+  // decoding it -- see lib/recovery-token.ts's isWellFormedHexDigest comment for the defect
+  // this closes (Buffer.from(str, 'hex') silently truncates at the first invalid character
+  // instead of rejecting malformed input).
+  if (!isWellFormedHexDigest(signatureSegment)) {
     return { ok: false, reason: 'bad-signature' };
   }
+
+  const expectedSignature = signPayload(payloadSegment, input.secret);
+
+  const signatureBuffer = Buffer.from(signatureSegment, 'hex');
+  const expectedBuffer = Buffer.from(expectedSignature, 'hex');
 
   if (!constantTimeEqual(signatureBuffer, expectedBuffer)) {
     return { ok: false, reason: 'bad-signature' };

@@ -4,6 +4,34 @@ Runs this project's **real** Next.js App Router route handlers in-process, with 
 infrastructure (admin session, Firestore, mailer, cookie jar) replaced by fixtures — so a
 contract check can assert what a route *does*, not merely what its source *looks like*.
 
+## How to invoke a check: `npx tsx`, never `node --import tsx/esm`
+
+On this project's Node/tsx combination (Node v26.4.0, tsx 4.23.12), `node --import tsx/esm
+<check>.mjs` fails to resolve the `@/*` tsconfig path alias whenever the import is nested more
+than one level deep — a check imports a lib file which itself imports `@/lib/...`. It dies with
+`Cannot find module '@/lib/...'`, and that failure reports as a FAILING check, not a check that
+could not load, which reads as "this code is broken" when the real story is "this check never
+ran." Running the identical file with `npx tsx <check>.mjs` instead resolves correctly.
+
+This was patched ad hoc, per assertion, three separate times on one mission (`A21`, `A50`, and
+a batch of individually-discovered cases) before anyone audited it systematically. The 2026-09-01
+architect pass found 36 assertions across the repo still on the broken invocation and fixed them
+in a single sweep — see `.agent/memory/project/specs/token-canonicality` era session notes /
+`learned.md` for the full audit (8 of the 36 had never actually been executing; none had gone
+PASS -> FAIL under the broken invocation, i.e. no real defect was hiding behind it).
+
+**The rule, going forward: every new `command:` in a contract that runs a `.mjs` check invokes
+it as `npx tsx <path>`, never `node --import tsx/esm <path>`.** There is no case where the
+latter is required — `npx tsx` resolves everything the former does, plus nested `@/` imports.
+Do not add a new `node --import tsx/esm` invocation, and if you touch an existing one for any
+other reason, switch it while you're there.
+
+This project deliberately did not centralize this into a wrapper script (e.g. a
+`contracts/harness/run-check.sh`) — `contract.py`'s shell executor still needs a literally
+runnable string either way, so a wrapper would add indirection without removing the failure
+mode, and that kind of repo-convention change deserves its own decision rather than riding
+along inside a bug fix. This README section is the convention until that decision is made.
+
 ## Why this exists
 
 Several checks in `contracts/checks/vendor-gated-registration-flow*/` state, as a limitation,
@@ -76,3 +104,29 @@ approval nor reissue commits unless the vendor can actually redeem the resulting
 
 **This is not wired into the contract.** Promoting these scenarios into assertions is
 @architect's call.
+
+## Importing a default-exported `.tsx` (e.g. an email component) from a check
+
+On this project's Node/tsx combination (Node v26.4.0, tsx 4.23.12), a plain ESM
+`import Component from './SomeComponent.tsx'` — under **either** `node --import tsx/esm` or
+`npx tsx` — yields a double-wrapped `{ default: [Getter] }` instead of the component itself,
+because tsx transpiles `.tsx` to CommonJS and the ESM import machinery re-wraps that module's
+own `.default` a second time. A React render check that does `render(<Component />)` against
+that value throws `Element type is invalid`. This is the same CJS-under-ESM mismatch documented
+above for `preload.cjs` fixtures, just hitting a different import site — switching between
+`node --import tsx/esm` and `npx tsx` does **not** fix it; both wrap identically.
+
+**Convention: use `createRequire`, not a plain `import`, for any default-exported `.tsx`.**
+
+```js
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const Component = require('../../../emails/VendorRegistrationConfirmation.tsx').default;
+```
+
+`require()` goes through tsx's CJS transform once, with no second ESM re-wrap, so
+`mod.default` is the real component — no unwrap gymnastics needed. This is the same
+`createRequire(import.meta.url)` pattern the route-runner fixtures already use (see "One
+consequence worth knowing" above) — one mechanism, two call sites. Do not use the
+`mod.default?.default ?? mod.default` fallback chain in new checks; it works but hides the
+actual cause and has to be re-derived by whoever reads it next.

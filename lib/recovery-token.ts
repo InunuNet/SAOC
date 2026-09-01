@@ -37,6 +37,35 @@ export function constantTimeEqual(a: Buffer, b: Buffer): boolean {
   return timingSafeEqual(a, b);
 }
 
+/**
+ * Every token module in this project (this file, lib/vendor-registration-token.ts,
+ * lib/supporter-registration-token.ts, lib/vendor-stand-payment-token.ts) signs with
+ * `createHmac('sha256', secret).digest('hex')`,
+ * which can only ever produce exactly 64 lowercase hex characters. Shared here, alongside
+ * `constantTimeEqual`, as the single source of truth for validating a signature segment's
+ * shape -- the same "reuse, never redefine" relationship `constantTimeEqual` already has with
+ * its importers.
+ *
+ * The defect this closes (found 2026-09-01, Codex cross-model review): `Buffer.from(str,
+ * 'hex')` does NOT reject malformed hex -- it silently stops decoding at the first invalid
+ * character or an odd-length tail and returns whatever it managed to parse. A genuine 64-char
+ * signature with arbitrary junk appended (`${validSignature}.junk`, trailing whitespace, an
+ * extra `.`-delimited segment, one appended hex character, ...) decodes to the SAME 32-byte
+ * buffer as the clean signature, so it passed the constant-time comparison unchanged -- every
+ * verifier in this project trusted the decoder to reject bad input, and it doesn't. Uppercase
+ * or mixed-case hex is also refused here even though it decodes to the same bytes: a genuine
+ * signature is never anything but lowercase, so accepting case variants would still mean this
+ * verifier treats more than one string as "the" token, which is the property this function
+ * exists to close off. `constantTimeEqual` above is unaffected and unchanged -- the fix is
+ * entirely in validating the segment's shape BEFORE it is ever decoded, never in the
+ * comparison itself.
+ */
+const SHA256_HEX_DIGEST_PATTERN = /^[0-9a-f]{64}$/;
+
+export function isWellFormedHexDigest(segment: string): boolean {
+  return SHA256_HEX_DIGEST_PATTERN.test(segment);
+}
+
 export interface MintRecoveryTokenInput {
   orderId: string;
   secret: string;
@@ -127,19 +156,17 @@ export function verifyRecoveryToken(input: VerifyRecoveryTokenInput): RecoveryTo
 
   const { payloadSegment, signatureSegment, payload } = parsed;
 
-  const expectedSignature = signPayload(payloadSegment, input.secret);
-
-  // Signature segments may legitimately differ in length (a tampered or truncated segment) —
-  // hex-decode failures and length mismatches must fall through to a clean 'bad-signature'
-  // refusal, never an unhandled exception.
-  let signatureBuffer: Buffer;
-  let expectedBuffer: Buffer;
-  try {
-    signatureBuffer = Buffer.from(signatureSegment, 'hex');
-    expectedBuffer = Buffer.from(expectedSignature, 'hex');
-  } catch {
+  // Reject any segment that is not EXACTLY a 64-character lowercase hex digest before ever
+  // decoding it — see isWellFormedHexDigest's comment. This is what actually closes the
+  // truncation defect; Buffer.from(..., 'hex') below is never trusted to reject bad input.
+  if (!isWellFormedHexDigest(signatureSegment)) {
     return { ok: false, reason: 'bad-signature' };
   }
+
+  const expectedSignature = signPayload(payloadSegment, input.secret);
+
+  const signatureBuffer = Buffer.from(signatureSegment, 'hex');
+  const expectedBuffer = Buffer.from(expectedSignature, 'hex');
 
   if (!compare(signatureBuffer, expectedBuffer)) {
     return { ok: false, reason: 'bad-signature' };

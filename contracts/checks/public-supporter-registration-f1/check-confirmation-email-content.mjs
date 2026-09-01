@@ -19,9 +19,16 @@
 // Run as: node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-confirmation-email-content.mjs
 
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { renderToStaticMarkup } from 'react-dom/server';
 import React from 'react';
-import SupporterRegistrationConfirmation from '../../../emails/SupporterRegistrationConfirmation.tsx';
+
+// See contracts/harness/route-runner/README.md "Importing a default-exported .tsx" — under
+// this project's Node/tsx combination a plain ESM import of a default-exported .tsx yields a
+// double-wrapped { default: [Getter] } instead of the component. require() via createRequire
+// goes through tsx's CJS transform once, with no second re-wrap.
+const require = createRequire(import.meta.url);
+const SupporterRegistrationConfirmation = require('../../../emails/SupporterRegistrationConfirmation.tsx').default;
 
 const failures = [];
 const CONFIRM_URL = 'https://saoc.co.za/api/supporters/confirm?token=abc.def123';

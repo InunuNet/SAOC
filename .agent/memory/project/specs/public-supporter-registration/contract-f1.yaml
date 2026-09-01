@@ -91,7 +91,7 @@ assertions:
         box" — see goldens/README.md "Consent design." Defeating mutation:
         `consentMarketing: Boolean(raw.consentMarketing)` or `?? true` defaulting.
       command: >-
-        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-consent-is-explicit.mjs
+        npx tsx contracts/checks/public-supporter-registration-f1/check-consent-is-explicit.mjs
 
     - id: A4
       description: >-
@@ -102,7 +102,7 @@ assertions:
         named, not collapsed into one generic message). Defeating mutation: hardcoding a
         generic fieldErrors array instead of forwarding the real validator's output.
       command: >-
-        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-no-parallel-validation.mjs
+        npx tsx contracts/checks/public-supporter-registration-f1/check-no-parallel-validation.mjs
 
     - id: A5
       description: >-
@@ -116,7 +116,7 @@ assertions:
         ignoring expectedPurpose entirely and returning whatever purpose the token itself
         carries.
       command: >-
-        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-purpose-scoped-tokens.mjs
+        npx tsx contracts/checks/public-supporter-registration-f1/check-purpose-scoped-tokens.mjs
 
     - id: A6
       description: >-
@@ -127,7 +127,7 @@ assertions:
         with the identical prior-attempts array is unaffected), and excludes attempts older
         than the window.
       command: >-
-        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-rate-limit-decision-wrapper.mjs
+        npx tsx contracts/checks/public-supporter-registration-f1/check-rate-limit-decision-wrapper.mjs
 
     - id: A7
       description: >-
@@ -141,7 +141,7 @@ assertions:
         caused by IP throttling. Defeating mutation: re-sending on every resubmission
         regardless of the cooldown decision.
       command: >-
-        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-email-cooldown-suppresses-resend.mjs
+        npx tsx contracts/checks/public-supporter-registration-f1/check-email-cooldown-suppresses-resend.mjs
 
     - id: A8
       description: >-
@@ -153,7 +153,7 @@ assertions:
         Defeating mutation: any branch-distinguishing field in the body (e.g.
         alreadyRegistered: true, an echoed status, a different message per branch).
       command: >-
-        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-no-enumeration.mjs
+        npx tsx contracts/checks/public-supporter-registration-f1/check-no-enumeration.mjs
 
     - id: A9
       description: >-
@@ -178,8 +178,28 @@ assertions:
         handleSupporterRegistration() result's body has EXACTLY the key `success` — no role,
         capability, claim, or echoed field of any kind.
       command: >-
-        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-zero-admin-authorization.mjs
+        npx tsx contracts/checks/public-supporter-registration-f1/check-zero-admin-authorization.mjs
 
     - id: A11
       description: pnpm lint passes with zero errors after all five new files are added.
       command: pnpm lint
+
+    - id: A12
+      description: >-
+        Class-level defeat of the crash Codex found on 2026-09-01: `firstName` is optional
+        (validateSupporterRegistrationInput permits it entirely ABSENT from the raw payload,
+        not merely null), but an unguarded downstream `.trim()` on the omitted-key case
+        crashed. None of A1-A11 caught this because every fixture payload sets `firstName`
+        explicitly (a string or null) — none deletes the key itself, the actual shape a form
+        submission takes when the field is left blank. For every field
+        validateSupporterRegistrationInput() treats as optional, a payload with that key
+        genuinely deleted (not set to null/undefined) must survive
+        validate -> buildSupporterRegistration -> handleSupporterRegistration end to end
+        without throwing, returning 201 with the field persisted as the documented null
+        default. Verified by mutation: reverting the `rawRecord.firstName ?? null` guard in
+        lib/supporter-registration-handler.ts back to an unguarded cast reproduces the exact
+        TypeError this assertion exists to catch. Same class as A42 in
+        vendor-gated-registration-flow ("every persisted field validated") — an optional field
+        validation permits must never be dereferenced unguarded downstream.
+      command: >-
+        npx tsx contracts/checks/public-supporter-registration-f1/check-optional-field-omission-safe.mjs

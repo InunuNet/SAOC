@@ -1142,6 +1142,29 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   conditionally-gated fields never render in the check. Traces to the original Aug-18 commit, not
   introduced by this mission.
 
+- [ ] SAOC (Contract decay, P3): 3 pre-existing, unrelated failures found in
+  `contracts/contract-ticketing-f4-admission-products.yaml` during the 2026-09-01 architect
+  tooling audit (`node --import tsx/esm` -> `npx tsx` sweep). Verdict confirmed unchanged before
+  and after the invocation switch — not caused by that fix, already broken:
+  1. `A3` (`check-single-source-of-truth.sh`) — `scripts/fix-vip-and-weekend-pass-pricing.ts`
+     re-types a price/capacity literal outside `lib/provisional-figures.ts` instead of importing
+     `ADMISSION_PRODUCTS`, breaking the single-source-of-truth invariant. (The script itself also
+     fails to run as a plain `node` script — `ERR_UNKNOWN_FILE_EXTENSION` on a bare `.ts` file —
+     separate from the content issue.)
+  2. `A6` (`check-checkout-wiring.sh`) — `app/api/tickets/checkout/route.ts` never references
+     `isWithinEarlyBirdWindow()`; the early-bird cutoff is stored on the ticketType document but
+     never enforced at checkout.
+  3. `A8` (`check-admission-products-data.mjs`) — `ADMISSION_PRODUCTS` is missing the
+     `early-bird-weekend-pass` product entirely, and `weekend-pass.price` is 380, not the
+     expected 400. Likely tied to the still-open multi-tier ticket pricing work (see
+     `project_gateway_deadline_august_2026` / Lee-Ann pricing artifact memory — pricing not
+     fully landed as of this writing).
+  None block any current mission's gate (this contract lives outside every currently-active
+  mission's own contract). Confirmed via `contract.py gate --run-checks`; A9
+  (`check-provisional-badge-gated.mjs`) in this same contract WAS fixed by the tooling sweep
+  (was erroring on `@/` module resolution, now genuinely passes) — do not conflate that fix
+  with these 3, which are real, separate, pre-existing content/wiring gaps.
+
 - [ ] SAOC (Misc): [quota-monitor] Athanor: active=2026-08-25-backlog-batch-6-checkpoint-autofind-stale-assertion-docs.
 
 - [ ] SAOC (Contract decay, P3): 4 more pre-existing, unrelated-to-`vendor-registration-form-rebuild`

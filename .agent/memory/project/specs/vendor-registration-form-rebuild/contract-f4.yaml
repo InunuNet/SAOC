@@ -153,7 +153,7 @@ assertions:
         values (a non-breaking widening masquerading as the rename this feature requires),
         failing to add 'no-preference', or renaming/removing 'corner' or 'end-of-row'.
       command: >-
-        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f4-boothtype-renamed-and-validated.mjs
+        npx tsx .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f4-boothtype-renamed-and-validated.mjs
 
     - id: A4
       description: >-
@@ -197,7 +197,7 @@ assertions:
         electricalEquipmentContinuousOperation without also requiring
         isElectricalLoadApplicable.
       command: >-
-        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f4-payload-gates.mjs
+        npx tsx .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f4-payload-gates.mjs
 
     - id: A6
       description: >-

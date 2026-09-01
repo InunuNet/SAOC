@@ -18,3 +18,4 @@ export { VendorRegisterSuccess } from './VendorRegisterSuccess';
 export { VendorRegisterForm } from './VendorRegisterForm';
 export { VendorApplyForm } from './VendorApplyForm';
 export { VendorRegistrationCodeEntryForm } from './VendorRegistrationCodeEntryForm';
+export { VendorStandPaymentForm } from './VendorStandPaymentForm';

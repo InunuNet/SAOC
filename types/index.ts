@@ -815,3 +815,40 @@ export type VendorApplicationDraft = Omit<
   | 'registrationCodeLockedAt'
   | 'registrationCodeGeneration'
 >;
+
+// ---------------------------------------------------------------------------
+// M3 (vendor-gated-registration-flow, F26) -- vendorStandOrders data model. A NEW sibling
+// Firestore collection, doc id === vendorSubmissionId (a vendor may book exactly one stand --
+// see contracts/golden/vendor-gated-registration-flow-m3/README.md "Booth size already encodes
+// the multi-stand case"). Deliberately NOT a reuse/extension of Order/Ticket/TicketType -- see
+// the golden README's "The crux decision" for the full reasoning.
+// ---------------------------------------------------------------------------
+
+// The three fixed booth-size options ARE the multi-stand cases (1 = single booth, 2 = the two
+// combined "Double" booths, 3 = the three combined "Triple" booths) -- there is no separate
+// quantity field. See the golden README "Booth size already encodes the multi-stand case."
+export type VendorStandBoothSize = 1 | 2 | 3;
+
+// No 'reserved' status -- deliberately. A stand booking has no finite pool to hold; see the
+// golden README "No 'reserved' status -- deliberately."
+export type VendorStandOrderStatus = 'pending' | 'paid' | 'failed' | 'cancelled';
+
+export interface VendorStandOrder {
+  id: string; // == vendorSubmissionId
+  vendorSubmissionId: string;
+  // Denormalized snapshots, for gateway display + admin visibility / confirmation email.
+  businessName: string;
+  contactEmail: string;
+  boothSize: VendorStandBoothSize;
+  // Server-derived ZAR figure, NEVER client-supplied -- see lib/vendor-stand-pricing.ts.
+  amount: number;
+  status: VendorStandOrderStatus;
+  // Resolved from adminSettings/activePaymentGateway at initiate time (lib/payments/active-gateway.ts).
+  gateway: string;
+  gatewayPaymentId: string | null;
+  // `VSO-{vendorSubmissionId}`, echoed to the gateway as its reference.
+  standOrderRef: string;
+  createdAt: Date;
+  paidAt: Date | null;
+  failedAt: Date | null;
+}

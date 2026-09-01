@@ -6,13 +6,14 @@ import { initAdmin } from '@/lib/firebase-admin';
 import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
+import { VENDOR_STAND_ORDERS_COLLECTION } from '@/lib/vendor-stand-orders';
 import { UtilityBar, Header, Footer } from '@/components/chrome';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
 import { VendorReviewTable } from '@/components/admin/VendorReviewTable';
 import { AdminNav } from '@/components/admin/AdminNav';
 import type { ShowIdentity } from '@/types';
-import type { VendorSubmission } from '@/types/index';
+import type { VendorSubmission, VendorStandOrderStatus } from '@/types/index';
 
 /**
  * /admin/vendors — vendor application review listing (mission vendor-registration F6).
@@ -55,9 +56,10 @@ export default async function VendorsAdminPage() {
     );
   }
 
-  const [show, submissions] = await Promise.all([
+  const [show, submissions, standPaymentStatusById] = await Promise.all([
     sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
     fetchVendorSubmissions(),
+    fetchStandPaymentStatusById(),
   ]);
 
   return (
@@ -85,7 +87,7 @@ export default async function VendorsAdminPage() {
           </div>
 
           <div className="mt-8">
-            <VendorReviewTable submissions={submissions} />
+            <VendorReviewTable submissions={submissions} standPaymentStatusById={standPaymentStatusById} />
           </div>
         </div>
       </main>
@@ -105,4 +107,22 @@ async function fetchVendorSubmissions(): Promise<VendorSubmission[]> {
     // UI-only and not itself contract-tested (see this feature's golden README).
     return { id: doc.id, ...data } as VendorSubmission;
   });
+}
+
+/**
+ * F32 (vendor-gated-registration-flow, M3) — READ-ONLY. Keyed by vendorSubmissionId (the
+ * vendorStandOrders doc id, by construction — see lib/vendor-stand-orders.ts). A submission
+ * absent from this map has "not started" -- no stand order has ever been created for it. This
+ * page never writes to vendorStandOrders; only lib/vendor-stand-payment-notification.ts (F31's
+ * settlement handler) may set its `status` to 'paid'.
+ */
+async function fetchStandPaymentStatusById(): Promise<Record<string, VendorStandOrderStatus>> {
+  const db = getFirestore(initAdmin());
+  const snapshot = await db.collection(VENDOR_STAND_ORDERS_COLLECTION).get();
+
+  const statusById: Record<string, VendorStandOrderStatus> = {};
+  for (const doc of snapshot.docs) {
+    statusById[doc.id] = doc.data().status as VendorStandOrderStatus;
+  }
+  return statusById;
 }

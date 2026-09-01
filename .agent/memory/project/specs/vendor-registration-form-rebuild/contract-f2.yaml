@@ -106,7 +106,7 @@ assertions:
         the payload when populated. Defeating mutation: gating render only (hiding the input)
         without also excluding the value in the payload builder, or vice versa.
       command: >-
-        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f2-payload-gates.mjs
+        npx tsx .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f2-payload-gates.mjs
 
     - id: A3
       description: >-
@@ -119,7 +119,7 @@ assertions:
         mandatory. Defeating mutation: tightening only one of the two validators, or tightening
         emergencyContactRelationship.
       command: >-
-        node --import tsx/esm .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f2-required-fields.mjs
+        npx tsx .agent/memory/project/specs/vendor-registration-form-rebuild/checks/check-f2-required-fields.mjs
 
     - id: A4
       description: >-

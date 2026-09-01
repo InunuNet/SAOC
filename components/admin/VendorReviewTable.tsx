@@ -2,8 +2,27 @@
 
 import { useState } from 'react';
 
-import type { VendorSubmission, VendorSubmissionStatus } from '@/types/index';
+import type { VendorSubmission, VendorSubmissionStatus, VendorStandOrderStatus } from '@/types/index';
 import type { VendorReviewAction } from '@/lib/vendor-review';
+
+// F32 (vendor-gated-registration-flow, M3) — read-only display labels only. This is NOT the
+// office-use `paymentReceived` (F7/EFT) signal, which the table renders separately below, so
+// an operator never conflates "gateway-paid" with "office-confirmed manually".
+const STAND_PAYMENT_LABELS: Record<VendorStandOrderStatus | 'not-started', string> = {
+  'not-started': 'Not started',
+  pending: 'Pending',
+  paid: 'Paid',
+  failed: 'Failed',
+  cancelled: 'Failed',
+};
+
+const STAND_PAYMENT_STYLES: Record<VendorStandOrderStatus | 'not-started', string> = {
+  'not-started': 'bg-bone text-muted border border-rule',
+  pending: 'bg-primary-100 text-primary-800',
+  paid: 'bg-primary text-ivory',
+  failed: 'bg-ivory text-muted border border-rule',
+  cancelled: 'bg-ivory text-muted border border-rule',
+};
 
 const HEADER_CELL_CLASS =
   'whitespace-nowrap border-b border-rule bg-bone px-4 py-3 text-left font-mono text-[11px] tracking-[0.16em] text-muted';
@@ -33,9 +52,11 @@ const ACTION_LABELS: Record<VendorReviewAction, string> = {
 
 interface VendorReviewTableProps {
   submissions: VendorSubmission[];
+  /** F32 — keyed by vendorSubmissionId; a submission absent from this map is "not started". */
+  standPaymentStatusById?: Record<string, VendorStandOrderStatus>;
 }
 
-export function VendorReviewTable({ submissions }: VendorReviewTableProps) {
+export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: VendorReviewTableProps) {
   const [rows, setRows] = useState(submissions);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +126,9 @@ export function VendorReviewTable({ submissions }: VendorReviewTableProps) {
                 Status
               </th>
               <th scope="col" className={HEADER_CELL_CLASS}>
+                Stand Payment
+              </th>
+              <th scope="col" className={HEADER_CELL_CLASS}>
                 Actions
               </th>
             </tr>
@@ -113,6 +137,7 @@ export function VendorReviewTable({ submissions }: VendorReviewTableProps) {
             {rows.map((row) => {
               const actions = AVAILABLE_ACTIONS[row.status] ?? [];
               const style = STATUS_STYLES[row.status] ?? 'bg-bone text-muted border border-rule';
+              const standPaymentStatus = standPaymentStatusById[row.id] ?? 'not-started';
 
               return (
                 <tr key={row.id} className="hover:bg-parchment/60">
@@ -149,6 +174,13 @@ export function VendorReviewTable({ submissions }: VendorReviewTableProps) {
                       className={`inline-flex items-center rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${style}`}
                     >
                       {row.status}
+                    </span>
+                  </td>
+                  <td className={BODY_CELL_CLASS}>
+                    <span
+                      className={`inline-flex items-center rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${STAND_PAYMENT_STYLES[standPaymentStatus]}`}
+                    >
+                      {STAND_PAYMENT_LABELS[standPaymentStatus]}
                     </span>
                   </td>
                   <td className={BODY_CELL_CLASS}>

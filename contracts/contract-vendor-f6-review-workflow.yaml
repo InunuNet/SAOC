@@ -177,7 +177,7 @@ assertions:
         submitted->approved/rejected shortcut, or allowing any transition out of
         a terminal state.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-f6-review-workflow/check-closed-transition-machine.mjs
+        npx tsx contracts/checks/vendor-f6-review-workflow/check-closed-transition-machine.mjs
 
     - id: A6
       description: >-
@@ -193,7 +193,7 @@ assertions:
         Date()` internally. Every refused decision's object has EXACTLY the 2 keys
         {ok, error} -- no stray `patch` key ever appears on a refusal.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-f6-review-workflow/check-additive-patch-injected-time.mjs
+        npx tsx contracts/checks/vendor-f6-review-workflow/check-additive-patch-injected-time.mjs
 
     - id: A7
       description: >-
@@ -206,7 +206,7 @@ assertions:
         transition decision is authorization-blind by construction, and the
         capability check lives only in the route/layout files A8 verifies.
       command: >-
-        node --import tsx/esm contracts/checks/vendor-f6-review-workflow/check-zero-authorization-carrythrough.mjs
+        npx tsx contracts/checks/vendor-f6-review-workflow/check-zero-authorization-carrythrough.mjs
 
     - id: A8
       description: >-

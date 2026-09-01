@@ -170,7 +170,7 @@ assertions:
         idempotencyKey that never collides with checkout's forbidden sentinel values
         and differs across two different comps.
       command: >-
-        node --import tsx/esm contracts/checks/ticketing-f8-comp-tickets/check-comp-shape-not-revenue.mjs
+        npx tsx contracts/checks/ticketing-f8-comp-tickets/check-comp-shape-not-revenue.mjs
 
     - id: A6
       description: >-
@@ -186,7 +186,7 @@ assertions:
         `now` values produce different purchasedAt values (proving the equality above
         isn't because `now` is ignored entirely).
       command: >-
-        node --import tsx/esm contracts/checks/ticketing-f8-comp-tickets/check-attribution-injected-time.mjs
+        npx tsx contracts/checks/ticketing-f8-comp-tickets/check-attribution-injected-time.mjs
 
     - id: A7
       description: >-
@@ -202,7 +202,7 @@ assertions:
         admin+owner-role-shaped token, IS granted every capability, proving (1)/(2)
         aren't vacuous refusals from a broken hasCapability().
       command: >-
-        node --import tsx/esm contracts/checks/ticketing-f8-comp-tickets/check-zero-privilege-escalation.mjs
+        npx tsx contracts/checks/ticketing-f8-comp-tickets/check-zero-privilege-escalation.mjs
 
     - id: A8
       description: >-

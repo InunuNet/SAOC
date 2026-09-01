@@ -19,7 +19,7 @@
 // Run as: npx tsc --noEmit -p contracts/checks/public-supporter-registration-f1/tsconfig.typecheck.json
 
 import type * as React from 'react';
-import type { RateLimitDecision } from '../../../lib/resend-rate-limit';
+import type { RateLimitDecision } from '../../../../lib/resend-rate-limit';
 import {
   SUPPORTER_REGISTRATIONS_COLLECTION,
   validateSupporterRegistrationInput,
@@ -27,7 +27,7 @@ import {
   type SupporterRegistration,
   type SupporterRegistrationStatus,
   type ValidationResult,
-} from '../../../lib/supporter-registrations';
+} from '../../../../lib/supporter-registrations';
 import {
   mintSupporterRegistrationToken,
   verifySupporterRegistrationToken,
@@ -35,7 +35,7 @@ import {
   SUPPORTER_MANAGE_TOKEN_DEFAULT_TTL_MS,
   type SupporterRegistrationTokenPurpose,
   type SupporterRegistrationTokenVerification,
-} from '../../../lib/supporter-registration-token';
+} from '../../../../lib/supporter-registration-token';
 import {
   SUPPORTER_REGISTER_RATE_LIMIT_MAX_ATTEMPTS,
   SUPPORTER_REGISTER_RATE_LIMIT_WINDOW_MS,
@@ -46,18 +46,18 @@ import {
   createInMemorySupporterConfirmationCooldownStore,
   type SupporterRegistrationAttemptRecord,
   type EmailCooldownDecision,
-} from '../../../lib/supporter-registration-rate-limit';
+} from '../../../../lib/supporter-registration-rate-limit';
 import {
   handleSupporterRegistration,
   type SupporterRegistrationHandlerDeps,
   type SupporterRegistrationHandlerResult,
   type ExistingSupporterRegistration,
-} from '../../../lib/supporter-registration-handler';
+} from '../../../../lib/supporter-registration-handler';
 import {
   sendSupporterRegistrationConfirmationEmail,
   type SendSupporterRegistrationConfirmationDeps,
   type SupporterRegistrationConfirmationInput,
-} from '../../../lib/supporter-registration-confirmation';
+} from '../../../../lib/supporter-registration-confirmation';
 
 const collection: string = SUPPORTER_REGISTRATIONS_COLLECTION;
 

@@ -201,7 +201,7 @@ assertions:
         provisional===true, and renders NO such marker when provisional===false, in the SAME
         check run — the negative control rules out a hardcoded-always-on badge.
       command: >-
-        node --import tsx/esm contracts/checks/ticketing-f4-admission-products/check-provisional-badge-gated.mjs
+        npx tsx contracts/checks/ticketing-f4-admission-products/check-provisional-badge-gated.mjs
 
     - id: A10
       description: >-
