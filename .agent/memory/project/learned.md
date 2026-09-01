@@ -2656,7 +2656,7 @@ any gate summary you did not personally run with `--run-checks` as unverified.
 
 ## Weak assertions keep passing over real defects unless they attack a class, not an instance (2026-08-31, vendor-gated-registration-flow M1–M4)
 
-The gate went green over a real defect **seven times** across this mission's four commits
+The gate went green over a real defect **six times** across this mission's four commits
 (`fd518136`, `67d63ff`, `e439827`, `5e3c9e6`):
 - A17 — grep-only, missed a read-then-write race on single-use token consumption
 - A18 — scoped to `app/(marketing)/**/*.tsx`, blind to `components/chrome/nav-config.ts`, which
@@ -2667,16 +2667,28 @@ The gate went green over a real defect **seven times** across this mission's fou
 - verify-code read `registrationCodeConsumedAt` while registration wrote
   `registrationTokenConsumedAt` — a field renamed on one side of a read/write pair
 - reissuing a code did not revoke sessions minted from the old one
-- A50 — written specifically to supersede A20 and prove the approval precondition, and it still
-  passed on the defective code
 
-**Four of the seven were caught only by the mandatory Codex GPT-5.5 cross-model pass**, not by
+(**Correction, same session:** an earlier draft of this note also counted A50 as a seventh
+instance — wrong, and worth recording why. `@dev` had run only
+`check-approval-mints-code-atomically.mjs` in isolation, one script out of A50's multi-script
+chained `command:`, and reported that result as A50's verdict; that single script never
+references the secret A50 exists to guard, so it trivially passed on its own. `@architect`
+later re-ran the FULL chain — atomicity script plus
+`check-redemption-preconditions-verified-before-approval-commits.mjs` — against a reconstructed
+defect and confirmed it fails correctly, and passes clean once restored. A50 was never actually
+blind; the read of it was. **Lesson, and it's a close cousin of the stale-cache trap above: a
+chained assertion must be verified as the whole chain, never one link in isolation.** Running a
+single script from a multi-script `command:` and reporting the result as the assertion's verdict
+produces a false reading in either direction — a false PASS here, and it could equally produce a
+false FAIL sending someone chasing a defect that does not exist. Both this trap and the
+stale-cache one are cases where something that looks like a measurement isn't one.)
+
+**Four of the six were caught only by the mandatory Codex GPT-5.5 cross-model pass**, not by
 this project's own @qa. Every one is a cross-file behavioural property: a field written under
-one name and read under another, an ordering, a race, a stale session, a precondition that
-migrated to a different file when the mechanism changed. None were catchable by a grep for an
-identifier in one file. Twice, an assertion written specifically to prevent a recurrence did not
-prevent it — because it followed the old implementation's *shape* rather than the underlying
-property.
+one name and read under another, an ordering, a race, a stale session. None were catchable by a
+grep for an identifier in one file. Once, an assertion written specifically to prevent a
+recurrence did not prevent it (A26) — because it followed the old implementation's *shape*
+rather than the underlying property.
 
 **Counter-pattern that worked — attack the class, not the instance:** `A42` (every persisted
 field must be validated, not just the ones named today), `A54` (every `claimRegistrationToken`
@@ -2691,8 +2703,10 @@ that has never been watched to fail is unverified. Cross-link: `feedback_contrac
 
 `contracts/harness/route-runner/` proves the real Next.js route handlers CAN be run in-process
 with only infrastructure (Firestore, email) faked — several earlier passes on this mission
-wrongly believed otherwise and settled for source-order/grep assertions instead, which is
-exactly why A50 (above) was blind. Two non-obvious implementation traps, now solved:
+wrongly believed otherwise and settled for source-order/grep assertions instead, which is the
+class of gap A50/A51's harness-based checks (added by `@architect` after the chained-assertion
+correction above) exist to close, including a revocation proof that source order structurally
+cannot express. Two non-obvious implementation traps, now solved:
 1. tsx transpiles route `.ts` files to CommonJS, so an ESM `module.register()` resolve hook
    never fires. `Module._load` interception via `NODE_OPTIONS --require` is the point that
    actually works.
