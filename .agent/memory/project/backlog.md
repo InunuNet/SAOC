@@ -38,7 +38,20 @@ Do not scope work from an entry that contradicts it.
 
 ## Next up (queued, not yet a mission — dispatch as soon as current mission closes)
 
-(none currently queued)
+- [ ] **[P2] Register Society — a society registration/affiliation flow, built against Lee-Ann's
+  Google Form** (added 2026-09-01, Brad). Source of truth for the field set:
+  https://docs.google.com/forms/d/e/1FAIpQLSc_Wh63oPJDoNQ9PCK7Tzz0a1C-NDf41QxX0RMVWx9iYqJTRw/viewform
+  The form is sign-in gated and the URL carries only the response id, not the form id, so neither
+  Alembic nor `gws forms forms get` can read it — **the field set has NOT been captured yet.**
+  First step before any architect pass: get the questions, either by Brad opening the form and
+  pasting/exporting them, or by Lee-Ann sharing the form itself (then `gws forms forms get <formId>`
+  works). Do not infer the fields from the existing 21-society Firestore `Society` shape in
+  `types/index.ts` — that is our model, not her intake questions, and Lee-Ann's documents take
+  precedence on the same fact.
+  Likely shape once the fields are known: a public application form -> Firestore collection ->
+  committee review under `/admin`, i.e. the same pipeline already built and proven for vendors
+  (`vendorApplications` -> approval -> gated full registration). Reuse that architecture rather
+  than inventing a second one; the vendor mission's goldens are the pattern.
 
 ---
 
