@@ -4,10 +4,12 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { VENDOR_STAND_ORDERS_COLLECTION, buildVendorStandOrderRef } from '@/lib/vendor-stand-orders';
-import { resolveVendorStandPrice } from '@/lib/vendor-stand-pricing';
+import { deriveVendorStandEarlyBirdCutoffIso, resolveVendorStandPrice } from '@/lib/vendor-stand-pricing';
 import { verifyVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token';
 import { resolveProvider } from '@/lib/payments';
 import { resolveActiveGateway } from '@/lib/payments/active-gateway';
+import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
+import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 
 /**
  * POST /api/vendors/stand-payment/initiate, body { token, boothSize } (mission
@@ -111,10 +113,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
   const boothSize = body.boothSize;
 
+  // Cutoff is derived fresh, server-side, from the active show's real Sanity-published start
+  // date -- never a client-supplied value, never a hardcoded literal. See
+  // contracts/golden/vendor-stand-early-bird-pricing/README.md "Where showStartDate comes
+  // from". `now` is the SAME identifier already derived from `new Date()` above for
+  // token-expiry verification -- never a second clock read.
+  const lookupShowWindow = await resolveShowWindowLookup(NATIONAL_SHOW_ID, now);
+  const showWindow = lookupShowWindow(NATIONAL_SHOW_ID);
+  const cutoffIso = showWindow ? deriveVendorStandEarlyBirdCutoffIso(showWindow.startDate) : null;
+
   // The ONLY source of `amount` in this route. Refuses BEFORE any Firestore write or gateway
-  // call when Council has not yet confirmed a real ZAR figure -- see
-  // lib/vendor-stand-pricing.ts and the golden's "The missing-figure problem".
-  const priceResolution = resolveVendorStandPrice(boothSize);
+  // call when the cutoff cannot be derived (no active show configured) -- see
+  // lib/vendor-stand-pricing.ts and the golden's "Refuse-on-missing-cutoff".
+  const priceResolution = resolveVendorStandPrice(boothSize, now, cutoffIso);
   if (!priceResolution.ok) {
     if (priceResolution.reason === 'not-configured') {
       console.error(
@@ -125,6 +136,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'boothSize must be 1, 2, or 3.' }, { status: 400 });
   }
   const amount = priceResolution.amount;
+  const tier = priceResolution.tier;
 
   const activeGateway = await resolveActiveGateway();
   if (!activeGateway) {
@@ -171,6 +183,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       contactEmail: submissionData.contactEmail ?? '',
       boothSize,
       amount,
+      tier,
       status: 'pending',
       gateway: activeGateway,
       gatewayPaymentId: null,

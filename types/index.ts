@@ -930,6 +930,10 @@ export type VendorApplicationDraft = Omit<
 // quantity field. See the golden README "Booth size already encodes the multi-stand case."
 export type VendorStandBoothSize = 1 | 2 | 3;
 
+// Mirrors lib/vendor-stand-pricing.ts's VendorStandPricingTier -- defined locally here rather
+// than imported, matching VendorStandBoothSize's own existing pattern in this file.
+export type VendorStandPricingTier = 'earlyBird' | 'regular';
+
 // No 'reserved' status -- deliberately. A stand booking has no finite pool to hold; see the
 // golden README "No 'reserved' status -- deliberately."
 export type VendorStandOrderStatus = 'pending' | 'paid' | 'failed' | 'cancelled';
@@ -943,6 +947,12 @@ export interface VendorStandOrder {
   boothSize: VendorStandBoothSize;
   // Server-derived ZAR figure, NEVER client-supplied -- see lib/vendor-stand-pricing.ts.
   amount: number;
+  // Which pricing tier `amount` was resolved from (vendor-stand-early-bird-pricing, M1/F1).
+  // null for orders written before this mission -- Firestore omits the key entirely on those
+  // documents, never stores it as an explicit null; every reader must treat "key absent" and
+  // "key present and null" identically. Informational only -- never read by any settlement
+  // guard. See contracts/golden/vendor-stand-early-bird-pricing/README.md.
+  tier: VendorStandPricingTier | null;
   status: VendorStandOrderStatus;
   // Resolved from adminSettings/activePaymentGateway at initiate time (lib/payments/active-gateway.ts).
   gateway: string;

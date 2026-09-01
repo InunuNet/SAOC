@@ -6,7 +6,8 @@ import { PayfastRedirectForm } from '@/components/tickets/PayfastRedirectForm';
 import {
   VENDOR_STAND_BOOTH_SIZES,
   VENDOR_STAND_BOOTH_SIZE_LABELS,
-  VENDOR_STAND_PRICE_ZAR,
+  VENDOR_STAND_EARLY_BIRD_DISCOUNT_PERCENT,
+  VENDOR_STAND_PER_STAND_RATE_ZAR_CENTS,
   type VendorStandBoothSizeValue,
 } from '@/lib/vendor-stand-pricing';
 import { VENDOR_STAND_FORFEITURE_NOTICE } from '@/lib/vendor-stand-forfeiture-notice';
@@ -39,8 +40,16 @@ export function VendorStandPaymentForm({ token, businessName }: VendorStandPayme
     null,
   );
 
-  const price = VENDOR_STAND_PRICE_ZAR[boothSize];
-  const pricingConfirmed = price !== null;
+  // Both prices shown here, standard AND early-bird -- which one actually applies depends on
+  // the active show's real cutoff date, which this client component has no access to (it's
+  // resolved server-side from Sanity). This is purely a UX preview, computed from the two
+  // confirmed pure constants; never trusted for the actual charge -- POST
+  // /api/vendors/stand-payment/initiate re-derives amount + tier server-side independently,
+  // including the "no active show configured" refusal, surfaced via `error` on submit.
+  const standardCents = VENDOR_STAND_PER_STAND_RATE_ZAR_CENTS * boothSize;
+  const earlyBirdCents = Math.round(
+    (standardCents * (100 - VENDOR_STAND_EARLY_BIRD_DISCOUNT_PERCENT)) / 100,
+  );
 
   async function handlePay() {
     setSubmitting(true);
@@ -96,9 +105,7 @@ export function VendorStandPaymentForm({ token, businessName }: VendorStandPayme
       </fieldset>
 
       <p className="font-sans text-[14px] text-ink">
-        {pricingConfirmed
-          ? `Price: R${price.toFixed(2)}`
-          : 'Pricing for this stand size has not yet been confirmed by the Show Organising Committee.'}
+        {`Price: R${(standardCents / 100).toFixed(2)} (R${(earlyBirdCents / 100).toFixed(2)} early-bird) — exact rate confirmed at payment.`}
       </p>
 
       <div className="border border-rule bg-bone px-4 py-3 font-sans text-[13px] text-ink" role="note">
@@ -113,7 +120,7 @@ export function VendorStandPaymentForm({ token, businessName }: VendorStandPayme
 
       <button
         type="button"
-        disabled={submitting || !pricingConfirmed}
+        disabled={submitting}
         onClick={handlePay}
         className="rounded-sm border border-rule bg-ivory px-4 py-2 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-parchment disabled:cursor-not-allowed disabled:opacity-50"
       >

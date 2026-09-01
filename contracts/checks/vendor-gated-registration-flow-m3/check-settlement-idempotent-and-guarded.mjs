@@ -19,6 +19,7 @@ const { vendorSubmissions, vendorStandOrders, resetAllCollections, FakeTimestamp
 );
 const { resetPaymentsFixture } = require('../../harness/route-runner/fixture-payments.mjs');
 const { setActiveGateway } = require('../../harness/route-runner/fixture-active-gateway.mjs');
+const { setShowWindowFixture } = require('../../harness/route-runner/fixture-show-window-lookup.mjs');
 
 // `applyPatch` (fixture-firestore.mjs) mutates the stored object's fields IN PLACE, so a
 // duplicate settlement that re-writes the SAME status/gatewayPaymentId values (differing only
@@ -39,13 +40,11 @@ FakeTimestamp.now = function spyingNow(...args) {
 const INITIATE = '../../../app/api/vendors/stand-payment/initiate/route.ts';
 const PAYFAST_ITN = '../../../app/api/vendors/stand-payment/payfast-itn/route.ts';
 const OZOW_ITN = '../../../app/api/vendors/stand-payment/ozow-itn/route.ts';
-const PRICING = '../../../lib/vendor-stand-pricing.ts';
 const TOKEN = '../../../lib/vendor-stand-payment-token.ts';
 
 const { POST: initiatePost } = await import(INITIATE);
 const { POST: payfastItnPost } = await import(PAYFAST_ITN);
 const { POST: ozowItnPost } = await import(OZOW_ITN);
-const pricing = await import(PRICING);
 const { mintVendorStandPaymentToken } = await import(TOKEN);
 
 const TEST_SECRET = 'test-stand-payment-secret-not-real';
@@ -56,9 +55,12 @@ function assert(condition, label) {
   if (!condition) failures.push(label);
 }
 
-pricing.VENDOR_STAND_PRICE_ZAR[1] = 1500;
-pricing.VENDOR_STAND_PRICE_ZAR[2] = 2800;
-pricing.VENDOR_STAND_PRICE_ZAR[3] = 3900;
+// vendor-stand-early-bird-pricing (M1/F1) replaced the flat, settable VENDOR_STAND_PRICE_ZAR
+// with a confirmed R1450-per-stand rate derived from the active show's window -- this check's
+// subject (settlement idempotency/guards) is unrelated to pricing, so it just needs a real,
+// resolvable show window (regular tier -- past cutoff -- so boothSize-1 amounts are the
+// confirmed R1450 = 145000 cents). See contracts/golden/vendor-stand-early-bird-pricing/README.md.
+setShowWindowFixture({ startDate: new Date('2026-10-01T00:00:00Z'), endDate: new Date('2026-10-04T23:59:59Z') });
 
 function mintToken(vendorSubmissionId) {
   return mintVendorStandPaymentToken({ vendorSubmissionId, secret: TEST_SECRET, now: new Date() }).token;
@@ -87,7 +89,7 @@ await seedPendingOrder('sub-dup', 'payfast');
 // counted against the settlement-specific assertion below.
 timestampNowCallCount = 0;
 
-const paidNotification = { reference: 'VSO-sub-dup', rawStatus: 'paid', grossAmountCents: 150000, gatewayPaymentId: 'pf-1' };
+const paidNotification = { reference: 'VSO-sub-dup', rawStatus: 'paid', grossAmountCents: 145000, gatewayPaymentId: 'pf-1' };
 const settle1 = await callItn(payfastItnPost, paidNotification);
 assert(settle1.status === 200, `expected first settlement to be acknowledged 200, got ${settle1.status}`);
 assert(vendorStandOrders.get('sub-dup')?.status === 'paid', 'order should flip to paid on first settlement.');
@@ -134,13 +136,13 @@ assert(!vendorSubmissions.get('sub-tamper')?.paymentReceived, 'paymentReceived m
 resetAllCollections();
 resetPaymentsFixture();
 await seedPendingOrder('sub-cross-1', 'payfast');
-await callItn(ozowItnPost, { reference: 'VSO-sub-cross-1', rawStatus: 'paid', grossAmountCents: 150000, gatewayPaymentId: 'oz-1' });
+await callItn(ozowItnPost, { reference: 'VSO-sub-cross-1', rawStatus: 'paid', grossAmountCents: 145000, gatewayPaymentId: 'oz-1' });
 assert(vendorStandOrders.get('sub-cross-1')?.status === 'pending', 'an Ozow notification must not be able to settle a PayFast-created order.');
 
 resetAllCollections();
 resetPaymentsFixture();
 await seedPendingOrder('sub-cross-2', 'ozow');
-await callItn(payfastItnPost, { reference: 'VSO-sub-cross-2', rawStatus: 'paid', grossAmountCents: 150000, gatewayPaymentId: 'pf-3' });
+await callItn(payfastItnPost, { reference: 'VSO-sub-cross-2', rawStatus: 'paid', grossAmountCents: 145000, gatewayPaymentId: 'pf-3' });
 assert(vendorStandOrders.get('sub-cross-2')?.status === 'pending', 'a PayFast notification must not be able to settle an Ozow-created order.');
 
 // =============================================================================================
@@ -149,7 +151,7 @@ assert(vendorStandOrders.get('sub-cross-2')?.status === 'pending', 'a PayFast no
 resetAllCollections();
 resetPaymentsFixture();
 await seedPendingOrder('sub-atomic', 'payfast');
-await callItn(payfastItnPost, { reference: 'VSO-sub-atomic', rawStatus: 'paid', grossAmountCents: 150000, gatewayPaymentId: 'pf-4' });
+await callItn(payfastItnPost, { reference: 'VSO-sub-atomic', rawStatus: 'paid', grossAmountCents: 145000, gatewayPaymentId: 'pf-4' });
 const orderPaid = vendorStandOrders.get('sub-atomic')?.status === 'paid';
 const submissionPaid = vendorSubmissions.get('sub-atomic')?.paymentReceived === true;
 assert(

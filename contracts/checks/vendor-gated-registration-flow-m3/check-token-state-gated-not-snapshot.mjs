@@ -17,13 +17,12 @@ const { vendorSubmissions, vendorStandOrders, resetAllCollections } = require(
 );
 const { resetPaymentsFixture } = require('../../harness/route-runner/fixture-payments.mjs');
 const { setActiveGateway } = require('../../harness/route-runner/fixture-active-gateway.mjs');
+const { setShowWindowFixture } = require('../../harness/route-runner/fixture-show-window-lookup.mjs');
 
 const INITIATE = '../../../app/api/vendors/stand-payment/initiate/route.ts';
-const PRICING = '../../../lib/vendor-stand-pricing.ts';
 const TOKEN = '../../../lib/vendor-stand-payment-token.ts';
 
 const { POST: initiatePost } = await import(INITIATE);
-const pricing = await import(PRICING);
 const { mintVendorStandPaymentToken } = await import(TOKEN);
 
 const TEST_SECRET = 'test-stand-payment-secret-not-real';
@@ -34,9 +33,11 @@ function assert(condition, label) {
   if (!condition) failures.push(label);
 }
 
-pricing.VENDOR_STAND_PRICE_ZAR[1] = 1500;
-pricing.VENDOR_STAND_PRICE_ZAR[2] = 2800;
-pricing.VENDOR_STAND_PRICE_ZAR[3] = 3900;
+// vendor-stand-early-bird-pricing (M1/F1) replaced the flat, settable VENDOR_STAND_PRICE_ZAR
+// with a confirmed R1450-per-stand rate derived from the active show's window -- this check's
+// subject (token state-gating) is unrelated to pricing, so it just needs a real, resolvable
+// show window. See contracts/golden/vendor-stand-early-bird-pricing/README.md.
+setShowWindowFixture({ startDate: new Date('2026-10-01T00:00:00Z'), endDate: new Date('2026-10-04T23:59:59Z') });
 setActiveGateway('payfast');
 
 function mintToken(vendorSubmissionId) {

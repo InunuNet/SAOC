@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import type { VendorSubmission, VendorSubmissionStatus, VendorStandOrderStatus } from '@/types/index';
 import type { VendorReviewAction } from '@/lib/vendor-review';
+import { VendorPaymentLinkControl } from './VendorPaymentLinkControl';
 
 // F32 (vendor-gated-registration-flow, M3) — read-only display labels only. This is NOT the
 // office-use `paymentReceived` (F7/EFT) signal, which the table renders separately below, so
@@ -74,6 +75,44 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
   const [rows, setRows] = useState(submissions);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Hotfix (contracts/golden/vendor-stand-payment-link-visibility) -- fetched links, keyed by
+  // vendorSubmissionId, so the manual-copy fallback stays visible after a successful fetch.
+  const [paymentUrlById, setPaymentUrlById] = useState<Record<string, string>>({});
+
+  // Hotfix (contracts/golden/vendor-stand-payment-link-visibility, 2026-09-01) -- reuses the
+  // same pendingId/error state as handleAction above (no second loading/error mechanism). The
+  // route ALWAYS mints a fresh token per call ("reissue, not unlock"), so re-clicking after a
+  // successful fetch is expected and re-copies a new, still-valid link.
+  async function handleResendPaymentLink(id: string) {
+    setPendingId(id);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/admin/vendors/${id}/resend-payment-link`, { method: 'POST' });
+      const body = (await res.json()) as { success?: boolean; paymentUrl?: string; error?: string };
+
+      if (!res.ok || !body.success || !body.paymentUrl) {
+        setError(body.error ?? 'Failed to generate the payment link.');
+        return;
+      }
+
+      const paymentUrl = body.paymentUrl;
+      setPaymentUrlById((current) => ({ ...current, [id]: paymentUrl }));
+
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(paymentUrl);
+        } catch {
+          // Clipboard write blocked (permissions, insecure context, etc.) -- the URL stays
+          // visible inline as a manual-copy fallback, so this is not an error state.
+        }
+      }
+    } catch {
+      setError('Failed to reach the server. Please try again.');
+    } finally {
+      setPendingId(null);
+    }
+  }
 
   async function handleAction(id: string, action: VendorReviewAction) {
     setPendingId(id);
@@ -217,8 +256,10 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
                     )}
                   </td>
                   <td className={BODY_CELL_CLASS}>
-                    <div className="flex gap-2">
-                      {actions.length === 0 && <span className="text-muted">—</span>}
+                    <div className="flex flex-wrap items-start gap-2">
+                      {actions.length === 0 && !(row.status === 'approved' && standPaymentStatus !== 'paid') && (
+                        <span className="text-muted">—</span>
+                      )}
                       {actions.map((action) => (
                         <button
                           key={action}
@@ -230,6 +271,13 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
                           {pendingId === row.id ? 'Saving…' : ACTION_LABELS[action]}
                         </button>
                       ))}
+                      {row.status === 'approved' && standPaymentStatus !== 'paid' && (
+                        <VendorPaymentLinkControl
+                          isPending={pendingId === row.id}
+                          paymentUrl={paymentUrlById[row.id] ?? null}
+                          onRequestLink={() => handleResendPaymentLink(row.id)}
+                        />
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -2,10 +2,13 @@ schema: athanor.contract/v1
 slug: vendor-stand-early-bird-pricing
 goal: >-
   Add the early-bird/regular tier axis to vendor stand pricing (lib/vendor-stand-pricing.ts),
-  server-derived and unspoofable by a client-supplied timestamp, with refuse-on-null holding
-  independently per tier, while keeping every pre-existing vendorStandOrders document
-  readable. See contracts/golden/vendor-stand-early-bird-pricing/README.md for the full
-  decision record; this file is the assertion set only.
+  derived from Brad's confirmed R1450-per-stand rate and 20% early-bird discount, with the
+  cutoff derived from the show's real start date (90 days before, SAST-boundary-correct),
+  server-derived and unspoofable by a client-supplied timestamp, with the refusal path
+  surviving as "no active show configured" now that no price itself can be null. See
+  contracts/golden/vendor-stand-early-bird-pricing/README.md for the full decision record
+  (REVISION 2026-09-01 — all figures confirmed, urgent demo scope); this file is the assertion
+  set only.
 created_at: '2026-09-01'
 autonomy: high
 features:
@@ -17,101 +20,101 @@ goldens:
 assertions:
   phase: 4
   checks:
-    # --- Data model: correct tier selected either side of the cutoff. ---
+    # --- Data model: correct tier selected either side of the cutoff, SAST-boundary-correct,
+    # cutoff derived from the show's real (possibly moved) start date. ---
     - id: A1
       description: >-
         Pure-function check (no Firestore/harness needed). lib/vendor-stand-pricing.ts's
-        resolveVendorStandPrice(boothSize, now) reuses lib/checkout-reservation.ts's
-        isWithinEarlyBirdWindow(now, cutoffIso) to decide the tier (static import assertion),
-        then selects that tier's price from VENDOR_STAND_PRICE_ZAR[boothSize]. Fixture: booth
-        1 earlyBird=1000/regular=1500, cutoff=2027-06-30 -- resolveVendorStandPrice(1,
-        <on-cutoff-date>) returns {ok:true, amount:1000, tier:'earlyBird'};
-        resolveVendorStandPrice(1, <day-after-cutoff>) returns {ok:true, amount:1500,
-        tier:'regular'}.
-        FAILS ON: resolveVendorStandPrice not accepting a `now` argument, VENDOR_STAND_PRICE_ZAR
-        cells not being { earlyBird, regular } records, VENDOR_STAND_EARLY_BIRD_CUTOFF not
-        exported as a mutable { value } object, cutoff math reimplemented instead of reusing
-        isWithinEarlyBirdWindow, or either tier resolving to the wrong price/tier label.
-        CONFIRMED RED against HEAD 2026-09-01: fails on all five sub-assertions (no
-        isWithinEarlyBirdWindow import, VENDOR_STAND_PRICE_ZAR[1] still a bare number|null,
-        VENDOR_STAND_EARLY_BIRD_CUTOFF not exported, both tier resolutions returning
-        not-configured instead of the fixture prices).
+        resolveVendorStandPrice(boothSize, now, cutoffIso) reuses (unmodified)
+        lib/checkout-reservation.ts's isWithinEarlyBirdWindow(now, cutoffIso) to decide the
+        tier. deriveVendorStandEarlyBirdCutoffIso(showStartDate) derives 90 days before the
+        show's real start date, tracking a MOVED show date (not hardcoded 2027-06-18), and
+        emits an ISO string with an explicit +02:00 (SAST) offset. The last instant qualifying
+        for early-bird and the first that does not are proven to land exactly at midnight SAST
+        (2027-06-18T22:00:00Z), catching a naive UTC-midnight boundary that would be wrong by
+        2 hours.
+        FAILS ON: resolveVendorStandPrice not accepting (now, cutoffIso) arguments,
+        deriveVendorStandEarlyBirdCutoffIso missing or not tracking a moved show date, the
+        derived ISO string lacking an explicit +02:00 offset, or either boundary instant
+        resolving to the wrong tier.
+        CONFIRMED RED against HEAD 2026-09-01: fails on missing isWithinEarlyBirdWindow
+        import and missing deriveVendorStandEarlyBirdCutoffIso export (captured output: "lib/
+        vendor-stand-pricing.ts imports isWithinEarlyBirdWindow..." and "...does not export
+        deriveVendorStandEarlyBirdCutoffIso").
       command: >-
         node --import tsx/esm contracts/checks/vendor-stand-early-bird-pricing/check-tier-selected-either-side-of-cutoff.mjs
 
-    # --- Anti-spoof: a forged client-supplied timestamp cannot buy the early-bird rate. ---
+    # --- Price = confirmed R1450/stand x booth size, standard tier; early-bird exactly 80%. ---
     - id: A2
       description: >-
-        Static class assertion + behavioural (route-runner harness). Statically: the request
-        body allow-list read by POST /api/vendors/stand-payment/initiate stays exactly
+        Pure-function check (no Firestore/harness needed). Price is derived from ONE confirmed
+        per-stand rate (145000 integer cents = R1450.00), never stored as six independent
+        figures: booth size N standard price = N x single-stand price (proven as a derived
+        relationship, not just fixed values, for N in {1,2,3}); early-bird price is EXACTLY
+        80% of standard (earlyBird*100 === standard*80, integer-cents-exact, for every booth
+        size). Concrete expected values: {1: R1450/R1160, 2: R2900/R2320, 3: R4350/R3480}.
+        FAILS ON: any booth size's standard or early-bird amount deviating from the expected
+        table, the size-N-equals-N-times-size-1 relationship breaking, the 80%-of-standard
+        relationship breaking, or pricing arithmetic that round-trips through a float rand
+        amount instead of staying in integer cents.
+        CONFIRMED RED against HEAD 2026-09-01: fails on the missing 145000-cents constant and
+        all six amount assertions (captured output: every booth size returns
+        {"ok":false,"reason":"not-configured"} against the still-null M3 flat pricing).
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-stand-early-bird-pricing/check-price-derived-from-per-stand-rate.mjs
+
+    # --- Anti-spoof: a forged client-supplied timestamp cannot buy the early-bird rate. ---
+    - id: A3
+      description: >-
+        Static class assertion + behavioural (route-runner harness, with the show-window
+        fixture configured to a real show opening 2027-09-16). Statically: the request body
+        allow-list read by POST /api/vendors/stand-payment/initiate stays exactly
         {token, boothSize} -- no body.now/body.timestamp/body.clientNow/body.purchasedAt/
-        body.clientTime/body.date access anywhere in the route file -- AND the route's call to
-        resolveVendorStandPrice(boothSize, now) passes the SAME `now` identifier the route
-        already derives from `new Date()` for token-expiry verification, never a second or
-        body-derived value. Behaviourally: with a fixture cutoff safely in the past (so the
-        REAL server clock unambiguously selects the 'regular' tier), an honest request
-        {token, boothSize} and four requests carrying a forged early-dated field under
-        plausible spoof key names ('now', 'timestamp', 'clientNow', 'purchasedAt') all produce
-        IDENTICAL results -- amount 1500, tier 'regular'. Any of the four landing in
-        tier 'earlyBird' proves a forged client timestamp bought the early-bird rate.
-        FAILS ON: any forbidden body key read in the route source, the two-argument
-        resolveVendorStandPrice(boothSize, now) call pattern absent, or any spoofed request
-        producing a different amount/tier than the honest baseline.
-        CONFIRMED RED against HEAD 2026-09-01: static assertion fails (no two-argument call
-        exists yet -- current route calls resolveVendorStandPrice(boothSize) only), and the
-        behavioural scenario throws immediately when the fixture tries to set the (not yet
-        existing) VENDOR_STAND_EARLY_BIRD_CUTOFF.value.
+        body.clientTime/body.date access anywhere in the route file -- AND the route calls
+        resolveVendorStandPrice(boothSize, now, ...) with the SAME `now` identifier already
+        derived from `new Date()` for token-expiry verification. Behaviourally: with a fixture
+        show date whose derived cutoff is safely in the past relative to the actual server
+        clock, an honest request and four requests carrying a forged early-dated field under plausible
+        spoof key names all produce IDENTICAL results -- amount R1450, tier 'regular'. Any
+        spoofed request landing in 'earlyBird' (R1160) proves a forged client timestamp bought
+        the discounted rate.
+        FAILS ON: any forbidden body key read in the route source, the
+        resolveVendorStandPrice(boothSize, now, ...) call pattern absent, or any spoofed
+        request producing a different amount/tier than the honest baseline.
+        CONFIRMED RED against HEAD 2026-09-01: static assertion fails (no such call exists --
+        current route calls resolveVendorStandPrice(boothSize) only, no now/cutoff args), and
+        every behavioural request (honest and all four spoofed) returns HTTP 503 "Stand
+        pricing has not yet been confirmed" since the old flat VENDOR_STAND_PRICE_ZAR is still
+        null for every booth size.
       command: >-
         NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx contracts/checks/vendor-stand-early-bird-pricing/check-timestamp-spoof-cannot-buy-early-bird.mjs
 
-    # --- Refuse-on-null holds independently per tier. ---
-    - id: A3
-      description: >-
-        Pure-function check (no Firestore/harness needed). Two mirrored fixtures against
-        resolveVendorStandPrice(boothSize, now), cutoff=2027-06-30: (1) booth 2,
-        earlyBird=null/regular=5000 -- before the cutoff refuses {ok:false,
-        reason:'not-configured'} even though `regular` has a real number; after the cutoff
-        succeeds with amount 5000/tier 'regular'. (2) booth 3, earlyBird=4000/regular=null --
-        before the cutoff succeeds with amount 4000/tier 'earlyBird'; after the cutoff refuses
-        {ok:false, reason:'not-configured'} even though `earlyBird` had a real number. Neither
-        scenario may fall back to the OTHER tier's populated figure.
-        FAILS ON: either scenario's refusal case instead returning the other (populated)
-        tier's price, either scenario's success case failing to return the correct
-        amount/tier, or a 'not-configured' refusal using a different `reason` value than the
-        flat (pre-tier) M3 refusal already uses.
-        CONFIRMED RED against HEAD 2026-09-01: cannot even set up the fixture
-        (VENDOR_STAND_PRICE_ZAR[2]/[3] are still bare number|null, VENDOR_STAND_EARLY_BIRD_CUTOFF
-        is not exported), and both success-case assertions fail (resolveVendorStandPrice
-        returns not-configured for boothSize 2/3 unconditionally today, since neither is priced
-        at all under the current flat model).
-      command: >-
-        node --import tsx/esm contracts/checks/vendor-stand-early-bird-pricing/check-refuse-holds-independently-per-tier.mjs
-
-    # --- Backward compatibility: pre-existing vendorStandOrders documents stay readable. ---
+    # --- A genuinely absent figure (no active show, so no cutoff) still refuses. ---
     - id: A4
       description: >-
-        Static class assertion + behavioural (route-runner harness). Statically:
-        lib/vendor-stand-payment-notification.ts (the settlement handler) contains zero
-        references to `.tier` anywhere -- its idempotency/amount/cross-gateway guards must
-        never read or require the new field. Behaviourally, two scenarios: (1) a NEW order
-        created via a real /initiate call (tiered pricing configured) carries the new `tier`
-        field with the correct value. (2) a LEGACY order seeded directly into the fixture
-        Firestore store in the EXACT shape M3's shipped code writes today -- no `tier` key
-        present at all -- settles correctly through the UNMODIFIED settlement handler (status
-        flips to 'paid', paidAt set, vendorSubmissions.paymentReceived flips true in the same
-        transaction) and settlement does not introduce a `tier` field onto it.
-        FAILS ON: any `.tier` reference found in the settlement handler source, a freshly
-        created order missing the `tier` field or carrying the wrong value, a legacy order
-        (no `tier` key) failing to settle or throwing, or settlement writing a `tier` field
-        onto a legacy order that never had one.
-        CONFIRMED RED against HEAD 2026-09-01: the behavioural scenario throws immediately
-        when the fixture tries to configure tiered pricing (VENDOR_STAND_EARLY_BIRD_CUTOFF.value
-        is not settable -- the export does not exist yet), proving property 1 (new orders
-        carry a tier field) cannot be demonstrated against current code. The static assertion
-        on the settlement handler passes today only because the concept doesn't exist yet to
-        violate it -- not evidence of correctness once the field is introduced.
+        Pure-function check + behavioural (route-runner harness). With all six prices now
+        confirmed constants, the only remaining genuinely-missing input is the show window
+        itself (no active show published in Sanity) -- resolveVendorStandPrice(boothSize, now,
+        null) must refuse {ok:false, reason:'not-configured'}, and the real initiate route,
+        with the show-window fixture left unconfigured (null), must refuse HTTP 503 BEFORE any
+        vendorStandOrders write or gateway initiate() call -- the exact posture M3's A55
+        established for "prices are null", now migrated onto "cutoff cannot be derived".
+        Guarded by a static check that the NEW three-argument, confirmed-pricing
+        implementation actually exists, specifically so this check cannot pass for the WRONG
+        reason (the old, still-null M3 pricing would trivially satisfy the same refusal
+        assertion via a completely different code path -- booth 1 simply still being
+        unpriced, not "cutoff unavailable").
+        FAILS ON: resolveVendorStandPrice(boothSize, now, null) not refusing, the route
+        creating a vendorStandOrders document or calling the gateway when no show is
+        configured, or the refusal happening via the old null-price path instead of the new
+        null-cutoff path (caught by the static guard).
+        CONFIRMED RED against HEAD 2026-09-01: static guard fails immediately (captured
+        output: "lib/vendor-stand-pricing.ts does not yet declare resolveVendorStandPrice
+        (boothSize, now, cutoffIso) with the confirmed per-stand rate...") -- the script halts
+        before the (currently accidentally-passing-for-the-wrong-reason) refusal proof can be
+        trusted.
       command: >-
-        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx contracts/checks/vendor-stand-early-bird-pricing/check-legacy-orders-stay-readable.mjs
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx contracts/checks/vendor-stand-early-bird-pricing/check-refuses-when-cutoff-unavailable.mjs
 
     # --- whole-project regression gate ---
     - id: A5

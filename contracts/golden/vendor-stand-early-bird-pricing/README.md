@@ -1,225 +1,271 @@
 # Golden: vendor-stand-early-bird-pricing — decision record
 
 Mission `vendor-stand-early-bird-pricing`, M1/F1. Adds the early-bird/regular tier axis to
-`lib/vendor-stand-pricing.ts`. This is an *additive* change to a shipped, green mechanism —
+`lib/vendor-stand-pricing.ts`. Additive to a shipped, green mechanism —
 `vendor-gated-registration-flow` M3 (F26-F32, checks A55-A63 in
-`contracts/contract-vendor-gated-registration-flow.yaml`). Read that golden's "The
-missing-figure problem", "Initiate — server-derived amount, transactional idempotency", and
-"Settlement" sections first; this document only records what changes on top of it.
+`contracts/contract-vendor-gated-registration-flow.yaml`). Read that golden's "Initiate —
+server-derived amount, transactional idempotency" and "Settlement" sections first; this
+document only records what changes on top of it.
 
-@dev implements against this record. @dev may not deviate from a decision recorded here
-without flagging it back to the orchestrator.
+**REVISION 2026-09-01, urgent (demo tonight):** Brad supplied real figures mid-mission. All
+six prices and the cutoff rule are now confirmed — nothing is council-blocked any more. This
+revision supersedes the original "everything ships null" version of this document. @dev
+implements against THIS version. See "What changed and what was cut for tonight" at the
+bottom for exactly what is in scope now vs. deferred.
 
-## Why this exists
+## Confirmed figures (Brad, 2026-09-01)
 
-Brad confirmed 2026-09-01 that vendor stand fees have early-bird and regular tiers. Today
-`VENDOR_STAND_PRICE_ZAR` is `Record<BoothSize, number | null>` — one price per booth size, no
-tier concept anywhere in the stand-payment path. Building the tier axis now, while every
-figure is still null, is a schema decision. Doing it after real figures land is a data
-migration. Per the mission brief: build it now.
+- **R1450 per stand, standard tier.** A booth of size N is N stands (per M3's own "booth size
+  already encodes the multi-stand case" — size 2 = two stands combined, size 3 = three), so
+  price is **derived** as `N × R1450`, never stored as three independent standard figures.
+- **Early-bird = 20% less than standard**, i.e. exactly 80% of the standard price. Derived,
+  not a second independently-maintained figure.
+- **Cutoff = 90 days before the show opens.** The show opens Thursday 16 September 2027, so
+  the cutoff is 18 June 2027 — but this must be **derived from the show's actual start date**
+  (see "Cutoff derivation" below), never hardcoded as a literal date, because the show dates
+  have already moved once on this project (the 18–21 September placeholder still being
+  purged — see `.agent/memory/project/provisional-figures.md`).
 
-## 1. Follow the ticketing pattern, don't invent a second one
+| booth size | standard | early-bird |
+|---|---|---|
+| 1 | R1450 | R1160 |
+| 2 | R2900 | R2320 |
+| 3 | R4350 | R3480 |
 
-Ticketing's F4/F1 (`docs/f4-admission-products.md`, `lib/checkout-reservation.ts`) already
-solved "does a cutoff instant currently favour tier A or tier B":
+All six cells are confirmed. None are provisional or invented — every one follows arithmetically
+from the two confirmed numbers (R1450/stand, 20% discount) and the confirmed booth-size
+semantics M3 already established.
+
+## Money arithmetic — integer cents, one confirmed rate, never stored redundantly
 
 ```typescript
-export function isWithinEarlyBirdWindow(now: Date, cutoffIso: string | null | undefined): boolean {
-  if (cutoffIso === null || cutoffIso === undefined) return true;
-  const cutoffEndExclusive = new Date(cutoffIso);
-  cutoffEndExclusive.setUTCDate(cutoffEndExclusive.getUTCDate() + 1);
-  return now.getTime() < cutoffEndExclusive.getTime();
+// Confirmed 2026-09-01 (Brad). Integer cents -- R1450.00 = 145000 -- so no arithmetic in the
+// payment path ever depends on IEEE-754 float rounding.
+export const VENDOR_STAND_PER_STAND_RATE_ZAR_CENTS = 145000;
+export const VENDOR_STAND_EARLY_BIRD_DISCOUNT_PERCENT = 20;
+
+function standardPriceZarCents(boothSize: VendorStandBoothSizeValue): number {
+  return VENDOR_STAND_PER_STAND_RATE_ZAR_CENTS * boothSize; // exact, integer x integer
+}
+
+function earlyBirdPriceZarCents(boothSize: VendorStandBoothSizeValue): number {
+  // Integer cents throughout: (cents * 80) / 100 is always exact for every boothSize in
+  // {1,2,3} against this rate (145000*80/100 = 116000, etc.) -- Math.round is defensive, not
+  // load-bearing, in case a future rate change ever produces a fractional cent.
+  return Math.round((standardPriceZarCents(boothSize) * (100 - VENDOR_STAND_EARLY_BIRD_DISCOUNT_PERCENT)) / 100);
 }
 ```
 
-`lib/vendor-stand-pricing.ts` **imports and calls this exact function** — it does not
-reimplement cutoff-date comparison. Two independently-written "is this date before the
-cutoff" functions is exactly the kind of drift (one exact-midnight, one end-of-day-inclusive)
-this project's own incidents (CTICC venue, 18–21 September placeholder — see
-`.agent/memory/project/provisional-figures.md`) warn against. `cutoffIso === null` already
-means "no restriction" in the reused function, which is the correct behaviour for a
-council-blocked, not-yet-set cutoff: with the cutoff null, every request lands in the
-early-bird tier by definition — but that tier's price is *also* null today, so
-`resolveVendorStandPrice` still refuses (see §3). The two nulls compose correctly for free;
-no special-casing is needed for "cutoff not yet set."
+Six independently-typed price constants were the ORIGINAL plan (see git history of this file
+if curious) specifically to avoid computing money at payment time. Brad's follow-up correction
+supersedes that: since the six figures are not independent facts but one confirmed rate times
+a known multiplier and a known discount, storing them independently is now the drift risk
+(six hand-maintained numbers can silently disagree with each other) rather than the safety
+net. One confirmed rate, multiplied by an integer, discounted by an integer percentage, in
+integer cents throughout — that removes the drift risk by construction rather than by
+convention. `resolveVendorStandPrice`'s public return `amount` stays a rand `number` (dividing
+by 100 once, at the boundary) — no other call site (route, gateway, admin display) needs to
+know cents exist.
 
-**Deviation from the ticketing pattern, and why:** ticketing stores `earlyBirdCutoff` per
-Sanity `ticketType` document (CMS-editable, per-product). Vendor stand pricing has no CMS
-document to attach a cutoff to — `lib/vendor-stand-pricing.ts` is a flat TypeScript constants
-module (M3's own deliberate choice, since there is no `vendorStandOrder`-shaped Sanity
-schema and Council-blocked figures shouldn't round-trip through the CMS anyway). So the
-cutoff is a second exported constant in the same file, `VENDOR_STAND_EARLY_BIRD_CUTOFF:
-{ value: string | null }`, not a Sanity field — same *mechanism* (`isWithinEarlyBirdWindow`), different
-*storage location*, consistent with M3's existing "flat constants module, council-blocked"
-posture for the six prices.
+**A2's assertions**: `amount_earlyBird × 100 === amount_standard × 80` (exact-80%-of-standard,
+proven per booth size) and `amount_sizeN === amount_size1 × N` at the same tier (proven for
+N∈{2,3}) — both derived-relationship checks, not fixed-value checks alone, so a future rate
+change can't silently break the *relationship* even if someone updates the base rate.
 
-## 2. The new shape
+## Tier decision — reuses `isWithinEarlyBirdWindow`, unmodified
 
 ```typescript
 export type VendorStandPricingTier = 'earlyBird' | 'regular';
-
-// Council-blocked, same posture as the six prices below — do NOT invent a date. Wrapped in a
-// one-key object, not a bare `string | null` export, for the SAME reason
-// VENDOR_STAND_PRICE_ZAR's cells are objects rather than scalars: an ES module namespace
-// object's exports are non-writable bindings from the importer's side, so a bare scalar
-// constant cannot be swapped for a fixture value by any test/check that imports this module —
-// only an object's OWN properties can be mutated externally. This is not a stylistic choice;
-// A1/A3 (below) depend on being able to set a fixture cutoff the same way M3's own checks set
-// fixture prices.
-export const VENDOR_STAND_EARLY_BIRD_CUTOFF: { value: string | null } = { value: null };
-
-export const VENDOR_STAND_PRICE_ZAR: Record<
-  VendorStandBoothSizeValue,
-  Record<VendorStandPricingTier, number | null>
-> = {
-  1: { earlyBird: null, regular: null },
-  2: { earlyBird: null, regular: null },
-  3: { earlyBird: null, regular: null },
-};
 
 export type VendorStandPriceResolution =
   | { ok: true; amount: number; tier: VendorStandPricingTier }
   | { ok: false; reason: 'not-configured' | 'invalid-booth-size' };
 
-// Still pure — no Date.now()/new Date() call anywhere in this file. `now` is a REQUIRED
-// parameter, supplied by the caller from a trusted server clock. This is the load-bearing
-// property for §3 below: the pricing module itself has no clock, so it cannot be spoofed
-// from inside — only a caller that wrongly threads a client-supplied value into `now` could
-// spoof it, and there is exactly one production caller (see §3).
+// Still pure -- no Date.now()/new Date() call anywhere in this file. `now` AND `cutoffIso`
+// are REQUIRED parameters, both supplied by the caller. This is the load-bearing property for
+// "anti-spoof" below: the pricing module has no clock and no cutoff of its own, so nothing
+// inside it can be fooled -- only a caller that wrongly threads a client-supplied value into
+// either parameter could spoof it, and there is exactly one production caller.
 export function resolveVendorStandPrice(
   boothSize: unknown,
   now: Date,
+  cutoffIso: string | null,
 ): VendorStandPriceResolution {
   if (!isValidBoothSize(boothSize)) {
     return { ok: false, reason: 'invalid-booth-size' };
   }
-  const tier: VendorStandPricingTier = isWithinEarlyBirdWindow(now, VENDOR_STAND_EARLY_BIRD_CUTOFF.value)
-    ? 'earlyBird'
-    : 'regular';
-  const amount = VENDOR_STAND_PRICE_ZAR[boothSize][tier];
-  if (amount === null) {
+  // A null cutoff (the show window couldn't be resolved -- see "Refuse-on-missing-cutoff"
+  // below) refuses before any tier decision is even attempted. This is now the ONLY
+  // 'not-configured' path -- the six prices themselves can never be null again (they are
+  // confirmed constants), so this is where M3's "never guess, never fall back" discipline
+  // now lives.
+  if (cutoffIso === null) {
     return { ok: false, reason: 'not-configured' };
   }
-  return { ok: true, amount, tier };
+  const tier: VendorStandPricingTier = isWithinEarlyBirdWindow(now, cutoffIso) ? 'earlyBird' : 'regular';
+  const cents = tier === 'earlyBird' ? earlyBirdPriceZarCents(boothSize) : standardPriceZarCents(boothSize);
+  return { ok: true, amount: cents / 100, tier };
 }
 ```
 
-`VendorStandBoothSizeValue`, `VENDOR_STAND_BOOTH_SIZES`, `VENDOR_STAND_BOOTH_SIZE_LABELS`,
-`isValidBoothSize` are all unchanged from M3.
+`isWithinEarlyBirdWindow(now, cutoffIso)` is `lib/checkout-reservation.ts`'s existing F1/F4
+export, **imported and called unmodified** — not reimplemented. Its semantics ("inclusive
+through the end of the cutoff date's calendar day, in whatever offset the ISO string
+carries") turn out to be exactly what's needed for the SAST boundary below, with zero changes
+to that function — see "SAST boundary" next.
 
-## 3. The tier decision is server-side and unspoofable — where the discipline lives
-
-`app/api/vendors/stand-payment/initiate/route.ts` already computes `const now = new Date();`
-today, for token-expiry verification, before this mission touches it. The ONLY change to the
-route's pricing call is:
-
-```typescript
-// before (M3):  resolveVendorStandPrice(boothSize)
-// after (this mission):
-const priceResolution = resolveVendorStandPrice(boothSize, now);
-```
-
-reusing that SAME `now` — not a second `new Date()` call, and never a value read from the
-request body. The request-body allow-list is **unchanged**: `{ token, boothSize }`. There is
-no third field, no `now`/`timestamp`/`clientTime`/`purchasedAt` key accepted anywhere in this
-route today or after this change — A2 (below) both proves a forged field of that shape is
-silently ignored, and statically proves the route only ever reads `{token, boothSize}` off
-the body (extending, not replacing, M3's own A59 class assertion for this same route).
-
-This is the same defect class this project fixed twice on 2026-09-01 (caller-supplied
-`sizeBytes` trusted over the decoded length): the fix here is structural, not a runtime
-check — the pricing module has no clock of its own to fool, and the one caller that has a
-clock reuses the value it already derived from `new Date()` for an unrelated purpose (token
-expiry), so there is only one place in the entire path a forged timestamp could even be
-threaded through, and it is never wired to the body.
-
-## 4. Refuse-on-null holds per tier, independently
-
-`resolveVendorStandPrice` reads `VENDOR_STAND_PRICE_ZAR[boothSize][tier]` for the ONE tier
-`isWithinEarlyBirdWindow` selected — never falls back to the other tier's figure. Concretely:
-if `earlyBird: null, regular: 5000` and `now` is before the cutoff, the call refuses
-`not-configured` even though `regular` has a real number — the vendor is not silently
-overcharged (or undercharged) by falling through to whichever tier happens to be populated.
-Symmetrically, `earlyBird: 4000, regular: null` refuses after the cutoff even though
-`earlyBird` had a figure. A half-populated pricing table is exactly as blocked as a fully-null
-one, per tier. This is the direct extension of M3's own `resolveVendorStandPrice` discipline
-("never throws, never guesses, never falls back to a default price") to the new axis — see
-`lib/vendor-stand-pricing.ts`'s existing docstring.
-
-Both `not-configured` failures — flat (M3, both tiers absent from the concept entirely) and
-tiered (this mission, the selected tier's cell is null) — share the SAME `reason:
-'not-configured'` value. No third reason is introduced. `app/api/vendors/stand-payment/initiate/route.ts`'s
-existing `503` + council-blocked-message handling for `'not-configured'` therefore requires
-**zero changes** to keep refusing correctly — the refusal path this mission exercises is
-identical code to the one M3's A55 already proved, just now reachable via either tier being
-the missing one.
-
-## 5. Backward compatibility — `VendorStandOrder.tier`
-
-`types/index.ts`'s `VendorStandOrder` gains one new field, appended at the end (additive, no
-renames, no reordering of existing fields):
+## Cutoff derivation — from the show's real start date, SAST-boundary-correct, in one place
 
 ```typescript
-export interface VendorStandOrder {
-  // ...all M3 fields, unchanged...
-  tier: VendorStandPricingTier | null; // null for orders written before this mission
+export const VENDOR_STAND_EARLY_BIRD_CUTOFF_DAYS_BEFORE_SHOW = 90; // confirmed, Brad 2026-09-01
+
+// South Africa Standard Time -- UTC+2, no daylight saving, ever. This is the ONE place the
+// offset is applied. See "SAST boundary" below for why it must be explicit rather than bare
+// UTC.
+const SAST_OFFSET = '+02:00';
+
+/**
+ * Pure. `showStartDate` is supplied by the caller (resolved from the active show's
+ * ShowWindow -- see "Where showStartDate comes from" below), never fetched here. Returns an
+ * ISO 8601 string with an EXPLICIT +02:00 offset -- never bare UTC/'Z' -- so that when this
+ * string is handed to isWithinEarlyBirdWindow(), the boundary it computes lands at SAST
+ * midnight, not UTC midnight.
+ */
+export function deriveVendorStandEarlyBirdCutoffIso(showStartDate: Date): string {
+  const cutoff = new Date(Date.UTC(
+    showStartDate.getUTCFullYear(),
+    showStartDate.getUTCMonth(),
+    showStartDate.getUTCDate() - VENDOR_STAND_EARLY_BIRD_CUTOFF_DAYS_BEFORE_SHOW,
+  ));
+  const yyyy = cutoff.getUTCFullYear();
+  const mm = String(cutoff.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(cutoff.getUTCDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}T00:00:00${SAST_OFFSET}`;
 }
 ```
 
-`app/api/vendors/stand-payment/initiate/route.ts` writes `tier: priceResolution.tier` on
-every `vendorStandOrders` document it creates or overwrites, alongside `amount` (same
-transactional step, M3's existing "re-derived server-side, never client-supplied" write —
-this mission does not touch that transaction's shape, only adds one more server-derived
-field to the object it already writes).
+### SAST boundary — the whole fix is one explicit offset, nothing else
 
-**A pre-existing `vendorStandOrders` document written by M3's code has no `tier` key in
-Firestore at all** (Firestore omits absent fields; it is not stored as `tier: null`). Every
-reader must treat "key absent" and "key present and null" identically:
+Firebase App Hosting containers run UTC. If the cutoff were expressed as a bare UTC-midnight
+boundary (what `isWithinEarlyBirdWindow`'s own "+1 day" logic assumes when handed a plain
+`'2027-06-18'`-shaped string, since `new Date('2027-06-18')` parses as UTC midnight), the
+computed boundary would be **2 hours later than intended**: a vendor paying between
+22:00–23:59:59 UTC on 18 June (i.e. midnight–01:59:59 SAST on the 19th) would wrongly still
+get the early-bird rate.
 
-- `lib/vendor-stand-payment-notification.ts` (settlement) — its idempotency guard
-  (`status !== 'pending'`), amount guard (`grossAmountCents === Math.round(order.amount *
-  100)`), and cross-gateway guard (`order.gateway === provider.id`) are **unchanged and never
-  read `order.tier`**. A legacy order with no `tier` field settles through the exact same
-  code path as a new one with a `tier`. This mission adds no new guard to settlement — `tier`
-  is informational (denormalized, for admin/audit display), never a security- or
-  money-relevant field, so it is deliberately excluded from every settlement check, the same
-  reasoning M3 gives for keeping `boothNumber` allocation out of the payment path entirely.
-- `app/admin/vendors/page.tsx`'s `fetchStandPaymentStatusById()` only ever projects
-  `.status` off each `vendorStandOrders` doc — unaffected either way, no change needed, and
-  a legacy doc's absent `tier` field can never reach it because it isn't read.
+The fix is not a new comparison function — it's that `deriveVendorStandEarlyBirdCutoffIso`
+emits the cutoff date with an **explicit `+02:00` suffix** (`'2027-06-18T00:00:00+02:00'`)
+instead of a bare date. `isWithinEarlyBirdWindow`'s existing, unmodified "+1 UTC day, exclusive"
+math then does exactly the right thing: `new Date('2027-06-18T00:00:00+02:00')` is
+`2027-06-17T22:00:00Z`; adding one UTC day gives `2027-06-18T22:00:00Z` — which **is** midnight
+SAST on 19 June, the correct exclusive boundary. No timezone library, no per-request TZ
+config, no user-facing zone display — one explicit offset, applied once, in
+`deriveVendorStandEarlyBirdCutoffIso`, with the reasoning captured in that function's comment.
+A1's checks assert both the derived ISO string's literal offset AND the actual boundary
+instant (last qualifying vs. first non-qualifying), specifically to catch a regression to the
+naive bare-UTC boundary.
 
-This mirrors M3's own "additive, no admin write path" discipline (A63): the new field is
-written by exactly one route (`initiate`), read by nothing that enforces a security or money
-property, and its absence on old data is a no-op everywhere it could be read.
+**Deliberately NOT built:** any general timezone-handling subsystem, a per-show or
+per-vendor zone setting, or any display of the cutoff in a particular zone. South Africa has
+one zone, no DST, ever — building more than this one explicit offset would be solving a
+problem this project doesn't have.
+
+### Where `showStartDate` comes from — reuses the existing show-window abstraction
+
+`lib/show-window-lookup.ts`'s `resolveShowWindowLookup(NATIONAL_SHOW_ID, now)` (already used
+by F6/F7's admin capability checks, `lib/tickets-constants.ts`'s `NATIONAL_SHOW_ID`) resolves
+to a `ShowWindowLookup` function; calling it with `NATIONAL_SHOW_ID` returns the active show's
+`ShowWindow { startDate: Date; endDate: Date } | null`. The initiate route:
+
+1. `const lookupShowWindow = await resolveShowWindowLookup(NATIONAL_SHOW_ID, now);`
+2. `const showWindow = lookupShowWindow(NATIONAL_SHOW_ID);`
+3. `const cutoffIso = showWindow ? deriveVendorStandEarlyBirdCutoffIso(showWindow.startDate) : null;`
+4. `const priceResolution = resolveVendorStandPrice(boothSize, now, cutoffIso);`
+
+This is the SAME `now` the route already derives from `new Date()` for token-expiry
+verification — reused, never a second clock read, never body-derived. Reusing this existing
+abstraction (rather than a bespoke Sanity query) means this feature inherits its established
+caching/failure posture for free.
+
+## Refuse-on-missing-cutoff — where M3's refusal discipline now lives
+
+The six prices can no longer be null (they're confirmed constants), so M3's original
+"refuse when a price is null" path is gone. Its discipline survives in the one input that
+genuinely can still be absent: **no active show published in Sanity** → `lookupShowWindow`
+returns `null` → `cutoffIso` is `null` → `resolveVendorStandPrice` refuses
+`{ok:false, reason:'not-configured'}` → the route returns the SAME `HTTP 503` +
+council-blocked-shaped message M3's A55 already proved, **before any Firestore write or
+gateway call**. This is a real, live operational failure mode (a demo/staging environment
+with no active show configured, or a show accidentally deactivated), not a fabricated test
+case — A4 proves it end-to-end.
+
+## Anti-spoof — unchanged posture, now protecting real money
+
+Exactly as originally briefed: the request body allow-list stays `{token, boothSize}`; `now`
+and `cutoffIso` are both server-derived (from `new Date()` and the Sanity-backed show window,
+respectively) and never read from the request body. A3 proves four plausible spoof field
+names (`now`, `timestamp`, `clientNow`, `purchasedAt`) are silently ignored and produce results
+identical to an honest request, plus a static assertion that no such body key is read anywhere
+in the route.
+
+## Two unrelated 90-day figures — kept as separate constants
+
+The T&Cs cancellation clause (M3, `lib/vendor-stand-forfeiture-notice.ts`) also says "90 days".
+`VENDOR_STAND_EARLY_BIRD_CUTOFF_DAYS_BEFORE_SHOW` (this feature) and whatever constant backs
+the forfeiture notice's "90 days before the opening of the show" wording are **two unrelated
+rules that happen to share a number today** — a payment-pricing rule and a cancellation-policy
+rule. They must NOT be collapsed into one shared constant; a future change to either (e.g.
+Council extends the cancellation window to 120 days without touching pricing) must not
+silently change the other. `lib/vendor-stand-pricing.ts` must not import from
+`lib/vendor-stand-forfeiture-notice.ts` or vice versa for this value.
 
 ## What Council still owes us
 
-Six ZAR figures (`VENDOR_STAND_PRICE_ZAR[1|2|3].earlyBird` / `.regular`) and one cutoff date
-(`VENDOR_STAND_EARLY_BIRD_CUTOFF`). None of the seven values may be invented, estimated, or
-defaulted — every one ships `null` in this mission, exactly as M3's three flat prices did.
-The moment Council supplies real numbers, filling in these seven constants is the entire
-follow-up change — no route, page, token, or settlement code should need to change, mirroring
-M3's own "the moment Council supplies three real numbers, filling in `VENDOR_STAND_PRICE_ZAR`
-is the entire follow-up change" claim (A55's regression lock). A future check in the same
-shape as A55 (pricing flips the mechanism on nothing but the constants) is recommended once
-real figures are supplied, though it is not written here since it would currently be
-vacuously true against all-null fixtures rather than real data.
+Nothing pricing-related. All six prices and the cutoff RULE (90 days) are confirmed. The only
+remaining external dependency is operational, not a missing fact: an active show document
+must exist in Sanity with a real `startDate` for the cutoff to be derivable at all — see
+"Refuse-on-missing-cutoff" above for what happens when it doesn't.
+
+## What changed and what was cut for tonight (urgent demo)
+
+Cut from the original scope, to be added back as a follow-up rather than blocking tonight's
+demo — flagging explicitly per the team lead's instruction, not silently dropped:
+
+- **Backward-compatibility check for pre-existing `vendorStandOrders` documents** (a legacy
+  order with no `tier` field settling correctly through the unmodified settlement handler).
+  The design requirement itself is UNCHANGED from the original brief — `VendorStandOrder.tier`
+  is still additive/nullable, `lib/vendor-stand-payment-notification.ts` must still never read
+  `.tier` — @dev should still build it this way. What's cut is the standalone RED check
+  proving it; there are no real `vendorStandOrders` documents in production yet tonight (the
+  mechanism has never successfully priced a real payment), so the risk of skipping this one
+  check tonight is low. Recommend adding it back as a same-shaped check tomorrow.
+- **The "refuse holds independently per null tier" scenario** from the original brief is
+  MOOT under the new design — there is no longer a "one tier null, one tier populated" state
+  possible, since both tiers are derived from one confirmed rate. Not cut, superseded.
+
+Everything else in this document is the full, current spec — not a placeholder.
 
 ## RED checks — proof these properties do not hold against current code
 
-All four fail against HEAD (`c9b465aa` plus the M3 code already on disk) because
-`VENDOR_STAND_PRICE_ZAR[n]` is currently a bare `number | null`, not a
-`{earlyBird, regular}` record, and `resolveVendorStandPrice` currently takes one argument,
-not two. See `contracts/contract-vendor-stand-early-bird-pricing.yaml` (A1-A4) for the exact
-commands and captured failure output.
+All four checks were run against HEAD (`vendor-gated-registration-flow` M3 code, unmodified)
+and confirmed failing, with real captured output recorded in
+`contracts/contract-vendor-stand-early-bird-pricing.yaml`'s A1-A4 descriptions.
 
-- **A1** — correct tier selected either side of the cutoff, reusing `isWithinEarlyBirdWindow`
-  (pure function, no harness).
-- **A2** — a forged client-supplied timestamp field cannot buy the early-bird rate
-  (behavioural, route-runner harness) + static class assertion that the route never threads
-  a body-derived value into `resolveVendorStandPrice`'s `now` argument.
-- **A3** — refusal holds independently per tier when only one tier's figure is null (pure
-  function, no harness).
-- **A4** — a `vendorStandOrders` document written before this mission (no `tier` key) still
-  settles correctly through the unmodified settlement handler, and the settlement handler's
-  source contains zero references to `.tier` in any guard (behavioural + static).
+- **A1** — `check-tier-selected-either-side-of-cutoff.mjs`: tier selection, including the
+  SAST boundary instant, and `deriveVendorStandEarlyBirdCutoffIso` tracking a moved show date.
+- **A2** — `check-price-derived-from-per-stand-rate.mjs`: price = confirmed R1450/stand ×
+  booth size at standard tier; early-bird exactly 80% of standard; both as derived
+  relationships, not just fixed values.
+- **A3** — `check-timestamp-spoof-cannot-buy-early-bird.mjs`: a forged client timestamp cannot
+  obtain the early-bird rate.
+- **A4** — `check-refuses-when-cutoff-unavailable.mjs`: a genuinely missing cutoff (no active
+  show configured) still refuses, before any write, exactly as M3's original null-price
+  refusal did.
+
+## Harness note: `fixture-show-window-lookup.mjs` extended
+
+`contracts/harness/route-runner/fixture-show-window-lookup.mjs` was a permanent
+`() => null`-returning stub with no check exercising its return value behaviourally. Extended
+with `setShowWindowFixture(window)` so A3/A4 can configure the active show window the initiate
+route resolves. Default behaviour (no window configured) is unchanged from before this
+mission — every pre-existing consumer of this fixture is unaffected.

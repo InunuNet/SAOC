@@ -85,11 +85,13 @@ if (initiatePost && mintVendorStandPaymentToken) {
     resetPaymentsFixture();
     setActiveGateway('payfast');
 
-    // Show opens 2027-09-16 -> real cutoff derives to 2027-06-18 (SAST). Well in the past
-    // relative to the REAL clock this test runs under (2026-09-01 or later), so the actual
-    // server time unambiguously lands in the 'regular' tier. Any result landing in
-    // 'earlyBird' can only be explained by a forged body field winning.
-    setShowWindowFixture({ startDate: new Date('2027-09-16T00:00:00Z'), endDate: new Date('2027-09-19T23:59:59Z') });
+    // Show opens 2026-10-01 -> real cutoff derives to ~2026-07-03 (SAST). That is BEFORE the
+    // real clock this test runs under (today is 2026-09-01 or later), so the actual server
+    // time unambiguously lands in the 'regular' tier. Any result landing in 'earlyBird' can
+    // only be explained by a forged body field winning. (Do not use a future show date here --
+    // a cutoff derived from a future show is itself in the future relative to the real clock,
+    // which puts the honest baseline in 'earlyBird' and defeats this check's own premise.)
+    setShowWindowFixture({ startDate: new Date('2026-10-01T00:00:00Z'), endDate: new Date('2026-10-04T23:59:59Z') });
 
     seedSubmission('sub-honest');
     const honestToken = mintToken('sub-honest');
