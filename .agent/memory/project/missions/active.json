@@ -1,5 +1,8 @@
 {
-  "mission": null,
-  "checkpoint": null,
-  "note": "mission complete"
+  "mission": ".agent/memory/project/missions/2026-09-01-vendor-stand-early-bird-pricing.md",
+  "checkpoint": {
+    "milestone": null,
+    "feature": null
+  },
+  "activated_at": "2026-09-01T18:13:42.700153+00:00"
 }
