@@ -489,3 +489,14 @@ P2 in `backlog.md`. See `learned.md` for the five session lessons (missing-secre
 stale-doc false blocker, concurrent-agent phantom gate failures, redesigned-check adversarial-pass
 gap, mid-revision ruling rework). Commits `0039c1eb`, `0ed223af`, `8c69cf1c`, `6a778009`,
 `d879514d`.
+
+### 2026-09-02 — `admin-vendor-listing-serialization` DONE — deployed
+
+Firestore Timestamps were reaching the RSC/JSON boundary unserialized in the admin vendor listing
+pages (`ccc6a73b`), fixed structurally (not a field allowlist — `4729b52b` proves Timestamp
+conversion is structural). Gate 15/15, Codex GPT-5.5 PASS, deployed as revision
+`saoc-prod-build-2026-09-01-008`. **Caveat carried to `learned.md`:** a bug an outside model found
+in one pass still sat in the code while the gate was green three separate times this session —
+the checks were fixtured against fields the implementation already handled, not against the full
+type. No mission `.md` file exists for this one (small/direct scope); see commits `ccc6a73b`,
+`4729b52b`, `c0aaa518` (deploy retrigger for the build-time secret-access fix).

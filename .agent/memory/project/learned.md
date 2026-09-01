@@ -2853,3 +2853,59 @@ the same mission, causing rework. **Rule: when an architect is mid-revision, red
 implementation question back to the architect (or wait for the revision) instead of ruling on it
 directly** — reinforces the standing `workflow.md` rule that the orchestrator doesn't implement,
 but extends it: don't arbitrate design questions an architect is actively mid-flight on either.
+
+## A green gate over a live bug, three times in one session (2026-09-02, admin-vendor-listing-serialization)
+
+The serialization fix passed 13 assertions while a bug an outside model found in one pass still
+sat in the code. The checks seeded only the fields the implementation already handled — same
+class as A60 (see below) and as the original outage this mission was fixing. **Rule: when a
+check and the code were shaped by the same understanding, the check cannot falsify that
+understanding.** Seed fixtures from the TYPE (every field the type declares, including ones the
+implementation doesn't yet touch), not from the implementation's own field list.
+
+## A60 is vacuous and is still unfixed (2026-09-02, tracked in backlog P1)
+
+Already logged in `backlog.md`'s Contract & test infrastructure section — stays green with
+`db.runTransaction()` deleted outright, because the test fixture keys documents by submission id
+in a plain Map so every write path converges to one document regardless of locking.
+Independently confirmed by Codex GPT-5.5. Found by mutation testing; no amount of reading the
+check's source would have caught it. Still open — do not treat M3 as fully done until rewritten.
+
+## Mutation testing works and should become routine, but must be announced (2026-09-02, same session)
+
+Deliberately breaking production code to confirm a check goes red found the one dead check (A60)
+among four candidates (A55, A60-A62). Cost: minutes, not hours. **Operational hazard:** two other
+agents read the tree mid-mutation and filed false regression reports against code that was
+intentionally, temporarily broken. Rule: mutations must be announced to the team before applying,
+applied one at a time, and reverted before the next agent's read — never leave a deliberately
+broken tree unannounced, even briefly.
+
+## App Hosting builds can fail silently for hours while the site serves stale code (2026-09-02, stand-payment secrets follow-up)
+
+Three consecutive builds failed on `PermissionDenied` resolving `VENDOR_REGISTRATION_TOKEN_SECRET`
+— a secret readable at RUNTIME can still break the BUILD, because App Hosting resolves secrets
+before compiling, not just before serving. Granting the binding by hand to the service account
+inferred from a working secret's IAM policy did NOT fix it; the actual fix was
+`firebase apphosting:secrets:grantaccess <SECRET> --backend saoc-prod`. Crucially, an earlier
+claim in this same session that the secrets were "deployed to beta" was false — that build had
+also failed silently and nobody checked. **Rule: after any push that matters, verify the live
+revision actually changed** —
+`gcloud run services describe saoc-prod --region=europe-west4 --format='value(status.latestReadyRevisionName)'`
+— never infer deployment from a successful `git push`, a green CI run, or a prior "it's deployed"
+claim in the same session. Same missing-secret defect class as earlier that day, one layer deeper
+(build-time resolution, not just runtime).
+
+## Empty collections hide serialization defects (2026-09-02, admin-vendor-listing-serialization)
+
+Both admin vendor pages were broken by the same Timestamp-serialization bug; only the one with
+data actually crashed. **Rule: a page reading a currently-empty collection into a client
+component is untested, not safe** — an empty result set can't exercise the serialization boundary
+that breaks on real documents. Don't treat "renders fine" as verification when the collection
+behind it happens to be empty; seed at least one real-shaped document before calling a listing
+page verified.
+
+## The mandatory Codex GPT-5.5 pass earned its place three times in one session (2026-09-02, reinforcing workflow.md)
+
+Caught the upload size cap gap, the incomplete timestamp allowlist, and independently agreed on
+A60 — three real, distinct findings in one session from the same independent-model pass. Reinforces
+the standing `workflow.md` rule: every QA pass runs Codex after Claude's own @qa, no exceptions.

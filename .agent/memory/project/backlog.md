@@ -2,7 +2,7 @@
 
 Organised by **priority and subject**, not by session. Rebuilt 2026-08-19 from a 2,677-line
 session diary (pre-cleanup copy: `archive/backlog-2026-08-19-pre-cleanup.md`).
-_Last compacted: 2026-09-01 by backlog_trim.py. Full history: git log on this file._
+_Last compacted: 2026-09-02 by backlog_trim.py. Full history: git log on this file._
 
 **Rules for this file.** One line of stale information here misleads every agent, every session.
 Completed items are deleted, not ticked — git history is the record. Plan steps live in
@@ -541,7 +541,18 @@ flat-over-nested-submenu pattern.
 
 ## Vendor registration
 
-- [ ] **P0 SECURITY — vendors sharing a normalized business name share a failed-attempt fate,
+  need a cleanup decision before real vendors use the system** (found 2026-09-01, session
+  close-out). IDs: `JZfHPoxnTSMytCzQgxib`, `UhUGhAjrdRrrl1LSrVDw`, `hi2Figor34cBTwqq76Wm`,
+  `rWSrLFyINIxn3uVSo2gg`, `injKWpwqvHjOgsVRO6Ye`. Two share the slug `demoorchidnursery`, two
+  share `zzqslugcollisiontestnursery` — deliberately created to exercise the P0 shared-slug
+  defect below. Delete, or mark clearly as fixtures, before go-live.
+  "No vendor applications have been submitted yet" while the page actually lists full
+  REGISTRATIONS.** Reads as a bug when it is telling the truth about the wrong noun. Found
+  2026-09-01, session close-out.
+  Found 2026-09-01 while building the `vendor-flow-notifications` contract — the notification
+  emails had to point review links at flat list pages instead of a specific application's detail
+  view, because that route does not exist.
+
   and possibly more.** Found 2026-09-01 by `QA_E2E_VendorFlow_Adversarial` during live E2E prep.
   `verify-code` matches candidates by normalized business name, and
   `recordFailedVendorRegistrationCodeAttempt` loops over EVERY matching candidate — so five wrong
@@ -697,7 +708,6 @@ flat-over-nested-submenu pattern.
 
 ## Contract & test infrastructure
 
-- [ ] **P1 — A60 is a vacuous check and must be rewritten before M3 is treated as done.**
   Found 2026-09-01 by an independent mutation-testing pass (`QA_Son5_M3-F1_RewrittenChecksAdversarial`),
   confirmed by Codex GPT-5.5 (`execution/codex_qa.sh`, exit 1) with identical file:line citations
   and no disagreement. `contracts/checks/vendor-gated-registration-flow-m3/check-initiate-is-transactionally-idempotent.mjs:60-68,88-98`
@@ -1134,3 +1144,4 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   see the existing P1 backlog item "Audit remaining contracts for the weak-assertion defect
   class."
 > Truncated 127 items at trim time (2026-09-01). Restore from git history if needed.
+> Truncated 5 items at trim time (2026-09-02). Restore from git history if needed.

@@ -121,6 +121,10 @@ state. See [`docs/admin-access.md`](docs/admin-access.md) for the policy, the de
 `reason` values, and known traps (unverified-email lockouts, an empty allowlist that
 fails closed silently).
 
+### Admin vendor listing — Firestore Timestamp serialisation
+
+Admin pages that read Firestore collections with timestamp-shaped fields (`submittedAt`, `reviewedAt`, etc.) must convert `Timestamp` class instances to native `Date` objects before passing them to `'use client'` components. The conversion module `lib/firestore-serialization.ts` provides `serializeVendorApplication()` and `serializeVendorSubmission()` for this — both convert by structure (duck-typed `.toDate()` method), not by a hardcoded field-name allowlist, ensuring new fields are handled correctly. See [`docs/admin-vendor-listing-serialization.md`](docs/admin-vendor-listing-serialization.md) for the defect analysis, the fix rationale, and why field allowlists fail.
+
 ---
 
 ## Adding Data (No Code Changes Needed)
