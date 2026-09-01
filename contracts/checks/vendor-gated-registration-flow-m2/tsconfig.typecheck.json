@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../types/index.ts",
+    "../../../components/admin/VendorReviewTable.tsx",
+    "fixtures/f14-new-fields-typecheck.ts",
+    "fixtures/admin-page-fixtures-typecheck.ts"
+  ],
+  "exclude": []
+}
