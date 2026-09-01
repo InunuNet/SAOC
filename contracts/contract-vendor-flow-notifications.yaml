@@ -1,0 +1,194 @@
+schema: athanor.contract/v1
+slug: vendor-flow-notifications
+goal: >-
+  Mission vendor-flow-notifications F1 (G1 from
+  .agent/memory/project/specs/vendor-flow-gaps/README.md) -- admin notification emails, plus the
+  missing vendor-facing "we received your application" confirmation folded in as G1's fifth gap.
+  Five new files (lib/vendor-application-confirmation.ts + emails/VendorApplicationConfirmation
+  .tsx -- the missing vendor-facing application-received email; lib/vendor-application-admin-
+  notice.ts + emails/VendorApplicationAdminNotice.tsx; lib/vendor-submission-admin-notice.ts +
+  emails/VendorSubmissionAdminNotice.tsx; lib/vendor-payment-admin-notice.ts +
+  emails/VendorPaymentAdminNotice.tsx -- three admin notices, one per mission event; lib/vendor-
+  admin-notify-recipients.ts -- the ONLY module that reads process.env.ADMIN_EMAIL_ALLOWLIST for
+  notification purposes, read-only, zero authorization meaning, no second roster env var) and
+  three wiring edits (app/api/vendors/apply/route.ts; lib/vendor-registration-handler.ts +
+  app/api/vendors/register/route.ts; lib/vendor-stand-payment-notification.ts). Every send is
+  independently wrapped in the REAL lib/confirmation-email.ts deliverConfirmationEmailAfterCommit
+  -- an admin-notify failure NEVER blocks or fails the vendor's own action. Full decision record,
+  every judgement call (including the review-link target correction -- the spec names a per-id
+  admin page that does not exist in this repo; this contract points every link at the real,
+  existing LIST page instead), and everything this contract does NOT prove:
+  contracts/golden/vendor-flow-notifications/README.md
+created_at: '2026-09-01'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Five new files, three wiring edits, zero new Firestore collections, zero new admin
+      capability, zero second admin-roster env var.
+      (1) lib/vendor-admin-notify-recipients.ts (new) -- exports
+      getVendorAdminNotifyRecipients(): string[], reading process.env.ADMIN_EMAIL_ALLOWLIST with
+      the same parse lib/admin-auth.ts's private parseAllowlist() already uses (comma-split,
+      trim, lowercase, filter empty). The ONLY function in the new surface that reads
+      process.env. Imports neither lib/admin-auth.ts nor lib/admin-roles.ts. Contains no
+      console.* call.
+      (2) lib/vendor-application-confirmation.ts + emails/VendorApplicationConfirmation.tsx (new)
+      -- vendor-facing "we received your application" email, mirroring lib/vendor-registration-
+      confirmation.ts's exact injectable-mailer shape (VendorApplicationConfirmationInput {
+      businessName; contactPersonName; contactEmail }; VendorApplicationConfirmationMailer {
+      send(args: { to: string; subject: string; react: ReactElement }): Promise<void> };
+      SendVendorApplicationConfirmationDeps { mailer? }; sendVendorApplicationConfirmationEmail
+      (input, deps): Promise<void>, deps.mailer defaults to { send: sendEmail }). Subject: 'We
+      received your vendor application — SAOC'. Sends to input.contactEmail. Zero console.*
+      calls anywhere in the module.
+      (3) lib/vendor-application-admin-notice.ts + emails/VendorApplicationAdminNotice.tsx (new)
+      -- VendorApplicationAdminNoticeInput { businessName: string; contactPersonName: string;
+      applicationId: string; reviewUrl: string }; same narrow mailer interface as (2);
+      sendVendorApplicationAdminNoticeEmail(input, deps): Promise<void> resolves recipients via
+      getVendorAdminNotifyRecipients() and calls mailer.send({ to: <each address>, subject: 'New
+      vendor application submitted — SAOC', react: ... }) once per recipient via Promise.all --
+      `to:` NEVER references input.contactEmail/businessName/contactPersonName, only the
+      resolver's output. Zero recipients -> zero sends, after exactly one console.warn with no
+      PII (the only console.* call permitted in this file).
+      (4) lib/vendor-submission-admin-notice.ts + emails/VendorSubmissionAdminNotice.tsx (new) --
+      identical shape to (3): VendorSubmissionAdminNoticeInput { businessName; contactPersonName;
+      vendorSubmissionId: string; reviewUrl: string }; sendVendorSubmissionAdminNoticeEmail(input,
+      deps): Promise<void>. Subject: 'New vendor registration submitted — SAOC'.
+      (5) lib/vendor-payment-admin-notice.ts + emails/VendorPaymentAdminNotice.tsx (new) --
+      identical shape: VendorPaymentAdminNoticeInput { businessName; contactPersonName;
+      standOrderRef: string; reviewUrl: string }; sendVendorPaymentAdminNoticeEmail(input, deps):
+      Promise<void>. Subject: 'Vendor stand payment received — SAOC'.
+      (6) app/api/vendors/apply/route.ts (edit) -- adds a local resolveSiteUrl() (same
+      DEFAULT_SITE_URL='https://saoc.co.za' / process.env.SITE_URL fallback pattern lib/
+      confirmation-email.ts already duplicates locally). Strictly AFTER `ref = await
+      .collection(VENDOR_APPLICATIONS_COLLECTION).add(...)` commits, fires TWO independent
+      deliverConfirmationEmailAfterCommit calls: sendVendorApplicationConfirmationEmail({
+      businessName: built.businessName, contactPersonName: built.contactPersonName, contactEmail:
+      built.contactEmail }) and sendVendorApplicationAdminNoticeEmail({ businessName:
+      built.businessName, contactPersonName: built.contactPersonName, applicationId: ref.id,
+      reviewUrl: `${resolveSiteUrl()}/admin/vendors/applications` }). Each onError logs only a
+      generic message plus error.message, never a submitted field. The route's existing
+      201/400/500 response shapes are UNCHANGED.
+      (7) lib/vendor-registration-handler.ts (edit) -- VendorRegistrationHandlerDeps gains
+      sendAdminNotice(input: { businessName: string; contactPersonName: string;
+      vendorSubmissionId: string }): Promise<void>. Immediately AFTER the existing step 7 call
+      (deliverConfirmationEmailAfterCommit(() => deps.sendConfirmationEmail(...),
+      deps.onEmailError)), a second, independent deliverConfirmationEmailAfterCommit(() =>
+      deps.sendAdminNotice({ businessName: built.businessName, contactPersonName:
+      built.contactPersonName, vendorSubmissionId: writeResult.id }), deps.onEmailError) is
+      added, reusing the SAME injected onEmailError (no new callback). app/api/vendors/
+      register/route.ts supplies sendAdminNotice as a closure calling
+      sendVendorSubmissionAdminNoticeEmail({ ...input, reviewUrl:
+      `${resolveSiteUrl()}/admin/vendors` }) -- the pure handler stays network/URL-agnostic.
+      (8) lib/vendor-stand-payment-notification.ts (edit) -- adds a local resolveSiteUrl()
+      helper and a `let paidNotice = null` declared before `db.runTransaction(...)`. Inside the
+      `status === 'paid'` branch, AFTER the amount guard passes and BEFORE
+      `transaction.update(standOrderRef, ...)`, adds `const submissionDoc = await
+      transaction.get(submissionRef);` (a read positioned before the transaction's first write,
+      satisfying Firestore's read-before-write-in-one-transaction requirement) and assigns
+      paidNotice = { businessName, contactPersonName, standOrderRef: notification.reference }
+      from submissionDoc.data(). Strictly AFTER `await db.runTransaction(...)` resolves (OUTSIDE
+      the transaction callback -- a transaction can retry, so the side effect must not live
+      inside it), `if (paidNotice) { await deliverConfirmationEmailAfterCommit(() =>
+      sendVendorPaymentAdminNoticeEmail({ ...paidNotice, reviewUrl:
+      `${resolveSiteUrl()}/admin/vendors` }), onError) }` fires once. No change to the existing
+      verification, cross-gateway, idempotency, or amount-guard logic.
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-flow-notifications/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The whole project still type-checks under strict TypeScript after all five new files and three edits.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        ROUTE-WIRING DISCRIMINATOR on app/api/vendors/apply/route.ts. Proves BOTH
+        sendVendorApplicationConfirmationEmail and sendVendorApplicationAdminNoticeEmail are
+        imported, each called wrapped inside deliverConfirmationEmailAfterCommit(() => ...), and
+        each call site sits AFTER the Firestore .add() commit. Self-tested against a frozen
+        KNOWN-UNWIRED fixture before trusting the live file. Defeating mutation: deleting either
+        call; calling either unwrapped; moving either call before the write.
+      command: node contracts/checks/vendor-flow-notifications/check-apply-route-wiring.mjs
+
+    - id: A3
+      description: >-
+        WIRING DISCRIMINATOR across lib/vendor-registration-handler.ts (declares
+        sendAdminNotice on VendorRegistrationHandlerDeps, calls it via
+        deliverConfirmationEmailAfterCommit strictly after the existing sendConfirmationEmail
+        call) and app/api/vendors/register/route.ts (supplies a real
+        sendVendorSubmissionAdminNoticeEmail closure). Self-tested against a frozen
+        KNOWN-UNWIRED handler fixture. Defeating mutation: deleting the call; calling it before
+        the existing confirmation call; calling it unwrapped; the route never supplying the dep.
+      command: node contracts/checks/vendor-flow-notifications/check-register-handler-wiring.mjs
+
+    - id: A4
+      description: >-
+        WIRING DISCRIMINATOR on lib/vendor-stand-payment-notification.ts. Proves
+        sendVendorPaymentAdminNoticeEmail is imported; transaction.get(submissionRef) happens
+        BEFORE the first transaction.update() in the same transaction (a real Firestore
+        constraint, not a style nit); the admin-notice send is wrapped in
+        deliverConfirmationEmailAfterCommit; and that call site sits STRICTLY OUTSIDE the
+        db.runTransaction(...) callback (never inside it, where a retry would double-send).
+        Self-tested against a frozen KNOWN-UNWIRED fixture. Defeating mutation: reading
+        submissionRef after a write (a runtime crash); firing the send inside the transaction;
+        calling it unwrapped.
+      command: node contracts/checks/vendor-flow-notifications/check-payment-admin-notice-wiring.mjs
+
+    - id: A5
+      description: >-
+        RECIPIENTS-FROM-ALLOWLIST-ONLY, paired presence+absence, across all three admin-notice
+        modules: each genuinely imports and calls getVendorAdminNotifyRecipients() and calls
+        mailer.send (presence -- rules out a stub that trivially passes by sending nowhere), AND
+        no mailer.send(...) call's `to:` argument ever references contactEmail/businessName/
+        contactPersonName (absence). Also proves no NEW process.env reference beyond
+        ADMIN_EMAIL_ALLOWLIST exists anywhere across the five new lib/*.ts files, and that
+        lib/vendor-admin-notify-recipients.ts imports neither lib/admin-auth.ts nor
+        lib/admin-roles.ts. Defeating mutation: computing `to` from the vendor's own submitted
+        contactEmail; introducing a second roster env var; deleting recipient resolution while
+        keeping the file's console.* count at zero (caught by the presence half).
+      command: node contracts/checks/vendor-flow-notifications/check-recipients-allowlist-only.mjs
+
+    - id: A6
+      description: >-
+        BEHAVIOURAL proof of getVendorAdminNotifyRecipients(): a real, messy
+        ADMIN_EMAIL_ALLOWLIST value (' Admin@Example.com , second@example.com,, third@Example.COM ')
+        parses to exactly ['admin@example.com','second@example.com','third@example.com']; an
+        unset var resolves to []; a second env var (VENDOR_NOTIFY_EMAIL_ALLOWLIST) is ignored.
+        Proves the resolver is a real implementation, not a stub always returning [] or a
+        hardcoded list -- which every absence-only check elsewhere in this contract would
+        otherwise trivially satisfy for the wrong reason.
+      command: npx tsx contracts/checks/vendor-flow-notifications/check-recipients-resolver-behavior.mjs
+
+    - id: A7
+      description: >-
+        EMAIL-FAILURE-NEVER-BLOCKS proof across all FOUR new sender modules, composed with the
+        REAL deliverConfirmationEmailAfterCommit: a rejecting mailer resolves (never throws) and
+        calls onError exactly once with the real rejection reason, WITH mailer.send genuinely
+        attempted (counted); a resolving mailer resolves with onError called zero times, WITH
+        mailer.send genuinely attempted. The three admin-notice modules are exercised with
+        ADMIN_EMAIL_ALLOWLIST set to two real addresses so the Promise.all recipient loop is
+        actually exercised, not a zero-recipient no-op. Defeating mutation: an inner try/catch
+        that silently swallows a mailer rejection before it reaches deliverConfirmationEmail
+        AfterCommit's own catch; a send function that never actually calls mailer.send.
+      command: npx tsx contracts/checks/vendor-flow-notifications/check-email-failure-isolation.mjs
+
+    - id: A8
+      description: >-
+        NO-PII-IN-LOGS, paired absence+presence, across all five new lib/*.ts files. The
+        vendor-facing confirmation and the recipient resolver contain ZERO console.* calls and
+        genuinely reference their respective real fields (proves they are not empty stubs). Each
+        of the three admin-notice modules contains AT MOST ONE console.* call (a console.warn,
+        zero-recipients case only, no PII in its arguments) and genuinely references
+        businessName. Matches the rule every existing vendor-email module in this project already
+        follows.
+      command: node contracts/checks/vendor-flow-notifications/check-no-pii-in-logs.mjs
+
+    - id: A9
+      description: pnpm lint passes with zero errors after all five new files and three edits.
+      command: pnpm lint
