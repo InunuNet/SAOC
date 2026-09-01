@@ -2640,9 +2640,19 @@ survives a real fix; a stale PASS survives a real regression, silently. A true r
 as evidence of current state without `--run-checks` is history, not measurement. Same failure
 shape as `feedback_unchanged_detector_reading` (identical output does not mean clean — it may
 mean the detector is blind), now confirmed at the harness's own gate primitive. Filed upstream:
-[InunuNet/Athanor#1376](https://github.com/InunuNet/Athanor/issues/1376), proposing
-`--run-checks` become the default rather than opt-in. Until that lands: always pass
-`--run-checks` when a gate result is going to be acted on or reported as current.
+[InunuNet/Athanor#1376](https://github.com/InunuNet/Athanor/issues/1376). This is not
+theoretical: in the same session, the trap independently misled two different agents ~90 minutes
+apart on the same repo — `@architect` read a stale FAIL and concluded an unrelated concurrent
+session had broken the lint gate (it had actually already been fixed minutes earlier by `@dev`),
+then `@dev` hit the identical stale-result confusion chasing its own fix. Neither was careless;
+both readings looked entirely plausible, because the output gives no signal distinguishing replay
+from measurement. Followed up on the issue with two ordered fix proposals: (1, recommended
+first, ship regardless of (2)) make the gate output state its own provenance — cached vs.
+freshly-executed, and how old — a small, low-risk change that fixes the misreading directly
+without altering any caller's invocation or performance; (2, more thorough but changes runtime
+behaviour for every existing caller) make `--run-checks` the default. Until either lands: always
+pass `--run-checks` when a gate result is going to be acted on or reported as current, and treat
+any gate summary you did not personally run with `--run-checks` as unverified.
 
 ## Weak assertions keep passing over real defects unless they attack a class, not an instance (2026-08-31, vendor-gated-registration-flow M1–M4)
 
