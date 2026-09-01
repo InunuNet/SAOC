@@ -23,8 +23,8 @@ goal: 'Rebuild the National Show vendor registration form (app/(marketing)/natio
   vendor-registration-form-rebuild'
 created_at: '2026-08-25T20:38:23.395516+00:00'
 started_at: null
-last_active_at: '2026-08-26T22:23:18.930076+00:00'
-status: pending
+last_active_at: '2026-09-01T00:01:06.098117+00:00'
+status: abandoned
 cost_estimate:
   features: 11
   milestones: 3
@@ -309,10 +309,12 @@ milestones:
   - F9
   - F10
   - F11
+notes: 'Abandoned: Superseded 2026-08-26: Lee-Ann replaced the source document in
+  place (same Drive file id). This mission was scoped against the 25 Aug snapshot,
+  now marked SUPERSEDED. Work continued under vendor-gated-registration-flow (M1 fd51813,
+  M2 F13 67d63ff/e439827, M4 5e3c9e6), which also inverted the flow to application-then-approval
+  per Brad 2026-08-30.'
 ---
-
-
-
 
 # Mission: Rebuild the National Show vendor registration form (app/(marketing)/national-show/vendors/register + app/api/vendors/register + lib/vendor-register-form-payload.ts + vendorSubmission Sanity/Firestore data model) to match the real, current source of truth: 2027_SAOC_National_Show_Vendor_Registration_Form.docx (mirrored locally at docs/leeann-source/2027-vendor-registration-form_2026-08-25.md), which has 18 sections / ~90 fields vs. the live form's 31 fields built from an older document. Missing sections confirmed by prior investigation: Emergency Contact, Gas/Cooking/Heat-Producing Equipment, Storage & Security, Waste & Cleaning, Insurance, Supporting Documentation Checklist, full Vehicle Details, per-day Staff & Exhibitor Passes, Marketing (including logo upload and marketing/photo-use consent, per Brad 2026-08-25), full Booth Fees & Payment breakdown, and the full 12-point Vendor Agreement & Declaration (currently one generic checkbox). Architect should read the mirrored source doc in full and produce a milestone/feature breakdown appropriately sized for a ~90-field form (do not attempt as one giant feature) — likely grouped by document section, with file uploads (logo/marketing photos, following the existing F7 proof-of-payment public-upload pattern: base64 in, Storage out, MIME allowlist, size cap, extension derived from mimeType) as their own feature. Do NOT touch the vendor-to-ticket-purchase linkage (separate open question, blocked on discussion with Lee-Ann, see backlog) or build a public vendor directory (separate backlog item) in this mission — scope is strictly matching the registration FORM itself to the real source document. --slug vendor-registration-form-rebuild
 

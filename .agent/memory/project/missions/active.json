@@ -1,9 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-08-25-vendor-registration-form-rebuild.md",
+  "mission": ".agent/memory/project/missions/2026-09-01-vendor-gated-registration-flow.md",
   "checkpoint": {
-    "milestone": "M2",
-    "feature": "F3",
-    "ts": "2026-08-26T22:23:18.930076+00:00"
+    "milestone": null,
+    "feature": null
   },
-  "activated_at": "2026-08-26T22:23:18.930186+00:00"
+  "activated_at": "2026-09-01T00:01:15.886310+00:00"
 }

@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "../../../lib/supporter-registrations.ts",
+    "../../../lib/supporter-registration-token.ts",
+    "../../../lib/supporter-registration-rate-limit.ts",
+    "../../../lib/supporter-registration-handler.ts",
+    "../../../lib/supporter-registration-confirmation.ts",
+    "../../../lib/resend-rate-limit.ts",
+    "../../../lib/email.ts",
+    "fixtures/public-supporter-registration-f1-typecheck.ts"
+  ],
+  "exclude": []
+}

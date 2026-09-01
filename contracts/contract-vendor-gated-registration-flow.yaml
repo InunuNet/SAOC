@@ -22,9 +22,19 @@ autonomy: high
 #         form's field set against the 26 Aug source doc. F13 (the vendor category list) is
 #         independently shippable ahead of F14-F21 -- ship it alone if the demo runs out of
 #         time. Full decision record: contracts/golden/vendor-gated-registration-flow-m2/README.md.
-#   M3 -- Stand Booking Payment as its own explicitly-non-ticket payment path; whether
-#         lib/vendor-payment.ts needs to change to make that separation more explicit than it
-#         is today. NOT contract-designed yet, same reason as M2.
+#   M3 -- ARCHITECTED 2026-09-01 (architect pass, F26-F32). Stand Booking Payment: a NEW
+#         sibling Firestore collection (vendorStandOrders), never touching orders/tickets/
+#         ticketType. Payment happens only after committee approval of the completed
+#         registration (Brad's sequencing decision) -- approving a submission mints and emails
+#         a stand-payment link; the vendor confirms a booth size (1/2/3, which already encodes
+#         the "multiple stands" case -- see golden), pays via the existing PayFast/Ozow
+#         gateway seam and activePaymentGateway admin setting, and settlement is idempotent
+#         and cross-gateway-guarded. The booth-size fee is council-blocked (no invented rand
+#         figure -- lib/vendor-stand-pricing.ts ships with every price null and the whole
+#         mechanism 503s until Council supplies real numbers); the written 90-day
+#         cancellation/no-refund clause is restated in a dedicated notice on the payment page,
+#         before the Pay button, sourced from one exported constant. Full decision record:
+#         contracts/golden/vendor-gated-registration-flow-m3/README.md.
 #   M4 -- ARCHITECTED 2026-09-01 (architect pass 3, F22-F25). Replaces M1/F3+F7's opaque HMAC
 #         link with a human-readable "{BusinessName}-{4 digits}" code (Brad, 2026-08-31),
 #         engineered so 10,000 possibilities is never the only barrier: per-application
@@ -467,6 +477,157 @@ features:
     milestone: M4
     contract: contracts/golden/vendor-gated-registration-flow-m4/README.md
 
+  # --- M3: Stand Booking Payment (F26-F32). See
+  # contracts/golden/vendor-gated-registration-flow-m3/README.md for the full decision record
+  # -- the ticket-model-vs-sibling-collection reasoning, why boothSize (1/2/3) needs no
+  # separate quantity/cart field, the missing-figure ledger (the 26 Aug doc's "Booth Fees &
+  # Payment" section was REMOVED entirely, not merely left with a blank rand figure), and the
+  # three open questions flagged to the orchestrator (F7 retirement, tables/chairs billing,
+  # refund mechanics).
+  - id: F26
+    name: >-
+      Data model + council-blocked pricing. types/index.ts: new VendorStandBoothSize (1|2|3),
+      VendorStandOrderStatus ('pending'|'paid'|'failed'|'cancelled'), VendorStandOrder
+      interface (id == vendorSubmissionId, vendorSubmissionId, businessName, contactEmail,
+      boothSize, amount, status, gateway, gatewayPaymentId, standOrderRef, createdAt, paidAt,
+      failedAt -- see golden "The crux decision" for why this is a NEW sibling collection,
+      never a reuse of Order/Ticket/TicketType). New lib/vendor-stand-pricing.ts:
+      VENDOR_STAND_BOOTH_SIZES = [1,2,3] as const, VENDOR_STAND_PRICE_ZAR (Record<1|2|3,
+      number|null>, every value null -- see golden "The missing-figure problem"; do NOT invent
+      a figure, do NOT follow lib/provisional-figures.ts's estimate-and-disclose pattern here,
+      there is no estimate to anchor to), resolveVendorStandPrice(boothSize): never throws,
+      never guesses, never defaults -- same posture as lib/payments/active-gateway.ts's
+      resolveActiveGateway(). Pure, no Firestore import.
+    status: pending
+    milestone: M3
+    contract: contracts/golden/vendor-gated-registration-flow-m3/README.md
+  - id: F27
+    name: >-
+      New trust domain. lib/vendor-stand-payment-token.ts: mintVendorStandPaymentToken()/
+      verifyVendorStandPaymentToken(), structurally identical to
+      lib/vendor-registration-token.ts (payload key 's' -- vendorSubmissionId -- a THIRD
+      distinct key alongside M1's 'a' and the order-recovery token's 'o'; same
+      malformed/bad-signature/expired result shape; injected `now`, no internal
+      Date.now()/new Date()). New env var VENDOR_STAND_PAYMENT_TOKEN_SECRET, never shared with
+      VENDOR_REGISTRATION_TOKEN_SECRET or RECOVERY_TOKEN_SECRET.
+      VENDOR_STAND_PAYMENT_TOKEN_DEFAULT_TTL_MS = 30 days. Zero authorization meaning by
+      itself -- see golden "Token mechanism" for why this token is deliberately NOT single-use
+      (unlike M1's registration token) and every use site re-verifies the linked submission's
+      CURRENT status/paid state, never a state snapshot from mint time.
+    status: pending
+    milestone: M3
+    contract: contracts/golden/vendor-gated-registration-flow-m3/README.md
+  - id: F28
+    name: >-
+      Approval mints + emails the payment link; admin resend escape hatch. Extends the EXISTING
+      app/api/admin/vendors/[id]/review/route.ts 'approve' action (F6/F8, unchanged
+      decideVendorStatusTransition()/3-key patch): after F8's existing
+      deliverConfirmationEmailAfterCommit() approval-email step, ADD a second, equally
+      non-blocking post-commit step that mints F27's token and sends a NEW email
+      (emails/VendorStandPaymentReady.tsx via new lib/vendor-stand-payment-notice.ts) linking
+      to /national-show/vendors/payment?token=... . Deliberately NOT fail-closed the way M1's
+      application-token mint is -- see golden "Approval triggers the mint" for why gating
+      submission approval on this secret would wrongly couple two independent decisions; the
+      approval write commits regardless, failure is logged and non-fatal. New POST
+      /api/admin/vendors/[id]/resend-payment-link, gated identically to the review route
+      (getAdminSession() -> hasCapability(..., 'review-vendor-applications', ...)), callable
+      any time the submission is currently 'approved' and its stand order (if any) is not yet
+      'paid' -- mints a fresh token, re-sends the email. Same "reissue, not unlock" shape as
+      F25 (M4); no separate "view existing link" mechanism.
+    status: pending
+    milestone: M3
+    contract: contracts/golden/vendor-gated-registration-flow-m3/README.md
+  - id: F29
+    name: >-
+      Public payment page. app/(marketing)/national-show/vendors/payment/page.tsx -- token-
+      gated (client-side UX check via F27's verify, page does not render the pay control if
+      missing/expired/malformed; never authorizing by itself, mirrors M1's register page
+      posture exactly). Displays business name, a boothSize selector (3 fixed radio options,
+      labels verbatim "Single Booth – 2.5m x 3m" / "2 Booths (Double) – 5m x 3m" / "3 Booths
+      (Triple) – 7m x 3m" -- same labels F17/M2 plans for the registration form, but this is
+      an INDEPENDENT selection, not read from VendorSubmission.boothSize -- see golden
+      "Relationship to M2/F17" for why M3 does not wait for or depend on F17), and the price
+      for the currently-selected size (503/"pricing not yet confirmed" state rendered plainly
+      if lib/vendor-stand-pricing.ts's price is null for every size). New
+      lib/vendor-stand-forfeiture-notice.ts exports ONE constant,
+      VENDOR_STAND_FORFEITURE_NOTICE, quoting both operative sentences from
+      docs/leeann-source/2027-vendor-registration-form_2026-08-26.md lines 242-243 verbatim
+      (the 90-day finalisation + no-refund-within-90-days sentences). The page renders this
+      constant, sourced only from the constant (never retyped inline), in a visually distinct
+      block that precedes the "Pay Now" control in DOM order -- see golden "The 90-day
+      forfeiture notice" for why this is a SECOND, independent placement from F20/M2's
+      T&Cs-block copy, not a duplicate of it.
+    status: pending
+    milestone: M3
+    contract: contracts/golden/vendor-gated-registration-flow-m3/README.md
+  - id: F30
+    name: >-
+      POST /api/vendors/stand-payment/initiate, body {token, boothSize}. Steps, in order (see
+      golden "Initiate" for the full decision record): verify token (generic 403 on any
+      failure, same enumeration-blindness posture as M1) -> re-read vendorSubmissions/{id},
+      refuse unless status === 'approved' (re-checked fresh, never trusting mint-time state) ->
+      validate boothSize is exactly one of {1,2,3} (reject any other value including a
+      numerically-equal string) -> resolveVendorStandPrice(boothSize) (F26), 503 with the
+      council-blocked message on 'not-configured' BEFORE any Firestore write or gateway call ->
+      resolveActiveGateway() (reused verbatim from lib/payments/active-gateway.ts, same
+      adminSettings/activePaymentGateway doc the ticket checkout route already reads), 500 if
+      unset -> resolveProvider(gateway).readiness('initiate'), refuse if not ready -> ONE
+      Firestore transaction on vendorStandOrders.doc(vendorSubmissionId) (doc id ==
+      vendorSubmissionId, see golden "Why the doc id is the submission id"): refuse if it
+      already exists with status 'paid'; otherwise .set() the fresh
+      boothSize/amount/gateway/standOrderRef('VSO-'+vendorSubmissionId)/status:'pending'/
+      createdAt/paidAt:null/failedAt:null (a re-initiate legitimately overwrites a prior
+      unpaid attempt) -> provider.initiate({reference: standOrderRef, amountFormatted:
+      amount.toFixed(2), itemName, returnUrl, cancelUrl, notifyUrl}), returning the redirect
+      fields in the same response shape the ticket checkout route already uses. The request
+      body's amount/price (if any) is NEVER read -- amount is ALWAYS F26's server-derived
+      value, no exception.
+    status: pending
+    milestone: M3
+    contract: contracts/golden/vendor-gated-registration-flow-m3/README.md
+  - id: F31
+    name: >-
+      Idempotent, cross-gateway-guarded settlement. New lib/vendor-stand-payment-notification.ts
+      (mirrors lib/tickets-notification.ts's shape) shared by two thin per-gateway routes,
+      app/api/vendors/stand-payment/payfast-itn/route.ts and .../ozow-itn/route.ts (same
+      "name exactly one provider, never the other" pattern as app/api/tickets/itn/route.ts
+      vs .../ozow-itn/route.ts). provider.verifyNotification() first; invalid signature logs
+      and no-ops (200, no state change). Parse vendorSubmissionId out of
+      notification.reference by stripping the 'VSO-' prefix; malformed/missing -> log, no-op.
+      ONE Firestore transaction touching BOTH vendorStandOrders.doc(vendorSubmissionId) AND
+      vendorSubmissions.doc(vendorSubmissionId): missing stand order -> no-op; CROSS-GATEWAY
+      GUARD -- refuse (logged, no write) unless order.gateway === provider.id, same reasoning
+      as lib/orders.ts's markOrderAndPositionPaidByPaymentId expectedGateway check;
+      IDEMPOTENCY -- if order.status !== 'pending' (already settled either way), no-op and
+      return success, no second write; AMOUNT GUARD -- refuse (logged, order stays 'pending')
+      unless notification.grossAmountCents === Math.round(order.amount * 100), the stored
+      server-derived amount is the ONLY comparison basis, the notification's amount is never
+      written anywhere; on every check passing, update BOTH vendorStandOrders (status:'paid',
+      paidAt, gatewayPaymentId) AND vendorSubmissions (paymentReceived: true) as one atomic
+      pair -- both-or-neither, same reasoning as lib/checkout-reservation.ts's
+      writeReservationPair. Failure/cancellation notifications follow the identical
+      transaction shape, writing status:'failed'/'cancelled' + failedAt, never touching
+      vendorSubmissions.paymentReceived.
+    status: pending
+    milestone: M3
+    contract: contracts/golden/vendor-gated-registration-flow-m3/README.md
+  - id: F32
+    name: >-
+      Read-only admin visibility. /admin/vendors submission list/detail gains a stand-payment
+      status badge ('Not started' / 'Pending' / 'Paid' / 'Failed'), driven by a Firestore read
+      of vendorStandOrders/{id} alongside the existing submission query. NO new admin action
+      may write vendorStandOrders.status to 'paid' -- only F31's gateway settlement handler
+      may do that; an admin "mark paid" control here would be exactly the
+      vendor/operator-can-mark-themselves-paid hole the mission's security condition rules
+      out. F7's separate, pre-existing manual paymentReceived toggle (EFT/proof-of-upload
+      path) is unaffected and stays exactly as it is -- label both signals distinctly in the
+      UI so an operator never conflates "gateway-paid" with "office-confirmed" (see golden
+      "Relationship to F7's existing manual payment fields" -- whether F7 should eventually be
+      retired is an OPEN QUESTION flagged to the orchestrator, not decided here).
+    status: pending
+    milestone: M3
+    contract: contracts/golden/vendor-gated-registration-flow-m3/README.md
+
 goldens:
   - contracts/golden/vendor-gated-registration-flow-f1/README.md
   - contracts/golden/vendor-gated-registration-flow-f1/vendor-application-categories.expected.ts.txt
@@ -476,6 +637,7 @@ goldens:
   - contracts/golden/vendor-gated-registration-flow-m2/removed-field-ledger.expected.md
   - contracts/golden/vendor-gated-registration-flow-m4/README.md
   - contracts/golden/vendor-gated-registration-flow-m4/vendor-registration-code-name-normalization.expected.md
+  - contracts/golden/vendor-gated-registration-flow-m3/README.md
 
 assertions:
   phase: 4
@@ -1158,65 +1320,87 @@ assertions:
     - id: A50
       description: >-
         PROMOTED to phase 4 2026-09-01 (architect pass 3) -- F24 is now implemented; also
-        SUPERSEDES A20 (see A20's retirement note). UPDATED 2026-09-01 (architect pass 5,
-        team-lead review, post-Codex). The 'approve' action in POST
+        SUPERSEDES A20 (see A20's retirement note). UPDATED 2026-09-01 (architect pass 6,
+        team-lead review, post-Codex, post-route-runner-harness). The 'approve' action in POST
         /api/admin/vendors/applications/[id]/review generates the code BEFORE any write and
         persists registrationCodeId/registrationCodeNameSlug/registrationCodeIssuedAt/
         registrationCodeExpiresAt in the SAME, single additive ref.update() call as F5's
         existing 3-key decision (never a separate, laggable write -- proving more than A20 ever
         could, since A20's M1 shape used two separate update calls), and -- behaviourally, via a
         real call to sendVendorApprovalConfirmationEmail() -- the approval email renders the
-        code digit-grouped ("4 8 2 1"), never as an unbroken 4-digit run.
+        code digit-grouped ("4 8 2 1"), never as an unbroken 4-digit run. Proved by
+        check-approval-mints-code-atomically.mjs (source-order + real-email-rendering; unchanged
+        from pass 5).
 
-        THIS ASSERTION WAS GREEN OVER A REAL DEFECT: Codex found that F24 moved the vendor's
+        THIS ASSERTION WAS GREEN OVER A REAL DEFECT TWICE, and the second time is why this
+        assertion is now written the way it is. First, Codex found that F24 moved the vendor's
         actual redemption dependency (VENDOR_REGISTRATION_TOKEN_SECRET, needed by
         POST /api/vendors/register/verify-code to mint the session cookie) to a DIFFERENT file
         without carrying forward a precondition check -- an approval could commit, the code
         would be emailed, and every redemption attempt would fail forever behind the
-        (deliberately) generic 403, with the operator seeing nothing wrong. This is the M1
-        dead-end (A20's original concern) reincarnated in a new file, precisely because A50's
-        original form asserted "code generated before ref.update()" -- a fact about the OLD
-        implementation's SHAPE that happened to still be true, not the actual property ("nothing
-        the vendor needs to redeem the credential may be unverified before the application
-        leaves pending"). A per-instance patch ("and also check the secret") would have the same
-        blind spot the next time a precondition moves file -- which is what just happened once
-        already. So this is now EXPRESSED AS A GENERAL, MECHANICALLY-EXTRACTED INVARIANT (A42
-        spirit, per the team lead's explicit direction), not a named instance: a second script,
-        check-redemption-preconditions-verified-before-approval-commits.mjs, performs static
-        analysis of the REAL redemption route (app/api/vendors/register/verify-code/route.ts) to
-        extract (a) every `process.env.NAME` reference there guarded by an `if (!x) { ...
-        return }` refusal, and (b) every Firestore `.where('field', '==', expr)` in its
-        candidate lookup where `expr` is a vendor-input-derived variable, not a constant literal
-        -- then asserts the approval route's 'approve' branch references each such env var name,
-        and guards-for-truthiness the exact expression it writes for each such match-key field,
-        before its commit. This is DATA-driven, not hardcoded to
-        VENDOR_REGISTRATION_TOKEN_SECRET/registrationCodeNameSlug by name -- a future
-        precondition added to (or moved into) the redemption route, of either shape, is picked
-        up automatically. Verified non-vacuous by independently reverting each of @dev's two
-        fixes (the secret precheck, and the empty-slug precheck it additionally found while
-        fixing the first) and confirming the new script fails on each, with the correct message,
-        before restoring.
+        (deliberately) generic 403, with the operator seeing nothing wrong. Pass 5's fix added a
+        second, general, DATA-driven static-analysis script
+        (check-redemption-preconditions-verified-before-approval-commits.mjs, still on disk,
+        still true, still passing) that extracts every env-var refusal guard and every
+        vendor-input-derived `.where()` match in the redemption route and asserts the approval
+        route mirrors each one. On 2026-09-01 the team lead reported @dev reconstructing the
+        original defect and getting a false PASS -- which turned out (re-verified fresh, see
+        below) to be @dev having run ONLY check-approval-mints-code-atomically.mjs in isolation,
+        not the full chained A50 command; the static-analysis script alone, independently
+        re-verified in this pass by reverting the real fix and restoring it, DOES catch this
+        exact defect. So the specific false-PASS report was a stale/partial test, not a live gap
+        in A50 as written. But the team lead's deeper point stands regardless: a static-analysis
+        script has an irreducible STATED LIMITATION (see pass 5's note, retained on disk in the
+        script's own header) -- it can only see preconditions shaped as an env-var guard or a
+        `.where()` match, inside one named file. A precondition behind a transitive import, a
+        non-`.where()` query, a third file, or infrastructure outside the route would still slip
+        past it, unlike the defects actually found so far, but exactly the shape of blind spot
+        this mission's whole history warns against. The route-runner harness
+        (contracts/harness/route-runner/, built by @dev this session) removes that ceiling
+        entirely: it runs the REAL route handlers, with only infrastructure faked, so a
+        precondition can move to ANY file or ANY enforcement shape and this check still catches
+        its absence, because it is asserting on what the route actually DOES to a real
+        Application-shaped record and a real subsequent redemption, not on what its source looks
+        like. A50 is now chained as BOTH scripts -- the atomicity/email-rendering proof (a
+        genuinely different property: write shape and email formatting, which the harness script
+        does not re-check) AND a new harness-based behavioural script,
+        check-approval-redemption-behavioural.mjs, which:
+          (1) sets VENDOR_REGISTRATION_TOKEN_SECRET unset and calls the REAL review route's
+              'approve' action -- asserts non-200, application still 'pending', no
+              registrationCodeId committed, no email sent;
+          (2) seeds a business name that normalises to an empty slug ('太陽 陶芸') and calls the
+              REAL review route -- same assertions;
+          (3) POSITIVE CONTROL: with the secret set and a normal business name, calls the REAL
+              review route, asserts 200/approved/code-committed/one-email-sent, THEN takes the
+              EXACT code from the captured email payload and calls the REAL
+              POST /api/vendors/register/verify-code route with it, asserting 200 and a session
+              cookie actually being set -- proving the credential this approval issues actually
+              redeems, not merely that the route claims success. Without this arm, (1) and (2)
+              could be satisfied by a route that refuses every approval unconditionally.
+        Both static-analysis and harness-based scripts verified non-vacuous by independently
+        reverting each of @dev's two real fixes (the secret precheck; the empty-slug precheck)
+        in app/api/admin/vendors/applications/[id]/review/route.ts, confirming the FULL chained
+        A50 command fails with the correct evidence on each reverted state, then restoring from
+        a diffed-clean backup and confirming the full chain passes again.
 
-        STATED LIMITATION, told plainly rather than glossed over (per the team lead's ask):
-        this general form only sees preconditions expressed as (a) an env-var refusal guard or
-        (b) a vendor-input-derived Firestore `.where()` equality match, BOTH inside the one
-        redemption route file this script reads. A precondition enforced a different way --
-        inside a transitively-imported helper rather than the route itself, via a non-`.where()`
-        Firestore query shape (e.g. `.get()` + in-memory filter), via a third file the
-        redemption path calls into, or via infrastructure outside this route entirely (a Cloud
-        Scheduler job, a Storage bucket policy) -- would still slip past this check. Widening
-        the scan to the redemption route's transitive imports, or to non-`.where()` filter
-        shapes, is future work if either pattern is ever used.
+        check-redemption-preconditions-verified-before-approval-commits.mjs is deliberately KEPT
+        in the chain, not retired: it is strictly narrower than the harness script for THIS
+        mission's two known defects, but it is a static, always-on structural guard with no
+        dependency on the harness's fixture surface staying in sync with the real routes --
+        genuine defense in depth, not redundant coverage.
         FAILS ON: the retired mintVendorRegistrationToken still being called, more than one
         ref.update() call site, the code generated after ref.update(), the code fields written
         in a separate call than the decision patch, a generation failure not refusing the whole
         approval, the email rendering the raw unbroken 4-digit string, any env-var refusal guard
         in the redemption route not mirrored by a reference to the same name in the approval
-        route's pre-commit approve branch, or any vendor-input-derived match-key field in the
+        route's pre-commit approve branch, any vendor-input-derived match-key field in the
         redemption route's lookup whose corresponding written expression in the approval patch
-        is not guarded for truthiness before the commit.
+        is not guarded for truthiness before the commit, OR (harness-based) an approval that
+        commits/emails a code with the secret unset, an approval that commits/emails a code for
+        an empty-slug business name, or a successfully-approved code that the real verify-code
+        route refuses to redeem.
       command: >-
-        npx tsx contracts/checks/vendor-gated-registration-flow-m4/check-approval-mints-code-atomically.mjs && node contracts/checks/vendor-gated-registration-flow-m4/check-redemption-preconditions-verified-before-approval-commits.mjs
+        npx tsx contracts/checks/vendor-gated-registration-flow-m4/check-approval-mints-code-atomically.mjs && node contracts/checks/vendor-gated-registration-flow-m4/check-redemption-preconditions-verified-before-approval-commits.mjs && NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx contracts/checks/vendor-gated-registration-flow-m4/check-approval-redemption-behavioural.mjs
 
     # --- F25: admin visibility + reissue ---
     - id: A51
@@ -1224,27 +1408,54 @@ assertions:
         PROMOTED to phase 4 2026-09-01 (architect pass 3) -- F25 is now implemented. UPDATED
         2026-09-01 (architect pass 4, team-lead item 3) to also cover @dev's fix for the second
         Codex-found M4 defect: a reissue previously minted a new code without revoking a
-        session already minted from the OLD one. POST
+        session already minted from the OLD one. UPDATED AGAIN 2026-09-01 (architect pass 6,
+        team-lead directive to selectively promote source-order assertions using the new
+        route-runner harness where it would catch something source order provably cannot).
+
+        check-reissue-route-resets-lock.mjs (kept, unchanged) remains a SOURCE-ORDER proof: POST
         /api/admin/vendors/applications/[id]/reissue-code is gated by the same
         getAdminSession()/hasCapability('review-vendor-applications') check as the existing
         review route, is callable regardless of current lock state (not conditioned on
         registrationCodeLockedAt being set), and its single additive patch resets
         registrationCodeFailedAttempts to 0, registrationCodeLockedAt to null, calls the real
         generateVendorRegistrationCodeId()/normalizeVendorCodeName() to mint a fresh code, AND
-        increments registrationCodeGeneration (an actual increment operation -- FieldValue.
-        increment(...) or equivalent -- not merely the field name appearing) -- the write that
-        makes a reissue an actual revocation, since
-        lib/vendor-registration-token-claim.ts's claimRegistrationToken() (see the strengthened
-        A17/check-single-use-claim-is-atomic.mjs) refuses a claim whose session generation no
-        longer matches. Source-based (same stated Firebase-Admin-credential limitation as
-        A20/A50 -- exercising the live route needs infrastructure this environment does not
-        have).
-        FAILS ON: a missing/weaker capability gate, a lock-state precondition blocking the
-        route, more than one update call site, the counters not resetting, the code not
-        freshly generated (no call to generateVendorRegistrationCodeId()), or
-        registrationCodeGeneration not incremented in that same patch.
+        increments registrationCodeGeneration (an actual increment operation, checked by regex
+        for FieldValue.increment(...) or equivalent -- not merely the field name appearing).
+
+        PROMOTED to also chain a harness-based behavioural script,
+        check-reissue-redemption-and-revocation-behavioural.mjs, for the same reason A50 was:
+        this route carries the identical two redemption preconditions A50 covers (secret unset,
+        empty-slug business name) -- reissue is what an operator reaches for precisely when
+        something has ALREADY gone wrong for a vendor, so minting an unredeemable code here
+        fails at the worst possible moment -- AND it carries a property source order genuinely
+        cannot prove at all: that the registrationCodeGeneration increment ACTUALLY REVOKES the
+        superseded code, not merely that an increment operation exists in the patch. Source
+        order can see the write; it cannot see whether anything downstream reads it, or whether
+        the old credential is actually refused afterward -- that is exactly the cross-file,
+        runtime-state-dependent shape this mission's defects have repeatedly hidden behind. The
+        harness script seeds an approved, locked-out application with a known code
+        ("1111")/generation (3), then against the REAL routes: (D) secret unset -> reissue
+        refused, code/lock/generation all provably untouched; (E) empty-slug business name ->
+        same refusal, same proof; (F) POSITIVE CONTROL AND REVOCATION PROOF -- normal reissue ->
+        200, lockout cleared, generation is provably 4 (3+1), the NEW code round-trips through
+        the REAL POST /api/vendors/register/verify-code route (200, session cookie set), AND the
+        OLD code "1111" is called against the same real verify-code route and is REFUSED
+        (non-200) -- the only way to actually prove revocation rather than mere re-issuance.
+        Verified non-vacuous three separate ways: reverting the secret precheck (fails on D, all
+        4 assertions, with the route silently succeeding and mutating the locked application);
+        reverting just the generation increment (fails on F's specific generation assertion,
+        while correctly leaving the old-code-refusal untouched since that arm is independently
+        driven by the codeId itself changing -- confirming this check isolates the generation
+        property specifically, not conflating it with the codeId change); each reverted state
+        restored and rerun to confirm a clean pass before moving on.
+        FAILS ON: everything check-reissue-route-resets-lock.mjs already failed on, PLUS
+        (harness-based) a reissue that commits/mutates the application with the secret unset or
+        an empty-derived slug, a reissue whose returned code does not verify at the real
+        verify-code route, or -- the property unique to this script -- a reissue after which the
+        SUPERSEDED code still successfully verifies (proving the generation bump is decorative,
+        not enforced).
       command: >-
-        node contracts/checks/vendor-gated-registration-flow-m4/check-reissue-route-resets-lock.mjs
+        node contracts/checks/vendor-gated-registration-flow-m4/check-reissue-route-resets-lock.mjs && NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx contracts/checks/vendor-gated-registration-flow-m4/check-reissue-redemption-and-revocation-behavioural.mjs
     - id: A52
       description: >-
         PROMOTED to phase 4 2026-09-01 (architect pass 3) -- F25 is now implemented. Behavioural
@@ -1296,3 +1507,200 @@ assertions:
         supply expectedGeneration, or the scan finding zero call sites.
       command: >-
         node contracts/checks/vendor-gated-registration-flow-m4/check-every-claim-call-site-supplies-generation.mjs
+
+    # --- M3: Stand Booking Payment. See contracts/golden/vendor-gated-registration-flow-m3/
+    # README.md. A55-A58 are BEHAVIOURAL, via contracts/harness/route-runner (extend
+    # preload.cjs's OVERRIDES to also cover lib/vendor-stand-pricing.ts,
+    # lib/payments/active-gateway.ts, lib/payments/payfast.ts, lib/payments/ozow.ts, and the
+    # vendorStandOrders collection -- do not fall back to a source-order check for money-
+    # handling logic; A50's own history on this mission is the reason why, see the golden's
+    # "Settlement" section closing paragraph).
+
+    # --- F26: data model + council-blocked pricing ---
+    - id: A55
+      description: >-
+        Behavioural, via the route-runner harness. With every VENDOR_STAND_PRICE_ZAR value
+        null, POST /api/vendors/stand-payment/initiate refuses with HTTP 503 and the
+        council-blocked message for EVERY boothSize in {1,2,3}, for an otherwise fully valid
+        request (valid token, submission approved, gateway configured) -- proving the refusal
+        is driven by price configuration alone, not by any other precondition failing first.
+        With all three prices set to real (fixture) numbers, the SAME request for the SAME
+        boothSize succeeds (creates a vendorStandOrders doc, calls provider.initiate()) --
+        this is the regression lock for the "M3b is filling in three numbers" milestoning
+        claim: the mechanism must demonstrably flip on nothing but the pricing constants
+        changing, no route/page/token code touched between the two runs.
+        FAILS ON: a 503 that persists after prices are configured, a non-503 refusal reason
+        substituting for the price check, the amount in the created order not matching the
+        configured price, or the initiate route reading an amount/price field off the request
+        body instead of resolveVendorStandPrice()'s return value.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m3/check-pricing-blocks-then-unblocks-initiate.mjs
+
+    # --- F27: token mechanism ---
+    - id: A56
+      description: >-
+        Pure-function check (no Firestore needed): mintVendorStandPaymentToken()/
+        verifyVendorStandPaymentToken() round-trip correctly; a token minted with payload key
+        's' fails to parse under lib/vendor-registration-token.ts's verifier and vice versa
+        (structural domain separation, same technique M1's own check used for 'a' vs 'o');
+        an expired token (now >= expiresAt, inclusive) verifies false with reason 'expired'; a
+        tampered signature verifies false with reason 'bad-signature'; VENDOR_STAND_PAYMENT_
+        TOKEN_SECRET is asserted (grep) to never appear as a value passed to
+        mintVendorRegistrationToken/verifyVendorRegistrationToken or vice versa with
+        VENDOR_REGISTRATION_TOKEN_SECRET/RECOVERY_TOKEN_SECRET -- three distinct secrets, three
+        distinct env var names, never cross-wired.
+        FAILS ON: a token minted under one module verifying successfully under another, a
+        non-expired-inclusive boundary, or any cross-secret reference found by the grep.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m3/check-stand-payment-token-domain-separation.mjs
+
+    # --- F28: approval mints + emails; resend escape hatch ---
+    - id: A57
+      description: >-
+        Behavioural, via the route-runner harness (same shape as A50's demo scenarios).
+        Approving a submission (F6's existing 'approve' action) with
+        VENDOR_STAND_PAYMENT_TOKEN_SECRET UNSET still commits the status transition to
+        'approved' (F8's existing approval email still sends) -- proving the payment-token
+        mint failure is non-fatal to the submission decision, per the golden's "Deliberately
+        NOT fail-closed" reasoning -- and logs the failure rather than swallowing it silently.
+        With the secret SET, approving sends a SECOND email (VendorStandPaymentReady) whose
+        embedded token verifies at the (fixture) initiate route. POST
+        /api/admin/vendors/[id]/resend-payment-link, called against an already-'approved'
+        submission whose stand order (if any) is not 'paid', mints a FRESH token (not the same
+        token bytes as any prior mint) and sends the email again; called against a submission
+        that is NOT 'approved', or whose stand order IS 'paid', refuses (409).
+        FAILS ON: approval failing/rolling back when the payment-token secret is unset, no
+        second email sent when the secret is set, resend succeeding against a non-approved or
+        already-paid submission, or resend returning the SAME token bytes as a prior mint
+        (proving it re-read a cached value instead of minting fresh).
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m3/check-approval-mints-payment-link-and-resend.mjs
+
+    # --- F29: payment page ---
+    - id: A58
+      description: >-
+        Behavioural (real react-dom/server render, same technique as A9/A52). The payment
+        page renders lib/vendor-stand-forfeiture-notice.ts's VENDOR_STAND_FORFEITURE_NOTICE
+        constant VERBATIM (byte-for-byte, not paraphrased) in the rendered output, and its
+        position in the rendered HTML PRECEDES the "Pay Now"/gateway-redirect control -- a
+        fixture that renders the notice AFTER the pay control must fail this check. Also
+        asserts the notice text is sourced ONLY from the exported constant (grep: the literal
+        sentence text appears nowhere else in the page/component source, ruling out a second,
+        driftable inline copy).
+        FAILS ON: the notice missing, paraphrased/truncated, appearing after the pay control
+        in DOM order, or a second inline copy of the sentence found elsewhere in the page
+        component's source.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m3/check-forfeiture-notice-precedes-pay-control.mjs
+
+    # --- F30: initiate -- server-derived amount, class assertion ---
+    - id: A59
+      description: >-
+        A42/A54-style CLASS assertion, not an instance check. Static analysis of the real
+        POST /api/vendors/stand-payment/initiate route source: asserts the parsed request-body
+        object's keys accessed anywhere in the file are a subset of {token, boothSize} --
+        i.e. no `body.amount`/`body.price`/`body.zar`-shaped access exists anywhere in the
+        route -- AND that every write to a vendorStandOrders document's `amount` field is
+        assigned FROM a call expression rooted at resolveVendorStandPrice(...) (traced through
+        at most one intermediate local variable), never a body-derived identifier. This is the
+        money-specific instance of the mission's "every amount must be server-derived" class
+        the team lead's contract-scoring guidance calls for -- extend it (not duplicate it) if
+        a second money-writing route is ever added to this mission.
+        FAILS ON: any request-body key outside {token, boothSize} read anywhere in the route,
+        or any `amount` field write traced to a body-derived value instead of
+        resolveVendorStandPrice()'s return.
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m3/check-initiate-amount-is-server-derived.mjs
+
+    # --- F30/F31: transactional idempotency, doc-id-as-submission-id ---
+    - id: A60
+      description: >-
+        Behavioural, via the route-runner harness. Two concurrent POST .../initiate calls for
+        the SAME vendorSubmissionId (simulated as two overlapping transaction attempts against
+        the shared in-memory Firestore fixture) result in exactly ONE vendorStandOrders
+        document (id === vendorSubmissionId), never two, and never a duplicate-key/collision
+        error surfacing to either caller as an unhandled 500. A second, LATER initiate call
+        after the first succeeded but before payment (a legitimate retry/boothSize change)
+        overwrites the SAME document's boothSize/amount/standOrderRef rather than creating a
+        second document. A third initiate call attempted AFTER the order reaches 'paid'
+        (settled via a fixture ITN in between) is refused ("already paid"), and the paid
+        document is left completely unmodified (byte-identical snapshot before/after the
+        refused call).
+        FAILS ON: two documents existing for one vendorSubmissionId, a re-initiate before
+        payment creating a second document instead of overwriting, or any field on an
+        already-'paid' order changing as a result of a post-payment initiate attempt.
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m3/check-initiate-is-transactionally-idempotent.mjs
+
+    # --- F31: settlement -- duplicate notification, cross-gateway, amount tamper ---
+    - id: A61
+      description: >-
+        Behavioural, via the route-runner harness -- the exact "exercise the real transaction
+        with two duplicate notifications and a tampered amount" proof the golden's closing
+        paragraph on A50's own history calls for. Three fixture scenarios against a single
+        'pending' vendorStandOrders doc created via a real F30 initiate call: (1) the SAME
+        (valid, correctly-signed) notification delivered TWICE -- first call settles
+        (status:'paid', paidAt set, gatewayPaymentId recorded, and
+        vendorSubmissions.paymentReceived flips to true in the SAME transaction), second call
+        no-ops (200, zero additional writes -- proven by a write-count fixture, not just by
+        re-reading the same final state); (2) a correctly-signed notification whose
+        grossAmountCents does NOT match Math.round(order.amount * 100) -- refused, order stays
+        'pending', vendorSubmissions.paymentReceived stays unset; (3) a correctly-signed
+        PayFast-shaped notification delivered to the ROUTE for an order whose stored
+        `gateway` is 'ozow' (and the mirrored Ozow-notification-against-a-PayFast-order case)
+        -- refused by the cross-gateway guard in both directions, order stays 'pending'.
+        FAILS ON: a second identical notification producing a second write of any kind (even a
+        no-op field re-set counts as a defeat -- the check must observe zero Firestore write
+        calls on the duplicate, not just an unchanged final value), a tampered-amount
+        notification settling the order, either direction of the cross-gateway case settling
+        the order, or vendorStandOrders and vendorSubmissions ending up in a state where one
+        says paid and the other doesn't (partial-write proof, both must move together or
+        neither moves).
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m3/check-settlement-idempotent-and-guarded.mjs
+
+    # --- F27/F30: token is state-gated, not merely cryptographically valid ---
+    - id: A62
+      description: >-
+        Behavioural, via the route-runner harness. A cryptographically valid, non-expired
+        stand-payment token minted while a submission was 'approved' is refused (generic 403,
+        matching M1's enumeration-blindness posture -- same message text for every refusal
+        reason in this route) when presented to POST .../initiate AFTER the submission's
+        status has since changed to anything other than 'approved' (fixture: flip to
+        'rejected' between mint and use) -- proving the route re-reads current state on every
+        call rather than trusting a state snapshot implied by successful token verification.
+        A second scenario: a valid token for a submission whose vendorStandOrders doc is
+        ALREADY 'paid' is refused with the "already paid" message, not a generic token-invalid
+        message (the two failure classes are allowed to differ from each other, per the
+        golden -- only the WITHIN-class messages must stay generic).
+        FAILS ON: the initiate route accepting a valid token without re-reading the
+        submission's current status, or refusing an against-a-different-application token with
+        the SAME message text used for "already paid" (proving the check can tell the two
+        code paths apart, not merely that both refuse).
+      command: >-
+        node --import tsx/esm contracts/checks/vendor-gated-registration-flow-m3/check-token-state-gated-not-snapshot.mjs
+
+    # --- F32: admin visibility has no write path ---
+    - id: A63
+      description: >-
+        Static analysis, class-shaped (mirrors A42/A54's method). Scans every route file under
+        app/api/admin/vendors/** (existing and new) for any Firestore write
+        (`.update(`/`.set(`/`transaction.update(`/`transaction.set(`) whose target collection
+        is vendorStandOrders, OR whose written data object's keys include `status` while the
+        target is vendorStandOrders. The ONLY file allowed to match is
+        lib/vendor-stand-payment-notification.ts (F31's settlement handler) and the two
+        payfast-itn/ozow-itn route files that call it -- every admin-facing route (including
+        F32's own new admin surfaces) must match zero times.
+        FAILS ON: any app/api/admin/vendors/** route file (present or future) writing to
+        vendorStandOrders at all, or writing a `status` key to it outside the three permitted
+        settlement files.
+      command: >-
+        node contracts/checks/vendor-gated-registration-flow-m3/check-only-settlement-writes-stand-order-status.mjs
+
+    # --- whole-mission regression gate, M3 ---
+    - id: A64
+      description: >-
+        Whole-project type safety and lint are unaffected by the new types, modules, routes,
+        and pages added in M3.
+        FAILS ON: any TypeScript error or lint error.
+      command: pnpm type-check && pnpm lint

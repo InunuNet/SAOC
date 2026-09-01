@@ -1,0 +1,185 @@
+schema: athanor.contract/v1
+slug: public-supporter-registration
+goal: >-
+  Mission public-supporter-registration, F1 only. A place for general members of the public
+  (not SAOC/society members, not vendors, not admins) to register their name and email for
+  early access to promos, events, and newsletters — Brad's ask, honest about POPIA, never
+  shared or sold. F1 is the foundation: data model + pure validate/build
+  (lib/supporter-registrations.ts), purpose-scoped signed tokens
+  (lib/supporter-registration-token.ts), two independent abuse throttles — a per-IP rate limit
+  and a per-email confirmation-send cooldown (lib/supporter-registration-rate-limit.ts) — the
+  pure orchestrator (lib/supporter-registration-handler.ts), and the double-opt-in confirmation
+  email (lib/supporter-registration-confirmation.ts + emails/SupporterRegistrationConfirmation.tsx).
+  Every load-bearing property — literal (non-coerced, non-defaulted) consent, no parallel
+  validation, purpose-scoped tokens that cannot be repurposed, both throttles genuinely wired
+  in, no email-enumeration via response-body differences, the no-share/no-sell promise present
+  in the actual rendered email, and zero admin-authorization meaning — is proven offline
+  against real exported functions, never by source-grep alone (grep is used only where it
+  proves what it can: absence of a specific forbidden import). F2 (confirm route), F3
+  (unsubscribe/erase), F4 (admin visibility), F5 (public form UI), and F6 (/privacy copy) are
+  separate, later contracts — not built or asserted here. Full decision record, every
+  judgement call, and what this contract does NOT prove:
+  .agent/memory/project/specs/public-supporter-registration/goldens/README.md
+created_at: '2026-09-01'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Five new files. (1) lib/supporter-registrations.ts — SUPPORTER_REGISTRATIONS_COLLECTION,
+      SupporterRegistrationStatus, validateSupporterRegistrationInput (email required/format/
+      length, firstName optional/length, consentMarketing must be the LITERAL boolean true —
+      no coercion, no default), buildSupporterRegistration (normalizes email, sets
+      status:'pending', confirmedAt/unsubscribedAt: null, consentTimestamp/createdAt = now).
+      (2) lib/supporter-registration-token.ts — purpose-scoped ('confirm'|'unsubscribe'|
+      'erase') HMAC-signed tokens, same wire-format family as lib/recovery-token.ts;
+      verifySupporterRegistrationToken checks signature THEN purpose, refusing with
+      'wrong-purpose' on any mismatch; CONFIRM default TTL 24h, MANAGE (unsubscribe/erase)
+      default TTL ~400d. (3) lib/supporter-registration-rate-limit.ts — two independent
+      throttles: decideSupporterRegistrationRateLimit (delegates to the REAL decideRateLimit()
+      from lib/resend-rate-limit.ts, 5 attempts/hour per IP key, independently tuned from the
+      vendor route's 3/hour) and decideConfirmationEmailCooldown (5-minute per-EMAIL cooldown
+      on resending a pending registration's confirmation email — the mail-bomb defense; an
+      IP-only limit cannot stop a victim's address being flooded from rotating IPs). (4)
+      lib/supporter-registration-handler.ts — handleSupporterRegistration(rawInput, deps): IP
+      rate-limit check first (before parsing, attempt always recorded) → real validate → real
+      build → deps.findByEmail (Firestore impl MUST exclude 'unsubscribed' docs, so a
+      previously-unsubscribed email is always treated as a fresh consent event) → branch on
+      null/'pending'/'confirmed' exactly as specified in
+      goldens/supporter-registration-data-model.md's "Order of operations" → every reachable
+      success branch returns the BYTE-IDENTICAL response body (no enumeration). (5)
+      lib/supporter-registration-confirmation.ts + emails/SupporterRegistrationConfirmation.tsx
+      — plain acknowledgement copy (modelled on emails/VendorRegistrationConfirmation.tsx) whose
+      rendered output states the no-share/no-sell promise, includes the confirm link as a real
+      href, and mentions the link expires; zero console.* anywhere in either file.
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/public-supporter-registration/goldens/README.md
+  - .agent/memory/project/specs/public-supporter-registration/goldens/supporter-registration-data-model.md
+  - contracts/checks/public-supporter-registration-f1/tsconfig.typecheck.json
+  - contracts/checks/public-supporter-registration-f1/fixtures/public-supporter-registration-f1-typecheck.ts
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after all five new files
+        are added.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        Compiler-driven proof of the exported shapes of all five new lib files — not a grep,
+        real literal assignments and calls that either compile or don't. Includes a
+        fully-faked SupporterRegistrationHandlerDeps object (no firebase-admin import, no
+        resend import, no network) and a fake mailer shaped exactly like lib/email.ts's real
+        sendEmail.
+      command: >-
+        npx tsc --noEmit -p contracts/checks/public-supporter-registration-f1/tsconfig.typecheck.json
+
+    - id: A3
+      description: >-
+        consentMarketing must be the literal boolean true — never coerced from a truthy value
+        ("true", 1, "on"), never defaulted when omitted, and false is rejected exactly like
+        omission. Checked at both the pure validator level (five non-true values plus total
+        omission, all rejected with an error naming consentMarketing) and the handler level
+        (two representative invalid values produce 400 with zero deps.write/
+        deps.sendConfirmationEmail calls). The literal true case is checked to succeed, proving
+        the check isn't rejecting everything. This is the data-model half of "no pre-ticked
+        box" — see goldens/README.md "Consent design." Defeating mutation:
+        `consentMarketing: Boolean(raw.consentMarketing)` or `?? true` defaulting.
+      command: >-
+        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-consent-is-explicit.mjs
+
+    - id: A4
+      description: >-
+        No parallel validation: handleSupporterRegistration()'s 400 rejection path is a direct
+        pass-through of the REAL validateSupporterRegistrationInput() error list, proven by
+        deep-equal comparison against calling the real validator directly on the identical
+        payload, for a single-omission case and a two-omission case (both omissions must be
+        named, not collapsed into one generic message). Defeating mutation: hardcoding a
+        generic fieldErrors array instead of forwarding the real validator's output.
+      command: >-
+        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-no-parallel-validation.mjs
+
+    - id: A5
+      description: >-
+        Purpose-scoped tokens: a token minted for one purpose refuses verification under any
+        of the other two expectedPurpose values (all three purposes cross-checked, not just one
+        pair), two different registrations' tokens are not interchangeable (signature covers
+        registrationId, not just purpose+expiry), a payload-swapped/tampered token fails
+        signature verification rather than adopting the swapped registrationId, and an expired
+        token refuses. This is the concrete security property behind "a leaked confirm-email
+        link must not double as a delete-my-data link" (goldens/README.md). Defeating mutation:
+        ignoring expectedPurpose entirely and returning whatever purpose the token itself
+        carries.
+      command: >-
+        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-purpose-scoped-tokens.mjs
+
+    - id: A6
+      description: >-
+        The per-IP rate-limit wrapper delegates to the real decideRateLimit() with
+        independently-tuned constants — not aliased to VENDOR_REGISTER_RATE_LIMIT_MAX_ATTEMPTS.
+        Enforces the exact MAX_ATTEMPTS boundary (N-1 prior attempts still allowed, N prior
+        attempts refused with a positive retryAfterMs), is keyed per-caller (a different key
+        with the identical prior-attempts array is unaffected), and excludes attempts older
+        than the window.
+      command: >-
+        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-rate-limit-decision-wrapper.mjs
+
+    - id: A7
+      description: >-
+        The mail-bomb defense: the per-email confirmation-send cooldown genuinely suppresses a
+        resend of a pending registration within the cooldown window (0 emails sent, 0 writes,
+        response body unchanged — still reports success), allows the resend again once the
+        cooldown has fully elapsed (>= boundary, not >), and an already-confirmed email never
+        triggers a write/refresh/email regardless of cooldown state. Every case uses a FRESH IP
+        key per call, isolating this from the separate per-IP rate limiter (A6) — the
+        suppression proven here is genuinely keyed on the email address, not incidentally
+        caused by IP throttling. Defeating mutation: re-sending on every resubmission
+        regardless of the cooldown decision.
+      command: >-
+        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-email-cooldown-suppresses-resend.mjs
+
+    - id: A8
+      description: >-
+        No email enumeration: handleSupporterRegistration()'s response BODY is byte-identical
+        (deep-equal JSON) across all four reachable success branches — brand-new email,
+        already-pending cooldown-suppressed, already-pending genuine resend, and
+        already-confirmed. A caller must not be able to use this public, unauthenticated
+        endpoint to test whether an arbitrary third party's address is already registered.
+        Defeating mutation: any branch-distinguishing field in the body (e.g.
+        alreadyRegistered: true, an echoed status, a different message per branch).
+      command: >-
+        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-no-enumeration.mjs
+
+    - id: A9
+      description: >-
+        The confirmation email's REAL rendered output (react-dom/server renderToStaticMarkup,
+        not a source-grep) states the no-share/no-sell promise, includes the confirm link as a
+        genuine clickable href (not only as visible text), mentions the link expires,
+        personalises with firstName when given, and renders cleanly with firstName: null. Also
+        a static source check that neither the email component nor the sender module contains
+        any console.* call site — the registrant's email/name must never reach a log line
+        (POPIA-relevant, same posture as lib/vendor-registration-confirmation.ts). This is
+        Brad's literal ask made a property of the SHIPPED email, not just of the /privacy page
+        copy.
+      command: >-
+        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-confirmation-email-content.mjs
+
+    - id: A10
+      description: >-
+        Zero admin-authorization meaning: static source check that none of the five new lib
+        files import lib/admin-auth.ts, lib/admin-roles.ts, or any vendor-gating token module —
+        this surface stays structurally separate from /admin and from vendor gating, per the
+        dispatch brief's explicit boundary. Runtime check: a successful
+        handleSupporterRegistration() result's body has EXACTLY the key `success` — no role,
+        capability, claim, or echoed field of any kind.
+      command: >-
+        node --import tsx/esm contracts/checks/public-supporter-registration-f1/check-zero-admin-authorization.mjs
+
+    - id: A11
+      description: pnpm lint passes with zero errors after all five new files are added.
+      command: pnpm lint
