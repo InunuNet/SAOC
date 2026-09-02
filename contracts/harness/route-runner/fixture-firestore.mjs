@@ -6,6 +6,21 @@ export const FieldValue = {
   increment: (by) => ({ [INCREMENT]: by }),
 };
 
+// vendor-stand-payment-confirm-gate (F6) addition -- lets a check simulate Firestore's real
+// contention-retry behaviour: `runTransaction(fn)` replays `fn` from scratch, discarding every
+// prior attempt's reads/writes, and applies ONLY the final, successfully-committing attempt's
+// writes. Real Firestore does this transparently on write conflicts; this fixture's original
+// `runTransaction` called `fn` exactly once, which cannot reproduce a defect whose failure mode
+// depends on the callback running MORE than once per external request -- e.g. an external I/O
+// call inside the callback (paymentProvider.confirmNotification()) firing once per attempt, with
+// only the LAST attempt's Firestore writes ever landing. One-shot: consumed by the very next
+// `runTransaction` call and reset to 0 immediately, whether or not a check explicitly resets it,
+// so a check that forgets to reset between scenarios cannot leak retries into an unrelated one.
+let pendingRetryCount = 0;
+export function simulateTransactionRetries(count) {
+  pendingRetryCount = count;
+}
+
 function applyPatch(map, id, patch) {
   const current = map.get(id);
   if (!current) throw new Error(`no such doc: ${id}`);
@@ -65,13 +80,32 @@ function collection(collectionName) {
 export function getFirestore() {
   return {
     collection,
-    runTransaction: async (fn) =>
-      fn({
+    runTransaction: async (fn) => {
+      const retries = pendingRetryCount;
+      pendingRetryCount = 0;
+
+      for (let attempt = 0; attempt < retries; attempt++) {
+        // A DISCARDED attempt -- reads see the current committed store state (nothing else
+        // mutates it mid-simulation), writes are staged into a throwaway object never applied
+        // to the real store. Any non-Firestore side effect the callback performs (an external
+        // call, a console.error, a closure over an outer `let` the production handler resets
+        // per-attempt) still runs for real -- Firestore's retry machinery has no way to undo
+        // those, which is precisely the property this simulation exists to exercise.
+        await fn({
+          get: async (ref) => snapshotOf(getCollectionMap(ref.__collection), ref.id),
+          set: () => {},
+          update: () => {},
+        });
+      }
+
+      // The FINAL, committing attempt -- writes applied exactly as the pre-F6 fixture always did.
+      return fn({
         get: async (ref) => snapshotOf(getCollectionMap(ref.__collection), ref.id),
         set: (ref, data) => {
           getCollectionMap(ref.__collection).set(ref.id, { ...data });
         },
         update: (ref, patch) => applyPatch(getCollectionMap(ref.__collection), ref.id, patch),
-      }),
+      });
+    },
   };
 }

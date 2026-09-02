@@ -20,6 +20,9 @@ const OVERRIDES = {
   '@/lib/payments/ozow': 'fixture-payments.mjs',
   '@/lib/payments/active-gateway': 'fixture-active-gateway.mjs',
   '@/lib/vendor-stand-payment-notice': 'fixture-vendor-stand-payment-notice.mjs',
+  // vendor-payment-confirmation mission additions.
+  '@/lib/vendor-payment-confirmation': 'fixture-vendor-payment-confirmation.mjs',
+  '@/lib/vendor-payment-admin-notice': 'fixture-vendor-payment-admin-notice.mjs',
 };
 
 const originalLoad = Module._load;

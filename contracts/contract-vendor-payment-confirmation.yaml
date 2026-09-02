@@ -1,0 +1,274 @@
+schema: athanor.contract/v1
+slug: vendor-payment-confirmation
+goal: >-
+  Close the gap the team lead identified directly in source: when a vendor's stand payment
+  settles ('paid'), lib/vendor-stand-payment-notification.ts sends exactly ONE email --
+  sendVendorPaymentAdminNoticeEmail, to the admin allowlist. The VENDOR who just paid receives
+  nothing. This mission adds ONE new sender pair (lib/vendor-payment-confirmation.ts +
+  emails/VendorPaymentConfirmation.tsx -- a receipt sent to the vendor's own contactEmail,
+  confirming the business name, booth size, amount paid, and standOrderRef) and edits
+  lib/vendor-stand-payment-notification.ts to fire it ALONGSIDE the existing admin notice, both
+  independently wrapped in the real lib/confirmation-email.ts
+  deliverConfirmationEmailAfterCommit, both strictly outside the settlement transaction, both
+  governed by the transaction's EXISTING idempotency guard (order?.status !== 'pending' early
+  return) so a duplicate/retried gateway ITN sends neither email a second time. Full decision
+  record, every judgement call, and everything this contract does NOT prove:
+  contracts/golden/vendor-payment-confirmation/README.md
+created_at: '2026-09-02'
+autonomy: high
+# STATUS UPDATE (2026-09-02, same-day second architect pass): @dev implemented
+# lib/vendor-payment-confirmation.ts, emails/VendorPaymentConfirmation.tsx, and the
+# lib/vendor-stand-payment-notification.ts edit CONCURRENTLY with this contract's ground-truth
+# revision (team lead corrections re: PaidNotice's real shape, contactEmail sourcing, and the
+# missing-contactEmail behaviour). All eight assertions (A1-A8) were re-run against the REAL
+# implementation after this revision and are GREEN. The "RED-verified live ... fails today"
+# language inside each assertion's `description` below is PROVENANCE, not current state -- it
+# documents what was observed against the pre-implementation file at the moment each check was
+# written (proving no check was vacuously green from the start), not a claim that the checks are
+# still failing. See contracts/golden/vendor-payment-confirmation/README.md's "Status" section
+# for the full GREEN verification record.
+
+features:
+  - id: F1
+    name: >-
+      One new file pair, one edit, zero new Firestore collections, zero new Firestore reads
+      (the vendorStandOrders document the settlement transaction already reads via
+      transaction.get(standOrderRef) already carries businessName, contactEmail, boothSize, and
+      amount -- written by app/api/vendors/stand-payment/initiate/route.ts's
+      transaction.set(standOrderRef, { businessName, contactEmail, boothSize, amount, ... }) --
+      so no second read is required to build the vendor receipt; only the EXISTING
+      transaction.get(submissionRef) read continues to supply contactPersonName for the admin
+      notice, exactly as it does today).
+
+      (1) lib/vendor-payment-confirmation.ts + emails/VendorPaymentConfirmation.tsx (new) --
+      mirrors lib/vendor-stand-payment-notice.ts's exact injectable-mailer shape:
+      VendorPaymentConfirmationInput { businessName: string; contactEmail: string; boothSize: 1
+      | 2 | 3; amount: number; standOrderRef: string }; VendorPaymentConfirmationMailer {
+      send(args: { to: string; subject: string; react: ReactElement }): Promise<void> };
+      SendVendorPaymentConfirmationDeps { mailer?; siteUrl? }; sendVendorPaymentConfirmationEmail
+      (input, deps): Promise<void>, deps.mailer defaults to { send: sendEmail }, deps.siteUrl
+      defaults to a locally-declared resolveSiteUrl() using the SAME DEFAULT_SITE_URL =
+      'https://saoc.co.za' / process.env.SITE_URL fallback pattern lib/confirmation-email.ts,
+      lib/vendor-stand-payment-notification.ts, and app/api/vendors/stand-payment/initiate/
+      route.ts each already duplicate locally (private-to-its-own-module, runtime-only env var
+      -- do not import a shared constant for this). Subject: 'Your SAOC National Show stand
+      payment is confirmed'. Sends to input.contactEmail -- NEVER to any admin address, NEVER
+      via getVendorAdminNotifyRecipients() (this module must not import
+      lib/vendor-admin-notify-recipients.ts at all). from: FORMS_FROM_ADDRESS. The email
+      includes ONE link -- `${siteUrl}/national-show` (the existing, real show-overview page;
+      see "The link judgement call" below for why this target and not a per-order deep link) --
+      passed to the template as a prop, never hardcoded or constructed inside
+      emails/VendorPaymentConfirmation.tsx. Renders businessName, boothSize (as booth count),
+      `R${amount.toFixed(2)}` (matching emails/ReconciliationAlert.tsx's existing currency
+      format convention -- the only other place in this codebase that renders a rand amount in
+      an email), and standOrderRef as the reference the vendor can quote to the show office.
+      Plain copy only, no invented brand colours/typography (project rule), modelled on
+      emails/VendorPaymentAdminNotice.tsx and emails/VendorStandPaymentReady.tsx's structure.
+      ZERO console.* calls anywhere in lib/vendor-payment-confirmation.ts (businessName/
+      contactEmail are POPIA-relevant submitter PII -- same absolute rule every sibling
+      vendor-email sender in this project already follows).
+
+      (2) lib/vendor-stand-payment-notification.ts (edit) -- GROUND TRUTH CORRECTED
+      2026-09-02 by the team lead's direct read of the real file (line numbers below are as of
+      that read): the real `PaidNotice` (line ~45) carries ONLY `businessName`,
+      `contactPersonName`, `standOrderRef` -- it does NOT carry an email address, and the
+      `order` cast (line ~121, `{ gateway?: string; status?: string; amount?: number }`) is
+      NOT where `contactEmail` comes from. Corrected plan:
+
+      `PaidNotice` widens to `{ businessName: string; contactPersonName: string; standOrderRef:
+      string; contactEmail: string | null; boothSize: 1 | 2 | 3; amount: number }`.
+      `contactEmail` is added to the EXISTING `submissionDoc` read at line ~165
+      (`transaction.get(submissionRef)`) -- widen that cast to
+      `{ businessName?: string; contactPersonName?: string; contactEmail?: string }` and read
+      `submission.contactEmail` from it. This is NOT a second Firestore fetch and NOT a
+      post-commit re-read of submissionRef -- `A2` asserts `transaction.get(submissionRef)`
+      appears exactly once in this file, and that no read of either `submissionRef` or
+      `standOrderRef` appears after `db.runTransaction(...)` closes. `boothSize` and `amount`
+      come from the EXISTING `order` object already in scope at line ~121 (widen that cast to
+      add `boothSize?: 1 | 2 | 3`; `amount` is already declared on it, just not yet captured
+      into `paidNotice`) -- these are order-time fields (chosen at
+      `/api/vendors/stand-payment/initiate`), never present on `submission`, so `order` is their
+      only correct source; there is no staleness question for them the way there is for
+      `contactEmail` (see next paragraph), so no source-of-truth test is needed for these two.
+
+      The EXISTING capture guard at line ~169 (`if (submission?.businessName &&
+      submission.contactPersonName)`) is UNCHANGED -- it must NOT be widened to also require
+      `contactEmail`, or a submission missing/blank `contactEmail` would silently drop BOTH
+      emails (a real regression the admin notice must never suffer for a reason that has
+      nothing to do with it). Inside that same guarded block, `contactEmail` is captured
+      separately as `submission.contactEmail?.trim() || null` (never crashes on `undefined`,
+      never stores an empty string as if it were a real address).
+
+      Immediately after the EXISTING `if (paidNotice) { ... sendVendorPaymentAdminNoticeEmail
+      ... }` block's existing call (UNCHANGED -- still fires whenever `paidNotice` is non-null,
+      regardless of whether `contactEmail` is present), and INSIDE THE SAME `if (paidNotice) {
+      }` block (not a second, separately-gated `if` -- `A2` asserts both sends share one
+      textual `if (paidNotice)` block), a conditional branch: `if (notice.contactEmail) { await
+      deliverConfirmationEmailAfterCommit(() => sendVendorPaymentConfirmationEmail({
+      businessName: notice.businessName, contactEmail: notice.contactEmail, boothSize:
+      notice.boothSize, amount: notice.amount, standOrderRef: notice.standOrderRef }), (error)
+      => { console.error(...) }); } else { console.error('[vendors/stand-payment] Paid
+      submission has no contactEmail -- vendor payment receipt not sent', { vendorSubmissionId
+      }); }` -- the `else` branch logs ONLY the submission id (never businessName/
+      contactPersonName/any submitted field) so a missing-contactEmail case is diagnosable
+      without becoming a second PII leak. `A8` proves this branch behaviourally: a submission
+      with businessName+contactPersonName but no contactEmail still produces exactly one admin
+      send and zero vendor sends.
+
+      Both sends remain independently wrapped in `deliverConfirmationEmailAfterCommit` -- losing
+      either send, coupling one send's failure to suppress the other, or moving either outside
+      the shared `if (paidNotice)` block, is a regression `A2`/`A4` exist to catch. No change to
+      the existing verification, cross-gateway, idempotency, or amount-guard logic -- the
+      EXISTING `if (order?.status !== 'pending') return;` early-return (line ~140) is what makes
+      BOTH emails idempotent against a duplicate/replayed ITN, because it exits BEFORE
+      `paidNotice` is ever assigned; `paidNotice` is reset to `null` at the top of every
+      transaction attempt (line ~111), so an early-returning attempt never inherits a stale
+      non-null value. `A3` proves this structural fact behaviourally.
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-payment-confirmation/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The whole project still type-checks under strict TypeScript after the new file pair and the edit.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        SOURCE-LEVEL WIRING DISCRIMINATOR on lib/vendor-stand-payment-notification.ts,
+        REVISED 2026-09-02 against the team lead's ground-truth read of the real file. Proves:
+        the EXISTING sendVendorPaymentAdminNoticeEmail call is still present (not lost); the NEW
+        sendVendorPaymentConfirmationEmail is imported from '@/lib/vendor-payment-confirmation'
+        and called; BOTH calls are wrapped in deliverConfirmationEmailAfterCommit; BOTH call
+        sites sit strictly OUTSIDE the db.runTransaction(...) block AND inside the SAME textual
+        `if (paidNotice) { ... }` block (not two independently-gated blocks); `transaction.get(
+        submissionRef)` appears EXACTLY ONCE in the file (proves contactEmail is sourced from
+        the existing in-transaction submission read, never a second fetch); and no read of
+        `submissionRef` or `standOrderRef` occurs anywhere AFTER the `db.runTransaction(...)`
+        block closes (proves no post-commit re-read was introduced to fetch contactEmail).
+        Self-tested against FOUR frozen fixtures: fully unwired, admin-notice-only (today's real
+        pre-feature shape -- proves this check is not already vacuously satisfied),
+        vendor-send-fired-from-inside-the-transaction, and vendor-send-fired-from-a-SECOND
+        `if (paidNotice)` block with a duplicate submissionRef read (proves the single-read /
+        single-block requirements are actually enforced, not just presence-checked).
+        RED-verified live against the real file (2026-09-02, architect pass, post-revision):
+        rejects with exactly 2 failures (missing import; call never wrapped) -- the admin-notice
+        half, the single-read property, and the single-block property all already pass against
+        today's real file, isolating precisely the missing piece. Defeating mutation: deleting
+        either call; moving either inside the transaction; calling either unwrapped; splitting
+        the two sends across two separate `if (paidNotice)` blocks; adding a second
+        transaction.get(submissionRef) or any post-commit read of submissionRef/standOrderRef.
+      command: node contracts/checks/vendor-payment-confirmation/check-notification-wiring.mjs
+
+    - id: A3
+      description: >-
+        BEHAVIOURAL, via the real route-runner harness (real payfast-itn route, real
+        lib/vendor-stand-payment-notification.ts, real lib/vendor-admin-notify-recipients.ts;
+        only Firestore/payments/mailer infrastructure faked). Proves, together: (1) RECIPIENT
+        CORRECTNESS + INDEPENDENCE, THE PROPERTY THAT ACTUALLY EARNS ITS KEEP (per the
+        vendor-flow-notifications A5-A8/A10 lesson -- a check that only proves "two sends
+        happened" is vacuous) -- the vendor receipt's contactEmail is EXACTLY the paying
+        vendor's own address (never an admin address), sourced from the SUBMISSION document
+        (proven with a deliberately STALE order.contactEmail that differs from the submission's
+        current contactEmail -- the receipt must use the submission's fresher value, proving
+        sourcing did not regress to reading the order doc instead), and the admin notice's own
+        input never carries the vendor's contactEmail as a field. A mutation swapping the two
+        recipient expressions (vendor receipt reads an admin address; admin notice reads the
+        vendor's contactEmail) makes every one of these assertions fail. (2) BOTH FIRE ON
+        SETTLEMENT -- a first genuine 'paid' ITN produces exactly 1 vendor receipt AND exactly 1
+        admin notice, with the vendor receipt's businessName/amount/boothSize/standOrderRef all
+        matching the real settled order. (4) IDEMPOTENCY, the highest-value property -- a SECOND
+        and THIRD duplicate 'paid' ITN for the same already-paid order produce ZERO additional
+        sends of EITHER email. RED-verified live (2026-09-02, post-revision): fails today with
+        exactly 1 failure ("0 vendor confirmations" -- the admin half and the stale-order-email
+        test setup already pass, same isolation as A2). ACCEPTED LIMITATION: this check has NOT
+        been observed to go GREEN or to independently catch a specific broken implementation
+        (e.g. a double-send bug, or a recipient swap), since no real implementation exists yet
+        to exercise -- @dev's implementation must make it pass, and whoever runs QA next should
+        deliberately reintroduce a double-send or recipient-swap defect and confirm this check
+        goes RED again before trusting a GREEN result at face value, per this project's own
+        "assertion satisfiable by something that isn't the real property" audited defect class.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-payment-confirmation/check-settlement-sends-both-emails.mjs
+
+    - id: A4
+      description: >-
+        BEHAVIOURAL, EMAIL-FAILURE-NEVER-BLOCKS, via the same real route-runner harness. Two
+        scenarios: (A) the vendor receipt's mailer rejects -- the gateway must still ack 200,
+        the order must still settle to 'paid', the send must have been genuinely attempted (not
+        skipped), and the INDEPENDENT admin notice must still fire; (B) the admin notice's
+        mailer rejects instead -- symmetric proof that the vendor's own receipt is never
+        suppressed by an admin-side failure. RED-verified live (2026-09-02): fails today with
+        exactly 2 failures, both "0 attempts" on the not-yet-implemented vendor-receipt send;
+        the admin-notice half of both scenarios already passes. Same accepted GREEN-side
+        limitation as A3.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-payment-confirmation/check-failure-isolation.mjs
+
+    - id: A5
+      description: >-
+        NO-PII-IN-LOGS, paired absence+presence, on the new lib/vendor-payment-confirmation.ts:
+        zero console.* calls, AND genuinely references both contactEmail and businessName
+        (rules out an empty stub trivially satisfying the absence half). Self-tested against a
+        PII-logging fixture and a vacuous-empty-stub fixture, both rejected. RED-verified live
+        (2026-09-02): file does not exist yet.
+      command: node contracts/checks/vendor-payment-confirmation/check-no-pii-in-logs.mjs
+
+    - id: A6
+      description: >-
+        Every link this feature's email builds is composed from a siteUrl/resolveSiteUrl()
+        variable in BOTH lib/vendor-payment-confirmation.ts and emails/
+        VendorPaymentConfirmation.tsx, never a hardcoded domain literal. Self-tested against a
+        hardcoded-domain fixture (rejected) and a correctly-resolving fixture (accepted).
+        ACCEPTED LIMITATION, stated in the check's own header and repeated in the golden README:
+        this is a source-text check -- it proves the link is built FROM the variable, and cannot
+        prove SITE_URL itself holds the correct runtime value. The 2026-09-01 hosted.app
+        incident happened with the variable being used correctly throughout; only the variable's
+        deployed VALUE was wrong, and no check of this shape would have caught that. RED-verified
+        live (2026-09-02): both target files do not exist yet.
+      command: node contracts/checks/vendor-payment-confirmation/check-links-use-site-url.mjs
+
+    - id: A7
+      description: pnpm lint passes with zero errors after the new file pair and the edit.
+      command: pnpm lint
+
+    - id: A8
+      description: >-
+        BEHAVIOURAL, per the team lead's ground-truth correction #2 (revised again 2026-09-02
+        per a follow-up request to close the gap where this check existed but was not yet
+        mutation-verified against the real file). Two scenarios, both exercised via the real
+        route-runner harness against the real lib/vendor-stand-payment-notification.ts, REUSING
+        the existing A3/A4 fixtures (no new fixtures added): a submission with
+        businessName+contactPersonName but contactEmail EMPTY (''), and, called out explicitly
+        by the team lead as the case most likely broken by a future refactor since @dev's real
+        capture is `submission.contactEmail?.trim() || null`, contactEmail WHITESPACE-ONLY
+        ('   '). Proves, for BOTH: the gateway still acks 200; the order still settles to
+        'paid'; the admin notice STILL fires exactly once (unchanged behaviour -- the capture
+        guard must remain businessName+contactPersonName only, never widened to also require
+        contactEmail); the vendor receipt fires ZERO times; and exactly one console.error is
+        logged naming ONLY the vendorSubmissionId -- never businessName/contactPersonName/any
+        email-shaped value (checked via containsSubmittedPii(), the SAME "submitted PII"
+        definition A5 uses for lib/vendor-payment-confirmation.ts, applied here as a
+        value-absence scan since this module -- an audit-log handler -- legitimately logs for
+        many unrelated reasons and so cannot hold A5's "zero console.* calls" rule; see the
+        check's own header for the full A5-coordination note). containsSubmittedPii() is
+        self-tested inline against three known-bad synthetic log lines (each PII field leaking
+        on its own) and one known-clean line before ever being pointed at real captured output.
+        LIVE MUTATION RED-VERIFIED (2026-09-02): backed up lib/vendor-stand-payment-
+        notification.ts (md5 999a8390926754fdce41a27ac1963587), changed the real capture guard
+        from `if (submission?.businessName && submission.contactPersonName)` to
+        `if (submission?.businessName && submission.contactPersonName &&
+        submission.contactEmail?.trim())` -- the EXACT regression the team lead named ("widens
+        the capture guard so a missing contactEmail drops BOTH emails") -- and ran this check:
+        **exit code 1, 4 failures** (both scenarios: "expected the admin notice to STILL fire
+        exactly once ... got 0" and "expected exactly 1 console.error ... got 0"). Restored from
+        the pre-mutation backup, verified byte-identical via md5 (same hash) and an empty diff,
+        re-ran this check: **exit code 0, GREEN again.**
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-payment-confirmation/check-missing-contact-email.mjs

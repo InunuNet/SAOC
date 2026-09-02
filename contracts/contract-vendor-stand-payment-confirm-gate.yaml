@@ -1,0 +1,559 @@
+schema: athanor.contract/v1
+slug: vendor-stand-payment-confirm-gate
+goal: >-
+  P0 SECURITY FIX, money path. lib/vendor-stand-payment-notification.ts settles a vendor's stand
+  order to 'paid' on nothing but inbound HMAC signature verification and an amount match -- it
+  never calls paymentProvider.confirmNotification(), the gateway's own out-of-band
+  server-confirm round trip that lib/tickets-notification.ts (the sibling TICKET settlement
+  path) already performs at its own step 8. Anyone holding the gateway passphrase can forge a
+  correctly-signed ITN and settle a stand order as paid with no money moving. This mission adds
+  ONE call -- paymentProvider.confirmNotification(notification) -- inside the existing
+  db.runTransaction(...) callback's `if (status === 'paid')` branch, positioned strictly AFTER
+  the existing amount-match guard and strictly BEFORE the
+  transaction.update(standOrderRef, { status: 'paid', ... }) write; an unconfirmed result (any
+  reason -- 'not-valid', 'request-failed', 'not-configured') returns before that write, leaving
+  both documents untouched and sending neither of the two downstream emails (the existing admin
+  notice and the vendor-payment-confirmation mission's concurrently-landing vendor receipt, both
+  gated by the same `paidNotice` variable this contract's design places downstream of the new
+  guard). HTTP response stays 200 on every outcome, matching this file's own existing documented
+  contract and the ticket path's precedent. Full decision record, the ticket-path-vs-vendor-path
+  structural divergence and why it is accepted, the fail-closed reasoning for every
+  ConfirmResult reason including 'not-configured', and everything these checks do NOT prove:
+  contracts/golden/vendor-stand-payment-confirm-gate/README.md
+
+  EXPANDED 2026-09-02 to fold in FOUR more defects in the SAME file, found by a Codex GPT-5.5
+  adversarial pass against @dev's now-complete vendor-receipt implementation (which is on disk
+  and green on A1-A8 of contract-vendor-payment-confirmation.yaml -- that contract is UNCHANGED
+  and stays green; every feature below is specced ON TOP of it). Folded into this contract
+  rather than a parallel one so a single @dev pass edits lib/vendor-stand-payment-notification.ts
+  once -- two agents editing that file concurrently already caused a problem this session. F2:
+  a hung email send can block its sibling send and the gateway's 200 ack after the order has
+  already committed 'paid'. F3: a stale, correctly-signed terminal (failed/cancelled)
+  notification from an abandoned payment attempt can overwrite a re-initiated, live attempt for
+  the same vendor submission, silently swallowing the vendor's genuine subsequent payment --
+  this is the highest-value fix after F1, a real money-loss path. F4: a paid order whose
+  submission has a blank businessName/contactPersonName still settles (correct, unchanged) but
+  does so in total silence -- zero emails, zero log line. F5: a caught mailer error's message
+  can embed the vendor's real email address (a realistic provider-validation-error shape) and
+  reach the log verbatim. Explicitly OUT OF SCOPE (Brad's call, logged as backlog, not fixed
+  here): at-most-once notification delivery / no durable outbox -- a crash between the
+  Firestore commit and the email attempts loses the notification's downstream side effects
+  permanently. Real, but pre-existing across the WHOLE repo including the ticket path; not a
+  regression this contract introduces or is scoped to fix. See the golden README's "Known
+  accepted limitation" section.
+
+  EXPANDED AGAIN 2026-09-02 to fold in THREE more defects, found by a Codex GPT-5.5 pass against
+  the now-LANDED F1-F5 diff itself -- i.e. defects IN the fixes, not the original file. F6
+  (HIGH confidence, HIGHEST priority of the three): F1 placed confirmNotification() INSIDE the
+  retriable db.runTransaction(...) callback -- Firestore replays that callback on write
+  contention, and confirmNotification() is a real external call the retry machinery cannot
+  undo, so a genuine payment whose FIRST (discarded) attempt confirms but whose SECOND
+  (committing) attempt hits a transient confirm failure can be silently and PERMANENTLY lost
+  (200 acked, gateway never retries, order stuck pending forever) -- the exact failure shape F3
+  exists to prevent, reintroduced by F1's own fix for a different root cause. F7 (HIGH
+  confidence): F3's widened reference (`VSO-{vendorSubmissionId}::{attemptId}`, with attemptId a
+  full crypto.randomUUID()) is 62 characters for a real Firestore-auto-id vendorSubmissionId,
+  breaching Ozow's own documented 50-char TransactionReference cap by 12 characters -- silent
+  today only because PayFast is the active gateway, but breaks the instant the pending Ozow
+  switch happens. F8 (Low/Medium confidence, cheap fix): an attacker-controlled `reference` on a
+  verification-FAILED notification is logged verbatim at line ~114, before any parsing or
+  ownership check -- a realistic log-poisoning/PII route distinct from F5's caught-mailer-error
+  redaction (different code path, same missing helper application). See the golden README's
+  "F6", "F7", "F8" for the full decision records, including F6's two allowed fix shapes and why
+  this contract does not mandate one over the other, and F7's BankReference pre-existing-gap
+  callout (documented, explicitly out of THIS scope).
+created_at: '2026-09-02'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      lib/vendor-stand-payment-notification.ts (edit only -- no new files, no new Firestore
+      collections, no new Firestore reads). Inside the `if (status === 'paid') { ... }` branch of
+      the existing db.runTransaction(...) callback, immediately after the existing amount-match
+      guard (`if (orderAmountCents === null || notification.grossAmountCents === null ||
+      notification.grossAmountCents !== orderAmountCents) { ...; return; }`) and immediately
+      before the existing `transaction.get(submissionRef)` / paidNotice assignment /
+      `transaction.update(standOrderRef, { status: 'paid', ... })` write: add
+      `const confirmation = await paymentProvider.confirmNotification(notification);` followed
+      by `if (!confirmation.confirmed) { console.error('[vendors/stand-payment] Server
+      confirmation failed -- rejecting notification', { provider: paymentProvider.id,
+      vendorSubmissionId, reason: confirmation.reason }); return; }` -- the check MUST be
+      reason-agnostic (`!confirmation.confirmed`, never a switch/allowlist on `reason`); there is
+      no ConfirmResult reason that means "trust the inbound signature instead." The `console.error`
+      call logs `vendorSubmissionId` and the gateway-reported `reason` only -- never
+      businessName/contactEmail/any submitted field (this project's absolute no-PII-in-logs
+      rule, same as every sibling vendor-email sender). No change to the `failed`/`cancelled`
+      branch, the cross-gateway guard, the existing idempotency short-circuit
+      (`if (order?.status !== 'pending') return;`), the amount-match guard itself, or either
+      email's existing wiring -- this feature only inserts one gate between the amount match and
+      the write. See the golden README's "Design intent" for why the call sits inside the
+      existing transaction (rather than restructured to mirror lib/tickets-notification.ts's
+      literal outside-any-transaction shape) and why that is the correct, deliberately smaller
+      change for this file.
+    status: pending
+
+  - id: F2
+    name: >-
+      lib/vendor-stand-payment-notification.ts (edit only). Introduce a module-local
+      `EMAIL_SEND_TIMEOUT_MS = 5000` constant and a local helper (e.g. `withTimeout(promise,
+      ms)`) that races a promise against a timer rejecting after `ms` with a distinct Error
+      (e.g. `new Error('email send timed out after 5000ms')`). Wrap BOTH email-send closures
+      passed into `deliverConfirmationEmailAfterCommit` with this helper -- e.g.
+      `deliverConfirmationEmailAfterCommit(() => withTimeout(sendVendorPaymentAdminNoticeEmail(
+      {...}), EMAIL_SEND_TIMEOUT_MS), onError)`. Fire the two `deliverConfirmationEmailAfterCommit(
+      ...)` calls CONCURRENTLY rather than sequentially-awaited -- e.g. build both as promises
+      first (the vendor-receipt one conditional on `notice.contactEmail`, matching today's
+      existing `if (notice.contactEmail) { ... } else { console.error(...) }` branch, F4 below),
+      then `await Promise.allSettled([adminNoticePromise, vendorReceiptPromise])` (or
+      `Promise.all`, since each individual send's own rejection is already caught by
+      `deliverConfirmationEmailAfterCommit`'s try/catch -- neither promise in the array should
+      ever itself reject) before the trailing `return acknowledge()`. Concurrency alone does not
+      fully solve this (two hangs still sum to zero forward progress without a timeout on at
+      least one), and a timeout alone does not either (a sequential await still means the SECOND
+      send waits for the FIRST send's full timeout before even starting) -- both changes
+      together are required; see the golden README's "Choosing the timeout value" for why 5000ms
+      and why concurrent-not-sequential.
+    status: pending
+
+  - id: F3
+    name: >-
+      HIGHEST-VALUE FIX AFTER F1 -- a real money-loss path, Codex Medium confidence but treated
+      as high-priority per the team lead. lib/vendor-stand-payment-notification.ts's non-'paid'
+      branch (`if (status === 'failed' || status === 'cancelled') { transaction.update(
+      standOrderRef, { status, failedAt: Timestamp.now() }); }`) and its 'paid' branch both key
+      exclusively off `order.gateway` matching and `order.status === 'pending'` -- neither
+      branch can tell a notification belonging to the CURRENT live payment attempt apart from a
+      stale, correctly-signed notification belonging to an EARLIER, already-superseded attempt
+      for the SAME vendor submission, because every attempt shares the identical
+      `VSO-{vendorSubmissionId}` reference today (lib/vendor-stand-orders.ts's
+      `buildVendorStandOrderRef`). Sequence: vendor initiates (attempt A, 'pending'), abandons it
+      before any terminal notification arrives, re-initiates (attempt B -- the initiate route's
+      OWN documented, intentional behaviour already allows overwriting a still-'pending' order
+      via `.set()`), then attempt A's stale terminal notification arrives late and incorrectly
+      flips the LIVE attempt-B order to 'cancelled'/'failed'; attempt B's own genuine 'paid'
+      notification then hits the (correct, unrelated) idempotency guard and is silently ignored
+      -- money taken, order never settles, zero emails, zero alert.
+
+      SPEC: mint a fresh, unguessable per-attempt identifier (e.g. `crypto.randomUUID()`) in
+      app/api/vendors/stand-payment/initiate/route.ts's EXISTING `transaction.set(standOrderRef,
+      {...})` write (one new field on that same document write, e.g. `attemptId`), and thread it
+      through the ALREADY-gateway-echoed `reference`/`m_payment_id` field --
+      `paymentProvider.initiate({ reference: ..., ... })` -- rather than a gateway-specific
+      custom field, since `reference` is the ONE value BOTH adapters (payfast.ts, ozow.ts)
+      already round-trip verbatim into `notification.reference` with ZERO adapter code changes
+      (that is the entire point of `ProviderNotification.reference` existing generically).
+      Widen lib/vendor-stand-orders.ts's reference format (e.g.
+      `VSO-{vendorSubmissionId}::{attemptId}`) and `parseVendorSubmissionIdFromStandOrderRef` to
+      extract ONLY the leading `vendorSubmissionId` (ignore/strip the attempt suffix for id
+      resolution -- unaffected callers, like the admin review pages, never see this suffix).
+      lib/vendor-stand-payment-notification.ts then extracts the attempt suffix from
+      `notification.reference` itself and compares it against the CURRENT `order.attemptId`
+      BEFORE treating ANY notification (paid, failed, or cancelled alike) as authoritative for
+      that order -- a mismatch is a no-op (log `vendorSubmissionId` only, no PII, still ack 200),
+      not a write. THE RULE IS STRICT, NOT PERMISSIVE: `order.attemptId` present is the ONLY
+      thing that determines whether a comparison is required. If `order.attemptId` is present,
+      the notification MUST carry a suffix that parses AND matches -- a notification whose
+      `reference` carries NO suffix at all (fails to parse) is exactly as much a mismatch as one
+      whose suffix parses but differs, and MUST be rejected the same way (no-op, no write, no
+      poisoning of the order either direction). There is no fallback-accept for a missing suffix
+      once an order has an `attemptId` -- that would silently readmit the pre-fix vulnerability
+      for every notification an attacker chooses to send without a suffix, which defeats the
+      entire point of this feature. BACKWARD COMPATIBILITY, explicit and time-boxed, and the
+      ONLY carve-out that exists: an order created before this fix ships has no `attemptId`
+      stored AT ALL on the order document itself (not "the notification has no suffix" -- the
+      ORDER has no attemptId to compare against) -- for that narrow migration window only, a
+      notification against such an order must be accepted unconditionally (today's behaviour,
+      not a NEW hole -- see the golden README's "F3 migration window" for why this is accepted
+      and bounded, not silently reintroducing the vulnerability class). Once `order.attemptId`
+      exists, every notification against that order is judged strictly against it, regardless of
+      whether the notification's own reference happens to carry a parseable suffix.
+
+      This check's own assertion (A7) does NOT assume this exact mechanism -- it captures
+      whatever `reference` the real initiate route mints per attempt and replays those verbatim,
+      so it stays valid regardless of which correlation mechanism is actually implemented, as
+      long as the end-to-end property holds.
+    status: pending
+
+  - id: F4
+    name: >-
+      lib/vendor-stand-payment-notification.ts (edit only). When a paid submission's
+      `businessName`/`contactPersonName` guard (`if (submission?.businessName &&
+      submission.contactPersonName) { paidNotice = {...}; }`) is false (blank/missing fields --
+      normal validation should prevent this, but a backfill or manual Firestore edit can produce
+      it), settlement MUST continue exactly as today (the order and submission still write
+      'paid'/`paymentReceived: true` -- refusing to settle already-taken money would be worse),
+      but the skip is currently 100% silent (`paidNotice` stays null, the entire `if
+      (paidNotice) {...}` block at the end of the handler is skipped, with no log anywhere).
+      SPEC: inside the `if (submission?.businessName && submission.contactPersonName) {...}
+      else {...}` (add the `else`), log exactly one `console.error` naming ONLY
+      `vendorSubmissionId` (e.g. `'[vendors/stand-payment] Paid order settled but submission is
+      missing businessName/contactPersonName -- no confirmation emails sent'`, `{
+      vendorSubmissionId }`) -- never businessName, contactEmail, contactPersonName, or any
+      other submitted field. This is the SAME no-PII-in-logs rule
+      contract-vendor-payment-confirmation.yaml's A5 already enforces STATICALLY on
+      lib/vendor-payment-confirmation.ts and lib/vendor-payment-admin-notice.ts -- do not
+      reimplement that rule differently here; this feature's log line follows the identical
+      "vendorSubmissionId only" shape those files already use for their own missing-field skips
+      (see lib/vendor-stand-payment-notification.ts's EXISTING, unrelated `else` branch at line
+      ~274-279 for the missing-contactEmail case, which already follows this exact pattern --
+      this feature adds the SAME shape for the missing-businessName/contactPersonName case,
+      which currently has no `else` at all).
+    status: pending
+
+  - id: F5
+    name: >-
+      lib/vendor-stand-payment-notification.ts (edit only). Both `onError` handlers passed to
+      `deliverConfirmationEmailAfterCommit` (the admin-notice one and the vendor-receipt one)
+      currently log `error instanceof Error ? error.message : 'unknown error'` VERBATIM. A caught
+      mailer/provider error's message routinely embeds the offending recipient's email address
+      (a real Resend/PayFast/Ozow-adjacent validation-error shape, e.g. "recipient X is not a
+      verified address") -- this is PII reaching the log stream through a path
+      contract-vendor-payment-confirmation.yaml's A5 (a STATIC check on the two sender modules'
+      own source text) structurally cannot see, because the PII here is interpolated into the
+      message at RUNTIME by whatever threw, not a literal string in either sender module.
+      SPEC: add a local helper (e.g. `redactEmailAddresses(message: string): string`) that
+      replaces every email-address-shaped substring in a string with a fixed placeholder (e.g.
+      `[redacted-email]`), applied to `error.message` (or the stringified error) in BOTH
+      `onError` handlers before it reaches `console.error` -- the log line must still exist and
+      still be diagnosable (this is a REDACTION requirement, not a suppression requirement;
+      logging nothing at all would just trade this defect for a milder version of F4's). A
+      reasonably permissive RFC-5322-lite pattern is sufficient (this is a best-effort log
+      hygiene control, not a validator) -- see the golden README's "F5 -- what redaction is not"
+      for the explicit limits of what this catches.
+    status: pending
+
+  - id: F6
+    name: >-
+      HIGHEST PRIORITY OF F6-F8 -- a defect IN F1's OWN fix. lib/vendor-stand-payment-
+      notification.ts (edit only). `paymentProvider.confirmNotification(notification)` currently
+      sits INSIDE the `db.runTransaction(...)` callback (~line 244). Firestore replays that
+      callback from scratch on write contention, discarding every prior attempt's reads/writes
+      and applying only the FINAL, committing attempt's writes -- but confirmNotification() is a
+      real external network call, which Firestore's retry machinery cannot undo. A genuinely
+      valid payment whose first (discarded) attempt confirms, but whose retried (committing)
+      attempt hits a transient confirm failure, is currently left permanently unsettled while
+      still being acknowledged HTTP 200 -- the gateway never retries a notification it was told
+      succeeded, so the loss is silent and permanent.
+
+      TWO fix shapes are acceptable; pick one, justify the choice in the golden README, and
+      implement it consistently:
+        (a) PREFERRED, per lib/tickets-notification.ts's own precedent (step 8: confirm sits
+            AFTER the amount/settled checks but BEFORE the transaction, called exactly once) --
+            move confirmNotification() to run ONCE, before `db.runTransaction(...)` starts,
+            reading whatever pre-transaction state is needed to decide whether confirming is
+            even worth attempting (mirroring the ticket path's already-settled/amount-match
+            short-circuits before its own step 8). The transaction itself then only needs to
+            re-verify the order is still in the expected state at write time (the same
+            re-check-inside-the-transaction pattern markOrderAndPositionPaidByPaymentId already
+            uses) and write. This eliminates the replay-duplication risk entirely -- confirm is
+            never re-invoked by a Firestore retry, because it no longer runs inside one.
+        (b) Keep confirmNotification() inside the transaction, but change the ack behaviour: a
+            confirm failure must return a NON-200 response (instead of today's blanket 200) so
+            the gateway redelivers, and a subsequent CLEAN (non-contended) delivery can then
+            genuinely confirm and settle. This shape still calls confirm potentially more than
+            once per real-world payment (once per contention retry) but no longer silently
+            drops a genuine payment forever -- it converts silent loss into a bounded number of
+            gateway-driven redeliveries.
+
+      A12 (below) is written to accept EITHER shape -- it rejects only the third combination
+      (order stays unsettled AND response is 200), which is the one currently reachable and the
+      one no valid fix may reintroduce. See the golden README's "F6" for the full decision
+      record and the exact reasoning the check follows.
+    status: pending
+
+  - id: F7
+    name: >-
+      A defect IN F3's OWN fix. lib/vendor-stand-orders.ts's `buildVendorStandOrderReference`
+      (edit) and app/api/vendors/stand-payment/initiate/route.ts's `attemptId` minting (edit) --
+      the attempt correlator is currently a full `crypto.randomUUID()` (36 characters including
+      hyphens). Combined with the `VSO-` prefix (4), a real Firestore-auto-id vendorSubmissionId
+      (always exactly 20 characters), and the `::` separator (2), the built reference is 62
+      characters -- 12 over Ozow's own documented 50-char TransactionReference cap (see
+      lib/payments/ozow.ts's existing deriveOzowBankReference doc comment, which already states
+      this field's limit). SPEC: shorten the attempt correlator so the FULL reference
+      (`VSO-{vendorSubmissionId}::{attemptId}`) fits comfortably under Ozow's 50-char
+      TransactionReference cap for a real 20-character vendorSubmissionId, WITH MARGIN for
+      future growth (A13 requires at least 5 characters of headroom below the 50-char cap, i.e.
+      a built reference of at most 45 characters) -- e.g. a truncated/shortened random token
+      (a hex-encoded `crypto.randomBytes(n)` of a length you choose and justify in the golden
+      README for adequate collision resistance at this project's realistic concurrent-attempt
+      volumes) in place of the full UUID. Do not change `VENDOR_STAND_ORDER_REF_PREFIX`,
+      `VENDOR_STAND_ORDER_REF_ATTEMPT_SEPARATOR`, or the base `VSO-{vendorSubmissionId}` shape
+      the document id/`standOrderRef` field use -- only the attemptId's own generation and
+      length. OUT OF SCOPE, documented not silently folded in: Ozow's `BankReference` field is
+      ALREADY over its own 20-char documented cap at the PRE-F3 length
+      (`VSO-{20-char id}` = 24 chars), via `deriveOzowBankReference`, which only strips the
+      ticket path's `BOOKING_REF_PREFIX` and does nothing for a `VSO-` reference -- this is a
+      pre-existing gap this contract did not introduce and is not scoped to fix; see the golden
+      README's "F7" for why it is flagged but left to a separate item.
+    status: pending
+
+  - id: F8
+    name: >-
+      lib/vendor-stand-payment-notification.ts (edit only), line ~114. The verification-failure
+      `console.error` call (`'[vendors/stand-payment] Notification rejected before any order was
+      touched'`) logs `verification.reference` VERBATIM -- this reference is fully
+      ATTACKER-CONTROLLED at this point (read straight off an unsigned/malformed notification's
+      wire field, before any parsing or ownership check), and can embed an arbitrary string
+      including a real or fabricated email address, e.g. `m_payment_id=alice@example.com`.
+      Distinct from F5 (which redacts a caught MAILER error's message in the two onError
+      handlers) -- same missing-redaction shape, different, much earlier code path. SPEC: apply
+      the SAME `redactEmailAddresses()` helper F5 already introduced to `verification.reference`
+      before this `console.error` call -- reuse the existing helper, do not reimplement
+      redaction a second way.
+    status: pending
+
+goldens:
+  - contracts/golden/vendor-stand-payment-confirm-gate/README.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The whole project still type-checks under strict TypeScript after the edit.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        SOURCE-LEVEL WIRING DISCRIMINATOR on lib/vendor-stand-payment-notification.ts. Proves,
+        within the `if (status === 'paid') { ... }` branch: (a)
+        paymentProvider.confirmNotification(notification) is called; (b) that call sits BEFORE
+        the transaction.update(standOrderRef, { status: 'paid', ... }) write; (c) the stretch of
+        source between the call and the write contains a guard referencing
+        confirmation.confirmed that returns -- i.e. an unconfirmed result cannot fall through to
+        the write. Self-tested against FOUR frozen fixtures: today's real unwired shape (no
+        confirm call at all -- proves this check is not vacuously satisfied), confirm-called-
+        but-result-ignored, confirm-called-after-the-write, and a positive control (the intended
+        fix shape) which the discriminator must ACCEPT (proves the discriminator is not simply
+        rejecting everything, which would also "pass" this check against unimplemented code).
+        RED-verified live (2026-09-02): rejects with exactly 1 failure ("confirmNotification is
+        never called"), isolating precisely the missing piece. Defeating mutation: removing the
+        call; calling it but never checking `.confirmed`; moving the call after the write;
+        checking `.confirmed` but not returning on failure.
+      command: node contracts/checks/vendor-stand-payment-confirm-gate/check-confirm-gate-wiring.mjs
+
+    - id: A3
+      description: >-
+        BEHAVIOURAL CRUX, via the real route-runner harness (real payfast-itn route, real
+        lib/vendor-stand-payment-notification.ts; only Firestore/payments/mailer infrastructure
+        faked). One order, three ITN deliveries of the SAME reference: (1) a correctly-signed,
+        correct-amount, 'paid'-status notification whose confirmNotification() reports
+        { confirmed: false, reason: 'not-valid' } -- the order MUST stay 'pending',
+        vendorSubmissions.paymentReceived MUST stay unset, ZERO emails of either kind (vendor
+        receipt, admin notice) MUST be sent, confirmNotification() MUST have been called exactly
+        once (proves the rejection is a real gate outcome, not an accidental early exit
+        elsewhere), and the gateway MUST still be acknowledged HTTP 200; (2) the SAME
+        notification redelivered, now genuinely confirmed -- settles normally, exactly one of
+        each email, proving the earlier rejection was per-attempt, not a poisoned order; (3) a
+        THIRD delivery against the now-paid order -- zero additional emails (existing
+        idempotency, must not regress). RED-verified live (2026-09-02): fails with exactly 5
+        failures at step 1 -- order settles to 'paid' on the forged-but-unconfirmed notification
+        (the exact vulnerability), both emails fire, and confirmNotificationCalls stays at 0
+        (the call never happens at all).
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-payment-confirm-gate/check-unconfirmed-blocks-settlement.mjs
+
+    - id: A4
+      description: >-
+        FAIL-CLOSED ON 'not-configured' SPECIFICALLY, via the same real route-runner harness.
+        Simulates the real Ozow adapter's missing-credential shape
+        (confirmNotification() -> { confirmed: false, reason: 'not-configured' }, the exact
+        return value of lib/payments/ozow.ts:56-62 when OZOW_SANDBOX_SITE_CODE /
+        OZOW_SANDBOX_API_KEY are absent) against a correctly-signed, correct-amount 'paid'
+        notification. Asserted separately from A3 because 'not-configured' is the one reason an
+        implementation could plausibly special-case ("we can't even ask, so trust the inbound
+        signature") and silently recreate the vulnerability under nothing more than a config
+        gap. The order MUST stay 'pending', ZERO emails MUST be sent, HTTP stays 200; a later
+        genuinely-confirmed redelivery of the same notification settles normally (proves this is
+        per-attempt, not a poisoned order). RED-verified live (2026-09-02): fails with exactly 4
+        failures, same root cause as A3 -- confirmNotification() is never called, so no reason
+        value can ever gate anything.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-payment-confirm-gate/check-not-configured-fails-closed.mjs
+
+    - id: A5
+      description: >-
+        CALL-ORDERING / NO-WASTED-ROUND-TRIP, via the same real route-runner harness, using the
+        fixture's confirmNotificationCalls call log. Two scenarios, each proving
+        confirmNotification() is never reached: (1) an amount-mismatched notification is
+        rejected by the EXISTING amount guard before the new confirm call -- 0 calls; (2) a
+        duplicate notification against an already-'paid' order is rejected by the EXISTING
+        idempotency short-circuit before the new confirm call -- call count unchanged from after
+        the first settlement. This does not re-prove the gate exists (A3/A4 do); it proves WHERE
+        it sits relative to the pre-existing guards, so a future "simplification" that moves the
+        confirm call earlier than the amount guard or the idempotency check is caught even
+        though it would not break A3/A4 (both of those scenarios already have correctly-matching
+        amounts and a fresh pending order). ACCEPTED, STATED LIMITATION: this check currently
+        PASSES against the real unfixed file, VACUOUSLY -- both scenarios show 0 calls today
+        simply because confirmNotification() is never called at all, for any notification. It is
+        included as A5 (not A2) precisely because it is not itself evidence the fix exists;
+        RED-evidence for the defect is A2/A3/A4. Once those land, A5 is what protects the
+        ordering going forward.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-payment-confirm-gate/check-confirm-call-ordering.mjs
+
+    - id: A6
+      description: >-
+        F2 -- BEHAVIOURAL, via the real route-runner harness, with the check's OWN outer
+        watchdog (9000ms, chosen with real headroom above F2's specified 5000ms
+        EMAIL_SEND_TIMEOUT_MS) racing the real POST call, since a check that simply awaited a
+        permanently-hung send would itself hang forever pre-fix. Two symmetric scenarios: the
+        admin notice's send hangs forever -- the vendor receipt send must still have been
+        GENUINELY ATTEMPTED and the route must still return 200, both within the watchdog; and
+        the reverse (vendor receipt hangs, admin notice must still fire). In both scenarios the
+        order must already be 'paid' regardless (the Firestore transaction commits strictly
+        before either email send is attempted, unaffected by a later hang). RED-verified live
+        (2026-09-02): fails both scenarios -- neither the sibling send nor the 200 ack happens
+        within the watchdog window, because today's code awaits the two sends sequentially with
+        no bound on either. Real elapsed time observed: ~19s total for both scenarios (this
+        check is comparatively slow BY DESIGN -- it is proving the absence of a timeout, which
+        requires waiting long enough to be sure one isn't coming).
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-payment-confirm-gate/check-hung-send-does-not-block-sibling-or-ack.mjs
+
+    - id: A7
+      description: >-
+        F3 -- BEHAVIOURAL, via the real route-runner harness (real initiate route, real
+        payfast-itn route, real lib/vendor-stand-payment-notification.ts). Reproduces the full
+        money-loss sequence using ONLY real routes: attempt A initiates (captures its real,
+        route-minted `reference` via the fixture's `initiateCalls` log -- implementation-
+        agnostic, does not assume any particular attempt-identity mechanism); attempt B
+        re-initiates over the same still-'pending' order (captures ITS real reference); attempt
+        A's stale 'cancelled' notification (replayed using A's captured reference) is delivered
+        LATE, after B already exists -- MUST NOT move B's order out of 'pending'; attempt B's
+        genuine 'paid' notification (replayed using B's captured reference) is then delivered --
+        MUST settle normally, with both downstream emails firing. RED-verified live
+        (2026-09-02): fails with exactly 5 failures -- today's identical bare `VSO-{id}`
+        reference for both attempts means the stale cancel silently overwrites the live order to
+        'cancelled', and the genuine payment is then swallowed by the (correct, unrelated)
+        idempotency guard: order never settles, vendorSubmissions.paymentReceived never flips,
+        zero emails of either kind.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-payment-confirm-gate/check-stale-terminal-itn-does-not-poison-fresh-attempt.mjs
+
+    - id: A8
+      description: >-
+        F4 -- BEHAVIOURAL, via the real route-runner harness, with console.error intercepted
+        directly (not via a fixture module) so this check observes exactly what reaches the log
+        stream. A submission with blank businessName/contactPersonName (but a REAL, present
+        contactEmail, to prove that value stays out of scope for accidental logging too) settles
+        normally (order -> 'paid', unchanged) and sends zero emails (unchanged) -- but MUST now
+        produce at least one console.error call naming the vendorSubmissionId, and MUST NOT leak
+        the real contactEmail or businessName value in ANY captured log line. RED-verified live
+        (2026-09-02): fails with exactly 1 failure -- zero console.error calls are made at all,
+        confirming today's total silence.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-payment-confirm-gate/check-blank-identity-logs-and-settles.mjs
+
+    - id: A9
+      description: >-
+        F5 -- BEHAVIOURAL, via the real route-runner harness, with console.error intercepted
+        directly. Two symmetric scenarios: the vendor-receipt send rejects with an error message
+        embedding the real contactEmail (a realistic provider-validation-error shape, via the
+        fixture's new setVendorPaymentConfirmationRejectMessage()); the admin-notice send
+        rejects the same way (via setVendorPaymentAdminNoticeRejectMessage()). In both, NO
+        captured console.error call may contain the real email address, AND a (redacted)
+        failure log line must still exist -- redaction must not become silence, which would
+        just trade this defect for a milder version of F4's. RED-verified live (2026-09-02):
+        fails both scenarios -- the real email address appears verbatim in a captured
+        console.error call in each.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-payment-confirm-gate/check-error-message-redaction.mjs
+
+    - id: A10
+      description: pnpm lint passes with zero errors after every edit in this contract.
+      command: pnpm lint
+
+    - id: A11
+      description: >-
+        F3 -- STRICT MISSING-SUFFIX REJECTION, via the same real route-runner harness. Isolates
+        the exact loophole a permissive implementation of F3's attempt-identity guard can leave
+        open: an order that HAS a real `attemptId` (captured from the real initiate route's
+        `initiateCalls` log, same implementation-agnostic technique as A7) receiving a notification
+        whose `reference` carries NO attempt suffix at all (the bare pre-F3 shape, e.g.
+        `VSO-{vendorSubmissionId}` with no `::{attemptId}`) -- this is DISTINCT from A7, which
+        only exercises a notification carrying a suffix that parses but mismatches; this check
+        proves the unparseable/absent-suffix case is rejected the same way, not silently
+        fallback-accepted. The order MUST stay 'pending', zero emails MUST be sent, HTTP stays
+        200, and a SUBSEQUENT genuine notification carrying the order's real matching suffix MUST
+        still settle it normally (proves the missing-suffix rejection is per-notification, not a
+        poisoned order). RED-verified live (2026-09-02) against @dev's current implementation
+        (which rejects only a PARSEABLE-BUT-MISMATCHED suffix and falls through to accept a
+        missing suffix): fails -- the bare-reference notification is wrongly accepted and settles
+        the order to 'paid'.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-payment-confirm-gate/check-missing-suffix-notification-rejected.mjs
+
+    - id: A12
+      description: >-
+        F6 -- BEHAVIOURAL, via the real route-runner harness with Firestore's real
+        contention-retry semantics SIMULATED (fixture-firestore.mjs's `simulateTransactionRetries
+        (1)` -- the fixture's original runTransaction called its callback exactly once, which
+        cannot reproduce a defect whose failure mode depends on the callback running more than
+        once; see that file's own comment for why the simulation discards a first attempt's
+        Firestore writes while still letting its side effects, e.g. confirmNotification(), run
+        for real). REWRITTEN 2026-09-02 -- the team lead mandated fix (a) (confirm moved OUTSIDE
+        and BEFORE db.runTransaction, called exactly once per delivery); the original version of
+        this check hardcoded `confirmNotificationCalls.length === 2` as an unconditional SETUP
+        assertion (the topology of the REJECTED fix (b)), so it failed on its own precondition
+        against the correctly-landed fix (a) even though the real security property held --
+        a false negative, not a real defect. This version asserts the PROPERTY instead of the
+        topology: (1) confirmNotification() is called EXACTLY ONCE per delivery, even under a
+        simulated transaction retry -- now a load-bearing assertion that structurally forbids
+        moving confirm back inside the retried section, which would reintroduce F6; (2) THE
+        CRUX, unchanged -- a genuine payment must never be left both unsettled and acknowledged
+        200; (3) despite the retry actually occurring (the confirm-free write transaction still
+        replays under simulated contention), the order must still converge correctly -- settles
+        'paid', HTTP 200, both emails fire exactly once. RED/GREEN evidence captured live
+        (2026-09-02): GREEN (exit 0) against the current, correctly-landed implementation;
+        RED (exit 1, 6 failures -- "confirmNotification() must be called EXACTLY ONCE... got 2
+        call(s)" and "order status 'pending' with HTTP 200") against a DELIBERATELY REVERTED
+        implementation (confirm moved back inside db.runTransaction, matching the pre-F6
+        topology) -- proving this check genuinely catches a reintroduction of F6, not merely
+        satisfied by construction. See the golden README's "F6" for the full before/after
+        evidence.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-payment-confirm-gate/check-transaction-retry-does-not-lose-settlement.mjs
+
+    - id: A13
+      description: >-
+        F7 -- BEHAVIOURAL, via the real route-runner harness (real initiate route; only
+        Firestore/payments infrastructure faked). Captures the REAL per-attempt reference the
+        initiate route mints (via `initiateCalls`) for a vendorSubmissionId of the REAL Firestore
+        auto-id length (exactly 20 characters, matching production -- a shorter id would
+        understate the real-world length and hide this defect). Asserts the captured reference's
+        length stays within Ozow's own documented 50-char TransactionReference cap (per
+        lib/payments/ozow.ts's existing deriveOzowBankReference doc comment), WITH a required
+        5-character margin (at most 45 characters) so a future reference-format addition cannot
+        silently re-breach the cap the moment it lands. Scoped to TransactionReference only --
+        Ozow's BankReference field is already over its own cap at the pre-F3 length, a
+        pre-existing gap this check does not assert (see the feature entry's "OUT OF SCOPE").
+        RED-verified live (2026-09-02): fails -- the real captured reference is 62 characters,
+        12 over the cap and outside the required margin.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-payment-confirm-gate/check-attempt-reference-fits-ozow-field-limit.mjs
+
+    - id: A14
+      description: >-
+        F8 -- BEHAVIOURAL, via the real route-runner harness, with console.error intercepted
+        directly (the same technique A8/A9 use). Delivers a notification that FAILS signature
+        verification (the fixture's `__invalidSignature` flag) whose `reference` field embeds a
+        real-shaped email address, entirely attacker-constructed. NO captured console.error call
+        may contain that email address verbatim, AND a (redacted) failure log line must still
+        exist -- redaction must not become silence. RED-verified live (2026-09-02): fails -- the
+        embedded email address appears verbatim in the captured "Notification rejected before
+        any order was touched" log line.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-payment-confirm-gate/check-verification-failure-reference-redaction.mjs

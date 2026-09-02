@@ -1,9 +1,15 @@
+import { randomBytes } from 'node:crypto';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
-import { VENDOR_STAND_ORDERS_COLLECTION, buildVendorStandOrderRef } from '@/lib/vendor-stand-orders';
+import {
+  VENDOR_STAND_ORDERS_COLLECTION,
+  buildVendorStandOrderRef,
+  buildVendorStandOrderReference,
+} from '@/lib/vendor-stand-orders';
 import { deriveVendorStandEarlyBirdCutoffIso, resolveVendorStandPrice } from '@/lib/vendor-stand-pricing';
 import { verifyVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token';
 import { resolveProvider } from '@/lib/payments';
@@ -165,6 +171,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const standOrderRefValue = buildVendorStandOrderRef(vendorSubmissionId);
+  // F3 (vendor-stand-payment-confirm-gate) -- a fresh, unguessable id minted per payment
+  // attempt (never reused across re-initiates), stored on the order doc AND threaded through
+  // the reference handed to the gateway (buildVendorStandOrderReference below), so the
+  // settlement handler can tell this attempt apart from an earlier, abandoned one for the same
+  // vendor submission. See the golden README's "F3" for the full decision record.
+  //
+  // F7 (vendor-stand-payment-confirm-gate) -- 16 hex characters (64 bits) of cryptographically
+  // random entropy, NOT a truncated crypto.randomUUID() (a v4 UUID string's fixed version/
+  // variant nibbles mean a naive substring slices across them, silently reducing real entropy
+  // below the character count). The full reference (VSO- + 20-char Firestore auto id + :: +
+  // this 16-char correlator = 42 chars) must stay within Ozow's documented 50-char
+  // TransactionReference cap with margin (A13 requires <=45 total) -- see the golden README's
+  // "F7" for why 64 bits is more than adequate here: this correlator only needs to distinguish
+  // a handful of attempts on a SINGLE vendor submission, and it is not a secret or an
+  // authentication token (F1's gateway confirm and provider signature verification are what
+  // authenticate a notification), so collision probability at this project's realistic
+  // concurrent-attempt volumes is negligible.
+  const ATTEMPT_ID_ENTROPY_BYTES = 8;
+  const attemptId = randomBytes(ATTEMPT_ID_ENTROPY_BYTES).toString('hex');
+  const attemptReference = buildVendorStandOrderReference(vendorSubmissionId, attemptId);
 
   // ONE Firestore transaction: re-read (a document that reached 'paid' between the earlier
   // read above and here must still be refused), then .set() -- create-or-overwrite -- never
@@ -188,6 +214,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       gateway: activeGateway,
       gatewayPaymentId: null,
       standOrderRef: standOrderRefValue,
+      attemptId,
       createdAt: Timestamp.now(),
       paidAt: null,
       failedAt: null,
@@ -201,7 +228,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const siteUrl = resolveSiteUrl();
   const initiation = await paymentProvider.initiate({
-    reference: standOrderRefValue,
+    reference: attemptReference,
     amountFormatted: amount.toFixed(2),
     itemName: `SAOC National Show — Vendor Stand (${submissionData.businessName ?? ''})`,
     returnUrl: `${siteUrl}/national-show/vendors/payment?token=${encodeURIComponent(body.token)}&paid=1`,
