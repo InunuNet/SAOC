@@ -1,6 +1,8 @@
 # Vendor flow notifications — admin and confirmation emails
 
-**Code:** Five new lib modules and four email templates, three route/handler edits.
+**Code:** Five new lib modules and four email templates, three route/handler edits. Plus a fifth
+notification (the vendor's own payment receipt), added by mission `vendor-payment-confirmation` —
+see below.
 
 **Contract:** [`contracts/contract-vendor-flow-notifications.yaml`](../contracts/contract-vendor-flow-notifications.yaml), feature F1 — 10 assertions (A1-A10). Golden spec: [`contracts/golden/vendor-flow-notifications/README.md`](../contracts/golden/vendor-flow-notifications/README.md).
 
@@ -12,11 +14,45 @@
 
 G1 from `.agent/memory/project/specs/vendor-flow-gaps/README.md` — four new notification emails at three mission-critical moments, plus the previously-missing vendor-facing "we received your application" confirmation.
 
-**Four emails, all new:**
+**Four emails, all new (this mission):**
 1. **Vendor application received** — vendor-facing. Subject: *We received your vendor application — SAOC*. Sent to `contactEmail` immediately after application submission. Acknowledges receipt; no invented brand colours or permit-status speculation.
 2. **New vendor application submitted** — admin-facing. Subject: *New vendor application submitted — SAOC*. Sent to all addresses in `ADMIN_EMAIL_ALLOWLIST` immediately after a vendor submits their short application.
 3. **New vendor registration submitted** — admin-facing. Subject: *New vendor registration submitted — SAOC*. Sent to all addresses in `ADMIN_EMAIL_ALLOWLIST` immediately after a vendor completes full registration (gated by token, M1).
 4. **Vendor stand payment received** — admin-facing. Subject: *Vendor stand payment received — SAOC*. Sent to all addresses in `ADMIN_EMAIL_ALLOWLIST` after stand payment clears (PayFast ITN verified, amount guarded).
+
+**A fifth email, added by mission `vendor-payment-confirmation` (F1):**
+
+5. **Vendor payment confirmation (receipt)** — vendor-facing. Subject: *Your SAOC National Show
+   stand payment is confirmed*. Sent to the vendor's own `contactEmail` from the SAME
+   `if (paidNotice)` block as #4 above (`lib/vendor-stand-payment-notification.ts`), so it
+   inherits the identical idempotency guarantee. Before this mission, a settled stand payment
+   produced exactly one email — the admin notice — and nothing to the vendor; this closes that
+   gap. Code: `lib/vendor-payment-confirmation.ts` + `emails/VendorPaymentConfirmation.tsx`.
+   Contract: [`contracts/contract-vendor-payment-confirmation.yaml`](../contracts/contract-vendor-payment-confirmation.yaml)
+   (A1-A8). Full settlement-path context (including the eight related hardening fixes to the same
+   handler, mission `vendor-stand-payment-confirm-gate`): [`docs/vendor-stand-payment-settlement.md`](vendor-stand-payment-settlement.md).
+
+   **Recipient sourcing — the one non-obvious decision.** `contactEmail` is captured from the
+   *vendor submission* document (`transaction.get(submissionRef)`, already read in the existing
+   transaction for `businessName`/`contactPersonName`), **not** from the `vendorStandOrders`
+   document's own `contactEmail` field. The order's `contactEmail` is a snapshot copied once at
+   `/api/vendors/stand-payment/initiate` time; if a vendor changes their contact details between
+   initiating payment and the gateway actually settling it (PayFast/Ozow settlement can take
+   minutes to days), the order's copy goes stale while the submission's stays current. The receipt
+   goes to the vendor's *current* address. `boothSize` and `amount`, by contrast, have no
+   submission-side counterpart (they're order-time-only fields chosen at initiate) and are read
+   from `order` as before — no staleness question for those two.
+
+   **`standOrderRef` is labelled "Booking reference" on the receipt** — a deliberate choice (no
+   invoice number is minted anywhere in the vendor stand-payment path today, and none is planned).
+   The raw value shape is `VSO-{submissionId}::{attemptId}`.
+
+   **Recipient independence.** `lib/vendor-payment-confirmation.ts` does not import
+   `lib/vendor-admin-notify-recipients.ts` at all — there is no code path by which an admin
+   address could reach this module's `to:`. Vendor mail goes to the vendor; admin notice goes to
+   `ADMIN_EMAIL_ALLOWLIST`; the two never cross. Proven behaviourally (not just structurally) by
+   A3, which independently re-resolves the real admin allowlist and asserts the vendor's
+   `contactEmail` never appears in it.
 
 ---
 
@@ -64,7 +100,7 @@ A failed notification email **never** fails the underlying Firestore write, neve
 
 2. **`lib/vendor-registration-handler.ts` + `app/api/vendors/register/route.ts`** — the handler gains a new dep `sendAdminNotice(input: { businessName, contactPersonName, vendorSubmissionId }): Promise<void>`. Immediately AFTER the existing vendor-facing confirmation send, a second `deliverConfirmationEmailAfterCommit` fires, calling the injected `sendAdminNotice` closure. The route wires this as a closure calling the real `sendVendorSubmissionAdminNoticeEmail()`, keeping the handler network-agnostic.
 
-3. **`lib/vendor-stand-payment-notification.ts`** — strictly OUTSIDE the `db.runTransaction(...)` callback (never inside it), after the transaction resolves, fires the admin notice via `deliverConfirmationEmailAfterCommit`.
+3. **`lib/vendor-stand-payment-notification.ts`** — strictly OUTSIDE any `db.runTransaction(...)` callback (never inside one), after the settlement transaction resolves, fires the admin notice via `deliverConfirmationEmailAfterCommit`. As of mission `vendor-payment-confirmation`, the vendor's own payment-confirmation receipt (email #5 above) fires from the SAME `if (paidNotice)` block, concurrently with the admin notice (both individually timeout-bounded and awaited via `Promise.allSettled` — see [`docs/vendor-stand-payment-settlement.md`](vendor-stand-payment-settlement.md) for the full mechanics, added by the separate `vendor-stand-payment-confirm-gate` mission).
 
 ---
 
