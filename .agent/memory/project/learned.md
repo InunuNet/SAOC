@@ -2977,3 +2977,20 @@ when inserting content into a prose-style backlog section (no blank line between
 change immediately after saving — an "insert before line N" edit that instead lands ON line N
 silently eats that line's content, and nothing but a manual re-read catches it. Prefer inserting
 after a clear boundary (a blank line or `---`) over mid-block insertion.
+
+## Automated checks verify code against its own assumptions, not against reality (2026-09-02, overnight session review)
+
+A contract gate, a golden file, and a Codex GPT-5.5 review all test whether code does what the
+code (or the test) assumes it should do. None of them test whether that assumption itself is
+true. Concrete example: `vendor-flow-notifications` shipped with admin notification emails
+linking to a Firebase `*.hosted.app` URL instead of `beta.saoc.co.za`. Every assertion in the
+suite checked that email links were built correctly FROM `SITE_URL` — none checked that
+`SITE_URL` itself held the right value, because no check was written to distrust that input; it
+was upstream of what any of them examined. A 10/10 gate and five Codex passes all passed clean.
+The defect was found in ninety seconds by reading one delivered email with the `gws` CLI —
+observing real output instead of re-deriving expected output from the same assumptions the code
+was built on. **Apply:** for anything that touches an environment-derived value the tests can't
+independently source (URLs, hostnames, config read from env vars), don't stop at gate-green —
+observe one real artifact (a deployed page, a delivered email, a live API response) before
+calling it done. See `backlog.md`'s "Next up" P0 working-process-review item for the fuller
+evidence set from the same session.

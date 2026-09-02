@@ -5,24 +5,37 @@ Full backlog remains the source of truth for everything not listed here — see 
 
 ---
 
-## 1. E2E vendor flow run — blocked on Brad approving 5 test applications
+## 1. Working-process review (P0, INTERACTIVE — Brad at the keyboard, not agent work)
 
-Why first: the live vendor flow (application → admin approval → gated registration → stand
+Why first, ahead of everything below: added 2026-09-02 by team lead on Brad's instruction. The
+project is not landing production work, and is producing "half-baked" output instead. Full
+problem statement and evidence (10/10 gate + 5 Codex passes + full chain never deployed or
+browser-opened; the `SITE_URL` defect invisible to every automated check by construction; browser
+agents skipped until Brad intervened despite being explicitly requested; four Codex rounds each
+finding one more instance of the same defect class before a sweep was ordered; two agents
+corrupting each other's work via a stale liveness signal; 103 backlog headers silently deleted
+across three maintainer commits while `backlog-audit` stayed green; an agent reporting work it
+hadn't done) is recorded in full in `backlog.md`'s "Next up" section, top entry. This is a working
+session with Brad — do not dispatch it to @architect/@dev/@qa.
+
+## 2. E2E vendor flow run — blocked on Brad approving 5 test applications
+
+Why second: the live vendor flow (application → admin approval → gated registration → stand
 payment) has not been proven end to end against the deployed site since the serialization fix,
 the App Hosting secret-access fix, and now `vendor-flow-notifications` all landed. The blocker is
 concrete, not vague — Brad needs to approve (or otherwise dispose of) the five test applications
 sitting in `vendorApplications` at
-`https://beta.saoc.co.za/admin/vendors/applications` (see item 5 below for the same IDs; approving
-some of them IS the unblock, so this and item 5 are two sides of one decision). Once at least one
+`https://beta.saoc.co.za/admin/vendors/applications` (see item 6 below for the same IDs; approving
+some of them IS the unblock, so this and item 6 are two sides of one decision). Once at least one
 is approved, run the flow through to a settled stand payment against the live deployment — verify
 via a real run with screenshots or BrowserAgent evidence, not an inference from a green build.
 Confirm the live revision actually changed first
 (`gcloud run services describe saoc-prod --region=europe-west4 --format='value(status.latestReadyRevisionName)'`,
 see `learned.md` "App Hosting builds can fail silently for hours").
 
-## 2. Structural guard against handler-deps drift (P1, new 2026-09-02)
+## 3. Structural guard against handler-deps drift (P1, new 2026-09-02)
 
-Why second: this is the direct, cheap follow-up to the defect class that cost four Codex
+Why third: this is the direct, cheap follow-up to the defect class that cost four Codex
 GPT-5.5 review rounds during `vendor-flow-notifications`. @architect's recommendation, ~1-2
 hours: (a) extend a contracts-wide typecheck config to cover every fixture constructing a handler
 deps object; (b) a shared `makeVendorRegistrationDeps()` helper whose default `onEmailError`
@@ -30,9 +43,9 @@ captures and asserts zero calls unless a test explicitly expects them. Full deta
 `backlog.md` "Vendor registration". Do this before the next feature touches any vendor handler's
 deps shape, or the same defect class recurs on the next dep addition.
 
-## 3. A60 rewrite (P1, `contracts/checks/vendor-gated-registration-flow-m3/check-initiate-is-transactionally-idempotent.mjs`)
+## 4. A60 rewrite (P1, `contracts/checks/vendor-gated-registration-flow-m3/check-initiate-is-transactionally-idempotent.mjs`)
 
-Why third: confirmed vacuous by mutation testing and independently by Codex GPT-5.5 — it stays
+Why fourth: confirmed vacuous by mutation testing and independently by Codex GPT-5.5 — it stays
 green even with `db.runTransaction()` deleted outright, because the fixture-Firestore Map keys
 every write to one document regardless of locking. See `backlog.md` "Contract & test
 infrastructure" for the two rewrite paths already scoped (a genuine lost-update-race fixture, or
@@ -41,31 +54,31 @@ an assertion isolating the in-transaction re-check).
 Done = the check fails on the same mutation it currently survives, and passes against the real
 code unmodified.
 
-## 4. G2/G3/G4 — vendor return access, QR/booking ref, vendor door check-in (still unbuilt)
+## 5. G2/G3/G4 — vendor return access, QR/booking ref, vendor door check-in (still unbuilt)
 
-Why fourth: these are the remaining gaps from the `vendor-flow-gaps` spec after G1
+Why fifth: these are the remaining gaps from the `vendor-flow-gaps` spec after G1
 (`vendor-flow-notifications`, DONE 2026-09-02) shipped. No contract or mission exists yet for any
 of the three. Needs an @architect pass reading
 `.agent/memory/project/specs/vendor-flow-gaps/README.md` before dispatch — do not assume scope
 from the gap names alone.
 
-## 5. Vendor test-data cleanup decision (P1, still open, new 2026-09-01)
+## 6. Vendor test-data cleanup decision (P1, still open, new 2026-09-01)
 
 Five test vendor applications sit in the live `vendorApplications` collection
 (`JZfHPoxnTSMytCzQgxib`, `UhUGhAjrdRrrl1LSrVDw`, `hi2Figor34cBTwqq76Wm`, `rWSrLFyINIxn3uVSo2gg`,
 `injKWpwqvHjOgsVRO6Ye`) — two share the slug `demoorchidnursery`, two share
 `zzqslugcollisiontestnursery` (deliberately created to exercise the P0 shared-slug defect). Needs
 a delete-or-mark-as-fixture decision from Brad before real vendors use the system — this is data
-cleanup, not a code change, so flag rather than delete unilaterally. Same items as item 1's
-blocker: approving them (or some of them) is how item 1 unblocks.
+cleanup, not a code change, so flag rather than delete unilaterally. Same items as item 2's
+blocker: approving them (or some of them) is how item 2 unblocks.
 
-## 6. Restore the deferred legacy-order `tier` check for stand pricing (P2, already in backlog)
+## 7. Restore the deferred legacy-order `tier` check for stand pricing (P2, already in backlog)
 
 Real stand payments are now live-capable; the deferred RED check proving a pre-existing
 `tier`-less `vendorStandOrders` document still settles and renders identically should land before
 the first real vendor payment, not after.
 
-## 7. Register Society — society profile intake + registration flow (P2, blocked)
+## 8. Register Society — society profile intake + registration flow (P2, blocked)
 
 Blocked on Lee-Ann for the affiliation/approval half — do not scope that half from the
 website-information form alone (it only covers content, not affiliation). The profile field set
