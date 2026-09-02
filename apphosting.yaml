@@ -73,15 +73,25 @@ env:
     secret: SANITY_API_TOKEN
     availability:
       - RUNTIME
-  # The checkout route builds notify_url/return_url/cancel_url on this at REQUEST time,
-  # falling back to https://saoc.co.za — which still resolves to the OLD Joomla site, so
-  # without this entry every deployed payment's ITN would be delivered there and the
-  # ticket would sit permanently 'reserved'. A public origin, not a secret. RUNTIME only:
-  # a BUILD entry would bake the origin into the bundle and defeat the per-environment
-  # lookup. If the backend is renamed or a custom domain is cut over, this changes with
-  # it — and it must never be saoc.co.za until that domain points at this app.
+  # The checkout route (and every transactional email — vendor notifications, ticket
+  # confirmations) builds links on this at REQUEST time, falling back to https://saoc.co.za —
+  # which still resolves to the OLD Joomla site, so without this entry every deployed payment's
+  # ITN and every emailed link would go there and the ticket would sit permanently 'reserved'.
+  # A public origin, not a secret. RUNTIME only: a BUILD entry would bake the origin into the
+  # bundle and defeat the per-environment lookup.
+  #
+  # beta.saoc.co.za is the current live origin for this backend — verified 2026-09-02 by a
+  # BrowserAgent running the full vendor flow against https://beta.saoc.co.za on deployed
+  # revision saoc-prod-build-2026-09-02-001. It replaced the raw *.hosted.app origin because
+  # Firebase *.hosted.app / *.run.app URLs must never appear in anything user-facing (they
+  # leaked into vendor-application review-button links and ticket confirmation emails before
+  # this change). Do NOT set this to the bare saoc.co.za apex — the apex's nameservers are
+  # still on the old cPanel host and do not point at this app; cutting the apex over to this
+  # backend is a separate DNS migration (see project memory
+  # project_domain_migration_resend_sequencing). Once that migration lands, change this value
+  # to https://saoc.co.za and update this comment accordingly.
   - variable: SITE_URL
-    value: "https://saoc-prod--saoc-webapp.europe-west4.hosted.app"
+    value: "https://beta.saoc.co.za"
     availability:
       - RUNTIME
   # PayFast SANDBOX credentials. Without these the deployed checkout route returns
