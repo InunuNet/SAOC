@@ -10,6 +10,40 @@ Build and maintain the South African Orchid Council's digital presence and tooli
 2. Keep the Athanor workspace healthy and in sync
 3. Deliver working software for the South African Orchid Council
 
+## Durable Project Facts (migrated from Claude's global per-project memory, 2026-09-02)
+
+These facts previously lived only in `~/.claude/projects/-Users-vetus-ai-SAOC/memory/`, which is
+out of scope per `.claude/rules/scope.md` and — more importantly — invisible to every chain
+agent (@architect/@dev/@qa/@docs read `.agent/memory/project/` and `brain.py`, never that
+directory). Recorded here so they actually reach the agents that need them.
+
+- **National Show brand architecture — RESOLVED.** SAOC's own chrome (header/footer/nav) is
+  site-wide; National Show-specific branding renders below the header, scoped to
+  `/national-show` routes only. Do not let Show branding bleed into global chrome.
+- **National Show 2027 branding assets** live in `branding/national-show-2027/` in this repo.
+  Covered by the existing "leave `branding/` alone, Brad is reorganising it by hand" standing
+  rule in `backlog.md`.
+- **Deploy authorization is standing.** Push to Firebase App Hosting any time without asking
+  first — this is the dev/staging site, not production. Does not extend to production deploys
+  once the site goes live, or to any destructive action (still covered by "Ask Before
+  Destructive Actions" in `.claude/rules/behavior.md`).
+- **The Sanity dataset is not live production data** — the site is pre-production, so editing
+  content in Sanity directly is safe. Still follow the project's careful-write method (never
+  leave test-sentinel values behind — see the "Contract checks mutate live content" entries in
+  `learned.md`).
+- **Logo status:** Scott granted permission to redo the National Show logo; the new Show logo is
+  done. Brad is separately designing the SAOC organisation logo himself — leave that to him, same
+  as the other `branding/`/`design spec/` no-touch rules.
+- **SAOC DNS zone is agent-editable** via cPanel UAPI on the `wh3` box; `ns1.inunu.co.za` IS that
+  same `wh3` box (not a separate nameserver host).
+- **Lee-Ann's documents take precedence over older in-project assumptions on the same fact** —
+  her specs/answers outrank prior project data that was often an unconfirmed placeholder (the
+  invented CTICC venue and the 18–21 September dates are the two worked examples of this).
+- **Ticketing spec security is a standing condition, not a negotiable tradeoff.** Brad delegated
+  ticketing implementation authority, but security requirements are the condition that authority
+  was granted under — never present a security tradeoff to Brad as if it were his open choice to
+  relax.
+
 ## Current Mission Status (updated 2026-08-12)
 
 **Overnight four-stream session, all shipped in `be80580` — four contracts green and documented:**

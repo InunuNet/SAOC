@@ -664,3 +664,19 @@ Never delete any Firestore or Sanity document. Deletion is Brad's decision alone
 (`next dev`, ~24h old at close) occupies the project directory — Next.js 16 refuses a second
 instance regardless of port. Not killed here, deliberately: it is Brad's own process. Once it's
 stopped (or from a different checkout), re-run the gate to pick this check back up.
+
+## Payment gateway decision — Brad's call, overdue against its own deadline (migrated 2026-09-02)
+
+A teardown artifact comparing 10 payment gateway providers was built; Peach leads the
+recommendation, but the final decision is explicitly Brad's, not an engineering call. Four facts
+were flagged as answerable only by the vendors themselves, not by document research — including
+PayFast's 540-day settlement hold clause. The decision deadline recorded at the time was "end of
+August 2026" (~2 weeks out from when it was set) — **today is 2026-09-02, so that deadline has
+already passed with no recorded resolution in this project's memory.** Check with Brad on current
+status before assuming Ozow (the gateway actually wired in code today, per `ozow-sandbox-toggle`)
+is the final answer rather than an interim default.
+
+## Credentials check order (migrated 2026-09-02)
+
+Before asking Brad for any token/credential, check `.env.local` first — an Editor-scope Sanity
+token is already there. Several past sessions asked before checking.

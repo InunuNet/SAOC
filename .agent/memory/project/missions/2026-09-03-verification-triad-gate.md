@@ -63,3 +63,32 @@ Retry 1 lanes (running):
 Out of scope, both reviewed and correctly closed: screenshot-path permissiveness (disclosed in
 README Known Limitations); `gate_codex_qa_failure` naming (one read site, clean); TimeoutExpired-
 only catch (pre-existing codex_qa pattern, @docs note only).
+
+## M2 — DEFERRED, and it is the mission's headline requirement
+
+Codex round 3 (commit 6615513a) finding, orchestrator's decision to defer at high context:
+
+**`execution/skills/quick_gate.sh:57` and `contract.py`'s `gate_cmd` (contract.py:926-929) never
+invoke `execution/verify_triad_coverage.py`.** The two new assertion kinds are enforced when a
+contract DECLARES them, but nothing forces any contract to declare them. A future UI contract can
+still reach a green gate with no browser and no inbox verification, exactly as before — unless it
+volunteers the linter as its own assertion.
+
+F1 built the mechanism. F1 did NOT deliver the mandate in the mission goal. Do not close this
+mission as done on F1 alone.
+
+Why deferred rather than fixed: wiring the linter into every gate run applies retroactively to
+every contract in the repo, most of which declare no triad kinds. That could turn the whole suite
+red and needs @architect scoping plus room to verify. Not a change to bolt on at 165k context.
+
+**Also for M2 — dormant gap @dev found itself and correctly did not fix:**
+`verify_triad_coverage.py`'s `iter_assertions_with_shape()` reads `contract.get("phases_raw")`,
+but an author-written contract's real YAML key is `phases`. `phases_raw` only exists
+post-normalisation inside contract.py, which this standalone linter never sees. So a contract in
+the `phases:` dict shape is invisible to the linter entirely. False-negative direction (fails to
+"no opinion", not to false certification), so lower severity than the above, but it means the
+linter's coverage is narrower than it appears.
+
+## Remaining chain steps for F1
+- @docs: README + docs/verification-triad-gate.md. NOT YET RUN.
+- @maintainer close-out: learned.md lessons (see scratch file), brain wrap-up.

@@ -38,6 +38,21 @@ Do not scope work from an entry that contradicts it.
 
 ## Next up (queued, not yet a mission — dispatch as soon as current mission closes)
 
+- [ ] **[P0] Wire the three-layer verification triad into the contract gate as an enforced
+  stage, not a prose rule** (added 2026-09-02, Brad, via team lead). `.claude/rules/workflow.md`
+  now mandates Codex GPT-5.5 review + BrowserAgent against the deployed site + `gws` read-only
+  against the real inbox for every UI/workflow mission (see "Three-layer verification triad"
+  section) — but today that's enforced only by an agent having read the rules file. An agent
+  that skips reading it, or a time-pressured session, can still report DONE without any of the
+  three layers running, exactly as happened with the `SITE_URL`/`hosted.app` incident this rule
+  was written to prevent. Upstream precedent to extend: InunuNet/Athanor#1357 shipped
+  `execution/codex_qa.sh` + a `type: codex_qa` contract assertion kind at the harness level —
+  this project pulled the script but never wired the assertion-kind side in (see
+  `workflow.md`'s Layer 1 section, last bullet). Model the BrowserAgent-on-deployed and
+  gws-read-only layers as sibling assertion kinds (e.g. `type: browser_deployed_check`,
+  `type: gws_inbox_check`) so a UI/workflow contract cannot reach a green gate without all
+  three actually having run, not merely been mentioned in a rules file.
+
 - [ ] **P0 — Working-process review (INTERACTIVE — Brad at the keyboard, not agent work)**
   (added 2026-09-02, team lead, on Brad's instruction). This is the next thing this project
   does, ahead of all feature work. It is a working session with Brad, not something to dispatch
@@ -127,6 +142,36 @@ Do not scope work from an entry that contradicts it.
   (that one is deliberately preserved as historical record under `contract-venue-prose-residue.yaml`
   A10 — dev-only, never rendered). Route to whoever owns `venue-prose-residue` follow-up work;
   not urgent.
+
+- [ ] **[P1] @docs Haiku tier defect / sync-regeneration risk.** Standing decision (2026-09-02,
+  recorded in `learned.md`'s resolved-contradiction entry near the top of the file): no Haiku for
+  any role on this project, @docs included — Sonnet 5 is the floor.
+  **Current state, precisely:** `.claude/agents/docs.md:3` was hand-corrected from `model: haiku`
+  to `model: sonnet` on 2026-09-02. But the template source `.agent/agents/docs.md` still
+  declares `model_tier: local` with no `model:` line at all, and `.gemini`/`.grok` mirror that
+  pattern with their own tier names (`flash`, etc). **This means the hand-edit is not the real
+  fix and can silently regress**: if `make sync` regenerates `.claude/agents/docs.md` from that
+  `local` tier the same way it apparently did before, `model: haiku` comes straight back with no
+  failure signal — and because the fix "already landed" in every session's notes (including this
+  one), nobody would think to re-check it. That is the worst shape a defect can have.
+  **The actual work:** locate the tier→model mapping `make sync` applies for the Claude provider
+  (not found in the search pass so far; likely under `execution/` or in the sync script itself)
+  and correct the `local` tier there, so the rendered file cannot regress. A hand-edit of
+  `.claude/agents/docs.md` alone is NOT the fix — it's what's in place today as an interim
+  patch only.
+  **Verification step:** after any `make sync`, re-check `.claude/agents/docs.md:3` still reads
+  `sonnet`. Until the mapping itself is fixed, treat that line as unstable — do not assume it
+  stays fixed just because it was corrected once.
+  `dev-fast.md` and `qa-fast.md` also carry `model: haiku` in frontmatter but are deliberately
+  excluded from this fix: both are documented OpenRouter free-tier fallbacks scoped to
+  non-critical ghost-task work, a different mechanism entirely — do not "fix" them alongside
+  this item.
+  **Practical impact (why P1, not P3):** if this regresses, @docs would silently run on the
+  same model that, on this project, reported two documentation items as "already correctly
+  documented" when neither existed anywhere except the line it had just written (`learned.md`,
+  "Do not report a task as already satisfied without running the check that proves it"). Until
+  the mapping is fixed, spot-check @docs output against the actual source
+  before trusting it, same as before this item existed.
 
 ---
 
@@ -746,6 +791,27 @@ flat-over-nested-submenu pattern.
   `node --import tsx/esm` breaks on the `@/` path alias, while the gate itself actually uses
   `npx tsx`. Same import-path trap already documented in `docs/firestore-undefined-write-safety.md`
   — fix the comment to match what the gate really runs.
+
+- [ ] **[P1] Notification delivery is at-most-once — a crash between commit and send loses the
+  email permanently.** In `lib/vendor-stand-payment-notification.ts`, the Firestore transaction
+  commits `status: 'paid'` and only THEN sends the notification emails, post-commit. If the
+  process crashes, times out, or is killed in the gap between those two steps, neither email is
+  ever sent. A replayed gateway ITN cannot recover it either: the replay hits the
+  `order?.status !== 'pending'` idempotency guard and returns early without rebuilding
+  `paidNotice`, so nothing gets retried. There is no outbox, no sent-flag, and no reconciliation
+  sweep for this path. Result: a vendor pays, the order is correctly marked paid, and neither the
+  vendor nor the admin is ever told. Found 2026-09-02 by the mandatory Codex GPT-5.5 layer, same
+  pass that found the F3 money-loss bug — high confidence.
+  **Why not fixed now:** this is the pre-existing architectural pattern across the whole repo,
+  including the ticket settlement path — not a regression introduced by the vendor receipt work.
+  Fixing it properly means a durable outbox or sent-flags plus a reconciliation sweep, which is
+  its own mission. Deliberately deferred, not overlooked.
+  **Related existing work to build on:** `app/api/admin/reconcile-orders/` already alerts on
+  orders stranded in `reserved` past expiry (see `docs/order-reconciliation.md`). The same
+  shape — a scheduled sweep detecting settled-but-unnotified orders — is the natural way to close
+  this without a full outbox; likely the cheapest first step.
+  **Scope note:** affects the ticket path too, not just vendor stand payment — any fix should be
+  considered repo-wide rather than vendor-only.
 
 ---
 

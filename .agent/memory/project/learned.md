@@ -1,3 +1,50 @@
+## Project knowledge migrated out of Claude's global per-project memory (2026-09-02)
+
+~40 SAOC facts had accumulated only in Claude's global per-project memory
+(`~/.claude/projects/-Users-vetus-ai-SAOC/memory/`), which is out of scope for every agent in
+this project per `.claude/rules/scope.md` — and, independent of the scope rule, no chain agent
+(@architect/@dev/@qa/@docs) ever reads that directory; they read `.agent/memory/project/*.md`
+and `brain.py`. Knowledge stored there was invisible to the agents doing the actual work. Merged
+the durable facts into `goals.md` ("Durable Project Facts" section), the behavioural rules into
+`.claude/rules/behavior.md` and `.claude/rules/alembic.md`, and the open questions into
+`needs-human.md`/`backlog.md`. Two corrections made during the merge: the show-dates purge is
+DONE and verified live (the stranded copy still called it outstanding), and the old
+"Codex-only mandatory QA" note is superseded by the three-layer verification triad now codified
+in `.claude/rules/workflow.md`.
+
+**Real inconsistency surfaced by this migration, now RESOLVED (2026-09-02, Brad via team lead):**
+the stranded memory recorded "No Haiku — use Sonnet 5" after Haiku 4.5 produced six factual
+errors in real prose (see the `admin-access` and `Haiku ... six factual errors` entries below,
+dated 2026-08-17/19). This file's own later "Process note — model policy" entry (below, dated
+~2026-08-25) contradicted it, stating the standing policy was "Sonnet for all Claude agent roles
+except @docs (Haiku)."
+
+**Decision: Haiku is not used for any role on this project, @docs included. Sonnet 5 is the
+floor for every agent role.** Reasoning: the measured failure ("No Haiku") was six factual
+errors *in real prose*. @docs produces exactly that — README and `docs/<feature>.md` content
+that engineers and Lee-Ann later rely on as fact. @docs is therefore the role MOST exposed to
+the measured failure mode, not an exception to it — the old "Haiku for docs" line assumed docs
+was a cheap, low-risk role, and the measurement says the opposite. Documentation errors are also
+the hardest class to catch later, because nothing fails — a wrong doc just quietly misleads the
+next reader. This project has already lived through both failure shapes: (1) the incident logged
+further down this file (search "Do not report a task as already satisfied") where @docs on
+Haiku reported two documentation items as "already correctly documented" and a one-second grep
+showed neither existed anywhere except the line Haiku itself had just written — the exact
+"flawless on lookups, confidently wrong on substantive claims" pattern, occurring in the docs
+role itself, logged and then left unaddressed; and (2) a cross-document contradiction that
+reached the gate in `docs/admin-nav-menu.md`, caught only by the mandatory Codex GPT-5.5 pass,
+not by any doc-correctness check of our own.
+
+Dispatches do not pass a `model` param — the agent definition's own frontmatter tier governs.
+`.claude/agents/docs.md` line 3 has been changed from `model: haiku` to `model: sonnet`
+(2026-09-02) — that was the only line changed, the agent definition's prose is untouched.
+`.claude/agents/dev-fast.md` and `.claude/agents/qa-fast.md` still carry `model: haiku` in
+their frontmatter — this is deliberate and was left alone: both are explicitly documented as
+cheap/fast ghost-task variants for non-critical work, not part of the main chain, and are a
+different mechanism (a Claude-side fallback tier for what's really an OpenRouter free-tier
+dispatch, per those files' own comments) — not the same defect class this decision addresses.
+Do not "fix" them to match this decision; they were excluded on purpose.
+
 ## Absence-only assertions let "correctly refused to invent X" become "shipped nothing where X was required" (2026-09-01, vendor-gated-registration-flow M2 F14-F21)
 
 Phase 5 went 11/11 green, then @qa found three real defects, all the same shape: the check
@@ -1891,8 +1938,12 @@ claims) with a new specific failure shape: self-reported completeness needs a gr
 trusted, regardless of which model wrote the report.
 
 **Process note — model policy and why the Codex pass is mandatory, not advisory.** Standing model
-policy: Sonnet for all Claude agent roles except @docs (Haiku) and QA cross-check (Codex GPT-5.5).
-Codex found two real, previously-unflagged production defects this mission (the missing in-
+policy (updated 2026-09-02 — see the resolved-contradiction entry near the top of this file):
+Sonnet for every Claude agent role, @docs included, and QA cross-check on Codex GPT-5.5. No
+role runs on Haiku. This paragraph originally read "except @docs (Haiku)" — that line was itself
+wrong given the incident two paragraphs above it in this same file, where @docs on Haiku reported
+undocumented items as "already correctly documented." Codex found two real, previously-unflagged
+production defects this mission (the missing in-
 transaction identity check on `orderId`/`m_payment_id`, and the floating-point amount guard) in
 code that had already passed two Opus architects, a full internal @qa pass, and a green contract
 gate. That is the standing justification for running the mandatory cross-model Codex pass after
@@ -2994,3 +3045,17 @@ independently source (URLs, hostnames, config read from env vars), don't stop at
 observe one real artifact (a deployed page, a delivered email, a live API response) before
 calling it done. See `backlog.md`'s "Next up" P0 working-process-review item for the fuller
 evidence set from the same session.
+
+## Verification triad is now a STANDING rule, not a one-off lesson (2026-09-02, Brad directive)
+
+Following the `SITE_URL`/`hosted.app` incident above, Brad codified the rule directly:
+every mission touching UI or a workflow (including a no-UI workflow like a notification email)
+must run all THREE independent verification layers before DONE — Codex GPT-5.5 adversarial
+review (`execution/codex_qa.sh`), a BrowserAgent against the DEPLOYED site (`beta.saoc.co.za`
+only, never `*.hosted.app`/`*.run.app`), and the `gws` CLI read-only against the real inbox for
+any email workflow. Codex alone is no longer sufficient — see `.claude/rules/workflow.md`'s
+"Three-layer verification triad" section for the full rationale and two corollaries (QA cannot
+run before deploy; name what a check class can't prove instead of papering over it). **Apply:**
+before calling any UI/workflow mission DONE, confirm all three layers ran, not just the gate and
+Codex. This is not yet enforced by the contract gate — see the P0 backlog item to wire it in as
+an enforced stage.

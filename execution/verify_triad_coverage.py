@@ -65,18 +65,43 @@ def load_contract(path: str):
     return data, None
 
 
-def iter_assertions(contract: dict):
-    """Yield each assertion dict, tolerating both the internal `assertions:`
-    list format and the @architect `assertions: {phase, checks: [...]}`
-    format -- this linter runs standalone against author-written contract
-    files, before contract.py's own normalize_contract() has touched them."""
+def iter_assertions_with_shape(contract: dict):
+    """Yield (assertion, from_checks_shape) pairs, tolerating both the
+    internal `assertions:` list format and the @architect
+    `assertions: {phase, checks: [...]}` format -- this linter runs
+    standalone against author-written contract files, before contract.py's
+    own normalize_contract() has touched them.
+
+    from_checks_shape is True only for items sourced from the @architect
+    `checks:` dict shape -- the ONE shape contract.py's normalize_contract()
+    synthesizes verify.kind from a top-level field (`check.get("type",
+    "shell")`, see contract.py's checks-dict branch). A plain `assertions:`
+    LIST item, or an item from the `phases: {...}` dict shape, gets
+    from_checks_shape=False: contract.py never reads a top-level `type:` for
+    either of those shapes (a plain-list item's verify is used exactly as
+    authored; a phases-dict item only ever gets `kind:` -- never `type:` --
+    synthesized into verify.kind, and only when its `verify` field is absent
+    or a bare string). Callers must not credit top-level `type` for a
+    from_checks_shape=False item.
+    """
     assertions_raw = contract.get("assertions", [])
     if isinstance(assertions_raw, dict) and "checks" in assertions_raw:
-        yield from assertions_raw.get("checks", [])
+        for assertion in assertions_raw.get("checks", []):
+            yield assertion, True
     elif isinstance(assertions_raw, list):
-        yield from assertions_raw
+        for assertion in assertions_raw:
+            yield assertion, False
     for phase_items in (contract.get("phases_raw") or {}).values():
-        yield from (phase_items or [])
+        for assertion in (phase_items or []):
+            yield assertion, False
+
+
+def iter_assertions(contract: dict):
+    """Yield each assertion dict, shape-agnostic -- for callers (like the
+    app/ path scan) that only need the assertion's text fields and don't
+    care which shape it came from."""
+    for assertion, _from_checks_shape in iter_assertions_with_shape(contract):
+        yield assertion
 
 
 def assertion_text_fields(assertion: dict):
@@ -98,32 +123,43 @@ def assertion_text_fields(assertion: dict):
     return fields
 
 
-def assertion_kind(assertion: dict) -> str:
+def assertion_kind(assertion: dict, from_checks_shape: bool = False) -> str:
     """The declared kind for one assertion, recognising exactly the key(s)
-    contract.py itself actually normalises/reads -- never a lookalike key
-    contract.py ignores.
+    contract.py itself actually normalises/reads for THIS assertion's shape
+    -- never a lookalike key contract.py ignores in that shape.
 
     contract.py's gate execution (check_cmd) reads ONLY
     assertion["verify"]["kind"] at run time -- see contract.py:159 (`kind =
-    verify.get("kind", "")`). The one place a top-level key feeds into that
-    is normalize_contract()'s @architect `checks:` dict-format branch, which
-    reads `check.get("type", "shell")` and synthesizes `verify: {kind: ...}`
-    from it before execution (contract.py:159's sibling in
-    normalize_contract). A top-level `kind:` field on a plain `assertions:`
-    list item is read by NEITHER path -- contract.py never looks at it, so a
-    contract could carry a top-level `kind: browser_deployed_check` with no
-    matching `verify.kind` and this linter would wrongly certify triad
-    coverage while the gate executes that assertion as a bare, uncovered
-    shell check. Recognise only `verify.kind` (the shape contract.py always
-    ends up reading) and top-level `type` (the one shape contract.py
-    normalises into it) -- never top-level `kind`.
+    verify.get("kind", "")`). So `verify.kind` is always credited, for every
+    shape.
+
+    A top-level key can also feed into verify.kind, but only via
+    normalize_contract(), and only for ONE shape: the @architect
+    `assertions: {checks: [...]}` dict format, which reads
+    `check.get("type", "shell")` and synthesizes `verify: {kind: ...}` from
+    it before execution. That is why `from_checks_shape` (set by the caller
+    from which branch of iter_assertions_with_shape() produced this
+    assertion) gates whether top-level `type` is credited here at all.
+
+    A plain `assertions:` LIST item is passed through untouched -- neither
+    top-level `type` nor top-level `kind` is read by contract.py for it, so
+    crediting either there would let a contract carry e.g. a top-level
+    `type: browser_deployed_check` with no matching `verify.kind`, pass this
+    linter as triad-covered, and have the gate execute that assertion as a
+    bare, uncovered shell check (the exact defect this fixed twice now: once
+    for top-level `kind` on any shape, now for top-level `type` outside the
+    checks shape). A `phases: {...}` dict-format item only ever gets
+    `kind:` -- never `type:` -- synthesized, and only when its `verify`
+    field is absent or a bare string; from_checks_shape is False for these
+    too, so top-level `type` is correctly never credited for them either.
     """
     verify = assertion.get("verify")
     if isinstance(verify, dict) and verify.get("kind"):
         return str(verify["kind"])
-    val = assertion.get("type")
-    if isinstance(val, str):
-        return val
+    if from_checks_shape:
+        val = assertion.get("type")
+        if isinstance(val, str):
+            return val
     return "shell"
 
 
@@ -139,9 +175,9 @@ def is_ui_workflow_contract(contract: dict) -> bool:
 
 def declared_kinds(contract: dict) -> set:
     kinds = set()
-    for assertion in iter_assertions(contract):
+    for assertion, from_checks_shape in iter_assertions_with_shape(contract):
         if isinstance(assertion, dict):
-            kinds.add(assertion_kind(assertion))
+            kinds.add(assertion_kind(assertion, from_checks_shape))
     return kinds
 
 
