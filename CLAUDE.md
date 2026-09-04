@@ -130,6 +130,10 @@ Vendor flow G1 (mission vendor-flow-notifications M1/F1) wires four new notifica
 
 Admin pages that read Firestore collections with timestamp-shaped fields (`submittedAt`, `reviewedAt`, etc.) must convert `Timestamp` class instances to native `Date` objects before passing them to `'use client'` components. The conversion module `lib/firestore-serialization.ts` provides `serializeVendorApplication()` and `serializeVendorSubmission()` for this — both convert by structure (duck-typed `.toDate()` method), not by a hardcoded field-name allowlist, ensuring new fields are handled correctly. See [`docs/admin-vendor-listing-serialization.md`](docs/admin-vendor-listing-serialization.md) for the defect analysis, the fix rationale, and why field allowlists fail.
 
+### Verification triad gate — `browser_deployed_check` / `gws_inbox_check` contract kinds
+
+`execution/contract.py` supports `browser_deployed_check` and `gws_inbox_check` as first-class contract assertion kinds, sibling to the pre-existing `codex_qa` kind, so a mission contract can declare that the mandatory three-layer verification triad (Codex adversarial review, BrowserAgent against the deployed site, `gws` read-only inbox check — see `.claude/rules/workflow.md`) actually ran, not merely that it was supposed to. `execution/verify_triad_coverage.py` is a coverage linter that flags a UI/workflow contract missing any triad kind — **it is not yet wired into any gate path** (`quick_gate.sh`, `contract.py`'s `gate_cmd`), so declaring the triad on a contract is still voluntary, not enforced. See [`docs/verification-triad-gate.md`](docs/verification-triad-gate.md) for the manifest shapes, the exit-code contract, the environment-override defaults, and what these checks cannot prove.
+
 ---
 
 ## Adding Data (No Code Changes Needed)
