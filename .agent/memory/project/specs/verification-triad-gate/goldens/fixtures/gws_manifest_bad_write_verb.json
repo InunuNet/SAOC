@@ -1,0 +1,11 @@
+{
+  "gws_subcommand": "mail send",
+  "message_id": "18fixturemsgid0001",
+  "subject": "SAOC Vendor Application Received",
+  "from": "no-reply@saoc.co.za",
+  "recipient": "brad@inunu.net",
+  "timestamp": "2026-09-03T13:19:29Z",
+  "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "outcome": "pass",
+  "notes": "fixture: MUST be rejected -- gws_subcommand is a write verb (send), not read-only"
+}

@@ -1,0 +1,10 @@
+{
+  "origin": "https://saoc-web-abc123-uc.a.run.app",
+  "path_tested": "/national-show/vendors/register?token=fixture-token",
+  "screenshot_path": "fixtures/screenshot_good.png",
+  "commit_sha": "COMMIT_SHA_AT_TEST_TIME",
+  "timestamp": "2026-09-03T13:19:20Z",
+  "http_status": 200,
+  "outcome": "pass",
+  "notes": "fixture: MUST be rejected -- Cloud Run origin, not the deployed public site. commit_sha is a placeholder substituted with the real `git rev-parse HEAD` by verify_browser_deployed_check_discriminator.py at test-execution time -- this fixture isolates the origin-denylist rejection only, so its commit_sha and timestamp must both be valid at test time (see fix note dated 2026-09-04)."
+}

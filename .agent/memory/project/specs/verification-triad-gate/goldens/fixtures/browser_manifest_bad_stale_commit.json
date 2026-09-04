@@ -1,0 +1,10 @@
+{
+  "origin": "https://beta.saoc.co.za",
+  "path_tested": "/national-show/vendors/register?token=fixture-token",
+  "screenshot_path": "fixtures/screenshot_good.png",
+  "commit_sha": "0000000000000000000000000000000000dead",
+  "timestamp": "2026-09-03T13:19:20Z",
+  "http_status": 200,
+  "outcome": "pass",
+  "notes": "fixture: MUST be rejected -- commit_sha does not match current HEAD, so this evidence predates the diff under gate"
+}

@@ -1,0 +1,10 @@
+{
+  "origin": "https://beta.saoc.co.za",
+  "path_tested": "/national-show/vendors/register?token=fixture-token",
+  "screenshot_path": "fixtures/screenshot_good.png",
+  "commit_sha": "COMMIT_SHA_AT_TEST_TIME",
+  "timestamp": "2026-08-01T00:00:00Z",
+  "http_status": 200,
+  "outcome": "pass",
+  "notes": "fixture: MUST be rejected -- timestamp older than max_age_seconds window. commit_sha is a placeholder substituted with the real `git rev-parse HEAD` by verify_browser_deployed_check_discriminator.py at test-execution time -- this fixture isolates the staleness rejection only, so its commit_sha must be valid at test time (never overridden itself: this is the one fixture whose timestamp is deliberately kept frozen/old, and whose freshness window is deliberately left un-widened, so staleness detection stays genuinely exercised; see fix note dated 2026-09-04)."
+}

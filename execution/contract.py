@@ -10,16 +10,17 @@ Usage:
 
 Exit-code contract for `gate` on a specific phase number (not "all"/"max"):
   0 = every phase-N assertion passed (allowing skips only via --allow-skips).
-  1 = reserved specifically for "a real codex_qa adversarial finding is among
-      the failing assertions for this phase" — a genuine cross-model QA
-      BLOCKED verdict, never anything else.
+  1 = reserved specifically for "a real adversarial finding from a
+      verification-triad kind (codex_qa, browser_deployed_check, or
+      gws_inbox_check) is among the failing assertions for this phase" — a
+      genuine cross-model/cross-layer QA BLOCKED verdict, never anything else.
   2 = every other failure shape: plain shell/file_exists/etc assertion
-      failures with no codex_qa assertion involved at all (the pre-existing
-      contract every non-codex_qa mission relies on), a pure codex_qa
+      failures with no triad-kind assertion involved at all (the pre-existing
+      contract every non-triad mission relies on), a pure triad-kind
       wrapper/usage error with zero real fail verdicts (auth/network/usage
       failure, not a finding), or unresolved skips.
   ("all"/"max" phase gating always exits 2 on any failure and 0 on full
-  success — the 1-vs-2 codex_qa distinction only applies to the specific-
+  success — the 1-vs-2 triad-kind distinction only applies to the specific-
   phase path above.)
 """
 import argparse
@@ -33,6 +34,13 @@ from pathlib import Path
 
 RESULTS_DIR = Path(".agent/memory/scratch/contract-results")
 MAX_TIMEOUT_SECONDS = 86400  # 24h ceiling -- generous for CI, still finite
+
+# Assertion kinds whose FAIL verdict is a genuine cross-model/cross-layer
+# adversarial finding -- not an ordinary shell/file_exists assertion failure --
+# and so must route to the BLOCKED gate verdict rather than a plain FAIL. See
+# mission verification-triad-gate (F1): codex_qa was the original member; F1
+# added the two sibling verification-triad kinds alongside it.
+TRIAD_ASSERTION_KINDS = ("codex_qa", "browser_deployed_check", "gws_inbox_check")
 
 
 def load_contract(path: str) -> dict:
@@ -154,6 +162,20 @@ def normalize_contract(contract: dict) -> dict:
                     "kind": "codex_qa",
                     "target": check.get("target", ""),
                     "script": check.get("script", "execution/codex_qa.sh"),
+                    "timeout_seconds": check.get("timeout_seconds", 200),
+                }
+            elif check_type == "browser_deployed_check":
+                verify = {
+                    "kind": "browser_deployed_check",
+                    "target": check.get("target", ""),
+                    "script": check.get("script", "execution/browser_deployed_check.sh"),
+                    "timeout_seconds": check.get("timeout_seconds", 200),
+                }
+            elif check_type == "gws_inbox_check":
+                verify = {
+                    "kind": "gws_inbox_check",
+                    "target": check.get("target", ""),
+                    "script": check.get("script", "execution/gws_inbox_check.sh"),
                     "timeout_seconds": check.get("timeout_seconds", 200),
                 }
             else:
@@ -390,6 +412,60 @@ def check_cmd(args):
             evidence = (f"codex_qa wrapper exceeded {timeout}s supervisory timeout "
                         "(check_cmd level, independent of the wrapper's own internal timeout)")
 
+    elif kind == "browser_deployed_check":
+        target = verify.get("target", "")
+        script = verify.get("script", "execution/browser_deployed_check.sh")
+        timeout = verify.get("timeout_seconds", 200)
+        try:
+            result = subprocess.run([script, target], capture_output=True,
+                                     text=True, timeout=timeout)
+            rc = result.returncode
+            if rc == 0:
+                verdict = "pass"
+                evidence = "browser_deployed_check PASS"
+            elif rc == 1:
+                verdict = "fail"
+                evidence = "BROWSER_DEPLOYED_CHECK_FAIL: " + result.stdout.strip()[:2000]
+            elif rc == 2:
+                verdict = "error"
+                evidence = ("BROWSER_DEPLOYED_CHECK_WRAPPER_ERROR: "
+                             + (result.stdout + result.stderr).strip()[:500])
+            else:
+                verdict = "error"
+                evidence = (f"browser_deployed_check wrapper exited {rc} (neither 0, 1, nor 2) "
+                            "-- treated as inconclusive, not a QA fail")
+        except subprocess.TimeoutExpired:
+            verdict = "error"
+            evidence = (f"browser_deployed_check wrapper exceeded {timeout}s supervisory timeout "
+                        "(check_cmd level, independent of the wrapper's own internal timeout)")
+
+    elif kind == "gws_inbox_check":
+        target = verify.get("target", "")
+        script = verify.get("script", "execution/gws_inbox_check.sh")
+        timeout = verify.get("timeout_seconds", 200)
+        try:
+            result = subprocess.run([script, target], capture_output=True,
+                                     text=True, timeout=timeout)
+            rc = result.returncode
+            if rc == 0:
+                verdict = "pass"
+                evidence = "gws_inbox_check PASS"
+            elif rc == 1:
+                verdict = "fail"
+                evidence = "GWS_INBOX_CHECK_FAIL: " + result.stdout.strip()[:2000]
+            elif rc == 2:
+                verdict = "error"
+                evidence = ("GWS_INBOX_CHECK_WRAPPER_ERROR: "
+                             + (result.stdout + result.stderr).strip()[:500])
+            else:
+                verdict = "error"
+                evidence = (f"gws_inbox_check wrapper exited {rc} (neither 0, 1, nor 2) "
+                            "-- treated as inconclusive, not a QA fail")
+        except subprocess.TimeoutExpired:
+            verdict = "error"
+            evidence = (f"gws_inbox_check wrapper exceeded {timeout}s supervisory timeout "
+                        "(check_cmd level, independent of the wrapper's own internal timeout)")
+
     elif kind == "file_exists":
         path = verify.get("path", "")
         exists = Path(path).exists()
@@ -515,15 +591,19 @@ def _gate_single_phase(contract: dict, args) -> bool:
     """Helper function to gate a single phase.
 
     On failure, also sets args.gate_codex_qa_failure (bool): True iff at
-    least one codex_qa-kind assertion is among the failing assertions for
-    this phase (a real cross-model adversarial finding). False for every
-    other failure shape, including plain shell/file_exists/etc assertion
-    failures (no codex_qa involved at all) and pure codex_qa wrapper/usage
-    errors with zero real fail verdicts. Callers that care about
-    distinguishing a genuine codex_qa BLOCKED from every other kind of gate
-    failure (contract.py gate's specific-phase exit code, currently 1 vs 2)
-    read this attribute after the call; callers that don't care simply
-    ignore it.
+    least one assertion of a TRIAD_ASSERTION_KINDS kind (codex_qa,
+    browser_deployed_check, gws_inbox_check) is among the failing assertions
+    for this phase (a real cross-model/cross-layer adversarial finding).
+    False for every other failure shape, including plain shell/file_exists/
+    etc assertion failures (no triad kind involved at all) and pure
+    triad-kind wrapper/usage errors with zero real fail verdicts. The
+    attribute name predates the two sibling kinds (it covered codex_qa
+    alone) and was kept as-is when its meaning was generalised, rather than
+    renamed, to avoid touching every existing reader of this attribute.
+    Callers that care about distinguishing a genuine triad BLOCKED from
+    every other kind of gate failure (contract.py gate's specific-phase exit
+    code, currently 1 vs 2) read this attribute after the call; callers that
+    don't care simply ignore it.
     """
     args.gate_codex_qa_failure = False
     phase_n = args.phase
@@ -602,33 +682,44 @@ def _gate_single_phase(contract: dict, args) -> bool:
           f"{fail_count} fail, {error_count} error")
 
     if failing:
+        # Triad-kind assertions (codex_qa, browser_deployed_check, gws_inbox_check) all
+        # route a real fail verdict to the same BLOCKED treatment -- a genuine adversarial
+        # finding from any verification-triad layer must never be confused with an ordinary
+        # shell/file_exists assertion failure. The attribute name is unchanged from when it
+        # covered codex_qa alone (mission verification-triad-gate F1 generalised its meaning
+        # rather than its name, to avoid touching every existing reader of this attribute).
         codex_qa_failing = [
             aid for aid in failing
-            if assertions_by_id.get(aid, {}).get("verify", {}).get("kind") == "codex_qa"
+            if assertions_by_id.get(aid, {}).get("verify", {}).get("kind") in TRIAD_ASSERTION_KINDS
         ]
         other_failing = [aid for aid in failing if aid not in codex_qa_failing]
         if codex_qa_failing:
             args.gate_codex_qa_failure = True
-            print(f"\nBLOCKED Phase {phase_n} gate BLOCKED -- cross-model QA (GPT-5.5) reported findings.")
+            print(f"\nBLOCKED Phase {phase_n} gate BLOCKED -- verification-triad layer reported findings.")
             for aid in codex_qa_failing:
-                print(f"GPT-5.5 findings ({aid}):")
+                kind = assertions_by_id.get(aid, {}).get("verify", {}).get("kind", "")
+                print(f"Triad findings ({aid}, kind={kind}):")
                 print(f"   {evidence_by_id.get(aid, '')}")
         if other_failing:
             print(f"\nFAIL Phase {phase_n} gate FAILED. Failing: {', '.join(other_failing)}")
             print("   Resolve before proceeding to the next phase.")
         if errors:
             for aid in errors:
-                print(f"\nGATE ERROR Phase {phase_n}: codex_qa wrapper did not produce a verdict for {aid}")
+                kind = assertions_by_id.get(aid, {}).get("verify", {}).get("kind", "unknown")
+                print(f"\nGATE ERROR Phase {phase_n}: {kind} wrapper did not produce a verdict for {aid}")
                 print(f"   (QA inconclusive -- not a QA failure). {evidence_by_id.get(aid, '')}")
-                print("   Fix: ensure the `codex` binary is on PATH and target/prompt is valid.")
-                print("   See docs/codex_qa.md.")
+                print("   Fix: ensure the underlying tool (codex/browser tooling/gws) is on "
+                      "PATH and the target/manifest is valid.")
+                print("   See docs/codex_qa.md and goldens/README.md for the sibling kinds.")
         return False
     elif errors:
         for aid in errors:
-            print(f"\nGATE ERROR Phase {phase_n}: codex_qa wrapper did not produce a verdict for {aid}")
+            kind = assertions_by_id.get(aid, {}).get("verify", {}).get("kind", "unknown")
+            print(f"\nGATE ERROR Phase {phase_n}: {kind} wrapper did not produce a verdict for {aid}")
             print(f"   (QA inconclusive -- not a QA failure). {evidence_by_id.get(aid, '')}")
-            print("   Fix: ensure the `codex` binary is on PATH and target/prompt is valid.")
-            print("   See docs/codex_qa.md.")
+            print("   Fix: ensure the underlying tool (codex/browser tooling/gws) is on "
+                  "PATH and the target/manifest is valid.")
+            print("   See docs/codex_qa.md and goldens/README.md for the sibling kinds.")
         return False
     elif skipped and not allow_skips:
         print(f"\nFAIL Phase {phase_n} gate FAILED. Skipped (use --allow-skips to permit): {', '.join(skipped)}")
@@ -799,14 +890,16 @@ def _gate_dispatch(contract: dict, args) -> int:
     else:  # Specific phase number
         if not _gate_single_phase(contract, args):
             # Exit code contract for the specific-phase gate path:
-            #   1 = reserved specifically for "a real codex_qa adversarial
-            #       finding is among the failing assertions for this phase"
-            #       (args.gate_codex_qa_failure is True). This is the ONLY
-            #       case that exits 1.
+            #   1 = reserved specifically for "a real adversarial finding from
+            #       a TRIAD_ASSERTION_KINDS kind (codex_qa, browser_deployed_
+            #       check, gws_inbox_check) is among the failing assertions
+            #       for this phase" (args.gate_codex_qa_failure is True --
+            #       name predates the two sibling kinds, meaning generalised
+            #       rather than renamed). This is the ONLY case that exits 1.
             #   2 = every other failure shape: plain shell/file_exists/etc
-            #       assertion failures with no codex_qa involved at all (the
+            #       assertion failures with no triad kind involved at all (the
             #       pre-existing, widely-relied-on contract for every
-            #       non-codex_qa mission), a pure codex_qa wrapper/usage
+            #       non-triad mission), a pure triad-kind wrapper/usage
             #       error with zero real fail verdicts, or unresolved skips.
             # A caller checking the exit code must never mistake a wrapper
             # crash or a plain assertion failure for an adversarial finding,

@@ -1,0 +1,126 @@
+schema: athanor.contract/v1
+slug: verification-triad-gate
+goal: >
+  Add browser_deployed_check and gws_inbox_check as first-class contract
+  assertion kinds, sibling to the already-working codex_qa kind, so a
+  UI/workflow mission cannot reach a green gate without all three
+  verification-triad layers (Codex adversarial review, BrowserAgent against
+  the DEPLOYED origin, gws read-only inbox check) actually having run --
+  closing the gap that let the SITE_URL/hosted.app incident reach a 10/10
+  gate with zero deploys and zero real browser/inbox verification.
+created_at: '2026-09-03'
+autonomy: high
+features:
+  - id: F1
+    name: browser_deployed_check + gws_inbox_check assertion kinds + triad coverage linter
+    status: pending
+goldens:
+  - .agent/memory/project/specs/verification-triad-gate/goldens/README.md
+  - .agent/memory/project/specs/verification-triad-gate/goldens/fixtures/browser_manifest_good.json
+  - .agent/memory/project/specs/verification-triad-gate/goldens/fixtures/browser_manifest_bad_hostedapp.json
+  - .agent/memory/project/specs/verification-triad-gate/goldens/fixtures/browser_manifest_bad_runapp.json
+  - .agent/memory/project/specs/verification-triad-gate/goldens/fixtures/browser_manifest_bad_stale_commit.json
+  - .agent/memory/project/specs/verification-triad-gate/goldens/fixtures/browser_manifest_bad_stale_timestamp.json
+  - .agent/memory/project/specs/verification-triad-gate/goldens/fixtures/browser_manifest_bad_missing_screenshot.json
+  - .agent/memory/project/specs/verification-triad-gate/goldens/fixtures/screenshot_good.png
+  - .agent/memory/project/specs/verification-triad-gate/goldens/fixtures/gws_manifest_good.json
+  - .agent/memory/project/specs/verification-triad-gate/goldens/fixtures/gws_manifest_bad_write_verb.json
+  - .agent/memory/project/specs/verification-triad-gate/goldens/fixtures/gws_manifest_bad_stale_timestamp.json
+  - .agent/memory/project/specs/verification-triad-gate/goldens/fixtures/gws_manifest_bad_missing_message_id.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        RED today, GREEN once @dev wires the browser_deployed_check kind:
+        contract.py's assertion normalisation/dispatch must reference
+        browser_deployed_check (verify.kind branch + type: normalisation),
+        mirroring the existing codex_qa block at execution/contract.py:368.
+      command: grep -q "browser_deployed_check" execution/contract.py
+      required: true
+
+    - id: A2
+      description: >
+        RED today, GREEN once @dev wires the gws_inbox_check kind:
+        contract.py's assertion normalisation/dispatch must reference
+        gws_inbox_check, mirroring the codex_qa block.
+      command: grep -q "gws_inbox_check" execution/contract.py
+      required: true
+
+    - id: A3
+      description: >
+        execution/browser_deployed_check.sh exists and is executable --
+        the sibling wrapper script, modelled on execution/codex_qa.sh's
+        exit 0/1/2 contract, that A1's dispatch subprocess-calls.
+      command: test -x execution/browser_deployed_check.sh
+      required: true
+
+    - id: A4
+      description: >
+        execution/gws_inbox_check.sh exists and is executable -- the
+        sibling wrapper script, modelled on execution/codex_qa.sh's exit
+        0/1/2 contract, that A2's dispatch subprocess-calls.
+      command: test -x execution/gws_inbox_check.sh
+      required: true
+
+    - id: A5
+      description: >
+        browser_deployed_check.sh's discriminator actually rejects every
+        documented failure shape (forbidden *.hosted.app/*.run.app origin,
+        stale commit_sha, stale timestamp, missing screenshot artefact) and
+        accepts only a fully-valid manifest -- proven against fixtures in
+        goldens/fixtures/, not merely "the script exists". See
+        goldens/README.md design answers 1-3 for the spec this discriminator
+        must satisfy.
+      command: python3 execution/checks/verify_browser_deployed_check_discriminator.py
+      required: true
+
+    - id: A6
+      description: >
+        gws_inbox_check.sh's discriminator rejects every documented failure
+        shape (write-verb subcommand, stale timestamp, missing message_id)
+        AND is structurally incapable of a write call against the mailbox
+        (no send/reply/delete/trash/forward/draft/modify/remove token in its
+        own source, no eval/dynamic argv built from manifest content). See
+        goldens/README.md design answers 1-2, 4.
+      command: python3 execution/checks/verify_gws_inbox_check_discriminator.py
+      required: true
+
+    - id: A7
+      description: >
+        execution/verify_triad_coverage.py exists and correctly classifies
+        three fixture contracts: a UI contract declaring all three triad
+        kinds (exit 0), a UI contract declaring none of them (exit 1, not
+        silently exit 0), and a non-UI contract (exempt, exit 0). See
+        goldens/README.md design answer 5 for the classification heuristic
+        and its documented false-positive/false-negative limitations.
+      command: python3 execution/checks/verify_triad_kinds_declared.py
+      required: true
+
+    - id: A8
+      description: >
+        Both sibling scripts degrade gracefully when their underlying tool
+        is unavailable or the manifest is missing/unparseable -- exit 2
+        (wrapper/usage error, routed by contract.py's existing
+        codex_qa-style error handling to an inconclusive/BLOCKED verdict),
+        never a silent exit 0 pass and never an exit 1 "verified broken"
+        false alarm. Exercised as the final case inside A5 and A6's
+        discriminator scripts (the "missing-manifest path -> exit 2" case
+        in each); this assertion additionally re-runs both to make the
+        exit-2 contract independently visible as its own gate line.
+      command: >-
+        python3 execution/checks/verify_browser_deployed_check_discriminator.py
+        2>&1 | grep -q "missing-manifest path -> exit 2" &&
+        python3 execution/checks/verify_gws_inbox_check_discriminator.py
+        2>&1 | grep -q "missing-manifest path -> exit 2"
+      required: true
+
+    - id: A9
+      description: >
+        The golden README documents the corrected backlog claim (this
+        project DID already wire codex_qa end-to-end; the gap was only the
+        two new sibling kinds) so the next reader of backlog.md's stale
+        wording isn't misled by it a second time.
+      command: >-
+        grep -q "already implements .codex_qa. as a" .agent/memory/project/specs/verification-triad-gate/goldens/README.md
+      required: true

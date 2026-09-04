@@ -1,0 +1,10 @@
+{
+  "origin": "https://beta.saoc.co.za",
+  "path_tested": "/national-show/vendors/register?token=fixture-token",
+  "screenshot_path": "fixtures/screenshot_good.png",
+  "commit_sha": "COMMIT_SHA_AT_TEST_TIME",
+  "timestamp": "2026-09-03T13:19:20Z",
+  "http_status": 200,
+  "outcome": "pass",
+  "notes": "fixture: valid deployed-origin run -- commit_sha is a placeholder substituted with the real `git rev-parse HEAD` by verify_browser_deployed_check_discriminator.py at test-execution time (not frozen here), so this fixture does not self-destruct the moment this mission's diff is committed and HEAD moves. See goldens/README.md §2 (commit binding) and the fix note dated 2026-09-04."
+}

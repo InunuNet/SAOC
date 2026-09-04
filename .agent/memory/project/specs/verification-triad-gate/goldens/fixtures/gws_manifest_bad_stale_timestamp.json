@@ -1,0 +1,11 @@
+{
+  "gws_subcommand": "mail read",
+  "message_id": "18fixturemsgid0002",
+  "subject": "SAOC Vendor Application Received",
+  "from": "no-reply@saoc.co.za",
+  "recipient": "brad@inunu.net",
+  "timestamp": "2026-08-01T00:00:00Z",
+  "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "outcome": "pass",
+  "notes": "fixture: MUST be rejected -- timestamp older than max_age_seconds window"
+}

@@ -1,0 +1,10 @@
+{
+  "origin": "https://beta.saoc.co.za",
+  "path_tested": "/national-show/vendors/register?token=fixture-token",
+  "screenshot_path": "fixtures/screenshot_does_not_exist.png",
+  "commit_sha": "COMMIT_SHA_AT_TEST_TIME",
+  "timestamp": "2026-09-03T13:19:20Z",
+  "http_status": 200,
+  "outcome": "pass",
+  "notes": "fixture: MUST be rejected -- screenshot artefact referenced by manifest is absent, so nothing proves a browser actually ran. commit_sha is a placeholder substituted with the real `git rev-parse HEAD` by verify_browser_deployed_check_discriminator.py at test-execution time, and the discriminator also widens the freshness window for this fixture -- it isolates the missing-screenshot rejection only, so commit_sha and timestamp must both be valid at test time and never trip an earlier check first (see fix note dated 2026-09-04: this fixture was previously failing on staleness before ever reaching the screenshot check)."
+}
