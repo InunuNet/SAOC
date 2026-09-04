@@ -535,6 +535,22 @@ the checks were fixtured against fields the implementation already handled, not 
 type. No mission `.md` file exists for this one (small/direct scope); see commits `ccc6a73b`,
 `4729b52b`, `c0aaa518` (deploy retrigger for the build-time secret-access fix).
 
+### 2026-09-04 — `verification-triad-gate` M1 (F1) DONE — mission stays `in_progress`, M2 open
+
+~~`verification-triad-gate` M1/F1 (`browser_deployed_check` + `gws_inbox_check` first-class
+contract assertion kinds, sibling to the existing `codex_qa` kind, plus a standalone
+`execution/verify_triad_coverage.py` triad-coverage linter)~~ ✅ **F1 DONE**, gate 9/9 green,
+@docs complete, commits `6615513a`/`f8c8dd7a`/`80829bec`. Closes the mechanism gap that let the
+`SITE_URL`/`hosted.app` defect reach a green gate with zero real deploy/browser/inbox
+verification. Took three FAIL rounds (Codex GPT-5.5 x2, @qa x1) against a first pass that showed
+9/9 green each time before landing — see `learned.md` for the seven reusable lessons, most
+notably that a 7-day fixture-driven freshness window and a default-off live inbox re-check both
+shipped as real (not test-only) production behaviour on the first pass. **Mission `status` stays
+`in_progress`, NOT `done`** — M2, the mission's headline requirement (wiring
+`verify_triad_coverage.py` into an actual gate path via `execution/skills/quick_gate.sh`/
+`contract.py`'s `gate_cmd`, so a real UI/workflow contract cannot skip declaring triad coverage),
+has not started. See `backlog.md`'s P0 entry and the mission file's "M2 — DEFERRED" section.
+
 ### 2026-09-02 — `vendor-flow-notifications` M1 (F1) DONE — mission complete
 
 ~~`vendor-flow-notifications` (F1: fills G1 from the `vendor-flow-gaps` spec — admin notices at

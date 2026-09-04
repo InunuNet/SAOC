@@ -11,20 +11,20 @@ cost_estimate:
   milestones: 1
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M1
+  feature: F1
+  ts: '2026-09-04T00:00:00+00:00'
 features:
 - id: F1
   name: browser_deployed_check + gws_inbox_check assertion kinds + triad coverage linter
   spec: .agent/memory/project/specs/verification-triad-gate/contract-f1.yaml
-  status: pending
+  status: done
 milestones:
 - id: M1
   name: Triad assertion kinds wired into the contract gate
   features:
   - F1
-  status: pending
+  status: done
 ---
 
 # Mission: verification-triad-gate
@@ -89,6 +89,14 @@ the `phases:` dict shape is invisible to the linter entirely. False-negative dir
 "no opinion", not to false certification), so lower severity than the above, but it means the
 linter's coverage is narrower than it appears.
 
-## Remaining chain steps for F1
-- @docs: README + docs/verification-triad-gate.md. NOT YET RUN.
-- @maintainer close-out: learned.md lessons (see scratch file), brain wrap-up.
+## Remaining chain steps for F1 — ALL DONE 2026-09-04
+
+- @docs: README + docs/verification-triad-gate.md. **DONE** (commit `80829bec`).
+- Gate: 9/9 green (final run, post-docs).
+- @maintainer close-out: learned.md lessons written, brain wrap-up run. **F1/M1 marked `done`
+  above. Mission `status` stays `in_progress` — M2 (wiring the linter into the actual gate path,
+  `execution/skills/quick_gate.sh:57` / `contract.py`'s `gate_cmd`) is NOT started and is this
+  mission's headline requirement. Do not close this mission as `done` until M2 ships.** See the
+  "M2 — DEFERRED" section above for full scope and the two Codex-cited defects it must close.
+
+Commits for F1: `6615513a`, `f8c8dd7a`, `80829bec`.

@@ -1,3 +1,69 @@
+## verification-triad-gate M1/F1 close-out — seven lessons (2026-09-04)
+
+Mission built `browser_deployed_check`/`gws_inbox_check` as first-class contract assertion kinds
+plus a triad-coverage linter, closing the gap that let the `SITE_URL`/`hosted.app` defect reach a
+green gate with zero real deploys and zero real browser/inbox verification. Took a first @dev
+pass to a 9/9 green gate that was then FAILed twice more by Codex GPT-5.5 and once by @qa before
+landing — the mission built to catch shallow verification caught it happening one layer in, three
+times, on its own goldens. Full finding history: git history of this mission's scratch notes
+(gitignored, so these lessons are the durable record — see mission file
+`.agent/memory/project/missions/2026-09-03-verification-triad-gate.md`).
+
+1. **Exit-code-only assertions cannot distinguish "failed for the right reason" from "failed
+   earlier for an unrelated reason."** `browser_manifest_bad_missing_screenshot.json` exited 1 and
+   read as `ok`, while actually failing on timestamp staleness and never reaching the screenshot
+   check it was supposed to exercise. Tightening the freshness window to 4h (fixing lesson 2,
+   below) is what made this vacuous — the fixture now fails earlier than intended. Fix pattern:
+   assert the failure MESSAGE a check produces, not just its exit code. This shipped inside the
+   goldens of the very mission built to catch exactly this class of defect.
+
+2. **A test fixture that can't satisfy a strict production default is a test-harness problem, not
+   a reason to loosen production.** @dev widened `BROWSER_CHECK_MAX_AGE_SECONDS`/
+   `GWS_CHECK_MAX_AGE_SECONDS` from the spec'd 4h to 7 days so aging fixtures would keep passing.
+   Nothing in the repo ever tightened it back afterward, so the 7-day window became real shipped
+   production behaviour — permitting exactly the stale-screenshot replay the design doc says the
+   freshness check exists to forbid. Correct fix: inject the override per-fixture in the
+   discriminator/test harness, never widen the production default to accommodate a fixture.
+
+3. **A default-off verification is not a verification.** `GWS_CHECK_LIVE_RECHECK` shipped
+   defaulting to `0`, so Layer 3 (the real-inbox check) never actually touched the inbox under
+   normal operation and could not distinguish a real delivered email from a fabricated manifest —
+   the exact failure mode this assertion kind exists to catch. An opt-in safety check that nothing
+   opts into provides zero protection while looking, from the gate's perspective, identical to one
+   that does.
+
+4. **Three Codex GPT-5.5 rounds FAILed this work while a 9/9 green gate showed every time** (4
+   findings, then 3, then 2). Cross-model review is not ceremony — it is catching real, distinct
+   defects a green gate and Claude's own @qa both missed, every single round of this mission.
+   Record the defect classes (lessons 1-3 above and the fixture-freeze/regex-narrowness findings
+   in round 2) rather than treating "gate is green" as sufficient signal to stop reviewing.
+
+5. **Orchestrator-level version of lesson 1: I called the gate "earned" at 9/9 without checking
+   WHY each case failed.** Same error one level up from the one under review — the mission exists
+   to stop exactly this class of shallow verification, and the orchestrator committed it anyway
+   while grading the mission's own output. Verify the reason a check passes or fails, not just the
+   code it returns, at every level of the chain, including your own.
+
+6. **Untracked mission artefacts are one `git checkout` from gone.** A scratch-branch checkout
+   mid-mission wiped four goldens plus a check script that existed nowhere else in the repo,
+   because they had never been committed. Commit mission goldens and check scripts early and
+   often, even mid-chain, not only at close-out.
+
+7. **I misjudged a teammate.** Seeing a file absent, the orchestrator told Brad @dev had reported
+   work it hadn't done. In fact the file existed when @dev ran and was deleted afterward by a
+   concurrent agent's own cleanup pass. Check for a benign concurrent cause (another agent running
+   in parallel, a cleanup step, a race) before reporting a teammate as unreliable or dishonest —
+   the evidence available in the moment (file absent) was consistent with both explanations, and
+   the wrong one was reported first.
+
+**Standing scope note:** M1/F1 is done (commits `6615513a`, `f8c8dd7a`, `80829bec`, gate 9/9,
+@docs complete). **M2 — wiring `verify_triad_coverage.py` into an actual gate path so a real
+contract cannot skip declaring triad coverage — is NOT done and is this mission's headline
+requirement.** The mission stays `in_progress`, not `done`, until M2 ships. See `backlog.md`'s P0
+entry and the mission file's "M2 — DEFERRED" section for full scope, including the two Codex-cited
+defects (`quick_gate.sh`/`contract.py` never invoke the linter; the linter's `phases_raw`-only
+read makes `phases:`-shaped contracts invisible to it).
+
 ## Project knowledge migrated out of Claude's global per-project memory (2026-09-02)
 
 ~40 SAOC facts had accumulated only in Claude's global per-project memory
