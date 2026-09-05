@@ -1,0 +1,118 @@
+schema: athanor.contract/v1
+slug: drive-docx-version-export
+goal: >
+  Build a read-only tool, execution/drive_docx_sync.py, that walks Lee-Ann's Drive
+  folder ("Docs for Brad", root id 1rZJVrYwrWM92vqmPw2c9E_HABQKEQoGa) via the gws
+  CLI, downloads every .docx Office file, and maintains a local versioned store
+  (content/drive-source/) so her source content can be parsed. Version bumps are
+  triggered ONLY by a real content-hash change (Drive md5Checksum), never by
+  modifiedTime alone, so metadata-only touches (rename, comment, permission
+  change) never mint spurious versions. MINOR bumps (v1.0 -> v1.1 -> ...) are
+  automatic on content change; MAJOR bumps (vX.0 -> v(X+1).0) are manual-only via
+  an explicit --major <fileId> flag. Renamed/moved files update in place with a
+  visible path_history entry, never silently. Deleted-from-Drive files keep all
+  local history forever, flagged missing in the index, never deleted locally.
+  Every version's extracted text (content.md, via the existing execution/doc2md.py
+  markitdown wrapper) is asserted to contain real extracted content, not just to
+  exist. Raw .docx bytes are gitignored (regenerable from Drive, bulky, useless
+  binary diffs); parsed content.md, manifest.json, and index.json are tracked.
+  See goldens/README.md for the full decision record, the eight design answers,
+  named simplifications, and four open questions for Brad.
+created_at: '2026-09-05'
+autonomy: high
+features:
+  - id: F1
+    name: >
+      execution/drive_docx_sync.py -- read-only Drive-to-local versioned docx
+      export/sync tool with md5Checksum-driven minor bumps, manual-only major
+      bumps, rename/move audit trail, deletion preservation, and asserted
+      real text extraction.
+    status: pending
+goldens:
+  - .agent/memory/project/specs/drive-docx-version-export/goldens/README.md
+  - .agent/memory/project/specs/drive-docx-version-export/goldens/fake_gws_stub.py
+  - .agent/memory/project/specs/drive-docx-version-export/goldens/fixtures/sample_v1.docx
+  - .agent/memory/project/specs/drive-docx-version-export/goldens/fixtures/sample_v2.docx
+  - .agent/memory/project/specs/drive-docx-version-export/goldens/fixtures/drive_world_run1_initial.json
+  - .agent/memory/project/specs/drive-docx-version-export/goldens/fixtures/drive_world_run2_unchanged.json
+  - .agent/memory/project/specs/drive-docx-version-export/goldens/fixtures/drive_world_run3_metadata_only_touch.json
+  - .agent/memory/project/specs/drive-docx-version-export/goldens/fixtures/drive_world_run4_content_changed.json
+  - .agent/memory/project/specs/drive-docx-version-export/goldens/fixtures/drive_world_run5_major_flag.json
+  - .agent/memory/project/specs/drive-docx-version-export/goldens/fixtures/drive_world_run6_renamed_moved.json
+  - .agent/memory/project/specs/drive-docx-version-export/goldens/fixtures/drive_world_run7_deleted.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        execution/drive_docx_sync.py exists and is executable. RED today
+        (confirmed) -- baseline existence gate only, not a substantive proof;
+        A2-A7 below are the real assertions.
+      command: test -x execution/drive_docx_sync.py
+      required: true
+
+    - id: A2
+      description: >
+        Structural read-only guarantee, mirroring execution/gws_inbox_check.sh's
+        own guard: the script's source may reference only 'drive files list' and
+        'drive files get', contains no token for any Drive write verb (create/
+        update/delete/copy/emptyTrash on files, create/update/delete on
+        permissions/revisions/comments/replies), no eval(...), and no f-string-
+        built subprocess argv that could let untrusted Drive/world content choose
+        the gws subcommand at runtime. Broader than "never called a write verb
+        today" -- proves calling one is not reachable from this source at all.
+        RED-verified against current HEAD (script absent). False-pass risk: a
+        version that avoids write calls in its tested paths but leaves a
+        reachable write-verb call behind an untested branch (e.g. a future
+        "mark processed" flag) fails this the moment that code exists, which a
+        purely behavioural test could miss.
+      command: python3 execution/checks/verify_drive_docx_sync_readonly.py
+      required: true
+
+    - id: A3
+      description: >
+        Full version-semantics/idempotency/rename/deletion contract, proven by
+        driving the real script through 7 scripted Drive-world runs against a
+        fake gws stub (goldens/fake_gws_stub.py) reading goldens/fixtures/
+        drive_world_run*.json -- no real Drive API call is ever made. Verifies,
+        per run: run1 mints exactly one v1.0 with all required provenance
+        fields non-null and content.md containing the real extracted fixture
+        text; run2 (unchanged world) creates zero new versions (idempotency);
+        run3 (modifiedTime changes, md5Checksum does not) creates zero new
+        versions (the specific false-bump this contract forbids); run4
+        (md5Checksum changes) mints exactly one v1.1, never v2.0, with
+        content.md reflecting the updated text; run5 (--major fileA, content
+        unchanged) mints exactly one v2.0; run6 (same fileId/md5, new name +
+        folder) mints zero new versions but updates index name/path_in_tree and
+        appends a path_history entry; run7 (file vanishes from Drive) leaves
+        every existing manifest byte-identical on disk and flips index status
+        to 'missing' with missing_since set. RED-verified against current HEAD
+        (script absent -- confirmed exiting 1 with an explicit "does not exist
+        yet" message, not a harness bug). False-pass risk for each sub-case is
+        documented inline in the check's own fail() messages -- see
+        goldens/README.md design answers 1-6 for the reasoning behind each.
+      command: python3 execution/checks/verify_drive_docx_sync_discriminator.py
+      timeout_seconds: 60
+      required: true
+
+    - id: A4
+      description: >
+        Repo-hygiene: content/drive-source/**/source.docx is gitignored (real
+        `git check-ignore`, not a text-grep guess) while content.md,
+        manifest.json, and index.json under the same tree are NOT ignored.
+        RED-verified against current HEAD (no .gitignore entry exists yet).
+        False-pass risk: a pattern present in .gitignore but wrongly anchored
+        or scoped (too broad -- hides the parsed output too; too narrow --
+        doesn't match nested version dirs, letting binaries in) would pass a
+        naive "grep for docx in .gitignore" check but fail this one, since it
+        exercises the real git mechanism against representative nested paths.
+      command: python3 execution/checks/verify_drive_docx_sync_gitignore.py
+      required: true
+
+    - id: A5
+      description: >
+        Baseline project sanity -- this feature adds a standalone Python tool
+        and does not touch app/ or any Next.js route, so this is a light
+        regression guard, not a substantive proof for this feature.
+      command: pnpm exec next build
+      required: true

@@ -1,0 +1,9 @@
+{
+  "root_id": "partial-root",
+  "nodes": {
+    "partial-root": {"type": "folder", "name": "Docs for Brad", "children": ["partial-folder"]},
+    "partial-folder": {"type": "folder", "name": "Partial Folder", "children": ["fileP", "fileQ"]},
+    "fileP": {"type": "file", "name": "GoodFile.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"},
+    "fileQ": {"type": "file", "name": "BadFile.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "7b7b069d4a64ab8189f8f936b4420b4e", "content_fixture": "sample_v2.docx", "fail_get": true}
+  }
+}

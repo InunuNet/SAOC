@@ -1,0 +1,8 @@
+{
+  "root_id": "coll-root",
+  "nodes": {
+    "coll-root": {"type": "folder", "name": "Docs for Brad", "children": ["coll-folder"]},
+    "coll-folder": {"type": "folder", "name": "Shared Folder", "children": ["fileX"]},
+    "fileX": {"type": "file", "name": "Duplicate.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"}
+  }
+}

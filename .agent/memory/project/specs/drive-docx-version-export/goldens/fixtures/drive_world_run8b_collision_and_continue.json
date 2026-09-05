@@ -1,0 +1,11 @@
+{
+  "root_id": "coll-root",
+  "nodes": {
+    "coll-root": {"type": "folder", "name": "Docs for Brad", "children": ["coll-folder", "other-folder"]},
+    "coll-folder": {"type": "folder", "name": "Shared Folder", "children": ["fileX", "fileY"]},
+    "fileX": {"type": "file", "name": "Duplicate.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"},
+    "fileY": {"type": "file", "name": "Duplicate.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-02T09:00:00Z", "md5Checksum": "7b7b069d4a64ab8189f8f936b4420b4e", "content_fixture": "sample_v2.docx"},
+    "other-folder": {"type": "folder", "name": "Other Folder", "children": ["fileZ"]},
+    "fileZ": {"type": "file", "name": "Unrelated.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-02T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"}
+  }
+}

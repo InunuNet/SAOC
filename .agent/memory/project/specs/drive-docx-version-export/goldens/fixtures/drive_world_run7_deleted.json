@@ -1,0 +1,9 @@
+{
+  "root_id": "docs-for-brad-root",
+  "nodes": {
+    "docs-for-brad-root": {"type": "folder", "name": "Docs for Brad", "children": ["national-show-root", "saoc-root"]},
+    "national-show-root": {"type": "folder", "name": "National Show", "children": ["exhibitors-folder"]},
+    "exhibitors-folder": {"type": "folder", "name": "4. South African Exhibitors", "children": []},
+    "saoc-root": {"type": "folder", "name": "SAOC ", "children": []}
+  }
+}

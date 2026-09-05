@@ -1,0 +1,9 @@
+{
+  "root_id": "freed-root",
+  "nodes": {
+    "freed-root": {"type": "folder", "name": "Docs for Brad", "children": ["freed-folder", "freed-elsewhere"]},
+    "freed-folder": {"type": "folder", "name": "Original Folder", "children": []},
+    "freed-elsewhere": {"type": "folder", "name": "Elsewhere", "children": ["fileA"]},
+    "fileA": {"type": "file", "name": "Slot Moved.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-05T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"}
+  }
+}

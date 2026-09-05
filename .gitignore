@@ -114,3 +114,8 @@ contracts/checks/**/_mutants/
 # Transient F5 containment-test bait dir; created and torn down by
 # goldens/verify_gate_sweep_isolation.py, must never be committed
 .agent/memory/project/specs/repo-wide-gate-sweep/goldens/fixture_specs_f5r2/escape-bait/
+
+# Raw .docx bytes downloaded by execution/drive_docx_sync.py -- regenerable
+# from Drive on demand, bulky, useless binary diffs in review. The parsed
+# content.md, manifest.json, and index.json alongside them ARE tracked.
+content/drive-source/**/source.docx

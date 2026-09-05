@@ -1,0 +1,12 @@
+{
+  "root_id": "freed-root",
+  "nodes": {
+    "freed-root": {"type": "folder", "name": "Docs for Brad", "children": ["freed-folder", "freed-elsewhere", "freed-unrelated"]},
+    "freed-folder": {"type": "folder", "name": "Original Folder", "children": ["fileB"]},
+    "freed-elsewhere": {"type": "folder", "name": "Elsewhere", "children": ["fileA"]},
+    "freed-unrelated": {"type": "folder", "name": "Unrelated Folder", "children": ["fileC"]},
+    "fileA": {"type": "file", "name": "Slot Moved.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-05T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"},
+    "fileB": {"type": "file", "name": "Slot.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-10T09:00:00Z", "md5Checksum": "7b7b069d4a64ab8189f8f936b4420b4e", "content_fixture": "sample_v2.docx"},
+    "fileC": {"type": "file", "name": "Unrelated.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-10T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"}
+  }
+}

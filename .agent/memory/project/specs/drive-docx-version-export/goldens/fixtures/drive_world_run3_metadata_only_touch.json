@@ -1,0 +1,10 @@
+{
+  "root_id": "docs-for-brad-root",
+  "nodes": {
+    "docs-for-brad-root": {"type": "folder", "name": "Docs for Brad", "children": ["national-show-root", "saoc-root"]},
+    "national-show-root": {"type": "folder", "name": "National Show", "children": ["exhibitors-folder"]},
+    "exhibitors-folder": {"type": "folder", "name": "4. South African Exhibitors", "children": ["fileA"]},
+    "fileA": {"type": "file", "name": "Vendor Pricing.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-05T11:30:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"},
+    "saoc-root": {"type": "folder", "name": "SAOC ", "children": []}
+  }
+}
