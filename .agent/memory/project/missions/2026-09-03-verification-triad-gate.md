@@ -5,15 +5,15 @@ goal: verification-triad-gate
 created_at: '2026-09-03T13:16:25.848190+00:00'
 started_at: '2026-09-04T20:51:10.586569+00:00'
 last_active_at: '2026-09-04T20:51:10.586569+00:00'
-status: in_progress
+status: done
 cost_estimate:
   features: 2
   milestones: 2
   total_calls: 0
 last_checkpoint:
-  milestone: M1
-  feature: F1
-  ts: '2026-09-04T00:00:00+00:00'
+  milestone: M2
+  feature: F2
+  ts: '2026-09-06T00:00:00+00:00'
 features:
 - id: F1
   name: browser_deployed_check + gws_inbox_check assertion kinds + triad coverage linter
@@ -22,7 +22,7 @@ features:
 - id: F2
   name: Wire verify_triad_coverage.py into the real gate path (quick_gate.sh + contract.py gate_cmd)
   spec: .agent/memory/project/specs/verification-triad-gate/contract-f2.yaml
-  status: pending
+  status: done
 milestones:
 - id: M1
   name: Triad assertion kinds wired into the contract gate
@@ -33,7 +33,7 @@ milestones:
   name: Triad coverage linter enforced in every gate run
   features:
   - F2
-  status: pending
+  status: done
 ---
 
 # Mission: verification-triad-gate
@@ -109,3 +109,41 @@ linter's coverage is narrower than it appears.
   "M2 — DEFERRED" section above for full scope and the two Codex-cited defects it must close.
 
 Commits for F1: `6615513a`, `f8c8dd7a`, `80829bec`.
+
+## Status 2026-09-06 — M2/F2 DONE, mission CLOSED
+
+Real gate run: `python3 execution/contract.py gate
+.agent/memory/project/specs/verification-triad-gate/contract-f2.yaml --phase 4 --run-checks`
+→ 12 pass, 0 skip, 0 fail, 0 error, exit 0, post-flight residue guard `ALL CLEAR — scanned 149
+document(s)`. @qa verdict PASS. Codex GPT-5.5 PASS on its fourth pass (see learned.md
+2026-09-06 entry — the first three each found a real defect: false-positive block on compliant
+phases-dict contracts, a mixed-shape masquerade the phases-dict fix itself introduced, and
+`IsADirectoryError` on `TRIAD_BASELINE_FILE` escaping the promised fail-closed exit 7).
+Committed as `aa2f74f3`.
+
+Delivered: `contract.py`'s `gate_cmd()` now runs the triad-coverage linter as a preflight after
+the dataset-residue guard and before `_gate_dispatch()` — the one choke point common to all
+four gate entry points. Blocks non-compliant UI/workflow contracts at exit 6; fails closed
+(exit 7) on any linter-infrastructure error. 32 pre-existing contracts grandfathered via
+`execution/triad-baseline-exempt.txt` + `.sha256` content pins (editing a baselined contract
+forfeits its exemption). The mission's headline requirement — deferred at M1 close specifically
+because F1 built the mechanism but nothing forced any contract to use it — is now delivered.
+Mission and both milestones marked `done` above.
+
+**Known residual gaps, carried to backlog, not fixed by F2:**
+- Classifier keys on the literal substring `app/` — a contract verifying the deployed site by
+  URL rather than file path still classifies EXEMPT and skips the triad entirely. Reproduced
+  independently by @maintainer and @qa. Highest-value gap remaining: it's exactly the contracts
+  most needing browser/inbox verification that slip through.
+- `contracts/cms-loop-f1-cdn-purge.yaml` A1 re-invokes `check-studio-edit-reaches-site.mjs`,
+  which writes a sentinel into the real Sanity dataset's `aboutPage.boardIntroText` with
+  fallible cleanup — poisoned the live dataset during this mission, manually restored.
+- `template/execution/contract.py` does not carry this preflight (tracked upstream-PR item,
+  already in backlog since F1).
+- `CLAUDE.md`'s triad-gate entry is now factually stale ("not yet wired... still voluntary") —
+  agent-uneditable path; replacement text queued in `needs-human.md` for Brad.
+
+Three harness issues filed upstream this session: Athanor#1391 (docs→gate handoff blocks every
+repo-wide gate run on an unrelated doc's mtime), Athanor#1397 (sandbox.md instructs cleanup
+that every command shape prompts on or denies), Athanor#1399 (protected-path deny leaves stale
+doc text in CLAUDE.md permanently uncorrectable by any agent).

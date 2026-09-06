@@ -2,7 +2,7 @@
 
 Organised by **priority and subject**, not by session. Rebuilt 2026-08-19 from a 2,677-line
 session diary (pre-cleanup copy: `archive/backlog-2026-08-19-pre-cleanup.md`).
-_Last compacted: 2026-09-04 by backlog_trim.py. Full history: git log on this file._
+_Last compacted: 2026-09-06 by backlog_trim.py. Full history: git log on this file._
 
 **Rules for this file.** One line of stale information here misleads every agent, every session.
 Completed items are deleted, not ticked — git history is the record. Plan steps live in
@@ -38,7 +38,6 @@ Do not scope work from an entry that contradicts it.
 
 ## Next up (queued, not yet a mission — dispatch as soon as current mission closes)
 
-- [x] **[P0] Wire `verify_triad_coverage.py` into an actual gate path so a UI/workflow contract
   cannot go green without declaring triad coverage** (mission `verification-triad-gate`, M2/F2 —
   DONE 2026-09-06; M1/F1 was DONE 2026-09-04). Original ask (2026-09-02, Brad, via team lead):
   today's `.claude/rules/workflow.md` mandate (Codex + BrowserAgent-on-deployed + gws-read-only)
@@ -57,6 +56,37 @@ Do not scope work from an entry that contradicts it.
   author-written `phases` key, not the post-normalisation-only `phases_raw`). See
   `.agent/memory/project/specs/verification-triad-gate/contract-f2.yaml` for the five binding
   architect decisions and `docs/verification-triad-gate.md` for usage.
+
+- [ ] **[P0] Triad-coverage classifier is dodgeable by URL-shaped assertions** (mission
+  `verification-triad-gate`, M2/F2 close-out, 2026-09-06). `is_ui_workflow_contract()` in
+  `execution/verify_triad_coverage.py` classifies a contract as UI/workflow by keying on the
+  literal substring `app/` in its assertion commands. A contract that verifies the deployed
+  site by URL instead of file path — e.g. `curl -sf https://saoc.co.za/national-show | grep -q
+  "National Show"` — contains no `app/` substring, so it classifies EXEMPT, exits 0, and skips
+  the triad entirely. Reproduced independently by @maintainer and @qa. This is the mission's
+  own premise only partially delivered: the contracts most needing browser/inbox verification
+  (they check the live site, not local files) are exactly the ones that slip through the net
+  F2 just built. Needs its own feature: classify on URL-shaped assertion targets too, not just
+  `app/` paths.
+
+- [ ] **[P1] `contracts/cms-loop-f1-cdn-purge.yaml` A1 mutates the real Sanity dataset**
+  (found during `verification-triad-gate` M2/F2, 2026-09-06). It re-invokes F6's
+  `check-studio-edit-reaches-site.mjs` verbatim, which writes a sentinel value into
+  `aboutPage.boardIntroText` on the live dataset with fallible cleanup. It poisoned the live
+  dataset during this mission's gate runs and needed a manual restore (`unset`, verified ALL
+  CLEAR by the residue guard). Any future gate run of this contract carries the same risk.
+  Needs the sentinel-write step reworked to a draft/throwaway document or otherwise made
+  non-destructive to real content. See also `project_contract_checks_mutate_live_content` in
+  the auto-memory index — this is a second occurrence of that defect class.
+
+- [ ] **[P2] `CLAUDE.md`'s "Verification triad gate" section is now factually stale and no
+  agent can fix it** (verification-triad-gate M2/F2 close-out, 2026-09-06). It still reads "...
+  is not yet wired into any gate path ... still voluntary, not enforced", which became false
+  with commit `aa2f74f3`. `execution/hooks/check_autonomy.sh:301` hard-denies writes to
+  `CLAUDE.md` at every autonomy level, so this needs Brad. Exact replacement text is already
+  drafted and queued in `.agent/memory/project/needs-human.md` — just needs him to paste it in.
+  Filed upstream as Athanor#1399 (the protected-path design has no route for correcting factual
+  staleness in an agent-maintained instruction file).
 
 - [ ] **[P1] Upstream PR to InunuNet/Athanor: `template/execution/contract.py` does not carry
   the F2 triad-coverage gate preflight** (mission `verification-triad-gate`, M2/F2 decision 5,
@@ -499,20 +529,17 @@ flat-over-nested-submenu pattern.
   BLOCKED on Brad's template. Email has a hard constraint the others don't: clients strip `<style>`
   blocks, ignore most modern CSS, and Gmail clips over ~102KB — so table layout, inline styles, and
   a logo delivered as a CID attachment the same way the QR fix will be.
-- [ ] **[P1] Refunds cannot be represented end to end.** `TicketStatus` has a `refunded` value but
   nothing sets it, `components/admin/StatusPill.tsx` has no style for it (renders through the
   neutral fallback, indistinguishable from an unrecognised status), and no gateway refund call
   exists. A refund today means refunding in the gateway dashboard and hand-editing Firestore with
   nothing linking the two. PayFast exposes a Refunds API (same MD5+passphrase auth as the ITN), so
   this is buildable. Needed before high refund volume.
-- [ ] **[P2] `createOrderWithPosition()` uses idempotent `transaction.set()`, not `.create()`** —
   a colliding `bookingRef` silently overwrites instead of failing. **Verified 2026-08-21: the main
   checkout path no longer uses this** — `buildMultiReservationDocs()`/`writeMultiReservationPair()`
   (multi-line-item-cart mission) use `transaction.create()` (fail-loud on collision), confirmed by
   reading the code. `createOrderWithPosition()` is now ONLY used by the admin comp-ticket route
   (`app/api/admin/tickets/comp/route.ts`) — narrower blast radius than originally scoped, still a
   real gap there, lower urgency (comp tickets are a low-volume admin action, not public checkout).
-- [ ] **[P2] `amount`/`purchasedAt`/`m_payment_id`/`pf_payment_id` are duplicated on both `Order`
   and `Ticket`**, deliberately, and nothing detects divergence between the copies. **Confirmed still
   true 2026-08-21** against a real live purchase (both fields present and populated on the order
   doc and on each of its two position docs). The position copies were meant to be removed with a
@@ -1106,6 +1133,20 @@ flat-over-nested-submenu pattern.
   (reads a plain `/Users/...` as recursive delete from filesystem root). Worked around with one
   relative path per command. Worth tightening if it recurs.
 
+- **Athanor#1391** (filed 2026-09-06, verification-triad-gate M2/F2) — the `docs -> gate`
+  handoff blocks every gate run repo-wide on an unrelated document's mtime; trivially
+  satisfiable by `touch`, so it's a speed bump for a real bad actor but routine friction for
+  everyone else.
+- **Athanor#1397** (filed 2026-09-06, verification-triad-gate M2/F2) — `sandbox.md` instructs
+  agents to clean up their own sandbox files on completion, but every command shape that does so
+  either prompts the operator (unresolvable variable delete path) or is denied outright; hit
+  twice while filing this same issue, since `check_autonomy.sh` pattern-matches the whole
+  command string including heredoc body text, so a bug report that merely *quotes* a denied
+  command is itself denied.
+- **Athanor#1399** (filed 2026-09-06, verification-triad-gate M2/F2) — the protected-path deny
+  on `CLAUDE.md` leaves factual documentation inside the agent instruction file permanently
+  uncorrectable by any agent once it goes stale; see the `CLAUDE.md` staleness item above.
+
 ---
 
 ## Hosting — decision pending Brad
@@ -1304,3 +1345,4 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 > Truncated 5 items at trim time (2026-09-02). Restore from git history if needed.
 > Truncated 9 items at trim time (2026-09-02). Restore from git history if needed.
 > Truncated 104 items at trim time (2026-09-04). Restore from git history if needed.
+> Truncated 3 items at trim time (2026-09-06). Restore from git history if needed.
