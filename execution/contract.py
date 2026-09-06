@@ -937,6 +937,23 @@ def _load_triad_baseline_hashes(hash_path: Path) -> dict:
     return entries
 
 
+def _exit_on_triad_baseline_error(failing_path: Path, exc: Exception) -> None:
+    """Prints a TRIAD PREFLIGHT ERROR block matching the linter-subprocess error format
+    (see _run_triad_coverage_preflight) and exits fail-closed. Called when a baseline or
+    hash-pin file can't be read as a plain UTF-8 text file (e.g. it's a directory, or its
+    bytes aren't valid UTF-8) -- an infrastructure error, never a silent pass and never
+    conflated with a real triad-noncompliance or dataset-residue exit code."""
+    print("=" * 78, file=sys.stderr)
+    print(f"TRIAD PREFLIGHT ERROR [code {TRIAD_PREFLIGHT_ERROR_EXIT_CODE}]: could not read "
+          f"{failing_path} -- {exc}", file=sys.stderr)
+    print("This is a baseline-infrastructure failure -- unlike the dataset-residue guard, "
+          "the triad preflight fails CLOSED here: it has no external dependency, so an "
+          "unreadable/malformed baseline file is a real regression, not transient noise.",
+          file=sys.stderr)
+    print("=" * 78, file=sys.stderr)
+    sys.exit(TRIAD_PREFLIGHT_ERROR_EXIT_CODE)
+
+
 def _triad_contract_is_grandfathered(contract_rel_path: str) -> bool:
     """True only if contract_rel_path is listed in the baseline AND its live sha256 still
     matches the pinned hash. An edit since baselining forfeits the grandfather -- enforcement
@@ -944,11 +961,17 @@ def _triad_contract_is_grandfathered(contract_rel_path: str) -> bool:
     baseline_path = Path(os.environ.get(TRIAD_BASELINE_FILE_ENV_VAR, str(DEFAULT_TRIAD_BASELINE)))
     hash_path = Path(os.environ.get(TRIAD_BASELINE_HASH_FILE_ENV_VAR, str(DEFAULT_TRIAD_BASELINE_HASH)))
 
-    baseline_paths = _load_triad_baseline_paths(baseline_path)
+    try:
+        baseline_paths = _load_triad_baseline_paths(baseline_path)
+    except (OSError, UnicodeDecodeError) as e:
+        _exit_on_triad_baseline_error(baseline_path, e)
     if contract_rel_path not in baseline_paths:
         return False
 
-    pinned_hashes = _load_triad_baseline_hashes(hash_path)
+    try:
+        pinned_hashes = _load_triad_baseline_hashes(hash_path)
+    except (OSError, UnicodeDecodeError) as e:
+        _exit_on_triad_baseline_error(hash_path, e)
     pinned = pinned_hashes.get(contract_rel_path)
     if not pinned:
         return False  # listed but unpinned -- cannot be honoured as grandfathered

@@ -680,3 +680,43 @@ is the final answer rather than an interim default.
 
 Before asking Brad for any token/credential, check `.env.local` first — an Editor-scope Sanity
 token is already there. Several past sessions asked before checking.
+
+---
+
+## 2026-09-06 — CLAUDE.md "Verification triad gate" entry is factually stale (agent-uneditable)
+
+**Action needed:** Brad applies the replacement text below to `CLAUDE.md`. No agent can do
+it: `execution/hooks/check_autonomy.sh:301` hard-denies writes to `CLAUDE.md` at every
+autonomy level, and the only bypass (`check_enforcement_hatch`) reads
+`.agent/enforcement_breakglass.json`, which is itself protected. @docs hit this and correctly
+escalated rather than routing around it.
+
+**Why it matters:** the entry currently tells every future session that triad declaration is
+"still voluntary, not enforced". That became false with commit `aa2f74f3` (M2/F2). A stale
+instruction in CLAUDE.md silently misdirects work — an agent reading it will assume it must
+volunteer the linter as its own assertion, or that a contract can skip the triad freely.
+
+**Locate:** the `### Verification triad gate` section, final paragraph, which currently reads
+"... **it is not yet wired into any gate path** (`quick_gate.sh`, `contract.py`'s `gate_cmd`),
+so declaring the triad on a contract is still voluntary, not enforced."
+
+**Replace that clause with:**
+
+> As of M2/F2 the coverage linter is **enforced on every gate run**:
+> `execution/contract.py`'s `gate_cmd()` runs it as a preflight (after the dataset-residue
+> guard, before `_gate_dispatch()`) — the one choke point common to all four gate entry
+> points, which converge on `contract.py gate` as a subprocess. A UI/workflow contract that
+> declares no triad kinds is blocked at exit 6; a triad-preflight infrastructure error fails
+> **closed** at exit 7, deliberately the opposite posture to the residue guard beside it,
+> which fails open because it makes a live network call. 32 pre-existing contracts are
+> grandfathered by path in `execution/triad-baseline-exempt.txt` with content pins in
+> `execution/triad-baseline-exempt.sha256` — editing a baselined contract forfeits its
+> exemption and re-arms enforcement. **Known gap:** classification keys on the literal
+> substring `app/`, so a contract that verifies the deployed site by URL rather than by file
+> path still classifies EXEMPT and skips the triad entirely.
+
+Full detail already written to `docs/verification-triad-gate.md` (M2/F2 section) — the
+CLAUDE.md entry only needs the summary above plus its existing pointer to that doc.
+
+**Upstream:** filed against the harness as the protected-path design having no route for
+correcting factual staleness in an agent-maintained instruction file.

@@ -287,3 +287,45 @@ assertions:
         without actually mirroring contract.py's condition.
       command: python3 execution/checks/verify_f2_mixed_shape_masquerade.py
       required: true
+
+    - id: A12
+      description: >
+        Regression found by the third Codex GPT-5.5 pass, reproduced by
+        @lead: decision 1's fail-closed promise covers the triad-linter
+        SUBPROCESS (A6) but not the BASELINE-LOADING step of the same
+        preflight. _load_triad_baseline_paths() and
+        _load_triad_baseline_hashes() (execution/contract.py, called from
+        _triad_contract_is_grandfathered()) call Path.read_text() with no
+        try/except at all. Pointing TRIAD_BASELINE_FILE or
+        TRIAD_BASELINE_HASH_FILE at a path that cannot be read as UTF-8 text
+        (a directory, or a file containing invalid UTF-8 bytes) crashes with
+        an uncaught IsADirectoryError/UnicodeDecodeError and a raw Python
+        traceback, exiting 1 -- never reaching
+        TRIAD_PREFLIGHT_ERROR_EXIT_CODE (7), which A8 keeps distinct from
+        every other exit code specifically so a caller can always tell
+        "confirmed triad-noncompliant" (6) apart from "preflight
+        infrastructure error" (7) apart from an unrelated crash (bare 1).
+        Not a bypass (1 still blocks), but it violates this feature's own
+        documented exit-code contract and leaves A6's fail-closed guarantee
+        covering only the linter-subprocess half of the preflight, not the
+        baseline-file-read half. The fix must wrap baseline/hash loading
+        (the call to _triad_contract_is_grandfathered(), or the two loader
+        functions individually) so any OSError/UnicodeDecodeError there
+        exits TRIAD_PREFLIGHT_ERROR_EXIT_CODE (7) with a loud, actionable
+        stderr message naming the failing baseline/hash file -- mirroring
+        the existing linter-subprocess error message's shape, never a raw
+        traceback. Asserts on exit code AND absence of a raw traceback in
+        the output, across three real, deterministic shapes: (1)
+        TRIAD_BASELINE_FILE pointing at a directory (reached
+        unconditionally, no baseline-listing needed); (2)
+        TRIAD_BASELINE_HASH_FILE pointing at a directory WITH the contract's
+        own path listed in TRIAD_BASELINE_FILE (hash-loading is only
+        reached when the contract is actually listed -- an unlisted
+        contract never touches the hash file at all); (3) TRIAD_BASELINE_FILE
+        containing invalid UTF-8 bytes. Chmod-based permission-denied
+        fixtures are deliberately excluded (unreliable when the gate runs
+        as the file owner, and chmod 777 / broad rm -rf are denied by this
+        project's autonomy hooks), as is a malformed hash-pin line (already
+        silently skipped by existing code, not a defect).
+      command: bash execution/checks/verify_f2_baseline_loading_failclosed.sh
+      required: true

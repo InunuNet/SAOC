@@ -1,6 +1,7 @@
 # Verification Triad Gate
 
-Mission `verification-triad-gate`, M1/F1. Commits `6615513a`, `f8c8dd7a`.
+Mission `verification-triad-gate`. M1/F1 commits `6615513a`, `f8c8dd7a`. M2/F2 (enforcement —
+see below) closed the mechanism gap M1 deliberately left open.
 
 ## Why this exists
 
@@ -133,28 +134,167 @@ whole point of these two variables, and an earlier pass in this same mission got
 twice** (shipping a 7-day production default, and a live-recheck default of off) before Codex
 GPT-5.5 review caught both.
 
+## M2/F2 — the linter is now enforced on every gate run
+
+M1 shipped the two assertion kinds and the coverage linter (`execution/verify_triad_coverage.py`)
+as a correct but voluntary mechanism — nothing forced a contract to declare the triad, so a
+UI/workflow contract could still reach a fully green gate with zero browser check and zero inbox
+check, exactly as before the SITE_URL incident. **M2/F2 closes that gap.** `execution/contract.py`'s
+`gate_cmd()` now runs a triad-coverage preflight, unconditionally, on every gate invocation — a
+UI/workflow contract cannot reach a green gate without declaring all three triad kinds unless it
+is explicitly grandfathered (see Rollout below).
+
+### Where it's wired, and why there
+
+The preflight lives inside `gate_cmd()` itself (`execution/contract.py:1107` onward), called via
+`_run_triad_coverage_preflight()` after `_preflight_residue_guard()` and before `_gate_dispatch()`
+— i.e. before any assertion phase executes, regardless of `--phase` or `--run-checks`. This is
+deliberate: `execution/skills/quick_gate.sh`, `execution/gate_sweep.py`,
+`execution/improvement_loop.sh`, and `execution/mission.py`'s `cmd_gate` all converge on one
+subprocess call, `python3 execution/contract.py gate ...` — `gate_cmd()` is the *only* choke
+point that covers all four callers. Wiring the preflight into `quick_gate.sh` alone (F2's
+original working title) would have been bypassable three separate ways, by any caller that
+invokes `contract.py gate` directly.
+
+### Exit codes
+
+Two new codes, distinct from each other and from the residue guard's 4/5:
+
+| Code | Meaning |
+|---|---|
+| `TRIAD_ENFORCEMENT_EXIT_CODE = 6` | Confirmed UI/workflow contract, missing one or more triad kinds, not grandfathered. The gate is correctly blocking real noncompliance. |
+| `TRIAD_PREFLIGHT_ERROR_EXIT_CODE = 7` | The triad preflight itself couldn't run (linter missing, linter exited an out-of-contract code, or the baseline/hash-pin files couldn't be read). Infrastructure failure, not a verdict on the contract. |
+
+A caller can always tell "confirmed noncompliant" (6) apart from "preflight infrastructure
+error" (7) apart from "dataset residue" (4/5) — no exit code is ever asked to carry two meanings.
+
+### Fail-closed — deliberately the opposite of its neighbour
+
+The dataset-residue guard sitting right before this preflight in `gate_cmd()` fails **open** on
+its own infrastructure error (`RESIDUE_SCAN_ERROR_EXIT_CODE`), because it depends on a live
+network call to Sanity shared across every concurrent gate, and transient blips there are
+routine noise not worth blocking unrelated work over.
+
+The triad preflight fails **closed** instead. `verify_triad_coverage.py` is pure local file read
+plus regex — no subprocess of its own, no network — so if it's missing, or exits any code
+outside its documented 0/1/2 contract, that's a real code regression, not noise. This project's
+own headline defect for this mission (`browser_deployed_check.sh` returning PASS when `curl` was
+missing, caught during F1) is exactly a check silently degrading to "proceed" when its tool was
+unavailable — failing open here would let that same defect recur one layer up, in the mechanism
+built specifically to prevent it. **A future reader should not "fix" this asymmetry to match the
+residue guard — the two checks have different failure profiles by design, and matching them
+would reintroduce the exact bug this mission exists to close.**
+
+This fail-closed behaviour also covers baseline/hash-pin file loading, not only the linter
+subprocess itself: pointing `TRIAD_BASELINE_FILE` or `TRIAD_BASELINE_HASH_FILE` at a directory,
+or a file containing invalid UTF-8, exits 7 with a named, actionable message — never a raw Python
+traceback, never a silent pass.
+
+### Rollout — 32 pre-existing contracts grandfathered, not permanently
+
+Wiring the preflight in retroactively would have turned much of the existing suite red overnight
+(most pre-M2 contracts declare no triad kinds at all). Rather than exempting UI/workflow
+contracts as a category, F2 grandfathers a fixed, named list: `execution/triad-baseline-exempt.txt`
+(one repo-relative contract path per line, `#`-comments and blanks ignored), paired with
+`execution/triad-baseline-exempt.sha256` (one `<sha256>  <path>` line per baselined contract,
+generated in the same commit).
+
+The grandfather is **content-pinned, not path-pinned**: at gate time, `contract.py` re-derives
+the live sha256 of a baselined contract file and compares it to the pinned hash.
+
+- Hash matches → the grandfather holds, the preflight does not block.
+- Hash doesn't match (the contract was edited since baselining) → enforcement **re-arms** for
+  that path. The edit forfeits the grandfather; it does not carry it forward automatically.
+
+This is deliberate: a bare path-list exemption that survived arbitrary future edits would let
+someone materially change a UI contract's behaviour while keeping it permanently exempt from the
+mission's headline requirement. A right (the exemption) is not a practice that outlives the state
+it was granted for. The baseline mechanism only ever applies to the linter's FAIL case (confirmed
+UI/workflow, missing kinds) — the linter's own EXEMPT classification (non-UI contracts) is never
+subject to it at all, so the ~69 of 101 contracts that already pass or don't need to see zero
+added noise.
+
+Env seams for testing/overriding this mechanism: `TRIAD_BASELINE_FILE`, `TRIAD_BASELINE_HASH_FILE`,
+`TRIAD_LINTER_SCRIPT_OVERRIDE` (points the preflight at a different linter binary — used by the
+fail-closed test fixtures, not intended for production use).
+
+### Linter shape-handling fixes (found by Codex, after the board was already green — twice)
+
+Two rounds of Codex GPT-5.5 review found real defects in `verify_triad_coverage.py`'s shape
+classification after F2's own gate was already 9/9 and then 11/11 green. Both are documented here
+because they are exactly the "assertion satisfiable by shape, not truth" defect class this project
+tracks — a future editor of the linter should know these boundaries were hit on purpose, not
+guessed at:
+
+- **`phases_raw` → `phases`.** An author-written contract in the raw `phases: {...}` dict shape
+  was invisible to the linter (it read a normalisation-only key that doesn't exist until
+  `contract.py` itself processes the file) and was misclassified as non-UI. Fixed by reading the
+  raw `phases:` key directly.
+- **Tri-state shape signal.** `assertion_kind()` must distinguish three shapes — checks-dict,
+  plain-list, phases-dict — because `contract.py` only ever synthesizes a top-level `kind` field
+  into `verify.kind` for phases-dict items, and only when that item's `verify` is absent or a bare
+  string. Crediting top-level `kind` for *both* list and phases shapes (fixing too broadly) would
+  let a plain-list item's decorative `kind:` masquerade as coverage the gate never actually
+  executes as that kind; crediting it for *neither* (fixing too narrowly) falsely blocks a
+  genuinely compliant phases-dict contract at exit 6.
+- **Mixed-shape masquerade — a regression the first fix introduced.** `contract.py:131-132`
+  discards `phases:` entries entirely when a truthy top-level `assertions:` list is also present
+  (its own real execution behaviour) — but the newly-fixed linter credited those discarded
+  `phases:` entries anyway. A contract could carry one bare, uncovered shell check in
+  `assertions:` plus a fully triad-compliant but entirely decorative `phases:` block and still
+  earn a green PASS from the linter, while the real gate executed zero triad checks. Fixed by
+  mirroring `contract.py`'s exact `not assertions` condition (including the edge case that an
+  explicit `assertions: []` is falsy too, and must still credit the `phases:` branch).
+
 ## What these checks CANNOT prove
 
 Per this project's standing rule (name the limitation, don't paper over it):
 
-- **The coverage linter is not wired into any gate path. This is the mission's headline
-  requirement and it is NOT delivered.** `execution/skills/quick_gate.sh:57` and
-  `execution/contract.py`'s `gate_cmd` (~line 926) never invoke
-  `execution/verify_triad_coverage.py`. The two new assertion kinds are enforced *once a contract
-  declares them* — nothing yet forces any contract to declare them. A future UI/workflow contract
-  can still reach a fully green gate with no browser check and no inbox check, exactly as before
-  the SITE_URL incident, unless whoever writes that contract volunteers the linter as one of its
-  own assertions. Wiring this in is deferred as M2 (see the mission file) because it applies
-  retroactively to every existing contract in the repo — most of which declare no triad kinds —
-  and risks turning the whole suite red without `@architect` scoping first. **Do not read this
-  doc as "the triad is enforced." It is available and correct; declaring it is still voluntary.**
-- **`phases:`-dict-shaped contracts are invisible to the linter.** `verify_triad_coverage.py`'s
+- **The `app/`-substring classifier is trivially, silently dodgeable — this is the largest
+  remaining gap, and it applies even now that enforcement is wired in.**
+  `is_ui_workflow_contract()` keys purely on the literal substring `app/` appearing in an
+  assertion's command/cmd/target text. A contract whose only assertion is
+  `curl -sf https://saoc.co.za/national-show | grep -q "National Show"` — a genuine deployed-page
+  check, checking exactly the kind of thing this mission's headline incident needed caught —
+  contains no literal `app/` anywhere and classifies **EXEMPT**, skipping the triad requirement
+  entirely, with no warning. Confirmed independently by both `@qa` and Codex. This means "no
+  contract can reach a green gate without the triad" is true only for contracts written in one
+  particular style (naming a repo-relative file path); a contract written against a URL, a
+  Firestore collection name, or a component name instead slips through. Disclosed in the linter's
+  own docstring as a known limitation, not a silently-dropped requirement, but it is a real,
+  demonstrated gap in the mechanism this mission exists to build. Not fixed by F2; not yet
+  scheduled.
+- **`template/execution/` carries a parallel copy of `contract.py` that does not inherit this
+  preflight.** `template/` is this project's seed copy of the upstream Athanor harness, not a
+  second production gate path for SAOC's own contracts — out of scope by deliberate decision, not
+  an oversight. Any contract gated through `template/execution/contract.py` (if ever invoked)
+  runs with zero triad enforcement. Tracked in `.agent/memory/project/backlog.md` as an upstream
+  PR to InunuNet/Athanor, per this project's standing convention
+  (`feedback_harness_issues_pr_upstream`) — fix locally is not an option here because `template/`
+  is meant to track upstream, not diverge from it.
+- **Gate runs can mutate live content.** At least one contract in this repo
+  (`contracts/cms-loop-f1-cdn-purge.yaml`, assertion A1) re-invokes a script that writes a
+  sentinel value into `aboutPage.boardIntroText` on the real, live Sanity dataset as part of its
+  own verification, with fallible cleanup. This is unrelated to the triad preflight itself, but
+  worth knowing before gating any `cms-loop` contract casually — it poisoned the live dataset
+  during this mission and required a manual restore.
+- **`phases:`-dict-shaped contracts are invisible to the linter.** ~~`verify_triad_coverage.py`'s
   `iter_assertions_with_shape()` also reads `contract.get("phases_raw")`, but that key only
   exists *after* `execution/contract.py`'s own internal normalisation — a standalone run of the
   linter against an author-written contract in the `phases:` dict shape never populates it, so
-  such a contract is invisible to the linter entirely. This is a false-negative (the linter says
-  nothing, rather than falsely certifying compliance), so it is lower-severity than a false
-  pass, but it means real coverage is narrower than the linter's exit code implies.
+  such a contract is invisible to the linter entirely.~~ **Fixed by M2/F2** — see "Linter
+  shape-handling fixes" above. Retained here, struck through, so a reader who remembers this
+  limitation from M1 can confirm it's closed rather than wondering if it was missed.
+- **One unwrapped file read in the baseline-grandfather path, low severity, not reachable in
+  practice today.** `_triad_contract_is_grandfathered()`'s own `full_path.read_bytes()` call
+  (hashing the *gated contract's own file* to compare against its pinned hash — not the
+  baseline/hash-pin list files, which are wrapped) has no try/except around it. In isolation this
+  raises rather than exiting 7. In the real `gate_cmd()` entry point, though, `load_contract()`
+  already opens and successfully parses this exact same path earlier in the same call, before the
+  triad preflight ever runs — so the only way to reach this unwrapped read with a *now-bad* path
+  is a TOCTOU race (the file changing on disk between `load_contract()`'s read and the preflight's
+  read, moments later, in the same process). Recorded here as defence-in-depth debt, not a live
+  defect, so it isn't rediscovered as new.
 - **No pixel-level screenshot diff.** The browser check confirms a screenshot file exists and is
   non-empty, and that the recorded origin/path independently returns a matching live HTTP status
   — it does not hash or diff the screenshot's *content* against what the page renders today. A
@@ -213,6 +353,12 @@ Each round caught a real defect that a 9/9 green gate was hiding at the time. Se
   `execution/checks/verify_triad_kinds_declared.py`
 - Dispatch/normalisation: `TRIAD_ASSERTION_KINDS` and the `elif kind == "browser_deployed_check"` /
   `elif kind == "gws_inbox_check"` blocks in `execution/contract.py`
+- Enforcement preflight (M2/F2): `_run_triad_coverage_preflight()` and
+  `_triad_contract_is_grandfathered()` in `execution/contract.py`, called from `gate_cmd()`
+- Baseline/rollout: `execution/triad-baseline-exempt.txt`, `execution/triad-baseline-exempt.sha256`
+- F2 fixture checks: `execution/checks/verify_f2_*.{py,sh}`
 - Spec: `.agent/memory/project/specs/verification-triad-gate/goldens/README.md`
-- Contract: `.agent/memory/project/specs/verification-triad-gate/contract-f1.yaml`
+- Contracts: `.agent/memory/project/specs/verification-triad-gate/contract-f1.yaml`,
+  `.agent/memory/project/specs/verification-triad-gate/contract-f2.yaml`
 - Mission file: `.agent/memory/project/missions/2026-09-03-verification-triad-gate.md`
+- QA report (M2/F2): `.agent/memory/scratch/qa-report-f2-triad-gate-wiring.md`
