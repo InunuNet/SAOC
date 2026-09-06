@@ -64,3 +64,81 @@ The fabricated meeting times and venues are gone from the deployed production da
 ## Not covered by this file
 Visual/rendered verification at 390 and 1280 against beta — dispatched to three separate
 agents, findings in .agent/evidence/site-build/_beta-visual/.
+
+################################################################
+# WAVE 2 — commit d620cee1 (societies rebuild + whitespace class)
+################################################################
+
+## Push
+$ git push origin main   ->  1d6512cb..d620cee1   PUSH_EXIT 0
+$ git ls-remote --heads origin main
+d620cee182a2eb039b6e0409dc310192b11e27b4   refs/heads/main   # == local HEAD
+
+## Gates (run by the orchestrator, not taken from agent reports)
+$ npx tsc --noEmit                 -> exit 0
+$ bun run build                    -> exit 0, 103/103 static pages, 0 errors
+$ 14 routes on local dev (https)   -> 14/14 = 200
+
+## Codex GPT-5.5 cross-model review
+Round 1 (full diff)     -> FAIL, 2 findings:
+  1. app/(marketing)/societies/[slug]/page.tsx:85 — fallback event cards link to
+     /events/<slug>, which calls notFound() with no static fallback.  REAL DEFECT.
+     Severity corrected upward during triage: every societyEvent doc currently has
+     hostSociety:null, so ALL 21 society pages run the fallback path. The dead link
+     would have shipped LIVE on this deploy, not sat dormant.
+     Fixed via option (a): fallback-origin rows render with no <a> at all.
+  2. execution/tests/layer1_static/test_hook_integrity.sh:34 — 7 failures, harness-side.
+     Not product code. See _deploy note below and template-hook-verify/functional.txt.
+Round 2 (scoped diff)   -> FAIL, 1 finding: "5 new modules not in diff".
+     ARTIFACT of `git diff` omitting untracked files, not a defect. Re-run with
+     `git add -N` on the 5 new components.
+Round 3 (complete diff) -> FAIL, 1 finding: "slugify not imported/defined".
+     ARTIFACT of diff-only review: slugify is defined at line 30 of the same file,
+     on an unchanged line the diff never showed. Disproved by tsc --noEmit exit 0.
+Net: 1 real defect found and fixed; 2 false positives from reviewing a diff without
+full file context. Codex earned the pass — it caught a live dead link three agents
+and one orchestrator visual review had all missed.
+
+## Deploy verification — and a false negative worth recording
+First watcher polled beta /societies for the string "pending confirmation from each
+society" and TIMED OUT after 30 minutes. That was MY error, not a failed deploy:
+/societies renders its 21 cards CLIENT-SIDE, so the disclaimer text lives in the JS
+bundle and can never appear in server HTML regardless of which build is live. Same
+trap produced an earlier false "beta is stale" scare on the same route.
+RULE: /societies cannot be verified by curl. It needs a browser.
+
+Re-verified with a server-rendered marker (the {' '} whitespace fix):
+  /privacy   NEW build (space fix present)
+  /terms     NEW build (space fix present)
+  /refunds   NEW build (space fix present)
+  /tickets   NEW build (space fix present)
+
+Server-rendered detail page /societies/cape-orchid-society on beta:
+  "Life at an affiliated orchid society"   present
+  "About this society"                     present
+  "Upcoming events"                        present
+  "send us the details" (contact ask)      present
+  "estimated"                              present
+  anchors to /events/*                     0     <- Codex fix confirmed IN PRODUCTION
+
+## Visual bar — production screenshots at 390 and 1280
+F6 analyst verified 9 falsifiable claims on beta, all PASS. Orchestrator independently
+reviewed beta-final-border-orchid-society-1280.png (the hardest case: no events, no
+meet, no venue) and confirms: quiet single ESTIMATED tag, real About section, designed
+empty state with calendar icon + calendar link, evergreen section, calm contact ask,
+CTA. No Next dev-tools badge => genuinely production. Clears the bar.
+
+Screenshots: .agent/evidence/site-build/societies/beta-final-{390,1280}.png
+             .agent/evidence/site-build/societies-detail/beta-final-<slug>-{390,1280}.png
+Findings:    .agent/evidence/site-build/_beta-visual/f6-societies-final.txt
+
+## Overturned agent verdicts (recorded because the pattern matters)
+Three analysts reported 13/13 routes PASS. Orchestrator review of the actual images
+overturned two of those passes:
+  - /societies + /societies/[slug] were passed as "thin content, not a visual defect".
+    At 84 hedge pills on the index and 4-badges-over-whitespace on 21 detail pages,
+    it WAS a visual defect. Rebuilt.
+  - /tickets, /privacy, /terms, /refunds were passed as clean while rendering
+    "Provisional pricing.These are" / "Draft pending legal review.This page".
+Lesson: a general "does it look good" question produces passes. Falsifiable claims
+("zero TO BE CONFIRMED pills", "event title is not an <a>") produce findings.
