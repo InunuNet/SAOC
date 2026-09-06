@@ -130,6 +130,23 @@ Vendor flow G1 (mission vendor-flow-notifications M1/F1) wires four new notifica
 
 Admin pages that read Firestore collections with timestamp-shaped fields (`submittedAt`, `reviewedAt`, etc.) must convert `Timestamp` class instances to native `Date` objects before passing them to `'use client'` components. The conversion module `lib/firestore-serialization.ts` provides `serializeVendorApplication()` and `serializeVendorSubmission()` for this — both convert by structure (duck-typed `.toDate()` method), not by a hardcoded field-name allowlist, ensuring new fields are handled correctly. See [`docs/admin-vendor-listing-serialization.md`](docs/admin-vendor-listing-serialization.md) for the defect analysis, the fix rationale, and why field allowlists fail.
 
+### Drive .docx version export — Lee-Ann's source content
+
+`execution/drive_docx_sync.py` (mission drive-docx-version-export, M1/F1) is a read-only,
+on-demand sync tool that mirrors Lee-Ann's Drive folder of `.docx` source content ("Docs for
+Brad", id `1rZJVrYwrWM92vqmPw2c9E_HABQKEQoGa` — her folder structure is the shape the site's
+content follows) into a local versioned store, `content/drive-source/`. Version bumps are keyed
+to Drive's `md5Checksum` (real content change) — never `modifiedTime`, which advances on renames,
+comments, and permission touches with no content change at all. Minor bumps (`v1.0 → v1.1 → ...`)
+are automatic; major bumps (`vX.0 → v(X+1).0`) are manual-only via `--major <fileId>`, never
+inferred. Duplicate filenames in one Drive folder are disambiguated (both files keep independent
+histories), not skipped. Untrusted Drive names (`..`, empty, containing a path separator or NUL)
+are rejected at the boundary with a resolved-path containment check as defence in depth, while
+unusual-but-legitimate names (including the real `SAOC ` folder's trailing space) keep working.
+Deletions from Drive never delete local history — they flip the index entry to `status: missing`.
+Raw `source.docx` bytes are gitignored; `content.md`, `manifest.json`, and `index.json` are
+tracked. See [`docs/drive-docx-version-export.md`](docs/drive-docx-version-export.md).
+
 ### Verification triad gate — `browser_deployed_check` / `gws_inbox_check` contract kinds
 
 `execution/contract.py` supports `browser_deployed_check` and `gws_inbox_check` as first-class contract assertion kinds, sibling to the pre-existing `codex_qa` kind, so a mission contract can declare that the mandatory three-layer verification triad (Codex adversarial review, BrowserAgent against the deployed site, `gws` read-only inbox check — see `.claude/rules/workflow.md`) actually ran, not merely that it was supposed to. `execution/verify_triad_coverage.py` is a coverage linter that flags a UI/workflow contract missing any triad kind — **it is not yet wired into any gate path** (`quick_gate.sh`, `contract.py`'s `gate_cmd`), so declaring the triad on a contract is still voluntary, not enforced. See [`docs/verification-triad-gate.md`](docs/verification-triad-gate.md) for the manifest shapes, the exit-code contract, the environment-override defaults, and what these checks cannot prove.

@@ -3,10 +3,10 @@
   "nodes": {
     "pg-root": {"type": "folder", "name": "Docs for Brad", "children": ["big-folder"]},
     "big-folder": {"type": "folder", "name": "Big Folder", "children": ["pg1", "pg2", "pg3", "pg4", "pg5"]},
-    "pg1": {"type": "file", "name": "Doc1.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "content_fixture": "sample_v1.docx"},
-    "pg2": {"type": "file", "name": "Doc2.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "content_fixture": "sample_v1.docx"},
-    "pg3": {"type": "file", "name": "Doc3.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "cccccccccccccccccccccccccccccccc", "content_fixture": "sample_v1.docx"},
-    "pg4": {"type": "file", "name": "Doc4.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "dddddddddddddddddddddddddddddddd", "content_fixture": "sample_v1.docx"},
-    "pg5": {"type": "file", "name": "Doc5.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "content_fixture": "sample_v1.docx"}
+    "pg1": {"type": "file", "name": "Doc1.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"},
+    "pg2": {"type": "file", "name": "Doc2.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"},
+    "pg3": {"type": "file", "name": "Doc3.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"},
+    "pg4": {"type": "file", "name": "Doc4.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"},
+    "pg5": {"type": "file", "name": "Doc5.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"}
   }
 }

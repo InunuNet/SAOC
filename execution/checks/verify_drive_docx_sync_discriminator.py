@@ -29,17 +29,21 @@ isolates exactly one behaviour this contract specifies:
   run7 deleted            -- fileId vanishes from Drive: local files untouched,
                              index flips to status "missing" with missing_since
   run8 storage collision  -- two DIFFERENT fileIds, SAME name in the SAME
-                             folder. RULING (see goldens/README.md addendum):
-                             skip-and-continue, NOT "both survive
-                             independently" -- the colliding file mints
-                             nothing and gets no index entry, the owning
-                             file's history is byte-identical, an UNRELATED
-                             file in the same run still syncs, and the
-                             process exits non-zero
+                             folder. RULING (final, see goldens/README.md
+                             addendum): BOTH survive independently at
+                             DISTINCT on-disk locations (disambiguated via a
+                             fileId-derived suffix on the new file; the
+                             existing owner keeps its plain path), each
+                             manifest matches its own file's checksum, an
+                             unrelated file in the same run still syncs, and
+                             the run exits 0 (a resolved collision is not a
+                             failure)
   run9 freed-slot reuse   -- a file renamed/moved away, then a NEW file takes
                              the name+path it vacated: same ruling as run8 --
-                             the new file is skipped, the original's history
-                             is byte-identical, an unrelated file still syncs
+                             the new file is disambiguated and indexed (not
+                             skipped), the original's history is
+                             byte-identical at its frozen plain path, an
+                             unrelated file still syncs, exit 0
  run10 partial failure    -- two files, the first mints cleanly, the second's
                              `gws get` fails: the first file's index entry
                              must survive the run
@@ -414,19 +418,21 @@ def main():
             fail("A_run7_deleted", "index fileA.missing_since not set once flipped to missing")
 
     # --- run8: storage-path collision -- two DIFFERENT fileIds, SAME name
-    #     in the SAME folder. RULING (supersedes an earlier draft of this
-    #     run that asserted "both survive independently"): the frozen-
-    #     storage-location design means the collision must be a hard skip,
-    #     not a disambiguation scheme -- a suffix keyed to something that
-    #     could shift between runs would be worse than the bug. What is
-    #     REQUIRED: the colliding file mints nothing and gets no index
-    #     entry, the file that already owns the location is byte-identical
-    #     before/after, every OTHER unrelated file in the same run still
-    #     syncs and persists (this is the point that actually distinguishes
-    #     "skip and continue" from "abort the whole run" -- a single
-    #     duplicate name anywhere in Lee-Ann's tree must never block every
-    #     other document), and the process exits non-zero so the failure
-    #     can never read as success. -----------------------------------
+    #     in the SAME folder. RULING (final, reversing an intermediate
+    #     skip-and-continue draft of this run): skip-and-continue means
+    #     Lee-Ann's second file silently gets no history until a human
+    #     reads a stderr line -- that is the silent-drop pattern this
+    #     project has been burned by before. The correct design -- and
+    #     what run8 asserts -- is disambiguation: BOTH files are indexed
+    #     and minted at DISTINCT on-disk locations, each manifest carries
+    #     its own checksum, and nothing is lost. Disambiguation is via a
+    #     deterministic suffix derived from the fileId, applied only to
+    #     the file that collides with an ALREADY-established owner (the
+    #     existing owner keeps its plain human-readable path -- path
+    #     stability for the common, non-colliding case is preserved, and
+    #     the suffix never shifts across future runs since it is derived
+    #     from the fileId, not from anything that could change). A
+    #     successful disambiguation is NOT an error: the run must exit 0.
     with tempfile.TemporaryDirectory() as tmp8:
         store_root8 = os.path.join(tmp8, "content", "drive-source")
         os.makedirs(store_root8, exist_ok=True)
@@ -444,39 +450,60 @@ def main():
 
             r8b = run_sync(store_root8, shim_dir8, "drive_world_run8b_collision_and_continue.json", drive_root_id="coll-root")
 
+            if "Traceback (most recent call last)" in r8b.stderr:
+                fail("A_run8_collision", f"the collision run crashed with a raw Python traceback instead of a clean, handled outcome: {r8b.stderr[-500:]}")
+
+            if r8b.returncode != 0:
+                fail(
+                    "A_run8_collision",
+                    f"a successfully-disambiguated collision exited {r8b.returncode} (non-zero) -- a "
+                    "wrong implementation that treats a resolved collision as a run failure would fail "
+                    f"here (stderr tail: {r8b.stderr[-300:]!r}).",
+                )
+
             fileX_bytes_after = open(os.path.join(store_root8, fileX_manifest_path), "rb").read()
             if fileX_bytes_after != fileX_bytes_before:
                 fail(
                     "A_run8_collision",
                     f"fileX's manifest ({fileX_manifest_path}) changed after fileY collided with it on "
-                    "name+folder. A wrong implementation that lets the colliding file overwrite the "
-                    "location it collided with -- instead of refusing to touch it -- would fail here.",
-                )
-
-            if "Traceback (most recent call last)" in r8b.stderr:
-                fail("A_run8_collision", f"the collision run crashed with a raw Python traceback instead of a clean, handled error: {r8b.stderr[-500:]}")
-
-            if r8b.returncode == 0:
-                fail(
-                    "A_run8_collision",
-                    "a run containing a genuine storage-path collision exited 0 (success) -- per the "
-                    "collision ruling this must exit non-zero so it can never read as success, even "
-                    "though every other file in the run synced fine.",
+                    "name+folder. The existing owner's plain path must stay untouched -- a wrong "
+                    "implementation that renames/moves the FIRST file to disambiguate (instead of "
+                    "suffixing the NEW one) would fail here.",
                 )
 
             index8 = load_index(store_root8)
+            entryX = (index8 or {}).get("fileX", {})
             entryY = (index8 or {}).get("fileY", {})
             manifests8 = find_version_dirs(store_root8)
             fileY_manifest = next((p for p in manifests8 if read_manifest(store_root8, p).get("drive_file_id") == "fileY"), None)
-            if entryY or fileY_manifest:
+            if not entryX or not entryY:
                 fail(
                     "A_run8_collision",
-                    f"fileY (the colliding file) was indexed and/or minted a manifest "
-                    f"(index entry: {entryY!r}, manifest: {fileY_manifest!r}) -- the ruling requires the "
-                    "colliding file to be skipped entirely, not partially recorded. A wrong "
-                    "implementation that writes SOME state for the losing file before detecting the "
-                    "collision would fail here.",
+                    f"expected both fileX and fileY indexed after a same-name/same-folder collision, "
+                    f"got index keys {sorted((index8 or {}).keys())}. A wrong implementation that lets "
+                    "the second file silently overwrite or drop the first's index entry would fail "
+                    "here -- both files must be independently visible.",
                 )
+            elif not fileY_manifest:
+                fail(
+                    "A_run8_collision",
+                    f"fileY has an index entry but no on-disk manifest.json -- disambiguation must "
+                    f"actually mint the colliding file, not just record it. Manifests found: {sorted(manifests8)}",
+                )
+            elif fileY_manifest == fileX_manifest_path:
+                fail(
+                    "A_run8_collision",
+                    f"fileX and fileY resolved to the SAME on-disk manifest path {fileX_manifest_path!r} "
+                    "-- one file's data silently overwrote the other's. Disambiguation must produce "
+                    "DISTINCT on-disk locations.",
+                )
+            else:
+                mX = read_manifest(store_root8, fileX_manifest_path)
+                mY = read_manifest(store_root8, fileY_manifest)
+                if mX.get("md5_checksum") != V1_MD5:
+                    fail("A_run8_collision", f"fileX's manifest md5_checksum {mX.get('md5_checksum')!r} != expected {V1_MD5!r} (fileY's checksum bled into fileX's manifest?)")
+                if mY.get("md5_checksum") != V2_MD5:
+                    fail("A_run8_collision", f"fileY's manifest md5_checksum {mY.get('md5_checksum')!r} != expected {V2_MD5!r} (fileX's checksum bled into fileY's manifest?)")
 
             entryZ = (index8 or {}).get("fileZ", {})
             fileZ_manifest = next((p for p in manifests8 if read_manifest(store_root8, p).get("drive_file_id") == "fileZ"), None)
@@ -485,19 +512,17 @@ def main():
                     "A_run8_collision",
                     f"fileZ (an entirely UNRELATED file, in a different folder, present in the same "
                     f"run as the fileX/fileY collision) was not synced/indexed (entry: {entryZ!r}, "
-                    f"manifest: {fileZ_manifest!r}). This is the assertion that actually distinguishes "
-                    "'skip the colliding file and continue' from 'abort the whole run on one "
-                    "collision' -- a wrong implementation that raises and lets the exception propagate "
-                    "out of the per-file loop would leave fileZ unsynced too, and would fail exactly "
-                    "here.",
+                    f"manifest: {fileZ_manifest!r}). A wrong implementation that lets one collision's "
+                    "handling abort or skip processing of unrelated files would fail here.",
                 )
 
     # --- run9: freed-slot reuse -- rename a file away, then a NEW file ----
-    #     takes the name+path it vacated. Same ruling as run8 applies:
-    #     fileB (the new file colliding with fileA's frozen location) must
-    #     be skipped (no index entry, no manifest), fileA's original
-    #     history must be byte-identical, an unrelated fileC elsewhere in
-    #     the same run must still sync, and the run must exit non-zero. ---
+    #     takes the name+path it vacated. Same ruling as run8: fileB (the
+    #     new file colliding with fileA's frozen location) is disambiguated
+    #     via its fileId-derived suffix and indexed/minted, NOT skipped;
+    #     fileA's original history stays byte-identical at its plain path;
+    #     an unrelated fileC elsewhere in the same run still syncs; the
+    #     run exits 0 (a resolved collision is not a failure). -----------
     with tempfile.TemporaryDirectory() as tmp9:
         store_root9 = os.path.join(tmp9, "content", "drive-source")
         os.makedirs(store_root9, exist_ok=True)
@@ -515,40 +540,46 @@ def main():
             run_sync(store_root9, shim_dir9, "drive_world_run9b_freed_slot_renamed_away.json", drive_root_id="freed-root")
             r9c = run_sync(store_root9, shim_dir9, "drive_world_run9c_freed_slot_reused.json", drive_root_id="freed-root")
 
-            fileA_bytes_after = open(os.path.join(store_root9, fileA_manifest_path_9a), "rb").read()
-            if fileA_bytes_after != fileA_bytes_before:
-                fail(
-                    "A_run9_freed_slot",
-                    f"fileA's original manifest ({fileA_manifest_path_9a}) changed after a NEW file "
-                    "(fileB) took over the name+path fileA vacated. A wrong implementation that lets "
-                    "a new file mint into a previously-used-and-now-freed on-disk location would "
-                    "silently overwrite fileA's history the moment fileB is synced -- this is the "
-                    "second collision variant this run isolates, distinct from run8's same-run case.",
-                )
             if "Traceback (most recent call last)" in r9c.stderr:
                 fail(
                     "A_run9_freed_slot",
                     f"the freed-slot-reuse run crashed with a raw Python traceback instead of a "
                     f"clean, handled outcome: {r9c.stderr[-500:]}",
                 )
-            if r9c.returncode == 0:
+            if r9c.returncode != 0:
                 fail(
                     "A_run9_freed_slot",
-                    "the freed-slot-reuse run exited 0 (success) even though fileB collided with "
-                    "fileA's frozen storage location -- per the collision ruling this must exit "
-                    "non-zero.",
+                    f"a successfully-disambiguated freed-slot collision exited {r9c.returncode} "
+                    f"(non-zero) -- a resolved collision is not a run failure (stderr tail: "
+                    f"{r9c.stderr[-300:]!r}).",
+                )
+
+            fileA_bytes_after = open(os.path.join(store_root9, fileA_manifest_path_9a), "rb").read()
+            if fileA_bytes_after != fileA_bytes_before:
+                fail(
+                    "A_run9_freed_slot",
+                    f"fileA's original manifest ({fileA_manifest_path_9a}) changed after a NEW file "
+                    "(fileB) took over the name+path fileA vacated. fileA's plain path must stay "
+                    "frozen -- a wrong implementation that lets the new file mint into (or otherwise "
+                    "disturb) the previously-used location would silently corrupt fileA's history.",
                 )
 
             index9 = load_index(store_root9)
             manifests_9c = find_version_dirs(store_root9)
             entryB = (index9 or {}).get("fileB", {})
             fileB_manifest = next((p for p in manifests_9c if read_manifest(store_root9, p).get("drive_file_id") == "fileB"), None)
-            if entryB or fileB_manifest:
+            if not entryB or not fileB_manifest:
                 fail(
                     "A_run9_freed_slot",
-                    f"fileB (the new file reusing fileA's vacated name+path) was indexed and/or minted "
-                    f"a manifest (index entry: {entryB!r}, manifest: {fileB_manifest!r}) -- per the "
-                    "collision ruling it must be skipped entirely, the same as run8's same-run case.",
+                    f"fileB (the new file reusing fileA's vacated name+path) was not indexed/minted "
+                    f"(entry: {entryB!r}, manifest: {fileB_manifest!r}) -- disambiguation must actually "
+                    "sync the new file at a distinct location, not silently drop it.",
+                )
+            elif fileB_manifest == fileA_manifest_path_9a:
+                fail(
+                    "A_run9_freed_slot",
+                    f"fileB resolved to the SAME on-disk manifest path as fileA's frozen location "
+                    f"({fileA_manifest_path_9a!r}) -- disambiguation must produce a distinct location.",
                 )
 
             entryC = (index9 or {}).get("fileC", {})
@@ -558,8 +589,7 @@ def main():
                     "A_run9_freed_slot",
                     f"fileC (an entirely UNRELATED file, present in the same run as the fileA/fileB "
                     f"freed-slot collision) was not synced/indexed (entry: {entryC!r}, manifest: "
-                    f"{fileC_manifest!r}). Distinguishes 'skip and continue' from 'abort the whole "
-                    "run' for the freed-slot variant too.",
+                    f"{fileC_manifest!r}).",
                 )
 
     # --- run10: partial failure -- first file mints cleanly, second's ----

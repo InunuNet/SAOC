@@ -257,35 +257,48 @@ below are the same files (`verify_drive_docx_sync_discriminator.py`,
 `verify_drive_docx_sync_readonly.py`), extended, not replaced.
 
 1. **Storage-path collision (runs 8a/8b, `drive_world_run8{a,b}_collision_*.json`).**
-   Two different `fileId`s, same name, same folder. **Ruling (supersedes an
-   earlier draft of this run):** the frozen-storage-location design (a
-   rename must never move a file's on-disk history) means a collision must
-   be a hard skip, not a disambiguation scheme -- a suffix keyed to
-   something that could shift between runs would be worse than the bug
-   it fixes. What is actually required, and what run8b asserts: the
-   colliding file (`fileY`) mints nothing and gets no index entry, the
-   file that already owns the location (`fileX`) is byte-identical
-   before/after, an entirely UNRELATED file in the same run (`fileZ`, a
-   different folder) still syncs and persists, and the process exits
-   non-zero. The `fileZ` assertion is the one that matters most -- it is
-   what distinguishes "skip the colliding file and continue" from "abort
-   the whole run on one collision" (a single duplicate filename anywhere
-   in Lee-Ann's hand-reorganised tree must never block every other
-   document). Confirmed green against the shipped
-   `StoragePathCollisionError` (caught per-iteration, `had_collision` flag,
-   non-zero exit from `main()`) -- and confirmed it would have failed RED
-   against an abort-the-whole-run implementation, since `fileZ` would then
-   never have synced.
+   Two different `fileId`s, same name, same folder. **Ruling, final** (this
+   item went through two drafts -- see history below): both files survive
+   independently at DISTINCT on-disk locations, each manifest carries its
+   own checksum, nothing is lost. Disambiguation is via a deterministic
+   suffix derived from the `fileId`, applied only to the file that collides
+   with an ALREADY-established owner -- the existing owner (`fileX`) keeps
+   its plain human-readable path untouched (path stability for the common,
+   non-colliding case), the new file (`fileY`) is minted at the suffixed
+   location, an entirely UNRELATED file in the same run (`fileZ`, a
+   different folder) still syncs and persists, and the run exits **0** (a
+   successfully-resolved collision is not a failure). Confirmed green
+   against the shipped `_disambiguated_relpath()` (hash-suffixes only the
+   new file's `storage_relpath`, leaves an existing owner's path alone).
+   A wrong implementation that keys the on-disk path by name+path alone
+   (ignoring `fileId`) silently overwrites one file with the other -- the
+   original HIGH-severity defect @qa found -- fails the distinct-manifest
+   assertion; one that renames the FIRST file instead of the new one fails
+   the byte-identity assertion; one that aborts the whole run instead of
+   disambiguating fails the `fileZ`-still-synced assertion.
+
+   **History, for anyone reading this later and wondering why it moved
+   twice:** drafted as "both survive" -> a mid-review ruling changed it to
+   "skip-and-continue" (reasoning: a disambiguating suffix keyed to
+   something that could shift between runs would be worse than the bug) ->
+   reversed back to "both survive" once it was pointed out that
+   skip-and-continue means Lee-Ann's second file silently gets NO history
+   at all until a human reads a stderr line and renames something in
+   Drive -- exactly the silent-drop failure mode this project has been
+   burned by before. @dev's fileId-derived suffix answers the original
+   path-stability objection without reintroducing the silent drop: the
+   suffix is deterministic and never shifts on a later run, even if the
+   other file is later deleted.
 
 2. **Freed-slot reuse (runs 9a/9b/9c,
    `drive_world_run9{a,b,c}_freed_slot_*.json`).** A file is renamed/moved
    away, then a NEW file (`fileB`) takes over the name+path it vacated.
-   Same ruling as run8: `fileB` must be skipped (no index entry, no
-   manifest), `fileA`'s original manifest must be byte-identical
-   before/after, an unrelated `fileC` (added to run9c) elsewhere in the
-   same run must still sync, and the run must exit non-zero. Distinct from
-   run8: this is a cross-run collision (the vacated slot is only reused in
-   a later sync), not a same-run one.
+   Same final ruling as run8: `fileB` is disambiguated and indexed/minted
+   (not skipped) at a location distinct from `fileA`'s frozen plain path,
+   `fileA`'s original manifest stays byte-identical, an unrelated `fileC`
+   (added to run9c) elsewhere in the same run still syncs, and the run
+   exits 0. Distinct from run8: this is a cross-run collision (the vacated
+   slot is only reused in a later sync), not a same-run one.
 
 3. **Content stability, not just path stability (runs 2 and 3 extended).**
    `snapshot_version_bytes()` / `assert_bytes_unchanged()` byte-compare
