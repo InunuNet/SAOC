@@ -1,0 +1,18 @@
+=== BASELINE 2026-09-06T20:34:17Z UTC | commit 1c2fe858 ===
+
+$ curl -s -o /dev/null -w '%{http_code}' https://beta.saoc.co.za/refunds
+HTTP 200
+exit: 0
+
+$ wc -l app/(marketing)/refunds/page.tsx
+     109 app/(marketing)/refunds/page.tsx
+exit: 0
+
+$ headings currently rendered on the live page
+Refund &amp; Cancellation Policy
+Terms pending confirmation
+Refunds
+Cancellations
+Exceptional circumstances
+How to request a refund or cancellation
+exit: 0

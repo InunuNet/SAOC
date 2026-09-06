@@ -1,0 +1,77 @@
+=== ARCHITECT RED-VERIFICATION 2026-09-06 | mission refunds-cancellation-terms F1 ===
+Commands run against localhost is unavailable in this pass; live beta used for
+URL-based checks (https://beta.saoc.co.za), local fixture files for the check
+script's --fixture mode. All results below are EXPECTED-RED (current code has no
+mechanism yet) or EXPECTED-PASS (pre-existing, unrelated-to-this-feature state).
+
+--- A1: PROVISIONAL_REFUND_POLICY export (expect RED / not found) ---
+$ grep -rl "PROVISIONAL_REFUND_POLICY" lib/
+exit: 1 (not found — RED, correct)
+
+--- A2: ProvisionalFigure component / data-provisional-figure marker (expect RED) ---
+$ grep -rl "data-provisional-figure" components/
+exit: 1 (not found — RED, correct)
+
+--- A4: revised POLICY-10 script against live /refunds (expect RED — no mechanism yet) ---
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs https://beta.saoc.co.za/refunds
+FAIL: no data-provisional-figure region found on the page
+exit: 1 (RED, correct — page has no figures/mechanism today)
+
+--- A5: vendor-scope script against live /refunds (expect RED — no vendor-scope marker yet) ---
+$ node contracts/checks/policy-pages/check-refunds-vendor-scope.mjs https://beta.saoc.co.za/refunds
+FAIL: page does not acknowledge that vendor stand bookings are out of scope and governed by their own separate terms
+exit: 1 (RED, correct)
+
+--- A9: no "N business days" processing-time figure on live page (expect PASS today, unrelated to this feature) ---
+$ curl -s https://beta.saoc.co.za/refunds | sed -E "s/<[^>]+>/ /g" | grep -qEi "[0-9]+[[:space:]]*(business day|business days)"
+exit: 1 (no match — assertion "! grep..." currently passes, correct: page has no such figure to begin with)
+
+--- A10: cross-page consistency (expect PASS today — pre-existing correct state) ---
+$ node contracts/checks/policy-pages/check-refunds-terms-consistency.mjs https://beta.saoc.co.za/terms https://beta.saoc.co.za/refunds
+OK: https://beta.saoc.co.za/terms still links to https://beta.saoc.co.za/refunds; no duplicated figures
+exit: 0 (PASS, correct — this is a regression guard, not something F1 needs to change)
+
+--- A11: POLICY-10 yaml wired to revised script (expect RED — not wired yet) ---
+$ awk "/id: POLICY-10/,/id: POLICY-11/" contracts/contract-policy-pages.yaml | grep -q "check-refunds-provisional-figures.mjs"
+exit: 1 (RED, correct — still points at the old inline regex)
+
+--- A12: original POLICY-09 script still passes unmodified (expect PASS, sanity check) ---
+$ node contracts/checks/policy-pages/check-refunds-no-fabrication.mjs https://beta.saoc.co.za/refunds
+OK: https://beta.saoc.co.za/refunds is structurally complete and free of fabricated figures
+exit: 0 (PASS, correct — untouched sibling check, still green)
+
+--- A13-A16: check-refunds-provisional-figures.mjs against fixtures (all as designed) ---
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .../fixtures/negative-fabricated.html
+FAIL: unconfirmed figure "14 days" appears outside any data-provisional-figure region
+FAIL: no data-provisional-figure region found on the page
+exit: 1 (correct — negative control, guard fires on bare fabrication)
+
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .../fixtures/negative-mark-no-figure.html
+FAIL: unconfirmed figure "14 days" appears outside any data-provisional-figure region
+FAIL: provisional-figure region #1 does not carry both a real figure and the word "provisional" as visible text: "See the table below PROVISIONAL"
+exit: 1 (correct — weak-check hole closed: irrelevant mark content does not launder a bare figure elsewhere)
+
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .../fixtures/negative-mark-no-word.html
+FAIL: provisional-figure region #1 does not carry both a real figure and the word "provisional" as visible text: "14 days"
+FAIL: provisional-figure region #2 does not carry both a real figure and the word "provisional" as visible text: "50%"
+exit: 1 (correct — marker must actually disclose "provisional", not just structurally isolate)
+
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .../fixtures/positive-provisional.html
+OK: .../fixtures/positive-provisional.html — every unconfirmed figure is bound to a disclosed provisional marker
+exit: 0 (correct — positive control, mechanism used correctly passes)
+
+--- Bug found and fixed during script authoring (not a regression from this pass; pre-existing) ---
+The ORIGINAL POLICY-10 pattern (check-refunds-no-fabrication.mjs / the yaml's inline
+regex) is `(?:day|days|hour|hours|week|weeks|%|percent)\b` — one shared trailing \b.
+Verified directly:
+$ node -e 'const p=/\b\d+\s*(?:day|days|hour|hours|week|weeks|%|percent)\b/i; console.log(p.test("Refund of 50% today"))'
+false
+This means the original POLICY-10, as shipped, does NOT actually catch "50% refund" or
+"50%." in realistic prose (only catches it glued to a following word char with no
+space, e.g. "50%refund") — contradicting the negative-control doc's claim it "correctly
+failed" against synthetic "50%" text. check-refunds-provisional-figures.mjs's
+FIGURE_PATTERN does not repeat this bug (verified above, A13-A16 all pass/fail as
+designed against literal "50%" and "14 days" text). Flagged in golden §8 for @dev to
+optionally backport the fix to the old script; not required by this contract since
+POLICY-09's script role does not depend on catching every percent phrasing (A12 above
+confirms it still passes today regardless).
