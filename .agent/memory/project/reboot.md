@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-09-06T20:04Z_
+_Generated: 2026-09-06T22:33Z_
 
 ## What happened last session
-Closed mission verification-triad-gate M2/F2: triad-coverage linter now enforced as a preflight in contract.py's gate_cmd (commit aa2f74f3), mission and both milestones marked done. Recorded three residual gaps to backlog (dodgeable app/-substring classifier, cms-loop-f1 live-dataset mutation, agent-uneditable stale CLAUDE.md doc) and three upstream Athanor issues (#1391, #1397, #1399).
+Recorded 7 durable lessons from tonight's beta-verification session: client-hydrated routes need browser not curl verification, falsifiable-claim prompts beat holistic QA asks, JSX whitespace-collapse is only detectable rendered, fallback paths can be the active path (check the dataset), Codex diff-only findings need verification against real files, an honest-gap content pattern for missing data, and a known (unfiled) condition re: Athanor hook-integrity update leaving require_*.sh hooks registered.

@@ -3206,3 +3206,108 @@ answer two hours in the direction that makes a false claim look confident. See
 **How to apply:** re-run every assertion independently before accepting a green report — two
 of four @dev reports this mission did not survive it. When an agent calls damage
 "pre-existing", decode the timestamp rather than accepting the attribution.
+
+## 2026-09-07 — `/societies` cannot be verified with curl
+
+The route renders its 21 cards client-side after hydration; server HTML contains only the
+RSC flight payload and a Suspense boundary. This produced two false alarms in one session: a
+"beta is serving a stale build" scare (0 society links found in HTML) and a 30-minute
+deploy-watcher timeout keyed on text that only exists in the JS bundle. Both were wrong — the
+build was live both times.
+
+**Why:** curl/`grep`-on-HTML checks assume server-rendered content; a client-hydrated route
+has none to find, so absence of the marker proves nothing about the deploy.
+
+**How to apply:** verify `/societies` (and any client-hydrated route) with a browser, not
+curl. Key deploy-readiness checks on a server-rendered marker instead — the `{' '}` whitespace
+fix on `/privacy` `/terms` `/refunds` `/tickets` worked well as a deploy marker because it's
+in the initial HTML.
+
+## 2026-09-07 — Ask agents for falsifiable claims, not "does it look good"
+
+Three analysts reported 13/13 routes PASS on beta. Orchestrator review of the actual
+screenshots overturned two: (a) `/societies` + all 21 `/societies/[slug]` pages were passed
+as "thin content, not a visual defect" when the index carried 84 hedge pills and each detail
+page was four badges over whitespace; (b) `/tickets` `/privacy` `/terms` `/refunds` were
+passed as clean while visibly rendering "Provisional pricing.These are" and "Draft pending
+legal review.This page". The same agents, given lettered falsifiable claims instead ("zero
+TO BE CONFIRMED pills", "the event title must not be an `<a>`", verified via `page.$$eval`),
+produced accurate verdicts.
+
+**Why:** "does it look good" invites a holistic, forgiving read; a falsifiable claim forces
+the agent to check a specific thing and admit when it's false.
+
+**How to apply:** phrase QA/analyst prompts as a list of checkable, falsifiable claims with a
+concrete verification method (a selector, a count, a `page.$$eval`), never as an open
+aesthetic judgment.
+
+## 2026-09-07 — JSX whitespace-collapse only detectable against rendered output
+
+An inline close tag ending a source line drops the following space:
+`<span>Provisional pricing.</span> These are` rendered as "pricing.These are". Fixed with
+explicit `{' '}` in `app/(marketing)/{tickets,terms,privacy,refunds}/page.tsx`. Critically,
+`app/(marketing)/constitution/page.tsx` has visually identical source and renders CORRECTLY —
+verified against served HTML and deliberately left unchanged.
+
+**Why:** whether JSX whitespace collapses depends on exact newline/tag adjacency that reads
+identically to a human scanning source; a source-pattern audit would both churn correct files
+and clear broken ones.
+
+**How to apply:** this bug class is only detectable against rendered output (browser or
+served HTML), never by reading JSX source, however similar two files look.
+
+## 2026-09-07 — Check whether a "latent" fallback path is actually the active path
+
+Codex GPT-5.5 flagged that fallback event cards linked to `/events/<slug>`, which calls
+`notFound()` with no static fallback. Orchestrator first assessed this as latent — it was
+not: every `societyEvent` doc has `hostSociety: null`, so all 21 society pages run the
+fallback path, meaning the dead link ships live to every visitor of that route.
+
+**Why:** "fallback path" sounds rare by name alone; the current dataset can make it the only
+path actually exercised.
+
+**How to apply:** before calling a fallback-path bug "latent", query the real dataset for how
+often the fallback condition holds. Same root-cause bug still exists in
+`app/(marketing)/events/page.tsx` — pre-existing, deliberately untouched, not filed as
+backlog per instruction, recorded here as a known condition.
+
+## 2026-09-07 — Codex diff-only review false positives: verify before acting
+
+Two Codex FAILs were artifacts of how the diff was built, not real defects: "5 new modules
+not in diff" (because `git diff` omits untracked files — fixed with `git add -N`) and
+"slugify not imported/defined" (defined at line 30 of the same file, on an unchanged line the
+diff never showed; disproved by `tsc --noEmit` exit 0).
+
+**Why:** `git diff` silently excludes untracked files and unchanged context lines, so Codex
+sees a partial file and can flag references that are actually defined just outside the diff
+window.
+
+**How to apply:** run `git add -N` before diffing for Codex review so new files appear in the
+diff, and verify every Codex finding against the real file (or a real check like
+`tsc --noEmit`) before acting on it — see [[feedback_codex_mandatory_qa]].
+
+## 2026-09-07 — The honest-gap design pattern for missing/unconfirmed content
+
+Removing fabricated content left pages that read as scaffolds. Fix: render a field only when
+real, fold estimates into one quiet shared-marker line instead of per-field badges, and
+convert the gap itself into a purposeful ask ("this society's details aren't confirmed — if
+you're a member, send them in"). Result: 84 pills collapsed to 1 disclaimer + 1 quiet marker
+per card; `data-placeholder` retained because integrity checks assert on it.
+
+**Why:** honesty about missing data and a scaffold-y visual impression are separable —
+quantity and prominence of the disclosure, not its presence, is what reads as unfinished.
+
+**How to apply:** when stripping fabricated/placeholder content, replace per-field loud
+badges with a single quiet shared marker plus one purposeful call-to-action, not silence and
+not repeated visual noise.
+
+## 2026-09-07 — Known condition: Athanor hook-integrity update left registrations unchanged
+
+Athanor template update `2c4347dc` shipped a stricter `execution/hooks/check_autonomy.sh` and
+a new `execution/tests/layer1_static/test_hook_integrity.sh` asserting `require_*.sh` hooks
+are dead, while all seven stayed registered in `.claude/settings.json` (69 → 70 hook
+registrations, not down to 6). Practical effect: `require_dev_result.sh` blocks `@qa`
+dispatch unless a `dev-result-*.md` exists in `.agent/memory/scratch/`. Workaround used:
+dispatch `@analyst` for read-only verification instead of fabricating the artifact. This is a
+known project condition, not filed upstream and not added to backlog per explicit
+instruction this session. Evidence: `.agent/evidence/template-hook-verify/functional.txt`.
