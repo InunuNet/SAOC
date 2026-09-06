@@ -11,7 +11,7 @@ interface AdmissionTicketsListProps {
 
 export function AdmissionTicketsList({ ticketTypes, soldOutLabel }: AdmissionTicketsListProps) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {ticketTypes.map((t) => (
         <TicketTypeCard key={t.slug} ticketType={t} mode="list" soldOutLabel={soldOutLabel} />
       ))}

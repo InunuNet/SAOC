@@ -116,15 +116,24 @@ assertions:
 
     - id: POLICY-10
       description: >
-        negative half of POLICY-09, isolated as its own assertion so a
-        fabrication regression is individually attributable: /refunds
-        contains NO concrete digit-plus-unit refund figure (days, hours,
-        weeks, %) anywhere on the page — the council has not supplied
-        these and this feature must not invent them. Only catches
-        digit-based figures (e.g. "14 days"); a spelled-out number
-        ("fourteen days") would not be caught by this pattern — see the
-        script's header comment.
-      command: '[ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3333/refunds)" = "200" ] && ! curl -s http://localhost:3333/refunds | sed -E "s/<[^>]+>/ /g" | grep -qEi "[0-9]+[[:space:]]*(day|days|hour|hours|week|weeks|%|percent)"'
+        REVISED (mission refunds-cancellation-terms, F1): /refunds now carries
+        real, invented-and-disclosed refund/cancellation figures, so the
+        original blanket "no digit anywhere" ban is wrong — it would fail on
+        the very content this feature is required to add. The narrower,
+        still-mechanical property this now proves: every digit-plus-unit
+        refund figure (days, hours, weeks, %) on the page is bound to a
+        data-provisional-figure region that itself visibly discloses the
+        word "provisional"; no such figure appears anywhere outside that
+        mechanism; at least one such region exists. Still fails a bare
+        fabricated figure (see check's own negative-control fixtures) while
+        permitting a figure provably tied to the disclosed mechanism. See
+        goldens/f1-refunds-policy.golden.md §8 for the full revision design.
+        (Original inline command, preserved for audit: `[ "$(curl -s -o
+        /dev/null -w "%{http_code}" http://localhost:3333/refunds)" = "200" ]
+        && ! curl -s http://localhost:3333/refunds | sed -E "s/<[^>]+>/ /g" |
+        grep -qEi "[0-9]+[[:space:]]*(day|days|hour|hours|week|weeks|%|percent)"`
+        — no longer the active command.)
+      command: node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs http://localhost:3333/refunds
       timeout_seconds: 30
 
     # ---- structural guard: existing pages/footer not restructured ----

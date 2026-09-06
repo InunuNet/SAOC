@@ -191,9 +191,14 @@ async function seedTicketsPage(client: SanityClient): Promise<void> {
     buyButtonLabel: 'Buy Ticket',
     soldOutMessage: 'Sold out',
     salesClosedMessage: 'Tickets for the 2027 National Show are not yet on sale — check back soon.',
+    // Reworded 2026-09 to stop contradicting /refunds's real tiered cancellation schedule —
+    // this field no longer asserts "non-refundable" itself (the page renders a hardcoded,
+    // code-owned link to /refunds as the single source of truth for that policy; see
+    // app/(marketing)/tickets/page.tsx). This field is reserved for content specific to
+    // admission tickets that /refunds doesn't already cover, e.g. the transfer instructions.
     termsNote:
-      'Tickets are non-refundable but may be transferred to another attendee by emailing ' +
-      'info@saoc.co.za before the show. Please bring your booking reference to the door.',
+      'Admission tickets may be transferred to another attendee by emailing info@saoc.co.za ' +
+      'before the show. Please bring your booking reference to the door.',
     confirmationPendingHeading: 'Confirming your payment',
     confirmationPendingMessage:
       "We're still waiting for payment confirmation from PayFast. This usually takes a " +

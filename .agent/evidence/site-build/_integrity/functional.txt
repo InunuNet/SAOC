@@ -1,0 +1,290 @@
+P0 content-integrity fix — fabricated officer names, invented society stats,
+misleading constitution disclaimer.
+
+Scope: lib/data/board.ts, lib/data/societies.ts (read, not edited — see notes),
+components/about/BoardGrid.tsx, components/societies/SocietyCard.tsx,
+app/(marketing)/about/page.tsx, app/(marketing)/societies/page.tsx,
+app/(marketing)/societies/[slug]/page.tsx, app/(marketing)/constitution/page.tsx,
+sanity/schemas/documents/boardMember.ts, sanity/schemas/documents/society.ts,
+sanity/queries.ts, plus live Sanity dataset content (see "Sanity dataset patch"
+below — the fabricated names/figures were seeded as real Sanity documents, not
+just present in the code fallback).
+
+===========================================================================
+1. Discovery: fabrication lives in Sanity too, not just the static fallback
+===========================================================================
+
+lib/data/board.ts and lib/data/societies.ts are only rendered when Sanity
+returns no documents for that type. Live query against the dataset showed
+Sanity already had boardMember/society documents seeded with the exact same
+fabricated names and figures as the code fallback:
+
+$ curl -s "https://<project>.api.sanity.io/v2023-01-01/data/query/<dataset>?query=*%5B_type%3D%3D%22boardMember%22%5D"
+{"result":[
+  {"_id":"boardMember-david-naidoo-treasurer","name":"David Naidoo","role":"Treasurer"},
+  {"_id":"boardMember-dr-annelie-van-der-merwe-president","name":"Dr. Annelie van der Merwe","role":"President"},
+  {"_id":"boardMember-lindiwe-khumalo-editor-orchids-south-africa","name":"Lindiwe Khumalo","role":"Editor, Orchids South Africa"},
+  {"_id":"boardMember-margaret-oosthuizen-secretary","name":"Margaret Oosthuizen","role":"Secretary"},
+  {"_id":"boardMember-prof-johan-botha-chair-of-judging","name":"Prof. Johan Botha","role":"Chair of Judging"},
+  {"_id":"boardMember-sipho-mthembu-vice-president","name":"Sipho Mthembu","role":"Vice-President"}
+]}
+
+$ curl -s "https://<project>.api.sanity.io/v2023-01-01/data/query/<dataset>?query=*%5B_type%3D%3D%22society%22%20%26%26%20slug.current%3D%3D%22cape-orchid-society%22%5D%5B0%5D"
+{"result":{"founded":1947,"memberCount":220,"name":"Cape Orchid Society", ...}}
+— identical to lib/data/societies.ts's fabricated "Cape Orchid Society" entry.
+
+count(*[_type=="society"]) = 21, matching all 21 fabricated entries in
+lib/data/societies.ts.
+
+Fixing only the code fallback would NOT have removed the fabricated names from
+the live page, since Sanity (checked first) was the actual source being
+rendered. Both were fixed.
+
+===========================================================================
+2. lib/data/board.ts — invented names removed
+===========================================================================
+
+All 6 entries: name changed from an invented full human name to the literal
+string "To be confirmed". Role kept (President, Vice-President, Secretary,
+Treasurer, Chair of Judging, Editor). society/tenure fields (also fabricated,
+though not rendered by BoardGrid) neutralised to "To be confirmed" as well —
+they described tenure/affiliation for a person who does not exist as described.
+
+===========================================================================
+3. Sanity dataset patch — board members
+===========================================================================
+
+Added `placeholder: boolean` field to sanity/schemas/documents/boardMember.ts,
+threaded through boardMembersQuery (sanity/queries.ts) and
+app/(marketing)/about/page.tsx's BoardMemberData/boardForGrid mapping.
+
+Patched the 6 live boardMember documents via Sanity mutate API:
+
+$ curl -s -X POST ".../data/mutate/<dataset>" -H "Authorization: Bearer <token>" \
+    --data-binary '{"mutations":[
+      {"patch":{"id":"boardMember-david-naidoo-treasurer","set":{"name":"To be confirmed","placeholder":true}}},
+      {"patch":{"id":"boardMember-dr-annelie-van-der-merwe-president","set":{"name":"To be confirmed","placeholder":true}}},
+      {"patch":{"id":"boardMember-lindiwe-khumalo-editor-orchids-south-africa","set":{"name":"To be confirmed","placeholder":true}}},
+      {"patch":{"id":"boardMember-margaret-oosthuizen-secretary","set":{"name":"To be confirmed","placeholder":true}}},
+      {"patch":{"id":"boardMember-prof-johan-botha-chair-of-judging","set":{"name":"To be confirmed","placeholder":true}}},
+      {"patch":{"id":"boardMember-sipho-mthembu-vice-president","set":{"name":"To be confirmed","placeholder":true}}}
+    ]}'
+{"transactionId":"jdIi0iSkX4NXv9moDv2osJ","results":[{"operation":"update"}x6]}
+
+Verified post-patch:
+$ curl -s ".../data/query/<dataset>?query=*%5B_type%3D%3D%22boardMember%22%5D%7Bname%2Cplaceholder%7D"
+{"result":[{"name":"To be confirmed","placeholder":true}x6]}
+
+===========================================================================
+4. Sanity dataset patch — societies (founded / memberCount)
+===========================================================================
+
+Added `foundedPlaceholder` and `memberCountPlaceholder` boolean fields to
+sanity/schemas/documents/society.ts, threaded through societyListQuery and
+societyBySlugQuery (sanity/queries.ts), and the SanitySociety type
+(components/societies/SocietyCard.tsx). Static fallback in
+app/(marketing)/societies/page.tsx and [slug]/page.tsx already sets both
+flags true (unchanged from original scope); Sanity-sourced records now pass
+their own flag through directly.
+
+Patched all 21 live society documents (id list queried first, then a 21-entry
+batch mutation setting both flags true — these founding years/member counts
+were invented, never Lee-Ann-sourced):
+
+$ curl -s -X POST ".../data/mutate/<dataset>" ... --data-binary @society_mutations.json
+{"transactionId":"Qc7Gq032aXYhUXMuDwqyWV","results":[{"operation":"update"}x21]}
+
+===========================================================================
+5. Rendering — visible + machine-readable placeholder marking
+===========================================================================
+
+- components/about/BoardGrid.tsx: card wrapper gets
+  data-placeholder="true" when the entry is a placeholder; renders a quiet
+  "Awaiting confirmation" badge (border-rule, bg-bone, text-muted — existing
+  semantic tokens, no new colours).
+- components/societies/SocietyCard.tsx: founded/memberCount fields each get
+  their own data-placeholder attribute plus an "(unconfirmed)" /
+  "unconfirmed" inline badge using the same tokens.
+- app/(marketing)/societies/[slug]/page.tsx: same pattern on the Founded and
+  Members detail-grid entries.
+- app/(marketing)/constitution/page.tsx: disclaimer section now carries
+  data-placeholder="true"; copy rewritten from "drafted with AI assistance,
+  pending legal review" (which implied constitution text exists) to "Not yet
+  published... available on request from the Secretary and will be published
+  here once supplied." No constitution text was invented.
+
+===========================================================================
+6. Verification commands and output
+===========================================================================
+
+$ npx tsc --noEmit
+(no output — exit 0)
+
+$ bun run build
+(exit 0 — full route manifest printed, including
+  ○ /about, ○ /societies, ● /societies/[slug], ○ /constitution)
+
+Note: two intermediate `bun run build` runs raced against a concurrent
+session's own build/start of the same .next directory (other dev/design
+agents are active on this repo in parallel per the team roster) and failed
+with transient "build still in progress" / "middleware-manifest.json not
+found" errors. Re-running `bun run build` cleanly after those in-flight
+builds finished produced exit 0 each time; final verification below is from
+the last clean build.
+
+Local server (bun run start -p 3914), status codes:
+  about:200
+  societies:200
+  constitution:200
+
+Fabricated-name grep on rendered /about HTML (must be 0 — proof is on the
+built/rendered output, not the source file):
+  Annelie van der Merwe: 0
+  Sipho Mthembu: 0
+  Margaret Oosthuizen: 0
+  David Naidoo: 0
+  Johan Botha: 0
+
+Before this fix (first server run, before the Sanity dataset patch — code
+fallback alone was insufficient because Sanity was the active source):
+  Annelie van der Merwe: 1
+  Sipho Mthembu: 1
+  Margaret Oosthuizen: 1
+  David Naidoo: 1
+  Johan Botha: 1
+
+Placeholder markers present on rendered /about:
+  "To be confirmed": 12 occurrences (6 board cards, doubled by embedded RSC
+    payload in the HTML response)
+  "Awaiting confirmation": 12 occurrences (same reason)
+  data-placeholder="true": 6 occurrences
+
+Placeholder markers present on rendered /societies/cape-orchid-society
+(server component, not client-hydrated — DOM + embedded RSC payload):
+  data-placeholder="true": 2 (Founded field, Members field)
+  "unconfirmed": 4 (2 in DOM, 2 duplicated in embedded RSC payload)
+
+Note: /societies (the list/index page) renders its cards through
+SocietiesClient, a 'use client' component reading useSearchParams — Next
+defers its content out of the static/SSR HTML shell (Suspense boundary), so a
+raw curl of /societies alone does not show card-level markup for founded/
+memberCount; the same SocietyCard component and data-placeholder logic is
+shared with the (server-rendered, verified above) /societies/[slug] detail
+page. Returns 200; no further evidence collected for the client-only list
+view specifically because it is not server-renderable via curl.
+
+Constitution page copy check:
+  "drafted with AI assistance": 0 (old misleading disclaimer gone)
+  "Not yet published": 2 (new copy present, DOM + RSC payload)
+  data-placeholder="true": 1
+
+===========================================================================
+7. Not touched
+===========================================================================
+
+- No files under app/(marketing)/national-show/**.
+- No existing before-*.png files under .agent/evidence/ — none read, moved,
+  or deleted.
+- lib/data/societies.ts's fabricated names/venues/meeting times/regions are
+  NOT in scope per the task (only founding years and member counts were
+  named as the defect) and were left as-is.
+
+===========================================================================
+8. FOLLOW-UP: fabricated meeting days/times and venues (lib/data/societies.ts)
+===========================================================================
+
+Team lead flagged this as more serious than founded/memberCount: a wrong
+founding year is a wrong fact; a wrong meeting day/time/venue sends a real
+person to a real building on the wrong night. Confirmed invented rather than
+sourced against docs/leeann-source/society-website-information-form_2026-09-01.md
+(Lee-Ann's intake form asking affiliated societies for exactly this data —
+responses not yet back).
+
+Same two-layer defect as before: the fabricated `meet`/`venue` values were
+present both in the code fallback (lib/data/societies.ts) AND seeded into the
+21 live Sanity society documents (already patched in section 4 for founded/
+memberCount, but meets/venue were untouched at that point).
+
+Changes:
+
+- types/index.ts: `Society.meet` and `Society.venue` changed from required
+  to optional (`meet?: string; venue?: string;`) — the site can now correctly
+  represent "we don't have this yet" instead of always carrying a string.
+- lib/data/societies.ts: removed the `meet` and `venue` properties entirely
+  from all 21 entries (previously invented values like "2nd Tue, 19h30" /
+  "Kirstenbosch Hall, Cape Town"). Header comment added citing the intake
+  form and explaining why no replacement value was invented.
+- sanity/schemas/documents/society.ts: added `meetPlaceholder` and
+  `venuePlaceholder` boolean fields (same pattern as foundedPlaceholder/
+  memberCountPlaceholder).
+- sanity/queries.ts: `societyListQuery` and `societyBySlugQuery` now also
+  fetch `meetPlaceholder`, `venuePlaceholder`.
+- components/societies/SocietyCard.tsx: SanitySociety type gains
+  `meetPlaceholder?`/`venuePlaceholder?`. Rendering: when `meets`/`venue`
+  has a real value, render it as before; when absent AND the placeholder
+  flag is set, render a quiet "To be confirmed" badge (border-rule/bg-bone/
+  text-muted tokens) in place of the field — no specific invented day, time,
+  or address is ever shown. Chose to omit the fabricated string outright
+  (per team lead's stated preference) rather than show a "confirmed-looking"
+  value with a small disclaimer next to it, since this is the field a
+  visitor actually acts on.
+- app/(marketing)/societies/page.tsx and [slug]/page.tsx: static-fallback
+  mapping sets `meetPlaceholder: true, venuePlaceholder: true` (meet/venue
+  are now `undefined` on the source objects); [slug]/page.tsx detail-grid
+  rendering gets the same real-value-or-placeholder-badge treatment as the
+  card.
+- Left untouched, per instruction: society `name`, `region`, `province` —
+  these read as genuine South African orchid societies and locations: no
+  society name looked invented on inspection.
+
+Live Sanity dataset patch — society documents (meets/venue blanked, flags set):
+
+$ curl -s "https://<project>.api.sanity.io/v2023-01-01/data/query/<dataset>?query=*%5B_type%3D%3D%22society%22%5D._id"
+(21 ids — same 21 as section 4)
+
+$ curl -s -X POST ".../data/mutate/<dataset>" -H "Authorization: Bearer <token>" \
+    --data-binary '{"mutations":[
+      {"patch":{"id":"society-border-orchid-society","set":{"meetPlaceholder":true,"venuePlaceholder":true},"unset":["meets","venue"]}},
+      ... (21 total, one per society id)
+    ]}'
+{"transactionId":"Qc7Gq032aXYhUXMuDwr7RL","results":[{"operation":"update"}x21]}
+
+Verified post-patch:
+$ curl -s ".../data/query/<dataset>?query=*%5B_type%3D%3D%22society%22%20%26%26%20slug.current%3D%3D%22cape-orchid-society%22%5D%5B0%5D%7Bname%2Cmeets%2Cvenue%2CmeetPlaceholder%2CvenuePlaceholder%7D"
+{"result":{"meetPlaceholder":true,"meets":null,"name":"Cape Orchid Society","venue":null,"venuePlaceholder":true}}
+
+$ curl -s ".../data/query/<dataset>?query=count(*%5B_type%3D%3D%22society%22%20%26%26%20defined(meets)%5D)"
+{"result":0}
+$ curl -s ".../data/query/<dataset>?query=count(*%5B_type%3D%3D%22society%22%20%26%26%20defined(venue)%5D)"
+{"result":0}
+
+Confirms all 21 society documents now have `meets`/`venue` fully unset —
+zero live documents carry any fabricated meeting time or venue string.
+
+Verification commands:
+
+$ npx tsc --noEmit
+(no output — exit 0)
+
+$ bun run build
+(exit 0 — full route manifest, including ○ /societies, ● /societies/[slug])
+
+Local server (bun run start -p 3915), status codes:
+  societies:200
+  society-detail (cape-orchid-society):200
+
+Fabricated meeting-time/venue grep on rendered /societies/cape-orchid-society
+(must be 0 — proof is on the built/rendered output):
+  "Kirstenbosch Hall": 0
+  "2nd Tue, 19h30": 0
+  "Durban Botanic Gardens": 0 (spot-check on a different society's old value,
+    not expected on this page anyway — confirms no cross-contamination)
+  "Walter Sisulu NBG": 0 (same spot-check)
+
+Placeholder markers present on the same rendered page:
+  "To be confirmed": 4 occurrences (Meets field + Venue field, doubled by
+    the embedded RSC payload in the HTML response)
+  data-placeholder="true": 4 occurrences (same reason)
+
+No changes made to society `name`, `region`, or `province` — inspected all
+21 and none read as invented.

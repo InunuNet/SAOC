@@ -19,6 +19,7 @@ config({ quiet: true });
 
 import {
   awards,
+  BOARD_PLACEHOLDER_NAME,
   boardMembers,
   events,
   partners,
@@ -83,11 +84,19 @@ function mapAwards(): Record<string, unknown>[] {
 }
 
 function mapBoardMembers(): Record<string, unknown>[] {
+  // Keyed on role, not `${name}-${role}`: a placeholder name ("To be confirmed") is
+  // expected to be corrected in place once SAOC supplies the real officeholder, and
+  // an id derived from the name would mint a NEW document on that edit — leaving the
+  // old placeholder-named document behind as an orphaned duplicate committee member.
+  // Roles are the stable identity here; names are the field expected to change.
   return boardMembers.map((m) => ({
-    _id: safeid('boardMember', `${m.name}-${m.role}`),
+    _id: safeid('boardMember', m.role),
     _type: 'boardMember',
     name: m.name,
     role: m.role,
+    // Derived from the sentinel, not hardcoded — flips to false automatically once
+    // lib/data/board.ts is updated with the real name, no separate flag to maintain.
+    placeholder: m.name === BOARD_PLACEHOLDER_NAME,
   }));
 }
 
@@ -127,9 +136,19 @@ function mapSocieties(): Record<string, unknown>[] {
     province: s.province,
     region: s.region,
     founded: s.founded,
-    meets: s.meet,
-    venue: s.venue,
     memberCount: s.members,
+    // The whole static societies array is our own estimate, not sourced from
+    // Lee-Ann or the affiliated societies themselves — see lib/data/societies.ts.
+    foundedPlaceholder: true,
+    memberCountPlaceholder: true,
+    // meet/venue are omitted from lib/data/societies.ts entirely rather than
+    // filled with an invented schedule/location (a wrong meeting time or venue
+    // is actionable, not just inaccurate). createOrReplace means an omitted key
+    // here clears any previously-seeded value on re-seed, same as a live unset.
+    ...(s.meet !== undefined ? { meets: s.meet } : {}),
+    ...(s.venue !== undefined ? { venue: s.venue } : {}),
+    meetPlaceholder: s.meet === undefined,
+    venuePlaceholder: s.venue === undefined,
   }));
 }
 

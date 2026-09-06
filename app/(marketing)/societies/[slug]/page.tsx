@@ -57,6 +57,14 @@ async function getSociety(slug: string): Promise<SanitySociety | null> {
     logo: null,
     website: match.websiteUrl ?? null,
     markBadge: null,
+    // Static fallback founding years and member counts are our own
+    // estimates, not Lee-Ann-sourced or Sanity-sourced data.
+    foundedPlaceholder: true,
+    memberCountPlaceholder: true,
+    // Meeting day/time and venue have not been supplied at all (match.meet/
+    // match.venue are unset) — flag so the UI shows "to be confirmed" instead of nothing.
+    meetPlaceholder: true,
+    venuePlaceholder: true,
   };
 }
 
@@ -110,6 +118,17 @@ export default async function SocietyPage({
               </dt>
               <dd className="mt-1 font-sans text-[15px] text-ink">{society.meets}</dd>
             </div>
+          ) : society.meetPlaceholder ? (
+            <div data-placeholder="true">
+              <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+                Meets
+              </dt>
+              <dd className="mt-1 font-sans text-[15px] text-ink">
+                <span className="border border-rule bg-bone px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                  To be confirmed
+                </span>
+              </dd>
+            </div>
           ) : null}
           {society.venue ? (
             <div>
@@ -118,21 +137,46 @@ export default async function SocietyPage({
               </dt>
               <dd className="mt-1 font-sans text-[15px] text-ink">{society.venue}</dd>
             </div>
+          ) : society.venuePlaceholder ? (
+            <div data-placeholder="true">
+              <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+                Venue
+              </dt>
+              <dd className="mt-1 font-sans text-[15px] text-ink">
+                <span className="border border-rule bg-bone px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                  To be confirmed
+                </span>
+              </dd>
+            </div>
           ) : null}
           {society.founded ? (
-            <div>
+            <div data-placeholder={society.foundedPlaceholder ? 'true' : undefined}>
               <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
                 Founded
               </dt>
-              <dd className="mt-1 font-sans text-[15px] text-ink">{society.founded}</dd>
+              <dd className="mt-1 font-sans text-[15px] text-ink">
+                {society.founded}
+                {society.foundedPlaceholder ? (
+                  <span className="ml-2 border border-rule bg-bone px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                    unconfirmed
+                  </span>
+                ) : null}
+              </dd>
             </div>
           ) : null}
           {society.memberCount !== null ? (
-            <div>
+            <div data-placeholder={society.memberCountPlaceholder ? 'true' : undefined}>
               <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
                 Members
               </dt>
-              <dd className="mt-1 font-sans text-[15px] text-ink">{society.memberCount}</dd>
+              <dd className="mt-1 font-sans text-[15px] text-ink">
+                {society.memberCount}
+                {society.memberCountPlaceholder ? (
+                  <span className="ml-2 border border-rule bg-bone px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                    unconfirmed
+                  </span>
+                ) : null}
+              </dd>
             </div>
           ) : null}
         </dl>

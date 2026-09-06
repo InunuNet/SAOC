@@ -14,6 +14,20 @@ export const revalidate = 60;
 
 export const metadata: Metadata = { title: 'Sponsors' };
 
+const REACH_STATS = [
+  { value: '21', label: 'Affiliated Societies' },
+  { value: '1968', label: 'Founding Year' },
+  { value: '18', label: 'National Shows Hosted' },
+  { value: '56', label: 'Accredited Judges' },
+] as const;
+
+const BENEFITS = [
+  'Logo placement on saoc.co.za and event signage',
+  'Recognition at the National Show — exhibition space, programme, and banner placement',
+  'A feature in Orchids South Africa, our 184-page annual yearbook',
+  'A mention to our affiliated-society network via newsletter and social channels',
+] as const;
+
 export default async function SponsorsPage() {
   const sponsors = await sanityFetch<SanitySponsor[]>({
     query: partnersQuery,
@@ -33,41 +47,76 @@ export default async function SponsorsPage() {
       />
 
       <div className="mx-auto max-w-[1280px] px-8 py-16 space-y-16">
-        {hasSponsors ? (
-          <SponsorGrid sponsors={list} />
-        ) : (
-          <section className="border border-rule bg-bone p-10 text-center">
-            <h2 className="font-serif text-[26px] font-medium text-ink">
-              Become our first sponsor
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl font-sans text-[15px] leading-relaxed text-ink/70">
-              SAOC is building a community of partners who support orchid growing, showing,
-              and judging across South Africa. Be the first to put your name behind it.
-            </p>
-            <Link
-              href="/contact"
-              className="mt-6 inline-block bg-ink px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-ink/85"
-            >
-              Get in Touch
-            </Link>
-          </section>
-        )}
+        {hasSponsors ? <SponsorGrid sponsors={list} /> : null}
 
-        <section className="border-t border-rule pt-10 text-center">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
-            Support SAOC
+        {/* What sponsorship supports */}
+        <section className="max-w-[720px]">
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
+            What your support funds
           </p>
-          <h2 className="mt-3 font-serif text-[24px] font-medium text-ink">
-            Become a sponsor
-          </h2>
-          <p className="mx-auto mt-2 max-w-xl font-sans text-[15px] leading-relaxed text-ink/70">
-            Partner with the national body coordinating orchid societies since 1968.
+          <p className="font-serif text-[20px] leading-relaxed text-ink">
+            SAOC coordinates orchid growing, showing, hybridising, and judging across South
+            Africa — reaching a national audience of 21 affiliated societies through our
+            triennial National Show and annual yearbook.
+          </p>
+          <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
+            Sponsorship funds the show bench, judging accreditation, and the community events
+            that keep orchid growing alive in South Africa — from the National Show down to
+            local society meetings.
+          </p>
+        </section>
+
+        {/* Reach — reused stat treatment from the home page */}
+        <section>
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
+            Our reach
+          </p>
+          <dl className="grid grid-cols-2 gap-8 border-y border-rule py-10 sm:grid-cols-4">
+            {REACH_STATS.map((stat) => (
+              <div key={stat.label}>
+                <dt className="font-serif text-[32px] font-medium text-ink">{stat.value}</dt>
+                <dd className="mt-1 font-mono text-[11px] tracking-[0.16em] text-muted">
+                  {stat.label}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        {/* Benefits */}
+        <section className="max-w-[720px]" data-placeholder="sponsorship-benefits-estimate">
+          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
+            What sponsors get
+          </p>
+          <ul className="space-y-3">
+            {BENEFITS.map((benefit) => (
+              <li
+                key={benefit}
+                className="font-sans text-[16px] leading-relaxed text-ink/80 pl-5 relative before:content-['—'] before:absolute before:left-0 before:text-muted"
+              >
+                {benefit}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 font-sans text-[13px] leading-relaxed text-ink/60">
+            Indicative benefits — final sponsorship tiers and pricing are confirmed when you get
+            in touch.
+          </p>
+        </section>
+
+        {/* Single consolidated CTA */}
+        <section className="border border-rule bg-bone p-10 text-center">
+          <h2 className="font-serif text-[26px] font-medium text-ink">Become a sponsor</h2>
+          <p className="mx-auto mt-3 max-w-xl font-sans text-[15px] leading-relaxed text-ink/70">
+            Partner with the national body coordinating orchid societies since 1968. Get in
+            touch to discuss sponsorship of the National Show, the yearbook, or the council
+            itself.
           </p>
           <Link
             href="/contact"
-            className="mt-5 inline-block text-ink underline underline-offset-2 font-sans text-[15px]"
+            className="mt-6 inline-block bg-ink px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-ink/85"
           >
-            Talk to us about sponsorship →
+            Talk to us about sponsorship
           </Link>
         </section>
       </div>

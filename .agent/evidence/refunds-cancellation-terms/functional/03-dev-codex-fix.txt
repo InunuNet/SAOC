@@ -1,0 +1,82 @@
+=== DEV CODEX-FIX RE-RUN 2026-09-06 | mission refunds-cancellation-terms F1 ===
+Fix applied: wrap spelled-out day thresholds + conference transfer window in
+ProvisionalFigure too (Codex finding: mechanism was incomplete for day figures).
+
+--- tsc --noEmit ---
+exit: 0
+
+--- A1 ---
+A1 PASS
+
+--- A2 ---
+found: components/ui/ProvisionalFigure.tsx
+A2 PASS
+
+--- A3 ---
+http_code=200
+A3 PASS
+
+--- A4 (revised POLICY-10, load-bearing) ---
+FAIL: provisional-figure region #2 does not carry both a real figure and the word "provisional" as visible text: "thirty days provisional"
+FAIL: provisional-figure region #4 does not carry both a real figure and the word "provisional" as visible text: "fourteen and thirty days provisional"
+FAIL: provisional-figure region #6 does not carry both a real figure and the word "provisional" as visible text: "fourteen days provisional"
+FAIL: provisional-figure region #8 does not carry both a real figure and the word "provisional" as visible text: "seven days provisional"
+exit: 1
+
+--- A5 (vendor scope) ---
+OK: http://localhost:3333/refunds — scoped to tickets, does not restate vendor stand terms
+exit: 0
+
+--- A6 (product families) ---
+admission-ok
+conference-ok
+workshop-ok
+
+--- A7 (transfer) ---
+A7 PASS
+
+--- A8 (organiser cancellation) ---
+A8 PASS
+
+--- A9 (no business-day figure) ---
+A9 PASS
+
+--- A10 (terms consistency) ---
+OK: http://localhost:3333/terms still links to http://localhost:3333/refunds; no duplicated figures
+exit: 0
+
+--- A11 (yaml wired) ---
+A11 PASS
+
+--- A12 (old script) ---
+OK: http://localhost:3333/refunds is structurally complete and free of fabricated figures
+exit: 0
+
+--- A13-A16 (fixtures, unaffected by page change) ---
+FAIL: unconfirmed figure "14 days" appears outside any data-provisional-figure region
+FAIL: no data-provisional-figure region found on the page
+A13 exit: 1 (expect 1)
+FAIL: unconfirmed figure "14 days" appears outside any data-provisional-figure region
+FAIL: provisional-figure region #1 does not carry both a real figure and the word "provisional" as visible text: "See the table below PROVISIONAL"
+A14 exit: 1 (expect 1)
+FAIL: provisional-figure region #1 does not carry both a real figure and the word "provisional" as visible text: "14 days"
+FAIL: provisional-figure region #2 does not carry both a real figure and the word "provisional" as visible text: "50%"
+A15 exit: 1 (expect 1)
+OK: .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/positive-provisional.html — every unconfirmed figure is bound to a disclosed provisional marker
+A16 exit: 0 (expect 0)
+
+=== SUMMARY ===
+A4 (load-bearing) FAILS with the Codex-suggested fix applied verbatim: wrapping
+spelled-out day-threshold words in ProvisionalFigure does NOT satisfy A4, because
+check-refunds-provisional-figures.mjs's own FIGURE_PATTERN requires a DIGIT inside
+each mark ('\d+\s*(?:days?|hours?|weeks?)|\d+\s*%|...') — a mark whose only
+content is 'thirty days provisional' has hasFigure=false and is flagged as a
+region that doesn't carry a real figure. This is empirical, not a guess: see the
+four A4 FAIL lines above, each quoting the exact mark text that fails.
+
+This reconfirms (with the fix Codex proposed actually applied and tested) that
+A4 and A12 cannot both be satisfied for day/week/hour thresholds: A12 forbids any
+digit+day/hour/week string ANYWHERE on the page (marked or not — no boundary bug
+for those units, verified prior pass); A4 requires every mark to contain a digit.
+Returning this to @architect per team lead's instruction, with output attached,
+rather than working around it further.

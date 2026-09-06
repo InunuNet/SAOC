@@ -1,0 +1,190 @@
+schema: athanor.contract/v1
+slug: refunds-cancellation-terms
+goal: >
+  Replace /refunds' deliberately figure-free "pending council confirmation" deferral with
+  real, invented-and-disclosed refund/cancellation terms for SAOC's ticket products
+  (admission, conference, workshop/field-trip), scoped to exclude vendor stand bookings
+  (which already have their own council-written 90-day clause). Every invented figure is
+  bound to a visible "provisional" marker via a new data-provisional-figure mechanism
+  (lib/provisional-figures.ts + a ProvisionalFigure component), reusing the pattern
+  already proven for ticket pricing. contracts/contract-policy-pages.yaml's POLICY-10 is
+  revised in tandem (not deleted) to permit a figure only when it is structurally bound
+  to that disclosed mechanism, while still failing a bare fabricated figure. See
+  goldens/f1-refunds-policy.golden.md for the full design record, the exact figures being
+  invented and why, and the POLICY-10 revision design.
+created_at: '2026-09-06'
+autonomy: high
+features:
+  - id: F1
+    name: Provisional refund/cancellation terms on /refunds + revised POLICY-10 gate
+    status: pending
+goldens:
+  - .agent/memory/project/specs/refunds-cancellation-terms/goldens/f1-refunds-policy.golden.md
+  - .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/positive-provisional.html
+  - .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-fabricated.html
+  - .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-mark-no-figure.html
+  - .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-mark-no-word.html
+  - .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-no-mechanism.html
+  - .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-mark-stray-number-word.html
+assertions:
+  phase: 4
+  checks:
+    # --- source of truth ---
+    - id: A1
+      description: >
+        [F1] lib/provisional-figures.ts exports PROVISIONAL_REFUND_POLICY carrying a
+        literal `provisional: true`, the three cancellation tiers, the
+        organiser-cancellation refund percent, and the conference transfer window — the
+        single source of truth for every figure this feature renders (golden §2). False
+        state that still passes — a constant that exists but is never rendered (A4/A5
+        prove it's actually on the page).
+      command: f=lib/provisional-figures.ts; grep -q "PROVISIONAL_REFUND_POLICY" "$f" && grep -q "cancellationTiers" "$f" && grep -q "organiserCancellationRefundPercent" "$f" && grep -q "conferenceTransferWindowDays" "$f"
+
+    - id: A2
+      description: >
+        [F1] A ProvisionalFigure component exists, is marked data-provisional-figure and
+        renders the literal visible word "provisional" as text content (not a title
+        attribute or CSS pseudo-element) — golden §4, same convention as
+        TicketTypeCard's provisional badge (must survive renderToStaticMarkup with no
+        browser).
+      command: f=$(grep -rl "data-provisional-figure" components/ 2>/dev/null | head -1); test -n "$f" && grep -qi "provisional" "$f"
+
+    # --- rendered page: structure ---
+    - id: A3
+      description: >
+        [F1] /refunds returns HTTP 200 and still contains the pre-existing "Draft
+        pending legal review... drafted with AI assistance... not yet been reviewed by a
+        qualified legal professional" disclosure — this feature extends that frame, it
+        does not add a second disclaimer mechanism or remove the existing one (golden
+        §6).
+      command: '[ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3333/refunds)" = "200" ] && curl -s http://localhost:3333/refunds | sed -E "s/<[^>]+>/ /g" | grep -qi "drafted with AI assistance"'
+      timeout_seconds: 30
+
+    - id: A4
+      description: >
+        [F1] REVISED POLICY-10: every digit+unit refund figure (day/days/hour/hours/
+        week/weeks/%/percent) on /refunds is bound to a data-provisional-figure region
+        that itself visibly discloses the word "provisional"; no such figure appears
+        anywhere outside that mechanism; at least one such region exists. Replaces the
+        original blanket "no digit anywhere" ban now that real, disclosed figures are
+        required content (golden §8). This is the load-bearing assertion for the whole
+        feature — see the script's own header comment for the three sub-properties and
+        the weak-check hole it closes.
+      command: node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs http://localhost:3333/refunds
+      timeout_seconds: 30
+
+    - id: A5
+      description: >
+        [F1] /refunds does not restate either vendor-stand cancellation figure ("90
+        days" or "2 months"/"two months") and explicitly states that vendor stand
+        bookings are a separate product with their own registration terms (golden §5).
+        Prevents publishing a third, unauthorised figure against the council-approved
+        vendor T&Cs (docs/vendor-gated-registration-flow.md:435,668).
+      command: node contracts/checks/policy-pages/check-refunds-vendor-scope.mjs http://localhost:3333/refunds
+      timeout_seconds: 30
+
+    - id: A6
+      description: >
+        [F1] All three ticket product families this policy covers are named on the page
+        — admission, conference, and workshop/field-trip/cocktail products — so a reader
+        can tell which of their purchases this policy actually governs (golden §6).
+      command: curl -s http://localhost:3333/refunds | sed -E "s/<[^>]+>/ /g" | grep -qi "admission" && curl -s http://localhost:3333/refunds | sed -E "s/<[^>]+>/ /g" | grep -qi "conference" && curl -s http://localhost:3333/refunds | sed -E "s/<[^>]+>/ /g" | grep -qi -E "workshop|field trip|cocktail"
+      timeout_seconds: 30
+
+    - id: A7
+      description: >
+        [F1] Conference tickets (named-registrant products) are offered a free transfer
+        option in addition to the standard cancellation tiers — golden §3/§6, the
+        conferenceTransferWindowDays figure from PROVISIONAL_REFUND_POLICY must actually
+        render, not just exist in the source file.
+      command: curl -s http://localhost:3333/refunds | sed -E "s/<[^>]+>/ /g" | grep -qi "transfer"
+      timeout_seconds: 30
+
+    - id: A8
+      description: >
+        [F1] Organiser-cancellation full-refund commitment (100%, provisional) still
+        appears alongside the buyer-initiated cancellation tiers — golden §6, this is
+        pre-existing content this feature must not silently drop while adding the new
+        tiered structure.
+      command: curl -s http://localhost:3333/refunds | sed -E "s/<[^>]+>/ /g" | grep -qi -E "SAOC cancels|cancels (the|an) event"
+      timeout_seconds: 30
+
+    - id: A9
+      description: >
+        [F1] No refund PROCESSING TIME or gateway fee amount is stated as a committed
+        figure (e.g. "7-10 business days", "R2 fee") — gateway choice is undecided and
+        PayFast/Ozow operational timing is not a policy commitment this feature should
+        make (golden §6, last two bullets). Reuses the same digit+unit pattern as A4 but
+        scoped to business-day-style processing language specifically.
+      command: '! curl -s http://localhost:3333/refunds | sed -E "s/<[^>]+>/ /g" | grep -qEi "[0-9]+[[:space:]]*(business day|business days)"'
+      timeout_seconds: 30
+
+    # --- cross-page consistency ---
+    - id: A10
+      description: >
+        [F1] /terms still cross-links to /refunds (unchanged) and has not grown its own
+        independently-maintained digit+unit refund figure — /refunds remains the single
+        source of truth (golden §7).
+      command: node contracts/checks/policy-pages/check-refunds-terms-consistency.mjs http://localhost:3333/terms http://localhost:3333/refunds
+      timeout_seconds: 30
+
+    # --- gate wiring: POLICY-10 actually revised, not just parallel-added ---
+    - id: A11
+      description: >
+        [F1] contracts/contract-policy-pages.yaml's POLICY-10 check id now invokes
+        check-refunds-provisional-figures.mjs (the revised, mechanism-aware check), not
+        the original blanket-ban inline regex — proves the tandem revision actually
+        happened in the shared gate file, not merely added as a parallel unused script
+        (golden §8 step 3). The old check-refunds-no-fabrication.mjs file itself is left
+        in place unmodified (still valid for POLICY-09's structural half).
+      command: 'awk "/id: POLICY-10/,/id: POLICY-11/" contracts/contract-policy-pages.yaml | grep -q "check-refunds-provisional-figures.mjs"'
+
+    - id: A12
+      description: >
+        [F1] check-refunds-no-fabrication.mjs (POLICY-09's script) is unmodified in
+        content/behavior — still exists, still exports the same structural checks — so
+        POLICY-09 itself keeps passing unaffected by this feature's changes.
+      command: test -f contracts/checks/policy-pages/check-refunds-no-fabrication.mjs && node contracts/checks/policy-pages/check-refunds-no-fabrication.mjs http://localhost:3333/refunds
+
+    # --- negative-control fixtures stay honest (guard survives) ---
+    - id: A13
+      description: >
+        [F1] Negative control — the revised POLICY-10 script still FAILS against a
+        synthetic page with a bare, unwrapped fabricated figure (no mechanism at all).
+        Guards against a future edit neutering the check (golden §9,
+        negative-fabricated.html).
+      command: '! node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-fabricated.html'
+
+    - id: A14
+      description: >
+        [F1] Negative control — the revised check still FAILS when a
+        data-provisional-figure mark exists but wraps irrelevant text while the real
+        figure sits bare elsewhere on the page (golden §9, negative-mark-no-figure.html).
+        Proves the mechanism can't be gamed by wrapping something unrelated in the mark.
+      command: '! node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-mark-no-figure.html'
+
+    - id: A15
+      description: >
+        [F1] Negative control — the revised check still FAILS when figures are correctly
+        wrapped in data-provisional-figure marks but the literal word "provisional" is
+        missing from each mark's own visible text (golden §9,
+        negative-mark-no-word.html). Proves the marker must actually disclose, not just
+        structurally isolate the figure.
+      command: '! node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-mark-no-word.html'
+
+    - id: A16
+      description: >
+        [F1] Positive control — the revised check PASSES against a synthetic page where
+        every figure is correctly wrapped and discloses "provisional" (golden §9,
+        positive-provisional.html). Rules out a check that can never go green.
+      command: node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/positive-provisional.html
+
+    - id: A17
+      description: >
+        [F1] Negative control — added after FIGURE_PATTERN was extended to recognise
+        spelled-out day/hour/week thresholds ("thirty days", not just "30 days"; see
+        golden §8 correction). Proves that extension didn't loosen the anti-vacuity
+        property: a mark containing a stray number word NOT adjacent to a unit ("two
+        important cases") must still fail, even though it visibly says "provisional"
+        (golden §9, negative-mark-stray-number-word.html).
+      command: '! node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-mark-stray-number-word.html'

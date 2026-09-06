@@ -1,0 +1,68 @@
+=== ARCHITECT YAML FIX 2026-09-06 | contract-f1.yaml unparseable ===
+
+Reported by team lead: contract-f1.yaml failed to parse —
+yaml.scanner.ScannerError: mapping values are not allowed here, line 140 col 24.
+
+Root cause: A11's command was an UNQUOTED plain scalar containing the substring
+"id: POLICY-10" (from its awk range pattern `/id: POLICY-10/,/id: POLICY-11/`). YAML's
+plain-scalar grammar treats ": " (colon immediately followed by a space) as a mapping
+key/value separator wherever it appears, so the parser read "id" as a nested mapping key
+inside what was meant to be one scalar command string, and broke.
+
+Fix: wrapped A11's entire command in single quotes (it contains no single quotes of its
+own, so no escaping was needed):
+
+  Before: command: awk "/id: POLICY-10/,/id: POLICY-11/" contracts/contract-policy-pages.yaml | grep -q "check-refunds-provisional-figures.mjs"
+  After:  command: 'awk "/id: POLICY-10/,/id: POLICY-11/" contracts/contract-policy-pages.yaml | grep -q "check-refunds-provisional-figures.mjs"'
+
+--- Parse verification ---
+$ python3 -c "import yaml;d=yaml.safe_load(open('.agent/memory/project/specs/refunds-cancellation-terms/contract-f1.yaml'));print(len(d['assertions']['checks']),'checks parsed')"
+17 checks parsed
+
+--- Scanned every other assertion's command for the same defect class ---
+Checked the raw file (grep -n "^      command:") and the parsed values for: an unquoted
+plain scalar containing ": " (colon+space), a leading {, [, *, or &, or a trailing ":".
+Only A11 was affected. Every other unquoted command (A1, A2, A4, A6-A8, A10, A12, A16)
+contains only "://" (colon immediately followed by a non-space, e.g. http://) which does
+NOT trigger the YAML mapping-indicator rule, or no colon at all. Every command that
+already needed shell-level `!`/leading-special-char protection (A3, A9, A13-A15, A17)
+was already single-quoted in the original file and parses correctly.
+
+--- Full re-run: every command extracted from the PARSED file (yaml.safe_load), not
+    hand-copied, executed via /bin/sh -c against the running local dev server
+    (localhost:3333, confirmed live: curl -s -o /dev/null -w '%{http_code}' -> 200) ---
+
+Script: .tmp/sandbox/refunds-arch/run_contract_checks.py (loads the yaml doc, iterates
+assertions.checks, runs check['command'] via subprocess against /bin/sh -c, using
+check.get('timeout_seconds', 60) as the timeout — no manual transcription of any
+command string).
+
+$ python3 .tmp/sandbox/refunds-arch/run_contract_checks.py
+17 checks parsed from contract-f1.yaml
+
+[PASS] A1 (exit 0)
+[PASS] A2 (exit 0)
+[PASS] A3 (exit 0)
+[PASS] A4 (exit 0)
+[PASS] A5 (exit 0)
+[PASS] A6 (exit 0)
+[PASS] A7 (exit 0)
+[PASS] A8 (exit 0)
+[PASS] A9 (exit 0)
+[PASS] A10 (exit 0)
+[PASS] A11 (exit 0)
+[PASS] A12 (exit 0)
+[PASS] A13 (exit 0)
+[PASS] A14 (exit 0)
+[PASS] A15 (exit 0)
+[PASS] A16 (exit 0)
+[PASS] A17 (exit 0)
+
+17/17 passed
+
+All 17 assertions pass when extracted and run programmatically from the now-valid YAML
+file, against the live local dev server on :3333. This supersedes @dev's earlier
+"17 green, run verbatim from contract-f1.yaml" claim with an actual parse-based
+re-run — the file could not have been parsed as claimed before this fix (A11's command
+would have thrown the same ScannerError), but the underlying implementation these
+checks exercise is independently confirmed correct now.

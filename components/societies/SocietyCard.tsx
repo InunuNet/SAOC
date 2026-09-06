@@ -17,6 +17,14 @@ export interface SanitySociety {
   logo: SanityImageSource | null;
   website: string | null;
   markBadge: boolean | null;
+  /** True when `founded` is an unconfirmed estimate rather than a confirmed figure. */
+  foundedPlaceholder?: boolean | null;
+  /** True when `memberCount` is an unconfirmed estimate rather than a confirmed figure. */
+  memberCountPlaceholder?: boolean | null;
+  /** True when the society has not supplied a real meeting day/time — `meets` should be null. */
+  meetPlaceholder?: boolean | null;
+  /** True when the society has not supplied a real venue — `venue` should be null. */
+  venuePlaceholder?: boolean | null;
 }
 
 export interface SocietyCardProps {
@@ -49,7 +57,18 @@ export function SocietyCard({ society }: SocietyCardProps) {
         <p className="mt-1 font-sans text-[14px] text-ink/70">
           {society.region}
           {society.region && society.founded ? ' · ' : ''}
-          {society.founded ? `est. ${society.founded}` : ''}
+          {society.founded ? (
+            <span data-placeholder={society.foundedPlaceholder ? 'true' : undefined}>
+              est. {society.founded}
+              {society.foundedPlaceholder ? (
+                <span className="ml-1 text-[10px] uppercase tracking-[0.14em] text-muted">
+                  (unconfirmed)
+                </span>
+              ) : null}
+            </span>
+          ) : (
+            ''
+          )}
         </p>
       ) : null}
 
@@ -59,17 +78,42 @@ export function SocietyCard({ society }: SocietyCardProps) {
             <dt className="font-mono uppercase tracking-[0.12em] text-muted">Meets</dt>
             <dd className="font-sans text-ink/80">{society.meets}</dd>
           </div>
+        ) : society.meetPlaceholder ? (
+          <div className="flex gap-2" data-placeholder="true">
+            <dt className="font-mono uppercase tracking-[0.12em] text-muted">Meets</dt>
+            <dd className="font-sans text-ink/80">
+              <span className="border border-rule bg-bone px-1.5 py-0.5 text-[10px] uppercase tracking-[0.14em] text-muted">
+                To be confirmed
+              </span>
+            </dd>
+          </div>
         ) : null}
         {society.venue ? (
           <div className="flex gap-2">
             <dt className="font-mono uppercase tracking-[0.12em] text-muted">Venue</dt>
             <dd className="font-sans text-ink/80">{society.venue}</dd>
           </div>
+        ) : society.venuePlaceholder ? (
+          <div className="flex gap-2" data-placeholder="true">
+            <dt className="font-mono uppercase tracking-[0.12em] text-muted">Venue</dt>
+            <dd className="font-sans text-ink/80">
+              <span className="border border-rule bg-bone px-1.5 py-0.5 text-[10px] uppercase tracking-[0.14em] text-muted">
+                To be confirmed
+              </span>
+            </dd>
+          </div>
         ) : null}
         {society.memberCount !== null ? (
-          <div className="flex gap-2">
+          <div className="flex gap-2" data-placeholder={society.memberCountPlaceholder ? 'true' : undefined}>
             <dt className="font-mono uppercase tracking-[0.12em] text-muted">Members</dt>
-            <dd className="font-sans text-ink/80">{society.memberCount} members</dd>
+            <dd className="font-sans text-ink/80">
+              {society.memberCount} members
+              {society.memberCountPlaceholder ? (
+                <span className="ml-1 border border-rule bg-bone px-1.5 py-0.5 text-[10px] uppercase tracking-[0.14em] text-muted">
+                  unconfirmed
+                </span>
+              ) : null}
+            </dd>
           </div>
         ) : null}
       </dl>

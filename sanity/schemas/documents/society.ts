@@ -17,5 +17,45 @@ export const society = defineType({
     defineField({ name: 'logo', title: 'Logo', type: 'image' }),
     defineField({ name: 'website', title: 'Website', type: 'url' }),
     defineField({ name: 'markBadge', title: 'Mark Badge', type: 'boolean' }),
+    defineField({
+      name: 'foundedPlaceholder',
+      title: 'Founding year is an estimate',
+      type: 'boolean',
+      description:
+        'True when `founded` is our own estimate rather than a confirmed figure. Renders ' +
+        'a visible "unconfirmed" marker on the society card and detail page.',
+      initialValue: false,
+    }),
+    defineField({
+      name: 'memberCountPlaceholder',
+      title: 'Member count is an estimate',
+      type: 'boolean',
+      description:
+        'True when `memberCount` is our own estimate rather than a confirmed figure. Renders ' +
+        'a visible "unconfirmed" marker on the society card and detail page.',
+      initialValue: false,
+    }),
+    defineField({
+      name: 'meetPlaceholder',
+      title: 'Meeting schedule not yet confirmed',
+      type: 'boolean',
+      description:
+        'True when the society has not supplied a real meeting day/time. `meets` should be ' +
+        'left empty rather than filled with an invented schedule — a wrong meeting time is ' +
+        'actionable, not just inaccurate. Renders a visible "to be confirmed" marker instead ' +
+        'of any specific value.',
+      initialValue: false,
+    }),
+    defineField({
+      name: 'venuePlaceholder',
+      title: 'Venue not yet confirmed',
+      type: 'boolean',
+      description:
+        'True when the society has not supplied a real venue. `venue` should be left empty ' +
+        'rather than filled with an invented location — a wrong venue is actionable, not ' +
+        'just inaccurate. Renders a visible "to be confirmed" marker instead of any specific ' +
+        'value.',
+      initialValue: false,
+    }),
   ],
 });

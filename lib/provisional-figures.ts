@@ -309,3 +309,44 @@ export const WORKSHOP_PRICING_STRUCTURE = {
     'verbatim into every future workshop regardless of its actual content.',
   provisional: true,
 } as const;
+
+/**
+ * F1 (refunds-cancellation-terms, M1) — the SOLE source of truth for every refund/
+ * cancellation figure rendered on `/refunds` (day thresholds, refund percentages, the
+ * organiser-cancellation percentage, and the conference transfer window). None of these
+ * numbers come from any SAOC document — see
+ * .agent/memory/project/specs/refunds-cancellation-terms/goldens/f1-refunds-policy.golden.md
+ * §3 for the full rationale per figure. Do not re-type any of these numbers anywhere else
+ * — the page imports this constant directly. Deliberately excludes vendor stand bookings,
+ * which have their own council-written 90-day clause
+ * (docs/vendor-gated-registration-flow.md:435,668) — never restated here.
+ */
+
+export interface RefundCancellationTier {
+  /** Minimum days' notice before the event start date for this tier to apply.
+   *  null on the "less than X days" tier. */
+  minDaysNotice: number | null;
+  /** Maximum days' notice (exclusive) — null = no upper bound. */
+  maxDaysNotice: number | null;
+  /** Percentage of the ticket price refunded under this tier. */
+  refundPercent: number;
+}
+
+export const PROVISIONAL_REFUND_POLICY = {
+  /** Applies to admission, conference, and workshop/field-trip ticket products only.
+   *  Vendor stand bookings are explicitly out of scope. */
+  appliesTo: ['admission', 'conference', 'workshop-field-trip'] as const,
+  cancellationTiers: [
+    { minDaysNotice: 30, maxDaysNotice: null, refundPercent: 90 },
+    { minDaysNotice: 14, maxDaysNotice: 30, refundPercent: 50 },
+    { minDaysNotice: null, maxDaysNotice: 14, refundPercent: 0 },
+  ] as RefundCancellationTier[],
+  /** Full refund when SAOC cancels the event/activity outright. */
+  organiserCancellationRefundPercent: 100,
+  /** Conference (named-registrant) products only: free transfer to another named
+   *  attendee up to this many days before the event, as an alternative to cancelling. */
+  conferenceTransferWindowDays: 7,
+  /** Always `true` in this file today — literal, not computed. Same convention as
+   *  `ProvisionalAdmissionProduct.provisional`. */
+  provisional: true as const,
+} as const;

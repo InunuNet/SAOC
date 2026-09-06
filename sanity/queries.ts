@@ -22,7 +22,11 @@ export const societyListQuery = defineQuery(`
     description,
     logo,
     website,
-    markBadge
+    markBadge,
+    foundedPlaceholder,
+    memberCountPlaceholder,
+    meetPlaceholder,
+    venuePlaceholder
   }
 `);
 
@@ -317,7 +321,8 @@ export const boardMembersQuery = defineQuery(`
     role,
     email,
     photo,
-    order
+    order,
+    placeholder
   }
 `);
 
@@ -346,7 +351,11 @@ export const societyBySlugQuery = defineQuery(`
     description,
     logo,
     website,
-    markBadge
+    markBadge,
+    foundedPlaceholder,
+    memberCountPlaceholder,
+    meetPlaceholder,
+    venuePlaceholder
   }
 `);
 

@@ -1,0 +1,70 @@
+=== DEV GREEN 2026-09-06 | mission refunds-cancellation-terms F1 ===
+
+--- A1 ---
+PASS
+exit: 0
+
+--- A2 ---
+found: /Users/vetus/ai/SAOC/components/ui/ProvisionalFigure.tsx
+PASS
+
+--- A3 ---
+http_code=200
+A3 PASS
+
+--- A4 (revised POLICY-10) ---
+OK: http://localhost:3333/refunds — every unconfirmed figure is bound to a disclosed provisional marker
+exit: 0
+
+--- A5 (vendor scope) ---
+OK: http://localhost:3333/refunds — scoped to tickets, does not restate vendor stand terms
+exit: 0
+
+--- A6 (product families named) ---
+admission-ok
+conference-ok
+workshop-ok
+
+--- A7 (transfer) ---
+A7 PASS
+
+--- A8 (organiser cancellation) ---
+A8 PASS
+
+--- A9 (no business-day figure) ---
+A9 PASS
+
+--- A10 (terms consistency) ---
+OK: http://localhost:3333/terms still links to http://localhost:3333/refunds; no duplicated figures
+exit: 0
+
+--- A11 (yaml wired to revised script) ---
+A11 PASS
+
+--- A12 (old script still passes, unmodified) ---
+file exists
+OK: http://localhost:3333/refunds is structurally complete and free of fabricated figures
+exit: 0
+
+--- A13 (negative-fabricated must fail) ---
+FAIL: unconfirmed figure "14 days" appears outside any data-provisional-figure region
+FAIL: no data-provisional-figure region found on the page
+exit: 1 (expect 1)
+
+--- A14 (negative-mark-no-figure must fail) ---
+FAIL: unconfirmed figure "14 days" appears outside any data-provisional-figure region
+FAIL: provisional-figure region #1 does not carry both a real figure and the word "provisional" as visible text: "See the table below PROVISIONAL"
+exit: 1 (expect 1)
+
+--- A15 (negative-mark-no-word must fail) ---
+FAIL: provisional-figure region #1 does not carry both a real figure and the word "provisional" as visible text: "14 days"
+FAIL: provisional-figure region #2 does not carry both a real figure and the word "provisional" as visible text: "50%"
+exit: 1 (expect 1)
+
+--- A16 (positive-provisional must pass) ---
+OK: .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/positive-provisional.html — every unconfirmed figure is bound to a disclosed provisional marker
+exit: 0 (expect 0)
+
+
+--- tsc typecheck (not a contract assertion, extra verification) ---
+exit: 0

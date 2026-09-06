@@ -44,6 +44,8 @@ snapshot_pulled: <YYYY-MM-DD>
 | [`south-african-exhibitors_2026-08-25.md`](south-african-exhibitors_2026-08-25.md) | `South African Exhibitors.docx` | `2027 Information to be added to website` | 2026-07-11 | 2026-08-25 |
 | [`2027-vendor-registration-form_2026-08-25.md`](2027-vendor-registration-form_2026-08-25.md) **SUPERSEDED** | `2027_SAOC_National_Show_Vendor_Registration_Form.docx` | `Docs for Brad` | 2026-08-10 | 2026-08-25 |
 | [`2027-vendor-registration-form_2026-08-26.md`](2027-vendor-registration-form_2026-08-26.md) **CANONICAL** | `2027_SAOC_National_Show_Vendor_Registration_Form.docx` | `Docs for Brad` | 2026-08-26 | 2026-08-26 |
+| [`about-page_2026-09-06.md`](about-page_2026-09-06.md) | `About page - South African Orchid Council.docx` | `Docs for Brad/SAOC /2. About` | 2026-09-03 | 2026-09-06 |
+| [`website-development-specification-v3_2026-09-06.md`](website-development-specification-v3_2026-09-06.md) | `1. Website Development SpecificationV3.docx` | `Docs for Brad/National Show` | 2026-09-03 | 2026-09-06 |
 
 **Note on these two:** `south-african-exhibitors_2026-08-25.md` and the vendor registration form
 are two genuinely separate Drive files (different file IDs, different parent folders). The live

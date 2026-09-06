@@ -1,0 +1,157 @@
+=== DEV RE-RUN AFTER A4 FIX 2026-09-06 | mission refunds-cancellation-terms F1 ===
+FIGURE_PATTERN now accepts spelled-out number words adjacent to a unit; A17 added
+as the anti-vacuity negative control. Running the full 17-assertion set verbatim
+from .agent/memory/project/specs/refunds-cancellation-terms/contract-f1.yaml.
+No code changes made before this run per team lead's instruction.
+
+--- A1 ---
+exit: 0
+
+--- A2 ---
+exit: 0
+
+--- A3 ---
+exit: 0
+
+--- A4 (load-bearing) ---
+OK: http://localhost:3333/refunds — every unconfirmed figure is bound to a disclosed provisional marker
+exit: 0
+
+--- A5 ---
+OK: http://localhost:3333/refunds — scoped to tickets, does not restate vendor stand terms
+exit: 0
+
+--- A6 ---
+exit: 0
+
+--- A7 ---
+exit: 0
+
+--- A8 ---
+exit: 0
+
+--- A9 ---
+exit: 0
+
+--- A10 ---
+OK: http://localhost:3333/terms still links to http://localhost:3333/refunds; no duplicated figures
+exit: 0
+
+--- A11 ---
+exit: 0
+
+--- A12 ---
+OK: http://localhost:3333/refunds is structurally complete and free of fabricated figures
+exit: 0
+
+--- A13 (expect exit 1 via '!') ---
+FAIL: unconfirmed figure "14 days" appears outside any data-provisional-figure region
+FAIL: no data-provisional-figure region found on the page
+exit: 0
+
+--- A14 (expect exit 1 via '!') ---
+FAIL: unconfirmed figure "14 days" appears outside any data-provisional-figure region
+FAIL: provisional-figure region #1 does not carry both a real figure and the word "provisional" as visible text: "See the table below PROVISIONAL"
+exit: 0
+
+--- A15 (expect exit 1 via '!') ---
+FAIL: provisional-figure region #1 does not carry both a real figure and the word "provisional" as visible text: "14 days"
+FAIL: provisional-figure region #2 does not carry both a real figure and the word "provisional" as visible text: "50%"
+exit: 0
+
+--- A16 (expect exit 0) ---
+OK: .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/positive-provisional.html — every unconfirmed figure is bound to a disclosed provisional marker
+exit: 0
+
+--- A17 (expect exit 1 via '!') ---
+FAIL: provisional-figure region #1 does not carry both a real figure and the word "provisional" as visible text: "Our policy covers two important cases and the committee will decide provisional"
+exit: 0
+
+--- npx tsc --noEmit ---
+exit: 0
+
+--- bun run build ---
+├ ƒ /api/admin/vendors/[id]/payment
+├ ƒ /api/admin/vendors/[id]/resend-payment-link
+├ ƒ /api/admin/vendors/[id]/review
+├ ƒ /api/admin/vendors/applications
+├ ƒ /api/admin/vendors/applications/[id]/reissue-code
+├ ƒ /api/admin/vendors/applications/[id]/review
+├ ƒ /api/contact
+├ ƒ /api/disable-draft
+├ ƒ /api/draft
+├ ƒ /api/events.ics
+├ ƒ /api/events/[slug]/ics
+├ ƒ /api/events/submit
+├ ƒ /api/revalidate
+├ ƒ /api/tickets/checkout
+├ ƒ /api/tickets/itn
+├ ƒ /api/tickets/ozow-itn
+├ ƒ /api/tickets/ozow-sandbox-test-mode
+├ ƒ /api/tickets/status
+├ ƒ /api/vendors/[id]/marketing-asset
+├ ƒ /api/vendors/[id]/proof-of-payment
+├ ƒ /api/vendors/apply
+├ ƒ /api/vendors/register
+├ ƒ /api/vendors/register/verify-code
+├ ƒ /api/vendors/stand-payment/initiate
+├ ƒ /api/vendors/stand-payment/ozow-itn
+├ ƒ /api/vendors/stand-payment/payfast-itn
+├ ○ /constitution
+├ ○ /contact                                                   1m      1y
+├ ○ /events                                                    1m      1y
+├ ● /events/[slug]                                             1m      1y
+│ ├ /events/cape-orchid-society-autumn-show                    1m      1y
+│ ├ /events/cape-orchid-society-winter-show                    1m      1y
+│ ├ /events/transvaal-autumn-orchid-show                       1m      1y
+│ └ [+15 more paths]
+├ ƒ /events/submit
+├ ○ /judging                                                   1m      1y
+├ ○ /media-kit
+├ ○ /national-show                                             1m      1y
+├ ○ /national-show/archive                                     1m      1y
+├ ● /national-show/archive/[year]                              1m      1y
+│ ├ /national-show/archive/2024                                1m      1y
+│ ├ /national-show/archive/2021                                1m      1y
+│ ├ /national-show/archive/2018                                1m      1y
+│ └ [+2 more paths]
+├ ƒ /national-show/conferences
+├ ○ /national-show/exhibitors                                  1m      1y
+├ ○ /national-show/faq                                         1m      1y
+├ ○ /national-show/plan-your-visit                             1m      1y
+├ ○ /national-show/tickets
+├ ○ /national-show/upcoming
+├ ○ /national-show/vendors                                     1m      1y
+├ ○ /national-show/vendors/apply
+├ ƒ /national-show/vendors/payment
+├ ƒ /national-show/vendors/register
+├ ○ /national-show/what-to-expect                              1m      1y
+├ ƒ /national-show/workshops
+├ ƒ /og
+├ ○ /privacy
+├ ○ /refunds
+├ ○ /robots.txt
+├ ○ /sitemap.xml
+├ ○ /societies                                                 1m      1y
+├ ● /societies/[slug]                                          1m      1y
+│ ├ /societies/border-orchid-society                           1m      1y
+│ ├ /societies/cape-orchid-society                             1m      1y
+│ ├ /societies/east-rand-orchid-society                        1m      1y
+│ └ [+18 more paths]
+├ ○ /sponsors                                                  1m      1y
+├ ƒ /studio/[[...tool]]
+├ ○ /terms
+├ ƒ /tickets
+├ ƒ /tickets/[slug]
+├ ƒ /tickets/cancelled
+└ ƒ /tickets/confirmation
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+exit_pipe_status: (unreliable capture through the tail pipe, re-checked directly below)
+
+--- bun run build (re-run, direct exit code, no pipe) ---
+REAL_EXIT: 0

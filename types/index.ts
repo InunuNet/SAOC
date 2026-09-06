@@ -7,8 +7,12 @@ export type Society = {
   region: string;
   province: string;
   founded: number;
-  meet: string;
-  venue: string;
+  // Not sourced yet — see docs/leeann-source/society-website-information-form_2026-09-01.md,
+  // the intake form asking affiliated societies for this data. Left unset rather than
+  // filled with an invented day/time/venue: a wrong meeting time or venue sends a real
+  // person to a real building on the wrong night.
+  meet?: string;
+  venue?: string;
   members?: number;
   city?: string;
   slug?: string;

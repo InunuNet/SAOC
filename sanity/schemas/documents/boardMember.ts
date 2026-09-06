@@ -10,5 +10,14 @@ export const boardMember = defineType({
     defineField({ name: 'email', title: 'Email', type: 'string' }),
     defineField({ name: 'photo', title: 'Photo', type: 'image' }),
     defineField({ name: 'order', title: 'Display Order', type: 'number' }),
+    defineField({
+      name: 'placeholder',
+      title: 'Placeholder (name not yet confirmed)',
+      type: 'boolean',
+      description:
+        'True when this entry\'s name is a stand-in ("To be confirmed") rather than the ' +
+        'real officeholder. Renders a visible "awaiting confirmation" marker on /about.',
+      initialValue: false,
+    }),
   ],
 });

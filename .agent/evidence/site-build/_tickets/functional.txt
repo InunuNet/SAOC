@@ -1,0 +1,71 @@
+/tickets layout grid + refund-policy reconciliation — functional evidence
+==========================================================================
+
+Files changed:
+  - components/tickets/AdmissionTicketsList.tsx (flex column -> responsive grid)
+  - app/(marketing)/tickets/page.tsx (wider wrapper, provisional-pricing note,
+    hardcoded /refunds link, narrowed prose columns)
+  - scripts/seed-ticketing.ts (termsNote copy, source of truth for future seeds)
+  - scripts/patch-tickets-terms-note.ts (new, one-off non-destructive patch script)
+
+--------------------------------------------------------------------------
+Command: npx tsc --noEmit
+Exit code: 0
+Output: (none — clean)
+
+--------------------------------------------------------------------------
+Command: bun run build
+(run twice; first two attempts hit "Another next build process is already
+running" from concurrent peer-agent builds sharing this checkout — waited
+for the other PID to exit each time, per sandbox rules, no --force/kill used)
+
+Exit code: 0
+Relevant route table output:
+  ○ /refunds
+  ƒ /tickets
+  ƒ /tickets/[slug]
+  ƒ /tickets/cancelled
+  ƒ /tickets/confirmation
+✓ Compiled successfully in 11.2s
+
+--------------------------------------------------------------------------
+Live-dataset patch: node --import tsx/esm scripts/patch-tickets-terms-note.ts
+Exit code: 0
+Output:
+  Before: Tickets are non-refundable but may be transferred to another attendee by emailing info@saoc.co.za before the show. Please bring your booking reference to the door.
+  After: Admission tickets may be transferred to another attendee by emailing info@saoc.co.za before the show. Please bring your booking reference to the door.
+
+--------------------------------------------------------------------------
+Runtime verification: started `bun run start` against this checkout's own
+.next build on an unused port (PORT=4711, avoiding a peer agent's server on
+3002 which is a *different* worktree, /Users/vetus/ai/SaocNosDesign).
+
+Command: curl -s -o /dev/null -w "%{http_code}" http://localhost:4711/tickets
+Result: 200
+
+Command: curl -s -o /dev/null -w "%{http_code}" http://localhost:4711/refunds
+Result: 200
+
+Command: curl -s http://localhost:4711/tickets | grep -o "..."
+Confirmed present in rendered HTML:
+  - "grid grid-cols-1 gap-6" (AdmissionTicketsList — grid-cols-1 by default,
+    sm:grid-cols-2 lg:grid-cols-3 at wider breakpoints; mobile at 390 stays
+    single column, unchanged from before)
+  - "max-w-[1100px]" (widened page wrapper)
+  - "Provisional pricing." (new plain-language clarification, rendered only
+    when at least one card is flagged provisional)
+  - "Refund &amp; Cancellation Policy" (new hardcoded link to /refunds)
+  - "Admission tickets may be transferred" (new termsNote wording)
+Confirmed absent:
+  - "non-refundable" — no longer appears anywhere on /tickets
+
+Command: curl -s http://localhost:4711/refunds | grep -o "tiered schedule|Terms pending confirmation"
+Confirmed /refunds' tiered-schedule content renders unaffected by the
+/tickets change (no shared markup was touched).
+
+Server stopped after verification (kill <pid>; confirmed not running).
+
+--------------------------------------------------------------------------
+Scope: app/(marketing)/national-show/** was not touched. No changes rippled
+into National Show ticket products — the admission-only /tickets page and
+its two supporting components/scripts were the only files edited.

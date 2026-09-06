@@ -1,0 +1,77 @@
+=== ARCHITECT FIX 2026-09-06 | check-refunds-provisional-figures.mjs: spelled-out figures ===
+
+Reported by @dev via team lead: A4's FIGURE_PATTERN required a DIGIT inside every
+data-provisional-figure mark, but A12 (legacy check-refunds-no-fabrication.mjs) bans
+digit-based day/hour/week figures anywhere on the page (its %-boundary bug only exempts
+percentages, not day/hour/week — that exemption was mis-stated as covering all units in
+the original golden §8). The two assertions were unsatisfiable together for any
+day/hour/week threshold: A4 demanded the digit be present inside the mark, A12 demanded
+it be absent from the page, same string, no arrangement satisfies both.
+
+Reproduced the exact failure dev reported:
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .tmp/sandbox/refunds-arch/dev-reported-mark.html
+  (fixture: <mark data-provisional-figure="true">thirty days<sup>provisional</sup></mark>)
+FAIL: provisional-figure region #1 does not carry both a real figure and the word
+"provisional" as visible text: "thirty days provisional"
+exit: 1 (confirmed the bug before fixing)
+
+Fix: extended FIGURE_PATTERN / FIGURE_PATTERN_G in check-refunds-provisional-figures.mjs
+to recognise a spelled-out number word (one..ninety, with an optional hyphenated/spaced
+ones-word after a tens-word) adjacent to day/hour/week as a real figure, alongside the
+existing digit-based and %-based alternatives. Applied to BOTH the "bare figure outside
+a mark" check and the "mark contains a real figure" check, so a bare spelled-out figure
+sitting outside a mark is still caught (the fabrication guard is not weakened).
+
+Re-verification after the fix:
+
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .tmp/sandbox/refunds-arch/dev-reported-mark.html
+OK: .tmp/sandbox/refunds-arch/dev-reported-mark.html — every unconfirmed figure is bound to a disclosed provisional marker
+exit: 0 (fixed — dev's fully-wrapped, fully-spelled-out state now passes)
+
+All existing fixtures re-run, all still behave as designed:
+
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/positive-provisional.html
+OK ... exit: 0
+
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-fabricated.html
+FAIL: unconfirmed figure "14 days" appears outside any data-provisional-figure region
+FAIL: no data-provisional-figure region found on the page
+exit: 1
+
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-mark-no-figure.html
+FAIL: unconfirmed figure "14 days" appears outside any data-provisional-figure region
+FAIL: provisional-figure region #1 does not carry both a real figure and the word "provisional" as visible text: "See the table below PROVISIONAL"
+exit: 1
+
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-mark-no-word.html
+FAIL: provisional-figure region #1 does not carry both a real figure and the word "provisional" as visible text: "14 days"
+FAIL: provisional-figure region #2 does not carry both a real figure and the word "provisional" as visible text: "50%"
+exit: 1
+
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-no-mechanism.html
+FAIL: no data-provisional-figure region found on the page
+exit: 1
+
+New negative control added — a mark visibly saying "provisional" but containing only a
+stray number WORD not adjacent to a unit ("two important cases"), to prove the
+word-form extension didn't loosen the anti-vacuity property into accepting any number
+word as a "figure":
+
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs --fixture .agent/memory/project/specs/refunds-cancellation-terms/goldens/fixtures/negative-mark-stray-number-word.html
+FAIL: provisional-figure region #1 does not carry both a real figure and the word "provisional" as visible text: "Our policy covers two important cases and the committee will decide provisional"
+exit: 1 (correct — still fails, "two" is not adjacent to a unit)
+
+Live page re-check (still RED, unaffected by this fix — page has no mechanism yet):
+$ node contracts/checks/policy-pages/check-refunds-provisional-figures.mjs https://beta.saoc.co.za/refunds
+FAIL: no data-provisional-figure region found on the page
+exit: 1
+
+Contract updated: added A17 (the new negative control) and registered the new fixture
+in the `goldens:` list of contract-f1.yaml. Golden §8 corrected — the wrong claim that
+the legacy script "keeps passing once real figures land" regardless of unit type is
+struck; the actual, corrected rule is recorded: day/hour/week thresholds must be
+spelled out in page prose (word form) to satisfy A12, while percentages remain
+digit-based because the legacy script's own %-boundary bug exempts them specifically —
+that asymmetry is intentional and must not be "fixed" into symmetry (would re-break
+A12 against the percentages this feature needs to state). Golden §3/§4 updated to state
+this rendering requirement explicitly for @dev.

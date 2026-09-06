@@ -18,12 +18,14 @@ export default function ConstitutionPage() {
       />
 
       <div className="mx-auto max-w-[720px] px-8 py-20 space-y-10">
-        <section className="space-y-3 border border-rule bg-primary/5 px-6 py-5">
+        <section
+          data-placeholder="true"
+          className="space-y-3 border border-rule bg-bone px-6 py-5"
+        >
           <p className="font-sans text-[14px] leading-relaxed text-ink/80">
-            <strong className="font-medium text-ink">Draft pending legal review.</strong> This
-            page has been drafted with AI assistance and has not yet been reviewed by a
-            qualified legal professional. It does not constitute legal advice and should not be
-            relied upon as SAOC&rsquo;s final policy until formal review is complete.
+            <strong className="font-medium text-ink">Not yet published.</strong> The
+            Constitution text itself has not been supplied for this site. This page will be
+            updated with the full document once it is received from the Council.
           </p>
         </section>
 
@@ -31,7 +33,7 @@ export default function ConstitutionPage() {
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
             The SAOC Constitution sets out the objects, membership structure, governance, and
             rules of the South African Orchid Council. A full copy is available on request from
-            the Secretary.
+            the Secretary, and will be published on this page once supplied.
           </p>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
             To request a copy, please{' '}

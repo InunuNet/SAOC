@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { PageHero } from '@/components/ui/PageHero';
 import { SalesClosedNotice, AdmissionTicketsList } from '@/components/tickets';
@@ -165,6 +166,7 @@ export default async function TicketsPage() {
     };
   });
   const allSoldOut = cardData.length > 0 && cardData.every((t) => t.soldOut);
+  const hasProvisionalPricing = cardData.some((t) => t.provisional);
 
   return (
     <>
@@ -175,22 +177,41 @@ export default async function TicketsPage() {
         lede={intro}
       />
 
-      <div className="mx-auto max-w-[720px] px-8 py-16 space-y-10">
+      <div className="mx-auto max-w-[1100px] px-8 py-16 space-y-10">
         {!salesOpen ? (
-          <SalesClosedNotice message={salesClosedMessage} />
+          <div className="mx-auto max-w-[720px]">
+            <SalesClosedNotice message={salesClosedMessage} />
+          </div>
         ) : allSoldOut ? (
-          <div className="border border-rule bg-bone px-6 py-8 text-center" role="status">
+          <div className="mx-auto max-w-[720px] border border-rule bg-bone px-6 py-8 text-center" role="status">
             <p className="font-serif text-[20px] text-ink">{soldOutMessage}</p>
           </div>
         ) : (
-          <AdmissionTicketsList ticketTypes={cardData} soldOutLabel={soldOutMessage} />
+          <>
+            {hasProvisionalPricing ? (
+              <p className="mx-auto max-w-[720px] font-sans text-[13px] leading-relaxed text-muted">
+                <span className="font-medium text-ink/80">Provisional pricing.</span> These are
+                SAOC&rsquo;s estimated prices, pending final confirmation by the National Show
+                council. The price shown is what you&rsquo;ll pay if you check out today, but
+                figures may still change for purchases made later.
+              </p>
+            ) : null}
+            <AdmissionTicketsList ticketTypes={cardData} soldOutLabel={soldOutMessage} />
+          </>
         )}
 
-        {termsNote ? (
-          <p className="border-t border-rule pt-6 font-sans text-[13px] leading-relaxed text-muted">
-            {termsNote}
+        <div className="mx-auto max-w-[720px] space-y-3 border-t border-rule pt-6">
+          <p className="font-sans text-[13px] leading-relaxed text-muted">
+            Refunds and cancellations for admission tickets are handled under our{' '}
+            <Link href="/refunds" className="text-ink underline underline-offset-2">
+              Refund &amp; Cancellation Policy
+            </Link>
+            .
           </p>
-        ) : null}
+          {termsNote ? (
+            <p className="font-sans text-[13px] leading-relaxed text-muted">{termsNote}</p>
+          ) : null}
+        </div>
       </div>
     </>
   );

@@ -74,6 +74,14 @@ export default async function SocietiesPage() {
           logo: null,
           website: s.websiteUrl ?? null,
           markBadge: null,
+          // Static fallback founding years and member counts are our own
+          // estimates, not Lee-Ann-sourced or Sanity-sourced data.
+          foundedPlaceholder: true,
+          memberCountPlaceholder: true,
+          // Meeting day/time and venue have not been supplied at all (s.meet/s.venue
+          // are unset) — flag so the UI shows "to be confirmed" instead of nothing.
+          meetPlaceholder: true,
+          venuePlaceholder: true,
         }));
 
   return (

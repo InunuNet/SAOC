@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { SanityImageSource } from '@sanity/image-url';
 
 export interface SanityJudge {
@@ -15,9 +16,18 @@ export interface JudgesDirectoryProps {
 export function JudgesDirectory({ judges, showPublicDirectory }: JudgesDirectoryProps) {
   if (!showPublicDirectory || judges.length === 0) {
     return (
-      <p className="font-sans text-[15px] leading-relaxed text-ink/70 max-w-3xl">
-        The full accredited judges directory is available to SAOC members.
-      </p>
+      <div className="border border-rule bg-parchment p-6 max-w-3xl">
+        <p className="font-sans text-[15px] leading-relaxed text-ink/70">
+          The full accredited judges directory is available to SAOC members. Log in through
+          your affiliated society, or get in touch with the council directly.
+        </p>
+        <Link
+          href="/contact"
+          className="mt-3 inline-block font-sans text-[13px] font-medium text-ink underline underline-offset-2 hover:text-primary"
+        >
+          Contact SAOC →
+        </Link>
+      </div>
     );
   }
 

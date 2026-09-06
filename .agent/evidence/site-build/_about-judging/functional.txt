@@ -1,0 +1,140 @@
+SAOC — /about and /judging rebuild — functional evidence
+==========================================================
+
+Scope: app/(marketing)/about/page.tsx, app/(marketing)/judging/page.tsx,
+new components/about/Timeline.tsx, components/ui/CTASection.tsx,
+components/ui/PhotoBand.tsx, edits to components/judging/JudgesDirectory.tsx,
+and a one-off Sanity content patch: scripts/update-about-judging-copy.ts
+(deepens the pre-seeded aboutPage.pillars/timelineNodes and
+judgingPage.intro/howItWorks/becomingAJudge fields — see script header for
+why the seeded thin one-liners from scripts/seed-page-singletons.ts were
+pre-empting the richer code fallbacks).
+
+Did NOT touch: lib/data/board.ts, board-rendering logic inside BoardGrid.tsx
+(owned concurrently by Dev_Integrity_FabricatedContent — confirmed via
+re-read before editing app/(marketing)/about/page.tsx a second time, since
+their edit landed mid-task), and nothing under
+app/(marketing)/national-show/**.
+
+--------------------------------------------------------------------------
+1. TypeScript — npx tsc --noEmit -p /Users/vetus/ai/SAOC/tsconfig.json
+--------------------------------------------------------------------------
+Command:
+  npx tsc --noEmit -p /Users/vetus/ai/SAOC/tsconfig.json
+Exit code: 0
+Output: (empty — no errors)
+
+--------------------------------------------------------------------------
+2. Production build — bun run build
+--------------------------------------------------------------------------
+Command:
+  bun run build
+Exit code: 0
+
+Relevant route table output (full log has 103 routes; both target routes
+prerender statically with no errors):
+
+  ✓ Compiled successfully in 11.0s
+    Running TypeScript ...
+    Finished TypeScript in 5.1s ...
+  ✓ Generating static pages using 13 workers (103/103) in 2.6s
+
+  Route (app)                                            Revalidate  Expire
+  ├ ○ /about                                                     1m      1y
+  ├ ○ /judging                                                   1m      1y
+
+  ○  (Static)   prerendered as static content
+
+(One earlier `bun run build` attempt failed with "Another next build process
+is already running" — a stale .next/lock from a concurrent teammate build,
+not from this work; it cleared on its own and the retry succeeded. Not a
+defect in this change.)
+
+--------------------------------------------------------------------------
+3. Live HTTP status — local dev server on :3333 (already running, used by
+   other agents this session; not started or stopped by this task)
+--------------------------------------------------------------------------
+Commands:
+  curl -s -o /dev/null -w "about: %{http_code}\n" http://localhost:3333/about
+  curl -s -o /dev/null -w "judging: %{http_code}\n" http://localhost:3333/judging
+
+Output:
+  about: 200
+  judging: 200
+
+--------------------------------------------------------------------------
+4. Content verification (curl + grep against rendered HTML)
+--------------------------------------------------------------------------
+/about:
+  - Heritage stats band renders 1968 / 1990 / 18 / 21 (real figures, same
+    source as Home's mission-block stat band).
+  - "Our history" now renders the seeded 4-paragraph founding timeline
+    (Bloemfontein 1968 -> incorporation 1978 (reg 1978/004040/08) -> judging
+    standardised 1990 -> present-day 21 societies / 18 shows) via the
+    existing aboutPage.timelineNodes Sanity field — confirmed present in the
+    HTML response after the Sanity content patch + cache/ISR window elapsed.
+  - Committee section (BoardGrid, untouched) renders 6 `data-placeholder="true"`
+    cards ("To be confirmed" + "Awaiting confirmation" badge) — confirmed via:
+      curl -s http://localhost:3333/about | grep -o 'data-placeholder="true"[^>]*' | wc -l
+    -> 6
+  - Closing CTASection renders ("Find your society, join the council's work",
+    links to /societies and /contact).
+  - PhotoBand (orchid-pink.jpg, "Est. 1968 · Bloemfontein" caption) renders
+    between the heritage stats and history sections.
+
+/judging:
+  - Stats band renders via the code fallback (Sanity's `stats` field is
+    intentionally left absent per seed-page-singletons.ts) — confirmed
+    56 / 1990 / 21 / 6 present in HTML.
+  - "Overview", "How judging works", "Becoming a judge" render the deepened
+    Sanity content (1990 standardisation, published criteria, award-tier
+    naming) after the content patch.
+  - Judges-directory dead end fixed: gated state now renders a bordered card
+    with a "Contact SAOC →" link to /contact (components/judging/JudgesDirectory.tsx).
+  - PhotoBand (orchid-dark.jpg — same image already associated with Judging
+    on Home's NavCards) renders between "How judging works" and the awards
+    grid.
+  - Closing CTASection renders ("See judging in action", links to /events
+    and /societies).
+  - AwardsGrid (untouched) still renders unchanged.
+
+--------------------------------------------------------------------------
+5. data-placeholder audit
+--------------------------------------------------------------------------
+Only invented (not Lee-Ann-sourced, not otherwise-established) content is
+marked. Established facts (1968 founding, 1978 incorporation number, 1990
+judging standardisation, 21 societies, 18 shows, 56 judges) are NOT marked
+placeholder — they already exist as real constants elsewhere in the
+codebase (Home's MissionBlock/NavCards stat band) and are treated as
+confirmed, not invented, per the audit's own framing.
+
+Invented-and-marked content (renders only in the code fallback path, i.e.
+when the corresponding Sanity field is empty):
+  - about/page.tsx: one FALLBACK_TIMELINE node ("1970s–2000s — Growth to a
+    national federation") — decade-range growth narrative with no confirmed
+    dates, marked `placeholder: true` on the Timeline node (renders
+    data-placeholder="true" + a visible "Detail pending confirmation" badge).
+  - judging/page.tsx: two inline `data-placeholder="true"` spans in the
+    "How judging works" and "Becoming a judge" fallback paragraphs (panel
+    size of three judges; illustrative training-pathway stages) — both
+    invented specifics with no confirmed source.
+
+These fallback paths did not render in the live-dev verification above
+because the corresponding Sanity fields are populated (either pre-existing
+seed data or this task's content patch) — they are the safety net for a
+future empty-CMS state, matching the pattern already used by every other
+field on these two pages (pillars, boardIntroText, intro, howItWorks,
+becomingAJudge all follow "render Sanity content if present, else a code
+fallback").
+
+--------------------------------------------------------------------------
+6. Mobile
+--------------------------------------------------------------------------
+No screenshots captured by this task (per instructions — a browser pass runs
+after this work; existing before-*.png baselines under .agent/evidence were
+not touched). All new sections reuse the same responsive primitives already
+proven at 390px elsewhere on the site: PageHero, the `grid-cols-2 sm:grid-cols-4`
+stat-band pattern (MissionBlock/Home), PhotoBand (single full-bleed <Image
+fill>, no fixed width), CTASection (`flex flex-wrap` button row), and
+Timeline (`border-l-2 pl-6` stacked list, no horizontal layout to break).
+No new fixed-width or fixed-height elements were introduced.

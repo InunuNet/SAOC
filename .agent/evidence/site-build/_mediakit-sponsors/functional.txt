@@ -1,0 +1,165 @@
+=== tsc --noEmit ===
+exit: 0
+=== bun run build ===
+$ next build
+▲ Next.js 16.2.12 (Turbopack)
+- Environments: .env.local, .env
+
+  Creating an optimized production build ...
+(node:52525) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✓ Compiled successfully in 10.8s
+  Running TypeScript ...
+  Finished TypeScript in 5.1s ...
+  Collecting page data using 13 workers ...
+(node:67736) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:67731) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:67747) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:67745) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:67741) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:67746) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:67734) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:67742) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:67737) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:67738) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:67729) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+⚠ Using edge runtime on a page currently disables static generation for that page
+(node:67733) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:67743) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  Generating static pages using 13 workers (0/103) ...
+  Generating static pages using 13 workers (25/103) 
+  Generating static pages using 13 workers (51/103) 
+  Generating static pages using 13 workers (77/103) 
+✓ Generating static pages using 13 workers (103/103) in 319ms
+  Finalizing page optimization ...
+
+Route (app)                                            Revalidate  Expire
+┌ ○ /                                                          1m      1y
+├ ○ /_not-found
+├ ○ /about                                                     1m      1y
+├ ƒ /admin
+├ ƒ /admin/door
+├ ○ /admin/login
+├ ƒ /admin/settings
+├ ƒ /admin/vendors
+├ ƒ /admin/vendors/applications
+├ ƒ /api/admin/checkin
+├ ƒ /api/admin/export-csv
+├ ƒ /api/admin/reconcile-orders
+├ ƒ /api/admin/session
+├ ƒ /api/admin/settings/active-payment-gateway
+├ ƒ /api/admin/settings/ozow-sandbox-test-mode
+├ ƒ /api/admin/tickets
+├ ƒ /api/admin/tickets/comp
+├ ƒ /api/admin/vendors
+├ ƒ /api/admin/vendors/[id]/payment
+├ ƒ /api/admin/vendors/[id]/resend-payment-link
+├ ƒ /api/admin/vendors/[id]/review
+├ ƒ /api/admin/vendors/applications
+├ ƒ /api/admin/vendors/applications/[id]/reissue-code
+├ ƒ /api/admin/vendors/applications/[id]/review
+├ ƒ /api/contact
+├ ƒ /api/disable-draft
+├ ƒ /api/draft
+├ ƒ /api/events.ics
+├ ƒ /api/events/[slug]/ics
+├ ƒ /api/events/submit
+├ ƒ /api/revalidate
+├ ƒ /api/tickets/checkout
+├ ƒ /api/tickets/itn
+├ ƒ /api/tickets/ozow-itn
+├ ƒ /api/tickets/ozow-sandbox-test-mode
+├ ƒ /api/tickets/status
+├ ƒ /api/vendors/[id]/marketing-asset
+├ ƒ /api/vendors/[id]/proof-of-payment
+├ ƒ /api/vendors/apply
+├ ƒ /api/vendors/register
+├ ƒ /api/vendors/register/verify-code
+├ ƒ /api/vendors/stand-payment/initiate
+├ ƒ /api/vendors/stand-payment/ozow-itn
+├ ƒ /api/vendors/stand-payment/payfast-itn
+├ ○ /constitution
+├ ○ /contact                                                   1m      1y
+├ ○ /events                                                    1m      1y
+├ ● /events/[slug]                                             1m      1y
+│ ├ /events/cape-orchid-society-autumn-show                    1m      1y
+│ ├ /events/cape-orchid-society-winter-show                    1m      1y
+│ ├ /events/transvaal-autumn-orchid-show                       1m      1y
+│ └ [+15 more paths]
+├ ƒ /events/submit
+├ ○ /judging                                                   1m      1y
+├ ○ /media-kit
+├ ○ /national-show                                             1m      1y
+├ ○ /national-show/archive                                     1m      1y
+├ ● /national-show/archive/[year]                              1m      1y
+│ ├ /national-show/archive/2024                                1m      1y
+│ ├ /national-show/archive/2021                                1m      1y
+│ ├ /national-show/archive/2018                                1m      1y
+│ └ [+2 more paths]
+├ ƒ /national-show/conferences
+├ ○ /national-show/exhibitors                                  1m      1y
+├ ○ /national-show/faq                                         1m      1y
+├ ○ /national-show/plan-your-visit                             1m      1y
+├ ○ /national-show/tickets
+├ ○ /national-show/upcoming
+├ ○ /national-show/vendors                                     1m      1y
+├ ○ /national-show/vendors/apply
+├ ƒ /national-show/vendors/payment
+├ ƒ /national-show/vendors/register
+├ ○ /national-show/what-to-expect                              1m      1y
+├ ƒ /national-show/workshops
+├ ƒ /og
+├ ○ /privacy
+├ ○ /refunds
+├ ○ /robots.txt
+├ ○ /sitemap.xml
+├ ○ /societies                                                 1m      1y
+├ ● /societies/[slug]                                          1m      1y
+│ ├ /societies/border-orchid-society                           1m      1y
+│ ├ /societies/cape-orchid-society                             1m      1y
+│ ├ /societies/east-rand-orchid-society                        1m      1y
+│ └ [+18 more paths]
+├ ○ /sponsors                                                  1m      1y
+├ ƒ /studio/[[...tool]]
+├ ○ /terms
+├ ƒ /tickets
+├ ƒ /tickets/[slug]
+├ ƒ /tickets/cancelled
+└ ƒ /tickets/confirmation
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+exit: 0
+=== /media-kit and /sponsors return 200 ===
+/media-kit -> 200
+/sponsors -> 200
+=== download link verification ===
+/downloads/media-kit/saoc-emblem.png -> 200  content-type: image/png  size: 1128988
+/images/saoc-logo-ink-paper.png -> 200  content-type: image/png  size: 429432
+/images/saoc-logo-sage-paper.png -> 200  content-type: image/png  size: 429853
+/images/saoc-logo-flat-paper.png -> 200  content-type: image/png  size: 91714
+
+=== rendered download anchors on /media-kit ===
+<a href="/downloads/media-kit/saoc-emblem.png" download
+<a href="/images/saoc-logo-ink-paper.png" download
+<a href="/images/saoc-logo-sage-paper.png" download
+<a href="/images/saoc-logo-flat-paper.png" download
+
+=== sponsors: single CTA confirmed (duplicate 'Become our first sponsor' block removed, count=0) ===
+=== sponsors: data-placeholder present on invented benefits list: data-placeholder="sponsorship-benefits-estimate" ===

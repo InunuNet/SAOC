@@ -1,13 +1,18 @@
 import type { Society } from '@/types';
 
+// `meet` and `venue` are intentionally omitted below — SAOC has not yet supplied real
+// meeting days/times/venues for these societies (see
+// docs/leeann-source/society-website-information-form_2026-09-01.md, the intake form
+// still awaiting responses). A wrong meeting time or venue is actionable, not just
+// inaccurate: it sends a real person to a real building on the wrong night. Do not
+// invent replacement values here — leave the fields unset so the UI can render a
+// visible "to be confirmed" placeholder instead (see SocietyCard.tsx).
 export const societies: Society[] = [
   {
     name: 'Cape Orchid Society',
     region: 'Western Cape',
     province: 'WC',
     founded: 1947,
-    meet: '2nd Tue, 19h30',
-    venue: 'Kirstenbosch Hall, Cape Town',
     members: 220,
   },
   {
@@ -15,8 +20,6 @@ export const societies: Society[] = [
     region: 'KwaZulu-Natal',
     province: 'KZN',
     founded: 1954,
-    meet: '1st Wed, 19h00',
-    venue: 'Durban Botanic Gardens',
     members: 310,
   },
   {
@@ -24,8 +27,6 @@ export const societies: Society[] = [
     region: 'Gauteng',
     province: 'GP',
     founded: 1959,
-    meet: '3rd Thu, 19h00',
-    venue: 'Walter Sisulu NBG, Roodepoort',
     members: 280,
   },
   {
@@ -33,8 +34,6 @@ export const societies: Society[] = [
     region: 'Tshwane',
     province: 'GP',
     founded: 1962,
-    meet: 'Last Mon, 19h30',
-    venue: 'Pretoria NBG',
     members: 190,
   },
   {
@@ -42,8 +41,6 @@ export const societies: Society[] = [
     region: 'Ekurhuleni',
     province: 'GP',
     founded: 1974,
-    meet: '2nd Sat, 14h00',
-    venue: 'Benoni Country Club',
     members: 95,
   },
   {
@@ -51,8 +48,6 @@ export const societies: Society[] = [
     region: 'Krugersdorp',
     province: 'GP',
     founded: 1978,
-    meet: '3rd Wed, 19h30',
-    venue: 'Walter Sisulu NBG',
     members: 72,
   },
   {
@@ -60,8 +55,6 @@ export const societies: Society[] = [
     region: 'Mbombela',
     province: 'MP',
     founded: 1981,
-    meet: '1st Sat, 14h00',
-    venue: 'Lowveld NBG, Mbombela',
     members: 110,
   },
   {
@@ -69,8 +62,6 @@ export const societies: Society[] = [
     region: 'Witbank',
     province: 'MP',
     founded: 1985,
-    meet: '2nd Sun, 14h00',
-    venue: 'Witbank Civic Centre',
     members: 48,
   },
   {
@@ -78,8 +69,6 @@ export const societies: Society[] = [
     region: 'Bloemfontein',
     province: 'FS',
     founded: 1970,
-    meet: 'Last Sat, 14h30',
-    venue: 'Free State NBG',
     members: 65,
   },
   {
@@ -87,8 +76,6 @@ export const societies: Society[] = [
     region: 'East London',
     province: 'EC',
     founded: 1976,
-    meet: '3rd Tue, 19h00',
-    venue: "Amathole Museum, King William's Town",
     members: 54,
   },
   {
@@ -96,8 +83,6 @@ export const societies: Society[] = [
     region: 'Gqeberha',
     province: 'EC',
     founded: 1972,
-    meet: '1st Thu, 19h00',
-    venue: 'Nelson Mandela Bay Botanical Gardens',
     members: 88,
   },
   {
@@ -105,8 +90,6 @@ export const societies: Society[] = [
     region: 'George',
     province: 'WC',
     founded: 1989,
-    meet: '2nd Fri, 18h30',
-    venue: 'Garden Route Botanical Garden',
     members: 76,
   },
   {
@@ -114,8 +97,6 @@ export const societies: Society[] = [
     region: 'Hermanus',
     province: 'WC',
     founded: 1994,
-    meet: '3rd Sat, 14h00',
-    venue: 'Hermanus Botanical Society Hall',
     members: 41,
   },
   {
@@ -123,8 +104,6 @@ export const societies: Society[] = [
     region: 'Stellenbosch',
     province: 'WC',
     founded: 1998,
-    meet: 'Last Wed, 19h00',
-    venue: 'Stellenbosch University Botanical Garden',
     members: 62,
   },
   {
@@ -132,8 +111,6 @@ export const societies: Society[] = [
     region: 'Pietermaritzburg',
     province: 'KZN',
     founded: 1983,
-    meet: '2nd Mon, 19h00',
-    venue: 'Royal Agricultural Society Hall',
     members: 84,
   },
   {
@@ -141,8 +118,6 @@ export const societies: Society[] = [
     region: 'Ballito',
     province: 'KZN',
     founded: 1991,
-    meet: '1st Sun, 14h00',
-    venue: 'Umhlanga Library',
     members: 58,
   },
   {
@@ -150,8 +125,6 @@ export const societies: Society[] = [
     region: 'Kimberley',
     province: 'NC',
     founded: 1988,
-    meet: 'Last Thu, 18h30',
-    venue: 'McGregor Museum, Kimberley',
     members: 32,
   },
   {
@@ -159,8 +132,6 @@ export const societies: Society[] = [
     region: 'Polokwane',
     province: 'LP',
     founded: 1996,
-    meet: '3rd Sat, 10h00',
-    venue: 'Polokwane Game Reserve Hall',
     members: 37,
   },
   {
@@ -168,8 +139,6 @@ export const societies: Society[] = [
     region: 'Potchefstroom',
     province: 'NW',
     founded: 1992,
-    meet: '2nd Wed, 19h00',
-    venue: 'NWU Botanical Garden',
     members: 44,
   },
   {
@@ -177,8 +146,6 @@ export const societies: Society[] = [
     region: 'Vanderbijlpark',
     province: 'GP',
     founded: 1986,
-    meet: 'Last Tue, 19h00',
-    venue: 'Vaal University of Technology Hall',
     members: 51,
   },
   {
@@ -186,8 +153,6 @@ export const societies: Society[] = [
     region: 'Mossel Bay',
     province: 'WC',
     founded: 2001,
-    meet: '1st Wed, 18h00',
-    venue: 'Mossel Bay Library',
     members: 36,
   },
 ];
