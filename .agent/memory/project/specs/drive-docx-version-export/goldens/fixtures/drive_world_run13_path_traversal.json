@@ -3,9 +3,9 @@
   "nodes": {
     "trav-root": {"type": "folder", "name": "Docs for Brad", "children": ["dotdot-folder", "normal-folder", "saoc-folder"]},
     "dotdot-folder": {"type": "folder", "name": "..", "children": ["dotdot-file"]},
-    "dotdot-file": {"type": "file", "name": "Nested.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "content_fixture": "sample_v1.docx"},
+    "dotdot-file": {"type": "file", "name": "Nested.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"},
     "normal-folder": {"type": "folder", "name": "Normal Folder", "children": ["slash-file"]},
-    "slash-file": {"type": "file", "name": "Evil/Name.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "content_fixture": "sample_v1.docx"},
+    "slash-file": {"type": "file", "name": "Evil/Name.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"},
     "saoc-folder": {"type": "folder", "name": "SAOC ", "children": ["legit-file"]},
     "legit-file": {"type": "file", "name": "Legit.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "modifiedTime": "2026-08-01T09:00:00Z", "md5Checksum": "2abe0277ed9f9782654cc8dc12311f77", "content_fixture": "sample_v1.docx"}
   }
