@@ -79,6 +79,39 @@ features:
   status: pending
   inline_brief: >-
     Write docs/nos-design-system.md, get the contract gate green, and open the PR to main.
+- id: F14
+  status: pending
+  inline_brief: >-
+    Admin information architecture and navigation. Make role separation unmistakable —
+    vendor vs exhibitor vs visitor — with scannable status, clear wayfinding, and a
+    dashboard that answers "what needs me now". Structural information design, not a
+    re-skin; admin is deliberately NOT show-branded.
+- id: F15
+  status: pending
+  inline_brief: >-
+    Admin vendor and exhibitor review surfaces: application queues, status transitions,
+    payment and booth allocation, made legible at a glance.
+- id: F16
+  status: pending
+  inline_brief: >-
+    Admin visitor and door surfaces: check-in scanner, ticket lookup, live show-day
+    operational view.
+- id: F17
+  status: pending
+  inline_brief: >-
+    Ticket purchase flow as a conversion surface end to end — product presentation,
+    day selection, attendee naming, and a confirmation moment that feels like an event
+    ticket rather than a receipt.
+- id: F18
+  status: pending
+  inline_brief: >-
+    SEO and discoverability: per-route metadata, Event/Organization structured data,
+    Open Graph and Twitter cards with NOS-branded images, sitemap, canonical URLs.
+- id: F19
+  status: pending
+  inline_brief: >-
+    Social and advertising kit built from the NOS tokens and emblem — fixed-ratio
+    export-ready artboards for Instagram and Facebook.
 milestones:
 - id: M1
   status: pending
@@ -92,6 +125,12 @@ milestones:
 - id: M4
   status: pending
   features: [F12, F13]
+- id: M5
+  status: pending
+  features: [F14, F15, F16]
+- id: M6
+  status: pending
+  features: [F17, F18, F19]
 ---
 
 # Mission: nos-design-system
