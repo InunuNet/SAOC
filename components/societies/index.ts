@@ -1,2 +1,11 @@
 export { SocietyCard } from './SocietyCard';
 export type { SanitySociety, SocietyCardProps } from './SocietyCard';
+export { SocietyFacts } from './SocietyFacts';
+export type { SocietyFactsProps } from './SocietyFacts';
+export { SocietyAbout } from './SocietyAbout';
+export type { SocietyAboutProps } from './SocietyAbout';
+export { SocietyExpect } from './SocietyExpect';
+export { SocietyEvents } from './SocietyEvents';
+export type { SocietyEventsProps } from './SocietyEvents';
+export { SocietyDetailsCallout } from './SocietyDetailsCallout';
+export type { SocietyDetailsCalloutProps } from './SocietyDetailsCallout';

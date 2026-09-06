@@ -1,0 +1,72 @@
+
+## F1 core pages
+Agent: beta visual verify (F1)
+Date: 2026-09-06
+Command run:
+  node .tmp/sandbox/beta-visual-f1/shoot.js > .tmp/sandbox/beta-visual-f1/output.json 2>.tmp/sandbox/beta-visual-f1/stderr.log
+Exit code: 0
+Playwright version: 1.62.0
+Base URL: https://beta.saoc.co.za
+Routes checked: /, /about, /societies, /judging
+Viewports: 390x844 (mobile) and 1280x900 (desktop), deviceScaleFactor 2, waitUntil networkidle + 2s settle
+  (societies also waited for >20 card-like elements to appear + 1.5s extra settle)
+
+Console errors (page.on('console', type=== 'error')): NONE on any route/viewport.
+Failed network requests (page.on('requestfailed')): NONE on any route/viewport.
+
+Screenshots written (in addition to existing before-*/after-* files, none overwritten):
+  .agent/evidence/site-build/home/beta-after-390.png
+  .agent/evidence/site-build/home/beta-after-1280.png
+  .agent/evidence/site-build/about/beta-after-390.png
+  .agent/evidence/site-build/about/beta-after-1280.png
+  .agent/evidence/site-build/societies/beta-after-390.png
+  .agent/evidence/site-build/societies/beta-after-1280.png
+  .agent/evidence/site-build/judging/beta-after-390.png
+  .agent/evidence/site-build/judging/beta-after-1280.png
+
+### Per-route verdict (pixels only, both viewports reviewed)
+
+**/ (home) — PASS**
+Hero image (orchid macro) loads full-bleed and crisp, headline type is well-kerned, CTA
+buttons are legible and correctly positioned over the image on both mobile and desktop.
+"Four ways into SAOC" card grid has properly loaded thumbnail images, consistent card
+heights, no overlap. Live countdown timer to the National Show renders correctly. Stats
+row, upcoming-shows list, yearbook block, and partner logos strip all lay out cleanly.
+Footer is fully styled with working-looking nav columns. Mobile stacks everything
+correctly with no horizontal overflow, no orphaned text, no broken images. This looks
+like a real, finished, professionally designed site — not a scaffold.
+
+**/about — PASS**
+Hero photo + headline reads well. Mission copy, stats row (1968/1990/18/21), full-bleed
+mid-page photo, history prose block, and "national committee" card grid all render
+cleanly on both breakpoints. The six committee cards intentionally show "To be
+confirmed" / "Awaiting confirmation" placeholders in a consistent pill-badge style —
+this reads as a deliberate "content not yet supplied" state rather than a bug (visually
+consistent styling, not a raw placeholder/lorem-looking artifact). CTA band and footer
+match the home page. No overflow, no unstyled elements, no broken images at either
+width.
+
+**/societies — PASS**
+This is the one flagged as highest-risk (client-side hydrated card grid) and it renders
+correctly: all 21 society cards are visible and populated (name, province chip, city,
+est. year, meets/venue/members rows) at both 1280 and 390. Filter pills (ALL, WC, EC,
+NC, FS, KZN, GP, MP, LP, NW) and the search box are present and styled. Grid reflows to
+a single column on mobile with no overlap or clipped cards. Each card's "meets/venue/
+members" fields show "TO BE CONFIRMED" / "(unconfirmed)" badges consistently — again
+reads as an intentional not-yet-populated data state, styled the same way across all 21
+cards, not a rendering failure. No blank/skeleton area was observed at either viewport.
+
+**/judging — PASS**
+Hero, overview stats (56/1990/21/6), "how judging works" text, full-bleed macro photo,
+the 6-card awards grid (Award of Merit, FCC, HCC, Cultural Merit, Botanical Recognition,
+Judges' Commendation), "becoming a judge" and "accredited judges" panels, CTA band, and
+footer all render correctly at both breakpoints. Card grid reflows to single column on
+mobile cleanly. No overflow, no broken images, no unstyled text.
+
+### Overall
+All four core routes clear Brad's bar — "must look like a site a real orchid society
+would be proud of." No horizontal overflow, no broken/missing images, no unstyled
+elements, no console errors, no failed network requests on any route at either
+viewport. The only content still pending is real per-society meeting details and real
+national-committee names, both of which are shown with a consistent, intentional-looking
+"to be confirmed" treatment rather than looking broken.

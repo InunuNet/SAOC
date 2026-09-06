@@ -363,6 +363,25 @@ export const societySlugsQuery = defineQuery(`
   *[_type == "society" && defined(slug.current)]{ "slug": slug.current }
 `);
 
+// Society detail page (F-societies-detail-redesign): upcoming events hosted by one
+// affiliated society, keyed off the `hostSociety` reference's slug.
+export const societyUpcomingEventsQuery = defineQuery(`
+  *[_type == "societyEvent" && date >= now() && hostSociety->slug.current == $slug]
+    | order(date asc)[0...6]{
+    _id,
+    title,
+    "slug": slug.current,
+    date,
+    endDate,
+    kind,
+    description,
+    venue,
+    location,
+    isFeatured,
+    "hostSociety": hostSociety->{ _id, name, "slug": slug.current }
+  }
+`);
+
 export const showClassesQuery = defineQuery(`
   *[_type == "showClass"] | order(order asc){
     _id,

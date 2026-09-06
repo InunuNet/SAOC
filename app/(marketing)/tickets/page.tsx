@@ -190,10 +190,10 @@ export default async function TicketsPage() {
           <>
             {hasProvisionalPricing ? (
               <p className="mx-auto max-w-[720px] font-sans text-[13px] leading-relaxed text-muted">
-                <span className="font-medium text-ink/80">Provisional pricing.</span> These are
-                SAOC&rsquo;s estimated prices, pending final confirmation by the National Show
-                council. The price shown is what you&rsquo;ll pay if you check out today, but
-                figures may still change for purchases made later.
+                <span className="font-medium text-ink/80">Provisional pricing.</span>{' '}
+                These are SAOC&rsquo;s estimated prices, pending final confirmation by the
+                National Show council. The price shown is what you&rsquo;ll pay if you check out
+                today, but figures may still change for purchases made later.
               </p>
             ) : null}
             <AdmissionTicketsList ticketTypes={cardData} soldOutLabel={soldOutMessage} />

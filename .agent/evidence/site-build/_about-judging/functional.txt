@@ -138,3 +138,91 @@ stat-band pattern (MissionBlock/Home), PhotoBand (single full-bleed <Image
 fill>, no fixed width), CTASection (`flex flex-wrap` button row), and
 Timeline (`border-l-2 pl-6` stacked list, no horizontal layout to break).
 No new fixed-width or fixed-height elements were introduced.
+
+==========================================================
+FOLLOW-UP — Codex GPT-5.5 FAIL fix: empty-array-is-truthy
+==========================================================
+
+Codex flagged `about?.timelineNodes ? (...)` at about/page.tsx:176 — an empty
+array (`[]`) is truthy in JS, so a Sanity field that exists but has been
+cleared (`timelineNodes: []`) would render an empty `<PortableText>` block
+instead of falling through to the `Timeline` fallback. Team lead asked me to
+check the same pattern across both rebuilt pages, not just the cited line,
+and to verify by exercising an actual empty array rather than re-reading the
+code.
+
+Audit of every CMS-array selector in both files:
+  - about/page.tsx: `about?.pillars` (bug), `about?.timelineNodes` (bug —
+    Codex's finding).
+  - judging/page.tsx: `data?.intro` (bug), `data?.howItWorks` (bug),
+    `data?.becomingAJudge` (bug), `data?.stats && data.stats.length > 0`
+    (already correct — not a bug), `data?.judges ?? []` (a default, not a
+    render-branch selector — not a bug), `data?.showPublicDirectory === true`
+    (boolean equality, not a bug).
+
+Fix applied — all five buggy selectors now guard on length:
+  - about/page.tsx:126  `about?.pillars && about.pillars.length > 0 ? (`
+  - about/page.tsx:176  `about?.timelineNodes && about.timelineNodes.length > 0 ? (`
+  - judging/page.tsx:78  `data?.intro && data.intro.length > 0 ? (`
+  - judging/page.tsx:116 `data?.howItWorks && data.howItWorks.length > 0 ? (`
+  - judging/page.tsx:158 `data?.becomingAJudge && data.becomingAJudge.length > 0 ? (`
+
+Verification method (per team lead's instruction — exercise it, don't just
+read it): wrote a temporary script, `scripts/_tmp_empty_array_test.ts`
+(left in place per the no-delete rule; self-documented as temporary/
+verification-only in its own header, not wired into the app), that patched
+the live dev Sanity dataset's `aboutPage.pillars`, `aboutPage.timelineNodes`,
+`judgingPage.intro`, `judgingPage.howItWorks`, and `judgingPage.becomingAJudge`
+to `[]` directly (confirmed via a direct `useCdn:false` Sanity query — not
+just assumed from the patch call succeeding).
+
+With all five fields genuinely empty, re-fetched both pages and confirmed
+via curl + grep against the rendered HTML that BEFORE this fix would have
+been dead — every fallback rendered, including the `data-placeholder`
+content nested inside it:
+  - about "Our mission" -> code fallback paragraph ("...greenhouse door...").
+  - about "Our history" -> code `Timeline` fallback rendered as a real
+    `<ol>` list (`From four societies to a national council` heading intact,
+    5 `<li>` nodes), with `data-placeholder="true"` count on the page = 7
+    (6 board cards + 1 timeline node — the middle "1970s–2000s" node), up
+    from 6 with real content — confirming the timeline's own placeholder
+    node is reachable, not dead code.
+  - judging "Overview" -> code fallback paragraph.
+  - judging "How judging works" -> code fallback paragraph, including the
+    inline `data-placeholder="true"` span "Panels typically comprise three
+    judges".
+  - judging "Becoming a judge" -> code fallback paragraph, including the
+    inline `data-placeholder="true"` span "Candidates begin as student
+    judges...".
+
+(Distinguishing fallback text from cached CMS text required grepping on
+substrings unique to each version, since some CMS copy and code-fallback
+copy share opening phrasing, e.g. both say "standardised in 1990 to replace
+regional variation..." — grep hits on that shared phrase are not proof of
+which branch rendered. Unique markers used: "greenhouse door" /
+"Four societies form a national council" (about fallbacks, absent from CMS
+copy); "Panels typically comprise three judges" / "Candidates begin as
+student judges" (judging fallbacks, exist only in code).)
+
+Then restored the real content by re-running the actual content patch,
+`node --import tsx/esm scripts/update-about-judging-copy.ts` (idempotent,
+already used earlier in this task), and re-verified via curl + grep on
+markers unique to the restored real copy ("annual publication Orchids South
+Africa", "registration number 1978/004040/08", "Accredited judges assess
+plants on form", "SAOC's published judging criteria", "begin the pathway
+toward becoming an accredited judge") — all present, all fallback/placeholder
+markers gone except the expected 6 board-member placeholders, both routes
+still 200.
+
+Re-ran the two build gates after the fix:
+  npx tsc --noEmit -p /Users/vetus/ai/SAOC/tsconfig.json
+    Exit code: 0, empty output.
+  bun run build
+    Exit code: 0.
+    ✓ Compiled successfully in 10.4s
+    ✓ Generating static pages using 13 workers (103/103) in 2.2s
+    ├ ○ /about     1m  1y
+    ├ ○ /judging   1m  1y
+
+No `before-*.png` files were read, written, or otherwise touched during this
+verification pass.

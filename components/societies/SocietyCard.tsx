@@ -53,70 +53,48 @@ export function SocietyCard({ society }: SocietyCardProps) {
         {society.name}
       </h3>
 
-      {society.region || society.founded ? (
-        <p className="mt-1 font-sans text-[14px] text-ink/70">
-          {society.region}
-          {society.region && society.founded ? ' · ' : ''}
-          {society.founded ? (
-            <span data-placeholder={society.foundedPlaceholder ? 'true' : undefined}>
-              est. {society.founded}
-              {society.foundedPlaceholder ? (
-                <span className="ml-1 text-[10px] uppercase tracking-[0.14em] text-muted">
-                  (unconfirmed)
-                </span>
-              ) : null}
+      {society.region || society.founded || society.memberCount !== null ? (
+        <p
+          data-placeholder={
+            society.foundedPlaceholder || society.memberCountPlaceholder ? 'true' : undefined
+          }
+          className="mt-1 font-sans text-[14px] text-ink/70"
+        >
+          {[
+            society.region,
+            society.founded ? `est. ${society.founded}` : null,
+            society.memberCount !== null && society.memberCount !== undefined
+              ? `${society.memberCount} members`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+          {society.foundedPlaceholder || society.memberCountPlaceholder ? (
+            <span className="ml-1.5 text-[10px] uppercase tracking-[0.14em] text-muted">
+              (estimated)
             </span>
-          ) : (
-            ''
-          )}
+          ) : null}
         </p>
       ) : null}
 
-      <dl className="mt-4 space-y-1.5 text-[13px]">
-        {society.meets ? (
-          <div className="flex gap-2">
-            <dt className="font-mono uppercase tracking-[0.12em] text-muted">Meets</dt>
-            <dd className="font-sans text-ink/80">{society.meets}</dd>
-          </div>
-        ) : society.meetPlaceholder ? (
-          <div className="flex gap-2" data-placeholder="true">
-            <dt className="font-mono uppercase tracking-[0.12em] text-muted">Meets</dt>
-            <dd className="font-sans text-ink/80">
-              <span className="border border-rule bg-bone px-1.5 py-0.5 text-[10px] uppercase tracking-[0.14em] text-muted">
-                To be confirmed
-              </span>
-            </dd>
-          </div>
-        ) : null}
-        {society.venue ? (
-          <div className="flex gap-2">
-            <dt className="font-mono uppercase tracking-[0.12em] text-muted">Venue</dt>
-            <dd className="font-sans text-ink/80">{society.venue}</dd>
-          </div>
-        ) : society.venuePlaceholder ? (
-          <div className="flex gap-2" data-placeholder="true">
-            <dt className="font-mono uppercase tracking-[0.12em] text-muted">Venue</dt>
-            <dd className="font-sans text-ink/80">
-              <span className="border border-rule bg-bone px-1.5 py-0.5 text-[10px] uppercase tracking-[0.14em] text-muted">
-                To be confirmed
-              </span>
-            </dd>
-          </div>
-        ) : null}
-        {society.memberCount !== null ? (
-          <div className="flex gap-2" data-placeholder={society.memberCountPlaceholder ? 'true' : undefined}>
-            <dt className="font-mono uppercase tracking-[0.12em] text-muted">Members</dt>
-            <dd className="font-sans text-ink/80">
-              {society.memberCount} members
-              {society.memberCountPlaceholder ? (
-                <span className="ml-1 border border-rule bg-bone px-1.5 py-0.5 text-[10px] uppercase tracking-[0.14em] text-muted">
-                  unconfirmed
-                </span>
-              ) : null}
-            </dd>
-          </div>
-        ) : null}
-      </dl>
+      {/* Meets/venue: only rendered when the society has supplied a real value —
+          no field is worth an absent-fact badge on the index grid. */}
+      {society.meets || society.venue ? (
+        <dl className="mt-4 space-y-1.5 text-[13px]">
+          {society.meets ? (
+            <div className="flex gap-2">
+              <dt className="font-mono uppercase tracking-[0.12em] text-muted">Meets</dt>
+              <dd className="font-sans text-ink/80">{society.meets}</dd>
+            </div>
+          ) : null}
+          {society.venue ? (
+            <div className="flex gap-2">
+              <dt className="font-mono uppercase tracking-[0.12em] text-muted">Venue</dt>
+              <dd className="font-sans text-ink/80">{society.venue}</dd>
+            </div>
+          ) : null}
+        </dl>
+      ) : null}
 
       <span aria-hidden className="mt-4 text-muted">
         →

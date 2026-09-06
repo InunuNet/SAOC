@@ -1,0 +1,66 @@
+# Beta deploy verification — commit 1d6512cb
+Run: 2026-09-06 21:23–21:35 UTC
+
+## Push
+$ git rev-parse HEAD origin/main
+1d6512cbff71c993a7a2f57c6478168f94f60057
+1d6512cbff71c993a7a2f57c6478168f94f60057      # identical — push landed
+$ git reflog show origin/main -n 2 --date=iso
+1d6512cb refs/remotes/origin/main@{2026-09-06 23:23:07 +0200}: update by push
+1c2fe858 refs/remotes/origin/main@{2026-09-06 22:33:08 +0200}: update by push
+
+## Rollout
+No gcloud access token on this machine (`gcloud auth print-access-token` empty), and
+`firebase apphosting:rollouts:list` is not a command in firebase-tools. Rollout state was
+therefore established by CONTENT, not by the control-plane API: polled beta /about every
+30s for a marker that only exists in the new build.
+
+$ (background poll, 30s interval)
+DEPLOYED: new /about content live after 60s (attempt 2)
+
+First check at 21:27 UTC (4 min after push) still served the OLD build — all five
+fabricated officer names present. That was the build still running, not a failure.
+
+## Content verification — beta vs local, after rollout
+$ curl -s https://beta.saoc.co.za/about
+  data-placeholder marks:  12    (local: 12)   MATCH
+  "To be confirmed":       12
+  fabricated names Annelie/Sipho/Oosthuizen/Naidoo/Botha/Khumalo:  0 each
+
+## HTTP sweep — all 13 in-scope marketing routes
+                  BETA  LOCAL     BETA_B    LOCAL_B
+/                  200    200      77247     103211
+/about             200    200      49848      63134
+/societies         200    200      40025      86767
+/judging           200    200      48151      61497
+/events            200    200      56163      70270
+/media-kit         200    200      44576      59520
+/sponsors          200    200      38297      49200
+/tickets           200    200      46577      62731
+/refunds           200    200      47445      59521
+/constitution      200    200      31960      42331
+/privacy           200    200      42150      53395
+/terms             200    200      37709      48584
+/contact           200    200      37729      48870
+13/13 = 200 on beta. 13/13 = 200 locally.
+Byte deltas are the dev server's unminified HMR scaffolding, not missing content.
+
+## /societies byte-ratio outlier — investigated, NOT a defect
+Beta /societies is 46% of local bytes where every other route is ~75-80%. Cause: the 21
+society cards render CLIENT-SIDE after hydration, so the server HTML ships the RSC flight
+payload plus a Suspense boundary (11 <template>) instead of rendered cards. The dev server
+renders them eagerly, hence 21 <a href="/societies/..."> in local HTML and 0 in beta HTML.
+curl cannot verify this route — it needs a browser (dispatched separately).
+
+Data-level proof the NEW build is live on /societies, read out of the flight payload:
+  \"meets\":null                21/21
+  \"meetPlaceholder\":true      21/21
+  \"venue\":null                21/21
+  distinct \"slug\" entries     21
+  surviving fabricated \"meets\":\"...\" strings   0
+  surviving fabricated \"venue\":\"...\" strings   0
+The fabricated meeting times and venues are gone from the deployed production dataset.
+
+## Not covered by this file
+Visual/rendered verification at 390 and 1280 against beta — dispatched to three separate
+agents, findings in .agent/evidence/site-build/_beta-visual/.

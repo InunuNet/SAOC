@@ -1,0 +1,36 @@
+
+## F3 policy pages
+
+**Command run:** `node .tmp/sandbox/beta-visual-f3/shoot.mjs` (custom Playwright script, chromium, deviceScaleFactor 2, viewports 390x844 and 1280x900, waitUntil: 'networkidle')
+**Exit code:** 0
+
+**Console errors:** none on any of the 5 routes checked.
+**Failed network requests (4xx/5xx or requestfailed):** none on any of the 5 routes checked.
+
+Screenshots saved:
+- .agent/evidence/site-build/refunds/beta-after-{390,1280}.png
+- .agent/evidence/site-build/constitution/beta-after-{390,1280}.png
+- .agent/evidence/site-build/privacy/beta-after-{390,1280}.png
+- .agent/evidence/site-build/terms/beta-after-{390,1280}.png
+- .agent/evidence/site-build/societies-detail/beta-after-{390,1280}.png (extra check, cape-orchid-society)
+
+### /refunds — PASS
+Both breakpoints look finished and well-designed, not a dumped legal document. Hero image + "LEGAL" pill + serif H1 reads as a designed page. Body has real typographic hierarchy: bolded section headers (Terms pending confirmation, Refunds, Cancellations, Admission tickets, Conference tickets, Workshop/field trip/cocktail tickets, Vendor stand bookings, Exceptional circumstances, How to request a refund), short paragraphs, and a bulleted tiered-notice schedule rather than one wall of prose. The grey "Draft pending legal review" notice box is clearly set off from body copy.
+Provisional-figure disclosure check (specifically requested): confirmed legible on both viewports. Every dollar/day figure that's an estimate (100% refund, thirty days, 90% refund, fourteen and thirty days, 50% refund, fourteen days, 0% refund, seven days) carries a small caps "PROVISIONAL" superscript/badge directly next to it, rendered in a lighter weight with a subtle background chip on desktop — easy for a human eye to spot, not just present in markup. No ambiguity about which figures are firm vs. estimated.
+Mobile (390): no overflow, no overlap, footer columns stack cleanly, nav collapses to hamburger correctly, "PROVISIONAL" tags wrap onto their own line under the stat but remain fully legible.
+No broken/overlapping/unstyled elements found. Looks like a page a real orchid society would be proud of.
+
+### /constitution — PASS
+Short page, but well composed rather than looking like a stub — hero photo, "GOVERNANCE" pill, then a clearly boxed "Not yet published" notice callout, a short explanatory paragraph, and a "contact the Secretary" link. Reads as an intentional placeholder state, not a broken/empty page. Both breakpoints render identically in structure with no overflow or layout issues. Footer intact and matches other pages (design consistency confirmed across routes).
+
+### /privacy — PASS
+Long legal content but broken into 9 well-labeled sections (Data we collect, Who we share it with, How long we keep it, Cookies and analytics, Your rights, Information Officer, Complaints, Questions) each with a bold heading, short paragraphs and bullets under "Data we collect" / "Who we share it with." Does not read as a dumped document — real hierarchy throughout, comparable to /refunds and /terms. Mobile view: no overflow, no unreadable text, links (secretary@saoc.co.za, inforegulator.org.za, contact us) render as normal inline underlined links, not broken/placeholder-looking. No console or network errors.
+
+### /terms — PASS
+Same treatment as /privacy — sectioned (Use of this site, Content ownership, Conditions of sale, Disclaimer, Contact) with a bulleted list under "Conditions of sale" calling out the Sunset Cocktails 18+ condition and workshop capacity condition in bold. Cross-links to Refund & Cancellation Policy render correctly. No overflow or unstyled elements at either breakpoint.
+
+### Extra check: /societies/cape-orchid-society — no visual defects, but thin
+No overlap, overflow, or broken styling at either breakpoint — hero photo with "WC" initials badge, "Cape Orchid Society" H1, province subtitle, then a 4-stat row (Meets / Venue / Founded / Members). However the actual data is nearly all placeholder: Meets and Venue both read "TO BE CONFIRMED", and Founded (1947) and Members (220) both carry an "UNCONFIRMED" tag. This isn't a bug or a rendering defect — the page is functioning correctly and displaying the true state of the underlying data — but as a stand-alone detail page it currently looks sparse/unfinished content-wise even though the layout itself is clean and finished. Flagging as a content-completeness observation, not a visual FAIL, since this route was not one of the four assigned policy pages and I was not asked to assess data completeness — just noting it since it was visibly thin compared to the four policy pages, which are fully fleshed out.
+
+### Overall
+All 4 assigned policy routes (/refunds, /constitution, /privacy, /terms) PASS the visual bar on both mobile (390) and desktop (1280). No horizontal overflow, no overlapping elements, no unstyled/broken markup, no walls of undifferentiated legal text — every long-form page has real section headers and short paragraphs/bullets. The refunds provisional-figure disclosure specifically reads clearly to a human eye on both viewports. Nothing to fix on these four routes from a visual-QA perspective.

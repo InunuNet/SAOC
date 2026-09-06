@@ -288,3 +288,171 @@ Placeholder markers present on the same rendered page:
 
 No changes made to society `name`, `region`, or `province` — inspected all
 21 and none read as invented.
+
+===========================================================================
+9. FOLLOW-UP: Codex GPT-5.5 findings — seed script had zero placeholder
+   awareness, and board _id was derived from the name being corrected
+===========================================================================
+
+Codex reviewed the integrity diff and returned FAIL on two real defects,
+verified by the team lead and confirmed independently here.
+
+Finding 1 — scripts/seed-sanity.ts had zero placeholder awareness
+-------------------------------------------------------------------------
+`grep -c placeholder scripts/seed-sanity.ts` returned 0 before this fix. The
+live documents were patched (sections 3/4/8), but the generator that
+recreates them from lib/data/* did not emit any of the placeholder flags —
+re-running `pnpm seed` would have silently re-introduced unmarked board
+members and society founding-years/member-counts as "confirmed fact" Sanity
+documents (with no code-fallback badge, since documents would exist).
+
+Fix — scripts/seed-sanity.ts:
+- `mapBoardMembers()` now emits `placeholder: m.name === BOARD_PLACEHOLDER_NAME`.
+  `BOARD_PLACEHOLDER_NAME` ('To be confirmed') is exported from
+  lib/data/board.ts so the flag is derived from the sentinel, not a second,
+  separately-maintained boolean that could drift from the name field.
+- `mapSocieties()` now emits `foundedPlaceholder: true`, `memberCountPlaceholder: true`
+  unconditionally (the entire static societies array is our own estimate —
+  see lib/data/societies.ts header), and `meetPlaceholder: s.meet === undefined`,
+  `venuePlaceholder: s.venue === undefined` (derived per-field, so a future
+  partial update — e.g. one society supplies a real venue but not a meeting
+  time — is handled correctly without a script change). `meets`/`venue` are
+  only included in the mapped object when defined, so createOrReplace clears
+  any previously-seeded value on re-seed, matching the live "unset" already
+  applied in section 8.
+
+Finding 2 — deterministic board _id encoded the fabricated name
+-------------------------------------------------------------------------
+`scripts/seed-sanity.ts:87` (pre-fix) built
+`_id: safeid('boardMember', \`${m.name}-${m.role}\`)`. The 6 documents
+patched in section 3 kept their original ids (e.g.
+`boardMember-dr-annelie-van-der-merwe-president`), because a Sanity `patch`
+only changes fields, never `_id`. Re-running the (then-unfixed) seed script
+after the name was corrected to "To be confirmed" would have minted 6 NEW
+documents under ids like `boardMember-to-be-confirmed-president`, leaving
+the old fabricated-name-id documents in place as orphans — a duplicated
+committee, half of it still addressable under ids that encode invented
+people.
+
+Fix — `mapBoardMembers()` now keys on role alone: `safeid('boardMember', m.role)`.
+Roles (President, Vice-President, Secretary, Treasurer, Chair of Judging,
+Editor) are the stable identity; names are the field expected to change
+when SAOC supplies the real officeholder, and a role-derived id survives
+that edit without minting a new document. Society `_id` (safeid('society',
+s.name)) was left unchanged per the team lead's instruction — society names
+were not altered by this work, so there is no equivalent churn risk there.
+
+Stale-document check (before fixing)
+-------------------------------------------------------------------------
+Queried the live dataset for the 6 existing boardMember documents:
+
+$ curl -s ".../data/query/<dataset>?query=*%5B_type%3D%3D%22boardMember%22%5D%7B_id%2Cname%2Crole%2Cplaceholder%7D"
+{"result":[
+  {"_id":"boardMember-david-naidoo-treasurer", ...},
+  {"_id":"boardMember-dr-annelie-van-der-merwe-president", ...},
+  {"_id":"boardMember-lindiwe-khumalo-editor-orchids-south-africa", ...},
+  {"_id":"boardMember-margaret-oosthuizen-secretary", ...},
+  {"_id":"boardMember-prof-johan-botha-chair-of-judging", ...},
+  {"_id":"boardMember-sipho-mthembu-vice-president", ...}
+]}
+
+Confirmed: yes, stale fabricated-name-derived ids were present (all 6 —
+these were the only boardMember documents that existed; the fixed seed
+script had not yet been run against the dataset, so no duplicates existed
+YET, but the OLD ids were exactly the ones a future re-seed under the new
+role-based scheme would have orphaned). Migrated rather than left as a
+time bomb: for each of the 6 roles, created a new document under the
+role-derived id the fixed script now produces, then deleted the old
+fabricated-name-id document, in one atomic Sanity mutation transaction
+(createOrReplace + delete, 12 mutations total):
+
+$ curl -s -X POST ".../data/mutate/<dataset>" ... --data-binary '{"mutations":[
+    {"createOrReplace":{"_id":"boardMember-president","_type":"boardMember","name":"To be confirmed","role":"President","placeholder":true}},
+    {"createOrReplace":{"_id":"boardMember-vice-president", ... "role":"Vice-President", ...}},
+    {"createOrReplace":{"_id":"boardMember-secretary", ...}},
+    {"createOrReplace":{"_id":"boardMember-treasurer", ...}},
+    {"createOrReplace":{"_id":"boardMember-chair-of-judging", ...}},
+    {"createOrReplace":{"_id":"boardMember-editor-orchids-south-africa", ...}},
+    {"delete":{"id":"boardMember-dr-annelie-van-der-merwe-president"}},
+    {"delete":{"id":"boardMember-sipho-mthembu-vice-president"}},
+    {"delete":{"id":"boardMember-margaret-oosthuizen-secretary"}},
+    {"delete":{"id":"boardMember-david-naidoo-treasurer"}},
+    {"delete":{"id":"boardMember-prof-johan-botha-chair-of-judging"}},
+    {"delete":{"id":"boardMember-lindiwe-khumalo-editor-orchids-south-africa"}}
+  ]}'
+{"transactionId":"Hv3zyv14FBW5AozIidRozE","results":[
+  {"operation":"create"},{"operation":"create"},{"operation":"delete"},
+  {"operation":"delete"},{"operation":"delete"},{"operation":"delete"},
+  {"operation":"delete"},{"operation":"create"},{"operation":"create"},
+  {"operation":"create"},{"operation":"delete"},{"operation":"create"}
+]}
+
+DELETED (6 documents, all fabricated-name-derived ids, all superseded by a
+role-derived document with identical content otherwise):
+  boardMember-dr-annelie-van-der-merwe-president
+  boardMember-sipho-mthembu-vice-president
+  boardMember-margaret-oosthuizen-secretary
+  boardMember-david-naidoo-treasurer
+  boardMember-prof-johan-botha-chair-of-judging
+  boardMember-lindiwe-khumalo-editor-orchids-south-africa
+
+CREATED (6 documents, role-derived ids, matching what the fixed seed script
+now produces byte-for-byte — verified by hand-computing slugify(role) against
+the script's own slugify() implementation before running the mutation):
+  boardMember-president
+  boardMember-vice-president
+  boardMember-secretary
+  boardMember-treasurer
+  boardMember-chair-of-judging
+  boardMember-editor-orchids-south-africa
+
+Verified post-migration:
+$ curl -s ".../data/query/<dataset>?query=*%5B_type%3D%3D%22boardMember%22%5D%7B_id%2Cname%2Crole%2Cplaceholder%7D%20%7C%20order(_id%20asc)"
+{"result":[
+  {"_id":"boardMember-chair-of-judging","name":"To be confirmed","placeholder":true,"role":"Chair of Judging"},
+  {"_id":"boardMember-editor-orchids-south-africa","name":"To be confirmed","placeholder":true,"role":"Editor, Orchids South Africa"},
+  {"_id":"boardMember-president","name":"To be confirmed","placeholder":true,"role":"President"},
+  {"_id":"boardMember-secretary","name":"To be confirmed","placeholder":true,"role":"Secretary"},
+  {"_id":"boardMember-treasurer","name":"To be confirmed","placeholder":true,"role":"Treasurer"},
+  {"_id":"boardMember-vice-president","name":"To be confirmed","placeholder":true,"role":"Vice-President"}
+]}
+$ curl -s ".../data/query/<dataset>?query=count(*%5B_type%3D%3D%22boardMember%22%5D)"
+{"result":6}
+
+Exactly 6 documents (no duplicates, no orphans), all under stable role ids,
+all correctly marked placeholder.
+
+Society documents: no migration needed. `_id` is `safeid('society', s.name)`
+and no society name was changed by this work, so there is no id-churn risk.
+Confirmed count unchanged at 21 post-fix:
+$ curl -s ".../data/query/<dataset>?query=count(*%5B_type%3D%3D%22society%22%5D)"
+{"result":21}
+
+Verification commands:
+
+$ npx tsc --noEmit
+(no output — exit 0; scripts/**/*.ts is included by tsconfig.json's
+`"**/*.ts"` glob, so the seed script itself is typechecked)
+
+$ bun run build
+(exit 0 — full route manifest unchanged)
+
+Local server (bun run start -p 3916), status codes:
+  about:200
+  societies:200
+  society-detail (cape-orchid-society):200
+
+Rendered /about re-verified after the board migration (must still show 6
+placeholder cards, 0 fabricated names):
+  "Awaiting confirmation": 12 occurrences (6 cards, doubled by RSC payload)
+  Annelie van der Merwe / Sipho Mthembu / Margaret Oosthuizen / David Naidoo /
+  Johan Botha: 0 each
+
+Note: the full `pnpm seed` script was deliberately NOT run against the live
+dataset for this fix — it would re-seed awards/events/shows/showClasses/
+partners/provinces too, which may carry live edits that differ from
+lib/data/* fallbacks unrelated to this defect. Instead, the exact mutation
+the fixed board-member mapper now produces was hand-verified (slugify(role)
+computed against the script's own slugify() implementation) and applied
+directly via the Sanity mutate API, scoped to only the 6 boardMember
+documents in question.

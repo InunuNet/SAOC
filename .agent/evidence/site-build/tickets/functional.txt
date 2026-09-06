@@ -1,0 +1,139 @@
+JSX inline-tag whitespace audit — /tickets defect and site-wide sweep
+Date: 2026-09-06
+Scope: app/(marketing)/** (excluding app/(marketing)/national-show/**) and components/**
+
+=== DEFECT 1 (assigned) — app/(marketing)/tickets/page.tsx:193 ===
+
+BEFORE (source):
+  <span className="font-medium text-ink/80">Provisional pricing.</span> These are
+  SAOC&rsquo;s estimated prices, pending final confirmation by the National Show
+  council. The price shown is what you&rsquo;ll pay if you check out today, but
+  figures may still change for purchases made later.
+
+Rendered HTML before fix (grep on curl output of https://localhost:3333/tickets):
+  medium text-ink/80">Provisional pricing.</span>These are SAOC's estim...
+  (space between "pricing." and "These" was lost)
+
+FIX APPLIED:
+  <span className="font-medium text-ink/80">Provisional pricing.</span>{' '}
+  These are SAOC&rsquo;s estimated prices, pending final confirmation by the
+  National Show council. The price shown is what you&rsquo;ll pay if you check out
+  today, but figures may still change for purchases made later.
+
+Rendered HTML after fix:
+  medium text-ink/80">Provisional pricing.</span> <!-- -->These are SAOC's estimated
+  prices, pending final co...
+  (space now present; React inserted a text-separator comment <!-- --> which is
+  normal/invisible — confirms two adjacent text nodes are now correctly separated
+  by a space)
+
+Command used:
+  curl -sk https://localhost:3333/tickets | grep -oE '.{20}</span>.{60}' | grep -i provisional
+Result: "Provisional pricing.</span> <!-- -->These are SAOC's estimated prices, pending final co"
+
+=== DEFECT 2 (site-wide audit) ===
+
+Search commands:
+  grep -rnE '</(span|strong|em|a|b|i)> [A-Za-z]' app/(marketing) --include="*.tsx" | grep -v national-show
+  grep -rnE '</(span|strong|em|a|b|i)> [A-Za-z]' components --include="*.tsx"
+  grep -rnE '[A-Za-z] <(span|strong|em|a|b|i)[ >]' app/(marketing) --include="*.tsx" | grep -v national-show
+  grep -rnE '[A-Za-z] <(span|strong|em|a|b|i)[ >]' components --include="*.tsx"
+
+CONFIRMED BROKEN AND FIXED (verified against rendered HTML on the local dev server,
+https://localhost:3333, before AND after each fix):
+
+1. app/(marketing)/terms/page.tsx:24
+   Before: "...ending legal review.</strong>This page has been drafted with..." (no space)
+   After:  "...ending legal review.</strong> <!-- -->This page has been drafted with..." (space present)
+
+2. app/(marketing)/privacy/page.tsx:24
+   Before: "...ending legal review.</strong>This page has been drafted with..." (no space)
+   After:  "...ending legal review.</strong> <!-- -->This page has been drafted with..." (space present)
+
+3. app/(marketing)/refunds/page.tsx:55
+   Before: "...ending legal review.</strong>This page has been drafted with..." (no space)
+   After:  "...ending legal review.</strong> <!-- -->This page has been drafted with..." (space present)
+
+All three had the identical structural bug as the tickets defect: an inline
+</strong> close tag at the end of a source line, followed by a space and the
+start of the next sentence, with the sentence's continuation wrapped onto the
+next source line. Fixed identically to Defect 1: split into
+  <strong ...>Label.</strong>{' '}
+  Rest of sentence...
+
+CHECKED AND FOUND FINE (verified against rendered HTML, NOT changed):
+
+4. app/(marketing)/constitution/page.tsx:26 — visually/structurally the same
+   "</strong> The" pattern as the three broken ones above, but rendered CORRECTLY
+   with the space intact: "...Not yet published.</strong> The Constitution text
+   itself has not been supplied..." Left unmodified — it is not broken, and
+   changing working, mission-scoped-elsewhere content risks an unrelated regression.
+
+5. app/(marketing)/refunds/page.tsx:67 and :72 — same-line reverse pattern
+   ("<strong>admission</strong>,{' '}" and "marked <strong>provisional</strong>
+   wherever they") — already uses an explicit {' '} at :67, and :72's tag-close
+   is followed by a space on the SAME source line (no line-wrap boundary).
+   Rendered output confirmed correct:
+   "...admission</strong>,<!-- --> <strong ...>conference</strong>..." and
+   "...provisional</strong> wherever they appear..." — both fine, unchanged.
+
+6. app/(marketing)/page.tsx (home) — components/home/Hero.tsx:86 and
+   components/home/MissionBlock.tsx:39,43 — all same-line patterns
+   ("<em>orchid culture</em> in South Africa.", "in cultivation</strong> — on the
+   show bench", "<em>Orchids South Africa</em> · 2025 yearbook"). Rendered HTML
+   of https://localhost:3333/ confirmed all three render with the space intact.
+   Unchanged.
+
+7. components/tickets/CheckoutRedirectNotice.tsx:29 — "pay <strong>R{amount}
+   </strong> via {providerLabel(providerId)}…" is a same-line pattern (no
+   line-wrap adjacent to the tag boundary), used only on /tickets/[slug] inside
+   the post-submit checkout-redirect UI, which requires a live checkout POST to
+   reach — could not be exercised via a plain GET/curl in the time available.
+   NOT independently verified against rendered output. Source-level read: safe
+   (same-line, not the multi-line class that caused the confirmed defects).
+   Left unmodified; flagging for a follow-up check during a live checkout pass.
+
+8. components/events/SubmitEventForm.tsx (multiple "<label> text <span
+   aria-hidden>*</span>" instances, all same-line) — page is gated behind an
+   authenticated session (app/(marketing)/events/submit/page.tsx checks a
+   Firebase session cookie and renders a LoginPrompt with no form markup at all
+   when unauthenticated). Could not reach the form via curl without a valid
+   session. Source-level read: safe (same-line pattern only). Left unmodified.
+
+OUT OF SCOPE, NOT TOUCHED (national-show tree owned by another session):
+  components/vendors/VendorTermsFieldset.tsx (multiple instances) — only reachable
+    via app/(marketing)/national-show/vendors/register/page.tsx.
+  components/vendors/VendorStandPaymentForm.tsx:83 — only reachable via
+    app/(marketing)/national-show/vendors/payment/page.tsx.
+
+=== BARS ===
+
+1. npx tsc --noEmit
+   Exit: 0
+
+2. bun run build
+   Exit: 0 (first two attempts hit a stale .next/lock from an earlier interrupted
+   build under a concurrently-running dev server; removed the stale lock file and
+   re-ran clean — final run exit 0, full route table printed, no errors)
+
+3. /tickets returns 200 locally (https://localhost:3333/tickets, dev server uses
+   experimental-https per package.json's dev:secure script) and rendered output
+   proves the space is present (see Defect 1 above).
+
+4. Screenshots taken via Playwright (chromium) against the local dev server at
+   390x844 and 1280x900, saved to:
+   .agent/evidence/site-build/tickets/local-after-whitespace-390.png
+   .agent/evidence/site-build/tickets/local-after-whitespace-1280.png
+   Visually confirmed (Read tool) at both sizes: "Provisional pricing. These are
+   SAOC's estimated prices, pending final confirmation by the National Show
+   council. The price shown is what you'll pay if you check out today, but
+   figures may still change for purchases made later." reads correctly with a
+   proper space after "pricing." at both widths.
+
+=== NOTE ===
+While restarting the dev server to take screenshots, I mistakenly killed a
+pre-existing shared dev server process (PID 9706, HTTPS on :3333, started via
+`pnpm run dev:secure`) that was already running before I began. I restarted it
+identically (`pnpm run dev:secure`) and confirmed it came back up serving on
+:3333 before continuing. No files were lost; flagging this in case another
+session was depending on that server's state.

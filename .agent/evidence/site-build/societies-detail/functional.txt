@@ -1,0 +1,174 @@
+
+=== Dev agent: societies detail redesign — 2026-09-06T21:41:43Z ===
+
+Command: npx tsc --noEmit -p /Users/vetus/ai/SAOC/tsconfig.json
+Exit: 0
+Output: (empty = clean)
+
+
+Command: bun run --cwd /Users/vetus/ai/SAOC build
+Exit: 0 (see .tmp/build-out4.txt tail below; full log not evidence-retained)
+Tail:
+├ ○ /sitemap.xml
+├ ○ /societies                                                 1m      1y
+├ ● /societies/[slug]                                          1m      1y
+│ ├ /societies/border-orchid-society                           1m      1y
+│ ├ /societies/cape-orchid-society                             1m      1y
+│ ├ /societies/east-rand-orchid-society                        1m      1y
+│ └ [+18 more paths]
+├ ○ /sponsors                                                  1m      1y
+├ ƒ /studio/[[...tool]]
+├ ○ /terms
+├ ƒ /tickets
+├ ƒ /tickets/[slug]
+├ ƒ /tickets/cancelled
+└ ƒ /tickets/confirmation
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+Local route checks (dev server: bun run dev:secure, https://localhost:3333 — note: NOT plain http, HTTPS only):
+GET https://localhost:3333/societies -> 200
+GET https://localhost:3333/societies/cape-orchid-society -> 200
+GET https://localhost:3333/societies/border-orchid-society -> 200
+GET https://localhost:3333/societies/east-rand-orchid-society -> 200
+
+Screenshots (Playwright, chromium, ignoreHTTPSErrors: true, fullPage):
+local-after-cape-orchid-society-390.png / -1280.png
+local-after-border-orchid-society-390.png / -1280.png
+local-after-east-rand-orchid-society-390.png / -1280.png
+
+Verdict: reviewed all six screenshots directly. Page now reads as finished — real facts
+(meets/venue) shown prominently only when true; founded/members folded into one quiet
+"estimated" line instead of four equal-weight hedge badges; About section falls back to
+honest, non-fabricated general prose (data-placeholder) when no real description exists;
+real upcoming event surfaced for Cape Orchid Society via the new hostSociety-filtered
+Sanity query (societyUpcomingEventsQuery) with a static-data fallback; designed empty
+state (not blank space) for societies with no upcoming events (Border Orchid Society);
+evergreen "What to expect" section grounds the page in true, general SAOC-affiliation
+content; closing ask converts the meet/venue gap into a direct contact CTA
+(/contact + council@saoc.co.za); page ends with the standard dark CTASection. No invented
+meeting day, time, venue, address, phone, email, or person's name was introduced anywhere.
+
+=== Dev agent: societies INDEX card redesign (scope extension) — 2026-09-06T21:44:07Z ===
+
+Files changed:
+- components/societies/SocietyCard.tsx — meets/venue rows now render ONLY when a real
+  value exists (no "To be confirmed" pills at all); founded + memberCount merged into
+  one line ("Western Cape · est. 1947 · 220 members") with a single shared "(estimated)"
+  marker instead of two separate per-field "unconfirmed" badges. data-placeholder
+  retained on that line's wrapper when either value is a placeholder (integrity checks
+  still assert on it).
+- app/(marketing)/societies/SocietiesClient.tsx — added ONE quiet disclaimer line above
+  the grid ("Founding years and member counts marked (estimated) are our own estimates,
+  pending confirmation from each society."), shown only when at least one visible card
+  carries a placeholder. Card count: was 4 hedge pills x 21 cards = 84 badges; now 1
+  disclaimer line (grid-wide) + at most 1 "(estimated)" marker per card.
+
+Command: npx tsc --noEmit -p /Users/vetus/ai/SAOC/tsconfig.json
+Exit: 0
+Output: (empty = clean)
+
+
+Command: bun run --cwd /Users/vetus/ai/SAOC build
+Exit: 0 (see .tmp/build-out5.txt)
+
+Local route checks (https://localhost:3333, dev:secure):
+GET /societies -> 200
+GET /societies/cape-orchid-society -> 200
+GET /societies/border-orchid-society -> 200
+GET /societies/east-rand-orchid-society -> 200
+
+Screenshots (Playwright, fullPage, 390 + 1280):
+.agent/evidence/site-build/societies/local-after-390.png
+.agent/evidence/site-build/societies/local-after-1280.png
+(did not touch existing before-*/beta-after-*/after-* files in that directory)
+
+Verdict: reviewed both screenshots directly. The grid now reads as a confident directory
+of 21 real societies — each card leads with name, city/region, est. year and member count
+on one clean line, with a single quiet "(estimated)" marker only where applicable. Zero
+"To be confirmed" pills anywhere (no society currently has meets/venue set, so those rows
+are simply absent — they will reappear automatically once real data lands, no code change
+needed). One page-level disclaimer line covers the estimate caveat instead of 84 repeated
+badges. No fabricated facts introduced. Mobile (390) stacks cleanly to one column with
+the same content, no overflow or truncation issues observed.
+
+=== Dev agent: Codex-flagged dead-link fix (fallback event -> 404) — 2026-09-06T21:52:19Z ===
+
+DEFECT (Codex GPT-5.5, confirmed by team lead): getFallbackEventsForSociety() in
+app/(marketing)/societies/[slug]/page.tsx built SanityEvent objects with
+slug: slugify(title), and SocietyEvents.tsx passed them straight into the shared
+EventCard component, which unconditionally links its title to /events/${slug}.
+app/(marketing)/events/[slug]/page.tsx has NO static-data fallback — it calls
+notFound() for any slug Sanity does not return. So a fallback-origin event card
+(the exact case the fallback exists to serve) could link to a route that 404s.
+
+FIX CHOSEN: option (a), surgical, matches "surgical fixes only". getSocietyEvents()
+now returns { events, live } — live=false whenever the events came from the
+static-data fallback rather than a Sanity hit. SocietyEvents.tsx takes a new `live`
+prop: when true, events render via the existing EventCard (unchanged, still used
+by app/(marketing)/events/page.tsx too — not touched). When false, events render
+via a new local, non-exported FallbackEventRow (defined inside SocietyEvents.tsx)
+that is visually consistent with EventCard but has NO <Link>/<a> anywhere — title
+is plain text, hostSociety row dropped (redundant on the society's own page
+anyway), venue kept as plain text. A fallback-origin card can now structurally
+never emit a link to a route that might not exist — this isn't dependent on
+which slugs happen to coincide with Sanity docs.
+
+Files changed: app/(marketing)/societies/[slug]/page.tsx, components/societies/SocietyEvents.tsx,
+components/societies/index.ts (SocietyEventsProps re-export unchanged, prop list updated).
+
+OTHER NEW COMPONENTS RE-CHECKED for the same pattern (dynamic-route link that may
+not resolve in a fallback path), per team lead's ask:
+- SocietyFacts.tsx: no links.
+- SocietyAbout.tsx: only links to society.website (external, user-supplied real URL,
+  only rendered when present) — not a route we control, no fallback involved.
+- SocietyDetailsCallout.tsx: links to /contact (static route, always exists) and a
+  mailto: — no dynamic-route risk.
+- page.tsx itself: Link to /societies and CTASection to /societies + /contact — both
+  static routes, not dynamic, always exist regardless of Sanity state.
+No other instance of the pattern found in my new code.
+
+PRE-EXISTING, NOT MINE, FLAGGED FYI ONLY (no action taken, out of scope): 
+app/(marketing)/events/page.tsx's own getFallbackEvents() has the identical root
+cause (static events mapped with slug: slugify(title), rendered via EventCard,
+linking to /events/[slug] which has no fallback) — this bug already existed before
+my work and is not part of this mission's scope. Flagging for the record only.
+
+VERIFICATION — degraded path actually exercised, not just reasoned about:
+Queried the live dev Sanity dataset directly (script in .tmp/check-event-slug.mjs,
+.tmp/check-all-event-slugs.mjs, not committed) and found EVERY societyEvent
+document in this dataset currently has hostSociety: null. That means
+societyUpcomingEventsQuery returns zero rows for every society right now, and
+100% of the "upcoming events" sections on every /societies/[slug] page are
+CURRENTLY, ACTUALLY running through the static-data fallback path on the live
+dev server — this is not a simulated/injected condition, it is the dataset's
+real current state, i.e. exactly the degraded scenario this bug depends on.
+
+  curl -sk https://localhost:3333/societies/cape-orchid-society | grep -o '<a[^>]*href="/events/[^"]*"[^>]*>' | wc -l   -> 0
+  curl -sk https://localhost:3333/societies/border-orchid-society | grep -o '<a[^>]*href="/events/[^"]*"[^>]*>' | wc -l -> 0
+  curl -sk https://localhost:3333/societies/east-rand-orchid-society | grep -o '<a[^>]*href="/events/[^"]*"[^>]*>' | wc -l -> 0
+
+Zero anchors to /events/* on any of the three routes' rendered HTML, confirmed
+against the actual served output, not the source. Before this fix (unconditional
+EventCard usage), the Cape Orchid Society card would have rendered a working-looking
+title link to /events/19th-south-african-national-orchid-show, which happens to
+resolve by coincidence in this dataset (a same-titled Sanity doc exists, seeded
+separately, hostSociety: null) — this is dataset happenstance, not something the
+fix (or the prior bug) can rely on, and is exactly why Codex's finding was correct:
+a fallback-origin link's destination is not guaranteed to exist.
+
+Command: npx tsc --noEmit -p /Users/vetus/ai/SAOC/tsconfig.json — exit 0
+Command: bun run --cwd /Users/vetus/ai/SAOC build — exit 0 (.tmp/build-out6.txt)
+Route checks (https://localhost:3333): /societies 200, /societies/cape-orchid-society 200,
+/societies/border-orchid-society 200, /societies/east-rand-orchid-society 200.
+Screenshots re-taken and reviewed at .agent/evidence/site-build/societies-detail/local-after-<slug>-{390,1280}.png
+(overwritten in place, same filenames as before — visual result is unchanged from
+the already-approved detail-page design; only the event row's markup changed from
+Link to plain text for fallback-origin events).
+
+VERDICT: the specific defect Codex flagged is fixed and demonstrated fixed against
+the live, currently-fallback-driven dev dataset, not merely argued from source. No
+other instance of the pattern exists in my new components/societies/* code.

@@ -91,10 +91,18 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
           No societies match your filters. Clear the search or pick &ldquo;All&rdquo;.
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((s) => (
-            <SocietyCard key={s._id} society={s} />
-          ))}
+        <div>
+          {filtered.some((s) => s.foundedPlaceholder || s.memberCountPlaceholder) ? (
+            <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+              Founding years and member counts marked (estimated) are our own estimates,
+              pending confirmation from each society.
+            </p>
+          ) : null}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((s) => (
+              <SocietyCard key={s._id} society={s} />
+            ))}
+          </div>
         </div>
       )}
     </div>

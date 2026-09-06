@@ -3,10 +3,24 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { PageHero } from '@/components/ui/PageHero';
+import { CTASection } from '@/components/ui/CTASection';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { societyBySlugQuery, societySlugsQuery } from '@/sanity/queries';
+import {
+  societyBySlugQuery,
+  societySlugsQuery,
+  societyUpcomingEventsQuery,
+} from '@/sanity/queries';
+import {
+  SocietyFacts,
+  SocietyAbout,
+  SocietyExpect,
+  SocietyEvents,
+  SocietyDetailsCallout,
+} from '@/components/societies';
 import type { SanitySociety } from '@/components/societies';
 import { societies as staticSocieties } from '@/lib/data/societies';
+import { events as staticEvents } from '@/lib/data/events';
+import type { SanityEvent } from '@/types';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -68,6 +82,50 @@ async function getSociety(slug: string): Promise<SanitySociety | null> {
   };
 }
 
+/**
+ * Static-data fallback events for one society, matched by host name, mapped to
+ * SanityEvent shape. These carry a synthesised `slug` (slugified title) that has
+ * no corresponding page: `/events/[slug]` has no static-data fallback of its own
+ * and calls `notFound()` for any slug Sanity doesn't know — so callers must NOT
+ * link to `/events/${slug}` for events from this function. See `SocietyEventsProps.live`.
+ */
+function getFallbackEventsForSociety(society: SanitySociety): SanityEvent[] {
+  const today = new Date().toISOString().slice(0, 10);
+  return staticEvents
+    .filter((e) => e.host === society.name && e.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 6)
+    .map((e) => ({
+      _id: `static-event-${e.id}`,
+      title: e.title,
+      slug: slugify(e.title),
+      date: e.date,
+      endDate: e.endDate ?? null,
+      kind: e.kind ?? null,
+      description: e.description ?? null,
+      venue: e.venue ?? null,
+      location: null,
+      isFeatured: null,
+      hostSociety: { _id: society._id, name: society.name, slug: society.slug },
+    }));
+}
+
+interface SocietyEventsResult {
+  events: SanityEvent[];
+  /** False for static-fallback events, which have no resolvable `/events/[slug]` page. */
+  live: boolean;
+}
+
+async function getSocietyEvents(society: SanitySociety): Promise<SocietyEventsResult> {
+  const events = await sanityFetch<SanityEvent[]>({
+    query: societyUpcomingEventsQuery,
+    params: { slug: society.slug },
+    tags: ['events', 'sanity'],
+  });
+  if (events && events.length > 0) return { events, live: true };
+  return { events: getFallbackEventsForSociety(society), live: false };
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -100,6 +158,9 @@ export default async function SocietyPage({
   const society = await getSociety(slug);
   if (!society) notFound();
 
+  const { events, live: eventsAreLive } = await getSocietyEvents(society);
+  const detailsUnconfirmed = !society.meets && !society.venue;
+
   return (
     <>
       <PageHero
@@ -108,97 +169,16 @@ export default async function SocietyPage({
         heading={society.name}
         lede={society.region ?? undefined}
       />
-      <div className="mx-auto max-w-[1280px] space-y-12 px-8 py-16">
-        {/* Details grid: Meets / Venue / Founded / Members — each guarded */}
-        <dl className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {society.meets ? (
-            <div>
-              <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-                Meets
-              </dt>
-              <dd className="mt-1 font-sans text-[15px] text-ink">{society.meets}</dd>
-            </div>
-          ) : society.meetPlaceholder ? (
-            <div data-placeholder="true">
-              <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-                Meets
-              </dt>
-              <dd className="mt-1 font-sans text-[15px] text-ink">
-                <span className="border border-rule bg-bone px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-                  To be confirmed
-                </span>
-              </dd>
-            </div>
-          ) : null}
-          {society.venue ? (
-            <div>
-              <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-                Venue
-              </dt>
-              <dd className="mt-1 font-sans text-[15px] text-ink">{society.venue}</dd>
-            </div>
-          ) : society.venuePlaceholder ? (
-            <div data-placeholder="true">
-              <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-                Venue
-              </dt>
-              <dd className="mt-1 font-sans text-[15px] text-ink">
-                <span className="border border-rule bg-bone px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-                  To be confirmed
-                </span>
-              </dd>
-            </div>
-          ) : null}
-          {society.founded ? (
-            <div data-placeholder={society.foundedPlaceholder ? 'true' : undefined}>
-              <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-                Founded
-              </dt>
-              <dd className="mt-1 font-sans text-[15px] text-ink">
-                {society.founded}
-                {society.foundedPlaceholder ? (
-                  <span className="ml-2 border border-rule bg-bone px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-                    unconfirmed
-                  </span>
-                ) : null}
-              </dd>
-            </div>
-          ) : null}
-          {society.memberCount !== null ? (
-            <div data-placeholder={society.memberCountPlaceholder ? 'true' : undefined}>
-              <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-                Members
-              </dt>
-              <dd className="mt-1 font-sans text-[15px] text-ink">
-                {society.memberCount}
-                {society.memberCountPlaceholder ? (
-                  <span className="ml-2 border border-rule bg-bone px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-                    unconfirmed
-                  </span>
-                ) : null}
-              </dd>
-            </div>
-          ) : null}
-        </dl>
+      <div className="mx-auto max-w-[1280px] space-y-16 px-8 py-16 md:px-16">
+        <SocietyFacts society={society} />
 
-        {/* Description prose — only when present */}
-        {society.description ? (
-          <p className="max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">
-            {society.description}
-          </p>
-        ) : null}
+        <SocietyAbout society={society} />
 
-        {/* Website CTA — only when present */}
-        {society.website ? (
-          <a
-            href={society.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block text-ink underline underline-offset-2"
-          >
-            Visit society website →
-          </a>
-        ) : null}
+        <SocietyEvents societyName={society.name} events={events} live={eventsAreLive} />
+
+        <SocietyExpect />
+
+        {detailsUnconfirmed ? <SocietyDetailsCallout societyName={society.name} /> : null}
 
         <Link
           href="/societies"
@@ -207,6 +187,14 @@ export default async function SocietyPage({
           ← All societies
         </Link>
       </div>
+
+      <CTASection
+        eyebrow="Keep exploring"
+        heading="Find another society, or reach the council"
+        body="SAOC coordinates 21 affiliated societies across South Africa. Browse the full list, or get in touch with the national committee directly."
+        primaryCta={{ href: '/societies', label: 'Find a society' }}
+        secondaryCta={{ href: '/contact', label: 'Contact SAOC' }}
+      />
     </>
   );
 }

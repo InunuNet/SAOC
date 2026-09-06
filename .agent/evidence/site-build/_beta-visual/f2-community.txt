@@ -1,0 +1,75 @@
+
+## F2 community pages
+
+Verified by: Analyst agent, visual verification only (no source edits).
+Date: 2026-09-06
+Site: https://beta.saoc.co.za
+Command run:
+
+    node .tmp/sandbox/beta-visual-f2/shot.js
+
+Exit code: 0
+
+Console errors (page.on('console', type==='error')): NONE on any of the 5 routes.
+Failed network requests (page.on('requestfailed')): NONE on any of the 5 routes.
+Raw JSON summary from the run:
+
+{
+  "events": { "console": [], "failedRequests": [] },
+  "media-kit": { "console": [], "failedRequests": [] },
+  "sponsors": { "console": [], "failedRequests": [] },
+  "tickets": { "console": [], "failedRequests": [] },
+  "contact": { "console": [], "failedRequests": [] }
+}
+
+Screenshots saved (all new, no existing files overwritten):
+  .agent/evidence/site-build/events/beta-after-390.png, beta-after-1280.png
+  .agent/evidence/site-build/media-kit/beta-after-390.png, beta-after-1280.png
+  .agent/evidence/site-build/sponsors/beta-after-390.png, beta-after-1280.png
+  .agent/evidence/site-build/tickets/beta-after-390.png, beta-after-1280.png
+  .agent/evidence/site-build/contact/beta-after-390.png, beta-after-1280.png
+
+### /events — PASS
+Hero image (purple phalaenopsis) loads full-bleed and looks premium. Calendar list
+renders real content (grouped by month: Sept 2026 through Sept 2027), with date
+badges, title, category tag (SHOW/WORKSHOP/COUNCIL), and venue per row — not a
+skeleton. Footer intact with nav, partner links, newsletter form. Mobile (390)
+stacks the same content cleanly, no overflow, no truncation, cards remain legible.
+No broken images, no overlap. Looks finished.
+
+### /media-kit — PASS
+Hero image loads, quick-facts stat row renders correctly (21 / 1968 / 18 / 56),
+brand-asset cards (4 across on desktop, single column on mobile) show the actual
+emblem/lockup artwork with correct captions, dimensions, and working "Download"
+links. Press enquiries and last-updated line present. No unstyled or placeholder-
+looking content. Looks finished on both breakpoints.
+
+### /sponsors — PASS
+Hero image (yellow oncidium) loads. Copy sections ("What your support funds",
+"Our reach" stats, "What sponsors get" bulleted list, CTA box "Become a sponsor")
+all render with correct typography and spacing on both 1280 and 390. No overlap,
+no overflow. Looks finished, reads as a real non-profit sponsorship page.
+
+### /tickets — PASS (confirms the fix)
+At 1280 the five ticket cards render as a responsive GRID (3 columns, row 1 with
+3 cards + row 2 with 2 cards) — confirmed NOT a single stacked column, which was
+the regression risk called out. Each card shows a real event photo, ticket name,
+price (R130–R400), description, provisional-pricing note, and "View tickets"
+link. At 390 the same cards stack into one column, fully legible, images crop
+sensibly, no overflow. Footer/refund policy note renders correctly under the grid.
+Looks finished and matches the bar.
+
+### /contact — PASS
+Two-column layout on desktop (Direct contacts + venue info on left, "Send a
+message" form on right) renders correctly with proper spacing, bordered venue
+info box, and a fully styled form (name/email/subject/message, min-char hint,
+styled submit button). At 390 columns stack top-to-bottom in a sensible order
+(contacts → venue → form) with no overflow or cut-off fields. Hero image loads.
+Looks finished.
+
+### Overall verdict
+All 5 routes: PASS. No console errors, no failed requests, no broken images, no
+horizontal overflow, no unstyled/placeholder content found on any route at either
+390 or 1280. The tickets grid is confirmed to be a genuine responsive grid at
+desktop width, not a regressed single column. Nothing here fails Brad's "would a
+real orchid society be proud of this" bar.

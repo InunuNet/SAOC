@@ -52,8 +52,8 @@ export default function RefundsPage() {
       <div className="mx-auto max-w-[720px] px-8 py-20 space-y-10">
         <section className="space-y-3 border border-rule bg-primary/5 px-6 py-5">
           <p className="font-sans text-[14px] leading-relaxed text-ink/80">
-            <strong className="font-medium text-ink">Draft pending legal review.</strong> This
-            page has been drafted with AI assistance and has not yet been reviewed by a
+            <strong className="font-medium text-ink">Draft pending legal review.</strong>{' '}
+            This page has been drafted with AI assistance and has not yet been reviewed by a
             qualified legal professional. It does not constitute legal advice and should not be
             relied upon as SAOC&rsquo;s final policy until formal review is complete.
           </p>
