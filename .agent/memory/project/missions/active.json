@@ -1,8 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-09-03-verification-triad-gate.md",
+  "mission": ".agent/memory/project/missions/2026-09-06-nos-design-system.md",
   "checkpoint": {
-    "milestone": "M2",
-    "feature": "F2"
+    "milestone": null,
+    "feature": null
   },
-  "activated_at": "2026-09-03T13:16:25.873782+00:00"
+  "activated_at": "2026-09-06T21:02:15.264320+00:00"
 }

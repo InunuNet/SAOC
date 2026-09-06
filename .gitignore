@@ -129,3 +129,5 @@ content/drive-source/**/source.docx
 # `git clone` carrying one would launder a copy, and two machines would fight
 # over one file holding two different absolute paths.
 .agent/.identity_binding.json
+# ---- NOS design evidence: keep committed webp, ignore heavy source PNGs ----
+.agent/evidence/**/*.png
