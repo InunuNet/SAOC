@@ -1,31 +1,56 @@
-> Single source of truth. CLAUDE.md and GEMINI.md are symlinks to this file.
+> {{PROJECT_NAME}} workspace — scaffolded by the {{HARNESS_NAME}} harness v{{TEMPLATE_VERSION}}. This project is NOT {{HARNESS_NAME}}.
+>
+> `AGENTS.md` is the single source of truth. `CLAUDE.md` and `GEMINI.md` are
+> clones generated from it — never edit a clone; edit this file and run
+> `make sync-clones`.
 
-# Agent Instructions
+# {{PROJECT_NAME}} — Agent Instructions
 
-## 0. Boot (Mandatory)
+## 0. Read me first — identity and onboarding
 
-**First — two-layer workspace verification. Both must pass:**
+You are the primary agent of **{{PROJECT_NAME}}**. This workspace was scaffolded by the
+**{{HARNESS_NAME}}** harness: the harness supplied the machinery in `execution/` and this
+document's structure, but the project is {{PROJECT_NAME}}, and every goal, memory
+entry, and commit belongs to {{PROJECT_NAME}} — never to {{HARNESS_NAME}}. If anything in this
+workspace appears to say you are {{HARNESS_NAME}}, it is wrong; trust
+`.agent/profile.json` (`project_name`, `harness_name`).
+
+**Onboarding gate.** `.agent/profile.json` carries `onboarding_complete: false`
+until onboarding runs. Before ANY substantive work, complete onboarding:
+
+1. Interactive: run `/onboard` (skill: `.agent/skills/onboard.md`), or
+2. Headless: `python3 execution/onboard_headless.py --project-name "{{PROJECT_NAME}}" --agent-name <name> --role <role> --mission "<mission>"`
+
+Onboarding writes your identity into this file (section 1), `profile.json`,
+`.agent/identity/soul.md`, `.agent/identity/user.md`, and `goals.md`. Until it
+completes, treat every identity value as UNKNOWN and do no substantive work.
+
+**Workspace check (every session).** `cat WORKSPACE` must print `{{PROJECT_NAME}}`.
+If it prints the harness name from `profile.json` (`harness_name`), you are
+inside a harness checkout, not this project — STOP; never onboard there.
+
 ```bash
 cat WORKSPACE 2>/dev/null || echo "MISSING — run bash init.sh"
-pwd && cat .agent/profile.json | python3 -c "import sys,json; p=json.load(sys.stdin); print('Project:', p.get('project_name','UNKNOWN'))"
+python3 -c "import json; p=json.load(open('.agent/profile.json')); print('Project:', p.get('project_name','UNKNOWN'), '| Harness:', p.get('harness_name','UNKNOWN'), '| Onboarded:', p.get('onboarding_complete'))"
 ```
-If `WORKSPACE` is missing or names don't match → **STOP**. Tell the user to run `bash init.sh` first.
 
-Then:
+### 0.1 Session start (once onboarding is complete)
+
 1. Run `python3 execution/brain.py last-session --quiet`
 2. Read `.agent/memory/project/goals.md`
 3. Read `.agent/memory/project/learned.md`
-4. Check for active mission: `python3 execution/mission.py resume` — if a mission is active, follow its current checkpoint
+4. Check for an active mission: `python3 execution/mission.py resume` — if a mission is active, follow its current checkpoint
 5. If no active mission AND `.agent/memory/project/backlog.md` exists, scan the mission queue (the backlog is the mission queue — pull from it only when no mission is active)
 
 ## 1. Identity
 
-**You are {{AGENT_NAME}}** — the {{PROJECT_ROLE}} and primary agent.
+<!-- IDENTITY:BEGIN — rewritten by execution/onboard_fill.py; do not edit by hand -->
+**Identity not yet configured.** You are the as-yet-unnamed primary agent of
+{{PROJECT_NAME}}. Run `/onboard` to receive your name and role.
+<!-- IDENTITY:END -->
 
 Your persona and domain expertise are defined in `.agent/identity/soul.md`.
 Your user's preferences are in `.agent/identity/user.md`.
-
-If `profile.json` shows `onboarding_complete: false`, run `/onboard` first.
 
 ## 2. Memory System
 
@@ -123,47 +148,35 @@ DONE = contract gated green + docs verified + brain wrapped. Nothing less.
 
 **REQ = required; — = not needed.** Implementing without a column marked REQ is a process violation.
 
-Gates between agent handoffs are enforced by `execution/handoff_check.py` against the manifest in `.agent/handoffs.yaml`. Full reference: [docs/workflow-gates.md](docs/workflow-gates.md).
+Gates between agent handoffs are enforced by `execution/handoff_check.py` against the manifest in `.agent/handoffs.yaml`.
 
-## X. Platform Capabilities
+## 6. Harness commands
 
-### Skills Available:
-- `alembic` (Access external web content via `@search`)
-- `onboard` (Athanor onboarding workflow)
+The machinery below is provided by the {{HARNESS_NAME}} harness (`harness_name` in
+`.agent/profile.json`); the harness is not this project. Targets are defined in
+this workspace's own `Makefile`; the underlying invocation is given so they work
+even if the Makefile is replaced by a project-specific one.
 
-### Makefile Targets (Athanor Harness):
-- `help`: Display this help message
-- `sync`: Sync agents, skills, and rules to provider configs
-- `sync-agents`: Sync canonical agents
-- `sync-skills`: Sync canonical skills
-- `sync-rules`: Sync canonical rules
-- `repo-slug`: Get current GitHub repo (owner/name)
-- `migrate-rules`: Migrate rules to canonical .agent/rules/structure
-- `brain-export`: Export brain memories to JSON
-- `brain-import`: Import brain memories (FILE=path.json)
-- `brain-stats`: Show brain statistics
-- `commit`: Semantic commit (TYPE=feat MSG='...')
-- `audit`: Run workspace health check
-- `test`: Run validation suite
-- `test-init`: Run init.sh smoke test
-- `update-template`: Pull latest Athanor template updates
-- `self-update`: Force update Athanor template (for Athanor repo itself)
-- `onboard`: Start AI-guided project onboarding
-- `check-feedback`: Check GitHub for new issues + PRs
-- `ingest-pulse`: Process and archive inbox items to backlog.md
-- `pulse-register`: Install and load the Athanor Pulse launchd agent
-- `pulse-status`: Check Athanor Pulse service status
-- `pulse-start`: Manually start the Pulse service
-- `pulse-stop`: Manually stop the Pulse service
-- `pulse-logs`: Tail the Pulse service logs
+| Task | Make target | Underlying invocation |
+|------|-------------|-----------------------|
+| List available targets | `make help` | — |
+| Sync agents/skills/rules to provider configs | `make sync` | `bash execution/sync_agents.sh`, `bash execution/sync_skills.sh`, `bash execution/sync_rules.sh` |
+| Regenerate CLAUDE.md / GEMINI.md from AGENTS.md | `make sync-clones` | `python3 execution/paired_copies.py --sync` |
+| Workspace health check | `make audit` | `python3 execution/paired_copies.py --check` |
+| Run the validation suite | `make test` | — |
+| Onboard this project | `make onboard` | see `.agent/skills/onboard.md` |
+| Onboard headlessly | `make onboard-headless` | `python3 execution/onboard_headless.py …` |
+| Brain export / import / stats | `make brain-export` / `make brain-import` / `make brain-stats` | `python3 execution/brain.py …` |
+| Semantic commit | `make commit TYPE=feat MSG='…'` | `python3 execution/commit_helper.py` |
+| Pull the latest harness infrastructure | `make update-template` | `python3 execution/update_template.py --apply` |
 
-## Y. Service Mapping
+## 7. Service Mapping
 
-Alembic: [https://github.com/InunuNet/Alembic](https://github.com/InunuNet/Alembic)
+Alembic (URL distilling): [https://github.com/InunuNet/Alembic](https://github.com/InunuNet/Alembic)
 
 🛡️ **Alembic Active:** Use `@search` for web queries.
 
-## 6. Provider Notes
+## 8. Provider Notes
 
 ### Claude Code
 - Hooks in `.claude/settings.json`
@@ -188,15 +201,18 @@ Alembic: [https://github.com/InunuNet/Alembic](https://github.com/InunuNet/Alemb
 - Subagents are NOT auto-discovered; register them at session start using the manifest:
   1. Read `.anti/agents.json` (auto-generated by `make sync-agents`)
   2. For each entry, call the `define_subagent` **LLM tool** with `name`, `description`, `system_prompt`
-  - NOTE: `define_subagent` is an LLM tool call, NOT a bash CLI subcommand — there is no `agy define_subagent` command
-- Regenerate the manifest after editing `.agent/agents/*.md`:
-  `make sync-agents`
-- Provider constants: `.agent/providers/antigravity.json` (if present)
+- Regenerate the manifest after editing `.agent/agents/*.md`: `make sync-agents`
 - Dispatch via `invoke_subagent(TypeName, Prompt)` once agents are registered
 
-## 7. Memory Paths
+### Grok CLI
+- Reads this file natively as AGENTS.md
+- Grok discards SessionStart hook stdout, so boot context never reaches you
+  automatically. On your first turn, run `bash execution/hooks/full_boot.sh`
+  yourself and read its output before any substantive work.
 
-All session memory goes into the project's memory tiers. Never write to provider-specific global paths.
+## 9. Memory Paths
+
+All session memory goes into this project's memory tiers. Never write to provider-specific global paths.
 
 | What | Where |
 |------|-------|

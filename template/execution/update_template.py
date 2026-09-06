@@ -3053,6 +3053,21 @@ def main():
         ),
     )
     parser.add_argument(
+        "--no-prune",
+        action="store_true",
+        default=False,
+        help=(
+            "Opt out of the default foreign-platform prune (platform-scoped-"
+            "delivery D2). By default, --apply runs execution/prune_foreign.py "
+            "against the fetched/--source template payload after delivery; "
+            "--dry-run previews the same prune with --dry-run. A file is only "
+            "ever pruned if manifest-governed with a scope excluding this "
+            "host, template-shipped at the same relpath, AND byte-identical "
+            "to the template copy -- see execution/prune_foreign.py's own docstring "
+            "for the full candidacy rule."
+        ),
+    )
+    parser.add_argument(
         "--reconcile-from-history",
         nargs="+",
         default=None,
@@ -3574,6 +3589,32 @@ def main():
                 "in .agent/allowed-symlinks (or pass --allow-symlink), which lets "
                 "the write actually proceed instead of muting the report."
             )
+
+        # Prune-by-default (platform-scoped-delivery D2/ruling-3): after
+        # delivery, sweep the workspace for foreign-platform files this same
+        # `source` template payload ships -- a file is only ever pruned if
+        # manifest-governed with a scope excluding this host, template-shipped
+        # at the same relpath, AND byte-identical to the template copy (see
+        # execution/prune_foreign.py). --dry-run previews the same prune with
+        # --dry-run so `update-template --dry-run` shows the real run's list
+        # before anything is touched. Never runs inside the harness repo
+        # itself (is_template_repo) -- the pruner also refuses that on its
+        # own, but skipping the call here avoids a spurious PRUNE-REFUSED
+        # block on every ordinary harness --dry-run.
+        if not args.no_prune and not is_template_repo:
+            prune_cmd = [
+                sys.executable, str(Path(__file__).parent / "prune_foreign.py"),
+                "--workspace-root", str(Path.cwd()),
+                "--template-root", str(source),
+            ]
+            if dry_run:
+                prune_cmd.append("--dry-run")
+            prune_result = subprocess.run(prune_cmd)
+            if prune_result.returncode == 2:
+                print("[prune] PRUNE-BLOCKED files present -- see report above; kept, not fatal to this update.")
+            elif prune_result.returncode not in (0, 2):
+                print(f"[prune] prune_foreign.py exited {prune_result.returncode} -- "
+                      "not treated as fatal to this update.")
 
         # exit 0 for every --dry-run: a preview writes nothing, so it cannot
         # deliver partially. backstop_warns stays deliberately out of the

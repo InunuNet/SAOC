@@ -17,10 +17,16 @@ not repeat).
 
 Usage:
   verify_all_contracts_validate.py
+  verify_all_contracts_validate.py --slug SLUG [--slug SLUG ...]   (scope the
+    sweep to the named spec directories only -- used by `make gate-fast`, whose
+    job is to gate the change under review, not to re-litigate the whole
+    corpus. The unscoped repo-wide sweep remains the default and remains what
+    `make audit` runs.)
   SPECS_ROOT_UNDER_TEST=<dir> verify_all_contracts_validate.py   (negative
     verification only -- points the sweep at a scratch specs tree instead of
     the real corpus; never used in the production `make audit` invocation)
 """
+import argparse
 import os
 import subprocess
 import sys
@@ -55,11 +61,30 @@ def _relname(path):
         return str(path)
 
 
+_ap = argparse.ArgumentParser(add_help=True)
+_ap.add_argument("--slug", action="append", default=[], metavar="SLUG",
+                 help="restrict the sweep to <specs-root>/SLUG/ (repeatable); "
+                      "default is every spec directory")
+_args = _ap.parse_args()
+
+if _args.slug:
+    ROOTS = [SPECS_ROOT / slug for slug in _args.slug]
+    missing = [r for r in ROOTS if not r.is_dir()]
+    if missing:
+        for r in missing:
+            print(f"FAIL: --slug directory does not exist: {_relname(r)}", file=sys.stderr)
+        sys.exit(1)
+    SCOPE_LABEL = ", ".join(_relname(r) for r in ROOTS)
+else:
+    ROOTS = [SPECS_ROOT]
+    SCOPE_LABEL = str(SPECS_ROOT)
+
 failures = []
 checked = 0
 skipped_retired = 0
 
-for path in sorted(SPECS_ROOT.glob("**/contract*.yaml")):
+_candidates = sorted({p for root in ROOTS for p in root.glob("**/contract*.yaml")})
+for path in _candidates:
     if _is_retired(path):
         skipped_retired += 1
         continue
@@ -72,7 +97,7 @@ for path in sorted(SPECS_ROOT.glob("**/contract*.yaml")):
         failures.append((path, (p.stdout + p.stderr).strip()))
 
 if checked == 0:
-    print(f"FAIL: no contract*.yaml files found under {SPECS_ROOT}", file=sys.stderr)
+    print(f"FAIL: no contract*.yaml files found under {SCOPE_LABEL}", file=sys.stderr)
     sys.exit(1)
 
 if failures:
@@ -82,6 +107,6 @@ if failures:
           f"({skipped_retired} retired file(s) skipped).", file=sys.stderr)
     sys.exit(1)
 
-print(f"PASS: all {checked} non-retired contract*.yaml files under {SPECS_ROOT} pass "
+print(f"PASS: all {checked} non-retired contract*.yaml files under {SCOPE_LABEL} pass "
       f"contract.py validate ({skipped_retired} retired file(s) skipped)")
 sys.exit(0)

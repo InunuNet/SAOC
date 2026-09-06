@@ -16,10 +16,10 @@ assertions:
       kind: shell
       cmd: 'python3 -c "import json; d=json.load(open(\".agent/providers/gemini-cli.json\")); assert d[\"autonomy\"][\"supports_policy_sync\"] == True"'
   - id: P1A3
-    description: "gemini-cli max_honerable_level updated to high"
+    description: "gemini-cli max_honorable_level updated to high"
     verify:
       kind: shell
-      cmd: 'python3 -c "import json; d=json.load(open(\".agent/providers/gemini-cli.json\")); assert d[\"autonomy\"][\"max_honerable_level\"] == \"high\""'
+      cmd: 'python3 -c "import json; d=json.load(open(\".agent/providers/gemini-cli.json\")); assert d[\"autonomy\"][\"max_honorable_level\"] == \"high\""'
   - id: P2A1
     description: "sync-autonomy Makefile target calls sync_autonomy.py"
     verify:

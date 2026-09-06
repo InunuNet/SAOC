@@ -86,6 +86,21 @@ WORKSPACE_IDENTITY_FIELD = "workspace_id"
 # is the safe direction.
 STAMP_STALENESS_PATCH_LIMIT = 5
 
+# Name the harness checkout answers to when profile.json carries no
+# `harness_name` (GH #1369) or cannot be read. The self-update guard compared
+# the WORKSPACE file against this literal for its whole life; keeping it as the
+# fallback means a workspace scaffolded before that field existed classifies
+# exactly as it always did, while a renamed fork is covered by the profile.
+HARNESS_NAME_FALLBACK = "Athanor"
+
+# The only two values write_template_state() ever writes into
+# .agent/.template_state's `delivery` field. _stamp_is_high_confidence() tests
+# MEMBERSHIP against these rather than mere presence: the stamp is a plain file
+# any local process can write, and a presence test would let `delivery: "x"`
+# re-arm a refusal that the real writer would never have armed.
+DELIVERY_COMPLETE = "complete"
+DELIVERY_PARTIAL = "partial"
+
 
 def _sha256_of_file(path: Path) -> str:
     """Return the sha256 hex digest of a file's current byte content."""
@@ -110,7 +125,10 @@ def load_template_baselines(store_path: Path = TEMPLATE_BASELINES_PATH) -> dict:
     return data
 
 
-def save_template_baselines(baselines: dict, store_path: Path = TEMPLATE_BASELINES_PATH) -> None:
+def save_template_baselines(
+    baselines: dict, store_path: Path = TEMPLATE_BASELINES_PATH,
+    stop_at: Path | None = None,
+) -> None:
     """Write the baseline hash store, creating parent directories as needed.
 
     Also serves as the self-heal path: a corrupt store gets overwritten with
@@ -124,8 +142,16 @@ def save_template_baselines(baselines: dict, store_path: Path = TEMPLATE_BASELIN
     identical, so it is closed for consistency. No caller inspects this
     function's return value, so a refusal degrades silently to a no-op
     write, exactly like the pre-existing corrupt-store degrade path.
+
+    stop_at (F21) lets a caller writing a store OUTSIDE the current working
+    directory -- --record-scaffold-baselines targets a freshly scaffolded
+    PROJECT path, not necessarily cwd -- bound the symlink ancestor walk at
+    that project's own root instead of defaulting to Path.cwd(), which
+    would be wrong for that call site. Defaults to None, which
+    _refuse_symlinked_write() itself resolves to Path.cwd() -- every
+    existing caller is unaffected.
     """
-    if _refuse_symlinked_write(store_path, "template baseline store"):
+    if _refuse_symlinked_write(store_path, "template baseline store", stop_at=stop_at):
         return
     store_path.parent.mkdir(parents=True, exist_ok=True)
     _write_text_nofollow(
@@ -343,6 +369,56 @@ def _write_text_nofollow(path: Path, text: str, label: str, stop_at: Path | None
     with os.fdopen(fd, "w") as f:
         f.write(text)
     return True
+
+
+def _write_text_atomic_nofollow(path: Path, text: str, label: str,
+                                stop_at: Path | None = None) -> bool:
+    """All-or-nothing sibling of _write_text_nofollow() (F33, Codex finding 4).
+
+    _write_text_nofollow() opens the destination with O_TRUNC and writes in
+    place, so a crash or a concurrent writer can leave a truncated or
+    internally mixed file. .agent/.template_state cannot afford that: it
+    carries `reconcile_from`, `withheld`, `untracked` and now
+    `bootstrap_unresolved` together, and a torn write loses the anchor and the
+    debt record at the same time -- the one state from which the recovery this
+    feature exists for cannot start.
+
+    Writes to a fresh temp file in the SAME directory, fsyncs it, then
+    os.replace()s it over the destination. The temp name comes from
+    tempfile.mkstemp(), never a predictable one: a fixed sibling name is a
+    plantable symlink target, and replacing a symlink planted there would
+    truncate whatever it points at before the rename ever ran.
+
+    Symlink semantics are delegated to _write_text_nofollow() unchanged, so
+    both the refusal WARN and F2's allow-listed write-through hatch behave
+    exactly as they do today. Only the ordinary, non-symlinked case becomes
+    atomic -- and it is also strictly safer in the race window, since
+    os.replace() swaps the name and can never write THROUGH a symlink planted
+    after the check.
+    """
+    stop_at = stop_at if stop_at is not None else Path.cwd()
+    contains_symlink, _offending = _contains_symlink_component(path, stop_at=stop_at)
+    if contains_symlink:
+        return _write_text_nofollow(path, text, label, stop_at=stop_at)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(dir=str(path.parent), prefix=".", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.chmod(tmp_name, 0o644)
+        os.replace(tmp_name, str(path))
+        return True
+    except BaseException:
+        # Never leave the scratch file behind on any failure path, including
+        # KeyboardInterrupt -- the destination is untouched either way.
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
 
 
 def _copy2_nofollow(src: Path, dst: Path, label: str, stop_at: Path | None = None) -> bool:
@@ -577,6 +653,16 @@ def _sync_file_with_guard(
                 # manifest path containing a space would otherwise be pasted
                 # back as two wrong targets. Ordinary paths are unchanged.
                 quoted_key = shlex.quote(baseline_key)
+                # F21 requirement 2: name the release --reconcile-from-history
+                # would check this path against, right here at the point of
+                # refusal -- an agent reading "no record that it was ever
+                # synced" has no way to judge whether reconciliation is even
+                # likely to resolve anything before trying it. Sourced from
+                # the SAME _read_reconcile_from_version() the reconcile
+                # command itself calls, so this is one shared read, not two
+                # independently-maintained ones that could drift apart.
+                _named_release, _ = _read_reconcile_from_version()
+                release_desc = _named_release if _named_release else "none recorded"
                 if no_record:
                     # baseline-guard-clearability F1/F2: this state must never
                     # be reported as a local edit -- the operator has no
@@ -595,9 +681,11 @@ def _sync_file_with_guard(
                         f"  WARN  {baseline_key} has no baseline recorded "
                         "(this workspace has no record that it was ever "
                         "synced) and differs from incoming content -- "
-                        "SKIPPING overwrite. Recovery: --reconcile-from-history "
-                        "checks this path against the release this workspace "
-                        "records and delivers it only if the bytes match. "
+                        "SKIPPING overwrite. Recorded release to reconcile "
+                        f"against: {release_desc}. Recovery: "
+                        "--reconcile-from-history checks this path against "
+                        "the release this workspace records and delivers it "
+                        "only if the bytes match. "
                         "--force-path delivers the incoming content NOW, "
                         "this run, and prints a loud FORCE line naming what "
                         "it destroyed (a backup is taken first) -- the "
@@ -616,7 +704,8 @@ def _sync_file_with_guard(
                         f"  WARN  {baseline_key} has local modifications "
                         "since the last template sync -- SKIPPING overwrite "
                         "(baseline mismatch; see .agent/memory/scratch/"
-                        "template_baselines.json). Recovery: "
+                        "template_baselines.json). Recorded release to "
+                        f"reconcile against: {release_desc}. Recovery: "
                         "--reconcile-from-history checks this path against "
                         "the release this workspace records and delivers it "
                         "only if the bytes match (unlikely for a real edit). "
@@ -737,6 +826,57 @@ def _stamp_is_from_this_workspace(state: dict) -> bool:
     if not isinstance(state, dict):
         return False
     return state.get(WORKSPACE_IDENTITY_FIELD) == _workspace_identity()
+
+
+def _harness_name(workspace: Path) -> str:
+    """The name that identifies the harness checkout for `workspace`.
+
+    profile.json's `harness_name` (GH #1369, which split harness identity from
+    project identity) when it carries one, else the historical literal. Never
+    raises: a workspace scaffolded before that field existed, or one whose
+    profile is unreadable, still resolves to the literal the self-update guard
+    compared against for its whole life, so behaviour there is unchanged.
+    """
+    try:
+        profile = json.loads((workspace / ".agent" / "profile.json").read_text())
+    except (OSError, ValueError):
+        return HARNESS_NAME_FALLBACK
+    if not isinstance(profile, dict):
+        return HARNESS_NAME_FALLBACK
+    name = profile.get("harness_name")
+    if isinstance(name, str) and name.strip():
+        return name.strip()
+    return HARNESS_NAME_FALLBACK
+
+
+def is_harness_checkout(workspace: str | Path = ".") -> bool:
+    """Is `workspace` the harness checkout rather than a downstream workspace?
+
+    This is the ONE test that partitions workspaces into "authors harness
+    releases" and "receives harness releases", and it is deliberately the same
+    test main()'s self-update guard has always used -- the WORKSPACE file's
+    content. Extracted here (version-stamp-provenance-split F32) so
+    execution/bump_version.sh can consume the same answer through
+    --print-workspace-role instead of drawing a second, differently placed
+    line. The invariant both sides depend on: a workspace may move
+    .agent/.template_state from a local bump IFF `--apply` refuses to run
+    there. Two predicates would drift, and the drift would reopen exactly the
+    ratchet F32 closed.
+
+    It also, usefully, captures Athanor's sibling checkouts (athlin/athwin),
+    which share the harness name: they are refused by the self-update guard, so
+    their stamps never face the version guard.
+
+    Never raises. An unreadable or absent WORKSPACE file answers "not the
+    harness", which is the safe direction -- a downstream misread as harness is
+    what ratchets its own delivery receipt out of the update channel.
+    """
+    root = Path(workspace)
+    try:
+        marker = (root / "WORKSPACE").read_text().strip()
+    except OSError:
+        return False
+    return bool(marker) and marker == _harness_name(root)
 
 
 def _paths_have_identical_content(src: Path, dst: Path) -> bool:
@@ -873,7 +1013,18 @@ def copy_harness(
                 guarded.append(str(rel))
                 # A refusal already claimed this key; it must not ALSO be
                 # reported as an ordinary withholding.
-                if withheld_out is not None and not (
+                #
+                # The `not in` membership guard matches every sibling
+                # accumulator (refused_out, untracked_out) and is NOT
+                # cosmetic here: .agent/update-manifest.yaml lists
+                # `execution/` as a directory HARNESS entry AND five
+                # execution/*.py files as their own entries, so those five
+                # are guarded twice per run and landed in `withheld` twice.
+                # The bootstrap entry condition (see _bootstrap_should_run())
+                # does set arithmetic against recorded lists, and an
+                # operator-facing count derived from a list with duplicates
+                # is simply wrong.
+                if withheld_out is not None and file_key not in withheld_out and not (
                         refused_out is not None and file_key in refused_out):
                     withheld_out.append(file_key)
         detail = f"copied {len(copied)}, unchanged {unchanged_count}"
@@ -894,7 +1045,10 @@ def copy_harness(
             return f"  FORCE (file)  {dst}", True
         if status == "unchanged":
             return f"  unchanged     {dst}", False
-        if withheld_out is not None and not (
+        # Same `not in` membership guard as the directory branch above, and
+        # for the same reason: a path listed both as its own file entry and
+        # under a directory entry reaches this line twice per run.
+        if withheld_out is not None and path_key not in withheld_out and not (
                 refused_out is not None and path_key in refused_out):
             withheld_out.append(path_key)
         return f"  SKIP  (guarded) {dst}", False
@@ -1428,10 +1582,11 @@ def update_profile_version(source: Path, profile_path: Path) -> str:
 
 def write_template_state(
     source: Path, state_path: Path = TEMPLATE_STATE_PATH,
-    delivery: str = "complete", withheld: list[str] | None = None,
+    delivery: str = DELIVERY_COMPLETE, withheld: list[str] | None = None,
     failed: list[str] | None = None, refused: list[str] | None = None,
     untracked: list[str] | None = None,
     prior_local_version: str | None = None,
+    bootstrap_unresolved: dict | None = None,
 ) -> str:
     """Persist the applied template_version to .agent/.template_state.
 
@@ -1449,6 +1604,26 @@ def write_template_state(
     no-op second --apply run leaves the file byte-identical instead of
     refreshing applied_at every time, while a partial run at an unchanged
     version can never leave a stale "complete" behind.
+
+    That same argument extends to `untracked` and `bootstrap_unresolved`
+    (F33), and used not to: the short-circuit compared template_version,
+    delivery, withheld and reconcile_from only, so a run that changed just
+    the CLASSIFICATION of a withheld path -- from "has no baseline recorded"
+    to "has local modifications", which moves it out of `untracked` while
+    leaving it in `withheld` -- returned "unchanged .template_state" and left
+    the previous run's `untracked` on disk, naming a path that demonstrably
+    does carry a baseline. `bootstrap_unresolved` lives in this same record
+    and would be silently unwritable on exactly the runs that need to record
+    it, so both fields join the comparison.
+
+    bootstrap_unresolved (F33) is the debt-driven bootstrap reconcile's
+    negative cache, {"anchor": "<version>", "paths": {path: sha256}} -- the
+    paths a reconcile PROVED unresolvable against that anchor, each carrying
+    the digest of the bytes that proof was drawn against so a later run can
+    corroborate it rather than trust it. None means "this run proved nothing
+    new", which PRESERVES whatever is already recorded rather than clearing
+    it: a degraded attempt must neither add to the cache nor destroy it. See
+    _bootstrap_settled_paths() and _bootstrap_should_run().
 
     untracked (baseline-guard-clearability F1/D3, the keystone fix) is the
     subset of `withheld` that carries NO recorded baseline. Whenever this run
@@ -1510,6 +1685,16 @@ def write_template_state(
         if not isinstance(current, dict):
             current = {}
 
+    # None means "this run proved nothing new about unresolvable debt" --
+    # carry the existing record forward untouched. The record is rebuilt from
+    # scratch below, so without this an ordinary --apply would silently drop
+    # a cache an earlier reconcile earned.
+    if bootstrap_unresolved is None:
+        existing_unresolved = current.get("bootstrap_unresolved")
+        bootstrap_unresolved = (
+            existing_unresolved if isinstance(existing_unresolved, dict) else None
+        )
+
     # D3: preserve an existing reconcile_from anchor across every later run
     # while any untracked path remains -- overwriting it with THIS run's own
     # prior template_version one run later is the same trap with a delay.
@@ -1553,7 +1738,9 @@ def write_template_state(
         current.get("template_version") == new_version
         and current.get("delivery") == delivery
         and list(current.get("withheld") or []) == withheld
+        and list(current.get("untracked") or []) == untracked
         and current.get("reconcile_from") == reconcile_from
+        and (current.get("bootstrap_unresolved") or None) == (bootstrap_unresolved or None)
         # F4b: an inherited stamp must be REPLACED by a local one on the
         # first apply here, even when every other field already matches
         # — otherwise a fresh clone whose incoming version equals the
@@ -1591,7 +1778,12 @@ def write_template_state(
         record["untracked"] = untracked
     if reconcile_from:
         record["reconcile_from"] = reconcile_from
-    _write_text_nofollow(
+    if bootstrap_unresolved:
+        record["bootstrap_unresolved"] = bootstrap_unresolved
+    # Atomic (F33): this record carries reconcile_from, withheld, untracked
+    # and bootstrap_unresolved together, and a torn write loses the anchor and
+    # the debt record at once.
+    _write_text_atomic_nofollow(
         state_path,
         json.dumps(record, indent=2) + "\n",
         ".agent/.template_state",
@@ -2024,15 +2216,78 @@ def _validate_force_paths(
 ATHANOR_REPO = "InunuNet/Athanor"
 
 
+def _walk_harness_manifest_files(manifest: dict, root: Path = Path(".")) -> list[tuple[str, Path]]:
+    """Yield (baseline_key, file_path) for every real on-disk file under
+    every HARNESS entry in `manifest`, keyed EXACTLY the way copy_harness()
+    keys the baseline store: the bare path string for a single-file entry,
+    or f"{path.rstrip('/')}/{relative_posix_path}" for a file discovered
+    inside a directory entry.
+
+    Single walk implementation (F21), shared by
+    _enumerate_no_baseline_harness_paths() (baseline-guard-clearability F1)
+    and --record-scaffold-baselines (F21) -- two callers that both need
+    "every real on-disk HARNESS file, correctly keyed" must not each grow
+    their own copy of this walk; that is exactly how a scaffold-time
+    baseline store keyed subtly differently from copy_harness()'s own keys
+    would happen, producing a store that exists and never matches (worse
+    than no store at all, because it looks fixed and isn't).
+
+    Excludes a symlinked destination -- never a valid baseline target (F8
+    EDGE 1): adopting/recording a baseline for a symlink would let a LATER
+    normal --apply treat "local matches baseline" as license to write
+    through it on a future divergence. Also excludes compiled Python
+    bytecode (F9): any __pycache__/ directory at any depth and any stray
+    *.pyc/*.pyo file, since that content is the interpreter's own cached
+    compile of a sibling .py file, regenerated with zero human involvement,
+    and a baseline recorded for it goes stale the moment the interpreter
+    recompiles it.
+
+    `root` lets a caller walk a manifest describing a DIFFERENT workspace
+    than the current directory -- --record-scaffold-baselines runs against
+    a freshly scaffolded project path, not necessarily cwd.
+    """
+    results: list[tuple[str, Path]] = []
+    for entry in manifest.get("paths", []):
+        if entry.get("category") != "HARNESS":
+            continue
+        path = entry["path"]
+        if path.endswith("/"):
+            dst_dir = root / path.rstrip("/")
+            if not dst_dir.is_dir():
+                continue
+            for f in sorted(dst_dir.rglob("*")):
+                if f.is_symlink() or f.is_dir() or not f.is_file():
+                    continue
+                if "__pycache__" in f.relative_to(dst_dir).parts:
+                    continue
+                if f.suffix in (".pyc", ".pyo"):
+                    continue
+                key = f"{path.rstrip('/')}/{f.relative_to(dst_dir).as_posix()}"
+                results.append((key, f))
+        else:
+            dst_file = root / path
+            if dst_file.is_symlink():
+                continue
+            if dst_file.exists() and dst_file.is_file():
+                results.append((path, dst_file))
+    return results
+
+
 def _enumerate_no_baseline_harness_paths(manifest_path: Path) -> list[str]:
     """Walk .agent/update-manifest.yaml's HARNESS entries and return every
-    on-disk file with no recorded baseline. Used by --adopt-baseline all and
-    --reconcile-from-history's default target set. Never returns a symlinked
-    destination -- a symlink is never a valid adopt/reconcile target (F8
-    EDGE 1); the same refusal that guards writes also guards baseline
-    adoption, since adopting a baseline for a symlink would let a LATER
-    normal --apply treat "local matches baseline" as license to write
-    through it on a future divergence.
+    on-disk file with no recorded baseline. Used by --adopt-baseline all,
+    --reconcile-from-history's default target set, and the debt-driven
+    bootstrap reconcile's entry condition (see _bootstrap_should_run()).
+    Never returns a symlinked destination -- see
+    _walk_harness_manifest_files()'s docstring.
+
+    DEDUPED, first-occurrence order preserved. The manifest lists
+    `execution/` as a directory HARNESS entry AND five execution/*.py files
+    as their own entries, so _walk_harness_manifest_files() yields those
+    five keys twice. That was cosmetic while this list was only ever a
+    target set (reconciling a path twice is idempotent); it stopped being
+    cosmetic once the bootstrap entry condition does set arithmetic against
+    it and reports its length to the operator.
     """
     import yaml
 
@@ -2044,42 +2299,180 @@ def _enumerate_no_baseline_harness_paths(manifest_path: Path) -> list[str]:
         return []
 
     baselines = load_template_baselines()
-    no_baseline: list[str] = []
-    for entry in manifest.get("paths", []):
-        if entry.get("category") != "HARNESS":
+    seen: set[str] = set()
+    unbaselined: list[str] = []
+    for key, _f in _walk_harness_manifest_files(manifest):
+        if baselines.get(key) or key in seen:
             continue
-        path = entry["path"]
-        if path.endswith("/"):
-            dst_dir = Path(path.rstrip("/"))
-            if not dst_dir.is_dir():
-                continue
-            for f in sorted(dst_dir.rglob("*")):
-                if f.is_symlink() or f.is_dir() or not f.is_file():
-                    continue
-                # F9: compiled Python bytecode is never real HARNESS content
-                # -- it is the interpreter's own cached compile of a sibling
-                # .py file, regenerated with zero human involvement, so a
-                # baseline recorded for it goes stale the moment the
-                # interpreter recompiles it. Excludes any __pycache__/
-                # directory at any depth (not just directly under this
-                # entry) and any stray *.pyc/*.pyo file even outside a
-                # __pycache__ dir. Deliberately NOT a substring match on
-                # "pyc" -- that would also drop a legitimately-named file
-                # like mypycfile.py.
-                if "__pycache__" in f.relative_to(dst_dir).parts:
-                    continue
-                if f.suffix in (".pyc", ".pyo"):
-                    continue
-                key = f"{path.rstrip('/')}/{f.relative_to(dst_dir).as_posix()}"
-                if not baselines.get(key):
-                    no_baseline.append(key)
-        else:
-            dst_file = Path(path)
-            if dst_file.is_symlink():
-                continue
-            if dst_file.exists() and dst_file.is_file() and not baselines.get(path):
-                no_baseline.append(path)
-    return no_baseline
+        seen.add(key)
+        unbaselined.append(key)
+    return unbaselined
+
+
+def _bootstrap_settled_paths(cached, anchor: str | None) -> set[str]:
+    """The paths a PREVIOUS reconcile proved unresolvable at `anchor`, AND
+    whose on-disk content still corroborates that proof.
+
+    `cached` is .agent/.template_state's `bootstrap_unresolved` record:
+
+        {"anchor": "3.7.153", "paths": {"<path>": "<sha256 at proof time>"}}
+
+    THE ANCHOR IS NECESSARY AND NOT SUFFICIENT (F33, Codex finding 3). An
+    entry says "this path, with THIS content, was compared against the
+    anchor's tree and matched neither snapshot". Believing the path alone
+    lets anyone disable recovery permanently by hand-writing every manifest
+    path into the record -- and .agent/.template_state is a TRACKED file, so
+    a clone inherits whatever the origin workspace recorded about content the
+    clone may not even have. Requiring the recorded digest to match the file
+    on disk right now makes an unverifiable entry worth nothing: a hand-
+    written list, a legacy list-shaped record, an inherited record describing
+    different bytes, and a file edited since the proof was drawn all fail to
+    corroborate and are RE-ATTEMPTED.
+
+    Every read degrades to "nothing is settled" -- retry, the safe direction.
+    That asymmetry is the whole point: a cache entry that cannot be
+    corroborated is not evidence, and the cost of being wrong is one extra
+    reconcile attempt, against permanently disabled recovery on the other
+    side.
+
+    Keyed on the anchor: when the anchor moves, a DIFFERENT historical tree
+    is in play and a path that could not be resolved against the old one may
+    resolve against the new, so the cache self-clears with no expiry logic.
+    """
+    if not anchor or not isinstance(cached, dict):
+        return set()
+    if cached.get("anchor") != anchor:
+        return set()
+    paths = cached.get("paths")
+    if not isinstance(paths, dict):
+        # A list-shaped record carries no proof of WHAT was compared, so it
+        # cannot be corroborated and settles nothing.
+        return set()
+    settled: set[str] = set()
+    for key, recorded_hash in paths.items():
+        if not isinstance(key, str) or not isinstance(recorded_hash, str):
+            continue
+        local_path = Path(key)
+        if local_path.is_symlink() or not local_path.is_file():
+            continue
+        try:
+            if _sha256_of_file(local_path) == recorded_hash:
+                settled.add(key)
+        except OSError:
+            continue
+    return settled
+
+
+def _bootstrap_proof_record(anchor: str, keys) -> dict:
+    """Build a `bootstrap_unresolved` record that carries its own evidence.
+
+    Records, for each path, the sha256 of the bytes the verdict was drawn
+    against, so a later run can ask "is this still the file that was
+    compared?" instead of taking the path list on faith. See
+    _bootstrap_settled_paths() for why the anchor alone is not sufficient.
+
+    A path that cannot be hashed right now (removed, replaced by a symlink,
+    unreadable) is simply left out: an entry with no digest could never be
+    corroborated, so recording one would only grow the file.
+    """
+    proofs: dict[str, str] = {}
+    for key in sorted(set(keys)):
+        local_path = Path(key)
+        if local_path.is_symlink() or not local_path.is_file():
+            continue
+        try:
+            proofs[key] = _sha256_of_file(local_path)
+        except OSError:
+            continue
+    return {"anchor": anchor, "paths": proofs}
+
+
+def _bootstrap_should_run(unbaselined: list[str], anchor: str | None,
+                          cached) -> bool:
+    """Should the debt-driven bootstrap reconcile run this invocation? (F33)
+
+    THE ONE predicate, consulted by both the --apply path and the --dry-run
+    preview so the two cannot drift; only --apply acts on a True.
+
+    Fire when there is unbaselined HARNESS debt that is not already covered
+    by a proof, recorded against the anchor currently in force, that it
+    cannot be resolved. Two properties earn their place:
+
+      * SUBSET, not equality -- a newly appearing unbaselined path fires the
+        reconcile even when every previously known one is settled.
+      * Nothing to do when there is no debt at all. A freshly scaffolded
+        workspace and a workspace after a clean --apply each enumerate ZERO
+        unbaselined HARNESS paths, so the healthy population pays nothing.
+    """
+    debt = set(unbaselined)
+    if not debt:
+        return False
+    return not debt <= _bootstrap_settled_paths(cached, anchor)
+
+
+def cmd_record_scaffold_baselines(project_path: str) -> int:
+    """--record-scaffold-baselines PATH handler (F21).
+
+    Called once by init.sh, at the very end of scaffolding a NEW workspace
+    at PATH -- after .agent/update-manifest.yaml has been copied in and
+    every HARNESS file init.sh writes has landed on disk. Walks that
+    manifest's HARNESS entries via _walk_harness_manifest_files() -- the
+    SAME walk _enumerate_no_baseline_harness_paths() uses -- and records
+    sha256(current content) for EVERY file found, not only ones lacking a
+    baseline (moot on a fresh scaffold, since nothing has a baseline yet,
+    but reusing one enumeration keeps this from silently drifting from
+    _enumerate_no_baseline_harness_paths() over time).
+
+    Keys EXACTLY the way copy_harness() keys the store, because
+    _walk_harness_manifest_files() is the same function copy_harness()'s
+    sibling reads keys from -- a store that exists and never matches this
+    key format is worse than no store at all: it looks fixed and isn't.
+
+    Never invoked by a plain --apply -- reachable ONLY via this explicit
+    CLI flag, exactly like --adopt-baseline and --reconcile-from-history.
+    Any failure here (missing/unparseable manifest, unreadable file,
+    refused write) degrades to today's status quo -- no baselines recorded,
+    the first update guards and warns per file -- rather than aborting
+    scaffolding, consistent with save_template_baselines()'s own
+    established "a refused write here degrades silently" precedent.
+    """
+    root = Path(project_path)
+    manifest_path = root / ".agent" / "update-manifest.yaml"
+    if not manifest_path.exists():
+        print(f"--record-scaffold-baselines: no manifest at {manifest_path} -- nothing recorded")
+        return 0
+    try:
+        import yaml
+        manifest = yaml.safe_load(manifest_path.read_text())
+    except Exception as e:
+        print(f"--record-scaffold-baselines: could not parse {manifest_path}: {e} -- nothing recorded")
+        return 0
+
+    baselines: dict = {}
+    hash_failures = 0
+    for key, f in _walk_harness_manifest_files(manifest, root=root):
+        try:
+            baselines[key] = _sha256_of_file(f)
+        except OSError as e:
+            hash_failures += 1
+            print(f"  WARN: could not hash {f} ({key}): {e} -- skipping")
+
+    store_path = root / TEMPLATE_BASELINES_PATH
+    try:
+        save_template_baselines(baselines, store_path=store_path, stop_at=root)
+    except Exception as e:
+        print(
+            f"--record-scaffold-baselines: could not write baseline store at "
+            f"{store_path}: {e} -- scaffold continues without recorded "
+            "baselines (degrades to today's status quo)"
+        )
+        return 0
+    print(
+        f"--record-scaffold-baselines: recorded {len(baselines)} baseline(s) "
+        f"at {store_path}"
+        + (f" ({hash_failures} file(s) unreadable, skipped)" if hash_failures else "")
+    )
+    return 0
 
 
 def cmd_adopt_baseline(targets: list[str]) -> int:
@@ -2324,9 +2717,32 @@ def _stamp_is_high_confidence(stamp_version, stamp_delivery, local_version,
     when it is absent, unparseable, records a partial delivery (it names a
     version this workspace never fully received), or has drifted from local
     .agent/version by a different major/minor or by more than
-    STAMP_STALENESS_PATCH_LIMIT patch releases. A stamp with no `delivery`
-    field at all predates that feature and is not penalised for it --
-    staleness is the fallback confidence signal for those.
+    STAMP_STALENESS_PATCH_LIMIT patch releases.
+
+    Confidence requires `delivery` to be EXACTLY the value a complete delivery
+    writes (version-stamp-provenance-split F32). Anything else -- absent, the
+    honest "partial", or any value write_template_state() does not emit -- is
+    low confidence. Testing for PRESENCE rather than membership would let any
+    non-empty value re-arm a refusal, and .agent/.template_state is a plain
+    file any local process can write: `delivery: "forged"` would then be
+    indistinguishable from a real receipt on the one axis this check exists to
+    read. The set is closed and tiny (DELIVERY_COMPLETE / DELIVERY_PARTIAL, the
+    only two values the writer emits), so membership costs nothing and presence
+    buys nothing.
+
+    Absence specifically used to be an amnesty -- "it predates that feature and
+    is not penalised for it" -- written for a finite legacy population. It was
+    not finite: write_template_state() records
+    `delivery` on every --apply, and execution/bump_version.sh recorded
+    {template_version, applied_at, workspace_id} and never `delivery`, at every
+    mission wrap-up in every workspace, until F32 made it harness-scoped. So
+    absence of `delivery` is UNKNOWN PROVENANCE, not benign legacy -- the same
+    reasoning WORKSPACE_IDENTITY_FIELD already applies to a missing
+    workspace_id. It is also the migration for workspaces already ratcheted
+    out of their own update channel, and it self-heals: the recovering --apply
+    writes `delivery`, so the next check on that workspace is high confidence
+    again. The amnesty it costs is bounded and deliberate -- a pre-F32 stamp
+    warns-and-proceeds on a genuine upstream rollback exactly once.
 
     THE DRIFT WINDOW IS ONE-SIDED, DELIBERATELY (delivery-integrity F4d).
     STAMP_STALENESS_PATCH_LIMIT applies only when the stamp is BEHIND local.
@@ -2355,7 +2771,7 @@ def _stamp_is_high_confidence(stamp_version, stamp_delivery, local_version,
     local_parts = _parse_dotted_version(local_version)
     if stamp_parts is None or local_parts is None:
         return False
-    if stamp_delivery == "partial":
+    if stamp_delivery != DELIVERY_COMPLETE:
         return False
     length = max(len(stamp_parts), len(local_parts), 3)
     stamp_parts = stamp_parts + (0,) * (length - len(stamp_parts))
@@ -2476,6 +2892,17 @@ def _classify_version_and_guard(payload_version, force) -> str:
                    "only ever moves .agent/version up — so the record is treated "
                    "as corrupt or inherited rather than as grounds for a refusal"
                    if _stamp_is_ahead_of_local(stamp_version, local_version) else "")
+                # F32: name the delivery-less case for the same reason. This one
+                # is not repairable by hand and needs no repair — the next
+                # --apply restamps it with a delivery outcome and the refusal
+                # re-arms by itself.
+                + (". The record carries no `delivery` field at all, which is the "
+                   "signature execution/bump_version.sh minted at every mission "
+                   "wrap-up before it became harness-scoped — a version recorded "
+                   "as delivered by a purely local bump is unknown provenance, "
+                   "not evidence about upstream, so it cannot justify a refusal. "
+                   "This run restamps it; the next check is high-confidence again"
+                   if stamp_delivery is None else "")
             )
     elif cmp_stamp is None and cmp_local is not None and cmp_local < 0:
         warning = (
@@ -2674,21 +3101,238 @@ ADOPT_HAZARD_NOTE = (
     "this workspace could not tell apart."
 )
 
+# F21 test/offline seam: when set, reconciliation reads the historical tree
+# for a given release from <this dir>/<version>/ instead of resolving a
+# commit via `gh api` and fetching a GitHub tarball. Read ONLY by
+# _resolve_historical_tree() below (link 1 of its fallback chain) -- never
+# documented in --help, never touches the safety argument (the byte-for-byte
+# comparison against whatever tree this resolves is unchanged either way),
+# only replaces where the historical tree's bytes come from. Exists so the
+# auto-reconcile bootstrap (F21) is hermetically testable without `gh` or
+# network access, the same way --source already lets --apply read its
+# incoming payload from a local directory instead of GitHub.
+ATHANOR_RECONCILE_HISTORY_DIR_ENV = "ATHANOR_RECONCILE_HISTORY_DIR"
 
-def cmd_reconcile_from_history(targets: list[str]) -> int:
-    """--reconcile-from-history PATH... handler (F6).
+# F21 residual-risk mitigation: reconciliation historically depended
+# entirely on `gh` + network (link 3 below), so a downstream with neither
+# fell straight through to the pre-fix broken behavior. This lets an
+# operator point reconciliation at a LOCAL git checkout of Athanor instead
+# -- no `gh`, no network -- which matters for any workspace co-located with
+# a full Athanor clone on the same machine. Generic and operator-set
+# (never auto-probed against a guessed filesystem path): unlike
+# ATHANOR_RECONCILE_HISTORY_DIR, this points at a real git repo, and the
+# version -> commit resolution below walks its `git log` history the same
+# way _resolve_version_to_commit() walks GitHub's.
+ATHANOR_LOCAL_CHECKOUT_ENV = "ATHANOR_LOCAL_CHECKOUT"
+
+
+def _resolve_version_to_commit_local(version: str, checkout: Path) -> str | None:
+    """Local-git equivalent of _resolve_version_to_commit() (link 2 of
+    _resolve_historical_tree()'s fallback chain): walks .agent/version's
+    commit history in a LOCAL git checkout -- no `gh`, no network -- looking
+    for the commit whose resulting .agent/version content equals `version`.
+    Never raises; returns None on any git failure or on no match found.
+    """
+    target = version.strip()
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(checkout), "log", "--format=%H", "--", ".agent/version"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            return None
+        shas = [s for s in result.stdout.splitlines() if s.strip()]
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+
+    for sha in shas:
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(checkout), "show", f"{sha}:.agent/version"],
+                capture_output=True, text=True, timeout=15,
+            )
+        except (subprocess.TimeoutExpired, OSError):
+            continue
+        if result.returncode == 0 and result.stdout.strip() == target:
+            return sha
+    return None
+
+
+def _export_local_checkout_tree(checkout: Path, sha: str, tmpdir: Path) -> bool:
+    """Export `sha`'s full tree from a local git checkout into tmpdir --
+    the local-git equivalent of _fetch_historical_tree()'s tarball stream,
+    same output shape, no network. Never raises.
+    """
+    try:
+        p1 = subprocess.Popen(
+            ["git", "-C", str(checkout), "archive", sha],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+        p2 = subprocess.Popen(
+            ["tar", "x", "-C", str(tmpdir)],
+            stdin=p1.stdout, stderr=subprocess.PIPE,
+        )
+        p1.stdout.close()
+        _, tar_err = p2.communicate(timeout=60)
+        _, git_err = p1.communicate(timeout=60)
+        if p1.returncode != 0:
+            summary = git_err.decode(errors="replace").strip()[:200] if git_err else ""
+            print(f"  [reconcile] WARN: git archive at {sha} exited {p1.returncode}: {summary}")
+            return False
+        if p2.returncode != 0:
+            summary = tar_err.decode(errors="replace").strip()[:200] if tar_err else ""
+            print(f"  [reconcile] WARN: tar extract at {sha} exited {p2.returncode}: {summary}")
+            return False
+        return True
+    except (subprocess.TimeoutExpired, OSError) as e:
+        print(f"  [reconcile] WARN: local checkout export at {sha} failed: {e}")
+        return False
+
+
+def _history_tree_is_populated(tree: Path) -> bool:
+    """Does `tree` hold at least one regular file? (F33, Codex finding 1)
+
+    "Successfully resolved" must mean the historical tree is present AND
+    plausibly populated, not merely that a directory exists at the path. An
+    empty seam subdirectory, or a tarball that expanded to nothing, otherwise
+    reads as a resolved tree in which EVERY manifest path "did not exist" --
+    a verdict the bootstrap is entitled to cache. One empty or truncated
+    archive would then permanently settle the whole manifest as unrecoverable,
+    which is precisely the cache poisoning the unresolved_out placement exists
+    to prevent, arriving through the door marked "resolved".
+
+    An empty history is missing evidence. Stops at the first hit, so it costs
+    one directory read on a populated tree.
+    """
+    try:
+        for entry in tree.rglob("*"):
+            if entry.is_file() and not entry.is_symlink():
+                return True
+    except OSError:
+        return False
+    return False
+
+
+def _resolve_historical_tree(version: str, tmpdir: Path) -> tuple[Path | None, str]:
+    """Resolve the historical tree reconciliation checks `version` against,
+    into an existing directory. Ordered fallback chain (F21):
+
+      1. ATHANOR_RECONCILE_HISTORY_DIR_ENV / <version> -- the hermetic test
+         seam; also usable as an offline source if an operator pre-stages
+         historical trees there.
+      2. ATHANOR_LOCAL_CHECKOUT_ENV, if set and a real git checkout --
+         resolves the version -> commit locally via `git log`/`git show`
+         and exports the tree via `git archive`, no `gh`, no network. Only
+         ever tried when explicitly configured; never auto-detected against
+         a guessed filesystem path.
+      3. `gh` + network -- production default, unchanged:
+         _resolve_version_to_commit() then _fetch_historical_tree().
+      4. Otherwise: (None, reason) -- the reason states WHY reconciliation
+         is unavailable (no seam, no usable local checkout, no `gh`, or a
+         resolution/fetch failure at whichever link was tried), not merely
+         that it failed, so a downstream missing `gh` and network entirely
+         is told what to fix rather than left to guess.
+
+    The returned Path, when not None, may be `tmpdir` itself (caller owns
+    cleanup) or an externally-owned directory under
+    ATHANOR_RECONCILE_HISTORY_DIR (caller must NOT delete it) -- callers
+    always rmtree `tmpdir` unconditionally in a finally block regardless of
+    which case fired, since an external directory is never the same path as
+    `tmpdir` and rmtree-ing an unused, still-empty `tmpdir` is harmless.
+    """
+    override_dir = os.environ.get(ATHANOR_RECONCILE_HISTORY_DIR_ENV)
+    if override_dir:
+        candidate = Path(override_dir) / version
+        if candidate.is_dir() and _history_tree_is_populated(candidate):
+            return candidate, f"{ATHANOR_RECONCILE_HISTORY_DIR_ENV} seam ({candidate})"
+        if candidate.is_dir():
+            print(
+                f"  [reconcile] WARN: {ATHANOR_RECONCILE_HISTORY_DIR_ENV} has a "
+                f"{version!r} subdirectory but it holds no files -- an EMPTY "
+                "history is missing evidence, not a resolved tree; falling "
+                "through to the next history source"
+            )
+        else:
+            print(
+                f"  [reconcile] WARN: {ATHANOR_RECONCILE_HISTORY_DIR_ENV} is set to "
+                f"{override_dir!r} but has no {version!r} subdirectory -- "
+                "falling through to the next history source"
+            )
+
+    local_checkout = os.environ.get(ATHANOR_LOCAL_CHECKOUT_ENV)
+    if local_checkout:
+        checkout_path = Path(local_checkout)
+        if (checkout_path / ".git").exists():
+            sha = _resolve_version_to_commit_local(version, checkout_path)
+            if (sha is not None
+                    and _export_local_checkout_tree(checkout_path, sha, tmpdir)
+                    and _history_tree_is_populated(tmpdir)):
+                return tmpdir, f"local Athanor checkout at {checkout_path} (commit {sha})"
+            print(
+                f"  [reconcile] WARN: local checkout at {checkout_path} "
+                f"({ATHANOR_LOCAL_CHECKOUT_ENV}) did not resolve version "
+                f"{version!r} -- falling through to gh + network"
+            )
+        else:
+            print(
+                f"  [reconcile] WARN: {ATHANOR_LOCAL_CHECKOUT_ENV}={local_checkout!r} "
+                "is not a git checkout (no .git found) -- falling through to "
+                "gh + network"
+            )
+
+    if shutil.which("gh") is None:
+        return None, (
+            "no gh + network fallback available: no "
+            f"{ATHANOR_RECONCILE_HISTORY_DIR_ENV} seam and no usable "
+            f"{ATHANOR_LOCAL_CHECKOUT_ENV} resolved a tree, and 'gh' is not "
+            "on PATH"
+        )
+    sha = _resolve_version_to_commit(version)
+    if sha is None:
+        return None, f"gh could not resolve version {version!r} to a commit"
+    if not _fetch_historical_tree(sha, tmpdir):
+        return None, f"gh could not fetch the historical tarball at commit {sha}"
+    if not _history_tree_is_populated(tmpdir):
+        return None, (
+            f"gh fetched the historical tarball at commit {sha} but it "
+            "expanded to no files (empty or truncated archive)"
+        )
+    return tmpdir, f"gh + network (commit {sha})"
+
+
+def _reconcile_targets(
+    targets: list[str], new_tree: Path | None = None,
+    unresolved_out: list[str] | None = None,
+    new_tree_is_authoritative: bool = True,
+) -> int:
+    """Core of --reconcile-from-history (F6), factored out (F21) so the
+    auto-reconcile bootstrap inside a plain --apply (see main()) can call
+    the exact same comparison/delivery logic instead of a second,
+    independently maintained copy of it.
 
     Resolves the version recorded in .agent/.template_state (profile.json
-    fallback) to a historical commit, fetches that historical tree ONCE, and
-    for each named no-baseline path: if local content matches what THAT
-    version shipped, the file was never edited -- DELIVER the incoming
-    update immediately, IN THIS SAME RUN (not deferred to a second
-    --apply), and record a baseline for it. If local already matches the
-    CURRENT live content (nothing to deliver), still record a baseline so
-    the file is protected going forward. If local matches NEITHER the old
-    nor the new upstream content, it is a genuine hand-edit -- leave it
-    exactly as F5 already treats it (skip + WARN on the next --apply), do
-    not touch it.
+    fallback) via _read_reconcile_from_version(), resolves the historical
+    tree for that version via _resolve_historical_tree()'s ordered fallback
+    chain (test seam -> local checkout -> gh + network), and for each named
+    no-baseline path: if local content matches what THAT version shipped,
+    the file was never edited -- DELIVER the incoming update immediately,
+    IN THIS SAME RUN (not deferred to a second --apply), and record a
+    baseline for it. If local already matches the CURRENT live content
+    (nothing to deliver), still record a baseline so the file is protected
+    going forward. If local matches NEITHER the old nor the new upstream
+    content, it is a genuine hand-edit -- leave it exactly as F5 already
+    treats it (skip + WARN on the next --apply), do not touch it.
+
+    new_tree (F21): the CURRENT live content to compare against and
+    (on a confirmed-old-match) deliver from. When None (the CLI
+    --reconcile-from-history entry point), fetched from GitHub via
+    fetch_latest_from_github() into a tmpdir this function owns and cleans
+    up, exactly as before this parameter existed. When given (the
+    auto-reconcile bootstrap inside --apply), it is the SAME `source` tree
+    --apply already resolved for its own manifest loop (fetched-from-
+    GitHub, --source, or the template/ fallback) -- reused rather than
+    fetched a second time, and NOT owned by this function: it is never
+    rmtree'd here.
 
     Delivery reuses _sync_file_with_guard() itself (issue: template-update-
     actually-updates F6) rather than a bare copy: for a confirmed-old-match,
@@ -2706,6 +3350,42 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
     overwriting never is. Every degrade path below returns 0 (a degraded
     recovery attempt is not a failure to complete the command) and never
     writes anything.
+
+    unresolved_out (F33) is an optional accumulator following the same
+    convention as copy_harness()'s withheld_out/refused_out/untracked_out,
+    including their `not in` membership guard. It collects ONLY the paths
+    this function PROVED unresolvable, and the definition of "proved" is
+    the whole safety property, not a detail:
+
+      * appended in exactly two branches, both reached only AFTER
+        _resolve_historical_tree() returned a real tree -- "did not exist in
+        the historical tree", and "matches neither the historical nor the
+        live snapshot" (the genuine hand-edit);
+      * appended NOWHERE else. Every early return above the loop (no
+        recorded version, no resolvable historical tree, a historical tree
+        that resolved but holds no files), the symlink refusal, the
+        unreadable/missing-file case, and a mismatch that could not be
+        checked against a live snapshot are all MISSING EVIDENCE, not
+        proof. The caller uses this list to stop re-attempting a reconcile,
+        so caching missing evidence as proof would permanently disable
+        recovery -- which is precisely the defect F33 exists to close,
+        rebuilt one level up. A degraded run must leave this list empty.
+
+    new_tree_is_authoritative (F33, Codex finding 2) says whether `new_tree`
+    is genuinely the CURRENT upstream content. When --apply's own fetch
+    fails it falls back to the workspace's local `template/` directory,
+    which is a vendored mirror that can lag the live tree by hundreds of
+    lines and by whole features. Comparing against it still DELIVERS safely
+    (delivery is gated on a byte-match to the historical tree, not to this
+    one), but its "matches neither snapshot" verdicts are worthless: a file
+    that differs from a stale mirror may match live upstream exactly. Caching
+    those would let one offline --apply permanently record recoverable files
+    as unrecoverable. False here therefore suppresses the hand-edit verdict's
+    cache write only -- the "did not exist in the historical tree" verdict is
+    drawn from the historical tree alone and is unaffected.
+
+    The return value and every existing caller contract are unchanged;
+    cmd_reconcile_from_history() passes None and is unaffected.
     """
     # baseline-guard-clearability D4: this revisits delivery-integrity F4b's
     # refusal for THIS call site only (F4b's own version-regression guard
@@ -2764,44 +3444,57 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
             "applied after it was withheld, so expect UNRESOLVED here; that "
             "would be missing evidence, NOT evidence of a local edit."
         )
-    sha = _resolve_version_to_commit(recorded_version)
-    if sha is None:
-        print(
-            f"--reconcile-from-history: could not resolve version {recorded_version!r} "
-            f"to a commit — {len(targets)} file(s) unreconciled; try --adopt-baseline instead.\n"
-            + ADOPT_HAZARD_NOTE
-        )
-        return 0
-
-    print(f"--reconcile-from-history: resolved {recorded_version!r} -> commit {sha} "
-          "(a match against this is provisional evidence, not proof -- a WRONG "
-          "recorded version cannot be detected by this mechanism alone; "
-          "sanity-check the resolved version if you suspect drift)")
-
     old_tmpdir = Path(tempfile.mkdtemp(prefix="athanor-reconcile-old-"))
-    new_tmpdir = Path(tempfile.mkdtemp(prefix="athanor-reconcile-new-"))
+    # F21: new_tree may be supplied by the caller (the --apply auto-reconcile
+    # bootstrap, reusing --apply's already-resolved `source`) -- only a tree
+    # THIS function fetches itself (new_tree is None on entry) is ours to
+    # clean up.
+    owned_new_tmpdir: Path | None = None
     try:
-        if not _fetch_historical_tree(sha, old_tmpdir):
+        old_tree, old_tree_desc = _resolve_historical_tree(recorded_version, old_tmpdir)
+        if old_tree is None:
             print(
-                f"--reconcile-from-history: could not fetch historical tree at {sha} — "
-                f"{len(targets)} file(s) unreconciled; try --adopt-baseline instead.\n"
-                + ADOPT_HAZARD_NOTE
+                f"--reconcile-from-history: reconciliation unavailable for "
+                f"version {recorded_version!r} ({old_tree_desc}) — "
+                f"{len(targets)} file(s) unreconciled; try --adopt-baseline "
+                "instead.\n" + ADOPT_HAZARD_NOTE
             )
             return 0
 
-        # Current live tree, fetched ONCE and reused for every target -- same
-        # mechanism and cost class as a plain --apply's own default fetch.
-        # If this fails, degrade to record-only (still correct, non-
-        # destructive) rather than aborting the whole command over a
-        # secondary fetch failure -- a partial win over none.
-        have_new_tree = fetch_latest_from_github(new_tmpdir)
-        if not have_new_tree:
-            print(
-                "  [reconcile] WARN: could not fetch current live tree — will still "
-                "verify against history and record baselines, but cannot deliver "
-                "in this run; a subsequent plain --apply will deliver once a "
-                "baseline is recorded."
-            )
+        print(
+            f"--reconcile-from-history: historical tree for {recorded_version!r} "
+            f"resolved via {old_tree_desc} (a match against this is "
+            "provisional evidence, not proof -- a WRONG recorded version "
+            "cannot be detected by this mechanism alone; sanity-check the "
+            "resolved version if you suspect drift)"
+        )
+
+        if new_tree is not None:
+            have_new_tree = new_tree.exists()
+            if not have_new_tree:
+                print(
+                    f"  [reconcile] WARN: supplied current-tree path {new_tree} "
+                    "does not exist — will still verify against history and "
+                    "record baselines, but cannot deliver in this run; a "
+                    "subsequent plain --apply will deliver once a baseline "
+                    "is recorded."
+                )
+        else:
+            # Current live tree, fetched ONCE and reused for every target --
+            # same mechanism and cost class as a plain --apply's own default
+            # fetch. If this fails, degrade to record-only (still correct,
+            # non-destructive) rather than aborting the whole command over a
+            # secondary fetch failure -- a partial win over none.
+            owned_new_tmpdir = Path(tempfile.mkdtemp(prefix="athanor-reconcile-new-"))
+            new_tree = owned_new_tmpdir
+            have_new_tree = fetch_latest_from_github(new_tree)
+            if not have_new_tree:
+                print(
+                    "  [reconcile] WARN: could not fetch current live tree — will still "
+                    "verify against history and record baselines, but cannot deliver "
+                    "in this run; a subsequent plain --apply will deliver once a "
+                    "baseline is recorded."
+                )
 
         # F14: created eagerly (mirroring main()'s own pattern) only when
         # there is a live tree to potentially deliver from -- if the
@@ -2842,10 +3535,18 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
                 unreconciled.append(key)
                 continue
 
-            historical_path = old_tmpdir / key
+            historical_path = old_tree / key
             if not historical_path.exists():
-                print(f"  UNRESOLVED  {key}: did not exist in the historical tree at {sha}")
+                print(f"  UNRESOLVED  {key}: did not exist in the historical tree ({old_tree_desc})")
                 unreconciled.append(key)
+                # CACHEABLE VERDICT 1 of 2 (F33). The tree resolved and the
+                # path is absent from it -- typically a project-local file
+                # living under a HARNESS directory entry (copy_harness()
+                # iterates SOURCE files, so nothing has ever recorded a
+                # baseline for it and nothing ever can). This is a real
+                # conclusion drawn from real evidence, not a degrade.
+                if unresolved_out is not None and key not in unresolved_out:
+                    unresolved_out.append(key)
                 continue
 
             try:
@@ -2863,19 +3564,44 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
                 # deliver, but is still worth protecting with a retroactive
                 # baseline. Only a match to NEITHER is treated as a genuine
                 # hand-edit.
-                new_path = new_tmpdir / key
+                new_path = new_tree / key
+                # F33: did the live snapshot actually get COMPARED? Only a
+                # completed comparison licenses the "matches neither" verdict
+                # below to be cached. An absent live tree, or a live file that
+                # could not be read, is missing evidence and must not be.
+                live_compared = False
                 if have_new_tree and new_path.exists():
                     try:
                         new_hash = _sha256_of_file(new_path)
                     except OSError:
                         new_hash = None
+                    live_compared = new_hash is not None
                     if new_hash is not None and local_hash == new_hash:
                         baselines[key] = local_hash
                         save_template_baselines(baselines)
                         already_current.append(key)
                         print(f"  CURRENT     {key}: already matches live upstream content — nothing to deliver, baseline recorded")
                         continue
+                elif have_new_tree:
+                    # The live tree resolved and simply does not carry this
+                    # path: it cannot match live, and that is a conclusion,
+                    # not an absence of one.
+                    live_compared = True
                 unreconciled.append(key)
+                # CACHEABLE VERDICT 2 of 2 (F33): local matches NEITHER the
+                # historical nor the live snapshot -- the genuine hand-edit.
+                # Both snapshots were real and both comparisons completed, so
+                # this path will not resolve against THIS anchor however many
+                # times it is retried. Gated on live_compared so a run that
+                # never saw a live snapshot caches nothing, and on
+                # new_tree_is_authoritative so a run that compared against the
+                # stale local template/ mirror caches nothing either --
+                # live_compared tests PRESENCE of a live tree, which the
+                # template/ fallback satisfies while not being live at all.
+                if (unresolved_out is not None and live_compared
+                        and new_tree_is_authoritative
+                        and key not in unresolved_out):
+                    unresolved_out.append(key)
                 if from_anchor:
                     # D19: "likely a real hand-edit" is only warranted when
                     # the anchor is known to be contemporaneous with THIS
@@ -2904,8 +3630,8 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
             # -- reusing the guard rather than duplicating its write path.
             baselines[key] = historical_hash
             save_template_baselines(baselines)
-            if have_new_tree and backup_dir is not None and (new_tmpdir / key).exists():
-                status = _sync_file_with_guard(new_tmpdir / key, local_path, backup_dir, key)
+            if have_new_tree and backup_dir is not None and (new_tree / key).exists():
+                status = _sync_file_with_guard(new_tree / key, local_path, backup_dir, key)
                 reconciled.append(key)
                 print(f"  RECONCILED  {key}: matches historical content at {recorded_version!r} — never edited, delivered ({status})")
             else:
@@ -2929,8 +3655,27 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
                   + ADOPT_HAZARD_NOTE)
         return 0
     finally:
+        # old_tmpdir is always ours (mkdtemp'd above), even when
+        # _resolve_historical_tree() returned an EXTERNALLY-owned directory
+        # (the test seam or a local-checkout export target that happened to
+        # write elsewhere) -- rmtree-ing our own still-unused tmpdir in that
+        # case is harmless. owned_new_tmpdir is only set (and only rmtree'd)
+        # when this function fetched the live tree itself; a caller-supplied
+        # new_tree is never ours to delete.
         shutil.rmtree(old_tmpdir, ignore_errors=True)
-        shutil.rmtree(new_tmpdir, ignore_errors=True)
+        if owned_new_tmpdir is not None:
+            shutil.rmtree(owned_new_tmpdir, ignore_errors=True)
+
+
+def cmd_reconcile_from_history(targets: list[str]) -> int:
+    """--reconcile-from-history PATH... handler (F6): CLI entry point.
+
+    Thin wrapper over _reconcile_targets() (F21) -- fetches the current
+    live tree from GitHub itself (new_tree=None), exactly as this command
+    behaved before that parameter existed. See _reconcile_targets()'s
+    docstring for the full design.
+    """
+    return _reconcile_targets(targets, new_tree=None)
 
 
 def main():
@@ -2997,6 +3742,19 @@ def main():
         ),
     )
     parser.add_argument(
+        "--print-workspace-role",
+        action="store_true",
+        default=False,
+        help=(
+            "Print 'harness' or 'downstream' and exit. Pure local read — no "
+            "network, no writes. Same single-source-of-truth precedent as "
+            "--print-workspace-identity: execution/bump_version.sh asks THIS "
+            "command whether it may move the upstream-owned version records, "
+            "so the population that may bump them is exactly the population "
+            "the self-update guard below refuses to serve."
+        ),
+    )
+    parser.add_argument(
         "--allow-skips",
         action="store_true",
         default=False,
@@ -3053,6 +3811,21 @@ def main():
         ),
     )
     parser.add_argument(
+        "--no-prune",
+        action="store_true",
+        default=False,
+        help=(
+            "Opt out of the default foreign-platform prune (platform-scoped-"
+            "delivery D2). By default, --apply runs execution/prune_foreign.py "
+            "against the fetched/--source template payload after delivery; "
+            "--dry-run previews the same prune with --dry-run. A file is only "
+            "ever pruned if manifest-governed with a scope excluding this "
+            "host, template-shipped at the same relpath, AND byte-identical "
+            "to the template copy -- see execution/prune_foreign.py's own docstring "
+            "for the full candidacy rule."
+        ),
+    )
+    parser.add_argument(
         "--reconcile-from-history",
         nargs="+",
         default=None,
@@ -3068,6 +3841,20 @@ def main():
             "'safe to overwrite' — if the recorded version cannot be "
             "resolved. Exits immediately after; does not run the normal "
             "update flow. template-update-actually-updates F6."
+        ),
+    )
+    parser.add_argument(
+        "--record-scaffold-baselines",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Record sha256 baselines for every on-disk HARNESS file under "
+            "PATH's .agent/update-manifest.yaml, keyed exactly like "
+            "copy_harness() keys the store. Intended to be called ONCE by "
+            "init.sh at the end of scaffolding a brand-new workspace -- "
+            "never invoked by a plain --apply. Exits immediately after; "
+            "does not run the normal update flow. delivery-channel-"
+            "baselines F21."
         ),
     )
     args = parser.parse_args()
@@ -3090,10 +3877,19 @@ def main():
     if args.print_workspace_identity:
         print(json.dumps(_stamp_identity_fields()))
         sys.exit(0)
+    # F32: reported alongside identity and for the same reason — the other
+    # writer of the version records asks this command which role it is in,
+    # rather than reimplementing the test and drifting away from the
+    # self-update guard it must agree with.
+    if args.print_workspace_role:
+        print("harness" if is_harness_checkout(".") else "downstream")
+        sys.exit(0)
     if args.adopt_baseline is not None:
         sys.exit(cmd_adopt_baseline(args.adopt_baseline))
     if args.reconcile_from_history is not None:
         sys.exit(cmd_reconcile_from_history(args.reconcile_from_history))
+    if args.record_scaffold_baselines is not None:
+        sys.exit(cmd_record_scaffold_baselines(args.record_scaffold_baselines))
 
     force_paths = frozenset(args.force_path or [])
 
@@ -3114,17 +3910,16 @@ def main():
     # Self-update guard: refuse to run inside the Athanor template repo itself.
     # Checked before fetch_latest_from_github() below -- a run this guard would
     # refuse must never perform the network fetch at all.
-    workspace_file = Path("WORKSPACE")
+    #
+    # The test lives in is_harness_checkout() rather than inline here (F32):
+    # execution/bump_version.sh consumes the same answer via
+    # --print-workspace-role, so the population allowed to move the delivery
+    # stamp by a local bump is exactly the population this guard refuses to
+    # serve. The WORKSPACE file is still the only signal -- a bare
+    # project_name == "Athanor" check would self-block downstream workspaces
+    # that happen to carry that project name.
     profile_file = Path(".agent/profile.json")
-    is_template_repo = False
-
-    if workspace_file.exists():
-        if workspace_file.read_text().strip() == "Athanor":
-            is_template_repo = True
-
-    # Removed: bare project_name == "Athanor" check that could self-block
-    # downstream workspaces with project_name set to "Athanor".
-    # The WORKSPACE file (lines above) is the only reliable signal.
+    is_template_repo = is_harness_checkout(".")
 
     if is_template_repo and not os.environ.get("FORCE_UPDATE") and not dry_run:
         print(
@@ -3138,6 +3933,13 @@ def main():
     # Track whether we own a temp dir so we can clean it up in finally.
     fetched_tmpdir: Path | None = None
 
+    # F33 (Codex finding 2): is `source` genuinely the CURRENT upstream tree?
+    # True for a successful fetch and for an operator-supplied --source; FALSE
+    # for the local template/ fallback, which is a vendored mirror that can lag
+    # live upstream by whole features. Delivery is unaffected (it is gated on a
+    # byte-match to the HISTORICAL tree), but the bootstrap must not cache a
+    # "matches neither snapshot" verdict drawn against a stale mirror.
+    source_is_authoritative = True
     if args.source is None:
         fetched_tmpdir = Path(tempfile.mkdtemp(prefix="athanor-update-"))
         if fetch_latest_from_github(fetched_tmpdir):
@@ -3146,6 +3948,7 @@ def main():
         else:
             print("[fetch] WARN: gh fetch failed — falling back to local template/")
             source = Path("template")
+            source_is_authoritative = False
             # We won't use fetched_tmpdir but we still own it; finally will clean it.
     else:
         source = Path(args.source)
@@ -3277,6 +4080,139 @@ def main():
                     prior_local_version = local_version_file.read_text().strip() or None
             except OSError:
                 prior_local_version = None
+
+        # A DEBT-DRIVEN RECONCILE (F33), which is what F21's one-time
+        # bootstrap should always have been. It recovers the fleet
+        # scaffolded before init.sh recorded baselines at scaffold time:
+        # such a workspace's baseline store was never populated, so the
+        # normal per-file guard below reads every HARNESS file as fully
+        # hand-edited and refuses everything.
+        #
+        # F21 gated this on "the baseline store is empty", and argued that
+        # it MUST be one-time. That gate asked a question about HISTORY --
+        # "have I ever run" -- which is unfalsifiable once true, and it made
+        # the recovery permanently unreachable for the population that most
+        # needs it: ONE ordinary --apply populates the store for every file
+        # it DID resolve while leaving the withheld ones unbaselined, so the
+        # store is non-empty forever and those paths can never be recovered
+        # by following the documented command. Measured in the field: 1056
+        # baselines written, 52 paths still withheld, no reconcile on any
+        # later --apply.
+        #
+        # So the question is now about the PRESENT -- "is there unrecovered
+        # debt I have not yet proved unrecoverable" -- which self-clears.
+        # F21's cost objection (that re-running a whole-tree, gh- and
+        # network-dependent reconcile on every invocation would tax every
+        # operator's every --apply) is answered by measurement, not by
+        # rhetoric: a freshly scaffolded workspace and a workspace after a
+        # clean --apply each enumerate ZERO unbaselined HARNESS paths and
+        # never enter here at all. Only the population this exists for pays.
+        #
+        # Two shapes of path can never be baselined, though -- a genuine
+        # hand-edit, and a project-local file under a HARNESS directory
+        # entry -- and without a further term either would re-arm the
+        # reconcile forever, which is F21's cost objection arriving through
+        # a different door. _bootstrap_should_run() therefore also consults
+        # `bootstrap_unresolved`: paths a reconcile PROVED unresolvable
+        # against the anchor currently in force, each recorded WITH the digest
+        # of the bytes the verdict was drawn against, so an entry that cannot
+        # be corroborated against the file on disk is re-attempted rather than
+        # believed. Only proof is ever recorded there; a degraded attempt --
+        # no resolvable history, an empty history tree, or a comparison
+        # against the stale template/ mirror -- records nothing at all (see
+        # _reconcile_targets() and _bootstrap_settled_paths()).
+        #
+        # Reuses `source` -- the tree --apply already resolved above for
+        # its own manifest loop (fetched-from-GitHub, --source, or the
+        # template/ fallback) -- as the "current live content"
+        # _reconcile_targets() compares against, instead of a second fetch.
+        # This is SAFE, not --adopt-baseline in disguise: a file is only
+        # ever delivered/baselined here when its bytes match an
+        # INDEPENDENTLY obtained historical snapshot (see
+        # _resolve_historical_tree()'s fallback chain) byte-for-byte; a
+        # genuine hand-edit necessarily fails that match and is left exactly
+        # where the normal guard already leaves an unresolved divergence:
+        # unbaselined, guarded, warned, skipped by the loop below.
+        bootstrap_unresolved_out: dict | None = None
+        bootstrap_state = _read_template_state_record()
+        bootstrap_unbaselined = _enumerate_no_baseline_harness_paths(manifest_path)
+        bootstrap_version, _bootstrap_from_anchor = _read_reconcile_from_version()
+        if _bootstrap_should_run(
+                bootstrap_unbaselined, bootstrap_version,
+                bootstrap_state.get("bootstrap_unresolved")):
+            if not bootstrap_version:
+                print(
+                    "[bootstrap-reconcile] "
+                    f"{len(bootstrap_unbaselined)} HARNESS path(s) carry no "
+                    "recorded baseline, but there is no recorded release to "
+                    "reconcile against (.agent/.template_state and "
+                    ".agent/profile.json both carry no template_version) -- "
+                    "falling through to the normal per-file guard below"
+                )
+            elif dry_run:
+                # REPORTS, never simulates. The preview resolves no
+                # historical tree and writes nothing, so it can promise
+                # nothing per-path: that tree is resolved at apply time
+                # through a network-dependent chain, and a preview
+                # announcing "would reconcile 51 of 52" can still deliver 0
+                # a minute later. Replacing today's false negative (silence,
+                # which reads as "the recovery did not ship") with a false
+                # POSITIVE would be strictly worse, because the operator
+                # acts on it. Naming the count and the anchor answers the
+                # question actually being asked -- will the recovery be
+                # attempted, and against what?
+                print(
+                    "[bootstrap-reconcile] would attempt to reconcile "
+                    f"{len(bootstrap_unbaselined)} unbaselined HARNESS "
+                    "path(s) against this workspace's recorded release "
+                    f"{bootstrap_version!r} on --apply -- per-path outcomes "
+                    "are determined at apply time; this preview fetches "
+                    "nothing and writes nothing"
+                )
+            else:
+                print(
+                    "[bootstrap-reconcile] "
+                    f"{len(bootstrap_unbaselined)} HARNESS path(s) carry no "
+                    "recorded baseline -- reconciling them against this "
+                    f"workspace's own recorded release {bootstrap_version!r} "
+                    "before the normal sync loop (F21/F33; debt-driven, and "
+                    "it stops once the debt is recovered or proved "
+                    "unrecoverable)"
+                )
+                proved_unresolvable: list[str] = []
+                _reconcile_targets(
+                    bootstrap_unbaselined, new_tree=source,
+                    unresolved_out=proved_unresolvable,
+                    new_tree_is_authoritative=source_is_authoritative,
+                )
+                # Record ONLY what this run proved. An empty list is the
+                # degraded case (no anchor-era tree resolved, so nothing was
+                # concluded about anything) and must leave the previous
+                # record alone rather than overwrite it with a confident
+                # "nothing here is unresolvable".
+                if proved_unresolvable:
+                    prior = bootstrap_state.get("bootstrap_unresolved")
+                    # Merge at the SAME anchor; replace outright when the
+                    # anchor has moved, since the older proofs were drawn
+                    # against a different historical tree and say nothing
+                    # about this one. Only STILL-CORROBORATED prior entries
+                    # are carried forward -- _bootstrap_settled_paths() drops
+                    # any whose file no longer matches its recorded digest,
+                    # so a stale proof cannot survive by being re-merged.
+                    settled = _bootstrap_settled_paths(prior, bootstrap_version)
+                    record = _bootstrap_proof_record(
+                        bootstrap_version, settled | set(proved_unresolvable))
+                    bootstrap_unresolved_out = record if record["paths"] else None
+        elif not bootstrap_unbaselined and not load_template_baselines():
+            # F21's own diagnostic, preserved. Under the old empty-store gate
+            # it covered the surprising "the store has never been populated,
+            # yet there is nothing on disk to reconcile" state; the debt gate
+            # above never enters there, so say it here instead of letting the
+            # one genuinely odd case go silent.
+            print(
+                "[bootstrap-reconcile] no baseline store found, and no "
+                "on-disk HARNESS files to reconcile"
+            )
 
         for entry in manifest.get("paths", []):
             path = entry["path"]
@@ -3457,8 +4393,8 @@ def main():
             paths_untracked = [key for key in paths_untracked if key in paths_withheld]
 
             delivery_status = (
-                "partial" if (paths_withheld or paths_refused or paths_failed)
-                else "complete"
+                DELIVERY_PARTIAL if (paths_withheld or paths_refused or paths_failed)
+                else DELIVERY_COMPLETE
             )
             try:
                 state_msg = write_template_state(
@@ -3466,6 +4402,7 @@ def main():
                     withheld=paths_withheld, failed=paths_failed,
                     refused=paths_refused, untracked=paths_untracked,
                     prior_local_version=prior_local_version,
+                    bootstrap_unresolved=bootstrap_unresolved_out,
                 )
             except OSError as e:
                 state_msg = (
@@ -3574,6 +4511,32 @@ def main():
                 "in .agent/allowed-symlinks (or pass --allow-symlink), which lets "
                 "the write actually proceed instead of muting the report."
             )
+
+        # Prune-by-default (platform-scoped-delivery D2/ruling-3): after
+        # delivery, sweep the workspace for foreign-platform files this same
+        # `source` template payload ships -- a file is only ever pruned if
+        # manifest-governed with a scope excluding this host, template-shipped
+        # at the same relpath, AND byte-identical to the template copy (see
+        # execution/prune_foreign.py). --dry-run previews the same prune with
+        # --dry-run so `update-template --dry-run` shows the real run's list
+        # before anything is touched. Never runs inside the harness repo
+        # itself (is_template_repo) -- the pruner also refuses that on its
+        # own, but skipping the call here avoids a spurious PRUNE-REFUSED
+        # block on every ordinary harness --dry-run.
+        if not args.no_prune and not is_template_repo:
+            prune_cmd = [
+                sys.executable, str(Path(__file__).parent / "prune_foreign.py"),
+                "--workspace-root", str(Path.cwd()),
+                "--template-root", str(source),
+            ]
+            if dry_run:
+                prune_cmd.append("--dry-run")
+            prune_result = subprocess.run(prune_cmd)
+            if prune_result.returncode == 2:
+                print("[prune] PRUNE-BLOCKED files present -- see report above; kept, not fatal to this update.")
+            elif prune_result.returncode not in (0, 2):
+                print(f"[prune] prune_foreign.py exited {prune_result.returncode} -- "
+                      "not treated as fatal to this update.")
 
         # exit 0 for every --dry-run: a preview writes nothing, so it cannot
         # deliver partially. backstop_warns stays deliberately out of the

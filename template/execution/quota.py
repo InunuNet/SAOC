@@ -5,8 +5,9 @@ Reads ONLY the project-local mirror file written by
 execution/hooks/inject_pressure.sh on every UserPromptSubmit turn
 (default .agent/memory/scratch/.quota_status.json). NEVER reads the global
 Claude usage cache under the user's home directory, directly or via
-subprocess — that path is sanctioned for inject_pressure.sh alone (see
-.claude/rules/scope.md).
+subprocess — that crossing is sanctioned for inject_pressure.sh alone, and
+the carve-out is recorded in that script's own header
+(execution/hooks/inject_pressure.sh).
 
 Provider-aware (GH #1368): the mirror is only ever trusted inside a genuine
 Claude Code session (CLAUDECODE=1, set by the real CLI binary itself). In any

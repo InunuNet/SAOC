@@ -1,0 +1,55 @@
+schema: athanor.contract/v1
+slug: f2-fixture-mixed-shape-masquerade
+goal: >
+  Reproduces the regression F2 itself introduced (Codex GPT-5.5 pass on M2,
+  confirmed and reproduced by @lead). contract.py's normalize_contract()
+  folds phase-derived assertions into `assertions` ONLY when the top-level
+  `assertions` key is missing or falsy (execution/contract.py:131-132,
+  `if not c.get("assertions"): c["assertions"] = extra_assertions`). When a
+  truthy top-level `assertions:` key IS present -- as it is here, a plain
+  list with one bare shell check -- every `phases:` entry is computed and
+  then discarded: contract.py's gate execution never sees or runs them.
+
+  But verify_triad_coverage.py's iter_assertions_with_shape() yields the
+  `phases:` dict branch unconditionally (a separate top-level `if`, not an
+  `elif` off the `assertions_raw` shape check), so it credits this
+  contract's phases-declared triad kinds even though contract.py discards
+  them entirely. The linter must mirror contract.py's own condition exactly
+  -- credit `phases:` entries only when `not contract.get("assertions")` --
+  or a contract like this one earns a false PASS while the gate actually
+  executes zero triad-kind assertions.
+
+  Correct behaviour: FAIL, naming all three missing triad kinds (codex_qa,
+  browser_deployed_check, gws_inbox_check) -- the only assertion contract.py
+  will ever actually run here is MSQ-01, a bare shell check with no verify
+  kind at all. The `phases:` dict below must NOT be credited.
+assertions:
+  - id: MSQ-01
+    description: >
+      the only assertion contract.py's gate actually executes for this
+      contract -- a bare shell check referencing an app/ path for UI
+      classification, no triad kind at all.
+    command: echo "app/(marketing)/national-show/page.tsx" && true
+phases:
+  1-decorative:
+    - id: MSQ-DECOY-CODEX
+      name: decorative -- discarded by contract.py, must not be credited
+      verify:
+        kind: codex_qa
+        target: .agent/memory/scratch/f2-fixture-codex-target.md
+        script: execution/codex_qa.sh
+        timeout_seconds: 200
+    - id: MSQ-DECOY-BROWSER
+      name: decorative -- discarded by contract.py, must not be credited
+      verify:
+        kind: browser_deployed_check
+        target: .agent/memory/scratch/f2-fixture-browser-manifest.json
+        script: execution/browser_deployed_check.sh
+        timeout_seconds: 200
+    - id: MSQ-DECOY-GWS
+      name: decorative -- discarded by contract.py, must not be credited
+      verify:
+        kind: gws_inbox_check
+        target: .agent/memory/scratch/f2-fixture-gws-manifest.json
+        script: execution/gws_inbox_check.sh
+        timeout_seconds: 200

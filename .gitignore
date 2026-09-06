@@ -119,3 +119,13 @@ contracts/checks/**/_mutants/
 # from Drive on demand, bulky, useless binary diffs in review. The parsed
 # content.md, manifest.json, and index.json alongside them ARE tracked.
 content/drive-source/**/source.docx
+# Pruner recovery bin (platform-scoped-delivery D2). Every prune is a MOVE
+# into .agent/trash/prune-<UTC>/, so a real prune leaves a full copy of every
+# pruned file here — untracked content that `git add -A` would otherwise
+# commit straight back into the repo the prune just removed it from.
+.agent/trash/
+# The workspace-identity affirmation (copied-project-halt D-2). Records THIS
+# machine's absolute path for THIS project, so it must never be tracked: a
+# `git clone` carrying one would launder a copy, and two machines would fight
+# over one file holding two different absolute paths.
+.agent/.identity_binding.json

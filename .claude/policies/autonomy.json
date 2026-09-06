@@ -1,0 +1,43 @@
+{
+  "schema": "athanor.autonomy-policy/v1",
+  "provider": "claude-code",
+  "level": "autonomous",
+  "stored_level": "high",
+  "permission_tier": "high",
+  "floor_denied_paths": [
+    "*/.git/*",
+    "*/.env",
+    "*/.sops.yaml",
+    "*.pem",
+    "*.key",
+    "*/secrets/*",
+    "*/init.sh",
+    "*/full_boot.sh",
+    "*/.ssh/*",
+    "*/.aws/*",
+    "*/.gnupg/*",
+    "*/.claude/settings.json",
+    "*/.claude/settings.local.json",
+    "*/.claude/hooks/*",
+    "*/execution/hooks/*",
+    "*/CLAUDE.md",
+    "*/AGENTS.md",
+    "*/GEMINI.md",
+    "*/.agent/autonomy_matrix.json"
+  ],
+  "floor_denied_commands": [
+    "recursive forced delete",
+    "forced git push",
+    "git reset --hard",
+    "interactive rebase",
+    "sudo",
+    "chmod 777",
+    "chown root",
+    "raw device writes",
+    "downloads piped into a shell",
+    "find -delete",
+    "find -exec"
+  ],
+  "generated_by": "execution/sync_autonomy.py",
+  "generated_at": "2026-09-06T18:28:00.828144+00:00"
+}

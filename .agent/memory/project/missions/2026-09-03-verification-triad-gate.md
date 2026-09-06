@@ -7,8 +7,8 @@ started_at: '2026-09-04T20:51:10.586569+00:00'
 last_active_at: '2026-09-04T20:51:10.586569+00:00'
 status: in_progress
 cost_estimate:
-  features: 1
-  milestones: 1
+  features: 2
+  milestones: 2
   total_calls: 0
 last_checkpoint:
   milestone: M1
@@ -19,12 +19,21 @@ features:
   name: browser_deployed_check + gws_inbox_check assertion kinds + triad coverage linter
   spec: .agent/memory/project/specs/verification-triad-gate/contract-f1.yaml
   status: done
+- id: F2
+  name: Wire verify_triad_coverage.py into the real gate path (quick_gate.sh + contract.py gate_cmd)
+  spec: .agent/memory/project/specs/verification-triad-gate/contract-f2.yaml
+  status: pending
 milestones:
 - id: M1
   name: Triad assertion kinds wired into the contract gate
   features:
   - F1
   status: done
+- id: M2
+  name: Triad coverage linter enforced in every gate run
+  features:
+  - F2
+  status: pending
 ---
 
 # Mission: verification-triad-gate

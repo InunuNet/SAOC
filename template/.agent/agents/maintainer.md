@@ -52,9 +52,10 @@ If you discover a template/workflow bug during a session:
    - **Always run after Step 6 (backlog updates) and BEFORE Step 8 (brain wrap-up).** The wrap-up can then reference the trim count.
    - If the script exits non-zero, stop — do not proceed to the brain wrap-up. Surface the stderr message; the user will rerun once fixed.
 8. **Store in brain** — `python3 execution/brain.py wrap-up --summary "SUMMARY" --tags "TAGS" --closure-candidates "GH #N — evidence" ...` (pass every candidate found in Step 2)
-9. **Bump version** — `bash execution/bump_version.sh && make sync`
+9. **Bump version** — `bash execution/bump_version.sh && make sync` — **ONLY in the harness checkout.**
    - Increments PATCH in `.agent/version` AND `template/.agent/version` (dual-write; both files must stay in sync).
    - `make sync` regenerates provider configs so they reflect the new version.
+   - ⛔ **In a downstream workspace, skip this step — do nothing instead.** `.agent/version` and `.agent/.template_state` record what UPSTREAM delivered here, not how many missions closed here; only `python3 execution/update_template.py --apply` moves them. Bumping them locally ratchets this workspace's delivery receipt above anything upstream ships, and the version-regression guard then refuses every future template update forever. The script enforces this itself — in a downstream it writes nothing and exits 0 with a one-line skip, which is the expected output, not a failure.
 10. **Commit** — `git add -A && git commit -m "chore: bump version to vNEW"`
    - Replace `NEW` with the version echoed by the bump script (format: `OLD -> NEW`).
 11. **Check consistency** — verify agent defs in `.agent/agents/` match the work being done.

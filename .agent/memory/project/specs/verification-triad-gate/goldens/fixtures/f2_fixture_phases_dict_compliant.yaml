@@ -1,0 +1,46 @@
+schema: athanor.contract/v1
+slug: f2-fixture-phases-dict-compliant
+goal: >
+  UI/workflow contract authored ENTIRELY in the raw phases-dict shape
+  (`phases: {<phase_key>: [...]}`) -- the shape execution/contract.py's
+  normalize_contract() supports (see its "Normalize phase-dict format"
+  block) but which verify_triad_coverage.py's standalone linter cannot see
+  today, because its iter_assertions_with_shape() reads
+  contract.get("phases_raw") -- a key that ONLY EXISTS after contract.py's
+  own normalization runs, never in an author-written file. This contract
+  has NO top-level `assertions:` key at all, so every assertion (including
+  the app/ classification marker and all three triad kinds) is reachable
+  ONLY through the phases-dict branch. Before the fix: iter_assertions()
+  sees nothing here at all, so is_ui_workflow_contract() returns False and
+  the linter wrongly prints "EXEMPT" (a false non-UI classification, not a
+  false PASS). After the fix: the linter must see all four items, correctly
+  classify this as UI/workflow (PD-01's app/ reference), and correctly
+  report all three triad kinds present -> "PASS".
+phases:
+  '4':
+    - id: PD-01
+      name: shell check whose command references an app/ path (classification marker)
+      verify:
+        kind: shell
+        cmd: echo "references app/national-show route for triad classification" && true
+    - id: PD-02
+      name: codex_qa triad layer
+      verify:
+        kind: codex_qa
+        target: .agent/memory/scratch/f2-fixture-codex-target.md
+        script: execution/codex_qa.sh
+        timeout_seconds: 200
+    - id: PD-03
+      name: browser_deployed_check triad layer
+      verify:
+        kind: browser_deployed_check
+        target: .agent/memory/scratch/f2-fixture-browser-manifest.json
+        script: execution/browser_deployed_check.sh
+        timeout_seconds: 200
+    - id: PD-04
+      name: gws_inbox_check triad layer
+      verify:
+        kind: gws_inbox_check
+        target: .agent/memory/scratch/f2-fixture-gws-manifest.json
+        script: execution/gws_inbox_check.sh
+        timeout_seconds: 200

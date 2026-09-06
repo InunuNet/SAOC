@@ -1,0 +1,50 @@
+schema: athanor.contract/v1
+slug: f2-fixture-list-toplevel-kind-masquerade
+goal: >
+  Plain `assertions:` LIST-shape contract where one item (LM-02) carries a
+  top-level `kind: browser_deployed_check` field but NO nested `verify:`
+  block at all. For this shape, contract.py's normalize_contract() does
+  nothing to a plain-list assertion -- it is passed through to gate
+  execution exactly as authored (see execution/contract.py's check_cmd,
+  which reads only assertion["verify"]["kind"]; a plain-list item with no
+  `verify:` key executes as a bare shell/no-verify check, NOT as
+  browser_deployed_check). So LM-02's top-level `kind` is decorative here --
+  crediting it would let this contract masquerade as triad-complete while
+  the gate actually runs LM-02 as an uncovered shell check. This is the
+  specific over-correction risk in fixing
+  f2_fixture_phases_dict_synthesized_kind_compliant.yaml's false negative:
+  the phases-dict shape's top-level `kind` genuinely IS synthesized into
+  verify.kind by contract.py, but a plain-list shape's top-level `kind` is
+  NOT. verify_triad_coverage.py's assertion_kind() must distinguish these
+  two shapes exactly along contract.py's own normalize_contract() behaviour
+  -- crediting top-level `kind` for the phases-dict shape only, never for a
+  plain `assertions:` list item -- or this contract wrongly reports PASS.
+  Correct behaviour: FAIL, naming browser_deployed_check specifically (LM-02's
+  top-level kind must NOT count), even though gws_inbox_check and codex_qa
+  are both genuinely present via nested verify.kind on LM-03/LM-04.
+assertions:
+  - id: LM-01
+    description: shell check referencing app/ path (classification marker)
+    command: echo "references app/national-show route for triad classification" && true
+  - id: LM-02
+    description: >
+      masquerade -- top-level kind: browser_deployed_check with no nested
+      verify: block at all. contract.py executes this as a bare
+      no-verify-kind assertion, NOT as browser_deployed_check. Must NOT be
+      credited by the linter.
+    kind: browser_deployed_check
+    command: echo "top-level kind here is decorative, not executed as browser_deployed_check"
+  - id: LM-03
+    description: genuine codex_qa layer via nested verify.kind
+    verify:
+      kind: codex_qa
+      target: .agent/memory/scratch/f2-fixture-codex-target.md
+      script: execution/codex_qa.sh
+      timeout_seconds: 200
+  - id: LM-04
+    description: genuine gws_inbox_check layer via nested verify.kind
+    verify:
+      kind: gws_inbox_check
+      target: .agent/memory/scratch/f2-fixture-gws-manifest.json
+      script: execution/gws_inbox_check.sh
+      timeout_seconds: 200

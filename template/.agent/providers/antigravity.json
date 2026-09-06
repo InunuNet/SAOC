@@ -36,7 +36,7 @@
   "notes": "Subagents require LLM tool registration from .anti/agents.json; no shell CLI adapter is assumed.",
   "autonomy": {
     "supports_policy_sync": false,
-    "max_honerable_level": "medium",
+    "max_honorable_level": "medium",
     "sync_mechanism": "none"
   }
 }

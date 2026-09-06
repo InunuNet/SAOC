@@ -53,69 +53,53 @@ is_safe_zone() {
 }
 
 # ── Mission/contract decision — resolved once per hook invocation ────────────
-# Path-independent: only depends on the active mission and whether it has a
-# contract. Echoes "allow" or "block:<message>".
+# Path-independent: only depends on the active mission and whether its CURRENT
+# feature (active.json's checkpoint.feature) has a contract. Delegates the
+# actual resolution to lib/resolve_feature_contract.py, which calls
+# mission.py's own parse_mission_file() and _existing_contract_for_feature()
+# -- so this hook and `mission.py gate` read mission files and resolve
+# contracts identically and can never disagree about whether a feature has
+# a contract. Echoes "allow" or "block:<message>".
+#
+# Fails CLOSED, not open: a guard that cannot understand its own resolver's
+# answer does not know the write is safe -- it knows nothing, and "I know
+# nothing" must not read as "allow". So a nonzero exit from the resolver, or
+# any stdout line other than the ones it documents, blocks.
 mission_contract_decision() {
-  local ACTIVE_JSON=".agent/memory/project/missions/active.json"
+  local RESULT RC
+  RESULT=$(python3 "${HOOK_DIR}/lib/resolve_feature_contract.py" 2>/dev/null)
+  RC=$?
 
-  if [ ! -f "$ACTIVE_JSON" ]; then
-    echo "allow"
+  if [ "$RC" -ne 0 ]; then
+    echo "block:⛔ CONTRACT GATE: resolve_feature_contract.py exited ${RC} — cannot determine whether the current feature has a contract.
+   Raw output: ${RESULT:-<empty>}
+   This is a hook-internal failure, not a missing contract — diagnose lib/resolve_feature_contract.py before retrying."
     return
   fi
 
-  local MISSION_PATH
-  MISSION_PATH=$(jq -r '.mission // ""' "$ACTIVE_JSON" 2>/dev/null || echo "")
-
-  if [ -z "$MISSION_PATH" ]; then
-    echo "allow"
-    return
-  fi
-
-  # ── Derive slug from mission path ───────────────────────────────────────
-  local SLUG="${MISSION_PATH##*/}"
-  SLUG="${SLUG%.md}"
-  # strip ALL leading YYYY-MM-DD- prefixes (handles double-date filenames)
-  while [[ "$SLUG" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}- ]]; do
-    SLUG="${SLUG#????-??-??-}"
-  done
-
-  if [ -z "$SLUG" ]; then
-    echo "allow"
-    return
-  fi
-
-  # ── Terminal-status mission guard (GH #1300) ────────────────────────────
-  # active.json can linger pointing at a mission whose frontmatter status has
-  # already reached a terminal state (complete/"done"/abandoned). Treat that
-  # as not-active and fail open instead of blocking every write. Handles
-  # both unquoted (status: complete) and quoted (status: "complete")
-  # frontmatter. Capture the FULL status token, not just its leading word --
-  # a narrower class would truncate a hyphenated value like
-  # "abandoned-superseded" and false-match the terminal case. GH #1300
-  # follow-up.
-  if [ -f "$MISSION_PATH" ]; then
-    local MISSION_STATUS
-    MISSION_STATUS=$(grep -m1 '^status:' "$MISSION_PATH" 2>/dev/null \
-      | sed -E 's/^status:[[:space:]]*"?([A-Za-z0-9_-]+)"?.*/\1/')
-    case "$MISSION_STATUS" in
-      complete|"done"|abandoned)
-        echo "allow"
-        return ;;
-    esac
-  fi
-
-  # ── Check contract exists ───────────────────────────────────────────────
-  local CONTRACT_PATH
-  CONTRACT_PATH=$(find ".agent/memory/project/specs/${SLUG}" -name "contract*.yaml" 2>/dev/null | head -1 || echo "")
-
-  if [ -f "$CONTRACT_PATH" ]; then
-    echo "allow"
-    return
-  fi
-
-  echo "block:⛔ CONTRACT GATE: No contract found for active mission '${SLUG}'.
-   Expected at: .agent/memory/project/specs/${SLUG}/contract*.yaml
-   Run @architect via the harness chain to produce it, then retry."
+  case "$RESULT" in
+    allow)
+      echo "allow" ;;
+    contract:*)
+      echo "allow" ;;
+    noncontract)
+      echo "block:⛔ CONTRACT GATE: No contract found for the active mission's current feature.
+   Checked: the feature's attach-spec contract: field, then
+   .agent/memory/project/specs/<mission-slug>/contract-f<N>.yaml, then
+   .agent/memory/project/specs/<mission-slug>/contract.yaml.
+   Run @architect via the harness chain to produce it, then retry." ;;
+    invalid:*)
+      echo "block:⛔ CONTRACT GATE: contract fails to validate: ${RESULT#invalid:}
+   Fix the contract (run: python3 execution/contract.py validate <path>), then retry." ;;
+    missing:*)
+      echo "block:⛔ CONTRACT GATE: feature's attach-spec contract: field names a file that does not exist: ${RESULT#missing:}
+   Fix the attached path (mission.py attach-spec) or restore the missing contract file, then retry." ;;
+    *)
+      # Unrecognised stdout from the resolver despite a zero exit -- an
+      # unreadable answer is not a green light. Blocks.
+      echo "block:⛔ CONTRACT GATE: resolve_feature_contract.py produced an unrecognised result: '${RESULT}'.
+   This is a hook-internal failure, not a missing contract — diagnose lib/resolve_feature_contract.py before retrying." ;;
+  esac
 }
 
 DECISION_COMPUTED=0

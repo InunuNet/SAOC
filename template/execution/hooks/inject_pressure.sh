@@ -15,6 +15,23 @@
 #   - ALWAYS exit 0 (never block a user turn)
 #   - Gracefully degrade to "?" when any data source is unavailable
 #   - All stderr suppressed; timeout python work at <= 4s
+#
+# SANCTIONED BOUNDARY CROSSING — the carve-out is recorded HERE, at the
+# exception site, and nowhere else.
+#   .agent/rules/_core/scope.md draws the boundary: nothing outside this
+#   project folder is read without permission asked and granted first.
+#   ~/.claude/ is the operator's global tree, so the usage-cache.json read
+#   above crosses it. That crossing is sanctioned for THIS SCRIPT ALONE: it is
+#   the single reader of ~/.claude/MEMORY/STATE/usage-cache.json in this
+#   harness, and it exists to mirror that one number into the project at
+#   .agent/memory/scratch/.quota_status.json so nothing else has to.
+#   Every downstream consumer — execution/quota.py,
+#   execution/quota_resume_window.py, and anything reading through them —
+#   reads the project-local mirror and MUST NOT read the global cache, whether
+#   directly or via subprocess.
+#   Recorded here rather than in the rule because a rule that every workspace
+#   loads should not name one script in one harness. The exception belongs at
+#   the code that takes it; the rule stays general.
 set +e
 exec 2>/dev/null
 

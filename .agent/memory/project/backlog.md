@@ -38,27 +38,36 @@ Do not scope work from an entry that contradicts it.
 
 ## Next up (queued, not yet a mission — dispatch as soon as current mission closes)
 
-- [ ] **[P0] Wire `verify_triad_coverage.py` into an actual gate path so a UI/workflow contract
-  cannot go green without declaring triad coverage** (mission `verification-triad-gate`, M2 —
-  still open as of 2026-09-04; M1/F1 is DONE, see below). Original ask (2026-09-02, Brad, via
-  team lead): today's `.claude/rules/workflow.md` mandate (Codex + BrowserAgent-on-deployed +
-  gws-read-only) is enforced only by an agent having read the rules file, exactly the gap that
-  let the `SITE_URL`/`hosted.app` defect reach a green gate. **F1 (2026-09-04, commits
-  `6615513a`/`f8c8dd7a`/`80829bec`) built the mechanism**: `browser_deployed_check` and
-  `gws_inbox_check` now exist as first-class contract assertion kinds (sibling to `codex_qa`),
-  plus `execution/verify_triad_coverage.py`, a standalone linter that flags a contract missing
-  triad coverage. **Not yet done: nothing forces any contract to declare them or run the
-  linter** — `execution/skills/quick_gate.sh:57` and `contract.py`'s `gate_cmd` (contract.py:926-
-  929) never invoke `verify_triad_coverage.py`. A future UI contract can still reach a green gate
-  with zero browser/inbox verification unless it volunteers the linter itself. Deferred rather
-  than fixed in F1 because wiring it into every gate run applies retroactively to every existing
-  contract, most of which declare no triad kinds — needs its own @architect scoping pass, not a
-  bolt-on. Also carry forward from F1: `verify_triad_coverage.py`'s `iter_assertions_with_shape()`
-  reads `contract.get("phases_raw")`, but an author-written contract's real YAML key is `phases`
-  — `phases_raw` only exists post-normalisation inside `contract.py`, so a `phases:`-shaped
-  contract is invisible to the standalone linter today (false-negative direction, lower
-  severity, but narrows the linter's real coverage). Full scope and both citations:
-  `.agent/memory/project/missions/2026-09-03-verification-triad-gate.md` "M2 — DEFERRED" section.
+- [x] **[P0] Wire `verify_triad_coverage.py` into an actual gate path so a UI/workflow contract
+  cannot go green without declaring triad coverage** (mission `verification-triad-gate`, M2/F2 —
+  DONE 2026-09-06; M1/F1 was DONE 2026-09-04). Original ask (2026-09-02, Brad, via team lead):
+  today's `.claude/rules/workflow.md` mandate (Codex + BrowserAgent-on-deployed + gws-read-only)
+  was enforced only by an agent having read the rules file, exactly the gap that let the
+  `SITE_URL`/`hosted.app` defect reach a green gate. F1 (2026-09-04) built the mechanism:
+  `browser_deployed_check` and `gws_inbox_check` as first-class contract assertion kinds, plus
+  `execution/verify_triad_coverage.py`. **F2 (2026-09-06) closes the gap**: `contract.py`'s
+  `gate_cmd()` now runs `_run_triad_coverage_preflight()` after `_preflight_residue_guard()` and
+  before `_gate_dispatch()`, hard-blocking a non-grandfathered UI/workflow contract missing any
+  triad kind (`TRIAD_ENFORCEMENT_EXIT_CODE=6`) and failing closed on any linter-infrastructure
+  error (`TRIAD_PREFLIGHT_ERROR_EXIT_CODE=7`) — deliberately the opposite fail posture of the
+  dataset-residue guard, since the linter has zero external dependencies. Existing noncompliant
+  contracts are grandfathered via `execution/triad-baseline-exempt.txt` +
+  `execution/triad-baseline-exempt.sha256` (re-arms on edit). The `phases_raw`/`phases`
+  false-negative in `iter_assertions_with_shape()` is also fixed (it now reads the real
+  author-written `phases` key, not the post-normalisation-only `phases_raw`). See
+  `.agent/memory/project/specs/verification-triad-gate/contract-f2.yaml` for the five binding
+  architect decisions and `docs/verification-triad-gate.md` for usage.
+
+- [ ] **[P1] Upstream PR to InunuNet/Athanor: `template/execution/contract.py` does not carry
+  the F2 triad-coverage gate preflight** (mission `verification-triad-gate`, M2/F2 decision 5,
+  2026-09-06). `template/execution/contract.py`, `quick_gate.sh`, and `improvement_loop.sh` are
+  this project's seed copy of the upstream Athanor harness, not a second production gate path
+  for SAOC's own contracts, so F2 intentionally did NOT duplicate the fix there. Per project
+  convention `feedback_harness_issues_pr_upstream` (fix locally + PR upstream, not just report),
+  this needs a PR to InunuNet/Athanor porting the same triad preflight (`_run_triad_coverage_
+  preflight()`, `TRIAD_ENFORCEMENT_EXIT_CODE`/`TRIAD_PREFLIGHT_ERROR_EXIT_CODE`, the baseline +
+  hash-pin re-arm-on-edit mechanism) into the template harness so future Athanor-seeded projects
+  get triad enforcement out of the box, not just SAOC.
 
 - [ ] **P0 — Working-process review (INTERACTIVE — Brad at the keyboard, not agent work)**
   (added 2026-09-02, team lead, on Brad's instruction). This is the next thing this project

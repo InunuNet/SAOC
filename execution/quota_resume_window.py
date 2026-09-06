@@ -31,7 +31,8 @@ Precedence (goldens/quota_bands_spec.md §6.1):
 This resolver never reads the live quota oracle a second, independent way —
 it shells out to `execution/quota.py status` (F1's sanctioned reader) rather
 than re-implementing mirror parsing, and never touches ~/.claude/** itself;
-only inject_pressure.sh may cross that boundary (.claude/rules/scope.md).
+only execution/hooks/inject_pressure.sh may cross, and the carve-out is
+recorded in that script's own header.
 
 Always exits 0 (it runs inside the Pulse cycle — a resolver must never
 break it) and prints exactly one line:

@@ -57,7 +57,7 @@ Skip the chain (handle directly) ONLY for:
 
 ## Related
 
-- `.claude/rules/workflow.md` — full chain rules
+- `<project>/.claude/rules/workflow.md` — full chain rules
 - `write-contract` — what @architect produces
 - `write-handoff` — what every chain agent produces
 - `quick-gate` — the phase-4 gate before @maintainer

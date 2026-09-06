@@ -33,6 +33,8 @@ import argparse
 import copy
 import datetime as _dt
 import json
+import os
+import platform as _platform
 import re
 import sys
 from pathlib import Path
@@ -53,7 +55,25 @@ PLATFORMS = ("all", "macos", "linux", "windows")
 # (execution/checks/verify_directives_valid.py, A8): a reader must stay
 # forward-compatible when a fifth downstream is added, so validate_directive()
 # deliberately does not reject an unrecognised token.
-KNOWN_TARGETS = ("saoc", "mumbl", "alembic", "herdr")
+#
+# athlin/athwin (platform-scoped-delivery D5, added 2026-09-01): the harness's
+# own Linux and Windows sibling checkouts, named after their git-identity
+# plus-address tags (execution/git_guard.py IDENTITY_BY_PLATFORM). Unlike the
+# project-fleet tokens above, these are PORT_TOKENS -- see matches_target.
+KNOWN_TARGETS = ("saoc", "mumbl", "alembic", "herdr", "athlin", "athwin")
+
+# The harness's own sibling-platform checkouts. `all` was published, and is
+# read, as "the project fleet" (saoc/mumbl/alembic/herdr) -- widening it to
+# silently also mean "the harness siblings" would re-address every directive
+# ever issued to an audience it was never written for. Ports are addressed
+# explicitly, by name, only.
+PORT_TOKENS = ("athlin", "athwin")
+
+# The lead project. It PUBLISHES and is never a recipient, so `all` does not
+# address it. Named here because Athanor's own profile.json predates
+# `harness_name` (GH #1369) and still leaves that field unset, so the
+# project_name == harness_name test alone does not recognise this checkout.
+PUBLISHER_TOKEN = "athanor"
 
 ID_RE = re.compile(r"^ATH-\d{8}-[a-z0-9]+(?:-[a-z0-9]+)*$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -303,13 +323,23 @@ def slugify_project(name: str) -> str:
 
 
 def matches_target(targets, project_token: str) -> bool:
-    """True when `targets` addresses me. Exact tokens only, never substrings. Pure."""
+    """True when `targets` addresses me. Exact tokens only, never substrings. Pure.
+
+    `all` does NOT address a PORT_TOKEN (platform-scoped-delivery D5): every
+    published `targets: [all]` directive was authored for the project fleet,
+    and widening `all` to also reach the harness's own siblings would
+    silently re-address history to an audience it was never written for.
+    Ports are addressed explicitly, by name, only.
+    """
     if not isinstance(targets, list):
         return False
     tokens = [t.strip().lower() for t in targets if isinstance(t, str)]
+    me = str(project_token).strip().lower()
+    if me in PORT_TOKENS:
+        return me in tokens
     if "all" in tokens:
         return True
-    return str(project_token).strip().lower() in tokens
+    return me in tokens
 
 
 def _sort_key(meta: dict):
@@ -523,13 +553,79 @@ def workspace_root(start: Path = None) -> Path:
     return here
 
 
+def _detect_platform() -> str:
+    """macos/linux/windows/unknown -- ATHANOR_PLATFORM override first, else
+    uname, mirroring init.sh's detect_platform() vocabulary and precedence
+    (platform-aware-delivery D2). Used only to disambiguate the harness's own
+    three sibling checkouts, which are otherwise indistinguishable (see
+    is_publisher / project_token below)."""
+    override = os.environ.get("ATHANOR_PLATFORM", "").strip().lower()
+    if override in ("macos", "linux", "windows"):
+        return override
+    system = _platform.system()
+    if system == "Darwin":
+        return "macos"
+    if system == "Linux":
+        return "linux"
+    if system == "Windows" or system.startswith(("MINGW", "MSYS", "CYGWIN")):
+        return "windows"
+    return "unknown"
+
+
+def _harness_checkout(data: dict) -> bool:
+    harness = slugify_project(data.get("harness_name") or "")
+    project = slugify_project(data.get("project_name") or "")
+    return bool(harness) and harness == project
+
+
 def project_token(root: Path) -> str:
     profile = root / ".agent" / "profile.json"
     try:
         data = json.loads(profile.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return ""
-    return slugify_project(data.get("project_name") or "")
+    project = slugify_project(data.get("project_name") or "")
+    # All three sibling harness checkouts share identical profile.json
+    # (project_name == harness_name), so project_name alone cannot tell them
+    # apart (platform-scoped-delivery D5). Platform is the only on-disk-or-host
+    # differentiator: macOS is the publisher (never addressed as a target;
+    # see is_publisher), linux/windows resolve to their port tokens so
+    # pending_for() addresses them correctly.
+    if project != PUBLISHER_TOKEN and _harness_checkout(data):
+        plat = _detect_platform()
+        if plat == "linux":
+            return "athlin"
+        if plat == "windows":
+            return "athwin"
+    return project
+
+
+def is_publisher(root: Path) -> bool:
+    """True in the harness checkout itself (project_name == harness_name) --
+    AND, since all three platform siblings share that same profile.json, only
+    on the platform that is the standing publisher.
+
+    Athanor PUBLISHES; it is not a recipient. `all` means every downstream, and
+    a lead session that saw its own outbound directives as "pending" would be
+    invited to ack them -- writing a receipt into the publishing repo, where it
+    means nothing. The publisher's view is `make directives-lint`.
+
+    Platform-derived (platform-scoped-delivery D5): Brad's standing setup runs
+    the lead on macOS, so the macOS checkout is the publisher and the linux/
+    windows checkouts are recipients (project_token() resolves them to
+    athlin/athwin). If the lead ever moves off macOS, this is the one line to
+    revisit.
+    """
+    try:
+        data = json.loads((root / ".agent" / "profile.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    project = slugify_project(data.get("project_name") or "")
+    if project == PUBLISHER_TOKEN:
+        return True
+    if not _harness_checkout(data):
+        return False
+    return _detect_platform() == "macos"
 
 
 def load_directives(root: Path):
@@ -598,6 +694,13 @@ def cmd_list(args) -> int:
     root = workspace_root()
     me = project_token(root)
     metas, bodies, problems = load_directives(root)
+
+    if is_publisher(root) and not args.verbose:
+        # Silent in the publishing repo: this block runs at every boot, and a
+        # notice that reappears forever is the nagware failure mode the spec
+        # spends section 4 avoiding. `make directives-lint` is the author view.
+        return 0
+
     rows = pending_for(me, metas, load_applied(root))
 
     clean, blocked = [], []
@@ -668,6 +771,11 @@ def cmd_show(args) -> int:
 
 def cmd_ack(args) -> int:
     root = workspace_root()
+    if is_publisher(root):
+        print("this is the publishing repo -- applied-state belongs in the RECEIVING "
+              "project, never here (a modified HARNESS tree trips the #104 baseline "
+              "guard).", file=sys.stderr)
+        return 1
     metas, _bodies, _problems = load_directives(root)
     known = {m.get("id") for m in metas}
     if known and args.id not in known:

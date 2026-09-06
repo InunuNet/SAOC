@@ -1,0 +1,49 @@
+schema: athanor.contract/v1
+slug: f2-fixture-empty-list-phases-dict-compliant
+goal: >
+  Edge case named explicitly by @lead: `not c.get("assertions")` in
+  execution/contract.py:131-132 is falsy for an EMPTY list too (`not []` is
+  True in Python), not only for a missing key. So a contract authored with
+  an explicit `assertions: []` alongside a populated `phases:` dict still
+  has contract.py fold the phases-derived assertions into `assertions` --
+  they are NOT discarded, unlike the mixed-shape masquerade case where
+  `assertions:` is a non-empty list.
+
+  This fixture proves the fix for A11 (crediting `phases:` only under
+  contract.py's exact condition) does not overcorrect and regress this case
+  back into the original phases_raw/phases blind spot (A4/A10's property).
+  All three triad kinds are declared solely via the `phases:` branch;
+  `assertions: []` is present but empty.
+
+  Correct behaviour: PASS, declaring all three triad kinds -- exactly like
+  the phases-only fixtures (f2_fixture_phases_dict_compliant.yaml) that
+  omit the `assertions:` key entirely.
+assertions: []
+phases:
+  1-checks:
+    - id: ELP-01
+      name: shell check whose command references an app/ path (classification marker)
+      verify:
+        kind: shell
+        cmd: echo "references app/national-show route for triad classification" && true
+    - id: ELP-02
+      name: codex_qa triad layer
+      verify:
+        kind: codex_qa
+        target: .agent/memory/scratch/f2-fixture-codex-target.md
+        script: execution/codex_qa.sh
+        timeout_seconds: 200
+    - id: ELP-03
+      name: browser_deployed_check triad layer
+      verify:
+        kind: browser_deployed_check
+        target: .agent/memory/scratch/f2-fixture-browser-manifest.json
+        script: execution/browser_deployed_check.sh
+        timeout_seconds: 200
+    - id: ELP-04
+      name: gws_inbox_check triad layer
+      verify:
+        kind: gws_inbox_check
+        target: .agent/memory/scratch/f2-fixture-gws-manifest.json
+        script: execution/gws_inbox_check.sh
+        timeout_seconds: 200

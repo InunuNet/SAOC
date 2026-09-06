@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Layer 2: check_autonomy.sh enforces autonomy levels + floor denials across the matrix.
-# Mechanism: write level to /tmp/athanor_autonomy_$$ (child's PPID == this script's $$),
-# then pipe a tool-input JSON into bash execution/hooks/check_autonomy.sh and assert exit.
+# Mechanism: write level to <repo>/.tmp/athanor_autonomy_$$ (child's PPID == this
+# script's $$ -- the hook keys its cache on the invoking shell's PID, and that
+# cache lives inside the project now, not /tmp -- see check_autonomy.sh's own
+# comment on why /tmp was dropped), then pipe a tool-input JSON into
+# bash execution/hooks/check_autonomy.sh and assert exit.
 set -uo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "ERROR: must run from inside the Athanor git repo"; exit 1; }
 cd "$REPO_ROOT"
@@ -9,11 +12,13 @@ source execution/tests/lib/assert.sh
 
 echo "=== test_autonomy_levels.sh ==="
 
-CACHE="/tmp/athanor_autonomy_$$"
+CACHE_DIR=".tmp"
+CACHE="${CACHE_DIR}/athanor_autonomy_$$"
 HOOK="execution/hooks/check_autonomy.sh"
 
 run_row() {
   local level="$1" input="$2"
+  mkdir -p "$CACHE_DIR"
   rm -f "$CACHE"
   echo "$level" > "$CACHE"
   echo "$input" | bash "$HOOK" >/dev/null 2>&1

@@ -54,21 +54,32 @@ help:
 	@echo "  make pulse-logs        Tail the Pulse service logs"
 
 
-sync: sync-autonomy sync-agents
+sync: sync-autonomy sync-agents sync-clones
 	@bash execution/sync_skills.sh
 	@bash execution/sync_rules.sh
 
 sync-agents:
 	@bash execution/sync_agents.sh
 
-sync-autonomy:
-	@python3 -c "import json,pathlib;LEVEL_ORDER=['off','low','medium','high','loop'];level_rank=lambda l: LEVEL_ORDER.index(l) if l in LEVEL_ORDER else 2;profile=json.loads(pathlib.Path('.agent/profile.json').read_text());current_level=profile.get('autonomy',{}).get('level','medium');current_rank=level_rank(current_level);print('sync-autonomy: current level='+current_level);mismatches=[];[mismatches.append((d.get('provider',mf.stem),d.get('autonomy',{}).get('max_honerable_level','medium'))) or print('AUTONOMY MISMATCH: '+d.get('provider',mf.stem)+' max_honerable_level='+d.get('autonomy',{}).get('max_honerable_level','medium')+', current='+current_level) if current_rank>level_rank(d.get('autonomy',{}).get('max_honerable_level','medium')) else print('   OK '+d.get('provider',mf.stem)+': can honor '+current_level+' (max='+d.get('autonomy',{}).get('max_honerable_level','medium')+')') for mf in sorted(pathlib.Path('.agent/providers').glob('*.json')) for d in [json.loads(mf.read_text())]];print(str(len(mismatches))+' provider(s) cannot honor autonomy='+current_level+'.' if mismatches else 'sync-autonomy complete -- all providers honor '+current_level)"
+# CLAUDE.md / GEMINI.md / rules.md are real-file CLONES of their sources,
+# not symlinks (platform-scoped-delivery F2). `sync:` depends on this so the
+# clones cannot silently drift from AGENTS.md.
+sync-clones:
+	@python3 execution/paired_copies.py --sync
 
+sync-autonomy:
+	@python3 execution/sync_autonomy.py
+
+# Thin wrapper. The validate-write-RE-READ logic lives in
+# execution/set_autonomy.py so it can be exercised against a fixture --root
+# instead of only by running make inside the workspace under test.
 set-autonomy:
-	@[ -n "$(LEVEL)" ] || (echo "Usage: make set-autonomy LEVEL=loop|high|medium|low|off" && exit 1)
-	@printf '%s' "$(LEVEL)" | grep -qE '^(off|low|medium|high|loop)$$' || (echo "❌ Invalid level '$(LEVEL)'. Valid: off low medium high loop" && exit 1)
-	@python3 -c "import json,pathlib,datetime; p=pathlib.Path('.agent/profile.json'); d=json.loads(p.read_text()); d['autonomy']=dict(level='$(LEVEL)',updated_at=datetime.datetime.utcnow().isoformat()+'Z'); p.write_text(json.dumps(d,indent=2)+'\n')"
-	@rm -f /tmp/athanor_autonomy_* 2>/dev/null || true
+	@[ -n "$(LEVEL)" ] || (echo "Usage: make set-autonomy LEVEL=interactive|autonomous|loop (legacy off|low|medium|high accepted)" && exit 1)
+	@python3 execution/set_autonomy.py --level "$(LEVEL)"
+	# No cache clear needed: the write above bumps profile.json's mtime, and
+	# check_autonomy.sh self-invalidates its .tmp/ session cache whenever the
+	# level source is newer than the cache -- the new level takes effect on
+	# the agent's next tool call without this recipe touching the cache file.
 	@if [ "$(LEVEL)" = "loop" ]; then \
 		if [ -f .agent/pulse/registry/caffeinate.pid ]; then kill $$(cat .agent/pulse/registry/caffeinate.pid) 2>/dev/null || true; rm -f .agent/pulse/registry/caffeinate.pid; fi; \
 		caffeinate -d & echo $$! > .agent/pulse/registry/caffeinate.pid; \
@@ -80,7 +91,6 @@ set-autonomy:
 			echo "💤 caffeinate stopped (sleep allowed)"; \
 		fi; \
 	fi
-	@echo "✅ Autonomy level set to: $(LEVEL)"
 
 stay-awake:
 	@mkdir -p .agent/pulse/registry
@@ -161,7 +171,7 @@ test-init:
 	[ -f .claude/settings.json ]      && echo "  ✅ .claude/settings.json" || { echo "  ❌ hooks missing";               FAIL=1; }; \
 	[ -f AGENTS.md ]                  && echo "  ✅ AGENTS.md"             || { echo "  ❌ AGENTS.md missing";           FAIL=1; }; \
 	[ -f execution/onboard_fill.py ]  && echo "  ✅ onboard_fill.py"       || { echo "  ❌ onboard_fill.py missing";     FAIL=1; }; \
-	[ -f CLAUDE.md ]                  && echo "  ✅ CLAUDE.md symlink"     || { echo "  ❌ CLAUDE.md missing";           FAIL=1; }; \
+	[ -f CLAUDE.md ] && [ ! -h CLAUDE.md ] && echo "  ✅ CLAUDE.md clone (real file)" || { echo "  ❌ CLAUDE.md missing or not a real file"; FAIL=1; }; \
 	ls .claude/skills/*.md >/dev/null 2>&1 && echo "  ✅ skills present"   || { echo "  ❌ .claude/skills empty";        FAIL=1; }; \
 	ls .claude/agents/*.md >/dev/null 2>&1 && echo "  ✅ agents present"   || { echo "  ❌ .claude/agents empty";        FAIL=1; }; \
 	python3 -c "import json; p=json.load(open('.agent/profile.json')); \
@@ -205,8 +215,7 @@ audit:
 	@echo "Running audit..."
 	@python3 -c "import json; json.load(open('.claude/settings.json')); print('✅ .claude/settings.json')"
 	@python3 -c "import json; json.load(open('.gemini/settings.json')); print('✅ .gemini/settings.json')"
-	@test -L CLAUDE.md && echo "✅ CLAUDE.md symlink" || echo "❌ CLAUDE.md"
-	@test -L GEMINI.md && echo "✅ GEMINI.md symlink" || echo "❌ GEMINI.md"
+	@python3 execution/paired_copies.py --check
 	@python3 execution/brain.py stats
 	@bash execution/verify_agents.sh
 	@python3 execution/audit_gates.py
@@ -299,7 +308,8 @@ self-update:
 onboard:
 	@echo "🏭 Starting onboarding..."
 	@echo "Open your AI agent and run: /onboard"
-	@echo "Or use the workflow at: .agent/workflows/onboard.md"
+	@echo "Skill: .agent/skills/onboard.md"
+	@echo "Headless: make onboard-headless NAME=... AGENT=... ROLE=... MISSION=..."
 
 onboard-headless:
 	@python3 execution/onboard_headless.py \
@@ -323,7 +333,7 @@ pulse-register: install-pulse
 install-pulse:
 	@echo "Installing Athanor Pulse launchd agent..."
 	@mkdir -p ~/Library/LaunchAgents
-	@sed "s|{{PROJECT_ROOT}}|$(CURDIR)|g" "$(CURDIR)/execution/com.athanor.pulse.plist" > ~/Library/LaunchAgents/com.athanor.pulse.plist
+	@sed "s|[{][{]PROJECT_ROOT[}][}]|$(CURDIR)|g" "$(CURDIR)/execution/com.athanor.pulse.plist" > ~/Library/LaunchAgents/com.athanor.pulse.plist
 	@launchctl unload -F ~/Library/LaunchAgents/com.athanor.pulse.plist 2>/dev/null || true
 	@launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.plist
 	@echo "✅ Athanor Pulse launchd agent installed and loaded. It will run every 5 minutes."

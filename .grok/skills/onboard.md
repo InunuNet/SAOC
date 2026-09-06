@@ -1,67 +1,97 @@
 # /onboard Skill
 
-This workflow onboards a new project by configuring the agents identity, user preferences, and project goals.
+Onboarding is a **program**, not a form you fill in from memory. Run it, and
+relay what it prints.
 
-## Instructions
-
-1.  **Ask the user for the following information:**
-    *   `project_name`: A short, descriptive name for the project (e.g., "Athanor CLI Tool").
-    *   `agent_name`: The name the agent should use for itself (e.g., "Athanor", "Vex").
-    *   `project_role`: The agents specific role in the project (e.g., "primary maintainer", "lead developer").
-    *   `soul_persona`: A description of the agents persona. What is its name, role, and personality? (e.g., "You are Vex, a project coordinator for a CLI tool. You are direct, efficient, and technical.")
-    *   `user_context`: A description of the users role and preferences. (e.g., "The user is Alex, a senior software engineer. They prefer concise, technical communication and use zsh.")
-    *   `mission`: A high-level mission statement for the project. (e.g., "To build a robust, self-maintaining agentic workspace that accelerates development.")
-
-2.  **Update `.agent/profile.json`:**
-    *   Replace the value of the `project_name` key with the user-provided `project_name`.
-    *   Update the `identity` object with `agent_name` and `project_role`.
-
-3.  **Update the identity files in `.agent/identity/`:**
-    *   Write the `soul_persona` to `soul.md`.
-    *   Write the `user_context` to `user.md`.
-
-4.  **Update `.agent/memory/project/goals.md`:**
-    *   Replace the placeholder mission with the user-provided `mission`.
-    *   Remove the "Complete onboarding" goal.
-
-5.  **Update `WORKSPACE` file:**
-    *   Write the user-provided `project_name` to the `WORKSPACE` file.
-
-6.  **Mark onboarding as complete in `.agent/profile.json`:**
-    *   Set `"onboarding_complete": false` to `"onboarding_complete": true`.
-
-7.  **Confirm to the user that onboarding is complete.**
-
-## Headless / Non-interactive
-
-For CI pipelines, scripted bootstraps, and headless runtimes that cannot respond to prompts, use `execution/onboard_headless.py` directly:
-
+<!-- onboard:run -->
 ```bash
-# Python invocation (all required flags)
-python3 execution/onboard_headless.py \
-  --project-name "MyProject" \
-  --agent-name "MyAgent" \
-  --role "primary maintainer" \
-  --mission "Build and ship the product."
-
-# With optional path overrides (useful for testing / isolation)
-python3 execution/onboard_headless.py \
-  --project-name "MyProject" \
-  --agent-name "MyAgent" \
-  --role "primary maintainer" \
-  --mission "Build and ship the product." \
-  --profile-path /tmp/test/profile.json \
-  --soul-path /tmp/test/soul.md \
-  --user-path /tmp/test/user.md \
-  --goals-path /tmp/test/goals.md \
-  --workspace-path /tmp/test/WORKSPACE
-
-# Makefile target (uses NAME, AGENT, ROLE, MISSION env vars)
-make onboard-headless \
-  NAME="MyProject" \
-  AGENT="MyAgent" \
-  ROLE="primary maintainer" \
-  MISSION="Build and ship the product."
+python3 execution/onboard_flow.py run
 ```
 
-The script is idempotent: running it twice with the same arguments produces byte-identical output files. It never calls `input()` and can be run with `</dev/null`.
+That command **is** the interview. It asks the questions, displays the harness
+defaults, quarantines any inherited workspace state, calls the one writer,
+proposes the git remote and ends with the boot panel. Do not ask the questions
+yourself, do not paraphrase what it prints, and do not write any of the files
+it owns.
+
+## The one law it enforces
+
+> Every value the operator sees is either DISPLAYED FROM DISK AND CONFIRMED,
+> or ASKED. Nothing is inferred. Nothing is invented to fill a gap.
+
+**The project name is the folder name. Never ask for it.** It is already in
+`WORKSPACE`, and the flow reads it from there — which is why nothing below
+passes a name flag.
+
+A field the human does not supply is recorded as **unset and named as unset**:
+no archetype guessed from the mission text, no stack guessed from the platform,
+no scale guessed from how the work sounds. "Unknown until we look" is a
+supported answer, not a dodge — say it, and put a scoping step first.
+
+## The ten steps it runs, in order
+
+1. `identity` — agent name (the project name, suggested), role, archetype.
+2. `user-profile` — the harness default profile, confirmed or replaced whole.
+3. `comms-contract` — the six fixed communication rules, confirmed.
+4. `mission` — the human's words, read back before anything is written.
+5. `scale` — asked separately, because it cannot be read off the mission.
+6. `tech-stack` — proposed with reasons, or left unset.
+7. `quarantine` — inherited memory and identity docs moved aside, never deleted.
+8. `write-identity` — `execution/onboard_headless.py` writes; the gate flips here.
+9. `git` — the proposal is shown; the human's confirmation is the only authorisation.
+10. `panel` — the boot panel, and the last bytes of the run.
+
+`python3 execution/onboard_flow.py steps` prints that list. A run that stops
+early is visible in the panel's verdict rather than silent.
+
+## Answering it
+
+Interactively, answer each prompt as it comes. A confirm step takes `confirm`
+or `edit` and nothing else; the git step takes `CONFIRM` or `DECLINE`.
+Case does not matter, in a file or at the prompt — but those are the only
+moves, and anything else is refused with nothing written.
+
+For a scripted boot, put the answers in a JSON object — `agent_name`, `role`,
+`archetype`, `user_profile`, `comms_contract`, `mission`, `scale`,
+`tech_stack`, `git` — and point the flow at it:
+
+```bash
+ATHANOR_ONBOARD_ANSWERS=answers.json python3 execution/onboard_flow.py run
+```
+
+Empty `archetype` or `tech_stack` means unset. The run announces on its first
+line that it is answering non-interactively.
+
+## After it exits 0
+
+Tell the human onboarding is complete, repeat the mission and the recorded
+scale back in two lines, and name anything the panel reported as not ready —
+git provisioning declined or unverified, most often. If the flow named a
+quarantine directory, say so: it holds another workspace's memory, and only
+the human decides what comes back out of it.
+
+Exit 2 means an answer was neither of the two moves a confirm step offers:
+nothing was written and nothing was created. Exit 1 means a step failed; the
+boot gate stayed shut and the next boot retries.
+
+## Driving the writer by hand
+
+Only when the flow itself cannot run. One command performs every write —
+`project_name` and `agent_name` in `.agent/profile.json`, `soul.md`, `user.md`,
+the `## Mission` and `## Scale` sections of `goals.md`, `WORKSPACE`, and the
+identity block of `AGENTS.md` with its clones:
+
+```bash
+python3 execution/onboard_headless.py \
+  --agent-name "<agent_name>" \
+  --role "<project_role>" \
+  --archetype "<archetype>" \
+  --mission "<mission>" \
+  --mission-scale "<mission_scale>" \
+  --tech-stack "<tech_stack>"
+```
+
+Add `--user-context "<user_context>"` only when the human replaced the default
+profile. Every value is re-read from disk before the boot gate opens, so a
+non-zero exit means the gate stayed **shut** — read the error, which names the
+value that did not land, fix the cause, and re-run. It is idempotent.

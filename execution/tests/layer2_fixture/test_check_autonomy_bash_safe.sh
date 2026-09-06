@@ -7,19 +7,41 @@ source execution/tests/lib/assert.sh
 echo "=== test_check_autonomy_bash_safe.sh ==="
 
 PROFILE=".agent/profile.json"
+POLICY=".claude/policies/autonomy.json"
 FIXTURE="execution/tests/layer2_fixture/fixtures/pretooluse_bash_safe.json"
+CACHE_DIR=".tmp"
 
-# Save original level
-ORIG_LEVEL=$(jq -r '.autonomy.level // "high"' "$PROFILE")
+# check_autonomy.sh reads POLICY's .permission_tier FIRST and only falls back
+# to PROFILE when that field is empty (execution/sync_autonomy.py is what
+# normally keeps the two in sync). Setting PROFILE alone never reaches the
+# hook: POLICY's stored tier wins every time, so this test used to pass only
+# because whatever tier POLICY already held also allows "ls -la" -- not
+# because "medium" was actually exercised. Back up both real sources
+# byte-for-byte and flip both.
+BACKUP_DIR=".tmp/sandbox/test_check_autonomy_bash_safe.$$"
+mkdir -p "$BACKUP_DIR"
+cp "$PROFILE" "$BACKUP_DIR/profile.json"
+cp "$POLICY" "$BACKUP_DIR/policy.json"
 
-# Set autonomy to medium
 python3 -c "
 import json
 with open('$PROFILE') as f: p = json.load(f)
 p['autonomy']['level'] = 'medium'
 with open('$PROFILE', 'w') as f: json.dump(p, f, indent=2)
 "
-rm -f /tmp/athanor_autonomy_*
+python3 -c "
+import json
+with open('$POLICY') as f: pol = json.load(f)
+pol['level'] = 'medium'
+pol['stored_level'] = 'medium'
+pol['permission_tier'] = 'medium'
+with open('$POLICY', 'w') as f: json.dump(pol, f, indent=2)
+"
+
+# Clear session cache (it lives under <repo>/.tmp/ now, not /tmp — see
+# check_autonomy.sh's own comment on why /tmp was dropped) so the hook
+# re-reads the sources above instead of serving a stale level.
+rm -f "$CACHE_DIR"/athanor_autonomy_*
 
 # Run check_autonomy.sh — expect exit 0 (allowed)
 cat "$FIXTURE" | bash execution/hooks/check_autonomy.sh 2>/dev/null
@@ -27,13 +49,10 @@ ACTUAL_EXIT=$?
 
 assert_exit "ls -la allowed at autonomy=medium" 0 $ACTUAL_EXIT
 
-# Restore original level
-python3 -c "
-import json
-with open('$PROFILE') as f: p = json.load(f)
-p['autonomy']['level'] = '$ORIG_LEVEL'
-with open('$PROFILE', 'w') as f: json.dump(p, f, indent=2)
-"
-rm -f /tmp/athanor_autonomy_*
+# Restore both sources byte-for-byte.
+cp "$BACKUP_DIR/profile.json" "$PROFILE"
+cp "$BACKUP_DIR/policy.json" "$POLICY"
+rm -rf -- "$BACKUP_DIR"
+rm -f "$CACHE_DIR"/athanor_autonomy_*
 
 summary

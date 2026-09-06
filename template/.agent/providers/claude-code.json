@@ -41,7 +41,7 @@
   "notes": "Provider adapter only; scheduled/background work must enqueue tickets instead of launching this command directly.",
   "autonomy": {
     "supports_policy_sync": true,
-    "max_honerable_level": "loop",
+    "max_honorable_level": "loop",
     "sync_mechanism": "check_autonomy.sh hook"
   }
 }

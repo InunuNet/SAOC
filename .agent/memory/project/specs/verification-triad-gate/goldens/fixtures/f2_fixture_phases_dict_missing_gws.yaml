@@ -1,0 +1,29 @@
+schema: athanor.contract/v1
+slug: f2-fixture-phases-dict-missing-gws
+goal: >
+  Same phases-dict shape as f2_fixture_phases_dict_compliant.yaml, but with
+  the gws_inbox_check layer removed. Proves the phases_raw fix does not
+  regress to a blanket PASS for every phases-dict contract once it can see
+  into the shape -- a genuinely incomplete phases-dict contract must still
+  report FAIL, naming the specific missing kind, after the fix.
+phases:
+  '4':
+    - id: PD-01
+      name: shell check whose command references an app/ path (classification marker)
+      verify:
+        kind: shell
+        cmd: echo "references app/national-show route for triad classification" && true
+    - id: PD-02
+      name: codex_qa triad layer
+      verify:
+        kind: codex_qa
+        target: .agent/memory/scratch/f2-fixture-codex-target.md
+        script: execution/codex_qa.sh
+        timeout_seconds: 200
+    - id: PD-03
+      name: browser_deployed_check triad layer
+      verify:
+        kind: browser_deployed_check
+        target: .agent/memory/scratch/f2-fixture-browser-manifest.json
+        script: execution/browser_deployed_check.sh
+        timeout_seconds: 200

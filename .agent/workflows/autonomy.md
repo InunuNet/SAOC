@@ -37,4 +37,6 @@ json.dump(p, open('.agent/profile.json', 'w'), indent=2)
 print('Autonomy set to <LEVEL>')
 "
 ```
-Then clear the session cache: `rm -f /tmp/athanor_autonomy_*`
+No manual cache clear needed: `check_autonomy.sh` compares `.agent/profile.json`'s mtime against its own session cache (`<repo>/.tmp/athanor_autonomy_$PPID`) and re-derives whenever the profile is newer, so this write takes effect on the agent's very next tool call.
+
+If you suspect the cache itself is corrupt (not the profile), clear it directly: `rm -f .tmp/athanor_autonomy_*`

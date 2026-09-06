@@ -1,11 +1,55 @@
 #!/usr/bin/env python3
-"""Sync autonomy level from profile.json to provider-specific gate files."""
+"""Sync the autonomy level from profile.json to provider-specific gate files.
 
+Two rules this script is the enforcement point for:
+
+1. **One dialect.** The level ordering and normalisation come from
+   `execution/autonomy.py`, not from a table declared here. The boot hook used
+   to carry a hand-copied rank table of its own and the two had already
+   diverged; the boot panel and this script now read the same module.
+2. **A declared mechanism must actually run.** Every provider whose manifest
+   says `supports_policy_sync: true` gets a policy artefact written into its
+   provider directory. `grok-cli` declared one for months, received nothing,
+   and still reported `OK` — a log line that lies is worse than no log line.
+"""
+
+import argparse
+import datetime
 import json
 import sys
 from pathlib import Path
 
-LEVEL_ORDER = ["off", "low", "medium", "high", "loop"]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import autonomy as autonomy_dialect  # noqa: E402  (path fixed up above)
+
+POLICY_SCHEMA = "athanor.autonomy-policy/v1"
+
+# Where each provider's synced configuration lives. A provider that declares
+# supports_policy_sync but has no entry here is a defect, not a silent skip.
+PROVIDER_DIRS = {
+    "claude-code": ".claude",
+    "gemini-cli": ".gemini",
+    "grok-cli": ".grok",
+    "antigravity": ".anti",
+}
+
+# The floor that execution/hooks/check_autonomy.sh enforces at EVERY level.
+# Carried in the policy artefact so a provider reading the policy rather than
+# the hook still sees the same floor.
+FLOOR_DENIED_PATHS = [
+    "*/.git/*", "*/.env", "*/.sops.yaml", "*.pem", "*.key", "*/secrets/*",
+    "*/init.sh", "*/full_boot.sh", "*/.ssh/*", "*/.aws/*", "*/.gnupg/*",
+    "*/.claude/settings.json", "*/.claude/settings.local.json",
+    "*/.claude/hooks/*", "*/execution/hooks/*",
+    "*/CLAUDE.md", "*/AGENTS.md", "*/GEMINI.md",
+    "*/.agent/autonomy_matrix.json",
+]
+FLOOR_DENIED_COMMANDS = [
+    "recursive forced delete", "forced git push", "git reset --hard",
+    "interactive rebase", "sudo", "chmod 777", "chown root",
+    "raw device writes", "downloads piped into a shell",
+    "find -delete", "find -exec",
+]
 
 # --- gemini-cli policy templates ---
 
@@ -154,68 +198,131 @@ GEMINI_POLICY_HIGH = (
 )
 
 
-def level_rank(level: str) -> int:
-    try:
-        return LEVEL_ORDER.index(level)
-    except ValueError:
-        return LEVEL_ORDER.index("medium")
+def _timestamp() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
-def sync_gemini_policy(root: Path, current_rank: int) -> str:
+def sync_gemini_policy(root: Path, level: str) -> Path:
+    """Write .gemini/policies/autonomy.toml for the effective level."""
     policy_path = root / ".gemini/policies/autonomy.toml"
-    if current_rank >= level_rank("high"):
-        policy_path.write_text(GEMINI_POLICY_HIGH, encoding="utf-8")
-        return "high"
-    else:
-        policy_path.write_text(GEMINI_POLICY_MEDIUM, encoding="utf-8")
-        return "medium"
+    policy_path.parent.mkdir(parents=True, exist_ok=True)
+    strong = autonomy_dialect.rank(level) >= autonomy_dialect.rank("autonomous")
+    policy_path.write_text(
+        GEMINI_POLICY_HIGH if strong else GEMINI_POLICY_MEDIUM, encoding="utf-8")
+    return policy_path
 
 
-def main() -> None:
-    root = Path(__file__).resolve().parent.parent
+def sync_json_policy(root: Path, provider: str, provider_dir: str,
+                     stored_level: str, level: str) -> Path:
+    """Write <provider_dir>/policies/autonomy.json for the effective level.
+
+    `stored_level` is the value profile.json holds and `permission_tier` is the
+    five-level word the PreToolUse gate consumes; `level` is the three-level
+    read surface. All three are recorded so no reader has to re-derive one from
+    another and get a different answer.
+    """
+    policy_path = root / provider_dir / "policies/autonomy.json"
+    policy_path.parent.mkdir(parents=True, exist_ok=True)
+    policy_path.write_text(json.dumps({
+        "schema": POLICY_SCHEMA,
+        "provider": provider,
+        "level": level,
+        "stored_level": stored_level,
+        "permission_tier": autonomy_dialect.permission_tier(stored_level),
+        "floor_denied_paths": FLOOR_DENIED_PATHS,
+        "floor_denied_commands": FLOOR_DENIED_COMMANDS,
+        "generated_by": "execution/sync_autonomy.py",
+        "generated_at": _timestamp(),
+    }, indent=2) + "\n", encoding="utf-8")
+    return policy_path
+
+
+def sync_provider_policy(root: Path, provider: str, provider_dir: str,
+                         stored_level: str, level: str) -> Path:
+    if provider == "gemini-cli":
+        return sync_gemini_policy(root, level)
+    return sync_json_policy(root, provider, provider_dir, stored_level, level)
+
+
+def _parse_args(argv=None):
+    parser = argparse.ArgumentParser(
+        prog="sync_autonomy.py",
+        description="Sync the autonomy level into provider policy files.")
+    parser.add_argument(
+        "--root", default=None,
+        help="Workspace root (default: the repo this script ships in). A root "
+             "argument is what makes the sync testable outside this checkout.")
+    return parser.parse_args(argv)
+
+
+def main(argv=None) -> int:
+    args = _parse_args(argv)
+    root = Path(args.root).resolve() if args.root \
+        else Path(__file__).resolve().parent.parent
     profile_path = root / ".agent/profile.json"
     if not profile_path.exists():
-        print("ERROR: .agent/profile.json not found", file=sys.stderr)
-        sys.exit(1)
+        print(f"ERROR: {profile_path} not found", file=sys.stderr)
+        return 1
 
     profile = json.loads(profile_path.read_text())
-    current_level = profile.get("autonomy", {}).get("level", "medium")
-    current_rank = level_rank(current_level)
-    print(f"sync-autonomy: current level={current_level}")
+    stored_level = (profile.get("autonomy") or {}).get("level")
+    level = autonomy_dialect.normalize(stored_level)
+    if level is None:
+        print(f"ERROR: autonomy.level={stored_level!r} in {profile_path} is not "
+              f"a recognised level (expected one of "
+              f"{', '.join(autonomy_dialect.LEVELS)} or the legacy "
+              f"{', '.join(autonomy_dialect.LEGACY_LEVEL_MAP)})", file=sys.stderr)
+        return 1
+    print(f"sync-autonomy: current level={stored_level}")
 
-    mismatches = []
+    defects, inherent = [], []
     providers_dir = root / ".agent/providers"
-    for mf in sorted(providers_dir.glob("*.json")):
-        data = json.loads(mf.read_text())
-        provider = data.get("provider", mf.stem)
-        autonomy_cfg = data.get("autonomy", {})
-        max_level = autonomy_cfg.get("max_honerable_level", "medium")
-        supports_sync = autonomy_cfg.get("supports_policy_sync", False)
+    for manifest in sorted(providers_dir.glob("*.json")):
+        data = json.loads(manifest.read_text())
+        provider = data.get("provider", manifest.stem)
+        config = data.get("autonomy") or {}
+        cap_raw = autonomy_dialect.provider_cap(data)
+        cap = autonomy_dialect.normalize(cap_raw)
 
-        if provider == "gemini-cli" and supports_sync:
-            applied = sync_gemini_policy(root, current_rank)
-            print(f"   ✓ gemini-cli: wrote {applied}-autonomy policy → .gemini/policies/autonomy.toml")
-            # After sync, gemini-cli can honor any level we write for
-            print(f"   OK gemini-cli: can honor {current_level} (synced)")
+        if config.get("supports_policy_sync"):
+            provider_dir = PROVIDER_DIRS.get(provider)
+            if provider_dir is None:
+                defects.append(provider)
+                print(f"   BROKEN {provider}: declares supports_policy_sync but "
+                      f"no provider directory is known for it — nothing can be "
+                      f"written, so the declaration is false")
+                continue
+            written = sync_provider_policy(
+                root, provider, provider_dir, stored_level, level)
+            print(f"   wrote {provider}: {level} autonomy policy → "
+                  f"{written.relative_to(root)}")
+            print(f"   OK {provider}: can honor {stored_level} (synced)")
             continue
 
-        if current_rank > level_rank(max_level):
-            mismatches.append(provider)
-            print(
-                f"AUTONOMY MISMATCH: {provider} max_honerable_level={max_level},"
-                f" current={current_level} (sync_mechanism={autonomy_cfg.get('sync_mechanism','none')})"
-            )
+        if cap is None:
+            defects.append(provider)
+            print(f"   BROKEN {provider}: {autonomy_dialect.CAP_KEY}={cap_raw!r} "
+                  f"is not a recognised level — the cap cannot be enforced")
+        elif autonomy_dialect.exceeds_cap(level, cap):
+            inherent.append(provider)
+            print(f"   -- {provider}: honors at most {cap} (max={cap_raw}); "
+                  f"{level} is above it and sync_mechanism="
+                  f"{config.get('sync_mechanism', 'none')} — inherent limitation")
         else:
-            print(f"   OK {provider}: can honor {current_level} (max={max_level})")
+            print(f"   OK {provider}: can honor {stored_level} (max={cap_raw})")
 
-    if mismatches:
-        print(
-            f"{len(mismatches)} provider(s) cannot honor autonomy={current_level}."
-            " These providers have no sync_mechanism — limitation is inherent."
-        )
+    if defects:
+        print(f"{len(defects)} provider(s) declare a policy mechanism that could "
+              f"not be performed: {', '.join(defects)}", file=sys.stderr)
+        return 1
+    if inherent:
+        print(f"{len(inherent)} provider(s) cannot honor autonomy={stored_level} "
+              f"and have no sync_mechanism — the limitation is inherent, not "
+              f"drift, so it is reported here and not at every boot.")
     else:
-        print(f"sync-autonomy complete -- all syncable providers honor {current_level}")
+        print(f"sync-autonomy complete -- all syncable providers honor {stored_level}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

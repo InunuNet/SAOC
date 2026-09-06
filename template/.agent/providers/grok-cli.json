@@ -40,7 +40,7 @@
   "notes": "Provider adapter only; scheduled/background work must enqueue tickets instead of launching this command directly. Grok natively reads .claude/rules/*.md when its Claude-compat mode is on, independent of this harness's own .grok/rules sync.",
   "autonomy": {
     "supports_policy_sync": true,
-    "max_honerable_level": "high",
+    "max_honorable_level": "high",
     "sync_mechanism": "sync-autonomy"
   }
 }

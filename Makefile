@@ -149,6 +149,7 @@ migrate-rules:
 	@mkdir -p .agent/rules/_core .agent/rules/claude .agent/rules/gemini
 	@[ -f .claude/rules/scope.md ]    && cp .claude/rules/scope.md    .agent/rules/_core/scope.md    || true
 	@[ -f .claude/rules/security.md ] && cp .claude/rules/security.md .agent/rules/_core/security.md || true
+	@[ -f .claude/rules/sandbox.md ]  && cp .claude/rules/sandbox.md  .agent/rules/_core/sandbox.md  || true
 	@[ -f .claude/rules/hooks.md ]    && cp .claude/rules/hooks.md    .agent/rules/claude/hooks.md   || true
 	@[ -f .claude/rules/memory.md ]   && cp .claude/rules/memory.md   .agent/rules/claude/memory.md  || true
 	@echo "✅ Rules migrated. Now run: make sync-rules"

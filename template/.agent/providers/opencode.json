@@ -35,7 +35,7 @@
   "notes": "Thin provider adapter. Do not assume max-turn or token flags unless this manifest is updated after CLI verification.",
   "autonomy": {
     "supports_policy_sync": false,
-    "max_honerable_level": "medium",
+    "max_honorable_level": "medium",
     "sync_mechanism": "none"
   }
 }

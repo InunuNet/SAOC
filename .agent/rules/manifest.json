@@ -1,0 +1,14 @@
+{
+  "schema": "athanor.rules-manifest/v1",
+  "rules": [
+    "alembic",
+    "athanor",
+    "behavior",
+    "coding",
+    "dispatch-naming",
+    "sandbox",
+    "scope",
+    "security",
+    "workflow"
+  ]
+}

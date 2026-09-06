@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# codex_qa.sh — headless cross-model QA wrapper around `codex exec` (GPT-5.5, pinned).
+# codex_qa.sh — headless cross-model QA wrapper around `codex exec` (gpt-5.6-terra, pinned).
 #
 # Usage:
 #   execution/codex_qa.sh <file_path_or_prompt>
@@ -73,8 +73,8 @@ trap 'rm -f "$tmpfile"' EXIT
 
 # --- Step 4: run codex exec, bounded by timeout, output captured via -o -----
 timeout "${CODEX_QA_TIMEOUT:-600}" codex exec \
-    -m gpt-5.5 \
-    -c model_reasoning_effort=high \
+    -m gpt-5.6-terra \
+    -c model_reasoning_effort=medium \
     -s read-only \
     -o "$tmpfile" \
     "$prompt"

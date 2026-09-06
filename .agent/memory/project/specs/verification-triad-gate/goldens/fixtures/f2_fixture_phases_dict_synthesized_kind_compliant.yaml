@@ -1,0 +1,35 @@
+schema: athanor.contract/v1
+slug: f2-fixture-phases-dict-synthesized-kind-compliant
+goal: >
+  UI/workflow contract authored in the raw phases-dict shape where every
+  triad item omits the nested `verify:` block entirely and relies on
+  contract.py's own synthesis path (normalize_contract()'s phases-dict
+  branch, execution/contract.py:118-122): when an item's `verify` is absent,
+  contract.py builds `verify = {"kind": a.get("kind", "shell"), "cmd": ...}`
+  from the item's TOP-LEVEL `kind` field. That is exactly what contract.py
+  will execute each of SK-02/SK-03/SK-04 as -- codex_qa,
+  browser_deployed_check, gws_inbox_check respectively -- even though no
+  item here carries a nested `verify:` key at all.
+  verify_triad_coverage.py's assertion_kind() must credit this SAME
+  top-level `kind` for phases-dict items (from_checks_shape=False, phases
+  shape) or it under-reports this fully-compliant contract as missing all
+  three triad kinds and blocks it at the real gate -- a false-positive
+  block on a contract that is, by contract.py's own execution semantics,
+  completely compliant. Companion fixture
+  f2_fixture_list_toplevel_kind_masquerade.yaml proves the linter does NOT
+  over-correct by crediting top-level `kind` for the one shape
+  (plain `assertions:` list) where contract.py passes it through untouched.
+phases:
+  '4':
+    - id: SK-01
+      name: shell check whose command references an app/ path (classification marker)
+      cmd: echo "references app/national-show route for triad classification" && true
+    - id: SK-02
+      name: codex_qa triad layer via synthesized top-level kind (no nested verify:)
+      kind: codex_qa
+    - id: SK-03
+      name: browser_deployed_check triad layer via synthesized top-level kind (no nested verify:)
+      kind: browser_deployed_check
+    - id: SK-04
+      name: gws_inbox_check triad layer via synthesized top-level kind (no nested verify:)
+      kind: gws_inbox_check

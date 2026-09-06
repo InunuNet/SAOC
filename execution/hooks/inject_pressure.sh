@@ -15,6 +15,23 @@
 #   - ALWAYS exit 0 (never block a user turn)
 #   - Gracefully degrade to "?" when any data source is unavailable
 #   - All stderr suppressed; timeout python work at <= 4s
+#
+# SANCTIONED BOUNDARY CROSSING — the carve-out is recorded HERE, at the
+# exception site, and nowhere else.
+#   .agent/rules/_core/scope.md draws the boundary: nothing outside this
+#   project folder is read without permission asked and granted first.
+#   ~/.claude/ is the operator's global tree, so the usage-cache.json read
+#   above crosses it. That crossing is sanctioned for THIS SCRIPT ALONE: it is
+#   the single reader of ~/.claude/MEMORY/STATE/usage-cache.json in this
+#   harness, and it exists to mirror that one number into the project at
+#   .agent/memory/scratch/.quota_status.json so nothing else has to.
+#   Every downstream consumer — execution/quota.py,
+#   execution/quota_resume_window.py, and anything reading through them —
+#   reads the project-local mirror and MUST NOT read the global cache, whether
+#   directly or via subprocess.
+#   Recorded here rather than in the rule because a rule that every workspace
+#   loads should not name one script in one harness. The exception belongs at
+#   the code that takes it; the rule stays general.
 set +e
 exec 2>/dev/null
 
@@ -61,6 +78,12 @@ import json, os, re, sys
 
 USAGE_FIELDS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")
 MIN_WINDOW = 1000  # no model ships a window this small; anything below is garbage input
+# The wrap-up warning fires at this fraction of the applicable window, never a
+# flat token count. A flat count is right for exactly one window size and
+# fires too early (spamming noise) or too late (losing the session) for
+# every other size a model might ship -- see HIGH_FIRES in the bash tail for
+# the fuller rationale. 90% leaves headroom to actually act on the warning.
+HIGH_WATER_FRACTION = 0.90
 
 # DOCUMENTED windows (spec 2a-doc, rank 3): single-configuration models only.
 # Published fact, not inference -- every entry MUST carry a provenance citation
@@ -122,12 +145,23 @@ def documented_for(model):
 
     Matching is EXACT (spec 2a-doc), unlike the candidate table's deliberate
     prefix matching: the family id, or the family id + dated suffix (-YYYYMMDD),
-    inherits; anything else -- notably a `[1m]` variant marker, the exact marker
-    Claude Code uses for a DIFFERENT window configuration -- falls through."""
+    inherits; anything else falls through -- EXCEPT the `[1m]` suffix handled
+    below, which is Claude Code's own marker for the 1M-token configuration."""
     model = (model or "").lower()
     for family, win in DOCUMENTED:
         if model == family or re.fullmatch(re.escape(family) + r"-[0-9]{8}", model):
             return win
+    # `[1m]` names a specific shipped configuration of an otherwise-ambiguous
+    # family (opus-5, sonnet-5, ...) -- it is itself the disambiguation, not a
+    # fact requiring its own DOCUMENTED row. Strip it and check the family's
+    # CANDIDATES set rather than hardcoding 1M for every family: this resolves
+    # `claude-opus-5[1m]` to 1M while leaving the BARE family (no suffix)
+    # exactly as ambiguous as before -- candidates_for() is untouched, and
+    # this branch is only ever reached with the suffix present. A family with
+    # no 1M candidate (or no candidates at all) still falls through to None.
+    m = re.fullmatch(r"(.+)\[1m\]", model)
+    if m and 1_000_000 in candidates_for(m.group(1)):
+        return 1_000_000
     return None
 
 
@@ -226,7 +260,7 @@ for raw in sys.stdin.buffer:
     eligible.append((msg.get("model") or "", total))
 
 if not eligible:
-    print("nodata|0|?|?|?")
+    print("nodata|0|?|?|?|?")
     sys.exit(0)
 
 last_model, total = eligible[-1]
@@ -242,7 +276,8 @@ if window is None:
 
 if window is not None:
     pct = round(100 * total / window)
-    print(f"resolved|{total}|{pct}|{fmt_window(window)}|{model}")
+    threshold = round(HIGH_WATER_FRACTION * window)
+    print(f"resolved|{total}|{pct}|{fmt_window(window)}|{model}|{threshold}")
     sys.exit(0)
 
 # Rank 3: documented single-configuration windows -- published fact, no
@@ -253,8 +288,9 @@ if window is not None:
 doc_window = documented_for(last_model)
 if doc_window is not None:
     pct = round(100 * total / doc_window)
+    threshold = round(HIGH_WATER_FRACTION * doc_window)
     state = "exceeded" if observed_max > doc_window else "resolved"
-    print(f"{state}|{total}|{pct}|{fmt_window(doc_window)}|{model}")
+    print(f"{state}|{total}|{pct}|{fmt_window(doc_window)}|{model}|{threshold}")
     sys.exit(0)
 
 # Rank 4: candidate table narrowed by observation. A candidate below the
@@ -265,22 +301,34 @@ live = {w for w in candidates if w >= observed_max}
 if len(live) == 1:
     w = next(iter(live))
     pct = round(100 * total / w)
-    print(f"resolved|{total}|{pct}|{fmt_window(w)}|{model}")
+    threshold = round(HIGH_WATER_FRACTION * w)
+    print(f"resolved|{total}|{pct}|{fmt_window(w)}|{model}|{threshold}")
 elif len(live) > 1:
     # Rank 5: more than one candidate survives -- unresolved, not a guess.
-    print(f"unresolved|{total}|?|?|{model}")
+    # The wrap-up warning still has to pick a moment to fire, though: use the
+    # SMALLEST live candidate's threshold. Conservative on purpose -- warning
+    # early against a candidate that turns out too small is cheap noise;
+    # warning late (i.e. sized to the largest candidate) risks never firing
+    # before the true, smaller window is exhausted and the session is lost.
+    threshold = round(HIGH_WATER_FRACTION * min(live))
+    print(f"unresolved|{total}|?|?|{model}|{threshold}")
 elif candidates:
     # Every candidate is refuted -- the observation exceeds the largest one.
     w = max(candidates)
     pct = round(100 * total / w)
-    print(f"exceeded|{total}|{pct}|{fmt_window(w)}|{model}")
+    threshold = round(HIGH_WATER_FRACTION * w)
+    print(f"exceeded|{total}|{pct}|{fmt_window(w)}|{model}|{threshold}")
 else:
-    # Rank 5: no table entry for this family at all -- unresolved.
-    print(f"unresolved|{total}|?|?|{model}")
+    # Rank 5: no table entry for this family at all -- unresolved, and there
+    # is no window of any size to take 90% of. No fabricated number: the
+    # bash tail falls back to its own flat constant here (never displayed --
+    # CTX_STATE=unresolved always renders "window unresolved" text), it only
+    # affects WHEN the warning fires, not what it says.
+    print(f"unresolved|{total}|?|?|{model}|?")
 PYEOF
   _PY_OUT=$(timeout 4 python3 "$_PY" "$_STDIN_JSON" < "$TRANSCRIPT")
   rm -f "$_PY" "$_STDIN_JSON"
-  [ -z "$_PY_OUT" ] && _PY_OUT="nodata|0|?|?|?"
+  [ -z "$_PY_OUT" ] && _PY_OUT="nodata|0|?|?|?|?"
   CTX_STATE="${_PY_OUT%%|*}"
   _CTX_REST="${_PY_OUT#*|}"
   CTX_TOKENS="${_CTX_REST%%|*}"
@@ -288,12 +336,18 @@ PYEOF
   CTX_PCT="${_CTX_REST%%|*}"
   _CTX_REST="${_CTX_REST#*|}"
   CTX_WIN="${_CTX_REST%%|*}"
-  CTX_MODEL="${_CTX_REST#*|}"
+  _CTX_REST="${_CTX_REST#*|}"
+  CTX_MODEL="${_CTX_REST%%|*}"
+  # 6th field: the wrap-up-warning token threshold, sized to the applicable
+  # window (see HIGH_FIRES below) -- "?" when no window of any size could be
+  # determined (nodata, or unresolved with zero live candidates).
+  CTX_HIGH_THRESH="${_CTX_REST#*|}"
   [ -z "$CTX_STATE" ]  && CTX_STATE="nodata"
   [ -z "$CTX_TOKENS" ] && CTX_TOKENS="0"
   [ -z "$CTX_PCT" ]    && CTX_PCT="?"
   [ -z "$CTX_WIN" ]    && CTX_WIN="?"
   [ -z "$CTX_MODEL" ]  && CTX_MODEL="?"
+  [ -z "$CTX_HIGH_THRESH" ] && CTX_HIGH_THRESH="?"
 fi
 
 # --- Quota % + refresh from usage-cache.json ---
@@ -593,9 +647,25 @@ if [[ "$Q_PCT" =~ ^[0-9]+$ ]]; then
   esac
 fi
 
+# Window-aware, not a flat token count. A flat threshold is only ever correct
+# for one window size: sized to fit a 200k window it fires at ~10% of a real
+# 1M session (spam, ignored, the warning trains itself into noise) and sized
+# to fit 1M it never fires at all inside 200k (the failure this mission
+# exists to fix -- silence through a whole 200k session while the harness
+# believed itself safe). The threshold instead comes from the Python
+# resolver above as CTX_HIGH_THRESH (90% of the applicable window --
+# resolved/exceeded: the resolved window; unresolved with live candidates:
+# the SMALLEST live one, conservative on purpose so an early false alarm
+# costs nothing but a late one costs the session). "?" means no window of
+# any size was determinable (nodata, or unresolved with zero candidates for
+# the family) -- fall back to the old flat constant rather than never firing.
 HIGH_FIRES=0
-if [[ "$CTX_TOKENS" =~ ^[0-9]+$ ]] && [ "$CTX_TOKENS" -ge 100000 ]; then
-  HIGH_FIRES=1
+if [[ "$CTX_TOKENS" =~ ^[0-9]+$ ]]; then
+  if [[ "$CTX_HIGH_THRESH" =~ ^[0-9]+$ ]]; then
+    [ "$CTX_TOKENS" -ge "$CTX_HIGH_THRESH" ] && HIGH_FIRES=1
+  elif [ "$CTX_TOKENS" -ge 100000 ]; then
+    HIGH_FIRES=1
+  fi
 fi
 CTX_K=0
 [[ "$CTX_TOKENS" =~ ^[0-9]+$ ]] && CTX_K=$(( CTX_TOKENS / 1000 ))

@@ -265,3 +265,37 @@ upstream — precedent `InunuNet/Athanor#1357` shipped `codex_qa.sh` + the
   `execution/gws_inbox_check.sh`, same as any other security-relevant file.
 - The triad-coverage linter's path-substring heuristic (see design answer 5) has
   documented false-negative and false-positive shapes above.
+
+## M2/F2 addendum -- wiring the linter into the real gate path
+
+F1 built `verify_triad_coverage.py` but nothing forced any contract to run it.
+F2 (`contract-f2.yaml`) closes that: the linter runs as a real preflight inside
+`execution/contract.py`'s `gate_cmd()`, after the dataset-residue preflight and
+before `_gate_dispatch()`, for all four real gate entry points (see
+`.agent/memory/scratch/research-f2-triad-gate-wiring.md`). Full decisions and
+rationale live in `contract-f2.yaml`'s `goal:` field; summary:
+
+- **Fail-closed** on a triad-linter infra error (`TRIAD_PREFLIGHT_ERROR_EXIT_CODE`
+  = 7) -- deliberately the opposite of the residue guard's fail-open precedent,
+  because the linter has zero external dependencies and this mission's whole
+  point is not repeating F1's "missing tool silently degrades to PASS" defect.
+- **Rollout via a hashed baseline**: `execution/triad-baseline-exempt.txt`
+  (plain path list, reused as-is from the prior architect pass) grandfathers
+  the 32 pre-existing noncompliant contracts; `execution/triad-baseline-exempt.sha256`
+  pins each one's content, so an edit to a baselined contract re-arms
+  enforcement instead of exempting it forever. `TRIAD_ENFORCEMENT_EXIT_CODE`
+  = 6 for a confirmed, non-grandfathered noncompliant contract.
+- **`phases_raw`/`phases` classification fix**: a contract authored entirely
+  in the raw `phases: {...}` dict shape is no longer invisible to the linter
+  (was silently `EXEMPT`; must now correctly `PASS`/`FAIL`).
+- **`template/execution/` is out of scope** for this feature -- it is this
+  project's seed copy of the upstream Athanor harness, not a second
+  production gate path. Flagged as an upstream-PR item, not silently dropped.
+
+New goldens: `f2_broken_linter_stub.sh` (infra-error fixture, exits 9). New
+checks: `verify_f2_baseline_hash_consistency.py`, `verify_f2_preflight_ordering.py`,
+`verify_f2_gate_enforcement.sh` (real `contract.py gate` subprocess calls, three
+baseline scenarios), `verify_f2_triad_failclosed.sh`. All were run against the
+current, unimplemented gate path and fail RED for the intended reason (missing
+wiring/files), never a crash -- see the architect's report for the captured
+transcript.

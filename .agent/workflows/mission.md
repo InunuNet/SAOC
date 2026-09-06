@@ -42,9 +42,9 @@ Rationale: mission planning quality degrades under accumulated tool noise. Compa
 **Next — lock autonomy:**
 ```bash
 python3 -c "import json,datetime; p=json.load(open('.agent/profile.json')); p.setdefault('autonomy',{})['level']='off'; p['autonomy']['updated_at']=datetime.datetime.now(datetime.UTC).isoformat(); json.dump(p,open('.agent/profile.json','w'),indent=2)"
-rm -f /tmp/athanor_autonomy_* 2>/dev/null || true
 echo "Autonomy locked to off for mission planning"
 ```
+No cache clear needed: `check_autonomy.sh` compares `.agent/profile.json`'s mtime against its session cache and re-derives whenever the profile is newer, so this takes effect on the very next tool call.
 
 **Dispatch @lead** to decompose the goal into:
 - 3–10 features (`F1`…`Fn`) — each implementable in one agent session
@@ -93,7 +93,7 @@ Enter 1–6:
 - **Option 1 (Reject)**: Update the mission file and re-validate. Re-present gate.
 - **Option 2 (Edit)**: User edits file; re-validate; re-present gate.
 - **Option 3 (Approve manual)**: Restore autonomy to prior level; print mission path. Exit.
-- **Options 4/5/6 (Approve + delegate)**: Set autonomy to chosen level, clear cache, activate mission, proceed to Phase 3.
+- **Options 4/5/6 (Approve + delegate)**: Set autonomy to chosen level, activate mission, proceed to Phase 3. (No cache clear needed — see Phase 1.)
 
 ## Phase 3: Execution Loop (Per-Milestone, Per-Feature)
 

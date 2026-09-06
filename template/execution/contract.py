@@ -648,7 +648,7 @@ def check_cmd(args):
                 print(f"   {evidence[:200]}")
                 sys.exit(1)
         if timeout is None:
-            timeout = getattr(args, "timeout_seconds", 60)
+            timeout = getattr(args, "timeout_seconds", DEFAULT_TIMEOUT_SECONDS)
 
         # Defence in depth on the F8 "empty command" defect: `verify:
         # {cmd: ...}` under `checks:` normalizes to an empty command, and an
@@ -715,8 +715,14 @@ def check_cmd(args):
             else:
                 verdict = "pass" if result.returncode == expected_exit else "fail"
         except subprocess.TimeoutExpired:
-            evidence = f"Command timed out after {timeout}s"
-            verdict = "fail"
+            # Distinct RED, not FAIL (platform-scoped-delivery D8): a check
+            # that never finished proved nothing about the code under test --
+            # conflating it with FAIL taught the false-RED-under-load pattern
+            # measured 2026-09-01. TIMEOUT is never convertible to SKIP (the
+            # exit-77 branch above is untouched) and never suppressible by
+            # --allow-skips (gate_cmd counts it in `failing`, same as fail).
+            evidence = f"did not finish within {timeout}s (Command timed out after {timeout}s)"
+            verdict = "timeout"
         finally:
             if tf_name:
                 try: os.unlink(tf_name)
@@ -837,8 +843,11 @@ def check_cmd(args):
         evidence = f"Unknown verify kind: {kind}"
 
     write_result(contract, assertion_id, verdict, evidence)
-    icon = "PASS" if verdict == "pass" else ("SKIP" if verdict == "skip" else
-           ("ERROR" if verdict == "error" else "FAIL"))
+    icon = ("PASS" if verdict == "pass" else
+            "SKIP" if verdict == "skip" else
+            "ERROR" if verdict == "error" else
+            "TIMEOUT" if verdict == "timeout" else
+            "FAIL")
     print(f"{icon} {assertion_id} ({kind}): {verdict.upper()}")
     if evidence:
         print(f"   {evidence[:200]}")
@@ -1021,7 +1030,7 @@ def _gate_single_phase(contract: dict, args) -> bool:
                 contract=args.contract,
                 assertion=aid,
                 handoff=getattr(args, "handoff", None),
-                timeout_seconds=getattr(args, "timeout_seconds", 60),
+                timeout_seconds=getattr(args, "timeout_seconds", DEFAULT_TIMEOUT_SECONDS),
             )
             try:
                 check_cmd(check_args)
@@ -1068,7 +1077,7 @@ def _gate_single_phase(contract: dict, args) -> bool:
                     contract=args.contract,
                     assertion=aid,
                     handoff=getattr(args, "handoff", None),
-                    timeout_seconds=getattr(args, "timeout_seconds", 60),
+                    timeout_seconds=getattr(args, "timeout_seconds", DEFAULT_TIMEOUT_SECONDS),
                 )
                 try:
                     check_cmd(check_args)
@@ -1078,10 +1087,15 @@ def _gate_single_phase(contract: dict, args) -> bool:
 
         verdict = result.get("verdict", "fail")
         evidence_by_id[aid] = result.get("evidence", "")
-        icon = "PASS" if verdict == "pass" else ("SKIP" if verdict == "skip" else
-               ("ERROR" if verdict == "error" else "FAIL"))
+        icon = ("PASS" if verdict == "pass" else
+                "SKIP" if verdict == "skip" else
+                "ERROR" if verdict == "error" else
+                "TIMEOUT" if verdict == "timeout" else
+                "FAIL")
         print(f"  {icon} {aid}: {verdict}")
-        if verdict == "fail":
+        if verdict in ("fail", "timeout"):
+            # TIMEOUT is a distinct red, never SKIP and never --allow-skips-
+            # suppressible -- it counts as a fail here on purpose.
             failing.append(aid)
             fail_count += 1
         elif verdict == "skip":
@@ -1210,7 +1224,7 @@ def gate_cmd(args):
                     run_checks=getattr(args, "run_checks", False),
                     handoff=getattr(args, "handoff", None),
                     allow_skips=getattr(args, "allow_skips", False),
-                    timeout_seconds=getattr(args, "timeout_seconds", 60),
+                    timeout_seconds=getattr(args, "timeout_seconds", DEFAULT_TIMEOUT_SECONDS),
                 )
                 if not _gate_single_phase(contract, single_phase_args):
                     print(f"\nFAIL: Phase {phase_id} failed. Stopping all-phase gate.")
@@ -1306,10 +1320,20 @@ def clear_cmd(args):
         print("Nothing to clear.")
 
 
-def main():
-    _boot_check = Path(__file__).parent / "checks" / "verify_boot_ran.py"
-    subprocess.run([sys.executable, str(_boot_check)], check=False)
+# Default shell-assertion budget. Raised 60->180 2026-09-01 (platform-scoped-
+# delivery D8): 60s produced four false REDs under load on 2026-09-01
+# (contract-f5 34/34 standalone but 19/15 and 24/10 alongside anything;
+# mission.py gate 29/5, every failure `Command timed out after 60s`) and
+# contract-f1 itself needs 90-156s for 4 assertions on a warm box. 180 clears
+# the measured worst case (156s) with headroom; slow checks keep declaring a
+# larger per-check timeout_seconds (already supported, max 86400).
+DEFAULT_TIMEOUT_SECONDS = 180
 
+
+def build_parser() -> argparse.ArgumentParser:
+    """Extracted from main() so the shipped --timeout-seconds default is
+    assertable in-process (same observability move repo-wide-gate-sweep A1
+    made on gate_sweep.py)."""
     parser = argparse.ArgumentParser(description="Athanor Validation Contract CLI")
     sub = parser.add_subparsers(dest="cmd")
 
@@ -1322,8 +1346,8 @@ def main():
     c.add_argument("contract")
     c.add_argument("--assertion", required=True)
     c.add_argument("--handoff")
-    c.add_argument("--timeout-seconds", type=int, default=60,
-                   help="Shell assertion timeout in seconds (default: 60)")
+    c.add_argument("--timeout-seconds", type=int, default=DEFAULT_TIMEOUT_SECONDS,
+                   help=f"Shell assertion timeout in seconds (default: {DEFAULT_TIMEOUT_SECONDS})")
 
     g = sub.add_parser("gate", help="Exit 0 iff all phase-N assertions pass. Use --run-checks to auto-run any missing checks before evaluating.")
     g.add_argument("contract")
@@ -1333,8 +1357,8 @@ def main():
                    help="Auto-run check for each assertion that lacks a result file before evaluating the gate")
     g.add_argument("--allow-skips", action="store_true", default=False,
                    help="Do not fail the gate when a non-required assertion is verdict=skip (default: off)")
-    g.add_argument("--timeout-seconds", type=int, default=60,
-                   help="Shell assertion timeout in seconds (default: 60)")
+    g.add_argument("--timeout-seconds", type=int, default=DEFAULT_TIMEOUT_SECONDS,
+                   help=f"Shell assertion timeout in seconds (default: {DEFAULT_TIMEOUT_SECONDS})")
     g.add_argument("--report-json", default=None, metavar="PATH",
                    help="Also write the structured athanor.gate-report/v1 verdict to PATH "
                         "(opt-in; stdout/stderr are unchanged). No file is written if the "
@@ -1353,7 +1377,14 @@ def main():
 
     cl = sub.add_parser("clear")
     cl.add_argument("contract")
+    return parser
 
+
+def main():
+    _boot_check = Path(__file__).parent / "checks" / "verify_boot_ran.py"
+    subprocess.run([sys.executable, str(_boot_check)], check=False)
+
+    parser = build_parser()
     args = parser.parse_args()
     if not args.cmd:
         parser.print_help()

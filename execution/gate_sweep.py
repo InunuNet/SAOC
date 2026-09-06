@@ -291,7 +291,7 @@ CONTAINMENT_UNCONFINED = ("reads", "network", "process-execution",
 # The next two literals are single physical lines ON PURPOSE (A32 searches this
 # file's SOURCE text for the exact phrase; a line-wrapped literal would not
 # match), so they exceed the usual line width.
-_POST_SWEEP_FORENSICS_JUSTIFICATION = "post-sweep drift evidence is best-effort, but a survivor is confined to its own per-spec sandbox and can forge no other spec's verdict, so it can hide only a report of its own contained writes, never a harm"  # noqa: E501
+_POST_SWEEP_FORENSICS_JUSTIFICATION = "post-sweep drift evidence is best-effort, but between confined specs a survivor is held to its own per-spec sandbox and can forge no other spec's verdict, so it can hide only a report of its own contained writes, never a harm; the confinement is the precondition, not a given -- a spec whose path resolves outside REPO_ROOT is gated un-sandboxed by declaration and can poison the master clone-source every later spec derives from"  # noqa: E501
 # NEWLY DECLARED (previously incidental -- undeclared behaviour is what every
 # round punishes): a property of the Seatbelt profile, not a guarantee F5 offers.
 _PS_TABLE_BLINDNESS_NOTE = "a confined check cannot enumerate the process table (ps returns nothing under the profile); lsof still resolves"  # noqa: E501
@@ -434,7 +434,22 @@ def detect_containment_backend():
     if sys.platform == "darwin" and SANDBOX_EXEC.exists():
         return BACKEND_SANDBOX_EXEC
     if sys.platform.startswith("linux") and shutil.which("bwrap"):
-        return BACKEND_BWRAP
+        # Presence on PATH is not capability. User namespaces may be disabled,
+        # or this invocation may itself be confined in a way that makes bwrap
+        # unusable. Probe the exact minimum namespace boundary before claiming
+        # OS-enforced containment; failure is manifest-declared audit-only.
+        try:
+            probe = subprocess.run(
+                ["bwrap", "--ro-bind", "/", "/", "--dev", "/dev",
+                 "--proc", "/proc", "--die-with-parent", "--unshare-pid",
+                 "--unshare-ipc", "--unshare-uts", "--", "true"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                timeout=10,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return None
+        if probe.returncode == 0:
+            return BACKEND_BWRAP
     return None
 
 
@@ -1136,14 +1151,192 @@ def _reject_manifest_inside_grant(manifest_path, roots):
     )
 
 
+def _allocated_tree_bytes(root: Path) -> int:
+    """Allocated bytes below root, used for conservative full-copy capacity."""
+    total = 0
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        for name in [*dirnames, *filenames]:
+            path = Path(dirpath) / name
+            try:
+                total += path.lstat().st_blocks * 512
+            except OSError as exc:
+                raise SandboxError(
+                    f"could not measure clone allocation at {path}: {exc}"
+                ) from exc
+    return total
+
+
+def _linux_copy_tree(source: Path, dest: Path,
+                     expected_clone_mode: str = None,
+                     classify_clone_mode: bool = True) -> dict:
+    """GNU copy with truthful reflink classification and measured cost.
+
+    With no expected mode, GNU ``--reflink=auto`` is followed by one exact-tree
+    ``--reflink=always`` classifier. Once preflight has selected a mode, every
+    real clone executes only that mode: ``always`` enforces a reflink plan,
+    while ``auto`` retains the conservative full-copy declaration. The sealed
+    master can opt out of classification because its mode is not the per-spec
+    strategy recorded in the manifest.
+    """
+    if expected_clone_mode not in (None, "reflink", "full-copy"):
+        raise SandboxError(f"invalid expected clone mode: {expected_clone_mode}")
+    if expected_clone_mode == "reflink":
+        reflink_option = "--reflink=always"
+    elif expected_clone_mode == "full-copy":
+        # Auto is required rather than `--reflink=never`: the preflight's
+        # conservative declaration remains true even if support appears later,
+        # while retaining GNU cp's safe fallback semantics.
+        reflink_option = "--reflink=auto"
+    else:
+        reflink_option = "--reflink=auto"
+    copy_t0 = time.monotonic()
+    cp = subprocess.run(
+        ["cp", "-a", reflink_option, str(source) + "/.", str(dest)],
+        capture_output=True, text=True,
+    )
+    copy_seconds = time.monotonic() - copy_t0
+    if cp.returncode != 0:
+        detail = cp.stderr.strip() or cp.stdout.strip() or f"exit {cp.returncode}"
+        raise SandboxError(f"GNU cp {reflink_option} failed: {detail}")
+
+    if expected_clone_mode is not None:
+        return {
+            "clone_mode": expected_clone_mode,
+            "copy_seconds": copy_seconds,
+            "classification_seconds": 0.0,
+            "probe_seconds": copy_seconds,
+            "probe_bytes": _allocated_tree_bytes(dest),
+        }
+    if not classify_clone_mode:
+        return {
+            "clone_mode": "unclassified",
+            "copy_seconds": copy_seconds,
+            "classification_seconds": 0.0,
+            "probe_seconds": copy_seconds,
+            "probe_bytes": _allocated_tree_bytes(dest),
+        }
+
+    verify_root = None
+    mode = "full-copy"
+    classification_t0 = time.monotonic()
+    try:
+        verify_root = Path(tempfile.mkdtemp(
+            prefix="gate_sweep_reflink_verify_", dir=str(dest.parent)))
+        verify = subprocess.run(
+            ["cp", "-a", "--reflink=always", str(source) + "/.", str(verify_root)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        if verify.returncode == 0:
+            mode = "reflink"
+    except OSError:
+        # Unverifiable sharing is never advertised as reflink-backed.
+        mode = "full-copy"
+    finally:
+        if verify_root is not None:
+            _rmtree_force(verify_root)
+    classification_seconds = time.monotonic() - classification_t0
+
+    return {
+        "clone_mode": mode,
+        "copy_seconds": copy_seconds,
+        "classification_seconds": classification_seconds,
+        "probe_seconds": copy_seconds + classification_seconds,
+        "probe_bytes": _allocated_tree_bytes(dest),
+    }
+
+
+def _copy_tree(source: Path, dest: Path, expected_clone_mode: str = None,
+               classify_clone_mode: bool = True) -> dict:
+    """Platform copy primitive, preserving the established Darwin path."""
+    source, dest = Path(source), Path(dest)
+    if sys.platform.startswith("linux"):
+        return _linux_copy_tree(
+            source, dest, expected_clone_mode=expected_clone_mode,
+            classify_clone_mode=classify_clone_mode,
+        )
+
+    t0 = time.monotonic()
+    if sys.platform == "darwin":
+        cp = subprocess.run(
+            ["cp", "-Rc", str(source) + "/.", str(dest)],
+            capture_output=True, text=True,
+        )
+        if cp.returncode == 0:
+            mode = "reflink"
+        else:
+            _rmtree_force(dest)
+            dest.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(source, dest, symlinks=True, dirs_exist_ok=True)
+            mode = "full-copy"
+    else:
+        shutil.copytree(source, dest, symlinks=True, dirs_exist_ok=True)
+        mode = "full-copy"
+    elapsed = time.monotonic() - t0
+    return {
+        "clone_mode": mode,
+        "copy_seconds": elapsed,
+        "classification_seconds": 0.0,
+        "probe_seconds": elapsed,
+        "probe_bytes": _allocated_tree_bytes(dest),
+    }
+
+
+def _measure_clone_plan(master_root: Path, work_root: Path, spec_count: int,
+                        jobs: int) -> dict:
+    """Measure one real per-spec copy, then fail closed on insufficient space."""
+    probe_root = None
+    try:
+        probe_root = Path(tempfile.mkdtemp(
+            prefix="gate_sweep_clone_probe_", dir=str(work_root)))
+        measured = _copy_tree(master_root, probe_root)
+    except (OSError, SandboxError) as exc:
+        if probe_root is not None:
+            _cleanup_partial_sandbox(probe_root)
+        raise SandboxError(f"could not measure per-spec clone cost: {exc}") from exc
+    finally:
+        if probe_root is not None and probe_root.exists():
+            _rmtree_force(probe_root)
+
+    concurrency = min(jobs, spec_count)
+    available = shutil.disk_usage(work_root).free
+    peak = measured["probe_bytes"] * concurrency
+    measured.update({
+        "clone_count": spec_count,
+        "clone_concurrency": concurrency,
+        "estimated_peak_bytes": peak,
+        "available_bytes": available,
+        "estimated_total_seconds": measured["copy_seconds"] * spec_count,
+        "estimated_wall_seconds": (
+            measured["copy_seconds"] * ((spec_count + jobs - 1) // jobs)
+        ),
+    })
+    if measured["clone_mode"] == "full-copy" and peak > available:
+        raise SandboxError(
+            "full-copy clone preflight requires "
+            f"{peak} bytes for {concurrency} concurrent clone(s), but only "
+            f"{available} bytes are available under {work_root}"
+        )
+    if measured["clone_mode"] == "full-copy":
+        print(
+            "WARNING: clone_mode=full-copy (copy-on-write cloning is unavailable). "
+            f"Measured {measured['probe_bytes']} bytes in "
+            f"{measured['copy_seconds']:.3f}s "
+            f"(one-time classification {measured['classification_seconds']:.3f}s); "
+            f"projected peak {peak} bytes and "
+            f"clone wall time {measured['estimated_wall_seconds']:.1f}s for "
+            f"{spec_count} specs at --jobs {jobs}.",
+            file=sys.stderr, flush=True,
+        )
+    return measured
+
+
 def make_sandbox(sandbox_dir: Path, manifest_path: Path = None) -> Path:
     """Materialise ONE disposable copy of the whole repository (.git included)
-    under sandbox_dir. Prefers a clonefile/reflink copy (`cp -Rc` on APFS,
-    ~3.1s / 122M measured on this repo) and falls back to a plain recursive
-    copy where the platform does not offer one. Raises SandboxError on any
-    failure -- callers must never fall back to gating in place -- and cleans
-    up any partial copy itself, since it raises before main()'s try/finally
-    is entered."""
+    under sandbox_dir. Darwin preserves its clonefile-first `cp -Rc` path;
+    Linux uses GNU `cp --reflink=auto` and classifies its silent full-copy
+    fallback explicitly. Raises SandboxError on any failure -- callers must
+    never fall back to gating in place -- and cleans up any partial copy itself,
+    since it raises before main()'s try/finally is entered."""
     sandbox_dir = Path(sandbox_dir)
     try:
         resolved_dir = sandbox_dir.resolve()
@@ -1180,15 +1373,8 @@ def make_sandbox(sandbox_dir: Path, manifest_path: Path = None) -> Path:
         raise
 
     try:
-        # dest already exists (mkdtemp); cp -Rc / copytree both need to write
-        # INTO it, so copy contents rather than the directory itself.
-        cp = subprocess.run(
-            ["cp", "-Rc", str(REPO_ROOT) + "/.", str(dest)],
-            capture_output=True, text=True,
-        )
-        if cp.returncode != 0:
-            shutil.rmtree(dest, ignore_errors=True)
-            shutil.copytree(REPO_ROOT, dest, symlinks=True)
+        # dest already exists (mkdtemp); copy contents into it.
+        _copy_tree(REPO_ROOT, dest, classify_clone_mode=False)
         if not (dest / ".git").exists():
             raise OSError(f"sandbox copy at {dest} is missing .git -- copy did not complete")
         seal_sandbox(dest)
@@ -1201,7 +1387,8 @@ def make_sandbox(sandbox_dir: Path, manifest_path: Path = None) -> Path:
     return dest
 
 
-def clone_sandbox(master_root: Path, work_root: Path) -> Path:
+def clone_sandbox(master_root: Path, work_root: Path,
+                  expected_clone_mode: str = None) -> Path:
     """A fresh, disposable, per-SPEC copy of the sealed per-sweep master (F5
     round 6). The master is created once, sealed once, and never mutated -- it is
     the source of `tree_fingerprint` at t0 and the pristine clone source. Every
@@ -1212,26 +1399,26 @@ def clone_sandbox(master_root: Path, work_root: Path) -> Path:
     not by substituting a common ANCESTOR with a symlink, which A31 did NOT close
     and which is the round-6 finding. There is no shared tree left to poison.
 
-    Prefers an APFS clonefile (`cp -Rc`, ~3.1s/122M measured, block-shared COW so
-    N live clones stay cheap) and falls back to a plain recursive copy where the
-    platform offers none. The clone is then re-sealed by remapping the MASTER's
-    path to the clone's -- the master is already sealed to its own path, so that
-    is the only reference a fresh clone inherits. Raises SandboxError on any
-    failure and removes any partial clone itself, exactly as make_sandbox does
-    for the master (the ENOSPC / A14 path is inherited unchanged)."""
+    Uses APFS clonefile on Darwin and GNU reflink-auto on Linux, with a measured,
+    manifest-declared full-copy fallback. The clone is then re-sealed by
+    remapping the MASTER's path to the clone's -- the master is already sealed
+    to its own path, so that is the only reference a fresh clone inherits.
+    Raises SandboxError on any failure and removes any partial clone itself,
+    exactly as make_sandbox does for the master."""
     master_root = Path(master_root)
     try:
         dest = Path(tempfile.mkdtemp(prefix="gate_sweep_spec_", dir=str(work_root)))
     except OSError as exc:
         raise SandboxError(f"could not create per-spec sandbox workdir: {exc}") from exc
     try:
-        cp = subprocess.run(
-            ["cp", "-Rc", str(master_root) + "/.", str(dest)],
-            capture_output=True, text=True,
-        )
-        if cp.returncode != 0:
-            shutil.rmtree(dest, ignore_errors=True)
-            shutil.copytree(master_root, dest, symlinks=True)
+        measured = _copy_tree(
+            master_root, dest, expected_clone_mode=expected_clone_mode)
+        if (expected_clone_mode is not None and
+                measured["clone_mode"] != expected_clone_mode):
+            raise SandboxError(
+                "clone mode changed after preflight: expected "
+                f"{expected_clone_mode}, got {measured['clone_mode']}"
+            )
         if not (dest / ".git").exists():
             raise OSError(f"per-spec clone at {dest} is missing .git -- copy did not complete")
         seal_sandbox(dest, source_root=master_root)
@@ -1600,12 +1787,20 @@ def _classify_from_report(report: bytes, rc: int, stderr: str):
 def _evaluate_one(path: Path, allow_skips: bool, master_root: Path = None,
                   backend: str = None, work_root: Path = None,
                   t0_hashes: dict = None, t0_ignore_sources: dict = None,
-                  t0_git_metadata: dict = None) -> SpecResult:
+                  t0_git_metadata: dict = None,
+                  clone_plan: dict = None, repo_root: Path = None) -> SpecResult:
     """Gate ONE spec inside its OWN disposable clone of the sealed per-sweep
     master (F5 round 6), grade that clone's drift and containment against the
     master's t0 snapshot, then destroy the clone. No neighbouring spec ever runs
     in this spec's tree, so nothing -- contract, goldens, or a shared helper
-    script -- can be substituted for the question or the answer."""
+    script -- can be substituted for the question or the answer.
+
+    `repo_root` (F2): the cwd an UN-sandboxed gate subprocess is launched in.
+    Defaults to the global REPO_ROOT constant, preserving F1/F5 behaviour
+    exactly; `--affected --repo-root DIR` passes DIR here so a fixture spec's
+    repo-relative `command:` (e.g. `python3 shared/helper.py`) resolves
+    against the fixture tree, not the real checkout."""
+    unsandboxed_root = repo_root if repo_root is not None else REPO_ROOT
     slug = _identify_slug(path)
     unsandboxed_note = ""
     unsandboxed = False
@@ -1616,12 +1811,15 @@ def _evaluate_one(path: Path, allow_skips: bool, master_root: Path = None,
         if translate_to_sandbox(path, master_root) is None:
             # Cannot be sandboxed (resolves outside REPO_ROOT) -- gate in
             # place and say so on the report line, never silently.
-            gate_target, cwd = path, REPO_ROOT
+            gate_target, cwd = path, unsandboxed_root
             unsandboxed_note = " [un-sandboxed: path resolves outside REPO_ROOT]"
             unsandboxed = True
         else:
             try:
-                clone_root = clone_sandbox(master_root, work_root)
+                clone_root = clone_sandbox(
+                    master_root, work_root,
+                    expected_clone_mode=(clone_plan or {}).get("clone_mode"),
+                )
             except SandboxError as exc:
                 # A per-spec clone that cannot be created is a containment-
                 # machinery failure, not a failing spec: ERROR -> exit 2, never
@@ -1633,7 +1831,7 @@ def _evaluate_one(path: Path, allow_skips: bool, master_root: Path = None,
             gate_target = translate_to_sandbox(path, clone_root)
             cwd = clone_root
     else:
-        gate_target, cwd = path, REPO_ROOT
+        gate_target, cwd = path, unsandboxed_root
         unsandboxed = True
 
     elapsed = 0.0
@@ -1783,8 +1981,14 @@ def _emit_line(text: str):
 def run_sweep(specs_root: Path, jobs: int, allow_skips: bool, emit=None,
               master_root: Path = None, backend: str = None,
               work_root: Path = None, t0_hashes: dict = None,
-              t0_ignore_sources: dict = None, t0_git_metadata: dict = None):
-    specs = discover(specs_root)
+              t0_ignore_sources: dict = None, t0_git_metadata: dict = None,
+              clone_plan: dict = None, spec_paths=None, repo_root: Path = None):
+    """`spec_paths` (F2): an explicit list of contract*.yaml Paths to gate,
+    bypassing discover(specs_root) -- how `--affected` narrows a sweep to its
+    computed selection without reimplementing this function. None (default)
+    preserves F1's plain-sweep behaviour exactly. `repo_root` is threaded to
+    _evaluate_one's un-sandboxed cwd (see its docstring)."""
+    specs = spec_paths if spec_paths is not None else discover(specs_root)
     t_start = time.monotonic()
     results = []
 
@@ -1795,7 +1999,8 @@ def run_sweep(specs_root: Path, jobs: int, allow_skips: bool, emit=None,
 
     def _one(path):
         return _evaluate_one(path, allow_skips, master_root, backend, work_root,
-                             t0_hashes, t0_ignore_sources, t0_git_metadata)
+                             t0_hashes, t0_ignore_sources, t0_git_metadata,
+                             clone_plan, repo_root)
 
     if jobs <= 1:
         for path in specs:
@@ -1859,7 +2064,7 @@ def aggregate_exit_code(results) -> int:
 def _write_manifest(manifest_path: Path, *, sandboxed, sandbox_path, sandbox_coverage,
                      unsandboxed_specs, head, tree_fp, drift, real_fp_before, real_fp_after,
                      results, wall_clock, exit_code, containment, containment_backend,
-                     containment_violations_found):
+                     containment_violations_found, clone_plan, affected: dict = None):
     counts = {s: 0 for s in STATUSES}
     for r in results:
         counts[r.status] += 1
@@ -1869,6 +2074,20 @@ def _write_manifest(manifest_path: Path, *, sandboxed, sandbox_path, sandbox_cov
         "sandboxed": sandboxed,
         "sandbox_path": str(sandbox_path) if sandbox_path is not None else None,
         "sandbox_coverage": sandbox_coverage,
+        # Linux GNU cp's `--reflink=auto` exit status cannot say whether it
+        # silently fell back. These values come from the measured, exact-tree
+        # preflight and make that cost/capacity distinction explicit.
+        "clone_mode": clone_plan.get("clone_mode", "none"),
+        "clone_probe_seconds": clone_plan.get("probe_seconds", 0.0),
+        "clone_copy_seconds": clone_plan.get("copy_seconds", 0.0),
+        "clone_classification_seconds": clone_plan.get("classification_seconds", 0.0),
+        "clone_probe_bytes": clone_plan.get("probe_bytes", 0),
+        "clone_count": clone_plan.get("clone_count", 0),
+        "clone_concurrency": clone_plan.get("clone_concurrency", 0),
+        "clone_estimated_peak_bytes": clone_plan.get("estimated_peak_bytes", 0),
+        "clone_available_bytes": clone_plan.get("available_bytes", 0),
+        "clone_estimated_total_seconds": clone_plan.get("estimated_total_seconds", 0.0),
+        "clone_estimated_wall_seconds": clone_plan.get("estimated_wall_seconds", 0.0),
         # HOW the gate subprocesses were contained, in the machine-readable
         # channel F3 actually reads. Whether they were OS-confined or merely
         # audited afterwards is the single most important fact about a sweep's
@@ -1911,7 +2130,333 @@ def _write_manifest(manifest_path: Path, *, sandboxed, sandbox_path, sandbox_cov
         "wall_clock_seconds": wall_clock,
         "exit_code": exit_code,
     }
+    if affected is not None:
+        # F2: --manifest combined with --affected gains these keys on top of
+        # the athanor.gate-sweep/v1 shape above (DECISIONS.md "F2").
+        manifest.update(affected)
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+
+
+# ---------------------------------------------------------------------------
+# AFFECTED MODE (F2) -- `--affected <git-ref>` bounds the sweep to specs a
+# change since REF can actually reach, escalating LOUDLY to the full
+# discovered set on anything it cannot confidently map. See DECISIONS.md
+# "F2 -- affected-spec mapping" for the full rationale and
+# goldens/verify_gate_sweep_affected.py's header docstring for the exact CLI
+# contract this section implements. The governing rule, repeated everywhere
+# below: silent under-selection is the one failure mode this exists to
+# prevent -- when in doubt, escalate to the full sweep, never narrow silently.
+# ---------------------------------------------------------------------------
+
+AFFECTED_SCHEMA = "athanor.gate-sweep-affected/v1"
+
+# Gate machinery / dispatch wiring: a change here can alter how every spec is
+# evaluated regardless of whether any contract's TEXT happens to reference it
+# (most don't -- they invoke gate_sweep.py as an external process, not a
+# Python import). No amount of ref-counting can see this; it must be named.
+FORCE_FULL_SWEEP_FILES = frozenset({
+    "execution/contract.py", "execution/gate_sweep.py", "Makefile",
+})
+
+# A file referenced by this fraction (or more) of the discovered corpus is
+# too broadly load-bearing to trust a heuristic reference scan narrowly.
+HUB_RATIO_THRESHOLD = 0.10
+
+# Common stdlib modules excluded from module-import resolution so an ordinary
+# `import os` never spuriously inflates a hub's ref_count.
+_STDLIB_DENYLIST = frozenset({
+    "os", "sys", "re", "json", "subprocess", "pathlib", "typing", "itertools",
+    "functools", "argparse", "shutil", "tempfile", "time", "math", "random",
+    "logging", "dataclasses", "enum", "io", "csv", "hashlib", "textwrap",
+    "string", "copy", "datetime", "glob", "fnmatch", "traceback", "threading",
+    "uuid", "contextlib", "abc", "importlib", "inspect", "warnings",
+})
+
+_DIRECT_PATH_TOKEN_RE = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_./-]*\.[A-Za-z0-9_]+")
+_MODULE_REF_RE = re.compile(r"(?:^|[\s;])(?:import|from)\s+([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)")
+# `sys.path.insert(0, 'DIR')` -- the idiom this corpus's contracts actually use
+# to make a non-standard directory importable before `import NAME`. DIR is a
+# genuine additional resolution candidate alongside the fixed default set
+# (execution/, execution/checks/, template/execution/, repo root); without it
+# a contract that inserts an unusual directory (srcmod/, say) onto sys.path
+# would resolve nothing at all, silently under-selecting.
+_SYS_PATH_INSERT_RE = re.compile(r"sys\.path\.insert\(\s*0\s*,\s*['\"]([^'\"]+)['\"]\s*\)")
+
+# Fixed directories this repo's contracts are known to insert onto sys.path
+# before `import NAME`; resolved against NAME's LAST dotted segment.
+_MODULE_BASE_DIRS = ("execution", "execution/checks", "template/execution", "")
+
+
+def _posix_rel(path: Path, root: Path) -> str:
+    """repo-relative POSIX path of `path` against `root`; falls back to the
+    absolute path string when `path` does not resolve under `root` (e.g. the
+    --repo-root override differs from the global REPO_ROOT constant used
+    elsewhere in this file for report formatting)."""
+    try:
+        return path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _resolve_direct_token(token: str, repo_root: Path, contract_path: Path,
+                          known_paths=frozenset()):
+    """Resolution order (a)-(d) from DECISIONS.md 'F2': repo_root/token,
+    repo_root/execution/token, repo_root/execution/checks/token,
+    contract_path.parent/token -- first EXISTING file wins. `known_paths` is
+    this run's changed-file set: a renamed-away OLD path no longer exists in
+    the working tree at all (git already moved it), but git itself attests
+    it WAS a real tracked path, so membership there is an equally valid
+    existence proof (A5: a rename must still select the spec referencing the
+    file by its old name)."""
+    for candidate in (
+        repo_root / token,
+        repo_root / "execution" / token,
+        repo_root / "execution" / "checks" / token,
+        contract_path.parent / token,
+    ):
+        rel = _posix_rel(candidate, repo_root)
+        try:
+            if candidate.is_file() or rel in known_paths:
+                return rel
+        except OSError:
+            continue
+    return None
+
+
+def _resolve_module_ref(dotted: str, repo_root: Path, sys_path_dirs, known_paths=frozenset()):
+    """Resolve a captured `import`/`from ... import` dotted name against
+    repo_root/<dotted-as-path>.py AND, using only its LAST segment, the fixed
+    _MODULE_BASE_DIRS plus any directory this same text inserted onto
+    sys.path via sys.path.insert(0, DIR). Stdlib names are excluded up
+    front. `known_paths` is the same renamed-away existence fallback as
+    _resolve_direct_token. Returns a list (possibly empty, possibly >1) of
+    repo-relative resolved paths."""
+    first = dotted.split(".")[0]
+    if first in _STDLIB_DENYLIST:
+        return []
+    resolved = []
+    as_path = repo_root / (dotted.replace(".", "/") + ".py")
+    as_rel = _posix_rel(as_path, repo_root)
+    if as_path.is_file() or as_rel in known_paths:
+        resolved.append(as_rel)
+    seg = dotted.split(".")[-1]
+    for base in (*_MODULE_BASE_DIRS, *sorted(sys_path_dirs)):
+        candidate = (repo_root / base / f"{seg}.py") if base else (repo_root / f"{seg}.py")
+        rel = _posix_rel(candidate, repo_root)
+        if (candidate.is_file() or rel in known_paths) and rel not in resolved:
+            resolved.append(rel)
+    return resolved
+
+
+def _scan_refs(text: str, repo_root: Path, contract_path: Path, known_paths=frozenset()):
+    """Apply rules 1 (direct path refs) + 2 (module refs) to one blob of raw
+    file text. Returns (direct_set, module_set) of repo-relative paths."""
+    direct = set()
+    for m in _DIRECT_PATH_TOKEN_RE.finditer(text):
+        resolved = _resolve_direct_token(m.group(0), repo_root, contract_path, known_paths)
+        if resolved:
+            direct.add(resolved)
+    sys_path_dirs = set(_SYS_PATH_INSERT_RE.findall(text))
+    module = set()
+    for m in _MODULE_REF_RE.finditer(text):
+        for resolved in _resolve_module_ref(m.group(1), repo_root, sys_path_dirs, known_paths):
+            module.add(resolved)
+    return direct, module
+
+
+def _spec_reference_set(contract_path: Path, repo_root: Path, known_paths=frozenset()) -> set:
+    """The full reference set for ONE discovered contract*.yaml: direct path
+    refs union module refs union one-hop transitive refs (through DIRECT refs
+    only, .py/.sh suffix, not recursive) union directory ownership (every
+    file living under contract_path.parent, whether or not the YAML text ever
+    names it)."""
+    try:
+        text = contract_path.read_text(errors="replace")
+    except OSError:
+        text = ""
+    direct, module = _scan_refs(text, repo_root, contract_path, known_paths)
+    combined = set(direct) | set(module)
+
+    # Rule 3: ONE hop, through this spec's DIRECT refs only.
+    for ref in direct:
+        if not (ref.endswith(".py") or ref.endswith(".sh")):
+            continue
+        hop_path = repo_root / ref
+        try:
+            if not hop_path.is_file():
+                continue
+            hop_text = hop_path.read_text(errors="replace")
+        except OSError:
+            continue
+        hop_direct, hop_module = _scan_refs(hop_text, repo_root, contract_path, known_paths)
+        combined |= hop_direct
+        combined |= hop_module
+
+    # Rule 4: directory ownership.
+    for dirpath, _dirnames, filenames in os.walk(contract_path.parent, followlinks=True):
+        for name in filenames:
+            combined.add(_posix_rel(Path(dirpath) / name, repo_root))
+
+    return combined
+
+
+def _build_reference_index(spec_paths, repo_root: Path, known_paths=frozenset()) -> dict:
+    """{absolute contract*.yaml Path -> reference set} for every discovered spec."""
+    return {sp: _spec_reference_set(sp, repo_root, known_paths) for sp in spec_paths}
+
+
+def _invert_ref_counts(ref_index: dict) -> dict:
+    """{repo-relative file -> number of DISTINCT specs referencing it}, used
+    for the >=10% hub-ratio escalation trigger."""
+    counts = {}
+    for refs in ref_index.values():
+        for f in refs:
+            counts[f] = counts.get(f, 0) + 1
+    return counts
+
+
+def _is_git_repo(repo_root: Path) -> bool:
+    if not repo_root.exists():
+        return False
+    proc = subprocess.run(["git", "rev-parse", "--git-dir"], cwd=repo_root,
+                          capture_output=True, text=True, env=child_env())
+    return proc.returncode == 0
+
+
+def _parse_name_status(output: str) -> set:
+    """Parse `git diff --name-status` output. A rename/copy line
+    (`R100\told\tnew`, `C100\told\tnew`) contributes BOTH the old and new
+    path to the changed-file set -- a contract can reference either."""
+    files = set()
+    for line in output.splitlines():
+        line = line.rstrip("\n")
+        if not line.strip():
+            continue
+        parts = line.split("\t")
+        status = parts[0]
+        if status[:1] in ("R", "C") and len(parts) >= 3:
+            files.add(parts[1].replace("\\", "/"))
+            files.add(parts[2].replace("\\", "/"))
+        elif len(parts) >= 2:
+            files.add(parts[1].replace("\\", "/"))
+    return files
+
+
+def _changed_files_union(repo_root: Path, ref: str):
+    """The UNION of (a) committed changes since REF, (b) uncommitted tracked
+    changes, (c) untracked new files. Returns (changed_files: set, ref_resolvable:
+    bool) -- ref_resolvable is False iff (a) itself could not be computed (bad
+    ref / no merge-base), which is escalation trigger (c), never a crash and
+    never a silent empty selection."""
+    def _run(*args):
+        return subprocess.run(["git", *args], cwd=repo_root, capture_output=True,
+                              text=True, env=child_env())
+
+    committed = _run("diff", "--name-status", f"{ref}..HEAD")
+    if committed.returncode != 0:
+        return set(), False
+
+    changed = _parse_name_status(committed.stdout)
+
+    uncommitted = _run("diff", "--name-status", "HEAD")
+    if uncommitted.returncode == 0:
+        changed |= _parse_name_status(uncommitted.stdout)
+
+    untracked = _run("ls-files", "--others", "--exclude-standard")
+    if untracked.returncode == 0:
+        for line in untracked.stdout.splitlines():
+            line = line.strip()
+            if line:
+                changed.add(line.replace("\\", "/"))
+
+    return changed, True
+
+
+def compute_affected_selection(repo_root: Path, specs_root: Path, ref: str) -> dict:
+    """The single source of truth for --affected's selection/escalation
+    decision, shared by --dry-run and the real (gating) path so they can
+    never drift apart (A12). Returns a dict with "ok": False (and "error")
+    only when --repo-root itself is not a git repository -- the one case
+    --dry-run cannot even evaluate. Otherwise "ok": True plus the documented
+    athanor.gate-sweep-affected/v1 fields, plus an internal "_selected_abs"
+    list of absolute Paths for the real (gating) caller."""
+    if not _is_git_repo(repo_root):
+        return {"ok": False, "error": f"--repo-root is not a git repository: {repo_root}"}
+
+    all_specs = discover(specs_root)
+    total_discovered = len(all_specs)
+
+    changed_files, ref_resolvable = _changed_files_union(repo_root, ref)
+
+    escalated = False
+    escalation_reason = None
+
+    if not ref_resolvable:
+        escalated = True
+        escalation_reason = (
+            f"git ref {ref!r} could not be resolved into a diff against HEAD "
+            "(bad ref, or no merge-base with HEAD) -- the mapper has nothing "
+            "to map FROM, so it escalates to the full discovered set rather "
+            "than guessing at a diff that could not be computed")
+    else:
+        for f in sorted(changed_files):
+            if f in FORCE_FULL_SWEEP_FILES:
+                escalated = True
+                escalation_reason = (
+                    f"{f} is on FORCE_FULL_SWEEP_FILES (gate machinery / "
+                    "dispatch wiring) -- a change here can alter every spec's "
+                    "evaluation regardless of whether any contract's TEXT "
+                    "references it")
+                break
+
+    ref_index = {}
+    if not escalated and changed_files:
+        ref_index = _build_reference_index(all_specs, repo_root, changed_files)
+        ref_counts = _invert_ref_counts(ref_index)
+        if total_discovered > 0:
+            for f in sorted(changed_files):
+                count = ref_counts.get(f, 0)
+                if count / total_discovered >= HUB_RATIO_THRESHOLD:
+                    escalated = True
+                    escalation_reason = (
+                        f"{f} is referenced by {count}/{total_discovered} "
+                        f"({count / total_discovered:.1%}) discovered specs, "
+                        f">= the {HUB_RATIO_THRESHOLD:.0%} hub-ratio threshold "
+                        "-- too broadly load-bearing to trust a narrow scan")
+                    break
+
+    if escalated:
+        selected_abs = list(all_specs)
+        trace = {}
+    elif not changed_files:
+        selected_abs = []
+        trace = {}
+    else:
+        if not ref_index:
+            ref_index = _build_reference_index(all_specs, repo_root, changed_files)
+        selected_abs = []
+        trace = {}
+        for sp in all_specs:
+            hit = sorted(ref_index.get(sp, set()) & changed_files)
+            if hit:
+                selected_abs.append(sp)
+                trace[_posix_rel(sp, repo_root)] = hit
+
+    selected_abs.sort(key=lambda p: _posix_rel(p, repo_root))
+
+    return {
+        "ok": True,
+        "schema": AFFECTED_SCHEMA,
+        "git_ref": ref,
+        "changed_files": sorted(changed_files),
+        "escalated": escalated,
+        "escalation_reason": escalation_reason,
+        "total_discovered": total_discovered,
+        "selected_specs": [_posix_rel(p, repo_root) for p in selected_abs],
+        "selection_trace": trace,
+        "_selected_abs": selected_abs,
+    }
+
 
 
 def main():
@@ -1946,14 +2491,75 @@ def main():
              "resolve inside the sandbox or inside the sweep's per-spec workdirs -- the "
              "artifact F3 consumes may not be writable by the checks being graded.",
     )
+    parser.add_argument(
+        "--affected", type=str, default=None, metavar="REF",
+        help="Bound the sweep to specs affected by changes since git ref REF (union of "
+             "committed changes since REF, uncommitted tracked changes, and untracked "
+             "new files). Escalates LOUDLY to the full discovered sweep on anything it "
+             "cannot confidently map -- see DECISIONS.md 'F2 -- affected-spec mapping'.",
+    )
+    parser.add_argument(
+        "--repo-root", type=Path, default=REPO_ROOT, metavar="DIR",
+        help="Git repository root used for --affected's diff and reference resolution "
+             "(default: this checkout). Testability hook mirroring --specs-root.",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", default=False,
+        help="With --affected: compute and print the selection/escalation decision as "
+             "one line of JSON, without running any contract.py gate subprocess. Its OWN "
+             "exit-code vocabulary (never overlapping the real 0/1/2 gate-outcome codes): "
+             "0=narrow selection, 3=escalated to the full sweep, 2=machinery failure.",
+    )
     args = parser.parse_args()
 
+    # An ABSENT ref is a USAGE error; a genuinely unchanged tree selecting zero
+    # specs is CORRECT (A6/A11). The discriminator is which INPUT is missing,
+    # never the size of the result. `git diff --name-status ..HEAD` exits 0 with
+    # an empty diff, so an unguarded empty --affected would gate NOTHING and
+    # report green -- the same silent-green shape as the all-SKIP-reports-PASS
+    # bug fixed at e749c26e. Rejected here, before any git call, in dry-run and
+    # real mode alike (DECISIONS.md "--affected with an empty/absent REF").
+    if args.affected is not None and not args.affected.strip():
+        print("ERROR: --affected requires a non-empty git ref; got an empty/"
+              "whitespace-only value (did you run `make gate-affected` without "
+              "REF=<git-ref>?)", file=sys.stderr)
+        sys.exit(2)
+    if args.dry_run and args.affected is None:
+        print("ERROR: --dry-run requires --affected", file=sys.stderr)
+        sys.exit(2)
     if args.jobs < 1:
         print("ERROR: --jobs must be >= 1", file=sys.stderr)
         sys.exit(2)
     if not args.specs_root.exists():
         print(f"ERROR: --specs-root does not exist: {args.specs_root}", file=sys.stderr)
         sys.exit(2)
+
+    # --dry-run never runs a gate subprocess and never touches the sandbox/
+    # containment machinery -- compute the selection and exit before any of
+    # that machinery is even set up, so it stays fast enough to run on every
+    # commit (DECISIONS.md "F2 -- --dry-run: a new exit-code vocabulary").
+    if args.dry_run:
+        sel = compute_affected_selection(args.repo_root, args.specs_root, args.affected)
+        if not sel["ok"]:
+            print(f"ERROR: {sel['error']}", file=sys.stderr)
+            sys.exit(2)
+        out = {k: v for k, v in sel.items() if not k.startswith("_") and k != "ok"}
+        print(json.dumps(out))
+        if args.manifest is not None:
+            manifest = dict(out)
+            manifest["affected_mode"] = True
+            args.manifest.write_text(json.dumps(manifest, indent=2) + "\n")
+        sys.exit(3 if sel["escalated"] else 0)
+
+    affected_sel = None
+    if args.affected is not None:
+        affected_sel = compute_affected_selection(args.repo_root, args.specs_root, args.affected)
+        if not affected_sel["ok"]:
+            print(f"ERROR: {affected_sel['error']}", file=sys.stderr)
+            sys.exit(2)
+        if affected_sel["escalated"]:
+            print(f"WARNING: --affected escalated to the full discovered sweep: "
+                  f"{affected_sel['escalation_reason']}", file=sys.stderr, flush=True)
 
     # ONE sweep-level root holding every per-spec workdir (F5 round 4). Each
     # spec's own subdirectory of this is the ONLY place outside the sandbox its
@@ -1980,6 +2586,7 @@ def main():
     t0_hashes = {}
     t0_ignore_sources = {}
     t0_git_metadata = {}
+    clone_plan = {}
     # Advisory-only canary on the REAL tree, computed regardless of sandbox
     # mode. Never affects the exit code: ambient agent activity in this repo
     # makes real-tree drift unattributable by nature (DECISIONS.md "Ambient
@@ -2013,6 +2620,16 @@ def main():
             print(f"ERROR: could not create disposable sandbox: {exc}", file=sys.stderr)
             sys.exit(2)
         try:
+            spec_count = (len(affected_sel["_selected_abs"]) if affected_sel is not None
+                         else len(discover(args.specs_root)))
+            clone_plan = _measure_clone_plan(
+                sandbox_root, work_root, spec_count, args.jobs)
+        except SandboxError as exc:
+            _rmtree_force(sandbox_root)
+            _rmtree_force(work_root)
+            print(f"ERROR: clone capacity preflight failed: {exc}", file=sys.stderr)
+            sys.exit(2)
+        try:
             t0_hashes = snapshot_dirty_content(sandbox_root)
             t0_ignore_sources = _collect_ignore_sources(sandbox_root)
             t0_git_metadata = _collect_git_metadata(sandbox_root)
@@ -2026,7 +2643,7 @@ def main():
             sys.exit(2)
 
     try:
-        gate_root = sandbox_root if sandbox_root is not None else REPO_ROOT
+        gate_root = sandbox_root if sandbox_root is not None else args.repo_root
         tree_fp = tree_fingerprint(gate_root)
         head = (_git(gate_root, "rev-parse", "HEAD").strip() or "NO-HEAD")
 
@@ -2034,12 +2651,19 @@ def main():
             args.specs_root, args.jobs, args.allow_skips, emit=_emit_line,
             master_root=sandbox_root, backend=backend, work_root=work_root,
             t0_hashes=t0_hashes, t0_ignore_sources=t0_ignore_sources,
-            t0_git_metadata=t0_git_metadata)
+            t0_git_metadata=t0_git_metadata, clone_plan=clone_plan,
+            spec_paths=(affected_sel["_selected_abs"] if affected_sel is not None else None),
+            repo_root=args.repo_root)
 
         if not results:
-            print(f"ERROR: no contract*.yaml files found under {args.specs_root}",
-                  file=sys.stderr)
-            sys.exit(2)
+            if affected_sel is None:
+                print(f"ERROR: no contract*.yaml files found under {args.specs_root}",
+                      file=sys.stderr)
+                sys.exit(2)
+            # --affected legitimately selected ZERO specs (the common case, A6/A11
+            # in dry-run terms) -- nothing to gate is success, never an error.
+            print("Gate sweep (--affected): 0 specs selected, nothing to gate.",
+                  flush=True)
 
         # Drift and containment are graded PER SPEC now (F5 round 6): each spec's
         # own clone is graded against the master's t0 snapshot inside
@@ -2107,6 +2731,16 @@ def main():
                 containment=containment,
                 containment_backend=containment_backend,
                 containment_violations_found=breaches,
+                clone_plan=clone_plan,
+                affected=({
+                    "affected_mode": True,
+                    "git_ref": affected_sel["git_ref"],
+                    "changed_files": affected_sel["changed_files"],
+                    "escalated": affected_sel["escalated"],
+                    "escalation_reason": affected_sel["escalation_reason"],
+                    "selected_specs": affected_sel["selected_specs"],
+                    "selection_trace": affected_sel["selection_trace"],
+                } if affected_sel is not None else None),
             )
 
         sys.exit(exit_code)

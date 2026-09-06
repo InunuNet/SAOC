@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # bump_version.sh — Increment the harness semver and dual-write to both version files.
-# Usage: bash execution/bump_version.sh [--minor | --major]
-# Exits: 0 on success, 2 on semver validation failure.
+# HARNESS CHECKOUT ONLY: in a downstream workspace this is a no-op that writes
+# nothing, because every record it touches is upstream-owned (see the role gate
+# below). Usage: bash execution/bump_version.sh [--minor | --major]
+# Exits: 0 on success, 0 (no-op) in a downstream workspace, 1 on an unknown
+# flag, 2 on semver validation failure.
 
 set -uo pipefail
 
@@ -18,6 +21,30 @@ TPL="template/.agent/version"
 # reads as not-from-here until the next --apply restamps it.
 _BUMP_SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_IDENTITY_JSON="$(python3 "$_BUMP_SELF_DIR/update_template.py" --print-workspace-identity 2>/dev/null || echo '{}')"
+
+# Which role is this workspace in? Every record this script writes is
+# UPSTREAM-OWNED: .agent/version and template/.agent/version name the harness
+# release installed here, and .agent/.template_state.template_version is a
+# receipt for what upstream last DELIVERED here — the record
+# update_template.py's version-regression guard refuses payloads against. A
+# downstream workspace that moves them from a local wrap-up ratchets its own
+# receipt above anything upstream ships and then permanently refuses every
+# future update (version-stamp-provenance-split F32; SAOC locked at 3.7.156, a
+# version that never existed upstream).
+#
+# The answer comes from update_template.py for the same reason the identity
+# above does: it is the other writer of these records, and the population
+# allowed to bump them must be EXACTLY the population `--apply` refuses to
+# serve. Two predicates would drift, and the drift is the ratchet.
+#
+# Fails CLOSED — anything but a clean "harness" is treated as downstream. A
+# bump that did not happen is recoverable; a delivery receipt that should not
+# have moved is not.
+WORKSPACE_ROLE="$(python3 "$_BUMP_SELF_DIR/update_template.py" --print-workspace-role 2>/dev/null || true)"
+case "$WORKSPACE_ROLE" in
+    harness) ;;
+    *) WORKSPACE_ROLE="downstream" ;;
+esac
 
 # --- parse flags ---
 BUMP="patch"
@@ -67,6 +94,18 @@ case "$BUMP" in
 esac
 
 NEW="${MAJOR}.${MINOR}.${PATCH}"
+
+# --- harness-only gate ---
+# Placed AFTER every validation and BEFORE the first write, so both roles share
+# one set of error paths byte for byte: an unknown flag still exits 1, a missing
+# or non-semver version file still exits 2, and a downstream is refused the
+# WRITES only. Exit 0 on the skip — a mission wrap-up must not fail over
+# bookkeeping it should never have been doing, the same posture as the graceful
+# degradation below.
+if [ "$WORKSPACE_ROLE" != "harness" ]; then
+    echo "bump_version.sh: skipped, nothing written — .agent/version and .agent/.template_state record what UPSTREAM delivered here, not how many missions closed here, and this is a downstream workspace (role from 'update_template.py --print-workspace-role'; would have bumped ${OLD} to ${NEW}). Only 'update_template.py --apply' moves them."
+    exit 0
+fi
 
 # --- dual-write ---
 printf '%s\n' "$NEW" > "$CANON"

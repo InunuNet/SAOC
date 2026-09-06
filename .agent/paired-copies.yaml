@@ -1,0 +1,30 @@
+# Paired copies — pairs are DATA, not code.
+#
+# BINDING RULING (Brad, 2026-09-01): "AGENTS.md should be the default and all
+# others cloned from it." Each `copy` below is a REAL FILE regenerated
+# byte-for-byte from its `source` by `make sync-clones`
+# (execution/paired_copies.py). Never edit a copy: the generator refuses to
+# overwrite a locally edited one, and the gate fails it by name.
+#
+# `enforce: clone` means byte-identical and is the only mode implemented. An
+# unknown mode is an ERROR, never a silent skip — a pair that appears covered
+# and is not is worse than an uncovered one.
+#
+# Adding a row requires NO code change. template/ mirrors and generated
+# provider configs are the wider paired-copy class this schema is shaped for,
+# and are deliberately NOT listed yet: template/ copies are allowed to diverge
+# in places, so `enforce: clone` cannot express them.
+schema: athanor.paired-copies/v1
+pairs:
+  - copy: CLAUDE.md
+    source: AGENTS.md
+    enforce: clone
+  - copy: GEMINI.md
+    source: AGENTS.md
+    enforce: clone
+  # rules.md does NOT point at AGENTS.md. The Windows session recorded that the
+  # original porting brief got this wrong, and a materialiser written to that
+  # assumption would have overwritten rules.md with the wrong content.
+  - copy: rules.md
+    source: .agent/memory/project/rules.md
+    enforce: clone

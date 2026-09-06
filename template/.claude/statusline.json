@@ -1,0 +1,33 @@
+{
+  "_docs": "Per-project statusline fields, read by the global statusline script. Absent file = no extra fields. Paths are project-relative; http targets are localhost-only and cached. rgb colours the label, rgbValue the value -- separate hues so the number does not vanish into the name. line routes to the ENV or MEMORY row.",
+  "fields": [
+    {
+      "label": "ATH",
+      "type": "file",
+      "path": ".agent/version",
+      "rgb": "251;146;60",
+      "line": "env",
+      "rgbValue": "254;215;170"
+    },
+    {
+      "label": "ALB",
+      "type": "http",
+      "url": "http://localhost:7077/health",
+      "jq": ".version",
+      "cache": 60,
+      "down": "DOWN",
+      "rgb": "52;211;153",
+      "line": "env",
+      "rgbValue": "167;243;208"
+    },
+    {
+      "label": "Backlog",
+      "type": "count",
+      "path": ".agent/memory/project/backlog.md",
+      "pattern": "^- \\[ \\]",
+      "rgb": "244;114;182",
+      "line": "memory",
+      "rgbValue": "251;207;232"
+    }
+  ]
+}

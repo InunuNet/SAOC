@@ -1,0 +1,60 @@
+# .agent/delivery-manifest.yaml — the DECLARED expected delivery set.
+#
+# Regenerated ONLY by `make delivery-manifest ACCEPT=1`, never by `make sync`.
+# Read by execution/boot_panel.py as the denominator for the boot panel's
+# delivery counts. Adding a rule/skill/agent/workflow/hook is a two-file change
+# on purpose: the expected set is a decision, not an accident.
+rules:
+  - alembic.md
+  - athanor.md
+  - behavior.md
+  - coding.md
+  - dispatch-naming.md
+  - sandbox.md
+  - scope.md
+  - security.md
+  - workflow.md
+skills:
+  - alembic.md
+  - onboard.md
+  - quick-gate.md
+  - report-harness-bug.md
+  - use-alembic.md
+  - wrap-mission.md
+agents:
+  - analyst.md
+  - architect.md
+  - designer.md
+  - dev.md
+  - docs.md
+  - lead.md
+  - maintainer.md
+  - qa.md
+workflows:
+  - spec.md
+hooks:
+  - block_asq_in_loop.sh
+  - blocker_scan.sh
+  - check_autonomy.sh
+  - compaction_backstop.sh
+  - compaction_nudge.sh
+  - full_boot.sh
+  - harness_heartbeat.sh
+  - inject_pressure.sh
+  - post_agent_loop_continue.sh
+  - post_compact_inject.sh
+  - post_compact_restore.sh
+  - quota_death_checkpoint.sh
+  - require_contract.sh
+  - require_contract_for_write.sh
+  - require_dev_result.sh
+  - require_docs.sh
+  - require_maintainer.sh
+  - require_qa_report.sh
+  - require_research.sh
+  - session_start_away_report.sh
+  - session_token_log.sh
+  - subagent_start.sh
+  - subagent_stop.sh
+  - turn_end_stamp.sh
+  - verify_workspace.sh

@@ -1,5 +1,27 @@
 {
-  "template_version": "3.7.156",
-  "applied_at": "2026-09-04T21:56:34Z",
-  "workspace_id": "0508fe91e31545b0"
+  "template_version": "3.8.1",
+  "applied_at": "2026-09-06T18:28:00Z",
+  "delivery": "partial",
+  "workspace_id": "0508fe91e31545b0",
+  "withheld": [
+    ".agent/rules/_core/coding.md",
+    ".agent/rules/_core/sandbox.md",
+    ".agent/rules/_core/workflow.md",
+    ".claude/agents/architect-apex.md",
+    ".claude/agents/docs.md",
+    ".claude/agents/qa-apex.md",
+    "Makefile",
+    "execution/contract.py",
+    "execution/gh_closure_scan.py",
+    "execution/ingest_pulse.sh",
+    "execution/pulse_runner.sh",
+    "template/.agent/version",
+    "template/.claude/settings.json"
+  ],
+  "untracked": [
+    ".agent/rules/_core/coding.md",
+    ".agent/rules/_core/sandbox.md",
+    ".agent/rules/_core/workflow.md"
+  ],
+  "reconcile_from": "3.7.156"
 }

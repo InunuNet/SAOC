@@ -1,0 +1,46 @@
+{
+  "_README": "Probe registry for profile.json tech_stack entries (spec boot-status-panel D8). A bare string in tech_stack is resolved here by name; an inline object in tech_stack overrides this file. kind: dependency|service|auth. cost: local|network-free|network-paid — a network-paid probe is NEVER executed at boot, it is read from .agent/memory/scratch/.stack_probes.json while younger than ttl_seconds. An entry with no probe here and no 'verify: manual' HALTS the boot panel: unverifiable is indistinguishable from missing.",
+  "node": {
+    "kind": "dependency",
+    "cost": "local",
+    "command": "command -v node"
+  },
+  "python3": {
+    "kind": "dependency",
+    "cost": "local",
+    "command": "command -v python3"
+  },
+  "go": {
+    "kind": "dependency",
+    "cost": "local",
+    "command": "command -v go"
+  },
+  "docker": {
+    "kind": "service",
+    "cost": "local",
+    "command": "docker info",
+    "timeout": 10
+  },
+  "postgres": {
+    "kind": "service",
+    "cost": "network-free",
+    "command": "pg_isready -q",
+    "timeout": 5
+  },
+  "firebase": {
+    "kind": "auth",
+    "cost": "local",
+    "command": "test -f .firebaserc"
+  },
+  "vercel": {
+    "kind": "auth",
+    "cost": "local",
+    "command": "test -f .vercel/project.json"
+  },
+  "google-cloud": {
+    "kind": "auth",
+    "cost": "network-paid",
+    "ttl_seconds": 86400,
+    "command": "gcloud auth print-access-token"
+  }
+}

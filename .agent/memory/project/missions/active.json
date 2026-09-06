@@ -1,8 +1,8 @@
 {
   "mission": ".agent/memory/project/missions/2026-09-03-verification-triad-gate.md",
   "checkpoint": {
-    "milestone": null,
-    "feature": null
+    "milestone": "M2",
+    "feature": "F2"
   },
   "activated_at": "2026-09-03T13:16:25.873782+00:00"
 }

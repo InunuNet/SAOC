@@ -35,3 +35,32 @@ You write and maintain project documentation. You generate user-facing guides fr
 ## Report Back
 
 Your final act before finishing is to SendMessage what you documented — the summary above — to the orchestrator (`main`). Going idle without reporting is an incomplete task: docs written and never reported look identical to docs never written, and the orchestrator will assume the gap is still open and re-dispatch it.
+
+## Shell discipline (hard constraint)
+
+Your cwd is reset between Bash calls, so two rules apply here — and they hold
+for two different reasons, don't collapse them.
+
+**Never `cd`** — it makes the *following* command's target statically
+unresolvable, and that's what triggers a permission prompt: with any `Read()`
+deny rule present (the scaffold ships `Read(~/.ssh/*)` and its siblings), an
+unresolvable target must be approved by hand — even though `Bash`/`Grep` are
+allowed and the command is read-only. It also doesn't persist to the next call
+anyway, so it buys nothing. One command per Bash call; never join reads with
+`&&`.
+
+**Always use absolute paths** — because a prompt that does still fire must be
+*approvable*. `~/.claude/settings.json` (the machine-global file, shared by
+every project) and `<project>/.claude/settings.json` (this project's own file)
+both render to the operator as `.claude/settings.json` once the path is
+relative — they cannot tell which tree is about to be touched, and can only
+refuse.
+
+| don't | do |
+|---|---|
+| `cd "$dir" && grep -n foo file.py` | `grep -n foo /abs/path/file.py` |
+| `grep -rl foo .` | `grep -rl foo /abs/path/` |
+| `cd "$d" && sed -i '' … && grep …` | two calls, absolute paths |
+
+This is the largest single source of operator interruption during autonomous
+work.

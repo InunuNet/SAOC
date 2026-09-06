@@ -24,6 +24,7 @@ Exit-code contract for `gate` on a specific phase number (not "all"/"max"):
   phase path above.)
 """
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -32,6 +33,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
 RESULTS_DIR = Path(".agent/memory/scratch/contract-results")
 MAX_TIMEOUT_SECONDS = 86400  # 24h ceiling -- generous for CI, still finite
 
@@ -853,6 +855,177 @@ def _run_dataset_residue_scan(stage: str) -> str:
     return "clean"
 
 
+# --- Verification-triad coverage preflight (mission verification-triad-gate, M2/F2) ---
+#
+# Wires execution/verify_triad_coverage.py into the real gate path so no UI/workflow contract
+# can reach a green gate without declaring all three verification-triad kinds (codex_qa,
+# browser_deployed_check, gws_inbox_check). See
+# .agent/memory/project/specs/verification-triad-gate/contract-f2.yaml for the five binding
+# architect decisions this implements.
+#
+# Deliberately the OPPOSITE fail posture of the dataset-residue guard above:
+# verify_triad_coverage.py is pure local file read + regex, no subprocess of its own, no
+# network -- a broken/missing linter is a real code regression, not transient noise, so this
+# preflight FAILS CLOSED on any linter-infrastructure error instead of the residue guard's
+# fail-open. TRIAD_ENFORCEMENT_EXIT_CODE (a confirmed, non-grandfathered triad-coverage FAIL)
+# and TRIAD_PREFLIGHT_ERROR_EXIT_CODE (the linter itself could not produce a real
+# classification) are deliberately distinct from each other and from RESIDUE_EXIT_CODE (4) /
+# RESIDUE_SCAN_ERROR_EXIT_CODE (5) so no caller can ever conflate the three.
+TRIAD_ENFORCEMENT_EXIT_CODE = 6
+TRIAD_PREFLIGHT_ERROR_EXIT_CODE = 7
+
+# The only classification exit codes verify_triad_coverage.py documents (see its own
+# docstring): 0 = PASS or EXEMPT, 1 = FAIL (confirmed UI/workflow contract missing triad
+# kinds). Anything else -- a usage/parse error (2), a crash, a missing script -- is not a real
+# classification result and must fail closed, never be treated as either compliant or
+# noncompliant.
+TRIAD_LINTER_VALID_EXIT_CODES = (0, 1)
+
+# Test-only override letting a check point the preflight at a stub linter (e.g.
+# goldens/fixtures/f2_broken_linter_stub.sh) instead of the real script, mirroring
+# RESIDUE_FIXTURE_ENV_VAR's existing pattern. Never set in real runs.
+TRIAD_LINTER_SCRIPT_ENV_VAR = "TRIAD_LINTER_SCRIPT_OVERRIDE"
+DEFAULT_TRIAD_LINTER = REPO_ROOT / "execution" / "verify_triad_coverage.py"
+
+# TRIAD_BASELINE_FILE is the same env var name already read by
+# execution/checks/verify_f2_baseline_completeness.py -- reused here, not reinvented, so a
+# check script and a real gate run agree on which baseline file is authoritative.
+TRIAD_BASELINE_FILE_ENV_VAR = "TRIAD_BASELINE_FILE"
+DEFAULT_TRIAD_BASELINE = REPO_ROOT / "execution" / "triad-baseline-exempt.txt"
+
+# TRIAD_BASELINE_HASH_FILE is new for F2: the companion content-hash pin that makes the
+# baseline re-arm on edit (decision 3) rather than grandfathering a path forever.
+TRIAD_BASELINE_HASH_FILE_ENV_VAR = "TRIAD_BASELINE_HASH_FILE"
+DEFAULT_TRIAD_BASELINE_HASH = REPO_ROOT / "execution" / "triad-baseline-exempt.sha256"
+
+# Scope note (decision 5): template/execution/contract.py is this project's seed copy of the
+# upstream Athanor harness, not a second production gate path for SAOC's own contracts -- this
+# fix intentionally does NOT propagate there as part of F2. It is logged as an upstream-PR
+# follow-up in .agent/memory/project/backlog.md (per project convention
+# feedback_harness_issues_pr_upstream), not silently dropped.
+
+
+def _load_triad_baseline_paths(baseline_path: Path) -> set:
+    """Repo-relative contract paths grandfathered against triad enforcement -- plain path per
+    line, `#`-comments and blank lines ignored. Missing file means an empty (no) baseline, not
+    an error: a fresh checkout with no baseline yet simply enforces everything."""
+    if not baseline_path.exists():
+        return set()
+    return {
+        line.strip()
+        for line in baseline_path.read_text().splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    }
+
+
+def _load_triad_baseline_hashes(hash_path: Path) -> dict:
+    """`<sha256>  <repo-relative-path>` per line -> {path: hash}. Missing file means no pins,
+    so no baselined path can be honoured (a baseline entry with no matching pin can never be
+    treated as grandfathered)."""
+    entries: dict = {}
+    if not hash_path.exists():
+        return entries
+    for line in hash_path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split(None, 1)
+        if len(parts) != 2:
+            continue
+        digest, rel_path = parts
+        entries[rel_path.strip()] = digest.strip()
+    return entries
+
+
+def _triad_contract_is_grandfathered(contract_rel_path: str) -> bool:
+    """True only if contract_rel_path is listed in the baseline AND its live sha256 still
+    matches the pinned hash. An edit since baselining forfeits the grandfather -- enforcement
+    re-arms for that path (decision 3), it is not carried forward automatically."""
+    baseline_path = Path(os.environ.get(TRIAD_BASELINE_FILE_ENV_VAR, str(DEFAULT_TRIAD_BASELINE)))
+    hash_path = Path(os.environ.get(TRIAD_BASELINE_HASH_FILE_ENV_VAR, str(DEFAULT_TRIAD_BASELINE_HASH)))
+
+    baseline_paths = _load_triad_baseline_paths(baseline_path)
+    if contract_rel_path not in baseline_paths:
+        return False
+
+    pinned_hashes = _load_triad_baseline_hashes(hash_path)
+    pinned = pinned_hashes.get(contract_rel_path)
+    if not pinned:
+        return False  # listed but unpinned -- cannot be honoured as grandfathered
+
+    full_path = REPO_ROOT / contract_rel_path
+    if not full_path.exists():
+        return False
+    live_hash = hashlib.sha256(full_path.read_bytes()).hexdigest()
+    return live_hash == pinned
+
+
+def _run_triad_coverage_preflight(contract_path: str) -> None:
+    """Runs execution/verify_triad_coverage.py (or its test override) against the contract
+    file being gated, before any assertion phase executes -- see gate_cmd() for the ordering
+    rationale. Exits the process directly; returns only when the gate may proceed.
+    """
+    linter = Path(os.environ.get(TRIAD_LINTER_SCRIPT_ENV_VAR, str(DEFAULT_TRIAD_LINTER)))
+    print(f"\n--- Verification-triad coverage preflight: {linter} ---")
+
+    try:
+        # Invoke the linter by its own path (not forced through sys.executable) so a test
+        # override pointing at a non-Python stub (e.g. a bash script) runs under its own
+        # shebang instead of being fed to the Python interpreter as source.
+        result = subprocess.run(
+            [str(linter), contract_path],
+            capture_output=True, text=True, timeout=30,
+        )
+    except Exception as e:
+        print("=" * 78, file=sys.stderr)
+        print(f"TRIAD PREFLIGHT ERROR [code {TRIAD_PREFLIGHT_ERROR_EXIT_CODE}]: could not run "
+              f"{linter} against {contract_path} -- {e}", file=sys.stderr)
+        print("This is a linter-infrastructure failure -- unlike the dataset-residue guard, "
+              "the triad preflight fails CLOSED here: it has no external dependency, so a "
+              "missing/crashing linter is a real regression, not transient noise.",
+              file=sys.stderr)
+        print("=" * 78, file=sys.stderr)
+        sys.exit(TRIAD_PREFLIGHT_ERROR_EXIT_CODE)
+
+    if result.stdout:
+        print(result.stdout.rstrip())
+    if result.stderr:
+        print(result.stderr.rstrip(), file=sys.stderr)
+
+    if result.returncode not in TRIAD_LINTER_VALID_EXIT_CODES:
+        print("=" * 78, file=sys.stderr)
+        print(f"TRIAD PREFLIGHT ERROR [code {TRIAD_PREFLIGHT_ERROR_EXIT_CODE}]: {linter} "
+              f"exited {result.returncode}, outside its documented classification contract "
+              f"({TRIAD_LINTER_VALID_EXIT_CODES}) -- treating as a linter-infrastructure "
+              "failure, never a silent pass.", file=sys.stderr)
+        print("=" * 78, file=sys.stderr)
+        sys.exit(TRIAD_PREFLIGHT_ERROR_EXIT_CODE)
+
+    if result.returncode == 0:
+        # PASS or EXEMPT -- decision 4: the linter's own exit-0 path never touches the
+        # baseline mechanism at all, zero added noise for contracts that already comply or
+        # don't need to.
+        return
+
+    # result.returncode == 1: confirmed UI/workflow contract missing one or more triad kinds.
+    contract_rel_path = os.path.relpath(os.path.abspath(contract_path), str(REPO_ROOT))
+    if _triad_contract_is_grandfathered(contract_rel_path):
+        print(f"TRIAD PREFLIGHT: {contract_rel_path} is missing triad kind(s) but is "
+              "grandfathered in the rollout baseline (unedited since baselining) -- warning, "
+              "not blocking.")
+        return
+
+    print("=" * 78, file=sys.stderr)
+    print(f"TRIAD PREFLIGHT BLOCKED [code {TRIAD_ENFORCEMENT_EXIT_CODE}]: {contract_rel_path} "
+          "is a UI/workflow contract missing verification-triad kind(s) and is not "
+          "grandfathered (either never baselined, or edited since baselining -- an edit "
+          "forfeits the grandfather). Add the missing triad assertions, or -- only with real "
+          "justification -- add it to execution/triad-baseline-exempt.txt with a matching "
+          "pin in execution/triad-baseline-exempt.sha256.", file=sys.stderr)
+    print("=" * 78, file=sys.stderr)
+    sys.exit(TRIAD_ENFORCEMENT_EXIT_CODE)
+
+
 def _gate_dispatch(contract: dict, args) -> int:
     """Runs the phase-gating logic for `gate` and returns the exit code it would use, without
     calling sys.exit() itself — split out of gate_cmd so the post-flight residue guard can run
@@ -925,6 +1098,16 @@ def gate_cmd(args):
     # "error" result (scanner infrastructure failure) fails open — see RESIDUE_SCAN_ERROR_EXIT_CODE.
     if _preflight_residue_guard() == "dirty":
         sys.exit(RESIDUE_EXIT_CODE)
+
+    # Verification-triad coverage pre-flight (mission verification-triad-gate, M2/F2): fires
+    # unconditionally, independent of --phase or --run-checks, because it only inspects the
+    # contract's declared shape via verify_triad_coverage.py, not any assertion result. This is
+    # the one placement common to all four real gate entry points (quick_gate.sh,
+    # gate_sweep.py, improvement_loop.sh, mission.py cmd_gate) -- see
+    # .agent/memory/scratch/research-f2-triad-gate-wiring.md section 3. Exits directly (never
+    # returns) on a confirmed noncompliant, non-grandfathered contract or a linter-
+    # infrastructure error; only returns when the gate may proceed.
+    _run_triad_coverage_preflight(args.contract)
 
     exit_code = _gate_dispatch(contract, args)
 

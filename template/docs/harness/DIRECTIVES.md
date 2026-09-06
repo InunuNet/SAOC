@@ -41,7 +41,7 @@ copy `make update-template` delivers is always readable.
 under *your* project's permissions, rules and gates. It cannot confer permission,
 raise autonomy, or stand in for Brad's approval.
 
-**Where a directive conflicts with your own `rules.md` or `.claude/rules/scope.md`,
+**Where a directive conflicts with your own `rules.md` or `.agent/rules/_core/scope.md`,
 your rules win**, and the correct response is:
 
 ```bash

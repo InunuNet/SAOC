@@ -20,7 +20,9 @@ CURRENT_AUTONOMY=$(python3 -c "import json; print(json.load(open('.agent/profile
 
 # 2. Flip autonomy to off (enforces hook-level read-only — not just a promise)
 python3 -c "import json,datetime; p=json.load(open('.agent/profile.json')); p.setdefault('autonomy',{})['level']='off'; p['autonomy']['updated_at']=datetime.datetime.now(datetime.UTC).isoformat(); json.dump(p,open('.agent/profile.json','w'),indent=2)"
-rm -f /tmp/athanor_autonomy_* 2>/dev/null || true  # clear session cache so hook picks up new level
+# No cache clear needed: the write above bumps profile.json's mtime, and
+# check_autonomy.sh re-derives the level whenever the profile is newer than
+# its own session cache — this takes effect on the very next tool call.
 
 # 3. Announce
 echo "🔒 SPEC MODE ACTIVE — autonomy locked to off (was: $CURRENT_AUTONOMY)"
@@ -145,17 +147,16 @@ Enter 1–5:
 - **Option 1 (Reject)**: Revise the plan based on feedback. Restore autonomy first:
   ```bash
   python3 -c "import json,datetime; p=json.load(open('.agent/profile.json')); p['autonomy']['level']='$CURRENT_AUTONOMY'; p['autonomy']['updated_at']=datetime.datetime.now(datetime.UTC).isoformat(); json.dump(p,open('.agent/profile.json','w'),indent=2)"
-  rm -f /tmp/athanor_autonomy_* 2>/dev/null || true
   ```
+  No cache clear needed — the write bumps `profile.json`'s mtime, and `check_autonomy.sh` re-derives the level whenever the profile is newer than its session cache, so this takes effect on the next tool call.
   Then edit the spec file in place and present the gate again.
 
 - **Option 2 (Approve manual)**: Restore autonomy to `$CURRENT_AUTONOMY` (same snippet as option 1). Print "Spec saved at [PLAN_PATH]. Execute manually." Exit.
 
-- **Options 3/4/5 (Approve + delegate)**: Set autonomy to chosen level, clear cache, then delegate to @dev:
+- **Options 3/4/5 (Approve + delegate)**: Set autonomy to chosen level, then delegate to @dev:
   ```bash
   # Set chosen level (low / medium / high)
   python3 -c "import json,datetime; p=json.load(open('.agent/profile.json')); p['autonomy']['level']='<CHOSEN>'; p['autonomy']['updated_at']=datetime.datetime.now(datetime.UTC).isoformat(); json.dump(p,open('.agent/profile.json','w'),indent=2)"
-  rm -f /tmp/athanor_autonomy_* 2>/dev/null || true
   echo "🔓 Autonomy set to <CHOSEN> — handing off to @dev"
   ```
   Tell @dev: "Implement the spec at [PLAN_PATH]. Read it fully before starting. Follow phases in order. Run tests per phase. Report after each phase before proceeding."
@@ -167,8 +168,8 @@ After dev completes (or aborts):
 1. Restore autonomy to `$CURRENT_AUTONOMY`:
    ```bash
    python3 -c "import json,datetime; p=json.load(open('.agent/profile.json')); p['autonomy']['level']='$CURRENT_AUTONOMY'; p['autonomy']['updated_at']=datetime.datetime.now(datetime.UTC).isoformat(); json.dump(p,open('.agent/profile.json','w'),indent=2)"
-   rm -f /tmp/athanor_autonomy_* 2>/dev/null || true
    ```
+   No cache clear needed — same self-invalidation as Phase 4.
 2. Append outcome to the spec file: `## Outcome\n✅ Shipped / ⏸ Paused / ❌ Rolled back — [date] [summary]`
 3. Store in brain: `python3 execution/brain.py remember --summary "<slug> spec outcome" --tags "spec,<slug>"`
 

@@ -1,0 +1,25 @@
+schema: athanor.contract/v1
+slug: f2-fixture-noncompliant-ui
+goal: >
+  Synthetic UI/workflow-shaped contract that declares zero triad kinds.
+  Used by execution/checks/verify_f2_gate_enforcement.sh to prove, by real
+  execution of `contract.py gate`, that a NEW (not-grandfathered) contract of
+  this shape is hard-blocked before any assertion runs. Never mutated in
+  place -- the check script copies this file to a scratch path per scenario
+  so "not in the baseline" and "listed in a scratch baseline" scenarios don't
+  collide on the same path.
+assertions:
+  - id: NC-01
+    description: >
+      Trivially-true shell check whose command text references an app/ path
+      -- the ONLY thing verify_triad_coverage.py's classifier looks at
+      (APP_PATH_PATTERN over command/cmd/target text). This assertion itself
+      always passes; it exists purely to make this contract classify as
+      UI/workflow, not to be a meaningful product check.
+    verify:
+      kind: shell
+      cmd: echo "references app/(marketing) route tree for triad classification" && true
+phases:
+  - id: 4
+    assertions:
+      - NC-01

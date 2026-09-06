@@ -8,8 +8,11 @@ echo "=== test_check_autonomy_bash_rm_rf.sh ==="
 
 FIXTURE="execution/tests/layer2_fixture/fixtures/pretooluse_bash_rm_rf.json"
 
-# rm -rf / is a floor denial — blocked even at high autonomy
-rm -f /tmp/athanor_autonomy_*
+# rm -rf / is a floor denial — blocked even at high autonomy. Clear the
+# session cache first (it lives under <repo>/.tmp/ now, not /tmp — see
+# check_autonomy.sh's own comment on why /tmp was dropped) so a stale entry
+# from an earlier PID reuse can't hand this run a level it never set.
+rm -f .tmp/athanor_autonomy_*
 cat "$FIXTURE" | bash execution/hooks/check_autonomy.sh 2>/dev/null
 ACTUAL_EXIT=$?
 

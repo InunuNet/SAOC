@@ -26,12 +26,14 @@ Database: .agent/memory/brain/ (project-local, persistent)
 """
 
 import argparse
+import fcntl
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -78,22 +80,41 @@ def get_collection():
 
 
 def remember(summary: str, tags: str = "", source: str = "manual", blockers: str = ""):
-    """Store a memory with automatic embedding."""
-    collection = get_collection()
-    mem_id = f"mem_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
-    metadata = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "tags": tags,
-        "source": source,
-        "word_count": len(summary.split()),
-    }
-    if blockers:
-        metadata["blockers"] = blockers
-    collection.add(
-        ids=[mem_id],
-        documents=[summary],
-        metadatas=[metadata],
-    )
+    """Store a memory with automatic embedding.
+
+    Serialized across processes with a file lock: chromadb's PersistentClient
+    (sqlite-backed) is not safe for two separate processes opening and
+    writing to it at the same moment -- one collection.add() can raise
+    outright, silently losing that memory (reproduced: two concurrent
+    `mission.py checkpoint` calls, one entry never lands). The lock forces
+    them to take turns instead.
+    """
+    Path(BRAIN_DIR).mkdir(parents=True, exist_ok=True)
+    lock_fd = os.open(str(Path(BRAIN_DIR) / ".brain.lock"), os.O_CREAT | os.O_RDWR, 0o644)
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        collection = get_collection()
+        # Second-precision alone collides under concurrent writers too --
+        # chromadb.add() with a duplicate id overwrites the earlier entry.
+        # A short random suffix makes every id unique regardless of timing,
+        # while the timestamp prefix stays human-readable.
+        mem_id = f"mem_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+        metadata = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "tags": tags,
+            "source": source,
+            "word_count": len(summary.split()),
+        }
+        if blockers:
+            metadata["blockers"] = blockers
+        collection.add(
+            ids=[mem_id],
+            documents=[summary],
+            metadatas=[metadata],
+        )
+    finally:
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        os.close(lock_fd)
     print(f"✅ Stored: {mem_id} ({metadata['word_count']} words)")
     return mem_id
 

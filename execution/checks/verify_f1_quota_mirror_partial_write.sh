@@ -107,7 +107,12 @@ partial_status_text_format)
   cache='{"five_hour":{"utilization":42}}'
   _run_hook "$cache" "$mirror"
   out=$(python3 "$QUOTA" status --mirror-path "$mirror")
-  expected="quota: state=partial used=42% resets_in=unknown"
+  # band=unknown is appended by the later quota-aware-pause-resume F1 change
+  # (commit 14961e25): compute_band() only ever yields a non-"unknown" word
+  # for state=="ok", so a state=partial line always carries band=unknown.
+  # See DECISIONS.md in this spec for why the check's expected string was
+  # updated rather than the feature being reverted.
+  expected="quota: state=partial used=42% resets_in=unknown band=unknown"
   if [ "$out" != "$expected" ]; then
     echo "FAIL: expected [$expected] got [$out]"; exit 1
   fi

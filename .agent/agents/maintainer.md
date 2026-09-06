@@ -54,9 +54,10 @@ If you discover a template/workflow bug during a session:
    - **For non-mission maintainer runs** (direct/trivial work per the CLAUDE.md decision tree, with no `wrap_mission.sh` close-out): run it manually here, after Step 6 (backlog updates) and BEFORE Step 8 (brain wrap-up), so the wrap-up can reference the trim count.
    - If the script exits non-zero, stop — do not proceed to the brain wrap-up. Surface the stderr message; the user will rerun once fixed.
 8. **Store in brain** — `python3 execution/brain.py wrap-up --summary "SUMMARY" --tags "TAGS" --closure-candidates "GH #N — evidence" ...` (pass every candidate found in Step 2)
-9. **Bump version** — `bash execution/bump_version.sh && make sync`
+9. **Bump version** — `bash execution/bump_version.sh && make sync` — **ONLY in the harness checkout.**
    - Increments PATCH in `.agent/version` AND `template/.agent/version` (dual-write; both files must stay in sync).
    - `make sync` regenerates provider configs so they reflect the new version.
+   - ⛔ **In a downstream workspace, skip this step — do nothing instead.** `.agent/version` and `.agent/.template_state` record what UPSTREAM delivered here, not how many missions closed here; only `python3 execution/update_template.py --apply` moves them. Bumping them locally ratchets this workspace's delivery receipt above anything upstream ships, and the version-regression guard then refuses every future template update forever. The script enforces this itself — in a downstream it writes nothing and exits 0 with a one-line skip, which is the expected output, not a failure.
 10. **Commit** — `git add -A && git commit -m "chore: bump version to vNEW"`
    - Replace `NEW` with the version echoed by the bump script (format: `OLD -> NEW`).
 11. **Check consistency** — verify agent defs in `.agent/agents/` match the work being done.
@@ -89,3 +90,32 @@ Dev and QA agents should call maintainer after completing each task:
 ## Report Back
 
 Your final act before finishing is to SendMessage your backlog updates — the ticked-off items, new items added, and brain memory ID above — to the orchestrator (`main`). Going idle without reporting is an incomplete task: a backlog that was actually updated but never reported looks, from the orchestrator's side, exactly like a backlog nobody touched.
+
+## Shell discipline (hard constraint)
+
+Your cwd is reset between Bash calls, so two rules apply here — and they hold
+for two different reasons, don't collapse them.
+
+**Never `cd`** — it makes the *following* command's target statically
+unresolvable, and that's what triggers a permission prompt: with any `Read()`
+deny rule present (the scaffold ships `Read(~/.ssh/*)` and its siblings), an
+unresolvable target must be approved by hand — even though `Bash`/`Grep` are
+allowed and the command is read-only. It also doesn't persist to the next call
+anyway, so it buys nothing. One command per Bash call; never join reads with
+`&&`.
+
+**Always use absolute paths** — because a prompt that does still fire must be
+*approvable*. `~/.claude/settings.json` (the machine-global file, shared by
+every project) and `<project>/.claude/settings.json` (this project's own file)
+both render to the operator as `.claude/settings.json` once the path is
+relative — they cannot tell which tree is about to be touched, and can only
+refuse.
+
+| don't | do |
+|---|---|
+| `cd "$dir" && grep -n foo file.py` | `grep -n foo /abs/path/file.py` |
+| `grep -rl foo .` | `grep -rl foo /abs/path/` |
+| `cd "$d" && sed -i '' … && grep …` | two calls, absolute paths |
+
+This is the largest single source of operator interruption during autonomous
+work.

@@ -1,16 +1,78 @@
 #!/usr/bin/env bash
 # sync_agents.sh — Generate platform-specific agent configs from canonical definitions
-# Reads .agent/agents/*.md → generates .claude/agents/*.md + .gemini/agents/*.md
+# Reads .agent/agents/*.md → writes one file per agent into every provider that
+# declares an agents_dir, and one JSON manifest per provider that declares an
+# agents_manifest.
+#
+# Targets are ENUMERATED from .agent/providers/*.json — never a hardcoded
+# destination list, exactly as sync_rules.sh already does. A provider with no
+# agents_dir reads AGENTS.md natively or is fed by a manifest; writing a
+# markdown tree it has no loader for delivers bytes nothing reads, and counting
+# that surface halts the boot with a remedy no command can clear.
+#
+# Only the FRONTMATTER DIALECT is per-provider (models and tool names differ);
+# the destination always comes from the declaration.
 #
 # NON-DESTRUCTIVE: creates missing provider agent files from .agent/agents/ canonical reference.
-# Never overwrites existing .claude/agents/*.md or .gemini/agents/*.md — those are authoritative.
+# Never overwrites an existing provider agent file — those are authoritative.
 
 set -euo pipefail
 
 CANONICAL_DIR=".agent/agents"
-CLAUDE_DIR=".claude/agents"
-GEMINI_DIR=".gemini/agents"
-GROK_DIR=".grok/agents"
+PROVIDERS_DIR=".agent/providers"
+
+if [ ! -d "$PROVIDERS_DIR" ]; then
+  echo "❌ sync_agents: $PROVIDERS_DIR not found — provider enumeration impossible"
+  exit 1
+fi
+
+# Enumerate "<provider>\t<value>" for every provider declaring the given key.
+enumerate_key() {
+  python3 - "$PROVIDERS_DIR" "$1" <<'PYEOF'
+import json
+import pathlib
+import sys
+
+providers_dir = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+for path in sorted(providers_dir.glob("*.json")):
+    try:
+        cfg = json.loads(path.read_text())
+    except (OSError, ValueError):
+        continue
+    if not isinstance(cfg, dict):
+        continue
+    value = cfg.get(key)
+    if value:
+        print("%s\t%s" % (cfg.get("provider", path.stem), value))
+PYEOF
+}
+
+TARGETS=$(enumerate_key agents_dir)
+MANIFESTS=$(enumerate_key agents_manifest)
+
+# The frontmatter dialect a provider speaks. Kept as an explicit map — the same
+# shape as sync_rules.sh's overlay_dir_for — because a model name and a tool
+# name are provider vocabulary, not a path. An unknown provider gets the
+# passthrough dialect rather than a guess at someone else's schema.
+dialect_for() {
+  case "$1" in
+    claude-code) echo "claude" ;;
+    gemini-cli)  echo "gemini" ;;
+    grok-cli)    echo "grok"   ;;
+    *)           echo "default" ;;
+  esac
+}
+
+# Short label used in --check / orphan output. Cosmetic only.
+short_name_for() {
+  case "$1" in
+    claude-code) echo "claude" ;;
+    gemini-cli)  echo "gemini" ;;
+    grok-cli)    echo "grok"   ;;
+    *)           echo "$1"     ;;
+  esac
+}
 
 # Mapping functions (avoids associative array issues across shells)
 map_claude_model() {
@@ -30,6 +92,17 @@ map_gemini_model() {
     flash) echo "gemini-2.5-flash" ;;
     local) echo "gemini-2.5-flash-lite" ;;
     *) echo "gemini-2.5-flash" ;;
+  esac
+}
+
+# The model a dialect writes into frontmatter. Empty means the dialect has no
+# model key at all (grok and the passthrough default), and --check therefore
+# has nothing to compare — silence, not a false drift report.
+model_for_dialect() {
+  case "$1" in
+    claude) map_claude_model "$2" ;;
+    gemini) map_gemini_model "$2" ;;
+    *)      echo "" ;;
   esac
 }
 
@@ -82,13 +155,12 @@ map_tools() {
   while IFS= read -r tool_item; do
     tool_item=$(echo "$tool_item" | xargs)
     [ -z "$tool_item" ] && continue
-    if [ "$platform" = "claude" ]; then
-      mapped=$(map_claude_tool "$tool_item")
-    elif [ "$platform" = "grok" ]; then
-      mapped=$(map_grok_tool "$tool_item")
-    else
-      mapped=$(map_gemini_tool "$tool_item")
-    fi
+    case "$platform" in
+      claude) mapped=$(map_claude_tool "$tool_item") ;;
+      gemini) mapped=$(map_gemini_tool "$tool_item") ;;
+      grok)   mapped=$(map_grok_tool "$tool_item") ;;
+      *)      mapped="$tool_item" ;;
+    esac
     if [ -n "$result" ]; then
       result="$result, \"$mapped\""
     else
@@ -108,30 +180,25 @@ if [ "${1:-}" = "--check" ]; then
     checked=$((checked + 1))
 
     model_tier=$(sed -n '/^---$/,/^---$/p' "$canonical" | grep '^model_tier:' | awk '{print $2}' || true)
-    expected_claude=$(map_claude_model "$model_tier")
-    expected_gemini=$(map_gemini_model "$model_tier")
 
-    CLAUDE_TARGET="$CLAUDE_DIR/$filename"
-    if [ ! -f "$CLAUDE_TARGET" ]; then
-      echo "MISSING claude $name: $CLAUDE_TARGET does not exist"
-    else
-      actual_claude=$(sed -n '/^---$/,/^---$/p' "$CLAUDE_TARGET" | grep '^model:' | awk '{print $2}' || true)
-      if [ "$actual_claude" != "$expected_claude" ]; then
-        echo "DRIFT claude $name: expected=$expected_claude actual=$actual_claude"
+    while IFS=$'\t' read -r provider dest; do
+      [ -n "$dest" ] || continue
+      dialect=$(dialect_for "$provider")
+      expected=$(model_for_dialect "$dialect" "$model_tier")
+      # A dialect with no model key has nothing to drift.
+      [ -n "$expected" ] || continue
+      label=$(short_name_for "$provider")
+      target="$dest/$filename"
+      if [ ! -f "$target" ]; then
+        echo "MISSING $label $name: $target does not exist"
+        continue
+      fi
+      actual=$(sed -n '/^---$/,/^---$/p' "$target" | grep '^model:' | awk '{print $2}' || true)
+      if [ "$actual" != "$expected" ]; then
+        echo "DRIFT $label $name: expected=$expected actual=$actual"
         drift=$((drift + 1))
       fi
-    fi
-
-    GEMINI_TARGET="$GEMINI_DIR/$filename"
-    if [ ! -f "$GEMINI_TARGET" ]; then
-      echo "MISSING gemini $name: $GEMINI_TARGET does not exist"
-    else
-      actual_gemini=$(sed -n '/^---$/,/^---$/p' "$GEMINI_TARGET" | grep '^model:' | awk '{print $2}' || true)
-      if [ "$actual_gemini" != "$expected_gemini" ]; then
-        echo "DRIFT gemini $name: expected=$expected_gemini actual=$actual_gemini"
-        drift=$((drift + 1))
-      fi
-    fi
+    done <<< "$TARGETS"
   done
 
   if [ "$drift" -eq 0 ]; then
@@ -145,8 +212,8 @@ fi
 
 # --- Orphan detection: provider agent files with no canonical source ---
 # (GH provider-agent-orphans F2). Reverse of the sync/--check scans above:
-# those walk $CANONICAL_DIR outward; this walks the provider dirs inward
-# looking for *.md files with no .agent/agents/<name>.md counterpart.
+# those walk $CANONICAL_DIR outward; this walks the declared provider dirs
+# inward looking for *.md files with no .agent/agents/<name>.md counterpart.
 ORPHAN_ALLOWLIST=".agent/agents/PROVIDER_ORPHAN_ALLOWLIST.yaml"
 
 # Prints "<provider>|<name>" once per allowlisted entry (empty output if the
@@ -173,31 +240,31 @@ with open(path) as f:
 PYEOF
 }
 
-# Populates the global ORPHANS array with "<provider>|<name>|<path>" entries
-# and sets ORPHAN_CHECKED to the total *.md files scanned across all three
-# provider dirs (before allowlist filtering).
+# Populates the global ORPHANS array with "<label>|<name>|<path>" entries
+# and sets ORPHAN_CHECKED to the total *.md files scanned across every declared
+# agents_dir (before allowlist filtering).
 scan_orphans() {
   ORPHANS=()
   ORPHAN_CHECKED=0
   local allowlist_pairs
   allowlist_pairs="$(allowlisted_pairs)"
 
-  local dir provider f name
-  for pair in "$CLAUDE_DIR:claude" "$GEMINI_DIR:gemini" "$GROK_DIR:grok"; do
-    dir="${pair%%:*}"
-    provider="${pair##*:}"
-    [ -d "$dir" ] || continue
-    for f in "$dir"/*.md; do
+  local provider dest label f name
+  while IFS=$'\t' read -r provider dest; do
+    [ -n "$dest" ] || continue
+    [ -d "$dest" ] || continue
+    label=$(short_name_for "$provider")
+    for f in "$dest"/*.md; do
       [ -f "$f" ] || continue
       ORPHAN_CHECKED=$((ORPHAN_CHECKED + 1))
       name=$(basename "$f" .md)
       [ -f "$CANONICAL_DIR/$name.md" ] && continue
-      if [ -n "$allowlist_pairs" ] && grep -qxF "$provider|$name" <<< "$allowlist_pairs"; then
+      if [ -n "$allowlist_pairs" ] && grep -qxF "$label|$name" <<< "$allowlist_pairs"; then
         continue
       fi
-      ORPHANS+=("$provider|$name|$f")
+      ORPHANS+=("$label|$name|$f")
     done
-  done
+  done <<< "$TARGETS"
 }
 
 if [ "${1:-}" = "--check-orphans" ]; then
@@ -224,7 +291,8 @@ if [ "${1:-}" = "--prune-orphans" ]; then
   for orphan in "${ORPHANS[@]:-}"; do
     [ -z "$orphan" ] && continue
     IFS='|' read -r o_provider o_name o_path <<< "$orphan"
-    rm -f "$o_path"
+    # Section-10 guarded delete: never let an empty variable become a path.
+    [ -n "$o_path" ] && [ -e "$o_path" ] && rm -f -- "$o_path"
     echo "remove: $o_path"
     removed=$((removed + 1))
   done
@@ -232,7 +300,15 @@ if [ "${1:-}" = "--prune-orphans" ]; then
   exit 0
 fi
 
-mkdir -p "$CLAUDE_DIR" "$GEMINI_DIR" "$GROK_DIR"
+if [ -z "$TARGETS" ] && [ -z "$MANIFESTS" ]; then
+  echo "⚠️  sync_agents: no provider declares an agents_dir or an agents_manifest — nothing to sync."
+  exit 0
+fi
+
+while IFS=$'\t' read -r provider dest; do
+  [ -n "$dest" ] || continue
+  mkdir -p "$dest"
+done <<< "$TARGETS"
 
 created=0
 skipped=0
@@ -246,85 +322,57 @@ for canonical in "$CANONICAL_DIR"/*.md; do
   tools_line=$(sed -n '/^---$/,/^---$/p' "$canonical" | grep '^tools:' | sed 's/^tools: \[//;s/\]//' || true)
   tools_denied_line=$(sed -n '/^---$/,/^---$/p' "$canonical" | grep '^tools_denied:' | sed 's/^tools_denied: \[//;s/\]//' || true)
 
-  # Map models
-  claude_model=$(map_claude_model "$model_tier")
-  gemini_model=$(map_gemini_model "$model_tier")
-
-  # Map tools
-  claude_denied=$(map_tools "claude" "$tools_denied_line")
-  gemini_tools=$(map_tools "gemini" "$tools_line")
-  grok_tools=$(map_tools "grok" "$tools_line")
-
   # Get body (everything after second ---)
   body=$(awk 'BEGIN{n=0} /^---$/{n++; if(n==2) next} n>=2{print}' "$canonical")
 
-  # --- Claude agent (non-destructive) ---
-  CLAUDE_TARGET="$CLAUDE_DIR/$filename"
-  if [ -f "$CLAUDE_TARGET" ]; then
-    echo "SKIP (exists): $CLAUDE_TARGET"
-    skipped=$((skipped + 1))
-  else
-    {
-      echo "---"
-      echo "name: ${filename%.md}"
-      echo "model: $claude_model"
-      echo "description: $description"
-      [ -n "$claude_denied" ] && echo "disallowedTools: [$claude_denied]"
-      echo "---"
-      echo "$body"
-    } > "$CLAUDE_TARGET"
-    echo "create: $CLAUDE_TARGET"
-    created=$((created + 1))
-  fi
+  while IFS=$'\t' read -r provider dest; do
+    [ -n "$dest" ] || continue
+    target="$dest/$filename"
+    if [ -f "$target" ]; then
+      echo "SKIP (exists): $target"
+      skipped=$((skipped + 1))
+      continue
+    fi
 
-  # --- Gemini agent (non-destructive) ---
-  GEMINI_TARGET="$GEMINI_DIR/$filename"
-  if [ -f "$GEMINI_TARGET" ]; then
-    echo "SKIP (exists): $GEMINI_TARGET"
-    skipped=$((skipped + 1))
-  else
-    {
-      echo "---"
-      echo "name: ${filename%.md}"
-      echo "model: $gemini_model"
-      echo "description: $description"
-      [ -n "$gemini_tools" ] && echo "tools: [$gemini_tools]"
-      echo "---"
-      echo "$body"
-    } > "$GEMINI_TARGET"
-    echo "create: $GEMINI_TARGET"
-    created=$((created + 1))
-  fi
+    dialect=$(dialect_for "$provider")
+    model=$(model_for_dialect "$dialect" "$model_tier")
+    if [ "$dialect" = "claude" ]; then
+      denied=$(map_tools "claude" "$tools_denied_line")
+      tools=""
+    else
+      denied=""
+      tools=$(map_tools "$dialect" "$tools_line")
+    fi
 
-  # --- Grok agent (non-destructive) ---
-  GROK_TARGET="$GROK_DIR/$filename"
-  if [ -f "$GROK_TARGET" ]; then
-    echo "SKIP (exists): $GROK_TARGET"
-    skipped=$((skipped + 1))
-  else
     {
       echo "---"
       echo "name: ${filename%.md}"
+      [ -n "$model" ] && echo "model: $model"
       echo "description: $description"
-      [ -n "$grok_tools" ] && echo "tools: [$grok_tools]"
+      [ -n "$denied" ] && echo "disallowedTools: [$denied]"
+      [ -n "$tools" ] && echo "tools: [$tools]"
       echo "---"
       echo "$body"
-    } > "$GROK_TARGET"
-    echo "create: $GROK_TARGET"
+    } > "$target"
+    echo "create: $target"
     created=$((created + 1))
-  fi
+  done <<< "$TARGETS"
 
 done
 
 echo "✅ sync_agents: created=$created skipped=$skipped (canonical advisory; provider files authoritative)"
 
-# --- Antigravity ---
-# Generate .anti/agents.json — a JSON manifest read by Eve at boot.
-# Eve calls the define_subagent LLM tool for each entry; there is no 'agy define_subagent' CLI.
-mkdir -p .anti
-python3 - <<'PYEOF'
+# --- Agents manifests (antigravity) ---
+# A provider that declares an `agents_manifest` is fed by a JSON file, not by a
+# markdown tree: Eve reads .anti/agents.json at boot and calls the
+# define_subagent LLM tool for each entry — there is no 'agy define_subagent'
+# CLI, and no markdown directory it could load instead.
+while IFS=$'\t' read -r provider manifest_path; do
+  [ -n "$manifest_path" ] || continue
+  python3 - "$manifest_path" <<'PYEOF'
 import json, pathlib, re, sys
 
+target = pathlib.Path(sys.argv[1])
 agents_dir = pathlib.Path('.agent/agents')
 result = []
 for md_file in sorted(agents_dir.glob('*.md')):
@@ -349,14 +397,20 @@ if short:
     sys.exit(1)
 
 # Atomic write — tempfile + rename so a failed run never leaves stale JSON
-pathlib.Path('.anti').mkdir(exist_ok=True)
-target = pathlib.Path('.anti/agents.json')
+target.parent.mkdir(parents=True, exist_ok=True)
 tmp = target.with_suffix('.json.tmp')
 tmp.write_text(json.dumps(result, indent=2))
 tmp.rename(target)
 
-print(f'✅ sync-agents: .anti/agents.json ({len(result)} agents)')
+print(f'✅ sync-agents: {target} ({len(result)} agents)')
 PYEOF
 
-# Remove the old bash-script approach if it lingers
-rm -f .anti/register_agents.sh
+  # Remove the old bash-script approach if it lingers. Guarded delete, and an
+  # `if` rather than an `&&` chain: under `set -e` a false final command in a
+  # loop body fails the whole script, so a missing legacy file would abort the
+  # sync it is supposed to tidy after.
+  legacy="$(dirname "$manifest_path")/register_agents.sh"
+  if [ -n "$legacy" ] && [ -e "$legacy" ]; then
+    rm -f -- "$legacy"
+  fi
+done <<< "$MANIFESTS"

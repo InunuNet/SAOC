@@ -1037,9 +1037,63 @@ def _existing_contract_for_feature(fm: dict, fid: str) -> ContractLookup:
     return ContractLookup(str(shared_path), None)
 
 
+BOOT_HALT_EXIT_CODE = 4
+
+
+def _boot_panel_verdict() -> tuple[str | None, list[str]]:
+    """(verdict, halt_reasons) from THIS workspace's boot-panel marker.
+
+    Read through boot_panel.read_marker rather than by loading the JSON here,
+    so the identity check — a marker carrying another checkout's workspace_root
+    counts as ABSENT, not as evidence of health — stays in exactly one place.
+    A workspace with no panel, no marker, or an unusable marker yields
+    (None, []): there is no halt to enforce, and inventing one would lock an
+    operator out of a workspace they cannot clear.
+    """
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import boot_panel
+    except Exception:
+        return None, []
+    try:
+        marker = boot_panel.read_marker(Path.cwd())
+        if not isinstance(marker, dict) or boot_panel.marker_problems(marker):
+            return None, []
+        return marker.get("verdict"), [str(r) for r in marker.get("halt_reasons") or []]
+    except Exception:
+        return None, []
+
+
+def _boot_halt_message(reasons: list[str]) -> str:
+    """The panel ANNOUNCES the halt and always exits 0 — a SessionStart hook
+    that fails takes the session with it. This is where it is ENFORCED, because
+    this is the thing that starts missions (SPEC section 2 / DECISIONS D6).
+    """
+    return (
+        f"⛔ BOOT PANEL HALT — the mission does not start. "
+        f"{len(reasons)} blocking check(s): " + ", ".join(reasons) + "\n"
+        "   Every one of them is clearable. See the fix for each: "
+        "python3 execution/boot_panel.py --format report\n"
+        "   Then re-run the panel so the marker is refreshed: "
+        "python3 execution/boot_panel.py\n"
+        "   To start anyway: python3 execution/mission.py resume --ignore-boot-halt"
+    )
+
+
+def _enforce_boot_halt(args) -> None:
+    """Refuse to start work against a halting workspace."""
+    if getattr(args, "ignore_boot_halt", False):
+        return
+    verdict, reasons = _boot_panel_verdict()
+    if verdict == "halt":
+        print(_boot_halt_message(reasons), file=sys.stderr)
+        sys.exit(BOOT_HALT_EXIT_CODE)
+
+
 def cmd_resume(args):
     _boot_check = Path(__file__).parent / "checks" / "verify_boot_ran.py"
     subprocess.run([sys.executable, str(_boot_check)], check=False)
+    _enforce_boot_halt(args)
     mission_path = None
     if args.mission:
         mission_path = args.mission
@@ -1382,6 +1436,9 @@ def main():
     p_resume.add_argument("mission", nargs="?", help="Path to mission .md (defaults to active.json)")
     p_resume.add_argument("--ignore-quota", action="store_true", default=False,
                            help="Bypass the quota admission check for this resume")
+    p_resume.add_argument("--ignore-boot-halt", action="store_true", default=False,
+                           help="Start despite a boot-panel halt marker (records nothing; "
+                                "the drift is still there)")
 
     # activate
     p_act = sub.add_parser("activate", help="Set a mission as active")
