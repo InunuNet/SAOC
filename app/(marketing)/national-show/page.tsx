@@ -247,13 +247,26 @@ export default async function NationalShowPage() {
         // wordmark — logo carries identity, h1 sits below it as the
         // headline (Brad, 2026-09-07). Its wordmark is real text, not baked
         // into an image, so it stays screen-reader reachable on its own.
-        brandMark={<Logo orientation="horizontal" tone="on-dark" />}
+        brandMark={
+          // The horizontal lockup wraps "National Orchid Show" onto two
+          // lines below ~640px, leaving the emblem sized for a two-line
+          // wordmark next to a three-line one — cramped, and it crowds "The
+          // Flagship" eyebrow right beneath it. Stack vertically below `sm`,
+          // switch to the full horizontal lockup from `sm:` up.
+          <>
+            <Logo orientation="vertical" tone="on-dark" className="sm:hidden" />
+            <Logo orientation="horizontal" tone="on-dark" className="hidden sm:flex" />
+          </>
+        }
         eyebrow="The Flagship"
         title={title}
         actions={
           <div className="flex w-full flex-col gap-8">
             {edition ? (
-              <p className="font-sans text-[13px] font-medium uppercase tracking-[0.18em] text-[var(--lilac-muted)]">
+              // Over the photograph, pale gold holds regardless of the image
+              // underneath — lilac measured 199,184,222 (weak) on the
+              // bright-petal region of orchid-yellow.jpg/orchid-pink.jpg.
+              <p className="font-sans text-[13px] font-medium uppercase tracking-[0.18em] text-ivory/90">
                 Edition {toRomanOrdinal(edition)}
               </p>
             ) : null}

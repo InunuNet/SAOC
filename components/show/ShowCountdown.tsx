@@ -99,7 +99,8 @@ export function ShowCountdown({ countdownDate, edition, pendingLabel }: ShowCoun
   if (targetMs === null) {
     return (
       <div>
-        <p className="font-serif text-[24px] leading-none text-accent-soft">
+        {/* Same photography-legibility reasoning as the ticking state below. */}
+        <p className="font-serif text-[24px] leading-none text-ivory">
           Show dates to be confirmed
         </p>
         <ConfirmationBadge status="pending" pendingLabel={pendingLabel} tone="dark" />
@@ -118,10 +119,17 @@ export function ShowCountdown({ countdownDate, edition, pendingLabel }: ShowCoun
     <div className="flex gap-6" aria-label={ariaLabel}>
       {units.map(({ label, value }) => (
         <div key={label} className="text-center">
-          <div className="font-serif text-[42px] leading-none text-accent-soft">
+          {/* This countdown's one call site (the national-show landing hero,
+              app/(marketing)/national-show/page.tsx) sits directly over full-
+              bleed photography, not a flat ground. Brand-tint violet
+              (text-accent-soft) and a 0.6-alpha label measured well under
+              4.5:1 against orchid-yellow.jpg/orchid-pink.jpg's bright petals
+              — over a photograph, legibility wins over brand tint (guardrail
+              6), so both use solid pale gold instead. */}
+          <div className="font-serif text-[42px] leading-none text-ivory">
             {String(value).padStart(2, '0')}
           </div>
-          <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/60">
+          <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/90">
             {label}
           </div>
         </div>

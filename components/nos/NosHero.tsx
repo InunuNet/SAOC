@@ -81,13 +81,54 @@ export function NosHero({
         className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(to top, rgba(14,11,36,0.92) 0%, rgba(14,11,36,0.72) 32%, rgba(14,11,36,0.28) 62%, rgba(14,11,36,0) 100%)',
+            'linear-gradient(to top, rgba(14,11,36,0.95) 0%, rgba(14,11,36,0.82) 30%, rgba(14,11,36,0.45) 58%, rgba(14,11,36,0) 88%)',
         }}
       />
+      {/* Second scrim, left to right, purple-tinted near-black. The text
+          column is left-aligned inside the max-width container, but the
+          photo's brightest region isn't guaranteed to sit under the
+          right-hand two-thirds — orchid-yellow.jpg and orchid-pink.jpg (the
+          two brightest cleared images) both have bright petals reaching
+          into the left column, where small brand-tint text (an olive
+          eyebrow, violet countdown digits) measured well under 4.5:1 even
+          with the bottom-up scrim alone. This fade holds the text column
+          dark regardless of what the photo underneath is doing there —
+          on top of the bottom-up scrim, not instead of it. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(to right, rgba(14,11,36,0.85) 0%, rgba(14,11,36,0.55) 42%, rgba(14,11,36,0.12) 72%, rgba(14,11,36,0) 100%)',
+        }}
+      />
+      {/* Second scrim, top-down, only when a brandMark is present. The bottom
+          scrim above is deliberately near-transparent at the very top of the
+          hero (it exists to hold the headline at the bottom) — a brandMark
+          sitting above the eyebrow lands in that unscrimmed zone. Measured
+          directly against the composited photo (not an average): without
+          this, the lockup's Jost subtitle line read 2.44:1 on
+          orchid-violet.jpg — below the 4.5:1 minimum. This band brings it to
+          the same ~0.8 density as the bottom scrim's text zone. */}
+      {brandMark ? (
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 h-[45%]"
+          style={{
+            background:
+              'linear-gradient(to bottom, rgba(14,11,36,0.8) 0%, rgba(14,11,36,0.55) 55%, rgba(14,11,36,0) 100%)',
+          }}
+        />
+      ) : null}
       <div className="relative z-10 mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-8 py-14">
         {brandMark ? <div className="mb-2">{brandMark}</div> : null}
+        {/* Olive is legal text only on a flat royal-purple/night ground (6.16:1,
+            golden table) — over a photograph, brand tints are decoration and
+            legibility wins (guardrail 6). Measured `text-[var(--olive)]` at
+            olive-on-bright-petal below 4.5:1 on orchid-yellow.jpg and
+            orchid-pink.jpg; pale gold holds regardless of what's under it. */}
         {eyebrow ? (
-          <span className="font-sans text-[12px] font-medium uppercase tracking-[0.3em] text-[var(--olive)]">
+          <span className="font-sans text-[12px] font-medium uppercase tracking-[0.3em] text-ivory">
             {eyebrow}
           </span>
         ) : null}
