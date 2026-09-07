@@ -28,8 +28,9 @@ every SAOC page.
 
 **Consequence:** SAOC-owned shared components — `components/vendors/*`,
 `components/ui/PageHero.tsx`, the shared ticket pages under `components/tickets/*` —
-re-skin under `.nos-theme` with **zero edits to any of their files**. QA verified zero
-SAOC-colour leaks on the national-show routes and confirmed `/about` renders unchanged.
+re-skin under `.nos-theme` with **zero edits to any of their files**. **Verified
+2026-09-08:** zero SAOC-colour leaks sampled across the national-show routes, and
+`/about` renders unchanged. Not re-checked since.
 
 Fonts follow the same seam: `national-show/layout.tsx` loads Cormorant Garamond and Jost
 via `next/font/google`, binds them to `--font-nos-cormorant` / `--font-nos-jost` on the
@@ -84,9 +85,10 @@ NOS palette value, or that same value redeclared under the `--color-*` Tailwind 
 
 ## 3. A green gate is a measurement, not a standing guarantee
 
-Every verified claim in this document — the contrast ratios in §4, the scope-seam
-isolation in §1, the zero-SAOC-colour-leak result, the Codex cross-model pass — was true
-**on the day someone measured it.** None of it re-runs automatically on a later change.
+Every verified claim in this document is dated at the point it's made — a check that
+proved something true on a given day, not a standing property of the code. None of it
+re-runs automatically on a later change, so treat each dated claim as exactly that:
+true when measured, unknown since.
 
 Nothing in this repo's CI wires those checks in. `.github/workflows/ci.yml` runs lint,
 type-check, build, and two residue guards (`dataset-residue-guard`,
@@ -125,15 +127,27 @@ Two related facts, so a future CI runner doesn't misread the suite:
   contract tweak can trip a gate block for a reason that has nothing to do with the
   change itself.
 
+**This isn't hypothetical for this project — it's already recurring.**
+`.agent/memory/project/backlog.md` records four separate contract checks
+(`vendor-f6-review-workflow`, `vendor-f5-register-route`, `vendor-f3-showcase-page`,
+`vendor-f4-admission-products`) confirmed failing, pre-existing and unrelated to the
+mission that found them, during an earlier vendor-flow QA sweep (2026-08-25/26) — plus a
+separate, still-open standing item, "Audit remaining contracts for the weak-assertion
+defect class." Those four failures are symptoms of the same cause described above:
+nothing runs a contract's checks after the mission that wrote them closes, so decay sits
+undetected until someone happens to look.
+
 ## 4. Contrast
 
 Source of truth: `.agent/memory/project/specs/nos-design-system/goldens/nos-contrast.golden.md`
-(WCAG 2.1 relative-luminance formula, computed by `execution/checks/nos_contrast.py`).
+(WCAG 2.1 relative-luminance formula, computed by `execution/checks/nos_contrast.py`,
+**computed 2026-09-07** — a static palette table, re-derivable any time from the same
+hex values, but not re-run since).
 
 **Headline rule: olive `#A7A841` is the show's most recognisable colour and its least
-usable one.** Measured ratios: 6.16:1 on royal purple (passes), but **2.22:1 on pale
-gold** and **2.52:1 on white** — fails body text, fails large text, fails even the
-non-text 3:1 bar. Olive is legal on light grounds only as a purely decorative rule
+usable one.** Measured ratios, 2026-09-07: 6.16:1 on royal purple (passes), but **2.22:1
+on pale gold** and **2.52:1 on white** — fails body text, fails large text, fails even
+the non-text 3:1 bar. Olive is legal on light grounds only as a purely decorative rule
 (WCAG 1.4.11 exempts decoration) — never body text on light, never a meaningful border,
 never a button fill. `--olive-700` / `--olive-deep` `#6A6829`/`#7F7D33` (5.53:1 / 4.30:1
 depending on ground) is the legal olive for large text on light grounds; it still fails
@@ -149,23 +163,24 @@ future contrast check on this tree:
 2. **For text over photography, measure the actual composited pixels, not a flat
    estimate.** The method: hide the text, screenshot the background, find the worst
    single pixel inside the text's own bounding box, then composite the text's real
-   computed colour — **including its own alpha** — over that pixel before scoring. QA
-   found `text-ivory/85` scores as raw ivory (correct-looking) unless you do this,
-   overstating the real ratio by roughly 1.5 points.
+   computed colour — **including its own alpha** — over that pixel before scoring.
+   **Verified 2026-09-08:** `text-ivory/85` scores as raw ivory (correct-looking) unless
+   you do this, overstating the real ratio by roughly 1.5 points.
 
-   The same method is what caught, and later confirmed the fix for, a real defect in
-   the hero's "Opens in" countdown label. At `text-ivory/45` (10px, weight 500) it
-   measured 3.92–4.36:1 across three widths (390/1024/1280px) against a required 4.5:1 —
-   a genuine WCAG failure, in the same hero and scrim as a wordmark that passes
-   comfortably, because the label's own 45% opacity eroded an otherwise-adequate scrim.
-   **Fixed** by raising the opacity to `text-ivory/70` (the scrim itself untouched); the
-   worst composited case across three widths and three background images is now
-   **7.06:1**. The fix was confirmed with a negative control: forcing the label back to
-   0.45 reproduced the original 3.84–4.22:1 failures, proving the harness actually
-   rejects the broken state rather than passing regardless of input. That negative-
-   control step is the technique worth reusing on the next contrast fix — a check that
-   only ever runs against the "fixed" code can't tell a real pass from a check that
-   would pass anything.
+   The same method is what caught, and the same day confirmed the fix for, a real
+   defect in the hero's "Opens in" countdown label. **Found 2026-09-08:** at
+   `text-ivory/45` (10px, weight 500) it measured 3.92–4.36:1 across three widths
+   (390/1024/1280px) against a required 4.5:1 — a genuine WCAG failure, in the same hero
+   and scrim as a wordmark that passes comfortably, because the label's own 45% opacity
+   eroded an otherwise-adequate scrim. **Fixed 2026-09-08** (commit `b3adca7d`) by
+   raising the opacity to `text-ivory/70`, scrim untouched; the worst composited case
+   across three widths and three background images measured **7.06:1** the same day.
+   The fix was confirmed with a negative control: forcing the label back to 0.45
+   reproduced the original 3.84–4.22:1 failures, proving the harness actually rejects
+   the broken state rather than passing regardless of input. That negative-control step
+   is the technique worth reusing on the next contrast fix — a check that only ever runs
+   against the "fixed" code can't tell a real pass from a check that would pass
+   anything. Not re-measured since 2026-09-08.
 
 ## 5. Photography, and the failure that recurred
 
@@ -180,13 +195,13 @@ on the dark end. **Gradient overlays only** — no duotone, filters, or vignette
 flower supplies the colour.
 
 **The pattern that bit the hero repeatedly: scaling an element moves it into different
-photographic ground.** The same strapline measured 2.44:1 at one width, 3.35:1 once
-enlarged, and 4.78:1 at 1024px, while 390px and 1280px both looked comfortable at
-7.37:1 — the failure was invisible at the two widths a quick check would naturally try.
-The rule that follows: **measure at three widths minimum, and against the brightest
-image**, not the default. The page's default hero uses one of the darker of the five
-images, so a visual check that only exercises the default silently tests the easiest
-case.
+photographic ground.** Over the course of 2026-09-07, the same strapline measured
+2.44:1 at one width, 3.35:1 once enlarged, and 4.78:1 at 1024px, while 390px and 1280px
+both looked comfortable at 7.37:1 — the failure was invisible at the two widths a quick
+check would naturally try. The rule that follows: **measure at three widths minimum,
+and against the brightest image**, not the default. The page's default hero uses one of
+the darker of the five images, so a visual check that only exercises the default
+silently tests the easiest case.
 
 Also worth recording as the worst instance of a styling decision carrying accessibility
 weight invisibly: the hero's top scrim was **gated on a `brandMark` prop**. Removing that
@@ -204,7 +219,9 @@ tracking, over a wide-tracked `WESTERN CAPE · 2027` line in Jost at 0.30em.
 On `/national-show`, the page's `<h1>` **is** the lockup: its `textContent` is the real
 wordmark text ("National Orchid Show" / "Western Cape · 2027"), not an image with hidden
 filler text, and both emblem `<img>` elements carry decorative `alt=""`. This keeps the
-heading real, indexable text rather than a picture standing in for one.
+heading real, indexable text rather than a picture standing in for one. **Verified
+2026-09-08** against real DOM at both 390 and 1280px, including that only one emblem is
+visible per breakpoint by computed size, not by class name alone. Not re-checked since.
 
 The wordmark measures 15.55em wide, so it cannot sit beside the emblem below roughly
 1263px of viewport width — the inline-to-stacked layout switch happens at Tailwind's
@@ -242,19 +259,19 @@ link one edition to another.
 Early-bird pricing uses `validThrough` on the `Offer`, not `validFrom` — a cutoff is when
 an offer *stops* being valid, not when it starts.
 
-**Status: wired and verified live, as of commit `b3adca7d`.** An earlier QA pass on this
-mission found `lib/seo.ts`'s `buildPageMetadata()` and `components/seo/JsonLd.tsx`'s
+**Found 2026-09-08 (QA pass), fixed and re-verified the same day (commit `b3adca7d`).**
+The QA pass found `lib/seo.ts`'s `buildPageMetadata()` and `components/seo/JsonLd.tsx`'s
 `eventJsonLd`/`nationalShowEventJsonLd` builders correctly written but called from no
 file under `app/` — no canonical tags, and `/national-show`'s `og:url` resolving to the
-homepage. That was fixed and re-verified against served HTML: `buildPageMetadata()` is
-now called from all 14 `/national-show` routes; `/national-show` serves
-`<link rel="canonical" href="https://saoc.co.za/national-show">` and `og:url
+homepage. Re-verified against served HTML the same day, after the fix:
+`buildPageMetadata()` is called from all 14 `/national-show` routes; `/national-show`
+serves `<link rel="canonical" href="https://saoc.co.za/national-show">` and `og:url
 https://saoc.co.za/national-show`; exactly one `Event` node exists in the national-show
 tree, with bare `2027-09-16`/`2027-09-19` dates, a `location` carrying both `name` and
 `address`, and five `Offer`s each pointing at its own `/tickets/<slug>` page (200). A
-64-route sweep found zero occurrences of the five dead identifiers, a clean 61-URL
-sitemap with no 3xx entries, and `noindex, nofollow` served on `vendors/register` and
-`vendors/payment`.
+64-route sweep the same day found zero occurrences of the five dead identifiers, a clean
+61-URL sitemap with no 3xx entries, and `noindex, nofollow` served on `vendors/register`
+and `vendors/payment`. Not re-verified since 2026-09-08.
 
 Two implementation details a future dev needs, since they're not obvious from the
 builder signatures alone:

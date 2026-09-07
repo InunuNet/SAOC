@@ -3206,3 +3206,78 @@ answer two hours in the direction that makes a false claim look confident. See
 **How to apply:** re-run every assertion independently before accepting a green report — two
 of four @dev reports this mission did not survive it. When an agent calls damage
 "pre-existing", decode the timestamp rather than accepting the attribution.
+
+## 2026-09-08 — `nos-design-system` mission: nine lessons on rendered-evidence verification
+
+Mission restyled all 14 `/national-show` routes into the National Orchid Show 2027 design
+system (17 commits, PR #1 on `InunuNet/SAOC`, branch `nos-design`, **not yet merged** — TRIAD-02
+still needs a preview-deploy manifest, and human decisions are pending on VIP pricing, admin
+scope, and the two live enquiry addresses). Sources: mission file
+`.agent/memory/project/missions/2026-09-06-nos-design-system.md`, `docs/nos-design-system.md`,
+`.agent/memory/scratch/qa-report-nos-design-system.md`, seven `dev-result-*.md` files, and
+`git log origin/main..HEAD`.
+
+1. **Rendered evidence, not source reading, is what caught the expensive defects.** A scrim
+   gated on a `brandMark` prop a refactor removed (taking a legibility guarantee with it), 118
+   elements inheriting SAOC ink while their tokens read correct, and a wordmark that physically
+   cannot fit beside its emblem below 1263px were all invisible in source. Meanwhile four
+   convincing false positives were produced by tooling and caught before being chased:
+   ivory-on-ivory headlines sitting over an `<img>`, "unlabelled" inputs that actually use
+   `label[for]`, a harness capturing lazy-loaded images as blank, and a contrast probe whose
+   background screenshot still contained the text's own pixels. Rule: measure rendered output,
+   and verify a damning finding twice before acting on it.
+
+2. **A CSS custom property's `var()` resolves where it is DECLARED, not where it is used.** Cost
+   three separate defects this mission. Redeclare the exact name the consumer reads (e.g.
+   `--color-*` for Tailwind utilities) on the scoping element, and remember `body` has already
+   resolved `color`/`background`/`font-family` at the root — a new scope must set those real
+   properties too, not only the custom properties behind them. See `docs/nos-design-system.md`
+   for the full mechanism writeup.
+
+3. **Scaling an element moves it onto different photographic ground.** The same hero measured
+   2.44:1, then 3.35:1 once enlarged, then 4.78:1 at 1024px, where both 390 and 1280 looked
+   comfortable at 7.37:1. Measure contrast at three widths minimum, against the brightest
+   candidate images, and composite the text's own alpha over the sampled ground before scoring
+   — not just at the two acceptance-bar viewports.
+
+4. **A negative control is what makes a contrast/a11y harness trustworthy.** Force a fixed
+   element back to its broken state and confirm the harness still fails it. Without that check,
+   a passing measurement may only prove the harness agrees with itself.
+
+5. **Nothing in this repo runs the contract checks automatically.** No `test` script; the
+   Makefile's gate targets are called by nothing CI invokes. Every assertion runs once, when its
+   author invokes it by hand — a green gate is a dated measurement, not a standing guarantee.
+   Seven of nine named Playwright scripts in this mission's contracts don't exist on disk, so a
+   runner must distinguish *failed* from *never runnable*. `backlog.md` already tracks four
+   failing contracts plus a standing P1 on weak assertions — same underlying gap.
+
+6. **The assertions that paid off were the ones that refused to proceed.** A contract literal
+   `'unresolved-nos-boundary'` that declined to guess a ticket category forced a cross-session
+   agreement instead of a silent mismatch weeks later; a gate blocked on *undeclared*
+   verification; a dev declined to self-certify an `agent_review`. Checks that pass are worth
+   less than checks that stop.
+
+7. **File-ownership boundaries prevent collisions but create silent gaps.** Strict ownership
+   stopped three write collisions between concurrent agents this mission, but a dev correctly
+   deferred SEO wiring it wasn't allowed to touch, and the orchestrator never dispatched the
+   follow-up — the whole layer shipped unwired until QA caught it. A declared boundary plus
+   deferred work requires an explicit follow-up dispatch, not an assumption someone else has it.
+
+8. **Orchestrator error, twice: `git add -A` while agents were mid-write** swept in-flight work
+   into unrelated commits (`b3adca7d`, `19fabc2b`). Stage explicit paths, never `-A`, when other
+   agents may be writing concurrently — two occurrences is a pattern, and it undermines the file
+   discipline that was otherwise working (lesson 7).
+
+9. **Never invent content — recurring trap, new instance found.** Five fabricated committee
+   members reached the live site earlier in this project (see existing entries below). This
+   mission's live instance: the Symposium has no date at source — Lee-Ann's FAQ document carries
+   the literal placeholder `"xx, xx September 2027 at the xx"` — and `/national-show/symposium`
+   must not inherit the show's own 16–19 September dates as a stand-in. Use `data-placeholder`
+   or omit; a contract now greps for the substitution.
+
+**Why these matter beyond this mission:** the harness's whole verification model assumes
+measurement is cheap and trustworthy. This mission is the clearest evidence yet that (a) source
+review misses exactly the defects that matter for visual/design work, and (b) an unrun gate is
+indistinguishable from a passing one until someone checks — both push toward automating the
+harness's own trigger (lesson 5 / [[project_contract_checks_mutate_live_content]]), not just its
+assertions. See [[feedback_codex_mandatory_qa]] for the adjacent same-model-review blind spot.

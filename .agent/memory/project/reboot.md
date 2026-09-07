@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-09-06T20:04Z_
+_Generated: 2026-09-07T22:53Z_
 
 ## What happened last session
-Closed mission verification-triad-gate M2/F2: triad-coverage linter now enforced as a preflight in contract.py's gate_cmd (commit aa2f74f3), mission and both milestones marked done. Recorded three residual gaps to backlog (dodgeable app/-substring classifier, cms-loop-f1 live-dataset mutation, agent-uneditable stale CLAUDE.md doc) and three upstream Athanor issues (#1391, #1397, #1399).
+nos-design-system mission (M1-M4 of 6, PR #1 open/unmerged): restyled all 14 /national-show routes into the National Orchid Show 2027 design system across 17 commits. Recorded 9 durable lessons in learned.md: rendered-evidence-over-source-reading for visual defects, var() resolves at declaration not use (cost 3 defects), scaling moves elements onto different photographic ground, negative controls validate a11y harnesses, no contract check runs automatically in this repo (gate is a dated measurement not a guarantee), refusing assertions catch more than passing ones, file-ownership boundaries need explicit follow-up dispatch for deferred work, orchestrator git add -A collided with concurrent agent writes twice, and a recurring no-invented-content trap (Symposium date placeholder). Mission remains open: TRIAD-02 needs a preview-deploy manifest, and VIP pricing / admin scope / duplicate enquiry addresses await human decisions.
