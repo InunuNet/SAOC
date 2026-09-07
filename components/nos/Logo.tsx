@@ -16,12 +16,12 @@ export interface NosLogoProps {
    * `vertical` (default, unchanged) stacks the emblem above the wordmark,
    * centred — the mark for a card or footer. `horizontal` sets the emblem
    * beside the two wordmark lines, left-aligned — the "full format" lockup
-   * for a wide surface like a hero. `responsive` stacks below `sm` and goes
-   * inline from `sm` up, rendered as ONE element — used where the lockup is
-   * itself the page's `<h1>` (see `as`) and swapping between two CSS-hidden
-   * instances would put two competing headings in the DOM. It is left-aligned
-   * at both breakpoints, so it sits flush with the hero column beneath it;
-   * only the standalone `vertical` mark is centred.
+   * for a wide surface like a hero. `responsive` stacks below `xl` and goes
+   * inline from `xl` up, rendered as a single element — used where the lockup
+   * is itself the page's `<h1>` (see the element prop below) and swapping
+   * between two CSS-hidden instances would put two competing headings in the
+   * DOM. It is left-aligned at both breakpoints, so it sits flush with the
+   * hero column beneath it; only the standalone `vertical` mark is centred.
    */
   orientation?: 'vertical' | 'horizontal' | 'responsive';
   /**
@@ -52,22 +52,34 @@ export interface NosLogoProps {
 const HORIZONTAL_EMBLEM_SIZE = 66;
 const VERTICAL_EMBLEM_SIZE = 56;
 
-// Hero size: same "match the wordmark block's optical height" reasoning as
-// above, re-derived at the hero's much larger clamp() type sizes. Title runs
-// clamp(36px,5.6vw,64px) at tracking 0.16em; subtitle runs clamp(18px,
-// 2.8vw,32px) at tracking 0.3em (half the title, matching the default
-// lockup's 22:11 ratio). Wordmark block height ≈ title*1.15 + 8px gap +
-// subtitle*1.2 line-height, and emblem width ≈ that height * 1264/848
-// (~1.49). Evaluated at the clamp() endpoints (36/18 and 64/32) and
-// expressed as a matching clamp() so the emblem scales continuously with
-// the type instead of snapping at a breakpoint. Horizontal needs to match a
-// two-line wordmark block (as above); vertical sits above a stacked block,
-// so it uses a plainer viewport-driven clamp — precision there matters less
-// since nothing beside it needs to line up.
+// Hero size. Title runs clamp(36px,5.6vw,64px) at tracking 0.16em; subtitle
+// runs clamp(18px,2.8vw,32px) at tracking 0.3em (half the title, matching the
+// default lockup's 22:11 ratio).
+//
+// The inline layout switches at `xl`, NOT `sm`. Measured, the single-line
+// wordmark is 15.55em wide at this tracking (995px at the 64px clamp maximum).
+// Against a content column of `min(1280px, 100vw) - 64px` minus the emblem and
+// gap, that only fits beside the emblem from ~1263px up — so an `sm` switch
+// put a THREE-line type block (wrapped title + strapline) next to an emblem
+// sized for two, across roughly 640-1200px, which is most laptop widths. That
+// is the exact mark/type height disagreement the default-size comment above
+// warns about. Above 1280px every value here is fixed (the container caps at
+// 1280), so the inline layout either fits or does not — it cannot drift.
+//
+// Below `xl` the stacked layout carries it, and the wordmark still holds ONE
+// line down to ~624px, where 15.55 * 36px finally exceeds the column. Only
+// genuinely narrow phones wrap it, which is the one place a broken wordmark
+// reads as a stacked lockup rather than a mistake.
 const HERO_TITLE_CLASS = 'text-[clamp(36px,5.6vw,64px)] tracking-[0.16em] leading-[1.05]';
 const HERO_SUBTITLE_CLASS = 'text-[clamp(18px,2.8vw,32px)] tracking-[0.3em]';
-const HERO_EMBLEM_VERTICAL_CLASS = 'w-[clamp(88px,22vw,140px)] h-auto';
-const HERO_EMBLEM_HORIZONTAL_CLASS = 'w-[clamp(104px,14.5vw,180px)] h-auto';
+// Stacked: nothing sits beside the emblem, so it is free to be the signature
+// the show asked for. The 132px floor is deliberate — at 390px the previous
+// 88px read as a supporting mark against a two-line wordmark, not as the
+// emblem of the block.
+const HERO_EMBLEM_VERTICAL_CLASS = 'w-[clamp(132px,16vw,220px)] h-auto';
+// Inline: fixed, because this layout only ever renders at a fixed 1216px
+// column. 168 + 24px gap + 995px wordmark = 1187px, leaving 29px of slack.
+const HERO_EMBLEM_HORIZONTAL_CLASS = 'w-[168px] h-auto';
 
 export function Logo({
   tone = 'light',
@@ -112,8 +124,9 @@ export function Logo({
 
   if (orientation === 'responsive') {
     // One emblem, one wordmark — never two swapped instances. Layout (stacked
-    // vs inline) and emblem size both switch at `sm` via CSS, not by rendering
-    // a second copy.
+    // vs inline) and emblem size both switch at `xl` via CSS, not by rendering
+    // a second copy. See the sizing constants above for why the switch is at
+    // `xl` and not `sm`.
     //
     // Left-aligned at BOTH breakpoints, unlike the standalone `vertical`
     // orientation, which stays centred for cards and the footer. This lockup
@@ -122,15 +135,15 @@ export function Logo({
     // centred mark over a left-aligned column reads as a misaligned seam at
     // 390px rather than as one heading block (Brad, 2026-09-07).
     const emblemClasses = isHero
-      ? `${HERO_EMBLEM_VERTICAL_CLASS} sm:hidden`
-      : 'sm:hidden';
+      ? `${HERO_EMBLEM_VERTICAL_CLASS} xl:hidden`
+      : 'xl:hidden';
     const emblemClassesDesktop = isHero
-      ? `hidden sm:block ${HERO_EMBLEM_HORIZONTAL_CLASS}`
-      : 'hidden sm:block';
+      ? `hidden xl:block ${HERO_EMBLEM_HORIZONTAL_CLASS}`
+      : 'hidden xl:block';
     return (
       <Container
         className={[
-          'flex flex-col items-start gap-3 text-left sm:flex-row sm:items-center sm:gap-6',
+          'flex flex-col items-start gap-3 text-left xl:flex-row xl:items-center xl:gap-6',
           className,
         ]
           .filter(Boolean)
