@@ -11,6 +11,10 @@ import {
   showLabelWithEdition,
 } from '@/lib/show-identity';
 import type { ShowIdentity } from '@/types';
+import { Badge } from '@/components/nos/Badge';
+import { Button } from '@/components/nos/Button';
+import { CtaBand } from '@/components/nos/CtaBand';
+import { NosHero } from '@/components/nos/NosHero';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -63,134 +67,106 @@ export default async function ShowArchivePage() {
 
   return (
     <>
-      {/* ── Page hero ── */}
-      <section className="relative overflow-hidden bg-primary-800 py-24">
-        <Image
-          src="/images/orchid-dark.jpg"
-          alt=""
-          fill
-          priority
-          className="object-cover opacity-25"
-          sizes="100vw"
-        />
-        <div className="relative z-10 mx-auto max-w-[1280px] px-8">
+      <NosHero
+        image="/images/orchid-dark.jpg"
+        eyebrow="Show history"
+        title="National Show archive"
+        lede="Since 1974, the South African National Orchid Show has rotated across the country’s provinces every three years — a triennial celebration of orchid culture."
+        priority
+        actions={
           <Link
             href="/national-show"
-            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/60 hover:text-ivory transition-colors duration-150 mb-8"
+            className="font-sans text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
           >
             ← National Show
           </Link>
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-accent mb-3">
-            Show history
-          </p>
-          <h1 className="font-serif text-[clamp(42px,5.4vw,72px)] font-medium leading-[1.04] tracking-[-0.012em] text-ivory max-w-[16ch]">
-            National Show Archive
-          </h1>
-          <p className="mt-6 font-sans text-[18px] leading-relaxed text-ivory/70 max-w-2xl">
-            Since 1974, the South African National Orchid Show has rotated across the country&rsquo;s
-            provinces every three years — a triennial celebration of orchid culture.
-          </p>
-        </div>
-      </section>
+        }
+      />
 
       {/* ── Show grid ── */}
       <section className="mx-auto max-w-[1280px] px-8 py-24">
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {pastShows.map((show) => (
-            <Link key={show.year} href={`/national-show/archive/${show.year}`}
-              className="flex flex-col border border-rule bg-parchment focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            <Link
+              key={show.year}
+              href={`/national-show/archive/${show.year}`}
+              className="group block focus-visible:outline-none"
             >
-              <div className="relative aspect-[3/2] bg-primary-800 overflow-hidden">
-                <Image
-                  src="/images/orchid-purple.jpg"
-                  alt={`${show.year} National Orchid Show`}
-                  fill
-                  className="object-cover opacity-60"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
-                <span className="absolute left-3 top-3 font-mono text-[10px] uppercase tracking-[0.18em] bg-primary text-ivory px-2 py-1">
-                  {show.edition ? `Edition ${toRomanOrdinal(show.edition)}` : show.year}
-                </span>
-              </div>
-
-              <div className="flex flex-col gap-4 p-6">
-                <div>
-                  <p className="font-serif text-[22px] font-medium text-ink leading-snug">
-                    {show.month ? `${show.year} — ${show.month}` : show.year}
-                  </p>
-                  {show.host && (
-                    <p className="mt-1 font-sans text-[14px] text-muted">{show.host}</p>
-                  )}
-                  {show.venue && show.venue !== show.host && (
-                    <p className="font-sans text-[13px] text-muted/70">{show.venue}</p>
-                  )}
+              <div className="flex h-full flex-col overflow-hidden rounded-[length:var(--radius-card)] border-[length:var(--border-hairline)] border-[var(--rule)] bg-white shadow-[var(--shadow-card)] transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-0.5 group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-[var(--ring-focus)]">
+                <div className="relative aspect-[3/2] overflow-hidden bg-[var(--night)]">
+                  <Image
+                    src="/images/orchid-purple.jpg"
+                    alt={`${show.year} National Orchid Show`}
+                    fill
+                    className="object-cover opacity-70"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
+                  <span className="absolute left-3 top-3">
+                    <Badge tone="purple">
+                      {show.edition ? `Edition ${toRomanOrdinal(show.edition)}` : show.year}
+                    </Badge>
+                  </span>
                 </div>
 
-                {(show.entries || show.exhibitors || show.visitors || show.trophies) && (
-                  <div className="flex flex-wrap gap-2 pt-3 border-t border-rule">
-                    {show.entries && (
-                      <span className="font-mono text-[10px] uppercase tracking-[0.14em] bg-bone px-2 py-1 text-muted">
-                        {show.entries.toLocaleString()} entries
-                      </span>
+                <div className="flex flex-col gap-4 p-6">
+                  <div>
+                    <p className="font-serif text-[22px] font-medium leading-snug text-ink">
+                      {show.month ? `${show.year} — ${show.month}` : show.year}
+                    </p>
+                    {show.host && (
+                      <p className="mt-1 font-sans text-[14px] text-muted">{show.host}</p>
                     )}
-                    {show.exhibitors && (
-                      <span className="font-mono text-[10px] uppercase tracking-[0.14em] bg-bone px-2 py-1 text-muted">
-                        {show.exhibitors.toLocaleString()} exhibitors
-                      </span>
-                    )}
-                    {show.visitors && (
-                      <span className="font-mono text-[10px] uppercase tracking-[0.14em] bg-bone px-2 py-1 text-muted">
-                        {show.visitors.toLocaleString()} visitors
-                      </span>
-                    )}
-                    {show.trophies && (
-                      <span className="font-mono text-[10px] uppercase tracking-[0.14em] bg-bone px-2 py-1 text-muted">
-                        {show.trophies} trophies
-                      </span>
+                    {show.venue && show.venue !== show.host && (
+                      <p className="font-sans text-[13px] text-muted/70">{show.venue}</p>
                     )}
                   </div>
-                )}
 
-                {show.note && (
-                  <p className="font-serif text-[14px] italic text-muted">{show.note}</p>
-                )}
+                  {(show.entries || show.exhibitors || show.visitors || show.trophies) && (
+                    <div className="flex flex-wrap gap-2 border-t border-rule pt-3">
+                      {show.entries && (
+                        <Badge tone="olive">{show.entries.toLocaleString()} entries</Badge>
+                      )}
+                      {show.exhibitors && (
+                        <Badge tone="olive">{show.exhibitors.toLocaleString()} exhibitors</Badge>
+                      )}
+                      {show.visitors && (
+                        <Badge tone="olive">{show.visitors.toLocaleString()} visitors</Badge>
+                      )}
+                      {show.trophies && <Badge tone="olive">{show.trophies} trophies</Badge>}
+                    </div>
+                  )}
+
+                  {show.note && (
+                    <p className="font-serif text-[14px] italic text-muted">{show.note}</p>
+                  )}
+                </div>
               </div>
             </Link>
           ))}
         </div>
 
         {pastShows.length === 0 && (
-          <p className="font-sans text-[16px] text-muted text-center py-16">
+          <p className="py-16 text-center font-sans text-[16px] text-muted">
             Archive records coming soon.
           </p>
         )}
       </section>
 
-      {/* ── CTA band ── */}
-      <section className="bg-bone py-20">
-        <div className="mx-auto max-w-[1280px] px-8 text-center">
-          <h2 className="font-serif text-[clamp(26px,3.2vw,40px)] font-medium text-ink">
-            Planning for the {upcomingLabel}?
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl font-sans text-[16px] text-ink/70">
-            {upcomingSentence}
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Link
-              href="/national-show"
-              className="font-sans text-[14px] font-medium bg-primary px-6 py-3 text-ivory transition-colors duration-150 hover:bg-primary-800"
-            >
+      <CtaBand
+        eyebrow="What's next"
+        title={`Planning for the ${upcomingLabel}?`}
+        lede={upcomingSentence}
+        action={
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button as={Link} href="/national-show" variant="on-dark">
               View {upcomingLabel} details
-            </Link>
-            <Link
-              href="/contact"
-              className="font-sans text-[14px] font-medium border border-ink/30 px-6 py-3 text-ink transition-colors duration-150 hover:bg-ink/5"
-            >
-              Ask the Council
-            </Link>
+            </Button>
+            <Button as={Link} href="/contact" variant="ghost" className="border-[var(--lilac-muted)] text-ivory hover:bg-white/5">
+              Ask the council
+            </Button>
           </div>
-        </div>
-      </section>
+        }
+      />
     </>
   );
 }

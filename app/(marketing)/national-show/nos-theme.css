@@ -46,9 +46,19 @@
   --rule: #dad7c8;
   --rule-soft: #e8e6c2;
 
-  /* ---- Typography (D2). next/font/google exposes these as CSS variables on
-     the same .nos-theme element via layout.tsx's className; this file only
-     assigns them into the semantic --serif/--sans names. ---- */
+  /* ---- Typography (D2). next/font/google publishes these fonts through CSS
+     custom properties on the same .nos-theme element via layout.tsx's
+     className; this file assigns them into the semantic --serif/--sans names
+     AND into --font-serif/--font-sans — app/globals.css has two independent
+     chains that both bottom out in the latter pair: the semantic chain
+     (`.h1` etc. read `--serif`) and the Tailwind chain (the `font-serif`/
+     `font-sans` utility classes read `--font-family-serif`, which is only
+     ever `var(--font-serif)`). Redeclaring `--serif`/`--sans` alone re-skins
+     the first chain but leaves every `font-serif`/`font-sans` utility
+     resolving to the root's Crimson Pro/Manrope — both pairs must be
+     redeclared here for the scope to hold. ---- */
+  --font-serif: var(--font-nos-cormorant);
+  --font-sans: var(--font-nos-jost);
   --serif: var(--font-nos-cormorant), 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --sans: var(--font-nos-jost), Jost, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --serif-weight: 400;

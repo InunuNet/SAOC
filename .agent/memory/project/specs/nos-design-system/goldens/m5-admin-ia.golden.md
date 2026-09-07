@@ -204,7 +204,42 @@ above.
 
 ---
 
-## 8. Non-goals for M5
+## 8. Instrumentation contract — REQUIRED, the A14/A15 checks address these
+
+The two behavioural checks (`execution/checks/verify_admin_ia.ts`,
+`execution/checks/verify_admin_status_vocabulary.ts`) address structure through data
+attributes rather than by pattern-matching rendered prose. Prose matching would be
+brittle, would break on any copy edit, and would silently pass after a redesign. **These
+attributes are part of the feature, not debug scaffolding — do not strip them.**
+
+| Attribute | Where | Values |
+|---|---|---|
+| `data-queue-row` | each queue row on `/admin` | — (presence) |
+| `data-queue-id` | same element | `vendor-applications` · `vendor-submissions` · `vendor-payments` · `ticket-orders` |
+| `data-queue-count` | the pending-count element inside a row | — (its text must be a bare integer) |
+| `data-queue-age` | the oldest-pending-age element inside a row | — (non-empty text) |
+| `data-status-state` | every `StatusPill` | `pending` · `active` · `done` · `blocked` |
+| `data-party-type` | every `PartyBadge` | `vendor` · `exhibitor` · `visitor` · `committee` |
+| `data-placeholder` | `/admin/exhibitors`' empty region | — (presence; already load-bearing project-wide) |
+
+Notes that follow from how the checks are written:
+
+- **`data-queue-id` is asserted as an exact set.** Every one of the four must render, and
+  nothing else may. That is what proves a zero-pending queue keeps its row rather than
+  being conditionally hidden.
+- **The count must be the largest text in its row**, measured by computed `font-size`. A
+  utility class is not enough — the check reads the rendered value, so an override fails.
+- **Every pill needs visible text.** A pill communicating by colour or icon alone fails
+  (WCAG 1.4.1).
+- **A11y roles are still required.** `role="row"` must not appear on `/admin/exhibitors`,
+  because the check treats any row-shaped element there as a fabricated data row.
+- **Seed a `blocked` fixture.** A15 case 5 proves `blocked` renders semantic red and is not
+  remapped to a brand hue. With no declined/failed record anywhere in the data, that case
+  **fails loudly rather than skipping silently** — a guardrail that cannot run is not a
+  guardrail that passed. Ensure a declined vendor application or failed order exists in the
+  check environment.
+
+## 9. Non-goals for M5
 
 Stated so a dev does not drift into them:
 

@@ -9,6 +9,10 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery, pastShowsQuery } from '@/sanity/queries';
 import { showLabelWithEdition, showYearOf } from '@/lib/show-identity';
 import type { ShowIdentity } from '@/types';
+import { Button } from '@/components/nos/Button';
+import { Card } from '@/components/nos/Card';
+import { CtaBand } from '@/components/nos/CtaBand';
+import { NosHero } from '@/components/nos/NosHero';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -117,38 +121,26 @@ export default async function ShowYearPage({
 
   return (
     <>
-      {/* ── Hero ── */}
-      <section className="relative overflow-hidden bg-primary-800 py-24">
-        <Image
-          src="/images/orchid-dark.jpg"
-          alt=""
-          fill
-          priority
-          className="object-cover opacity-25"
-          sizes="100vw"
-        />
-        <div className="relative z-10 mx-auto max-w-[1280px] px-8">
+      <NosHero
+        image="/images/orchid-dark.jpg"
+        eyebrow={editionLabel(show)}
+        title={`The ${show.year} South African National Orchid Show`}
+        lede={subtitle(show)}
+        priority
+        actions={
           <Link
             href="/national-show/archive"
-            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/60 hover:text-ivory transition-colors duration-150 mb-8"
+            className="font-sans text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
           >
             ← Archive
           </Link>
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-accent mb-2">
-            {editionLabel(show)}
-          </p>
-          <h1 className="font-serif text-[clamp(36px,4.8vw,64px)] font-medium leading-[1.06] tracking-[-0.012em] text-ivory max-w-[18ch]">
-            The {show.year} South African National{' '}
-            <em className="not-italic text-accent-soft">Orchid Show</em>
-          </h1>
-          <p className="mt-5 font-sans text-[17px] text-ivory/70">{subtitle(show)}</p>
-        </div>
-      </section>
+        }
+      />
 
       {/* ── Stats ── */}
       <section className="bg-bone">
         <div className="mx-auto max-w-[1280px] px-8 py-16">
-          <div className="grid grid-cols-2 gap-px bg-rule sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[
               {
                 value: show.edition ? toRomanOrdinal(show.edition) : NOT_RECORDED,
@@ -164,14 +156,14 @@ export default async function ShowYearPage({
                 label: 'Visitors',
               },
             ].map(({ value, label }) => (
-              <div key={label} className="bg-bone px-8 py-10">
-                <div className="font-serif text-[42px] font-medium leading-none text-primary">
+              <Card key={label} className="text-center">
+                <div className="font-serif text-[38px] font-medium leading-none text-primary">
                   {value}
                 </div>
-                <div className="mt-2 font-mono text-[11px] tracking-[0.16em] text-muted">
+                <div className="mt-2 font-sans text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
                   {label}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
@@ -181,7 +173,7 @@ export default async function ShowYearPage({
       <section className="mx-auto max-w-[1280px] px-8 py-20">
         <div className="grid grid-cols-1 gap-16 lg:grid-cols-2">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent mb-4">
+            <p className="mb-4 font-sans text-[12px] font-medium uppercase tracking-[0.3em] text-[var(--olive-deep)]">
               About the show
             </p>
             <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -197,12 +189,12 @@ export default async function ShowYearPage({
             )}
           </div>
 
-          <div className="relative aspect-[4/3] overflow-hidden bg-primary-800">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-[length:var(--radius-lg)] bg-[var(--night)]">
             <Image
               src="/images/orchid-purple.jpg"
               alt={`${show.year} National Orchid Show`}
               fill
-              className="object-cover opacity-70"
+              className="object-cover opacity-80"
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
           </div>
@@ -211,16 +203,16 @@ export default async function ShowYearPage({
 
       {/* ── Pagination ── */}
       <section className="border-t border-rule">
-        <div className="mx-auto max-w-[1280px] px-8 py-12 flex justify-between items-center gap-4">
+        <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-8 py-12">
           {prevShow ? (
             <Link
               href={`/national-show/archive/${prevShow.year}`}
               className="group flex flex-col gap-1"
             >
-              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted group-hover:text-primary transition-colors duration-150">
+              <span className="font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
                 ← Earlier
               </span>
-              <span className="font-serif text-[20px] font-medium text-ink group-hover:text-primary transition-colors duration-150">
+              <span className="font-serif text-[20px] font-medium text-ink transition-colors duration-150 group-hover:text-primary">
                 {prevShow.host ? `${prevShow.year} — ${prevShow.host}` : prevShow.year}
               </span>
             </Link>
@@ -232,10 +224,10 @@ export default async function ShowYearPage({
               href={`/national-show/archive/${nextShow.year}`}
               className="group flex flex-col gap-1 text-right"
             >
-              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted group-hover:text-primary transition-colors duration-150">
+              <span className="font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
                 Later →
               </span>
-              <span className="font-serif text-[20px] font-medium text-ink group-hover:text-primary transition-colors duration-150">
+              <span className="font-serif text-[20px] font-medium text-ink transition-colors duration-150 group-hover:text-primary">
                 {nextShow.host ? `${nextShow.year} — ${nextShow.host}` : nextShow.year}
               </span>
             </Link>
@@ -245,28 +237,25 @@ export default async function ShowYearPage({
         </div>
       </section>
 
-      {/* ── CTA ── */}
-      <section className="bg-bone py-16">
-        <div className="mx-auto max-w-[1280px] px-8 text-center">
-          <h2 className="font-serif text-[clamp(24px,3vw,36px)] font-medium text-ink">
-            Next up: the {upcomingLabel}{upcomingWhere}
-          </h2>
-          <div className="mt-6 flex flex-wrap justify-center gap-4">
-            <Link
-              href="/national-show"
-              className="font-sans text-[14px] font-medium bg-primary px-6 py-3 text-ivory transition-colors duration-150 hover:bg-primary-800"
-            >
+      <CtaBand
+        eyebrow="What's next"
+        title={`Next up: the ${upcomingLabel}${upcomingWhere}`}
+        action={
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button as={Link} href="/national-show" variant="on-dark">
               View {upcomingLabel}
-            </Link>
-            <Link
+            </Button>
+            <Button
+              as={Link}
               href="/national-show/archive"
-              className="font-sans text-[14px] font-medium border border-ink/30 px-6 py-3 text-ink transition-colors duration-150 hover:bg-ink/5"
+              variant="ghost"
+              className="border-[var(--lilac-muted)] text-ivory hover:bg-white/5"
             >
-              Full Archive
-            </Link>
+              Full archive
+            </Button>
           </div>
-        </div>
-      </section>
+        }
+      />
     </>
   );
 }
