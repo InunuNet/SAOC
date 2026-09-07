@@ -180,6 +180,42 @@ assertions:
       kind: shell
       cmd: 'pnpm tsc --noEmit 2>&1 | grep -c "error TS" | grep -q "^0$"'
 
+  # ---- Triad (CTO ruling, PR #1): this contract references app/ paths (F1-04/05,
+  # GATE-01/03/04) so verify_triad_coverage.py classes it UI/workflow and requires
+  # codex_qa + browser_deployed_check + gws_inbox_check. codex_qa and
+  # browser_deployed_check are declared for real below; gws_inbox_check is
+  # exempted via execution/triad-baseline-exempt.{txt,sha256} (reason: no email
+  # surface in this mission) rather than declared, per the ruling — this
+  # contract must never gain a gws_inbox_check assertion claiming an inbox check
+  # ran. Note for the next reader: the UI/workflow classifier is a coarse `app/`
+  # substring match over assertion command/target text (verify_triad_coverage.py
+  # APP_PATH_PATTERN, docstring lines 21-29 self-documents the false-positive
+  # risk) — it is not a semantic check of what this feature touches, and is
+  # being filed as a separate Athanor harness defect, not fixed here.
+  - id: TRIAD-01
+    description: >-
+      Codex GPT-5.5 adversarial review of the M1 diff (app/(marketing)/national-show/
+      and components/nos/ vs origin/main) — CTO-ruling triad requirement. Already run
+      for this branch via execution/codex_qa.sh; exited 0 (PASS).
+    verify:
+      kind: codex_qa
+      target: >-
+        Review the git diff between origin/main and HEAD, scoped to
+        app/(marketing)/national-show/ and components/nos/, for real bugs,
+        regressions, and correctness risks. Cite file:line for every finding.
+
+  - id: TRIAD-02
+    description: >-
+      Deployed preview browser check for the NOS design system routes, run
+      against a Firebase Hosting preview channel URL (not the localhost:3002 dev
+      server) — CTO-ruling triad requirement. PENDING: target below is a
+      placeholder until the preview channel deploy finishes; do not treat this
+      assertion as passing until the real preview URL is substituted and the
+      check has actually run against it.
+    verify:
+      kind: browser_deployed_check
+      target: "REPLACE_WITH_FIREBASE_PREVIEW_CHANNEL_URL"
+
 phases:
   - id: 1
     assertions:
@@ -214,3 +250,7 @@ phases:
       - GATE-03
       - GATE-04
       - GATE-05
+  - id: 5
+    assertions:
+      - TRIAD-01
+      - TRIAD-02
