@@ -7,6 +7,8 @@
 // never used here, in any orientation.
 // =============================================================
 
+import type { CSSProperties } from 'react';
+
 import { EmblemBadge } from './EmblemBadge';
 
 export interface NosLogoProps {
@@ -70,16 +72,27 @@ const VERTICAL_EMBLEM_SIZE = 56;
 // line down to ~624px, where 15.55 * 36px finally exceeds the column. Only
 // genuinely narrow phones wrap it, which is the one place a broken wordmark
 // reads as a stacked lockup rather than a mistake.
-const HERO_TITLE_CLASS = 'text-[clamp(36px,5.6vw,64px)] tracking-[0.16em] leading-[1.05]';
+// The hero's type scale, named once as a CSS custom property so the emblem is
+// DERIVED from it instead of hand-tuned against it. A constant emblem width is
+// what failed here: 168px was picked to fit horizontally and silently came out
+// 8px shorter than the block it was supposed to match.
+const HERO_TITLE_SIZE = 'clamp(36px,5.6vw,64px)';
+const HERO_TITLE_CLASS =
+  'text-[length:var(--nos-hero-title)] tracking-[0.16em] leading-[1.05]';
 const HERO_SUBTITLE_CLASS = 'text-[clamp(18px,2.8vw,32px)] tracking-[0.3em]';
-// Stacked: nothing sits beside the emblem, so it is free to be the signature
-// the show asked for. The 132px floor is deliberate — at 390px the previous
-// 88px read as a supporting mark against a two-line wordmark, not as the
-// emblem of the block.
+// Stacked: nothing sits beside the emblem, so it does not need to match a
+// height — it is free to be the signature the show asked for. The 132px floor
+// is deliberate: at 390px the previous 88px read as a supporting mark against a
+// two-line wordmark, not as the emblem of the block.
 const HERO_EMBLEM_VERTICAL_CLASS = 'w-[clamp(132px,16vw,220px)] h-auto';
-// Inline: fixed, because this layout only ever renders at a fixed 1216px
-// column. 168 + 24px gap + 995px wordmark = 1187px, leaving 29px of slack.
-const HERO_EMBLEM_HORIZONTAL_CLASS = 'w-[168px] h-auto';
+// Inline: the emblem must match the wordmark block's optical height, so it is
+// computed from the title size rather than stated. Measured rendered block
+// height across 36/50/57/64px titles is title*1.8 + 6px (title leading 1.05,
+// 4px gap, half-size subtitle at Jost's normal leading). EmblemBadge's viewBox
+// is 1264x848, so width = height * 1.4906 = title*2.683 + 9px. Change the type
+// scale above and the emblem follows on its own.
+const HERO_EMBLEM_HORIZONTAL_CLASS =
+  'w-[calc(var(--nos-hero-title)*2.683_+_9px)] h-auto';
 
 export function Logo({
   tone = 'light',
@@ -91,6 +104,12 @@ export function Logo({
   const isDark = tone === 'on-dark';
   const isHero = size === 'hero';
   const Container = as;
+
+  // Type assertion: React's CSSProperties has no index signature for CSS custom
+  // properties, but the DOM accepts them and React forwards them verbatim.
+  const heroStyle: CSSProperties | undefined = isHero
+    ? ({ '--nos-hero-title': HERO_TITLE_SIZE } as CSSProperties) // custom prop, see above
+    : undefined;
 
   const titleClasses = [
     'font-serif font-medium uppercase',
@@ -148,6 +167,7 @@ export function Logo({
         ]
           .filter(Boolean)
           .join(' ')}
+        style={heroStyle}
       >
         {/* Two <img>s, CSS-swapped by breakpoint, are fine here — unlike the
             wordmark, the emblem carries no text content to duplicate for a
@@ -163,6 +183,7 @@ export function Logo({
     return (
       <Container
         className={['flex items-center gap-4 text-left', className].filter(Boolean).join(' ')}
+        style={heroStyle}
       >
         <EmblemBadge
           size={HORIZONTAL_EMBLEM_SIZE}
@@ -178,6 +199,7 @@ export function Logo({
       className={['flex flex-col items-center gap-2 text-center', className]
         .filter(Boolean)
         .join(' ')}
+      style={heroStyle}
     >
       <EmblemBadge
         size={VERTICAL_EMBLEM_SIZE}

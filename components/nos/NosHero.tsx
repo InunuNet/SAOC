@@ -129,20 +129,27 @@ export function NosHero({
           wordmark 1.37:1, strapline 2.49:1, eyebrow 1.23:1 — a regression, as
           the eyebrow had been passing.
 
-          Retuned from h-[45%]/0.80 to h-[55%]/0.82 for the taller mark. Five
-          candidates were measured: restoring the old 45% band passes but only
-          reaches 4.84:1 on the strapline (too thin — that is the line that
-          already failed once), while denser bands reach 11-13:1 and visibly
-          flatten the photograph. This is the lightest scrim that clears 4.5:1
-          with real margin (worst case 7.37:1). Gradient only — no duotone,
-          filter or vignette ever touches the photograph. */}
+          Retuned from h-[45%]/0.80 to h-[62%]/0.85 for the taller mark.
+          Restoring the old 45% band passes but only reaches 4.84:1 on the
+          strapline — too thin for the line that already failed once.
+
+          The 62% figure comes from measuring a THIRD width. Tuned against 390
+          and 1280 alone, h-[55%]/0.82 looked comfortable at 7.37:1 worst case;
+          adding 1024 to the sweep exposed the real worst case at 4.78:1
+          (strapline, orchid-dark) — passing, but with 0.28 of headroom. The
+          intermediate widths put the text on different ground than either
+          endpoint, so two widths were not enough to characterise this scrim.
+          h-[62%]/0.85 takes the worst case to 5.98:1; a denser 68%/0.86 reaches
+          7.07:1 but starts visibly flattening the photograph, which is the
+          brand's signature device. Lightest band that clears with real margin —
+          gradient only, no duotone, filter or vignette on the photograph. */}
       {brandMark || titleIsElement ? (
         <div
           aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-[55%]"
+          className="absolute inset-x-0 top-0 h-[62%]"
           style={{
             background:
-              'linear-gradient(to bottom, rgba(14,11,36,0.82) 0%, rgba(14,11,36,0.60) 55%, rgba(14,11,36,0) 100%)',
+              'linear-gradient(to bottom, rgba(14,11,36,0.85) 0%, rgba(14,11,36,0.64) 55%, rgba(14,11,36,0) 100%)',
           }}
         />
       ) : null}
