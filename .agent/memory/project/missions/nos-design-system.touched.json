@@ -1,0 +1,16 @@
+{
+  "schema": "athanor.mission-touched-files/v1",
+  "slug": "nos-design-system",
+  "pending_baselines": {
+    "F1": [
+      ".agent/memory/project/missions/active.json",
+      ".agent/memory/project/specs/nos-design-system/README.md",
+      ".agent/memory/project/specs/nos-design-system/contract.yaml",
+      ".agent/memory/project/specs/nos-design-system/goldens/m5-admin-ia.golden.md",
+      ".agent/memory/project/specs/nos-design-system/goldens/tokens.css",
+      "app/(marketing)/national-show/layout.tsx",
+      "app/(marketing)/national-show/nos-theme.css"
+    ]
+  },
+  "paths": []
+}

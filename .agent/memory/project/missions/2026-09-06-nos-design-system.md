@@ -4,133 +4,137 @@ slug: nos-design-system
 goal: nos-design-system
 created_at: '2026-09-06T21:02:15.256562+00:00'
 started_at: '2026-09-06T21:02:15.256562+00:00'
-last_active_at: '2026-09-06T21:02:15.256562+00:00'
+last_active_at: '2026-09-06T22:31:31.784599+00:00'
 status: in_progress
 cost_estimate:
   features: 13
   milestones: 4
   total_calls: 0
 last_checkpoint:
-  milestone: null
-  feature: null
-  ts: null
+  milestone: M1
+  feature: F1
+  ts: '2026-09-06T22:31:31.784599+00:00'
 features:
 - id: F1
-  status: pending
-  inline_brief: >-
-    Scoped NOS token layer, fonts and logo assets. New
-    app/(marketing)/national-show/layout.tsx introducing a nos-theme wrapper that
-    redefines the NOS palette/type/spacing tokens locally. Cormorant Garamond + Jost
-    via next/font. Emblem and Layout-B logo assets vendored from the Claude Design
-    project. Zero edits to app/globals.css :root and zero edits to components/chrome/*.
+  status: in_progress
+  inline_brief: Scoped NOS token layer, fonts and logo assets. New app/(marketing)/national-show/layout.tsx
+    introducing a nos-theme wrapper that redefines the NOS palette/type/spacing tokens
+    locally. Cormorant Garamond + Jost via next/font. Emblem and Layout-B logo assets
+    vendored from the Claude Design project. Zero edits to app/globals.css :root and
+    zero edits to components/chrome/*.
+  started_at: '2026-09-06T22:31:31.784397+00:00'
 - id: F2
   status: pending
-  inline_brief: >-
-    NOS primitive components: Button, Badge, Card, SectionHeading, Logo (Layout B),
-    EmblemBadge, Icon, plus the form primitives the vendor and ticket forms need.
-    All render through the F1 scoped tokens.
+  inline_brief: 'NOS primitive components: Button, Badge, Card, SectionHeading, Logo
+    (Layout B), EmblemBadge, Icon, plus the form primitives the vendor and ticket
+    forms need. All render through the F1 scoped tokens.'
 - id: F3
   status: pending
-  inline_brief: >-
-    NOS composite blocks: NosHero (full-bleed with purple scrim), programme/event card
-    grid, visit and CTA bands, section nav, and the NOS footer brand band that sits
-    above the inherited SAOC footer.
+  inline_brief: 'NOS composite blocks: NosHero (full-bleed with purple scrim), programme/event
+    card grid, visit and CTA bands, section nav, and the NOS footer brand band that
+    sits above the inherited SAOC footer.'
 - id: F4
   status: pending
-  inline_brief: >-
-    Restyle the /national-show landing page (642 lines, flagship) into the NOS system.
+  inline_brief: Restyle the /national-show landing page (642 lines, flagship) into
+    the NOS system.
 - id: F5
   status: pending
-  inline_brief: >-
-    Restyle /national-show/plan-your-visit and /national-show/what-to-expect.
+  inline_brief: Restyle /national-show/plan-your-visit and /national-show/what-to-expect.
 - id: F6
   status: pending
-  inline_brief: >-
-    Restyle /national-show/faq, /national-show/archive and /national-show/archive/[year].
+  inline_brief: Restyle /national-show/faq, /national-show/archive and /national-show/archive/[year].
 - id: F7
   status: pending
-  inline_brief: >-
-    Restyle /national-show/exhibitors.
+  inline_brief: Restyle /national-show/exhibitors.
 - id: F8
   status: pending
-  inline_brief: >-
-    Restyle /national-show/tickets.
+  inline_brief: Restyle /national-show/tickets.
 - id: F9
   status: pending
-  inline_brief: >-
-    Restyle /national-show/workshops and /national-show/conferences through NOS-scoped
-    wrappers and props only. components/tickets/CategoryTicketsPage is owned by the
-    sibling SAOC session and must not be edited.
+  inline_brief: Restyle /national-show/workshops and /national-show/conferences through
+    NOS-scoped wrappers and props only. components/tickets/CategoryTicketsPage is
+    owned by the sibling SAOC session and must not be edited.
 - id: F10
   status: pending
-  inline_brief: >-
-    Restyle /national-show/vendors and /national-show/vendors/apply.
+  inline_brief: Restyle /national-show/vendors and /national-show/vendors/apply.
 - id: F11
   status: pending
-  inline_brief: >-
-    Restyle /national-show/vendors/register and /national-show/vendors/payment.
+  inline_brief: Restyle /national-show/vendors/register and /national-show/vendors/payment.
 - id: F12
   status: pending
-  inline_brief: >-
-    Capture "after" screenshots at 390 and 1280 for every route into
-    .agent/evidence/nos-design/<route>/, run the route-200 sweep, and complete the a11y
-    pass (visible focus, labelled controls, WCAG AA contrast against the NOS palette).
+  inline_brief: Capture "after" screenshots at 390 and 1280 for every route into .agent/evidence/nos-design/<route>/,
+    run the route-200 sweep, and complete the a11y pass (visible focus, labelled controls,
+    WCAG AA contrast against the NOS palette).
 - id: F13
   status: pending
-  inline_brief: >-
-    Write docs/nos-design-system.md, get the contract gate green, and open the PR to main.
+  inline_brief: Write docs/nos-design-system.md, get the contract gate green, and
+    open the PR to main.
 - id: F14
   status: pending
-  inline_brief: >-
-    Admin information architecture and navigation. Make role separation unmistakable —
-    vendor vs exhibitor vs visitor — with scannable status, clear wayfinding, and a
-    dashboard that answers "what needs me now". Structural information design, not a
-    re-skin; admin is deliberately NOT show-branded.
+  inline_brief: Admin information architecture and navigation. Make role separation
+    unmistakable — vendor vs exhibitor vs visitor — with scannable status, clear wayfinding,
+    and a dashboard that answers "what needs me now". Structural information design,
+    not a re-skin; admin is deliberately NOT show-branded.
 - id: F15
   status: pending
-  inline_brief: >-
-    Admin vendor and exhibitor review surfaces: application queues, status transitions,
-    payment and booth allocation, made legible at a glance.
+  inline_brief: 'Admin vendor and exhibitor review surfaces: application queues, status
+    transitions, payment and booth allocation, made legible at a glance.'
 - id: F16
   status: pending
-  inline_brief: >-
-    Admin visitor and door surfaces: check-in scanner, ticket lookup, live show-day
-    operational view.
+  inline_brief: 'Admin visitor and door surfaces: check-in scanner, ticket lookup,
+    live show-day operational view.'
 - id: F17
   status: pending
-  inline_brief: >-
-    Ticket purchase flow as a conversion surface end to end — product presentation,
-    day selection, attendee naming, and a confirmation moment that feels like an event
-    ticket rather than a receipt.
+  inline_brief: Ticket purchase flow as a conversion surface end to end — product
+    presentation, day selection, attendee naming, and a confirmation moment that feels
+    like an event ticket rather than a receipt.
 - id: F18
   status: pending
-  inline_brief: >-
-    SEO and discoverability: per-route metadata, Event/Organization structured data,
-    Open Graph and Twitter cards with NOS-branded images, sitemap, canonical URLs.
+  inline_brief: 'SEO and discoverability: per-route metadata, Event/Organization structured
+    data, Open Graph and Twitter cards with NOS-branded images, sitemap, canonical
+    URLs.'
 - id: F19
   status: pending
-  inline_brief: >-
-    Social and advertising kit built from the NOS tokens and emblem — fixed-ratio
-    export-ready artboards for Instagram and Facebook.
+  inline_brief: Social and advertising kit built from the NOS tokens and emblem —
+    fixed-ratio export-ready artboards for Instagram and Facebook.
 milestones:
 - id: M1
   status: pending
-  features: [F1, F2, F3]
+  features:
+  - F1
+  - F2
+  - F3
 - id: M2
   status: pending
-  features: [F4, F5, F6, F7]
+  features:
+  - F4
+  - F5
+  - F6
+  - F7
 - id: M3
   status: pending
-  features: [F8, F9, F10, F11]
+  features:
+  - F8
+  - F9
+  - F10
+  - F11
 - id: M4
   status: pending
-  features: [F12, F13]
+  features:
+  - F12
+  - F13
 - id: M5
   status: pending
-  features: [F14, F15, F16]
+  features:
+  - F14
+  - F15
+  - F16
 - id: M6
   status: pending
-  features: [F17, F18, F19]
+  features:
+  - F17
+  - F18
+  - F19
 ---
 
 # Mission: nos-design-system

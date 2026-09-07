@@ -12,6 +12,8 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
 import { VendorApplicationReviewTable } from '@/components/admin/VendorApplicationReviewTable';
 import { AdminNav } from '@/components/admin/AdminNav';
+import { AdminSectionNav } from '@/components/admin/AdminSectionNav';
+import { PartyBadge } from '@/components/admin/PartyBadge';
 import type { ShowIdentity } from '@/types';
 import type { VendorApplication } from '@/types/index';
 
@@ -60,9 +62,18 @@ export default async function VendorApplicationsAdminPage() {
         canReviewVendors={canReviewVendors}
         canManagePaymentSettings={canManagePaymentSettings}
       />
+      <AdminSectionNav
+        ariaLabel="Vendor sections"
+        links={[
+          { label: 'Submissions', href: '/admin/vendors' },
+          { label: 'Applications', href: '/admin/vendors/applications' },
+        ]}
+      />
       <main>
         <div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-8 sm:py-16">
-          <span className="eyebrow">Admin</span>
+          <span className="eyebrow">
+            Admin <PartyBadge type="vendor" />
+          </span>
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
             <h1 className="font-serif text-[28px] font-semibold leading-tight text-ink sm:text-[34px]">
               Vendor Applications

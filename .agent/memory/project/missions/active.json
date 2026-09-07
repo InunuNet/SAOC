@@ -1,8 +1,9 @@
 {
   "mission": ".agent/memory/project/missions/2026-09-06-nos-design-system.md",
   "checkpoint": {
-    "milestone": null,
-    "feature": null
+    "milestone": "M1",
+    "feature": "F1",
+    "ts": "2026-09-06T22:31:31.784599+00:00"
   },
-  "activated_at": "2026-09-06T21:02:15.264320+00:00"
+  "activated_at": "2026-09-06T22:31:31.784716+00:00"
 }

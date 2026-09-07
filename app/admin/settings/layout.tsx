@@ -7,6 +7,7 @@ import { UtilityBar, Header, Footer } from '@/components/chrome';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
 import { AdminNav } from '@/components/admin/AdminNav';
+import { AdminTeamPanel } from '@/components/admin/AdminTeamPanel';
 import type { ShowIdentity } from '@/types';
 
 // This subtree never otherwise rendered site chrome (mission admin-settings-deploy-and-chrome-fix
@@ -61,6 +62,7 @@ export default async function AdminSettingsLayout({ children }: { children: Reac
         canManagePaymentSettings={canManagePaymentSettings}
       />
       {children}
+      <AdminTeamPanel />
       <Footer />
     </>
   );
