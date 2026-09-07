@@ -1,21 +1,26 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { PageHero } from '@/components/ui/PageHero';
 import { ConfirmationBadge, ShowSectionNav, VisitorInfoBlock } from '@/components/show';
+import { Button } from '@/components/nos/Button';
+import { Card } from '@/components/nos/Card';
+import { NosHero } from '@/components/nos/NosHero';
+import { SectionHeading } from '@/components/nos/SectionHeading';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
+import { buildPageMetadata } from '@/lib/seo';
 import type { ShowVisitorInfo } from '@/types';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'What to Expect — National Orchid Show',
   description:
     'Opening hours, admission, food, photography, cloakroom and accessibility at the South ' +
     'African National Orchid Show.',
-};
+  path: '/national-show/what-to-expect',
+});
 
 interface ShowDatesData {
   showDate: string | null;
@@ -63,20 +68,19 @@ export default async function WhatToExpectPage() {
 
   return (
     <>
-      <PageHero
+      <NosHero
         image="/images/orchid-yellow.jpg"
         eyebrow="National Show"
-        heading={info?.expectTitle ?? 'What to expect'}
+        title={info?.expectTitle ?? 'What to expect'}
         lede={info?.expectIntro ?? undefined}
+        priority
       />
 
       <div className="mx-auto max-w-[1280px] space-y-10 px-8 py-16">
         {dateRange ? (
           <section>
-            <h2 className="font-serif text-[clamp(26px,3vw,36px)] font-medium text-ink">
-              Show dates
-            </h2>
-            <p className="mt-3 font-serif text-[28px] text-primary">{dateRange}</p>
+            <SectionHeading as="h2" title="Show dates" />
+            <p className="mt-3 font-serif text-[28px] font-medium text-primary">{dateRange}</p>
             <ConfirmationBadge
               status={status.dates}
               pendingLabel={pendingLabel}
@@ -87,25 +91,25 @@ export default async function WhatToExpectPage() {
 
         {openingHours.length > 0 ? (
           <section className="border-t border-rule pt-8">
-            <h3 className="font-serif text-[24px] font-medium text-ink">Opening hours</h3>
+            <SectionHeading as="h3" title="Opening hours" />
             <ConfirmationBadge
               status={status.openingHours}
               pendingLabel={pendingLabel}
               researchLabel={researchLabel}
             />
-            <dl className="mt-4 grid grid-cols-1 gap-px bg-rule sm:grid-cols-2">
+            <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {openingHours.map((entry, index) => (
-                <div key={entry._key ?? `${entry.label}-${index}`} className="bg-parchment p-5">
-                  <dt className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-muted">
+                <Card key={entry._key ?? `${entry.label}-${index}`}>
+                  <dt className="font-sans text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
                     {entry.label}
                   </dt>
-                  <dd className="mt-1 font-serif text-[20px] text-ink">{entry.hours}</dd>
+                  <dd className="mt-1 font-serif text-[22px] font-medium text-ink">{entry.hours}</dd>
                   {entry.note ? (
-                    <p className="mt-2 font-sans text-[13px] leading-snug text-ink/60">
+                    <p className="mt-2 font-sans text-[13px] leading-snug text-muted">
                       {entry.note}
                     </p>
                   ) : null}
-                </div>
+                </Card>
               ))}
             </dl>
           </section>
@@ -118,12 +122,9 @@ export default async function WhatToExpectPage() {
           pendingLabel={pendingLabel}
           researchLabel={researchLabel}
         >
-          <Link
-            href="/tickets"
-            className="mt-4 inline-block bg-primary px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800"
-          >
+          <Button as={Link} href="/tickets" className="mt-4">
             {info?.admissionLinkLabel ?? 'See ticket prices and book'} →
-          </Link>
+          </Button>
         </VisitorInfoBlock>
 
         <VisitorInfoBlock

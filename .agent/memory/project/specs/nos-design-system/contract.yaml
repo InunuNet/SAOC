@@ -1,0 +1,267 @@
+schema: athanor.contract/v1
+feature: M1
+slug: nos-design-system
+name: >-
+  M1 NOS foundations — scoped token layer (F1), primitive components (F2), and
+  composite blocks (F3) for the National Orchid Show 2027 design system
+created_at: '2026-09-07T00:00:00.000000+00:00'
+
+assertions:
+  # ---- F1: scoped token layer never touches SAOC-global surfaces ----
+  - id: F1-01
+    description: app/globals.css is byte-identical to origin/main (no global token edits)
+    verify:
+      kind: shell
+      cmd: "git diff --quiet origin/main -- app/globals.css"
+
+  - id: F1-02
+    description: components/chrome/ is byte-identical to origin/main (chrome untouched)
+    verify:
+      kind: shell
+      cmd: "git diff --quiet origin/main -- components/chrome/"
+
+  - id: F1-03
+    description: app/layout.tsx is byte-identical to origin/main (root layout untouched)
+    verify:
+      kind: shell
+      cmd: "git diff --quiet origin/main -- app/layout.tsx"
+
+  - id: F1-04
+    description: national-show/layout.tsx exists
+    verify:
+      kind: file_exists
+      path: "app/(marketing)/national-show/layout.tsx"
+
+  - id: F1-05
+    description: national-show/layout.tsx wraps children in the nos-theme scope element
+    verify:
+      kind: shell
+      cmd: "grep -q 'nos-theme' 'app/(marketing)/national-show/layout.tsx'"
+
+  - id: F1-06
+    description: the NOS token stylesheet declares no :root selector
+    verify:
+      kind: shell
+      cmd: "! grep -Eq '^:root' 'app/(marketing)/national-show/nos-theme.css'"
+
+  - id: F1-07
+    description: the NOS token stylesheet declares no @theme block
+    verify:
+      kind: shell
+      cmd: "! grep -q '@theme' 'app/(marketing)/national-show/nos-theme.css'"
+
+  - id: F1-08
+    description: >-
+      the NOS token stylesheet does not introduce status-colour semantic names
+      (this project's :root has none to remap — guardrail 1; a future status
+      colour must never route through the NOS scope)
+    verify:
+      kind: shell
+      cmd: "! grep -Eiq -- '--(color-)?(success|warning|error|danger)' 'app/(marketing)/national-show/nos-theme.css'"
+
+  - id: F1-09
+    description: Cormorant Garamond and Jost are loaded via next/font/google
+    verify:
+      kind: shell
+      cmd: "grep -q \"from 'next/font/google'\" 'app/(marketing)/national-show/layout.tsx' && grep -q 'Cormorant_Garamond' 'app/(marketing)/national-show/layout.tsx' && grep -q 'Jost' 'app/(marketing)/national-show/layout.tsx'"
+
+  - id: F1-10
+    description: the loaded fonts are bound to CSS variables (next/font `variable:` option), not applied as bare classNames only
+    verify:
+      kind: shell
+      cmd: "grep -q 'variable:' 'app/(marketing)/national-show/layout.tsx'"
+
+  - id: F1-11
+    description: the retired circular badge logo is never referenced by new NOS code
+    verify:
+      kind: shell
+      cmd: "! grep -rqi 'circular.*badge\\|badge.*logo' 'app/(marketing)/national-show/' 'components/nos/' 2>/dev/null; test $? -le 1"
+
+  - id: F1-12
+    description: the vendored emblem asset exists under public/images/nos/ and is an SVG (true vector, per D3)
+    verify:
+      kind: shell
+      cmd: "ls public/images/nos/*.svg 2>/dev/null | grep -qi 'graminifolia\\|emblem'"
+
+  - id: F1-13
+    description: the vendored emblem SVG has no embedded <metadata> block (C2PA blob stripped per D3)
+    verify:
+      kind: shell
+      cmd: "! grep -l '<metadata' public/images/nos/*.svg 2>/dev/null | grep -qi 'graminifolia\\|emblem'"
+
+  # ---- F2/F3: primitives and composites render only through the F1 scope ----
+  - id: F2-01
+    description: NOS primitive components directory exists with at least Button, Badge, Card, SectionHeading, Logo, EmblemBadge
+    verify:
+      kind: shell
+      cmd: "for f in Button Badge Card SectionHeading Logo EmblemBadge; do find components/nos -iname \"$f.tsx\" | grep -q . || exit 1; done"
+
+  - id: F2-02
+    description: no uppercase form-label transform is introduced (guardrail 4 — no text-transform on labels)
+    verify:
+      kind: shell
+      cmd: "! grep -rEq 'text-transform:\\s*uppercase' components/nos/ 2>/dev/null || ! grep -rlq '<label' components/nos/ 2>/dev/null | xargs -r grep -lq 'uppercase'"
+
+  - id: F3-01
+    description: NosHero composite exists and applies a scrim over full-bleed photography
+    verify:
+      kind: shell
+      cmd: "find components/nos -iname 'NosHero.tsx' | xargs grep -lqi 'scrim\\|gradient' "
+
+  - id: F3-02
+    description: NosHero only references the five rights-cleared production photographs (guardrail D5 — never the uncleared Ormerod set)
+    verify:
+      kind: shell
+      cmd: "! find components/nos -iname 'NosHero.tsx' -exec grep -Eq 'ormerod' {} \\;"
+
+  # ---- Cross-cutting: no fabricated content, whitespace-bug-safe rendered-copy checks ----
+  - id: X-01
+    description: >-
+      new NOS files under app/(marketing)/national-show and components/nos do not
+      hardcode invented people/venue/contact details (spot check: no @example
+      emails, no placeholder phone patterns) outside of data-placeholder markers
+      (hard rule — no fabricated content)
+    verify:
+      kind: shell
+      cmd: "! grep -rEo '[A-Za-z0-9._%+-]+@(example|test)\\.[a-z]+' 'app/(marketing)/national-show/' components/nos/ 2>/dev/null | grep -q ."
+
+  - id: X-02
+    description: >-
+      data-placeholder attribute count in national-show routes is non-decreasing
+      versus origin/main (credible filler must stay marked, never silently
+      promoted to real content nor silently dropped)
+    verify:
+      kind: shell
+      cmd: "test $(git show origin/main -- 'app/(marketing)/national-show' | grep -o 'data-placeholder' | wc -l) -le $(grep -ro 'data-placeholder' 'app/(marketing)/national-show/' 2>/dev/null | wc -l)"
+
+  - id: X-03
+    description: >-
+      rendered-copy checks (if any assert on visible text) must run against
+      served HTML, never raw source — grep JSX source files directly for wording
+      never proves a whitespace-bug-safe render
+    verify:
+      kind: agent_review
+      note: >-
+        Not mechanically checkable — this is a review discipline, not a
+        property of any single file. QA must confirm any copy-wording
+        assertion in later M1/M2 contracts curls localhost:3002 and inspects
+        the served HTML/text, not app source. Kept as agent_review because the
+        thing being verified is "did the reviewer test the right artifact",
+        which has no file-based signature.
+
+  # ---- Gate ----
+  - id: GATE-01
+    description: every /national-show route returns 200; /national-show/upcoming returns 308 by design
+    verify:
+      kind: shell
+      cmd: "for r in national-show national-show/plan-your-visit national-show/what-to-expect national-show/faq national-show/archive national-show/exhibitors national-show/tickets national-show/vendors national-show/vendors/apply; do code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3002/$r); [ \"$code\" = \"200\" ] || exit 1; done; code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3002/national-show/upcoming); [ \"$code\" = \"308\" ]"
+
+  - id: GATE-02
+    description: production build exits 0
+    verify:
+      kind: shell
+      cmd: "pnpm build"
+
+  - id: GATE-03
+    description: no `any` type in new NOS files
+    verify:
+      kind: shell
+      cmd: "! grep -rnE ':\\s*any\\b|<any>|as any\\b' 'app/(marketing)/national-show/' components/nos/ 2>/dev/null | grep -q ."
+
+  - id: GATE-04
+    description: no unexplained type assertion (`as X`, excluding `as const`) without an adjacent explanatory comment in new NOS files
+    verify:
+      kind: shell
+      cmd: "! grep -rnE '\\bas [A-Z][A-Za-z0-9_<>]*\\b' 'app/(marketing)/national-show/' components/nos/ 2>/dev/null | grep -v '//' | grep -q ."
+
+  - id: GATE-05
+    description: TypeScript strict-mode build passes
+    verify:
+      kind: shell
+      cmd: 'pnpm tsc --noEmit 2>&1 | grep -c "error TS" | grep -q "^0$"'
+
+  # ---- Triad (CTO ruling, PR #1): this contract references app/ paths (F1-04/05,
+  # GATE-01/03/04) so verify_triad_coverage.py classes it UI/workflow and requires
+  # codex_qa + browser_deployed_check + gws_inbox_check. codex_qa and
+  # browser_deployed_check are declared for real below; gws_inbox_check is
+  # exempted via execution/triad-baseline-exempt.{txt,sha256} (reason: no email
+  # surface in this mission) rather than declared, per the ruling — this
+  # contract must never gain a gws_inbox_check assertion claiming an inbox check
+  # ran. Note for the next reader: the UI/workflow classifier is a coarse `app/`
+  # substring match over assertion command/target text (verify_triad_coverage.py
+  # APP_PATH_PATTERN, docstring lines 21-29 self-documents the false-positive
+  # risk) — it is not a semantic check of what this feature touches, and is
+  # being filed as a separate Athanor harness defect, not fixed here.
+  - id: TRIAD-01
+    description: >-
+      Codex GPT-5.5 adversarial review of the M1 diff (app/(marketing)/national-show/
+      and components/nos/ vs origin/main) — CTO-ruling triad requirement. Already run
+      for this branch via execution/codex_qa.sh; exited 0 (PASS).
+    verify:
+      kind: codex_qa
+      target: >-
+        Review the git diff between origin/main and HEAD, scoped to
+        app/(marketing)/national-show/ and components/nos/, for real bugs,
+        regressions, and correctness risks. Cite file:line for every finding.
+
+  - id: TRIAD-02
+    description: >-
+      Deployed browser-run manifest for the NOS design system routes — CTO-ruling
+      triad requirement (earned against a deployed origin, not the localhost:3002
+      dev server). target is a manifest JSON path per
+      execution/browser_deployed_check.sh's own usage contract (argv[1]), not a
+      URL. PENDING: the manifest at this path does not exist yet — the deploying
+      dev produces it after driving a real browser run against the deployment.
+      Until it exists this assertion honestly errors (exit 2, wrapper usage
+      error), which is correct behaviour, not something to paper over. NOTE: the
+      script's origin allowlist is an exact-string match against
+      BROWSER_CHECK_DEPLOYED_ORIGIN (default https://beta.saoc.co.za, see script
+      lines 37/112-114) with no per-assertion override available in this
+      contract's schema (check_cmd invokes the script with no env passthrough
+      mechanism) — if the manifest records a Firebase preview-channel origin
+      instead, this check fails the allowlist unless BROWSER_CHECK_DEPLOYED_ORIGIN
+      is exported in the shell that runs `contract.py gate` itself; this is not
+      something a contract.yaml edit can set. Flagged for the orchestrator to
+      resolve, not decided here.
+    verify:
+      kind: browser_deployed_check
+      target: ".agent/memory/project/specs/nos-design-system/browser-deployed-manifest.json"
+
+phases:
+  - id: 1
+    assertions:
+      - F1-01
+      - F1-02
+      - F1-03
+      - F1-04
+      - F1-05
+      - F1-06
+      - F1-07
+      - F1-08
+      - F1-09
+      - F1-10
+      - F1-11
+      - F1-12
+      - F1-13
+  - id: 2
+    assertions:
+      - F2-01
+      - F2-02
+      - F3-01
+      - F3-02
+  - id: 3
+    assertions:
+      - X-01
+      - X-02
+      - X-03
+  - id: 4
+    assertions:
+      - GATE-01
+      - GATE-02
+      - GATE-03
+      - GATE-04
+      - GATE-05
+  - id: 5
+    assertions:
+      - TRIAD-01
+      - TRIAD-02

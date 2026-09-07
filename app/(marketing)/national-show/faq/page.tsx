@@ -1,21 +1,24 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { PageHero } from '@/components/ui/PageHero';
 import { ShowFaqList, ShowSectionNav } from '@/components/show';
+import { Button } from '@/components/nos/Button';
+import { NosHero } from '@/components/nos/NosHero';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { showFaqsQuery, showVisitorInfoQuery } from '@/sanity/queries';
+import { buildPageMetadata } from '@/lib/seo';
 import type { ShowFaq, ShowVisitorInfo } from '@/types';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Visitor Questions — National Orchid Show',
   description:
     'Answers to the questions visitors ask most about the South African National Orchid Show — ' +
     'getting there, tickets, accessibility and plant sales.',
-};
+  path: '/national-show/faq',
+});
 
 export default async function ShowFaqPage() {
   const [info, faqs] = await Promise.all([
@@ -28,11 +31,12 @@ export default async function ShowFaqPage() {
 
   return (
     <>
-      <PageHero
+      <NosHero
         image="/images/orchid-pink.jpg"
         eyebrow="National Show"
-        heading={info?.faqTitle ?? 'Frequently asked questions'}
+        title={info?.faqTitle ?? 'Frequently asked questions'}
         lede={info?.faqIntro ?? undefined}
+        priority
       />
 
       <div className="mx-auto max-w-[900px] px-8 py-16">
@@ -49,18 +53,12 @@ export default async function ShowFaqPage() {
             </p>
           ) : null}
           <div className="mt-5 flex flex-wrap gap-4">
-            <Link
-              href="/contact"
-              className="bg-primary px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800"
-            >
+            <Button as={Link} href="/contact" variant="primary">
               Ask the council →
-            </Link>
-            <Link
-              href="/national-show/plan-your-visit"
-              className="border border-ink/30 px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-ink/5"
-            >
+            </Button>
+            <Button as={Link} href="/national-show/plan-your-visit" variant="ghost">
               Plan your visit
-            </Link>
+            </Button>
           </div>
         </div>
       </div>

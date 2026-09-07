@@ -40,3 +40,11 @@ contracts/contract-vendor-gated-registration-flow.yaml
 contracts/contract-wcag-accent-contrast.yaml
 contracts/F4-home-page.yaml
 contracts/m2-next16-upgrade.yaml
+# nos-design-system contract.yaml: CTO ruling (PR #1) authorises this exemption.
+# codex_qa and browser_deployed_check are declared for real in the contract
+# (TRIAD-01/TRIAD-02); only gws_inbox_check is grandfathered here. Reason:
+# no email surface in this mission. Baselined 2026-09-08, after TRIAD-01/02
+# were added, so the linter's missing-set at pin time was {gws_inbox_check}
+# alone (all-or-nothing grandfather per contract.py -- see the file-level
+# scoping note this exemption relies on).
+.agent/memory/project/specs/nos-design-system/contract.yaml

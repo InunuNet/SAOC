@@ -1,24 +1,39 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 
 import { ConfirmationBadge, ShowCountdown } from '@/components/show';
+import { Button } from '@/components/nos/Button';
+import { CtaBand } from '@/components/nos/CtaBand';
+import { CycleStep } from '@/components/nos/CycleStep';
+import { ExhibitorStageCard } from '@/components/nos/ExhibitorStageCard';
+import { JudgingGroupCard } from '@/components/nos/JudgingGroupCard';
+import { Logo } from '@/components/nos/Logo';
+import { NosHero, NOS_HERO_IMAGES, type NosHeroImage } from '@/components/nos/NosHero';
+import { PastEditionCard } from '@/components/nos/PastEditionCard';
+import { SectionHeading } from '@/components/nos/SectionHeading';
+import { VisitorLinkCard } from '@/components/nos/VisitorLinkCard';
+import { JsonLd, nationalShowEventJsonLd, type NationalShowOffer } from '@/components/seo/JsonLd';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
+  activeTicketTypesByCategoryQuery,
   showClassesQuery,
   pastShowsQuery,
   nationalShowQuery,
+  nationalShowSalesQuery,
   showVisitorInfoQuery,
 } from '@/sanity/queries';
-import { urlFor } from '@/sanity/lib/image';
 import { showClasses as staticClasses } from '@/lib/data/showClasses';
 import { shows as staticShows } from '@/lib/data/shows';
+import { effectiveCapacity, resolveEffectivePrice } from '@/lib/checkout-reservation';
+import { buildPageMetadata } from '@/lib/seo';
 import {
   formatShowDateRange,
   formatShowMonthYear,
+  formatVenueAddress,
   showYearOf,
   toOrdinal,
+  toShowIsoDate,
 } from '@/lib/show-identity';
 import type { ShowClass, NationalShow, ShowVenue, ShowVisitorInfo } from '@/types';
 import type { SanityImageSource } from '@sanity/image-url';
@@ -28,11 +43,82 @@ import type { SanityImageSource } from '@sanity/image-url';
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
 
-export const metadata: Metadata = {
+const PAGE_DESCRIPTION =
+  'The South African National Orchid Show — the flagship triennial competition bringing together growers, judges and enthusiasts from all nine provinces.';
+
+export const metadata: Metadata = buildPageMetadata({
   title: 'National Orchid Show',
-  description:
-    'The South African National Orchid Show — the flagship triennial competition bringing together growers, judges and enthusiasts from all nine provinces.',
-};
+  description: PAGE_DESCRIPTION,
+  path: '/national-show',
+});
+
+// ---------------------------------------------------------------------------------------
+// F18 wiring (nos-design-system, M6) — the site's ONE schema.org Event node lives on this
+// page and nowhere else. Every value below is derived from the Sanity nationalShow
+// singleton and the admission ticketType documents; nothing here is a literal show fact.
+// When Sanity lacks a name, a start date or a complete venue, nationalShowEventJsonLd()
+// returns null and NO node is emitted — a placeholder date or venue is never substituted.
+// ---------------------------------------------------------------------------------------
+
+const EVENT_URL = 'https://saoc.co.za/national-show';
+const TICKET_PRODUCT_BASE_URL = 'https://saoc.co.za/tickets';
+const OFFER_CURRENCY = 'ZAR';
+
+interface SanityAdmissionTicketType {
+  _id: string;
+  name: string;
+  slug: string | null;
+  price: number;
+  regularPrice?: number | null;
+  earlyBirdCutoff?: string | null;
+  capacity: number;
+  releasedQuantity?: number | null;
+  demo?: boolean | null;
+}
+
+/**
+ * One Offer per publicly listable admission ticket type, priced through the SAME
+ * `resolveEffectivePrice()` checkout itself uses — so an early-bird cutoff passing can never
+ * leave the rich result advertising a price the purchase flow will not honour. A type with
+ * no resolvable effective price (early-bird expired, no regular price set) or no slug gets
+ * NO offer rather than a guessed one. Prices reach the served page through the existing
+ * `revalidate = 60` ISR bound plus the /api/revalidate Sanity webhook — never baked in.
+ *
+ * `availability` is derived from Sanity's released quantity alone, deliberately NOT from
+ * live Firestore sold counts: this page is prerendered, and
+ * contracts/contract-build-without-secrets.yaml A3/A7 forbid a prerendered page reaching
+ * firebase-admin (and require this page keep `revalidate = 60`). The per-product
+ * /tickets/<slug> page each offer URL points at is the surface that renders live inventory.
+ */
+function buildAdmissionOffers(
+  ticketTypes: SanityAdmissionTicketType[],
+  now: Date,
+): NationalShowOffer[] {
+  return ticketTypes.flatMap<NationalShowOffer>((ticketType) => {
+    if (ticketType.demo || !ticketType.slug) return [];
+
+    const price = resolveEffectivePrice({
+      price: ticketType.price,
+      regularPrice: ticketType.regularPrice ?? null,
+      earlyBirdCutoff: ticketType.earlyBirdCutoff ?? null,
+      now,
+    });
+    if (price === null) return [];
+
+    const released = effectiveCapacity(ticketType.capacity, ticketType.releasedQuantity);
+
+    return [
+      {
+        name: ticketType.name,
+        price,
+        priceCurrency: OFFER_CURRENCY,
+        availability: released > 0 ? 'InStock' : 'SoldOut',
+        validThrough: toShowIsoDate(ticketType.earlyBirdCutoff),
+        url: `${TICKET_PRODUCT_BASE_URL}/${ticketType.slug}`,
+      },
+    ];
+  });
+}
 
 interface SanityShowClass {
   _id: string;
@@ -144,18 +230,37 @@ function toRomanOrdinal(n: number): string {
   return result;
 }
 
-export default async function NationalShowPage() {
-  const [sanityClasses, sanityShows, sanityShow, visitorInfo] = await Promise.all([
-    sanityFetch<SanityShowClass[]>({ query: showClassesQuery, tags: ['showClass', 'sanity'] }),
-    sanityFetch<SanityPastShow[]>({ query: pastShowsQuery, tags: ['show', 'sanity'] }),
-    sanityFetch<SanityNationalShow>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
-    sanityFetch<ShowVisitorInfo>({
-      query: showVisitorInfoQuery,
-      tags: ['showVisitorInfo', 'sanity'],
-    }),
-  ]);
+// Rotates through the five rights-cleared production photographs so the past-editions
+// grid does not repeat a single image across every card — none of the five is tied to a
+// specific edition, so the mapping is presentational only.
+function pastEditionImage(index: number): NosHeroImage {
+  return NOS_HERO_IMAGES[(index + 1) % NOS_HERO_IMAGES.length];
+}
 
-  const title = sanityShow?.title || 'The South African National Orchid Show';
+export default async function NationalShowPage() {
+  const [sanityClasses, sanityShows, sanityShow, visitorInfo, salesState, admissionTicketTypes] =
+    await Promise.all([
+      sanityFetch<SanityShowClass[]>({ query: showClassesQuery, tags: ['showClass', 'sanity'] }),
+      sanityFetch<SanityPastShow[]>({ query: pastShowsQuery, tags: ['show', 'sanity'] }),
+      sanityFetch<SanityNationalShow>({
+        query: nationalShowQuery,
+        tags: ['nationalShow', 'sanity'],
+      }),
+      sanityFetch<ShowVisitorInfo>({
+        query: showVisitorInfoQuery,
+        tags: ['showVisitorInfo', 'sanity'],
+      }),
+      sanityFetch<{ salesOpen?: boolean | null }>({
+        query: nationalShowSalesQuery,
+        tags: ['nationalShow', 'sanity'],
+      }),
+      sanityFetch<SanityAdmissionTicketType[]>({
+        query: activeTicketTypesByCategoryQuery,
+        params: { category: 'admission' },
+        tags: ['ticketType', 'sanity'],
+      }),
+    ]);
+
   // Sanity wins in every fallback below. The dataset value always comes first and the
   // literal is only the right-hand side — the reverse order would mask a published
   // Studio edit behind a hardcoded default.
@@ -164,7 +269,6 @@ export default async function NationalShowPage() {
   // the new and the old venue in a single viewport. `venue.name` is the source; `location`
   // is fallback only. See show-identity-surfaces.golden.md.
   const venueLine = sanityShow?.venue?.name || sanityShow?.location || 'Venue to be confirmed';
-  const heroUrl = sanityShow?.hero ? urlFor(sanityShow.hero).width(2400).url() : '/images/orchid-dark.jpg';
 
   const edition = sanityShow?.edition ?? null;
   const dateRange = formatShowDateRange(sanityShow?.showDate, sanityShow?.showEndDate);
@@ -200,6 +304,22 @@ export default async function NationalShowPage() {
     venueCity ? ` in ${venueCity}.` : '.',
   ].join('');
 
+  // The one Event node on the site. Offers are omitted entirely while sales are closed —
+  // there is nothing purchasable to advertise, and an offer list is not a place to guess.
+  const eventData = nationalShowEventJsonLd({
+    name: sanityShow?.title,
+    startDate: toShowIsoDate(sanityShow?.showDate),
+    endDate: toShowIsoDate(sanityShow?.showEndDate),
+    description: PAGE_DESCRIPTION,
+    venueName: sanityShow?.venue?.name,
+    venueAddress: formatVenueAddress(sanityShow?.venue),
+    url: EVENT_URL,
+    offers:
+      salesState?.salesOpen === true
+        ? buildAdmissionOffers(admissionTicketTypes ?? [], new Date())
+        : [],
+  });
+
   const classes: ShowClass[] =
     sanityClasses && sanityClasses.length > 0
       ? sanityClasses.map((c) => ({ id: c._id, code: c.code, name: c.name, group: '', description: c.description }))
@@ -222,108 +342,105 @@ export default async function NationalShowPage() {
 
   return (
     <>
-      {/* ── Show Hero ── */}
-      <section className="relative flex min-h-[760px] items-end overflow-hidden bg-primary-800">
-        <Image
-          src={heroUrl}
-          alt="National Show bench of orchids"
-          fill
-          priority
-          className="object-cover opacity-50"
-          sizes="100vw"
-        />
-        {/* Diagonal sage → ink gradient */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(135deg, var(--primary) 0%, var(--primary-800) 60%, #0a0f0a 100%)',
-            opacity: 0.75,
-          }}
-        />
-        <div className="relative z-10 mx-auto w-full max-w-[1280px] px-8 py-20">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-accent">
-            The Flagship
-          </p>
-          {edition ? (
-            <p className="mt-2 font-mono text-[13px] uppercase tracking-[0.18em] text-ivory/60">
-              Edition {toRomanOrdinal(edition)}
-            </p>
-          ) : null}
-          <h1 className="mt-4 max-w-[16ch] font-serif text-[clamp(42px,5.6vw,76px)] font-medium leading-[1.04] tracking-[-0.015em] text-ivory">
-            {title}
-          </h1>
+      {eventData ? <JsonLd data={eventData} /> : null}
 
-          {/* 4-up meta grid */}
-          <dl className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {heroMeta.map(({ label, value }) => (
-              <div key={label} className="border-l-2 border-accent/40 pl-4">
-                <dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-ivory/50">
-                  {label}
-                </dt>
-                <dd className="mt-0.5 font-sans text-[15px] text-ivory">{value}</dd>
-              </div>
-            ))}
-          </dl>
+      {/* ── Hero — practical facts and the booking path live here, above the
+          narrative (Kew pattern from research item 3: a visitor's first
+          question is "can I come and what does it cost"). ── */}
+      <NosHero
+        image="/images/orchid-violet.jpg"
+        priority
+        eyebrow="The Flagship"
+        // The lockup IS the headline now — the separate Cormorant "The South
+        // African National Orchid Show" text is retired (Brad, 2026-09-07).
+        // Logo's wordmark spans are real text, so the <h1> it renders here
+        // stays fully text- and screen-reader-reachable on its own; the
+        // emblem stays a decorative image (alt=""). `orientation="responsive"`
+        // keeps this to ONE h1 in the DOM at every width — centred/stacked
+        // below `sm`, horizontal/left-aligned from `sm` up — rather than two
+        // CSS-swapped instances, which would duplicate real heading text.
+        title={<Logo orientation="responsive" tone="on-dark" size="hero" as="h1" />}
+        titleIsElement
+        actions={
+          <div className="flex w-full flex-col gap-8">
+            {edition ? (
+              // Over the photograph, pale gold holds regardless of the image
+              // underneath — lilac measured 199,184,222 (weak) on the
+              // bright-petal region of orchid-yellow.jpg/orchid-pink.jpg.
+              <p className="font-sans text-[13px] font-medium uppercase tracking-[0.18em] text-ivory/90">
+                Edition {toRomanOrdinal(edition)}
+              </p>
+            ) : null}
 
-          {/* The dates above are our working assumption, not a committee decision.
-              An unmarked plausible date range is exactly the invention this section
-              must not ship — the marker is driven by showVisitorInfo.confirmations. */}
-          <ConfirmationBadge
-            status={datesStatus}
-            pendingLabel={visitorInfo?.pendingLabel}
-            researchLabel={visitorInfo?.researchLabel}
-            tone="dark"
-          />
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
+              {heroMeta.map(({ label, value }) => (
+                <div key={label} className="border-l-[length:var(--border-primary)] border-[var(--olive)]/50 pl-4">
+                  <dt className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-ivory/55">
+                    {label}
+                  </dt>
+                  <dd className="mt-0.5 font-sans text-[15px] text-ivory">{value}</dd>
+                </div>
+              ))}
+            </dl>
 
-          {/* Countdown */}
-          <div className="mt-10">
-            <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-ivory/40">
-              Opens in
-            </p>
-            <Suspense fallback={null}>
-              <ShowCountdown
-                countdownDate={sanityShow?.countdownDate}
-                edition={edition}
-                pendingLabel={visitorInfo?.pendingLabel}
-              />
-            </Suspense>
+            {/* The dates above are our working assumption, not a committee decision.
+                An unmarked plausible date range is exactly the invention this section
+                must not ship — the marker is driven by showVisitorInfo.confirmations. */}
+            <ConfirmationBadge
+              status={datesStatus}
+              pendingLabel={visitorInfo?.pendingLabel}
+              researchLabel={visitorInfo?.researchLabel}
+              tone="dark"
+            />
+
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+              <Button<typeof Link> as={Link} href="/tickets" variant="on-dark">
+                Book tickets →
+              </Button>
+              <Link
+                href="/contact"
+                className="font-sans text-[14px] font-medium text-ivory underline decoration-ivory/40 underline-offset-4 transition-colors duration-150 hover:decoration-ivory"
+              >
+                Register interest
+              </Link>
+              <Link
+                href="/societies"
+                className="font-sans text-[14px] font-medium text-ivory underline decoration-ivory/40 underline-offset-4 transition-colors duration-150 hover:decoration-ivory"
+              >
+                Find your society
+              </Link>
+            </div>
+
+            <div>
+              {/* 10px/500 is small text, so the 4.5:1 body bar applies — not the 3:1
+                  large-text one. At text-ivory/45 this measured 3.92–4.36:1 composited over
+                  the real photograph at 390/1024/1280. Raised here rather than by darkening
+                  NosHero's scrim, which is tuned across the whole hero and would regress the
+                  wordmark treatment that already passes at 5.68–10.09:1. */}
+              <p className="mb-3 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-ivory/70">
+                Opens in
+              </p>
+              <Suspense fallback={null}>
+                <ShowCountdown
+                  countdownDate={sanityShow?.countdownDate}
+                  edition={edition}
+                  pendingLabel={visitorInfo?.pendingLabel}
+                />
+              </Suspense>
+            </div>
           </div>
-
-          {/* CTAs */}
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Link
-              href="/contact"
-              className="font-sans text-[14px] font-medium bg-accent px-6 py-3 text-ivory transition-colors duration-150 hover:bg-accent-soft"
-            >
-              Register Interest →
-            </Link>
-            <Link
-              href="/societies"
-              className="font-sans text-[14px] font-medium border border-ivory/40 px-6 py-3 text-ivory transition-colors duration-150 hover:bg-ivory/10"
-            >
-              Find Your Society
-            </Link>
-            <Link
-              href="/tickets"
-              className="font-sans text-[14px] font-medium border border-ivory/40 px-6 py-3 text-ivory transition-colors duration-150 hover:bg-ivory/10"
-            >
-              Book Tickets →
-            </Link>
-          </div>
-        </div>
-      </section>
+        }
+      />
 
       {/* ── What it is ── */}
       <section className="mx-auto grid max-w-[1280px] grid-cols-1 gap-16 px-8 py-24 lg:grid-cols-2">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-            About the show
-          </p>
-          <h2 className="mt-3 font-serif text-[clamp(30px,3.8vw,46px)] font-medium leading-[1.1] text-ink">
-            Three years in the making,{' '}
-            <em className="not-italic text-primary-700">four days on the bench</em>
-          </h2>
+          <SectionHeading
+            eyebrow="About the show"
+            title={
+              'Three years in the making, four days on the bench'
+            }
+          />
           <p className="mt-6 font-sans text-[16px] leading-relaxed text-ink/80">
             The SAOC National Orchid Show is the country&rsquo;s premier competitive orchid event.
             Held every three years, it rotates across South Africa&rsquo;s nine provinces, bringing
@@ -332,7 +449,7 @@ export default async function NationalShowPage() {
           </p>
           <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
             Every plant is assessed by{' '}
-            <Link href="/judging" className="underline underline-offset-2">
+            <Link href="/judging" className="text-[var(--accent)] underline underline-offset-2">
               accredited SAOC judges
             </Link>{' '}
             against the 100-point scale across ten botanical classes. The Grand Champion is the
@@ -341,18 +458,18 @@ export default async function NationalShowPage() {
         </div>
 
         {/* 4-up stats */}
-        <div className="grid grid-cols-2 gap-px bg-rule">
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[length:var(--radius-lg)] bg-rule">
           {[
             { value: '18', label: 'Editions held' },
             { value: '3 yr', label: 'Cycle' },
             { value: '10', label: 'Judging classes' },
             { value: '1,240', label: 'Entries — 2024' },
           ].map(({ value, label }) => (
-            <div key={label} className="bg-bone px-8 py-10">
-              <div className="font-serif text-[48px] font-medium leading-none text-primary">
+            <div key={label} className="bg-parchment px-8 py-10">
+              <div className="font-serif text-[46px] font-medium leading-none text-primary">
                 {value}
               </div>
-              <div className="mt-2 font-mono text-[11px] tracking-[0.16em] text-muted">
+              <div className="mt-2 font-sans text-[11px] font-medium tracking-[0.16em] text-muted">
                 {label}
               </div>
             </div>
@@ -362,32 +479,11 @@ export default async function NationalShowPage() {
 
       {/* ── Planning a visit — the section's front door (F5 reachability) ── */}
       <section className="mx-auto max-w-[1280px] px-8 pb-8">
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-          Coming to the show
-        </p>
-        <h2 className="mt-3 font-serif text-[clamp(26px,3vw,36px)] font-medium text-ink">
-          Planning a visit
-        </h2>
-        <ul className="mt-8 grid grid-cols-1 gap-px bg-rule sm:grid-cols-2 lg:grid-cols-4">
+        <SectionHeading eyebrow="Coming to the show" title="Planning a visit" />
+        <ul className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {VISITOR_CARDS.map(({ href, title: cardTitle, description }) => (
             <li key={href}>
-              <Link
-                href={href}
-                className="flex h-full flex-col gap-3 bg-parchment p-6 transition-shadow duration-150 hover:shadow-md"
-              >
-                <span className="font-serif text-[20px] font-medium leading-snug text-ink">
-                  {cardTitle}
-                </span>
-                <span className="font-sans text-[14px] leading-relaxed text-ink/65">
-                  {description}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="mt-auto border-t border-rule pt-3 text-muted"
-                >
-                  →
-                </span>
-              </Link>
+              <VisitorLinkCard href={href} title={cardTitle} description={description} />
             </li>
           ))}
         </ul>
@@ -396,67 +492,20 @@ export default async function NationalShowPage() {
       {/* ── Three-year cycle ── */}
       <section className="bg-bone py-20">
         <div className="mx-auto max-w-[1280px] px-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-            The rotation
-          </p>
-          <h2 className="mt-3 font-serif text-[clamp(26px,3vw,36px)] font-medium text-ink">
-            Three-year cycle
-          </h2>
+          <SectionHeading eyebrow="The rotation" title="Three-year cycle" />
 
-          <div className="relative mt-12 grid grid-cols-3 gap-6">
-            {/* Connecting rail */}
-            <div className="absolute left-[calc(16.7%+1rem)] right-[calc(16.7%+1rem)] top-8 h-px bg-rule" />
+          <div className="relative mt-14 grid grid-cols-1 gap-6 sm:grid-cols-3">
+            {/* Connecting rail — hidden below sm, where cards stack */}
+            <div className="absolute left-[calc(16.7%+1rem)] right-[calc(16.7%+1rem)] top-1 hidden h-px bg-rule sm:block" />
 
             {cycle.map(({ year, edition: cycleEdition, host, status }) => (
-              <div
+              <CycleStep
                 key={year}
-                className={[
-                  'relative flex flex-col gap-3 p-6',
-                  status === 'current'
-                    ? 'bg-primary text-ivory scale-105 shadow-lg'
-                    : status === 'past'
-                      ? 'bg-parchment border border-rule'
-                      : 'bg-parchment border border-dashed border-rule',
-                ].join(' ')}
-              >
-                {status === 'current' && (
-                  <span className="self-start font-mono text-[10px] uppercase tracking-[0.18em] bg-accent text-ivory px-2 py-0.5">
-                    Next
-                  </span>
-                )}
-                {/* Brass dot on rail */}
-                <div
-                  className="absolute -top-1 left-1/2 h-3 w-3 -translate-x-1/2 rounded-full border-2"
-                  style={{
-                    backgroundColor: status === 'current' ? 'var(--accent)' : 'var(--rule)',
-                    borderColor: status === 'current' ? 'var(--accent)' : 'var(--rule)',
-                  }}
-                />
-                <div
-                  className={[
-                    'font-serif text-[32px] font-medium leading-none',
-                    status === 'current' ? 'text-ivory' : 'text-ink',
-                  ].join(' ')}
-                >
-                  {year}
-                </div>
-                <div
-                  className={[
-                    'font-mono text-[11px] uppercase tracking-[0.14em]',
-                    status === 'current' ? 'text-ivory/60' : 'text-muted',
-                  ].join(' ')}
-                >
-                  Edition {toRomanOrdinal(cycleEdition)}
-                </div>
-                <div
-                  className={[
-                    'font-sans text-[14px]',
-                    status === 'current' ? 'text-ivory/80' : 'text-ink/70',
-                  ].join(' ')}
-                >
-                  {host}
-                </div>
-              </div>
+                year={year}
+                editionLabel={`Edition ${toRomanOrdinal(cycleEdition)}`}
+                host={host}
+                status={status}
+              />
             ))}
           </div>
           <p className="mt-6 font-sans text-[13px] text-muted">
@@ -465,35 +514,23 @@ export default async function NationalShowPage() {
         </div>
       </section>
 
-      {/* ── Classes & Judging ── */}
+      {/* ── Classes & Judging — a botanical index, not placeholder tiles ── */}
       <section className="mx-auto max-w-[1280px] px-8 py-24">
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-          Competition structure
-        </p>
-        <h2 className="mt-3 font-serif text-[clamp(26px,3vw,36px)] font-medium text-ink">
-          Ten judging groups
-        </h2>
-        <p className="mt-4 max-w-2xl font-sans text-[15px] text-ink/70">
-          Every exhibit is entered in one of ten botanical classes. Judges score on a 100-point
-          scale covering cultural quality, presentation, and species accuracy.
-        </p>
+        <SectionHeading
+          eyebrow="Competition structure"
+          title="Ten judging groups"
+          lede="Every exhibit is entered in one of ten botanical classes. Judges score on a 100-point scale covering cultural quality, presentation, and species accuracy."
+        />
 
         <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {classes.map((cls) => (
-            <div key={cls.id} className="flex flex-col gap-2 border border-rule bg-parchment p-5">
-              <div className="flex h-10 w-10 items-center justify-center bg-primary">
-                <span className="font-serif text-[15px] italic font-medium text-accent-soft">
-                  {cls.code}
-                </span>
-              </div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-                {cls.group || `Group ${classes.indexOf(cls) + 1}`}
-              </p>
-              <p className="font-serif text-[16px] font-medium leading-snug text-ink">
-                {cls.name}
-              </p>
-              <p className="font-sans text-[13px] leading-snug text-ink/60">{cls.description}</p>
-            </div>
+          {classes.map((cls, index) => (
+            <JudgingGroupCard
+              key={cls.id}
+              code={cls.code}
+              group={cls.group || `Group ${index + 1}`}
+              name={cls.name}
+              description={cls.description}
+            />
           ))}
         </div>
       </section>
@@ -501,38 +538,28 @@ export default async function NationalShowPage() {
       {/* ── Exhibitor information ── */}
       <section className="bg-primary py-24">
         <div className="mx-auto max-w-[1280px] px-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-            Entering the show
-          </p>
-          <h2 className="mt-3 font-serif text-[clamp(26px,3vw,36px)] font-medium text-ivory">
-            Exhibitor information
-          </h2>
+          <SectionHeading eyebrow="Entering the show" title="Exhibitor information" tone="on-dark" />
 
           {/* Retiring nationalShow.exhibitorStages (exhibitor F-7): this page no longer reads
               that field. The exhibitor journey has one source — showExhibitorStep, rendered at
               /national-show/exhibitors — and what stays here is a process summary that links
               there, not a second copy an editor would have to keep in step. */}
           <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {EXHIBITOR_STAGES.map(({ stage, title, description }) => (
-              <div
+            {EXHIBITOR_STAGES.map(({ stage, title: stageTitle, description }) => (
+              <ExhibitorStageCard
                 key={stage}
-                className="flex flex-col gap-3 p-6"
-                style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
-              >
-                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-accent">
-                  Stage {stage}
-                </p>
-                <h3 className="font-serif text-[20px] font-medium leading-snug text-ivory">
-                  {title}
-                </h3>
-                <p className="font-sans text-[14px] leading-relaxed text-ivory/70">{description}</p>
-                <ConfirmationBadge
-                  status={datesStatus}
-                  pendingLabel={visitorInfo?.pendingLabel}
-                  researchLabel={visitorInfo?.researchLabel}
-                  tone="dark"
-                />
-              </div>
+                stage={stage}
+                title={stageTitle}
+                description={description}
+                confirmation={
+                  <ConfirmationBadge
+                    status={datesStatus}
+                    pendingLabel={visitorInfo?.pendingLabel}
+                    researchLabel={visitorInfo?.researchLabel}
+                    tone="dark"
+                  />
+                }
+              />
             ))}
           </div>
 
@@ -540,12 +567,9 @@ export default async function NationalShowPage() {
               /national-show/exhibitors is reachable from the home page only — the same
               built-but-unlinked hole /national-show/archive had. */}
           <div className="mt-10">
-            <Link
-              href="/national-show/exhibitors"
-              className="inline-block border border-ivory/40 px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-ivory/10"
-            >
+            <Button<typeof Link> as={Link} href="/national-show/exhibitors" variant="on-dark">
               Exhibitor information →
-            </Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -553,90 +577,45 @@ export default async function NationalShowPage() {
       {/* ── Past shows ── */}
       {pastShows.length > 0 && (
         <section className="mx-auto max-w-[1280px] px-8 py-24">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-            Show history
-          </p>
-          <h2 className="mt-3 font-serif text-[clamp(26px,3vw,36px)] font-medium text-ink">
-            Past editions
-          </h2>
+          <SectionHeading eyebrow="Show history" title="Past editions" />
 
           <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {pastShows.slice(0, 6).map((show) => (
-              <div key={show.year} className="flex flex-col border border-rule bg-parchment">
-                <div className="relative aspect-[3/2] bg-primary-800 overflow-hidden">
-                  <Image
-                    src="/images/orchid-purple.jpg"
-                    alt={`${show.year} National Orchid Show`}
-                    fill
-                    className="object-cover opacity-60"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
-                  <span className="absolute left-3 top-3 font-mono text-[10px] uppercase tracking-[0.18em] bg-primary text-ivory px-2 py-1">
-                    {show.edition > 0 ? `Edition ${toRomanOrdinal(show.edition)}` : show.year}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-3 p-5">
-                  <div>
-                    <p className="font-serif text-[20px] font-medium text-ink">
-                      {show.year} — {show.month}
-                    </p>
-                    <p className="font-sans text-[14px] text-muted">{show.host}</p>
-                  </div>
-                  {(show.entries || show.visitors || show.trophies) && (
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-rule">
-                      {show.entries && (
-                        <span className="font-mono text-[10px] uppercase tracking-[0.14em] bg-bone px-2 py-1 text-muted">
-                          {show.entries.toLocaleString()} entries
-                        </span>
-                      )}
-                      {show.visitors && (
-                        <span className="font-mono text-[10px] uppercase tracking-[0.14em] bg-bone px-2 py-1 text-muted">
-                          {show.visitors.toLocaleString()} visitors
-                        </span>
-                      )}
-                      {show.trophies && (
-                        <span className="font-mono text-[10px] uppercase tracking-[0.14em] bg-bone px-2 py-1 text-muted">
-                          {show.trophies} trophies
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {show.note && (
-                    <p className="font-serif text-[14px] italic text-muted">{show.note}</p>
-                  )}
-                </div>
-              </div>
+            {pastShows.slice(0, 6).map((show, index) => (
+              <PastEditionCard
+                key={show.year}
+                image={pastEditionImage(index)}
+                editionLabel={show.edition > 0 ? `Edition ${toRomanOrdinal(show.edition)}` : String(show.year)}
+                year={show.year}
+                month={show.month}
+                host={show.host}
+                entries={show.entries}
+                visitors={show.visitors}
+                trophies={show.trophies}
+                note={show.note}
+              />
             ))}
           </div>
         </section>
       )}
 
       {/* ── CTA band ── */}
-      <section className="bg-bone py-20">
-        <div className="mx-auto max-w-[1280px] px-8 text-center">
-          <h2 className="font-serif text-[clamp(28px,3.6vw,44px)] font-medium text-ink">
-            Start planning your entry now.
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl font-sans text-[16px] text-ink/70">
-            {ctaSentence} Register your interest through your society or contact the council
-            directly.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Link
-              href="/societies"
-              className="font-sans text-[14px] font-medium bg-primary px-6 py-3 text-ivory transition-colors duration-150 hover:bg-primary-800"
-            >
-              Find Your Society
-            </Link>
+      <CtaBand
+        title="Start planning your entry now."
+        lede={`${ctaSentence} Register your interest through your society or contact the council directly.`}
+        action={
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button<typeof Link> as={Link} href="/societies" variant="on-dark">
+              Find your society
+            </Button>
             <Link
               href="/contact"
-              className="font-sans text-[14px] font-medium border border-ink/30 px-6 py-3 text-ink transition-colors duration-150 hover:bg-ink/5"
+              className="font-sans text-[14px] font-medium text-ivory underline decoration-ivory/40 underline-offset-4 transition-colors duration-150 hover:decoration-ivory"
             >
-              Ask the Council
+              Ask the council
             </Link>
           </div>
-        </div>
-      </section>
+        }
+      />
     </>
   );
 }

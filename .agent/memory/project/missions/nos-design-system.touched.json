@@ -1,0 +1,13 @@
+{
+  "schema": "athanor.mission-touched-files/v1",
+  "slug": "nos-design-system",
+  "pending_baselines": {
+    "F12": [
+      ".agent/memory/project/handoff/SESSION_STATE.md",
+      ".agent/memory/project/missions/2026-09-06-nos-design-system.md",
+      ".agent/memory/project/missions/active.json",
+      ".agent/memory/project/missions/nos-design-system.touched.json"
+    ]
+  },
+  "paths": []
+}

@@ -1,0 +1,178 @@
+/*
+ * NOS scoped token layer (F1, golden reference — see D1 in the M1 README).
+ *
+ * This file is the golden shape for `app/(marketing)/national-show/nos-theme.css`.
+ * It redeclares the EXISTING SAOC semantic custom-property names — the same names
+ * declared in `app/globals.css` `:root` — on the `.nos-theme` scope class only.
+ * It never touches `:root` and never declares Tailwind's global theme-config
+ * at-rule: that at-rule is global in Tailwind v4 and would leak show tokens
+ * onto every SAOC page.
+ *
+ * Mechanism — read this before adding or removing anything below. A custom
+ * property's `var()` references are substituted at the element that DECLARES
+ * the property, NOT at the element that uses it. This file once claimed the
+ * opposite, and that single wrong sentence is what shipped a broken scope: the
+ * raw + semantic names were redeclared here, `--color-*` was not, and every
+ * Tailwind colour utility on the show pages rendered SAOC sage.
+ *
+ * Concretely: `app/globals.css`'s theme at-rule declares
+ * `--color-parchment: var(--parchment)` on `:root`, so `var(--parchment)`
+ * resolves THERE, against the SAOC palette, and the already-computed SAOC
+ * literal is what inherits into `.nos-theme`. Redeclaring `--parchment` here
+ * cannot retroactively re-run that `:root` declaration.
+ *
+ * The consequence, and the rule for this file: re-skinning a descendant
+ * requires redeclaring the exact name that descendant's CSS actually reads —
+ * `--color-*` for Tailwind colour utilities, the semantic names for the
+ * hand-written element styles. Redeclaring only the name those sit on top of
+ * is inert. The same trap applies to inherited PROPERTIES (not just custom
+ * properties): `body`'s `color`/`background`/`font-family` resolve on `body`,
+ * outside this scope, so they are re-declared on `.nos-theme` too (see the
+ * inherited-property block below). Once the right names are declared here,
+ * every descendant re-skins — including SAOC-owned components — with zero
+ * edits to those components.
+ *
+ * Deliberately excluded from this scope (guardrail 1, mission + README D-notes):
+ * this project's `:root` declares no status-colour semantic tokens (the four
+ * conventional status names) at all, so there is nothing semantic to remap here.
+ * If a future component adds status colours, they must NOT be routed through
+ * this file.
+ */
+
+.nos-theme {
+  /* ---- NOS raw palette (committee-approved + emblem-sampled; see
+     .agent/memory/project/specs/nos-design-system/goldens/nos-contrast.golden.md
+     for the full contrast table). Every hex below is a member of that sanctioned
+     set — do not add a colour here without an @architect round-trip. ---- */
+  --parchment: #fbfaf0;
+  --ivory: #fbfaf0;
+  --bone: #f3f2d6;
+  --bg-tint: #f3f2d6;
+
+  --primary: #211a57;
+  --primary-800: #1a1445;
+  --primary-700: #33296f;
+  --primary-100: #ece8f5;
+
+  --accent: #7e3f97; /* violet — NOT olive; olive fails contrast as a fill */
+  --accent-soft: #9a63ae;
+
+  --ink: #211a57;
+  --muted: #6a6780;
+
+  --rule: #dad7c8;
+  --rule-soft: #e8e6c2;
+
+  /* ---- Tailwind colour-utility layer. REQUIRED — redeclaring the raw names
+     above is NOT sufficient, for a reason that is easy to get backwards.
+
+     A custom property's `var()` references are substituted at the element that
+     DECLARES it, not at the element that uses it. `app/globals.css`'s theme
+     at-rule declares `--color-primary: var(--primary)` on `:root`, so
+     `var(--primary)` resolves there, against `:root`'s SAOC palette, and the
+     already-resolved SAOC literal is what inherits down into `.nos-theme`.
+     Redeclaring `--primary` here cannot retroactively re-run that `:root`
+     declaration. Tailwind's colour utilities emit `var(--color-primary)` — the
+     theme-namespaced name — so they read that stale inherited value.
+
+     Fonts escape this by an accident of naming — see the typography block
+     below. Do not take that as evidence colours will behave the same way.
+
+     Literals, not `var(--parchment)`: either resolves correctly here, but a
+     literal cannot be re-broken by a future change to the indirection above.
+     Keep each value identical to its raw counterpart. ---- */
+  --color-primary: #211a57;
+  --color-primary-800: #1a1445;
+  --color-primary-700: #33296f;
+  --color-primary-100: #ece8f5;
+  --color-accent: #7e3f97;
+  --color-accent-soft: #9a63ae;
+  --color-parchment: #fbfaf0;
+  --color-ivory: #fbfaf0;
+  --color-bone: #f3f2d6;
+  --color-ink: #211a57;
+  --color-muted: #6a6780;
+  --color-rule: #dad7c8;
+  --color-rule-soft: #e8e6c2;
+
+  /* ---- Typography (D2). next/font/google publishes these fonts through CSS
+     custom properties on the same .nos-theme element via layout.tsx's
+     className; this file assigns them into BOTH name pairs, because two
+     independent consumers read two different names:
+
+       - the hand-written element styles in app/globals.css (`.h1` etc.)
+         read the semantic `--serif`/`--sans`;
+       - Tailwind's `font-serif`/`font-sans` utilities emit
+         `font-family: var(--font-serif)` / `var(--font-sans)` directly,
+         because `--font-*` IS Tailwind v4's font namespace.
+
+     That second point is why fonts survived the scoping bug that broke every
+     colour: the utility reads the same `--font-serif` name next/font publishes
+     and this file redeclares, with no `--color-*`-style intermediate hop to
+     resolve prematurely at `:root`. Naming luck, not a build-tool difference —
+     do not generalise it to other token families.
+
+     (`--font-family-serif` in globals.css's theme at-rule maps to no Tailwind
+     utility and is inert; nothing reads it. An earlier version of this comment
+     claimed the utilities read it. They do not.)
+
+     Redeclaring one pair without the other re-skins only that consumer. ---- */
+  --font-serif: var(--font-nos-cormorant);
+  --font-sans: var(--font-nos-jost);
+  --serif: var(--font-nos-cormorant), 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --sans: var(--font-nos-jost), Jost, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --serif-weight: 400;
+
+  /* ---- Inherited-property re-resolution. `app/globals.css` sets
+     `font-family: var(--sans)`, `color: var(--fg)` and `background: var(--bg)`
+     on `body` — OUTSIDE this scope — so all three resolve against the root's
+     SAOC palette and inherit down as already-computed SAOC values. Redeclaring
+     the custom properties above cannot change that; the declarations must be
+     repeated here so they re-resolve against this element. Without these, NOS
+     pages rendered SAOC ink on SAOC parchment in Manrope for every element not
+     carrying an explicit utility class. ---- */
+  font-family: var(--sans);
+  color: var(--fg);
+  background-color: var(--bg);
+
+  /* ---- Semantic layer — same names app/globals.css declares on :root,
+     redeclared here so every descendant using them re-skins automatically. ---- */
+  --bg: var(--parchment);
+  --bg-dark: var(--primary);
+  --fg: var(--ink);
+  --fg-muted: var(--muted);
+  --fg-on-dark: var(--ivory);
+  --fg-on-dark-muted: rgba(251, 250, 240, 0.65);
+  --link: var(--primary);
+  --link-underline: var(--accent);
+
+  /* ---- Focus ring (guardrail 2). rgba(154,99,174,.45) is tuned for white and
+     falls below 3:1 non-text contrast on pale gold — use the solid violet
+     instead of thinning the ring. ---- */
+  --ring-focus: #7e3f97;
+
+  /* ---- F2/F3 additions: remaining sanctioned-palette members the primitives
+     and composites need (photography scrim, on-dark surfaces). Every hex here
+     is also a member of the sanctioned set in nos-contrast.golden.md. ---- */
+  --olive: #a7a841; /* decorative rule / eyebrow / tracked-caps ONLY — never
+                        body text on light, never a button fill (see golden). */
+  --olive-deep: #7f7d33; /* large text / meaningful UI boundary on light grounds */
+  --night: #0e0b24; /* purple-tinted near-black ground for full-bleed photography */
+  --lilac: #d8c9ec; /* on-dark accent */
+  --lilac-muted: #c7b8de; /* muted copy on dark grounds */
+  --lilac-pale: #eae2f3; /* tint ground */
+
+  /* ---- F2/F3 additions: radii, borders, shadow, motion. Radii are soft and
+     generous per the design grammar — 2px reads cold and was rejected. ---- */
+  --radius-card: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --border-primary: 1.5px;
+  --border-hairline: 1px;
+  /* Soft, low, purple-tinted — never harsh black. */
+  --shadow-card: 0 1px 2px rgba(33, 26, 87, 0.06), 0 8px 24px rgba(33, 26, 87, 0.08);
+  --ease-nos: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur-med: 220ms;
+  --dur-slow: 360ms;
+}
