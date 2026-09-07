@@ -206,15 +206,26 @@ assertions:
 
   - id: TRIAD-02
     description: >-
-      Deployed preview browser check for the NOS design system routes, run
-      against a Firebase Hosting preview channel URL (not the localhost:3002 dev
-      server) — CTO-ruling triad requirement. PENDING: target below is a
-      placeholder until the preview channel deploy finishes; do not treat this
-      assertion as passing until the real preview URL is substituted and the
-      check has actually run against it.
+      Deployed browser-run manifest for the NOS design system routes — CTO-ruling
+      triad requirement (earned against a deployed origin, not the localhost:3002
+      dev server). target is a manifest JSON path per
+      execution/browser_deployed_check.sh's own usage contract (argv[1]), not a
+      URL. PENDING: the manifest at this path does not exist yet — the deploying
+      dev produces it after driving a real browser run against the deployment.
+      Until it exists this assertion honestly errors (exit 2, wrapper usage
+      error), which is correct behaviour, not something to paper over. NOTE: the
+      script's origin allowlist is an exact-string match against
+      BROWSER_CHECK_DEPLOYED_ORIGIN (default https://beta.saoc.co.za, see script
+      lines 37/112-114) with no per-assertion override available in this
+      contract's schema (check_cmd invokes the script with no env passthrough
+      mechanism) — if the manifest records a Firebase preview-channel origin
+      instead, this check fails the allowlist unless BROWSER_CHECK_DEPLOYED_ORIGIN
+      is exported in the shell that runs `contract.py gate` itself; this is not
+      something a contract.yaml edit can set. Flagged for the orchestrator to
+      resolve, not decided here.
     verify:
       kind: browser_deployed_check
-      target: "REPLACE_WITH_FIREBASE_PREVIEW_CHANNEL_URL"
+      target: ".agent/memory/project/specs/nos-design-system/browser-deployed-manifest.json"
 
 phases:
   - id: 1
