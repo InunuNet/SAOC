@@ -33,11 +33,21 @@ export interface NosHeroProps {
   /**
    * Rendered above the eyebrow, inside the scrim's dark band — typically a
    * `<Logo orientation="horizontal" tone="on-dark" />`. Optional: most heroes
-   * don't carry the full lockup, only the flagship one does.
+   * don't carry the full lockup, only the flagship one did (retired in
+   * favour of `titleIsElement`, below — the lockup now sits IN the headline
+   * position, not above the eyebrow, so it goes through `title` instead).
    */
   brandMark?: ReactNode;
   eyebrow?: string;
-  title: string;
+  title: ReactNode;
+  /**
+   * Set when `title` is already a heading element (e.g.
+   * `<Logo as="h1" size="hero" .../>`) rather than plain text — NosHero then
+   * renders `title` bare instead of wrapping it in its own `<h1>`. Nesting
+   * two `<h1>`s (Logo's and NosHero's) would be invalid and would give the
+   * page two competing top-level headings.
+   */
+  titleIsElement?: boolean;
   lede?: string;
   /** Rendered below the lede, inside the scrim's dark band — typically a Button. */
   actions?: ReactNode;
@@ -51,6 +61,7 @@ export function NosHero({
   brandMark,
   eyebrow,
   title,
+  titleIsElement = false,
   lede,
   actions,
   priority = false,
@@ -132,9 +143,13 @@ export function NosHero({
             {eyebrow}
           </span>
         ) : null}
-        <h1 className="max-w-[20ch] font-serif text-[clamp(36px,5.6vw,64px)] font-medium leading-[1.05] text-ivory">
-          {title}
-        </h1>
+        {titleIsElement ? (
+          title
+        ) : (
+          <h1 className="max-w-[20ch] font-serif text-[clamp(36px,5.6vw,64px)] font-medium leading-[1.05] text-ivory">
+            {title}
+          </h1>
+        )}
         {lede ? (
           <p className="max-w-[58ch] font-sans text-[19px] leading-[1.55] text-[var(--lilac-pale)]">
             {lede}

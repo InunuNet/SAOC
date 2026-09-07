@@ -170,7 +170,6 @@ export default async function NationalShowPage() {
     }),
   ]);
 
-  const title = sanityShow?.title || 'The South African National Orchid Show';
   // Sanity wins in every fallback below. The dataset value always comes first and the
   // literal is only the right-hand side — the reverse order would mask a published
   // Studio edit behind a hardcoded default.
@@ -242,24 +241,17 @@ export default async function NationalShowPage() {
       <NosHero
         image="/images/orchid-violet.jpg"
         priority
-        // The horizontal lockup carries the brand identity here, so the h1
-        // below is left as the show's headline rather than restating the
-        // wordmark — logo carries identity, h1 sits below it as the
-        // headline (Brad, 2026-09-07). Its wordmark is real text, not baked
-        // into an image, so it stays screen-reader reachable on its own.
-        brandMark={
-          // The horizontal lockup wraps "National Orchid Show" onto two
-          // lines below ~640px, leaving the emblem sized for a two-line
-          // wordmark next to a three-line one — cramped, and it crowds "The
-          // Flagship" eyebrow right beneath it. Stack vertically below `sm`,
-          // switch to the full horizontal lockup from `sm:` up.
-          <>
-            <Logo orientation="vertical" tone="on-dark" className="sm:hidden" />
-            <Logo orientation="horizontal" tone="on-dark" className="hidden sm:flex" />
-          </>
-        }
         eyebrow="The Flagship"
-        title={title}
+        // The lockup IS the headline now — the separate Cormorant "The South
+        // African National Orchid Show" text is retired (Brad, 2026-09-07).
+        // Logo's wordmark spans are real text, so the <h1> it renders here
+        // stays fully text- and screen-reader-reachable on its own; the
+        // emblem stays a decorative image (alt=""). `orientation="responsive"`
+        // keeps this to ONE h1 in the DOM at every width — centred/stacked
+        // below `sm`, horizontal/left-aligned from `sm` up — rather than two
+        // CSS-swapped instances, which would duplicate real heading text.
+        title={<Logo orientation="responsive" tone="on-dark" size="hero" as="h1" />}
+        titleIsElement
         actions={
           <div className="flex w-full flex-col gap-8">
             {edition ? (
