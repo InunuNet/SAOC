@@ -4,95 +4,111 @@ slug: nos-design-system
 goal: nos-design-system
 created_at: '2026-09-06T21:02:15.256562+00:00'
 started_at: '2026-09-06T21:02:15.256562+00:00'
-last_active_at: '2026-09-06T22:31:31.784599+00:00'
+last_active_at: '2026-09-07T22:34:26.109815+00:00'
 status: in_progress
 cost_estimate:
   features: 13
   milestones: 4
   total_calls: 0
 last_checkpoint:
-  milestone: M1
-  feature: F1
-  ts: '2026-09-06T22:31:31.784599+00:00'
+  milestone: M4
+  feature: F12
+  ts: '2026-09-07T22:34:26.109815+00:00'
 features:
 - id: F1
-  status: in_progress
+  status: done
   inline_brief: Scoped NOS token layer, fonts and logo assets. New app/(marketing)/national-show/layout.tsx
     introducing a nos-theme wrapper that redefines the NOS palette/type/spacing tokens
     locally. Cormorant Garamond + Jost via next/font. Emblem and Layout-B logo assets
     vendored from the Claude Design project. Zero edits to app/globals.css :root and
     zero edits to components/chrome/*.
   started_at: '2026-09-06T22:31:31.784397+00:00'
+  completed_at: '2026-09-07T22:34:06.041424+00:00'
 - id: F2
-  status: pending
+  status: done
   inline_brief: 'NOS primitive components: Button, Badge, Card, SectionHeading, Logo
     (Layout B), EmblemBadge, Icon, plus the form primitives the vendor and ticket
     forms need. All render through the F1 scoped tokens.'
+  completed_at: '2026-09-07T22:34:07.682092+00:00'
 - id: F3
-  status: pending
+  status: done
   inline_brief: 'NOS composite blocks: NosHero (full-bleed with purple scrim), programme/event
     card grid, visit and CTA bands, section nav, and the NOS footer brand band that
     sits above the inherited SAOC footer.'
+  completed_at: '2026-09-07T22:34:08.928790+00:00'
 - id: F4
-  status: pending
+  status: done
   inline_brief: Restyle the /national-show landing page (642 lines, flagship) into
     the NOS system.
+  completed_at: '2026-09-07T22:34:10.242338+00:00'
 - id: F5
-  status: pending
+  status: done
   inline_brief: Restyle /national-show/plan-your-visit and /national-show/what-to-expect.
+  completed_at: '2026-09-07T22:34:11.554798+00:00'
 - id: F6
-  status: pending
+  status: done
   inline_brief: Restyle /national-show/faq, /national-show/archive and /national-show/archive/[year].
+  completed_at: '2026-09-07T22:34:13.110263+00:00'
 - id: F7
-  status: pending
+  status: done
   inline_brief: Restyle /national-show/exhibitors.
+  completed_at: '2026-09-07T22:34:14.434897+00:00'
 - id: F8
-  status: pending
+  status: done
   inline_brief: Restyle /national-show/tickets.
+  completed_at: '2026-09-07T22:34:15.886730+00:00'
 - id: F9
-  status: pending
+  status: done
   inline_brief: Restyle /national-show/workshops and /national-show/conferences through
     NOS-scoped wrappers and props only. components/tickets/CategoryTicketsPage is
     owned by the sibling SAOC session and must not be edited.
+  completed_at: '2026-09-07T22:34:17.193109+00:00'
 - id: F10
-  status: pending
+  status: done
   inline_brief: Restyle /national-show/vendors and /national-show/vendors/apply.
+  completed_at: '2026-09-07T22:34:18.433576+00:00'
 - id: F11
-  status: pending
+  status: done
   inline_brief: Restyle /national-show/vendors/register and /national-show/vendors/payment.
+  completed_at: '2026-09-07T22:34:19.643734+00:00'
 - id: F12
-  status: pending
+  status: in_progress
   inline_brief: Capture "after" screenshots at 390 and 1280 for every route into .agent/evidence/nos-design/<route>/,
     run the route-200 sweep, and complete the a11y pass (visible focus, labelled controls,
     WCAG AA contrast against the NOS palette).
+  started_at: '2026-09-07T22:34:26.109560+00:00'
 - id: F13
   status: pending
   inline_brief: Write docs/nos-design-system.md, get the contract gate green, and
     open the PR to main.
 - id: F14
-  status: pending
+  status: done
   inline_brief: Admin information architecture and navigation. Make role separation
     unmistakable — vendor vs exhibitor vs visitor — with scannable status, clear wayfinding,
     and a dashboard that answers "what needs me now". Structural information design,
     not a re-skin; admin is deliberately NOT show-branded.
+  completed_at: '2026-09-07T22:34:20.922983+00:00'
 - id: F15
-  status: pending
+  status: done
   inline_brief: 'Admin vendor and exhibitor review surfaces: application queues, status
     transitions, payment and booth allocation, made legible at a glance.'
+  completed_at: '2026-09-07T22:34:22.136910+00:00'
 - id: F16
-  status: pending
+  status: done
   inline_brief: 'Admin visitor and door surfaces: check-in scanner, ticket lookup,
     live show-day operational view.'
+  completed_at: '2026-09-07T22:34:23.349296+00:00'
 - id: F17
   status: pending
   inline_brief: Ticket purchase flow as a conversion surface end to end — product
     presentation, day selection, attendee naming, and a confirmation moment that feels
     like an event ticket rather than a receipt.
 - id: F18
-  status: pending
+  status: done
   inline_brief: 'SEO and discoverability: per-route metadata, Event/Organization structured
     data, Open Graph and Twitter cards with NOS-branded images, sitemap, canonical
     URLs.'
+  completed_at: '2026-09-07T22:34:24.580750+00:00'
 - id: F19
   status: pending
   inline_brief: Social and advertising kit built from the NOS tokens and emblem —
