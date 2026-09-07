@@ -90,6 +90,19 @@ proved something true on a given day, not a standing property of the code. None 
 re-runs automatically on a later change, so treat each dated claim as exactly that:
 true when measured, unknown since.
 
+**Verified 2026-09-07:** Codex GPT-5.5 adversarial review of the branch diff via
+`execution/codex_qa.sh`, exit 0 (PASS). Transcript at
+`.agent/evidence/nos-design/codex/codex-qa-2026-09-07.log` (4,098 lines, ending
+`PASS`/`EXIT=0`) — cited so the next reader can check it rather than trust it. Not
+re-run since. The run itself happened a day earlier than it was committed: it was
+executed in a session scratchpad on 2026-09-07 and only written to this durable path on
+2026-09-08 (commit `8487582f`), after an earlier draft of this document searched
+`learned.md`, `backlog.md` and the commit log, found no record of it, and correctly
+dropped the claim rather than assert something unverifiable. The claim was true the
+whole time; it just wasn't checkable by anyone until the transcript was committed. A
+result that exists only in a session's working memory is not evidence — the same
+standard this document holds every other claim to.
+
 Nothing in this repo's CI wires those checks in. `.github/workflows/ci.yml` runs lint,
 type-check, build, and two residue guards (`dataset-residue-guard`,
 `firestore-residue-guard`) — nothing else. `package.json` has no `test` script. A repo
