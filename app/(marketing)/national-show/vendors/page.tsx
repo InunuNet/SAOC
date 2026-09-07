@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { PageHero } from '@/components/ui/PageHero';
+import { Button } from '@/components/nos/Button';
+import { CtaBand } from '@/components/nos/CtaBand';
+import { NosHero } from '@/components/nos/NosHero';
 import { VendorEmptyState, VendorGrid, VendorIntro } from '@/components/vendors';
 import type { SanityVendorNursery } from '@/components/vendors';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -12,6 +14,10 @@ export const revalidate = 60;
 
 export const metadata: Metadata = { title: 'Exhibiting Nurseries — National Show' };
 
+// F10 (nos-design-system, M3): borrows the World Orchid Conference's prestige framing
+// (research item D) — a curated trade floor of named nurseries, not a bureaucratic listing.
+// VendorIntro/VendorGrid/VendorEmptyState are SAOC-owned, untouched, and already re-skin
+// through the inherited nos-theme tokens; this page only composes NOS chrome around them.
 export default async function VendorsPage() {
   const nurseries = await sanityFetch<SanityVendorNursery[]>({
     query: vendorNurseriesQuery,
@@ -22,26 +28,29 @@ export default async function VendorsPage() {
 
   return (
     <>
-      <PageHero
-        image="/images/orchid-yellow.jpg"
+      <NosHero
+        image="/images/orchid-violet.jpg"
         eyebrow="National Show"
-        heading="Exhibiting Nurseries"
+        title="Exhibiting Nurseries"
         lede="Meet the specialist nurseries showcasing their finest orchids at the South African National Orchid Show."
+        priority
       />
 
       <div className="mx-auto max-w-[1280px] px-8 py-16 space-y-16">
         <VendorIntro />
 
         {list.length > 0 ? <VendorGrid nurseries={list} /> : <VendorEmptyState />}
-
-        <p className="font-sans text-[15px] text-ink/80">
-          Interested in exhibiting at the 2027 SAOC National Show?{' '}
-          <Link href="/national-show/vendors/apply" className="underline hover:text-accent">
-            Register as a vendor
-          </Link>
-          .
-        </p>
       </div>
+
+      <CtaBand
+        eyebrow="Trade floor"
+        title="Interested in exhibiting at the 2027 SAOC National Show?"
+        action={
+          <Button as={Link} href="/national-show/vendors/apply" variant="on-dark">
+            Register as a vendor
+          </Button>
+        }
+      />
     </>
   );
 }

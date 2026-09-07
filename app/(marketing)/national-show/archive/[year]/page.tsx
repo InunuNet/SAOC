@@ -12,7 +12,7 @@ import type { ShowIdentity } from '@/types';
 import { Button } from '@/components/nos/Button';
 import { Card } from '@/components/nos/Card';
 import { CtaBand } from '@/components/nos/CtaBand';
-import { NosHero } from '@/components/nos/NosHero';
+import { NOS_HERO_IMAGES, NosHero } from '@/components/nos/NosHero';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -20,6 +20,17 @@ import { NosHero } from '@/components/nos/NosHero';
 export const revalidate = 60;
 
 const NOT_RECORDED = '—';
+
+/**
+ * Deterministic photo per edition, keyed off edition (falling back to year for a
+ * Sanity-only show with no edition number) — matches the same picker on the archive
+ * index page, so a given show's tile there and its detail photo here always agree.
+ * Never randomised: a photo that changed on reload would look broken.
+ */
+function archivePhotoFor(show: { edition?: number | null; year: number }) {
+  const key = show.edition ?? show.year;
+  return NOS_HERO_IMAGES[key % NOS_HERO_IMAGES.length];
+}
 
 function toRomanOrdinal(n: number): string {
   const val = [50, 40, 10, 9, 5, 4, 1];
@@ -193,7 +204,7 @@ export default async function ShowYearPage({
 
           <div className="relative aspect-[4/3] overflow-hidden rounded-[length:var(--radius-lg)] bg-[var(--night)]">
             <Image
-              src="/images/orchid-purple.jpg"
+              src={archivePhotoFor(show)}
               alt={`${show.year} National Orchid Show`}
               fill
               className="object-cover opacity-80"

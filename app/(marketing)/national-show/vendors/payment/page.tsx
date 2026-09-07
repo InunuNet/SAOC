@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
-import { PageHero } from '@/components/ui/PageHero';
+import { NosHero } from '@/components/nos/NosHero';
 import { VendorStandPaymentForm } from '@/components/vendors/VendorStandPaymentForm';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { VENDOR_STAND_ORDERS_COLLECTION } from '@/lib/vendor-stand-orders';
@@ -43,11 +43,16 @@ export default async function VendorStandPaymentPage({ searchParams }: VendorSta
 
   return (
     <>
-      <PageHero
+      {/* F11 (nos-design-system, M3): restraint scales with transaction risk — someone
+          entering card details should feel the page is boring and safe, so this stays the
+          same conventional hero treatment as the rest of the site, nothing more decorative.
+          VendorStandPaymentForm is SAOC-owned and untouched. */}
+      <NosHero
         image="/images/orchid-yellow.jpg"
         eyebrow="National Show"
-        heading="Vendor Stand Payment"
+        title="Vendor Stand Payment"
         lede="Select your stand size and complete payment for the 2027 SAOC National Show."
+        priority
       />
 
       <div className="mx-auto max-w-2xl px-6 py-16 sm:px-8 sm:py-20">

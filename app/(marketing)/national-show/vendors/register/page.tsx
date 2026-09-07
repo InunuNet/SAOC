@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
-import { PageHero } from '@/components/ui/PageHero';
+import { NosHero } from '@/components/nos/NosHero';
 import { VendorRegisterForm, VendorRegistrationCodeEntryForm } from '@/components/vendors';
 import { VENDOR_APPLICATIONS_COLLECTION } from '@/lib/vendor-applications';
 import { verifyVendorRegistrationToken } from '@/lib/vendor-registration-token';
@@ -52,11 +52,16 @@ export default async function VendorRegisterPage({ searchParams }: VendorRegiste
 
   return (
     <>
-      <PageHero
+      {/* F11 (nos-design-system, M3): restraint scales with transaction risk — this is the
+          gate in front of the full registration form, so it gets the same conventional
+          hero treatment as every other NOS page and nothing more decorative. The gate/form
+          below is entirely SAOC-owned and untouched. */}
+      <NosHero
         image="/images/orchid-yellow.jpg"
         eyebrow="National Show"
-        heading="Vendor Registration"
+        title="Vendor Registration"
         lede="Register your business as a vendor at the 2027 SAOC National Show."
+        priority
       />
 
       <div className="mx-auto max-w-2xl px-6 py-16 sm:px-8 sm:py-20">

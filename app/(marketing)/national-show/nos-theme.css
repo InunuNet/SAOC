@@ -8,12 +8,29 @@
  * at-rule: that at-rule is global in Tailwind v4 and would leak show tokens
  * onto every SAOC page.
  *
- * Mechanism: `app/globals.css` already layers a raw palette into semantic names
- * (`--bg: var(--parchment)`, etc.) and Tailwind's global theme-config at-rule
- * only indirects through those semantic names (`--color-parchment: var(--parchment)`).
- * Custom properties resolve at the element that uses them, so redeclaring the raw +
- * semantic names on `.nos-theme` re-skins every descendant — including
- * SAOC-owned components — with zero edits to those components.
+ * Mechanism — read this before adding or removing anything below. A custom
+ * property's `var()` references are substituted at the element that DECLARES
+ * the property, NOT at the element that uses it. This file once claimed the
+ * opposite, and that single wrong sentence is what shipped a broken scope: the
+ * raw + semantic names were redeclared here, `--color-*` was not, and every
+ * Tailwind colour utility on the show pages rendered SAOC sage.
+ *
+ * Concretely: `app/globals.css`'s theme at-rule declares
+ * `--color-parchment: var(--parchment)` on `:root`, so `var(--parchment)`
+ * resolves THERE, against the SAOC palette, and the already-computed SAOC
+ * literal is what inherits into `.nos-theme`. Redeclaring `--parchment` here
+ * cannot retroactively re-run that `:root` declaration.
+ *
+ * The consequence, and the rule for this file: re-skinning a descendant
+ * requires redeclaring the exact name that descendant's CSS actually reads —
+ * `--color-*` for Tailwind colour utilities, the semantic names for the
+ * hand-written element styles. Redeclaring only the name those sit on top of
+ * is inert. The same trap applies to inherited PROPERTIES (not just custom
+ * properties): `body`'s `color`/`background`/`font-family` resolve on `body`,
+ * outside this scope, so they are re-declared on `.nos-theme` too (see the
+ * inherited-property block below). Once the right names are declared here,
+ * every descendant re-skins — including SAOC-owned components — with zero
+ * edits to those components.
  *
  * Deliberately excluded from this scope (guardrail 1, mission + README D-notes):
  * this project's `:root` declares no status-colour semantic tokens (the four
@@ -58,13 +75,8 @@
      declaration. Tailwind's colour utilities emit `var(--color-primary)` — the
      theme-namespaced name — so they read that stale inherited value.
 
-     Fonts escape this only by accident of naming: Tailwind's font namespace is
-     `--font-*`, so the `font-serif`/`font-sans` utilities emit
-     `var(--font-serif)`/`var(--font-sans)` directly — the same names next/font
-     publishes and this file redeclares. There is no `--color-*`-style
-     indirection in that path, which is why fonts re-skinned and colours did
-     not. (`--font-family-serif` in the theme at-rule maps to no Tailwind
-     utility and is inert.)
+     Fonts escape this by an accident of naming — see the typography block
+     below. Do not take that as evidence colours will behave the same way.
 
      Literals, not `var(--parchment)`: either resolves correctly here, but a
      literal cannot be re-broken by a future change to the indirection above.
@@ -85,15 +97,26 @@
 
   /* ---- Typography (D2). next/font/google publishes these fonts through CSS
      custom properties on the same .nos-theme element via layout.tsx's
-     className; this file assigns them into the semantic --serif/--sans names
-     AND into --font-serif/--font-sans — app/globals.css has two independent
-     chains that both bottom out in the latter pair: the semantic chain
-     (`.h1` etc. read `--serif`) and the Tailwind chain (the `font-serif`/
-     `font-sans` utility classes read `--font-family-serif`, which is only
-     ever `var(--font-serif)`). Redeclaring `--serif`/`--sans` alone re-skins
-     the first chain but leaves every `font-serif`/`font-sans` utility
-     resolving to the root's Crimson Pro/Manrope — both pairs must be
-     redeclared here for the scope to hold. ---- */
+     className; this file assigns them into BOTH name pairs, because two
+     independent consumers read two different names:
+
+       - the hand-written element styles in app/globals.css (`.h1` etc.)
+         read the semantic `--serif`/`--sans`;
+       - Tailwind's `font-serif`/`font-sans` utilities emit
+         `font-family: var(--font-serif)` / `var(--font-sans)` directly,
+         because `--font-*` IS Tailwind v4's font namespace.
+
+     That second point is why fonts survived the scoping bug that broke every
+     colour: the utility reads the same `--font-serif` name next/font publishes
+     and this file redeclares, with no `--color-*`-style intermediate hop to
+     resolve prematurely at `:root`. Naming luck, not a build-tool difference —
+     do not generalise it to other token families.
+
+     (`--font-family-serif` in globals.css's theme at-rule maps to no Tailwind
+     utility and is inert; nothing reads it. An earlier version of this comment
+     claimed the utilities read it. They do not.)
+
+     Redeclaring one pair without the other re-skins only that consumer. ---- */
   --font-serif: var(--font-nos-cormorant);
   --font-sans: var(--font-nos-jost);
   --serif: var(--font-nos-cormorant), 'Cormorant Garamond', Georgia, 'Times New Roman', serif;

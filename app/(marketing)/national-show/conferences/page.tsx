@@ -9,6 +9,9 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = { title: 'Conferences — National Show' };
 
+// F9 (nos-design-system, M3): CategoryTicketsPage is owned by the sibling SAOC session and
+// is not edited here — `heroImage` is this route's only visual lever, and the component
+// already re-skins through the inherited nos-theme tokens with zero changes to its own file.
 export default async function ConferencesTicketsPage() {
   return (
     <CategoryTicketsPage
