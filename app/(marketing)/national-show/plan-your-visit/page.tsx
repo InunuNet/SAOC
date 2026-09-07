@@ -16,17 +16,19 @@ import { NosHero } from '@/components/nos/NosHero';
 import { SectionHeading } from '@/components/nos/SectionHeading';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
+import { buildPageMetadata } from '@/lib/seo';
 import type { ShowVenue, ShowVisitorInfo } from '@/types';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Plan Your Visit — National Orchid Show',
   description:
     'Getting to the South African National Orchid Show: travel from the airports, parking, ' +
     'public transport, where to stay and what else to see while you are in town.',
-};
+  path: '/national-show/plan-your-visit',
+});
 
 interface ShowVenueData {
   venue: ShowVenue | null;

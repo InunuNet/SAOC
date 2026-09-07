@@ -141,6 +141,11 @@ export type NationalShowOffer = {
   /** ISO date. Only supplied when this ticket type carries a Sanity `earlyBirdCutoff`
    *  that makes the offer date-restricted; omitted otherwise. */
   validFrom?: string | null;
+  /** Bare `YYYY-MM-DD`. F18 wiring: an early-bird cutoff is the date an offer STOPS being
+   *  available, which is what this field means — `validFrom` would state the opposite and
+   *  publish a date-restriction Google would read backwards. Supplied only for a ticket
+   *  type carrying a Sanity `earlyBirdCutoff`; omitted otherwise. */
+  validThrough?: string | null;
   /** MUST be the per-product `/tickets/<slug>` page — never `/national-show/tickets`.
    *  Google requires the offer URL's predominant purpose to be selling that specific
    *  ticket to the general public, which the five-product router does not satisfy. */
@@ -205,6 +210,7 @@ export function nationalShowEventJsonLd(
             priceCurrency: offer.priceCurrency,
             availability: `https://schema.org/${offer.availability}`,
             ...(offer.validFrom ? { validFrom: offer.validFrom } : {}),
+            ...(offer.validThrough ? { validThrough: offer.validThrough } : {}),
             url: offer.url,
           })),
         }

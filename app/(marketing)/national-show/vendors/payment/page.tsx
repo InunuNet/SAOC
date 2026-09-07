@@ -7,6 +7,7 @@ import { VendorStandPaymentForm } from '@/components/vendors/VendorStandPaymentF
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { VENDOR_STAND_ORDERS_COLLECTION } from '@/lib/vendor-stand-orders';
 import { verifyVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token';
+import { buildPageMetadata } from '@/lib/seo';
 
 /**
  * Public stand-payment page (mission vendor-gated-registration-flow, M3/F29). Token-gated via
@@ -19,7 +20,15 @@ import { verifyVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token'
  * decision is re-verified server-side again by POST /api/vendors/stand-payment/initiate, which
  * re-reads the submission's CURRENT status rather than trusting this page's read.
  */
-export const metadata: Metadata = { title: 'Vendor Stand Payment — National Show' };
+// noIndex: token-gated, not public content, and excluded from the sitemap. No Event or Offer
+// markup here either — the stand fee is a gated B2B transaction, not a public ticket sale
+// (M6/B8c).
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Vendor Stand Payment — National Show',
+  description: 'Select your stand size and complete payment for the 2027 SAOC National Show.',
+  path: '/national-show/vendors/payment',
+  noIndex: true,
+});
 
 // Reads Firestore at request time -- must never be prerendered at build time (FIREBASE_ADMIN_*
 // secrets are runtime-only), same rationale as the gated vendor registration page's own

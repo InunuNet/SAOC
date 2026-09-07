@@ -13,20 +13,27 @@ import { NosHero, NOS_HERO_IMAGES, type NosHeroImage } from '@/components/nos/No
 import { PastEditionCard } from '@/components/nos/PastEditionCard';
 import { SectionHeading } from '@/components/nos/SectionHeading';
 import { VisitorLinkCard } from '@/components/nos/VisitorLinkCard';
+import { JsonLd, nationalShowEventJsonLd, type NationalShowOffer } from '@/components/seo/JsonLd';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
+  activeTicketTypesByCategoryQuery,
   showClassesQuery,
   pastShowsQuery,
   nationalShowQuery,
+  nationalShowSalesQuery,
   showVisitorInfoQuery,
 } from '@/sanity/queries';
 import { showClasses as staticClasses } from '@/lib/data/showClasses';
 import { shows as staticShows } from '@/lib/data/shows';
+import { effectiveCapacity, resolveEffectivePrice } from '@/lib/checkout-reservation';
+import { buildPageMetadata } from '@/lib/seo';
 import {
   formatShowDateRange,
   formatShowMonthYear,
+  formatVenueAddress,
   showYearOf,
   toOrdinal,
+  toShowIsoDate,
 } from '@/lib/show-identity';
 import type { ShowClass, NationalShow, ShowVenue, ShowVisitorInfo } from '@/types';
 import type { SanityImageSource } from '@sanity/image-url';
@@ -36,11 +43,82 @@ import type { SanityImageSource } from '@sanity/image-url';
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
 
-export const metadata: Metadata = {
+const PAGE_DESCRIPTION =
+  'The South African National Orchid Show — the flagship triennial competition bringing together growers, judges and enthusiasts from all nine provinces.';
+
+export const metadata: Metadata = buildPageMetadata({
   title: 'National Orchid Show',
-  description:
-    'The South African National Orchid Show — the flagship triennial competition bringing together growers, judges and enthusiasts from all nine provinces.',
-};
+  description: PAGE_DESCRIPTION,
+  path: '/national-show',
+});
+
+// ---------------------------------------------------------------------------------------
+// F18 wiring (nos-design-system, M6) — the site's ONE schema.org Event node lives on this
+// page and nowhere else. Every value below is derived from the Sanity nationalShow
+// singleton and the admission ticketType documents; nothing here is a literal show fact.
+// When Sanity lacks a name, a start date or a complete venue, nationalShowEventJsonLd()
+// returns null and NO node is emitted — a placeholder date or venue is never substituted.
+// ---------------------------------------------------------------------------------------
+
+const EVENT_URL = 'https://saoc.co.za/national-show';
+const TICKET_PRODUCT_BASE_URL = 'https://saoc.co.za/tickets';
+const OFFER_CURRENCY = 'ZAR';
+
+interface SanityAdmissionTicketType {
+  _id: string;
+  name: string;
+  slug: string | null;
+  price: number;
+  regularPrice?: number | null;
+  earlyBirdCutoff?: string | null;
+  capacity: number;
+  releasedQuantity?: number | null;
+  demo?: boolean | null;
+}
+
+/**
+ * One Offer per publicly listable admission ticket type, priced through the SAME
+ * `resolveEffectivePrice()` checkout itself uses — so an early-bird cutoff passing can never
+ * leave the rich result advertising a price the purchase flow will not honour. A type with
+ * no resolvable effective price (early-bird expired, no regular price set) or no slug gets
+ * NO offer rather than a guessed one. Prices reach the served page through the existing
+ * `revalidate = 60` ISR bound plus the /api/revalidate Sanity webhook — never baked in.
+ *
+ * `availability` is derived from Sanity's released quantity alone, deliberately NOT from
+ * live Firestore sold counts: this page is prerendered, and
+ * contracts/contract-build-without-secrets.yaml A3/A7 forbid a prerendered page reaching
+ * firebase-admin (and require this page keep `revalidate = 60`). The per-product
+ * /tickets/<slug> page each offer URL points at is the surface that renders live inventory.
+ */
+function buildAdmissionOffers(
+  ticketTypes: SanityAdmissionTicketType[],
+  now: Date,
+): NationalShowOffer[] {
+  return ticketTypes.flatMap<NationalShowOffer>((ticketType) => {
+    if (ticketType.demo || !ticketType.slug) return [];
+
+    const price = resolveEffectivePrice({
+      price: ticketType.price,
+      regularPrice: ticketType.regularPrice ?? null,
+      earlyBirdCutoff: ticketType.earlyBirdCutoff ?? null,
+      now,
+    });
+    if (price === null) return [];
+
+    const released = effectiveCapacity(ticketType.capacity, ticketType.releasedQuantity);
+
+    return [
+      {
+        name: ticketType.name,
+        price,
+        priceCurrency: OFFER_CURRENCY,
+        availability: released > 0 ? 'InStock' : 'SoldOut',
+        validThrough: toShowIsoDate(ticketType.earlyBirdCutoff),
+        url: `${TICKET_PRODUCT_BASE_URL}/${ticketType.slug}`,
+      },
+    ];
+  });
+}
 
 interface SanityShowClass {
   _id: string;
@@ -160,15 +238,28 @@ function pastEditionImage(index: number): NosHeroImage {
 }
 
 export default async function NationalShowPage() {
-  const [sanityClasses, sanityShows, sanityShow, visitorInfo] = await Promise.all([
-    sanityFetch<SanityShowClass[]>({ query: showClassesQuery, tags: ['showClass', 'sanity'] }),
-    sanityFetch<SanityPastShow[]>({ query: pastShowsQuery, tags: ['show', 'sanity'] }),
-    sanityFetch<SanityNationalShow>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
-    sanityFetch<ShowVisitorInfo>({
-      query: showVisitorInfoQuery,
-      tags: ['showVisitorInfo', 'sanity'],
-    }),
-  ]);
+  const [sanityClasses, sanityShows, sanityShow, visitorInfo, salesState, admissionTicketTypes] =
+    await Promise.all([
+      sanityFetch<SanityShowClass[]>({ query: showClassesQuery, tags: ['showClass', 'sanity'] }),
+      sanityFetch<SanityPastShow[]>({ query: pastShowsQuery, tags: ['show', 'sanity'] }),
+      sanityFetch<SanityNationalShow>({
+        query: nationalShowQuery,
+        tags: ['nationalShow', 'sanity'],
+      }),
+      sanityFetch<ShowVisitorInfo>({
+        query: showVisitorInfoQuery,
+        tags: ['showVisitorInfo', 'sanity'],
+      }),
+      sanityFetch<{ salesOpen?: boolean | null }>({
+        query: nationalShowSalesQuery,
+        tags: ['nationalShow', 'sanity'],
+      }),
+      sanityFetch<SanityAdmissionTicketType[]>({
+        query: activeTicketTypesByCategoryQuery,
+        params: { category: 'admission' },
+        tags: ['ticketType', 'sanity'],
+      }),
+    ]);
 
   // Sanity wins in every fallback below. The dataset value always comes first and the
   // literal is only the right-hand side — the reverse order would mask a published
@@ -213,6 +304,22 @@ export default async function NationalShowPage() {
     venueCity ? ` in ${venueCity}.` : '.',
   ].join('');
 
+  // The one Event node on the site. Offers are omitted entirely while sales are closed —
+  // there is nothing purchasable to advertise, and an offer list is not a place to guess.
+  const eventData = nationalShowEventJsonLd({
+    name: sanityShow?.title,
+    startDate: toShowIsoDate(sanityShow?.showDate),
+    endDate: toShowIsoDate(sanityShow?.showEndDate),
+    description: PAGE_DESCRIPTION,
+    venueName: sanityShow?.venue?.name,
+    venueAddress: formatVenueAddress(sanityShow?.venue),
+    url: EVENT_URL,
+    offers:
+      salesState?.salesOpen === true
+        ? buildAdmissionOffers(admissionTicketTypes ?? [], new Date())
+        : [],
+  });
+
   const classes: ShowClass[] =
     sanityClasses && sanityClasses.length > 0
       ? sanityClasses.map((c) => ({ id: c._id, code: c.code, name: c.name, group: '', description: c.description }))
@@ -235,6 +342,8 @@ export default async function NationalShowPage() {
 
   return (
     <>
+      {eventData ? <JsonLd data={eventData} /> : null}
+
       {/* ── Hero — practical facts and the booking path live here, above the
           narrative (Kew pattern from research item 3: a visitor's first
           question is "can I come and what does it cost"). ── */}
@@ -303,7 +412,12 @@ export default async function NationalShowPage() {
             </div>
 
             <div>
-              <p className="mb-3 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-ivory/45">
+              {/* 10px/500 is small text, so the 4.5:1 body bar applies — not the 3:1
+                  large-text one. At text-ivory/45 this measured 3.92–4.36:1 composited over
+                  the real photograph at 390/1024/1280. Raised here rather than by darkening
+                  NosHero's scrim, which is tuned across the whole hero and would regress the
+                  wordmark treatment that already passes at 5.68–10.09:1. */}
+              <p className="mb-3 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-ivory/70">
                 Opens in
               </p>
               <Suspense fallback={null}>

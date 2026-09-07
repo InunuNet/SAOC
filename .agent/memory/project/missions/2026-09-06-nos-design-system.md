@@ -348,3 +348,87 @@ judging it on the checklist.
   `.agent/evidence/nos-design/<slug>/`. "before" set captured 2026-09-06 (28 shots).
 - Contrast watch: pale gold `#F3F2D6` grounds with olive `#A7A841` text will **fail**
   WCAG AA. Olive is an accent/rule colour, not body text on light grounds.
+
+---
+
+## NEXT MISSION — NOS section structure (agreed with `saoc-0f`, 2026-09-08)
+
+Lee-Ann's Drive folder structure is now the baseline site structure (Brad's
+instruction). Her "National Show" folder (Drive id `1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH`)
+has 13 numbered folders; **five have no route**. Read her documents with the `gws`
+CLI — **curl does not work against Drive here.**
+
+### The five routes to build — paths are agreed and final
+
+| Lee-Ann | path | source document |
+|---|---|---|
+| 2 About | `/national-show/about` | `2.1 About - 2027 National Show.docx` |
+| 5 International Exhibitors | `/national-show/exhibitors/international` | — |
+| 6 SAOC Symposium | `/national-show/symposium` | `Symposium Theme` |
+| 7 WOSA Conference | `/national-show/wosa-conference` | — |
+| 11 Programme of events | `/national-show/programme` | — |
+
+International nests under the existing `/national-show/exhibitors` so that live,
+indexed URL stays stable; it remains the South African page.
+
+### Sub-nav grouping (agreed, adopted by `saoc-0f`)
+
+Grouped by visitor intent, **not** by Lee-Ann's numbering — her numbers are document
+order, not information architecture, and building nav from them would ship her filing
+system to visitors. The spine is *can I come, what's on, can I take part, how do I pay*.
+
+- **Visit** — About · What to expect · Plan your visit · FAQ
+- **Programme** — Programme of events · Workshops & field trips · SAOC Symposium · WOSA Conference
+- **Exhibit & trade** — South African exhibitors · International exhibitors · Vendors
+- **Tickets** — standalone, outside the groups; it is the conversion path and must never be two clicks deep
+- **Past editions** — archive, deliberately last and visually quieter
+
+**Read versus buy.** `/national-show/conferences` is a *ticketing category* page.
+`/symposium` and `/wosa-conference` are *content* pages (theme, speakers, programme).
+Programme links to the content pages; those pages carry the CTA through to
+`/conferences`. Without this distinction the two look like duplication.
+
+**Two nav layers.** `saoc-0f` builds the header `National Show` dropdown. This session
+builds the section's own persistent sub-nav **below** the SAOC header, inside
+`.nos-theme`. Honours the hard rule: NOS branding sits below the header and never
+modifies it.
+
+### ⚠ FABRICATION TRAP — the Symposium has no date at source
+
+Lee-Ann's own FAQ document contains the literal placeholder
+`"The symposium will be held on xx, xx September 2027 at the xx"`.
+
+**There is no date or venue to find.** It must NOT inherit the show's own
+16–19 September dates or the show venue as a stand-in. That is exactly how an invented
+CTICC venue once propagated across six fields on this site. `saoc-0f`'s F2 contract now
+greps for that substitution. Use `data-placeholder`, or omit.
+
+### Other agreements
+
+- **Exhibitor Entry → `exhibitor-entry`**, its own ticket category, never `admission`.
+  The buyer is a participant, not a visitor; collapsing them destroys the
+  visitor-vs-exhibitor split Brad asked to be unmistakable. `saoc-0f` is NOT retrofitting
+  this tonight — the `'unresolved-nos-boundary'` literal is contract-locked and stays
+  until the Sanity enum can hold a fourth value.
+- **WOSA:** cultivation vs wild is a hard `CLAUDE.md` line. `/wosa-conference` covers the
+  conference *at our show* and links out for wild-orchid content. WOSA's own site rebuild
+  is a different session's work — **link, never mirror.**
+- **Ownership:** `saoc-0f` owns ticketing engineering, taxonomy, pricing, checkout,
+  `components/tickets/**`, and `nav-config.ts`. This session owns all markup inside
+  `app/(marketing)/national-show/**`, NOS branding, and admin UI. They deliver a data
+  layer + component API and stay out of the NOS tree entirely.
+- **New pricing rule:** early bird = purchased 90+ days before the show = **20% discount**
+  (cutoff 2027-06-18). This supersedes the separate early-bird products, so the tickets
+  front door will need re-cutting against a computed discount rather than a static cutoff
+  line.
+
+### Live-data cautions
+
+- **One shared Sanity dataset (`production`)** for local dev and the deployed site. Any
+  dataset write is instantly live with no deploy. Treat writes as production changes.
+- **Two Weekend Pass SKUs coexist** (R380 with a 2027-07-31 cutoff, and R400 flat).
+  Neither is authoritative; Brad's to resolve.
+- **The VIP ladder is incoherent** (VIP R300 below a R400 Weekend Pass while including
+  more). Client's call; VIP keeps `data-placeholder`.
+- **Two enquiry addresses live at once** (`council@saoc.co.za`, `info@saoc.co.za`). Use
+  the existing contact component; hardcode neither.

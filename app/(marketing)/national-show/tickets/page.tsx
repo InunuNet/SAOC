@@ -8,13 +8,22 @@ import { NosHero } from '@/components/nos/NosHero';
 import { resolveEffectivePrice } from '@/lib/checkout-reservation';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { activeTicketTypesByCategoryQuery, nationalShowSalesQuery } from '@/sanity/queries';
+import { buildPageMetadata } from '@/lib/seo';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site. This page
 // only reads Sanity (no Firebase Admin sold-count call), so — unlike /tickets and the shared
 // CategoryTicketsPage — it does not need force-dynamic.
 export const revalidate = 60;
 
-export const metadata: Metadata = { title: 'Tickets — National Show' };
+// Description restates the page's own rendered lede below. This route is a five-product
+// router, so it is never used as an Offer target — those point at /tickets/<slug> (M6/B8b).
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Tickets — National Show',
+  description:
+    "Choose the option that matches why you're coming to the 2027 SAOC National Show — " +
+    "we'll take you straight to the right form.",
+  path: '/national-show/tickets',
+});
 
 // F8 (nos-design-system, M3): the visitor-admission option used to be one of five equal
 // cards. It is now the dominant front-door block below, carrying a real price; these four

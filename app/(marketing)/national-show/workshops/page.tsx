@@ -2,13 +2,23 @@ import type { Metadata } from 'next';
 
 import { CategoryTicketsPage } from '@/components/tickets';
 import { Card } from '@/components/nos/Card';
+import { buildPageMetadata } from '@/lib/seo';
 
 // See app/(marketing)/tickets/page.tsx for why this stays force-dynamic — the shared
 // CategoryTicketsPage component calls getSoldCountsByTicketType() (Firebase Admin SDK,
 // runtime-only credentials).
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = { title: 'Workshops & Field Trips — National Show' };
+// Description restates the page's own rendered lede below — no new claim is introduced here.
+// Deliberately no Event markup: ticketType carries no session date, and inventing one to
+// unlock a rich result is exactly what M6/B8d forbids.
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Workshops & Field Trips — National Show',
+  description:
+    'Book Sunset Cocktails and guided Field Trip outings at the South African National ' +
+    'Orchid Show.',
+  path: '/national-show/workshops',
+});
 
 const SESSIONS_NOTE =
   'Individual session times are still being finalised — the products below are the ' +

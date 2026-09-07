@@ -6,6 +6,7 @@ import { mergePastShows } from '@/lib/data/mergeShows';
 import type { SanityShowProjection } from '@/lib/data/mergeShows';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery, pastShowsQuery } from '@/sanity/queries';
+import { buildPageMetadata } from '@/lib/seo';
 import {
   formatShowMonthYear,
   showLabelWithEdition,
@@ -21,11 +22,14 @@ import { NOS_HERO_IMAGES, NosHero, type NosHeroImage } from '@/components/nos/No
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
 
-export const metadata: Metadata = {
+// Self-canonical, and deliberately carries no Event markup: a past edition is not bookable,
+// and a second Event under the live show's own name would compete with it. See M6/B8e.
+export const metadata: Metadata = buildPageMetadata({
   title: 'National Show Archive',
   description:
     'A record of every South African National Orchid Show — past editions, host provinces, entry numbers, and winners.',
-};
+  path: '/national-show/archive',
+});
 
 function toRomanOrdinal(n: number): string {
   const val = [50, 40, 10, 9, 5, 4, 1];

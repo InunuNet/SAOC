@@ -13,6 +13,7 @@ import { Button } from '@/components/nos/Button';
 import { NosHero } from '@/components/nos/NosHero';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { showExhibitorInfoQuery, showExhibitorStepsQuery } from '@/sanity/queries';
+import { buildPageMetadata } from '@/lib/seo';
 import type { ShowExhibitorInfo, ShowExhibitorStep } from '@/types';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
@@ -28,12 +29,13 @@ export async function generateMetadata(): Promise<Metadata> {
     tags: ['showExhibitorInfo', 'sanity'],
   });
 
-  return {
+  return buildPageMetadata({
     title: `${info?.title ?? 'Exhibitor Information'} — National Orchid Show`,
     description:
       'Entering plants in the South African National Orchid Show: how entry works, what is ' +
       'still to be confirmed by the show committee, and the questions we are asking them.',
-  };
+    path: '/national-show/exhibitors',
+  });
 }
 
 // Section order is the exhibitor's own sequence, not the schema's: someone arriving here

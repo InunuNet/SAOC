@@ -8,17 +8,19 @@ import { NosHero } from '@/components/nos/NosHero';
 import { SectionHeading } from '@/components/nos/SectionHeading';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
+import { buildPageMetadata } from '@/lib/seo';
 import type { ShowVisitorInfo } from '@/types';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'What to Expect — National Orchid Show',
   description:
     'Opening hours, admission, food, photography, cloakroom and accessibility at the South ' +
     'African National Orchid Show.',
-};
+  path: '/national-show/what-to-expect',
+});
 
 interface ShowDatesData {
   showDate: string | null;

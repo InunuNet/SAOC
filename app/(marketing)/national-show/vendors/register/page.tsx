@@ -8,6 +8,7 @@ import { VendorRegisterForm, VendorRegistrationCodeEntryForm } from '@/component
 import { VENDOR_APPLICATIONS_COLLECTION } from '@/lib/vendor-applications';
 import { verifyVendorRegistrationToken } from '@/lib/vendor-registration-token';
 import { VENDOR_REGISTRATION_SESSION_COOKIE_NAME } from '@/lib/vendor-registration-code-verify-handler';
+import { buildPageMetadata } from '@/lib/seo';
 
 /**
  * F23 (vendor-gated-registration-flow, M4) -- REWRITTEN from the M1/F7 `?token=` gate. The
@@ -31,7 +32,16 @@ import { VENDOR_REGISTRATION_SESSION_COOKIE_NAME } from '@/lib/vendor-registrati
  * PREFILL the code-entry form's two inputs -- the vendor still must submit through the
  * rate-limited verify-code endpoint; the link is never itself a bypass.
  */
-export const metadata: Metadata = { title: 'Vendor Registration — National Show' };
+// noIndex: this route is reachable only behind the gate described above, so it is not public
+// content and has nothing to rank for. It is also excluded from the sitemap, and carries no
+// Event or Offer markup — Google excludes invitation-gated events from the event experience
+// (M6/B8c).
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Vendor Registration — National Show',
+  description: 'Register your business as a vendor at the 2027 SAOC National Show.',
+  path: '/national-show/vendors/register',
+  noIndex: true,
+});
 
 // This page reads a cookie and calls Firestore at request time -- must never be prerendered at
 // build time (FIREBASE_ADMIN_* secrets are runtime-only), mirroring app/admin/vendors/page.tsx's

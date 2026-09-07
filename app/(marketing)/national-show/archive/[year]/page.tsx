@@ -8,6 +8,7 @@ import type { SanityShowProjection } from '@/lib/data/mergeShows';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery, pastShowsQuery } from '@/sanity/queries';
 import { showLabelWithEdition, showYearOf } from '@/lib/show-identity';
+import { buildPageMetadata } from '@/lib/seo';
 import type { ShowIdentity } from '@/types';
 import { Button } from '@/components/nos/Button';
 import { Card } from '@/components/nos/Card';
@@ -93,15 +94,31 @@ export async function generateMetadata({
   params: Promise<{ year: string }>;
 }): Promise<Metadata> {
   const { year } = await params;
+  const path = `/national-show/archive/${year}`;
   const pastShows = await loadPastShows();
   const show = pastShows.find((s) => String(s.year) === year);
-  if (!show) return { title: `National Show ${year}` };
-  return {
+
+  // SELF-canonical, never pointed at /national-show. Cross-canonicalising would deindex
+  // genuinely unique historical content; the year-leading title is what separates a past
+  // edition from the live show in results, now that the schema linkage is deliberately gone.
+  // Unrecorded year: the page itself calls notFound(), so this branch never reaches a
+  // crawler. The description stays deliberately neutral rather than asserting a show that
+  // is not in the record actually took place.
+  if (!show) {
+    return buildPageMetadata({
+      title: `National Show ${year}`,
+      description: 'The South African National Orchid Show archive.',
+      path,
+    });
+  }
+
+  return buildPageMetadata({
     title: show.host
       ? `${year} National Orchid Show — ${show.host}`
       : `${year} National Orchid Show`,
     description: summarySentence(show),
-  };
+    path,
+  });
 }
 
 export default async function ShowYearPage({

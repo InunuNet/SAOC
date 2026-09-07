@@ -8,11 +8,21 @@ import { VendorEmptyState, VendorGrid, VendorIntro } from '@/components/vendors'
 import type { SanityVendorNursery } from '@/components/vendors';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { vendorNurseriesQuery } from '@/sanity/queries';
+import { buildPageMetadata } from '@/lib/seo';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
 
-export const metadata: Metadata = { title: 'Exhibiting Nurseries — National Show' };
+// Description restates the page's own rendered lede below. No Event or Offer markup on any
+// vendor route: the flow is invitation-gated, which Google excludes from the event
+// experience (M6/B8c).
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Exhibiting Nurseries — National Show',
+  description:
+    'Meet the specialist nurseries showcasing their finest orchids at the South African ' +
+    'National Orchid Show.',
+  path: '/national-show/vendors',
+});
 
 // F10 (nos-design-system, M3): borrows the World Orchid Conference's prestige framing
 // (research item D) — a curated trade floor of named nurseries, not a bureaucratic listing.
