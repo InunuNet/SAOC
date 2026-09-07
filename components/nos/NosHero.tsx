@@ -30,6 +30,12 @@ export type NosHeroImage = (typeof NOS_HERO_IMAGES)[number];
 
 export interface NosHeroProps {
   image: NosHeroImage;
+  /**
+   * Rendered above the eyebrow, inside the scrim's dark band — typically a
+   * `<Logo orientation="horizontal" tone="on-dark" />`. Optional: most heroes
+   * don't carry the full lockup, only the flagship one does.
+   */
+  brandMark?: ReactNode;
   eyebrow?: string;
   title: string;
   lede?: string;
@@ -42,6 +48,7 @@ export interface NosHeroProps {
 
 export function NosHero({
   image,
+  brandMark,
   eyebrow,
   title,
   lede,
@@ -78,6 +85,7 @@ export function NosHero({
         }}
       />
       <div className="relative z-10 mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-8 py-14">
+        {brandMark ? <div className="mb-2">{brandMark}</div> : null}
         {eyebrow ? (
           <span className="font-sans text-[12px] font-medium uppercase tracking-[0.3em] text-[var(--olive)]">
             {eyebrow}

@@ -8,6 +8,7 @@ import { CtaBand } from '@/components/nos/CtaBand';
 import { CycleStep } from '@/components/nos/CycleStep';
 import { ExhibitorStageCard } from '@/components/nos/ExhibitorStageCard';
 import { JudgingGroupCard } from '@/components/nos/JudgingGroupCard';
+import { Logo } from '@/components/nos/Logo';
 import { NosHero, NOS_HERO_IMAGES, type NosHeroImage } from '@/components/nos/NosHero';
 import { PastEditionCard } from '@/components/nos/PastEditionCard';
 import { SectionHeading } from '@/components/nos/SectionHeading';
@@ -241,6 +242,12 @@ export default async function NationalShowPage() {
       <NosHero
         image="/images/orchid-violet.jpg"
         priority
+        // The horizontal lockup carries the brand identity here, so the h1
+        // below is left as the show's headline rather than restating the
+        // wordmark — logo carries identity, h1 sits below it as the
+        // headline (Brad, 2026-09-07). Its wordmark is real text, not baked
+        // into an image, so it stays screen-reader reachable on its own.
+        brandMark={<Logo orientation="horizontal" tone="on-dark" />}
         eyebrow="The Flagship"
         title={title}
         actions={

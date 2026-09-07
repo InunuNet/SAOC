@@ -37,7 +37,12 @@ export function SectionHeading({
         <span
           className={[
             'font-sans text-[12px] font-medium uppercase tracking-[0.3em]',
-            isDark ? 'text-[var(--olive)]' : 'text-[var(--olive-deep)]',
+            // On-dark: olive on royal purple/night is 6.16–7.62:1 (golden table,
+            // "olive's one legal text use"). On light: olive-deep is only legal at
+            // ≥24px (3.78–4.30:1 at this 12px size — FAIL). Violet clears 6.07:1 on
+            // pale gold and 6.90:1 on white, so it carries the eyebrow on light
+            // grounds instead. See nos-contrast.golden.md.
+            isDark ? 'text-[var(--olive)]' : 'text-[var(--accent)]',
           ].join(' ')}
         >
           {eyebrow}
