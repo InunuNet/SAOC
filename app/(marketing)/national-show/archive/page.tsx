@@ -14,7 +14,7 @@ import type { ShowIdentity } from '@/types';
 import { Badge } from '@/components/nos/Badge';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
-import { NosHero } from '@/components/nos/NosHero';
+import { NOS_HERO_IMAGES, NosHero, type NosHeroImage } from '@/components/nos/NosHero';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -38,6 +38,17 @@ function toRomanOrdinal(n: number): string {
     }
   }
   return result;
+}
+
+/**
+ * Deterministic photo per edition, keyed off edition (falling back to year for a
+ * Sanity-only show with no edition number) — so a given show always gets the same one
+ * of the five cleared photographs, on this page and on its own /archive/[year] page.
+ * Never randomised: a card that changed image on reload would look broken.
+ */
+function archivePhotoFor(show: { edition?: number | null; year: number }): NosHeroImage {
+  const key = show.edition ?? show.year;
+  return NOS_HERO_IMAGES[key % NOS_HERO_IMAGES.length];
 }
 
 export default async function ShowArchivePage() {
@@ -95,7 +106,7 @@ export default async function ShowArchivePage() {
               <div className="flex h-full flex-col overflow-hidden rounded-[length:var(--radius-card)] border-[length:var(--border-hairline)] border-[var(--rule)] bg-white shadow-[var(--shadow-card)] transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-0.5 group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-[var(--ring-focus)]">
                 <div className="relative aspect-[3/2] overflow-hidden bg-[var(--night)]">
                   <Image
-                    src="/images/orchid-purple.jpg"
+                    src={archivePhotoFor(show)}
                     alt={`${show.year} National Orchid Show`}
                     fill
                     className="object-cover opacity-70"
@@ -122,17 +133,21 @@ export default async function ShowArchivePage() {
                   </div>
 
                   {(show.entries || show.exhibitors || show.visitors || show.trophies) && (
+                    // tone="purple" not "olive": olive-deep is 4.30:1 on white, which fails
+                    // body-text contrast at this pill's 11px size (needs 4.5:1) — see
+                    // nos-contrast.golden.md note 1. Olive text is legal only on dark grounds
+                    // or as large (≥24px) text.
                     <div className="flex flex-wrap gap-2 border-t border-rule pt-3">
                       {show.entries && (
-                        <Badge tone="olive">{show.entries.toLocaleString()} entries</Badge>
+                        <Badge tone="purple">{show.entries.toLocaleString()} entries</Badge>
                       )}
                       {show.exhibitors && (
-                        <Badge tone="olive">{show.exhibitors.toLocaleString()} exhibitors</Badge>
+                        <Badge tone="purple">{show.exhibitors.toLocaleString()} exhibitors</Badge>
                       )}
                       {show.visitors && (
-                        <Badge tone="olive">{show.visitors.toLocaleString()} visitors</Badge>
+                        <Badge tone="purple">{show.visitors.toLocaleString()} visitors</Badge>
                       )}
-                      {show.trophies && <Badge tone="olive">{show.trophies} trophies</Badge>}
+                      {show.trophies && <Badge tone="purple">{show.trophies} trophies</Badge>}
                     </div>
                   )}
 

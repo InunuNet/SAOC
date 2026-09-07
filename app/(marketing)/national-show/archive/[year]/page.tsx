@@ -173,7 +173,9 @@ export default async function ShowYearPage({
       <section className="mx-auto max-w-[1280px] px-8 py-20">
         <div className="grid grid-cols-1 gap-16 lg:grid-cols-2">
           <div>
-            <p className="mb-4 font-sans text-[12px] font-medium uppercase tracking-[0.3em] text-[var(--olive-deep)]">
+            {/* text-accent (violet, 6.90:1 on white) not olive-deep (4.30:1 — fails 4.5:1 body
+                text at this 12px size, see nos-contrast.golden.md note 1). */}
+            <p className="mb-4 font-sans text-[12px] font-medium uppercase tracking-[0.3em] text-accent">
               About the show
             </p>
             <p className="font-sans text-[16px] leading-relaxed text-ink/80">

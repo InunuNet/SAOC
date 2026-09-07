@@ -46,6 +46,43 @@
   --rule: #dad7c8;
   --rule-soft: #e8e6c2;
 
+  /* ---- Tailwind colour-utility layer. REQUIRED — redeclaring the raw names
+     above is NOT sufficient, for a reason that is easy to get backwards.
+
+     A custom property's `var()` references are substituted at the element that
+     DECLARES it, not at the element that uses it. `app/globals.css`'s theme
+     at-rule declares `--color-primary: var(--primary)` on `:root`, so
+     `var(--primary)` resolves there, against `:root`'s SAOC palette, and the
+     already-resolved SAOC literal is what inherits down into `.nos-theme`.
+     Redeclaring `--primary` here cannot retroactively re-run that `:root`
+     declaration. Tailwind's colour utilities emit `var(--color-primary)` — the
+     theme-namespaced name — so they read that stale inherited value.
+
+     Fonts escape this only by accident of naming: Tailwind's font namespace is
+     `--font-*`, so the `font-serif`/`font-sans` utilities emit
+     `var(--font-serif)`/`var(--font-sans)` directly — the same names next/font
+     publishes and this file redeclares. There is no `--color-*`-style
+     indirection in that path, which is why fonts re-skinned and colours did
+     not. (`--font-family-serif` in the theme at-rule maps to no Tailwind
+     utility and is inert.)
+
+     Literals, not `var(--parchment)`: either resolves correctly here, but a
+     literal cannot be re-broken by a future change to the indirection above.
+     Keep each value identical to its raw counterpart. ---- */
+  --color-primary: #211a57;
+  --color-primary-800: #1a1445;
+  --color-primary-700: #33296f;
+  --color-primary-100: #ece8f5;
+  --color-accent: #7e3f97;
+  --color-accent-soft: #9a63ae;
+  --color-parchment: #fbfaf0;
+  --color-ivory: #fbfaf0;
+  --color-bone: #f3f2d6;
+  --color-ink: #211a57;
+  --color-muted: #6a6780;
+  --color-rule: #dad7c8;
+  --color-rule-soft: #e8e6c2;
+
   /* ---- Typography (D2). next/font/google publishes these fonts through CSS
      custom properties on the same .nos-theme element via layout.tsx's
      className; this file assigns them into the semantic --serif/--sans names
@@ -62,6 +99,18 @@
   --serif: var(--font-nos-cormorant), 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --sans: var(--font-nos-jost), Jost, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --serif-weight: 400;
+
+  /* ---- Inherited-property re-resolution. `app/globals.css` sets
+     `font-family: var(--sans)`, `color: var(--fg)` and `background: var(--bg)`
+     on `body` — OUTSIDE this scope — so all three resolve against the root's
+     SAOC palette and inherit down as already-computed SAOC values. Redeclaring
+     the custom properties above cannot change that; the declarations must be
+     repeated here so they re-resolve against this element. Without these, NOS
+     pages rendered SAOC ink on SAOC parchment in Manrope for every element not
+     carrying an explicit utility class. ---- */
+  font-family: var(--sans);
+  color: var(--fg);
+  background-color: var(--bg);
 
   /* ---- Semantic layer — same names app/globals.css declares on :root,
      redeclared here so every descendant using them re-skins automatically. ---- */

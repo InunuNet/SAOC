@@ -89,7 +89,10 @@ export default async function ExhibitorInfoPage() {
           </Link>
         </p>
 
-        <Badge tone="olive" className="normal-case">
+        {/* tone="purple" not "olive": olive-deep is 4.30:1 on white/parchment, which fails
+            body-text contrast (needs 4.5:1) — see nos-contrast.golden.md note 1. Olive text is
+            legal only on dark grounds or as large (≥24px) text. */}
+        <Badge tone="purple" className="normal-case">
           <span aria-hidden="true">※</span>
           <span className="tracking-[0.02em]">
             Exhibitor entries are not yet open — this page covers what to expect when they do.
