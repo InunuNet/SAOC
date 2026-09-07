@@ -113,21 +113,36 @@ export function NosHero({
             'linear-gradient(to right, rgba(14,11,36,0.85) 0%, rgba(14,11,36,0.55) 42%, rgba(14,11,36,0.12) 72%, rgba(14,11,36,0) 100%)',
         }}
       />
-      {/* Second scrim, top-down, only when a brandMark is present. The bottom
-          scrim above is deliberately near-transparent at the very top of the
-          hero (it exists to hold the headline at the bottom) — a brandMark
-          sitting above the eyebrow lands in that unscrimmed zone. Measured
-          directly against the composited photo (not an average): without
-          this, the lockup's Jost subtitle line read 2.44:1 on
-          orchid-violet.jpg — below the 4.5:1 minimum. This band brings it to
-          the same ~0.8 density as the bottom scrim's text zone. */}
-      {brandMark ? (
+      {/* Third scrim, top-down, whenever the hero carries text high up. The
+          bottom-up scrim is deliberately near-transparent at the very top of
+          the hero (it exists to hold a headline at the BOTTOM), so anything
+          sitting above the eyebrow lands in an unscrimmed zone. Measured
+          directly against the composited photo (not an average): without this,
+          the lockup's Jost subtitle line read 2.44:1 on orchid-violet.jpg.
+
+          Gated on `brandMark || titleIsElement`, not `brandMark` alone. When
+          the lockup became the <h1> the brandMark went away and this band went
+          with it — but the full-scale lockup is far taller than the text
+          headline it replaced, so it pushes the whole content column UP into
+          exactly the zone this band exists to cover. Re-measured worst-case
+          across orchid-yellow/pink/violet at 390 and 1280 with the band gone:
+          wordmark 1.37:1, strapline 2.49:1, eyebrow 1.23:1 — a regression, as
+          the eyebrow had been passing.
+
+          Retuned from h-[45%]/0.80 to h-[55%]/0.82 for the taller mark. Five
+          candidates were measured: restoring the old 45% band passes but only
+          reaches 4.84:1 on the strapline (too thin — that is the line that
+          already failed once), while denser bands reach 11-13:1 and visibly
+          flatten the photograph. This is the lightest scrim that clears 4.5:1
+          with real margin (worst case 7.37:1). Gradient only — no duotone,
+          filter or vignette ever touches the photograph. */}
+      {brandMark || titleIsElement ? (
         <div
           aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-[45%]"
+          className="absolute inset-x-0 top-0 h-[55%]"
           style={{
             background:
-              'linear-gradient(to bottom, rgba(14,11,36,0.8) 0%, rgba(14,11,36,0.55) 55%, rgba(14,11,36,0) 100%)',
+              'linear-gradient(to bottom, rgba(14,11,36,0.82) 0%, rgba(14,11,36,0.60) 55%, rgba(14,11,36,0) 100%)',
           }}
         />
       ) : null}

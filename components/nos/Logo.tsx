@@ -16,10 +16,12 @@ export interface NosLogoProps {
    * `vertical` (default, unchanged) stacks the emblem above the wordmark,
    * centred — the mark for a card or footer. `horizontal` sets the emblem
    * beside the two wordmark lines, left-aligned — the "full format" lockup
-   * for a wide surface like a hero. `responsive` is `vertical` below `sm`
-   * and `horizontal` from `sm` up, rendered as ONE element — used where the
-   * lockup is itself the page's `<h1>` (see `as`) and swapping between two
-   * CSS-hidden instances would put two competing headings in the DOM.
+   * for a wide surface like a hero. `responsive` stacks below `sm` and goes
+   * inline from `sm` up, rendered as ONE element — used where the lockup is
+   * itself the page's `<h1>` (see `as`) and swapping between two CSS-hidden
+   * instances would put two competing headings in the DOM. It is left-aligned
+   * at both breakpoints, so it sits flush with the hero column beneath it;
+   * only the standalone `vertical` mark is centred.
    */
   orientation?: 'vertical' | 'horizontal' | 'responsive';
   /**
@@ -59,9 +61,9 @@ const VERTICAL_EMBLEM_SIZE = 56;
 // (~1.49). Evaluated at the clamp() endpoints (36/18 and 64/32) and
 // expressed as a matching clamp() so the emblem scales continuously with
 // the type instead of snapping at a breakpoint. Horizontal needs to match a
-// two-line wordmark block (as above); vertical sits above a centred,
-// stacked block, so it uses a plainer viewport-driven clamp — precision
-// there matters less since nothing beside it needs to line up.
+// two-line wordmark block (as above); vertical sits above a stacked block,
+// so it uses a plainer viewport-driven clamp — precision there matters less
+// since nothing beside it needs to line up.
 const HERO_TITLE_CLASS = 'text-[clamp(36px,5.6vw,64px)] tracking-[0.16em] leading-[1.05]';
 const HERO_SUBTITLE_CLASS = 'text-[clamp(18px,2.8vw,32px)] tracking-[0.3em]';
 const HERO_EMBLEM_VERTICAL_CLASS = 'w-[clamp(88px,22vw,140px)] h-auto';
@@ -97,17 +99,28 @@ export function Logo({
     isDark ? (isHero ? 'text-ivory/85' : 'text-[var(--lilac-muted)]') : 'text-muted',
   ].join(' ');
 
+  // A <span>, not a <div>: with `as="h1"` this wrapper sits inside the heading,
+  // and <h1> takes phrasing content only — a <div> there is invalid HTML.
+  // `flex flex-col` gives the span the same stacking it had as a div, so the
+  // rendering is unchanged at every call site.
   const wordmark = (
-    <div className="flex flex-col gap-1">
+    <span className="flex flex-col gap-1">
       <span className={titleClasses}>National Orchid Show</span>
       <span className={subtitleClasses}>Western Cape · 2027</span>
-    </div>
+    </span>
   );
 
   if (orientation === 'responsive') {
-    // One emblem, one wordmark — never two swapped instances. Layout
-    // (centred/stacked vs left-aligned/inline) and emblem size both switch
-    // at `sm` via CSS, not by rendering a second copy.
+    // One emblem, one wordmark — never two swapped instances. Layout (stacked
+    // vs inline) and emblem size both switch at `sm` via CSS, not by rendering
+    // a second copy.
+    //
+    // Left-aligned at BOTH breakpoints, unlike the standalone `vertical`
+    // orientation, which stays centred for cards and the footer. This lockup
+    // is the hero's <h1>, and everything below it in that column — the
+    // eyebrow, "Edition XIX", the fact strip, the CTAs — is left-aligned; a
+    // centred mark over a left-aligned column reads as a misaligned seam at
+    // 390px rather than as one heading block (Brad, 2026-09-07).
     const emblemClasses = isHero
       ? `${HERO_EMBLEM_VERTICAL_CLASS} sm:hidden`
       : 'sm:hidden';
@@ -117,7 +130,7 @@ export function Logo({
     return (
       <Container
         className={[
-          'flex flex-col items-center gap-3 text-center sm:flex-row sm:items-center sm:gap-6 sm:text-left',
+          'flex flex-col items-start gap-3 text-left sm:flex-row sm:items-center sm:gap-6',
           className,
         ]
           .filter(Boolean)
