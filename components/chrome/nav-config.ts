@@ -63,5 +63,5 @@ export const NAV: readonly NavItem[] = [
     ],
   },
   { type: 'link', id: 'events', label: 'Events', href: '/events' },
-  { type: 'link', id: 'learn', label: 'Learn', href: '#', disabled: true },
+  { type: 'link', id: 'members', label: 'Members Portal', href: '/members' },
 ];
