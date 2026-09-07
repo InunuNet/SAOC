@@ -82,7 +82,50 @@ See `app/(marketing)/national-show/nos-theme.css` — its header comment carries
 mechanism explanation in full, and every colour it declares is one of two things: a raw
 NOS palette value, or that same value redeclared under the `--color-*` Tailwind name.
 
-## 3. Contrast
+## 3. A green gate is a measurement, not a standing guarantee
+
+Every verified claim in this document — the contrast ratios in §4, the scope-seam
+isolation in §1, the zero-SAOC-colour-leak result, the Codex cross-model pass — was true
+**on the day someone measured it.** None of it re-runs automatically on a later change.
+
+Nothing in this repo's CI wires those checks in. `.github/workflows/ci.yml` runs lint,
+type-check, build, and two residue guards (`dataset-residue-guard`,
+`firestore-residue-guard`) — nothing else. `package.json` has no `test` script. A repo
+search for the contract-check tooling (`contracts/`, `execution/contract.py`,
+`execution/checks/`) turns up plenty of files, but none of them are invoked from
+`ci.yml` or from any `Makefile` target that CI calls — `make contract-check` and `make
+gate-all` exist, but only run when a person or an agent runs them by hand. Every
+assertion in a `contract.yaml` runs exactly once, when its author invokes it, and never
+again on its own.
+
+The consequence: someone can regress the `.nos-theme` scoping seam, reintroduce olive as
+body text on pale gold, or ship a fabricated Event date next week, and no automated
+check will notice. **If you change anything in this system — the token layer, the
+contrast-sensitive surfaces, the SEO wiring — re-run the measurements yourself. Do not
+rely on the results recorded in this document.** The methods are described where the
+claim is made: composited-pixel contrast measurement (§4), sampling an unstyled
+paragraph rather than only utility-classed elements (§2, §4), and reading served HTML
+from a real running server rather than grepping source (§7, §8's whitespace-bug note).
+
+Two related facts, so a future CI runner doesn't misread the suite:
+
+- **Seven of the nine Playwright check scripts named by the M5/M6 contracts do not exist
+  on disk.** Only `execution/checks/verify_admin_nav.ts` and
+  `verify_admin_nav_active_state.ts` are present; `verify_admin_ia.ts`,
+  `verify_admin_status_vocabulary.ts`, `verify_tickets_front_door.ts`,
+  `verify_show_seo.ts`, `verify_social_artboards.ts`, `verify_event_jsonld_guard.py` and
+  `verify_cleared_images_only.py` are missing. The assertions that name them could never
+  have run as written, by anyone. A future runner needs to distinguish "ran and failed"
+  from "was never runnable" — those are different signals, and treating a missing script
+  as a pass (or as a fail) would both be wrong.
+- **The triad exemption for this contract is fragile by design.** `gws_inbox_check` is
+  grandfathered in only while the contract file stays **unedited** since it was
+  baselined. Any future edit to it forfeits that pin and forces re-baselining against
+  whatever verification kinds are missing at that point — an otherwise-innocuous
+  contract tweak can trip a gate block for a reason that has nothing to do with the
+  change itself.
+
+## 4. Contrast
 
 Source of truth: `.agent/memory/project/specs/nos-design-system/goldens/nos-contrast.golden.md`
 (WCAG 2.1 relative-luminance formula, computed by `execution/checks/nos_contrast.py`).
@@ -124,7 +167,7 @@ future contrast check on this tree:
    only ever runs against the "fixed" code can't tell a real pass from a check that
    would pass anything.
 
-## 4. Photography, and the failure that recurred
+## 5. Photography, and the failure that recurred
 
 Only the five rights-cleared images in `public/images/` may ship as page imagery:
 `orchid-dark.jpg`, `orchid-pink.jpg`, `orchid-purple.jpg`, `orchid-violet.jpg`,
@@ -151,7 +194,7 @@ prop for an unrelated layout reason silently removed a legibility guarantee from
 the text had moved into — nothing in the type system could catch it, because a styling
 prop was load-bearing for contrast and nothing declared that dependency.
 
-## 5. The identity
+## 6. The identity
 
 The circular badge lockup is **retired** — do not use it or reference it in new code.
 The approved identity is **Layout B**: the *Disa graminifolia* emblem above a
@@ -169,7 +212,7 @@ The wordmark measures 15.55em wide, so it cannot sit beside the emblem below rou
 scale rather than set independently, so changing the type scale moves both together; it
 does not need a second manual adjustment.
 
-## 6. SEO
+## 7. SEO
 
 The intended shape: **exactly one `Event` JSON-LD node on the whole site**, on
 `/national-show`, built from Sanity-sourced values only (`nationalShow` document),
@@ -222,7 +265,7 @@ builder signatures alone:
   is not what `availability` reflects; it reflects the released allocation.
 - **Offers are scoped to `ticketType`s where `category === 'admission'` and `demo` is
   false.** Workshop/conference/vendor products never enter the `Offer` array, consistent
-  with §6's rule that those get no Event/Offer markup at all.
+  with §7's rule that those get no Event/Offer markup at all.
 
 Note on the commit that shipped this: `b3adca7d`'s message describes only a structure/
 docs record (the sub-nav agreement below), but the commit — pushed to this shared
@@ -230,7 +273,7 @@ branch — also contains all 17 files of this SEO wiring, from a `git add -A` ru
 that work was mid-edit. History is not being rewritten on a pushed branch, so this is
 recorded here rather than fixed by amending the commit.
 
-## 7. Known gaps — recorded, not resolved
+## 8. Known gaps — recorded, not resolved
 
 - No exhibitor data model exists in Firestore. `/admin/exhibitors` is deliberately
   declared-empty, marked `data-placeholder`, rather than showing fabricated rows.
@@ -239,14 +282,14 @@ recorded here rather than fixed by amending the commit.
 - Two general-enquiry addresses are live at once (`council@saoc.co.za`,
   `info@saoc.co.za`). Neither is hardcoded into new NOS code; not resolved here.
 - The `<h1>` on `/national-show` does not render the editor-overridable Sanity title —
-  it renders the fixed Layout B wordmark text described in §5.
+  it renders the fixed Layout B wordmark text described in §6.
 - **Confirmed: a second `Event` node for the same real-world show is live**, served from
   `/events/19th-south-african-national-orchid-show` (the generic society-events route) —
-  same name, same dates, same venue, different URL. So "exactly one Event node" (§6)
+  same name, same dates, same venue, different URL. So "exactly one Event node" (§7)
   holds within the national-show tree but **not site-wide**. This route is outside
   `app/(marketing)/national-show/**` and this branch never touches it; it needs a
   follow-up on the society-event route itself. This is exactly the duplicate-entity
-  cannibalisation §6's design exists to prevent, so it's recorded as confirmed rather
+  cannibalisation §7's design exists to prevent, so it's recorded as confirmed rather
   than as a hypothetical risk.
 - Several contract check scripts referenced by the M5/M6 contracts do not exist on disk
   (`verify_admin_ia.ts`, `verify_admin_status_vocabulary.ts`,
@@ -254,7 +297,7 @@ recorded here rather than fixed by amending the commit.
   `verify_event_jsonld_guard.py`, `verify_cleared_images_only.py`) — the assertions they
   back have not been run as written.
 - `data-placeholder` is a load-bearing marker, not decoration — it is how the
-  no-fabrication rule (§6, §7) is made checkable. Do not remove it from a field just
+  no-fabrication rule (§7, §8) is made checkable. Do not remove it from a field just
   because the surrounding layout looks tidier without it.
 - A live JSX whitespace bug exists elsewhere in this codebase: an inline closing tag
   ending a source line drops the following space in the rendered output (`<span>x.</span>
@@ -268,7 +311,7 @@ recorded here rather than fixed by amending the commit.
 - `.agent/memory/project/specs/nos-design-system/README.md` — the M1 (F1–F3) token,
   font, and logo decision record this document's §1–§2 are drawn from.
 - `.agent/memory/project/specs/nos-design-system/platform-README.md` — the M5/M6
-  (admin IA, SEO, conversion, social kit) decision record §6 is drawn from.
+  (admin IA, SEO, conversion, social kit) decision record §7 is drawn from.
 - `.agent/memory/project/specs/nos-design-system/goldens/nos-contrast.golden.md` — the
   full contrast table.
 - `app/(marketing)/national-show/nos-theme.css` — the token layer itself; its header
