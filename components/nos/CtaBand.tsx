@@ -22,7 +22,11 @@ export function CtaBand({ eyebrow, title, lede, action, className = '' }: NosCta
   return (
     <section
       className={[
-        'bg-primary px-8 py-16 text-center',
+        // nos-on-dark (R9/3, R8/3): this band is always a royal-purple
+        // ground, so any focus ring or status colour rendered inside it
+        // must read the on-dark alias, not the on-light default — see
+        // nos-theme.css's `.nos-theme .nos-on-dark` block.
+        'nos-on-dark bg-primary px-8 py-16 text-center',
         className,
       ]
         .filter(Boolean)

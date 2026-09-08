@@ -1,0 +1,594 @@
+{
+  "capturedAt": "2026-09-08",
+  "mission": "nos-design-system F12 (M4)",
+  "routesSwept": 14,
+  "routes": [
+    {
+      "path": "/national-show",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    },
+    {
+      "path": "/national-show/plan-your-visit",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    },
+    {
+      "path": "/national-show/what-to-expect",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    },
+    {
+      "path": "/national-show/faq",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    },
+    {
+      "path": "/national-show/archive",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    },
+    {
+      "path": "/national-show/archive/2024",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    },
+    {
+      "path": "/national-show/exhibitors",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    },
+    {
+      "path": "/national-show/tickets",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    },
+    {
+      "path": "/national-show/workshops",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    },
+    {
+      "path": "/national-show/conferences",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    },
+    {
+      "path": "/national-show/vendors",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    },
+    {
+      "path": "/national-show/vendors/apply",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    },
+    {
+      "path": "/national-show/vendors/register",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    },
+    {
+      "path": "/national-show/vendors/payment",
+      "status": 200,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "badControls": [],
+      "badImages": []
+    }
+  ],
+  "upcomingRedirect": {
+    "path": "/national-show/upcoming",
+    "status": 308,
+    "note": "confirmed via curl -D-, redirects to /national-show"
+  },
+  "focusVisible": {
+    "note": "Elements with outlineStyle \"solid\" and 2px width are inside the .nos-theme scope and governed by the R9 focus reset in nos-theme.css:231. Elements with outlineStyle \"auto\" or \"none\" belong to the shared SAOC site header/footer chrome OUTSIDE .nos-theme (layout.tsx:51 wraps only page content, not the global header) and are out of scope for this NOS re-skin — they use the pre-existing SAOC site default browser focus, unchanged by this mission.",
+    "results": [
+      {
+        "tag": "A",
+        "text": "council@saoc.co.za",
+        "outlineStyle": "auto",
+        "outlineColor": "rgb(236, 238, 235)",
+        "outlineWidth": "1px",
+        "ground": "rgb(34, 40, 31)",
+        "rect": {
+          "x": 32,
+          "y": 12.21875,
+          "w": 171.203125,
+          "h": 21.6875
+        },
+        "ratio": 12.93,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "19th National Show · Sept 2027",
+        "outlineStyle": "auto",
+        "outlineColor": "rgb(244, 243, 236)",
+        "outlineWidth": "1px",
+        "ground": "rgb(34, 40, 31)",
+        "rect": {
+          "x": 924.734375,
+          "y": 8,
+          "w": 208.796875,
+          "h": 30.140625
+        },
+        "ratio": 13.57,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Join a society",
+        "outlineStyle": "auto",
+        "outlineColor": "rgb(56, 65, 56)",
+        "outlineWidth": "1px",
+        "ground": "rgb(158, 140, 107)",
+        "rect": {
+          "x": 1141.53125,
+          "y": 9,
+          "w": 106.46875,
+          "h": 28.140625
+        },
+        "ratio": 3.24,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "SA Orchid CouncilMaking a difference sin",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(0, 95, 204)",
+        "outlineWidth": "1px",
+        "ground": "rgb(244, 243, 236)",
+        "rect": {
+          "x": 32,
+          "y": 58.140625,
+          "w": 318.3125,
+          "h": 44
+        },
+        "ratio": 5.38,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "About",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(23, 25, 23)",
+        "outlineWidth": "1px",
+        "ground": "rgb(244, 243, 236)",
+        "rect": {
+          "x": 442.703125,
+          "y": 69.28125,
+          "w": 39.375,
+          "h": 21.6875
+        },
+        "ratio": 15.89,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Societies",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(23, 25, 23)",
+        "outlineWidth": "1px",
+        "ground": "rgb(244, 243, 236)",
+        "rect": {
+          "x": 510.078125,
+          "y": 69.28125,
+          "w": 60.328125,
+          "h": 21.6875
+        },
+        "ratio": 15.89,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Judging & Awards",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(23, 25, 23)",
+        "outlineWidth": "1px",
+        "ground": "rgb(244, 243, 236)",
+        "rect": {
+          "x": 598.40625,
+          "y": 69.28125,
+          "w": 112.953125,
+          "h": 21.6875
+        },
+        "ratio": 15.89,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "National Show",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(23, 25, 23)",
+        "outlineWidth": "1px",
+        "ground": "rgb(244, 243, 236)",
+        "rect": {
+          "x": 739.359375,
+          "y": 69.734375,
+          "w": 92.375,
+          "h": 21.6875
+        },
+        "ratio": 15.89,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Events",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(23, 25, 23)",
+        "outlineWidth": "1px",
+        "ground": "rgb(244, 243, 236)",
+        "rect": {
+          "x": 859.734375,
+          "y": 69.28125,
+          "w": 44.078125,
+          "h": 21.6875
+        },
+        "ratio": 15.89,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "BUTTON",
+        "text": "",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(23, 25, 23)",
+        "outlineWidth": "1px",
+        "ground": "rgb(244, 243, 236)",
+        "rect": {
+          "x": 1115.75,
+          "y": 63.140625,
+          "w": 34,
+          "h": 34
+        },
+        "ratio": 15.89,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Contact",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(244, 243, 236)",
+        "outlineWidth": "1px",
+        "ground": "rgb(56, 65, 56)",
+        "rect": {
+          "x": 1161.75,
+          "y": 61.296875,
+          "w": 86.25,
+          "h": 37.6875
+        },
+        "ratio": 9.53,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "National Orchid ShowWestern Cape · 2027",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(126, 63, 151)",
+        "outlineWidth": "2px",
+        "ground": "rgb(251, 250, 240)",
+        "rect": {
+          "x": 32,
+          "y": 138.140625,
+          "w": 432.046875,
+          "h": 55.140625
+        },
+        "ratio": 6.58,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Book tickets →",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(33, 26, 87)",
+        "outlineWidth": "2px",
+        "ground": "rgb(243, 242, 214)",
+        "rect": {
+          "x": 32,
+          "y": 742.703125,
+          "w": 145.78125,
+          "h": 39
+        },
+        "ratio": 13.69,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Register interest",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(251, 250, 240)",
+        "outlineWidth": "2px",
+        "ground": "rgb(14, 11, 36)",
+        "rect": {
+          "x": 189.78125,
+          "y": 741.703125,
+          "w": 156.53125,
+          "h": 41
+        },
+        "ratio": 18.35,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Find your society",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(251, 250, 240)",
+        "outlineWidth": "2px",
+        "ground": "rgb(14, 11, 36)",
+        "rect": {
+          "x": 358.3125,
+          "y": 741.703125,
+          "w": 162.1875,
+          "h": 41
+        },
+        "ratio": 18.35,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "accredited SAOC judges",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(126, 63, 151)",
+        "outlineWidth": "2px",
+        "ground": "rgb(251, 250, 240)",
+        "rect": {
+          "x": 211.21875,
+          "y": 438.171875,
+          "w": 168.34375,
+          "h": 23
+        },
+        "ratio": 6.58,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Plan your visitTravel from the airports,",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(0, 95, 204)",
+        "outlineWidth": "1px",
+        "ground": "rgb(251, 250, 240)",
+        "rect": {
+          "x": 32,
+          "y": 694.15625,
+          "w": 289,
+          "h": 206.171875
+        },
+        "ratio": 5.71,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "What to expectOpening hours, admission, ",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(0, 95, 204)",
+        "outlineWidth": "1px",
+        "ground": "rgb(251, 250, 240)",
+        "rect": {
+          "x": 341,
+          "y": 694.15625,
+          "w": 289,
+          "h": 206.171875
+        },
+        "ratio": 5.71,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Visitor questionsThe questions we are as",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(0, 95, 204)",
+        "outlineWidth": "1px",
+        "ground": "rgb(251, 250, 240)",
+        "rect": {
+          "x": 650,
+          "y": 694.15625,
+          "w": 289,
+          "h": 206.171875
+        },
+        "ratio": 5.71,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Past showsPrevious editions, their grand",
+        "outlineStyle": "none",
+        "outlineColor": "rgb(0, 95, 204)",
+        "outlineWidth": "1px",
+        "ground": "rgb(251, 250, 240)",
+        "rect": {
+          "x": 959,
+          "y": 694.15625,
+          "w": 289,
+          "h": 206.171875
+        },
+        "ratio": 5.71,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Exhibitor information →",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(33, 26, 87)",
+        "outlineWidth": "2px",
+        "ground": "rgb(243, 242, 214)",
+        "rect": {
+          "x": 32,
+          "y": 430.203125,
+          "w": 205.015625,
+          "h": 39
+        },
+        "ratio": 13.69,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Find your society",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(33, 26, 87)",
+        "outlineWidth": "2px",
+        "ground": "rgb(243, 242, 214)",
+        "rect": {
+          "x": 505.03125,
+          "y": 430.953125,
+          "w": 160.1875,
+          "h": 39
+        },
+        "ratio": 13.69,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Ask the council",
+        "outlineStyle": "solid",
+        "outlineColor": "rgb(251, 250, 240)",
+        "outlineWidth": "2px",
+        "ground": "rgb(33, 26, 87)",
+        "rect": {
+          "x": 681.21875,
+          "y": 430.953125,
+          "w": 93.75,
+          "h": 39
+        },
+        "ratio": 14.84,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "About",
+        "outlineStyle": "auto",
+        "outlineColor": "rgba(244, 243, 236, 0.8)",
+        "outlineWidth": "1px",
+        "ground": "rgb(34, 40, 31)",
+        "rect": {
+          "x": 344,
+          "y": 829.921875,
+          "w": 39.375,
+          "h": 19
+        },
+        "ratio": 13.57,
+        "meetsR9Floor": true
+      },
+      {
+        "tag": "A",
+        "text": "Societies",
+        "outlineStyle": "auto",
+        "outlineColor": "rgba(244, 243, 236, 0.8)",
+        "outlineWidth": "1px",
+        "ground": "rgb(34, 40, 31)",
+        "rect": {
+          "x": 344,
+          "y": 862.71875,
+          "w": 60.328125,
+          "h": 19
+        },
+        "ratio": 13.57,
+        "meetsR9Floor": true
+      }
+    ]
+  },
+  "contrast": {
+    "floor": "4.5:1 body text (WCAG AA), 3:1 R9 focus-ring floor",
+    "results": [
+      {
+        "label": "hero headline (dark ground)",
+        "selector": "h1",
+        "found": true,
+        "color": "rgb(251, 250, 240)",
+        "background": "rgb(14, 11, 36)",
+        "fontSize": "66.56px",
+        "fontWeight": "500",
+        "path": "/national-show",
+        "ratio": 18.35,
+        "passesAA": true,
+        "floor": 4.5
+      },
+      {
+        "label": "body copy (light ground)",
+        "selector": "p",
+        "found": true,
+        "color": "rgb(234, 226, 243)",
+        "background": "rgb(14, 11, 36)",
+        "fontSize": "19px",
+        "fontWeight": "400",
+        "path": "/national-show",
+        "ratio": 15.27,
+        "passesAA": true,
+        "floor": 4.5
+      },
+      {
+        "label": "eyebrow attempt",
+        "selector": "[class*=\"eyebrow\"], .eyebrow, span:has(> :first-child)",
+        "found": true,
+        "color": "rgb(33, 26, 87)",
+        "background": "rgb(251, 250, 240)",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "path": "/national-show",
+        "ratio": 14.84,
+        "passesAA": true,
+        "floor": 4.5
+      },
+      {
+        "label": "tickets headline (dark ground)",
+        "selector": "h1",
+        "found": true,
+        "color": "rgb(251, 250, 240)",
+        "background": "rgb(14, 11, 36)",
+        "fontSize": "64px",
+        "fontWeight": "500",
+        "path": "/national-show/tickets",
+        "ratio": 18.35,
+        "passesAA": true,
+        "floor": 4.5
+      }
+    ]
+  },
+  "negativeControl": {
+    "description": "Violet ring (#7E3F97) on royal purple ground (#0E0B24/rgb(14,11,36)) — the exact failure mode documented in design ruling R9 (\"the single-ring instinct\"). Included as a deliberately-wrong pairing to prove this measurement method actually rejects a bad value rather than always reporting pass.",
+    "ringColor": "rgb(126,63,151)",
+    "groundColor": "rgb(14,11,36)",
+    "ratio": 2.79,
+    "floor": 3,
+    "result": "FAIL (correctly below floor) — harness proven sensitive"
+  }
+}

@@ -6,9 +6,9 @@ import { ConfirmationBadge, ShowCountdown } from '@/components/show';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
 import { CycleStep } from '@/components/nos/CycleStep';
+import { EmblemBadge } from '@/components/nos/EmblemBadge';
 import { ExhibitorStageCard } from '@/components/nos/ExhibitorStageCard';
 import { JudgingGroupCard } from '@/components/nos/JudgingGroupCard';
-import { Logo } from '@/components/nos/Logo';
 import { NosHero, NOS_HERO_IMAGES, type NosHeroImage } from '@/components/nos/NosHero';
 import { PastEditionCard } from '@/components/nos/PastEditionCard';
 import { SectionHeading } from '@/components/nos/SectionHeading';
@@ -51,6 +51,25 @@ export const metadata: Metadata = buildPageMetadata({
   description: PAGE_DESCRIPTION,
   path: '/national-show',
 });
+
+/**
+ * `object-position` for the hero photograph — the measured bloom centre of
+ * `/images/orchid-violet.jpg`, not a hand-picked crop (M7 golden D2, req 2).
+ *
+ * How it was measured (`.tmp/sandbox/m7-dev/measure-bloom-centre.mjs`): the jpg
+ * is decoded in a headless browser, drawn to a canvas at its natural 7327×4885,
+ * and sampled on a 240×240 grid. A pixel counts as bloom-like under D2.1's own
+ * metric — HSL saturation ≥ 0.35 and lightness ≥ 0.35 — and the constant is the
+ * centroid of every bloom-like sample, expressed image-relative: 50.7% / 36.5%,
+ * rounded to whole percent. 21.2% of the frame is bloom-like.
+ *
+ * A single declared point, not a per-breakpoint crop, so the composition holds
+ * across viewport aspects. Note what it can and cannot do: `object-cover` scales
+ * this 3:2 image by whichever axis is short, and at every width the hero is
+ * wider than 3:2, so the horizontal axis is the one that fits exactly and the X
+ * term is inert — the Y term is what lifts the bloom out from behind the type.
+ */
+const HERO_FOCAL_POINT = '51% 37%';
 
 // ---------------------------------------------------------------------------------------
 // F18 wiring (nos-design-system, M6) — the site's ONE schema.org Event node lives on this
@@ -350,17 +369,20 @@ export default async function NationalShowPage() {
       <NosHero
         image="/images/orchid-violet.jpg"
         priority
+        focalPoint={HERO_FOCAL_POINT}
         eyebrow="The Flagship"
-        // The lockup IS the headline now — the separate Cormorant "The South
-        // African National Orchid Show" text is retired (Brad, 2026-09-07).
-        // Logo's wordmark spans are real text, so the <h1> it renders here
-        // stays fully text- and screen-reader-reachable on its own; the
-        // emblem stays a decorative image (alt=""). `orientation="responsive"`
-        // keeps this to ONE h1 in the DOM at every width — centred/stacked
-        // below `sm`, horizontal/left-aligned from `sm` up — rather than two
-        // CSS-swapped instances, which would duplicate real heading text.
-        title={<Logo orientation="responsive" tone="on-dark" size="hero" as="h1" />}
-        titleIsElement
+        // The headline is the show's own name, set as plain text in Cormorant at
+        // the scoped `--display-xl` step — NOT the Logo lockup. A lockup nested
+        // inside an <h1> made the heading a composite of a decorative emblem and
+        // two wordmark spans: the accessible name survived, but the type scale,
+        // the measure and the line-breaking were the lockup's, not the page's,
+        // and the emblem was doing masthead duty inside a heading. The mark now
+        // rides above the eyebrow as `brandMark`, where it is decoration, and the
+        // full lockup belongs to the masthead/colophon instead (F21).
+        brandMark={<EmblemBadge />}
+        title="The South African National Orchid Show"
+        titleSize="display"
+        lede={PAGE_DESCRIPTION}
         actions={
           <div className="flex w-full flex-col gap-8">
             {edition ? (
@@ -393,31 +415,38 @@ export default async function NationalShowPage() {
               tone="dark"
             />
 
-            <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+            {/* Three actions, one grammar (F22). These were a filled Button plus
+                two underlined inline links: three different heights, three
+                different type sizes and two different hit areas for what are
+                three peer destinations. Secondary is expressed by fill alone
+                now — `ghost-on-dark` shares every metric with `on-dark` (same
+                padding, same 15px label, same 2px radius), so the row reads as
+                one control group and each target clears the same touch area. */}
+            <div className="flex flex-wrap items-center gap-3">
               <Button<typeof Link> as={Link} href="/tickets" variant="on-dark">
                 Book tickets →
               </Button>
-              <Link
-                href="/contact"
-                className="font-sans text-[14px] font-medium text-ivory underline decoration-ivory/40 underline-offset-4 transition-colors duration-150 hover:decoration-ivory"
-              >
+              <Button<typeof Link> as={Link} href="/contact" variant="ghost-on-dark">
                 Register interest
-              </Link>
-              <Link
-                href="/societies"
-                className="font-sans text-[14px] font-medium text-ivory underline decoration-ivory/40 underline-offset-4 transition-colors duration-150 hover:decoration-ivory"
-              >
+              </Button>
+              <Button<typeof Link> as={Link} href="/societies" variant="ghost-on-dark">
                 Find your society
-              </Link>
+              </Button>
             </div>
 
             <div>
-              {/* 10px/500 is small text, so the 4.5:1 body bar applies — not the 3:1
-                  large-text one. At text-ivory/45 this measured 3.92–4.36:1 composited over
-                  the real photograph at 390/1024/1280. Raised here rather than by darkening
-                  NosHero's scrim, which is tuned across the whole hero and would regress the
-                  wordmark treatment that already passes at 5.68–10.09:1. */}
-              <p className="mb-3 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-ivory/70">
+              {/* Same treatment as the countdown's own unit labels ("days",
+                  "hours", …) directly beneath it — font-mono 11px, uppercase,
+                  0.18em, ivory/90 (components/show/ShowCountdown.tsx). This
+                  label and those labels annotate one object, and a third
+                  micro-caps style (font-sans 10px/500, 0.2em, ivory/70) made
+                  them look like two unrelated systems stacked together (F22).
+                  Adopting the denser style also raises the alpha: 10px/500 at
+                  ivory/45 had measured 3.92–4.36:1 composited over the real
+                  photograph, and ivory/90 clears the 4.5:1 body bar with room
+                  — without darkening NosHero's scrim, which is tuned across the
+                  whole hero and would regress what already passes. */}
+              <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/90">
                 Opens in
               </p>
               <Suspense fallback={null}>
@@ -536,7 +565,10 @@ export default async function NationalShowPage() {
       </section>
 
       {/* ── Exhibitor information ── */}
-      <section className="bg-primary py-24">
+      {/* nos-on-dark (R9/3, R8/3): royal-purple ground — any focus ring or
+          status colour inside must read the on-dark alias. See
+          nos-theme.css's `.nos-theme .nos-on-dark` block. */}
+      <section className="nos-on-dark bg-primary py-24">
         <div className="mx-auto max-w-[1280px] px-8">
           <SectionHeading eyebrow="Entering the show" title="Exhibitor information" tone="on-dark" />
 

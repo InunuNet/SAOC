@@ -107,7 +107,7 @@ export default async function ShowArchivePage() {
               href={`/national-show/archive/${show.year}`}
               className="group block focus-visible:outline-none"
             >
-              <div className="flex h-full flex-col overflow-hidden rounded-[length:var(--radius-card)] border-[length:var(--border-hairline)] border-[var(--rule)] bg-white shadow-[var(--shadow-card)] transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-0.5 group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-[var(--ring-focus)]">
+              <div className="flex h-full flex-col overflow-hidden rounded-[length:var(--radius-card)] border-[length:var(--border-primary)] border-[var(--rule)] bg-white transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-0.5 group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-[var(--ring-focus)]">
                 <div className="relative aspect-[3/2] overflow-hidden bg-[var(--night)]">
                   <Image
                     src={archivePhotoFor(show)}

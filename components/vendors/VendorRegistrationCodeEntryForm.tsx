@@ -76,7 +76,10 @@ export function VendorRegistrationCodeEntryForm({
       </p>
 
       {status === 'error' && errorMessage ? (
-        <p role="alert" className="rounded-sm border border-primary-800 bg-bone p-4 font-sans text-[15px] font-medium text-primary-800">
+        <p
+          role="alert"
+          className="rounded-sm border border-[var(--status-error)] bg-bone p-4 font-sans text-[15px] font-medium text-[var(--status-error)]"
+        >
           {errorMessage}
         </p>
       ) : null}

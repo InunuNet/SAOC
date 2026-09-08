@@ -123,6 +123,25 @@
   --sans: var(--font-nos-jost), Jost, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --serif-weight: 400;
 
+  /* ---- Display type scale (F21). `--display-xl` is declared on `:root` in
+     app/globals.css as clamp(54px, 7vw, 96px) and is redeclared here — not
+     overridden at the element — for the same reason as every other name in
+     this file: the show pages are a scoped re-skin, and the only consumer of
+     `--display-xl` inside this scope is the flagship hero's `<h1>`. (Outside
+     the scope it drives `.h1`, used solely by components/home/Hero.tsx, which
+     is untouched by this declaration.)
+
+     Why it differs from the root value: the root floor of 54px is sized for a
+     short SAOC headline. This hero's headline is the show's full name — 38
+     characters — and the design calls for exactly two lines at every width.
+     At 390px the text column is 326px wide, where 54px Cormorant cannot set
+     "National Orchid Show" on one line, so the root scale wraps it to four.
+     The floor here is the largest step that still holds two lines at 326px;
+     the 5.2vw slope and 72px ceiling keep the headline the largest type on
+     the page at desktop widths without reaching the root's 96px, which
+     overruns the two-line measure from ~1450px up. ---- */
+  --display-xl: clamp(34px, 5.2vw, 72px);
+
   /* ---- Inherited-property re-resolution. `app/globals.css` sets
      `font-family: var(--sans)`, `color: var(--fg)` and `background: var(--bg)`
      on `body` — OUTSIDE this scope — so all three resolve against the root's
@@ -146,11 +165,76 @@
   --link: var(--primary);
   --link-underline: var(--accent);
 
-  /* ---- Focus ring (guardrail 2). rgba(154,99,174,.45) is tuned for white and
-     falls below 3:1 non-text contrast on pale gold — use the solid violet
-     instead of thinning the ring. ---- */
-  --ring-focus: #7e3f97;
+  /* ---- Focus ring (guardrail 2, corrected under R9). rgba(154,99,174,.45)
+     is tuned for white and falls below 3:1 non-text contrast on pale gold —
+     use the solid violet instead of thinning the ring. R9/3 — ring colour is
+     chosen by the ground the ring sits on, not by the control's own fill:
+     outline-offset places the ring outside the control, so a dark-ground
+     control's ring lands on the dark ground and must be pale gold instead.
+     `--ring-focus` is the ground-resolved alias every consumer reads (see
+     `.nos-on-dark` below and status-tokens.golden.md §2 for why the alias
+     indirection is safe for this shape); `--ring-focus-on-dark` stays
+     directly addressable too, because components/nos/Button.tsx picks its
+     ring colour from its own `variant` prop rather than from ground
+     scoping, and needs the on-dark value regardless of which alias is in
+     scope where it renders. ---- */
+  --ring-focus-on-light: #7e3f97;
+  --ring-focus-on-dark: var(--ivory);
+  --ring-focus: var(--ring-focus-on-light);
 
+  /* ---- Status colour (R8). Three states, two grounds — one value cannot
+     clear 4.5:1 on both `--parchment` and `--primary-800`/`--night`, so each
+     state declares a pair. See status-tokens.golden.md §2-4 for the measured
+     contrast, hue-constancy and saturation-bound constraints these values
+     satisfy. Ground-resolved aliases (`--status-error` etc.) are what
+     components consume; `.nos-on-dark` flips them the same way it flips
+     `--ring-focus`. ---- */
+  --status-error-on-light: #8f2834;
+  --status-error-on-dark: #e298a0;
+  --status-warning-on-light: #714a1e;
+  --status-warning-on-dark: #d6a164;
+  --status-success-on-light: #1f5c3e;
+  --status-success-on-dark: #8fb89c;
+  --status-error: var(--status-error-on-light);
+  --status-warning: var(--status-warning-on-light);
+  --status-success: var(--status-success-on-light);
+}
+
+/* ---- Ground flip (R8/3, R9/3). Applied by @dev to any NOS section whose
+   composited ground is --primary, --primary-800 or --night. One class doing
+   both token families' job — not one class per family. ---- */
+.nos-theme .nos-on-dark {
+  --ring-focus: var(--ring-focus-on-dark);
+  --status-error: var(--status-error-on-dark);
+  --status-warning: var(--status-warning-on-dark);
+  --status-success: var(--status-success-on-dark);
+}
+
+/* ---- Focus reset (R9/1, R9/2). Nine `focus-visible:ring-2
+   focus-visible:ring-ink/40` call sites across components/vendors/* paint a
+   box-shadow ring at 40% alpha, which measures below the 3:1 non-text floor
+   and is clipped by overflow:hidden ancestors. Those class strings are
+   shared with SAOC routes outside .nos-theme, so they are not rewritten
+   here (see focus-affordance.golden.md §2) — this scoped, UNLAYERED rule
+   fixes every one of them without a call-site edit. Tailwind v4 emits
+   utilities inside `@layer utilities`; an unlayered declaration beats a
+   layered one regardless of specificity, so this overrides both
+   `focus-visible:outline-none` and `focus-visible:ring-2` with no
+   `!important`.
+
+   `:not(.group)` is the double-ring hazard carve-out: NosEventCard,
+   VisitorLinkCard and archive/page.tsx deliberately set
+   `focus-visible:outline-none` on a `.group` Link and draw the ring on the
+   inner Card via `group-focus-visible:outline-*` instead. Without this
+   exclusion the reset would restore an outline on the Link too, producing
+   two concentric rings on one focus. ---- */
+.nos-theme :focus-visible:not(.group) {
+  outline: 2px solid var(--ring-focus);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.nos-theme {
   /* ---- F2/F3 additions: remaining sanctioned-palette members the primitives
      and composites need (photography scrim, on-dark surfaces). Every hex here
      is also a member of the sanctioned set in nos-contrast.golden.md. ---- */
@@ -162,15 +246,21 @@
   --lilac-muted: #c7b8de; /* muted copy on dark grounds */
   --lilac-pale: #eae2f3; /* tint ground */
 
-  /* ---- F2/F3 additions: radii, borders, shadow, motion. Radii are soft and
-     generous per the design grammar — 2px reads cold and was rejected. ---- */
-  --radius-card: 10px;
-  --radius-lg: 16px;
+  /* ---- F2/F3 additions, corrected under R1/R2 (nos-design-rulings.md): NOS
+     is a subsection of the SAOC site, not its own brand system, and keeps
+     SAOC's structural grammar — radius 0 on cards, 2px on buttons, elevation
+     as borders rather than shadows. An earlier version of this file claimed
+     "radii are soft and generous per the design grammar — 2px reads cold and
+     was rejected"; that was Codi relaying the standalone NOS brand system's
+     rules as if they applied here, and it was retracted (R1). Pill radius is
+     reserved for eyebrow pills only (R2) — --radius-button is what buttons
+     use now, not --radius-pill. ---- */
+  --radius-card: 0px;
+  --radius-lg: 0px;
   --radius-pill: 999px;
-  --border-primary: 1.5px;
+  --radius-button: 2px;
+  --border-primary: 1px;
   --border-hairline: 1px;
-  /* Soft, low, purple-tinted — never harsh black. */
-  --shadow-card: 0 1px 2px rgba(33, 26, 87, 0.06), 0 8px 24px rgba(33, 26, 87, 0.08);
   --ease-nos: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-fast: 120ms;
   --dur-med: 220ms;

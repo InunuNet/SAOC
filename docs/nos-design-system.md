@@ -334,6 +334,284 @@ recorded here rather than fixed by amending the commit.
   These` renders as `x.These`), invisibly in source. Any check of rendered copy on these
   routes must read served HTML from a real server, never grep the JSX source.
 
+## 9. M7 — the design supersession rework
+
+M6 shipped a NOS system with its own radii, shadows and a Jost eyebrow face — reads that
+were **never approved**; Codi's relay of "NOS radii/shadow/Jost as universal" was retracted
+(ruling R1, `.agent/memory/project/design/nos-design-rulings.md:36-38`). R1 settles it: NOS
+is a *subsection* of saoc.co.za, not its own site, so structure stays SAOC's and only
+identity (palette, display face, emblem, photography) changes. M7 (F20–F22) reverts the
+grammar and repairs four hero defects the M6 build shipped alongside it. Design rulings
+R1–R4 are the basis; the mission record's briefs are at
+`.agent/memory/project/missions/2026-09-06-nos-design-system.md:116-134`.
+
+### F20 — token grammar hardening
+
+`components/nos/` reverts to the site's own structural tokens instead of the retired NOS
+ones:
+
+- **Radius.** Cards and the CycleStep "current" panel go back to square corners
+  (`--radius-card`, `--radius-lg` both `0`); buttons go back to `--radius-button` (`2px`,
+  the site's `--radius-1`) instead of the NOS pill radius —
+  `components/nos/Button.tsx:82` no longer references `--radius-pill` at all. Pill radius
+  is now confined to the eyebrow-pill sites and the CycleStep rail dot; nothing else may
+  render above 4px without an explicit allowlist reason (R2).
+- **Borders, not shadows.** `--shadow-card` is deleted from the stylesheet and from all
+  three of its former consumers — `Card.tsx`, `CycleStep.tsx` and
+  `app/(marketing)/national-show/archive/page.tsx`. `Card.tsx:16` now carries
+  `border-[length:var(--border-primary)]` where it carried `shadow-[var(--shadow-card)]`;
+  `CycleStep.tsx`'s current-step panel does the same. Elevation is expressed the way the
+  rest of the site expresses it: a border, never a shadow (R1).
+- **Type faces.** Eyebrows across the section move off Jost onto JetBrains Mono, matching
+  the site's own eyebrow face (R1). Jost is not removed from the system — it stays reserved
+  for the lockup's `WESTERN CAPE · 2027` location line (`components/nos/Logo.tsx`), the one
+  place R1 keeps it.
+- `--radius-button` is redeclared **inside** the `.nos-theme` block itself, not left to
+  inherit — the mission's own `var()`-resolves-at-declaration trap (§2 above) applies to
+  this token exactly as it did to colour.
+
+Verified by a 44-id Playwright verifier,
+`execution/checks/verify_nos_m7_hero_and_grammar.ts` (F20's commissioned driver — see
+below), plus a set of static greps in `contract-m7.yaml` (A46–A50) confirming
+`shadow-card`, `shadow-[`, `rounded-(sm|md|lg|xl|2xl)` and `radius-pill` are gone from
+`components/nos/` and that the stale nos-theme.css comment claiming 2px "reads cold and was
+rejected" — the retracted relay R1 corrects — has been replaced by one citing R1 itself.
+
+### F21 — typographic h1 grammar
+
+Ruling R3 (`nos-design-rulings.md:53-61`): *"The `<h1>` is the typographic headline. The
+emblem sits above it as a modest mark."* The M6 hero used the `Logo` lockup itself as the
+page's `<h1>` (a `size="hero"` scale and an `as="h1"` escape hatch on `Logo.tsx`, feeding
+the emblem and wordmark into the heading element). F21 removes that path entirely:
+`components/nos/Logo.tsx` drops `size` and `as` from `NosLogoProps` along with the five
+hero-only sizing constants (`HERO_TITLE_SIZE`, `HERO_TITLE_CLASS`,
+`HERO_EMBLEM_VERTICAL_CLASS`, `HERO_EMBLEM_HORIZONTAL_CLASS`, and the `heroStyle` custom
+property) that existed only to scale the lockup up to headline size. The lockup's outer
+element is a plain `<span>` now (it no longer needs to conditionally render as `<h1>`), and
+is used only at its compact size in the masthead and colophon (R3's "header and footer,
+where a signature is what's wanted").
+
+In its place, `NosHero.tsx` renders a real typographic `<h1>` — the show's name as text at
+`--display-xl` in Cormorant — with the emblem placed above it as a decorative mark
+(`alt=""`). This is also the fix behind §6's "the page's `<h1>` **is** the lockup" note
+above: that text is now backed by an actual heading element rather than an image standing
+in for one.
+
+### F22 — hero composition
+
+Three defects in the M6 hero, all traced to ruling violations, repaired together since they
+share the same hero markup:
+
+- **Collision fixed by the crop, not the scrim (R4).** The M6 hero deepened its scrim
+  locally to hide a compositional collision between the bloom and the type block — exactly
+  the vignette-solving-a-layout-problem R4 forbids. F22 shifts the focal point right via
+  `object-position` (declared off the real bloom centre, not a hardcoded crop, so it holds
+  across viewport aspects) so the left third resolves to the frame's own naturally dark
+  ground; at 390px the bloom stacks full-bleed below the type block rather than behind it.
+  The three **scrim gradient layers themselves are unchanged** — verified by
+  `SCRIM_UNCHANGED` against a baseline captured from the pre-M7 build (see below), because
+  R4 says the scrim's only job is legibility and it must not acquire a second one.
+- **Three equal-weight, 2px-radius actions, "Register interest" restored.** M6 had demoted
+  the exhibitor conversion action to an underlined text link — the exact decay R2's
+  corollary forbids ("an action demoted to an underlined text link has left the hierarchy").
+  F22 restores it as a button alongside the other two hero actions, all three the same
+  2px-radius shape and visual weight, with the focus ring re-measured now that it sits on a
+  rectangle instead of a pill (R2's second corollary: "changing a button from pill to
+  rectangle moves the focus ring relative to the label").
+- **The `OPENS IN` eyebrow matches the countdown's own type.** Restyled off the (now
+  removed) Jost eyebrow face onto the same mono type the countdown numerals themselves use,
+  so the label reads as part of one instrument rather than a mismatched caption.
+
+### The 44-id verifier
+
+`execution/checks/verify_nos_m7_hero_and_grammar.ts` is the single Playwright driver behind
+every browser-measured M7 claim — F20's token grammar, F21's heading, and F22's hero
+composition all read from the same run, at 390/1024/1280px. It exists because a QA pass
+raised seven candidate defects against an earlier version of this suite and all seven
+turned out to be harness bugs — six of them a check reporting `FAIL` when it had actually
+failed to *locate* its target. The script's status vocabulary makes that distinction
+structural: `PASS` (the property holds), `FAIL` (measured, and the property does not hold),
+`BLOCKED` (target or precondition missing — nothing learned), `ERROR` (the check threw).
+`FAIL` and `BLOCKED`/`ERROR` are never collapsed into each other; a gate grep for `"PASS"`
+still fails on any of the other three, so the distinction doesn't cost the gate anything —
+it's for the human deciding whether the *code* or the *harness* is wrong
+(`verify_nos_m7_hero_and_grammar.ts:26-38`).
+
+What it checks, by group: the `<h1>` text, face, case, size and line count at all three
+widths (D1); the hero's `object-position`, the bloom-clear-of-emblem measurement (an
+annulus around the emblem, not a padded box that contains it — see the post-mortem below
+for why that distinction mattered), the unchanged scrim, and composited contrast on the
+`<h1>`, lede and eyebrow (D2); the three actions' count, radius, absence of underline,
+equal weight, hrefs, and focus-ring edges/corners/clipping/outline-ness (D3); the eyebrow's
+face-match and case (D4); the token-grammar greps described under F20 above; a regression
+guard that the other eleven heroes are untouched; and two negative controls proving the
+contrast and bloom metrics actually discriminate rather than always reporting the answer
+they're pointed at. Contrast is read from composited screenshot pixels, never
+`getComputedStyle().color` (Tailwind v4 serialises opacity-modified colours as `oklab()` —
+InunuNet/SAOC#3). Exit codes: `0` all PASS, `1` at least one FAIL, `2` setup failure
+(server never came up, Playwright missing, hero image missing), `3` no FAIL but something
+BLOCKED or ERROR remains — never collapsed into a pass.
+
+### The scrim baseline
+
+`SCRIM_UNCHANGED` needs something from before F22 to compare against, and the M7 diff was
+still uncommitted while the check was written — so a straight `git show HEAD` couldn't
+supply it. It was captured from a **detached git worktree checked out at `24f87e05`** (the
+M6 build, the design-supersession-docs commit that immediately precedes this mission's
+uncommitted work), served locally with `next dev --webpack` on port 3921 (Turbopack refuses
+a symlinked `node_modules`, which the worktree needs), and read via Playwright as the
+computed `background-image` of the hero's three scrim `<div>` layers. The result is
+`.agent/memory/project/specs/nos-design-system/goldens/m7/scrim-baseline.json` — three
+gradient strings, DOM order. The baseline file also records that in the same capture the
+M6 hero's `<h1>` was still the `Logo` lockup itself (the F21 path this milestone removed),
+while the current tree's `<h1>` has no `<img>` at all — two demonstrably different trees
+producing byte-identical gradients, which is exactly the property F22 claims (the scrim
+keeps its stops and opacities; only the composition around it changed). If this baseline
+file is ever absent, the check reports `BLOCKED`, never `PASS` — this script never
+regenerates the baseline from the tree under test, because that would compare the change
+against itself.
+
+## 10. M8 — semantic status colour and focus affordance
+
+Where M7 repaired structure, M8 (F23–F24) closes two functional gaps ruling R6/1 assumed
+were already closed and weren't: status colour and focus rings had no dedicated tokens at
+all. Rulings R8 (status colour) and R9 (focus) are the basis
+(`nos-design-rulings.md:106-149`); the full constraint tables and measured values live in
+`.agent/memory/project/specs/nos-design-system/goldens/m8/status-tokens.golden.md` and
+`focus-affordance.golden.md` — this section summarises, it doesn't restate them.
+
+### F23 — semantic status colour tokens
+
+R6/1 said status colours were excluded from the NOS palette shift. R8 records why that
+guardrail was unenforceable as written: **no status tokens existed anywhere in the
+codebase** to exclude. Two public NOS routes were painting error banners with brand ink
+(`border-primary-800`/`text-primary-800` in `VendorApplyForm.tsx` and
+`VendorRegistrationCodeEntryForm.tsx`), and two token-gated components were painting
+validation state with raw, out-of-palette Tailwind red
+(`VendorMarketingFieldset.tsx`, `VendorMarketingUploadField.tsx`) — a defect only latent
+because NOS and SAOC brand ink happened to read as "emphasis" rather than "error."
+
+Six new tokens, declared inside the `.nos-theme` block of
+`app/(marketing)/national-show/nos-theme.css` — never in `app/globals.css`, per R8/2's
+explicit "do not open the SAOC base uninvited" (the gap is filed to the SAOC session as a
+finding; when the base declares these names, the NOS block collapses to overrides with
+nothing stranded):
+
+| token | hex | measured on its own ground |
+|---|---|---|
+| `--status-error-on-light` | `#8f2834` | 7.95:1 on `#fbfaf0` |
+| `--status-error-on-dark` | `#e298a0` | 7.51:1 on `#1a1445` |
+| `--status-warning-on-light` | `#714a1e` | 7.42:1 on `#fbfaf0` |
+| `--status-warning-on-dark` | `#d6a164` | 7.43:1 on `#1a1445` |
+| `--status-success-on-light` | `#1f5c3e` | 7.54:1 on `#fbfaf0` |
+| `--status-success-on-dark` | `#8fb89c` | 7.73:1 on `#1a1445` |
+
+R8/3's reasoning is empirical, not aesthetic: each value collapses to roughly 2:1 on the
+*opposite* ground, so a single value per state cannot clear 4.5:1 on both `#fbfaf0` (pale
+gold) and `#1a1445` (royal purple) — a pair is the only shape that works.
+
+**The on-light/on-dark pairing rule.** Each pair is generated at one hue, with lightness the
+only thing that separates the two members (error and warning hold hue to within 0.5° across
+their pair; success's on-dark member drifts to 139.0° against the on-light member's 150.5°,
+approved by Codi rather than tightened, because "a value that satisfies the rule and looks
+wrong has satisfied the wrong thing" — `status-tokens.golden.md`'s §4). The assertion
+tolerance is ±15° between pair members, deliberately looser than an earlier ±4°, because the
+tighter number rejected a value chosen correctly on a quantity nobody perceives.
+
+Three **ground-resolved aliases** are what components actually consume — never the six
+literals directly:
+
+```
+.nos-theme               { --status-error: var(--status-error-on-light);  … }
+.nos-theme .nos-on-dark  { --status-error: var(--status-error-on-dark);   … }
+```
+
+(and the equivalent pair for `--status-warning` and `--status-success`). `.nos-on-dark` is
+a marker class applied to any NOS section whose composited ground is `--primary`,
+`--primary-800` or `--night`; a consumer writes `text-[var(--status-error)]`, which Tailwind
+emits as a **regular property** (`color: var(--status-error)`, not a custom-property
+declaration), so it resolves at the *using* element and correctly picks up whichever alias
+is in scope there. This is the one place in the token system where the "`var()` resolves at
+declaration, not use" trap from §2 above does **not** apply — the golden spells out why
+(`status-tokens.golden.md` §2, "Why the alias indirection is safe here").
+
+Four call sites converted off brand ink and raw Tailwind red onto `var(--status-error)`:
+the two public vendor banners (`VendorApplyForm.tsx`, `VendorRegistrationCodeEntryForm.tsx`)
+and the two gated ones (`VendorMarketingFieldset.tsx`, `VendorMarketingUploadField.tsx`).
+Only the two public banners are reachable by a headless verifier — the gated pair sits
+behind the vendor registration token gate — so those two are measured at the rendered pixel
+while the gated pair is covered by static assertion.
+
+### F24 — focus affordance
+
+Two distinct defects existed under `.nos-theme` before this feature, both against ruling
+R9:
+
+1. **Nine call sites used a 40%-alpha `box-shadow` ring** (`focus-visible:ring-2
+   focus-visible:ring-ink/40`), across `VendorFormField.tsx`, `VendorApplyForm.tsx`,
+   `VendorRegistrationCodeEntryForm.tsx` (×2), `VendorElectricalEquipmentTable.tsx` (×2),
+   `VendorGasEquipmentTable.tsx` (×2) and `VendorRegisterForm.tsx` — `VendorFormField.tsx`'s
+   single line alone painted every field of the full vendor registration form. Measured:
+   `ring-ink/40` composited to 2.43:1 over `--ivory` and 2.38:1 over `--bone`, both below
+   the 3:1 floor; the same `--ink` at full alpha measures 14.84:1. The opacity, not the
+   colour, was the entire defect — R9/2 states the same rule R4 states about scrims:
+   opacity is not a contrast instrument. `box-shadow`-based rings also fail R9/1 on their
+   own terms — clipped by an `overflow: hidden` ancestor, not following an inset radius the
+   way `outline` does, and invisible in forced-colors mode.
+2. **One ring colour for two grounds** — `nos-theme.css` declared a single
+   `--ring-focus: #7e3f97` (violet). Violet measures 6.58:1 on pale gold but only 2.48:1 on
+   `--primary-800`, so any NOS control on a purple ground got an almost-invisible ring.
+
+The fix is a single scoped, unlayered `.nos-theme :focus-visible` outline reset —
+`outline` + `outline-offset`, never `box-shadow` (R9/1: it follows the border radius, isn't
+clipped by an overflow ancestor, and survives forced-colors mode) — reading a ground-paired
+`--ring-focus`, itself now backed by two literals exactly like the M8 status tokens:
+`--ring-focus-on-light: #7e3f97` (violet, ~6.6:1 on pale gold) and `--ring-focus-on-dark:
+#fbfaf0` (pale gold, ~16:1 on royal purple), with `--ring-focus` retained as the consumed
+alias so the six sites that already used `outline` + `var(--ring-focus)` correctly
+(`Button.tsx`, `SectionNav.tsx`, `NosEventCard.tsx`, `VisitorLinkCard.tsx`, the archive
+page, and the M7 masthead lockup link) needed **no call-site edit at all** — only the token
+they read changed shape. The reset fixes the nine `ring-ink/40` sites the same way, without
+touching one of them. One deliberate side effect: the masthead lockup's own
+`outline-offset-4` (the one site that differed from every other's `-offset-2`) is now dead —
+the unlayered reset outranks it — and those four now-inert utility classes were stripped
+from `layout.tsx` rather than left to lie about intent.
+
+**The `.nos-on-dark` defect a rendered measurement caught.** `.nos-on-dark` (the same marker
+class F23 uses for status-token aliasing) was declared correctly in `nos-theme.css` but
+**applied to no element in the tree**, so F24's headline dark-ground contrast claim stayed
+live at **2.53:1** — against a promised ~18:1 — while every static token-declaration and
+computed-style check passed clean. It was caught only because a Playwright pass rendered
+the actual page and measured the composited ring pixel against its actual ground, rather
+than reading the stylesheet or `getComputedStyle()` in isolation. This is recorded in full,
+as the generalised "declared-but-unapplied token" defect shape, in `learned.md`'s
+2026-09-08 "NOS M7/M8 verification post-mortem" entry — summarised here, not duplicated:
+of eight apparent defects the M7/M8 verifier-hardening pass surfaced that night, seven were
+instrument bugs (checks aimed at the wrong referent) and exactly one, this one, was a real
+code defect. Both M8 evidence artefacts now carry negative controls that demonstrably fail
+(2.17:1 and 2.48:1), proving the harness rejects the broken state rather than passing
+regardless of input — the same negative-control discipline §4 above documents for the
+hero's contrast fix.
+
+### Verification status
+
+**Codex GPT-5.5 adversarial review: PASS, zero findings**, run against the full M7+M8 diff
+via `execution/codex_qa.sh`. 65,022 tokens used, exit 0. Transcript at
+`.agent/evidence/nos-design/codex/codex-qa-m7m8-2026-09-08.log`.
+
+Extending §3's "green gate is a measurement, not a standing guarantee" and §8's known gaps:
+this repo's triad-verification tooling (`execution/verify_triad_coverage.py`, see
+`docs/verification-triad-gate.md`) now runs a **preflight on every gate invocation** that
+blocks a UI/workflow contract missing any of the three mandatory verification kinds —
+`codex_qa`, `browser_deployed_check`, `gws_inbox_check`. Neither `contract-m7.yaml` nor
+`contract-m8.yaml` declares the latter two kinds. `browser_deployed_check` cannot exist for
+this branch yet regardless: its manifest requires the page to already be reachable at an
+allowlisted deployed origin, and `nos-design` is still an open, unmerged PR — the identical
+`TRIAD-02` blocker already recorded against M1–M4 in this mission's own contract
+(`.agent/memory/project/specs/nos-design-system/contract.yaml:207`). So M7/M8 carry a real
+Codex PASS and a real QA pass, but not a completed three-layer triad; that gap is structural
+to being pre-deployment, not a shortcut taken on this milestone specifically.
+
 ## Related documents
 
 - `.agent/memory/project/missions/2026-09-06-nos-design-system.md` — the mission record,
@@ -344,5 +622,9 @@ recorded here rather than fixed by amending the commit.
   (admin IA, SEO, conversion, social kit) decision record §7 is drawn from.
 - `.agent/memory/project/specs/nos-design-system/goldens/nos-contrast.golden.md` — the
   full contrast table.
+- `.agent/memory/project/design/nos-design-rulings.md` — rulings R1–R9, the binding source
+  for §9–§10.
+- `.agent/memory/project/specs/nos-design-system/goldens/m7/` and `.../goldens/m8/` — the
+  full M7/M8 golden specifications §9–§10 summarise.
 - `app/(marketing)/national-show/nos-theme.css` — the token layer itself; its header
   comment carries the mechanism explanation in full.

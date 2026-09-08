@@ -1,0 +1,496 @@
+schema: athanor.contract/v1
+slug: nos-design-system
+goal: >-
+  Revert components/nos/ to SAOC's structural grammar (radius 0 cards, 2px buttons,
+  pill reserved for eyebrow pills, 1px borders instead of shadows) and repair the
+  four M6 hero defects — typographic h1, collision fixed by crop not scrim, three
+  equal-weight rectangular actions including Register interest, and an OPENS IN
+  eyebrow that matches the countdown's own type.
+created_at: '2026-09-08'
+autonomy: high
+
+features:
+  - id: F20
+    name: >-
+      Token grammar revert in nos-theme.css and its three --shadow-card consumers —
+      radius-card 0, radius-lg 0, radius-button 2px, border-primary 1px,
+      --shadow-card deleted, pill radius confined to the four eyebrow-pill sites
+      plus the CycleStep rail dot (R1/R2)
+    status: pending
+  - id: F21
+    name: >-
+      Hero states its name in type — a real typographic <h1> at --display-xl in
+      Cormorant, emblem above it as a modest mark, full lockup relocated to the NOS
+      masthead and colophon only, titleIsElement dead code removed (R3)
+    status: pending
+  - id: F22
+    name: >-
+      Hero collision fixed by the crop, three equal-weight 2px-radius actions with
+      Register interest restored to the button hierarchy and a re-measured focus
+      ring, and the OPENS IN eyebrow restyled to the countdown's own mono type (R4/R2)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/nos-design-system/goldens/m7/token-grammar.golden.md
+  - .agent/memory/project/specs/nos-design-system/goldens/m7/hero-dom.golden.md
+  - .agent/memory/project/specs/nos-design-system/goldens/m7/verifier-contract.golden.md
+
+assertions:
+  phase: 4
+  checks:
+
+    # ---------------------------------------------------------------------
+    # Driver. One Playwright run measures every rendered claim and writes a
+    # flat id -> PASS/FAIL map. Every browser assertion below greps that map,
+    # so a failure names itself instead of collapsing into one red driver.
+    # ---------------------------------------------------------------------
+    - id: A0_DRIVER
+      description: >-
+        Run the M7 verifier — spawns the dev server on 3412, drives 390/1024/1280,
+        writes .tmp/sandbox/nos-m7/results.json. Every check id records exactly one
+        of PASS / FAIL / BLOCKED / ERROR; only PASS is green, and no key is ever
+        absent or "SKIP". Exit 0 all PASS, 1 at least one FAIL (a defect), 2 setup
+        failure, 3 incomplete — no FAIL but a BLOCKED or ERROR remains. Precedence
+        1 > 3 > 0. Exit 2 is never collapsed into 1 and exit 3 is never treated as
+        a pass: the gate stays red while any check is unproven.
+      type: shell
+      timeout_seconds: 900
+      command: node_modules/.bin/tsx execution/checks/verify_nos_m7_hero_and_grammar.ts
+
+    - id: A0_SCRIPT_EXISTS
+      description: The commissioned verifier script exists at its contracted path.
+      type: shell
+      command: test -f execution/checks/verify_nos_m7_hero_and_grammar.ts
+
+    - id: A0_RESULTS_FRESH
+      description: >-
+        results.json records the HEAD commit it was measured at — a stale results
+        file from an earlier commit cannot green this gate.
+      type: shell
+      command: 'grep -q "$(git rev-parse HEAD)" .tmp/sandbox/nos-m7/results.json'
+
+    - id: A0_DETAIL_SEPARATE
+      description: >-
+        Measured values live in detail.json, not results.json — detail prose on a
+        results line would satisfy the PASS greps below and turn a failure green.
+      type: shell
+      command: 'test -f .tmp/sandbox/nos-m7/detail.json && ! grep -q "_detail" .tmp/sandbox/nos-m7/results.json'
+
+    # ---------------------------------------------------------------------
+    # Negative control at the contract level: the grep shape used by every
+    # assertion below MUST NOT match an id that was never emitted. If this
+    # fails, every PASS grep in this contract is meaningless.
+    # ---------------------------------------------------------------------
+    - id: A0_NEGCTL_GREP_DISCRIMINATES
+      description: >-
+        A never-emitted id does not match the PASS grep — proves the assertion
+        shape can distinguish pass from absent.
+      type: shell
+      command: 'test -f .tmp/sandbox/nos-m7/results.json && ! grep -q ''"__ID_NEVER_EMITTED__":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    # ---------------------------------------------------------------------
+    # F21 — D1: the page states its name in type (R3)
+    # ---------------------------------------------------------------------
+    - id: A1
+      description: h1 text is exactly "The South African National Orchid Show".
+      type: shell
+      command: 'grep -q ''"H1_TEXT":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A2
+      description: h1 computed font-family is Cormorant.
+      type: shell
+      command: 'grep -q ''"H1_FONT_CORMORANT":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A3
+      description: h1 is sentence case — text-transform none and not all-uppercase.
+      type: shell
+      command: 'grep -q ''"H1_SENTENCE_CASE":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A4
+      description: h1 computed font-size equals its resolved --display-xl within 0.5px.
+      type: shell
+      command: 'grep -q ''"H1_DISPLAY_XL":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A5
+      description: h1 sets exactly two line boxes at 390.
+      type: shell
+      command: 'grep -q ''"H1_TWO_LINES_390":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A6
+      description: h1 sets exactly two line boxes at 1024.
+      type: shell
+      command: 'grep -q ''"H1_TWO_LINES_1024":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A7
+      description: h1 sets exactly two line boxes at 1280.
+      type: shell
+      command: 'grep -q ''"H1_TWO_LINES_1280":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A8
+      description: >-
+        The emblem sits above the h1 as a modest mark — rect bottom above the h1 top,
+        width no more than 25% of the h1's.
+      type: shell
+      command: 'grep -q ''"EMBLEM_ABOVE_H1":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A9
+      description: No emblem+wordmark lockup inside the hero section (R3 — the lockup is a signature, not a headline).
+      type: shell
+      command: 'grep -q ''"HERO_NO_LOCKUP":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A10
+      description: The full lockup renders in the NOS masthead and colophon on /national-show.
+      type: shell
+      command: 'grep -q ''"LOCKUP_IN_CHROME":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A11
+      description: The show lockup does not leak into non-NOS chrome (/societies).
+      type: shell
+      command: 'grep -q ''"LOCKUP_NOT_GLOBAL":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A12
+      description: >-
+        titleIsElement is removed from the codebase — the prop, its default, its two
+        JSX branches and the page.tsx call site. Dead code by the project's own standard.
+      type: shell
+      command: '! grep -rq "titleIsElement" components/ app/'
+
+    - id: A13
+      description: >-
+        Removing titleIsElement did not disturb the other NOS heroes — a second hero
+        renders its title at the pre-M7 size with its scrim band unchanged.
+      type: shell
+      command: 'grep -q ''"OTHER_HERO_UNCHANGED":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    # ---------------------------------------------------------------------
+    # F22 — D2: the collision is fixed by the crop, never by the scrim (R4)
+    # ---------------------------------------------------------------------
+    - id: A14
+      description: >-
+        A focal point was declared — the hero img computed object-position is not 50% 50%.
+      type: shell
+      command: 'grep -q ''"HERO_OBJECT_POSITION":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A15
+      description: Emblem does not intersect the hero image rect at 390 (geometric, per D2.1).
+      type: shell
+      command: 'grep -q ''"BLOOM_CLEAR_OF_EMBLEM_390":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A16
+      description: The 8px annulus around the emblem (its own rect masked) is clear of bloom-like pixels at 1024.
+      type: shell
+      command: 'grep -q ''"BLOOM_CLEAR_OF_EMBLEM_1024":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A17
+      description: The 8px annulus around the emblem (its own rect masked) is clear of bloom-like pixels at 1280.
+      type: shell
+      command: 'grep -q ''"BLOOM_CLEAR_OF_EMBLEM_1280":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A18
+      description: At 390 the bloom stacks below the type block rather than behind it.
+      type: shell
+      command: 'grep -q ''"BLOOM_BELOW_TYPE_390":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A19
+      description: >-
+        The scrim is byte-for-byte the M6 baseline. R4 is binding — a scrim deepened to
+        hide a collision is a vignette solving a layout problem, and is out of bounds.
+      type: shell
+      command: 'grep -q ''"SCRIM_UNCHANGED":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A20
+      description: >-
+        No scrim-substitute smuggled into the hero — no per-element dark plate behind
+        the type and no text-shadow legibility crutch. R4's escalation path is a further
+        crop or quieter ground, never opacity.
+      type: shell
+      command: '! grep -Eq "text-shadow|drop-shadow|bg-(black|ink|night|primary)/[0-9]" components/nos/NosHero.tsx'
+
+    - id: A20B
+      description: >-
+        No fourth gradient plate added to NosHero — the file still declares exactly the
+        three M6 linear-gradient scrims (top, right, bottom) and no extra darkening layer.
+      type: shell
+      command: 'test "$(grep -c "linear-gradient" components/nos/NosHero.tsx)" -eq 3'
+
+    - id: A21
+      description: h1 contrast at the composited pixel is at least 4.5:1 at 390.
+      type: shell
+      command: 'grep -q ''"CONTRAST_H1_390":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A22
+      description: h1 contrast at the composited pixel is at least 4.5:1 at 1024.
+      type: shell
+      command: 'grep -q ''"CONTRAST_H1_1024":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A23
+      description: h1 contrast at the composited pixel is at least 4.5:1 at 1280.
+      type: shell
+      command: 'grep -q ''"CONTRAST_H1_1280":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A24
+      description: Lede contrast at the composited pixel is at least 4.5:1 at 1024.
+      type: shell
+      command: 'grep -q ''"CONTRAST_LEDE_1024":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A25
+      description: Eyebrow contrast at the composited pixel is at least 4.5:1 at 1024.
+      type: shell
+      command: 'grep -q ''"CONTRAST_EYEBROW_1024":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    # ---------------------------------------------------------------------
+    # F22 — D3: three equal-weight rectangular actions (R2)
+    # ---------------------------------------------------------------------
+    - id: A26
+      description: Exactly three controls in the hero action row.
+      type: shell
+      command: 'grep -q ''"ACTIONS_COUNT_THREE":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A27
+      description: All four computed corner radii are 2px on all three actions.
+      type: shell
+      command: 'grep -q ''"ACTIONS_RADIUS_2PX":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A28
+      description: >-
+        No action renders as an underlined text link — R2's corollary, Register interest
+        must never decay into body copy.
+      type: shell
+      command: 'grep -q ''"ACTIONS_NO_UNDERLINE":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A29
+      description: Exactly one filled action; the other two are transparent with a visible 1px border.
+      type: shell
+      command: 'grep -q ''"ACTIONS_ONE_FILLED":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A30
+      description: >-
+        The three actions carry equal typographic weight — identical font-size and
+        horizontal padding, heights within 2px.
+      type: shell
+      command: 'grep -q ''"ACTIONS_EQUAL_WEIGHT":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A31
+      description: The action href set is exactly /tickets, /contact, /societies.
+      type: shell
+      command: 'grep -q ''"ACTIONS_HREFS":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A32
+      description: Keyboard focus produces a visible composited change at all four edge midpoints of each action.
+      type: shell
+      command: 'grep -q ''"ACTIONS_FOCUS_RING_EDGES":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A33
+      description: >-
+        The same at all four corners — the regression R2 predicts when a pill becomes a
+        2px rectangle and the ring starts fouling a tight corner.
+      type: shell
+      command: 'grep -q ''"ACTIONS_FOCUS_RING_CORNERS":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A34
+      description: No ancestor overflow:hidden clips the focus-ring band around the action row.
+      type: shell
+      command: 'grep -q ''"ACTIONS_FOCUS_NOT_CLIPPED":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A34B
+      description: >-
+        R9/1 — the focus affordance on all three actions is a real outline
+        (outline-style not none, outline-width > 0), never a box-shadow ring.
+        Closes the escape from A34: switching outline to box-shadow would move
+        the ring off the property the ruling names without unclipping anything,
+        since an overflow ancestor clips both.
+      type: shell
+      command: 'grep -q ''"ACTIONS_FOCUS_IS_OUTLINE":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A35
+      description: Each action label measures at least 4.5:1 against its own composited ground.
+      type: shell
+      command: 'grep -q ''"CONTRAST_ACTION_LABELS_1024":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    # ---------------------------------------------------------------------
+    # F22 — D4: the OPENS IN eyebrow matches the countdown's own type
+    # ---------------------------------------------------------------------
+    - id: A36
+      description: >-
+        Eyebrow font-family, font-size, letter-spacing and colour all equal a live
+        ShowCountdown unit label's, measured in the same render.
+      type: shell
+      command: 'grep -q ''"EYEBROW_MATCHES_COUNTDOWN":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A37
+      description: Both the eyebrow and the countdown unit labels compute text-transform uppercase.
+      type: shell
+      command: 'grep -q ''"EYEBROW_UPPERCASE":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A38
+      description: The eyebrow sits above the countdown block.
+      type: shell
+      command: 'grep -q ''"EYEBROW_ABOVE_COUNTDOWN":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A39
+      description: >-
+        Anti-cheat for A36 — the countdown keeps its own type, so equality cannot be
+        reached by degrading ShowCountdown to match the hero. ShowCountdown is shared
+        chrome outside components/nos/ and is not this milestone's to restyle.
+      type: shell
+      command: 'grep -q "font-mono text-\[11px\] uppercase tracking-\[0.18em\] text-ivory/90" components/show/ShowCountdown.tsx'
+
+    # ---------------------------------------------------------------------
+    # F20 — token grammar reverts to SAOC (R1/R2)
+    # ---------------------------------------------------------------------
+    - id: A40
+      description: Every NOS card surface rendered on /national-show computes border-radius 0px.
+      type: shell
+      command: 'grep -q ''"RADIUS_CARDS_ZERO":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A41
+      description: >-
+        No element computes a radius above 4px except the four allowlisted eyebrow-pill
+        sites and the 12px CycleStep rail dot. Browser-measured, because a grep cannot
+        see radius arriving through a class the file does not name.
+      type: shell
+      command: 'grep -q ''"RADIUS_PILL_ALLOWLIST":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A42
+      description: --border-primary resolves to 1px inside .nos-theme.
+      type: shell
+      command: 'grep -q ''"BORDER_PRIMARY_1PX":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A43
+      description: >-
+        No element under .nos-theme has a non-none computed box-shadow — elevation is a
+        1px border. focus-visible state is excluded.
+      type: shell
+      command: 'grep -q ''"NO_SHADOWS":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A44
+      description: --shadow-card resolves to empty inside .nos-theme.
+      type: shell
+      command: 'grep -q ''"SHADOW_TOKEN_GONE":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A45
+      description: >-
+        --radius-button is declared inside the .nos-theme block itself. var() resolves at
+        the declaring element, not the using one — this cost three defects earlier in the
+        mission.
+      type: shell
+      command: |-
+        awk '/:where\(\.nos-theme\)/{f=1} f&&/--radius-button:[[:space:]]*(2px|var\(--radius-1\))/{ok=1} f&&/^\}/{f=0} END{exit !ok}' "app/(marketing)/national-show/nos-theme.css"
+
+    - id: A46
+      description: >-
+        --shadow-card is gone from the stylesheet and from all three of its consumers —
+        Card.tsx, CycleStep.tsx and archive/page.tsx.
+      type: shell
+      command: '! grep -rq "shadow-card" "app/(marketing)/" components/nos/'
+
+    - id: A47
+      description: >-
+        No arbitrary-value or named-scale shadow utilities survive in components/nos/.
+      type: shell
+      command: '! grep -rEq "shadow-\[|shadow-(sm|md|lg|xl|2xl)" components/nos/'
+
+    - id: A48
+      description: >-
+        No named-scale radius utilities in components/nos/ — NOS surfaces are 0 or 2px.
+      type: shell
+      command: '! grep -rEq "rounded-(sm|md|lg|xl|2xl|3xl)\b" components/nos/'
+
+    - id: A49
+      description: >-
+        Button.tsx no longer reaches for --radius-pill; it uses the named --radius-button.
+        R2 — a full pill on a hero CTA reads as a different system.
+      type: shell
+      command: '! grep -q "radius-pill" components/nos/Button.tsx'
+
+    - id: A50
+      description: >-
+        The stale nos-theme.css comment claiming 2px "reads cold and was rejected" is
+        replaced by one citing R1 — that claim recorded a retracted relay, and left in
+        place it invites the next reader to restore the soft radii.
+      type: shell
+      command: '! grep -q "reads cold" "app/(marketing)/national-show/nos-theme.css" && grep -q "R1" "app/(marketing)/national-show/nos-theme.css"'
+
+    # ---------------------------------------------------------------------
+    # Harness negative controls — a verifier that cannot fail proves nothing.
+    # ---------------------------------------------------------------------
+    - id: A51
+      description: >-
+        A synthetic low-contrast probe is scored below 4.5:1 by the same code path the
+        real contrast checks use. PASS means the harness correctly reported a failure.
+      type: shell
+      command: 'grep -q ''"NEGCTL_CONTRAST_DETECTS_FAILURE":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    - id: A52
+      description: >-
+        A control rect placed on the declared focal point measures above the bloom-like
+        threshold — the bloom metric discriminates rather than always reporting clear.
+      type: shell
+      command: 'grep -q ''"NEGCTL_BLOOM_METRIC_DISCRIMINATES":.*"PASS"'' .tmp/sandbox/nos-m7/results.json'
+
+    # ---------------------------------------------------------------------
+    # Triad (CTO ruling, PR #1) — mirrors contract.yaml TRIAD-01/TRIAD-02.
+    # This contract references app/ paths (A12, A45, A46, A50) so
+    # verify_triad_coverage.py classes it UI/workflow and requires codex_qa +
+    # browser_deployed_check + gws_inbox_check. codex_qa and
+    # browser_deployed_check are declared for real below; gws_inbox_check is
+    # NOT declared — M7 has no email surface — and is grandfathered instead via
+    # execution/triad-baseline-exempt.{txt,sha256}, per the ruling. This
+    # contract must never gain a gws_inbox_check assertion claiming an inbox
+    # check ran. Both checks carry `phase: 5` so phase 4 (every measured
+    # assertion above) can be gated and read independently of the pending
+    # deploy: contract.py's per-check phase routing (GH #1317 / F6) leaves
+    # every check without a phase field on the block-level phase 4. Editing
+    # this file forfeits the grandfather — re-pin the sha256 after any change.
+    # ---------------------------------------------------------------------
+    - id: TRIAD-01
+      description: >-
+        Codex GPT-5.5 adversarial review of the M7 diff — CTO-ruling triad
+        requirement. Already run for this branch on 2026-09-08 via
+        execution/codex_qa.sh over the combined M7+M8 tracked-file diff (65,022
+        tokens, exit 0, PASS, zero findings); evidence at
+        .agent/evidence/nos-design/codex/codex-qa-m7m8-2026-09-08.log. That run's
+        diff was `git diff` output and so excluded the then-untracked verifier
+        execution/checks/verify_nos_m7_hero_and_grammar.ts; the prompt below scopes
+        the review to this milestone's files and names the verifier explicitly, so
+        a gate run covers it. Real, not decorative: the gate invokes codex live on
+        every --run-checks run. timeout_seconds matches codex_qa.sh's own 600s
+        default so contract.py's 200s supervisory default cannot kill a legitimate
+        open-ended review.
+      type: codex_qa
+      phase: 5
+      timeout_seconds: 600
+      target: >-
+        Adversarially review the working tree against origin/main (git diff
+        origin/main), scoped to the M7 hero and token-grammar change set:
+        components/nos/NosHero.tsx, components/nos/Logo.tsx, components/nos/Button.tsx,
+        components/nos/Card.tsx, components/nos/CycleStep.tsx,
+        app/(marketing)/national-show/nos-theme.css (radius, border and shadow token
+        grammar), app/(marketing)/national-show/page.tsx,
+        app/(marketing)/national-show/archive/page.tsx,
+        app/(marketing)/national-show/layout.tsx, plus the verifier
+        execution/checks/verify_nos_m7_hero_and_grammar.ts (untracked — read it from
+        disk). Look for real bugs, regressions, security issues and correctness
+        risks, not style. For each finding cite exact file:line, state the concrete
+        failure scenario, and rate confidence. If nothing real is wrong, say so
+        plainly instead of inventing findings.
+
+    - id: TRIAD-02
+      description: >-
+        Deployed browser-run manifest for the M7 hero and token-grammar changes on
+        /national-show and /national-show/archive — CTO-ruling triad requirement,
+        earned against a deployed origin, never the localhost:3002 dev server nor
+        the verifier's own port-3412 server. target is a manifest JSON path per
+        execution/browser_deployed_check.sh's usage contract (argv[1]), not a URL.
+        PENDING: the manifest at this path does not exist and cannot yet — the
+        nos-design branch is not deployed at an allowlisted origin
+        (BROWSER_CHECK_DEPLOYED_ORIGIN, default https://beta.saoc.co.za; *.hosted.app
+        and *.run.app are denylisted). The deploying dev produces it after driving a
+        real browser run against that deployment. Until then this assertion
+        honestly errors (exit 2, wrapper usage error, verdict ERROR) — correct
+        behaviour, not something to paper over, and never a fabricated manifest.
+        Same allowlist caveat as contract.yaml TRIAD-02: the origin match is exact
+        against an env var the gate's shell must export; no contract field sets it.
+      type: browser_deployed_check
+      phase: 5
+      target: .agent/memory/project/specs/nos-design-system/browser-deployed-manifest-m7.json

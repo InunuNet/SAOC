@@ -3315,3 +3315,68 @@ no interactive rc). Before diagnosing a tool, execute it. The generalised form i
 Related: this is the measurement-side twin of [[feedback_codex_mandatory_qa]] (same model
 reviewing its own work) and of the mission lesson that source review misses rendered defects —
 all three are the same underlying error of accepting a cheaper substitute for the real check.
+
+---
+
+## 2026-09-08 — NOS M7/M8 verification post-mortem: eight instrument defects, one code defect
+
+Headline: across a full night hardening the M7/M8 verifiers for `nos-design-system`, **eight
+apparent defects were found and corrected; exactly one was a real code defect.** Every other
+"failure" traced back to a check aimed at the wrong thing, not to wrong code. This is the
+generalised, named version of the single-instance lessons above — record the family, not just
+the instances.
+
+**The defect family — a check that stops touching the thing it claims to be about, while still
+producing confident output:**
+
+1. **Self-comparison.** The measurement never reaches an independent referent, so the result is
+   stable, confident, and empty. Instance: a focus check compared a screenshot against itself
+   (focus never applied, all-zero diffs read as "ring missing"); a bloom metric sampled a padded
+   box that *contained* the emblem and scored the emblem's own ink at 0.944 against a <0.02
+   threshold.
+2. **Verified machinery nobody calls.** The check reaches a real referent and measures it
+   correctly — but that referent is not in the actual execution path. Worse than
+   self-comparison because nothing about the check itself is wrong; it survives every audit of
+   the check in isolation.
+3. **Decorative guard.** The thing deciding *whether to check at all* is aimed wrong — e.g. a
+   triad gate classifying "is this UI work" by testing for the substring `app/`.
+4. **Drowned alert.** Working machinery nobody can hear: a residue guard fired correctly, named
+   the right documents, and changed nothing because every CI run had been red for days already.
+5. **Bad referee.** An artefact in the instrument used to *adjudicate* another artefact — e.g.
+   overturning a QA finding using a page-wide `.first()` selector, the identical error just
+   written into a dev brief an hour earlier. The adjudicating instrument needs the same scrutiny
+   as the instrument it's judging; writing the rule down doesn't protect you from breaking it.
+6. **Seam.** Two individually *correct* rules whose interaction is the defect, so neither audit
+   finds anything alone — e.g. the sandbox rule mandating scratch writes to `.tmp/sandbox/`
+   (never delete it) plus an eslint config that doesn't ignore `.tmp/`.
+
+**Method rules earned tonight:**
+- A passing negative control proves a metric *moves*. It never proves the metric is aimed at the
+  right element or compared against the right threshold — that gap alone produced six false
+  failures in one session.
+- **A large margin is evidence for a misaimed metric, not against it.** "47× over threshold, too
+  large to be noise" was the tell, not the proof of a real defect.
+- **Report a discrepancy; never adjust either side to agree.** The dangerous failure isn't
+  measuring wrong — it's the *quiet reconciliation* afterwards, editing instrument or golden
+  (whichever is easier) until they match. This is the only one of the six shapes that leaves no
+  artefact behind, so it's the one to watch for hardest.
+- **Green is only meaningful next to something that failed for a reason you understand.**
+- A check that cannot locate its target must report **BLOCKED or ERROR, never FAIL.** FAIL means
+  "the code is wrong"; BLOCKED means "I learned nothing." Six of seven artefacts in one pass were
+  lookup failures wearing FAIL because FAIL was the only vocabulary the checker had. Giving a
+  checker a word for "I don't know" stops it manufacturing certainty.
+- **A geometric question deserves a geometric test — but only where the property is geometric at
+  that layout.**
+- **Specify a threshold as a two-sided window, not a floor** — a floor is a tuning surface.
+
+**The one real code defect — why the whole cycle was worth it:** `.nos-on-dark` was declared
+correctly in `nos-theme.css` and **applied to no element**, so F24's headline contrast defect
+stayed live at 2.53:1 against a promised 18:1 while every static token/computed-style check
+passed. It was caught only because a rendered measurement contradicted what the feature claimed.
+A declared-but-unapplied token passes every check that doesn't actually render the page.
+
+**How to apply:** when a check fails, before trusting the failure, ask what it's actually
+touching — is the referent independent of the thing being measured, is that referent on the real
+execution path, and would a negative control at the *correct* aim also pass? When adjudicating a
+prior check's finding, apply the same scrutiny to the adjudicator's own selectors/thresholds
+before trusting its verdict either way.

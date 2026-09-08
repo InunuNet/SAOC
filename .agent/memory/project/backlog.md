@@ -1146,6 +1146,34 @@ flat-over-nested-submenu pattern.
 - **Athanor#1399** (filed 2026-09-06, verification-triad-gate M2/F2) — the protected-path deny
   on `CLAUDE.md` leaves factual documentation inside the agent instruction file permanently
   uncorrectable by any agent once it goes stale; see the `CLAUDE.md` staleness item above.
+- [ ] **[P1] Upstream dependency: carve `execution/checks/` (or an equivalent project-owned check
+  directory) out of HARNESS ownership in `update-manifest.yaml`.** Surfaced 2026-09-08 by
+  nos-design-system M7, whose contract commissions a project-specific verifier at
+  `execution/checks/verify_nos_m7_hero_and_grammar.ts`. `execution/` is marked `HARNESS`, so the
+  next `make update-template` replaces the tree wholesale, silently, with no merge and no conflict
+  marker — taking any project-authored check with it and leaving the contract's assertions
+  greenless with no trace of why. This is **not** specific to M7: ~20 existing siblings already
+  live in `execution/checks/` under the same exposure, so it is a pre-existing project-wide gap
+  this feature merely surfaced. Per `.claude/rules/athanor.md` a harness defect is filed, never
+  patched or worked around — M7 therefore keeps its verifier at the conventional path rather than
+  inventing a private one. Ask: a `PROJECT`-marked (or manifest-excluded) subdirectory for
+  project-authored contract checks, so the harness can still ship its own scripts alongside.
+
+- [ ] **[P1] Upstream dependency: `execution/codex_qa.sh` reports transport failures as `FAIL`.**
+  Filed 2026-09-08 as [InunuNet/Athanor#1419](https://github.com/InunuNet/Athanor/issues/1419).
+  Running the mandatory Codex pass on the M7 diff hit an OpenAI usage limit; the wrapper's
+  `fail_safe()` (`codex_qa.sh:26-29`, called at `:88` for any non-zero `codex` exit) emitted
+  `FAIL` + exit 1 — the identical signal to a genuine defect verdict — with zero findings and
+  zero `file:line` citations, because no review ever ran. The documented contract
+  (`codex_qa.sh:9-10`) merges these on purpose: `1=FAIL (verdict or fail-safe)`.
+  Why it matters here: `.claude/rules/workflow.md` makes the Codex pass a blocking gate before
+  any feature is DONE, so an ambiguous failure either blocks a clean diff indefinitely or teaches
+  the operator to wave `FAIL` through as "probably quota" — which is how a real finding ships.
+  Asked for: a distinct exit code meaning *review did not execute*, with quota/auth/network/timeout
+  classified as transport failures before `fail_safe`, so a `type: codex_qa` assertion can record
+  BLOCKED instead of a verdict no model produced.
+  **Blocks:** M7 cannot be marked DONE until the Codex pass actually runs (quota resets 17:01
+  local, 2026-09-08). Do not route around it — re-run, don't waive.
 
 ---
 

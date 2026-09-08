@@ -1,13 +1,36 @@
 {
   "schema": "athanor.mission-touched-files/v1",
   "slug": "nos-design-system",
-  "pending_baselines": {
-    "F12": [
-      ".agent/memory/project/handoff/SESSION_STATE.md",
-      ".agent/memory/project/missions/2026-09-06-nos-design-system.md",
-      ".agent/memory/project/missions/active.json",
-      ".agent/memory/project/missions/nos-design-system.touched.json"
-    ]
-  },
-  "paths": []
+  "pending_baselines": {},
+  "paths": [
+    ".agent/evidence/nos-design/",
+    ".agent/memory/project/backlog.md",
+    ".agent/memory/project/design/nos-design-rulings.md",
+    ".agent/memory/project/learned.md",
+    ".agent/memory/project/specs/nos-design-system/contract-m7.yaml",
+    ".agent/memory/project/specs/nos-design-system/contract-m8.yaml",
+    ".agent/memory/project/specs/nos-design-system/goldens/m7/",
+    ".agent/memory/project/specs/nos-design-system/goldens/m8/",
+    ".agent/memory/project/telemetry/session_usage.jsonl",
+    ".claude/settings.json",
+    ".claude/settings.json.bak",
+    "app/(marketing)/national-show/archive/page.tsx",
+    "app/(marketing)/national-show/layout.tsx",
+    "app/(marketing)/national-show/nos-theme.css",
+    "app/(marketing)/national-show/page.tsx",
+    "components/nos/Button.tsx",
+    "components/nos/Card.tsx",
+    "components/nos/CtaBand.tsx",
+    "components/nos/CycleStep.tsx",
+    "components/nos/Logo.tsx",
+    "components/nos/NosHero.tsx",
+    "components/vendors/VendorApplyForm.tsx",
+    "components/vendors/VendorMarketingFieldset.tsx",
+    "components/vendors/VendorMarketingUploadField.tsx",
+    "components/vendors/VendorRegistrationCodeEntryForm.tsx",
+    "docs/nos-design-system.md",
+    "execution/checks/verify_nos_m7_hero_and_grammar.ts",
+    "execution/triad-baseline-exempt.sha256",
+    "execution/triad-baseline-exempt.txt"
+  ]
 }

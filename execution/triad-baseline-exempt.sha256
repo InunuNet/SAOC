@@ -36,3 +36,5 @@ adc97d6bfe47231584bff9c33893a17548818fca2dcefabc435c5dcec2f4fcec  contracts/cont
 a72b4f5b7aeaf755cfb21dd7dbb5430bcbf59e52b5537cb565685fcdd4fe4bef  contracts/F4-home-page.yaml
 56a469828d5938a4f00c5a876713b3943f7543dbea6cff6152cc1db809e0230a  contracts/m2-next16-upgrade.yaml
 f559ff9937609c5163f71ea975fb8a211bd0027c474610957ef1681ad92198cd  .agent/memory/project/specs/nos-design-system/contract.yaml
+0542f7526e92c090b0b8119c073b8db5c5d78bfc621b6817b1b411a9823efa6c  .agent/memory/project/specs/nos-design-system/contract-m7.yaml
+e138827b6969909a7f4f4c6a71d9e1cf06ddf5ffacee742aac4cde77246fc734  .agent/memory/project/specs/nos-design-system/contract-m8.yaml

@@ -24,7 +24,7 @@ export function CycleStep({ year, editionLabel, host, status }: NosCycleStepProp
       className={[
         'relative flex flex-col gap-2 rounded-[length:var(--radius-lg)] p-6',
         isCurrent
-          ? 'bg-primary text-ivory shadow-[var(--shadow-card)]'
+          ? 'border-[length:var(--border-primary)] border-primary bg-primary text-ivory'
           : isFuture
             ? 'border border-dashed border-rule bg-parchment'
             : 'border-[length:var(--border-hairline)] border-rule bg-parchment',

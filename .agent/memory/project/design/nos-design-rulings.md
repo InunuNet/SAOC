@@ -103,6 +103,108 @@ The live site already carries the show's own words. Headlines, standfirsts and
 section copy come from it or from Brad. Inventing plausible-sounding copy for a real
 event is a defect, not a placeholder.
 
+## R8 — Status colour is functional; it never joins the palette shift
+
+R6/1 assumed semantic tokens existed to be excluded. They don't, so the guardrail was
+unenforceable as written and the FAIL is the right verdict on it. That the collision is
+latent makes it worse, not lighter — it shipped unseen across eight routes.
+
+1. **Status colour carries meaning, not identity.** Hue is the signal and the palette shift
+   does not reach it. A brand that recolours its own error states has stopped warning anyone.
+2. **Declare the tokens in the NOS layer now.** Do not open the SAOC base uninvited — that
+   base is not ours, and a token change there is a blast radius this mission has no mandate
+   for. File the gap to the SAOC session as a finding with this audit attached. When the base
+   declares them, the NOS declarations collapse to overrides and nothing is stranded.
+3. **Two tokens per state — on-light and on-dark.** One value cannot clear 4.5:1 on both the
+   pale gold ground and the royal purple one. Hold hue constant across the pair and lighten
+   for the dark ground, so the state reads as the same state on either surface.
+4. **Ink, not signal.** These sit in a botanical, faintly formal system: deep oxblood rather
+   than fluorescent red, and the same register for warning and success. Saturated enough to
+   mean something, dark enough to belong.
+5. **Never colour alone.** A word or an icon carries the state as well, so a drifted hue
+   degrades to ugly rather than to silent.
+6. **Capture triggered.** Status states are verified in their triggered state at 390 and
+   1280, never at rest. A state nobody rendered is a state nobody checked.
+
+Values are proposed against these constraints and approved on a rendered swatch sheet over
+both grounds — not asserted from a colour picker.
+
+**Evidence review 2026-09-08 (captures at 127.0.0.1:8765, HEAD 24f87e05):**
+
+- **Error on the pale gold ground — APPROVED.** Real triggered UI on
+  `/vendors/apply` (400) and `/vendors/register` (403), 390 and 1280. Oxblood
+  heading and rule, word carrier present, body in ink. This is what R8 looks
+  like when it is right.
+- **Synthetic specimens — WITHDRAWN as evidence, not re-run.** All five painted
+  the SAOC base ink `#171917` with no status token applied, and the "dark
+  ground" set rendered on the light chrome `#f4f3ec`. They demonstrated
+  nothing, and the honest labelling is the only reason this is a note rather
+  than a finding. Rule going forward: a synthetic specimen is never R8/6
+  evidence. A state with no surface has no capture; it is recorded as dormant.
+- **Findings from the audit.** `--status-warning-*` and `--status-success-*`
+  have zero consumers; `--status-error-*` has no consumer on a dark ground.
+  Ruling: the tokens stay declared and dormant. Do not invent a surface to
+  consume them. One exception: the vendor application thank-you panel *is* a
+  success state and currently paints plain ink; its heading consumes
+  `--status-success-on-light` with the word carrier kept, captured triggered
+  at 390 and 1280 when done. Warning and on-dark error stay dormant until a
+  real surface exists, and that surface ships with its capture.
+
+## R9 — Focus is a solid outline; opacity is not a contrast instrument
+
+1. **`outline` + `outline-offset`, never `box-shadow`.** The outline follows the border
+   radius, is not clipped by an overflow ancestor, survives forced-colors mode, and is
+   already what the one NOS control that passes uses. The inner pale gold layer was a spacer
+   wearing a focus ring's clothes; `outline-offset` is the honest way to say that.
+2. **Full alpha, always.** R4 forbids buying contrast with opacity; this is the same rule
+   read from the other end — opacity is not a contrast instrument in either direction. A
+   focus ring is a functional state, and functional states are opaque.
+3. **Two ring colours, by ground.** Violet `#7E3F97` on pale gold (measures ~6.6:1 against
+   `#fbfaf0`); pale gold `#fbfaf0` on royal purple (~16:1 against `#1a1445`). The violet ring
+   on a purple ground is ~2.5:1 and is a defect — the single-ring instinct is what produced
+   this failure.
+4. **3:1 is the floor, not the target.** A ring that lands at 3.1:1 is one ground-colour
+   tweak away from failing again.
+
+Every re-skinned control's ring is measured at the composited pixel with a negative control.
+Focus is never inspected by reading the stylesheet.
+
+**Evidence review 2026-09-08 — PASS.** 62 control pairs across four routes at
+390 and 1280, focused by real keyboard Tab with an unfocused negative control.
+Outline only, `box-shadow: none` on all 62. Violet on pale gold, pale gold on
+purple. Raster-measured ring-to-ground contrast 5.71:1 at the lowest pair.
+One condition attached: on the violet-filled buttons the ring is the same hue
+as the fill and reads only through the `outline-offset` gap. That gap never
+drops below 2px; it is a golden assertion. Still owed when a dev registration
+code path exists: the full register form and the marketing word-count error.
+Ask the SAOC session for a dev code; never disable the gate to capture past it.
+
+## R10 — The hero scrim is a gradient with a transparent end, never a plate
+
+The scrim probe (normal composite, flat `#808080` photograph swap, luminance
+columns at 25/50/75% width, 1280) measured the overlay at alpha 0.76 or higher
+at every sample, and at 1.0 across the entire left half and bottom third. The
+photograph survives only in the upper-right quadrant at 10 to 24% strength,
+and violet-cast. The hero is not a photograph with a scrim; it is a purple plate
+with a faint photograph behind it. That is a duotone by another route, and it
+fails R4 (the scrim has one job, legibility) and R5 with the brand photography
+guideline (no filters, the flower supplies the colour).
+
+1. **The scrim ends transparent.** From x = 75% outward, mid-height, the
+   overlay alpha is 0.25 or lower and the bloom reads as shot: warm petals in
+   their own colour, not violet.
+2. **The text column may be dark.** Behind the `<h1>` and standfirst, from the
+   left edge, alpha may rise to about 0.85 and must fall away by the midline.
+   The existing left-to-right layer is the legibility mechanism; the vertical
+   layer goes, or becomes light enough that rule 1 holds.
+3. **Legibility is measured, then the crop moves.** Headline and standfirst at
+   the composited pixel, 4.5:1 or better, with a negative control. If the
+   text fails on the quieter scrim, R4 applies: the crop or the type moves.
+   Alpha does not climb back.
+4. **Verified by the same probe.** Normal plus grey swap plus column profile at
+   390 and 1280, before and after. Green when the x = 75% column reads alpha
+   at or under 0.25 and the x = 25% column reads 0.75 or over.
+
 ## Verification standard
 
 Design claims are settled by rendered evidence, not by reading source. Contrast is

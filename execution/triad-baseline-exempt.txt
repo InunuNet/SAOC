@@ -48,3 +48,14 @@ contracts/m2-next16-upgrade.yaml
 # alone (all-or-nothing grandfather per contract.py -- see the file-level
 # scoping note this exemption relies on).
 .agent/memory/project/specs/nos-design-system/contract.yaml
+# nos-design-system contract-m7.yaml / contract-m8.yaml: same CTO ruling (PR #1),
+# same shape as contract.yaml above. codex_qa and browser_deployed_check are
+# declared for real in each contract (TRIAD-01/TRIAD-02, phase 5); only
+# gws_inbox_check is grandfathered here. Reason: no email surface in M7 (hero
+# and token grammar) or M8 (status colour tokens and focus reset -- validation
+# states render in-page, nothing sends mail). Baselined 2026-09-08 after
+# TRIAD-01/02 were added, so the linter's missing-set at pin time was
+# {gws_inbox_check} alone for each file. Any further edit to either contract
+# re-arms enforcement until its sha256 pin is refreshed.
+.agent/memory/project/specs/nos-design-system/contract-m7.yaml
+.agent/memory/project/specs/nos-design-system/contract-m8.yaml
