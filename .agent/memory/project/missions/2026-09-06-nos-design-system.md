@@ -601,3 +601,18 @@ recorded dormant. R9 PASS (62 pairs, outline-only, min 5.71:1) with one new gold
 third — "a purple plate with a faint photo behind it", fails R4/R5. Rework opened as M9 (F25–F27).
 Verbatim rulings text requested from Codi for the mirror at
 `.agent/memory/project/design/nos-design-rulings.md`; do not paraphrase rulings into the mirror.
+
+## ⚠ Resume-first findings from the M7/M8 gate run (2026-09-08 19:25, pre-reboot)
+
+- **M8 DISCREPANCY:** contract-m8.yaml's A0_SCRIPT_EXISTS names
+  `execution/checks/verify_nos_m8_status_and_focus.ts`, which does not exist in the tree, and
+  `.tmp/sandbox/nos-m8/` holds no results.json/detail.json. F23/F24 are marked done "covered by
+  contract-m8.yaml" — that claim is not backed by the contracted verifier. All M8 static checks
+  pass; all 29 rendered checks fail for lack of the script. Resolve before M8 is called DONE:
+  either the verifier was never committed to disk by the M8 dev (dispatch @dev to write it
+  against goldens/m8/verifier-contract.golden.md) or the contract names the wrong path.
+- **M7:** A0_DRIVER FAIL — the verifier's own dev server on :3412 never came up (environmental,
+  under reboot load); every rendered check failed downstream; statics pass. Re-run after reboot.
+- Triad phase 5 (TRIAD-01/02) never executed in either run (gate stops at first failing phase).
+  Preflight now clears: m7/m8 grandfathered for gws_inbox_check only, pins in
+  execution/triad-baseline-exempt.sha256. Logs: .tmp/sandbox/arch-m7m8-triad/m{7,8}.log.
