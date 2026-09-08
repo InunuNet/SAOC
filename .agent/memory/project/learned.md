@@ -3281,3 +3281,37 @@ review misses exactly the defects that matter for visual/design work, and (b) an
 indistinguishable from a passing one until someone checks — both push toward automating the
 harness's own trigger (lesson 5 / [[project_contract_checks_mutate_live_content]]), not just its
 assertions. See [[feedback_codex_mandatory_qa]] for the adjacent same-model-review blind spot.
+
+---
+
+## 2026-09-08 — Measuring a stand-in and reporting it as the real thing
+
+**One failure shape, three instances in a single night, across two sessions.** Worth recording
+in its general form because none of the three looked like the same bug from the inside.
+
+1. **Orchestrator (this session):** escalated to `needs-human.md` that PR #1 carried unrelated
+   commits. The evidence was `git log main..nos-design` — but local `main` was 18 commits behind
+   `origin/main`, so upstream commits read as branch commits. Against the real merge target,
+   all 21 branch-only commits were NOS mission work. The escalation was pure artefact of the
+   stale ref. Caught by peer session `saoc-0f`, retracted in `8ff8e65c`.
+
+2. **A dev verifying a contract assertion** ran it in an interactive shell where `grep` was a
+   `ugrep` alias. The assertion looked green and was broken in the runner's bare subprocess.
+
+3. **`saoc-0f` diagnosing that same alias bug** read a version banner instead of executing the
+   binary, and was about to send people rewriting 108 working patterns.
+
+**The general rule:** when you answer a question about a target, measure the target — not a
+local proxy for it. `main` is not `origin/main`. An interactive shell is not the runner's
+subprocess. A version banner is not the binary's behaviour. In every case the proxy was
+convenient, plausible, and wrong, and the report that followed was stated with full confidence
+because the measurement *had* been taken — just not of the thing being asked about.
+
+**How to apply:** before any claim about merge scope, `git fetch` and diff against the remote
+ref. Before certifying a shell assertion, run it the way the runner runs it (bare subprocess,
+no interactive rc). Before diagnosing a tool, execute it. The generalised form is due to
+`saoc-0f`, which spotted that "forgot to fetch" was the shallow reading of instance 1.
+
+Related: this is the measurement-side twin of [[feedback_codex_mandatory_qa]] (same model
+reviewing its own work) and of the mission lesson that source review misses rendered defects —
+all three are the same underlying error of accepting a cheaper substitute for the real check.
