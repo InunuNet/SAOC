@@ -5,13 +5,10 @@ import { useState } from 'react';
 import type { VendorSubmission, VendorSubmissionStatus, VendorStandOrderStatus } from '@/types/index';
 import type { VendorReviewAction } from '@/lib/vendor-review';
 import { VendorPaymentLinkControl } from './VendorPaymentLinkControl';
-import { StatusPill } from './StatusPill';
 
 // F32 (vendor-gated-registration-flow, M3) — read-only display labels only. This is NOT the
 // office-use `paymentReceived` (F7/EFT) signal, which the table renders separately below, so
-// an operator never conflates "gateway-paid" with "office-confirmed manually". F14
-// (nos-design-system M5) — labels only now; colour comes from the shared StatusPill/
-// resolveStatusVocabulary mapping, not a second ad-hoc style map.
+// an operator never conflates "gateway-paid" with "office-confirmed manually".
 const STAND_PAYMENT_LABELS: Record<VendorStandOrderStatus | 'not-started', string> = {
   'not-started': 'Not started',
   pending: 'Pending',
@@ -20,10 +17,25 @@ const STAND_PAYMENT_LABELS: Record<VendorStandOrderStatus | 'not-started', strin
   cancelled: 'Failed',
 };
 
+const STAND_PAYMENT_STYLES: Record<VendorStandOrderStatus | 'not-started', string> = {
+  'not-started': 'bg-bone text-muted border border-rule',
+  pending: 'bg-primary-100 text-primary-800',
+  paid: 'bg-primary text-ivory',
+  failed: 'bg-ivory text-muted border border-rule',
+  cancelled: 'bg-ivory text-muted border border-rule',
+};
+
 const HEADER_CELL_CLASS =
   'whitespace-nowrap border-b border-rule bg-bone px-4 py-3 text-left font-mono text-[11px] tracking-[0.16em] text-muted';
 const BODY_CELL_CLASS =
   'whitespace-nowrap border-b border-rule-soft px-4 py-3 font-sans text-[14px] text-ink';
+
+const STATUS_STYLES: Record<string, string> = {
+  submitted: 'bg-bone text-muted border border-rule',
+  'under-review': 'bg-primary-100 text-primary-800',
+  approved: 'bg-primary text-ivory',
+  rejected: 'bg-ivory text-muted border border-rule line-through',
+};
 
 // Which review action(s) are offered for a given current status. A submission at
 // 'approved'/'rejected' offers none — it is a terminal state in
@@ -180,6 +192,7 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
           <tbody>
             {rows.map((row) => {
               const actions = AVAILABLE_ACTIONS[row.status] ?? [];
+              const style = STATUS_STYLES[row.status] ?? 'bg-bone text-muted border border-rule';
               const standPaymentStatus = standPaymentStatusById[row.id] ?? 'not-started';
               const uploadedProductPhotoCount = countUploadedProductPhotos(row);
               const uploadsComplete = uploadedProductPhotoCount >= REQUIRED_PRODUCT_PHOTO_COUNT;
@@ -215,10 +228,18 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
                     </p>
                   </td>
                   <td className={BODY_CELL_CLASS}>
-                    <StatusPill status={row.status} />
+                    <span
+                      className={`inline-flex items-center rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${style}`}
+                    >
+                      {row.status}
+                    </span>
                   </td>
                   <td className={BODY_CELL_CLASS}>
-                    <StatusPill status={standPaymentStatus} label={STAND_PAYMENT_LABELS[standPaymentStatus]} />
+                    <span
+                      className={`inline-flex items-center rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${STAND_PAYMENT_STYLES[standPaymentStatus]}`}
+                    >
+                      {STAND_PAYMENT_LABELS[standPaymentStatus]}
+                    </span>
                   </td>
                   <td className={BODY_CELL_CLASS}>
                     <span

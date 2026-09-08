@@ -4,18 +4,22 @@ import { useState } from 'react';
 
 import type { VendorApplication, VendorApplicationStatus } from '@/types/index';
 import type { VendorApplicationReviewAction } from '@/lib/vendor-application-review';
-import { StatusPill } from './StatusPill';
 
 // Mirrors components/admin/VendorReviewTable.tsx's structure exactly (mission
-// vendor-gated-registration-flow F5) -- same fetch-then-optimistic-patch action handler
-// shape, adapted to VendorApplication's smaller field set and pending/approved/declined
-// machine. F14 (nos-design-system M5) -- status now renders through the shared StatusPill,
-// not a per-table ad-hoc colour map.
+// vendor-gated-registration-flow F5) -- same status-pill styling vocabulary, same
+// fetch-then-optimistic-patch action handler shape, adapted to VendorApplication's smaller
+// field set and pending/approved/declined machine.
 
 const HEADER_CELL_CLASS =
   'whitespace-nowrap border-b border-rule bg-bone px-4 py-3 text-left font-mono text-[11px] tracking-[0.16em] text-muted';
 const BODY_CELL_CLASS =
   'whitespace-nowrap border-b border-rule-soft px-4 py-3 font-sans text-[14px] text-ink';
+
+const STATUS_STYLES: Record<string, string> = {
+  pending: 'bg-bone text-muted border border-rule',
+  approved: 'bg-primary text-ivory',
+  declined: 'bg-ivory text-muted border border-rule line-through',
+};
 
 // A pending application offers both actions; approved/declined are terminal in
 // lib/vendor-application-review.ts's closed transition machine and offer none.
@@ -146,6 +150,7 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
           <tbody>
             {rows.map((row) => {
               const actions = AVAILABLE_ACTIONS[row.status] ?? [];
+              const style = STATUS_STYLES[row.status] ?? 'bg-bone text-muted border border-rule';
 
               return (
                 <tr key={row.id} className="hover:bg-parchment/60">
@@ -160,7 +165,11 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
                   <td className={BODY_CELL_CLASS}>{row.vendorCategory.join(', ')}</td>
                   <td className={BODY_CELL_CLASS}>{row.indicativeBoothCount}</td>
                   <td className={BODY_CELL_CLASS}>
-                    <StatusPill status={row.status} />
+                    <span
+                      className={`inline-flex items-center rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${style}`}
+                    >
+                      {row.status}
+                    </span>
                   </td>
                   <td className={BODY_CELL_CLASS}>
                     {row.status === 'approved' ? (

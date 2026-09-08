@@ -27,16 +27,6 @@ import { getFirebaseApp } from '@/lib/firebase';
 
 export type AdminNavVariant = 'bar' | 'minimal';
 
-// F14 — `/admin` matches only exactly (every other admin route also starts with `/admin`, so
-// a plain prefix check would light up Overview everywhere). Every other section link matches
-// its own route AND any nested route beneath it (e.g. `/admin/visitors/tickets` still lights
-// up `Visitors`), so a Level 2 sub-nav page still shows which Level 1 section it belongs to.
-function isLinkActive(href: string, pathname: string | null): boolean {
-  if (!pathname) return false;
-  if (href === '/admin') return pathname === '/admin';
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 interface AdminNavProps {
   variant: AdminNavVariant;
   canReviewVendors: boolean;
@@ -54,25 +44,22 @@ interface NavLink {
 const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2';
 
-// F14 (nos-design-system M5) — audience-first route tree, replacing the old flat
-// Dashboard/Vendors/Door Scanner/Settings set. Order fixed by
-// goldens/m5-admin-ia.golden.md §2: Overview · Visitors · Vendors · Exhibitors · Door ·
-// Settings. Overview, Visitors, Exhibitors and Door stay unconditional — no route gates on
-// those today, and hiding a reachable link is worse than showing one (same reasoning the
-// original Dashboard/Door Scanner links already relied on). Vendors and Settings remain the
-// only two links actually conditioned on a capability, unchanged from before this feature.
 function buildLinks(canReviewVendors: boolean, canManagePaymentSettings: boolean): NavLink[] {
+  // Dashboard and Door Scanner are unconditional — they mirror what
+  // app/admin/page.tsx and app/admin/door/layout.tsx actually gate on today
+  // (an ok admin session, nothing more). Vendors and Settings are the
+  // destinations that are genuinely capability-gated at their routes, so
+  // they're the only links conditioned here. Deliberately not gated on the
+  // two dashboard/scanner capabilities defined in lib/admin-roles.ts — no
+  // route checks either of those yet, so gating the nav on them would hide
+  // a reachable link.
   const links: NavLink[] = [
-    { id: 'overview', label: 'Overview', href: '/admin' },
-    { id: 'visitors', label: 'Visitors', href: '/admin/visitors' },
+    { id: 'dashboard', label: 'Dashboard', href: '/admin' },
+    { id: 'door', label: 'Door Scanner', href: '/admin/door' },
   ];
   if (canReviewVendors) {
     links.push({ id: 'vendors', label: 'Vendors', href: '/admin/vendors' });
   }
-  links.push(
-    { id: 'exhibitors', label: 'Exhibitors', href: '/admin/exhibitors' },
-    { id: 'door', label: 'Door', href: '/admin/door' },
-  );
   if (canManagePaymentSettings) {
     links.push({ id: 'settings', label: 'Settings', href: '/admin/settings' });
   }
@@ -114,7 +101,7 @@ export function AdminNav({ variant, canReviewVendors, canManagePaymentSettings }
     return (
       <ul className="flex flex-col gap-1 min-[1240px]:flex-row min-[1240px]:items-center min-[1240px]:gap-6">
         {links.map((link) => {
-          const active = isLinkActive(link.href, pathname);
+          const active = pathname === link.href;
           return (
             <li key={link.id}>
               <Link
