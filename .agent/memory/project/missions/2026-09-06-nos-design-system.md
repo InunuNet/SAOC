@@ -448,3 +448,72 @@ greps for that substitution. Use `data-placeholder`, or omit.
   more). Client's call; VIP keeps `data-placeholder`.
 - **Two enquiry addresses live at once** (`council@saoc.co.za`, `info@saoc.co.za`). Use
   the existing contact component; hardcode neither.
+
+---
+
+## ⚠ DESIGN SUPERSESSION — 2026-09-08, from `saoc-nos-design-54` (design authority)
+
+**This overrides the "Design grammar" section above on three points. Part of what
+shipped in PR #1 is now wrong and needs rework.**
+
+The designer had not seen `globals.css` or the rendered site when the original brief
+was written; Brad has since granted read access. The earlier rules were taken from the
+standalone NOS 2027 design system, which its own readme describes as an event sub-brand
+authored with **no product to mirror**. They are correct for that system and wrong for
+this site.
+
+### The site already has a coherent language — "Sage & Paper"
+
+`--radius-0: 0` for cards and image wells · `--radius-1: 2px` for buttons and inputs ·
+pill radius **only** for eyebrow pills · **cards use borders, not shadow** (the single
+shadow token exists only for floating menus) · **JetBrains Mono** for every eyebrow and
+meta label at `--mono-tracking` 0.18em.
+
+We built the opposite: 10/16/999 radii, white cards with purple-tinted shadows, and
+Jost eyebrows. Applying those produces exactly the "takes over the parent site" outcome
+Brad's hard constraint forbids.
+
+### The revised rule: keep the structural grammar, change palette, display face, imagery
+
+**Inherit unchanged from `globals.css`:** `--radius-0` cards, `--radius-1` buttons, pill
+for eyebrow pills only; **borders not shadows** on cards; **JetBrains Mono eyebrows** at
+`--mono-tracking`; the 8-pt spacing scale; `--section-y: 96px`; `--container-max: 1280px`;
+the existing display/body type scales; `--ease` and the 150/250/400ms durations.
+
+**NOS identity enters through three things only:**
+
+1. **Palette, mapped onto the existing semantic names.**
+   `--bg` `#f4f3ec` → pale gold `#F3F2D6` (close cousins, a subtle warm shift) ·
+   **`--bg-dark` `#384138` → royal purple `#211A57` — the signature move, carries most of
+   the identity** · `--accent` brass `#9e8c6b` → olive `#7F7D33` · `--link-underline` and
+   `--focus-ring` → violet `#7E3F97` · `--fg-on-dark` → pale gold.
+   **Keep `--ink` for body copy on light; do not tint running text purple.**
+2. **Display face:** Crimson Pro → **Cormorant Garamond**, still weight 500, still
+   sentence case. Both are high-contrast serifs, so it reads as a change of voice rather
+   than a change of system. **Keep JetBrains Mono for eyebrows — do not substitute Jost.**
+   Jost is reserved for the logo lockup's location line only, which is where the NOS
+   system actually specifies it.
+3. **The emblem and the orchid photography.**
+
+### Unchanged from the original brief
+
+Sentence-case Cormorant 400–500 · no gradients or textures · ease-out motion without
+bounce · no duotone or filters on photography · semantic status colours excluded from the
+override · no uppercase form labels · restraint increasing through the payment flow ·
+**do not invent copy**.
+
+### Rework scope against PR #1
+
+The scoped-token seam, the palette mapping, the Cormorant swap, the emblem, the
+photography treatment and the measured scrims all **stand**. What needs revisiting is
+`components/nos/*` where it introduced 10/16px radii, card shadows, and Jost eyebrows —
+those should inherit the site's existing radii, border-not-shadow card treatment, and
+mono eyebrows.
+
+The designer's argument for why this is right rather than a compromise: the existing hero
+composition — full-bleed dark orchid under a scrim, mono eyebrows stepping down to a very
+large serif, a four-column meta row on hairline rules, serif countdown over mono unit
+labels — **does not need new radii or shadows to carry NOS.** It needs the ground to go
+purple, the serif to become Cormorant, and the mark to be the *Disa*. Change those and it
+is unmistakably the National Orchid Show. Change the radii and card treatment as well and
+it stops being the same website.
