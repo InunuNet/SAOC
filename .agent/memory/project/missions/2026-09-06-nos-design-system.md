@@ -4,8 +4,8 @@ slug: nos-design-system
 goal: nos-design-system
 created_at: '2026-09-06T21:02:15.256562+00:00'
 started_at: '2026-09-06T21:02:15.256562+00:00'
-last_active_at: '2026-09-08T17:09:35.331219+00:00'
-status: in_progress
+last_active_at: '2026-09-08T17:25:02.299353+00:00'
+status: paused
 cost_estimate:
   features: 27
   milestones: 9
@@ -18,26 +18,28 @@ features:
 - id: F1
   status: done
   inline_brief: Scoped NOS token layer, fonts and logo assets. New app/(marketing)/national-show/layout.tsx
-    introducing a nos-theme wrapper that redefines the NOS palette/type/spacing tokens locally. Cormorant
-    Garamond + Jost via next/font. Emblem and Layout-B logo assets vendored from the Claude Design project.
-    Zero edits to app/globals.css :root and zero edits to components/chrome/*.
+    introducing a nos-theme wrapper that redefines the NOS palette/type/spacing tokens
+    locally. Cormorant Garamond + Jost via next/font. Emblem and Layout-B logo assets
+    vendored from the Claude Design project. Zero edits to app/globals.css :root and
+    zero edits to components/chrome/*.
   started_at: '2026-09-06T22:31:31.784397+00:00'
   completed_at: '2026-09-07T22:34:06.041424+00:00'
 - id: F2
   status: done
-  inline_brief: 'NOS primitive components: Button, Badge, Card, SectionHeading, Logo (Layout B), EmblemBadge,
-    Icon, plus the form primitives the vendor and ticket forms need. All render through the F1 scoped
-    tokens.'
+  inline_brief: 'NOS primitive components: Button, Badge, Card, SectionHeading, Logo
+    (Layout B), EmblemBadge, Icon, plus the form primitives the vendor and ticket
+    forms need. All render through the F1 scoped tokens.'
   completed_at: '2026-09-07T22:34:07.682092+00:00'
 - id: F3
   status: done
-  inline_brief: 'NOS composite blocks: NosHero (full-bleed with purple scrim), programme/event card grid,
-    visit and CTA bands, section nav, and the NOS footer brand band that sits above the inherited SAOC
-    footer.'
+  inline_brief: 'NOS composite blocks: NosHero (full-bleed with purple scrim), programme/event
+    card grid, visit and CTA bands, section nav, and the NOS footer brand band that
+    sits above the inherited SAOC footer.'
   completed_at: '2026-09-07T22:34:08.928790+00:00'
 - id: F4
   status: done
-  inline_brief: Restyle the /national-show landing page (642 lines, flagship) into the NOS system.
+  inline_brief: Restyle the /national-show landing page (642 lines, flagship) into
+    the NOS system.
   completed_at: '2026-09-07T22:34:10.242338+00:00'
 - id: F5
   status: done
@@ -57,9 +59,9 @@ features:
   completed_at: '2026-09-07T22:34:15.886730+00:00'
 - id: F9
   status: done
-  inline_brief: Restyle /national-show/workshops and /national-show/conferences through NOS-scoped wrappers
-    and props only. components/tickets/CategoryTicketsPage is owned by the sibling SAOC session and must
-    not be edited.
+  inline_brief: Restyle /national-show/workshops and /national-show/conferences through
+    NOS-scoped wrappers and props only. components/tickets/CategoryTicketsPage is
+    owned by the sibling SAOC session and must not be edited.
   completed_at: '2026-09-07T22:34:17.193109+00:00'
 - id: F10
   status: done
@@ -72,91 +74,100 @@ features:
 - id: F12
   status: done
   inline_brief: Capture "after" screenshots at 390 and 1280 for every route into .agent/evidence/nos-design/<route>/,
-    run the route-200 sweep, and complete the a11y pass (visible focus, labelled controls, WCAG AA contrast
-    against the NOS palette).
+    run the route-200 sweep, and complete the a11y pass (visible focus, labelled controls,
+    WCAG AA contrast against the NOS palette).
   started_at: '2026-09-07T22:34:26.109560+00:00'
   completed_at: '2026-09-08T17:09:35.331034+00:00'
 - id: F13
   status: pending
-  inline_brief: Write docs/nos-design-system.md, get the contract gate green, and open the PR to main.
+  inline_brief: Write docs/nos-design-system.md, get the contract gate green, and
+    open the PR to main.
 - id: F14
   status: done
-  inline_brief: Admin information architecture and navigation. Make role separation unmistakable — vendor
-    vs exhibitor vs visitor — with scannable status, clear wayfinding, and a dashboard that answers "what
-    needs me now". Structural information design, not a re-skin; admin is deliberately NOT show-branded.
+  inline_brief: Admin information architecture and navigation. Make role separation
+    unmistakable — vendor vs exhibitor vs visitor — with scannable status, clear wayfinding,
+    and a dashboard that answers "what needs me now". Structural information design,
+    not a re-skin; admin is deliberately NOT show-branded.
   completed_at: '2026-09-07T22:34:20.922983+00:00'
 - id: F15
   status: done
-  inline_brief: 'Admin vendor and exhibitor review surfaces: application queues, status transitions, payment
-    and booth allocation, made legible at a glance.'
+  inline_brief: 'Admin vendor and exhibitor review surfaces: application queues, status
+    transitions, payment and booth allocation, made legible at a glance.'
   completed_at: '2026-09-07T22:34:22.136910+00:00'
 - id: F16
   status: done
-  inline_brief: 'Admin visitor and door surfaces: check-in scanner, ticket lookup, live show-day operational
-    view.'
+  inline_brief: 'Admin visitor and door surfaces: check-in scanner, ticket lookup,
+    live show-day operational view.'
   completed_at: '2026-09-07T22:34:23.349296+00:00'
 - id: F17
   status: pending
-  inline_brief: Ticket purchase flow as a conversion surface end to end — product presentation, day selection,
-    attendee naming, and a confirmation moment that feels like an event ticket rather than a receipt.
+  inline_brief: Ticket purchase flow as a conversion surface end to end — product
+    presentation, day selection, attendee naming, and a confirmation moment that feels
+    like an event ticket rather than a receipt.
 - id: F18
   status: done
-  inline_brief: 'SEO and discoverability: per-route metadata, Event/Organization structured data, Open
-    Graph and Twitter cards with NOS-branded images, sitemap, canonical URLs.'
+  inline_brief: 'SEO and discoverability: per-route metadata, Event/Organization structured
+    data, Open Graph and Twitter cards with NOS-branded images, sitemap, canonical
+    URLs.'
   completed_at: '2026-09-07T22:34:24.580750+00:00'
 - id: F19
   status: pending
-  inline_brief: Social and advertising kit built from the NOS tokens and emblem — fixed-ratio export-ready
-    artboards for Instagram and Facebook.
+  inline_brief: Social and advertising kit built from the NOS tokens and emblem —
+    fixed-ratio export-ready artboards for Instagram and Facebook.
 - id: F20
   status: done
   inline_brief: Token grammar hardening — 44-id verifier at execution/checks/verify_nos_m7_hero_and_grammar.ts
-    covering the M7 hero/grammar contract. Goldens and contract made coherent, scrim baseline captured
-    from a detached worktree at 24f87e05, blocked_when retired. Zero code defects found; type-check and
-    build both exit 0.
+    covering the M7 hero/grammar contract. Goldens and contract made coherent, scrim
+    baseline captured from a detached worktree at 24f87e05, blocked_when retired.
+    Zero code defects found; type-check and build both exit 0.
   completed_at: '2026-09-08T00:00:00.000000+00:00'
 - id: F21
   status: done
-  inline_brief: Typographic h1 grammar as part of the M7 hero/grammar contract (see F20 verifier). Covered
-    by contract-m7.yaml + goldens/m7/.
+  inline_brief: Typographic h1 grammar as part of the M7 hero/grammar contract (see
+    F20 verifier). Covered by contract-m7.yaml + goldens/m7/.
   completed_at: '2026-09-08T00:00:00.000000+00:00'
 - id: F22
   status: done
-  inline_brief: Hero composition as part of the M7 hero/grammar contract (see F20 verifier). Covered by
-    contract-m7.yaml + goldens/m7/.
+  inline_brief: Hero composition as part of the M7 hero/grammar contract (see F20
+    verifier). Covered by contract-m7.yaml + goldens/m7/.
   completed_at: '2026-09-08T00:00:00.000000+00:00'
 - id: F23
   status: done
-  inline_brief: Status colour tokens — six semantic status tokens added at nos-theme.css:192-197 (hex
-    8f2834, 714a1e, 1f5c3e, e298a0, d6a164, 8fb89c), four call sites updated. Design-approved by Codi
-    (design authority). Covered by contract-m8.yaml + goldens/m8/.
+  inline_brief: Status colour tokens — six semantic status tokens added at nos-theme.css:192-197
+    (hex 8f2834, 714a1e, 1f5c3e, e298a0, d6a164, 8fb89c), four call sites updated.
+    Design-approved by Codi (design authority). Covered by contract-m8.yaml + goldens/m8/.
   completed_at: '2026-09-08T00:00:00.000000+00:00'
 - id: F24
   status: done
-  inline_brief: 'Focus affordance — one scoped :focus-visible reset fixing nine ring-ink/40 sites without
-    editing any of them. Headline defect found and fixed during this feature — see docs/nos-design-system.md
-    and learned.md ''NOS M7/M8 verification post-mortem'': .nos-on-dark was declared in nos-theme.css
-    but applied to no element, leaving contrast at 2.53:1 against a promised 18:1 until a rendered measurement
-    caught it. Both evidence artefacts now carry controls that demonstrably fail (2.17:1 and 2.48:1).
-    Design-approved by Codi. Covered by contract-m8.yaml + goldens/m8/.'
+  inline_brief: 'Focus affordance — one scoped :focus-visible reset fixing nine ring-ink/40
+    sites without editing any of them. Headline defect found and fixed during this
+    feature — see docs/nos-design-system.md and learned.md ''NOS M7/M8 verification
+    post-mortem'': .nos-on-dark was declared in nos-theme.css but applied to no element,
+    leaving contrast at 2.53:1 against a promised 18:1 until a rendered measurement
+    caught it. Both evidence artefacts now carry controls that demonstrably fail (2.17:1
+    and 2.48:1). Design-approved by Codi. Covered by contract-m8.yaml + goldens/m8/.'
   completed_at: '2026-09-08T00:00:00.000000+00:00'
 - id: F25
   status: pending
-  inline_brief: 'R10 hero scrim rework: scrim ends transparent (x=75% column alpha <=0.25 at mid-height,
-    petals in own colour), text column may darken to ~0.85 from the left edge and must fall away by the
-    midline, vertical layer removed or lightened; legibility >=4.5:1 measured at composited pixel with
-    negative control, crop/type moves before alpha climbs; verified by the same grey-swap probe at 390
-    and 1280 before and after. Requires Codi review then Brad hero approval before templating across routes.'
+  inline_brief: 'R10 hero scrim rework: scrim ends transparent (x=75% column alpha
+    <=0.25 at mid-height, petals in own colour), text column may darken to ~0.85 from
+    the left edge and must fall away by the midline, vertical layer removed or lightened;
+    legibility >=4.5:1 measured at composited pixel with negative control, crop/type
+    moves before alpha climbs; verified by the same grey-swap probe at 390 and 1280
+    before and after. Requires Codi review then Brad hero approval before templating
+    across routes.'
 - id: F26
   status: pending
-  inline_brief: 'Vendor application thank-you panel heading consumes --status-success-on-light with word
-    carrier kept; captured triggered at 390 and 1280. Warning, success-elsewhere, and error-on-dark tokens
-    stay declared and dormant: never invent surfaces, never synthetic specimens as R8/6 evidence.'
+  inline_brief: 'Vendor application thank-you panel heading consumes --status-success-on-light
+    with word carrier kept; captured triggered at 390 and 1280. Warning, success-elsewhere,
+    and error-on-dark tokens stay declared and dormant: never invent surfaces, never
+    synthetic specimens as R8/6 evidence.'
 - id: F27
   status: pending
-  inline_brief: 'R9 golden: on violet-filled buttons the ring reads only through the outline-offset gap;
-    assert the gap never drops below 2px in contract-m8. Still owed: register-form and marketing word-count
-    focus captures, pending a dev registration-code path from the SAOC session (gate never disabled).'
+  inline_brief: 'R9 golden: on violet-filled buttons the ring reads only through the
+    outline-offset gap; assert the gap never drops below 2px in contract-m8. Still
+    owed: register-form and marketing word-count focus captures, pending a dev registration-code
+    path from the SAOC session (gate never disabled).'
 milestones:
 - id: M1
   status: done
