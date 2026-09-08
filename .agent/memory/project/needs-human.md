@@ -720,3 +720,17 @@ CLAUDE.md entry only needs the summary above plus its existing pointer to that d
 
 **Upstream:** filed against the harness as the protected-path design having no route for
 correcting factual staleness in an agent-maintained instruction file.
+
+---
+
+## 2026-09-08 — canonical SAOC enquiry address: `council@` or `info@`?
+
+**Action needed:** Brad picks one of `council@saoc.co.za` / `info@saoc.co.za` as canonical.
+
+**Why it matters:** both appear across the public site, so a visitor sees two "official"
+addresses and the JSON-LD `Organization` block can only carry one. Whichever loses should be
+kept as a working alias, not deleted — printed material and the old Joomla site still point
+at it.
+
+**Blocked on:** a fact only SAOC holds (which mailbox is actually monitored). No agent can
+determine this; guessing would ship a wrong contact address to production.
