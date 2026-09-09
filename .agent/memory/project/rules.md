@@ -41,3 +41,40 @@ Tailwind class names is not verification — it is the same claim restated.
 - Check the pages *behind* the one reported. The login fix was requested; the dashboard one
   click away had the identical defect and nobody looked.
 - Compare against a known-good page on the same site to confirm it belongs there.
+
+### Site hierarchy — NOS is a SUBSECTION of saoc.co.za. Never re-litigate this.
+
+```
+saoc.co.za                     <- THE home. The South African Orchid Council's site.
+  └── /national-show           <- the National Orchid Show (NOS). A SUBSECTION.
+        └── its marketing pages
+```
+
+- **saoc.co.za is the home. There is exactly one home page, and it belongs to SAOC.**
+- The **National Orchid Show (NOS)** runs **every three years** (next: 2027). It is a
+  promotional event subsection of the SAOC site — a "promo event on the Council's site",
+  not a site of its own.
+- NOS is **branded as if it were a different company** — its own styling, its own identity,
+  visually distinct from SAOC. That branding is *presentation only*. It does not make NOS a
+  separate site, and it never earns NOS a home page of its own.
+- **There is no NOS "Home" page.** Lee-Ann's `Website Development SpecificationV3` lists
+  "1. Home" for the show; that means the **`/national-show` landing page, which already
+  exists**. Do not create a home page for the show. Do not treat the show as a site root.
+- **Scope of work on the show: the subsection only.** All marketing pages under
+  `/national-show`. Never the SAOC parent site, never a sibling section.
+
+**Why this is written down:** on 2026-09-09 the orchestrator presented Lee-Ann's spec page
+"1. Home" as a page to be built, which reads as giving the show its own home page. Brad's
+correction: "SAOC.co.za is the home. They're just a subsection, like a promo event."
+
+### Invented copy must be notarised as invented
+
+Most NOS pages have no copy from the council yet. Inventing placeholder copy is **approved by
+Brad** — on one non-negotiable condition: **every page carrying invented copy must declare it,
+visibly, at the top of the page.** The declaration is driven by a flag on the content itself,
+so a page *cannot* render invented copy silently; it is never a banner someone remembers to
+add. When the council supplies real copy and the flag is cleared, the notice disappears.
+
+**Note:** `CLAUDE.md` is write-protected by `execution/hooks/check_autonomy.sh` (always denied),
+so durable project rules go here, in `.agent/memory/project/rules.md`, which is loaded into
+every session's boot context.

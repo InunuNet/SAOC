@@ -1,0 +1,437 @@
+schema: athanor.contract/v1
+slug: national-show-ia-alignment
+goal: >-
+  Build the Sanity content model, the route map and the content pipeline behind the spec's
+  National Show subsection - 17 showPage documents with section-level provenance, a
+  placeholder gate that no page template can bypass, a durable home for the four
+  hand-recovered Drive documents, and an idempotent seed that can be re-run forever without
+  ever overwriting an edit the council has made in Studio. The show is a subsection of
+  saoc.co.za and has no home page of its own; spec entry 1 is the existing /national-show
+  landing page and spec entry 14 is a link, not a page.
+created_at: '2026-09-09'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      showPage / showPageSection / showPageSettings Sanity types, with provenance as a
+      required three-value enum carrying NO initialValue, registered in
+      sanity/schemas/index.ts and pinned or listed in sanity/structure.ts
+    status: pending
+  - id: F2
+    name: >-
+      content/drive-recovered/ — the four hand-salvaged council documents moved out of the
+      session sandbox into a committed sibling tree the Drive sync tool never writes to,
+      each with a recovery.json recording source path, source md5 and salvage method
+    status: pending
+  - id: F3
+    name: >-
+      The gate — lib/data/show-pages.ts loader whose sections expose prose only as an
+      opaque GatedProse value, components/nos/ShowPageProse.tsx as its only renderer with
+      the notice and the copy in one inseparable expression, and a fail-loud resolveNotice
+      that notifies on every state except a verified council-supplied
+    status: pending
+  - id: F4
+    name: >-
+      Seeding — 18 content/show-pages/*.json sources and scripts/seed-show-pages.ts with a
+      pure exported decideSectionAction, so a re-run creates what is missing, updates only
+      what the script itself last wrote untouched, and skips-and-reports anything a human
+      has edited
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m1/content-model.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m1/provenance-gate.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m1/drive-recovery.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m1/seeding-reconciliation.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m1/route-map.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m1/page-contract.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m1/codi-handover.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m1/verifier-contract.golden.md
+
+assertions:
+  phase: 4
+  checks:
+
+    # -----------------------------------------------------------------------
+    # A0 — the commissioned verifier. One tsx driver imports the real schema
+    # objects, the real resolveNotice, the real ShowPageProse component and the
+    # real decideSectionAction, drives every semantic case, and writes a flat
+    # two-token PASS/FAIL manifest to .tmp/sandbox/nos-ia/m1-results.txt. Every
+    # semantic assertion below greps that manifest, so a failure names itself
+    # instead of collapsing into one red driver.
+    #
+    # It lives in scripts/checks/, NOT execution/checks/. execution/ is
+    # HARNESS-owned wholesale (.agent/update-manifest.yaml:12) and anything put
+    # there is deleted by the next `make update-template`.
+    # -----------------------------------------------------------------------
+
+    - id: A0_DRIVER
+      description: >-
+        Run the M1 verifier. Exit 0 every check passed, 1 a check failed, 2 the harness
+        itself broke (never collapsed into 1). Writes .tmp/sandbox/nos-ia/m1-results.txt.
+      type: shell
+      timeout_seconds: 600
+      command: node_modules/.bin/tsx scripts/checks/verify-show-page-m1.ts
+
+    - id: A0_SCRIPT_EXISTS
+      description: The commissioned verifier exists at its contracted project-owned path.
+      type: shell
+      command: test -f scripts/checks/verify-show-page-m1.ts
+
+    - id: A0_NOT_IN_HARNESS
+      description: >-
+        The verifier was NOT written into execution/checks/. That directory is harness-owned
+        and is wiped by the next template update, which would silently delete this gate.
+      type: shell
+      command: test ! -e execution/checks/verify-show-page-m1.ts
+
+    # -----------------------------------------------------------------------
+    # F1 — schema. Static existence is checked independently of the driver so a
+    # totally broken driver still leaves signal.
+    # -----------------------------------------------------------------------
+
+    - id: A1
+      description: The three new schema files exist at the paths the content-model golden names.
+      type: shell
+      command: test -f sanity/schemas/documents/showPage.ts -a -f sanity/schemas/objects/showPageSection.ts -a -f sanity/schemas/documents/showPageSettings.ts
+
+    - id: A2
+      description: >-
+        showPageSection.provenance is a string whose option list is exactly council-supplied /
+        research / placeholder-ai. Driven against the imported schema object, not the text.
+      type: shell
+      command: grep -q '^S1 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A3
+      description: >-
+        THE MISSION ASSERTION. showPageSection.provenance carries NO initialValue, so Sanity
+        blocks publication until an editor makes an explicit choice and the system never
+        guesses on the council's behalf. Contrast society.ts's boolean initialValue false,
+        whose safe-looking default is the dangerous one.
+      type: shell
+      command: grep -q '^S2 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A4
+      description: >-
+        showPageSection.provenance carries a validation rule that marks it required — the
+        other half of A3. Without required(), an absent value is publishable.
+      type: shell
+      command: grep -q '^S3 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A5
+      description: >-
+        showPage.pageKey is required and regex-constrained, specNumber is required, and
+        sections is required with a minimum length of one — an empty page cannot be published.
+      type: shell
+      command: grep -q '^S4 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A6
+      description: >-
+        showPageSettings carries all four notice-wording fields and every one is required, so
+        the council can reword the notice in Studio but cannot blank it.
+      type: shell
+      command: grep -q '^S5 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A7
+      description: >-
+        All three types are registered in sanity/schemas/index.ts; showPageSettings is in
+        PINNED_SINGLETON_TYPES with a title; showPage is in COLLECTION_TYPES.
+      type: shell
+      command: grep -q '^S6 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    # -----------------------------------------------------------------------
+    # F3 — the gate itself. G1..G8 are the rows of the fail-loud table in
+    # provenance-gate.golden.md, one assertion per row so a regression names the
+    # exact state that stopped notifying.
+    # -----------------------------------------------------------------------
+
+    - id: A8
+      description: >-
+        resolveNotice returns null ONLY for a council-supplied section whose sourcePath names
+        a file that exists, and for no other input in the whole suite. That is the single
+        suppressing state.
+      type: shell
+      command: grep -q '^G1 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A9
+      description: >-
+        Fail-loud rows: council-supplied with an absent, empty or nonexistent sourcePath, plus
+        research and placeholder-ai, all return a notice.
+      type: shell
+      command: grep -q '^G2 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A10
+      description: >-
+        Unenumerated states all notify — provenance null, undefined, empty string and an
+        unrecognised string each return the placeholder notice via an explicit switch default,
+        never a fallthrough to null. Mirrors the fails-closed house style of lib/admin-auth.ts.
+      type: shell
+      command: grep -q '^G3 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A11
+      description: >-
+        A missing or blank showPageSettings singleton cannot suppress a notice — the loader
+        falls back to hardcoded constants matching the golden's fixed wording verbatim.
+      type: shell
+      command: grep -q '^G4 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A12
+      description: >-
+        Page-level rollup: council-supplied only when sections is non-empty AND every section
+        resolves clean; a page with zero sections rolls up to placeholder-ai, not to clean.
+      type: shell
+      command: grep -q '^G5 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A13
+      description: >-
+        ShowPageProse renders the notice text BEFORE the body text in the produced markup —
+        measured by string index in the rendered output, not by reading the JSX.
+      type: shell
+      command: grep -q '^G6 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A14
+      description: >-
+        ShowPageProse accepts no prop that suppresses the notice — its props type has exactly
+        one key, and every section fixture carrying a notice renders one.
+      type: shell
+      command: grep -q '^G7 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A15
+      description: >-
+        Section prose never crosses the module boundary as plain portable text — the loader's
+        section body is the opaque GatedProse shape, and handing it to a portable-text
+        renderer is a compile error. There is no un-noticed form of the copy to render by
+        mistake.
+      type: shell
+      command: grep -q '^G8 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A16
+      description: >-
+        No file under app/ contains the GROQ type literal for showPage — every page template
+        reads through loadShowPage. This is a CI guard, not a type guarantee; the gate golden
+        states plainly that a differently-shaped query evades it.
+      type: shell
+      command: bash scripts/checks/assert-no-direct-showpage-query.sh
+
+    - id: A17
+      description: The loader and its sole renderer exist at the paths the handover golden gives Codi.
+      type: shell
+      command: test -f lib/data/show-pages.ts -a -f components/nos/ShowPageProse.tsx
+
+    # -----------------------------------------------------------------------
+    # F2 — the recovery tree.
+    # -----------------------------------------------------------------------
+
+    - id: A18
+      description: >-
+        All four hand-salvaged council documents are committed under content/drive-recovered/,
+        each beside a recovery.json. They existed only in gitignored .tmp/ before this.
+      type: shell
+      command: grep -q '^D1 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A19
+      description: >-
+        Every recovery.json carries specPage, sourceDrivePath, a 32-hex sourceMd5, method,
+        recoveredAt, recoveredBy and an explicit supersededBy key — so a hand-salvage is
+        always traceable back to the Drive file it came from.
+      type: shell
+      command: grep -q '^D2 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A20
+      description: >-
+        Supersession is reported, not silent — every recovery entry is compared against the
+        matching content/drive-source/ manifest md5, so a stale hand-salvage cannot quietly
+        outlive a real re-export.
+      type: shell
+      command: grep -q '^D3 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A21
+      description: >-
+        execution/drive_docx_sync.py contains no reference to drive-recovered — the recovery
+        tree needs zero harness edits and the sync tool cannot overwrite it. If a future
+        template update changes that, this fails and we find out.
+      type: shell
+      command: test -f execution/drive_docx_sync.py -a -z "$(grep -l drive-recovered execution/drive_docx_sync.py)"
+
+    - id: A22
+      description: Salvaged .docx bytes stay out of git, matching how drive-source treats source.docx.
+      type: shell
+      command: grep -q 'content/drive-recovered' .gitignore
+
+    - id: A23
+      description: >-
+        The two facts that exist nowhere else survived the move verbatim — the Stellenbosch
+        Flying Club venue line and the show theme.
+      type: shell
+      command: grep -q '^D5 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A24
+      description: >-
+        The sandbox originals were left in place, not deleted. .claude/rules/sandbox.md — an
+        agent never deletes a sandbox file.
+      type: shell
+      command: test -f .tmp/sandbox/nos-ia/17.1-faq-RECOVERED.md
+
+    # -----------------------------------------------------------------------
+    # F4 — seeding. P* checks read the committed JSON corpus with no Sanity
+    # token and no network, which is what makes them gate-runnable.
+    # -----------------------------------------------------------------------
+
+    - id: A25
+      description: >-
+        Exactly 17 seed sources exist and their specNumbers are exactly {1..13, 15..18}. 14 is
+        absent because Lee-Ann said the societies directory should stay in the SAOC section -
+        modelling it as a page would model something she asked us not to build.
+      type: shell
+      command: grep -q '^P1 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A26
+      description: >-
+        Every pageKey matches the two-digit-prefix format and equals its own filename stem, so
+        the Studio list sorts into sitemap order with no ordering field.
+      type: shell
+      command: grep -q '^P2 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A27
+      description: >-
+        Every section in every seed source declares a provenance from the three-value enum and
+        a sectionKey unique within its page. No section is seeded without one.
+      type: shell
+      command: grep -q '^P3 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A28
+      description: >-
+        HONESTY CHECK. Every section claiming council-supplied names a sourcePath under
+        content/drive-source/ or content/drive-recovered/ that resolves to a file that exists
+        on disk. Nothing can claim the council wrote it without pointing at the document.
+      type: shell
+      command: grep -q '^P4 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A29
+      description: >-
+        No seed source states a ticket price. Lee-Ann's reply on spec 2.7 is that the ticket
+        and cocktail options still need to be fully developed, and the ticketing document
+        contradicts itself on the Early Bird Weekend Pass. Prices live in ticketType, which
+        this mission does not touch.
+      type: shell
+      command: grep -q '^P6 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A30
+      description: >-
+        No seed source exists for spec entry 14, and no pageKey or title in the corpus contains
+        the word "home". The show is a subsection of saoc.co.za with no home page of its own
+        (.agent/memory/project/rules.md); spec entry 1 is the existing /national-show landing
+        page, keyed 01-national-show-landing so no future developer reads it as a site root.
+      type: shell
+      command: grep -q '^P7 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A31
+      description: >-
+        decideSectionAction and hashBody are exported and pure — importable and drivable in a
+        gate with no Sanity credentials and no network.
+      type: shell
+      command: grep -q '^N1 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A32
+      description: >-
+        THE CONSTRAINT THAT MATTERS. decideSectionAction returns the expected value for all six
+        rows of the decision table, including skip-edited on a seedHash mismatch and
+        skip-unknown-origin when there is no seedHash at all. A re-run can never overwrite an
+        edit Lee-Ann has made in Studio.
+      type: shell
+      command: grep -q '^N2 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A33
+      description: >-
+        hashBody is stable under object-key reordering. Without that, a re-serialised body
+        reads as an edit and every section falls through to skip-edited forever — the failure
+        mode that would make the whole reconciliation silently useless.
+      type: shell
+      command: grep -q '^N3 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A34
+      description: >-
+        The seed script contains none of createOrReplace, .delete( or a random key generator.
+        scripts/seed-page-singletons.ts is the project's own cautionary tale — its
+        createOrReplace silently reverted the secretary's Studio edits.
+      type: shell
+      command: test -f scripts/seed-show-pages.ts -a -z "$(grep -n -e createOrReplace -e '\.delete(' -e randomUUID -e 'Math\.random' scripts/seed-show-pages.ts)"
+
+    - id: A35
+      description: The seed script and the seed-source directory exist at their contracted paths.
+      type: shell
+      command: test -f scripts/seed-show-pages.ts -a -d content/show-pages
+
+    # -----------------------------------------------------------------------
+    # Route map. M1 decides it (route-map.golden.md) and pins the two
+    # properties that must hold from M1 onward; R1/R3/R4 are M4 build checks
+    # and the verifier reports them SKIP until then.
+    # -----------------------------------------------------------------------
+
+    - id: A40
+      description: >-
+        The route map golden exists and records the resolution of both known conflicts -
+        /national-show/exhibitors keeps its route and its plant-entry content, and
+        /national-show/conferences stays the shared registration surface while spec entries 6
+        and 7 get dedicated content pages.
+      type: shell
+      command: test -f .agent/memory/project/specs/national-show-ia-alignment/goldens/m1/route-map.golden.md
+
+    - id: A41
+      description: >-
+        R2. The untouchable routes are unmodified - tickets, vendors, archive and upcoming.
+        conferences and exhibitors are deliberately NOT in this list: they keep their routes
+        and content but may gain a cross-link to the new pages, and a link out is not a
+        restructure.
+      type: shell
+      command: grep -q '^R2 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A42
+      description: >-
+        R5. No file under app/(marketing)/national-show/ declares a colour, font-family,
+        border-radius or box-shadow literal. The NOS identity is inherited from the layout's
+        .nos-theme scope and never re-declared - CLAUDE.md's no-invented-brand-assets rule is
+        unchanged by this session gaining the page build. Verified clean at M1 baseline.
+      type: shell
+      command: grep -q '^R5 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    # -----------------------------------------------------------------------
+    # Preservation — this mission touches none of the live subsystems.
+    # -----------------------------------------------------------------------
+
+    - id: A36
+      description: >-
+        ticketType is untouched — the five admission products and their F4 fields are exactly
+        as this mission found them.
+      type: shell
+      command: test -z "$(git diff --name-only HEAD -- sanity/schemas/documents/ticketType.ts)"
+
+    - id: A37
+      description: >-
+        The gated vendor subsystem is untouched. Completed missions own it and it is live.
+      type: shell
+      command: test -z "$(git diff --name-only HEAD -- app/api/vendors 'app/(marketing)/national-show/vendors')"
+
+    - id: A38
+      description: >-
+        The project still typechecks. A branded opaque type is only a real barrier if the
+        compiler is actually enforcing it, so A15 means nothing without this.
+      type: shell
+      timeout_seconds: 900
+      command: node_modules/.bin/tsc --noEmit -p tsconfig.json
+
+    # -----------------------------------------------------------------------
+    # Verification triad — .claude/rules/workflow.md makes the Codex pass
+    # mandatory for every QA pass. Declared here so the contract records that it
+    # ran, rather than that it was supposed to.
+    # -----------------------------------------------------------------------
+
+    - id: A39
+      description: >-
+        Codex GPT-5.5 cross-model adversarial review of the M1 diff. Claude reviewing Claude's
+        own code does not reliably catch the weak-check defect class this project has already
+        been bitten by — and this mission's central assertion is exactly that class.
+      type: codex_qa
+      timeout_seconds: 400
+      command: git diff
