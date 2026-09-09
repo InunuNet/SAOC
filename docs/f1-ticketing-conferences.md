@@ -60,7 +60,7 @@ The five new fields F4 added to `sanity/schemas/documents/ticketType.ts` are alr
 | Field | Already in F4 | Reused Here |
 |---|---|---|
 | `provisional` | ✓ | ✓ Flag is true for all six; replaced when Lee-Ann's answers land |
-| `earlyBirdCutoff` | ✓ | ✓ Set to `'2027-07-31'` for all early-bird products; `null` for normal |
+| `earlyBirdCutoff` | ✓ | ✓ Set to `'2027-07-31'` for these six early-bird products; `null` for normal |
 | `releasedQuantity` | ✓ | ✓ Early-bird types: equals capacity; normal types: `null` |
 | `requiresDaySelection` | ✓ | ✗ False for all six (Symposium/Conference/Joint is multi-day, not per-day choice) |
 | `requiresAttendeeNames` | ✓ | ✓ True for all six (conference registration requires badges/sign-in) |

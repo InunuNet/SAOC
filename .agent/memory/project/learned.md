@@ -1,3 +1,45 @@
+Standing rule now enforced by per-turn injection: `docs/rules/no-invention.md` +
+`docs/rules/inject_no_invention.sh`, registered in `.claude/settings.json` on both
+`UserPromptSubmit` and `SubagentStart`. Lives under `docs/` (not `.claude/rules/` or
+`.claude/hooks/`) because those trees are write-blocked by the autonomy floor + contract gate. If
+it ever stops appearing in a turn, check `.claude/settings.json` survived a `make update-template`
+json_deep_merge.
+
+## site-content-alignment M1-M2 close-out (2026-09-10)
+
+Two more instances of this repo's audited "green means nothing" defect class (now eight):
+- `python3 execution/mission.py gate --milestone M2` returned **PASS (0 ran, 0 skipped)** — the
+  mission gate is not wired to the feature contracts' assertions at all. Real verification came
+  from looping `python3 execution/contract.py check <spec> --assertion <id>` per assertion instead.
+- `contract-f3.yaml` A15 (`codex_qa`) **errored instead of evaluating**: `contract.py` passes
+  `verify.get("target","")` and A15's YAML had no `target:` field, so `codex_qa.sh` got an empty
+  argument. A contract-authoring defect in our own YAML, not a harness bug.
+- Generalised lesson: an assertion that cannot execute, or a gate wired to nothing, manufactures
+  false confidence. Always confirm a contract's build assertions FAIL pre-implementation (as
+  @architect did for F3's A1) — a check that passes before the work exists proves nothing.
+
+"Blocked on tooling" was a misdiagnosis of "never shipped": F3's A14 `browser_deployed_check` was
+first reported blocked (Chrome extension unavailable). @qa found the real cause — the work was
+uncommitted, so `/national-show/about` 404'd live and `what-to-expect` still served pre-F3
+content; the contract's mandatory deployed-origin fallback never ran. Before attributing a
+live-site check failure to tooling, verify the code is actually deployed (deploy authorization is
+standing on this project — see [[project_deploy_authorization]]).
+
+Three more Athanor harness defects found this mission — unfixed, worth a PR upstream per
+[[athanor]] (file upstream, never patch vendored source in place):
+- `execution/hooks/check_autonomy.sh:891` blocks `find ... -not -path './node_modules/*'` — it
+  tokenises the command line and matches the literal excluded path string even when the argument
+  EXCLUDES it. False positive on a read-only command.
+- `.agent/memory/scratch/handoff_state.json` carries the `qa->docs` attempt counter ACROSS
+  missions — it read `attempts: 3` and declared "human required" on this mission's FIRST @docs
+  dispatch. `mission.py new` does not reset it.
+- `mission.py gate --milestone <M>` passing with "0 ran, 0 skipped" (same item as above).
+
+Chain-ordering friction: the commit hook (`require_maintainer.sh`) gates commits behind
+@maintainer, which sits after @docs. When a QA failure's fix requires a deploy (as A14's did), the
+honest order is @docs → @maintainer → commit → deploy → re-run the live assertion. Note this so
+the circularity isn't rediscovered.
+
 ## verification-triad-gate M1/F1 close-out — seven lessons (2026-09-04)
 
 Mission built `browser_deployed_check`/`gws_inbox_check` as first-class contract assertion kinds
@@ -3311,3 +3353,371 @@ dispatch unless a `dev-result-*.md` exists in `.agent/memory/scratch/`. Workarou
 dispatch `@analyst` for read-only verification instead of fabricating the artifact. This is a
 known project condition, not filed upstream and not added to backlog per explicit
 instruction this session. Evidence: `.agent/evidence/template-hook-verify/functional.txt`.
+
+## 2026-09-08 — A fixture set that passes under both the correct and the buggy implementation proves nothing
+
+`deriveAdmissionEarlyBirdCutoffIso` (`lib/admission-early-bird-pricing.ts`) did SAST calendar
+arithmetic on UTC calendar *components*. Six fixture cases all passed with the bug present,
+because the real show start (09:00 SAST = 07:00Z) happens to fall on the same calendar date in
+both zones. A start before 02:00 SAST would silently move the early-bird cutoff a day earlier
+and misprice every purchase near the boundary. Adding one case with a 01:00 SAST start caught
+it immediately, and the proof that mattered was the pairing: with the bug reintroduced, the new
+assertion went RED while the old six stayed GREEN. A follow-up grading pass found only 5 of the
+7 pricing fixture cases discriminate a specific plausible bug; the other 2 are baseline-only
+arithmetic anchors, now labelled as such rather than silently counted as boundary proofs.
+
+**Why:** test count is not evidence of coverage — a case only proves something if you can name
+the specific wrong implementation it rules out.
+
+**How to apply:** for each fixture/test case, write down the wrong implementation it would
+catch. If you can't name one, it's a baseline anchor, not a boundary proof — label it that way
+in the fixture rather than deleting it or letting it pass as coverage.
+
+## 2026-09-08 — Anti-fabrication discipline catches missing values, not invented relationships
+
+An agent under an explicit no-fabrication brief wrote onto `/members` that "SAOC membership is
+held through an affiliated society... if you belong to one of the 21 affiliated societies, you
+are already part of SAOC" — sourced nowhere. It survived because a relationship claim doesn't
+read as data needing a citation, it reads as helpful context. Softening the sentence left a
+residue that still presumed the same model ("**your** affiliated society ... can help"). "SAOC
+Secretary" in the same sentence was fine — genuinely sourced at `lib/data/board.ts:26` and used
+on `/privacy` and `/constitution`. Research later found no source we hold settles the
+affiliated-society-implies-membership model at all: the constitution has never been supplied,
+Lee-Ann's Members Portal Drive folder is empty, and spec v3 actually cuts the other way.
+
+**Why:** fabrication checks are tuned to catch invented numbers, names and dates — a relational
+claim ("X entitles/qualifies/means Y") doesn't trip the same instinct.
+
+**How to apply:** audit for "X entitles/qualifies/means Y" sentences specifically, not just for
+invented facts. A possessive pronoun ("your society") is a tell — it presumes a relationship
+holds even when softened.
+
+## 2026-09-08 — Six migration scripts default to writing to the LIVE Sanity dataset
+
+`fix-venue-never-changed-copy.ts:77`, `migrate-ticket-type-category.ts:102`,
+`migrate-show-sales-fields.ts:86`, `fix-vip-and-weekend-pass-pricing.ts:79`,
+`fix-show-dates-2027.ts:80`, `fix-visitor-info-dates-confirmed.ts:76` all gate on
+`const DRY_RUN = process.argv.includes('--dry-run')` — the bare no-flag invocation MUTATES.
+There is only one Sanity dataset (`production`), read by local dev and the live site both, so
+running any of these with no flag changes the live site with no deploy step. In
+`fix-vip-and-weekend-pass-pricing.ts` the write-capable client is constructed at module top
+level (line 70) *before* the flag is even read (line 79). Three other scripts in the same repo
+already use the safer `--apply`-to-write polarity (`seed-fictional-test-show.ts`,
+`seed-demo-ticket-type.ts`, `swap-active-show.ts`) — the safe pattern existed in-repo and
+simply wasn't applied consistently. Related: `scripts/fix-vip-and-weekend-pass-pricing.ts`
+existing in the repo was earlier assumed to have been run against the live dataset — it had
+not been; a script's presence is not evidence of its execution.
+
+**Why:** `--dry-run`-to-opt-out-of-writing is the wrong default polarity for anything touching
+the one shared production dataset — a bare invocation during exploration or a copy-paste
+mistake mutates live content silently.
+
+**How to apply:** never assume a migration script has run just because it exists — check the
+data directly. See `backlog.md` "Migration script write-polarity" item for the open fix
+decision (deliberately not applied overnight since some may already have hit live data).
+
+## 2026-09-08 — `POST /api/contact` sends a real email on every success; not test-mode gated
+
+Proving the new suggestion form end-to-end mailed a non-existent address at a reserved domain
+via Resend, and left a test document in the live `contactSubmissions` queue alongside real
+enquiries (since deleted by exact id). Bounces accrue against a sending domain currently
+mid-migration on domain + Resend DNS (see [[project_domain_migration_resend_sequencing]]).
+
+**Why:** the route has no test-mode guard and no mocked mailer path, so any automated proof of
+the contact/suggestion flow is an automated real-world side effect.
+
+**How to apply:** before adding Playwright/automated coverage of `ContactForm` or
+`SuggestionForm`, add a mocked mailer or a test-mode guard on `/api/contact` first — see
+`backlog.md`.
+
+## 2026-09-08 — An explicit unresolved-value literal beat a silent default, twice
+
+F1's ticket taxonomy mapped `exhibitor` to an explicit `'unresolved-nos-boundary'` literal
+instead of silently defaulting to `admission`. That refusal to guess forced a cross-session
+negotiation that resolved it to a distinct `exhibitor-entry` category — the opposite of the
+default that would have been chosen silently, and the one choice that preserves the
+visitor-vs-exhibitor split for later reporting.
+
+**Why:** a silent default under ambiguity is indistinguishable from a considered decision until
+someone audits it; an explicit unresolved marker forces the audit to happen before ambiguity
+ships.
+
+**How to apply:** when a mapping/taxonomy decision is genuinely unconfirmed, encode it as a
+loud placeholder value the type system or a downstream check will complain about, not a
+plausible-looking default.
+
+## 2026-09-08 — `\"` inside a YAML `>-` block scalar is not a quote escape, it's two literal characters
+
+Contract-f2.yaml's original A15 command used `\"name: '(SAOC Symposium|...)"` inside a `>-`
+folded block scalar, trying to escape a literal double quote. It doesn't work: `>-` block
+scalars pass backslashes through UNCHANGED — YAML string-escaping rules only apply inside
+flow scalars (`"..."`), not block scalars. So `\"` became the two literal characters
+backslash + doublequote in the shell command `contract.py` wrote to its temp script. Bash
+then treated the bare `"` as un-escaped (backslash doesn't escape a quote outside a quoted
+context the way the author intended) and, critically, the FIRST real quote-delimiter bash
+saw after that was the following unescaped `'` in `name: '(...`, which opened a real
+single-quoted string that was never cleanly closed before the command's genuine `tr -d ' '`
+— producing "unexpected EOF while looking for matching '''". Reproduced standalone with a
+plain bash script (no `contract.py` involved) and again through `contract.py check` itself —
+confirmed the harness's "write cmd verbatim to a temp bash script" behavior (execution/
+contract.py:355-390) is exactly as documented; this was a contract-authoring mistake, not a
+harness defect, and nothing was filed upstream to InunuNet/Athanor because there is nothing
+there to file.
+
+**Why:** it looks safe — `\"` reads like a normal escaped quote to anyone used to writing
+double-quoted strings elsewhere — but a YAML block scalar's literal-backslash semantics make
+it silently wrong, and the error it produces ("unexpected EOF...") points at the wrong
+layer (looks like a bash authoring slip in the COMMAND's own quoting design, not a
+one-character YAML-escaping mistake), so it's easy to misdiagnose as a harness bug — which is
+exactly the first hypothesis floated here before reproduction disproved it.
+
+**How to apply:** never write `\"` inside a `>-` or `|` block-scalar `command:` value hoping
+it escapes a quote — it doesn't. If a shell command genuinely needs a literal double quote
+alongside other quoting, restructure the command instead (a differently-shaped grep pattern,
+a variable, or an entirely single-quoted alternative) rather than reaching for backslash
+escaping that only makes sense in a flow scalar.
+
+### 2026-09-08 — Negative/absence assertions pass vacuously against files that don't exist yet
+
+**The pattern.** An assertion shaped as `! grep -q BAD file` or "loop over matches, fail if any"
+reports PASS when `file` does not exist, because there is nothing to contradict it. Same for a
+negated exit code: `! node runner.mjs --flag` reads Node's own "Cannot find module" crash as
+success, since a crash is also a nonzero exit. The assertion examines nothing and reports green.
+
+**Why it matters more than it looks.** Contracts are routinely authored RED-today, before @dev
+builds the thing. That is correct practice — but it means every negative-shaped assertion in a
+not-yet-built contract is green for the wrong reason, and nobody notices, because a green
+assertion in a red contract looks like the one part that was already fine.
+
+**Evidence: three independent instances in a single session, all in contracts authored by the
+same agent, the third caught while actively hunting the first two.**
+1. `ticketing-complete` F2 A13 — `grep -rlE` scoped to `contracts/checks/ticketing-complete-f2/`,
+   a directory that does not exist. `xargs -r` never ran. Green unconditionally.
+2. F7 first-draft A28 — `! node run_contract_suite.mjs --verify-baseline <bad-path> >/dev/null`.
+   Passed before the runner existed, on the module-not-found crash.
+3. F8 A6/A10/A11 — negative checks against `docs/ticketing-complete-f8-morning-review.md`, a
+   file not yet written.
+
+**Vigilance is not a control.** Instance 3 was authored by an agent that had already found and
+fixed instances 1 and 2 that same session and was explicitly watching for the pattern. Only
+running the full suite against real current state before reporting caught it — every time.
+
+**How to apply.**
+- Every negative or absence-checking assertion must first prove it has something to examine:
+  `test -f <path> || exit 1` before the negative check, in the same assertion.
+- A negated exit code must additionally require the expected failure to be identified — e.g. the
+  runner's own stderr naming the specific condition — never bare non-zero, which any crash gives.
+- ALWAYS run a freshly-authored contract against real current state before reporting it. The
+  expected result for a RED-today contract is that every assertion FAILS. **A green assertion in
+  a not-yet-built contract is a defect until proven otherwise**, not a pleasant surprise.
+- Lint rule for the vacuity linter already logged in backlog.md: "does this assertion's
+  negative/absence check have anything real to examine?" is at least as important as "does the
+  referenced path exist?"
+
+**AUDITED, same night — and the exposure is SMALL. This corrects an earlier draft of this
+entry, which asserted the existing corpus was probably riddled with this and was wrong.**
+
+Mechanical sweep of 208 contract files / 2128 assertions / 189 negative-shaped commands, cross-
+referencing every extracted path against disk. Result: **1** genuine case of idle debt —
+`vendor-page-fixes/contract-f2.yaml` A6, guarding against a script that no longer exists. Six
+further hits were that night's own correctly-not-yet-built F3/F8 assertions, and one was a false
+positive (a runtime path the command generates and consumes itself, which a static sweep cannot
+distinguish from a dependency).
+
+Also checked first, and a useful negative result: the four contracts `backlog.md` records as
+failing from the vendor F2 QA sweep are NOT this defect class. They fail for real, already-logged
+reasons — capability-array drift, an env-scrub harness issue, a file-hash change, missing labels.
+Positive-shaped assertions examining something real. A different problem entirely.
+
+**So: the defect class is real and worth a lint rule eventually, but "nothing has ever checked
+these" did NOT imply widespread rot.** Three vivid instances in one session made it feel
+systemic; measurement said otherwise. Worth remembering as its own lesson — the sample that
+generates a hypothesis is a terrible estimate of its frequency, and the fix is cheap to measure.
+
+The auditor caught its own extractor dropping Next.js route-group segments (`(marketing)`) on the
+first pass, which had produced 28 false-positive-heavy hits, by spot-checking the very first
+result before trusting the list. Sweep script left at `.tmp/sandbox/vacuity-audit/sweep.py`.
+
+---
+
+**A version banner is not a behavior test -- and an interactive shell is not the runner.**
+2026-09-08, mission ticketing-complete. Team lead framed a sweep target from `grep --version`'s
+"BSD grep 2.6.0-FreeBSD" banner: GNU-only regex escapes (`\s \b \d \+ \? \|`) in basic (non-`-E`)
+grep patterns should be broken under this binary. Reasonable-looking, and wrong -- the same
+banner also says "GNU compatible", and empirically it is: `\s`, `\b`, `\d`, `\+`, `\?`, `\|` all
+work as GNU shorthand on `/usr/bin/grep` here, in both basic and `-E` modes, confirmed with
+direct `printf | grep` tests. The premise would have sent two QA agents hunting a 108-hit class
+that doesn't exist on this machine, and would have missed the one shape that actually IS broken.
+
+**The real defect, once tested rather than inferred:** a DOUBLED backslash (`\\s`, from a YAML
+`>-` block scalar passing a source token through with no escape interpretation) landing inside
+SINGLE-quoted bash. Single quotes never interpret backslashes, so grep receives two literal
+backslash characters plus a letter -- a genuine no-op, exactly [[contract-f1.yaml]]'s old A4 bug
+(see the shell-quoting-lesson entry above this one). The same doubled backslash inside
+DOUBLE-quoted bash self-corrects: bash's own `\\` -> `\` collapse turns it back into the single-
+escape GNU form that works fine here. Swept the whole corpus for the doubled-inside-single-quotes
+shape specifically (not the broader "any GNU escape in basic grep" shape) and found zero live
+instances -- the one historical case was already fixed. Genuine zero-yield result, not a
+near-miss the sweep failed to find.
+
+**How to apply.**
+- Test the exact binary the runner invokes, not a plausible-sounding proxy for it. `grep
+  --version` in an interactive shell here reports `ugrep 7.8.4` (Claude Code's own shell
+  function aliases `grep` to `ugrep -G` for its own tool use) -- a completely different program
+  from the `/usr/bin/grep` (BSD-badged, GNU-compatible, 2.6.0-FreeBSD) that `execution/
+  contract.py` actually runs assertion commands under via a bare bash subprocess. Verifying a
+  regex shell snippet "by hand" in an interactive shell tests the WRONG grep and will report the
+  wrong answer with total confidence -- this masked the bug from the F1 dev once already that
+  same night, and masked it from this architect on the very first pass at re-testing it.
+- The only meaningful verification for a contract assertion's shell command is running it the
+  way `contract.py` runs it: write the exact string extracted via `yaml.safe_load` into a bare
+  `#!/usr/bin/env bash` script and execute that script directly (`bash script.sh`), never
+  hand-retype a "looks equivalent" repro and never rely on the interactive shell's own aliases,
+  functions, or PATH.
+- A defect framed from a version string, a doc comment, or a plausible mental model is a
+  hypothesis, not a finding -- run the actual experiment before designing the sweep around it,
+  the same discipline as "the sample that generates a hypothesis is a terrible estimate of its
+  frequency" two entries up. Here the correction narrowed 108 naive regex-text hits down to the
+  1-in-corpus shape that actually reproduces broken behavior, which is the whole value of testing
+  instead of inferring: it changes not just the count but which specific findings are real.
+
+Sweep script left at `.tmp/sandbox/vacuity-audit/grep_escape_sweep.py`.
+
+---
+
+**A fixture's own commentary is inside the file the check reads -- and a negative control
+that passes for the wrong reason is worse than one that can't fail, because nobody
+re-examines a passing test.** 2026-09-08, mission ticketing-complete, three instances in one
+night, all self-inflicted, all in fixtures rather than in production code.
+
+This is a DIFFERENT defect class from the "test the actual binary, not a proxy" grep lesson
+two entries up -- related in spirit ([[grep-compatibility-lesson]]-shaped, a check that can't
+fail, arrived at by a different route) but failing for an unrelated reason. That one is about
+the runner's environment differing from the shell you tested in. This one is about a
+fixture's EXPLANATORY TEXT becoming part of the DATA the check scans -- guarding against one
+does not make you think to guard against the other.
+
+**All three shapes, in order:**
+1. `goldens/fixtures/f8-open-decisions-negative-fixture.md` -- built to prove a coverage
+   check requires every substring of every golden item, with exactly one substring
+   deliberately omitted. First draft named the omitted figure literally inside the fixture's
+   own top-of-file HTML comment explaining what was omitted and why -- a plain-text
+   substring scan doesn't know the difference between prose-about-the-file and the file's
+   real content, so the "gap" wasn't a gap at all.
+2. The same leak, repeated, in a second location inside the same file after the first fix --
+   caught by re-running the check, not by assuming one fix covered every mention.
+3. `goldens/fixtures/f8-walkthrough-routes-negative-fixture.md` -- built to prove a
+   markdown-link route-extractor gap is real. First draft described the new fake route and
+   an example `[label](/route)` syntax pattern by wrapping them in BACKTICKS inside the
+   comment -- which the CURRENT (not-yet-widened) script's own backtick-span extraction then
+   picked up out of the comment text. This is the sharpest instance: the fixture "worked" --
+   it appeared to demonstrate the exact gap it was built to demonstrate -- and would have
+   kept "working" indefinitely while proving nothing about markdown-link extraction
+   specifically, since the backtick leak alone was already enough to make it fail for an
+   unrelated, satisfied-by-accident reason.
+
+**Why case 3 matters more than 1 and 2:** a test that fails loudly gets fixed. A negative
+control that PASSES for the wrong reason gets trusted -- nothing about its output looks
+wrong, so nobody goes back to check whether it's testing what its name says it tests. Case 3
+would have shipped as evidence that markdown-link extraction had been verified when it had
+verified nothing about markdown links at all.
+
+**The detection method was identical all three times, and IS the actual takeaway:** run the
+real script against the draft fixture and read the actual output before trusting it. Not
+"reason about whether the fixture looks sound" -- execute it and look at what it says it
+found and why. Every one of these three was caught this way, and none would have been caught
+by re-reading the fixture's prose more carefully, because the prose itself was the thing
+lying.
+
+**How to apply.**
+- A fixture's own explanatory comment is not exempt from what the check reads -- it is
+  inside the same file, and a naive (or even careful) substring/pattern scanner has no
+  concept of "this text is metadata, not content." Prose describing what is deliberately
+  ABSENT from a fixture must not contain the absent thing, in any form the extractor can
+  see -- no backticks, no code fences, no literal digits/strings if the check does plain
+  substring matching. Plain prose only.
+- After writing or editing ANY negative-control fixture, run the real check against it (not
+  a mental simulation) and read the specific reason it failed. "It failed" is not enough --
+  confirm it failed because of the thing you intended, not an accident sitting in your own
+  commentary. This is the same discipline as mutation-testing a fixed assertion both
+  directions (see the F1 A4 rewrite this same session) applied one layer up, to the test
+  apparatus itself rather than the code.
+- When a fixture is EXTENDED (not written fresh) to cover a widened check, re-verify the
+  extension in isolation: confirm the OLD script fails on the OLD cases but NOT the NEW one
+  (proving the new gap is real, not already accidentally covered), the same way [[contract-f1.yaml]]'s A4 rewrite was proven RED against a real mutant and GREEN against the
+  real file, not just "run once and it exited non-zero."
+
+See also [[contract-f8.yaml]] A20's history for a worked example, and the same-night grep
+lesson two entries up for the sibling "check that can't fail" class this one is distinct
+from, not a duplicate of.
+
+---
+
+**"Compares something against itself" is the unifying shape of a whole defect family — F8's
+own negative control included.** 2026-09-08, formulation contributed by the NOS peer session
+(saocnosdesign-ea) and adopted verbatim because it subsumes three cases carried separately
+until now: F8's A22 negative control counted its own module-resolution error as the planted
+failure firing; the peer's focus-ring check compared a screenshot against itself and reported
+zero change across every edge and corner; the peer's bloom-overlap metric measured an
+emblem's own ink as the thing overlapping the emblem. In every case the measurement never
+reaches an independent referent, so the result is stable, confident, and meaningless.
+**Stability is the trap** — a self-referent check reproduces perfectly across runs, and
+reproducibility reads as reliability. The peer's 0.944 score, identical to three decimal
+places at two breakpoints, was read by its own QA agent as corroboration; it was the same SVG
+measured twice.
+
+**A large margin over threshold is evidence FOR a misaimed metric, not against it.** Also from
+the peer session, and it inverts a heuristic this project has been using as a confidence
+signal. Their QA agent defended a finding twice on the grounds that "47x over threshold is far
+too large for sampling noise to flip." The correct reading: a correctly-aimed metric that is
+wrong is usually *marginally* wrong; a metric pointed at the wrong object is usually *wildly*
+wrong. The magnitude that reads as certainty is the tell. Seven candidate defects in that
+session were all artefacts; the most confident-looking one was the last to fall.
+
+**A check that cannot locate its target has not FAILED — it has learned nothing.** FAIL means
+"the code is wrong." BLOCKED/ERROR means "I have no information." Collapsing them is how a
+false regression gets relayed onward as confirmed. Observed at two altitudes the same night: at
+the assertion level (six of the peer's failures carried a diagnostic string — "countdown label
+not found", "missing boxes" — where a measured value belongs) and at the process level
+(`execution/codex_qa.sh` returned exit 1 with the literal token `FAIL` when an OpenAI quota
+error meant no review ran at all — see the P0/P1 backlog items for both occurrences of this).
+**Operational rule:** a negative control must assert on the failure's *content* — the specific
+planted figure named in the error — never merely on a non-zero exit.
+
+**Green is only meaningful next to something that failed for a reason you understand.** The
+night's two largest findings were both reached by the same route, and neither by auditing a
+passing result on purpose. The peer found six false failures because a re-check disagreed with
+itself. This project found the triad-gate classifier defect (Athanor#1420, backlog) because a
+*blocked* contract (F6) prompted a look at the four that had passed. Without an anomaly to
+force the inspection, quiet greens stay quiet indefinitely — which is exactly how four green
+gates sat on top of a guard that had never run.
+
+---
+
+**A verified pure function with zero runtime call sites is a feature-scale version of the
+proxy-measurement defect, not a code-quality nit.** 2026-09-08, verified directly against the
+tree while checkpointing the ticketing-complete mission's findings.
+`lib/admission-early-bird-pricing.ts` exports `resolveComputedEarlyBirdPrice()` — a tested,
+contract-verified pure function implementing Brad's confirmed 20%-off early-bird rule.
+`grep -rn "resolveComputedEarlyBirdPrice" app/ lib/ components/ scripts/` returns hits only
+inside the function's own file and the contract check scripts under
+`contracts/checks/ticketing-complete-f1/` and `.../f2/` — nothing in `app/`, no API route, no
+component. Runtime pricing goes through `app/api/tickets/checkout/route.ts` →
+`lib/checkout-reservation.ts:resolveEffectivePrice()`, which reads the stored Sanity `price` /
+`regularPrice` pair directly and never consults the engine.
+
+Confirmed against `lib/provisional-figures.ts` (the file's own header calls it the single
+source of truth for these numbers): measured as stored pairs, the four admission products'
+early-bird discounts are VIP 500/625 = exactly 20% (matches the rule, but by stored-value
+coincidence, not by the engine enforcing it — `provisional-figures.ts:145-158` even cites
+"20% early-bird discount" as prose next to the literal numbers), Weekend Pass 380/400 = 5%,
+Symposium 450/550 = 18.2%, Joint 750/900 = 16.7%. Every contract check points at the function;
+none points at the path that actually prices a ticket, so none of them would catch the
+Weekend/Symposium/Joint figures failing the rule the mission exists to enforce.
+
+Note the sibling half of the same engine IS wired: `deriveAdmissionEarlyBirdCutoffIso()` is
+called live from `lib/provisional-figures.ts:87` to derive VIP's 2027-06-18 cutoff. Half an
+engine connected is harder to spot than none — the honest-looking call site makes it easy to
+assume the whole module is reachable. See the full defect and the decision Brad needs to make
+in backlog.md's "F1's computed early-bird pricing engine has ZERO runtime call sites" entry,
+extended with these measured figures.

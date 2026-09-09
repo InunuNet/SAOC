@@ -46,6 +46,30 @@ snapshot_pulled: <YYYY-MM-DD>
 | [`2027-vendor-registration-form_2026-08-26.md`](2027-vendor-registration-form_2026-08-26.md) **CANONICAL** | `2027_SAOC_National_Show_Vendor_Registration_Form.docx` | `Docs for Brad` | 2026-08-26 | 2026-08-26 |
 | [`about-page_2026-09-06.md`](about-page_2026-09-06.md) | `About page - South African Orchid Council.docx` | `Docs for Brad/SAOC /2. About` | 2026-09-03 | 2026-09-06 |
 | [`website-development-specification-v3_2026-09-06.md`](website-development-specification-v3_2026-09-06.md) | `1. Website Development SpecificationV3.docx` | `Docs for Brad/National Show` | 2026-09-03 | 2026-09-06 |
+| [`about-national-show_2026-09-09.md`](about-national-show_2026-09-09.md) | `2.1 About - 2027 National Show.docx` | `Docs for Brad/National Show/2. About` | 2026-09-04 | 2026-09-09 |
+| [`what-to-expect_2026-09-09.md`](what-to-expect_2026-09-09.md) | `3.1 Info - What to Expect.docx` | `Docs for Brad/National Show/3. What to expect` | 2026-09-04 | 2026-09-09 |
+| [`symposium-theme_2026-09-09.md`](symposium-theme_2026-09-09.md) | `Symposium Theme ` | `Docs for Brad/National Show/6. SAOC Symposium` | 2026-09-04 | 2026-09-09 |
+| [`ticketing-system-details_2026-09-09.md`](ticketing-system-details_2026-09-09.md) | `13.1 Ticketing system details.docx` | `Docs for Brad/National Show/13. Registration/Booking/Tickets` | 2026-09-03 | 2026-09-09 |
+| [`show-contact-information_2026-09-09.md`](show-contact-information_2026-09-09.md) | `2027 Show Contact information.docx` | `Docs for Brad/National Show/18. Contact` | 2026-09-03 | 2026-09-09 |
+| **BLOCKED** — `17.1 Frequently asked questions.docx` | `Docs for Brad/National Show/17. Frequently Asked Questions` | unknown | 2026-09-09 (attempted) |
+
+**FAQ doc is truncated in Drive itself, confirmed unrecoverable on our side —
+not a guess:** `17.1 Frequently asked questions.docx`
+(`1soLx8vKPs1jQBnYFTu88_LWxjzRFTHsf`) is 23,731 bytes. Our downloaded copy's md5
+matches Drive's own reported `md5Checksum` (`27f4911dc51dfada43b242104b627c0e`)
+byte-for-byte, so the transfer is not the problem. The file has a valid
+`PK\x03\x04` local-file-header magic number and 16 readable local file headers —
+but the **End-of-Central-Directory (EOCD) record is absent**: the zip stream
+ends mid central-directory, so no reader can extract it, no matter which tool is
+used. This is consistent with every tool tried across five independent read
+attempts failing the same way (`textutil`, Python `zipfile` —
+`BadZipFile: File is not a zip file` — and `unzip`, across three separate
+downloads on 2026-08-xx and 2026-09-09). Per `docs/rules/no-invention.md` and
+this mission's brief: do not reconstruct or paraphrase its contents from
+anything. The file is an incomplete write on Lee-Ann's end, not a local tooling
+or re-download problem — she needs to re-save/re-export it, or supply it as a
+native Google Doc instead of an uploaded `.docx` (see `f1-coverage-map.json`'s
+`nos-17-faq` entry, openQuestion q5).
 
 **Note on these two:** `south-african-exhibitors_2026-08-25.md` and the vendor registration form
 are two genuinely separate Drive files (different file IDs, different parent folders). The live

@@ -100,6 +100,15 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
 ];
 ```
 
+> **Superseded (F2, ticketing-complete M1, 2026-09-08):** this snippet is this feature's
+> code-as-shipped record — VIP genuinely had no `earlyBirdCutoff` at F1 time, and its price
+> has since moved again too (see [F2 Open Decisions §1](ticketing-complete-f2-open-decisions.md#1-vip-price-ladder--resolved-by-brads-direct-ruling-2026-09-08)
+> for the current figures). Relevant to this doc's own subject: VIP is no longer without an
+> early-bird window — F2 gave it a freshly-derived cutoff (2027-06-18), off the legacy
+> `EARLY_BIRD_CUTOFF` constant this migration introduced. See
+> [F2 Open Decisions §3](ticketing-complete-f2-open-decisions.md#3-weekend-pass-early-bird-cutoff-mismatch)
+> for why that is not a resolution of Weekend Pass's own cutoff question.
+
 ### `sanity/schemas/documents/ticketType.ts`
 
 Adds one new optional field:

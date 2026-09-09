@@ -1,0 +1,10 @@
+{
+  "capturedAt": "2026-09-08",
+  "note": "Confirmed by direct filesystem check (no directory exists under app/(marketing)/national-show/ for any of these paths as of this date): all five of the NOS session's newly committed routes are unbuilt tonight. F6 wires nav entries to all five anyway (contract-f6.yaml A5) because that session is actively building them and the routing agreement is final -- but F7's nav-links-200 coverage (contract-f7.yaml A5) must treat every href in this list as a KNOWN, LISTED exception to its 200-status check, never as a silent skip inferred from whatever happens to 404 on the day the suite runs. When the NOS session lands one of these routes for real, remove it from this list -- do not leave a route that now returns 200 sitting in the pending list, and do not add a route here that was never negotiated.",
+  "pendingRoutes": [
+    "/national-show/exhibitors/international",
+    "/national-show/symposium",
+    "/national-show/wosa-conference",
+    "/national-show/programme"
+  ]
+}

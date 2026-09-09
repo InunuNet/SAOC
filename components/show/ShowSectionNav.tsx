@@ -19,6 +19,7 @@ interface SectionLink {
 
 const SECTION_LINKS: readonly SectionLink[] = [
   { href: '/national-show', label: 'Show overview', hint: 'The show, the cycle and the classes' },
+  { href: '/national-show/about', label: 'About the show', hint: 'Theme, programme and what it celebrates' },
   { href: '/national-show/plan-your-visit', label: 'Plan your visit', hint: 'Travel, parking and where to stay' },
   { href: '/national-show/what-to-expect', label: 'What to expect', hint: 'Hours, admission and on-the-day detail' },
   { href: '/national-show/faq', label: 'Questions', hint: 'What visitors ask us most' },

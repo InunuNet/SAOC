@@ -1,0 +1,40 @@
+{
+  "capturedAt": "2026-09-09",
+  "note": "Captured at F2 contract-authoring time, BEFORE the unification refactor. Proves the refactor is byte-identical visual output, not a redesign (f1-provisional-unification.md req 2). The two TONE_CLASSES blocks were already identical before F2 touched anything -- the shared module's literal class strings must still equal these after the merge, character for character.",
+  "toneClassesLight": "border-rule bg-parchment text-muted",
+  "toneClassesDark": "border-ivory/30 bg-ivory/10 text-ivory/80",
+  "dataAttributes": {
+    "ProvisionalFigure": "data-provisional-figure",
+    "ExhibitorStatusBadge": "data-exhibitor-marker",
+    "ConfirmationBadge": "data-confirmation-badge",
+    "SocietyFacts": "data-placeholder",
+    "TicketTypeCard": "data-placeholder"
+  },
+  "exhibitorStatusVocabulary": ["confirmed", "research", "question", "pending"],
+  "confirmationStatusVocabulary": ["confirmed", "research", "pending"],
+  "navHrefsBaseline": [
+    "/about",
+    "/societies",
+    "/judging",
+    "/events",
+    "/members",
+    "/national-show/about",
+    "/national-show/what-to-expect",
+    "/national-show/plan-your-visit",
+    "/national-show/faq",
+    "/national-show/programme",
+    "/national-show/workshops",
+    "/national-show/symposium",
+    "/national-show/wosa-conference",
+    "/national-show/exhibitors",
+    "/national-show/exhibitors/international",
+    "/national-show/vendors",
+    "/tickets",
+    "/national-show/archive"
+  ],
+  "badgeCallSites": [
+    "app/(marketing)/national-show/page.tsx",
+    "app/(marketing)/national-show/what-to-expect/page.tsx",
+    "app/(marketing)/national-show/plan-your-visit/page.tsx"
+  ]
+}

@@ -1,30 +1,3 @@
-// =============================================================
-// SAOC — components/chrome/nav-config.ts
-// Site-wide primary nav structure. Header.tsx and MobileMenu.tsx both
-// consume this — neither hardcodes nav items or ticket destination hrefs.
-//
-// Restructured (mission ticketing-complete M3/F6) into the group layout
-// negotiated with the National Show session: Visit / Programme / Exhibit &
-// Trade are `mega` items (one column each) covering the National-Show-scoped
-// destinations; Tickets stands alone as a top-level `link` (the conversion
-// path — never nested two clicks deep inside a dropdown); Past Editions is a
-// standalone, visually quieter `link` (see `quiet` below). Lee-Ann's six SAOC
-// sections (About, Societies, Judging, Events/"Calendar of events", Members
-// Portal, and Home via the logo lockup in Header.tsx) stay top-level `link`
-// items — her Drive folder's numbering is document order, not information architecture,
-// so this file does not mirror it.
-//
-// SUPERSEDED (2026-09-09, mission site-content-alignment M2/F2): the note above
-// was written when only Lee-Ann's 6 SAOC sections were being reconciled
-// against nav. That reconciliation now covers all 20 of her sections, SAOC and
-// National Show alike — see
-// .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json,
-// the authoritative section-to-route source of truth (not just this file's
-// comment). For the still-open route-gap list, see
-// .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json
-// rather than restating it here, so the two files can't drift apart.
-// =============================================================
-
 export interface NavLeaf {
   id: string;
   label: string;

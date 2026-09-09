@@ -69,6 +69,11 @@ interface SanityNationalShow {
 // 200 for months while nothing linked to it — reachable by clicking.
 const VISITOR_CARDS = [
   {
+    href: '/national-show/about',
+    title: 'About the show',
+    description: 'The 2027 theme, what the National Show brings together and who takes part.',
+  },
+  {
     href: '/national-show/plan-your-visit',
     title: 'Plan your visit',
     description: 'Travel from the airports, parking, public transport, where to stay and what else to see.',
