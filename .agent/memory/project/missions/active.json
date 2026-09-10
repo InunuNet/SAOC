@@ -1,8 +1,9 @@
 {
   "mission": ".agent/memory/project/missions/2026-09-10-menu-system-layout4.md",
   "checkpoint": {
-    "milestone": null,
-    "feature": null
+    "milestone": "M1",
+    "feature": "F1",
+    "ts": "2026-09-10T19:36:11.080108+00:00"
   },
-  "activated_at": "2026-09-10T19:29:36.276739+00:00"
+  "activated_at": "2026-09-10T19:36:11.080377+00:00"
 }

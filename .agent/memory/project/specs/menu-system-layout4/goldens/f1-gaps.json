@@ -1,0 +1,33 @@
+{
+  "_comment": "Mission menu-system-layout4. Per docs/rules/no-invention.md: 'the correct response to a gap is to name the gap and ask, never to fill it with judgement, inference, or a reasonable-sounding default.' These fields are referenced from f1-nav-config-target.json as value: '__GAP__'. @dev must NOT invent literal copy for them. Contract assertions for these fields check STRUCTURAL presence (non-empty string, correct field name) only -- never exact wording -- so the gate can go green without anyone guessing Brad's or Lee-Ann's words.",
+  "gaps": [
+    {
+      "id": "lead-meta-line",
+      "field": "mega.lead.meta",
+      "describedAs": "mission section 1 table: 'venue + dates line'",
+      "whyGap": "no literal wording given anywhere in the mission file, the handoff, or a manifest field. The underlying FACTS are confirmed elsewhere in project memory (The Hangar, Stellenbosch Flying Club; Thu 16 - Sun 19 Sept 2027) but composing them into a nav meta line is new copy, not sourced copy.",
+      "recommendation": "ask Brad for the exact line, or point @dev at the confirmed facts and let him propose wording for Brad's sign-off before merge -- do not gate-block F1/F5 on this; F2 (MegaMenu render) is where it first becomes visible."
+    },
+    {
+      "id": "feature-rail-meta",
+      "field": "mega.featureRail.meta",
+      "describedAs": "mission section 1 table: 'mono date meta'",
+      "whyGap": "same as lead-meta-line -- likely the show's opening dates, but no literal string given.",
+      "recommendation": "same as lead-meta-line; may end up identical text to it -- Brad's call, not architect's."
+    },
+    {
+      "id": "feature-rail-blurb",
+      "field": "mega.featureRail.blurb",
+      "describedAs": "mission section 1 table: 'one-line blurb'",
+      "whyGap": "no literal wording given. This is promotional copy for the primary conversion CTA -- exactly the kind of string no-invention.md means by 'never fill it with... a reasonable-sounding default.'",
+      "recommendation": "ask Lee-Ann/Brad for one sentence, or draft as placeholder-ai (per docs/rules/no-invention.md provenance values) and mark it visibly until Council-supplied."
+    },
+    {
+      "id": "column-heading-hrefs",
+      "field": "mega.lead.theShow.headingHref, mega.columns[*].headingHref",
+      "describedAs": "not mentioned in the mission at all",
+      "whyGap": "not a copy gap -- a structural call. The pre-Layout-4 nav had each column's heading link to that column's own first leaf (e.g. Visit's heading linked /national-show/about). Layout 4's columns are pure category labels over 4/5/4/3 full leaf lists with no leaf demoted to 'the heading'. Setting headingHref: null on all four is the architect's read of the approved shape, not an invented visual element -- flag to Brad if he intended one of the leaves to double as the column's own link target.",
+      "recommendation": "proceed with null; low risk, one-line reversible if Brad wants a column heading to link somewhere specific."
+    }
+  ]
+}

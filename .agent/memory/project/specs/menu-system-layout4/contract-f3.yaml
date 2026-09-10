@@ -1,0 +1,113 @@
+schema: athanor.contract/v1
+slug: menu-system-layout4
+goal: >
+  Rebuild the National Show section of components/chrome/MobileMenu.tsx: the feature block
+  at the top of the expanded section, then the four groups as headed lists with descriptors.
+  Hard constraint from Brad in the earlier round: mobile menu font was "way too big" -- the
+  handoff's mobile drawer link size is 17px (design/design_handoff_saoc/src/styles.css
+  371-419); never exceed it. Drawer stays right side at min(360px, 90vw). Depends on
+  contract-f1.yaml's NAV shape.
+created_at: '2026-09-10'
+autonomy: high
+features:
+  - id: F3
+    name: >-
+      components/chrome/MobileMenu.tsx -- feature block at the top of the expanded National
+      Show section, then the four groups as headed lists with descriptors; drawer link size
+      never exceeds the handoff's 17px
+    status: pending
+goldens:
+  - .agent/memory/project/specs/menu-system-layout4/goldens/f1-nav-config-target.json
+  - contracts/checks/menu-system-layout4-f3/check-mobile-drawer-max-font-size.mjs
+  - contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs
+  - contracts/checks/menu-system-layout4-shared/check-style-values-sourced.mjs
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/mobile-drawer-oversized-link-fixture.tsx
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/nos-palette-mixing-fixture.tsx
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/invented-font-size-fixture.tsx
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        No font-size literal in MobileMenu.tsx exceeds the handoff's 17px mobile drawer link
+        cap (design/design_handoff_saoc/src/styles.css 371-419) -- Brad's hard constraint
+        from the earlier round. NEGATIVE FIXTURE: goldens/fixtures/
+        mobile-drawer-oversized-link-fixture.tsx (text-[20px]) -- confirm
+        `node contracts/checks/menu-system-layout4-f3/check-mobile-drawer-max-font-size.mjs
+        <that fixture>` exits 1. Currently PASSES against the real file (today's largest is
+        16px) -- must stay passing through the F3 rebuild, not merely start passing.
+      command: >-
+        node contracts/checks/menu-system-layout4-f3/check-mobile-drawer-max-font-size.mjs
+        components/chrome/MobileMenu.tsx
+      required: true
+
+    - id: A2
+      description: >
+        Drawer panel stays right side at min(360px, 90vw) -- explicitly named as unchanged
+        in the mission's own F3 brief. CORRECTED DURING AUTHORING: the mission brief's own
+        "min(360px, 90vw)" is the handoff CSS's literal value
+        (design/design_handoff_saoc/src/styles.css .mobile-menu__panel, `width: min(360px,
+        90vw)`); the real component implements the equivalent with Tailwind utilities --
+        `ml-auto` (right side) + `w-full max-w-[360px]` (full width capped at 360px, which
+        behaves like min(360px, 100vw) -- effectively identical to the CSS `min()` at any
+        viewport under 3600px). Checking for the literal "min(360px, 90vw)" string would
+        never have passed against the real implementation at any point, pre- or post-F3 --
+        that would have been an assertion satisfiable by nothing real, exactly the audited
+        defect class this mission's own contract is supposed to avoid. Checks the actual
+        Tailwind pattern instead. NEGATIVE CONTROL: currently passes against the real file;
+        deleting `max-w-[360px]` or `ml-auto` during the rewrite flips it red.
+      command: >-
+        grep -qE "ml-auto" components/chrome/MobileMenu.tsx &&
+        grep -qE "max-w-\[360px\]" components/chrome/MobileMenu.tsx
+      required: true
+
+    - id: A3
+      description: >
+        The rebuilt National Show section renders the four manifest groups (Visit,
+        Programme, Exhibit & Trade) as headed lists, plus the feature block, replacing
+        today's three-separate-mega-groups-plus-standalone-Tickets structure. Checks for the
+        three group headings and the absence of the old "Exhibit" trigger-only label
+        (mission section 3 F6's shortened trigger text, superseded by this mission).
+      command: >-
+        grep -q "Visit" components/chrome/MobileMenu.tsx &&
+        grep -q "Programme" components/chrome/MobileMenu.tsx &&
+        grep -qE "Exhibit (&amp;|&) Trade" components/chrome/MobileMenu.tsx
+      required: true
+
+    - id: A4
+      description: >
+        No unsourced colour or font-size literal (property 3). NEGATIVE FIXTURE:
+        goldens/fixtures/invented-font-size-fixture.tsx.
+      command: >-
+        node contracts/checks/menu-system-layout4-shared/check-style-values-sourced.mjs
+        components/chrome/MobileMenu.tsx
+      required: true
+
+    - id: A5
+      description: >
+        SAOC/NOS palette never mixes. NEGATIVE FIXTURE:
+        goldens/fixtures/nos-palette-mixing-fixture.tsx.
+      command: >-
+        node contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs
+        components/chrome/MobileMenu.tsx
+      required: true
+
+    - id: A6
+      description: >
+        PROPERTY 5 (mission section 6, 390px drawer) -- placeholder, expected FAIL/MISSING
+        today. e2e/mobile-nav-reaches-every-section.spec.ts hardcodes the pre-Layout-4 three-
+        group shape (GROUPS array with Visit/Programme/Exhibit trigger names and destination
+        lists) and must be rewritten by @dev to walk the new single National Show mega's four
+        groups plus feature block, reading goldens/fixtures/f1-pending-nos-routes.json (per
+        contract-f1.yaml's A9) rather than the old f6 fixture.
+      command: >-
+        grep -q "f1-pending-nos-routes.json" e2e/mobile-nav-reaches-every-section.spec.ts
+      required: true
+
+    - id: A7
+      description: >
+        Real Playwright run of e2e/no-horizontal-overflow.spec.ts at 390px, once F3 lands --
+        no horizontal scroll introduced by the rebuilt drawer content.
+      command: >-
+        npx playwright test e2e/no-horizontal-overflow.spec.ts --grep "390"
+      required: true

@@ -1,0 +1,115 @@
+schema: athanor.contract/v1
+slug: menu-system-layout4
+goal: >
+  Touch components/chrome/Header.tsx only as far as F1's nav restructure forces. The
+  lockup, utility bar, search and Contact button are untouched. Header ground stays
+  parchment, sticky; nav links stay Manrope 14px/500, sentence case, brass active
+  underline. Header.tsx already renders NAV generically (`n.type === 'mega' ? <MegaMenu
+  item={n} /> : <Link>`), so F1's additive NavItem changes (lead/columns/featureRail)
+  should require ZERO change here -- MegaMenu.tsx (F2) is where the new fields are
+  consumed. This contract exists to PROVE that "should require zero change" rather than
+  assume it.
+created_at: '2026-09-10'
+autonomy: high
+features:
+  - id: F4
+    name: >-
+      components/chrome/Header.tsx -- only as far as the nav restructure forces; lockup,
+      utility bar, search and Contact button untouched
+    status: pending
+goldens:
+  - .agent/memory/project/specs/menu-system-layout4/goldens/f1-nav-config-target.json
+  - contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs
+  - contracts/checks/menu-system-layout4-shared/check-style-values-sourced.mjs
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/nos-palette-mixing-fixture.tsx
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/invented-font-size-fixture.tsx
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        Untouched surfaces present and unchanged: the logo lockup (SA Orchid Council
+        wordmark + "Making a difference since 1968" tagline), the search trigger
+        (aria-label "Open search"), and the Contact button linking /contact. NEGATIVE
+        CONTROL: currently passes against the real file; removing any of these three during
+        the nav-restructure edit flips it red -- exactly the "F4 only touches what F1 forces"
+        boundary this contract exists to hold.
+      command: >-
+        grep -q "SA Orchid Council" components/chrome/Header.tsx &&
+        grep -q "Making a difference since 1968" components/chrome/Header.tsx &&
+        grep -q "Open search" components/chrome/Header.tsx &&
+        grep -qE 'href="/contact"' components/chrome/Header.tsx
+      required: true
+
+    - id: A2
+      description: >
+        Header ground stays parchment and sticky (design/design_handoff_saoc/src/styles.css
+        279-297: `.header { position: sticky; ... background: var(--parchment); }`).
+        NEGATIVE CONTROL: currently passes against the real file (`sticky top-0` and
+        `bg-parchment` both present) -- untouched by this mission's own scope, but guarded
+        against an accidental sweep-up edit.
+      command: >-
+        grep -q "sticky" components/chrome/Header.tsx &&
+        grep -q "bg-parchment" components/chrome/Header.tsx
+      required: true
+
+    - id: A3
+      description: >
+        Nav link styling stays Manrope 14px/500 with a brass active-state underline
+        (design/design_handoff_saoc/src/styles.css 309-338: `.header__link { font-size:
+        14px; font-weight: 500; }`, `.header__link.is-active::after { background:
+        var(--accent); }` -- brass is --accent, #9e8c6b). NEGATIVE CONTROL: currently
+        passes against the real file (text-[14px], the active-state absolute underline
+        span, and bg-primary/text-primary active-state colouring are all present -- Manrope
+        itself is the site's default `font-sans`, not set per-link). PRE-EXISTING GAP flagged
+        during contract authoring, not gated here: the handoff's own `.header__inner`
+        padding is `18px 0`, but the real Header.tsx uses `px-8 py-3` (py-3 = 12px) -- a
+        pre-existing mismatch unrelated to F1's nav restructure and out of F4's stated scope
+        ("only as far as the nav restructure forces"). Not asserted true or false by this
+        contract; flagged for Brad/backlog, not silently fixed or silently ignored.
+      command: >-
+        grep -qE "text-\[14px\]" components/chrome/Header.tsx &&
+        grep -qE "is-active|active \?" components/chrome/Header.tsx &&
+        grep -qE "bg-primary|-bottom-1 h-px" components/chrome/Header.tsx
+      required: true
+
+    - id: A4
+      description: >
+        Header.tsx still renders the mega item generically -- `n.type === 'mega'` dispatches
+        to `<MegaMenu item={n} />` rather than Header.tsx itself special-casing the National
+        Show item's lead/columns/featureRail fields. This is the mechanical proof that F1's
+        additive type changes did NOT force Header.tsx to grow National-Show-specific
+        rendering logic of its own.
+      command: >-
+        grep -qE "n\.type === 'mega'" components/chrome/Header.tsx &&
+        grep -qE "<MegaMenu" components/chrome/Header.tsx &&
+        ! grep -qE "\.featureRail|\.columns\.map|\.lead\." components/chrome/Header.tsx
+      required: true
+
+    - id: A5
+      description: >
+        No unsourced colour or font-size literal (property 3). NEGATIVE FIXTURE:
+        goldens/fixtures/invented-font-size-fixture.tsx.
+      command: >-
+        node contracts/checks/menu-system-layout4-shared/check-style-values-sourced.mjs
+        components/chrome/Header.tsx
+      required: true
+
+    - id: A6
+      description: >
+        SAOC/NOS palette never mixes. NEGATIVE FIXTURE:
+        goldens/fixtures/nos-palette-mixing-fixture.tsx.
+      command: >-
+        node contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs
+        components/chrome/Header.tsx
+      required: true
+
+    - id: A7
+      description: >
+        PROPERTY 2 (mission section 6): /national-show reachable from the header, and
+        PROPERTY 1's non-pending subset: all currently-existing (non-NOS-pending) hrefs
+        return 200. Real Playwright run once F1/F5 land and e2e/nav-links-200.spec.ts is
+        updated (contract-f1.yaml A8).
+      command: >-
+        npx playwright test e2e/nav-links-200.spec.ts
+      required: true

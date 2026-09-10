@@ -1,0 +1,36 @@
+{
+  "_comment": "Mission menu-system-layout4, M1/F1. Flattened, deduplicated href golden for the target NAV shape -- mirrors the pattern of .agent/memory/project/specs/ticketing-complete/goldens/f7-nav-targets.json (independent audit-trail cross-check, NOT the source of truth -- e2e specs must import NAV directly, per that file's own established convention). This mission's own checker, contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs, imports the real NAV export at runtime and diffs its flattened hrefs against expectedHrefs below in both directions, exactly like check-nav-targets-golden.mjs does for f7. Supersedes f7-nav-targets.json's list for the National Show scope only -- the 6 flat SAOC links (about/societies/judging/events/members) plus /sponsors stay a direct comparison; F6's old three-mega-plus-standalone-Tickets shape is gone.",
+  "expectedTopLevelCount": 7,
+  "expectedHrefs": [
+    "/about",
+    "/societies",
+    "/judging",
+    "/events",
+    "/members",
+    "/sponsors",
+    "/national-show",
+    "/national-show/about",
+    "/national-show/what-to-expect",
+    "/national-show/plan-your-visit",
+    "/national-show/faq",
+    "/national-show/programme",
+    "/national-show/workshops",
+    "/national-show/symposium",
+    "/national-show/wosa-conference",
+    "/national-show/conferences",
+    "/national-show/sa-exhibitors",
+    "/national-show/international-guests",
+    "/national-show/exhibitors",
+    "/national-show/vendors",
+    "/national-show/tickets",
+    "/national-show/sponsors",
+    "/national-show/archive"
+  ],
+  "expectedHrefCount": 23,
+  "countNote": "23 = 6 flat SAOC top-level (about/societies/judging/events/members/sponsors) + 17 National Show entries (1 hub + 4 visit + 5 programme + 4 exhibit-trade + 3 the-show, matching the manifest's 17 listed:true rows exactly). Tickets' feature-rail CTA href (/national-show/tickets) is the SAME href as its theShow.links entry -- already counted once, per the existing f7 golden's own dedupe convention ('a href could in principle appear as both a mega item's own href and a column link... the test shouldn't assume that').",
+  "removedHrefsFromF7": {
+    "_comment": "Hrefs that were in f7-nav-targets.json (the pre-Layout-4 F6 nav shape) and are GONE from this golden -- must not still appear anywhere in NAV after F1 lands.",
+    "hrefs": ["/national-show/exhibitors/international", "/tickets"],
+    "note": "/national-show/exhibitors/international is F5's dead link, repointed to /national-show/international-guests (already present above). /tickets (the old standalone top-level Tickets item's href) is superseded -- Layout 4's two Tickets placements both point at /national-show/tickets per the manifest's 'the-show' group, not the separate /tickets route. /tickets itself still exists as a real page (app/(marketing)/tickets) and is unaffected by this mission -- it simply stops being a NAV target."
+  }
+}

@@ -1,0 +1,109 @@
+schema: athanor.contract/v1
+slug: menu-system-layout4
+goal: >
+  Rebuild components/chrome/MegaMenu.tsx from a narrow anchored panel (min-w-[280px] /
+  sm:min-w-[520px]) into the approved full-width sheet in five tracks: lead block, three
+  group columns, feature rail. Keep the existing disclosure semantics VERBATIM --
+  aria-haspopup, aria-expanded, Enter/Space open, Escape closes and returns focus, outside
+  mousedown closes, blur-outside closes. Depends on contract-f1.yaml's NAV shape (the NavItem
+  type additions -- lead/columns/featureRail -- must exist before this can render them).
+created_at: '2026-09-10'
+autonomy: high
+features:
+  - id: F2
+    name: >-
+      components/chrome/MegaMenu.tsx -- the narrow anchored panel becomes the full-width
+      sheet in five tracks (lead block, three group columns, feature rail); existing
+      disclosure and keyboard semantics kept verbatim
+    status: pending
+goldens:
+  - .agent/memory/project/specs/menu-system-layout4/goldens/f1-nav-config-target.json
+  - .agent/memory/project/specs/menu-system-layout4/goldens/f1-gaps.json
+  - contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs
+  - contracts/checks/menu-system-layout4-shared/check-style-values-sourced.mjs
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/nos-palette-mixing-fixture.tsx
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/invented-font-size-fixture.tsx
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        The old narrow-panel sizing is GONE -- min-w-[280px] and sm:min-w-[520px] no longer
+        appear, and the panel is full-width (spans a `w-full` or equivalent full-container
+        track, not `absolute left-0 top-full` anchored to the trigger). NEGATIVE CONTROL:
+        this assertion FAILS against the CURRENT, unmodified MegaMenu.tsx today (verified
+        during contract authoring -- `grep -q "min-w-\[280px\]" components/chrome/
+        MegaMenu.tsx` currently succeeds, i.e. the narrow class is still there) -- it is
+        proof the assertion is checking something real, not a tautology, and it must flip to
+        PASS only once F2 actually replaces the sizing.
+      command: >-
+        ! grep -q "min-w-\[280px\]" components/chrome/MegaMenu.tsx &&
+        ! grep -q "sm:min-w-\[520px\]" components/chrome/MegaMenu.tsx &&
+        grep -qE "w-full|inset-x-0" components/chrome/MegaMenu.tsx
+      required: true
+
+    - id: A2
+      description: >
+        Disclosure semantics preserved VERBATIM (mission F2 brief, out of scope to change):
+        aria-haspopup, aria-expanded, Escape-closes-and-returns-focus, outside mousedown
+        closes, blur-outside closes. Currently PASSES against the real file (these are
+        already correct and untouched by this mission) -- included so a regression during
+        the five-track rebuild is caught, not assumed safe because "we didn't mean to touch
+        it." Proven capable of failing: stripping these five substrings from a copy of the
+        real file (any accidental deletion during the rewrite) flips this red -- see
+        note below for the exact reproduction command used during authoring (not committed
+        as a fixture file, since it is a mechanical strip of the real file rather than a
+        hand-authored broken shape).
+      command: >-
+        grep -q "aria-haspopup" components/chrome/MegaMenu.tsx &&
+        grep -q "aria-expanded" components/chrome/MegaMenu.tsx &&
+        grep -q "Escape" components/chrome/MegaMenu.tsx &&
+        grep -q "mousedown" components/chrome/MegaMenu.tsx &&
+        grep -qE "onBlur|blur" components/chrome/MegaMenu.tsx
+      required: true
+
+    - id: A3
+      description: >
+        No unsourced colour or font-size literal (property 3, mission section 6) in the
+        rebuilt component. NEGATIVE FIXTURE: goldens/fixtures/invented-font-size-fixture.tsx
+        (19px, absent from both handoff CSS files) -- confirm
+        `node contracts/checks/menu-system-layout4-shared/check-style-values-sourced.mjs
+        <that fixture>` exits 1.
+      command: >-
+        node contracts/checks/menu-system-layout4-shared/check-style-values-sourced.mjs
+        components/chrome/MegaMenu.tsx
+      required: true
+
+    - id: A4
+      description: >
+        SAOC/NOS palette never mixes. NEGATIVE FIXTURE:
+        goldens/fixtures/nos-palette-mixing-fixture.tsx (#211a57) -- confirm
+        `node contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs
+        <that fixture>` exits 1.
+      command: >-
+        node contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs
+        components/chrome/MegaMenu.tsx
+      required: true
+
+    - id: A5
+      description: >
+        PROPERTY 4 (mission section 6, keyboard) -- placeholder, expected MISSING or FAIL
+        today. e2e/nav-keyboard-operable.spec.ts currently targets a trigger named "Visit"
+        and a menu role named "Visit" (the pre-Layout-4 three-mega shape) -- it must be
+        updated by @dev to target the single "National Show" trigger and assert tab order
+        runs lead -> groups -> feature rail with no focus trap, per mission section 6
+        property 4. This assertion checks the spec was actually repointed, not merely that
+        it still exists and still (accidentally) passes against a differently-named trigger.
+      command: >-
+        grep -q "National Show" e2e/nav-keyboard-operable.spec.ts &&
+        ! grep -qE "'Visit'|\"Visit\"" e2e/nav-keyboard-operable.spec.ts
+      required: true
+
+    - id: A6
+      description: >
+        Real Playwright run of the (updated) keyboard-operability spec, once A5's repoint has
+        landed -- the actual property, not just a grep proxy for "the spec mentions the right
+        trigger name."
+      command: >-
+        npx playwright test e2e/nav-keyboard-operable.spec.ts
+      required: true
