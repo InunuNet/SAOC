@@ -794,3 +794,38 @@ her, not us, because they are her documents and her facts.
 7. **Ticket prices are not final** — her own §2.7 reply says the ticket and cocktail options
    "still need to be fully developed", and her ticketing document contradicts itself on the
    weekend pass. No price appears anywhere in the seeded content.
+
+---
+
+## M4 gws_inbox_check has no subject under the approved 17-page tree (2026-09-10)
+
+**Decision needed from the lead orchestrator. Raised by @architect while revising
+`contract-m4.yaml`; not an architect's call to make.**
+
+The mandatory verification triad (`.claude/rules/workflow.md`) has three kinds, one of which is
+`gws_inbox_check` — a real test submission whose arrival in a real inbox `gws mail read`
+verifies. M4's revision 1 satisfied it through spec entry 18's contact page: a POPIA-consented
+form on `/national-show/contact` reusing the existing `/api/contact` → Resend flow.
+
+**Brad's approved tree deletes that page** (no NOS-level contact page; a second inbox is an
+unwatched inbox, and site-level `/contact` is the `saoc-eb` lane's). After that deletion, **no
+route M4 owns wires a form that sends mail.** `/national-show/vendors/apply` does, and it is
+the `saoc-eb` lane's, untouchable, and not in this diff.
+
+Pointing the manifest at the site-level `/contact` form would verify **the other lane's code**
+and prove nothing about M4. M4's own revision-1 golden already ruled that out in its own words:
+*"the right response then is to say so and ask, never to point the manifest at an unrelated
+email."*
+
+Two ways out, both structural:
+
+1. **Exempt M4 from `gws_inbox_check`** on the recorded ground that it wires no mail path — and
+   record it as an exemption with a reason, not by quietly omitting the kind. Note
+   `scripts/checks/triad-baseline-exempt.txt` says in its own text that M4 must never be added
+   to an exemption baseline, so this needs an explicit ruling rather than an edit.
+2. **Put a mail path back in scope**, which means adding a page or a form to the approved tree
+   — a change to Brad's approved structure, and his to make.
+
+Until it is ruled, `contract-m4.yaml`'s `D32` asserts only that this escalation exists. The
+other two triad kinds (`codex_qa` `D30`, `browser_deployed_check` `D31`) are unaffected and
+both run.

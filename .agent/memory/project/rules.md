@@ -79,22 +79,36 @@ add. When the council supplies real copy and the flag is cleared, the notice dis
 so durable project rules go here, in `.agent/memory/project/rules.md`, which is loaded into
 every session's boot context.
 
-## NOS structure — agreed by all three sessions 2026-09-10 (awaiting operator sign-off)
+## NOS structure — APPROVED BY BRAD 2026-09-10, relayed via saoc-eb
 
-16 pages under /national-show. Hub + four IA groups (Visit / Programme / Exhibit & Trade / The Show).
+17 pages under /national-show. Hub + four IA groups. This supersedes the 16-page draft
+agreed earlier the same day; where the two differ, this section wins.
 
-- Visit: /about · /what-to-expect · /plan-your-visit · /faq
-- Programme: /programme · /workshops · /symposium · /wosa · /conferences (registration)
-- Exhibit & Trade: /sa-exhibitors (nursery directory) · /international-guests · /exhibitors (grower entry guide) · /vendors
-- The Show: /tickets · /archive
-- Link out only: /societies · /sponsors · /judging · /contact
+- Visit: /about (exists, deployed) · /what-to-expect (exists) · /plan-your-visit (exists) · /faq (exists, copy BLOCKED — her .docx is truncated in Drive)
+- Programme: /programme (create) · /workshops (exists) · /symposium (create) · /wosa (create) · /conferences (exists, OWNED BY saoc-eb)
+- Exhibit & Trade: /sa-exhibitors (create) · /international-guests (create) · /exhibitors (exists) · /vendors + /apply /register /payment (exists)
+- The Show: /tickets (exists, OWNED BY saoc-eb) · /sponsors (create) · /archive + /archive/[year] (exists)
+
+DELETED — do not build, and remove if present:
+/national-show/upcoming (delete the route, NO redirect) · /plant-exhibition · /plant-sales ·
+/judging-and-awards · /national-show/contact. Site-level /media-kit deletion belongs to saoc-eb.
 
 Rulings:
 - `/national-show/exhibitors` is the GROWER ENTRY GUIDE (entryProcess/fees/classes/judging/eligibility/display/sales/practicalities/permits). `/national-show/sa-exhibitors` is the PUBLIC NURSERY DIRECTORY from Lee-Ann's `4. South African Exhibitors`. Different audiences; both correct. The docx filename "1.1 SA Exhibitors" misleads — do not re-merge them.
-- No NOS-level sponsors, judging, or contact page: site-level pages exist and a duplicate splits real relationships / creates an unwatched inbox.
+- `/national-show/sponsors` is REINSTATED and needs its OWN DATA SCOPE — a new `showSponsor` type, never a filter or view over the site-level sponsor list. The Show's sponsors and SAOC's are different lists and must be able to diverge. Lee-Ann's NOS Sponsors folder is empty: placeholder copy under R11, real empty listing, never an invented sponsor.
+- No NOS-level judging or contact page: site-level /judging and /contact exist and a duplicate splits real relationships or creates an unwatched inbox.
 - No plant-exhibition or plant-sales page: the sales area is described inside the SA Exhibitors doc; the competitive display is What to Expect + Judging.
 - `/national-show/conferences` keeps its slug (already a registration page). "Joint track" wording removed per spec §4.7 — owned by saoc-eb.
-- Five layout archetypes, not sixteen page designs: hub, prose (FAQ is a prose variant), schedule, listing, transactional.
-- Menu: flat six, `National Show` → hub; the four groups render on the hub, not as a dropdown. Unanimous across sessions; awaiting operator confirmation.
-- Owned by saoc-eb: components/chrome/**, /tickets/**, /sponsors, /judging, /contact, /societies, all redirects.
-- Empty listings (/sa-exhibitors, /international-guests) name WHAT will appear and WHEN, with the page's own structure visible (heading, intro, shape of the coming card) and the absence stated in words. Never "no results". The rendered treatment is Codi's and is downstream of building, not a precondition for structure.
+- /wosa links OUT to WOSA and generates NO wild-orchid conservation content. Standing ruling.
+- Five layout archetypes, not seventeen page designs: hub, prose (FAQ is a prose variant), schedule, listing, transactional.
+- Reachability is HUB-BASED, not header-based. There is no approved header dropdown; the handoff specifies a flat six-item nav. Every page must be reachable from the /national-show hub AND from ShowSectionNav. No assertion may depend on a header entry existing.
+- Empty listings (/sa-exhibitors, /international-guests, /sponsors) name WHAT will appear and WHEN, with the page's own structure visible (heading, intro, shape of the coming card) and the absence stated in words. Never "no results". The rendered treatment is Codi's and is downstream of building.
+- Owned by saoc-eb, do not edit: components/chrome/**, app/(marketing)/tickets/**, /national-show/tickets, /national-show/conferences, /sponsors, /judging, /contact, /societies, all redirects, all route deletions outside /national-show.
+- Binding design rulings: R1 (SAOC chrome untouched), R11 (disclosure chip → sentence → dashed 2px rail, warning tokens for AI-generated, muted for researched, never error/red), R12 (no NOS header or second nav), R13 (grid orphan rule, columns derived from rendered count, never a hardcoded grid-cols class; when no c avoids the orphan, keep the content ceiling and let the FINAL CARD SPAN the remainder — never a partial row, never a centred lone card; binds at c>=3, EXEMPT BY RULING at c=2).
+
+Process (Brad, 2026-09-10):
+- LOCAL FIRST. Every page renders correctly on localhost:3000 before anything is pushed.
+- The site is EARLY ALPHA — no real users, no bookmarks, no live payments. Route changes are free; never preserve a bad structure for migration safety.
+- Branch for this lane is `nos-site`. `origin/nos-design` belongs to the design lane — never push to it.
+
+- Design-ruling authority is Codi's `.agent/memory/project/design/nos-design-rulings.md` (R1-R13, commits 6687b13/5c103ea) IN CODI'S WORKSPACE. The same relative path in this tree is a STALE MIRROR and is not the authority. Cite rulings by number; never treat the local copy as canonical.
