@@ -1,0 +1,9 @@
+{
+  "count": 0,
+  "missingAssertionIds": [],
+  "parseErrorCount": 2,
+  "parseErrorFiles": [
+    ".agent/memory/project/specs/gate-timeout-fix/contract-f1.yaml::(file)",
+    ".agent/memory/project/specs/mission-slug-collision-fix/contract-f1.yaml::(file)"
+  ]
+}
