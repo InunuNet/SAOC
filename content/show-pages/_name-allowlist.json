@@ -1,0 +1,39 @@
+{
+  "_comment": [
+    "M3 (national-show-ia-alignment) proper-noun allowlist for scripts/checks/verify-show-page-m3.ts's",
+    "check C3. Every capitalised multi-word phrase appearing in a section body whose provenance is",
+    "placeholder-ai or research must appear here, or C3 fails. See",
+    ".agent/memory/project/specs/national-show-ia-alignment/goldens/m3/verifier-contract.golden.md.",
+    "C3 WILL produce false positives on legitimate names. The fix is to add the name here, never to",
+    "reword the sentence that triggered it. Every entry below is a real organisation, place or page",
+    "name used in the M3 corpus — none is an invented exhibitor, sponsor, speaker or business."
+  ],
+  "names": [
+    "SAOC",
+    "WOSA",
+    "South Africa",
+    "South African",
+    "South African Orchid Council",
+    "Orchid Council",
+    "National Show",
+    "National Orchid Show",
+    "SAOC Symposium",
+    "WOSA Conference",
+    "Wild Orchids of Southern Africa",
+    "Stellenbosch Flying Club",
+    "Western Cape",
+    "Plan Your Visit",
+    "Contact Us",
+    "Booking and Tickets",
+    "Judging and Awards",
+    "Plant Exhibition and Sales",
+    "Plant Sales",
+    "International Guests and Exhibitors",
+    "South African Exhibitors",
+    "Frequently Asked Questions",
+    "What to Expect",
+    "Booking and Contact",
+    "Symposium and Workshops",
+    "WOSA Conference and Workshops"
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "pageKey": "05-international-guests-and-exhibitors",
+  "specNumber": 5,
+  "title": "International Guests and Exhibitors",
+  "summary": "Profiles of international speakers, judges, exhibitors and researchers attending the Show.",
+  "sections": [
+    {
+      "sectionKey": "intro",
+      "heading": "International Guests and Exhibitors",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "intro-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b1-s1",
+              "text": "This page will introduce the international speakers, judges, exhibitors and researchers travelling to the 2027 National Show.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "intro-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b2-s1",
+              "text": "Each guest's profile will cover their role at the Show, the organisation they represent, and where they will appear across the programme.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "who-will-appear",
+      "heading": "Who Will Appear",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "who-will-appear-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "who-will-appear-b1-s1",
+              "text": "The guest list is still being confirmed with the Council, so no international guests can be named here yet.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "who-will-appear-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "who-will-appear-b2-s1",
+              "text": "Once confirmations are in place, this section will list each guest with their role and confirmation status, sourced from the shared guest profile the Council maintains.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "pageKey": "18-contact-us",
+  "specNumber": 18,
+  "title": "Contact Us",
+  "summary": "How to reach the 2027 National Show organising committee.",
+  "sections": [
+    {
+      "sectionKey": "overview",
+      "heading": "Contact Us",
+      "kind": "prose",
+      "provenance": "council-supplied",
+      "sourcePath": "content/drive-source/National Show/18. Contact/2027 Show Contact information/v1.0/content.md",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "contact-overview-b30",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "contact-overview-b30-s1",
+              "text": "The Orchid Council is still finalising how enquiries will be routed for 2027 — possible categories under consideration are Exhibition visitors, SAOC Symposium, WOSA Conference, Vendors, and Workshops and outings, or a single enquiries address covering all of them. Confirmed contact details will be published here once the Council decides.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "how-to-reach-us",
+      "heading": "How to Reach Us",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "how-to-reach-us-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "how-to-reach-us-b1-s1",
+              "text": "How enquiries will be routed for 2027 is still being decided by the Council, as explained above.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "how-to-reach-us-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "how-to-reach-us-b2-s1",
+              "text": "Once contact details and routing are confirmed, this section will explain the quickest way to reach the right person for your enquiry.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

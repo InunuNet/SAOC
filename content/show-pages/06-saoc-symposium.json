@@ -1,0 +1,117 @@
+{
+  "pageKey": "06-saoc-symposium",
+  "specNumber": 6,
+  "title": "SAOC Symposium",
+  "summary": "Programme and registration hub for the SAOC Symposium.",
+  "sections": [
+    {
+      "sectionKey": "theme",
+      "heading": "Symposium Theme",
+      "kind": "prose",
+      "provenance": "council-supplied",
+      "sourcePath": "content/drive-recovered/06-saoc-symposium/theme/content.md",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "symposium-theme-b14",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "symposium-theme-b14-s1",
+              "text": "\"From Wild Origins to Cultivated Excellence: The Future of Orchids\"",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "symposium-theme-b15",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "symposium-theme-b15-s1",
+              "text": "Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the sustainability of the orchid industry.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "about-the-symposium",
+      "heading": "About the Symposium",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "about-the-symposium-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "about-the-symposium-b1-s1",
+              "text": "This page is the programme and registration hub for the SAOC Symposium.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "about-the-symposium-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "about-the-symposium-b2-s1",
+              "text": "The full programme, including sessions and presenters, is still being finalised with the Council and will be published here once confirmed.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "attending",
+      "heading": "Attending",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "attending-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "attending-b1-s1",
+              "text": "Registration for the Symposium will run through the Show's central booking system once details are confirmed.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "attending-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "attending-b2-s1",
+              "text": "Fees, capacity and any waiting-list arrangements have not yet been decided.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

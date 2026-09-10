@@ -1,0 +1,80 @@
+{
+  "pageKey": "11-programme",
+  "specNumber": 11,
+  "title": "Programme",
+  "summary": "The master timetable across all National Show activities.",
+  "sections": [
+    {
+      "sectionKey": "intro",
+      "heading": "Programme",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "intro-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b1-s1",
+              "text": "This page will bring together the master timetable for every National Show activity in one place, once the full programme is confirmed.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "intro-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b2-s1",
+              "text": "It draws on the same schedule information used by the Symposium, WOSA Conference and Workshops pages.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "how-the-programme-will-work",
+      "heading": "How the Programme Will Work",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "how-the-programme-will-work-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "how-the-programme-will-work-b1-s1",
+              "text": "The programme is intended to be viewable as both a list and a calendar, with filtering by day. None of the underlying schedule has been confirmed yet.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "how-the-programme-will-work-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "how-the-programme-will-work-b2-s1",
+              "text": "Once sessions are finalised, this page will list them here rather than repeating the detail already published on the Symposium and Workshops pages.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

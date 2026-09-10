@@ -78,3 +78,23 @@ add. When the council supplies real copy and the flag is cleared, the notice dis
 **Note:** `CLAUDE.md` is write-protected by `execution/hooks/check_autonomy.sh` (always denied),
 so durable project rules go here, in `.agent/memory/project/rules.md`, which is loaded into
 every session's boot context.
+
+## NOS structure — agreed by all three sessions 2026-09-10 (awaiting operator sign-off)
+
+16 pages under /national-show. Hub + four IA groups (Visit / Programme / Exhibit & Trade / The Show).
+
+- Visit: /about · /what-to-expect · /plan-your-visit · /faq
+- Programme: /programme · /workshops · /symposium · /wosa · /conferences (registration)
+- Exhibit & Trade: /sa-exhibitors (nursery directory) · /international-guests · /exhibitors (grower entry guide) · /vendors
+- The Show: /tickets · /archive
+- Link out only: /societies · /sponsors · /judging · /contact
+
+Rulings:
+- `/national-show/exhibitors` is the GROWER ENTRY GUIDE (entryProcess/fees/classes/judging/eligibility/display/sales/practicalities/permits). `/national-show/sa-exhibitors` is the PUBLIC NURSERY DIRECTORY from Lee-Ann's `4. South African Exhibitors`. Different audiences; both correct. The docx filename "1.1 SA Exhibitors" misleads — do not re-merge them.
+- No NOS-level sponsors, judging, or contact page: site-level pages exist and a duplicate splits real relationships / creates an unwatched inbox.
+- No plant-exhibition or plant-sales page: the sales area is described inside the SA Exhibitors doc; the competitive display is What to Expect + Judging.
+- `/national-show/conferences` keeps its slug (already a registration page). "Joint track" wording removed per spec §4.7 — owned by saoc-eb.
+- Five layout archetypes, not sixteen page designs: hub, prose (FAQ is a prose variant), schedule, listing, transactional.
+- Menu: flat six, `National Show` → hub; the four groups render on the hub, not as a dropdown. Unanimous across sessions; awaiting operator confirmation.
+- Owned by saoc-eb: components/chrome/**, /tickets/**, /sponsors, /judging, /contact, /societies, all redirects.
+- Empty listings (/sa-exhibitors, /international-guests) name WHAT will appear and WHEN, with the page's own structure visible (heading, intro, shape of the coming card) and the absence stated in words. Never "no results". The rendered treatment is Codi's and is downstream of building, not a precondition for structure.

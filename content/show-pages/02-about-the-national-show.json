@@ -1,0 +1,73 @@
+{
+  "pageKey": "02-about-the-national-show",
+  "specNumber": 2,
+  "title": "About the 2027 National Show",
+  "summary": "The Orchid Council's introduction to the 2027 National Show and its theme, \"From Wild Origins to Cultivated Excellence: The Future of Orchids.\"",
+  "sections": [
+    {
+      "sectionKey": "overview",
+      "heading": "About the Show",
+      "kind": "prose",
+      "provenance": "council-supplied",
+      "sourcePath": "content/drive-source/National Show/2. About/2.1 About - 2027 National Show/v1.0/content.md",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "about-overview-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "about-overview-b2-s1",
+              "text": "The 2027 South African National Orchid Show is the South African Orchid Council's premier triennial event, bringing together orchid enthusiasts, growers, researchers, conservationists, judges, horticultural professionals and members of the public to celebrate one of the world's most remarkable plant families.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "about-overview-b3",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "about-overview-b3-s1",
+              "text": "Guided by the theme \"From Wild Origins to Cultivated Excellence: The Future of Orchids,\" the National Show explores the relationship between orchids in their natural habitats and the future of responsible cultivation. The knowledge gained through conservation and scientific research provides the foundation for sustainable cultivation, ethical breeding programmes and the long-term future of orchid growing worldwide.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "about-overview-b4",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "about-overview-b4-s1",
+              "text": "The National Show will showcase spectacular displays created by orchid societies and specialist growers from across South Africa, alongside the country's highest level of orchid judging and awards, specialist plant sales, educational exhibits, a comprehensive symposium, practical workshops and opportunities to engage with local and international experts.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "about-overview-b5",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "about-overview-b5-s1",
+              "text": "An important feature of the 2027 programme will be the participation of Wild Orchids of Southern Africa (WOSA). Through presentations and collaborative sessions within the symposium, WOSA will contribute valuable insights into the ecology, conservation and study of indigenous orchids.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

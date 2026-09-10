@@ -1,0 +1,10 @@
+{
+  "specPage": 6,
+  "sourceDrivePath": "National Show/13. Registration/Booking/Tickets/6-symposium-theme/source.docx",
+  "sourceMd5": "5b10cd4cb2fcbadb0a9cd5fe8e271c39",
+  "method": "unsafe-drive-path-workaround",
+  "recoveredAt": "2026-09-09",
+  "recoveredBy": "athanor:national-show-ia-alignment",
+  "supersededBy": null,
+  "note": "Collected in the same pass as the 13.1/13.2 documents and blocked by the same embedded-slash folder name. The download itself is intact; only the folder name blocked the sync."
+}

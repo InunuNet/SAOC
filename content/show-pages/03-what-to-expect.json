@@ -1,0 +1,95 @@
+{
+  "pageKey": "03-what-to-expect",
+  "specNumber": 3,
+  "title": "What to Expect",
+  "summary": "What visitors will find at the 2027 National Orchid Show.",
+  "sections": [
+    {
+      "sectionKey": "overview",
+      "heading": "What to Expect",
+      "kind": "prose",
+      "provenance": "council-supplied",
+      "sourcePath": "content/drive-source/National Show/3. What to expect/3.1 Info - What to Expect/v1.0/content.md",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "expect-overview-b6",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "expect-overview-b6-s1",
+              "text": "The 2027 South African National Orchid Show promises an immersive experience celebrating the beauty, science and future of orchids.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "expect-overview-b7",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "expect-overview-b7-s1",
+              "text": "Explore breathtaking displays showcasing thousands of flowering orchids, from rare species found in nature to award-winning cultivated hybrids that demonstrate decades of careful breeding and horticultural achievement.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "expect-overview-b8",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "expect-overview-b8-s1",
+              "text": "Browse the extensive plant sales area, where specialist nurseries from across South Africa will be joined by selected international orchid vendors.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "expect-overview-b9",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "expect-overview-b9-s1",
+              "text": "The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "visitor-logistics",
+      "heading": "Visitor Logistics",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "visitor-logistics-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "visitor-logistics-b1-s1",
+              "text": "A few practical details for the day are not yet confirmed by the Council. Opening hours, parking arrangements, the photography policy, cloakroom and plant-holding facilities, and accessibility information will each be added here once confirmed, rather than estimated in advance.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

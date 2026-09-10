@@ -1,0 +1,95 @@
+{
+  "pageKey": "17-faq",
+  "specNumber": 17,
+  "title": "Frequently Asked Questions",
+  "summary": "Answers to the questions visitors ask us most about the 2027 National Show.",
+  "sections": [
+    {
+      "sectionKey": "faq",
+      "heading": "Frequently Asked Questions",
+      "kind": "prose",
+      "provenance": "council-supplied",
+      "sourcePath": "content/drive-recovered/17-faq/faq/content.md",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "faq-b28",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "faq-b28-s1",
+              "text": "Q2. When will the 2027 SAOC show be held?",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "faq-b29",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "faq-b29-s1",
+              "text": "The Show will be held at the Stellenbosch Flying Club, R44 northbound to Stellenbosch.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "more-questions-coming",
+      "heading": "More Questions Coming",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "more-questions-coming-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "more-questions-coming-b1-s1",
+              "text": "The answers above are the only ones confirmed so far. The source document for this page is known to be missing further questions, and the Council has been asked to supply the rest.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "more-questions-coming-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "more-questions-coming-b2-s1",
+              "text": "More questions and answers will be added here as they are confirmed. If you have a question that is not yet covered, please use the Contact Us page.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "more-questions-coming-b3",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "more-questions-coming-b3-s1",
+              "text": "One question we are asked often is when the SAOC Symposium will be held. Its day, date and venue are not yet confirmed, and will be published here once the Council finalises them.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

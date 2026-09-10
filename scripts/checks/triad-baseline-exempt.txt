@@ -1,0 +1,44 @@
+# Verification-triad enforcement baseline — PROJECT-OWNED.
+#
+# Consumed via TRIAD_BASELINE_FILE. Deliberately NOT execution/triad-baseline-exempt.txt:
+# .agent/update-manifest.yaml:12 classifies execution/ as HARNESS wholesale, so a baseline
+# written there is deleted by the next `make update-template` and enforcement silently
+# re-arms mid-mission.
+#
+# ---------------------------------------------------------------------------
+# WHY M1 IS EXEMPT
+# ---------------------------------------------------------------------------
+# execution/verify_triad_coverage.py classifies contract-m1.yaml as a UI/workflow contract
+# because A16 and A37 mention app/ paths. Both mention them only inside PROHIBITION greps —
+# "no file under app/ contains the GROQ type literal for showPage", and "app/api/vendors is
+# unmodified". Neither puts a route or a component under test.
+#
+# M1 genuinely cannot satisfy the triad. It ships components/nos/ShowPageProse.tsx and the
+# lib/data/show-pages.ts loader, but NO ROUTE RENDERS EITHER ONE until M4. There is no
+# deployed surface to point BrowserAgent at. This is the same reason the route checks
+# R1/R3/R4 correctly report SKIP rather than PASS.
+#
+# The exemption expires the moment that stops being true. It is pinned to this contract's
+# exact bytes (see the .sha256 companion), so ANY edit to contract-m1.yaml re-arms
+# enforcement rather than carrying the exemption forward.
+#
+# ---------------------------------------------------------------------------
+# M4 MUST CARRY THE FULL TRIAD AND MUST NEVER BE ADDED TO THIS FILE
+# ---------------------------------------------------------------------------
+# M4 builds sixteen real pages on a deployed origin. That is precisely what the triad
+# exists for, and the placeholder-notice properties (N1-N9) are measured on composited
+# pixels in a real browser — Codi rule at the pixels, not the stylesheet. A browser check
+# is not optional there; it is the only thing that can prove the work.
+#
+# If you are here to exempt M4: don't. Build the deployed surface and verify it.
+# Do not weaken the linter and do not fabricate triad assertions to satisfy it.
+#
+# Upstream: InunuNet/Athanor#1432 — the classifier treats a contract as
+# UI/workflow when app/ paths appear only in prohibition greps, with no route or component
+# under test. Tracked in .agent/memory/project/backlog.md.
+#
+# Two paths, one file: contract.yaml is a symlink to contract-m1.yaml, and mission.py's
+# gate resolves the contract.yaml name. Both are listed so the exemption holds whichever
+# name the gate is invoked with; both pin the same bytes.
+.agent/memory/project/specs/national-show-ia-alignment/contract.yaml
+.agent/memory/project/specs/national-show-ia-alignment/contract-m1.yaml

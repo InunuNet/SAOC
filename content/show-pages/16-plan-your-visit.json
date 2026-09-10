@@ -1,0 +1,103 @@
+{
+  "pageKey": "16-plan-your-visit",
+  "specNumber": 16,
+  "title": "Plan Your Visit",
+  "summary": "Travel, accommodation and itinerary guidance for visitors to the 2027 National Show.",
+  "sections": [
+    {
+      "sectionKey": "intro",
+      "heading": "Plan Your Visit",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "intro-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b1-s1",
+              "text": "This page will help visitors plan their trip to the 2027 National Show, covering travel, parking, accommodation and things to do nearby.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "intro-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b2-s1",
+              "text": "Full detail is still being put together with the Council; what follows is a starting point rather than a finished guide.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "getting-here",
+      "heading": "Getting Here",
+      "kind": "prose",
+      "provenance": "research",
+      "sourcePath": "content/drive-recovered/17-faq/faq/content.md",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "getting-here-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "getting-here-b1-s1",
+              "text": "The venue for the 2027 National Show is Stellenbosch Flying Club, R44 northbound to Stellenbosch.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "staying-nearby",
+      "heading": "Staying Nearby",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "staying-nearby-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "staying-nearby-b1-s1",
+              "text": "Accommodation and local attractions near the venue will be listed here once the Council has options to recommend, grouped by distance from the Show.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "staying-nearby-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "staying-nearby-b2-s1",
+              "text": "In the meantime, visitors are welcome to make their own arrangements ahead of confirmed guidance.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

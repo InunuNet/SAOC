@@ -1,0 +1,87 @@
+{
+  "pageKey": "08-judging-and-awards",
+  "specNumber": 8,
+  "title": "Judging and Awards",
+  "summary": "The judging programme and, after the Show, the award results.",
+  "sections": [
+    {
+      "sectionKey": "intro",
+      "heading": "Judging and Awards",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "intro-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b1-s1",
+              "text": "This page will present the 2027 judging programme for the National Show, covering award categories and how judging works.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "intro-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b2-s1",
+              "text": "After the Show, results will appear here linking each award to its category, exhibitor and judge, alongside the listing below.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "how-judging-works",
+      "heading": "How Judging Works",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "how-judging-works-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "how-judging-works-b1-s1",
+              "text": "Judging at the National Show follows the Council's established accreditation and scoring system, applied consistently across every category.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "how-judging-works-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "how-judging-works-b2-s1",
+              "text": "The specific award categories and judging criteria for 2027 are still being finalised and will be published here once confirmed.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "results",
+      "heading": "Results",
+      "kind": "entityList",
+      "provenance": "placeholder-ai",
+      "body": []
+    }
+  ]
+}

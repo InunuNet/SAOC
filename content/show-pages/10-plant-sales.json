@@ -1,0 +1,88 @@
+{
+  "pageKey": "10-plant-sales",
+  "specNumber": 10,
+  "title": "Plant Sales",
+  "summary": "Practical buying information for the nursery sales area.",
+  "sections": [
+    {
+      "sectionKey": "intro",
+      "heading": "Plant Sales",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "intro-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b1-s1",
+              "text": "This page will cover practical buying information for the nursery sales area at the 2027 National Show, separate from the exhibitor profiles found elsewhere on this site.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "intro-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b2-s1",
+              "text": "It focuses on what buyers need to know before they shop, rather than which nurseries are exhibiting.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "buying-and-taking-plants-home",
+      "heading": "Buying and Taking Plants Home",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "buying-and-taking-plants-home-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "buying-and-taking-plants-home-b1-s1",
+              "text": "Guidance on choosing, wrapping and transporting plants purchased at the Show, including phytosanitary requirements for buyers travelling with plants internationally, will be published here once confirmed with the Council.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "payment",
+      "heading": "Payment",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "payment-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "payment-b1-s1",
+              "text": "Accepted payment methods for the sales area have not yet been confirmed. This section will be updated once the Council finalises how purchases can be paid for on site.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

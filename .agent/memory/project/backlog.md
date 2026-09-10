@@ -1522,3 +1522,11 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   **Not yet filed upstream** — read `execution/mission.py`'s validator first and reproduce it in
   both directions before filing. One untested upstream claim today was enough (see the withdrawn
   `codex_qa.sh` entry). `execution/` is HARNESS-owned; file against `InunuNet/Athanor`, no patch.
+
+## NOS M1 — open on resume (paused 2026-09-10 by operator)
+- A39 source-verification fix is COMPLETE (content-linkage check in `lib/data/show-pages.ts`); gate not re-run.
+- Linkage check correctly FAILS two seed sections whose body is @dev's prose but labelled `council-supplied`:
+  - `content/show-pages/13-booking-tickets.json` § `categories`
+  - `content/show-pages/18-contact-us.json` § `overview`
+  Fix on resume: replace with a real excerpt from the source, else reclassify to `placeholder-ai`. Never loosen the 25-char/sentence threshold.
+- Structure itself is frozen pending three-session sign-off (SAOC lead / NOS Site / NOS Design) + operator approval.

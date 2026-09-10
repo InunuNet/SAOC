@@ -25,6 +25,10 @@ const PINNED_SINGLETON_TYPES = [
   // Without the pin an editor can create a duplicate that the query's [0] may silently
   // pick over the intended one.
   'showExhibitorInfo',
+  // F1 (national-show-ia-alignment, M1): pinned the same way — see
+  // content-model.golden.md. Holds the placeholder/research notice wording so the
+  // council can reword it in Studio without a developer.
+  'showPageSettings',
 ] as const;
 
 const SINGLETON_TITLES: Record<(typeof PINNED_SINGLETON_TYPES)[number], string> = {
@@ -37,6 +41,7 @@ const SINGLETON_TITLES: Record<(typeof PINNED_SINGLETON_TYPES)[number], string> 
   ticketsPage: 'Tickets Page',
   showVisitorInfo: 'Show Visitor Information',
   showExhibitorInfo: 'Show Exhibitor Information',
+  showPageSettings: 'Show Page Settings',
 };
 
 // Collection (non-singleton) document types that keep the stock list behaviour.
@@ -56,6 +61,9 @@ const COLLECTION_TYPES = [
   // F1 (show-exhibitor-info): a listed collection, so the committee can add, remove and
   // reorder journey steps without a developer.
   'showExhibitorStep',
+  // F1 (national-show-ia-alignment, M1): an ordinary browsable list in sitemap order —
+  // pageKey's two-digit prefix does the sorting, no separate order field needed.
+  'showPage',
 ];
 
 export function structure(S: StructureBuilder, _context: StructureResolverContext) {

@@ -1,0 +1,116 @@
+{
+  "pageKey": "09-plant-exhibition-and-sales",
+  "specNumber": 9,
+  "title": "Plant Exhibition and Sales",
+  "summary": "General-admission visitor information for the plant exhibition and sales area.",
+  "sections": [
+    {
+      "sectionKey": "intro",
+      "heading": "Plant Exhibition and Sales",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "intro-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b1-s1",
+              "text": "This page gives general-admission visitors the practical information they need to enjoy the plant exhibition and sales area at the 2027 National Show.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "intro-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b2-s1",
+              "text": "It covers what the space includes and how to make the most of a visit, separately from the accessibility detail below.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "visiting",
+      "heading": "Visiting",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "visiting-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "visiting-b1-s1",
+              "text": "Opening arrangements, admission details and facilities for the exhibition and sales area are still being finalised with the Council.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "visiting-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "visiting-b2-s1",
+              "text": "Once confirmed, this section will explain what is included with general admission and how the space is laid out.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "accessibility",
+      "heading": "Accessibility",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "accessibility-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "accessibility-b1-s1",
+              "text": "Accessibility arrangements for the exhibition and sales area, including wheelchair access and any assistance available on site, will be confirmed and published here ahead of the Show.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "accessibility-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "accessibility-b2-s1",
+              "text": "Visitors with specific accessibility needs are welcome to check back closer to the event for confirmed details.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

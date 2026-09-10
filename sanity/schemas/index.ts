@@ -22,6 +22,9 @@ import { showFaq } from './documents/showFaq';
 import { showExhibitorInfo } from './documents/showExhibitorInfo';
 import { showExhibitorStep } from './documents/showExhibitorStep';
 import { vendorNursery } from './documents/vendorNursery';
+// F1 (national-show-ia-alignment, M1)
+import { showPage } from './documents/showPage';
+import { showPageSettings } from './documents/showPageSettings';
 
 import { portableText } from './objects/portableText';
 import { showVenue } from './objects/showVenue';
@@ -35,6 +38,8 @@ import { exhibitorSection } from './objects/exhibitorSection';
 import { showExhibitorDate } from './objects/showExhibitorDate';
 import { exhibitorQuestion } from './objects/exhibitorQuestion';
 import { exhibitorConfirmationStatuses } from './objects/exhibitorConfirmationStatuses';
+// F1 (national-show-ia-alignment, M1)
+import { showPageSection } from './objects/showPageSection';
 
 export const schemaTypes: SchemaTypeDefinition[] = [
   // Singletons
@@ -49,6 +54,8 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   showVisitorInfo,
   // F1 (show-exhibitor-info)
   showExhibitorInfo,
+  // F1 (national-show-ia-alignment, M1)
+  showPageSettings,
   // Collections
   society,
   boardMember,
@@ -62,6 +69,8 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   showFaq,
   showExhibitorStep,
   vendorNursery,
+  // F1 (national-show-ia-alignment, M1)
+  showPage,
   // Ticketing
   ticketType,
   // Objects
@@ -78,4 +87,6 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   showExhibitorDate,
   exhibitorQuestion,
   exhibitorConfirmationStatuses,
+  // F1 (national-show-ia-alignment, M1)
+  showPageSection,
 ];

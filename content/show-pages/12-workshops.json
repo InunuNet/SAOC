@@ -1,0 +1,102 @@
+{
+  "pageKey": "12-workshops",
+  "specNumber": 12,
+  "title": "Workshops",
+  "summary": "Detailed, bookable workshop listings for the 2027 National Show.",
+  "sections": [
+    {
+      "sectionKey": "intro",
+      "heading": "Workshops",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "intro-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b1-s1",
+              "text": "This page will list the bookable workshops on offer at the 2027 National Show.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "intro-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b2-s1",
+              "text": "Each workshop listing will cover what it involves and how to book, once the workshop schedule is confirmed.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "what-to-expect",
+      "heading": "What to Expect",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "what-to-expect-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "what-to-expect-b1-s1",
+              "text": "Workshops are expected to cover a range of skill levels and practical topics related to orchid growing. Specific titles, durations and presenters have not yet been confirmed.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "booking",
+      "heading": "Booking",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "booking-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "booking-b1-s1",
+              "text": "Workshop places will be booked through the Show's central booking system alongside other ticketed elements.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "booking-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "booking-b2-s1",
+              "text": "Booking will open once workshop details and availability are confirmed.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

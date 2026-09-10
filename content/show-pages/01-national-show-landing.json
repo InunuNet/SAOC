@@ -1,0 +1,103 @@
+{
+  "pageKey": "01-national-show-landing",
+  "specNumber": 1,
+  "title": "The 2027 National Show",
+  "summary": "The primary gateway to the 2027 South African National Orchid Show, showcasing the event theme and linking to every part of the show.",
+  "sections": [
+    {
+      "sectionKey": "welcome",
+      "heading": "Welcome to the 2027 National Show",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "welcome-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "welcome-b1-s1",
+              "text": "This page is the main gateway to the 2027 National Show, introducing the event before visitors move on to the rest of the site.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "welcome-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "welcome-b2-s1",
+              "text": "Here visitors will find an overview of what the Show offers, alongside quick links through to the Symposium, WOSA Conference, Programme, Workshops, Exhibitors, Sponsors, Plan Your Visit, Booking and Contact. This copy is a placeholder pending the introduction the Council supplies.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "what-is-on",
+      "heading": "What's On",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "what-is-on-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "what-is-on-b1-s1",
+              "text": "An overview of what to expect at the Show, drawn together from the Symposium, WOSA Conference, exhibitions, workshops and plant sales once each of those pages has its own confirmed content.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "what-is-on-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "what-is-on-b2-s1",
+              "text": "For now this section only outlines the shape of the event; specific activities and highlights will be added here as the Council confirms them.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "getting-here",
+      "heading": "Getting Here",
+      "kind": "prose",
+      "provenance": "research",
+      "sourcePath": "content/drive-recovered/17-faq/faq/content.md",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "getting-here-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "getting-here-b1-s1",
+              "text": "The venue for the 2027 National Show is confirmed: Stellenbosch Flying Club, R44 northbound to Stellenbosch. Full travel, parking and accommodation guidance will follow on the Plan Your Visit page.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "pageKey": "13-booking-tickets",
+  "specNumber": 13,
+  "title": "Booking and Tickets",
+  "summary": "Ticket categories and activities available to book for the 2027 National Show.",
+  "sections": [
+    {
+      "sectionKey": "categories",
+      "heading": "What You Can Book",
+      "kind": "prose",
+      "provenance": "council-supplied",
+      "sourcePath": "content/drive-recovered/13-booking-tickets/ticketing/content.md",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "ticket-categories-b22",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ticket-categories-b22-s1",
+              "text": "One booking allows a visitor to purchase any combination of Orchid Exhibition tickets, Sunset Cocktails, Workshops and Field Trips. Exhibition ticket categories planned for 2027 are the Early-Bird Exhibition Ticket, the Day Visitor Ticket and the Weekend Pass, plus a VIP Ticket for the Thursday evening opening. Final ticket categories, availability and pricing are confirmed on the booking page.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "ticket-categories-b23",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ticket-categories-b23-s1",
+              "text": "See the current ticket types and book online.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
