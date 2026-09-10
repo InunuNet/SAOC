@@ -138,3 +138,48 @@ exist at all. The canvas had no treatment; this is the treatment.
   lands the grid returns and R13 governs from n = 1.
 - If a page's own intro prose is itself AI placeholder, **R11 applies to that prose in its own
   anatomy, independently of the R18 panel. Do not stack the two.**
+
+---
+
+## MIRROR TRANSFER FAILED VERIFICATION — 2026-09-10. The mirror is NOT landed.
+
+All 4 parts were received and transcribed to `.tmp/sandbox/mirror-sync/part{1..4}.md`.
+Assembled result: **707 lines**, sha256 `27fb4501ef3ee5c055d96b59899fb45a9d1721bb3a5e6afeb910ac2223c9a6fd`.
+**Expected: 709 lines, sha256 `cd4efc0f4b4b6ed01790f288f29cc6c1c4c504b18cb8f4ea51debbe502f7cee7`.**
+
+Per Codi's instruction the file was NOT used and NOT repaired. The assembled draft is parked as
+`.tmp/sandbox/mirror-sync/UNVERIFIED-DO-NOT-USE-assembled.md`. `.agent/memory/project/design/nos-design-rulings.md`
+still holds the STALE 2026-09-08 mirror (R1-R10 only) and remains NOT AUTHORITATIVE.
+
+Likely cause is on our side, not theirs: the parts arrived as chat messages and were transcribed by
+hand, so whitespace at the part boundaries is not byte-faithful. Saved part line counts were
+180/197/211/118 against declared ranges implying 181/198/212/118. Re-transfer should go to a FILE,
+not through message text, if that is possible for them.
+
+**Until a checksum-verified mirror lands: cite R11-R18 by number against Codi's copy, never ours.**
+
+### CONTRADICTION FOUND while reading the parts — needs Codi's ruling before ShowPageProse is rebuilt
+- **R11 clause 1** (in the transferred text): "A dashed 2px rail on the leading edge... Dashed,
+  because provisional... **This is what stops the notice degrading into fine print, and it is the
+  part not to negotiate.**"
+- **Codi's message the same day**, answering our conflict #1: the dashed 2px rail "dies twice over:
+  R17 retires 2px and retires borders as elevation, and a dashed rule specifically is the
+  missing-thing/drop-zone anatomy — the wrong semantic". And **R18 clause 5** independently says
+  "never a dashed outline (a dashed box is the drop-zone/missing-file anatomy, and R17 retired
+  borders as elevation regardless)".
+
+So the transferred R11 still mandates the exact anatomy R17/R18 and Codi's own message retire.
+**Do not rebuild `ShowPageProse` until this is resolved.** Our current implementation matches R11 as
+written and is the thing Codi called non-conforming.
+
+### R13 clause 7 — NEW, and it invalidates part of our grid helper
+The cap of 4 applies to **text-bearing cards** only. It does **NOT** apply to **small uniform tiles**
+(sponsor/affiliate logos, photo thumbnails) where **5 or 6 across is correct and 4 looks sparse**.
+The orphan rule still binds at whatever c is chosen.
+
+Consequences for our lane:
+- `lib/grid-columns.ts` caps every collection at 4. That is wrong for logo/thumbnail grids.
+  **The sweep has two families, not one — read what the card contains before picking its ceiling.**
+- The hub's pre-existing `lg:grid-cols-5` (ten judging classes) was ruled "leave alone" by us on
+  cost grounds; R13/7 now says 5 may be legitimate. Re-examine rather than assume either way.
+- D67/D86/D87/D88 (span tie-break) are CONFIRMED to stand — Codi restated them explicitly.
