@@ -21,133 +21,161 @@ last_checkpoint:
 features:
 - id: F1
   status: pending
-  inline_brief: >-
-    showPage / showPageSection / showPageSettings Sanity types. provenance is a required
-    three-value enum (council-supplied | research | placeholder-ai) with NO initialValue, so
-    a section cannot be published until an editor makes an explicit choice. Registered in
-    sanity/schemas/index.ts; showPageSettings pinned in structure.ts, showPage listed as a
-    collection.
+  inline_brief: showPage / showPageSection / showPageSettings Sanity types. provenance
+    is a required three-value enum (council-supplied | research | placeholder-ai)
+    with NO initialValue, so a section cannot be published until an editor makes an
+    explicit choice. Registered in sanity/schemas/index.ts; showPageSettings pinned
+    in structure.ts, showPage listed as a collection.
 - id: F2
   status: pending
-  inline_brief: >-
-    content/drive-recovered/ - the four hand-salvaged council documents (13.1 ticketing,
-    13.2 vendor form, 6 symposium theme, 17.1 FAQ) moved out of the gitignored session
-    sandbox into a committed sibling tree that execution/drive_docx_sync.py never writes to,
-    each with a recovery.json recording source Drive path, source md5 and salvage method.
+  inline_brief: content/drive-recovered/ - the four hand-salvaged council documents
+    (13.1 ticketing, 13.2 vendor form, 6 symposium theme, 17.1 FAQ) moved out of the
+    gitignored session sandbox into a committed sibling tree that execution/drive_docx_sync.py
+    never writes to, each with a recovery.json recording source Drive path, source
+    md5 and salvage method.
 - id: F3
   status: pending
-  inline_brief: >-
-    The gate. lib/data/show-pages.ts loader exposing section prose only as an opaque
-    GatedProse value, components/nos/ShowPageProse.tsx as its only renderer with notice and
-    copy in one inseparable expression, and a fail-loud resolveNotice that notifies on every
-    state except an affirmative, source-verified council-supplied.
+  inline_brief: The gate. lib/data/show-pages.ts loader exposing section prose only
+    as an opaque GatedProse value, components/nos/ShowPageProse.tsx as its only renderer
+    with notice and copy in one inseparable expression, and a fail-loud resolveNotice
+    that notifies on every state except an affirmative, source-verified council-supplied.
 - id: F4
   status: pending
-  inline_brief: >-
-    Seeding. 17 content/show-pages/*.json sources (spec entries 1-13 and 15-18) and
-    scripts/seed-show-pages.ts with a pure exported decideSectionAction: create what is
-    missing, update only what the script itself last wrote untouched (seedHash match),
-    skip-and-report anything a human has edited. Never createOrReplace.
+  inline_brief: 'Seeding. 17 content/show-pages/*.json sources (spec entries 1-13
+    and 15-18) and scripts/seed-show-pages.ts with a pure exported decideSectionAction:
+    create what is missing, update only what the script itself last wrote untouched
+    (seedHash match), skip-and-report anything a human has edited. Never createOrReplace.'
 - id: F5
   status: pending
-  inline_brief: >-
-    M2 shared entities: showExhibitorProfile and showGuestProfile document types per spec
-    2.6 and Section 7 - one profile serving multiple roles (speaker, judge, exhibitor,
-    researcher), country, specialities, products, confirmation status. Carries the same
-    required provenance enum as showPageSection: an invented exhibitor is a named business a
-    visitor may plan a trip around. Wires the entityList section kind.
+  inline_brief: 'M2 shared entities: showExhibitorProfile and showGuestProfile document
+    types per spec 2.6 and Section 7 - one profile serving multiple roles (speaker,
+    judge, exhibitor, researcher), country, specialities, products, confirmation status.
+    Carries the same required provenance enum as showPageSection: an invented exhibitor
+    is a named business a visitor may plan a trip around. Wires the entityList section
+    kind.'
 - id: F6
   status: pending
-  inline_brief: >-
-    M2 programme model: showSession with speaker references, day/time/venue, capacity, and
-    the programme section kind. Serves spec entries 6 (Symposium), 7 (WOSA), 11 (Programme)
-    and 12 (Workshops) off one structure, per spec 4.7's requirement that WOSA reuse the
-    Symposium's Speaker/Presentation/Programme structures.
+  inline_brief: 'M2 programme model: showSession with speaker references, day/time/venue,
+    capacity, and the programme section kind. Serves spec entries 6 (Symposium), 7
+    (WOSA), 11 (Programme) and 12 (Workshops) off one structure, per spec 4.7''s requirement
+    that WOSA reuse the Symposium''s Speaker/Presentation/Programme structures.'
 - id: F7
   status: pending
-  inline_brief: >-
-    M2 relational awards and sponsors: sponsorship level and archive fields on the existing
-    sponsor type (spec 4.15 - archive expired sponsors, never delete), and the
-    Orchid-Exhibitor-Judge-Category-Photo-ShowYear relation spec 4.8 requires as a permanent
-    cross-show archive. Extends the existing sponsor and judge types, does not replace them.
+  inline_brief: 'M2 relational awards and sponsors: sponsorship level and archive
+    fields on the existing sponsor type (spec 4.15 - archive expired sponsors, never
+    delete), and the Orchid-Exhibitor-Judge-Category-Photo-ShowYear relation spec
+    4.8 requires as a permanent cross-show archive. Extends the existing sponsor and
+    judge types, does not replace them.'
 - id: F8
   status: pending
-  inline_brief: >-
-    M2 entity seeding and verifier extension: seed only the entity records that genuinely
-    exist, mark every unsupplied one placeholder, and extend
-    scripts/checks/verify-show-page-m1.ts with entity-level provenance checks so an
-    unconfirmed exhibitor or guest cannot render as confirmed.
+  inline_brief: 'M2 entity seeding and verifier extension: seed only the entity records
+    that genuinely exist, mark every unsupplied one placeholder, and extend scripts/checks/verify-show-page-m1.ts
+    with entity-level provenance checks so an unconfirmed exhibitor or guest cannot
+    render as confirmed.'
 - id: F9
   status: pending
-  inline_brief: >-
-    M3 researched placeholder copy for the ten spec entries with no council copy at all (1,
-    5, 7, 8, 9, 10, 11, 12, 15, 16), written from each entry's own spec Section 4 Purpose
-    and Key-content lines. Every section provenance placeholder-ai. Replaces M1's honest
-    stubs via the seedHash reconciliation, with no migration.
+  inline_brief: M3 researched placeholder copy for the ten spec entries with no council
+    copy at all (1, 5, 7, 8, 9, 10, 11, 12, 15, 16), written from each entry's own
+    spec Section 4 Purpose and Key-content lines. Every section provenance placeholder-ai.
+    Replaces M1's honest stubs via the seedHash reconciliation, with no migration.
 - id: F10
   status: pending
-  inline_brief: >-
-    M3 gap-filling on the thin entries (3, 4, 6, 17, 18): the operational facts spec 4.3 and
-    4.9 ask for that Lee-Ann's marketing prose does not carry - hours, parking, photography
-    policy, cloakroom, accessibility - as separate sections marked research where a real
-    external source exists and placeholder-ai otherwise. Never merged into a
-    council-supplied section.
+  inline_brief: 'M3 gap-filling on the thin entries (3, 4, 6, 17, 18): the operational
+    facts spec 4.3 and 4.9 ask for that Lee-Ann''s marketing prose does not carry
+    - hours, parking, photography policy, cloakroom, accessibility - as separate sections
+    marked research where a real external source exists and placeholder-ai otherwise.
+    Never merged into a council-supplied section.'
 - id: F11
   status: pending
-  inline_brief: >-
-    M3 content review. The WOSA subject-matter boundary is the hard one: /national-show/wosa
-    may carry conference logistics (dates, programme, speakers, registration) but NEVER wild
-    orchid identification, habitat, or conservation content - that belongs to WOSA and gets
-    a link, per CLAUDE.md. Also POPIA before any personal name or email is seeded, and no
-    price, date or venue stated unless a council source says it.
+  inline_brief: 'M3 content review. The WOSA boundary is a HARD PROHIBITION on generated
+    copy, not a scope preference: we never generate wild orchid identification, habitat,
+    distribution, conservation status or species accounts. Spec 4.7 asks page 7 for
+    galleries of indigenous orchids and habitats - we decline and link to WOSA, because
+    inventing conservation claims about real South African wild orchids under a real
+    council''s name is a correctness and reputational harm no placeholder label covers.
+    Enforced by two machine checks in M3''s contract (W1 habitat/conservation vocabulary,
+    W2 SA orchid genera), scoped to sections whose provenance is placeholder-ai or
+    research so the council''s own theme text and the Conservation Partner sponsor
+    tier stay legal. If anyone argues a little habitat context is harmless, escalate
+    to the team lead - that call is not the copy author''s to make. See goldens/m3/wosa-content-boundary.golden.md.
+    Also POPIA before any personal name or email is seeded, and no price, date or
+    venue stated unless a council source says it.'
 - id: F12
   status: pending
-  inline_brief: >-
-    M4 route scaffolding and navigation. Create the eleven new routes under
-    app/(marketing)/national-show/ per route-map.golden.md, each a Server Component
+  inline_brief: M4 route scaffolding and navigation. Create the eleven new routes
+    under app/(marketing)/national-show/ per route-map.golden.md, each a Server Component
     consuming loadShowPage and rendering through ShowPageProse. Wire every one into
-    nav-config.ts, ShowSectionNav's SECTION_LINKS, or the landing page's quick links, plus
-    the /societies link that is all spec entry 14 gets. A 200 nothing links to is the
-    archive defect repeating.
+    nav-config.ts, ShowSectionNav's SECTION_LINKS, or the landing page's quick links,
+    plus the /societies link that is all spec entry 14 gets. A 200 nothing links to
+    is the archive defect repeating.
 - id: F13
   status: pending
-  inline_brief: >-
-    M4 reconcile the six existing routes onto their showPage documents without moving any of
-    them: the /national-show landing page (spec entry 1 - a subsection landing page, never a
-    home page), what-to-expect, workshops, plan-your-visit, faq and the tickets document.
-    Must not disturb showVisitorInfo's existing confirmationStatuses markers on the three
-    pages that already have them.
+  inline_brief: 'M4 reconcile the six existing routes onto their showPage documents
+    without moving any of them: the /national-show landing page (spec entry 1 - a
+    subsection landing page, never a home page), what-to-expect, workshops, plan-your-visit,
+    faq and the tickets document. Must not disturb showVisitorInfo''s existing confirmationStatuses
+    markers on the three pages that already have them.'
 - id: F14
   status: pending
-  inline_brief: >-
-    M4 build the entity-backed pages against M2's types: 4 and 5 (exhibitor and guest
-    directories, filterable, with confirmation status), 8 (judging and awards), 11
-    (programme in list and calendar form), 15 (sponsors by tier). Composes from
-    components/nos/* only - no new colours, fonts, radii or shadows, and no edits to
-    nos-theme.css.
+  inline_brief: 'M4 build the entity-backed pages against M2''s types: 4 and 5 (exhibitor
+    and guest directories, filterable, with confirmation status), 8 (judging and awards),
+    11 (programme in list and calendar form), 15 (sponsors by tier). Composes from
+    components/nos/* only - no new colours, fonts, radii or shadows, and no edits
+    to nos-theme.css.'
 - id: F15
   status: pending
-  inline_brief: >-
-    M4 deployed verification. Playwright across all seventeen pages proving every page whose
-    pageProvenance is not council-supplied renders its notice above the fold before any body
-    copy, that no page renders section copy without one, and that every route is reachable
-    by clicking. The M1 verifier proves the module boundary; this proves the running site.
+  inline_brief: M4 deployed verification. Playwright across all seventeen pages proving
+    every page whose pageProvenance is not council-supplied renders its notice above
+    the fold before any body copy, that no page renders section copy without one,
+    and that every route is reachable by clicking. The M1 verifier proves the module
+    boundary; this proves the running site.
 - id: F16
   status: pending
-  inline_brief: >-
-    M5 source recovery with the council: Lee-Ann re-exports the truncated 17.1 FAQ .docx
-    (its zip central directory is missing in Drive itself - our download is byte-perfect
-    against Drive's md5, so the breakage is upstream), and renames the 13.
-    Registration/Booking/Tickets folder whose embedded slash makes drive_docx_sync.py reject
-    it. Both replace hand-salvage with real sync.
+  inline_brief: M4 unify the placeholder mechanism across the subsection, closing
+    gate-golden limitation (d). Keep showVisitorInfo and showFaq as the structured
+    owners of spec entries 3, 16 and 17 - their five typed arrays (travel routes,
+    accommodation by distance, attractions, opening hours, emergency contacts) would
+    be destroyed by flattening into portable text. Migrate them onto the shared Provenance
+    type and resolveNotice, map confirmed/research/pending onto council-supplied/research/placeholder-ai,
+    then remove initialValue and require the field on all 13 confirmationStatuses
+    blocks and showFaq.status. Migration runs BEFORE the schema tightens or the secretary's
+    Studio blocks mid-edit. Adds the additive visitorInfo section kind. See goldens/m4/visitor-info-unification.golden.md.
 - id: F17
   status: pending
-  inline_brief: >-
-    M5 open-questions register: contact routing (one enquiries@ address versus
-    per-department, spec 4.18 - Lee-Ann is still asking), ticket and cocktail option
-    finalisation (spec 2.7 - still needs to be fully developed, and the ticketing doc
-    contradicts itself on the Early Bird Weekend Pass), the unanswered About banking-details
-    purpose (spec Section 5), and which exhibitor contact fields are POPIA-safe to hold.
+  inline_brief: M4 prove the placeholder notice is actually noticeable, closing gate-golden
+    limitation (e). A13 proves DOM order; a reader does not read the DOM. Seven measured
+    properties on composited pixels at 390 and 1280 - above the fold, painted before
+    body copy, 4.5:1 contrast against its own rendered ground, distinguished by more
+    than colour, non-dismissible, announced to assistive technology before the copy,
+    and the page still reading correctly with the notice absent. saoc-nos-design-cc
+    decides the treatment; we decide and measure the properties. See goldens/m4/notice-visibility.golden.md.
+- id: F20
+  status: pending
+  inline_brief: M4 fourth provenance value, council-draft - the council's words, not
+    yet finished, and notified. council-supplied conflated "whose words these are"
+    with "whether they are finished", so 17-faq's unfilled template ("held on xx,
+    xx September 22027 at the xx") rendered as finished copy with no notice while
+    every assertion stayed green. Adds the enum value, draftLabel/draftNotice on showPageSettings
+    with fallbacks, seeds council text containing an unfilled slot as council-draft
+    so the automatic path is the safe one, and extends the never-overwrite rule to
+    it - unfinished does not make her words ours. Rejected two orthogonal fields (readiness
+    only varies inside one provenance value) and rejected moving her draft into a
+    placeholder section (that says AI-generated about words she wrote). See goldens/m4/council-draft-provenance.golden.md.
+- id: F18
+  status: pending
+  inline_brief: 'M5 source recovery with the council: Lee-Ann re-exports the truncated
+    17.1 FAQ .docx (its zip central directory is missing in Drive itself - our download
+    is byte-perfect against Drive''s md5, so the breakage is upstream), and renames
+    the 13. Registration/Booking/Tickets folder whose embedded slash makes drive_docx_sync.py
+    reject it. Both replace hand-salvage with real sync.'
+- id: F19
+  status: pending
+  inline_brief: 'M5 open-questions register: contact routing (one enquiries@ address
+    versus per-department, spec 4.18 - Lee-Ann is still asking), ticket and cocktail
+    option finalisation (spec 2.7 - still needs to be fully developed, and the ticketing
+    doc contradicts itself on the Early Bird Weekend Pass), the unanswered About banking-details
+    purpose (spec Section 5), and which exhibitor contact fields are POPIA-safe to
+    hold.'
 milestones:
 - id: M1
   status: pending
@@ -156,6 +184,8 @@ milestones:
   - F2
   - F3
   - F4
+  gate_ran_at: '2026-09-09T22:57:02.928467+00:00'
+  gate_result: fail
 - id: M2
   status: pending
   features:
@@ -175,12 +205,15 @@ milestones:
   - F12
   - F13
   - F14
+  - F16
+  - F17
+  - F20
   - F15
 - id: M5
   status: pending
   features:
-  - F16
-  - F17
+  - F18
+  - F19
 ---
 
 # Mission: Align the /national-show subsection's page structure to Lee-Ann's Drive folder structure and Website Development Specification V3: build the full 18-page event-site IA, wire real Drive copy where it exists, and render a prominent AI-generated-placeholder banner on every page whose copy is not yet supplied by the council. Preserve all existing work (vendors flow, tickets, archive).

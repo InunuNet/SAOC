@@ -1,0 +1,485 @@
+schema: athanor.contract/v1
+slug: national-show-ia-alignment
+goal: >-
+  Build the marketing pages of the National Show subsection - sixteen routes created, the
+  existing landing page and five existing routes reconciled onto their showPage documents,
+  every page reachable by clicking, every page whose copy the council has not supplied
+  carrying a notice that is measurably noticeable, one placeholder mechanism across the
+  subsection instead of three, and a seed that can never overwrite a council-authored field.
+created_at: '2026-09-10'
+autonomy: high
+
+features:
+  - id: F12
+    name: >-
+      Route scaffolding and navigation - the sixteen new routes, each consuming loadShowPage and
+      rendering through ShowPageProse, every one reachable from the hub's quick links or
+      ShowSectionNav so nothing is reachable only by URL, plus the /societies link that is all
+      spec entry 14 gets, plus the route manifest the main-site lane wires its header from. Site
+      chrome is off-limits - components/chrome/ belongs to the other lane
+    status: pending
+  - id: F13
+    name: >-
+      Reconcile the six existing routes onto their showPage documents without moving any of
+      them, including the /national-show landing page - a subsection landing page, never a home
+      page
+    status: pending
+  - id: F14
+    name: >-
+      Entries 8 and 15 render real listings from the existing sponsor / award / judge types;
+      entries 4, 5, 11 and 12 render M3's prose while M2 is deferred
+    status: pending
+  - id: F16
+    name: >-
+      Unify the placeholder mechanism - showVisitorInfo and showFaq onto the shared Provenance
+      type, migration BEFORE the schema tightens
+    status: pending
+  - id: F17
+    name: >-
+      The placeholder notice made measurably noticeable - R11's chip, sentence and dashed rail,
+      the new --status-muted-on-dark token declared, N1-N10 measured on composited pixels
+    status: pending
+  - id: F20
+    name: >-
+      The fourth provenance value, council-draft - the council's words, not yet finished, and
+      notified. Closes the conflation of "whose words these are" with "whether they are
+      finished", which let an unfilled FAQ template render as finished copy with no notice
+    status: pending
+  - id: F15
+    name: >-
+      Deployed verification - the full triad against the live origin, last
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m1/route-map.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m1/page-contract.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/seed-write-narrowing.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/visitor-info-unification.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/notice-visibility.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/route-manifest.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/council-draft-provenance.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/verifier-contract.golden.md
+
+assertions:
+  phase: 4
+  checks:
+
+    - id: D0_DRIVER
+      description: >-
+        Run the M4 static verifier - routes, nav reachability, seed-write narrowing,
+        visitor-info unification. Exit 0 all passed, 1 a check failed, 2 the harness broke.
+      type: shell
+      timeout_seconds: 900
+      command: node_modules/.bin/tsx scripts/checks/verify-show-page-m4.ts
+
+    - id: D0_NOTICE_DRIVER
+      description: >-
+        Run the Playwright notice verifier - N1-N10 measured on composited pixels at 390 and
+        1280 against its own dev server. A computed style can be correct while the rendered
+        result is not, which is why nothing here reads the stylesheet.
+      type: shell
+      timeout_seconds: 900
+      command: node_modules/.bin/tsx scripts/checks/verify-nos-m4-notice.ts
+
+    - id: D0_NOT_IN_HARNESS
+      description: >-
+        Neither verifier was written into execution/checks/, which the next template update
+        deletes, silently removing this gate.
+      type: shell
+      command: test ! -e execution/checks/verify-show-page-m4.ts -a ! -e execution/checks/verify-nos-m4-notice.ts
+
+    # -----------------------------------------------------------------------
+    # Routes and reachability.
+    # -----------------------------------------------------------------------
+
+    - id: D1
+      description: >-
+        Every route in route-map.golden.md marked CREATE or RECONCILE has a page.tsx, and every
+        seed source's pageKey maps to exactly one route.
+      type: shell
+      command: grep -q '^R1 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D2
+      description: >-
+        Untouchable routes unmodified - tickets, vendors, archive, upcoming. conferences and
+        exhibitors keep their routes and content but may gain a cross-link out; a link out is
+        not a restructure.
+      type: shell
+      command: grep -q '^R2 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D3
+      description: >-
+        EVERY CREATED ROUTE IS REACHABLE BY CLICKING, from the two surfaces WE OWN - the
+        /national-show hub's quick links (spec 4.1 requires them anyway) and
+        components/show/ShowSectionNav.tsx's SECTION_LINKS. components/chrome/nav-config.ts is
+        NOT consulted and must not be: site chrome belongs to the main-site lane. No assertion
+        may depend on a header entry existing - the approved handoff at
+        design/design_handoff_saoc/src/chrome.jsx defines a flat six-item nav with no dropdown,
+        so a header entry may not exist at all. The property is unchanged:
+        /national-show/archive returned 200 for months with nothing linking to it, and a 200
+        nothing links to has not been delivered.
+      type: shell
+      command: grep -q '^R3 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D4
+      description: >-
+        A link to /societies exists on one of the two surfaces we own - the hub's quick links or
+        ShowSectionNav. All spec entry 14 gets, per Lee-Ann's own instruction that the directory
+        stays in the SAOC section. Not placed in site chrome, which is the other lane's.
+      type: shell
+      command: grep -q '^R4 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D5
+      description: >-
+        No colour, font-family, border-radius or box-shadow literal under
+        app/(marketing)/national-show/. The NOS identity is inherited from the layout's
+        .nos-theme scope and never re-declared. Verified clean at M1 baseline, so this is a
+        regression guard, not an aspiration.
+      type: shell
+      command: grep -q '^R5 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D6
+      description: >-
+        loadShowPage returning null produces a 404, not an empty page. An empty page reads as a
+        finished page with nothing to say - the silent failure this mission exists to prevent.
+      type: shell
+      command: grep -q '^R6 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    # -----------------------------------------------------------------------
+    # The seed may never overwrite a council-authored field. M1's gate found
+    # the guarantee was false: hashBody covered `body` only while the write
+    # replaced the whole section, so a heading edit or a flip to
+    # council-supplied was silently clobbered. M4 pins the narrowed write.
+    # -----------------------------------------------------------------------
+
+    - id: D7
+      description: >-
+        A council-supplied section is NEVER written - no create, update, patch or delete,
+        regardless of any hash, checked BEFORE any hash comparison. That value is the council
+        declaring the words are theirs. Includes the case a hash-first implementation gets
+        wrong: council-supplied WITH a perfectly matching seedHash.
+      type: shell
+      command: grep -q '^SW1 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D8
+      description: >-
+        The seed hash covers heading, body, provenance AND sourcePath - each field changed
+        individually changes the hash. Four sub-cases, not one: a hash covering three of four
+        passes a single-field test, which is exactly how the original defect survived review.
+      type: shell
+      command: grep -q '^SW2 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D9
+      description: >-
+        The write is field-scoped, never a whole-section replace. A section carrying an extra
+        unknown field retains it after a simulated update - a whole-object write silently
+        deletes fields an editor or a later schema version added.
+      type: shell
+      command: grep -q '^SW3 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D10
+      description: >-
+        Every seed patch carries ifRevisionId. A hash check is meaningless if the document can
+        change between the read that produced it and the write that acts on it; a save landing
+        in that window makes the commit fail rather than overwrite.
+      type: shell
+      command: grep -q '^SW4 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D11
+      description: >-
+        END TO END, THE PROPERTY THE COUNCIL ACTUALLY CARES ABOUT - a fixture section edited in
+        each of the four seed-owned fields, and one flipped to council-supplied, all survive a
+        re-run byte-identical. SW1-SW4 check the mechanism; this checks that their words are
+        still there after we run the script again.
+      type: shell
+      command: grep -q '^SW5 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    # -----------------------------------------------------------------------
+    # One placeholder mechanism across the subsection instead of three.
+    # -----------------------------------------------------------------------
+
+    - id: D12
+      description: >-
+        showVisitorInfo and showFaq consume the shared Provenance type and resolveNotice -
+        neither defines its own notice logic. Closes the hazard of one site making two different
+        promises about unconfirmed content.
+      type: shell
+      command: grep -q '^V1 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D13
+      description: >-
+        No confirmationStatuses field and no showFaq.status carries an initialValue; each has a
+        validation rule marking it required. A default is the system answering on the council's
+        behalf - "nobody has said" and "we decided it is pending" become indistinguishable.
+      type: shell
+      command: grep -q '^V2 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D14
+      description: >-
+        The triad mapping is total - confirmed, research, pending, plus null, undefined, empty
+        string and an unrecognised value all resolve exactly as M1's fail-loud table specifies.
+      type: shell
+      command: grep -q '^V3 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D15
+      description: >-
+        MIGRATION BEFORE TIGHTENING, and the migration is idempotent and write-only-where-absent.
+        Reversed, requiring a field with no default on a live document makes every document
+        holding an unset block unpublishable and blocks the secretary mid-edit on content that is
+        not hers to decide. That order is the difference between a correct decision and an outage.
+      type: shell
+      command: grep -q '^V4 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D16
+      description: >-
+        /plan-your-visit, /what-to-expect and /faq still render every structured block - travel
+        routes, accommodation, attractions, opening hours, emergency contacts, every active FAQ -
+        with no field lost against a pre-migration snapshot. The whole argument for keeping the
+        documents split is that the structure is worth keeping, so prove it survived.
+      type: shell
+      command: grep -q '^V5 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    # -----------------------------------------------------------------------
+    # The notice, measured in a browser. Brad's hard condition lives here.
+    # -----------------------------------------------------------------------
+
+    - id: D17
+      description: >-
+        The notice is the first element after the hero, with no content block preceding it.
+        Replaces the earlier "visible without scrolling" form, which at 390 would have forced a
+        disclosure above the show's own headline - Codi's push-back, and the replacement is
+        viewport-independent rather than silently changing meaning with every device.
+      type: shell
+      command: grep -q '^N1 PASS$' .tmp/sandbox/nos-ia/m4-notice-results.txt
+
+    - id: D18
+      description: >-
+        The notice is PAINTED before the body copy, not merely ordered before it in the DOM.
+        M1's A13 proves DOM order; CSS can disagree with it, and a reader reads pixels.
+      type: shell
+      command: grep -q '^N2 PASS$' .tmp/sandbox/nos-ia/m4-notice-results.txt
+
+    - id: D19
+      description: >-
+        Notice text measures at least 4.5:1 against its own composited background, sampled from
+        rendered pixels rather than declared tokens, at 390 and 1280.
+      type: shell
+      command: grep -q '^N3 PASS$' .tmp/sandbox/nos-ia/m4-notice-results.txt
+
+    - id: D20
+      description: >-
+        The notice is distinguished by more than colour - it carries a word, never an icon
+        standing in for one. Colour-blind readers and greyscale printouts both matter.
+      type: shell
+      command: grep -q '^N4 PASS$' .tmp/sandbox/nos-ia/m4-notice-results.txt
+
+    - id: D21
+      description: >-
+        The notice CANNOT BE DISMISSED - no control toggles it, and no localStorage or cookie
+        suppresses it on a second load. A dismissible notice is a notice that gets dismissed.
+        One of the two a purely visual design review would not catch.
+      type: shell
+      command: grep -q '^N5 PASS$' .tmp/sandbox/nos-ia/m4-notice-results.txt
+
+    - id: D22
+      description: >-
+        The notice is real DOM text - not a pseudo-element, not a background image - and reaches
+        assistive technology before the first body paragraph. The other one a visual review
+        would not catch.
+      type: shell
+      command: grep -q '^N6 PASS$' .tmp/sandbox/nos-ia/m4-notice-results.txt
+
+    - id: D23
+      description: >-
+        A fully council-supplied page reads correctly with the notice absent - no layout gap,
+        orphaned rule or empty container. The notice is temporary; the page outlives it.
+      type: shell
+      command: grep -q '^N7 PASS$' .tmp/sandbox/nos-ia/m4-notice-results.txt
+
+    - id: D24
+      description: >-
+        A page with every flag cleared renders PIXEL-IDENTICAL to the same page authored with
+        real copy. Codi's addition, and we did not have it - our gate proved the notice renders
+        and nothing proved it stops. Pages flip to real copy one block at a time over months,
+        so the zero state is the one that breaks.
+      type: shell
+      command: grep -q '^N8 PASS$' .tmp/sandbox/nos-ia/m4-notice-results.txt
+
+    - id: D25
+      description: >-
+        A notice on a dark ground uses --status-muted-on-dark (research) or
+        --status-warning-on-dark (placeholder) and measures at least 4.5:1 composited against the
+        ground it actually sits on - not against --primary-800 by assumption. The earlier
+        --status-muted-on-dark value cleared 4.5 on one of four NOS dark grounds.
+      type: shell
+      command: grep -q '^N9 PASS$' .tmp/sandbox/nos-ia/m4-notice-results.txt
+
+    - id: D26
+      description: >-
+        On any ground, the research notice's contrast is strictly LESS than the placeholder
+        notice's. Without it a future edit could lift research above placeholder, pass every
+        per-token check, and invert the hierarchy so the weaker disclosure reads as the stronger
+        one. Protects the meaning rather than the number.
+      type: shell
+      command: grep -q '^N10 PASS$' .tmp/sandbox/nos-ia/m4-notice-results.txt
+
+    - id: D27
+      description: >-
+        --status-muted-on-dark is declared in nos-theme.css alongside the existing status pairs.
+        It did not exist when R11 was ruled, and a ruled value reads as a shipped value.
+      type: shell
+      command: grep -q 'status-muted-on-dark' app/'(marketing)'/national-show/nos-theme.css
+
+    # -----------------------------------------------------------------------
+    # council-draft — the fourth provenance value. council-supplied conflated
+    # "whose words these are" with "whether they are finished", so an unfilled
+    # FAQ template published with no notice while every assertion stayed green.
+    # See goldens/m4/council-draft-provenance.golden.md.
+    # -----------------------------------------------------------------------
+
+    - id: D34
+      description: >-
+        NO council-supplied SECTION CONTAINS AN UNFILLED SLOT - xx runs, TBC/TBA/TBD, [ ] or
+        [...] or [...], ___, .... , or a doubled ellipsis. Catches the real case: "The symposium
+        will be held on xx, xx September 22027 at the xx" rendered with no notice because the
+        section was correctly marked as the council's words. Dry-run 20/20 both directions; does
+        not fire on "From Wild Origins to Cultivated Excellence", "R44 northbound", "The XXI
+        edition", or a single ellipsis in ordinary prose. WHEN THIS FIRES THE RESOLUTION IS TO
+        RECLASSIFY THE SECTION TO council-draft, NEVER TO EDIT THE COUNCIL'S WORDS.
+      type: shell
+      command: grep -q '^CD1 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D35
+      description: >-
+        resolveNotice returns the draft notice for council-draft, and suppression still requires
+        council-supplied AND a resolving sourcePath. The fourth value widens what notifies, never
+        what suppresses - the fail-loud table gains a row and loses none.
+      type: shell
+      command: grep -q '^CD2 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D36
+      description: >-
+        council-draft carries the same seed-write protection as council-supplied - never created,
+        updated, patched or deleted by the seed, checked before any hash. They are still her
+        words; being unfinished does not make them ours to overwrite.
+      type: shell
+      command: grep -q '^CD3 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D37
+      description: >-
+        showPageSettings.draftLabel and draftNotice are required, and the hardcoded fallbacks
+        match the golden verbatim, so a missing settings document cannot suppress the draft
+        notice - the same fail-loud property the other two notices already have.
+      type: shell
+      command: grep -q '^CD4 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D38
+      description: >-
+        17-faq's Q1 answer is present as council-draft - her words restored verbatim, sourcePath
+        naming the recovered document, rendering with the draft notice. M3 deleted the unfinished
+        fragment because with three values there was no honest way to publish it; F20 creates
+        that way, so the deletion is reversed rather than left standing. This is also the one
+        assertion proving the fourth value was actually used for the case that motivated it,
+        rather than shipped and left unexercised - a dropped fragment stays dropped by inertia,
+        because nothing surfaces it and the page looks finished without it.
+      type: shell
+      command: grep -q '^CD5 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    # -----------------------------------------------------------------------
+    # Cross-lane boundary. Site chrome belongs to the SAOC main-site lane,
+    # which has a restructure landing on it. See goldens/m4/route-manifest.golden.md.
+    # -----------------------------------------------------------------------
+
+    - id: D39
+      description: >-
+        components/chrome/ is unmodified - nav-config.ts, Header, MegaMenu, MobileMenu, Footer.
+        They belong to the main-site lane and two sessions editing nav-config.ts concurrently is
+        the collision this carve-out prevents. A merge conflict in the site header is not a cheap
+        thing to discover late. Verified clean at amendment time, so this is a regression guard.
+        If M4 genuinely needs a header change it goes to the lead orchestrator as a request,
+        never as a commit.
+      type: shell
+      command: test -z "$(git diff --name-only HEAD -- components/chrome)"
+
+    - id: D40
+      description: >-
+        content/national-show-routes.json lists EXACTLY the routes that exist under
+        app/(marketing)/national-show/ - cross-checked in BOTH directions against the page.tsx
+        files on disk and against route-map.golden.md, with every row carrying a non-empty label,
+        a parent, and a pageKey resolving to a real seed source. The main-site lane wires its
+        header from this file without reading our code, so a manifest that has drifted is worse
+        than none - they build from it and never find out. One-directional checking catches a
+        dead link but not a silently dropped page.
+      type: shell
+      command: grep -q '^RM1 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D41
+      description: >-
+        The route manifest exists at its contracted path, so the consuming lane can find it
+        without asking.
+      type: shell
+      command: test -f content/national-show-routes.json
+
+    # -----------------------------------------------------------------------
+    # Preservation.
+    # -----------------------------------------------------------------------
+
+    - id: D28
+      description: ticketType and the gated vendor subsystem are untouched.
+      type: shell
+      command: test -z "$(git diff --name-only HEAD -- sanity/schemas/documents/ticketType.ts app/api/vendors)"
+
+    - id: D29
+      description: The project still typechecks.
+      type: shell
+      timeout_seconds: 900
+      command: node_modules/.bin/tsc --noEmit -p tsconfig.json
+
+    # -----------------------------------------------------------------------
+    # The verification triad. M4 builds sixteen real pages on a deployed
+    # origin - this is the milestone the triad exists for, and it must never be
+    # added to any exemption baseline. All three kinds read `target:` and ignore
+    # `command:`; D33 guards that.
+    # -----------------------------------------------------------------------
+
+    - id: D30
+      description: >-
+        Codex cross-model adversarial review of the M4 diff. On M1 this assertion found a broken
+        core guarantee that the commissioned verifier, @qa and the team lead all missed.
+      type: codex_qa
+      timeout_seconds: 600
+      target: >-
+        Adversarially review the current git diff for real bugs, security issues and correctness
+        risks - not style. Pay particular attention to guards satisfiable by something other than
+        the real property they claim to check, to any write path that can overwrite content a
+        human edited, and to accessibility affordances that are present in the DOM but not
+        perceivable. Cite exact file:line, state the concrete failure scenario, and rate
+        confidence. If nothing real is wrong, say so plainly instead of inventing findings.
+
+    - id: D31
+      description: >-
+        BrowserAgent drove the deployed National Show pages against the live origin and recorded
+        a manifest - origin, path tested, screenshot, commit sha equal to HEAD, and an http
+        status the wrapper re-fetches live. Sixteen new pages is exactly what this check is for.
+      type: browser_deployed_check
+      timeout_seconds: 300
+      target: .agent/memory/scratch/m4-browser-manifest.json
+
+    - id: D32
+      description: >-
+        gws confirmed a test submission through the National Show contact page arrived in a real
+        inbox. Satisfiable because M4 wires a real form - spec 4.18 requires a POPIA-consented
+        contact form on that page, reusing the existing /api/contact to Resend flow. If the page
+        ends up linking to the site-wide /contact instead, this check has nothing to verify and
+        the right response is to say so, never to point the manifest at an unrelated email.
+      type: gws_inbox_check
+      timeout_seconds: 300
+      target: .agent/memory/scratch/m4-gws-manifest.json
+
+    - id: D33
+      description: >-
+        Every triad check in this contract carries a non-empty target. All three kinds read
+        `target:` and ignore `command:`, so all three fail the same silent way - the regression
+        that made M1's A39 review nothing while reading as fully populated.
+      type: shell
+      command: python3 scripts/checks/verify-codex-target-present.py .agent/memory/project/specs/national-show-ia-alignment/contract-m4.yaml

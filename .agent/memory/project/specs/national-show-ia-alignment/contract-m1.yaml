@@ -310,10 +310,13 @@ assertions:
 
     - id: A29
       description: >-
-        No seed source states a ticket price. Lee-Ann's reply on spec 2.7 is that the ticket
-        and cocktail options still need to be fully developed, and the ticketing document
-        contradicts itself on the Early Bird Weekend Pass. Prices live in ticketType, which
-        this mission does not touch.
+        No section WE generated states a ticket price. Lee-Ann's reply on spec 2.7 is that the
+        ticket and cocktail options still need to be fully developed, and the ticketing document
+        contradicts itself on the Early Bird Weekend Pass. Council-supplied sections are exempt:
+        P6's first version matched R44, the road the venue sits on, and made the council's own
+        venue sentence unpublishable. An assertion satisfiable only by altering the client's
+        factual content is broken, not the content. Discriminates a price from a route
+        designation; dry-run 19/19 both directions.
       type: shell
       command: grep -q '^P6 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
 
@@ -362,6 +365,60 @@ assertions:
       description: The seed script and the seed-source directory exist at their contracted paths.
       type: shell
       command: test -f scripts/seed-show-pages.ts -a -d content/show-pages
+
+    - id: A43
+      description: >-
+        The placeholder notice carries an AI-generation disclosure, in the hardcoded fallback
+        constant AND in what the seed writes to showPageSettings. Brad's condition is three-part -
+        placeholder, AI-generated, awaiting Council copy. Codi's house-style example discloses
+        only the first and third; wording is not theirs to set. G4 pins the exact string, this
+        pins the property that must survive any rewording, including a Council edit in Studio.
+      type: shell
+      command: grep -q '^G10 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A44
+      description: >-
+        The council's venue sentence survives verbatim - "Stellenbosch Flying Club, R44
+        northbound to Stellenbosch". It is the only written statement of the venue we hold, a
+        visitor needs it to arrive, and it has already been paraphrased once to satisfy a broken
+        price check. This asserts the fact directly instead of trusting a reviewer to notice.
+      type: shell
+      command: grep -q '^D6 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A45
+      description: >-
+        sourcePath containment, driven in BOTH directions. Clean requires a repo-relative path
+        with no ".." segment, prefixed content/drive-source/ or content/drive-recovered/, whose
+        RESOLVED path stays inside that root and names a real file. Every rejection is tested -
+        /etc/hosts, ../../etc/hosts, an absolute in-repo path, a prefix-lookalike
+        (content/drive-source-evil/), a traversal that escapes after a valid prefix, and a
+        nonexistent file - each must classify placeholder. Codex GPT-5.5 found the original
+        implementation accepted any existing path on the machine, which made the gate's stated
+        cost of mislabelling zero. A one-directional assertion here would recreate that defect.
+      type: shell
+      command: grep -q '^G11 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A46
+      description: >-
+        showPage.specNumber rejects 14 and accepts 1-13 and 15-18. The field's own description
+        says entry 14 is never a document because Lee-Ann asked for a link, not a page; a
+        validation rule that allows it makes the description a comment rather than a constraint.
+      type: shell
+      command: grep -q '^S7 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
+
+    - id: A47
+      description: >-
+        The GatedProse renderer boundary, proved in both directions. No file outside
+        components/nos/ShowPageProse.tsx imports the renderer-private unwrap module, and
+        lib/data/show-pages.ts exports no public opener - AND the check is run against a
+        committed copy of @qa's bypass probe, which it MUST flag. @qa's probe imported
+        __unsafeUnwrapGatedProse from an arbitrary component, discarded the notice, rendered
+        the blocks, and typechecked clean; the naming convention was the whole enforcement.
+        The fixture is committed rather than read from gitignored .tmp/, or the self-test
+        passes vacuously on a fresh checkout. A boundary check nobody has watched fail is not
+        a boundary check.
+      type: shell
+      command: grep -q '^G12 PASS$' .tmp/sandbox/nos-ia/m1-results.txt
 
     # -----------------------------------------------------------------------
     # Route map. M1 decides it (route-map.golden.md) and pins the two
@@ -429,9 +486,52 @@ assertions:
 
     - id: A39
       description: >-
-        Codex GPT-5.5 cross-model adversarial review of the M1 diff. Claude reviewing Claude's
-        own code does not reliably catch the weak-check defect class this project has already
-        been bitten by — and this mission's central assertion is exactly that class.
+        Codex cross-model adversarial review of the M1 diff. Claude reviewing Claude's own
+        code does not reliably catch the weak-check defect class this project has been bitten
+        by, and this mission's central assertion is exactly that class - Codex found two real
+        defects here that Claude's own chain missed, one of which holed the gate golden's
+        central claim.
+        FIELD-NAME TRAP, and it is the reason this description is long - contract.py:162-167
+        reads `target:` for a codex_qa check and ignores `command:` entirely. This assertion
+        originally carried only `command: git diff`, so the wrapper received an empty prompt,
+        exited 2 on a usage error, and NO REVIEW EVER RAN: an assertion that reviews nothing,
+        inside the contract whose stated purpose is cross-model review. The two findings we
+        acted on came from a hand-run review, not from this assertion. Guarded by A49.
+        The exit code IS trustworthy - execution/codex_qa.sh:102-115 derives it from the
+        line-1 verdict token, and contract.py:392-415 invokes it via subprocess with no shell
+        and no pipe, so it reads the real status and distinguishes rc 2 as inconclusive rather
+        than as a pass. A reported "FAIL with exit 0" was a pipeline artefact - `cmd | tail`
+        reports tail's status. A48 pins that mapping in both directions.
       type: codex_qa
-      timeout_seconds: 400
-      command: git diff
+      timeout_seconds: 600
+      target: >-
+        Adversarially review the current git diff for real bugs, security issues and
+        correctness risks - not style. Pay particular attention to assertions or guards that
+        can be satisfied by something other than the real property they claim to check. For
+        each finding cite exact file:line, state the concrete failure scenario, and rate
+        confidence. Do not flag anything you cannot point to a specific line for. If nothing
+        real is wrong, say so plainly instead of inventing findings.
+
+    - id: A49
+      description: >-
+        Every codex_qa assertion in this contract carries a non-empty `target:`. This is the
+        exact regression that made A39 review nothing - the kind reads `target:` and silently
+        ignores `command:`, so a mistyped field name produces a wrapper usage error rather than
+        a review, and the contract looks fully populated while its cross-model guarantee is
+        absent. Cheap, and it fails on the mistake instead of trusting the next author to know.
+      type: shell
+      command: python3 scripts/checks/verify-codex-target-present.py
+
+    - id: A48
+      description: >-
+        execution/codex_qa.sh derives its exit code from the verdict token, proved in both
+        directions against the real script with a stubbed codex - FAIL exits 1 and never 0,
+        PASS exits 0, and an unparseable or empty transcript fails closed. A39 is only as good
+        as this contract, because contract.py maps that exit code straight to the verdict; if
+        the wrapper ever inherited codex's status instead, a FAIL would read green and A39
+        would become a light that cannot go red. Also pins the pipeline trap that caused this
+        to be misdiagnosed as a wrapper bug - piping the wrapper reports the pipe's status,
+        not the wrapper's.
+      type: shell
+      timeout_seconds: 120
+      command: bash scripts/checks/verify-codex-qa-exit-contract.sh

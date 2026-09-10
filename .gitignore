@@ -119,6 +119,10 @@ contracts/checks/**/_mutants/
 # from Drive on demand, bulky, useless binary diffs in review. The parsed
 # content.md, manifest.json, and index.json alongside them ARE tracked.
 content/drive-source/**/source.docx
+# Same treatment for content/drive-recovered/ (national-show-ia-alignment, M1) --
+# hand-salvaged content.md and recovery.json are tracked; any .docx copied in
+# alongside them is not.
+content/drive-recovered/**/*.docx
 # Pruner recovery bin (platform-scoped-delivery D2). Every prune is a MOVE
 # into .agent/trash/prune-<UTC>/, so a real prune leaves a full copy of every
 # pruned file here — untracked content that `git add -A` would otherwise
@@ -131,3 +135,10 @@ content/drive-source/**/source.docx
 .agent/.identity_binding.json
 # ---- NOS design evidence: keep committed webp, ignore heavy source PNGs ----
 .agent/evidence/**/*.png
+
+# SECURITY (2026-09-10): client-supplied Drive documents can contain live secrets.
+# Lee-Ann's spec doc carried plaintext mailbox passwords and reached the PUBLIC repo
+# once already (commit 1d6512cb) — see .agent/memory/project/needs-human.md.
+# Ignored wholesale so `git add -A` cannot re-commit it. Do not un-ignore without a
+# secret scan; the sync tool re-derives this tree on demand.
+content/drive-source/

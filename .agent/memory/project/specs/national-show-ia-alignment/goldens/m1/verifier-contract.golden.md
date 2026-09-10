@@ -55,6 +55,7 @@ a debugging session.
 | S3 | `showPageSection.provenance` has a `validation` function, and calling it against a Rule spy records a `required()` call |
 | S4 | `showPage.pageKey` is required with a regex; `showPage.sections` is required with `min(1)`; `showPage.specNumber` is required |
 | S5 | `showPageSettings` has all four label fields and each is required |
+| S7 | `showPage.specNumber` **rejects 14** and accepts 1-13 and 15-18. The field's own description says entry 14 is never a document; a validation rule that allows it makes the description a comment rather than a constraint. Driven by calling the field's validation against each of 0, 1, 13, 14, 15, 18, 19 and a non-integer. |
 | S6 | `showPage`, `showPageSettings` and `showPageSection` are present in `sanity/schemas/index.ts`'s exported `schemaTypes`; `showPageSettings` is in `PINNED_SINGLETON_TYPES` and has a `SINGLETON_TITLES` entry; `showPage` is in `COLLECTION_TYPES` |
 
 ### G — the gate, driven against the real `resolveNotice` and the real `ShowPageProse`
@@ -70,6 +71,9 @@ Each G row corresponds to rows of the fail-loud table in `provenance-gate.golden
 | G5 | `pageProvenance` rollup: all-clean sections yields `council-supplied`; one `research` among clean yields `research`; one `placeholder-ai` anywhere yields `placeholder-ai`; **zero sections yields `placeholder-ai`** |
 | G6 | rendering `ShowPageProse` for a placeholder section produces markup in which `indexOf(noticeText)` is less than `indexOf(bodyText)` — measured on the rendered string, not read from the JSX |
 | G7 | `ShowPageProse`'s props type has exactly one key (`section`), and rendering every section fixture that carries a notice produces that notice's text in the output |
+| G12 | **The `GatedProse` renderer boundary, proved in both directions.** (a) No file under `app/` or `components/` — other than `components/nos/ShowPageProse.tsx` — imports the renderer-private unwrap module, and `lib/data/show-pages.ts` no longer exports `__unsafeUnwrapGatedProse` or any equivalent public opener. (b) **The check is run against a committed copy of @qa's bypass probe and MUST report a violation** — if the probe passes, the check is broken and G12 fails. A boundary check nobody has watched fail is not a boundary check. (c) The ESLint `no-restricted-imports` rule fires on the same fixture. |
+| G11 | **`sourcePath` containment, driven in BOTH directions.** A section is clean ONLY when its `sourcePath` is repo-relative, contains no `..` segment, begins with `content/drive-source/` or `content/drive-recovered/`, and its **resolved** path stays inside that root and names a real file. Accept case: a real `content/drive-recovered/17-faq/faq/content.md` classifies clean. Reject cases, each of which MUST classify **placeholder**: `/etc/hosts` (absolute, exists); `../../etc/hosts` (traversal); an absolute path to a real file inside the repo; `content/drive-source-evil/x.md` (prefix-lookalike, defeats a `startsWith` test); `content/drive-source/../../package.json` (traversal that resolves outside after a valid prefix); and a well-formed path naming a file that does not exist. Both the loader and the Sanity schema are driven — neither is allowed to rely on the other. |
+| G10 | the placeholder notice text carries an **AI-generation disclosure** — the resolved placeholder notice matches `/\bAI[- ]generated\b/i` — checked against BOTH the hardcoded fallback constant in `lib/data/show-pages.ts` AND the value the seed writes to `showPageSettings.placeholderNotice`. G4 pins the exact string; G10 pins the property that must survive any rewording. |
 | G8 | the value at `section.body` returned by the loader is the `GatedProse` shape — it is not an array of portable-text blocks, and passing it to a portable-text renderer is a compile error (proved by a `// @ts-expect-error` fixture that `tsc` must accept) |
 
 ### D — the drive recovery tree
@@ -80,6 +84,7 @@ Each G row corresponds to rows of the fail-loud table in `provenance-gate.golden
 | D2 | every `recovery.json` parses and carries `specPage` (integer 1..18), `sourceDrivePath` (non-empty), `sourceMd5` (32 lowercase hex), `method` (one of the three enumerated values), `recoveredAt` (ISO date), `recoveredBy`, and a `supersededBy` key present even when null |
 | D3 | for every recovery entry, if a `content/drive-source/` manifest exists for the same Drive file, report whether its md5 still equals `sourceMd5` — a mismatch means the salvage has been superseded and is reported, not silently kept |
 | D5 | the string `Stellenbosch Flying Club` and the string `From Wild Origins to Cultivated Excellence` each appear in the recovery tree |
+| D6 | the council's venue sentence survives **verbatim** wherever it is reused — the exact string `Stellenbosch Flying Club, R44 northbound to Stellenbosch` appears in the recovery tree, and any seed section quoting the venue reproduces it character-for-character. This is the check that would have caught the R44 paraphrase directly, rather than leaving it to a reviewer. |
 
 ### P — the seed corpus, read with no Sanity token and no network
 
@@ -89,8 +94,76 @@ Each G row corresponds to rows of the fail-loud table in `provenance-gate.golden
 | P2 | every `pageKey` matches `/^[0-9]{2}-[a-z0-9-]+$/` and equals its filename stem; all 17 are distinct |
 | P3 | every section carries a `provenance` drawn from the three-value enum, and a `sectionKey` unique within its page |
 | P4 | every section with `provenance === 'council-supplied'` has a `sourcePath` that is repo-relative, starts with `content/drive-source/` or `content/drive-recovered/`, and resolves to a file that exists |
-| P6 | no seed source body contains a South African rand price token (`/\bR\s?\d{2,4}\b/`) |
-| P7 | no seed source exists for spec entry 14 and no `pageKey` begins `14-`; and no `pageKey` or `title` in the corpus contains the word "home", so the landing page can never be modelled as a site root |
+| P6 | no section **we generated** states a ticket price — see "P6, and why the first version was broken" below. Council-supplied sections are exempt. |
+| P7 | no seed source exists for spec entry 14 and no `pageKey` begins `14-`; and no `pageKey` or `title` in the corpus contains `home` **as a whole word** (case-insensitive `\bhome\b`, so a title like "Homegrown Orchids" is not forced to change), so the landing page can never be modelled as a site root |
+
+#### The G12 fixture must be committed, not read from the sandbox
+
+@qa's probe lives at `.tmp/sandbox/nos-ia/qa-bypass-attempt.tsx`. **`.tmp/` is gitignored**
+(`.gitignore:3`), so a check that reads it there passes vacuously on a fresh checkout — the
+fixture is missing, nothing is detected, and the "we watched it fail" property silently
+evaporates on the one machine that matters, CI.
+
+So G12 drives a **committed** copy at
+`scripts/checks/fixtures/gated-prose-bypass-attempt.tsx.txt`, beside the existing
+`gated-prose-type-guard.ts`. The `.txt` suffix keeps it out of the TypeScript project's own
+compilation while leaving it readable by the check and by the lint-rule test.
+
+The sandbox original stays exactly where it is — `.claude/rules/sandbox.md`, an agent never
+deletes a sandbox file — and is the provenance record for how the fixture was found.
+
+**If the fixture is absent, G12 FAILS.** It does not skip. A self-testing check whose
+self-test is missing has no more standing than no check at all.
+
+#### P6, and why the first version was broken
+
+The first P6 matched `/\bR\s?\d{2,4}\b/` across every seed body. That regex matches **`R44`** —
+the national road the venue sits on. The council's only written statement of the venue is
+*"Stellenbosch Flying Club, R44 northbound to Stellenbosch"*, and the assertion made that
+sentence unpublishable. @dev paraphrased around the road number to get the gate green, which
+degraded a confirmed fact a visitor actually needs in order to arrive.
+
+**The principle this fix encodes: an assertion that can only be satisfied by altering the
+client's factual content is broken — the content is not.** P6 exists to stop *us* publishing
+unconfirmed prices. It has no business policing words the council wrote.
+
+Two changes, and the first is the real one:
+
+**1. Scope P6 to copy we generated.** It applies only to sections whose `provenance` is
+`placeholder-ai` or `research`. `council-supplied` sections are exempt. This is the same rule
+already governing the WOSA boundary checks (`goldens/m3/wosa-content-boundary.golden.md`), and
+it is the correct rule for the same reason: we police our own words, not the client's. It fixes
+the R44 case at the root, because the venue sentence is council-supplied.
+
+**2. Discriminate a price from a route designation** in the copy we *do* police, so a generated
+"getting there" section can name the road without tripping the gate:
+
+```
+PRICE_CANDIDATE = /\bR\s?\d{1,3}(?:[ ,]?\d{3})*(?:\.\d{2})?\b/
+ROUTE_KEYWORD   = /^\W{0,3}(northbound|southbound|eastbound|westbound|highway|freeway|
+                   motorway|route|road|off-?ramp|on-?ramp|turn-?off|toward|towards|exit)\b/i
+ROUTE_ALLOWLIST = R44 R45 R101 R102 R304 R310 N1 N2 N7 M3
+LOOKAHEAD       = 30 characters
+```
+
+Per candidate: **a decimal part is decisive — `R44.00` is a price, always.** Otherwise, skip it
+if a route keyword follows within 30 characters, or if the token is a known SA route
+designation. Everything else is a price and fails the check.
+
+The thousands separator is optional (`[ ,]?`), which the first draft of this fix got wrong: with
+a required separator, `R1500` — the Couple cocktail price straight out of the ticketing document
+— was missed entirely. A price check with a hole in it is worse than none, because it is
+believed.
+
+**Dry-run, both directions, 19/19.** Catches `R130.00`, `R 380`, `R150`, `R800`, `R1500`,
+`R300`, `R100`, `R1 500`, `R200`, `R380`, `R2 500`, and `R44.00`. Does not catch `R44
+northbound`, `R44 towards`, `R310 road`, `N1 highway`, `R44 turn-off`, `the venue is on the
+R44.`, or times like `09:00`.
+
+**Known limit:** a generated sentence naming a road that is neither in the allowlist nor
+followed by a route keyword — "the venue is off the R62" — still fails. That is a false positive
+of the same family, and the fix when it happens is to add the route to the allowlist, **never**
+to reword the sentence. Written here so the next person hits the right lever.
 
 ### R — the route map
 

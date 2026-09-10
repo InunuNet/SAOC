@@ -734,3 +734,63 @@ at it.
 
 **Blocked on:** a fact only SAOC holds (which mailbox is actually monitored). No agent can
 determine this; guessing would ship a wrong contact address to production.
+
+## 🚨 2026-09-10 — Live credentials exposed in the PUBLIC repo (human action required)
+
+**Found by:** Codex GPT-5.5 cross-model review of the M1 diff, 2026-09-09 (incidental — it was
+reviewing something else).
+
+`docs/leeann-source/website-development-specification-v3_2026-09-06.md` contains a table of SAOC
+email accounts with **plaintext passwords**. Committed in `1d6512cb` on 2026-09-06, present in
+HEAD, and pushed to `origin/main`, `origin/nos-design` and `origin/HEAD`.
+**`InunuNet/SAOC` is PUBLIC** (`gh repo view`: `"isPrivate": false`).
+
+Two accounts, both owned by Lee-Ann McCleland per the document:
+- `info@saoc.co.za`
+- `treasurer-secretary@saoc.co.za`
+
+Recovery contact for both is `saoctreasurer@gmail.com`, so the exposure plausibly pivots to the
+treasurer's mailbox — a payment-fraud target.
+
+**Required (human, cannot be automated):**
+1. **Rotate both passwords.** Assume compromised: public-GitHub credential scanners are
+   continuous, and this sat for four days. Rotation is the only real remediation.
+2. Audit both accounts — sent items, forwarding rules, recovery-address changes.
+3. Notify Lee-Ann. Writing credentials into a working document is an ordinary thing for a
+   volunteer to do; committing it to a public repo was our failure, not hers.
+4. Decide on history rewrite. NOT done by any agent: it needs a force-push to a shared public
+   repo and is the operator's call. It also does not undo exposure (forks, clones, caches).
+   Rotate first; scrub second.
+
+**Agent action taken:** the freshly-synced copy under `content/drive-source/` was unstaged so it
+could not be committed again. Git history untouched.
+
+## For Lee-Ann — questions and corrections in her source documents (not urgent)
+
+Raised 2026-09-10 during `national-show-ia-alignment` M3. None of these are blocking; all need
+her, not us, because they are her documents and her facts.
+
+1. **The FAQ `.docx` in Drive is corrupt.** `17.1 Frequently asked questions.docx` is truncated —
+   its zip central directory is missing, so it will not open. Our download is byte-perfect against
+   Drive's own checksum, so the damage is in the stored file, not in transit. We salvaged the text
+   by hand; she should re-save and re-upload it. Until then the sync tool re-derives an error
+   string for that document on every run.
+2. **A typo in her FAQ: "September 22027"** should presumably be 2027. **We have not corrected
+   it** — we do not edit the client's prose, including typos. She should fix it at source.
+3. **Her FAQ Q1 answer is an unfilled template** — "on xx, xx September 22027 at the xx". We have
+   stopped publishing that fragment rather than showing placeholders as finished copy; the site
+   now says the symposium date is not yet confirmed. It publishes properly once she fills it in.
+4. **Folder `13. Registration/Booking/Tickets` cannot be synced** — the `/` in the name is not a
+   legal filename component, so the sync skips the folder and both documents inside it, including
+   the ticketing model. We fetched them by hand. Renaming the folder (e.g. "13. Registration,
+   Booking, Tickets") makes it sync normally. It is her folder; we have not renamed it.
+5. **`Symposium Theme` has no `.docx` extension**, so the sync skips it although it is a valid
+   Word file. Adding the extension makes it sync.
+6. **Spec §4.7 asks the WOSA Conference page to carry galleries of indigenous orchids, habitats
+   and fieldwork.** We have declined to write that: wild orchid conservation is WOSA's subject,
+   not SAOC's, and inventing conservation claims about real South African orchids under the
+   Council's name is not something we will generate. The page carries conference logistics and
+   links to WOSA. If she wants that content, it should come from WOSA with attribution.
+7. **Ticket prices are not final** — her own §2.7 reply says the ticket and cocktail options
+   "still need to be fully developed", and her ticketing document contradicts itself on the
+   weekend pass. No price appears anywhere in the seeded content.

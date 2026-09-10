@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-09-08T17:24Z_
+_Generated: 2026-09-10T16:17Z_
 
 ## What happened last session
-nos-design-system: repaired mission YAML; Codex PASS on M7/M8 diff after quota reset; triad preflight blocks m7/m8 gates until triad kinds declared (architect mid-run); F12 evidence recaptured PASS; docs §9-§10 added; served R8/R9/scrim evidence to Codi at 127.0.0.1:8765 — R8 error approved, synthetics withdrawn, R9 PASS, new R10 requires hero scrim rework; M9 (F25-F27) opened, contract-m9 authoring interrupted by operator reboot. Browser triad manifest still needs a deployed origin (TRIAD-02).
+national-show-ia-alignment: M1 content model built (provenance gate: required enum no default, opaque GatedProse, single renderer, no suppressing prop); M3 copy written for all 17 pages; M4 (16 pages) authored but HALTED pending Brad's approval of the NOS structure. M1 gate 51/52 - last finding: sourcePath existence != body provenance, dev fixing. Cross-lane: saoc-eb is lead orchestrator, owns site chrome; our slugs won; /national-show/exhibitors not repointed (it is the grower entry guide). SECURITY P0: live SAOC mailbox passwords in docs/leeann-source/website-development-specification-v3_2026-09-06.md, commit 1d6512cb, pushed to PUBLIC InunuNet/SAOC - needs human rotation, see needs-human.md. Four failure modes recorded plus: a limitation you chose to accept is still a defect to someone who was not in the room.

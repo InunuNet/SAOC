@@ -1399,3 +1399,126 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   regressed — the same symptom already recorded against M8. Fix: move commissioned verifiers to
   `scripts/checks/` (project-owned) and repoint the contracts. `national-show-ia-alignment` M1
   already does this and pins it with assertion A0_NOT_IN_HARNESS. Found by @architect, 2026-09-09.
+
+- [x] **WITHDRAWN — `execution/codex_qa.sh` does NOT exit 0 on a FAIL verdict. The original
+  report was a pipeline artefact, and the entry is corrected here rather than deleted so the
+  same conclusion is not re-derived.** Tested on 2026-09-09 against the real script with a
+  stubbed `codex` that always exits 0, so the wrapper could only get its status from the
+  verdict token:
+
+  | case | exit |
+  |---|---|
+  | `FAIL` verdict | **1** |
+  | `PASS` verdict | **0** |
+  | unparseable transcript | 1 (fails closed) |
+  | empty codex output | 1 (fails closed) |
+  | **`codex_qa.sh ... \| head`** | **0 — the pipe's status, not the wrapper's** |
+
+  The last row is what was observed. `$?` after a pipeline is the *last* command's status, so
+  reading the wrapper through `head`, `tee` or any pipe discards its exit code. The wrapper is
+  correct: `execution/codex_qa.sh:100-115` derives the code from line 1 of the transcript, and
+  `execution/contract.py:392-415` invokes it via `subprocess.run` with no shell and no pipe,
+  reading the real status and distinguishing rc 2 (wrapper error) and unexpected rc as
+  *inconclusive* rather than as a pass or a fail. **Nothing to file upstream.**
+
+  Pinned so the belief is tested rather than remembered:
+  `scripts/checks/verify-codex-qa-exit-contract.sh` (assertion A48) drives all five cases,
+  including the pipeline case as a known fact.
+
+  **The real lesson, which is worth more than the reported bug:** never read a verdict wrapper's
+  status through a pipe. And a defect report against harness code deserves the same
+  two-directional test as an assertion — filing this upstream would have wasted a maintainer's
+  time and risked a "fix" to a script that was already right.
+
+- [ ] **P2 — `execution/verify_triad_coverage.py` classifies a contract as UI/workflow when
+  `app/` paths appear only inside *prohibition* greps, with no route or component under test.**
+  On 2026-09-09 this blocked `mission.py gate --milestone M1` at exit 6 for
+  `national-show-ia-alignment`. The two assertions that tripped it are both negative:
+  A16 — *"No file under app/ contains the GROQ type literal for showPage"* — and
+  A37 — *"the gated vendor subsystem is untouched"* (`git diff --name-only HEAD -- app/api/vendors`).
+  Neither renders anything. M1 ships `components/nos/ShowPageProse.tsx` and
+  `lib/data/show-pages.ts`, but **no route renders either until M4**, so there is no deployed
+  surface for a `browser_deployed_check` to point at — the same reason the route checks R1/R3/R4
+  correctly report SKIP.
+  Proposed fix: classify on *positive* evidence — an assertion that exercises a route or renders a
+  component — rather than on any occurrence of an `app/` path; at minimum, exclude assertions whose
+  command is a negative grep or a `git diff --name-only` emptiness check.
+  Worked around locally, correctly and narrowly: `TRIAD_BASELINE_FILE` /
+  `TRIAD_BASELINE_HASH_FILE` point at **project-owned** `scripts/checks/triad-baseline-exempt.txt`
+  and `.sha256` (never `execution/`, which the next `make update-template` deletes), scoped to M1's
+  contract alone and content-pinned by sha256 so any edit re-arms enforcement. **M4 must carry the
+  full triad and must never be added to that baseline** — it builds sixteen real pages on a
+  deployed origin, which is exactly what the triad exists for.
+  Filed upstream: **InunuNet/Athanor#1432**. Do NOT weaken the linter and do NOT fabricate triad assertions.
+
+- [ ] **P2 — an assertion that can only be satisfied by altering the client's factual content is
+  a defect class, not a one-off.** On 2026-09-09 assertion P6 (`national-show-ia-alignment` M1)
+  matched `/\bR\s?\d{2,4}\b/` to catch unconfirmed ticket prices. It also matches **`R44`** — the
+  national road the venue sits on. The council's only written statement of the venue is
+  *"Stellenbosch Flying Club, R44 northbound to Stellenbosch"*, so the check made a confirmed fact
+  a visitor needs unpublishable, and @dev paraphrased around the road number to get the gate green.
+  Fixed by scoping P6 to sections whose provenance is `placeholder-ai` or `research` — **we police
+  our own words, not the client's** — plus a price-vs-route discriminator, dry-run 19/19 in both
+  directions. The same scoping now governs the WOSA vocabulary checks (W1/W2).
+  Two more of the class were found in the same audit and fixed: P7 matched `home` as a substring
+  (a title like "Homegrown Orchids" would have been forced to change) — now word-bounded; and no
+  assertion protected the venue sentence itself — added as D6/A44, which asserts it verbatim.
+  **Standing rule for contract authors:** before shipping a content-matching assertion, ask what a
+  correct-but-unusual client fact would do to it, and scope it to generated copy wherever the
+  client's own words could be caught. Found by @architect and the team lead, 2026-09-09.
+
+- [x] **Standing rule, added 2026-09-09 — an overstated guarantee is a defect, and on this
+  mission it was the commonest one.** Of the three critical findings against
+  `national-show-ia-alignment` M1, **two were overstated guarantees rather than missing code**:
+  - `provenance-gate.golden.md` claimed *"the copy never crosses a module boundary as plain data,
+    so there is no un-noticed form of it to render by mistake."* `lib/data/show-pages.ts` exported
+    `__unsafeUnwrapGatedProse` publicly, guarded only by a doc-comment. @qa's probe imported it
+    from an arbitrary component, discarded the notice, rendered the blocks, and typechecked clean.
+  - the same golden's limitation (a) said `sourcePath` *"raises the cost"* of mislabelling. The
+    implementation resolved against cwd and called `existsSync`, so any existing path on the
+    machine satisfied it — `/etc/hosts` included. The cost was zero.
+
+  Both had working-looking implementations. Both had golden text describing a stronger property
+  than the code delivered. **A limitation that reads as stronger than it is does more damage than
+  no limitation at all, because it stops the next person looking** — which is precisely why
+  neither was found by review and both needed an adversarial probe.
+
+  **For contract and golden authors, in addition to the content-assertion rule above:**
+  1. State the guarantee at the strength the *weakest enforcing layer* provides, never the
+     strongest. "Accidental misuse does not compile; deliberate misuse fails CI" is honest;
+     "structurally impossible" was not.
+  2. A CI grep or lint rule is materially weaker than a type error. Say which one is holding the
+     line, per claim.
+  3. Every escape hatch belongs in the limitations list the day it is written, not the day
+     somebody exploits it. The `__unsafeUnwrapGatedProse` export was absent from a limitations
+     list that enumerated five other weaknesses.
+  4. A boundary check nobody has watched fail is not a boundary check. Commit the probe that
+     proves it fires — and commit it somewhere tracked: `.tmp/` is gitignored, so a self-test
+     reading a sandbox fixture passes vacuously on a fresh checkout, which is exactly where it
+     matters.
+
+- [ ] **P0 — Drive-sourced client documents can carry live secrets into a tracked, PUBLIC repo.**
+  On 2026-09-09 Codex found plaintext email passwords in
+  `docs/leeann-source/website-development-specification-v3_2026-09-06.md`, committed `1d6512cb`
+  and pushed to public `InunuNet/SAOC`. See `needs-human.md` for the rotation actions.
+  The design gap: `execution/drive_docx_sync.py` converts the client's Drive documents into
+  `content/drive-source/`, and per `docs/drive-docx-version-export.md` the derived `content.md`
+  is **tracked by design**. Nobody anticipated a client planning document containing credentials
+  — which is exactly what a volunteer-run organisation's working document does contain.
+  Fix: a secret scan gating anything Drive-sourced before it can be staged or committed
+  (credential-shaped table rows, `password`-adjacent columns, high-entropy tokens), failing
+  closed. Consider whether derived `content.md` should be tracked at all for client-supplied
+  source, or kept local with only checksums and structure committed.
+  `execution/` is HARNESS-owned — file upstream against `InunuNet/Athanor`, do not patch.
+
+- [ ] **P2 — `mission.py validate` accepts a milestone referencing a nonexistent feature.**
+  On 2026-09-10 @architect accidentally deleted feature F15 while revising an adjacent brief.
+  `mission.py validate` reported "Valid, 18 features" — it verifies every feature belongs to a
+  milestone, but not the converse: that every milestone's feature reference resolves. The mission
+  would have carried a dangling `F15` under M4 and silently lost its deployed-verification
+  feature. Caught only because the author cross-checked both directions by hand.
+  Fix: validate milestone→feature references resolve, and fail on a dangling ref. Cheap check,
+  and the failure it prevents is silent feature loss.
+  **Not yet filed upstream** — read `execution/mission.py`'s validator first and reproduce it in
+  both directions before filing. One untested upstream claim today was enough (see the withdrawn
+  `codex_qa.sh` entry). `execution/` is HARNESS-owned; file against `InunuNet/Athanor`, no patch.

@@ -53,25 +53,56 @@ why — *"Every block defaults to 'pending'. That default is the whole safety pr
 unset status can never read as committee-confirmed fact."* M1 keeps the triad and tightens
 it further: no default at all, so an unset status cannot even be published.
 
-## The render obligation, and why it cannot be forgotten
+## The render obligation — what each layer actually guarantees
 
-A notice a page author has to remember is a notice that will eventually be forgotten. So
-the copy and the notice are made inseparable at the module boundary rather than assembled
-by each page.
+A notice a page author has to remember is a notice that will eventually be forgotten. So the
+copy and the notice are bound together at the module boundary rather than assembled by each
+page.
 
-**`lib/data/show-pages.ts` does not return renderable prose.** `loadShowPage(pageKey)`
-returns a `ShowPage` whose sections expose `body` only as an opaque `GatedProse` value —
-a branded type carrying the portable-text blocks alongside the section's resolved notice.
-Nothing outside the module can render `GatedProse`.
+**The guarantee, stated exactly:** *accidental misuse does not compile; deliberate misuse
+fails CI.* It is **not** "structurally impossible", and this file said that it was. See the
+correction below — the overstatement is the part worth reading.
 
-**`components/nos/ShowPageProse.tsx` is the only renderer of `GatedProse`.** It emits the
-notice element and then the blocks, in that order, in the same return statement. There is
-no prop that suppresses the notice, and no code path through the component that reaches
-the blocks without having emitted it, because the two are one JSX expression.
+`loadShowPage(pageKey)` returns a `ShowPage` whose sections expose `body` only as an opaque
+`GatedProse` — a branded type carrying the portable-text blocks alongside the section's
+resolved notice. Three layers then stand between that value and an un-noticed render, and
+they stop different things:
 
-This is what "structurally impossible" reduces to in React: the copy never crosses a
-module boundary as plain data, so there is no un-noticed form of it to render by mistake.
-A page author does not choose to include the notice; they have no way to exclude it.
+| layer | what it stops | strength |
+|---|---|---|
+| **The brand.** `GatedProse` is structurally incompatible with `PortableTextBlock[]`. | The naive mistake: passing `section.body` straight to `PortableText`. | **Compile error.** The strongest of the three, and it holds — QA confirmed it with a `@ts-expect-error` fixture that the compiler accepted. |
+| **Renderer-private unwrap.** The function that opens `GatedProse` is not exported from `lib/data/show-pages.ts`; it lives in a module only `ShowPageProse` may import. | A second component reaching for the unwrap by import. | **Compile error** for anything outside the renderer's module graph. |
+| **ESLint `no-restricted-imports` + assertion A47.** | A deliberate import of the private module from anywhere else. | **CI failure.** A lint rule and a grep, not a type — a determined author can still write it, and it will go red rather than being impossible. |
+
+**`components/nos/ShowPageProse.tsx` remains the only renderer of `GatedProse`.** It emits
+the notice element and then the blocks in the same return statement. There is no prop that
+suppresses the notice and no code path that reaches the blocks without having emitted it,
+because the two are one JSX expression. That part was always true and is unaffected.
+
+### The correction, and why it is recorded rather than quietly fixed
+
+This section previously read: *"the copy never crosses a module boundary as plain data, so
+there is no un-noticed form of it to render by mistake. A page author does not choose to
+include the notice; they have no way to exclude it."*
+
+**That was false as shipped.** `lib/data/show-pages.ts` exported
+`__unsafeUnwrapGatedProse` as an ordinary public symbol, guarded only by the doc-comment
+above it. @qa wrote a probe that imports it from an arbitrary component, discards `notice`,
+and renders the blocks through `PortableText` — it typechecked clean, exit 0, against the
+real project types (`.tmp/sandbox/nos-ia/qa-bypass-attempt.tsx`). The naming convention was
+the whole enforcement.
+
+Worse than the hole: the escape hatch was **absent from this file's own limitations list**,
+which enumerated editor mislabelling, the GROQ grep, accuracy, non-`showPage` content and
+visual noticeability — everything except the mechanism that most directly defeated the
+central claim.
+
+**Two of the three critical findings on M1 were overstated guarantees, not missing code** —
+this one and the `sourcePath` containment case. Both had working-looking implementations and
+both had golden text describing a stronger property than the code delivered. That is the
+failure mode to watch on this mission: not an absent check, but a check described as more
+than it is, which stops the next person looking. A limitation that reads as stronger than it
+is does more damage than no limitation at all.
 
 ## Fail-loud table — every unenumerated state notifies
 
@@ -125,13 +156,28 @@ that it is present and precedes the copy in the DOM.
 
 The gate is strong at the boundaries it owns. These are the gaps, and they are real:
 
-1. **An editor can lie.** Nothing stops someone opening a placeholder section in Studio and
-   setting `provenance` to `council-supplied` while leaving the AI copy in place. The
-   `sourcePath` requirement raises the cost — they would also have to name a real file in
-   the repo — but a determined or careless editor defeats it. This is a process control,
-   not a technical one. **Mitigation:** the seed-source check (assertion A9) verifies every
-   `council-supplied` section in the committed seed sources against a file on disk; it
-   catches the seeded corpus, not later Studio edits.
+1. **An editor can lie — but the cost is now real, and it was not before.** Nothing stops
+   someone opening a placeholder section in Studio, setting `provenance` to
+   `council-supplied`, and leaving the AI copy in place. To do it they must also supply a
+   `sourcePath` that is repo-relative, free of `..` segments, prefixed with
+   `content/drive-source/` or `content/drive-recovered/`, and whose **resolved** path stays
+   inside that root and names a file that exists. In practice that means naming a real
+   council document — the lie has to be told against a specific file somebody can open.
+
+   **This paragraph previously overstated the guarantee, and the correction is worth
+   recording.** The first implementation resolved `sourcePath` against the working directory
+   and called `existsSync`, so **any** existing path on the machine satisfied it —
+   `/etc/hosts`, or a `../../..` traversal — and the schema only required a non-empty
+   string. The stated cost was zero. Codex GPT-5.5 found it (`lib/data/show-pages.ts:111`).
+   A limitation that reads "hard but possible" when it is actually trivial is worse than no
+   limitation at all, because it stops anyone looking.
+
+   **Mitigations, and their edges:** assertion A45 / driver check G11 pins containment in
+   both directions — the rejections are tested, not just the acceptance, because a
+   one-directional check here would recreate exactly this defect. A28 verifies every
+   `council-supplied` section in the committed seed corpus against a file on disk. Neither
+   covers a later Studio edit, and neither can tell whether the named document actually
+   contains the words in the section. Naming the wrong real file still passes.
 2. **A future developer can bypass the module.** Nothing stops someone writing a new GROQ
    query against `showPage` directly and rendering `sections[].body` without going through
    `loadShowPage`. Assertion A8 greps for exactly this and fails the gate — but a grep is a
@@ -145,7 +191,16 @@ The gate is strong at the boundaries it owns. These are the gaps, and they are r
    reading /plan-your-visit is protected by `confirmationStatuses`, not by this gate. M1
    does not unify them, and until something does, the site has two placeholder mechanisms
    with different guarantees.
-5. **The notice is visual.** A screen-reader user gets it because it is real text in the
+5. **The renderer boundary is CI-enforced, not type-enforced, at its last layer.** The brand
+   and the renderer-private module make accidental misuse a compile error. A developer who
+   deliberately imports the private unwrap module from another component defeats both, and
+   is caught by an ESLint `no-restricted-imports` rule and assertion A47 — a CI failure, not
+   an impossibility. `.tmp/sandbox/nos-ia/qa-bypass-attempt.tsx` is kept as the fixture that
+   check is proved against: **a boundary check nobody has watched fail is not a boundary
+   check.** Nothing prevents a future author from adding a second export that reopens the
+   same hole; only review and the lint rule's scope do.
+
+6. **The notice is visual.** A screen-reader user gets it because it is real text in the
    DOM before the copy, not a decorative badge — but nothing in M1 verifies the announced
    order, and no assertion here measures contrast or focus. That belongs with Codi.
 
