@@ -8,9 +8,12 @@
 // SKIPPED, never PASS, if neither resolves):
 //   1. the working tree (once the NOS lane merges to main, it will live here directly)
 //   2. `git show origin/nos-site:content/national-show-routes.json` (today's location)
-// A resolution failure prints "SKIPPED" on its own first line and exits 0 -- the shared
-// contract runner and any human reading gate output must not read a SKIP as a pass; grep for
-// the literal string "SKIPPED" if wiring this into a stricter gate later.
+// A resolution failure prints "SKIPPED" on its own first line and exits 3 (not 0, and not 1)
+// -- contracts/checks/_shared/run_contract_suite.mjs's SHELL_SKIP_EXIT_CODE, the runner's real
+// skip channel for `kind: shell` checkers. Exiting 0 here previously made this checker's own
+// skip land as a silent PASS in the runner (reproduced during authoring:
+// `GIT_DIR=/nonexistent node check-descriptor-provenance.mjs` printed SKIPPED and exited 0) --
+// fixed 2026-09-10 (mission menu-system-layout4 M2, gap closure). Never revert this to exit 0.
 //
 // Run via: node contracts/checks/menu-system-layout4-f1/check-descriptor-provenance.mjs [navModulePath]
 import { execFileSync } from 'node:child_process';
@@ -70,10 +73,11 @@ async function main() {
     console.log('SKIPPED');
     console.log(
       `could not resolve ${MANIFEST_REL} from the working tree or origin/nos-site -- ` +
-        `descriptor provenance cannot be checked right now. This must render SKIPPED, never PASS. ` +
+        `descriptor provenance cannot be checked right now. This must render SKIP, never PASS -- ` +
+        `exiting 3 (run_contract_suite.mjs's SHELL_SKIP_EXIT_CODE), not 0. ` +
         `Underlying error: ${error?.message ?? '(unknown)'}`,
     );
-    process.exit(0);
+    process.exit(3);
   }
 
   const manifestByHref = new Map(manifest.routes.map((r) => [r.slug, r]));

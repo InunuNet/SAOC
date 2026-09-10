@@ -23,6 +23,7 @@ goldens:
   - contracts/checks/menu-system-layout4-shared/check-style-values-sourced.mjs
   - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/nos-palette-mixing-fixture.tsx
   - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/invented-font-size-fixture.tsx
+  - e2e/nav-rendered-reachability.spec.ts
 assertions:
   phase: 4
   checks:
@@ -106,4 +107,27 @@ assertions:
         trigger name."
       command: >-
         npx playwright test e2e/nav-keyboard-operable.spec.ts
+      required: true
+
+    - id: A7
+      description: >
+        item.lead and item.featureRail are ACTUALLY READ AND RENDERED by this component, not
+        merely present as unused NavItem fields -- the specific defect an architect audit
+        found in the pre-F2 file (2026-09-10): MegaMenu.tsx gated its only CTA on
+        `item.ctaLabel`, a top-level field nav-config.ts never sets on the National Show mega,
+        so `item.lead` and `item.featureRail` were dead data and /national-show plus both
+        Tickets hrefs (lead.theShow's and featureRail's) had no rendered anchor anywhere on
+        desktop. This is gated two ways, not one: a grep proxy (cheap, fast-failing) AND the
+        real rendered-DOM property (e2e/nav-rendered-reachability.spec.ts's desktop test,
+        which opens the flyout and asserts every NAV href -- including lead.leadHref,
+        lead.theShow's links, and featureRail.ctaHref -- is a real <a href> inside the
+        rendered, opened header). CONFIRMED FAILING against the pre-F2 file during contract
+        authoring: `npx playwright test e2e/nav-rendered-reachability.spec.ts --grep desktop`
+        failed, naming /national-show, /national-show/tickets, /national-show/sponsors,
+        /national-show/archive as unreachable. Must flip to PASS only once F2 actually wires
+        lead/featureRail into the render path -- not by loosening the spec.
+      command: >-
+        grep -q "item\.lead" components/chrome/MegaMenu.tsx &&
+        grep -q "item\.featureRail" components/chrome/MegaMenu.tsx &&
+        npx playwright test e2e/nav-rendered-reachability.spec.ts --grep desktop
       required: true

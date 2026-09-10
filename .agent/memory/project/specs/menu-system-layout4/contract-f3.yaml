@@ -24,6 +24,7 @@ goldens:
   - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/mobile-drawer-oversized-link-fixture.tsx
   - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/nos-palette-mixing-fixture.tsx
   - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/invented-font-size-fixture.tsx
+  - e2e/nav-rendered-reachability.spec.ts
 assertions:
   phase: 4
   checks:
@@ -110,4 +111,27 @@ assertions:
         no horizontal scroll introduced by the rebuilt drawer content.
       command: >-
         npx playwright test e2e/no-horizontal-overflow.spec.ts --grep "390"
+      required: true
+
+    - id: A8
+      description: >
+        n.lead and n.featureRail are ACTUALLY READ AND RENDERED by this component, not
+        merely present as unused NavItem fields -- same defect class as contract-f2.yaml's
+        A7, confirmed in this file too by architect audit (2026-09-10): the only `lead` match
+        anywhere in the pre-F3 MobileMenu.tsx was the CSS class `leading-tight`; `n.lead` and
+        `n.featureRail` were never referenced, and the drawer's only CTA was gated on
+        `n.ctaLabel` (unset on the National Show mega, same as MegaMenu.tsx). Gated two ways:
+        a grep proxy AND the real rendered-DOM property
+        (e2e/nav-rendered-reachability.spec.ts's mobile test, which opens the drawer and
+        expands every mega, then asserts every NAV href -- including lead.leadHref,
+        lead.theShow's links, and featureRail.ctaHref -- is a real <a href> inside the
+        rendered, opened dialog). CONFIRMED FAILING against the pre-F3 file during contract
+        authoring: `npx playwright test e2e/nav-rendered-reachability.spec.ts --grep mobile`
+        failed, naming the same four hrefs as contract-f2.yaml's A7. Must flip to PASS only
+        once F3 actually wires lead/featureRail into the render path -- not by loosening the
+        spec.
+      command: >-
+        grep -q "n\.lead" components/chrome/MobileMenu.tsx &&
+        grep -q "n\.featureRail" components/chrome/MobileMenu.tsx &&
+        npx playwright test e2e/nav-rendered-reachability.spec.ts --grep mobile
       required: true

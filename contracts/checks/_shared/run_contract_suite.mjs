@@ -17,11 +17,17 @@
 // missing script the same as a failing one buries real failures in noise; one
 // that silently skips it reports green for coverage that was never written,
 // which is worse, because it manufactures false confidence. So every
-// assertion this runner evaluates is classified into exactly ONE of three
-// states — pass / fail / missing — and "missing" is detected BEFORE
-// execution (a check-script path under contracts/checks/ that does not exist
-// on disk is never invoked, so it can never accidentally exit 0 and read as a
-// pass, nor throw a shell error that reads as a generic fail).
+// assertion this runner evaluates is classified into exactly ONE of five
+// states — pass / fail / missing / skip / not-evaluated — and "missing" is
+// detected BEFORE execution (a check-script path under contracts/checks/ that
+// does not exist on disk is never invoked, so it can never accidentally exit 0
+// and read as a pass, nor throw a shell error that reads as a generic fail).
+// A `kind: shell` checker gets its own real "skip" channel via a dedicated
+// exit code (SHELL_SKIP_EXIT_CODE, below) — added 2026-09-10 after a checker
+// (contracts/checks/menu-system-layout4-f1/check-descriptor-provenance.mjs)
+// was found printing "SKIPPED" and exiting 0, which this runner recorded as
+// PASS: exit code was the only signal it read, and 0 always meant pass. See
+// SHELL_SKIP_EXIT_CODE's own comment for why an exit code, not stdout text.
 //
 // USAGE
 //   node run_contract_suite.mjs                     scan the default corpus (contracts/*.yaml)
@@ -88,6 +94,38 @@ const DEFAULT_CORPUS_DIR = path.join(REPO_ROOT, 'contracts');
 // which is what "missing" is supposed to mean. Matching only script
 // extensions avoids both false positives without hand-listing exceptions.
 const CHECK_SCRIPT_PATH_PATTERN = /contracts\/checks\/[^\s'"]+\.(?:mjs|cjs|js|ts|py|sh)\b/g;
+
+// A shell checker has exactly one channel to report "I measured nothing" and
+// have it land as anything other than a pass: this exit code. Before this, a
+// `kind: shell` assertion was classified purely on exit code, with 0 => pass
+// and anything else => fail — no third state existed at all, unlike
+// `agent_review`, which gets 'skip' for free because THIS runner hardcodes it
+// at the call site (see the agent_review branch below). A checker that prints
+// "SKIPPED" and exits 0 (the pre-existing, real shape of
+// contracts/checks/menu-system-layout4-f1/check-descriptor-provenance.mjs,
+// reproduced during authoring: `GIT_DIR=/nonexistent node
+// check-descriptor-provenance.mjs ...` prints SKIPPED and exits 0) is recorded
+// PASS — the exact "the check ran, the property was or was not measured, and
+// the reporting layer collapsed the distinction" shape this repo has now hit
+// three times independently (this file, m2-next16-upgrade/check-routes.mjs,
+// and the NOS lane's own PASS|FAIL-typed verifier).
+//
+// A dedicated exit code, not stdout sniffing: stdout text is free-form prose a
+// checker author can phrase any way ("SKIPPED", "skipped:", "N/A", a differently
+// worded sentence tomorrow) — a regex over it is one rewording away from
+// silently breaking, and it can't be shared across languages without every
+// checker agreeing on exact wording. An exit code is a fixed, structural
+// contract every language's process model already has a channel for (Python
+// sys.exit(3), a shell script's own `exit 3`, Node process.exit(3)) — no
+// parsing, no wording to keep in sync. This repo already uses exit codes as
+// the state-communication channel for a third state elsewhere (workflow.md:
+// execution/codex_qa.sh — 0 pass / 1 fail / 2 wrapper-usage-error), so this
+// follows an established local convention rather than inventing a new one.
+// Picked 3, not 2, to stay clear of that existing convention (exit 2 already
+// means "usage error", a distinct concept from "ran fine, nothing to measure")
+// and clear of the near-universal shell convention that 1 means a generic
+// failure.
+const SHELL_SKIP_EXIT_CODE = 3;
 
 function relToRoot(absPath) {
   return path.relative(REPO_ROOT, absPath);
@@ -326,6 +364,20 @@ function evaluateAssertion(assertion, { evaluateFully }) {
       return { status: 'pass', detail: 'pass', unresolvableScripts };
     } catch (err) {
       const code = typeof err.status === 'number' ? err.status : 'error';
+      if (code === SHELL_SKIP_EXIT_CODE) {
+        // The checker measured nothing (e.g. its source data wasn't
+        // resolvable) and said so structurally, via exit code — never via
+        // stdout text this runner would have to parse. Must land in the same
+        // 'skip' bucket agent_review uses below: excluded from pass/fail/
+        // missing counts, but never silently absorbed into a pass either.
+        const stderrText = err.stderr ? err.stderr.toString('utf8').split('\n')[0] : '';
+        const stdoutText = err.stdout ? err.stdout.toString('utf8').split('\n')[0] : '';
+        return {
+          status: 'skip',
+          detail: `exit ${SHELL_SKIP_EXIT_CODE}: ${stdoutText || stderrText || '(no output)'}`,
+          unresolvableScripts,
+        };
+      }
       return { status: 'fail', detail: `fail (exit ${code})`, unresolvableScripts };
     }
   }

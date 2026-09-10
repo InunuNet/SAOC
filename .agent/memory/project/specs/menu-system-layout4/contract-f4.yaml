@@ -23,6 +23,7 @@ goldens:
   - contracts/checks/menu-system-layout4-shared/check-style-values-sourced.mjs
   - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/nos-palette-mixing-fixture.tsx
   - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/invented-font-size-fixture.tsx
+  - e2e/nav-rendered-reachability.spec.ts
 assertions:
   phase: 4
   checks:
@@ -112,4 +113,19 @@ assertions:
         updated (contract-f1.yaml A8).
       command: >-
         npx playwright test e2e/nav-links-200.spec.ts
+      required: true
+
+    - id: A8
+      description: >
+        Integration-level closure of the same property contract-f2.yaml's A7 and
+        contract-f3.yaml's A8 gate individually (item.lead/item.featureRail wired into the
+        real render path, desktop and mobile): Header.tsx is where NAV, MegaMenu and
+        MobileMenu actually assemble into one page, so this is the natural place to run BOTH
+        rendered-reachability tests together as a final cross-component check, not just each
+        component in isolation. This must fail against the pre-F2/F3 tree (confirmed during
+        contract authoring) and pass only once F2 and F3 have both landed -- a green A8 with
+        a red A7-in-f2 or A8-in-f3 would itself be a contradiction worth investigating, not a
+        shortcut past them.
+      command: >-
+        npx playwright test e2e/nav-rendered-reachability.spec.ts
       required: true

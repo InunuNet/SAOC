@@ -1512,4 +1512,67 @@ against NOS grounds needs re-deriving from `colors_and_type.css`. The disclosure
 work (R11) is the known case — it was discussed using NOS parchment/bone/muted.
 
 Standing: SAOC surfaces take colour only from `design/design_handoff_saoc/colors_and_type.css`.
+## Orphaned council copy: `13-booking-tickets` seeds a showPage nothing renders (2026-09-10)
+
+Found by the NOS lane while resolving the 12-vs-13 pageKey discrepancy on
+`content/national-show-routes.json`. The discrepancy itself is benign and closed:
+21 manifest rows, 12 carry a `pageKey`, and the 9 that do not are all functional
+routes with their own implementations — `/national-show/{conferences,exhibitors,
+vendors,tickets,archive}`, the three vendor sub-forms, and `/archive/[year]`.
+Verified against the manifest on `origin/nos-site`, not taken on report.
+
+The residual is ours. `13-booking-tickets.json` is Lee-Ann's council copy for
+`/national-show/tickets`, but that route renders from the PayFast/ticketing
+implementation, not from a `showPage` document. So the seed writes real council
+copy into the dataset that nothing on the site reads.
+
+**Why it matters:** the tickets page may be displaying provisional or
+implementation-authored text while genuine committee copy sits unrendered in
+Sanity. That is the inverse of the usual no-invention failure — not invented
+content shipping, but sourced content NOT shipping — and it is invisible to the
+provisional-marker system, which flags pages lacking copy, not pages ignoring
+copy they have.
+
+**Before touching the tickets page:** read `13-booking-tickets.json` and compare
+it against what `/national-show/tickets` actually renders. Do not assume the
+rendered text is the sourced text.
+
+Not a defect in the NOS lane's PR — their verifier's CL1 already asserts against
+that file's `categories` provenance, so it is known content, not a stray.
+
 > Truncated 23 items at trim time (2026-09-10). Restore from git history if needed.
+
+## `check-routes.mjs` hardcodes skip-as-pass at three call sites (2026-09-10)
+
+Found while closing the shell-checker skip-channel gap in
+`contracts/checks/_shared/run_contract_suite.mjs` (mission menu-system-layout4
+M2 — see `SHELL_SKIP_EXIT_CODE` and its doc comment there, and
+`contracts/checks/menu-system-layout4-f1/check-descriptor-provenance.mjs`, the
+checker that motivated the fix). A sibling instance of the exact same defect
+class exists in `contracts/checks/m2-next16-upgrade/check-routes.mjs:82,90,98`:
+
+```
+record('GET /societies/[slug]', true, 'SKIPPED — no society document with a slug in dataset');
+record('GET /events/[slug]', true, 'SKIPPED — no societyEvent document with a slug in dataset');
+record('GET /national-show/archive/[year]', true, 'SKIPPED — no nationalShow document with a year in dataset');
+```
+
+`record(name, ok, detail)` takes only a boolean `ok` — there is no third state,
+so "nothing to measure" is hardcoded as `ok=true`, i.e. PASS, at the call site
+itself. Structurally identical to the pre-fix `check-descriptor-provenance.mjs`
+bug: the check ran, the property was or was not measured, and the reporting
+layer collapsed the distinction. If the dataset ever legitimately has zero
+societies/events/national shows with the needed field, these three routes'
+200-status property silently reports verified when it was never exercised.
+
+**Out of scope for menu-system-layout4** — this file belongs to mission
+m2-next16-upgrade, not this one. Record here so it survives until that mission
+(or whoever next touches this checker) fixes it.
+
+**Fix shape, once picked up:** give `record()` a real third state (e.g. a
+`skip: true` flag or a distinct status param) instead of overloading the
+boolean `ok`, and have the checker's own summary/exit-code logic treat skips
+separately from passes — same shape as `run_contract_suite.mjs`'s
+`SHELL_SKIP_EXIT_CODE` fix, adapted to this checker's own summary format rather
+than the shared runner's (this script isn't run through `run_contract_suite.mjs`
+today, so the runner-level fix does not cover it).
