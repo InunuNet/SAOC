@@ -2242,7 +2242,9 @@ RESUME HERE, in order:
    that reads as an overwrite of council content. Without this the six routes stay 404 because
    loadShowPage returns null and R6's notFound() fires as designed.
 2. HTTP-check all 18 NOS routes on port 3002 (NOT 3000 — pnpm dev is `next dev --port 3002`;
-   CLAUDE.md's "localhost:3000" line is wrong and needs a one-line correction).
+   CLAUDE.md's "localhost:3000" is NOT wrong — 3000 is what Next binds when free, 3002 is the
+   fallback when it isn't. The doc is silent about the fallback; the fix belongs in the checker
+   pinning its own port, not in the doc. Do not "correct" CLAUDE.md.
 3. Only then tell saoc-eb the routes are ready, so they can build the menu against them.
 
 Deferred to a separate slice (Brad's call): `scripts/checks/verify-nos-m4-notice.ts` (pixel
@@ -2256,3 +2258,7 @@ Open, needs a decision:
   comparison trap S3 exists to catch). Check first whether any untouchable route reads showPage —
   if so the baseline must be captured BEFORE the seed.
 - Gate checks need `M4_BASE_REF=3fe9c6e1`; `origin/main` predates this work and over-reports.
+
+- `nos-site` is PUSHED (origin/nos-site, head 9f467869). saoc-eb reads the route manifest from
+  `git show origin/nos-site:content/national-show-routes.json` (21 routes, 17 listed) to build the
+  header. No PR opened yet.
