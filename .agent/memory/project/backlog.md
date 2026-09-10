@@ -38,6 +38,145 @@ Do not scope work from an entry that contradicts it.
 
 ## Next up (queued, not yet a mission — dispatch as soon as current mission closes)
 
+- [ ] **[P1] A14 re-verification after deploy** (site-content-alignment M1-M2, 2026-09-10) —
+  confirm `/national-show/about` and the reconciled `/national-show/what-to-expect` are live on
+  `https://beta.saoc.co.za`; four routes (`/programme`, `/symposium`, `/wosa-conference`,
+  `/exhibitors/international`) still 404 by design, gated on Lee-Ann.
+
+- [ ] **[P1] Send Lee-Ann the 11 questions** in
+  `.agent/memory/project/specs/site-content-alignment/goldens/f1-questions-for-leeann.md`
+  (2026-09-10) — including that her **FAQ .docx is truncated at rest in Drive** (file id
+  `1soLx8vKPs1jQBnYFTu88_LWxjzRFTHsf`, md5 matches our download, valid PK header, 16 local file
+  headers, End-of-Central-Directory record absent) and needs re-uploading, plus the unfinished
+  Show Contact doc and the unknown National Show sections 8/9/10/14/16. M3 is blocked until she
+  answers.
+
+- [ ] **[P2] Brad's unruled design question** (site-content-alignment, 2026-09-10) — the handoff's
+  `SKILL.md` prescribes literal bracket-placeholders + sage/mono "TBD" blocks; shipped components
+  use bordered mono badges instead. Unresolved; do not decide it.
+
+- [ ] **[P2] `/national-show` renders zero status markers** (site-content-alignment, 2026-09-10) —
+  cause untraced (correct fail-closed suppression vs. a wiring break). @qa flagged rather than
+  assumed; needs investigation.
+
+- [ ] **[P3] `prettier --check` warns** on the 4 files touched by site-content-alignment F3
+  (2026-09-10); not wired into CI.
+
+- [ ] **[P3] A15 assertion-shape audit** (site-content-alignment, 2026-09-10) — check every
+  contract in this repo for assertions missing required fields (e.g. `codex_qa` without `target:`)
+  that would error rather than evaluate. See [[learned.md]] "green means nothing" defect class.
+
+- [ ] **[P1] TWO unparseable contracts — their assertions have never run**
+  (found 2026-09-08 via F7's new contract-suite runner, mission ticketing-complete).
+  (a) `.agent/memory/project/specs/gate-timeout-fix/contract-f1.yaml` — ambiguous compact mapping.
+  (b) `.agent/memory/project/specs/mission-slug-collision-fix/contract-f1.yaml` — a heredoc `---`
+  misread as a YAML document separator; found only when the baseline was regenerated, i.e. the
+  first sweep missed it. Both fail YAML parsing, so every assertion they declare has silently
+  never executed and never will. It is not counted as `missing` (no absent check script) and not
+  as `fail` (nothing runs), so no signal exists anywhere today. Fix the YAML, then confirm the
+  assertions actually pass — they have never been evaluated, so treat all of them as unverified
+  rather than assuming they were green before the parse broke. F7 has added parse-error to the CI
+  ratchet (baseline `{count: 3, parseErrorCount: 2}`) so a third cannot appear silently, but that
+  does NOT fix these two files. Worth a sweep
+  for the same defect class: any other contract that parses but whose assertions have never been
+  executed is equally invisible.
+
+- [ ] **[P2] `ticketing-purchase-pages-f3/check-seed-category-field.mjs` hardcodes a stale product
+  total** (found 2026-09-08 by the F2 dev, mission ticketing-complete). OWNER, corrected: the
+  script is run by `.agent/memory/project/specs/ticketing-conferences-and-events/contract-f3-purchase-pages.yaml:209`
+  — a DIFFERENT, earlier mission that also numbered a feature F3. It is NOT ticketing-complete's
+  contract-f3.yaml, which is clean. Do not confuse the two.
+  It asserts `ALL_PRODUCTS.length !== 15`. Already stale at HEAD before any F2 change — HEAD has
+  14 real products (counted by listing `slug:` lines, not `grep -c`, which overcounts by matching
+  the interface's own `slug: string;` declaration); the working tree now has 13 (4 admission +
+  6 conference + 3 workshop-field-trip), with `field-trip-single`/`field-trip-all-outings` retired
+  and `field-trip` in their place. Drifted twice in one mission and caught nobody.
+  RECOMMENDED FIX (architect, 2026-09-08): drop the count assertion entirely rather than deriving
+  it. Nothing downstream needs a count to be true — a count only proves someone remembered to bump
+  a literal. What the check actually exists to prove is that `buildTicketTypeDoc` stamps `category`
+  onto every product using the real builder. Assert instead: every product's built doc carries a
+  `category` matching its own `product.category`; no two products across the three arrays share a
+  slug; and `RETIRED_FIELD_TRIP_SLUGS` never appears as a live slug. All three survive any future
+  product addition or retirement with no magic number to maintain.
+  Same shape as the stale `ticketing-workshops-f2` capacity check.
+
+- [ ] **[P2] Focus ring fails the 3:1 non-text contrast floor on two vendor forms** (measured
+  2026-09-08 by the NOS session, branch `nos-design`, composited-pixel measurement via Playwright
+  + pngjs — NOT a `getComputedStyle()` regex, which returns plausible wrong numbers because
+  Tailwind v4 serialises opacity-modified colours as `oklab()`, see InunuNet/SAOC#3).
+  Three text inputs paint focus as a two-layer `box-shadow` instead of an `outline`: an inner
+  pale-gold ring that is invisible on the pale-gold ground (acting only as a spacer), and an outer
+  royal-purple `#211a57` at 40% alpha. Composited that is `0.4×(33,26,87) + 0.6×(251,250,240) =
+  (164,160,179)`, measured `#a3a0b3` — **2.43:1 against a 3:1 floor**. Size and position are
+  correct; the alpha is what sinks it.
+  Affected: `/national-show/vendors/apply` (`businessName`, `tradingName`) at 390 and 1280;
+  `/national-show/vendors/register` (`code-entry-business-name`) at 1280.
+  Useful adjacent signal: `/national-show/tickets`' "Get visitor tickets" anchor uses a real
+  `outline: 2px solid rgb(126, 63, 151)` and passes cleanly — so TWO different focus mechanisms
+  coexist across these surfaces. Likely predates the NOS restyle. Whatever the alpha ruling is,
+  the split itself is worth resolving. Pending a Codi ruling; the fix is ours, not the NOS
+  session's.
+  NOT THE SAME AS `CategoryTicketsPage` — measured separately 2026-09-08 and it PASSES:
+  composited lede contrast 11.44:1 (/national-show/workshops @390), 10.29:1 (@1280),
+  7.37:1 (/national-show/conferences @1280), against a 4.5:1 floor at 17px. The 'olive body
+  text on purple' concern did NOT reproduce — hue recovered geometrically (pale-gold fit
+  off-line 0.4-0.5 vs olive fit 254-300), so it is pale gold at ~0.85 alpha. Do not
+  re-investigate. Caveat carried: that lede buys its appearance partly with opacity, which is
+  acceptable for decorative text but is the same mechanism ruled out for functional/focus
+  states. Cite the r6-probe.mjs run, never r6-verify.mjs — the latter regex-parses
+  getComputedStyle() and its numbers for this component are wrong.
+
+- [ ] **[P0] No enforcement for the "never cd" rule — agents keep prompting the operator**
+  (2026-09-08, Brad raised it twice in one session, explicitly refusing to approve more).
+  Agents open Bash blocks with `cd <project-root>`, which makes the following command's target
+  statically unresolvable while a `Read()` deny rule is configured, forcing a manual approval
+  modal that stalls the mission and everything queued behind it. The rule is ALREADY stated in
+  `.claude/agents/<role>.md` (qa.md:47), `.claude/rules/sandbox.md`, and
+  `.agent/rules/_core/sandbox.md` — three places — and 2 of 2 QA subagents violated it anyway.
+  Prose is empirically insufficient; only a `PreToolUse(Bash)` hook would fix it.
+  CANNOT BE FIXED LOCALLY: `check_autonomy.sh`'s `floor_glob_match()` protects `.claude/hooks/*`,
+  `.claude/settings.json`, `CLAUDE.md` and `AGENTS.md`, so the guard can neither be written nor
+  registered. Filed upstream: InunuNet/Athanor#1416.
+  MITIGATION IN PLACE until upstream lands: (a) Rule Zero prepended to `.claude/rules/sandbox.md`;
+  (b) every Agent dispatch brief must open with the prohibition — this is now mandatory practice,
+  recorded in the brain. Blocked on: upstream.
+
+- [ ] **[P0] Harness `backlog_trim.py` deletes open items without archiving them** (found
+  2026-09-08, mission ticketing-complete). `execution/backlog_trim.py:126-141` archives closed
+  `[x]` items to the brain, but open `[ ]` items past `MAX_OPEN=50` are removed with no archive
+  and no titles recorded — only a `> Truncated N items` marker. This file already carries
+  **5 such markers, 248 items destroyed** (127/5/9/104/3), one of them a standing P1 that was
+  only noticed missing because an architect went looking for it by name. The cutoff is by file
+  *position*, not priority, so newly-appended P0/P1 items die first. **This file is at 57 open
+  items against MAX_OPEN=50 right now — the next `make backlog-trim` deletes 7 items off the
+  bottom.** Do not run it until upstream lands a fix; curate by hand instead. Filed upstream as
+  InunuNet/Athanor#1413 (never patch `execution/` in place — `make update-template` reverts it).
+  Blocked on: upstream. Deliberately placed at the TOP of the open items, because the bottom is
+  the kill zone.
+
+- [ ] **[P1] Migration script write-polarity — decision needed, not fixed overnight** (found
+  2026-09-08, `ticketing-complete` overnight session). Six scripts default to WRITING to the
+  live Sanity `production` dataset on a bare no-flag invocation: `scripts/fix-venue-never-
+  changed-copy.ts`, `scripts/migrate-ticket-type-category.ts`, `scripts/migrate-show-sales-
+  fields.ts`, `scripts/fix-vip-and-weekend-pass-pricing.ts`, `scripts/fix-show-dates-2027.ts`,
+  `scripts/fix-visitor-info-dates-confirmed.ts` (all gate on
+  `const DRY_RUN = process.argv.includes('--dry-run')`). `fix-vip-and-weekend-pass-
+  pricing.ts:70-79` builds the write-capable client before it even reads the flag. Three other
+  scripts already use the safer polarity (`--apply`-to-write): `seed-fictional-test-show.ts`,
+  `seed-demo-ticket-type.ts`, `swap-active-show.ts`. Decision needed: flip the six to `--apply`
+  polarity, or delete the spent ones. Deliberately NOT fixed overnight — several of the six may
+  already have been run against live data, so changing them now without checking could mask
+  that history. See `learned.md` 2026-09-08 entry for detail.
+
+- [ ] **[P2] `POST /api/contact` needs a test-mode guard or mocked mailer before automated
+  coverage** (found 2026-09-08, `ticketing-complete` overnight session). The route sends a real
+  Resend email and writes a real `contactSubmissions` doc on every successful POST, with no
+  test-mode gate. Manually proving the new suggestion form end-to-end mailed a non-existent
+  address at a reserved domain and left a live queue document (since deleted by exact id).
+  Bounces accrue against a sending domain currently mid-migration on domain + Resend DNS. Add a
+  mocked mailer or a test-mode guard on the route before any Playwright/automated coverage of
+  `ContactForm` or `SuggestionForm`.
+
   cannot go green without declaring triad coverage** (mission `verification-triad-gate`, M2/F2 —
   DONE 2026-09-06; M1/F1 was DONE 2026-09-04). Original ask (2026-09-02, Brad, via team lead):
   today's `.claude/rules/workflow.md` mandate (Codex + BrowserAgent-on-deployed + gws-read-only)
@@ -68,6 +207,20 @@ Do not scope work from an entry that contradicts it.
   (they check the live site, not local files) are exactly the ones that slip through the net
   F2 just built. Needs its own feature: classify on URL-shaped assertion targets too, not just
   `app/` paths.
+
+  **Filed upstream as Athanor#1420** (2026-09-08, mission `ticketing-complete`) with a second,
+  independent confirmation of the same root cause going the other direction: keying on the
+  literal substring `app/` misclassifies in BOTH directions, not just the URL-shaped dodge
+  above. It EXEMPTED the Playwright e2e harness (F7, 49 Playwright references, drives real
+  browser specs against the deployed site — exactly what the triad exists to verify) and the
+  screenshot-embedding contract (F8), while BLOCKING the nav rebuild (F6) only because two of
+  its nineteen assertions happen to run `grep -c` on `app/globals.css`. Net effect on this
+  mission: none of its six contracts carries a triad assertion of any kind, and four of them
+  gated green having never been asked to. HARNESS-owned (`.agent/update-manifest.yaml` marks
+  `execution/` wholesale, no per-file carve-out), so filed upstream rather than patched locally
+  per `.claude/rules/athanor.md`. Offered a PR pending upstream's choice between widening the
+  signal list (URL patterns, Playwright/browser-test references, etc.) and adding an explicit
+  `ui:` contract declaration that opts a contract in without relying on text-sniffing at all.
 
 - [ ] **[P1] `contracts/cms-loop-f1-cdn-purge.yaml` A1 mutates the real Sanity dataset**
   (found during `verification-triad-gate` M2/F2, 2026-09-06). It re-invokes F6's
@@ -1075,6 +1228,57 @@ flat-over-nested-submenu pattern.
   appears to dedupe on git SHA. Workaround is POSTing directly to the App Hosting REST builds
   endpoint.
 
+- [ ] **[P0] `execution/codex_qa.sh` reports quota/transport failure identically to a real
+  adversarial FAIL** (found 2026-09-08, mission `ticketing-complete`, F2/A13; a peer session
+  filed the same defect independently the same night as Athanor#1419 via the stdin entry
+  point — this is a second, independent confirmation via the `<file_path>` argument form, so
+  the fix needs to cover exit-code classification generally, not just one call shape). When
+  OpenAI quota is exhausted, the wrapper exits 1 and prints the literal token `FAIL`,
+  indistinguishable from a genuine Codex GPT-5.5 adversarial verdict — the quota error message
+  is emitted twice before the `FAIL` token, so a classifier keyed to a fixed line position
+  would still miss it. Consequence: **the mandatory cross-model Codex pass on
+  `contracts/checks/ticketing-complete-f2/check-no-migration-apply-invocation.mjs` (A13) did
+  NOT run** — quota exhausted, resets 17:01 on 2026-09-08 — yet A13 is landed and gate-green.
+  Per `.claude/rules/workflow.md` ("No feature is DONE without a Codex GPT-5.5 pass"), F2/A13
+  is not actually DONE until this pass is re-run and genuinely passes; re-run it once the quota
+  resets, before closing F2.
+
+- [ ] **[P2] F6 nav rebuild gate is red at exit 6, feature otherwise complete** (found
+  2026-09-08, mission `ticketing-complete`). The nav rebuild itself is implemented, and both
+  `codex_qa` (A20) and `browser_deployed_check` (A21) triad assertions were added honestly.
+  `gws_inbox_check` was deliberately NOT added — a nav rebuild sends no email, so there is no
+  truthful `message_id` to assert against — which the triad-gate preflight (see the Athanor
+  #1420 entry above) currently has no way to express as a legitimate exemption rather than a
+  gap. Not resolvable via `execution/triad-baseline-exempt.txt`, since that is a one-time
+  2026-09-06 rollout snapshot of pre-existing contracts, not an open-enrollment exemption list
+  for new ones. Blocked on Athanor#1420 landing an applicability escape (an explicit way for a
+  contract to declare "this triad kind does not apply here" instead of the classifier guessing
+  from assertion text) — do not work around it locally by force-adding a fabricated
+  `gws_inbox_check`.
+
+- [ ] **[P2] F8's hardcoded `:3002` route-origin fix is designed but not landed** (mission
+  `ticketing-complete`, F8, 2026-09-08). @architect specced the fix: a new
+  `contracts/checks/_shared/verify-server-identity.mjs`, an edit to
+  `verify-walkthrough-routes.mjs` to use it, a negative-control script proving the guard fires
+  on a wrong-server response, and two new contract-f8.yaml assertions (A25/A26). None of the
+  four are written yet. Separately, **9 other check files share the same hardcoded `:3002`
+  origin exposure** (not yet enumerated by path) — the F8 fix should be the reference pattern
+  for cleaning those up, not a one-off.
+
+- [ ] **[P3] Clone drift — `make sync-clones` overdue.** `CLAUDE.md` has drifted from
+  `AGENTS.md`; the `GEMINI.md` symlink and `rules.md` are missing from at least one clone
+  target. Found during the 2026-09-08 `ticketing-complete` wrap-up. Housekeeping only, not
+  mission-scoped — run `make sync-clones` and commit separately.
+
+- [ ] **[P3] `.claude/settings.json` hook-entry de-duplication is drafted but uncommitted, and
+  is template-sync churn, not mission scope** (found 2026-09-08, mission `ticketing-complete`).
+  Roughly 86 lines of working-tree diff replace hook entries duplicated in both the old
+  `[ -f X ] && bash X || exit 0` form and the newer `[ -f X ] || exit 0; bash X` form with the
+  single newer form — correct, and aligned with `.claude/rules/hooks.md`'s guidance on hook
+  file shape. This is `make update-template` output reconciling drift, not something the
+  ticketing-complete mission touched or should carry in its commit. Needs its own deliberate,
+  separately-reviewed commit; exclude it explicitly when committing ticketing-complete's work.
+
 ---
 
   scenario-1 comparison.** It checks `position.pf_payment_id` on both sides — F10 moved payment
@@ -1530,3 +1734,492 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   - `content/show-pages/18-contact-us.json` § `overview`
   Fix on resume: replace with a real excerpt from the source, else reclassify to `placeholder-ai`. Never loosen the 25-char/sentence threshold.
 - Structure itself is frozen pending three-session sign-off (SAOC lead / NOS Site / NOS Design) + operator approval.
+- [ ] **[P1] Duplicate `Event` structured-data node for the 2027 National Show.**
+  `/events/19th-south-african-national-orchid-show` emits a second schema.org `Event` for the
+  SAME real-world show as `/national-show` — identical name, dates and venue, different URL.
+  Duplicate-entity cannibalisation in search. Origin is the generic society-event route driven
+  by a Sanity `societyEvent` document. Found 2026-09-08 by the NOS design session during its SEO
+  work and filed as InunuNet/SAOC#2 with three candidate directions. **Do NOT delete the Sanity
+  document without first checking what else reads it** — the events calendar and .ics feeds may
+  depend on it. Our tree (`app/(marketing)/events/**`), not the NOS session's.
+
+- [ ] **[P1] Nothing in this repo runs the contract checks — no CI job, no `test` script.**
+  Verified 2026-09-08: `.github/workflows/ci.yml` runs only lint, type-check, build and two
+  residue guards (one SKIPPED for missing secrets). `package.json` has no `test` script. Grep for
+  `contracts/checks` across CI, Makefile and `execution/` returns zero. Every assertion runs once
+  — when its author invokes it — and never again.
+  This is the mechanism behind the contract-decay items already logged above (the four failing
+  contracts found during the vendor F2 QA sweep, and the standing "audit remaining contracts for
+  the weak-assertion defect class" item). Those were symptoms; this is the cause. Consequence:
+  every "N/N assertions green" claim in this repo is a point-in-time measurement, not a standing
+  guarantee. Mission `ticketing-complete` F7 is folding in a runner + CI job.
+  Related, and Brad's call because it is a GitHub setting not a code change: **main has no branch
+  protection**, so even a wired-up red CI job blocks nothing (stated in ci.yml's own comments).
+
+- [ ] **[P2] A contract runner must distinguish "check failed" from "check was never runnable."**
+  Reported 2026-09-08 by the NOS session: of nine Playwright check scripts named in its contract,
+  seven do not exist on disk. A runner that treats a missing script as a failure buries real
+  failures in noise; one that skips it silently reports green for coverage that was never written.
+  Neither is acceptable — the two states must be reported separately. Fold into F7's runner.
+
+- [ ] **[P2] `check-workshop-products.mjs` is stale post-F2 (ticketing-complete) — three
+  assertions need updating to the new 3-product reality, one genuine pre-existing defect
+  needs separate repair.** Ruling written 2026-09-08:
+  `.agent/memory/project/specs/ticketing-complete/goldens/f2-README.md` §14. File:
+  `contracts/checks/ticketing-workshops-f2/check-workshop-products.mjs` (belongs to the
+  earlier, closed `ticketing-conferences-and-events` mission, not `ticketing-complete`).
+  Correct-consequence fixes (never revert F2's data to make these pass): update
+  `REQUIRED_SLUGS` to drop `field-trip-single`/`field-trip-all-outings` and add `field-trip`;
+  update the `length === 4` expectation to `3`; delete the now-permanently-vacuous
+  field-trip bundle-relationship check (both slugs it reads are `undefined` post-retirement,
+  so its guard silently no-ops rather than failing — dead coverage, not passing coverage).
+  Genuine pre-existing defect, unrelated to F2: the "oversell invariant" check
+  (`cocktailSingle.capacity * 1 + cocktailCouple.capacity * 2 <= 200`) predates
+  `planPooledCapacity()` (shipped later, `ticketing-conferences-and-events` M2/F5) and
+  double-counts one shared `capacityPool: 'sunset-cocktails'` ceiling as if it were two
+  independent per-slug budgets — it will fail forever regardless of any F2 change. Needs
+  rewriting to assert the two products share one pool at the real venue ceiling (200), not a
+  sum of two fields. Implementation work for `@dev`, not an architect edit.
+
+- [ ] **[P1] Audit remaining contracts for the weak-assertion defect class — standing, open.**
+  The general class (an assertion satisfiable by something other than the real property it
+  claims to check) is still unaudited across the repo at large and stays open.
+
+  **One measured sub-class is now closed out, 2026-09-08: vacuously-green negative assertions
+  (a `!`-negated/absence-shaped check whose referenced file or directory doesn't exist, so it
+  passes unconditionally, examining nothing).** Found and hand-fixed three live instances
+  this session while authoring new contracts (`ticketing-complete/contract-f2.yaml`'s old
+  A13, `contract-f7.yaml`'s first-draft A28, `contract-f8.yaml`'s first-draft A6/A10/A11) —
+  enough to suspect the existing corpus was "probably riddled with" the same shape. Measured
+  it instead of assuming: a mechanical, read-only sweep (`.tmp/sandbox/vacuity-audit/sweep.py`,
+  left in place) over 208 contract YAML files (`.agent/memory/project/specs/**`,
+  `contracts/**`, root `contract.yaml`) found 2128 total assertions, 189 negative-shaped, and
+  exactly **1 genuine idle-debt hit**: `vendor-page-fixes/contract-f2.yaml` A6, which checks
+  that `scripts/send-test-vendor-confirmation-email.ts` never logs `RESEND_API_KEY` — that
+  script no longer exists on disk. That mission has no active owner; someone should either
+  rewrite the script or retire the assertion, but this is not urgent and not part of any
+  current mission's scope.
+  The four contracts already logged above as failing from the vendor F2 QA sweep
+  (`vendor-f6-review-workflow`, `vendor-f5-register-route`, `vendor-f3-showcase-page`,
+  `vendor-form-ui`) were checked FIRST and explicitly excluded — confirmed their check
+  scripts still exist on disk and they fail for real, unrelated, already-logged reasons
+  (capability-array drift, an env-scrub harness issue, unrelated file-hash drift, missing
+  labels), not this defect shape.
+  **Conclusion: this specific sub-class is not widespread** — one hit out of 2128 assertions,
+  not the systemic rot three same-night anecdotes suggested. The broader weak-assertion class
+  (satisfiable-by-something-else generally, not just "path doesn't exist") remains genuinely
+  unaudited and this P1 stays open for that larger question — this entry closes out only the
+  narrower, now-measured vacuous-negative sub-class.
+
+## P2 — VIP early-bird cutoff wrote the legacy constant, not the mission's own 90-day rule
+**Filed 2026-09-08. Found by Codex GPT-5.5 cross-model review of the completed F2 diff;
+independently verified before acting.** `scripts/migrate-f2-ticket-taxonomy.ts:206` writes
+VIP's `earlyBirdCutoff` from `lib/provisional-figures.ts:64`'s legacy
+`EARLY_BIRD_CUTOFF = '2027-07-31'`, while this mission's confirmed rule — 90 days before the
+confirmed 2027-09-16 start — computes **2027-06-18** via
+`lib/admission-early-bird-pricing.ts:deriveAdmissionEarlyBirdCutoffIso()`. Runtime price
+selection (`lib/checkout-reservation.ts:resolveEffectivePrice()`) reads the STORED field, not
+the engine, so a migrated VIP would sell at the R500 early-bird rate for 43 days past the
+cutoff the mission confirmed.
+
+**Another instance of the house defect class.**
+`contracts/checks/ticketing-complete-f2/check-vip-computed-early-bird-price.mjs` proves the
+pricing ENGINE returns {500,'earlyBird'} at the real cutoff — it never inspects what the
+migration WRITES. The assertion is fully satisfiable without the property holding. The check
+measured a proxy (the engine) instead of the target (the data the engine's answer is stored
+against), which is the same shape as version-banner-vs-binary, interactive-shell-vs-runner,
+local-`main`-vs-`origin/main`, and `getComputedStyle()`-vs-composited-pixels.
+
+**Scope is wider than the finding stated.** `EARLY_BIRD_CUTOFF` backs ~7 entries: `early-bird`,
+`weekend-pass`, and the conference early-bird SKUs — not just VIP. Both
+`docs/ticketing-complete-f2-open-decisions.md` §2 and the published F8 walkthrough §3 frame
+this as an `early-bird-weekend-pass`-only question, which understates the blast radius.
+NOTE: `early-bird-weekend-pass`'s own mismatch is a DELIBERATE open escalation to Brad
+(`goldens/f2-open-decisions.json`: "a migration that silently picks one destroys the evidence
+a decision was needed") and must NOT be resolved as a side effect of fixing VIP.
+
+## P3 — CI ratchet cannot see check scripts whose path is built by shell variable interpolation
+**Filed 2026-09-08, found by @qa adversarial pass on F7 via a planted probe.**
+`contracts/checks/_shared/run_contract_suite.mjs:~155` (`referencedCheckScripts()`) excludes
+any matched path containing `$`, deliberately, to avoid false positives on
+`contracts/contract-show-visitor-info.yaml`'s legitimate `for`-loops. Consequence: an
+assertion declaring `node "contracts/checks/x/${F}.mjs"` where the script does not exist is
+reported NOWHERE in ratchet mode — not missing, not fail, silently bucketed `not-evaluated`,
+which the ratchet does not gate on. So a declared check that will never run is invisible to
+CI permanently. QA confirmed this is NOT a gap for quoted paths, `&&`-chains, or subshells.
+Being fixed as "print it, don't gate on it" — gating would fire on the legitimate loops.
+
+## SEQUENCING — regenerate missing-baseline.json ONCE, and last
+`contracts/checks/_shared/missing-baseline.json` commits `count:3` against F8's A9/A10/A15,
+but a concurrent F8 session has since created `contracts/checks/ticketing-complete-f8/*`, so
+live count is **0 missing of 2242** (verified 2026-09-08) and contract-f7.yaml's A27
+(`--verify-baseline`) fails right now. This is the ratchet working as designed, not a defect.
+The regeneration is mechanical (`--write-baseline`) but must run AFTER the F2 cutoff fix lands
+with its new check script written, so it happens exactly once rather than twice.
+`parseErrorCount: 2` is expected to stay — the two unparseable contracts
+(`gate-timeout-fix/contract-f1.yaml`, `mission-slug-collision-fix/contract-f1.yaml`) are
+separately logged and not part of this mission.
+
+## P1 — F1's computed early-bird pricing engine has ZERO runtime call sites
+**Filed 2026-09-08. Found while verifying an @architect claim during the F2 Codex repair —
+not by any check, and not by the QA pass on F1 itself.**
+
+`grep -rn "resolveComputedEarlyBirdPrice\|deriveAdmissionEarlyBirdCutoffIso" app/ lib/
+components/ scripts/` returns **no hits outside `lib/admission-early-bird-pricing.ts` itself
+and the check scripts under `contracts/checks/ticketing-complete-f1/` and `.../f2/`.**
+Nothing in `app/`, nothing in `components/`, no API route, no server component calls either
+function.
+
+Runtime pricing goes exclusively through `lib/checkout-reservation.ts:resolveEffectivePrice()`,
+which reads the STORED Sanity `earlyBirdCutoff` / `price` / `regularPrice` fields and never
+consults the engine. So F1 built a pricing engine, wrote golden fixtures and check scripts
+proving that engine correct, passed its gate — and never connected it to anything that sells
+a ticket.
+
+**This is the house defect class at FEATURE scale rather than assertion scale.** The whole
+F1 feature is a proxy: proven correct in isolation, never wired to the target. Same shape as
+version-banner-vs-binary and `getComputedStyle()`-vs-composited-pixels, but a whole feature
+rather than one assertion. Every F1 check is green and honest about what it measures; none of
+them measures whether the engine is REACHABLE from a purchase.
+
+Consequence for F2's VIP repair: fixing the STORED value is the correct and sufficient fix for
+the actual selling price, precisely because runtime reads stored fields. The repair is not
+undermined by this. But F1's stated purpose — "replaces separately-priced early-bird PRODUCTS
+with one computed discount any product can carry... never two independently hand-maintained
+prices that can drift apart" — is not delivered in production behaviour, and the drift it was
+built to prevent is exactly what the VIP defect turned out to be.
+
+**Decision needed (Brad):** wire the engine into checkout (a real feature touching
+checkout-reservation, cart pricing, and the ticket-type display path), or retire it and commit
+to stored-field pricing with a check that the stored values match the 90-day rule. Do not
+leave it half-built — an orphaned engine is a standing invitation to assume pricing is
+computed when it is not.
+
+**Process lesson for the gate:** no contract in this mission asserts that a newly-built module
+is CALLED by anything. "Module exists and is correct" and "module is reachable from the
+behaviour it was built for" are two different properties, and only the first is currently
+checkable. Worth a standing assertion shape: for any new lib/ module a feature introduces,
+prove at least one non-test call site in app/ or lib/.
+
+**Re-verified and measured, 2026-09-08 checkpoint.** Re-confirmed the zero-call-site grep
+still holds. Went further and measured what the "no engine, stored fields only" reality
+actually prices, against `lib/provisional-figures.ts` (its own header calls it the single
+source of truth): VIP 500/625 = exactly 20% (matches Brad's confirmed rule, but by
+coincidence of the stored literals, not because anything enforces it), Weekend Pass 380/400 =
+5%, Symposium 450/550 = 18.2%, Joint 750/900 = 16.7%. Only VIP happens to comply. Every F1/F2
+contract check imports and exercises `resolveComputedEarlyBirdPrice()` directly, so none of
+them would ever catch Weekend/Symposium/Joint failing the 20% rule — the checks are all
+green and all pointed at the wrong object. Also confirmed the engine is not *entirely*
+disconnected: `deriveAdmissionEarlyBirdCutoffIso()` (the cutoff-date half) IS called live from
+`lib/provisional-figures.ts:87` to derive VIP's cutoff — only the price-computation half is
+orphaned. A half-wired engine is easy to mistake for a fully-wired one; don't let the live
+cutoff call site stand in for proof the price call site exists too.
+
+
+## P2 — glob-built check-script paths are dropped entirely by the contract runner (same hole as interpolation)
+
+**Filed 2026-09-08 by @dev at the team lead's instruction, traced by @architect and verified
+independently. Log only — deliberately NOT fixed here.**
+
+`classifyReferencedCheckScripts()` in `contracts/checks/_shared/run_contract_suite.mjs:237-238`
+sorts a matched check-script path into `literal` only when it contains neither a shell glob
+character nor a `$`, and into `interpolated` only when it contains a `$`. A path carrying a
+glob and no `$` therefore matches neither branch and is dropped on the floor — not counted
+`missing`, not reported in the `unresolvable` bucket, not visible anywhere.
+
+This is the identical blind spot QA proved for variable interpolation, one category over. The
+interpolation case was closed on 2026-09-08 by printing an ungated `unresolvable` bucket
+(see `.agent/memory/project/specs/ticketing-complete/goldens/f7-README.md` §10 and
+assertions A32/A33); the glob case was
+consciously left open at the time because no live instance had been demonstrated, and this
+project's own bar is that a reported class needs a concrete instance.
+
+**The live instance now exists.** `contracts/contract-show-visitor-info.yaml` A76 loops
+`for f in contracts/checks/show-visitor-info/check-<glob>.mjs` — its check-script reference is
+glob-built and is invisible to `--list-missing` and `--check-ratchet` today.
+
+**Scope of the exposure is scan mode only.** In full-eval mode (single-file runs) an unmatched
+glob is passed through to node as a literal string, which fails loudly and self-detects as a
+real `fail`. The hole is specific to the corpus scan the CI ratchet uses — which is also where
+it matters most, because that is the run nobody reads line by line.
+
+**Proposed fix (not implemented):** add a third `globbed` category alongside `literal` and
+`interpolated`, triaged and printed in the same `unresolvable` bucket, with the same deliberate
+decision NOT to gate on it — gating would fail CI on correct contracts whose loops iterate over
+files that really exist. Needs its own contract and its own falsifiability proof; extending A32
+to cover it would be the natural pin.
+
+## P2 — superseded F4 golden is red on main and nobody owns it
+**Surfaced 2026-09-08 by the F2 dev during the VIP cutoff repair; verified red BEFORE that
+change, so it is pre-existing, not caused by it.**
+`contracts/checks/ticketing-f4-admission-products/check-admission-products-data.mjs` fails with
+7 failures against the current tree. It encodes a superseded F4 golden: it expects 5 slugs
+including `early-bird-weekend-pass`, VIP at R300, and `provisional: true` — all three of which
+later missions deliberately changed (VIP is now R625/R500 settled under Brad's 2026-09-08
+ruling; `provisional` became per-value rather than per-file).
+
+The F2 repair alters one of its failure LINES (`vip.earlyBirdCutoff` now reports 2027-06-18
+instead of 2027-07-31) but does not change its pass/fail state. Left alone deliberately — it is
+a golden question (which expectations are still authoritative?), not a code one, and it belongs
+to no active mission.
+
+**Decision needed:** update the F4 golden to the current authoritative figures, or retire the
+check as superseded. Do not "fix" it by loosening assertions — this repo's whole discipline is
+that a check which cannot fail is worse than no check. Note this is the same ownership shape as
+the `vendor-page-fixes/contract-f2.yaml` A6 item already logged above: a real assertion whose
+subject moved on, with no active owner to notice.
+
+## P2 — SAOC base declares no semantic status colour tokens (success/warning/error)
+**Filed 2026-09-08 by the NOS design session (mission nos-design-system) as a base-level
+finding, not a NOS one. Every claim in their audit independently re-verified here before
+logging — all exact.**
+
+`app/globals.css` `@theme` declares **13 colour tokens, all identity** (primary/-800/-700/-100,
+accent, accent-soft, parchment, ivory, bone, ink, muted, rule, rule-soft). There is no
+`--color-success`, `-warning`, `-error`, `-danger` or `-info`.
+
+Consequence: status colour is expressed ad hoc with raw Tailwind palette utilities —
+**14 occurrences across 4 files** (`components/events/SubmitEventForm.tsx`,
+`app/admin/settings/page.tsx`, `components/vendors/VendorMarketingFieldset.tsx`,
+`components/vendors/VendorMarketingUploadField.tsx`), and **`text-red-600` (8) and
+`text-red-700` (5) are both in use for the same meaning** — drift already present, not
+hypothetical.
+
+**How it surfaced, which is the interesting part:** NOS's design authority ruled that status
+colour is functional and must never join a palette shift — "a brand that recolours its own
+error states has stopped warning anyone." Going to honour that rule, they found there was
+nothing to exclude. The guardrail was unenforceable because the thing it guards does not
+exist. A rule with no referent reads as satisfied.
+
+Mostly UNDER-coloured rather than miscoloured (32 files carry `aria-live`/`role="alert"`/
+`role="status"` regions, most with no colour at all), which is why it stayed invisible.
+
+**NOT ACTIONED, deliberately.** `app/globals.css` is main-site style, and the style freeze is
+Brad's standing instruction (nav was the one sanctioned exception). A token change there has
+real blast radius. NOS is declaring these in their own layer only and explicitly did not touch
+the base — if the base later declares them, NOS's values collapse to overrides and nothing is
+stranded. Nothing is blocked meanwhile.
+
+**Their design constraints, worth adopting if Brad greenlights this:**
+- Two tokens per state (on-light and on-dark) — one value cannot clear 4.5:1 on both grounds;
+  hold hue constant across the pair and lighten for dark.
+- Never colour alone: a word or icon must carry the state too, so a drifted hue degrades to
+  ugly rather than to silent.
+- Verify in the TRIGGERED state, not at rest, at 390 and 1280.
+- Measure contrast at the composited pixel, never `getComputedStyle()` — Tailwind v4
+  serialises opacity-modified colours as `oklab()` and regex-parsing it returns plausible,
+  wrong numbers (InunuNet/SAOC#3). This is the same proxy-measurement class this project keeps
+  hitting; see the F1 orphaned-engine and vacuous-negative entries above.
+
+They offered their token values as a base proposal once approved on a rendered swatch sheet.
+**Decision for Brad:** accept that offer and lift the freeze for a scoped token addition, or
+leave the base as-is and let NOS carry its own.
+
+## P2 — `make update-template` changed .claude/settings.json; one hook was REMOVED, uncommitted
+**Found 2026-09-08 during the pre-commit residue scan. Not agent work — this is output from
+Brad's own `make update-template` run, sitting uncommitted.**
+
+`.agent/update-manifest.yaml:63` classifies `.claude/settings.json` as **MERGE /
+json_deep_merge**, not HARNESS — so it is not replaced wholesale and local intent is meant to
+survive. The diff is **86 lines changed, 84 of them deletions**, which is a lot for a deep
+merge and deserves a human eye.
+
+Two distinct changes, one good and one a behaviour change:
+1. **Genuine fix:** `[ -f execution/hooks/full_boot.sh ] && bash ... || exit 0` became
+   `[ -f ... ] || exit 0; bash ...`. The old form swallows a real failure from `bash` and
+   reports success — the exact `|| true`-on-blocking-hooks trap `.claude/rules/hooks.md`
+   warns about. The new form propagates the true exit code. Also de-duplicated a
+   double-registered `full_boot.sh` entry.
+2. **Behaviour change, unreviewed:** the `session_start_away_report.sh` SessionStart hook was
+   REMOVED entirely. If the away report is still wanted, it is now silently not running. This
+   is the kind of loss a deep merge is supposed to prevent, so it is worth confirming it was
+   intended upstream rather than collateral.
+
+Also uncommitted from the same run: `.claude/policies/autonomy.json`,
+`.grok/policies/autonomy.json`, `.anti/agents.json` (24 lines),
+`template/.agent/config/hook_probes.json`.
+
+**COMMIT HYGIENE — acted on:** the ticketing-complete mission commit must be scoped to mission
+files only (contracts/, docs/, lib/, components/, scripts/, e2e/, .github/workflows/ci.yml,
+.agent/memory/project/specs/ and memory files). These config/template files must NOT be swept
+into it — they are a separate concern with a separate reviewer (Brad), and burying a hook
+removal inside a feature commit is how it stops being noticed.
+
+Related to the already-logged 61 unreconciled harness baselines from the same run.
+
+## P1 — the walkthrough exists TWICE, and the contract guards the copy Brad doesn't read
+**Found 2026-09-08 while resolving a rendering question before redeploying the artifact.**
+
+`docs/ticketing-complete-f8-morning-review.md` is guarded by SIX contract assertions (A6
+screenshots, A10 open-decisions coverage, A15 figure citations, plus negatives A20/A21/A22 and
+now A23/A24). Those assertions verify that every figure in the markdown matches
+`lib/provisional-figures.ts` at runtime.
+
+But the published artifact at
+`https://claude.ai/code/artifact/e372cb8c-c062-4e8e-baed-d7e4961e2be5` is **not a render of
+that markdown**. Reading it shows a hand-authored HTML page — its own `<title>`, an imported
+Google font stack, a full set of CSS custom properties and a dark-mode palette, ~4.4MB with
+the screenshots embedded. It is a second, independently-written document.
+
+**So the figure-verification chain stops at the markdown.** Brad opens the HTML. The markdown
+could be perfect and the HTML could still say VIP is R300 — nothing checks it. A15 could stay
+green forever while the document he actually reads drifts arbitrarily far from the source of
+truth.
+
+**This is the house defect class again, and it undercuts a decision made earlier today.** When
+@architect recommended keeping A10 pointed at the walkthrough rather than F2's open-decisions
+doc, its stated reason was "the walkthrough is the document Brad actually reads and the one
+that's Artifact-published" — which would be circular if the artifact isn't the markdown. The
+recommendation is still right (of the two REPO files, the walkthrough is the better target),
+but the premise that guarding it guards what Brad sees is false.
+
+A2 partially discloses this: it says a shell assertion "can confirm a URL-shaped string is
+recorded, never that the artifact is actually live and rendering correctly," and names the
+residual gap in goldens/f8-README.md rather than pretending coverage. Honest, but it describes
+a liveness gap, not a CONTENT-PARITY gap, which is the larger of the two.
+
+**Remediation options, for a decision:**
+1. Generate the artifact HTML FROM the markdown so drift is structurally impossible. Best fix;
+   costs the hand-designed presentation unless the generator preserves it.
+2. Add an assertion that reads the published artifact and diffs its figures against
+   `provisional-figures.ts` the way A15 does for the markdown. Keeps the design freedom, needs
+   network access in a check.
+3. Accept the gap and document it loudly. Weakest, but honest — and strictly better than the
+   current state where the gap is undisclosed.
+
+Until this is decided, ANY redeploy of the walkthrough artifact must carry the markdown's
+changes across BY HAND and be verified against `provisional-figures.ts` manually. The §3
+rewrite from this session is exactly such a change and has NOT yet been carried across.
+
+## P1 — residue scanning proves a value is WRONG, never that it is VISIBLE; hydration-only fields hide
+**Established 2026-09-08 by the NOS design session, by measuring the rendered page rather than
+reasoning from field names. It corrected my own impact assessment, which was wrong.**
+
+During the 6-field sentinel incident, I asserted that corrupt `nationalShow.title` and
+`.location` would have poisoned layout captures via wrapping/truncation. Measured, that was
+false, and the true picture split three ways:
+
+- **`title` — no visual impact.** Both occurrences on /national-show sit inside the
+  `application/ld+json` block as `Event.name`. The visible `<h1>`, header lockup and card
+  titles all rendered the real title (12 occurrences). Still a real defect, but a
+  STRUCTURED-DATA one: for ~12 hours the page told crawlers the event was named
+  `F3-TITLE-SENTINEL-1788824005021`. An SEO bug, not a content bug.
+- **`location` — clean.** Rendered correctly (4 occurrences), no "CTICC" anywhere.
+- **`countdownDate` — the only one that reached a glyph, and the only one no static check
+  could see.** The SSR payload ships `00` placeholders, so a source grep AND a curl of the
+  SSR HTML both clear it FALSELY. It is passed as a client prop to `ShowCountdown` and only
+  after hydration does the days cell paint `26412` — 86px wide against 31-43px for its
+  siblings. No clipping, no overflow, but ~30px of lateral shift in the hero countdown row.
+  The real date gives a 3-digit count at ~55px, so any HERO GEOMETRY capture in that window
+  measured a row that will never ship. Contrast and colour numbers are unaffected; geometry
+  ones are.
+
+**THE GENERALISABLE RULE:** `scripts/scan-dataset-residue.ts` correctly detects that a stored
+value is wrong — that part works and is what caught this incident. What nothing currently
+answers is whether a given residue hit is VISIBLE, and the answer cannot be obtained from the
+source or from the SSR HTML. A field consumed by a client component is invisible to both.
+`countdownDate` passed every static check and was the only field of the three that a human
+would actually have seen.
+
+**If the scanner ever grows an "is this residue user-visible?" signal, it must look after
+hydration.** Same shape as `getComputedStyle()` vs the composited pixel, and as every other
+proxy-measurement failure logged above: the SSR HTML is a proxy for the rendered page, and it
+disagrees exactly where it matters.
+
+Corollary for incident triage: never rank residue severity by field name. I ranked `title`
+highest because it sounded most visible and it was the least; `countdownDate` sounded like
+metadata and was the only one anybody could see.
+
+## P1 — four contract families mutate LIVE data and rely on `finally`; SIGKILL skips `finally`
+**Root-caused 2026-09-08 after the six-field sentinel incident. This corrects the initial
+framing (mine): the residue was NOT one mission's fault.**
+
+Tracing each sentinel prefix against `contracts/golden/dataset-residue-guard/marker-catalogue.md`
+gives FOUR independent sources, not one:
+
+| corrupted field | writing check |
+|---|---|
+| nationalShow title/location/countdownDate | `contracts/checks/cms-loop-f3-national-show/check-headline-round-trip.mjs` |
+| aboutPage.boardIntroText | `contracts/checks/f6-prove-cms-loop/check-studio-edit-reaches-site.mjs` |
+| award-am-saoc.threshold | `contracts/checks/cms-loop-f4-orphaned-types/check-award-threshold-reaches-site.mjs` |
+| societyEvent description | `contracts/checks/cms-loop-f2-event-tags/check-studio-edit-reaches-site.mjs` |
+
+(`contracts/checks/show-visitor-info/` was wrongly blamed at first — it has its own
+restoreGuarded/withDatasetLock checks but they target DIFFERENT fields: showVisitorInfo.parking
+and nationalShow.venue/showDate/showEndDate/edition/hostRegion. Not these six.)
+
+**THE ARCHITECTURAL DEFECT.** All four write a sentinel to the LIVE dataset, then restore in a
+`finally` block. Signal handling is inconsistent — cms-loop-f3 traps SIGTERM/SIGINT only;
+f6-prove-cms-loop traps uncaughtException/unhandledRejection and no OS signals at all;
+cms-loop-f4 and cms-loop-f2 have zero `process.on(` handlers — but that inconsistency is a
+side issue, because **no Node process can trap SIGKILL. It is OS-enforced and always skips
+`finally`.**
+
+All four sentinels landed inside a 3.5-minute window (23:31:05-23:34:49 UTC 2026-09-07) with
+no residue alert logged anywhere and no surviving session. Sentinel written + zero cleanup +
+zero alert + process gone, uniformly across four independent checks, is the signature of a
+hard kill (OOM, quota/session termination, `kill -9`) — not an application bug in
+`restoreGuarded`. A graceful SIGTERM would have been caught by at least the F3 checks and
+produced a `residueAlert()` block. The silence is the evidence.
+
+**So better signal handling CANNOT fix this.** Any design whose correctness depends on a
+`finally` block running is unsound when the value at risk is live shared content. Real options:
+1. Don't mutate live data. Point these checks at a scratch dataset or a disposable document.
+   Best fix — removes the hazard rather than narrowing the window.
+2. Write-ahead intent: record "about to corrupt field X of doc Y, prior value Z" to a durable
+   journal BEFORE mutating, so a later run (or CI) can always roll forward to clean, with no
+   dependence on the writer surviving.
+3. A lease/TTL on the sentinel so a stale one is self-evidently expired and auto-restored.
+
+The existing CI `dataset-residue-guard` job (daily cron) is DETECTION, and it worked — but it
+detects at up to 24h latency and, per `project_contract_checks_mutate_live_content`, its alerts
+go to a log nobody reads. This incident sat ~12 hours and was found only because a contract
+gate's pre-flight guard refused to run. Detection is not the gap; SAFE MUTATION is.
+
+**Restoration performed** (targeted patch/unset per field, never a reseed — a
+`createOrReplace` from seed-page-singletons.ts would have wiped nationalShow's edition, hero,
+hostRegion, salesOpen, showDate, showEndDate and venue, none of which the seed lists):
+title/location/countdownDate from `scripts/seed-page-singletons.ts:212/214/216`;
+award threshold `"80-89 pts"` from `scripts/backfill-award-fields.ts:42` (schema
+`sanity/schemas/documents/award.ts:11` confirms type string); `aboutPage.boardIntroText` UNSET
+per the seed's own comment; `societyEvent-10-midlands-orchid-show.description` UNSET — proven
+correct from Sanity transaction history, which shows the doc has exactly two transactions ever
+and `description` was absent from the pre-corruption revision entirely, so it was never
+legitimately populated. Scanner verified ALL CLEAR across 149 documents.
+
+## P1 — BUILD: the visibility half of scan-dataset-residue.ts (design donated, ready to build)
+**Offered 2026-09-08 by the NOS design session, which built a working prototype this morning
+to answer the countdown question and handed the approach over. Credit theirs; the item belongs
+with the scanner, not with a restyle mission.**
+
+The gap (established in the P1 entry above): `scripts/scan-dataset-residue.ts` proves a stored
+value is WRONG. Nothing answers whether that hit is USER-VISIBLE, and the answer exists in
+neither the source nor the SSR HTML — `countdownDate` was a client prop whose SSR payload ships
+`00` placeholders, so a grep and a curl BOTH cleared it falsely while it was the only one of
+three sentinels a human could actually see.
+
+**The design, which is small — roughly thirty lines of Playwright:**
+1. Launch headless, `goto` with `waitUntil: 'networkidle'`.
+2. Wait ~1200ms for hydration to settle and any ticking component to render once.
+   **This delay IS the mechanism** — everything measured before hydration is a false clean.
+3. `page.evaluate()` a reducer that runs PAGE-SIDE and returns only trimmed text plus measured
+   boxes — a few hundred bytes of JSON, never a DOM dump. Doing the reduction in the page is
+   what makes it cheap enough to loop.
+4. Loop over breakpoints (390 and 1280).
+
+**The inversion that turns it into the scanner's other half:** instead of naming an element to
+read, feed it the sentinel strings `scan-dataset-residue.ts` has ALREADY found, and have the
+page-side reducer walk text nodes looking for them — returning which sentinels reached a glyph,
+in which element, at which breakpoint. Scanner: "is this value wrong." This: "does anyone see
+it." Together they let an incident be triaged by measurement instead of by guessing from field
+names, which is exactly what went wrong in the 2026-09-08 triage (I ranked `title` most severe;
+it was invisible, confined to `application/ld+json`).
+
+NOT BUILT — deliberately out of scope for ticketing-complete, which is mid-gate. Needs its own
+contract. Note the prototype lives in the NOS session's own scratchpad, OUTSIDE this project,
+so it cannot simply be read from here; either have it dropped into the SAOC tree first, or
+rebuild from the design above, which is complete enough to work from.
+
+Related: the same session has adopted running the scanner at BOTH ENDS of a measurement pass,
+treating its own geometry numbers as suspect if the dataset moved underneath it. Worth making
+standing practice for any agent taking visual measurements against live content.

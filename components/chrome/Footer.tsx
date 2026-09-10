@@ -19,6 +19,7 @@ const FOOTER_NAV = [
   { id: 'judging', label: 'Judging & Awards', href: '/judging' },
   { id: 'show', label: 'National Show', href: '/national-show' },
   { id: 'events', label: 'Events', href: '/events' },
+  { id: 'members', label: 'Members Portal', href: '/members' },
 ];
 
 export function Footer() {

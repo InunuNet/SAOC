@@ -1,0 +1,200 @@
+schema: athanor.contract/v1
+slug: site-content-alignment
+goal: >
+  F1 is the audit/spec feature: produce a machine-checkable coverage map of all 20 of
+  Lee-Ann's sections against Drive source docs and live routes, a handoff-implementation
+  delta (inventory only, no new design), a unification spec for the 5 existing provisional-
+  content markers, a nav reconciliation spec (comment correction + cross-reference to
+  f6-pending-nos-routes.json + multi-angle reachability requirement), the mission's
+  milestone/feature plan for the buildable-now (M2) vs Lee-Ann-gated (M3) follow-on work,
+  and the consolidated 11-item question list for Lee-Ann/Brad. F1 writes ZERO production
+  code -- every assertion below checks the existence and internal consistency of these
+  planning artifacts, not application behaviour (application behaviour is F2+'s contract).
+created_at: '2026-09-09'
+autonomy: high
+features:
+  - id: F1
+    name: Audit, coverage map, unification spec, nav reconciliation spec, question list
+    status: pending
+goldens:
+  - .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json
+  - .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-baseline-dirty-files.json
+  - .agent/memory/project/specs/site-content-alignment/goldens/f1-handoff-implementation.md
+  - .agent/memory/project/specs/site-content-alignment/goldens/f1-provisional-unification.md
+  - .agent/memory/project/specs/site-content-alignment/goldens/f1-nav-reachability.md
+  - .agent/memory/project/specs/site-content-alignment/goldens/f1-questions-for-leeann.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        Coverage map exists, is valid JSON, and declares exactly 20 total sections (6 SAOC +
+        14 National Show, the 14 being 13 numbered `sections[]` entries + 1
+        `unnumberedEntries[]` entry) -- matches the analyst's independently re-verified
+        Drive tree, not an invented count.
+      command: >-
+        test -f .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json &&
+        python3 -c "import json,sys; d=json.load(open('.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json')); assert d['totalSections']==20; assert d['saocSectionCount']==6; assert d['nationalShowSectionCount']==14; saoc=[s for s in d['sections'] if s['org']=='saoc']; nos=[s for s in d['sections'] if s['org']=='nationalShow']; assert len(saoc)==6, len(saoc); assert len(nos)==13, len(nos); assert len(d['unnumberedEntries'])==1"
+      required: true
+
+    - id: A2
+      description: >
+        NEGATIVE CONTROL for A1: every section's contentStatus is one of exactly the three
+        values the team lead specified -- sourced | provisional | blocked-on-leeann -- no
+        fourth value invented, no section left with a missing/null contentStatus (which would
+        silently read as neither an absence proof nor a presence proof, the exact
+        "silence isn't protection" failure mode).
+      command: >-
+        python3 -c "import json; d=json.load(open('.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json')); allowed={'sourced','provisional','blocked-on-leeann'}; bad=[s['id'] for s in d['sections'] if s.get('contentStatus') not in allowed]; assert not bad, bad"
+      required: true
+
+    - id: A3
+      description: >
+        PRESENCE pairing for A2's absence check: the numbering gaps (8, 9, 10, 14, 16) are
+        explicitly recorded in `numberingGaps.missingNumbers`, not silently omitted from the
+        file -- a reader must be able to see the gap was investigated and confirmed absent,
+        not merely that 13 numbered sections happen to exist.
+      command: >-
+        python3 -c "import json; d=json.load(open('.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json')); assert d['numberingGaps']['missingNumbers']==[8,9,10,14,16]; assert d['numberingGaps']['status']=='confirmed-absent-not-a-listing-bug'"
+      required: true
+
+    - id: A4
+      description: >
+        Every section with contentStatus 'provisional' or 'blocked-on-leeann' carries a
+        non-empty `notes` field explaining WHY (which open question, or what's missing) --
+        proves this is a researched audit, not a template with the same generic string
+        pasted 15 times. Structural proxy for "was this section actually looked at."
+      command: >-
+        python3 -c "import json; d=json.load(open('.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json')); gaps=[s for s in d['sections'] if s['contentStatus'] in ('provisional','blocked-on-leeann')]; bad=[s['id'] for s in gaps if not s.get('notes') or len(s['notes'].strip())<20]; assert not bad, bad; notes=[s['notes'] for s in gaps]; assert len(set(notes))>1, 'all notes identical -- template, not audit'"
+      required: true
+
+    - id: A5
+      description: >
+        Cross-reference consistency: every href in f6-pending-nos-routes.json's
+        pendingRoutes array matches exactly one section's routes[] entry in
+        f1-coverage-map.json, and that section's routeStatus is 'gap-nav-only' -- proves the
+        two files agree on which routes are actually missing, per f1-nav-reachability.md's
+        no-drift requirement.
+      command: >-
+        python3 -c "import json; cov=json.load(open('.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json')); pend=json.load(open('.agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json'))['pendingRoutes']; route_status={r: s['routeStatus'] for s in cov['sections'] for r in s['routes']}; bad=[r for r in pend if route_status.get(r) != 'gap-nav-only']; assert not bad, bad"
+      required: true
+
+    - id: A6
+      description: >
+        NEGATIVE CONTROL for A5: no section already marked routeStatus 'built' appears
+        anywhere in f6-pending-nos-routes.json's pendingRoutes -- proves a built route was
+        never left stranded in the pending-exception list (the drift direction A5 alone
+        doesn't catch).
+      command: >-
+        python3 -c "import json; cov=json.load(open('.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json')); pend=set(json.load(open('.agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json'))['pendingRoutes']); built_routes=[r for s in cov['sections'] if s['routeStatus']=='built' for r in s['routes']]; bad=[r for r in built_routes if r in pend]; assert not bad, bad"
+      required: true
+
+    - id: A7
+      description: >
+        WOSA Conference is recorded with contentOwner 'wosa', not 'saoc' -- structural proof
+        the coverage map itself respects the CLAUDE.md scope boundary (SAOC hosts/credits,
+        never authors, wild-orchid-conservation content) rather than leaving it to be
+        rediscovered by whoever builds the route later.
+      command: >-
+        python3 -c "import json; d=json.load(open('.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json')); wosa=[s for s in d['sections'] if s['id']=='nos-7-wosa-conference']; assert len(wosa)==1; assert wosa[0]['contentOwner']=='wosa'"
+      required: true
+
+    - id: A8
+      description: >
+        Provisional-unification spec explicitly preserves the exhibitor-specific 'question'
+        status (must not silently collapse into ExhibitorStatusBadge/ConfirmationBadge's
+        shared 'pending' bucket) -- required per research §4's explicit warning.
+      command: >-
+        grep -qi "do not.*drop.*question\|must not.*collapse.*question\|question.*must keep rendering" .agent/memory/project/specs/site-content-alignment/goldens/f1-provisional-unification.md
+      required: true
+
+    - id: A9
+      description: >
+        PRESENCE pairing for A8: the same spec requires a visible marker actually render on
+        any page whose coverage-map section is provisional/blocked-on-leeann -- not merely
+        that invented copy is absent. Direct citation of the learned.md "Absence-only
+        assertions" defect class, so F2's own contract is written against it deliberately,
+        not by chance.
+      command: >-
+        grep -qi "absence-only assertions\|render the marker, never nothing" .agent/memory/project/specs/site-content-alignment/goldens/f1-provisional-unification.md
+      required: true
+
+    - id: A10
+      description: >
+        Handoff-implementation delta exists and states the one real structural gap (no
+        generic content-page wrapper) is NOT a deviation from the handoff -- the handoff's
+        own mockups are also hand-composed per page. Proves this is inventory, not a
+        proposal to build a new wrapper component.
+      command: >-
+        grep -qi "not a gap against the handoff" .agent/memory/project/specs/site-content-alignment/goldens/f1-handoff-implementation.md
+      required: true
+
+    - id: A11
+      description: >
+        Nav reachability spec states the exact superseded comment text in nav-config.ts
+        (the "six destinations" framing) and specifies its replacement must point at
+        f1-coverage-map.json -- so F2's edit target and required content are unambiguous,
+        not left for @dev to infer.
+      command: >-
+        grep -q "superseded" .agent/memory/project/specs/site-content-alignment/goldens/f1-nav-reachability.md &&
+        grep -q "f1-coverage-map.json" .agent/memory/project/specs/site-content-alignment/goldens/f1-nav-reachability.md
+      required: true
+
+    - id: A12
+      description: >
+        NEGATIVE CONTROL for the "architect writes no production code" rule: the set of
+        dirty files under app/, components/, lib/, sanity/, types/ is IDENTICAL to
+        f1-baseline-dirty-files.json's pre-F1 snapshot (9 files, all pre-existing from the
+        concurrent ticketing-complete mission) -- no new production file was added or
+        removed from the dirty set by F1's own work. Compares sets, not raw porcelain text,
+        so it isn't invalidated by unrelated in-flight edits to those same 9 files landing
+        between contract-authoring time and gate time. Guards against the exact failure mode
+        CLAUDE.md's chain and this brief both warn against (architect designing instead of
+        specifying).
+      command: >-
+        python3 -c "import json,subprocess; base=set(json.load(open('.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-baseline-dirty-files.json'))['dirtyProductionFiles']); out=subprocess.run(['git','status','--porcelain','--','app/','components/','lib/','sanity/','types/'],capture_output=True,text=True,check=True).stdout; now=set(l[3:] for l in out.splitlines() if l.strip()); extra=now-base; assert not extra, extra"
+      required: true
+
+    - id: A13
+      description: >
+        Question list has exactly 11 numbered items (analyst's 7 + architect's 4: bracket-
+        vs-badge design-compliance question, media-kit orphan status, the unfinished-Contact-
+        doc restated item, and the unnumbered top-level spec doc) -- a deliverable, not a
+        footnote, per the brief's explicit instruction.
+      command: >-
+        test "$(grep -cE '^[0-9]+\. \*\*' .agent/memory/project/specs/site-content-alignment/goldens/f1-questions-for-leeann.md)" = "11"
+      required: true
+
+    - id: A14
+      description: >
+        Mission file's milestone/feature plan is populated (not left as the stub `features: []`
+        / `milestones: []` the mission started with) and distinguishes buildable-now work
+        (M2) from Lee-Ann-gated work (M3) -- proves the follow-on plan actually separates
+        what can proceed today from what must wait on real answers, rather than listing
+        every open item as equally actionable.
+      command: >-
+        grep -q "milestone: M2" .agent/memory/project/missions/2026-09-09-site-content-alignment.md &&
+        grep -q "milestone: M3" .agent/memory/project/missions/2026-09-09-site-content-alignment.md &&
+        grep -q "blocked-on-leeann" .agent/memory/project/missions/2026-09-09-site-content-alignment.md
+      required: true
+
+    - id: A15
+      description: >
+        Verification triad applicability, stated rather than silently skipped per
+        .claude/rules/workflow.md: F1 ships no deployed UI change and sends no email, so
+        browser_deployed_check and gws_inbox_check are inapplicable to THIS feature --
+        explicitly recorded here so a future reader doesn't mistake the absence for an
+        oversight. F2 (the first feature with real UI/behaviour changes) is required to
+        declare the triad for real.
+      command: >-
+        true
+      inapplicable_kinds:
+        - browser_deployed_check
+        - gws_inbox_check
+      inapplicable_reason: >-
+        F1 is a planning/spec-only feature (contract, coverage-map JSON, markdown goldens,
+        mission-file plan) with zero production-code or deployed-surface changes -- there is
+        nothing for a browser to load or an inbox to receive that F1 itself produced. A12
+        already proves the zero-production-code boundary structurally. The triad becomes
+        mandatory starting with F2, the first feature that touches app/components/lib.
+      required: true

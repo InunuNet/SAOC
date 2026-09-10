@@ -1,0 +1,15 @@
+{
+  "capturedAt": "2026-09-09",
+  "note": "Snapshot of `git status --porcelain -- app/ components/ lib/ sanity/ types/` taken at F1 contract-authoring time, BEFORE any F1 work -- these 9 files are pre-existing in-flight changes from the concurrent ticketing-complete mission, not F1's doing. A12 asserts this exact set is unchanged (no additions) after F1, proving F1 itself touched zero production files, without falsely requiring a clean tree F1 never had.",
+  "dirtyProductionFiles": [
+    "components/chrome/Footer.tsx",
+    "components/chrome/Header.tsx",
+    "components/chrome/MegaMenu.tsx",
+    "components/chrome/MobileMenu.tsx",
+    "components/chrome/nav-config.ts",
+    "components/societies/SocietyEvents.tsx",
+    "components/tickets/TicketTypeCard.tsx",
+    "lib/provisional-figures.ts",
+    "sanity/schemas/documents/ticketType.ts"
+  ]
+}

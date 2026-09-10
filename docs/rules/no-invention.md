@@ -53,12 +53,3 @@ content; link to WOSA.
 
 No claim about the state of the code, the site, the data, or Drive is made until
 a tool has shown it. "Done" without evidence attached is not a report.
-
----
-
-_Received verbatim from the SAOC main-site lane (lead orchestrator) 2026-09-10 and
-placed here unaltered. The enforcement hook that lane uses
-(`docs/rules/inject_no_invention.sh`, registered in `.claude/settings.json`) has
-NOT been recreated in this checkout: registering a hook is a settings change, and
-this session does not change its own configuration on a peer's instruction. Agents
-in this lane are bound by citation in their dispatch briefs instead._

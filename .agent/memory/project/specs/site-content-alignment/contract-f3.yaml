@@ -1,0 +1,236 @@
+schema: athanor.contract/v1
+slug: site-content-alignment
+goal: >
+  F3 builds the ONLY two of the five 404ing National Show nav routes that have a source
+  document: a new /national-show/about page sourced from
+  docs/leeann-source/about-national-show_2026-09-09.md, and a content reconciliation of the
+  already-existing /national-show/what-to-expect page against
+  docs/leeann-source/what-to-expect_2026-09-09.md (that page today is Sanity-driven visitor-
+  logistics copy -- hours/admission/food -- and carries none of the doc's narrative/theme/WOSA
+  content, so "reconciliation" here means adding the missing sourced narrative, not merely
+  auditing what's already there). /national-show/symposium, /national-show/wosa-conference,
+  /national-show/programme, and /national-show/exhibitors/international have NO source
+  document (Symposium Theme is a one-sentence theme statement, not page copy -- a fragment,
+  not a page) and stay explicitly gated on Lee-Ann in M3; F3 must not invent placeholder pages
+  for them. F4 is multi-angle reachability, scoped concretely to the two pages F3 touches (see
+  goldens/f3-f4-scope-note.md for why this is not a full 20-section sweep). Both source docs
+  and the design handoff's own WOSA-hosting pattern require any WOSA mention to attribute and
+  link out to WOSA, never author conservation content in SAOC's own voice, per
+  docs/rules/no-invention.md and CLAUDE.md's scope boundary.
+created_at: '2026-09-10'
+autonomy: high
+features:
+  - id: F3
+    name: Build /national-show/about (sourced); reconcile /national-show/what-to-expect
+      against its source doc; leave the 4 Lee-Ann-gated routes unbuilt and correctly
+      tracked as pending
+    status: pending
+  - id: F4
+    name: Multi-angle reachability for the two F3 pages -- hub-page and ShowSectionNav
+      cross-links, not just the primary nav entry
+    status: pending
+goldens:
+  - .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json
+  - .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-baseline-dirty-files.json
+  - .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f2-nav-config-body-baseline.txt
+  - .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f3-canary-phrases.json
+  - .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json
+  - .agent/memory/project/specs/site-content-alignment/goldens/f1-nav-reachability.md
+  - .agent/memory/project/specs/site-content-alignment/goldens/f1-questions-for-leeann.md
+  - .agent/memory/project/specs/site-content-alignment/goldens/f3-f4-scope-note.md
+  - docs/leeann-source/about-national-show_2026-09-09.md
+  - docs/leeann-source/what-to-expect_2026-09-09.md
+  - docs/leeann-source/symposium-theme_2026-09-09.md
+assertions:
+  phase: 4
+  checks:
+    # ---------- F3: /national-show/about (new, sourced) ----------
+    - id: A1
+      description: >
+        The route file actually exists -- proves this is a real Next.js route, not just
+        documented as built.
+      command: test -f "app/(marketing)/national-show/about/page.tsx"
+      required: true
+
+    - id: A2
+      description: >
+        The about route renders content actually drawn from its source snapshot -- all 3
+        canary phrases from f3-canary-phrases.json's `about.phrases` (copied verbatim from
+        docs/leeann-source/about-national-show_2026-09-09.md) appear literally somewhere
+        under the route's own directory. Greps the directory, not one hardcoded filename, so
+        it doesn't care whether the copy lives in page.tsx directly or a colocated
+        content/fallback module. Proves reconciliation actually happened, not merely that a
+        route file with unrelated content exists (defeats A1 alone being satisfiable by an
+        empty stub page).
+      command: >-
+        python3 -c "import json, subprocess; d=json.load(open('.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f3-canary-phrases.json'))['about']; missing=[p for p in d['phrases'] if subprocess.run(['grep','-rq',p,d['routeDir']]).returncode!=0]; assert not missing, missing"
+      required: true
+
+    - id: A3
+      description: >
+        WOSA is attributed and linked, not authored in SAOC's own voice -- the about route
+        directory contains an outbound link to wildorchids.co.za (f3-canary-phrases.json's
+        `wosaAttributionLink.requiredSubstring`). Per CLAUDE.md's scope boundary and
+        docs/site-content-alignment.md's Scope boundary section: the source doc's WOSA
+        paragraph must be presented as a hosted-guest credit with a real outbound link, not
+        just prose mentioning WOSA by name with no link.
+      command: >-
+        grep -rq -- "wildorchids.co.za" "app/(marketing)/national-show/about/"
+      required: true
+
+    # ---------- F3: /national-show/what-to-expect (existing route, content reconciled) ----------
+    - id: A4
+      description: >
+        The existing what-to-expect route now carries content actually drawn from
+        what-to-expect_2026-09-09.md -- all 3 canary phrases in
+        f3-canary-phrases.json's `whatToExpect.phrases` appear literally somewhere under the
+        route's directory. The pre-F3 page (Sanity-driven hours/admission/food only) has
+        none of this narrative content, so a pass here proves real reconciliation work, not
+        a no-op on an already-compliant page.
+      command: >-
+        python3 -c "import json; d=json.load(open('.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f3-canary-phrases.json'))['whatToExpect']; import subprocess; missing=[p for p in d['phrases'] if subprocess.run(['grep','-rq',p,d['routeDir']]).returncode!=0]; assert not missing, missing"
+      required: true
+
+    - id: A5
+      description: >
+        Same WOSA attribution-link requirement as A3, applied to what-to-expect -- its
+        source doc explicitly frames WOSA's symposium presentations, so the reconciled page
+        must link out to WOSA wherever it renders that paragraph.
+      command: >-
+        grep -rq -- "wildorchids.co.za" "app/(marketing)/national-show/what-to-expect/"
+      required: true
+
+    # ---------- F3: negative controls -- the 4 Lee-Ann-gated routes stay unbuilt ----------
+    - id: A6
+      description: >
+        NEGATIVE CONTROL: no placeholder/invented page was shipped for any of the 4 routes
+        that have no source doc (Symposium Theme is a 1-sentence fragment, not page copy;
+        WOSA Conference, Programme and International Exhibitors have no doc at all). Asserts
+        the absence of route files, not merely the absence of a string inside them --
+        catches a stub page shipped with no real content just as much as one with invented
+        copy.
+      command: >-
+        test ! -e "app/(marketing)/national-show/symposium/page.tsx" && test ! -e "app/(marketing)/national-show/wosa-conference/page.tsx" && test ! -e "app/(marketing)/national-show/programme/page.tsx" && test ! -e "app/(marketing)/national-show/exhibitors/international/page.tsx"
+      required: true
+
+    - id: A7
+      description: >
+        PRESENCE pairing for A6 (learned.md's "absence-only assertions hide presence
+        failures"): f6-pending-nos-routes.json's pendingRoutes still lists all 4 gated
+        routes -- proves the gap was actually recorded as still-pending, not just silently
+        true because nobody touched the tracking file either way.
+      command: >-
+        python3 -c "import json; p=json.load(open('.agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json'))['pendingRoutes']; req=['/national-show/symposium','/national-show/wosa-conference','/national-show/programme','/national-show/exhibitors/international']; missing=[r for r in req if r not in p]; assert not missing, missing"
+      required: true
+
+    - id: A8
+      description: >
+        f6-pending-nos-routes.json's own instruction ("When the NOS session lands one of
+        these routes for real, remove it from this list") was followed for the ONE route
+        that did land this feature: /national-show/about must no longer appear in
+        pendingRoutes -- proves the tracking file was updated in the same change, not left
+        stale claiming a real, working route is still a dead link.
+      command: >-
+        ! grep -q '"/national-show/about"' .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json
+      required: true
+
+    - id: A9
+      description: >
+        f1-coverage-map.json's `nos-2-about` section reflects reality: routeStatus flipped
+        from "gap-nav-only" to "built", and sourceDocSnapshot is no longer null (points at
+        the real snapshot path) -- proves the coverage map itself was updated, not just the
+        route built while the authoritative tracking record silently drifted out of date.
+      command: >-
+        python3 -c "import json; m=json.load(open('.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json')); s=next(x for x in m['sections'] if x['id']=='nos-2-about'); assert s['routeStatus']=='built', s['routeStatus']; assert s['sourceDocSnapshot']=='docs/leeann-source/about-national-show_2026-09-09.md', s['sourceDocSnapshot']"
+      required: true
+
+    - id: A10
+      description: >
+        NEGATIVE CONTROL: nav-config.ts's body (from `export interface NavLeaf` onward) is
+        unchanged from the F2 baseline -- /national-show/about's href already existed in nav
+        before F3 (it was a pre-existing dead link), so F3 needs zero nav structural changes
+        to make it resolve. Reuses F2's own baseline fixture rather than a fresh
+        self-comparison, so this can't pass by comparing the file against a copy of itself
+        taken after the change.
+      command: >-
+        diff <(awk 'NR>=1 && /^export interface NavLeaf/{f=1} f' components/chrome/nav-config.ts) .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f2-nav-config-body-baseline.txt
+      required: true
+
+    # ---------- F4: multi-angle reachability (scoped per f3-f4-scope-note.md) ----------
+    - id: A11
+      description: >
+        /national-show/about is reachable from a SECOND angle beyond the primary nav: a real
+        object-literal entry with `href: '/national-show/about'` exists in
+        components/show/ShowSectionNav.tsx's SECTION_LINKS array -- the established
+        cross-link mechanism already used by what-to-expect, plan-your-visit, faq and
+        archive (the component maps over this array with a dynamic `href={href}` in its
+        JSX, so the array literal, not a JSX attribute string, is where the real link data
+        lives -- checked here, not against the wrong syntax).
+      command: >-
+        grep -qE "href: '/national-show/about'" components/show/ShowSectionNav.tsx
+      required: true
+
+    - id: A12
+      description: >
+        /national-show/about is reachable from a THIRD angle: the National Show hub page
+        (app/(marketing)/national-show/page.tsx) links to it -- per the brief's explicit
+        "hub-page cross-link" requirement. The hub page's existing VISITOR_CARDS array uses
+        the same `href: '/path'` object-literal convention as ShowSectionNav (confirmed:
+        plan-your-visit, what-to-expect, faq and archive are all wired in that exact shape)
+        -- checks for that convention, whether /national-show/about is added to that array
+        or an equivalent one.
+      command: >-
+        grep -qE "href: '/national-show/about'" "app/(marketing)/national-show/page.tsx"
+      required: true
+
+    - id: A13
+      description: >
+        what-to-expect keeps its existing 2nd-angle reachability (ShowSectionNav already
+        lists it pre-F3) -- regression guard proving F3's reconciliation work didn't
+        accidentally remove the page from the cross-link list while editing the file for its
+        narrative content.
+      command: >-
+        grep -qE "href: '/national-show/what-to-expect'" components/show/ShowSectionNav.tsx
+      required: true
+
+    # ---------- Verification triad ----------
+    - id: A14
+      description: >
+        BrowserAgent confirms, against the deployed site (never a *.hosted.app/*.run.app
+        origin), that /national-show/about renders real visible content (not a blank/error
+        page), that its WOSA link is a real clickable anchor pointing off-site, and that
+        /national-show/what-to-expect visibly shows its new narrative content alongside the
+        pre-existing hours/admission/food sections. Required per .claude/rules/workflow.md's
+        mandatory triad -- F3 ships real user-facing routes, and a live-DOM proof is exactly
+        what this feature needs. Tooling dependency: the Chrome extension was not connected
+        as of the F2 pass (docs/site-content-alignment.md's "Known gaps"); if still
+        unavailable when this runs, state that explicitly and substitute a direct fetch of
+        the deployed origin's rendered HTML per F2's own precedent -- never silently skip.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/f3-status-marker-browser-manifest.json
+      required: true
+
+    - id: A15
+      description: >
+        Codex GPT-5.5 cross-model adversarial review of the diff, per
+        .claude/rules/workflow.md's mandatory triad -- independent-model review catches
+        defect classes (e.g. content silently diverging from source doc, WOSA link missing
+        on one of the two pages, broken href) that same-model self-review has already missed
+        once on this project.
+      type: codex_qa
+      target: .agent/memory/scratch/f3-content-alignment-codex-review-diff.txt
+      required: true
+
+    - id: A16
+      description: >
+        gws_inbox_check is INAPPLICABLE to F3/F4: neither feature sends email or touches any
+        notification path (F3 is page content + one new route; F4 is nav-adjacent
+        cross-links) -- recorded explicitly per .claude/rules/workflow.md rather than
+        silently omitted.
+      command: "true"
+      inapplicable_kinds:
+        - gws_inbox_check
+      inapplicable_reason: >-
+        F3/F4 have no email/notification surface. A15 (browser_deployed_check) and A16
+        (codex_qa) cover the two triad legs that apply to a content-and-routing feature.
+      required: true

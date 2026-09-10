@@ -1,0 +1,312 @@
+ticketing-complete M1/F1 — evidence log
+Session: dev agent, 2026-09-08
+
+FILES CREATED
+- lib/ticket-taxonomy.ts
+- lib/admission-early-bird-pricing.ts
+- contracts/checks/ticketing-complete-f1/check-pricing-boundaries.mjs
+
+============================================================
+1. CONTRACT ASSERTIONS (11 total in contract-f1.yaml, IDs A1-A11)
+   command: python3 execution/contract.py check
+     .agent/memory/project/specs/ticketing-complete/contract-f1.yaml --assertion <ID>
+============================================================
+
+== A1 ==
+PASS A1 (shell): PASS
+
+== A2 ==
+PASS A2 (shell): PASS
+
+== A3 ==
+PASS A3 (shell): PASS
+
+== A4 ==
+PASS A4 (shell): PASS
+
+== A5 ==
+PASS A5 (shell): PASS
+   PASS — check-pricing-boundaries
+
+== A6 ==
+PASS A6 (shell): PASS
+   PASS — check-pricing-boundaries --negative-control
+
+== A7 ==
+PASS A7 (shell): PASS
+
+== A8 ==
+PASS A8 (shell): PASS
+
+== A9 ==
+PASS A9 (shell): PASS
+
+== A10 ==
+PASS A10 (shell): PASS
+
+== A11 ==
+PASS A11 (shell): PASS
+
+RESULT: 11/11 assertions PASS. (Contract goal text says "10 assertions" but the YAML
+actually enumerates A1-A11 — 11. Flagged below in "issues found.")
+
+============================================================
+2. TYPE CHECK + BUILD
+============================================================
+
+$ npx tsc --noEmit
+exit code: 0 (no output)
+
+$ bun run build
+exit code: 0
+(full Next.js route manifest printed, no errors; app builds clean with the two new
+pure lib files present)
+
+============================================================
+3. DELIBERATE-FAILURE PROOFS (each: break implementation -> confirm RED -> restore ->
+   confirm GREEN again). Backup kept at
+   .tmp/sandbox/ticketing-complete-f1/admission-early-bird-pricing.ts.bak throughout;
+   restored copy diffed byte-identical against the original after every proof.
+============================================================
+
+-- Proof 1: discount percentage (20% -> hardcoded 25% via 0.75 multiplier) --
+Mutated resolveComputedEarlyBirdPrice's Math.round multiplier from
+`(100 - ADMISSION_EARLY_BIRD_DISCOUNT_PERCENT) / 100` to a hardcoded `0.75`.
+A5 result: FAIL — amount mismatches on every earlyBird case (e.g. 'exactly-91-days-before'
+expected 104, got 98).
+Restored. A5 result: PASS.
+
+-- Proof 2: SAST offset (+02:00 -> bare 'Z') --
+Mutated `const SAST_OFFSET = '+02:00'` to `'Z'`.
+A5 result: FAIL — deriveAdmissionEarlyBirdCutoffIso mismatch (expected
+2027-06-18T00:00:00+02:00, got .../00:00:00Z) and the
+'timezone-sast-vs-utc-disagreement' case flips tier.
+Restored. A5 result: PASS.
+(This also empirically confirms the golden README's SAST-vs-UTC hazard is real, not
+theoretical — the fixture's cross-timezone case actually fires on this exact bug class.)
+
+-- Proof 3: cutoff day-count (90 -> 89) --
+Mutated `ADMISSION_EARLY_BIRD_CUTOFF_DAYS_BEFORE_SHOW = 90` to `89`.
+A5 result: FAIL — cutoff ISO shifts a day (expected 2027-06-18, got 2027-06-19) and the
+'exactly-89-days-before' case flips from 'regular' to 'earlyBird'.
+Restored. A5 result: PASS.
+(Confirms the 89/90/91-day boundary fixture cases are load-bearing, not vacuous.)
+
+-- Proof 4: negative-control (A6) can itself fail --
+With SAST_OFFSET broken to 'Z' (same mutation as Proof 2), re-ran A6 instead of A5:
+A6 result: FAIL — "correct implementation: expected tier 'regular' ... got 'earlyBird'"
+and "NEGATIVE CONTROL FAILED TO DISCRIMINATE: correct ('earlyBird') and broken naive-UTC
+('earlyBird') implementations agree" — i.e. once the real implementation itself becomes
+naive-UTC, it stops disagreeing with the simulated broken variant, and A6 correctly goes
+red. This proves A6 is not vacuously true — it can and does fail when the two
+implementations converge.
+Restored. A6 result: PASS.
+
+Final restore verified: `diff` between the backup and the live file after all four
+proofs reported IDENTICAL — no residual mutation left in the shipped module.
+
+============================================================
+5. POST-REVIEW FIX (team lead, 2026-09-08): SAST-vs-UTC off-by-one in
+   deriveAdmissionEarlyBirdCutoffIso
+============================================================
+
+Team lead traced the implementation by hand and found `deriveAdmissionEarlyBirdCutoffIso`
+read `showStartDate.getUTCFullYear/Month/Date()` -- UTC calendar components -- to do SAST
+calendar-day arithmetic. It only produced the right answer because the real show start
+(2027-09-16T09:00:00+02:00 = 07:00Z) happens to fall on the same calendar date in both
+zones. A show starting before 02:00 SAST would have its UTC date be the previous day,
+silently sliding the derived cutoff a day early. No case in the golden fixture could catch
+this, since every fixture case uses a mid-morning SAST show start.
+
+FIX: `deriveAdmissionEarlyBirdCutoffIso` now shifts the instant forward by the SAST offset
+(+2h) before reading UTC-labelled Y/M/D components off it, so those components are the SAST
+wall-clock date, not the UTC one. See the updated function comment in
+lib/admission-early-bird-pricing.ts for the full rationale.
+
+SUPPLEMENTARY TEST ADDED (in the verifier script, NOT the golden fixture -- goldens are not
+mine to edit): contracts/checks/ticketing-complete-f1/check-pricing-boundaries.mjs now
+includes an inline case 'early-morning-sast-show-start' -- show start
+2027-09-15T23:00:00Z (= 2027-09-16T01:00:00+02:00), expects cutoff
+2027-06-18T00:00:00+02:00.
+
+DELIBERATE-FAILURE PROOF for this fix specifically:
+- Reverted the fix (read `showStartDate.getUTC*()` directly instead of the SAST-shifted
+  instant) while leaving everything else unchanged.
+- Re-ran A5: FAIL — only the new supplementary case failed ("expected cutoff
+  2027-06-18T00:00:00+02:00 ... SAST calendar day (2027-09-16), not the UTC calendar day
+  (2027-09-15)"). All 6 pre-existing golden-fixture cases still passed, confirming they
+  cannot see this class of bug and the new case is the one doing real work.
+- Restored the fix; `diff` against the fresh backup reported IDENTICAL.
+- Re-ran full 11/11 assertions, `npx tsc --noEmit`, and `bun run build`: all green again
+  after the fix (see full run above, same command shapes).
+
+============================================================
+6. ISSUES FOUND IN THE CONTRACT/GOLDENS (not silently worked around)
+============================================================
+
+- contract-f1.yaml's `goal:` prose said "10 assertions, all kind: shell" but the file
+  defines 11 (A1 through A11) — team lead has since confirmed this is expected (A11 was
+  added by the architect after the original dispatch) and corrected the goal text
+  separately; noting here only that it was independently caught and reported before that
+  correction arrived.
+
+- goldens/fixtures/f1-pricing-boundary-cases.json is internally inconsistent:
+  `showStartDateIso` is `"2027-09-16T00:00:00Z"`, while the same file's own `_comment` says
+  the show start is `"2027-09-16T09:00:00+02:00"` "per the live show-19-2027 Sanity
+  document" — those are different instants (00:00Z vs 07:00Z, a 7-hour gap). They happen to
+  agree on every case's expected tier/amount today, so nothing in the assertion suite goes
+  red over it — which is exactly why it would otherwise sit there unnoticed. NOT edited by
+  this agent (goldens aren't mine to change); reported to team lead, who is routing it to
+  @architect. The live Sanity value (09:00:00+02:00) is authoritative per team lead.
+
+- goldens/README.md §5 (as revised) also records two live-dataset inconsistencies for F2 to
+  resolve (Weekend Pass R380-vs-R400, and `early-bird-weekend-pass`'s existing
+  2027-07-31 cutoff vs the mission's computed 2027-06-18 cutoff) — not touched here, F1 has
+  no opinion about what is currently in the dataset, only about the pure computation from
+  caller-supplied inputs.
+
+No other contract text was found to be wrong or requiring a workaround. F1's scope
+(pure taxonomy + pricing engine, no Sanity, no national-show tree, no admin tree) was
+followed exactly as specified.
+
+============================================================
+7. A12 ADDED (team lead/@architect, 2026-09-08): dedicated cutoff-derivation coverage
+============================================================
+
+Contract is now at 12 assertions. @architect added A12 to run against a NEW
+`cutoffDerivationCases` array in f1-pricing-boundary-cases.json (deliberately separate from
+the pre-existing `cases` array -- `cases` exercises resolveComputedEarlyBirdPrice's
+day-count boundary, `cutoffDerivationCases` exercises deriveAdmissionEarlyBirdCutoffIso's
+calendar handling directly). The fixture's `showStartDateIso` was also corrected to
+`2027-09-16T07:00:00Z` (the exact live show-19-2027 instant), replacing the earlier
+`2027-09-16T00:00:00Z` value flagged in section 6 above -- that inconsistency is now
+resolved in the fixture itself.
+
+FILE CREATED: contracts/checks/ticketing-complete-f1/check-cutoff-derivation.mjs
+- Reads `cutoffDerivationCases` from the fixture and asserts
+  deriveAdmissionEarlyBirdCutoffIso(showStartDate) matches expectedCutoffIso for each entry:
+  'cutoff-derivation-standard-morning-start' (09:00 SAST, non-discriminating baseline) and
+  'cutoff-derivation-early-morning-start' (01:00 SAST / 2027-09-15T23:00:00Z UTC -- the one
+  case in the whole fixture capable of catching the UTC-calendar-component off-by-one fixed
+  in section 5).
+
+CLEANUP: removed the ad-hoc inline supplementary case from
+check-pricing-boundaries.mjs (added in section 5, before A12 existed) now that the same
+coverage exists properly in the golden fixture + A12 -- avoids duplicate/dead test logic.
+
+RE-VERIFICATION against the corrected fixture (not assumed):
+$ for a in A1..A12: python3 execution/contract.py check contract-f1.yaml --assertion <ID>
+Result: 12/12 PASS, including A5 and A6 re-run fresh against the corrected
+`showStartDateIso: 2027-09-16T07:00:00Z` fixture value (both still PASS).
+$ npx tsc --noEmit -> exit 0
+$ bun run build -> exit 0
+
+DELIBERATE-FAILURE PROOF FOR A12 (the required pairing): reverted
+deriveAdmissionEarlyBirdCutoffIso to read `showStartDate.getUTCFullYear/Month/Date()`
+directly (the pre-fix behaviour) and re-ran A5, A6, and A12 individually:
+- A12: FAIL -- "case 'cutoff-derivation-early-morning-start': expected cutoff
+  2027-06-18T00:00:00+02:00, got 2027-06-17T00:00:00+02:00 (show start
+  2027-09-16T01:00:00+02:00)"
+- A5: PASS (unchanged)
+- A6: PASS (unchanged)
+This is exactly the pairing team lead asked to confirm: the bug is real and reachable, A12
+catches it, and A5/A6 staying green under the SAME broken implementation proves the rest of
+the suite was blind to this class before A12 existed.
+
+Restored the fix immediately after; `diff` against a fresh backup
+(.tmp/sandbox/ticketing-complete-f1/admission-early-bird-pricing.ts.bak) reported
+IDENTICAL. Final re-run: 12/12 PASS, tsc exit 0, build exit 0.
+
+No commit, no deploy, no dataset write.
+
+============================================================
+8. MUTATION-TESTING RE-VERIFICATION of tightened A1/A4/A8 (team lead, 2026-09-08) --
+   run through `python3 execution/contract.py check --assertion <ID>` (the real gate
+   runner), never by hand alone, per team lead's explicit instruction
+============================================================
+
+Method for each: swap the real lib file for QA's mutant (or, for A1, a synthetic mutant I
+built myself -- see below), run the tightened assertion through contract.py's actual
+`check` subcommand, restore the real file, diff byte-identical, re-run to confirm GREEN.
+Mutants at .tmp/sandbox/qa-mutation/ left in place, untouched, per the sandbox rule.
+
+-- A8 (lib/ticket-taxonomy.ts <- ticket-taxonomy-mutant.ts, exhibitor silently defaulted
+   to 'admission') --
+$ python3 execution/contract.py check contract-f1.yaml --assertion A8
+  Against mutant: FAIL -- "exhibitor mapped to admission"
+  Against real file (restored, diff IDENTICAL): PASS
+Scope check: A1 run against the SAME mutant stayed PASS (mutant doesn't touch
+TICKET_CATEGORIES), confirming A1 and A8 aren't accidentally catching each other's class
+of bug.
+RESULT: A8 correctly discriminates via the real contract.py runner.
+
+-- A1 (lib/ticket-taxonomy.ts <- synthetic mutant, 8th category 'vip-lounge' appended to
+   TICKET_CATEGORIES) --
+QA did not supply a dedicated A1 mutant (its two mutant files target A4 and A8 only), so I
+built a minimal one myself to give A1 the same proof discipline, per the team lead's "each
+must go red against the mutant" bar -- flagging this so it's clear it wasn't in the
+QA-supplied set.
+$ python3 execution/contract.py check contract-f1.yaml --assertion A1
+  Against mutant: FAIL -- reported the actual 8-element sorted array, mismatch vs the 7
+  expected.
+  Against real file (restored, diff IDENTICAL): PASS
+Scope check: A8 run against this mutant stayed PASS (exhibitor mapping untouched).
+RESULT: A1 correctly discriminates via the real contract.py runner.
+
+-- A4 (lib/admission-early-bird-pricing.ts <- admission-early-bird-pricing-mutant.ts,
+   isWithinEarlyBirdWindow imported but never called; a reimplemented, buggy comparator is
+   called instead) --
+$ python3 execution/contract.py check contract-f1.yaml --assertion A4
+  Against mutant: **PASS** -- i.e. did NOT go red. This is a real defect in the assertion's
+  runner-level behaviour, not a logic error I can wave off, and I did not adjust the
+  assertion to make it pass -- stopping to report per team lead's instruction.
+
+ROOT CAUSE (isolated and reproduced against contract.py's own execution path, not just by
+hand): A4's third clause is meant to strip comment lines before counting real call sites --
+  test "$(grep -v '^\s*\*\|^\s*//' lib/admission-early-bird-pricing.ts | grep -c 'isWithinEarlyBirdWindow(')" -ge 1
+but the command as it actually appears in contract-f1.yaml has DOUBLED backslashes in
+that pattern -- `'^\\s*\\*\\|^\\s*//'` (confirmed via `yaml.safe_load` printing the raw
+parsed string, not a shell-quoting artifact of my own re-typing it). Doubled backslashes in
+a single-quoted grep pattern are interpreted as literal escaped-backslash atoms, not as
+`\s`/`\*`/`\|` shorthand, in the plain POSIX-ish `/usr/bin/grep` (BSD grep 2.6.0-FreeBSD)
+that a bare `bash` subprocess resolves to on this machine -- confirmed with
+`bash -c 'command -v grep; command grep --version'` -> `/usr/bin/grep`, BSD grep 2.6.0.
+(My interactive Bash-tool shell has a `grep` *function* wrapping `ugrep -G`, which is NOT
+inherited by a plain `bash script.sh` subprocess the way contract.py's runner invokes it --
+this is exactly why running the composed command "by hand" in my own shell earlier gave a
+different, correct-looking result than the real runner does, and exactly why team lead's
+instruction to prove it through `contract.py check` rather than by hand mattered.) Net
+effect: the comment-stripping clause fails to strip the mutant's one remaining mention of
+`isWithinEarlyBirdWindow(` -- a JSDoc line, "handed to isWithinEarlyBirdWindow(), the
+boundary..." -- so the mutant's fake call count comes out as 1 instead of 0, and the `-ge 1`
+check passes even though the function is never actually called (the mutant calls a locally
+reimplemented, buggy comparator instead, with the import left unused).
+
+Reproduction is mechanical and repeatable:
+  $ python3 -c "import yaml; d=yaml.safe_load(open('.agent/memory/project/specs/ticketing-complete/contract-f1.yaml')); print(repr(next(c for c in d['assertions']['checks'] if c['id']=='A4')['command']))"
+  (shows the doubled backslashes in the parsed command string)
+  $ bash -c 'command -v grep; command grep --version | head -1'
+  -> /usr/bin/grep, BSD grep 2.6.0-FreeBSD (the interpreter a bare bash subprocess actually
+     gets, not the interactive shell's ugrep-wrapping grep function)
+  $ grep -n "isWithinEarlyBirdWindow(" .tmp/sandbox/qa-mutation/admission-early-bird-pricing-mutant.ts
+  -> only line 45, the JSDoc mention -- zero real call sites, confirming the mutant should
+     fail the "-ge 1 real call sites" check and doesn't, because the comment isn't stripped.
+
+This is the class of defect the team lead named up front ("a known shell-quoting bug in
+contract.py's assertion wrapper... an assertion whose logic is correct can still misbehave
+through the runner") -- confirmed here concretely, with a specific pattern and a specific
+grep binary, rather than asserted from the general warning.
+
+I did NOT alter A4's command to fix the regex, and did NOT delete or modify either QA
+mutant file. Per team lead's explicit instruction ("stop and tell me rather than adjusting
+the assertion"), reporting this and awaiting direction rather than patching it myself.
+
+FILES LEFT BEHIND FROM THIS ROUND (all in .tmp/sandbox/, per the sandbox rule, not
+deleted): ticket-taxonomy.ts.bak2 (fresh backup used for the A1 mutation round) and
+a4_repro.sh (the exact temp script contract.py's runner generates for A4, saved for
+reproduction) under .tmp/sandbox/ticketing-complete-f1/.
+
+Real files (lib/ticket-taxonomy.ts, lib/admission-early-bird-pricing.ts) are confirmed
+restored to their pre-mutation state for every swap performed in this round (diff
+IDENTICAL each time) and the full 12/12 + tsc + build re-run at the end of this round
+(section 7's numbers) reflects the real files, not any mutant.

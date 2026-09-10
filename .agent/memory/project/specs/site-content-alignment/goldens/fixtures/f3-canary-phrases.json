@@ -1,0 +1,25 @@
+{
+  "$schemaNote": "Exact substrings copied verbatim from the two F3 source snapshots. Assertions grep for these literally inside the corresponding route directory to prove the page was actually reconciled against Lee-Ann's doc, not left blank or invented. Do not paraphrase these strings when implementing -- render the source copy, do not rewrite it.",
+  "about": {
+    "sourceSnapshot": "docs/leeann-source/about-national-show_2026-09-09.md",
+    "routeDir": "app/(marketing)/national-show/about/",
+    "phrases": [
+      "premier triennial event",
+      "From Wild Origins to Cultivated Excellence",
+      "WOSA will contribute valuable insights into the ecology, conservation and study of indigenous orchids"
+    ]
+  },
+  "whatToExpect": {
+    "sourceSnapshot": "docs/leeann-source/what-to-expect_2026-09-09.md",
+    "routeDir": "app/(marketing)/national-show/what-to-expect/",
+    "phrases": [
+      "immersive experience celebrating the beauty, science and future of orchids",
+      "Integrated throughout the symposium, presentations by Wild Orchids of Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids",
+      "from the protection of orchids in the wild to the pursuit of cultivated excellence"
+    ]
+  },
+  "wosaAttributionLink": {
+    "requiredSubstring": "wildorchids.co.za",
+    "note": "Both routeDirs must contain an outbound link to WOSA wherever they mention WOSA -- per CLAUDE.md scope boundary and docs/site-content-alignment.md's 'Scope boundary' section: attribute and link, never author in SAOC's own voice."
+  }
+}

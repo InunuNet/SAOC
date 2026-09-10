@@ -1,0 +1,145 @@
+Members Portal placeholder + suggestion form — functional evidence
+====================================================================
+Date: 2026-09-08 (initial pass 2026-09-07)
+
+⚠ LIVE SIDE EFFECT — READ BEFORE WRITING AUTOMATED COVERAGE FOR THIS ROUTE ⚠
+POST /api/contact sends a real outbound email via Resend on every successful submission
+(the confirmation email to the submitter's address) — it is not mocked or gated behind a
+test mode. The end-to-end proof below used qa-members-portal-test@example.com, a
+non-existent address at a reserved domain (RFC 2606), so Resend was asked to deliver to an
+address that will bounce. The route treats email-send failure as non-fatal (the 201 was
+genuine and independent of the send outcome), so this is not a defect in the route or in
+this feature's implementation — but it means bounces against the sending domain did occur,
+which matters more than usual right now because this project is mid-migration on domain +
+Resend DNS (see project memory: domain_migration_resend_sequencing). The test document this
+created in contactSubmissions (id itObDm976jh2oaHCF26i) has been deleted — see "ROUND 4"
+below — but the email attempt itself cannot be recalled.
+Implication for F7 (Playwright form coverage): any automated test that POSTs to this route,
+or drives the real ContactForm/SuggestionForm UI to submission, will trigger a real send.
+Future coverage needs either (a) a test-mode/dry-run guard on POST /api/contact (e.g. skip
+the Resend call for an allow-listed test-domain pattern or an explicit header/flag), or
+(b) a mocked mailer in the test harness so `sendEmail` is never actually invoked. Do not
+add ad hoc automated coverage against this route until one of those exists.
+
+ROUND 1 (page + nav + footer) — see .agent/memory/scratch/members-functional-evidence.txt
+for the original detailed log (left in place per instruction not to delete scratch copies).
+Summary: tsc exit 0, bun build exit 0, /members returned 200 on a locally started dev
+server (port 3921 at the time), nav/footer rendered correctly, screenshots reviewed.
+
+ROUND 2 (fabrication fix + suggestion form) — this pass
+--------------------------------------------------------
+1. Removed the fabricated membership-model claim from
+   app/(marketing)/members/page.tsx ("SAOC membership is held through an affiliated
+   society... you are already part of SAOC"). Replaced with a neutral routing sentence
+   that asserts nothing about eligibility: "Have a question about the Members Portal, or
+   how to become a paid-up member? Contact SAOC." No claim substituted in its place.
+
+2. Built components/members/SuggestionForm.tsx — name / email / suggestion textarea,
+   modelled field-for-field on components/contact/ContactForm.tsx (same labels, honeypot,
+   client-side length guard, loading/error/success states, identical Tailwind classes —
+   no new styles introduced). Wired into app/(marketing)/members/page.tsx as a new
+   section ("Help shape it").
+
+3. Backend: reused the existing POST /api/contact route and contactSubmissions Firestore
+   collection unchanged — no new collection, no route.ts edit. Discriminated via a fixed,
+   non-editable `subject: 'Members Portal suggestion'` string sent by the form. Chose this
+   over a new collection/route because the existing endpoint's validation, Firestore write,
+   and confirmation-email path already do everything a 3-field suggestion box needs, and
+   `subject` was already a free-text discriminator field on the existing document shape —
+   no schema change required.
+
+4. `npx tsc --noEmit -p tsconfig.json` — exit 0.
+
+5. `bun run build` — exit 0. Route table: `○ /members` (static).
+
+6. Local dev server: nothing is on port 3333 or any of the other already-running ports
+   (3002, 3911, 3913-3916, 3999 were all other agents' stale servers). Started a fresh one:
+     npx --prefix /Users/vetus/ai/SAOC next dev --port 3922
+   GET http://localhost:3922/members -> 200 (verified via python3 urllib).
+
+7. END-TO-END FORM SUBMISSION — real POST + Firestore read-back:
+
+   POST http://localhost:3922/api/contact
+   body: {
+     "name": "QA Test — Members Portal Suggestion Verification",
+     "email": "qa-members-portal-test@example.com",
+     "subject": "Members Portal suggestion",
+     "message": "End-to-end verification submission for the Members Portal suggestion
+                 form, dispatched by the dev agent on 2026-09-08."
+   }
+   Response: 201 {"success":true}
+
+   Read-back via firebase-admin (script: .agent/memory/scratch/read-back-suggestion.mjs),
+   querying contactSubmissions where subject == "Members Portal suggestion":
+
+     doc id: itObDm976jh2oaHCF26i
+     {
+       "name": "QA Test — Members Portal Suggestion Verification",
+       "email": "qa-members-portal-test@example.com",
+       "subject": "Members Portal suggestion",
+       "message": "End-to-end verification submission for the Members Portal suggestion
+                   form, dispatched by the dev agent on 2026-09-08.",
+       "submittedAt": { "_seconds": 1788819591, "_nanoseconds": 60000000 },
+       "status": "new"
+     }
+
+   Confirms: the form's exact POST shape reaches the real /api/contact route, Firebase
+   Admin credentials in .env.local work, the document lands in contactSubmissions with the
+   "Members Portal suggestion" discriminator intact, and status defaults to "new" — same
+   path a real visitor's submission would take. This is a Firestore write, not a Sanity
+   write (no Sanity dataset touched at any point in this task).
+
+8. Screenshots re-taken (Playwright chromium, full page) against the port-3922 server:
+   - .agent/evidence/site-build/members/local-after-390.png
+   - .agent/evidence/site-build/members/local-after-1280.png
+   Reviewed directly. Verdict: form styling is indistinguishable from /contact's
+   ContactForm (same input/label/button classes), section rhythm matches /constitution
+   and /about, nothing looks bolted on at either viewport. Dev-tools "N" overlay circle is
+   the known Next.js dev artifact, not a defect.
+
+Files changed (cumulative across both rounds):
+  - app/(marketing)/members/page.tsx           (new page; fabricated claim removed in round 2)
+  - components/chrome/nav-config.ts            (1 entry replaced: learn -> members)
+  - components/chrome/Footer.tsx               (1 entry appended to FOOTER_NAV)
+  - components/members/SuggestionForm.tsx      (new, round 2)
+
+No Sanity dataset writes at any point. No restyling — no new colours, fonts, spacing
+tokens, or globals.css changes.
+
+ROUND 3 (line-68 presumption fix)
+----------------------------------
+Removed "your affiliated society or" from the CTASection body on
+app/(marketing)/members/page.tsx line 68. Was:
+  "Until it launches, your affiliated society or the SAOC Secretary can help with
+  membership questions."
+Now:
+  "Until it launches, the SAOC Secretary can help with membership questions."
+No replacement explanation of how one becomes a paid-up member was added, per instruction —
+the page states nothing on that subject pending the analyst's constitution check.
+Both CTA buttons (Contact SAOC / Find your society) left unchanged.
+
+Re-ran after this edit:
+  npx tsc --noEmit -p tsconfig.json  -> exit 0
+  bun run build                       -> exit 0, route table still shows: ○ /members
+
+ROUND 4 (test-document cleanup)
+---------------------------------
+Deleted the single test document created during the end-to-end verification above, by its
+exact id — no query, no batch, no sweep of anything else.
+
+  Collection: contactSubmissions
+  Doc id: itObDm976jh2oaHCF26i
+
+  Read back BEFORE delete (confirms it was the right, and only, target):
+    {"name":"QA Test — Members Portal Suggestion Verification",
+     "email":"qa-members-portal-test@example.com",
+     "subject":"Members Portal suggestion",
+     "message":"End-to-end verification submission for the Members Portal suggestion form, dispatched by the dev agent on 2026-09-08.",
+     "submittedAt":{"_seconds":1788819591,"_nanoseconds":60000000},
+     "status":"new"}
+
+  Delete executed via firebase-admin (script: .agent/memory/scratch/delete-test-doc.mjs).
+
+  Read back AFTER delete: exists = false.
+
+No other documents were queried, listed, or touched.

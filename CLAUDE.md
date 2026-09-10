@@ -130,6 +130,24 @@ Vendor flow G1 (mission vendor-flow-notifications M1/F1) wires four new notifica
 
 Admin pages that read Firestore collections with timestamp-shaped fields (`submittedAt`, `reviewedAt`, etc.) must convert `Timestamp` class instances to native `Date` objects before passing them to `'use client'` components. The conversion module `lib/firestore-serialization.ts` provides `serializeVendorApplication()` and `serializeVendorSubmission()` for this — both convert by structure (duck-typed `.toDate()` method), not by a hardcoded field-name allowlist, ensuring new fields are handled correctly. See [`docs/admin-vendor-listing-serialization.md`](docs/admin-vendor-listing-serialization.md) for the defect analysis, the fix rationale, and why field allowlists fail.
 
+### Site content alignment — Lee-Ann's Drive as coverage contract, not a URL map
+
+Mission `site-content-alignment` (M1/F1 audit + M2/F2 build) treats Lee-Ann's
+Drive tree as the **content inventory and coverage contract** — which of her 20
+SAOC + National Show sections exist and have official committee copy — never a
+literal folder-to-URL map; nav and IA stay engineering decisions against the
+approved design handoff. The 20-section coverage map
+(`.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json`)
+tracks `routeStatus` and `contentStatus` as independent fields so build progress
+is never conflated with copy provenance. `components/show/_shared/StatusMarker.tsx`
+unifies the previously-duplicated `ExhibitorStatusBadge`/`ConfirmationBadge`
+render path (byte-identical refactor, `question`-vocabulary preserved on the
+exhibitor-only branch). See [`docs/site-content-alignment.md`](docs/site-content-alignment.md)
+and [`docs/rules/no-invention.md`](docs/rules/no-invention.md) for the governing
+rule, the open Brad-only design question (badge vs. literal bracket placeholder),
+and known gaps (5 pre-existing dead nav links, `/national-show`'s zero-marker
+render still untraced).
+
 ### Drive .docx version export — Lee-Ann's source content
 
 `execution/drive_docx_sync.py` (mission drive-docx-version-export, M1/F1) is a read-only,

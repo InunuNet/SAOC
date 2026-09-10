@@ -1,0 +1,239 @@
+schema: athanor.contract/v1
+slug: site-content-alignment
+goal: >
+  F2 is the BUILD feature: implement F1's specs against real source. Piece A (already landed
+  by @dev pre-contract) mirrors 5 more Lee-Ann Drive docs into docs/leeann-source/ and records
+  the FAQ doc as BLOCKED (truncated in Drive, not reconstructed). Piece B unifies the 5
+  existing provisional/honest-gap markers (ProvisionalFigure, ExhibitorStatusBadge,
+  ConfirmationBadge, SocietyFacts placeholder flags, TicketTypeCard badge) into one shared
+  implementation per f1-provisional-unification.md, with byte-identical visual output --
+  this is a refactor, not a redesign, and does not resolve Brad's open bracket-vs-badge
+  question (f1-questions-for-leeann.md Q8). Piece C corrects the components/chrome/
+  nav-config.ts:10-16 comment per f1-nav-reachability.md -- comment text only, zero
+  structural/href changes. This contract also folds in two corrections discovered after F1
+  closed: `Symposium Theme` is a real .docx, not a native Google Doc (openQuestion q4
+  resolved); the FAQ .docx is confirmed truncated in Drive itself (missing End-of-Central-
+  Directory record), not a local tooling failure -- both already applied to
+  f1-coverage-map.json and f1-questions-for-leeann.md by this same architect pass, ahead of
+  F2's own assertions.
+created_at: '2026-09-09'
+autonomy: high
+features:
+  - id: F2
+    name: Snapshot mirroring (assert), provisional-marker unification (build), nav comment
+      correction (build)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json
+  - .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-baseline-dirty-files.json
+  - .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f2-marker-baseline.json
+  - .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f2-nav-config-body-baseline.txt
+  - .agent/memory/project/specs/site-content-alignment/goldens/f1-provisional-unification.md
+  - .agent/memory/project/specs/site-content-alignment/goldens/f1-nav-reachability.md
+  - .agent/memory/project/specs/site-content-alignment/goldens/f1-questions-for-leeann.md
+  - docs/leeann-source/README.md
+assertions:
+  phase: 4
+  checks:
+    # ---------- Piece A: Drive snapshot mirroring (already landed; assert, don't rebuild) ----------
+    - id: A1
+      description: >
+        All 5 new snapshots exist at the exact paths docs/leeann-source/README.md's index
+        names, per the mission brief's Piece A list.
+      command: >-
+        test -f docs/leeann-source/about-national-show_2026-09-09.md && test -f docs/leeann-source/what-to-expect_2026-09-09.md && test -f docs/leeann-source/symposium-theme_2026-09-09.md && test -f docs/leeann-source/show-contact-information_2026-09-09.md && test -f docs/leeann-source/ticketing-system-details_2026-09-09.md
+      required: true
+
+    - id: A2
+      description: >
+        Every one of the 5 snapshots carries the full header the README's own "Snapshot
+        header format" section requires (source_filename, source_file_id, source_link,
+        source_modified_time, snapshot_pulled) -- proves header-convention compliance
+        structurally, not by eyeballing one file and assuming the rest match.
+      command: >-
+        python3 -c "req=['source_filename:','source_file_id:','source_link:','source_modified_time:','snapshot_pulled:']; files=['docs/leeann-source/about-national-show_2026-09-09.md','docs/leeann-source/what-to-expect_2026-09-09.md','docs/leeann-source/symposium-theme_2026-09-09.md','docs/leeann-source/show-contact-information_2026-09-09.md','docs/leeann-source/ticketing-system-details_2026-09-09.md']; bad=[f for f in files if not all(k in open(f).read(2000) for k in req)]; assert not bad, bad"
+      required: true
+
+    - id: A3
+      description: >
+        README.md's index table lists all 5 new snapshot filenames (PRESENCE), and its FAQ
+        row states the truncation finding precisely -- an End-of-Central-Directory /
+        central-directory detail, not the vaguer pre-F2 "won't open" -- so nobody retries a
+        fetch this pass already proved futile.
+      command: >-
+        grep -q "about-national-show_2026-09-09.md" docs/leeann-source/README.md && grep -q "what-to-expect_2026-09-09.md" docs/leeann-source/README.md && grep -q "symposium-theme_2026-09-09.md" docs/leeann-source/README.md && grep -q "show-contact-information_2026-09-09.md" docs/leeann-source/README.md && grep -q "ticketing-system-details_2026-09-09.md" docs/leeann-source/README.md && grep -qi "central-directory" docs/leeann-source/README.md
+      required: true
+
+    - id: A4
+      description: >
+        ABSENCE+PRESENCE pairing for the FAQ (learned.md's "absence-only assertions" defect
+        class): ABSENCE -- no file under docs/leeann-source/ reconstructs or paraphrases FAQ
+        Q&A content (no faq/frequently-named file besides this README's own BLOCKED note).
+        PRESENCE -- the README explicitly states the doc is BLOCKED and states per
+        no-invention.md that its contents were not reconstructed from anything. Proves the
+        honest-gap was actually recorded, not merely that no fake content happens to exist.
+      command: >-
+        test "$(find docs/leeann-source -maxdepth 1 \( -iname '*faq*' -o -iname '*frequently*' \) | wc -l | tr -d ' ')" = "0" && grep -qi "BLOCKED" docs/leeann-source/README.md && grep -qi "reconstruct or paraphrase" docs/leeann-source/README.md
+      required: true
+
+    - id: A5
+      description: >
+        NEGATIVE CONTROL for A1/A4: F2 did not touch app/(marketing)/national-show/faq/
+        page.tsx -- the route stays exactly as it was pre-F2, because there is nothing sourced
+        to reconcile it against yet. Proves the FAQ gap was left honestly blocked, not
+        quietly patched from guesswork.
+      command: >-
+        git diff --quiet HEAD -- "app/(marketing)/national-show/faq/page.tsx"
+      required: true
+
+    # ---------- Piece B: provisional-marker unification ----------
+    - id: A6
+      description: >
+        Single shared implementation exists at the canonical location this contract
+        specifies (components/show/_shared/StatusMarker.tsx), and both
+        ExhibitorStatusBadge.tsx and ConfirmationBadge.tsx import from it -- proves the two
+        near-duplicate files were actually collapsed into one implementation, not merely
+        documented as unified while both keep their own copy-pasted render logic.
+      command: >-
+        test -f components/show/_shared/StatusMarker.tsx && grep -q "_shared/StatusMarker" components/show/ExhibitorStatusBadge.tsx && grep -q "_shared/StatusMarker" components/show/ConfirmationBadge.tsx
+      required: true
+
+    - id: A7
+      description: >
+        `question` status is NOT dropped. types/index.ts's ExhibitorStatus union still
+        includes the literal 'question' value (unchanged from today), the shared module
+        branches on `'question'` explicitly, and ConfirmationStatus (which never had
+        `question`) is NOT silently widened to include it -- per f1-provisional-
+        unification.md req 1, unifying the two components must not erase this
+        exhibitor-specific semantic.
+      command: >-
+        grep -q "export type ExhibitorStatus = 'pending' | 'research' | 'question' | 'confirmed';" types/index.ts && grep -q "export type ConfirmationStatus = 'pending' | 'research' | 'confirmed';" types/index.ts && grep -q "'question'" components/show/_shared/StatusMarker.tsx
+      required: true
+
+    - id: A8
+      description: >
+        BYTE-IDENTICAL VISUAL OUTPUT (f1-provisional-unification.md req 2): the shared
+        module's literal Tailwind class strings for light/dark tone equal
+        f2-marker-baseline.json's toneClassesLight/toneClassesDark verbatim -- proves the
+        refactor introduced no new colour, spacing, or typography token.
+      command: >-
+        python3 -c "import json; b=json.load(open('.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f2-marker-baseline.json')); s=open('components/show/_shared/StatusMarker.tsx').read(); assert b['toneClassesLight'] in s, 'light tone classes changed'; assert b['toneClassesDark'] in s, 'dark tone classes changed'"
+      required: true
+
+    - id: A9
+      description: >
+        `data-*` resolved-value convention carries forward on all 5 markers unchanged --
+        each of ProvisionalFigure, ExhibitorStatusBadge (via the shared module),
+        ConfirmationBadge (via the shared module), SocietyFacts, and TicketTypeCard still
+        emits the exact attribute name f2-marker-baseline.json recorded pre-refactor. Never
+        the raw upstream value -- structurally countable, per f1-provisional-
+        unification.md req 3.
+      command: >-
+        python3 -c "import json; b=json.load(open('.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f2-marker-baseline.json'))['dataAttributes']; files={'ProvisionalFigure':'components/ui/ProvisionalFigure.tsx','ExhibitorStatusBadge':'components/show/_shared/StatusMarker.tsx','ConfirmationBadge':'components/show/_shared/StatusMarker.tsx','SocietyFacts':'components/societies/SocietyFacts.tsx','TicketTypeCard':'components/tickets/TicketTypeCard.tsx'}; bad=[k for k,f in files.items() if b[k] not in open(f).read()]; assert not bad, bad"
+      required: true
+
+    - id: A10
+      description: >
+        FAIL-CLOSED FLOOR preserved, twice over (f1-provisional-unification.md req 4): the
+        shared module has exactly one early-return/no-render branch, gated on the literal
+        string 'confirmed', and a hardcoded fallback label constant (not sourced purely from
+        a prop) survives an empty/cleared upstream label -- the exact defect this repo
+        already shipped once (23 blank boxes).
+      command: >-
+        python3 -c "import re; s=open('components/show/_shared/StatusMarker.tsx').read(); assert s.count(\"=== 'confirmed'\") >= 1; assert re.search(r'const [A-Z_]*FALLBACK[A-Z_]* *=', s), 'no hardcoded fallback constant found'"
+      required: true
+
+    - id: A11
+      description: >
+        NEGATIVE CONTROL for A10: no second status literal (`'research'`, `'question'`,
+        `'pending'`) triggers an early return / null render in the shared module -- only
+        `'confirmed'` may suppress the marker, proving the fail-closed shape wasn't
+        accidentally widened during the merge.
+      command: >-
+        python3 -c "import re; s=open('components/show/_shared/StatusMarker.tsx').read(); bad=[m for m in re.findall(r\"if \([^)]*=== '(research|question|pending)'[^)]*\)\s*{?\s*return null\", s)]; assert not bad, bad"
+      required: true
+
+    - id: A12
+      description: >
+        No call site to ExhibitorStatusBadge or ConfirmationBadge in the 3 pages that use
+        them hardcodes a literal `status=\"confirmed\"` JSX attribute -- confirmed must come
+        from a variable (Sanity field or coverage-derived constant), never baked in, so a
+        page cannot drift ahead of f1-coverage-map.json's contentStatus for that section
+        (f1-provisional-unification.md req 7).
+      command: >-
+        ! grep -rn 'status="confirmed"' "app/(marketing)/national-show/page.tsx" "app/(marketing)/national-show/what-to-expect/page.tsx" "app/(marketing)/national-show/plan-your-visit/page.tsx"
+      required: true
+
+    - id: A13
+      description: >
+        No new colour/spacing/typography token was introduced anywhere in the shared module
+        or its 3 call sites -- every Tailwind class token used resolves to a variable already
+        present in app/globals.css's `@theme` block (token-parity is exact per no-invention.md;
+        this proves the refactor didn't quietly add one). Greps for the handoff's known token
+        prefixes and rejects anything using a raw hex/rgb literal instead.
+      command: >-
+        ! grep -nE "#[0-9a-fA-F]{3,8}\b|rgb\(" components/show/_shared/StatusMarker.tsx
+      required: true
+
+    # ---------- Piece C: nav-config.ts comment correction ----------
+    - id: A14
+      description: >
+        The superseded "six destinations" framing (f1-nav-reachability.md's cited quote) is
+        gone from nav-config.ts, replaced with text pointing at f1-coverage-map.json as the
+        section-to-route source of truth for all 20 sections -- not just documented in the
+        golden, actually edited into the file.
+      command: >-
+        ! grep -q "of those six destinations stays reachable" components/chrome/nav-config.ts && grep -q "f1-coverage-map.json" components/chrome/nav-config.ts
+      required: true
+
+    - id: A15
+      description: >
+        The still-true point survives verbatim in substance -- Drive folder numbering is
+        document order, not information architecture -- and the comment still cross-
+        references f6-pending-nos-routes.json for the open route-gap list rather than
+        restating the 5 pending hrefs inline in the comment block (f1-nav-reachability.md
+        req 1 and 3).
+      command: >-
+        grep -qi "document order, not information architecture\|document order.*not.*information architecture" components/chrome/nav-config.ts && grep -q "f6-pending-nos-routes.json" components/chrome/nav-config.ts
+      required: true
+
+    - id: A16
+      description: >
+        NEGATIVE CONTROL / no structural or href changes: nav-config.ts's body from
+        `export interface NavLeaf` onward (every href, every NAV entry, every type) is
+        byte-identical to f2-nav-config-body-baseline.txt, captured before F2 touched
+        anything -- proves this was a comment-only edit, per the brief's explicit
+        "comment only in F2" instruction.
+      command: >-
+        diff <(awk 'NR>=1 && /^export interface NavLeaf/{f=1} f' components/chrome/nav-config.ts) .agent/memory/project/specs/site-content-alignment/goldens/fixtures/f2-nav-config-body-baseline.txt
+      required: true
+
+    # ---------- Verification triad (mandatory starting this feature, per f1 contract A15) ----------
+    - id: A17
+      description: >
+        BrowserAgent confirms, against the deployed site (never a *.hosted.app/*.run.app
+        origin), that the 3 pages using the unified marker (/national-show,
+        /national-show/what-to-expect, /national-show/plan-your-visit) render real DOM nodes
+        carrying data-exhibitor-marker / data-confirmation-badge with a RESOLVED status
+        value -- proves the marker is actually rendered at runtime by the pages claiming it,
+        not merely present as dead code or an unused export (learned.md's "testing the
+        extracted function isn't testing the real path").
+      type: browser_deployed_check
+      target: .agent/memory/scratch/f2-status-marker-browser-manifest.json
+      required: true
+
+    - id: A18
+      description: >
+        gws_inbox_check is INAPPLICABLE to F2: this feature sends no email and touches no
+        notification path (Piece A is a file mirror, Piece B is a UI marker refactor, Piece C
+        is a code comment) -- recorded explicitly per .claude/rules/workflow.md rather than
+        silently omitted.
+      command: >-
+        true
+      inapplicable_kinds:
+        - gws_inbox_check
+      inapplicable_reason: >-
+        F2 has no email/notification surface. A17 covers the one real deployed-UI change
+        (Piece B); Piece A is a docs-only file mirror and Piece C is a comment-only edit,
+        neither reaching a deployed page a browser check would add value against beyond A17.
+      required: true

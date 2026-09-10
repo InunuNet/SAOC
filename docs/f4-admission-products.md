@@ -17,6 +17,18 @@
 | `weekend-pass` | Weekend Pass | R380 | R400 | 300 | ∅ | 2027-07-31 | ✗ | ✗ |
 | `vip` | VIP Ticket | R480 | — | 120 | ∅ | ∅ | ✗ | ✓ |
 
+> **Superseded (F2, ticketing-complete M1, 2026-09-08):** the VIP row above is this feature's
+> original snapshot — VIP shipped with no early-bird cutoff (`∅`). F2 subsequently gave VIP a
+> freshly-derived cutoff (**2027-06-18**, computed by `deriveAdmissionEarlyBirdCutoffIso()`,
+> not the legacy `2027-07-31` constant the other early-bird rows still use) as part of Brad's
+> direct pricing ruling. Within this doc's four admission products, VIP is the only one off the
+> legacy constant (`early-bird` and `weekend-pass` still carry it; `day-visitor` has no
+> early-bird window at all). Fleet-wide — including the three Conferences-category products
+> that also still carry the legacy constant — five products remain on `2027-07-31`. Whether
+> those five should also move to the derived date is an open decision for Brad, not resolved
+> here — see
+> [F2 Open Decisions §3](ticketing-complete-f2-open-decisions.md#3-weekend-pass-early-bird-cutoff-mismatch).
+
 All figures are transcribed verbatim from `.agent/memory/project/provisional-figures.md` — see the "Replacement procedure" section below. The VIP ticket (R480) is the top tier, priced above the Weekend Pass (R380 early-bird, R400 regular) to reflect its reception access. The Weekend Pass is now one product that changes price at the cutoff; the separate early-bird-weekend-pass document is retired (F1, see below). VIP is Thursday-only (17:00–18:30 reception); Day Visitor is a per-day admission, not concurrent occupancy (see "Known scope gap" below).
 
 ---

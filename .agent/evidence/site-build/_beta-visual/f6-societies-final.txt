@@ -1,0 +1,110 @@
+
+## F6 societies final (beta, d620cee1)
+
+Command:
+  node .tmp/sandbox/beta-visual-f6/shot.mjs
+Exit code: 0
+
+Routes tested:
+  https://beta.saoc.co.za/societies
+  https://beta.saoc.co.za/societies/cape-orchid-society
+  https://beta.saoc.co.za/societies/border-orchid-society
+
+Screenshots written (full-page, deviceScaleFactor 2, no existing files touched):
+  .agent/evidence/site-build/societies/beta-final-390.png
+  .agent/evidence/site-build/societies/beta-final-1280.png
+  .agent/evidence/site-build/societies-detail/beta-final-cape-orchid-society-390.png
+  .agent/evidence/site-build/societies-detail/beta-final-cape-orchid-society-1280.png
+  .agent/evidence/site-build/societies-detail/beta-final-border-orchid-society-390.png
+  .agent/evidence/site-build/societies-detail/beta-final-border-orchid-society-1280.png
+
+Console errors (all 3 pages): none — consoleErrors arrays were empty on every page.
+
+Failed network requests: all three pages logged a handful of
+"GET https://beta.saoc.co.za/...?_rsc=... -- net::ERR_ABORTED" entries. These
+are Next.js RSC prefetch requests aborted by client-side navigation/prefetch
+churn during the run (a normal artifact of Playwright driving multiple
+sequential page.goto() calls against a prefetching app router), not surfaced
+to users and not accompanied by any 4xx/5xx response or console error. Not
+counted as a real defect.
+
+--- INDEX (/societies) ---
+
+(a) PASS. Zero grey "TO BE CONFIRMED" pills anywhere on the page (1280 and 390
+    screenshots reviewed in full). Every card shows only "est. <year> ·
+    <n> members (ESTIMATED)" — one small caps "(ESTIMATED)" tag per card, not
+    42 individual per-field badges.
+
+(b) PASS. Confirmed above — one quiet "(ESTIMATED)" marker per card, appended
+    inline after the member count, not separate badges per field.
+
+(c) PASS. One disclaimer line above the grid, above the province filter
+    pills: "FOUNDING YEARS AND MEMBER COUNTS MARKED (ESTIMATED) ARE OUR OWN
+    ESTIMATES, PENDING CONFIRMATION FROM EACH SOCIETY." Single line, small
+    caps, muted — reads as one calm caveat, not a wall of warnings.
+
+(d) PASS. Counted all 21 cards in the 1280 screenshot: Border, Cape, East
+    Rand, Eastern Province, Free State, Garden Route, Highveld, Kalahari,
+    Limpopo, Lowveld, Midlands, Natal, North Coast, North West, Northern
+    Transvaal, Overberg, South Cape, Transvaal, Vaal Triangle, West Rand,
+    Winelands = 21/21, all readable. At 390 the grid reflows to a clean
+    single column, full width, no horizontal overflow, no clipped text.
+
+(e) VERDICT: reads as a confident directory of 21 real societies. Each card
+    has a real name, province code chip, city, founding year, member count,
+    and a clear affordance to open the detail page. The estimate disclaimer
+    is a single quiet line, not a wall of hedges. This is a legitimate
+    improvement over the "42 TO BE CONFIRMED pills" baseline described in
+    the brief.
+
+--- DETAIL PAGES ---
+
+(f) PASS on both cape-orchid-society and border-orchid-society. Both pages
+    have real body substance and section order: hero (name, province chip,
+    city) -> "est. <year> · ~<n> members (ESTIMATED)" strip -> "ABOUT THIS
+    SOCIETY" (a real descriptive paragraph plus a small "GENERAL DESCRIPTION
+    — SOCIETY-SPECIFIC DETAIL PENDING CONFIRMATION" note) -> "UPCOMING
+    EVENTS" -> "WHAT TO EXPECT: Life at an affiliated orchid society" (four
+    sub-sections: Regular meetings, Shows and displays, Judging and
+    accreditation, Beginners welcome) -> a single contact-ask paragraph
+    about the meeting day/time/venue not yet being confirmed, with
+    "send us the details" link and council email -> "Find another society,
+    or reach the council" CTA band -> footer. This is real content, not
+    four hedge badges over whitespace.
+
+(g) PASS. cape-orchid-society's "UPCOMING EVENTS" section shows one event
+    card: "16 SEPT — 19th South African National Orchid Show [SHOW] — The
+    Hangar, Stellenbosch Flying Club." border-orchid-society's "UPCOMING
+    EVENTS" section shows a designed empty state: a calendar icon, "Border
+    Orchid Society has no upcoming events listed yet. Check the full SAOC
+    calendar for shows and workshops across every affiliated society." and
+    a "View the SAOC events calendar ->" link, inside a bordered card — not
+    blank space, not a broken layout.
+
+(h) PASS. Visually the event title "19th South African National Orchid Show"
+    on cape-orchid-society renders as plain unstyled text with no underline
+    and no link-blue colouring — reads identically to the surrounding
+    labels. Verified in the DOM: the element is a bare
+    <p class="font-serif text-[18px] font-semibold leading-snug text-ink">,
+    not an <a>. page.$$eval('a[href^="/events/"]') returned 0 on both
+    cape-orchid-society and border-orchid-society.
+
+(i) PASS. At 390 on both detail pages: no horizontal overflow, no
+    overlapping or unstyled elements. Hero image, title, meta strip, all
+    four "what to expect" sub-sections, and the CTA band all stack cleanly
+    full-width with consistent spacing.
+
+Worst thing found: nothing on these three routes rises to a real defect.
+The only anomaly at all is the handful of ERR_ABORTED _rsc prefetch
+requests, which are a normal side effect of the crawl script driving
+sequential navigations against a prefetching Next.js app router, not a
+user-facing bug — no console errors, no 4xx/5xx responses, nothing visible
+on screen.
+
+Overall verdict: these three routes now meet the bar "a site a real orchid
+society would be proud of." The index reads as a confident, calm directory
+of 21 real societies with one quiet estimate disclaimer, not a wall of
+"TO BE CONFIRMED" warnings. Both detail pages have genuine substance (about
+copy, a real "what to expect" section, and an honest, non-alarming ask for
+missing meeting details) and handle the has-event / no-event cases with a
+real card and a real designed empty state respectively, with no dead links.

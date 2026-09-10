@@ -14,6 +14,7 @@
 // =============================================================
 
 import { CalendarDays } from 'lucide-react';
+import Link from 'next/link';
 
 import { EventCard } from '@/components/events';
 import type { SanityEvent } from '@/types';
@@ -89,9 +90,9 @@ export function SocietyEvents({ societyName, events, live }: SocietyEventsProps)
             {societyName} has no upcoming events listed yet. Check the full SAOC calendar for
             shows and workshops across every affiliated society.
           </p>
-          <a href="/events" className="inline-link font-sans text-[14px] font-medium text-ink">
+          <Link href="/events" className="inline-link font-sans text-[14px] font-medium text-ink">
             View the SAOC events calendar →
-          </a>
+          </Link>
         </div>
       )}
     </section>
