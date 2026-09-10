@@ -25,7 +25,7 @@
 // element.
 import { expect, test } from '@playwright/test';
 
-import { NAV, type NavItem } from '@/components/chrome/nav-config';
+import { NAV, type NavColumn, type NavItem } from '@/components/chrome/nav-config';
 import pendingNosRoutes from '../.agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-pending-nos-routes.json';
 import { collectHrefs } from './utils/collect-nav-hrefs';
 
@@ -78,23 +78,50 @@ function deriveFlatDestinations(items: readonly NavItem[]): FlatDestination[] {
     }));
 }
 
+// A column's own destinations, in MobileMenu.tsx's render order: the heading
+// itself renders as a clickable <Link> whenever `headingHref` is non-null
+// (MobileMenu.tsx: `column.headingHref ? <Link>... : <span>...`), *ahead of*
+// its leaf links — not a theoretical case; it's null on every column today,
+// but the two-way consistency check below requires the derivation to cover
+// it the moment it isn't.
+function deriveColumnDestinations(column: NavColumn): GroupDestination[] {
+  const destinations: GroupDestination[] = [];
+  if (column.headingHref) {
+    destinations.push({ label: column.heading, href: column.headingHref });
+  }
+  destinations.push(...column.links.map((link) => ({ label: link.label, href: link.href })));
+  return destinations;
+}
+
 // Mirrors nav-config.ts's National Show mega, in MobileMenu.tsx's own render
-// order: the "The Show" group folded off item.lead, then the group columns —
-// all four render as flat headed lists once the single "National Show"
-// trigger is expanded (see MobileMenu.tsx: `[n.lead?.theShow, ...n.columns]`).
+// order: the feature-rail CTA renders first, then the lead block (its own
+// leadHref link, separate from "The Show" group folded underneath it), then
+// the group columns — all render as flat headed lists once the single
+// "National Show" trigger is expanded (see MobileMenu.tsx: featureRail
+// block, then lead block, then `[n.lead?.theShow, ...n.columns]`). The
+// feature rail and lead link aren't part of any NavColumn, so each gets its
+// own single-destination "group" here purely to share GROUPS' heading+list
+// shape and the same click-and-navigate test loop below.
 function deriveGroups(item: Extract<NavItem, { type: 'mega' }>): Group[] {
   const groups: Group[] = [];
+  if (item.featureRail) {
+    groups.push({
+      heading: 'Feature rail',
+      destinations: [{ label: item.featureRail.ctaLabel, href: item.featureRail.ctaHref }],
+    });
+  }
   if (item.lead) {
     groups.push({
+      heading: 'Lead',
+      destinations: [{ label: item.lead.leadLabel, href: item.lead.leadHref }],
+    });
+    groups.push({
       heading: item.lead.theShow.heading,
-      destinations: item.lead.theShow.links.map((link) => ({ label: link.label, href: link.href })),
+      destinations: deriveColumnDestinations(item.lead.theShow),
     });
   }
   for (const column of item.columns) {
-    groups.push({
-      heading: column.heading,
-      destinations: column.links.map((link) => ({ label: link.label, href: link.href })),
-    });
+    groups.push({ heading: column.heading, destinations: deriveColumnDestinations(column) });
   }
   return groups;
 }
@@ -110,23 +137,31 @@ if (!NATIONAL_SHOW_ITEM) {
 const FLAT_DESTINATIONS: FlatDestination[] = deriveFlatDestinations(NAV);
 const GROUPS: Group[] = deriveGroups(NATIONAL_SHOW_ITEM);
 
-// Consistency proof, not test coverage of its own: every href this spec is
-// about to exercise must also appear in collectHrefs(NAV) (minus hrefs
-// already known-pending), and vice versa for the National Show mega's own
-// hrefs — otherwise the two collectors have silently diverged.
+// Consistency proof, not test coverage of its own — and a genuine two-way
+// set equality, not the one-way subset check this used to be (Codex
+// cross-model review, 2026-09-10: a one-way "every derived href is in
+// collectHrefs" check can never catch a href collectHrefs finds that the
+// derivation omits — exactly the defect class this whole file exists to
+// close). Every href this spec is about to exercise must appear in
+// collectHrefs(NAV), and every href collectHrefs(NAV) finds must appear
+// among this spec's derived destinations — otherwise the two NAV collectors
+// have silently diverged.
 {
   const allCollected = new Set(collectHrefs(NAV));
   const derivedHrefs = new Set<string>([
     ...FLAT_DESTINATIONS.map((d) => d.href),
     ...GROUPS.flatMap((g) => g.destinations.map((d) => d.href)),
   ]);
-  for (const href of derivedHrefs) {
-    if (!allCollected.has(href)) {
-      throw new Error(
-        `derived destination ${href} is not present in collectHrefs(NAV) — the two NAV collectors ` +
-          `have diverged`,
-      );
-    }
+  const missingFromDerived = [...allCollected].filter((href) => !derivedHrefs.has(href));
+  const missingFromCollected = [...derivedHrefs].filter((href) => !allCollected.has(href));
+  if (missingFromDerived.length > 0 || missingFromCollected.length > 0) {
+    throw new Error(
+      'NAV collectors have diverged — ' +
+        `collectHrefs(NAV) found hrefs this spec's derived destinations miss: ` +
+        `[${missingFromDerived.join(', ')}]; ` +
+        `this spec's derived destinations have hrefs collectHrefs(NAV) doesn't find: ` +
+        `[${missingFromCollected.join(', ')}]`,
+    );
   }
 }
 
