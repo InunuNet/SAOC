@@ -112,3 +112,46 @@ For our six routes:
 
 # WHAT THE MIRROR STILL GATES
 Nothing in this brief. The stale mirror gates only **re-citing the M4 contract by rule number.**
+
+---
+
+# CLAUDE DESIGN WEEKLY LIMIT HIT — 2026-09-10, resets Sun 13 Sep
+
+Brad hit 95%+ of the Claude Design weekly limit. **The full design system cannot be finished until
+Sunday 13 September 2026.** What this does and does not block:
+
+**NOT blocked — the critical path is untouched.** The Sanity dotted-id bug, the six 404s, the seed
+fix, the M4 merge to `main` — none of it involves Claude Design.
+
+**NOT blocked — reading the canvas.** `DesignSync` read methods (`get_project`, `list_files`,
+`get_file`) are API reads, not Claude Design generation. The reading order in this brief can be
+worked through now.
+
+**NOT blocked — three of the six routes.** `sa-exhibitors`, `international-guests` and `sponsors` are
+covered by R18 + the canvas grammar, which Codi has stated IS the whole brief for them.
+
+**NOT blocked — the `ShowPageProse` rebuild.** R19's prose is complete enough to build from; Codi
+said so explicitly.
+
+**BLOCKED until the reset:** designs for `programme`, `symposium` and `wosa-conference`, which Codi
+owes and which must NOT be derived from the rulings. Plan around this — it is a hard date, not a
+negotiation, and deriving them to fill the gap is the exact failure Brad called "horrible".
+
+# A SECOND CLAUDE DESIGN PROJECT EXISTS — flagged 2026-09-10, needs Codi's confirmation
+
+A screenshot from Brad shows Claude Design project **`6cca8eaa-5cac-42f2-97e9-06496fbae25d`**
+containing a **"Logo Export Sheet"** (9 pages): *"Sixteen approved files at the proportions locked in
+the studio. Each captured artwork sits on a transparent ground with even clearspace built in; the
+tinted panel behind it is preview only and is not part of the file."* Its task list reads: read studio
+proportions (done), build one export file per logo version — **8 treatments x 2 lockups** (done),
+render to PNG assets (done), update presentation / Word pack / marketing templates (pending).
+
+**16 = R14's "eight colourways, two orientations each".** So this is the authoritative logo export,
+and it is consistent with R14 rather than in conflict with it.
+
+**But it is a DIFFERENT project id from the canvas (`262aba20-…`), and Codi's artifact list says
+"Nothing else exists. There is no third design surface."** That statement was made about design
+surfaces; this may be an asset-production project rather than a design surface, which would make both
+true. **Do not assume — ask Codi to confirm** which is authoritative for logo files: this export
+sheet, the canvas's `assets/logo/*`, or `/Users/vetus/ai/SAOC/branding/National Show 2027/Logo`.
+R14 binds regardless: **pick a colourway, never re-typeset, never re-tint.**
