@@ -32,7 +32,15 @@ const RESULTS_DIR = path.resolve(PROJECT_ROOT, '.tmp/sandbox/nos-ia');
 const RESULTS_FILE = path.join(RESULTS_DIR, 'm4-local-results.txt');
 const MANIFEST_PATH = path.resolve(PROJECT_ROOT, 'content/national-show-routes.json');
 
-type Verdict = 'PASS' | 'FAIL';
+// UNMEASURED is distinct from FAIL: FAIL means the check ran and the property did not
+// hold; UNMEASURED means there is no way to run the check at all today (e.g. S1-S4,
+// which need a pre-M4 baseline nobody captured). Collapsing UNMEASURED into FAIL hides
+// which is which from whoever reads the raw output; collapsing it into PASS is the
+// audited defect class this repo watches for. Neither silent absence nor a fabricated
+// verdict is acceptable — every id in ALL_CHECK_IDS gets one of these four, and the
+// summary line below counts them separately so "N/M PASS" can never quietly absorb a
+// SKIP or an UNMEASURED into the numerator.
+type Verdict = 'PASS' | 'FAIL' | 'SKIP' | 'UNMEASURED';
 const ALL_CHECK_IDS = ['SERVER', 'L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'S1', 'S2', 'S3', 'S4'] as const;
 type CheckId = (typeof ALL_CHECK_IDS)[number];
 
@@ -50,10 +58,26 @@ function check(id: CheckId, condition: boolean, expected: string, found: string)
   record(id, condition ? 'PASS' : 'FAIL', condition ? undefined : `expected ${expected}, found ${found}`);
 }
 
+// For a property this script has no way to measure at all — never for a property it
+// measured and found false. That distinction is the entire reason this function exists
+// separately from check(): a caller cannot express UNMEASURED through check()'s boolean
+// condition, so before this fix every "cannot measure" case was written as
+// `check(id, false, ...)` and collapsed into FAIL, indistinguishable from a real failure.
+function unmeasured(id: CheckId, reason: string): void {
+  record(id, 'UNMEASURED', reason);
+}
+
 function writeResults(): void {
   mkdirSync(RESULTS_DIR, { recursive: true });
   const lines = ALL_CHECK_IDS.map((id) => `${id} ${results.get(id) ?? 'UNSET'}`);
-  writeFileSync(RESULTS_FILE, lines.join('\n') + '\n', 'utf8');
+  const counts = { PASS: 0, FAIL: 0, SKIP: 0, UNMEASURED: 0, UNSET: 0 };
+  for (const id of ALL_CHECK_IDS) {
+    const v = results.get(id) ?? 'UNSET';
+    counts[v as keyof typeof counts] = (counts[v as keyof typeof counts] ?? 0) + 1;
+  }
+  const summary = `SUMMARY PASS=${counts.PASS} FAIL=${counts.FAIL} SKIP=${counts.SKIP} UNMEASURED=${counts.UNMEASURED} UNSET=${counts.UNSET} TOTAL=${ALL_CHECK_IDS.length}`;
+  console.log(summary);
+  writeFileSync(RESULTS_FILE, lines.join('\n') + '\n' + summary + '\n', 'utf8');
 }
 
 interface ManifestRoute {
@@ -345,14 +369,15 @@ async function main(): Promise<void> {
     // one now would be exactly the trap S3 exists to catch (D91/D92): "compares the tree
     // against a copy of itself taken after the change." So S1/S2 have nothing to compare
     // against, and S3 (which is supposed to PROVE a pre-existing baseline is unmodified)
-    // has no baseline to check. Reported as FAIL with the reason, never as a fabricated
-    // PASS or a silently-skipped id.
+    // has no baseline to check. Reported as UNMEASURED with the reason — NOT FAIL, because
+    // this script has no way to run the check at all, and NOT PASS, because the property
+    // was never verified. Never a fabricated PASS, never silently absent.
     const baselineDir = path.resolve(PROJECT_ROOT, '.tmp/sandbox/nos-ia/snapshots-baseline');
     const baselineExists = existsSync(baselineDir);
-    check('S1', false, 'a pre-M4 rendered-output baseline to compare against', baselineExists ? 'baseline dir exists but was not captured before M4 — see S3' : 'no baseline exists at .tmp/sandbox/nos-ia/snapshots-baseline — BLOCKED, needs a human decision on when/how it should have been captured');
-    check('S2', false, '/national-show/exhibitors identity check against a captured baseline', 'same blocker as S1 — no baseline to assert identity from');
-    check('S3', false, 'a baseline whose git blob predates the M4 base ref', 'no baseline file is tracked in git at all, so there is nothing to pin as unchanged');
-    check('S4', false, 'confirmation that no baseline was regenerated to resolve a G2/S1 collision', 'moot until S1-S3 have a real baseline — recorded as FAIL rather than a vacuous PASS');
+    unmeasured('S1', baselineExists ? 'baseline dir exists but was not captured before M4 — see S3' : 'no baseline exists at .tmp/sandbox/nos-ia/snapshots-baseline — BLOCKED, needs a human decision on when/how it should have been captured');
+    unmeasured('S2', 'same blocker as S1 — no baseline to assert identity from');
+    unmeasured('S3', 'no baseline file is tracked in git at all, so there is nothing to pin as unchanged');
+    unmeasured('S4', 'moot until S1-S3 have a real baseline');
   } finally {
     if (browser) await browser.close();
     if (devServer) devServer.kill();

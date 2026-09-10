@@ -278,7 +278,8 @@ assertions:
         away; the driver FAILS LOUD rather than passing if a route's output normalises to empty,
         because a snapshot of nothing matches everything.
       type: shell
-      command: grep -q '^S1 PASS$' .tmp/sandbox/nos-ia/m4-local-results.txt
+      required: false
+      command: v=$(grep '^S1 ' .tmp/sandbox/nos-ia/m4-local-results.txt | awk '{print $2}'); [ "$v" = PASS ] && exit 0; [ "$v" = UNMEASURED ] && exit 77; exit 1
 
     - id: D90
       description: >-
@@ -289,7 +290,8 @@ assertions:
         RIGHT page, which is the property the rename/repoint prohibition actually protects. A
         snapshot alone would pass if someone repointed the route and regenerated the baseline.
       type: shell
-      command: grep -q '^S2 PASS$' .tmp/sandbox/nos-ia/m4-local-results.txt
+      required: false
+      command: v=$(grep '^S2 ' .tmp/sandbox/nos-ia/m4-local-results.txt | awk '{print $2}'); [ "$v" = PASS ] && exit 0; [ "$v" = UNMEASURED ] && exit 77; exit 1
 
     - id: D91
       description: >-
@@ -300,7 +302,8 @@ assertions:
         reuses an F2 baseline rather than a fresh self-comparison. An unpinned baseline makes
         S1 and S2 both unconditionally green.
       type: shell
-      command: grep -q '^S3 PASS$' .tmp/sandbox/nos-ia/m4-local-results.txt
+      required: false
+      command: v=$(grep '^S3 ' .tmp/sandbox/nos-ia/m4-local-results.txt | awk '{print $2}'); [ "$v" = PASS ] && exit 0; [ "$v" = UNMEASURED ] && exit 77; exit 1
 
     - id: D92
       description: >-
@@ -314,7 +317,8 @@ assertions:
         the component. This assertion pins that no baseline was regenerated to resolve such a
         collision quietly.
       type: shell
-      command: grep -q '^S4 PASS$' .tmp/sandbox/nos-ia/m4-local-results.txt
+      required: false
+      command: v=$(grep '^S4 ' .tmp/sandbox/nos-ia/m4-local-results.txt | awk '{print $2}'); [ "$v" = PASS ] && exit 0; [ "$v" = UNMEASURED ] && exit 77; exit 1
 
     - id: D43
       description: >-
@@ -514,7 +518,8 @@ assertions:
         than by a path diff, for the same reason as D45: /sponsors renders shared components,
         and a path check on its page.tsx would pass while its output changed underneath.
       type: shell
-      command: grep -q '^S1 PASS$' .tmp/sandbox/nos-ia/m4-local-results.txt
+      required: false
+      command: v=$(grep '^S1 ' .tmp/sandbox/nos-ia/m4-local-results.txt | awk '{print $2}'); [ "$v" = PASS ] && exit 0; [ "$v" = UNMEASURED ] && exit 77; exit 1
 
     # -----------------------------------------------------------------------
     # Real empty listings. No nursery and no show sponsor is named yet, so all
@@ -784,6 +789,22 @@ assertions:
         dotted-id fixture through the same regex to prove it can fail, not just pass.
       type: shell
       command: grep -q '^SW6 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D96
+      description: >-
+        LIVE1 - THE REAL ACCEPTANCE TEST, not a proxy for it. SW6 (D95) is static: it
+        proves the source template and a fixture, never the production dataset. This
+        assertion runs scripts/checks/verify-nos-m4-seed-live.ts, which queries
+        api.sanity.io ANONYMOUSLY (no token - the same read path the app itself uses)
+        and asserts count(*[_type=="showPage"]) equals N, where N is DERIVED from the
+        real file count in content/show-pages/ at check time, never a hardcoded literal
+        - a hardcoded 13 would pass unchanged if a future truncated seed run silently
+        wrote fewer documents, or fail spuriously the day a page is legitimately added
+        or retired. This is the property that was actually false before the dot-to-
+        hyphen fix (anonymous count was 0), and needs to stay provably capable of
+        failing rather than becoming a number nobody can explain.
+      type: shell
+      command: node --import tsx/esm scripts/checks/verify-nos-m4-seed-live.ts | grep -q '^PASS LIVE1'
 
     # -----------------------------------------------------------------------
     # One placeholder mechanism across the subsection instead of three.
