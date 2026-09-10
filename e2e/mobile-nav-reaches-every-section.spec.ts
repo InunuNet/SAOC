@@ -25,7 +25,9 @@
 // element.
 import { expect, test } from '@playwright/test';
 
+import { NAV, type NavItem } from '@/components/chrome/nav-config';
 import pendingNosRoutes from '../.agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-pending-nos-routes.json';
+import { collectHrefs } from './utils/collect-nav-hrefs';
 
 const VIEWPORT_HEIGHT = 800;
 const PENDING_ROUTES = new Set<string>(pendingNosRoutes.pendingRoutes);
@@ -33,6 +35,7 @@ const NATIONAL_SHOW_TRIGGER = 'National Show';
 
 interface FlatDestination {
   label: string;
+  href: string;
   hrefPattern: RegExp;
 }
 
@@ -46,59 +49,86 @@ interface Group {
   destinations: GroupDestination[];
 }
 
-// Mirrors components/chrome/nav-config.ts's flat top-level `link` items —
-// everything except the single `National Show` mega, which is exercised via
-// GROUPS below.
-const FLAT_DESTINATIONS: FlatDestination[] = [
-  { label: 'About', hrefPattern: /\/about$/ },
-  { label: 'Societies', hrefPattern: /\/societies$/ },
-  { label: 'Judging & Awards', hrefPattern: /\/judging$/ },
-  { label: 'Events', hrefPattern: /\/events$/ },
-  { label: 'Members', hrefPattern: /\/members$/ },
-  { label: 'Sponsors', hrefPattern: /\/sponsors$/ },
-];
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
-// Mirrors nav-config.ts's National Show mega: the "The Show" group folded off
-// item.lead, plus the three group columns — all four render as flat headed
-// lists once the single "National Show" trigger is expanded.
-const GROUPS: Group[] = [
-  {
-    heading: 'The Show',
-    destinations: [
-      { label: 'Tickets', href: '/national-show/tickets' },
-      { label: 'Show Sponsors', href: '/national-show/sponsors' },
-      { label: 'Past Shows', href: '/national-show/archive' },
-    ],
-  },
-  {
-    heading: 'Visit',
-    destinations: [
-      { label: 'About the Show', href: '/national-show/about' },
-      { label: 'What to Expect', href: '/national-show/what-to-expect' },
-      { label: 'Plan Your Visit', href: '/national-show/plan-your-visit' },
-      { label: 'FAQ', href: '/national-show/faq' },
-    ],
-  },
-  {
-    heading: 'Programme',
-    destinations: [
-      { label: 'Programme', href: '/national-show/programme' },
-      { label: 'Workshops', href: '/national-show/workshops' },
-      { label: 'SAOC Symposium', href: '/national-show/symposium' },
-      { label: 'WOSA Conference', href: '/national-show/wosa-conference' },
-      { label: 'Conference Registration', href: '/national-show/conferences' },
-    ],
-  },
-  {
-    heading: 'Exhibit & Trade',
-    destinations: [
-      { label: 'South African Exhibitors', href: '/national-show/sa-exhibitors' },
-      { label: 'International Guests', href: '/national-show/international-guests' },
-      { label: 'Exhibitor Entry Guide', href: '/national-show/exhibitors' },
-      { label: 'Trade Vendors', href: '/national-show/vendors' },
-    ],
-  },
-];
+// Codex cross-model review, 2026-09-10: FLAT_DESTINATIONS and GROUPS used to be
+// a hand-copied second (really third, alongside nav-links-200.spec.ts's
+// collectHrefs and nav-rendered-reachability.spec.ts's collectAllNavHrefs)
+// transcription of nav-config.ts's NAV export. A hand-copied list can drift —
+// add a mobile-visible leaf, rename a route — while this suite stays green,
+// which is exactly the defect this whole mission started from (see this
+// file's own original header comment). Both are now DERIVED from NAV, so a
+// changed or added leaf is picked up automatically. This derivation logic is
+// new (nothing before it grouped destinations by heading+label the way the
+// mobile drawer renders them); collectHrefs, the flat-href collector already
+// shared with nav-links-200.spec.ts, is reused below as an independent
+// consistency cross-check rather than re-implemented a third time.
+
+// Mirrors nav-config.ts's flat top-level `link` items — everything except the
+// single `National Show` mega, which is exercised via GROUPS below.
+function deriveFlatDestinations(items: readonly NavItem[]): FlatDestination[] {
+  return items
+    .filter((item): item is Extract<NavItem, { type: 'link' }> => item.type === 'link' && !item.disabled)
+    .map((item) => ({
+      label: item.label,
+      href: item.href,
+      hrefPattern: new RegExp(`${escapeRegExp(item.href)}$`),
+    }));
+}
+
+// Mirrors nav-config.ts's National Show mega, in MobileMenu.tsx's own render
+// order: the "The Show" group folded off item.lead, then the group columns —
+// all four render as flat headed lists once the single "National Show"
+// trigger is expanded (see MobileMenu.tsx: `[n.lead?.theShow, ...n.columns]`).
+function deriveGroups(item: Extract<NavItem, { type: 'mega' }>): Group[] {
+  const groups: Group[] = [];
+  if (item.lead) {
+    groups.push({
+      heading: item.lead.theShow.heading,
+      destinations: item.lead.theShow.links.map((link) => ({ label: link.label, href: link.href })),
+    });
+  }
+  for (const column of item.columns) {
+    groups.push({
+      heading: column.heading,
+      destinations: column.links.map((link) => ({ label: link.label, href: link.href })),
+    });
+  }
+  return groups;
+}
+
+const NATIONAL_SHOW_ITEM = NAV.find(
+  (item): item is Extract<NavItem, { type: 'mega' }> =>
+    item.type === 'mega' && item.label === NATIONAL_SHOW_TRIGGER,
+);
+if (!NATIONAL_SHOW_ITEM) {
+  throw new Error(`nav-config.ts has no mega item labelled "${NATIONAL_SHOW_TRIGGER}"`);
+}
+
+const FLAT_DESTINATIONS: FlatDestination[] = deriveFlatDestinations(NAV);
+const GROUPS: Group[] = deriveGroups(NATIONAL_SHOW_ITEM);
+
+// Consistency proof, not test coverage of its own: every href this spec is
+// about to exercise must also appear in collectHrefs(NAV) (minus hrefs
+// already known-pending), and vice versa for the National Show mega's own
+// hrefs — otherwise the two collectors have silently diverged.
+{
+  const allCollected = new Set(collectHrefs(NAV));
+  const derivedHrefs = new Set<string>([
+    ...FLAT_DESTINATIONS.map((d) => d.href),
+    ...GROUPS.flatMap((g) => g.destinations.map((d) => d.href)),
+  ]);
+  for (const href of derivedHrefs) {
+    if (!allCollected.has(href)) {
+      throw new Error(
+        `derived destination ${href} is not present in collectHrefs(NAV) — the two NAV collectors ` +
+          `have diverged`,
+      );
+    }
+  }
+}
 
 async function openMobileMenuAndClick(page: import('@playwright/test').Page, label: string) {
   await page.getByRole('button', { name: 'Open menu' }).click();

@@ -67,22 +67,33 @@ async function renderedAnchorHrefs(scope: import('@playwright/test').Locator): P
     .evaluateAll((els) => els.map((el) => el.getAttribute('href')).filter((h): h is string => h !== null));
 }
 
-// Existing in the DOM is not the same as reachable: an anchor sitting under
-// display:none, visibility:hidden, aria-hidden, or zero size satisfies
-// renderedAnchorHrefs() above but nobody can click it. For every href that is
-// currently present in `scope`, assert Playwright's own toBeVisible() — it
-// accounts for display/visibility/size/hidden together, which a hand-rolled
-// getComputedStyle check would get subtly wrong. Called once per DOM state
-// (initial load, and after each mega/drawer panel opens) so every href is
-// checked while its own panel is the one open.
-async function assertPresentAnchorsVisible(
+// Visible is not the same as reachable (Codex cross-model review, 2026-09-10):
+// an anchor with `pointer-events: none`, or covered by a positioned overlay, is
+// visible under Playwright's own toBeVisible() — display/visibility/size/hidden
+// all check out — while a real user still cannot click it. For every href that
+// is currently present in `scope`, run a TRIAL click (`click({ trial: true })`),
+// which performs Playwright's full actionability wait — attached, visible,
+// stable, receives pointer events at its own hit-target point, AND enabled —
+// without actually navigating. That is the correct instrument for "a user can
+// click this", not a hand-rolled getComputedStyle check, and not toBeVisible()
+// alone. Called once per DOM state (initial load, and after each mega/drawer
+// panel opens) so every href is checked while its own panel is the one open.
+async function assertPresentAnchorsActionable(
   scope: import('@playwright/test').Locator,
   hrefs: readonly string[],
 ): Promise<void> {
   for (const href of hrefs) {
     const anchor = scope.locator(`a[href="${href}"]`).first();
     if ((await anchor.count()) === 0) continue;
-    await expect(anchor, `nav href is present in the DOM but not visible to a user: ${href}`).toBeVisible();
+    try {
+      await anchor.click({ trial: true, timeout: 5000 });
+    } catch (err) {
+      throw new Error(
+        `nav href is present in the DOM but not actionable by a real user (Playwright's ` +
+          `actionability check failed — commonly pointer-events:none or an overlay sitting on ` +
+          `top of it): ${href}\n${(err as Error).message}`,
+      );
+    }
   }
 }
 
@@ -102,7 +113,7 @@ test.describe('nav hrefs are reachable from the rendered header (not just presen
     const header = page.locator('header');
     const rendered = new Set<string>();
     for (const href of await renderedAnchorHrefs(header)) rendered.add(href);
-    await assertPresentAnchorsVisible(header, ALL_NAV_HREFS);
+    await assertPresentAnchorsActionable(header, ALL_NAV_HREFS);
 
     for (const item of NAV) {
       if (item.type !== 'mega') continue;
@@ -111,7 +122,7 @@ test.describe('nav hrefs are reachable from the rendered header (not just presen
       const panel = header.getByRole('menu', { name: item.label });
       await expect(panel).toBeVisible();
       for (const href of await renderedAnchorHrefs(header)) rendered.add(href);
-      await assertPresentAnchorsVisible(header, ALL_NAV_HREFS);
+      await assertPresentAnchorsActionable(header, ALL_NAV_HREFS);
       await trigger.click(); // close before opening the next mega
     }
 
@@ -137,7 +148,7 @@ test.describe('nav hrefs are reachable from the rendered header (not just presen
 
     const rendered = new Set<string>();
     for (const href of await renderedAnchorHrefs(dialog)) rendered.add(href);
-    await assertPresentAnchorsVisible(dialog, ALL_NAV_HREFS);
+    await assertPresentAnchorsActionable(dialog, ALL_NAV_HREFS);
 
     for (const item of NAV) {
       if (item.type !== 'mega') continue;
@@ -146,7 +157,7 @@ test.describe('nav hrefs are reachable from the rendered header (not just presen
       await trigger.click();
       await expect(trigger).toHaveAttribute('aria-expanded', 'true');
       for (const href of await renderedAnchorHrefs(dialog)) rendered.add(href);
-      await assertPresentAnchorsVisible(dialog, ALL_NAV_HREFS);
+      await assertPresentAnchorsActionable(dialog, ALL_NAV_HREFS);
     }
 
     const missing = ALL_NAV_HREFS.filter((href) => !rendered.has(href));

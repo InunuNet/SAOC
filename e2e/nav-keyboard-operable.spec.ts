@@ -11,12 +11,60 @@
 // class-name standing in for verification."
 import { expect, test } from '@playwright/test';
 
+import { NAV, type NavItem } from '@/components/chrome/nav-config';
+
 // Mission menu-system-layout4 M2/F2: retargeted from the pre-Layout-4 three-mega
 // shape's old trigger name to the single National Show mega trigger — see
 // contract-f2.yaml's A5/A6. Tab order into the open panel runs lead -> groups ->
 // feature rail (mission section 6 property 4) because that's the panel's real DOM
 // order in components/chrome/MegaMenu.tsx; nothing here needs to special-case it.
 const TRIGGER_NAME = 'National Show';
+
+// Codex cross-model review, 2026-09-10: the original version of this spec Tabbed
+// once after opening the panel and asserted a focus ring existed, but never
+// proved the focused element was actually INSIDE the open panel. An empty or
+// unreachable panel would let Tab move straight to the next header control
+// (e.g. Contact), that control has its own focus ring, and the old assertion
+// would pass — the exact "satisfiable by something that isn't the real
+// property" defect class this repo audits for.
+//
+// Fixed by asserting two things instead: (1) the focused element is a
+// descendant of the open `role="menu"` panel, and (2) it is specifically the
+// FIRST focusable leaf in the panel's real DOM order. That order is derived
+// from NAV here (mirroring MegaMenu.tsx's render order exactly: lead.leadHref
+// is always a <Link>; lead.theShow.headingHref and each column's headingHref
+// render as a <Link> only when non-null, else a plain <span>; every leaf link
+// is always a <Link>; featureRail.ctaHref is always a <Link>), not hardcoded —
+// @qa independently drove this by hand and recorded the same order: lead ->
+// theShow -> Visit -> Programme -> Exhibit & Trade -> feature rail. Today that
+// resolves to lead.leadHref ('/national-show'), since theShow.headingHref is
+// null and lead.leadHref is the panel's first rendered anchor.
+function focusableHrefsInPanelOrder(item: Extract<NavItem, { type: 'mega' }>): string[] {
+  const hrefs: string[] = [];
+  if (item.lead) {
+    hrefs.push(item.lead.leadHref);
+    if (item.lead.theShow.headingHref) hrefs.push(item.lead.theShow.headingHref);
+    for (const link of item.lead.theShow.links) hrefs.push(link.href);
+  }
+  for (const column of item.columns) {
+    if (column.headingHref) hrefs.push(column.headingHref);
+    for (const link of column.links) hrefs.push(link.href);
+  }
+  if (item.featureRail) hrefs.push(item.featureRail.ctaHref);
+  return hrefs;
+}
+
+const NATIONAL_SHOW_ITEM = NAV.find(
+  (item): item is Extract<NavItem, { type: 'mega' }> =>
+    item.type === 'mega' && item.label === TRIGGER_NAME,
+);
+if (!NATIONAL_SHOW_ITEM) {
+  throw new Error(`nav-config.ts has no mega item labelled "${TRIGGER_NAME}" — update TRIGGER_NAME`);
+}
+const FIRST_PANEL_HREF = focusableHrefsInPanelOrder(NATIONAL_SHOW_ITEM)[0];
+if (!FIRST_PANEL_HREF) {
+  throw new Error(`"${TRIGGER_NAME}" mega has no focusable leaf at all — nothing for Tab to reach`);
+}
 
 // Tabs forward from the top of the document until an element with the given
 // accessible name is focused, or the attempt budget runs out. Avoids hardcoding
@@ -100,7 +148,26 @@ test.describe('nav keyboard operability', () => {
 
     // Tab once more, into the now-open panel, onto its first link.
     await page.keyboard.press('Tab');
-    const itemInPanel = page.locator(':focus');
+
+    // Assert the focused element is actually a descendant of the OPEN panel —
+    // not merely that something focusable exists somewhere. An empty panel
+    // would let this Tab land on the next header control instead; that
+    // control lying outside `panel` is exactly what this catches.
+    const panel = page.getByRole('menu', { name: TRIGGER_NAME });
+    const itemInPanel = panel.locator(':focus');
+    await expect(
+      itemInPanel,
+      'after opening the "National Show" panel and pressing Tab, focus did not land inside it — ' +
+        'an empty or unreachable panel would let Tab skip straight to the next header control',
+    ).toHaveCount(1);
+
+    // Assert WHICH link — the first focusable leaf in the panel's real DOM
+    // order, derived from NAV above, not hardcoded.
+    const focusedHref = await itemInPanel.getAttribute('href');
+    expect(
+      focusedHref,
+      `expected Tab to land on the first focusable leaf in DOM order (${FIRST_PANEL_HREF}), got href=${focusedHref}`,
+    ).toBe(FIRST_PANEL_HREF);
 
     const focusedStyle = await itemInPanel.evaluate((el) => {
       const s = getComputedStyle(el);

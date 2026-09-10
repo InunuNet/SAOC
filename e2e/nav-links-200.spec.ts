@@ -22,51 +22,17 @@
 // file must read it directly rather than hand-maintain its own skip list, which
 // could silently drift from nav-config.ts's real pending set. Every href NOT in
 // that list still asserts 200 exactly as before.
+//
+// collectHrefs() (Codex cross-model review, 2026-09-10) now lives in
+// ./utils/collect-nav-hrefs.ts, shared with
+// e2e/mobile-nav-reaches-every-section.spec.ts — it used to be defined here
+// only, and that spec had grown its own hand-copied, drift-prone second list
+// instead of reusing this one.
 import { expect, test } from '@playwright/test';
 
-import { NAV, type NavItem } from '@/components/chrome/nav-config';
+import { NAV } from '@/components/chrome/nav-config';
 import pendingNosRoutes from '../.agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-pending-nos-routes.json';
-
-function collectHrefs(items: readonly NavItem[]): string[] {
-  const hrefs: string[] = [];
-  for (const item of items) {
-    if (item.type === 'link') {
-      hrefs.push(item.href);
-    } else {
-      hrefs.push(item.href);
-      if (item.lead) {
-        hrefs.push(item.lead.leadHref);
-        // item.lead.theShow is itself a NavColumn — it carries its own
-        // headingHref, rendered as a <Link> by MegaMenu/MobileMenu whenever
-        // non-null, exactly like the headingHref on item.columns below. Null
-        // today (never set on the real nav), but must not stay invisible to
-        // this collector the way item.columns[].headingHref no longer is.
-        if (item.lead.theShow.headingHref) {
-          hrefs.push(item.lead.theShow.headingHref);
-        }
-        for (const link of item.lead.theShow.links) {
-          hrefs.push(link.href);
-        }
-      }
-      for (const column of item.columns) {
-        if (column.headingHref) {
-          hrefs.push(column.headingHref);
-        }
-        for (const link of column.links) {
-          hrefs.push(link.href);
-        }
-      }
-      if (item.featureRail) {
-        hrefs.push(item.featureRail.ctaHref);
-      }
-    }
-  }
-  // De-duplicate — a href could in principle appear in more than one of these
-  // places (e.g. Tickets is both a lead.theShow link and the feature rail CTA
-  // today, and lead.leadHref happens to equal the mega's own item.href today —
-  // it doesn't need to stay that way for the test to hold).
-  return Array.from(new Set(hrefs));
-}
+import { collectHrefs } from './utils/collect-nav-hrefs';
 
 const PENDING_ROUTES = new Set<string>(pendingNosRoutes.pendingRoutes);
 
