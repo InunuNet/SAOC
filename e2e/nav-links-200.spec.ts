@@ -36,6 +36,14 @@ function collectHrefs(items: readonly NavItem[]): string[] {
       hrefs.push(item.href);
       if (item.lead) {
         hrefs.push(item.lead.leadHref);
+        // item.lead.theShow is itself a NavColumn — it carries its own
+        // headingHref, rendered as a <Link> by MegaMenu/MobileMenu whenever
+        // non-null, exactly like the headingHref on item.columns below. Null
+        // today (never set on the real nav), but must not stay invisible to
+        // this collector the way item.columns[].headingHref no longer is.
+        if (item.lead.theShow.headingHref) {
+          hrefs.push(item.lead.theShow.headingHref);
+        }
         for (const link of item.lead.theShow.links) {
           hrefs.push(link.href);
         }

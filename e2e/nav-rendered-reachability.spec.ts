@@ -43,6 +43,11 @@ function collectAllNavHrefs(items: readonly NavItem[]): string[] {
     hrefs.push(item.href);
     if (item.lead) {
       hrefs.push(item.lead.leadHref);
+      // item.lead.theShow is itself a NavColumn — MegaMenu/MobileMenu render
+      // its headingHref as a <Link> whenever non-null, same as any other
+      // column's headingHref below. Null today, but must be collected so a
+      // future non-null value can't go unreachable here undetected.
+      if (item.lead.theShow.headingHref) hrefs.push(item.lead.theShow.headingHref);
       for (const link of item.lead.theShow.links) hrefs.push(link.href);
     }
     for (const column of item.columns) {
@@ -62,6 +67,25 @@ async function renderedAnchorHrefs(scope: import('@playwright/test').Locator): P
     .evaluateAll((els) => els.map((el) => el.getAttribute('href')).filter((h): h is string => h !== null));
 }
 
+// Existing in the DOM is not the same as reachable: an anchor sitting under
+// display:none, visibility:hidden, aria-hidden, or zero size satisfies
+// renderedAnchorHrefs() above but nobody can click it. For every href that is
+// currently present in `scope`, assert Playwright's own toBeVisible() — it
+// accounts for display/visibility/size/hidden together, which a hand-rolled
+// getComputedStyle check would get subtly wrong. Called once per DOM state
+// (initial load, and after each mega/drawer panel opens) so every href is
+// checked while its own panel is the one open.
+async function assertPresentAnchorsVisible(
+  scope: import('@playwright/test').Locator,
+  hrefs: readonly string[],
+): Promise<void> {
+  for (const href of hrefs) {
+    const anchor = scope.locator(`a[href="${href}"]`).first();
+    if ((await anchor.count()) === 0) continue;
+    await expect(anchor, `nav href is present in the DOM but not visible to a user: ${href}`).toBeVisible();
+  }
+}
+
 test.describe('nav hrefs are reachable from the rendered header (not just present in NAV data)', () => {
   test('NAV data is non-empty (sanity)', () => {
     expect(ALL_NAV_HREFS.length).toBeGreaterThan(0);
@@ -78,6 +102,7 @@ test.describe('nav hrefs are reachable from the rendered header (not just presen
     const header = page.locator('header');
     const rendered = new Set<string>();
     for (const href of await renderedAnchorHrefs(header)) rendered.add(href);
+    await assertPresentAnchorsVisible(header, ALL_NAV_HREFS);
 
     for (const item of NAV) {
       if (item.type !== 'mega') continue;
@@ -86,6 +111,7 @@ test.describe('nav hrefs are reachable from the rendered header (not just presen
       const panel = header.getByRole('menu', { name: item.label });
       await expect(panel).toBeVisible();
       for (const href of await renderedAnchorHrefs(header)) rendered.add(href);
+      await assertPresentAnchorsVisible(header, ALL_NAV_HREFS);
       await trigger.click(); // close before opening the next mega
     }
 
@@ -111,6 +137,7 @@ test.describe('nav hrefs are reachable from the rendered header (not just presen
 
     const rendered = new Set<string>();
     for (const href of await renderedAnchorHrefs(dialog)) rendered.add(href);
+    await assertPresentAnchorsVisible(dialog, ALL_NAV_HREFS);
 
     for (const item of NAV) {
       if (item.type !== 'mega') continue;
@@ -119,6 +146,7 @@ test.describe('nav hrefs are reachable from the rendered header (not just presen
       await trigger.click();
       await expect(trigger).toHaveAttribute('aria-expanded', 'true');
       for (const href of await renderedAnchorHrefs(dialog)) rendered.add(href);
+      await assertPresentAnchorsVisible(dialog, ALL_NAV_HREFS);
     }
 
     const missing = ALL_NAV_HREFS.filter((href) => !rendered.has(href));
