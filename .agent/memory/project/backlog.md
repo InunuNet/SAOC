@@ -2262,3 +2262,9 @@ Open, needs a decision:
 - `nos-site` is PUSHED (origin/nos-site, head 9f467869). saoc-eb reads the route manifest from
   `git show origin/nos-site:content/national-show-routes.json` (21 routes, 17 listed) to build the
   header. No PR opened yet.
+
+## RESUME POINT 2026-09-10 → next session
+Full plan on disk: `.agent/memory/project/plans/2026-09-11-m4-closeout.md`
+Blocker: six routes 404 because `showPage` is invisible to ANONYMOUS Sanity reads (13 docs exist and
+are published; dataset is public; `showPage` is the only type missing from an anonymous type list).
+NOT CDN lag — that was disproved. Prime suspect is our own read path (`sanity/lib/fetch.ts`).
