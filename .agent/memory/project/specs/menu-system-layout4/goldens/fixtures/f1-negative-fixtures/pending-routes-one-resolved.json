@@ -1,0 +1,11 @@
+{
+  "_comment": "NEGATIVE FIXTURE for contracts/checks/menu-system-layout4-shared/check-pending-routes-still-pending.mjs. Identical to the real f1-pending-nos-routes.json's pendingRoutes list EXCEPT '/national-show/about' has been substituted in place of a genuinely-pending route -- /national-show/about has a committed page.tsx at HEAD (app/(marketing)/national-show/about/page.tsx exists in this repo today), so the checker must report it STALE and exit 1. Confirms the checker can fail, not just pass by construction.",
+  "pendingRoutes": [
+    "/national-show/about",
+    "/national-show/symposium",
+    "/national-show/wosa-conference",
+    "/national-show/sa-exhibitors",
+    "/national-show/international-guests",
+    "/national-show/sponsors"
+  ]
+}

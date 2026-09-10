@@ -1,0 +1,16 @@
+{
+  "_comment": "NEGATIVE FIXTURE for contracts/checks/menu-system-layout4-shared/check-manifest-routes-have-pages.mjs, used only via that script's TEST-ONLY --manifest-file flag. A minimal manifest carrying one real, existing listed:true route (/national-show/about, which has a committed page.tsx at HEAD) plus one FABRICATED listed:true route with no page.tsx anywhere in this repo's history -- confirms the checker fails and names the missing slug, not just passes by construction.",
+  "schema": "saoc.nos-route-manifest/v1",
+  "routes": [
+    {
+      "slug": "/national-show/about",
+      "label": "About the Show",
+      "listed": true
+    },
+    {
+      "slug": "/national-show/does-not-exist-negative-fixture",
+      "label": "Fabricated route with no page file",
+      "listed": true
+    }
+  ]
+}
