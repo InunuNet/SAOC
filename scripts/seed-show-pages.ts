@@ -216,7 +216,11 @@ export const SHOW_PAGE_SETTINGS_DEFAULTS = {
 };
 
 function loadSeedPages(): SeedPage[] {
-  const files = readdirSync(SHOW_PAGES_DIR).filter((f) => f.endsWith('.json'));
+  // Skip non-page files: `_name-allowlist.json` and `_retired.json` are metadata, not
+  // seed pages — the leading underscore is the same filter the M1 verifier already
+  // uses. Without it, `seedPage.sections.map()` throws downstream on a file with no
+  // `sections` array.
+  const files = readdirSync(SHOW_PAGES_DIR).filter((f) => f.endsWith('.json') && !f.startsWith('_'));
   return files.map((file) => {
     const raw = readFileSync(path.join(SHOW_PAGES_DIR, file), 'utf8');
     return JSON.parse(raw) as SeedPage;
@@ -311,7 +315,12 @@ async function seedShowPageSettings(client: SanityClient): Promise<void> {
 }
 
 async function reconcilePage(client: SanityClient, seedPage: SeedPage): Promise<string[]> {
-  const docId = `showPage.${seedPage.pageKey}`;
+  // Hyphen, never a dot — matches the project convention everywhere else
+  // (`showFaq-accessibility-1`, `aboutPage`, `showPageSettings`) and, critically, the
+  // dataset's public read grant `_id in path("*")`, which matches a single path
+  // segment. A dot starts a new segment, so `showPage.<pageKey>` was invisible to every
+  // anonymous reader — the root cause of the six routes 404ing. See SW6 below.
+  const docId = `showPage-${seedPage.pageKey}`;
   const existingDoc = await client.getDocument<ExistingShowPageDoc>(docId);
   const skips: string[] = [];
 

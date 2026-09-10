@@ -707,7 +707,7 @@ assertions:
         ShowSectionNav.tsx currently carries sm:grid-cols-2 lg:grid-cols-4 on a list whose
         length varies with the current page, and must be migrated.
       type: shell
-      command: test -z "$(grep -rl 'grid-cols-' 'app/(marketing)/national-show/page.tsx' 'app/(marketing)/national-show/about' 'app/(marketing)/national-show/programme' 'app/(marketing)/national-show/symposium' 'app/(marketing)/national-show/wosa' 'app/(marketing)/national-show/sa-exhibitors' 'app/(marketing)/national-show/international-guests' 'app/(marketing)/national-show/sponsors' components/show 2>/dev/null)"
+      command: test -z "$(grep -rl 'grid-cols-' 'app/(marketing)/national-show/page.tsx' 'app/(marketing)/national-show/about' 'app/(marketing)/national-show/programme' 'app/(marketing)/national-show/symposium' 'app/(marketing)/national-show/wosa-conference' 'app/(marketing)/national-show/sa-exhibitors' 'app/(marketing)/national-show/international-guests' 'app/(marketing)/national-show/sponsors' components/show 2>/dev/null)"
 
     - id: D70
       description: >-
@@ -773,6 +773,17 @@ assertions:
         still there after we run the script again.
       type: shell
       command: grep -q '^SW5 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
+
+    - id: D95
+      description: >-
+        No seed-written document id contains a dot. The dataset's public read grant is
+        `_id in path("*")`, which matches a SINGLE path segment - a dot starts a new
+        segment, so `showPage.<pageKey>` was invisible to every anonymous reader. This
+        was the root cause of the six M4 routes 404ing; the fix moved to a hyphen
+        (`showPage-<pageKey>`), matching the rest of the project. The check also runs a
+        dotted-id fixture through the same regex to prove it can fail, not just pass.
+      type: shell
+      command: grep -q '^SW6 PASS$' .tmp/sandbox/nos-ia/m4-results.txt
 
     # -----------------------------------------------------------------------
     # One placeholder mechanism across the subsection instead of three.

@@ -20,7 +20,7 @@ export const revalidate = 60;
 export const metadata: Metadata = buildPageMetadata({
   title: 'WOSA Conference — National Orchid Show',
   description: 'The WOSA Conference, held alongside the National Show, and what it is for.',
-  path: '/national-show/wosa',
+  path: '/national-show/wosa-conference',
 });
 
 export default async function WosaConferencePage() {
@@ -59,7 +59,7 @@ export default async function WosaConferencePage() {
         </p>
       </div>
 
-      <ShowSectionNav current="/national-show/wosa" />
+      <ShowSectionNav current="/national-show/wosa-conference" />
     </>
   );
 }

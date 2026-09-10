@@ -9,8 +9,8 @@ const BASE_URL = 'https://saoc.co.za';
 
 // F12/RM2 (national-show-ia-alignment, M4) — the /national-show/* block of this sitemap
 // is DERIVED from content/national-show-routes.json, the artifact the saoc-eb lane also
-// builds its header from. A hand-kept list drifts silently: this file previously listed
-// the deleted /national-show/upcoming route and omitted seven real routes entirely. See
+// builds its header from. A hand-kept list drifts silently: this file previously listed a
+// route since deleted from the tree, and omitted seven real routes entirely. See
 // .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/route-manifest.golden.md §10.
 //
 // Every `indexable: true`, non-dynamic row becomes an entry; every `indexable: false`

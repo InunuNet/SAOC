@@ -91,7 +91,7 @@
     },
     {
       "slug": "/national-show/faq",
-      "label": "Questions",
+      "label": "FAQ",
       "group": "visit",
       "parent": "/national-show",
       "order": 4,
@@ -154,7 +154,7 @@
       "specNumber": 6
     },
     {
-      "slug": "/national-show/wosa",
+      "slug": "/national-show/wosa-conference",
       "label": "WOSA Conference",
       "group": "programme",
       "parent": "/national-show",

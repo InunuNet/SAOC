@@ -9,6 +9,7 @@ import { CycleStep } from '@/components/nos/CycleStep';
 import { EmblemBadge } from '@/components/nos/EmblemBadge';
 import { ExhibitorStageCard } from '@/components/nos/ExhibitorStageCard';
 import { JudgingGroupCard } from '@/components/nos/JudgingGroupCard';
+import { COLUMN_CLASS, SPAN_CLASS, resolveGridLayout } from '@/lib/grid-columns';
 import { NosHero, NOS_HERO_IMAGES, type NosHeroImage } from '@/components/nos/NosHero';
 import { NosHubGroup, type NosHubGroupMember } from '@/components/show/nos/NosHubGroup';
 import { PastEditionCard } from '@/components/nos/PastEditionCard';
@@ -213,7 +214,7 @@ const NOS_GROUPS: readonly { id: string; label: string; members: readonly NosHub
       { href: '/national-show/about', label: 'About the Show' },
       { href: '/national-show/what-to-expect', label: 'What to Expect' },
       { href: '/national-show/plan-your-visit', label: 'Plan Your Visit' },
-      { href: '/national-show/faq', label: 'Questions' },
+      { href: '/national-show/faq', label: 'FAQ' },
     ],
   },
   {
@@ -223,7 +224,7 @@ const NOS_GROUPS: readonly { id: string; label: string; members: readonly NosHub
       { href: '/national-show/programme', label: 'Programme' },
       { href: '/national-show/workshops', label: 'Workshops' },
       { href: '/national-show/symposium', label: 'SAOC Symposium' },
-      { href: '/national-show/wosa', label: 'WOSA Conference' },
+      { href: '/national-show/wosa-conference', label: 'WOSA Conference' },
       { href: '/national-show/conferences', label: 'Conference Registration' },
     ],
   },
@@ -396,6 +397,12 @@ export default async function NationalShowPage() {
     sanityClasses && sanityClasses.length > 0
       ? sanityClasses.map((c) => ({ id: c._id, code: c.code, name: c.name, group: '', description: c.description }))
       : staticClasses;
+
+  // R13 (goldens/m4/grid-orphan-rule.golden.md): text-bearing cards (JudgingGroupCard
+  // carries a code badge, uppercase label, serif name and description) cap at 4 columns
+  // — DERIVED from the live count, never a hardcoded `lg:grid-cols-N` literal, so a
+  // future change in the number of judging groups can't silently reintroduce an orphan.
+  const judgingGridLayout = resolveGridLayout(classes.length);
 
   const pastShows: NationalShow[] =
     sanityShows && sanityShows.length > 0
@@ -635,16 +642,27 @@ export default async function NationalShowPage() {
           lede="Every exhibit is entered in one of ten botanical classes. Judges score on a 100-point scale covering cultural quality, presentation, and species accuracy."
         />
 
-        <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {classes.map((cls, index) => (
-            <JudgingGroupCard
-              key={cls.id}
-              code={cls.code}
-              group={cls.group || `Group ${index + 1}`}
-              name={cls.name}
-              description={cls.description}
-            />
-          ))}
+        <div className={`mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 ${COLUMN_CLASS[judgingGridLayout.columns]}`}>
+          {classes.map((cls, index) => {
+            // Only the final card in the spanning tie-break case (n = 13, 25, 37, ...)
+            // gets a span class — the exact case resolveGridLayout falls back to a
+            // full-width final card for, rather than leaving a lone orphan in a
+            // partial row. See components/show/nos/ShowEntityGrid.tsx for the same
+            // pattern applied to entity listings.
+            const isFinal = index === classes.length - 1;
+            const isSpanningTieBreak = judgingGridLayout.finalCardSpans > 1;
+            const spanClass = isFinal && isSpanningTieBreak ? SPAN_CLASS[judgingGridLayout.finalCardSpans] : '';
+            return (
+              <div key={cls.id} className={spanClass}>
+                <JudgingGroupCard
+                  code={cls.code}
+                  group={cls.group || `Group ${index + 1}`}
+                  name={cls.name}
+                  description={cls.description}
+                />
+              </div>
+            );
+          })}
         </div>
       </section>
 

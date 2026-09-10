@@ -118,7 +118,7 @@ const ROUTE_TABLE: RouteRow[] = [
   },
   {
     slug: '/national-show/faq',
-    label: 'Questions',
+    label: 'FAQ',
     group: 'visit',
     parent: '/national-show',
     order: 4,
@@ -185,7 +185,7 @@ const ROUTE_TABLE: RouteRow[] = [
     diskPath: 'symposium',
   },
   {
-    slug: '/national-show/wosa',
+    slug: '/national-show/wosa-conference',
     label: 'WOSA Conference',
     group: 'programme',
     parent: '/national-show',
@@ -200,7 +200,7 @@ const ROUTE_TABLE: RouteRow[] = [
       'What the WOSA Conference is and who it is for, with a link out to WOSA for wild-orchid content.',
     pageKey: '07-wosa-conference',
     specNumber: 7,
-    diskPath: 'wosa',
+    diskPath: 'wosa-conference',
   },
   {
     slug: '/national-show/conferences',

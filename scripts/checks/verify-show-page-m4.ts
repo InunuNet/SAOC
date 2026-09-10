@@ -46,7 +46,7 @@ const ALL_CHECK_IDS = [
   'EL1', 'EL2', 'EL3',
   'RS1', 'RS2', 'RS3', 'RS4',
   'CL1', 'CL2', 'CL3', 'CL4', 'CL5',
-  'SW1', 'SW2', 'SW3', 'SW4', 'SW5',
+  'SW1', 'SW2', 'SW3', 'SW4', 'SW5', 'SW6',
   'V1', 'V2', 'V3', 'V4', 'V5',
   'CD1', 'CD2', 'CD3', 'CD4', 'CD5',
   'G1', 'G6',
@@ -163,7 +163,7 @@ const GOLDEN_ROWS: Record<string, Partial<ManifestRoute>> = {
   '/national-show/programme': { group: 'programme', order: 1, listed: true, status: 'created', owner: 'nos-design', archetype: 'schedule', pageKey: '11-programme' },
   '/national-show/workshops': { group: 'programme', order: 2, listed: true, status: 'reconciled', owner: 'nos-design', archetype: 'schedule', pageKey: '12-workshops' },
   '/national-show/symposium': { group: 'programme', order: 3, listed: true, status: 'created', owner: 'nos-design', archetype: 'prose', pageKey: '06-saoc-symposium' },
-  '/national-show/wosa': { group: 'programme', order: 4, listed: true, status: 'created', owner: 'nos-design', archetype: 'prose', pageKey: '07-wosa-conference' },
+  '/national-show/wosa-conference': { group: 'programme', order: 4, listed: true, status: 'created', owner: 'nos-design', archetype: 'prose', pageKey: '07-wosa-conference' },
   '/national-show/conferences': { group: 'programme', order: 5, listed: true, status: 'untouched', owner: 'saoc-eb', archetype: 'transactional', pageKey: null },
   '/national-show/sa-exhibitors': { group: 'exhibit-trade', order: 1, listed: true, status: 'created', owner: 'nos-design', archetype: 'listing', pageKey: '04-south-african-exhibitors' },
   '/national-show/international-guests': { group: 'exhibit-trade', order: 2, listed: true, status: 'created', owner: 'nos-design', archetype: 'listing', pageKey: '05-international-guests-and-exhibitors' },
@@ -1004,6 +1004,39 @@ function runSeedWriteChecks(seedModule: SeedShowPagesModule): void {
   const outcomes = edits.map((existing) => decideSectionAction(seedInput, existing));
   const sw5ok = outcomes.every((a) => a === 'skip-edited' || a === 'skip-council');
   check('SW5', sw5ok, 'a section edited in each seed-owned field, or flipped to council-supplied, survives a re-run (never update)', outcomes.join(','));
+
+  // SW6 — no seed-written document id may contain a dot. The dataset's public read
+  // grant is `_id in path("*")`, which matches a SINGLE path segment; a dot starts a
+  // new segment, so a dotted id (`showPage.<pageKey>`) is invisible to every
+  // anonymous reader — this was the root cause of the six M4 routes 404ing.
+  //
+  // Codex's cross-model review found the first cut of this check tested only a
+  // hardcoded sample string and the source template shape — it would still pass a
+  // committed seed JSON whose OWN `pageKey` contains a dot, since nothing computed
+  // the real id and ran it through the regex. This version does both: the fixture
+  // proves the regex itself is capable of failing, and the real-file sweep proves
+  // no committed seed page's pageKey would actually produce a dotted id today.
+  const NO_DOT_ID_RE = /^[a-zA-Z][a-zA-Z0-9-]*$/;
+  const sw6PositiveOk = NO_DOT_ID_RE.test('showPage-01-national-show-landing');
+  const sw6NegativeRejected = !NO_DOT_ID_RE.test('showPage.01-national-show-landing');
+  const sw6SourceHyphenated = seedSrc.includes('`showPage-${seedPage.pageKey}`');
+  const sw6SourceHasNoDotTemplate = !seedSrc.includes('`showPage.${seedPage.pageKey}`');
+
+  const realPageKeys = readdirSync(SHOW_PAGES_DIR)
+    .filter((f) => f.endsWith('.json') && !f.startsWith('_'))
+    .map((f) => readJson<{ pageKey: string }>(path.join(SHOW_PAGES_DIR, f)).pageKey);
+  const sw6RealIdFails = realPageKeys
+    .map((pageKey) => `showPage-${pageKey}`)
+    .filter((id) => !NO_DOT_ID_RE.test(id));
+  const sw6RealFilesOk = realPageKeys.length > 0 && sw6RealIdFails.length === 0;
+
+  const sw6ok = sw6PositiveOk && sw6NegativeRejected && sw6SourceHyphenated && sw6SourceHasNoDotTemplate && sw6RealFilesOk;
+  check(
+    'SW6',
+    sw6ok,
+    "seed document ids use the hyphen scheme 'showPage-<pageKey>' with no dot, both as a fixture-proven regex and against every committed seed file's own pageKey",
+    `positive=${sw6PositiveOk} negativeRejected=${sw6NegativeRejected} sourceHyphenated=${sw6SourceHyphenated} noDotTemplate=${sw6SourceHasNoDotTemplate} realFilesChecked=${realPageKeys.length} realFileFails=${JSON.stringify(sw6RealIdFails)}`,
+  );
 }
 
 // ===========================================================================
