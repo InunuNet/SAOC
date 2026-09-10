@@ -2349,7 +2349,7 @@ Note brain.py recreates the venv itself when absent, but builds it from whatever
 happens to be at that moment — which is how a 3.9 venv got created in the first place. Deleting it
 alone is not sufficient; it must be recreated deliberately from a 3.10+ python.
 
-### ALSO FILE UPSTREAM
+### FILED UPSTREAM: InunuNet/Athanor#1437 (P0)
 `execution/` is marked HARNESS in `.agent/update-manifest.yaml`, so do not patch `brain.py` in place.
 The upstream defect: `_ensure_chromadb()` re-execs into a venv **without checking its Python
 version**, turning a stale-environment problem into an unreadable `TypeError` at import. It should

@@ -50,18 +50,27 @@ const BASELINE_PATH = path.resolve(
   '.agent/memory/project/specs/national-show-ia-alignment/goldens/m4/fixtures/f24-content-baseline.json',
 );
 
+// Verdict-bearing ids only. SERVER is deliberately NOT a member — it is provenance
+// (which port answered, or that one was spawned), never a verdict, and folding it in
+// here is exactly the reporting-collapse class this golden's "reconciliation rule"
+// section calls out in the driver next door: a typed escape hatch that lets a
+// non-verdict string land in a verdict slot, silently dropped from the bucket counts.
+// SERVER is emitted as an informational comment line instead — see recordServerInfo().
 type Verdict = 'PASS' | 'FAIL' | 'DRIFT';
 const ALL_CHECK_IDS = [
-  'SERVER',
   'NF1', 'NF2', 'NF3', 'NF4', 'NF5', 'NF6', 'NF7', 'NF8', 'NF9', 'NF10',
-  'NF11', 'NF12', 'NF13', 'NF14', 'NF15', 'NF16', 'NF17',
+  'NF11', 'NF12', 'NF13', 'NF14', 'NF15', 'NF16', 'NF17', 'NF18',
 ] as const;
 type CheckId = (typeof ALL_CHECK_IDS)[number];
 
-const results = new Map<CheckId, string>();
+const results = new Map<CheckId, Verdict>();
 let hardFailure = false;
+let serverInfo = '';
 
-function record(id: CheckId, verdict: Verdict | string, detail?: string): void {
+// `verdict` is Verdict alone, with no string-widening escape hatch — there is no way to
+// write a non-verdict value into a verdict slot, which is what NF18/A40b exist to keep
+// true (A40b's static guard re-checks this signature never regains that hatch).
+function record(id: CheckId, verdict: Verdict, detail?: string): void {
   results.set(id, verdict);
   if (verdict === 'FAIL') hardFailure = true;
   console.log(`${verdict} ${id}${detail ? ` — ${detail}` : ''}`);
@@ -71,9 +80,19 @@ function check(id: CheckId, condition: boolean, expected: string, found: string)
   record(id, condition ? 'PASS' : 'FAIL', condition ? undefined : `expected ${expected}, found ${found}`);
 }
 
+/** SERVER is provenance, never a verdict (A40c) — recorded as an informational comment
+ * line, outside ALL_CHECK_IDS and outside the reconciliation NF18 checks. */
+function recordServerInfo(info: string): void {
+  serverInfo = info;
+  console.log(`# SERVER ${info}`);
+}
+
 function writeResults(): void {
   mkdirSync(RESULTS_DIR, { recursive: true });
-  const lines = ALL_CHECK_IDS.map((id) => `${id} ${results.get(id) ?? 'UNSET'}`);
+  const lines = [
+    `# SERVER ${serverInfo || 'UNSET'}`,
+    ...ALL_CHECK_IDS.map((id) => `${id} ${results.get(id) ?? 'UNSET'}`),
+  ];
   writeFileSync(RESULTS_FILE, lines.join('\n') + '\n', 'utf8');
 }
 
@@ -270,12 +289,12 @@ async function main(): Promise<void> {
 
   if (await probe(3000)) {
     port = 3000;
-    record('SERVER', 'reused 3000');
+    recordServerInfo('reused 3000');
   } else {
     const configuredPort = readDevPortFromPackageJson();
     if (configuredPort && (await probe(configuredPort))) {
       port = configuredPort;
-      record('SERVER', `reused ${configuredPort}`);
+      recordServerInfo(`reused ${configuredPort}`);
     } else {
       port = 0;
       devServer = spawn('node_modules/.bin/next', ['dev', '--port', '0'], {
@@ -305,7 +324,7 @@ async function main(): Promise<void> {
         writeResults();
         process.exit(2);
       }
-      record('SERVER', `started ${port}`);
+      recordServerInfo(`started ${port}`);
     }
   }
 
@@ -660,6 +679,32 @@ async function main(): Promise<void> {
     if (browser) await browser.close();
     if (devServer) devServer.kill();
   }
+
+  // -------------------------------------------------------------------
+  // NF18 — the driver can count itself. Computed over every OTHER declared id, before
+  // NF18 is itself recorded: the per-verdict buckets must sum to exactly
+  // ALL_CHECK_IDS.length - 1, and every one of those ids must be present exactly once
+  // (results is a Map, so "exactly once" is structural). A mismatch means the harness
+  // itself is broken — exit 2, never a recorded FAIL — because a verifier that cannot
+  // count its own output cannot be trusted about anything else it reported.
+  // -------------------------------------------------------------------
+  const idsExcludingNF18 = ALL_CHECK_IDS.filter((id): id is Exclude<CheckId, 'NF18'> => id !== 'NF18');
+  const missingBeforeNF18 = idsExcludingNF18.filter((id) => !results.has(id));
+  const buckets: Record<Verdict, number> = { PASS: 0, FAIL: 0, DRIFT: 0 };
+  for (const id of idsExcludingNF18) {
+    const v = results.get(id);
+    if (v) buckets[v]++;
+  }
+  const bucketTotal = buckets.PASS + buckets.FAIL + buckets.DRIFT;
+  const reconciled = missingBeforeNF18.length === 0 && bucketTotal === idsExcludingNF18.length;
+  if (!reconciled) {
+    console.error(
+      `Verifier bug: NF18 reconciliation failed — missing=[${missingBeforeNF18.join(', ')}] bucketTotal=${bucketTotal} expected=${idsExcludingNF18.length}`,
+    );
+    writeResults();
+    process.exit(2);
+  }
+  record('NF18', 'PASS');
 
   writeResults();
 
