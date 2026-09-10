@@ -1,5 +1,17 @@
 # MISSION AFTER M4 — apply the final NOS design rules to the seventeen pages
 
+**THE BRIEF IS ON DISK: `.agent/memory/project/design/nos-brief.md`** — received from Codi 2026-09-10.
+Read it before this plan. It supersedes this file wherever the two differ, and it corrects two things
+recorded here: `Card.jsx` is a SOURCE to derive from, never the thing itself (R19/5 requires the
+disclosure surface be distinguishable from a card); and NO image from the canvas's `assets/photos/`
+may ship until provenance is confirmed, not just the `uploads/scott-ormerod-*` set.
+
+**`programme`, `symposium` and `wosa-conference` are NOT designed and must NOT be derived from the
+rulings.** Codi owes designs for those three — ask when the Sanity blocker clears.
+
+**The rulings ledger artifact `78b83703-…` is DEAD (Brad deleted it). Do not cite or fetch it.**
+
+
 Written 2026-09-10. **Do not start until M4 is merged to `main`** (see
 `2026-09-11-m4-closeout.md`; standing rule: a mission is not finished until it is on `main`).
 
