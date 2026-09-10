@@ -46,7 +46,14 @@ MAX_TIMEOUT_SECONDS = 86400  # 24h ceiling -- generous for CI, still finite
 KNOWN_TOP_LEVEL_KEYS = {
     "acceptance", "amendment_2026_08_16", "amendment_2026_08_16b", "anti_patterns",
     "architect", "assertions", "autonomy", "classifications", "cleanup", "constraints",
-    "contract_ref", "coverage", "created_at", "description", "exclusions", "exit_codes",
+    # enforcement_edits is READ BY check_autonomy.sh's route1_permit() as the
+    # sanctioned, audited way to declare a floor-protected edit (F7/D26). It was
+    # absent from this set, so any contract that used it failed validation --
+    # and an invalid contract makes resolve_feature_contract.py return
+    # "noncontract", which blocks EVERY write, including the one that would fix
+    # the contract. The hatch was unusable and the deadlock was silent.
+    "contract_ref", "coverage", "created_at", "description", "enforcement_edits",
+    "exclusions", "exit_codes",
     "expected_failures", "feature", "features", "files", "files_changed", "gate_command",
     "gate_policy", "goal", "goldens", "id", "implementation_notes", "issue", "layer",
     "mechanism", "mission", "mission_id", "notes", "pass_criteria", "phase1_scope",
@@ -565,13 +572,31 @@ def validate_cmd(args):
         # Omarchy failure 2, and the sharpest of the six: `verify: {cmd: ...}`
         # under `checks:` normalizes to an EMPTY command. An empty command is
         # a bash script that exits 0 -- the gate would record a pass for an
-        # assertion that runs nothing.
+        # assertion that runs nothing. F19 (notes-f19.md §5) widens this: a
+        # check with NO `command:` key at all normalizes the exact same way
+        # and was NOT caught here, so it was silently counted toward
+        # "machine-verifiable" under --strict -- a check that runs nothing
+        # certifying itself as verified is the presence-not-function disease
+        # one layer up from boot_panel's. And a non-string `command:` (a YAML
+        # list, say) crashed this function outright on cmd.strip() -- a
+        # malformed contract deserves a diagnostic naming the assertion, never
+        # an uncaught traceback that reads as a harness crash.
         cmd = verify.get("cmd", "")
-        if verify.get("kind") == "shell" and not cmd.strip() and isinstance(raw_check.get("verify"), dict):
-            err(f"Assertion {aid}: resolved command is empty -- this check used "
-                f"`verify:` (with a nested `cmd:`) instead of the top-level "
-                f"`command:` key checks: expects; an empty command always exits 0 "
-                f"and would always record a pass", ln)
+        if verify.get("kind") == "shell" and not isinstance(cmd, str):
+            err(f"Assertion {aid}: command must be a string, got "
+                f"{type(cmd).__name__} ({cmd!r}) -- a non-string command "
+                f"cannot be executed", ln)
+            cmd = ""
+        elif verify.get("kind") == "shell" and not cmd.strip():
+            if isinstance(raw_check.get("verify"), dict):
+                err(f"Assertion {aid}: resolved command is empty -- this check used "
+                    f"`verify:` (with a nested `cmd:`) instead of the top-level "
+                    f"`command:` key checks: expects; an empty command always exits 0 "
+                    f"and would always record a pass", ln)
+            else:
+                err(f"Assertion {aid}: no command -- this check has no `command:` "
+                    f"key at all and would run nothing; an empty command always "
+                    f"exits 0 and must not be counted as machine-verifiable", ln)
 
         # Omarchy failure 3. `phase: "4"` on an individual check survives
         # today only because normalize_contract happens to int() it; a
@@ -1182,6 +1207,11 @@ def gate_cmd(args):
 
     contract = load_contract(args.contract)
 
+    # Gate runs live by default; --cached opts into trusting prior results
+    # (GH #1404: a bare gate must not print a stale cached verdict without
+    # executing). --cached wins if given; otherwise every assertion re-runs.
+    args.run_checks = not getattr(args, "cached", False)
+
     # F7: gate eligibility. A contract that fails `contract.py validate`
     # must never be able to gate green -- today neither `gate` nor `check`
     # calls validate at all, so an invalid contract (missing schema, a check
@@ -1349,12 +1379,16 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--timeout-seconds", type=int, default=DEFAULT_TIMEOUT_SECONDS,
                    help=f"Shell assertion timeout in seconds (default: {DEFAULT_TIMEOUT_SECONDS})")
 
-    g = sub.add_parser("gate", help="Exit 0 iff all phase-N assertions pass. Use --run-checks to auto-run any missing checks before evaluating.")
+    g = sub.add_parser("gate", help="Exit 0 iff all phase-N assertions pass. Runs every assertion live by default; --cached trusts prior results.")
     g.add_argument("contract")
     g.add_argument("--phase", type=str, required=True, choices=['all', 'max'] + [str(i) for i in range(1, 10)],
                    help="Phase id (integer), 'max' for highest phase, or 'all' for all phases in contract")
-    g.add_argument("--run-checks", action="store_true", default=False,
-                   help="Auto-run check for each assertion that lacks a result file before evaluating the gate")
+    g.add_argument("--run-checks", action="store_true", default=True,
+                   help="(default, kept for back-compat) re-run every assertion live before evaluating the gate")
+    g.add_argument("--cached", action="store_true", default=False,
+                   help="Trust cached results in .agent/memory/scratch/contract-results/ instead of "
+                        "re-running each assertion. Faster, but the verdict then reflects the last run, "
+                        "not the current tree, so a bare gate could report a stale green (GH #1404).")
     g.add_argument("--allow-skips", action="store_true", default=False,
                    help="Do not fail the gate when a non-required assertion is verdict=skip (default: off)")
     g.add_argument("--timeout-seconds", type=int, default=DEFAULT_TIMEOUT_SECONDS,

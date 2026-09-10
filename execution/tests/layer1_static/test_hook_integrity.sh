@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
-# Layer 1: Hook Integrity — require_*.sh present + syntactically valid,
-# check_autonomy.sh present, and every hook script referenced by
-# .claude/settings.json actually exists on disk.
+# Layer 1: Hook Integrity — every surviving hook present + syntactically valid,
+# check_autonomy.sh present, no paperwork hook back from the dead, and every
+# hook script referenced by .claude/settings.json actually exists on disk.
+#
+# This test asserted the six require_*.sh paperwork hooks existed until CEO
+# Directive v2 (2026-09-06, L1) deleted the whole family: a document is not
+# proof, and evidence under .agent/evidence/ replaces all seven. Part 1 now
+# names the hooks the directive KEEPS, and part 1b is the ratchet — a
+# reinstated paperwork hook fails this test rather than passing it silently.
 set -uo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "ERROR: must run from inside the Athanor git repo"; exit 1; }
 cd "$REPO_ROOT"
@@ -9,22 +15,29 @@ source execution/tests/lib/assert.sh
 
 echo "=== test_hook_integrity.sh ==="
 
-# Part 1: require_*.sh scripts exist (6 files)
-REQUIRE_SCRIPTS=(
-  "execution/hooks/require_contract.sh"
-  "execution/hooks/require_dev_result.sh"
-  "execution/hooks/require_docs.sh"
-  "execution/hooks/require_maintainer.sh"
-  "execution/hooks/require_qa_report.sh"
-  "execution/hooks/require_research.sh"
+# Part 1: the surviving hook set exists (CEO Directive v2, L1)
+HOOK_SCRIPTS=(
+  "execution/hooks/check_autonomy.sh"
+  "execution/hooks/verify_workspace.sh"
+  "execution/hooks/full_boot.sh"
+  "execution/hooks/post_compact_restore.sh"
+  "execution/hooks/post_compact_inject.sh"
+  "execution/hooks/statusline.sh"
+  "execution/hooks/subagent_stop.sh"
 )
 
-for f in "${REQUIRE_SCRIPTS[@]}"; do
+for f in "${HOOK_SCRIPTS[@]}"; do
   assert_file_exists "$(basename "$f") exists" "$f"
 done
 
-# Part 2: bash -n syntax check on every require_*.sh
-for f in "${REQUIRE_SCRIPTS[@]}"; do
+# Part 1b: the paperwork family stays dead
+for f in execution/hooks/require_*.sh; do
+  [ -e "$f" ] || continue
+  assert_exit "paperwork hook $(basename "$f") is gone (L1)" 0 1
+done
+
+# Part 2: bash -n syntax check on every surviving hook
+for f in "${HOOK_SCRIPTS[@]}"; do
   if [ -f "$f" ]; then
     bash -n "$f" 2>/dev/null; syntax_rc=$?
     assert_exit "bash -n $(basename "$f")" 0 $syntax_rc

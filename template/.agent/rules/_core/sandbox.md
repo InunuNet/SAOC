@@ -30,6 +30,41 @@ del "$W/$prov/$cls/$victim"
 Same for `rm -r` on a sandbox dir: guard the variable, always `--`, never let an unset
 variable expand into a delete path.
 
+## Tearing down a whole sandbox directory
+
+Never `rm -rf` a sandbox directory, and never fall back to `find … -delete` —
+the autonomy floor denies both unconditionally, with no exception. An agent
+that reaches for either is stopped every time.
+
+Use a resolved-path containment guard in Python instead: it deletes only what
+is strictly inside the sandbox, and refuses everything else, including the
+sandbox root itself.
+
+```python
+import shutil
+import sys
+from pathlib import Path
+
+def safe_rmtree(target: Path) -> None:
+    target = target.resolve()
+    root = (Path.cwd() / ".tmp" / "sandbox").resolve()
+    if target == root or root not in target.parents:
+        print(f"refusing to delete outside the sandbox: {target}", file=sys.stderr)
+        return
+    if target.is_dir():
+        shutil.rmtree(target, ignore_errors=True)
+
+if __name__ == "__main__":
+    safe_rmtree(Path(sys.argv[1]))
+```
+
+Save it as a local script and run it from the project root, naming the case
+directory to remove:
+
+```sh
+python3 .tmp/sandbox/safe_rmtree.py .tmp/sandbox/<purpose>/<case>
+```
+
 ## Never `cd`, and always use absolute paths
 
 Two rules, two different reasons — don't collapse them into one.

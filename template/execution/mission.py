@@ -18,11 +18,13 @@ Usage:
   mission.py skip <mission.md> --feature F1 --reason "..."
 """
 import argparse
+import fcntl
 import json
 import os
 import re
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
@@ -497,6 +499,15 @@ def _milestone_summary(fm: dict) -> list[dict]:
 
 
 def cmd_status(args):
+    if not args.mission:
+        active = read_active()
+        mission_path = active.get("mission") if active else None
+        if not mission_path:
+            print("ERROR: no active mission and no mission path given. Run: "
+                  "python3 execution/mission.py list", file=sys.stderr)
+            sys.exit(1)
+        args.mission = mission_path
+
     fm, _ = parse_mission_file(args.mission)
     feat_counts = _feature_summary(fm)
     ms_summary = _milestone_summary(fm)
@@ -640,6 +651,225 @@ def _quota_block_message(data: dict) -> str:
     )
 
 
+BRAIN_PY = Path(__file__).resolve().parent / "brain.py"
+SESSION_STATE_PATH = Path(".agent/memory/project/handoff/SESSION_STATE.md")
+SESSION_STATE_MAX_ENTRIES = 5
+SESSION_STATE_ENTRY_SEP = "\n\n---\n\n"
+SESSION_STATE_HEADER_MARK = "## Recent checkpoints\n\n"
+# Reasoning content is best-effort and attacker/garbage-input-reachable (a
+# --handoff file is written by whatever produced the handoff, not validated
+# against the schema before checkpoint reads it) -- clip every field so a
+# huge or hostile payload can never blow an OS argv-length limit on the
+# brain.py subprocess call, nor bloat SESSION_STATE.md unboundedly.
+MAX_REASONING_FIELD_CHARS = 2000
+MAX_SUMMARY_CHARS = 8000
+BRAIN_TIMEOUT_DEFAULT = 30.0
+
+
+def _clip(text: str, limit: int) -> str:
+    if len(text) > limit:
+        return text[:limit] + "...[truncated]"
+    return text
+
+
+def _brain_py_path() -> Path:
+    """Path to brain.py, overridable for tests -- same pattern as
+    ATHANOR_QUOTA_MIRROR_PATH above. Never used to redirect production
+    calls; it exists so a test can point checkpoint at a stand-in script
+    that's slow or fails, without waiting out a real 30s timeout."""
+    override = os.environ.get("ATHANOR_BRAIN_PY_PATH")
+    return Path(override) if override else BRAIN_PY
+
+
+def _brain_timeout() -> float:
+    raw = os.environ.get("ATHANOR_BRAIN_TIMEOUT", BRAIN_TIMEOUT_DEFAULT)
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return BRAIN_TIMEOUT_DEFAULT
+
+
+def _read_handoff_reasoning(handoff_path):
+    """Best-effort read of a --handoff JSON file.
+
+    Returns the parsed JSON value (any type -- callers must not assume a
+    dict) or None on any read/parse failure. A malformed, absent, or hostile
+    handoff file must never block the checkpoint itself; it just means no
+    reasoning content is folded in this time.
+    """
+    if not handoff_path:
+        return None
+    try:
+        return json.loads(Path(handoff_path).read_text())
+    except Exception:
+        return None
+
+
+def _checkpoint_reasoning_lines(handoff_data) -> list[str]:
+    """Extract the actual reasoning content (not structural pointer fields
+    already present in the mission YAML) out of a handoff JSON value.
+
+    Tolerant of any malformed shape -- wrong top-level type (list, string,
+    number), non-dict list elements, non-string values where a string is
+    expected. A handoff file that doesn't match the schema degrades to "no
+    reasoning captured this time", never a crash.
+    """
+    if not isinstance(handoff_data, dict):
+        return []
+    lines = []
+    task = handoff_data.get("task")
+    if isinstance(task, str) and task:
+        lines.append(f"Task: {_clip(task, MAX_REASONING_FIELD_CHARS)}")
+    completed = handoff_data.get("completed")
+    if isinstance(completed, list) and completed:
+        joined = "; ".join(str(c) for c in completed)
+        lines.append(f"Completed: {_clip(joined, MAX_REASONING_FIELD_CHARS)}")
+    left_undone = handoff_data.get("left_undone")
+    if isinstance(left_undone, list):
+        for item in left_undone:
+            if not isinstance(item, dict):
+                continue
+            reason = item.get("reason")
+            if isinstance(reason, str) and reason:
+                label = item.get("item", "?")
+                lines.append(f"Left undone ({label}): {_clip(reason, MAX_REASONING_FIELD_CHARS)}")
+    procedures = handoff_data.get("procedures_followed")
+    if isinstance(procedures, dict):
+        notes = procedures.get("notes")
+        if isinstance(notes, str) and notes:
+            lines.append(f"Notes: {_clip(notes, MAX_REASONING_FIELD_CHARS)}")
+    return lines
+
+
+def _write_checkpoint_memory(slug: str, milestone_id, fid: str, old_status: str,
+                              new_status: str, handoff_data, ts: str) -> None:
+    """Record this checkpoint transition in brain.py, synchronously and
+    in-process, so the reasoning behind a crash/quota-death survives even
+    when brain.py's own wrap-up never runs. Calls the ALREADY-EXISTING
+    `remember` CLI (execution/brain.py) -- never a second writer.
+
+    Fires on every checkpoint transition, not just status=="done" -- a
+    crash can happen mid-feature. Recording memory must never be able to
+    kill the checkpoint it is recording: every failure mode here (a
+    malformed handoff, a missing/crashing/hung brain.py) is caught and
+    reported as a stderr warning, never raised -- the mission file write
+    that already succeeded above is never rolled back by this.
+    """
+    try:
+        lines = [f"Checkpoint: mission={slug} milestone={milestone_id} feature={fid} "
+                 f"status={old_status}->{new_status}"]
+        lines.extend(_checkpoint_reasoning_lines(handoff_data))
+        summary = _clip("\n".join(lines), MAX_SUMMARY_CHARS)
+        tags = f"mission,{slug},{fid},checkpoint,{new_status}"
+    except Exception as exc:
+        print(f"WARNING: checkpoint memory: failed to build summary: {exc}", file=sys.stderr)
+        return
+
+    try:
+        result = subprocess.run(
+            [sys.executable, str(_brain_py_path()), "remember", "--summary", summary, "--tags", tags],
+            capture_output=True, text=True, timeout=_brain_timeout(),
+        )
+        if result.returncode != 0:
+            print(f"WARNING: checkpoint memory: brain.py remember exited "
+                  f"{result.returncode}: {result.stderr.strip()[:300]}", file=sys.stderr)
+    except Exception as exc:
+        # brain.py missing, crashed, hung past the timeout, or anything else
+        # -- must never block or fail a checkpoint.
+        print(f"WARNING: checkpoint memory: brain.py remember failed: {exc}", file=sys.stderr)
+
+
+def _session_state_entry(slug: str, milestone_id, fid: str, old_status: str,
+                          new_status: str, handoff_data, ts: str) -> str:
+    lines = [f"**{ts}** — `{slug}` milestone={milestone_id} feature={fid} "
+             f"status={old_status}->{new_status}"]
+    lines.extend(f"- {line}" for line in _checkpoint_reasoning_lines(handoff_data))
+    return "\n".join(lines)
+
+
+def _refresh_session_state(slug: str, milestone_id, fid: str, old_status: str,
+                            new_status: str, handoff_data, ts: str) -> None:
+    """Refresh .agent/memory/project/handoff/SESSION_STATE.md -- a new,
+    exclusively machine-owned sibling to the hand-authored RESUME.md (which
+    this function must NEVER touch, at either of its two documented
+    locations). Keeps a bounded rolling window of recent reasoning so a
+    resumed session sees more than just the current pointer.
+
+    Every failure mode (missing/read-only handoff/ directory, a concurrent
+    checkpoint, a symlink pre-planted at the temp path) is caught and
+    reported as a stderr warning, never raised -- checkpoint's contract is
+    "the mission file is written"; this is best-effort on top of that.
+    """
+    path = SESSION_STATE_PATH
+    lock_fd = None
+    tmp_path = None
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Serialize concurrent checkpoints' read-modify-write of this file
+        # so two parallel checkpoints don't race and silently drop one
+        # another's entry (lost update).
+        lock_path = str(path) + ".lock"
+        lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+
+        existing_entries: list[str] = []
+        if path.exists():
+            try:
+                raw = path.read_text()
+                _, _, tail = raw.partition(SESSION_STATE_HEADER_MARK)
+                if tail:
+                    existing_entries = [e for e in tail.split(SESSION_STATE_ENTRY_SEP) if e.strip()]
+            except Exception:
+                existing_entries = []
+
+        new_entry = _session_state_entry(slug, milestone_id, fid, old_status, new_status, handoff_data, ts)
+        entries = ([new_entry] + existing_entries)[:SESSION_STATE_MAX_ENTRIES]
+
+        content = (
+            "# Session State\n\n"
+            "Machine-owned — refreshed automatically by `mission.py checkpoint` on every "
+            "feature-status transition. Do not hand-edit; hand-authored session notes "
+            "belong in RESUME.md, not here.\n\n"
+            f"Last updated: {ts}\n\n"
+            f"{SESSION_STATE_HEADER_MARK}"
+            + SESSION_STATE_ENTRY_SEP.join(entries)
+            + "\n"
+        )
+
+        # Never write through a path we did not just create ourselves --
+        # mkstemp() atomically creates a new, uniquely-named file (O_EXCL
+        # under the hood) in the SAME directory as the target, so it cannot
+        # be defeated by a pre-planted symlink at a predictable name (unlike
+        # a fixed "<path>.tmp"), and os.replace() from that same directory
+        # stays atomic.
+        fd, tmp_path = tempfile.mkstemp(
+            prefix=path.name + ".", suffix=".tmp", dir=str(path.parent),
+        )
+        try:
+            with os.fdopen(fd, "w") as f:
+                f.write(content)
+            os.replace(tmp_path, str(path))
+            tmp_path = None
+        except Exception:
+            raise
+    except Exception as exc:
+        print(f"WARNING: checkpoint session-state: failed to refresh "
+              f"SESSION_STATE.md: {exc}", file=sys.stderr)
+    finally:
+        if tmp_path is not None:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+        if lock_fd is not None:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            except OSError:
+                pass
+            os.close(lock_fd)
+
+
 def cmd_checkpoint(args):
     mission_path = args.mission
     if not mission_path:
@@ -716,6 +946,16 @@ def cmd_checkpoint(args):
         write_active(active["mission"], fm["last_checkpoint"])
 
     write_mission_file(args.mission, fm, body)
+
+    # Record reasoning, not just position -- fires on every transition (not
+    # gated to status=="done") so a crash mid-feature still leaves the WHY
+    # behind, not only the mission YAML's WHERE. Synchronous and in-process:
+    # nothing here may depend on a graceful wrap-up ever running.
+    handoff_data = _read_handoff_reasoning(args.handoff)
+    milestone_id = fm["last_checkpoint"]["milestone"]
+    _write_checkpoint_memory(slug, milestone_id, fid, old_status, new_status, handoff_data, ts)
+    _refresh_session_state(slug, milestone_id, fid, old_status, new_status, handoff_data, ts)
+
     if new_status == "done":
         emit_compaction_hint("checkpoint", fid)
     print(f"Checkpoint: {fid} {old_status} → {new_status}")
@@ -1395,7 +1635,7 @@ def main():
 
     # status
     p_status = sub.add_parser("status", help="Print mission progress")
-    p_status.add_argument("mission", help="Path to mission .md file")
+    p_status.add_argument("mission", nargs="?", help="Path to mission .md (defaults to active.json)")
     p_status.add_argument("--json", action="store_true", default=False)
 
     # list

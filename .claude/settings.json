@@ -83,20 +83,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f execution/hooks/full_boot.sh ] && bash execution/hooks/full_boot.sh || exit 0"
+            "command": "[ -f execution/hooks/full_boot.sh ] || exit 0; bash execution/hooks/full_boot.sh"
           },
           {
             "type": "command",
             "command": "echo \"You are now operating within the $(jq -r '.project_name // \"Athanor\"' .agent/profile.json) Agentic Workspace (v$(cat .agent/version)). Identity: $(jq -r '.identity.agent_name // \"Athanor Agent\"' .agent/profile.json) | Identity Status: Active. A full boot context was just injected above \u2014 framework identity (AGENTS.md), workspace, last session, project rules, goals, learned, backlog, brain recall, blockers, and git remotes. Read the injected BOOT CONTEXT carefully. You have 8 specialized agents at your disposal (@lead, @dev, @designer, etc.). Your primary goal is autonomous self-improvement for this project. Report boot status using this exact format: \u2705 ATHANOR: [name] | \ud83e\udd16 Agents: 8 roles active | Last session: [1-line summary] | Goals: [count] active | Backlog: [count] open items | Rules loaded: yes | \u27a1\ufe0f Ready.\""
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/session_start_away_report.sh ] && bash execution/hooks/session_start_away_report.sh || exit 0",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/full_boot.sh ] || exit 0; bash execution/hooks/full_boot.sh"
           },
           {
             "type": "command",
@@ -168,11 +159,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f execution/hooks/post_compact_restore.sh ] && bash execution/hooks/post_compact_restore.sh || exit 0",
-            "timeout": 15
-          },
-          {
-            "type": "command",
             "command": "[ -f execution/hooks/post_compact_restore.sh ] || exit 0; bash execution/hooks/post_compact_restore.sh",
             "timeout": 15
           }
@@ -185,27 +171,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f execution/hooks/post_compact_inject.sh ] && bash execution/hooks/post_compact_inject.sh || exit 0",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/harness_heartbeat.sh ] && bash execution/hooks/harness_heartbeat.sh || exit 0",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/inject_pressure.sh ] && bash execution/hooks/inject_pressure.sh || exit 0",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/compaction_nudge.sh ] && bash execution/hooks/compaction_nudge.sh || exit 0",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/compaction_backstop.sh ] && bash execution/hooks/compaction_backstop.sh || exit 0",
+            "command": "[ -f docs/rules/inject_no_invention.sh ] || exit 0; bash docs/rules/inject_no_invention.sh",
             "timeout": 5
           },
           {
@@ -242,6 +208,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "[ -f docs/rules/inject_no_invention.sh ] || exit 0; bash docs/rules/inject_no_invention.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "[ -f execution/hooks/subagent_start.sh ] && bash execution/hooks/subagent_start.sh || exit 0",
             "timeout": 10
           },
@@ -257,11 +228,6 @@
       {
         "matcher": "analyst|architect|designer|dev|docs|lead|maintainer|qa",
         "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/subagent_stop.sh ] && bash execution/hooks/subagent_stop.sh || exit 0",
-            "timeout": 15
-          },
           {
             "type": "command",
             "command": "[ -f execution/hooks/subagent_stop.sh ] || exit 0; bash execution/hooks/subagent_stop.sh",
@@ -339,31 +305,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f execution/hooks/check_autonomy.sh ] && bash execution/hooks/check_autonomy.sh || exit 0"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/require_contract_for_write.sh ] && bash execution/hooks/require_contract_for_write.sh || exit 0"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/verify_workspace.sh ] && bash execution/hooks/verify_workspace.sh || exit 0"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/require_docs.sh ] && bash execution/hooks/require_docs.sh || exit 0"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/require_maintainer.sh ] && bash execution/hooks/require_maintainer.sh || exit 0"
-          },
-          {
-            "type": "command",
             "command": "[ -f execution/hooks/check_autonomy.sh ] || exit 0; bash execution/hooks/check_autonomy.sh"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/allow_in_project_bash.sh ] || exit 0; bash execution/hooks/allow_in_project_bash.sh"
           },
           {
             "type": "command",
@@ -380,6 +322,10 @@
           {
             "type": "command",
             "command": "[ -f execution/hooks/require_maintainer.sh ] || exit 0; bash execution/hooks/require_maintainer.sh"
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/allow_in_project_bash.sh ] || exit 0; bash execution/hooks/allow_in_project_bash.sh"
           }
         ]
       },
@@ -417,6 +363,15 @@
           {
             "type": "command",
             "command": "[ -f execution/hooks/require_qa_report.sh ] || exit 0; bash execution/hooks/require_qa_report.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/check_autonomy.sh ] || exit 0; bash execution/hooks/check_autonomy.sh"
           }
         ]
       }
@@ -485,7 +440,7 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "BASH_DEFAULT_TIMEOUT_MS": "300000",
     "PAI_CONTEXT_MODE": "coding",
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "30"
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "300000"
   },
   "cleanupPeriodDays": 30,
   "skipDangerousModePermissionPrompt": true,

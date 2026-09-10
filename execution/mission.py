@@ -499,6 +499,15 @@ def _milestone_summary(fm: dict) -> list[dict]:
 
 
 def cmd_status(args):
+    if not args.mission:
+        active = read_active()
+        mission_path = active.get("mission") if active else None
+        if not mission_path:
+            print("ERROR: no active mission and no mission path given. Run: "
+                  "python3 execution/mission.py list", file=sys.stderr)
+            sys.exit(1)
+        args.mission = mission_path
+
     fm, _ = parse_mission_file(args.mission)
     feat_counts = _feature_summary(fm)
     ms_summary = _milestone_summary(fm)
@@ -1626,7 +1635,7 @@ def main():
 
     # status
     p_status = sub.add_parser("status", help="Print mission progress")
-    p_status.add_argument("mission", help="Path to mission .md file")
+    p_status.add_argument("mission", nargs="?", help="Path to mission .md (defaults to active.json)")
     p_status.add_argument("--json", action="store_true", default=False)
 
     # list

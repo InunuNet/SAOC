@@ -187,14 +187,67 @@ PLACEHOLDER_RESIDUE_ALLOWLIST=( '*.plist' )
 # means a directory tree; no trailing `/` means that one file.
 PLACEHOLDER_RESIDUE_SOURCE_PREFIXES=( 'template/' 'docs/' 'execution/' 'init.sh' 'Makefile' )
 
+# Argument parsing. EVERY refusal below lands before the `mkdir -p
+# "$PROJECT_PATH"` that follows this loop, so a rejected invocation writes
+# nothing at all (bootstrap-integrity A2_3).
+arg_die() { # $1 = operator-facing reason
+    printf "${YELLOW}❌ %s${NC}\n" "$1" >&2
+    printf "${DIM}   usage: bash init.sh [--name NAME] [--path PATH] [--no-pulse]${NC}\n" >&2
+    exit 1
+}
+
+# A VALUE that begins with `-` is a slip of the fingers, not a value
+# (bootstrap-integrity D3). Rejecting the unknown flag `--nmae` closed one door;
+# `bash init.sh --path WS --name --path` walked through the next one, because
+# `--name` took `--path` as its value and the run then re-scaffolded the
+# EXISTING workspace under the name `--path` at rc=0 — the same P0 wearing a
+# different typo. Measured: 7 paths written, WORKSPACE renamed, three root
+# instruction files quarantined.
+#
+# Only the SEPARATE-TOKEN spelling is guarded. `--name=-Weird` is unambiguous —
+# the operator typed the `=`, so the value cannot be a flag they meant to pass —
+# and stays accepted as the escape hatch for the rare name that really does
+# begin with a dash.
+arg_value_or_die() { # $1 = flag, $2 = the token that followed it
+    case "$2" in
+        -*) arg_die "$1 requires a value, but the next argument is another flag: $2" ;;
+    esac
+}
+
+# A flag given twice states two intents and init.sh cannot know which one the
+# operator meant. Last-wins is what the loop did before, and it is the wrong
+# default HERE: `--path A --path B` silently scaffolded a second 340-file
+# workspace at B while the operator watched a transcript that named only one.
+# Refusing costs a re-run; guessing costs a directory nobody asked for.
+NAME_SEEN="false"
+PATH_SEEN="false"
+
 while [ $# -gt 0 ]; do
     case "$1" in
-        --name=*) PROJECT_NAME="${1#*=}"; NAME_EXPLICIT="true"; shift ;;
-        --name)   PROJECT_NAME="$2"; NAME_EXPLICIT="true"; shift 2 ;;
-        --path=*) PROJECT_PATH="${1#*=}"; shift ;;
-        --path)   PROJECT_PATH="$2"; shift 2 ;;
+        --name=*|--name)
+            [ "$NAME_SEEN" = "false" ] || arg_die "--name given more than once — say it once."
+            if [ "$1" = "--name" ]; then
+                [ $# -ge 2 ] || arg_die "--name requires a value."
+                arg_value_or_die "--name" "$2"
+                PROJECT_NAME="$2"; shift 2
+            else
+                PROJECT_NAME="${1#*=}"; shift
+            fi
+            NAME_EXPLICIT="true"; NAME_SEEN="true" ;;
+        --path=*|--path)
+            [ "$PATH_SEEN" = "false" ] || arg_die "--path given more than once — say it once."
+            if [ "$1" = "--path" ]; then
+                [ $# -ge 2 ] || arg_die "--path requires a value."
+                arg_value_or_die "--path" "$2"
+                PROJECT_PATH="$2"; shift 2
+            else
+                PROJECT_PATH="${1#*=}"; shift
+            fi
+            PATH_SEEN="true" ;;
+        # Repeating --no-pulse is idempotent and carries no value, so there is
+        # nothing to disambiguate and nothing to refuse.
         --no-pulse) NO_PULSE="true"; shift ;;
-        *)        shift ;;
+        *) arg_die "Unrecognised argument: $1" ;;
     esac
 done
 
@@ -1172,12 +1225,24 @@ scaffold_core() {
 
     # Paired-copy registry — declares CLAUDE.md/GEMINI.md as real-file clones of
     # AGENTS.md so `make sync-clones` and `make audit` work in the new workspace.
-    cp "$TEMPLATE_DIR/.agent/paired-copies.yaml"            "$PROJECT_PATH/.agent/paired-copies.yaml"           2>/dev/null || true
+    # Runtime config, not a seed: routed through install_preserving so a
+    # re-run never silently overwrites an operator's edit (bootstrap-integrity
+    # F3). NO known-harness-source args here — passing $SCRIPT_DIR/... would
+    # self-match its own dest under an in-place re-run (SCRIPT_DIR ==
+    # PROJECT_PATH) and force an unconditional overwrite, which is the exact
+    # defect this fix removes. Comparing only against $src is enough: identical
+    # bytes are left alone, a real difference is quarantined and announced.
+    install_preserving "$TEMPLATE_DIR/.agent/paired-copies.yaml" \
+        ".agent/paired-copies.yaml" "paired-copies.yaml"
 
-    # Pulse registry from template
+    # Pulse registry from template — same treatment, per file.
     if [ -d "$TEMPLATE_DIR/.agent/pulse/registry" ]; then
         mkdir -p "$PROJECT_PATH/.agent/pulse/registry"
-        cp "$TEMPLATE_DIR/.agent/pulse/registry/"* "$PROJECT_PATH/.agent/pulse/registry/" 2>/dev/null || true
+        for entry in "$TEMPLATE_DIR/.agent/pulse/registry/"*; do
+            [ -f "$entry" ] || continue
+            name="$(basename -- "$entry")"
+            install_preserving "$entry" ".agent/pulse/registry/$name" "pulse/registry/$name"
+        done
     fi
 
     # Identity templates (filled in during /onboard). Per-file and named, never a
@@ -1215,25 +1280,77 @@ scaffold_core() {
     # each provider's rules_dir belongs to sync_rules.sh, which enumerates them
     # from .agent/providers/*.json, so a provider added later needs no change
     # here. sync_all() runs it after the provider configs are in place.
+    # Per file, preserved in place (bootstrap-integrity F3) — the prior
+    # `cp -R .../.` overwrote an operator's amended rule unconditionally, and
+    # sync_all()'s fan-out then propagated the loss into every provider clone.
+    # Deliberately NOT install_preserving's quarantine-and-replace: a canonical
+    # rule that differs stays exactly where it is (fan-out then carries the
+    # operator's own edit forward, instead of trading it for a fresh copy the
+    # operator never asked for). Only a missing or byte-identical file is
+    # (re)written.
+    #
+    # AND IT SAYS SO, BY NAME (bootstrap-integrity D5). Preserving in place is
+    # the right call — `make update-template` owns the update path — but doing it
+    # silently is the same disease as the defect this mission opened with: the
+    # operator's edit is pinned forever, the upstream version is withheld,
+    # sync_rules.sh fans the pinned copy into all three provider clones, and the
+    # transcript reads as though nothing happened. One line per withheld rule, in
+    # the same voice as install_preserving's "QUARANTINED, not deleted".
+    #
+    # A SYMLINK AT THE DESTINATION IS NEVER WRITTEN THROUGH (bootstrap-integrity
+    # D4). `[ -f ]` is FALSE for a dangling symlink, so this loop used to fall
+    # straight to the `cp`, which follows the link and lands the template's bytes
+    # OUTSIDE the workspace — measured at 3936 bytes, rc=0, silent.
+    # install_preserving guards the same case with `[ ! -h "$dest" ]`; this loop
+    # was hand-rolled beside it and did not. Same test, same verdict as any other
+    # destination that is not the harness's own file: leave it alone and say so.
     if [ -d "$TEMPLATE_DIR/.agent/rules" ]; then
         mkdir -p "$PROJECT_PATH/.agent/rules"
-        cp -R "$TEMPLATE_DIR/.agent/rules/." "$PROJECT_PATH/.agent/rules/"
+        RULES_PRESERVED="false"
+        while IFS= read -r -d '' entry; do
+            relpath="${entry#"$TEMPLATE_DIR"/.agent/rules/}"
+            rule_dest="$PROJECT_PATH/.agent/rules/$relpath"
+            mkdir -p "$(dirname -- "$rule_dest")"
+            if [ -h "$rule_dest" ] || { [ -f "$rule_dest" ] && ! cmp -s "$entry" "$rule_dest"; }; then
+                printf "${YELLOW}   ⚠ %s already existed and differed — PRESERVED, not overwritten.${NC}\n" \
+                    ".agent/rules/$relpath" >&2
+                RULES_PRESERVED="true"
+                continue
+            fi
+            cp "$entry" "$rule_dest"
+        done < <(find "$TEMPLATE_DIR/.agent/rules" -type f -print0)
+        if [ "$RULES_PRESERVED" = "true" ]; then
+            printf "${DIM}     The harness's version of each was WITHHELD — \`make update-template\` takes it.${NC}\n" >&2
+            printf "${DIM}     Until then sync_rules.sh fans YOUR copy into every provider clone.${NC}\n" >&2
+        fi
     else
         printf "${YELLOW}   ⚠️  %s missing — no canonical rules to deliver.${NC}\n" \
             "$TEMPLATE_DIR/.agent/rules" >&2
     fi
 
-    # Copy hook scripts BEFORE settings.json so hooks exist when Claude Code loads settings
+    # Copy hook scripts BEFORE settings.json so hooks exist when Claude Code
+    # loads settings. Per file, through install_preserving (bootstrap-integrity
+    # F3): the prior unconditional `cp` silently overwrote an operator's edited
+    # hook on every re-run. No known-harness-source arg — see the
+    # paired-copies.yaml comment above for why.
     if [ -d "$SCRIPT_DIR/execution/hooks" ]; then
-        cp "$SCRIPT_DIR/execution/hooks/"*.sh "$PROJECT_PATH/"         2>/dev/null || true
-        cp "$SCRIPT_DIR/execution/hooks/"*.sh "$PROJECT_PATH/execution/hooks/" 2>/dev/null || true
+        for entry in "$SCRIPT_DIR/execution/hooks/"*.sh; do
+            [ -f "$entry" ] || continue
+            name="$(basename -- "$entry")"
+            install_preserving "$entry" "$name" "hooks-root/$name"
+            install_preserving "$entry" "execution/hooks/$name" "hooks/$name"
+        done
         # execution/hooks/lib/ holds non-.sh files (e.g. context_window.py) that
-        # the glob above never reaches since it doesn't recurse. Copy it
+        # the glob above never reaches since it doesn't recurse. Walk it
         # recursively so any current or future file under lib/ ships too,
         # instead of patching this line again per file.
         if [ -d "$SCRIPT_DIR/execution/hooks/lib" ]; then
             mkdir -p "$PROJECT_PATH/execution/hooks/lib" 2>/dev/null || true
-            cp -R "$SCRIPT_DIR/execution/hooks/lib/." "$PROJECT_PATH/execution/hooks/lib/" 2>/dev/null || true
+            while IFS= read -r -d '' entry; do
+                relpath="${entry#"$SCRIPT_DIR"/execution/hooks/lib/}"
+                mkdir -p "$PROJECT_PATH/execution/hooks/lib/$(dirname -- "$relpath")"
+                install_preserving "$entry" "execution/hooks/lib/$relpath" "hooks/lib/$relpath"
+            done < <(find "$SCRIPT_DIR/execution/hooks/lib" -type f -print0)
         fi
     fi
 

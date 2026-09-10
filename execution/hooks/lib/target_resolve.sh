@@ -242,7 +242,93 @@ expand_target() {
 # GEMINI.md, init.sh, full_boot.sh, or autonomy_matrix.json: those are
 # floor-protected from writes, not from being read (a read-only grep over
 # execution/hooks/foo.sh must stay allowed).
-re_write_protpath='(^|/)\.claude/settings\.json$|(^|/)\.claude/settings\.local\.json$|(^|/)\.claude/hooks/|(^|/)execution/hooks/|(^|/)CLAUDE\.md$|(^|/)AGENTS\.md$|(^|/)GEMINI\.md$|(^|/)\.agent/autonomy_matrix\.json$|(^|/)init\.sh$|(^|/)full_boot\.sh$|(^|/)\.env$|(^|/)\.sops\.yaml$|(^|/)\.agent/enforcement_breakglass\.json$'
+#
+# The two hook-directory entries are `(/|$)`, not a bare trailing `/`: a
+# `cp -t execution/hooks README.md` names the DIRECTORY itself as the write
+# target (W4/W5, #1407) and a bare directory name never carries a trailing
+# slash once it has passed through expand_target()'s split/rejoin (a
+# trailing slash on the raw token is itself dropped by that pass). Requiring
+# `/` unconditionally made the directory reachable as a write target that
+# matched nothing.
+re_write_protpath='(^|/)\.claude/settings\.json$|(^|/)\.claude/settings\.local\.json$|(^|/)\.claude/hooks(/|$)|(^|/)execution/hooks(/|$)|(^|/)CLAUDE\.md$|(^|/)AGENTS\.md$|(^|/)GEMINI\.md$|(^|/)\.agent/autonomy_matrix\.json$|(^|/)init\.sh$|(^|/)full_boot\.sh$|(^|/)\.env$|(^|/)\.sops\.yaml$|(^|/)\.agent/enforcement_breakglass\.json$'
+
+# ci_match <regex> <string> -- case-insensitive ERE match of one protected-
+# path regex, scoped to this one test (nocasematch is restored immediately
+# after, never left armed for whatever the caller does next). APFS is
+# case-insensitive and case-preserving, so `~/.SSH/id_rsa` and `~/.ssh/id_rsa`
+# name the SAME on-disk file (R5, #1407) — a case-sensitive regex on a
+# case-insensitive filesystem is a bypass, not a stricter check. Folding case
+# is deliberately a superset of the case-sensitive match, never a subset: at
+# worst it denies a same-spelled-but-different path on a case-sensitive
+# filesystem, never the reverse.
+ci_match() {
+  local re="$1" s="$2" rc restore
+  restore=0; shopt -q nocasematch || restore=1
+  shopt -s nocasematch
+  [[ "$s" =~ $re ]]
+  rc=$?
+  [ "$restore" = 1 ] && shopt -u nocasematch
+  return $rc
+}
+
+# PROTECTED_DIR_COMPONENTS -- directory-name path components a single '/'-
+# separated segment can equal outright. Suffix-style entries in the regex
+# sets above (.pem/.key/.env/.sops.yaml) are whole-basename patterns, not
+# bare directory names, and are not part of this list — they stay on the
+# regex path, which already anchors on `$`.
+PROTECTED_DIR_COMPONENTS=(".ssh" ".aws" ".gnupg" "secrets")
+
+# component_glob_hit <path> -- does any component of <path> glob-MATCH one
+# of PROTECTED_DIR_COMPONENTS? R7 (#1407): `~/.ss?/id_rsa` never contains the
+# literal substring ".ssh", so no anchored regex on the token itself can
+# catch it. This test is deliberately reversed from an ordinary glob use:
+# the path's own component is the PATTERN, and the protected name is the
+# fixed candidate tested against it — `[[ "$literal" == $pattern ]]` lets
+# bash's own glob engine answer "could this token ever denote that name"
+# using pure pattern matching, with no filesystem access and no execution.
+component_glob_hit() {
+  local path="$1" comp lit hit restore
+  local -a comps
+  IFS='/' read -r -a comps <<< "$path"
+  for comp in "${comps[@]}"; do
+    [ -z "$comp" ] && continue
+    for lit in "${PROTECTED_DIR_COMPONENTS[@]}"; do
+      hit=1
+      restore=0; shopt -q nocasematch || restore=1
+      shopt -s nocasematch
+      [[ "$lit" == $comp ]] && hit=0
+      [ "$restore" = 1 ] && shopt -u nocasematch
+      [ "$hit" = 0 ] && return 0
+    done
+  done
+  return 1
+}
+
+# brace_variants <token> -- conservative, single-group {a,b,...} expansion,
+# one variant per line (the token itself, unexpanded, is NOT included --
+# callers already test that form). R6 (#1407): real bash only expands a
+# brace group that carries a comma or a `..` range; a comma-less group like
+# `{s}` is left completely literal by the shell that executes the command.
+# This helper expands it anyway, because the floor's question is "could an
+# interpreter of this text ever reach a protected path", not "does bash
+# itself expand this" — under-expanding here relative to whatever actually
+# runs the command is exactly how #1407's R6 bypass got filed in the first
+# place. Bounded to one group and 8 alternatives so a hostile token cannot
+# turn this into a combinatorial match loop.
+brace_variants() {
+  local tok="$1"
+  [[ "$tok" =~ ^(.*)\{([^{}]*)\}(.*)$ ]] || return 0
+  local pre="${BASH_REMATCH[1]}" body="${BASH_REMATCH[2]}" post="${BASH_REMATCH[3]}"
+  local -a alts
+  IFS=',' read -r -a alts <<< "$body"
+  [ "${#alts[@]}" -eq 0 ] && alts=("")
+  local alt n=0
+  for alt in "${alts[@]}"; do
+    n=$((n + 1))
+    [ "$n" -gt 8 ] && break
+    printf '%s\n' "${pre}${alt}${post}"
+  done
+}
 
 # The read set is split in two, because its two halves answer different
 # questions and only one of them is location-independent.
@@ -372,8 +458,9 @@ path_in_project() {
 # the workspace-scoped exemption.
 read_protected() {
   local p="$1"
-  [[ "$p" =~ $re_read_protpath_core ]] && return 0
-  if [[ "$p" =~ $re_read_protpath_settings ]]; then
+  ci_match "$re_read_protpath_core" "$p" && return 0
+  component_glob_hit "$p" && return 0
+  if ci_match "$re_read_protpath_settings" "$p"; then
     path_in_project "$p" && return 1
     return 0
   fi

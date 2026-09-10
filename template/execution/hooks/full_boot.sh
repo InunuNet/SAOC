@@ -41,11 +41,16 @@ else
   _BOOT_IS_HARNESS=$([ "$_BOOT_WS_NAME" = "Athanor" ] && echo "true" || echo "false")
   _BOOT_HARNESS="Athanor"
 fi
+# F19 (notes-f19.md §2): the opening line names the workspace, never a
+# verdict — nothing about this boot has been checked yet at this point, and
+# a HALT three lines later must not read past a green glyph printed before
+# anything was known. The verdict glyph is printed exactly once, by
+# boot_panel's _render_verdict, once the checks below have actually run.
 if [ "$_BOOT_IS_HARNESS" = "true" ]; then
-  echo "✅ ATHANOR: $_BOOT_WS_NAME | Athanor Harness v$_BOOT_VERSION"
+  echo "ATHANOR: $_BOOT_WS_NAME | Athanor Harness v$_BOOT_VERSION"
   echo "════ BOOT CONTEXT (Athanor Harness) ════"
 else
-  echo "✅ $_BOOT_PROJECT | scaffolded by $_BOOT_HARNESS harness v$_BOOT_VERSION"
+  echo "$_BOOT_PROJECT | scaffolded by $_BOOT_HARNESS harness v$_BOOT_VERSION"
   echo "════ BOOT CONTEXT ($_BOOT_PROJECT) ════"
 fi
 echo "Core Mandates: Specialized agents, Tiered memory, Autonomous self-improvement, Alembic (URL distilling)."
@@ -522,8 +527,24 @@ fi
 # checks, not downstream necessities, so a workspace that legitimately lacks
 # one must boot silently rather than print an interpreter's file-not-found
 # error as an agent's first impression of its own workspace (D7).
-[ -f execution/checks/verify_model_env_boot.py ] && python3 execution/checks/verify_model_env_boot.py boot_report || true  # Model-env boot guard (#1332), non-fatal
-[ -f execution/checks/verify_all_contracts_parse.py ] && python3 execution/checks/verify_all_contracts_parse.py || true  # Contract-parse boot canary (assertion-shape-sweep F4), non-fatal
+# Harness diagnostics, folded to one rollup line (L1: boot on one screen).
+# The guards STILL RUN here (side effects and any gating preserved) and STILL
+# gate where they gate (boot_panel / fleet acceptance); only their per-item
+# PASS spam is suppressed. Any real FAIL is named.
+_BOOT_DIAG=""
+[ -f execution/checks/verify_model_env_boot.py ] && _BOOT_DIAG="$_BOOT_DIAG$(python3 execution/checks/verify_model_env_boot.py boot_report 2>&1)
+"
+[ -f execution/checks/verify_all_contracts_parse.py ] && _BOOT_DIAG="$_BOOT_DIAG$(python3 execution/checks/verify_all_contracts_parse.py 2>&1)
+"
+_DIAG_PASS=$(printf '%s\n' "$_BOOT_DIAG" | grep -c '^PASS:')
+_DIAG_FAIL=$(printf '%s\n' "$_BOOT_DIAG" | grep -c '^FAIL:')
+if [ "${_DIAG_FAIL:-0}" -gt 0 ] 2>/dev/null; then
+  echo "boot guards: $_DIAG_PASS passed, $_DIAG_FAIL FAILED —"
+  printf '%s\n' "$_BOOT_DIAG" | grep '^FAIL:' | sed 's/^/  /'
+else
+  echo "boot guards: ${_DIAG_PASS:-0} passed"
+fi
+unset _BOOT_DIAG _DIAG_PASS _DIAG_FAIL
 
 # Step 0.5: Quota-death warm restart — one-shot checkpoint left by quota_death_checkpoint.sh
 # (StopFailure) or inject_pressure.sh (proactive, >=90% quota). quota_death_detect
@@ -588,17 +609,27 @@ fi
 
 if [ -n "$ACTIVE_MISSION_SLUG" ]; then
   if [ -f execution/mission.py ]; then
-    python3 execution/mission.py status "$ACTIVE_MISSION_SLUG" 2>/dev/null || echo "(stale mission pointer — run: python3 execution/mission.py list)"
+    _MSTAT=$(python3 execution/mission.py status "$ACTIVE_MISSION_SLUG" 2>/dev/null)
+    if [ -n "$_MSTAT" ]; then
+      printf '%s\n' "$_MSTAT" | grep -m1 -E '^Status:' || printf '%s\n' "$_MSTAT" | head -1
+    else
+      echo "(stale mission pointer — run: python3 execution/mission.py list)"
+    fi
+    unset _MSTAT
   else
     echo "⛔ HARNESS INCOMPLETE — missing: execution/mission.py"
     echo "   Propagation failed. Run: python3 execution/update_template.py --apply"
   fi
+  # F19 (notes-f19.md §4): active.json's "mission" field holds a FULL PATH
+  # (".agent/memory/project/missions/<slug>.md"), not a basename — `find
+  # -name` matches basenames, so this lookup could never match, MISSION_STATUS
+  # was always empty, and every branch below the case's default was
+  # unreachable at repo root. Resolve the pointer directly instead of
+  # searching for it; a pointer to a file that is not there still correctly
+  # falls through to the default (no status to read), which the golden pins.
   MISSION_STATUS=""
-  if [ -n "$ACTIVE_MISSION_SLUG" ]; then
-    MISSION_FILE=$(find .agent/memory/project/missions -maxdepth 1 -name "${ACTIVE_MISSION_SLUG}" 2>/dev/null | head -1)
-    if [ -n "$MISSION_FILE" ] && [ -f "$MISSION_FILE" ]; then
-      MISSION_STATUS=$(grep -m1 '^status:' "$MISSION_FILE" 2>/dev/null | sed 's/^status:[[:space:]]*//' | tr -d ' ' || echo "")
-    fi
+  if [ -n "$ACTIVE_MISSION_SLUG" ] && [ -f "$ACTIVE_MISSION_SLUG" ]; then
+    MISSION_STATUS=$(grep -m1 '^status:' "$ACTIVE_MISSION_SLUG" 2>/dev/null | sed 's/^status:[[:space:]]*//' | tr -d ' ' || echo "")
   fi
 
   case "$MISSION_STATUS" in
@@ -653,7 +684,7 @@ if [ -f "$COMMS_FILE" ]; then
   LATEST_DIRECTIVE=""
   LAST_CODI_LINE=$(grep -n "^## \[CODI" "$COMMS_FILE" 2>/dev/null | tail -1 | cut -d: -f1)
   if [ -n "$LAST_CODI_LINE" ]; then
-    LATEST_DIRECTIVE=$(awk -v startline="$LAST_CODI_LINE" 'NR > startline { if (/^## \[/) {exit} count++; if(count>=40){print "[truncated — read full comms.md]"; exit} print }' "$COMMS_FILE" 2>/dev/null)
+    LATEST_DIRECTIVE=$(awk -v startline="$LAST_CODI_LINE" 'NR > startline { if (/^## \[/) {exit} count++; if(count>=10){print "[truncated — read full comms.md]"; exit} print }' "$COMMS_FILE" 2>/dev/null)
   fi
   if [ -n "$LATEST_DIRECTIVE" ]; then
     NEW_COMMS_HASH=$(printf '%s' "$LATEST_DIRECTIVE" | shasum -a 256 | awk '{print $1}')
@@ -679,283 +710,44 @@ if [ -f "execution/directives.py" ]; then
   python3 execution/directives.py list 2>/dev/null || true
 fi
 
-# Step 0: System Identity
-echo "--- SYSTEM IDENTITY ---"
+# ── IDENTITY (L1: boot on one screen) ───────────────────────────────────────
+# The verbose per-section context dump (discovery, workspace, last session,
+# project rules, goals, learned, mission queue, reboot, recent work, backlog
+# hygiene) is intentionally NOT printed here: CEO Directive v2 L1 puts boot on
+# one screen — identity, active mission, latest directive, hard blockers, and
+# nothing else. The full context stays on disk under .agent/memory/.
+echo "--- IDENTITY ---"
 python3 -c "
 import json
 with open('.agent/profile.json') as f:
     p = json.load(f)
-identity = p.get('identity', {})
-name = identity.get('agent_name', 'Athanor Agent')
-role = identity.get('project_role', 'project coordinator')
-print(f'Identity: {name} | Role: {role} | Identity Status: Active')
-" 2>/dev/null || echo "Identity: Athanor Agent | Identity Status: Active"
+i = p.get('identity', {})
+print('Identity: %s | Role: %s | Project: %s' % (
+    i.get('agent_name', 'Athanor Agent'),
+    i.get('project_role', 'project coordinator'),
+    p.get('project_name', '?')))
+" 2>/dev/null || echo "Identity: Athanor Agent"
 echo ""
 
-# Step 0.5: Discovery & Capabilities
-if [ -f "execution/discovery.sh" ]; then
-  bash execution/discovery.sh
-elif [ -f "discovery.sh" ]; then
-  bash discovery.sh
-fi
-
-# Step 0+1: Workspace verification
-echo "--- WORKSPACE ---"
-if [ -f "$WORKSPACE_FILE" ]; then
-  WORKSPACE_NAME=$(sed 's/[[:space:]]*$//' < "$WORKSPACE_FILE" | head -1)
-  echo "✅ WORKSPACE: $WORKSPACE_NAME"
-else
-  echo "⛔ WORKSPACE file missing — run bash init.sh"
-fi
-if [ -f "$PROFILE_FILE" ]; then
-  PROFILE_FILE="$PROFILE_FILE" python3 -c "
-import os, json
-p = json.load(open(os.environ['PROFILE_FILE'], encoding='utf-8-sig'))
-status = p.get('status', 'active')
-icon = '✅' if status != 'archive' else '⚠️ ARCHIVED'
-print(f\"{icon} Project: {p.get('project_name','?')} | Type: {p.get('project_type','?')} | Onboarded: {p.get('onboarding_complete', False)}\")
-" 2>/dev/null || true
-  # Detect unfilled identity placeholders / incomplete onboarding.
-  # Non-fatal warning — boot continues regardless.
-  if command -v jq >/dev/null 2>&1; then
-    _PROJECT_NAME=$(jq -r '.project_name // ""' "$PROFILE_FILE" 2>/dev/null)
-    _AGENT_NAME=$(jq -r '.identity.agent_name // ""' "$PROFILE_FILE" 2>/dev/null)
-    _ONBOARDED=$(jq -r '.onboarding_complete // false' "$PROFILE_FILE" 2>/dev/null)
-
-    if [ "$_PROJECT_NAME" = "Athanor" ]        || [[ "$_AGENT_NAME" == *"{{"* ]]        || [[ "$_AGENT_NAME" == *"["* ]]        || [ "$_ONBOARDED" = "false" ]; then
-      echo ""
-      echo "⚠️  IDENTITY NOT CONFIGURED — project=$_PROJECT_NAME agent=$_AGENT_NAME"
-      echo "⚠️  Run /onboard NOW before any substantive work to configure this workspace."
-      echo "⚠️  Until onboarding completes, all identity values should be treated as UNKNOWN."
-      echo ""
-    fi
-    unset _PROJECT_NAME _AGENT_NAME _ONBOARDED
-  fi
-fi
-echo ""
-
-# Step 2: Last session recall
-echo "--- LAST SESSION ---"
-python3 execution/brain.py last-session --quiet 2>/dev/null || echo "(no brain data yet)"
-echo ""
-
-# Step 3: Project rules (override base rules — injected first so they take effect)
-echo "--- PROJECT RULES ---"
-if [ -f ".agent/memory/project/rules.md" ]; then
-  RULES_LINES=$(wc -l < ".agent/memory/project/rules.md")
-  if [ "$RULES_LINES" -gt 400 ]; then
-    echo "[WARNING: rules.md has $RULES_LINES lines — grown past its intended size. Injecting in full below, but this file should be compacted.]"
-  fi
-  cat .agent/memory/project/rules.md
-else
-  echo "(no rules.md)"
-fi
-echo ""
-
-# Step 4: Project context — reboot.md (fresh session summary) if present and non-empty,
-# takes priority over the full goals/learned/backlog dump. Missing or zero-byte reboot.md
-# falls back to exactly today's existing full-dump behavior, unchanged.
-REBOOT_FILE=".agent/memory/project/reboot.md"
-if [ -s "$REBOOT_FILE" ]; then
-  echo "--- REBOOT CONTEXT ---"
-  cat "$REBOOT_FILE"
-  echo ""
-  echo "Full goals/learned/backlog available on request — see .agent/memory/project/*.md"
-  echo ""
-else
-  # Step 4: Project context — goals
-  echo "--- GOALS ---"
-  if [ -f ".agent/memory/project/goals.md" ]; then
-    cat .agent/memory/project/goals.md
-  else
-    echo "(no goals.md)"
-  fi
-  echo ""
-
-  # Step 4: Project context — learned (capped at last 20 lines to control token cost)
-  echo "--- LEARNED (last 20 lines) ---"
-  if [ -f ".agent/memory/project/learned.md" ]; then
-    LEARNED_LINES=$(wc -l < ".agent/memory/project/learned.md")
-    if [ "$LEARNED_LINES" -gt 20 ]; then
-      echo "[Note: learned.md has $LEARNED_LINES lines — showing last 20. Run \`cat .agent/memory/project/learned.md\` for full history.]"
-    fi
-    tail -20 .agent/memory/project/learned.md
-  else
-    echo "(no learned.md)"
-  fi
-  echo ""
-
-  # Step 4: Mission queue — skip if active mission (already shown above); cat clean file otherwise
-  if [ -z "$ACTIVE_MISSION" ]; then
-    echo "--- MISSION QUEUE ---"
-    if [ -f ".agent/memory/project/backlog.md" ]; then
-      awk '
-        /^- \[x\]/        { next }
-        /^## Closed/      { skip=1; next }
-        /^## /            { skip=0 }
-        skip              { next }
-        /^$/ && prev_blank { next }
-        { print; prev_blank=($0=="") }
-      ' ".agent/memory/project/backlog.md"
-      echo ""
-      echo "(full backlog: .agent/memory/project/backlog.md)"
-    else
-      echo "(no backlog.md)"
-    fi
-    echo ""
-  fi
-fi
-
-# Step 4.1: Diverted-reboot warning — write_reboot() (execution/brain.py) refuses to
-# overwrite a reboot.md it doesn't recognize as its own (hand-authored / near-miss /
-# empty) and instead writes the session summary to reboot.auto.md beside it. If that
-# sidecar is newer than reboot.md, wrap-up has been writing there — possibly for
-# several sessions — while this boot keeps serving the older, unreplaced reboot.md
-# above. Surface it every session until resolved, not just once at divert time.
-AUTO_SIDECAR=".agent/memory/project/reboot.auto.md"
-if [ -f "$AUTO_SIDECAR" ] && { [ ! -f "$REBOOT_FILE" ] || [ "$AUTO_SIDECAR" -nt "$REBOOT_FILE" ]; }; then
-  echo "⚠️  WARN: $AUTO_SIDECAR is newer than $REBOOT_FILE — reboot.md is not being updated by wrap-up (provenance check keeps failing). Review $AUTO_SIDECAR and its reboot.auto-*.md history, then run \`brain.py wrap-up --force-reboot\` to resume writing reboot.md directly."
-  echo ""
-fi
-
-# Step 4.5: Inbox Processing
-INBOX_DIR=".agent/memory/project/inbox"
-# Check if there are any non-directory files in INBOX_DIR
-if [ -d "$INBOX_DIR" ] && find "$INBOX_DIR" -maxdepth 1 -type f -not -name "archive" | grep -q .; then
-    echo "--- INBOX PROCESSING ---"
-    echo "Inbox contains unread items. Running make ingest-pulse..."
-    make ingest-pulse
-    echo ""
-fi
-
-# Step 5: Semantic recall — what we were working on
-echo "--- RECENT WORK ---"
-python3 execution/brain.py recall "$(head -3 .agent/memory/project/goals.md 2>/dev/null | tail -1 || echo 'project goals')" --n 2 2>/dev/null || true
-echo ""
-
-# Step 6: Recurring blockers (exits 1 when blockers found, 0 when none)
+# Hard blockers — the one section of the old dump that survives: a real
+# blocker is one of the four things boot must always surface.
 echo "--- BLOCKERS ---"
 BLOCKER_OUTPUT=$(python3 execution/brain.py scan-blockers 2>&1)
-echo "$BLOCKER_OUTPUT"
-if ! echo "$BLOCKER_OUTPUT" | grep -q "No recurring blockers detected."; then
+if echo "$BLOCKER_OUTPUT" | grep -q "No recurring blockers detected."; then
+  echo "No recurring blockers detected."
+else
+  echo "$BLOCKER_OUTPUT"
   echo "⚠️  Recurring blockers detected! Run /pain-point-monitor for root cause analysis."
-fi
-echo ""
-
-echo "--- BACKLOG HYGIENE ---"
-if [ -f .agent/memory/project/backlog.md ]; then
-  [ -f execution/backlog_audit.sh ] && bash execution/backlog_audit.sh || true
-  _OPEN_COUNT=$(grep -c '^- \[ \]' .agent/memory/project/backlog.md 2>/dev/null || echo 0)
-  _MAX_OPEN_CFG="${BACKLOG_TRIM_MAX_OPEN:-50}"
-  if [ "$_OPEN_COUNT" -gt "$_MAX_OPEN_CFG" ] 2>/dev/null; then
-    echo "⚠️  BACKLOG: $_OPEN_COUNT open items exceeds MAX_OPEN=$_MAX_OPEN_CFG — run 'make backlog-trim' or close out the active mission soon."
-  fi
-  unset _OPEN_COUNT _MAX_OPEN_CFG
 fi
 echo ""
 fi  # ── end INHERITED CONTEXT ────────────────────────────────────────────────
 
-# Step 7: Pulse Heartbeat Service Check
-echo "--- PULSE HEARTBEAT ---"
-if launchctl list com.athanor.pulse &>/dev/null; then
-  echo "✅ Pulse Heartbeat: Active (Running)"
-else
-  echo "🔄 Pulse Heartbeat: Starting..."
-  launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.plist 2>/dev/null || echo "⚠️ Could not load Pulse Heartbeat. Ensure 'make install-pulse' has been run."
-fi
-echo ""
-
-# Step 7.5: Upstream Service Mapping
-echo "--- UPSTREAM SERVICES ---"
-if curl -s --max-time 1 http://localhost:7077/ >/dev/null; then
-  echo "✅ Alembic Proxy: Active (localhost:7077)"
-else
-  echo "❌ Alembic Proxy: Down (localhost:7077)"
-  echo "   Mandate: Use Alembic for all URL retrieval. (See .agent/skills/alembic.md)"
-fi
-echo ""
-
-# Step 8: GitHub Auth
-echo "--- GITHUB AUTH ---"
-# `gh auth status` and `gh api user -q .login` are both network calls that
-# must never be allowed to hang boot indefinitely. Bound each with the same
-# timeout/gtimeout-or-poll-kill-fallback pattern as the update-check call
-# above, reusing the already-resolved $_GH_TIMEOUT_BIN (nothing unsets it
-# between there and here). A bare unconditional `timeout` would silently
-# disable this check on stock macOS (no timeout/gtimeout on PATH) instead of
-# merely bounding it, so the poll-kill fallback must actually run the call.
-_gh_bounded_run() {
-  # $1 = file to capture stdout into, remaining args = command to run.
-  # Returns the command's exit code (124 if it had to be killed).
-  local _out_file="$1"; shift
-  if [ -n "$_GH_TIMEOUT_BIN" ]; then
-    "$_GH_TIMEOUT_BIN" 3 "$@" >"$_out_file" 2>/dev/null
-    return $?
-  fi
-  "$@" >"$_out_file" 2>/dev/null &
-  local _pid=$!
-  local _waited=0
-  while kill -0 "$_pid" 2>/dev/null && [ "$_waited" -lt 3 ]; do
-    sleep 1
-    _waited=$((_waited + 1))
-  done
-  if kill -0 "$_pid" 2>/dev/null; then
-    kill -9 "$_pid" 2>/dev/null
-    wait "$_pid" 2>/dev/null
-    return 124
-  fi
-  wait "$_pid" 2>/dev/null
-}
-if [ -f ./.env ] && grep -q "GITHUB_TOKEN" ./.env; then
-    echo "✅ GitHub Auth: Active (Token found in .env)"
-elif [ -n "$GITHUB_TOKEN" ]; then
-    echo "✅ GitHub Auth: Active (Token found in environment)"
-elif command -v gh &>/dev/null; then
-    _gh_bounded_run /dev/null gh auth status
-    if [ $? -eq 0 ]; then
-        _GH_API_OUT=$(_boot_tmpfile)
-        _gh_bounded_run "$_GH_API_OUT" gh api user -q .login
-        GH_USER=$(tr -d '\n' <"$_GH_API_OUT" 2>/dev/null)
-        rm -f "$_GH_API_OUT"
-        [ -z "$GH_USER" ] && GH_USER="authenticated"
-        echo "✅ GitHub Auth: Active (gh logged in as $GH_USER via System CLI)"
-        unset _GH_API_OUT
-    else
-        echo "❌ GitHub Auth: Inactive"
-    fi
-else
-    echo "❌ GitHub Auth: Inactive"
-fi
-unset -f _gh_bounded_run
-echo ""
-
-# Step 9: Git remotes
-echo "--- GIT REMOTES ---"
-git remote -v 2>/dev/null || echo "(not a git repo)"
-echo ""
-
-# Step 9.5: Per-workspace git identity + pre-push discipline
-# (platform-scoped-delivery D4/D6). git_guard exits 0 and prints nothing in a
-# downstream project — `identity` is a no-op outside a harness checkout, so
-# this block is silent everywhere except Athanor's own three sibling
-# checkouts. Identity is REPAIRED here (repo-local user.email only, never
-# global) because a wrong plus-address is only discoverable after it has
-# already mis-attributed commits. The pre-push hook is NOT auto-installed:
-# it refuses pushes to main, so arming it is an explicit act
-# (`make git-guard-install`), not something a boot script does behind you.
+# Machinery status (pulse, alembic, github auth, git remotes, git identity)
+# is not printed at boot under L1 (boot on one screen). The guard that repairs
+# harness-sibling git identity STILL RUNS — silently — because its repair is a
+# side effect, not its output.
 if [ -f execution/git_guard.py ]; then
-    _GG_OUT=$(python3 execution/git_guard.py identity --repair 2>&1)
-    if [ -n "$_GG_OUT" ]; then
-        echo "--- GIT IDENTITY (harness siblings) ---"
-        echo "$_GG_OUT"
-        _HOOKS_PATH=$(git config core.hooksPath 2>/dev/null)
-        if [ -f .agent/githooks/pre-push ] && [ "$_HOOKS_PATH" != ".agent/githooks" ]; then
-            echo "⚠️  pre-push guard NOT installed (core.hooksPath='${_HOOKS_PATH:-unset}'). Arm it with: make git-guard-install"
-        fi
-        unset _HOOKS_PATH
-        echo ""
-    fi
-    unset _GG_OUT
+    python3 execution/git_guard.py identity --repair >/dev/null 2>&1 || true
 fi
 
 # Loud-not-silent boot detection (GH #1366 P0): downstream commands

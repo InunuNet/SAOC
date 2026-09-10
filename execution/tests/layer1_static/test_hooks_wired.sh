@@ -13,10 +13,12 @@ OUT=$(jq -r '.hooks.SessionStart[]?.hooks[]?.command // ""' "$SETTINGS" 2>/dev/n
 [ "$OUT" -ge 1 ] && RC=0 || RC=1
 assert_exit "SessionStart has full_boot.sh"      0 $RC
 
-# PreToolUse Write hook (scope check for PAI/MEMORY paths)
-OUT=$(jq -r '.hooks.PreToolUse[]? | select(.matcher == "Write") | .hooks[]?.command // ""' "$SETTINGS" 2>/dev/null | grep -c "exit 2" || echo 0)
+# PreToolUse hook with check_autonomy.sh (destructive-command floor).
+# CEO Directive v2 (L1) cut the paperwork/scope Write hooks; the surviving
+# PreToolUse guard that stops real damage is the autonomy/destructive floor.
+OUT=$(jq -r '.hooks.PreToolUse[]?.hooks[]?.command // ""' "$SETTINGS" 2>/dev/null | grep -c "check_autonomy.sh" || echo 0)
 [ "$OUT" -ge 1 ] && RC=0 || RC=1
-assert_exit "PreToolUse Write hook exists"       0 $RC
+assert_exit "PreToolUse has check_autonomy.sh floor" 0 $RC
 
 # PreToolUse Bash hook with verify_workspace.sh
 OUT=$(jq -r '.hooks.PreToolUse[]? | select(.matcher == "Bash") | .hooks[]?.command // ""' "$SETTINGS" 2>/dev/null | grep -c "verify_workspace.sh" || echo 0)
