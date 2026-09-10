@@ -23,6 +23,35 @@ Codi's own standing correction says the same about their own method: they once d
 R10's prose instead of opening the canvas, and it "satisfied the numbers and discarded the canvas's
 judgement."
 
+### THE CANVAS IS REACHABLE FROM THIS SESSION — verified 2026-09-10
+
+Use the **`DesignSync`** tool (deferred; load with `ToolSearch("select:DesignSync")`).
+`get_project` on `262aba20-788b-4930-b724-255600ffd9d3` returns:
+**"National Orchid Show 2027 — Design System"**, type `PROJECT_TYPE_DESIGN_SYSTEM`, owner InunuNet,
+`canEdit: true`. Read methods do not prompt. **`DesignSync` read-only: never write to this project** —
+it is Codi's authority and our lane does not edit the design system.
+
+**It is NOT the local `design/design_handoff_saoc/` bundle.** That one is the SAOC MAIN SITE handoff —
+sage/parchment/brass, Crimson Pro + Manrope, `ui_kits/website`. The NOS canvas is royal purple,
+Fraunces + Karla, `ui_kits/event-website`. Do not confuse them; building NOS from the local bundle
+would produce the wrong design system entirely.
+
+**Canvas inventory (read what you need, not all of it):**
+- `readme.md` — THE GRAMMAR. Binding. Read first.
+- `guidelines/*.html` — binding. `brand-logo`, `brand-photography`, `brand-reproduction`,
+  `brand-voice`, `colors-core`, `colors-purple`, `colors-accents`, `colors-semantic`,
+  `spacing-radii-shadows`, `spacing-scale`, `type-display`, `type-body`, `type-pairing`, `type-scale`.
+- `tokens/*.css` — VOCABULARY ONLY, not the system: `colors`, `effects`, `fonts`, `spacing`,
+  `typography`.
+- `components/` — `actions/Button`, `actions/IconButton`, `brand/Logo`, `brand/EmblemBadge`,
+  `brand/Icon`, `display/Card`, `display/Badge`, `display/EventCard`, `display/SectionHeading`,
+  `forms/Input`, `forms/Select`, `forms/Checkbox`. Each has `.jsx`, `.d.ts` and a `.prompt.md`.
+  **`display/Card.jsx` is the anatomy R19's disclosure surface and R18's panel are built from.**
+- `ui_kits/event-website/` — `Hero.jsx` (the R10/R15 scrim source of truth), `Programme.jsx`,
+  `Visit.jsx`, `SiteHeader.jsx` (**RETIRED by R12 — ships nowhere**), `SiteFooter.jsx`, `index.html`.
+- `styles.css`, `assets/logo/*` (8 colourways), `assets/photos/*`.
+- `uploads/scott-ormerod-orchid-*.jpg` — **rights UNCONFIRMED and watermarked (R15/4). Do not use.**
+
 **So the first task of this mission is to obtain and read the canvas — not to start building from the
 rules file.** The rules ANNOTATE and CONSTRAIN the canvas; they are not a specification it can be
 regenerated from. If the canvas cannot be read from this session, that is a blocker to raise with
