@@ -1,0 +1,70 @@
+{
+  "schema": "saoc.nos-fallback-wording/v1",
+  "feature": "F24",
+  "mission": "national-show-ia-alignment",
+  "milestone": "M4",
+  "generatedAt": "2026-09-10",
+  "golden": ".agent/memory/project/specs/national-show-ia-alignment/goldens/m4/never-404-fallback.golden.md",
+
+  "markerAttribute": "data-nos-content-state",
+  "markerValues": {
+    "published": "published",
+    "fallback": "fallback-unpublished"
+  },
+  "markerEmitter": "components/show/nos/ShowContentState.tsx",
+  "markerIsServerRendered": true,
+  "censusArtifact": ".tmp/sandbox/nos-ia/content-state-census.json",
+  "censusSchema": "saoc.nos-content-state-census/v1",
+  "gateCondition": "disclosure",
+  "gateRule": "PASS on a disclosed fallback. FAIL on an undisclosed fallback. Content presence is never gated on.",
+
+  "reservedProbePageKey": "__nos-absent-probe__",
+  "fallbackSectionKey": "content-not-yet-published",
+  "fallbackSectionProvenance": "placeholder-ai",
+  "fallbackSectionHeading": null,
+  "fallbackSummary": null,
+
+  "fixedSentence": "The South African Orchid Council has not yet supplied the content for this page.",
+
+  "markedSubtreeTextParts": [
+    "noticeLabel",
+    "noticeText",
+    "routePurposeVerbatim",
+    "fixedSentence"
+  ],
+
+  "bannedPhrases": [
+    "coming soon",
+    "no results",
+    "check back",
+    "watch this space",
+    "TBA",
+    "TBC",
+    "under construction",
+    "page not found",
+    "nothing here yet",
+    "stay tuned"
+  ],
+
+  "inScopeRoutes": [
+    { "slug": "/national-show/programme", "pageKey": "11-programme" },
+    { "slug": "/national-show/symposium", "pageKey": "06-saoc-symposium" },
+    { "slug": "/national-show/wosa-conference", "pageKey": "07-wosa-conference" },
+    { "slug": "/national-show/sa-exhibitors", "pageKey": "04-south-african-exhibitors" },
+    { "slug": "/national-show/international-guests", "pageKey": "05-international-guests-and-exhibitors" },
+    { "slug": "/national-show/sponsors", "pageKey": "15-sponsors" }
+  ],
+
+  "allowedHardNotFoundCallSites": [
+    "app/(marketing)/national-show/archive/[year]/page.tsx"
+  ],
+
+  "notes": [
+    "EXTERNAL CONSUMERS: markerAttribute, markerValues, censusArtifact and censusSchema are the stable public surface. Assert on these rather than building a parallel check; they are pinned here so no consumer has to parse prose or read this repo's checker.",
+    "The marker is emitted structurally by markerEmitter on BOTH branches from one discriminant — a page author cannot forget it, so an undisclosed fallback is unreachable.",
+    "fixedSentence is ONE sentence and makes no claim about the show, its dates, venue, programme or participants.",
+    "routePurposeVerbatim is copied byte-identical from content/national-show-routes.json; it is never edited, tightened or re-voiced.",
+    "bannedPhrases are matched case-insensitively against the marked subtree's visible text.",
+    "reservedProbePageKey must exist in no seed and no dataset — NF12 asserts this so the negative discriminator can never rot into a tautology."
+  ]
+}

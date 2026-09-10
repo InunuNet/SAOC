@@ -64,3 +64,31 @@ cost a push.
   (`N1`–`N15`), the grid check (`G3b`), and Codi's eye.
 - **That the content is correct.** The linkage and provenance checks do that.
 - **That the deployed build matches.** `D31`.
+
+---
+
+## AMENDMENT — 2026-09-10, F24: `L1` is insufficient alone
+
+`L1` ("all 17 listed routes return HTTP 200") was a sufficient signal when it was written and
+**is not one after F24.**
+
+F24 replaces the hard `notFound()` on the six `showPage`-consuming routes with a disclosed
+fallback shell, so those routes can no longer 404 on absent content. That makes `L1`
+**trivially satisfiable**: green forever, on a subsection with no content whatsoever. It is the
+repo's audited defect class — an assertion satisfiable by something that is not the property it
+claims to prove — and it would now be *this* file introducing it.
+
+`L1` itself is **not modified**, and `scripts/checks/verify-nos-m4-local-render.ts` is **not
+touched**: eleven frozen routes depend on this driver's green assertions, and any regression
+there outranks the tidiness of editing a passing verifier.
+
+The hole is closed by conjunction instead, in a separate driver
+(`scripts/checks/verify-nos-content-state.ts`, specified in `content-state-verifier.golden.md`):
+
+> **A green `L1` means "every menu link resolves". It does NOT mean "every page has content".**
+> `L1` is meaningful only conjoined with `NF3` (six of six routes render `published`) and `NF4`
+> (zero render `fallback-unpublished`).
+
+`NF3` is the assertion that stays **red** while content is genuinely absent. The F24 contract
+annotates its own `L1` mirror (`NF5`/`A20`) as `insufficient alone` in writing, next to the
+assertion, so no reader takes a green status code for a working page.

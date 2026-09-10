@@ -829,3 +829,120 @@ Two ways out, both structural:
 Until it is ruled, `contract-m4.yaml`'s `D32` asserts only that this escalation exists. The
 other two triad kinds (`codex_qa` `D30`, `browser_deployed_check` `D31`) are unaffected and
 both run.
+
+
+---
+
+## NEEDS BRAD — the Tickets nav path lands on a chooser, not a checkout (2026-09-10)
+
+**Two call sites, one decision. Neither lane is changing anything until Brad rules.**
+
+- Lead's lane: the nav's Tickets entry was repointed from `/tickets` to `/national-show/tickets`.
+- Our lane: `components/show/ShowSectionNav.tsx:53` carries `/national-show/tickets` with the hint
+  **"Buy admission tickets"** — a hint that promises checkout.
+
+`/national-show/tickets` is a chooser: it asks whether you are a visitor, an exhibitor or a vendor and
+forwards on. Both routes exist, so nothing is dead and **no href-level assertion fires** — this is the
+lead's "reachability is not arrival" case, and we have no assertion that distinguishes them.
+
+**Read the page before deciding — it is not a flat three-way question.**
+`app/(marketing)/national-show/tickets/page.tsx:130` puts a primary-variant `Get visitor tickets`
+button straight to `/tickets`; comments at lines 28 and 95 record this as a deliberate **F8 decision
+from M3 of nos-design-system** — visitor admission was demoted from one of five equal cards and
+re-anchored as the dominant journey, exhibitor and vendor left as ghost-variant secondaries. So a
+visitor sees their button first. The cost is one extra click, not a dead end.
+
+**The question for Brad, framed honestly:** should the nav skip a chooser that was deliberately built
+to route three audiences, at the price of the exhibitor and vendor paths losing their entry point?
+Do NOT frame it as "the buy button lands on a question" — that invites undoing F8 without saying it
+was a decision.
+
+Whatever he rules applies to BOTH call sites at once. Two lanes independently adjusting ticket-path
+wording while the underlying question is open is how we ship a decision nobody made.
+
+### CORRECTION 2026-09-10 — the two lanes described two different files, and both were right
+
+The F8 reading above is **branch-qualified and was not marked as such.** Verified across refs:
+
+| ref | lines | shape |
+|---|---|---|
+| `origin/main` | 77 | flat `.map` over OPTIONS, three identical cards, every one `bg-primary`, heading "What are you here for?". No F8 comment, no variants, no demotion. |
+| `origin/nos-site` (= our HEAD) | 191 | F8 comment at line 28, primary `Get visitor tickets` button to `/tickets` at line 130, ghost-variant secondaries at line 182. |
+
+The lead described main; we described our branch. Both cited real files and real line numbers and
+reached incompatible conclusions, because **neither said which tree.** A file path is not an
+identifier — a file path plus a ref is. This is the input-layer collapse one step further out than the
+`nav-links-200` case: not the wrong artefact, but the right artefact in the wrong tree.
+
+**Which framing Brad should get depends on merge order, and that is now a real dependency:**
+
+- **If `nos-site` merges before the menu ships** (expected, and it is what the plan requires — their
+  flyout cannot gate green until our six routes return 200): the F8 chooser is the destination that
+  will actually exist, so the question is whether the nav should skip a chooser deliberately built to
+  route three audiences, at the cost of the exhibitor and vendor entry points.
+- **If the menu shipped first**, the nav would point at main's flat three-card chooser and the
+  lead's original framing — a buy button landing on an undifferentiated question — would be live and
+  correct.
+
+The lead has corrected what they sent Brad to the first framing, and will verify the destination
+against merged `main` before signing off their own gate rather than assuming it. **If our timebox
+escape hatch is ever taken, re-check this entry before it goes to Brad** — the escape hatch changes
+what lands and could revive the second framing.
+
+#### RESOLVED 2026-09-10 — the merge-order condition is NOT load-bearing. Do not re-litigate.
+
+Verified: `app/(marketing)/national-show/tickets/page.tsx` is touched by `b3adca7d` and `a34e68e5`,
+both inside `origin/main..origin/nos-site` (range is **52 commits**, not the 41 quoted earlier — size
+the review against the range at PR time, not against any number in these notes). The page differs
+main-to-branch by +143/-29.
+
+**The escape hatch flips six manifest rows to `listed: false` and merges the same commits. It drops
+nav entries, not commits — nothing in it reverts a file edit.** So the 191-line F8 page lands in the
+reduced-PR scenario exactly as in the full one, and the first framing above is the correct one
+unconditionally.
+
+**Keep the condition recorded, but treat it as answered.** A decision memo that shows why a condition
+was checked is worth more than one that silently omits it.
+
+**The reasoning is the reusable part:** this hatch is safe *specifically because it operates on
+manifest data rather than on history*. That distinction is not visible in the phrase "escape hatch".
+Any future hatch that drops, reverts or reorders commits brings the whole concern straight back and
+must be re-checked against this entry.
+
+
+---
+
+## NEEDS BRAD / CODI — the manifest `purpose` has no provenance slot (2026-09-10, from M4/F24)
+
+F24 (never-404 fallback) renders each absent page's **manifest `purpose` string, byte-identical**,
+underneath a `placeholder-ai` disclosure reading "AI-generated placeholder… may be inaccurate".
+
+**The mismatch:** `purpose` is team-authored, already-published content — the lead's flyout renders it
+trimmed. Describing it as AI-generated slightly *mis*states what it is. The architect chose
+over-disclosure deliberately, because under-disclosure is this repo's audited defect class, and I have
+upheld that for M4. **It ships this way unless Codi rules otherwise.**
+
+**The real finding underneath it:** `purpose` occupies a *fifth* provenance state that
+`docs/rules/no-invention.md`'s four values have no slot for — team-authored routing metadata that has
+become published content. Not `council-supplied` (not the council's words), not `council-draft` (not
+Lee-Ann's), not `research`, not `placeholder-ai`. **This is a gap in the provenance vocabulary, not a
+bug in F24.** Codi's call.
+
+### Second, separate: some `purpose` strings make factual claims about the show
+
+`11-programme`'s purpose is "The overall schedule of sessions across the four show days." **"Four show
+days" is a factual claim about an unconfirmed event.** It is already published, so F24 treats it as an
+existing decision rather than a new invention — but F24 propagates it onto a page whose entire premise
+is that nothing on it is confirmed yet.
+
+**Someone should confirm the show is four days** before this reaches more surfaces. If it is not, the
+error is already live in the flyout and is not F24's to fix. Sweep every `purpose` string for similar
+claims while ruling.
+
+### Accepted without escalation (recorded so the reasoning is not re-litigated)
+- **No breadcrumb.** My brief named one; this repo has no breadcrumb component and building one is
+  design work Brad's instruction explicitly forbids taking on here. `ShowSectionNav` substitutes — it
+  exists, is already on all six routes, and is required there by L7/N15. Correct refusal.
+- **The fixed sentence** ("The South African Orchid Council has not yet supplied the content for this
+  page.") is authored prose no source document contains, but it makes no claim about the show, and
+  NF13's text census pins the marked subtree to exactly four permitted strings so it cannot grow.

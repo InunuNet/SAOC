@@ -150,3 +150,39 @@ the checksum exists to prevent.
 - **Escalate, never re-derive.** New design questions go to Codi. An architect does not invent a
   ruling and a dev does not improvise one.
 - Delivery is a PR from `nos-site`, cross-lane review, one approval, merge. No pushes to `main`.
+
+
+---
+
+## DESIGN LANE CLOSED 2026-09-10 — unblock status at handoff (verified, not taken on trust)
+
+Design session `saoc-nos-design-9d` closed. Brad resumes it tomorrow or on **Sun 13 Sep** when the
+Claude Design quota resets. Verified on our side: all three files in `.agent/memory/project/design/`
+are committed on HEAD with nothing uncommitted, and R3, R11, R13, R14-R20 all appear. R20 confirmed
+substantive (nos-brief.md:161).
+
+**NOW UNBLOCKED** (was blocked at plan time):
+- `ShowPageProse` rebuild against **R19**. The R11-vs-R17/R18 rail contradiction that blocked it is
+  resolved — R19 supersedes. **The old BLOCKED note in the M4 close-out plan is stale.**
+- `sa-exhibitors`, `international-guests`, `sponsors` against **R18** plus the grammar.
+- Logo files per **R20**.
+- The `lg:grid-cols-5` → 4 fix — already in M4 scope and in @dev's brief.
+
+**STILL GATED:** re-citing the M4 contract by rule number, which waits on the checksummed mirror.
+That is the only remaining gate.
+
+**WITH BRAD, not with either lane:** the direct mirror write; photo provenance on the canvas's
+`assets/photos/` set; and the three owed designs — `programme`, `symposium`, `wosa-conference` —
+gated by the quota reset, not by anyone's queue. **Nobody derives those from the rulings in the
+meantime.** Deriving a design from rules prose is the mistake Brad called "horrible".
+
+### THIS CHANGES NOTHING ABOUT M4 SCOPE
+Brad, 2026-09-10: *"don't get blocked by the design just do a best effort approach"*, and the mission
+is done at merge with no new mission after. **Unblocked does not mean in scope.** None of the above
+enters M4. The M4 pages ship structurally undesigned with disclosed F14 fallbacks, which the lead has
+already accepted as a stated condition rather than a defect.
+
+### SCOPE-BOUNDARY WARNING for whoever runs this plan
+R20's authoritative logo source is `/Users/vetus/ai/SAOC/branding/National Show 2027/Logo` — **outside
+this project folder.** Reading it needs permission asked and granted first, naming the full path and
+the tree (`scope.md`). Do not assume the path is readable because it is named here.
