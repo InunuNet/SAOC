@@ -3824,3 +3824,84 @@ Two things to carry:
 Standing consequence: after any `backlog_trim.py` run, `git status` the whole
 `.agent/memory/project/` tree before committing, and commit extracted detail files in the
 same commit as the file that links to them.
+
+## Session 2026-09-10: the audited defect class, found seven times in one pass
+
+Same class this repo already tracks — "an assertion satisfiable without the property it
+claims to prove" — recurred seven times across nav, contract-runner, and disclosure-gate
+work in a single session. Worth recording as instances of one rule, not seven separate bugs:
+
+1. `e2e/nav-links-200.spec.ts` asserted 200 on the **NAV data export**, never on rendered
+   HTML — it proved a link exists in config while claiming a visitor could reach the page.
+   Fixed with `e2e/nav-rendered-reachability.spec.ts`, which opens the real flyout/drawer and
+   reads actual anchors, and which was required to fail against the pre-fix tree first.
+2. `check-descriptor-provenance.mjs` printed "SKIPPED, never PASS" then exited 0, which the
+   runner counted as a pass — a check that goes green by itself the moment an unrelated
+   branch merges. Fixed with a real skip channel: `SHELL_SKIP_EXIT_CODE = 3` in
+   `contracts/checks/_shared/run_contract_suite.mjs`, counted separately from PASS.
+3. `collectHrefs` covered 20 of 23 real hrefs — blind to the lead block, feature rail,
+   `leadHref`, `headingHref`. A link the collector can't see is a link the test can't fail on.
+4. A pending-routes exemption list had no mechanism to empty itself — "don't leave a route
+   here once it's live" was prose, not a gate, so exemptions would have stayed forever.
+   Fixed: `check-pending-routes-still-pending.mjs` re-tests each against a named ref, and the
+   property now reports UNMEASURED (not PASS) while any route is still listed.
+5. A gate measuring 11 of 17 hrefs could still report PASS. Fixed:
+   `check-nav-links-200-gated-by-exemptions.mjs` exits 3 while the exemption list is
+   non-empty, regardless of how many non-exempt hrefs pass.
+6. A disclosure gate vacuously true at zero cases (site-content-alignment NOS lane, F24) —
+   green forever with nothing exercised. Only a probe assertion keeps it honest; if the probe
+   is weakened the gate goes decorative with no signal.
+7. `record()` was typed `Verdict | string`, defeating a type just widened to exclude bare
+   strings — a summary printed TOTAL=13 against 12 accounted. Fixed by making the wrong shape
+   unrepresentable (`Verdict` only) plus asserting the buckets reconcile with the total, so
+   the next unaccounted value can't hide either.
+
+**General rule:** an assertion must be able to fail in the context where it runs. Green is
+not evidence; green-and-could-have-been-red is. When a check changes, prove the change is
+real against a case that can fail — a widening that alters no count on today's data proves
+nothing without a synthetic negative (`.tmp/sandbox/nav-links-200-collector-proof/prove-widening.mjs`
+showed 4→6 while the real nav stayed 23).
+
+## Unnamed state reported as fact (2026-09-10) — four instances, one habit
+
+Treating local, private, mutable state as if it were shared or durable:
+
+- **A file path is not an identifier; a path plus a ref is.** `wosa-conference` was claimed
+  to exist three times; it was on no pushed ref each time.
+- **A port is not evidence.** A ten-route failure report (including two 500s) came from a dev
+  server "already running from concurrent work" that nobody could identify. Four of those
+  routes return 200 on a clean run; the 500s never existed. Evidence must come from a server
+  you started, from a stated revision — or it isn't cited.
+- **"Committed" means "exists here", not "exists".** Six commits sat local while reported as
+  landed.
+- **A line number is not an identifier of content.** An agent redacting a credential located
+  the values by grepping surrounding email addresses rather than trusting given line numbers;
+  its own line arithmetic drifted but the redaction was still correct because it didn't trust
+  the offsets. Had it trusted them and reported the offsets back as confirmation, a live
+  credential would have survived behind a report saying it was handled. **Verify by content
+  match, not by the coordinate you were handed.**
+
+Two more from the same session:
+
+- **Gate results taken while other agents run concurrently are untrustworthy either way.**
+  contract-f3 scored 6/8 once then 8/8 three times, from contention between a stray dev
+  server and Playwright's own webServer. Run the final gate with nothing else in flight.
+- **An expiring negative fixture must be captured before the fix, or it does not exist.**
+  Once a dataset is repaired, "assertion fails against a hand-broken copy" only proves it
+  fails against a synthetic break, not the original one. Mark such assertions
+  unproven-by-fixture; never upgrade them quietly.
+- **"Already covered" was wrong three times in one session.** Treat it as a prompt to check,
+  not a conclusion.
+
+## Security facts, 2026-09-10 (values must never be written anywhere, including here)
+
+- `InunuNet/SAOC` is **public** — verified via `gh`, not assumed. It had been believed
+  private.
+- Two plaintext mailbox passwords, from a committed copy of Lee-Ann's Spec V3 document, were
+  redacted in `0ec14930` — history still carries them. They are **not** the live mailbox
+  passwords (the migration's generated randoms live only in gitignored `ops-secrets.local.md`,
+  never on any ref) but they are reused values, so only Lee-Ann rotating them closes the gap.
+- Near-miss: `download.xml`, an untracked Word doc, sat in the repo root, not gitignored — a
+  bare `git add -A` would have committed it, which is exactly how the spec document leaked in
+  the first place. **Rule: Drive source documents go under `content/drive-source/`; anything
+  untracked sitting in the repo root is a hazard until it's ignored or filed, never left.**
