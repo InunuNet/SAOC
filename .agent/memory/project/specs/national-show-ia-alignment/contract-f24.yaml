@@ -25,9 +25,10 @@ autonomy: high
 # need it. Flagged, not silently resolved.
 #
 # Goldens:
-#   goldens/m4/never-404-fallback.golden.md      - design, scope, provenance, wording
-#   goldens/m4/content-state-verifier.golden.md  - the NF1-NF13 driver contract
+#   goldens/m4/never-404-fallback.golden.md       - design, scope, provenance, wording
+#   goldens/m4/content-state-verifier.golden.md   - the NF1-NF17 driver contract
 #   goldens/m4/fixtures/f24-fallback-wording.json - pinned wording + banned phrases
+#   goldens/m4/fixtures/f24-content-baseline.json - A39's regression tripwire baseline
 #
 # THE TRAP THIS CONTRACT IS BUILT AROUND, stated once here so no assertion is read
 # in isolation: after F24, "the route returns 200" is true forever, with or without
@@ -37,17 +38,28 @@ autonomy: high
 # it supersedes this contract's first draft, which gated on published == 6):
 #   PASS on a disclosed fallback. FAIL on an undisclosed one.
 # The failure condition is not "this page is a shell" - it is "this page is a shell
-# and does not say so". Content presence is not ours to require; honest disclosure
-# is. A19 is the gate. A18/A18b keep the census provably RUNNING and its numbers on
-# the record whether the fallback count is 0 or 6 - because a metric that appears
-# only when non-zero is indistinguishable from a metric that is not running, which
-# is exactly how this afternoon's skip-as-pass defect landed.
+# and does not say so". A19 is the gate. A18/A18b keep the census provably RUNNING
+# and its numbers on the record whether the fallback count is 0 or 6 - because a
+# metric that appears only when non-zero is indistinguishable from a metric that is
+# not running, which is exactly how this afternoon's skip-as-pass defect landed.
+#
+# THE REASON MATTERS, because the first one given was wrong. An earlier revision of
+# this header argued that gating on content presence would sit red for months on a
+# property nobody here controls. That was ALREADY FALSE when written: commit
+# db6cd81d re-seeded production the same day, all six routes render real content,
+# and `published == 6` would be GREEN TODAY. The ruling stands on the sound reason -
+# content presence is not the property F24 exists to protect; F24 is the fallback
+# machinery and seeding belongs to another lane. The bad argument is struck rather
+# than quietly dropped, because a contract that keeps a wrong argument for a right
+# conclusion invites the conclusion to be reopened.
 #
 # A19 is vacuous at zero fallbacks; A21/NF6 is what stops that being a free pass.
 # A36/A37 make the marker STRUCTURAL so an undisclosed fallback is unreachable
 # rather than merely detected. A34/A35 cover the router-level 404 this feature
-# structurally cannot reach at all. If a reviewer reads three assertions in this
-# file, read A19, A36 and A34.
+# structurally cannot reach at all. A39 is the CONTENT-PRESENCE TRIPWIRE - the one
+# signal that fires when the subsection silently empties, which every other
+# assertion here would sail straight through. If a reviewer reads four assertions in
+# this file, read A19, A36, A34 and A39.
 # ---------------------------------------------------------------------------
 
 features:
@@ -67,6 +79,7 @@ goldens:
   - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/never-404-fallback.golden.md
   - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/content-state-verifier.golden.md
   - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/fixtures/f24-fallback-wording.json
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/fixtures/f24-content-baseline.json
 
 assertions:
   phase: 4
@@ -78,9 +91,9 @@ assertions:
     # -----------------------------------------------------------------------
 
     - id: A1
-      description: The three golden artifacts this feature is implemented against exist.
+      description: The four golden artifacts this feature is implemented against exist.
       type: shell
-      command: test -f .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/never-404-fallback.golden.md -a -f .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/content-state-verifier.golden.md -a -f .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/fixtures/f24-fallback-wording.json
+      command: test -f .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/never-404-fallback.golden.md -a -f .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/content-state-verifier.golden.md -a -f .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/fixtures/f24-fallback-wording.json -a -f .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/fixtures/f24-content-baseline.json
 
     # -----------------------------------------------------------------------
     # The loader. loadShowPage keeps returning null; the fallback is a SECOND,
@@ -470,6 +483,60 @@ assertions:
         prose or read our checker.
       type: shell
       command: grep -q '^NF16 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    # -----------------------------------------------------------------------
+    # THE CONTENT-PRESENCE TRIPWIRE.
+    #
+    # With disclosure as the gate, EVERY OTHER ASSERTION IN THIS FILE STAYS
+    # GREEN on a subsection that has silently gone empty: A19 passes because the
+    # fallbacks are disclosed, A18 because the census ran and summed to six,
+    # A18b because the artifact is well-formed. The fallback machinery would be
+    # verified working in full while the thing it substitutes for had vanished -
+    # the same defect shape this mission chased all day, one level up.
+    #
+    # A39 is a BASELINE, never a count. `published == 6` cannot tell a broken
+    # seed from a deliberately retired page; both arrive as the same red, and the
+    # second is the mysterious red that teaches people to widen checks. Comparing
+    # against a checked-in list of WHICH routes are expected published yields
+    # three verdicts: PASS, FAIL (the tripwire fired - check the named seed), and
+    # DRIFT (a page was added or retired without the baseline being updated).
+    #
+    # DRIFT still fails the grep - a drifting baseline is not a pass - but it is
+    # a distinct token, so a legitimate retirement reads as a bookkeeping gap at
+    # a glance instead of arriving as an unexplained failure. Retiring a page is
+    # recorded by EDITING THE BASELINE in the same commit that retires the route:
+    # an edit has an author, a diff and a commit message, which a gate colour
+    # does not.
+    #
+    # WHY A HARD ASSERTION AND NOT required: false - the lead left this call to
+    # me. A soft signal is precisely the "number nothing gates on" that produced
+    # this afternoon's skip-as-pass defect, so making the tripwire optional would
+    # reintroduce the failure it was added to prevent. The concern that a hard
+    # check couples F24's gate to the seeding lane's data is answered by the
+    # baseline being F24's OWN artifact: this asserts "the baseline is satisfied",
+    # and the baseline is ours to edit deliberately. Separately identified and
+    # separately reported, per the brief - but not optional.
+    # -----------------------------------------------------------------------
+
+    - id: A39
+      description: >-
+        NF17 - CONTENT-PRESENCE TRIPWIRE, established green 2026-09-10 against db6cd81d
+        ("fix(nos): hyphenate seed document ids - unblocks the six 404ing show routes"). Every
+        route baselined in goldens/m4/fixtures/f24-content-baseline.json as expected-published
+        must render `published`, and the published set must match the baseline exactly. THIS IS
+        NOT F24's GATE - A19 (disclosure) is. This is the distinct signal that notices the
+        db6cd81d blocker returning, which no other assertion in this contract can see.
+      type: shell
+      command: grep -q '^NF17 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A39b
+      description: >-
+        The baseline artifact itself is present and well-formed - schema, and one entry per
+        in-scope route naming its slug, pageKey and backing seed file. A tripwire whose baseline
+        has been emptied or truncated would pass NF17 vacuously, which is the failure mode
+        tripwires characteristically die of.
+      type: shell
+      command: python3 -c "import json; d=json.load(open('.agent/memory/project/specs/national-show-ia-alignment/goldens/m4/fixtures/f24-content-baseline.json')); assert d['schema']=='saoc.nos-content-baseline/v1'; e=d['expectedPublished']; assert len(e)==6; assert all(r['slug'] and r['pageKey'] and r['seed'] for r in e)"
 
     # -----------------------------------------------------------------------
     # Verification triad. gws_inbox_check is DELIBERATELY ABSENT: F24 wires no

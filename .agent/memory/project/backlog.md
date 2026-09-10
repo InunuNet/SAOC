@@ -2268,3 +2268,34 @@ Full plan on disk: `.agent/memory/project/plans/2026-09-11-m4-closeout.md`
 Blocker: six routes 404 because `showPage` is invisible to ANONYMOUS Sanity reads (13 docs exist and
 are published; dataset is public; `showPage` is the only type missing from an anonymous type list).
 NOT CDN lag — that was disproved. Prime suspect is our own read path (`sanity/lib/fetch.ts`).
+
+
+---
+
+## UPSTREAM DEPENDENCY — InunuNet/Athanor#1436 (filed 2026-09-10)
+
+`contract.py gate --phase max` hard-blocks with **exit 6** on a triad-coverage preflight before
+running any assertion: *"contract-m4.yaml is a UI/workflow contract missing triad kind(s):
+gws_inbox_check"*. This contradicts `CLAUDE.md`, which documents `verify_triad_coverage.py` as
+**not wired into any gate path**. Either the behaviour or the documentation is wrong.
+
+**Consequence for M4:** the 92-assertion contract could not be gated. Measurement was obtained by
+invoking `contract.py check` per assertion instead — **61 PASS / 30 FAIL / 1 ERROR**, raw log at
+`.tmp/sandbox/m4-seed/gate-m4-checks-raw.log`. The gate path and the measurement path can therefore
+disagree silently, and only the per-assertion path was actually run. **State this in the PR.**
+
+**Three escapes deliberately NOT taken, and why:**
+1. Adding a `gws_inbox_check` assertion — this mission has no inbox surface, so the assertion would
+   be vacuous. That is the exact defect class the triad exists to prevent.
+2. Adding the contract to `scripts/checks/triad-baseline-exempt.txt` — exempting a contract to turn
+   a gate green is indistinguishable from the outside from gaming the gate, and the list carries no
+   reason next to the entry.
+3. Patching `execution/contract.py` — harness-owned, reverted by the next `make update-template`.
+
+**Preferred upstream fix:** a first-class way to declare a triad kind *not applicable* with a written
+justification recorded next to the contract, distinct from a global exemption list. "Not applicable,
+because there is no inbox surface in this mission" is an honest, reviewable claim; an exempt-list
+entry is not.
+
+**Until it lands:** measure with per-assertion `contract.py check`. Do not add to the exempt list and
+do not patch the harness.

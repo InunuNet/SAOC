@@ -52,9 +52,13 @@ how a census silently becomes meaningless.
 ### The census, and the disclosure gate
 
 **Revised 2026-09-10 on the lead's ruling.** An earlier draft made `NF3` gate on
-`published == 6`. That is wrong: **content presence is not ours to require** — the Council
-supplies copy on its own schedule, and a gate that stays red for months on a property nobody
-here controls is a gate everyone learns to skip. **Honest disclosure is ours to require.**
+`published == 6`. That is wrong, but **not** for the reason first given here: the struck
+argument was that such a gate would sit red for months on a property nobody controls. Commit
+`db6cd81d` re-seeded production the same day, so `published == 6` would in fact be **green
+today** — see `never-404-fallback.golden.md` §0. The sound reason is the other one:
+**content presence is not the property F24 exists to protect.** F24 is the fallback machinery;
+whether a document exists belongs to the seeding lane. **Honest disclosure is what this feature
+owns**, and `NF17` below is what watches the part that is no longer being gated.
 
 | id | gates on | explicitly does NOT gate on |
 |---|---|---|
@@ -97,6 +101,36 @@ nothing to disclose) and it would be a serious weakness on its own.
 holds, and asserts the disclosure is there. The disclosure gate is therefore never untested,
 even when every route is published — which is the state this repo expects to be in most of the
 time, and therefore the state the gate has to keep working in.
+
+### `NF17` — the content-presence tripwire, reported separately from the gate
+
+| id | check |
+|---|---|
+| `NF17` | The live census matches `fixtures/f24-content-baseline.json` — every route baselined as expected-published renders `published`, and the published set matches the baseline exactly. |
+
+**Why it has to exist.** With disclosure as the gate, every other id here stays green on a
+subsection that has silently gone empty: `NF4` because the shells are disclosed, `NF3` because
+the census ran and summed to six, `A18b` because the artifact is well-formed. The fallback
+machinery would be fully verified while the content it substitutes for had vanished — the same
+defect shape as everything else this mission fixed today, one level up.
+
+**Three verdicts, not two**, because a two-valued check cannot tell a broken seed from a
+deliberate retirement:
+
+| verdict | line | meaning |
+|---|---|---|
+| pass | `NF17 PASS` | live set matches the baseline |
+| regression | `NF17 FAIL` | **the tripwire fired** — a baselined route is now a shell; the detail line names the route and its seed file |
+| drift | `NF17 DRIFT` | a page was added or retired without the baseline being updated |
+
+`DRIFT` is a distinct token so the contract's `grep -q '^NF17 PASS$'` still fails on it — a
+drifting baseline is not a pass — while the operator sees immediately that this is a
+bookkeeping gap, not a content regression, and knows the fix is to edit the baseline in the
+commit that changed the tree.
+
+**`NF17` is reported on its own line with its own vocabulary and is not folded into the gate
+verdict.** `NF4` is the gate. This is a distinct signal about content, and it is deliberately
+legible as one.
 
 ### The 200 check, explicitly labelled insufficient
 

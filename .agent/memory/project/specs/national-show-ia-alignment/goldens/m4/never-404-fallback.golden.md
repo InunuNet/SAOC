@@ -40,10 +40,55 @@ does not say so."*
 
 Two things follow, and both matter:
 
-**Content presence is not ours to require.** The Council supplies copy on its own schedule. A
-gate that fails until they do would go red for months on a property nobody in this repo
-controls, and a permanently-red gate is a gate everyone learns to skip. Honest disclosure *is*
-ours to require, absolutely, and it is the property that actually protects the reader.
+**Content presence is not the property F24 exists to protect.** F24 is the fallback machinery;
+whether a document exists is the seeding lane's business. Disclosure is the property this
+feature owns, and it is the one that actually protects the reader.
+
+> **Correction, same day.** An earlier version of this paragraph gave a second reason first:
+> that gating on content presence would hold the gate red for months on a property nobody here
+> controls. **That reason was already false when it was written.** Commit `db6cd81d` landed the
+> id fix and re-seeded production; all six routes now render real content, and a
+> `published == 6` gate would be *green today*. Content presence for these six is controlled —
+> we seed it from `content/show-pages/*.json`. The ruling stands on the first reason, which is
+> the sound one; the second is struck rather than quietly deleted, because a golden that keeps
+> a bad argument for a good conclusion invites the conclusion to be reopened when someone
+> notices the argument is wrong.
+
+That correction has a consequence, and it is `NF17` — see below.
+
+### `NF17` — the content-presence tripwire
+
+Once disclosure is the gate, **every assertion in this contract stays green on a subsection
+that has silently gone empty.** `NF4` passes because the fallbacks are disclosed. `NF3` passes
+because the census ran and sums to six. `A18b` passes because the census artifact is
+well-formed. The
+fallback machinery would be verified working, in full, while the thing it exists to substitute
+for had vanished.
+
+That is the same defect shape this mission has been chasing all day, one level up.
+
+`NF17` is the separate signal that catches it: a **regression tripwire**, established green on
+2026-09-10 against `fixtures/f24-content-baseline.json`, whose only job is to notice the
+`db6cd81d` blocker returning.
+
+**It is a baseline, not a count** — and that is the whole design. `published == 6` cannot
+distinguish a broken seed from a deliberately retired page; both arrive as the same red, and
+the second one is the "mysterious red" that teaches people to widen checks. Comparing against
+a checked-in list of *which* routes are expected published gives three outcomes instead of two:
+
+| verdict | meaning |
+|---|---|
+| `PASS` | the live set matches the baseline exactly |
+| `FAIL` | **the tripwire fired** — a baselined route regressed to a shell. Check its seed. |
+| `DRIFT` | a page was added or retired without the baseline being updated |
+
+`DRIFT` is the amber. A legitimate retirement is recorded by **editing the baseline in the same
+commit that retires the page** — an edit with an author, a diff and a commit message, which is
+a far better record than a gate colour nobody has to justify.
+
+**`NF17` is not F24's gate.** `NF4` is. `NF17` is reported on its own line, with its own
+verdict vocabulary, so it reads as a distinct signal about *content* rather than as part of the
+verdict on the *fallback layer*.
 
 **A reported number that nothing gates on is not a safeguard.** That is precisely how the
 skip-as-pass defect landed this afternoon. So the census is not merely printed — `NF3` gates on
