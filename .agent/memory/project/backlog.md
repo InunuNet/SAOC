@@ -2231,3 +2231,28 @@ this project's CLAUDE.md says 3000; `pnpm dev` actually runs 3002. The dangerous
 "reuse whatever answers on 3000" pattern — on a multi-session machine that can verify a different
 project's app and report green. Local fix until upstream lands: verifiers probe, prove server
 identity before reuse, and record verified-vs-started in the evidence line.
+
+## NOS M4 — state at 2026-09-10 wrap-up (commit c27b41cb, branch nos-site)
+
+NOT DONE. The six new routes exist and typecheck but return 404 on localhost:3002.
+
+RESUME HERE, in order:
+1. Run `scripts/seed-show-pages.ts` — AUTHORISED by Brad. Target is the PRODUCTION dataset
+   (26yfbug4). Creates and field-scoped patches only; report output verbatim; stop on anything
+   that reads as an overwrite of council content. Without this the six routes stay 404 because
+   loadShowPage returns null and R6's notFound() fires as designed.
+2. HTTP-check all 18 NOS routes on port 3002 (NOT 3000 — pnpm dev is `next dev --port 3002`;
+   CLAUDE.md's "localhost:3000" line is wrong and needs a one-line correction).
+3. Only then tell saoc-eb the routes are ready, so they can build the menu against them.
+
+Deferred to a separate slice (Brad's call): `scripts/checks/verify-nos-m4-notice.ts` (pixel
+measurement, N1-N15/G3b), F16 visitor-info/showFaq provenance unification (V1-V5 correctly FAIL),
+`ExhibitorSteps`/`ExhibitorQuestions` grid migration (D92 — escalate, never act unilaterally),
+and the hub's pre-existing fixed-count grids (deferred WITH REASONS in the golden, not skipped).
+
+Open, needs a decision:
+- S1-S4 rendered-output snapshots have NO pre-M4 baseline. Resolution given but not executed:
+  capture from a clean worktree at 3fe9c6e1, never from the current tree (that is the self-
+  comparison trap S3 exists to catch). Check first whether any untouchable route reads showPage —
+  if so the baseline must be captured BEFORE the seed.
+- Gate checks need `M4_BASE_REF=3fe9c6e1`; `origin/main` predates this work and over-reports.

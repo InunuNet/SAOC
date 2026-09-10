@@ -1,9 +1,5 @@
 # Reboot Context
-_Generated: 2026-09-10T16:17Z_
+_Generated: 2026-09-10T18:38Z_
 
 ## What happened last session
-national-show-ia-alignment: M1 content model built (provenance gate: required enum no default, opaque GatedProse, single renderer, no suppressing prop); M3 copy written for all 17 pages; M4 (16 pages) authored but HALTED pending Brad's approval of the NOS structure. M1 gate 51/52 - last finding: sourcePath existence != body provenance, dev fixing. Cross-lane: saoc-eb is lead orchestrator, owns site chrome; our slugs won; /national-show/exhibitors not repointed (it is the grower entry guide). SECURITY P0: live SAOC mailbox passwords in docs/leeann-source/website-development-specification-v3_2026-09-06.md, commit 1d6512cb, pushed to PUBLIC InunuNet/SAOC - needs human rotation, see needs-human.md. Four failure modes recorded plus: a limitation you chose to accept is still a defect to someone who was not in the room.
-_Generated: 2026-09-06T22:33Z_
-
-## What happened last session
-Recorded 7 durable lessons from tonight's beta-verification session: client-hydrated routes need browser not curl verification, falsifiable-claim prompts beat holistic QA asks, JSX whitespace-collapse is only detectable rendered, fallback paths can be the active path (check the dataset), Codex diff-only findings need verification against real files, an honest-gap content pattern for missing data, and a known (unfiled) condition re: Athanor hook-integrity update leaving require_*.sh hooks registered.
+NOS M4: Brad approved the 17-page tree; contract retargeted to 95 assertions and committed (3fe9c6e1); dev pass built 6 routes + hub groups + route manifest + sitemap derivation (c27b41cb). Routes are NOT live — all six 404 because the showPage docs are not seeded; seed is authorised against the production dataset and is the first action on resume. Merged origin/main after nearly writing a second /about over a deployed page; renamed branch nos-design -> nos-site after finding origin/nos-design belongs to the design lane. Filed Athanor#1435 (verification guidance hardcodes a dev port; 'reuse whatever answers' can verify the wrong app and report green).
