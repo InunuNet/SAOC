@@ -48,35 +48,21 @@ Do not scope work from an entry that contradicts it.
 
 ## Next up (queued, not yet a mission — dispatch as soon as current mission closes)
 
-- [ ] **[P1] The live National Show menu renders the pre-Layout-4 panel, and I do not yet know why.**
-  Brad's screenshots (2026-09-10, ~21:10) show the old narrow three-column flyout: Visit /
-  Programme / Exhibit & Trade only, no lead block, no per-leaf descriptors, no Tickets feature
-  rail, not full-width. The approved Layout 4 artifact has five tracks. **But the leaf names in
-  his screenshot are the new F1 manifest ones** (Conference Registration, Trade Vendors,
-  Exhibitor Entry Guide, International Guests), so the nav data landed and the render did not.
-  Every gate is green: contract-f2 7/7, the rendered-reachability spec passes and explicitly
-  asserts the lead-block links appear in real DOM, 52 Playwright tests pass, production build
-  clean.
-  **Two candidate causes, neither confirmed.** (a) The build being served predates `0b131c85`
-  (F2/F3/F4 render path, pushed ~21:05) while including `ab4cae1e` (F1 nav data, pushed
-  earlier) — i.e. ordinary deploy lag, and nothing is wrong with the code. (b) There is a
-  header render path our tests never exercise, so the suite proves Layout 4 renders somewhere
-  the visitor isn't.
-  **Investigation so far was inconclusive and should not be trusted.** `curl` against
-  `saoc-prod--saoc-webapp.europe-west4.hosted.app` returned zero matches for BOTH the F1 leaf
-  names and the F2 markers — which contradicts the screenshot in the F1 direction, so either
-  that is not the origin Brad was viewing, or the panel's contents are client-rendered and
-  never appear in the initial HTML `curl` sees. A `next start` probe on port 3311 returned 0
-  bytes: the server never came up, so its zeros measured nothing and are not evidence.
-  **First action next session, before touching any code: establish which commit the thing Brad
-  is looking at was built from, and say the sha.** Then open it in a real browser rather than
-  `curl`, because a client-rendered panel is invisible to a plain fetch. Ask Brad for the exact
-  URL. Only after the build is identified does it make sense to ask whether the code is wrong —
-  today's repeated lesson is that a report about an unnamed build state is not evidence about
-  the tree.
-  If cause (b) turns out to be real it is the most serious finding of the mission, because it
-  means the acceptance test opened a page the visitor does not get — the same defect class,
-  one level up from the one this mission was created to fix.
+- [x] **[P1 — RESOLVED 2026-09-10] "Live menu renders the pre-Layout-4 panel" was deploy lag on the wrong origin.**
+  Cause (a) of the two candidates, confirmed by Brad's screenshots of `beta.saoc.co.za`: the
+  Layout 4 render IS live and correct — five tracks, lead block, per-leaf descriptors, feature
+  rail, full-width sheet. Candidate (b), "a header render path our tests never exercise", is
+  DISPROVED; the acceptance tests were opening the same page the visitor gets.
+  The investigation was wrong because it measured the wrong origin. `curl` was pointed at
+  `saoc-prod--saoc-webapp.europe-west4.hosted.app`, which was stale; Brad views
+  `beta.saoc.co.za`. **Lesson, and the reason this entry is kept rather than deleted: an
+  origin is part of what a measurement claims. Reporting "the deployed site shows zero
+  markers" without naming which host was fetched is the same defect as reporting a line
+  number without its content — the same class this mission was created to fix, hit twice in
+  one day.** `beta.saoc.co.za` is the origin to check; record it before the next deploy check.
+  Superseded by the M2/F6 visual-fidelity work: the render landed, the *styling* drifted from
+  the approved artifact (missing column rules, wrong sheet shadow, feature rail missing its
+  blurb).
 
 - [ ] **[P1] A14 re-verification after deploy** (site-content-alignment M1-M2, 2026-09… → [details](data/p1-a14-re-verification-after-deploy-site.md)
 
