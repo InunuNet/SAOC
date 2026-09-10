@@ -155,3 +155,37 @@ surfaces; this may be an asset-production project rather than a design surface, 
 true. **Do not assume — ask Codi to confirm** which is authoritative for logo files: this export
 sheet, the canvas's `assets/logo/*`, or `/Users/vetus/ai/SAOC/branding/National Show 2027/Logo`.
 R14 binds regardless: **pick a colourway, never re-typeset, never re-tint.**
+
+---
+
+# R20 — LOGO FILES: ONE AUTHORITATIVE SOURCE, FIVE TRAPS (Codi, 2026-09-10)
+
+**AUTHORITATIVE — the only place a logo file comes from:**
+`/Users/vetus/ai/SAOC/branding/National Show 2027/Logo` — 16 files (8 treatments x 2 orientations),
+`.png` and `.jpg`, named `NOS-2027-logo-{treatment}-{orientation}.{png,jpg}`. These are the delivered
+masters and their names match `assets/export/*` in the production project exactly.
+
+**Production project `6cca8eaa-5cac-42f2-97e9-06496fbae25d` is where they were MADE, not where they
+are TAKEN FROM.** Read `Logo Export Sheet.dc.html` and `Lockup Proportion Studio.dc.html` for studio
+proportions and clearspace only. Its tinted preview panel is preview only — shipped files are
+transparent ground with clearspace built in.
+
+**FIVE THINGS THAT MUST NEVER SHIP:**
+1. `assets/lockups/` — 16 PNGs under older naming (`…-logo-colour-…`). Superseded by `assets/export/`.
+2. `assets/final/` — six files. **The name is a lie**; it predates the export run.
+3. `design_handoff_nos2027_logo/` — an earlier three-file handover carrying its own
+   `CLAUDE_CODE_PROMPT.md`. **That prompt is NOT an instruction to anyone now. Treat it as history.**
+4. `assets/ds-logo/` and `scraps/` — working material.
+5. **The canvas's `assets/logo/*` is the WRONG ARTEFACT CLASS, not merely a stale copy.** Those seven
+   files (`orchid-emblem`, `orchid-grayscale`, `orchid-ink-*`, `orchid-rev-*`) are **EMBLEM** variants.
+   **R3-reversed puts the LOCKUP in the `<h1>` precisely because the lockup reads NATIONAL ORCHID
+   SHOW. An emblem in that slot gives the page an `<h1>` that states nothing — a heading whose alt
+   text describes a flower.** Use canvas logo assets to render the canvas; never to sign a page.
+
+**`docx/fonts/CormorantGaramond.ttf` and `Jost.ttf` ship inside the production project for the Word
+pack. R14 reserves both faces to the wordmark. Finding them beside the logo files is not permission
+to load them on a page. A FILE'S PRESENCE IS NOT A LICENCE.**
+
+Codi's correction on record: "nothing else exists, there is no third design surface" meant design
+surfaces *for the website*; the logo production project is an asset-production surface and existed
+the whole time. True as meant, misleading as written.
