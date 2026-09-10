@@ -255,7 +255,13 @@ said only "reproduce the handoff faithfully":
 
 - header: parchment ground, sticky, 18px padding (`styles.css` 279–297)
 - nav link: Manrope 14px/500, **sentence case**, brass active underline (309–338)
-- mobile drawer: right side, `min(360px, 90vw)`, 17px links (371–419)
+- mobile drawer: right side, 17px links (371–419). The handoff CSS declares the
+  panel width as `min(360px, 90vw)`, but **that literal string never appears in the
+  component** — `MobileMenu.tsx` implements the equivalent with Tailwind
+  (`w-full max-w-[360px]` + `ml-auto`). Assert the pattern, never the literal: an
+  assertion on the CSS string is satisfiable by nothing real, which is this repo's
+  defect class inverted. Corrected 2026-09-10 by @architect, who caught it while
+  writing the contract against this section.
 - palette: sage `#384138`, brass `#9e8c6b`, parchment `#f4f3ec`, bone `#e8e6dc`,
   ink `#171917`; Crimson Pro / Manrope / JetBrains Mono
 
