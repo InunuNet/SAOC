@@ -118,13 +118,15 @@ export function MobileMenu({ open, onClose, nav, triggerRef }: MobileMenuProps) 
                     </button>
                     {isExpanded && (
                       <div className="pl-3 pb-2">
-                        <Link
-                          href={n.href}
-                          onClick={onClose}
-                          className="block px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-                        >
-                          Visit National Show &rarr;
-                        </Link>
+                        {n.ctaLabel && (
+                          <Link
+                            href={n.href}
+                            onClick={onClose}
+                            className="block px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                          >
+                            {n.ctaLabel} &rarr;
+                          </Link>
+                        )}
                         {n.columns.map((column) => (
                           <div key={column.id} className="mt-2">
                             {column.headingHref ? (
@@ -180,7 +182,10 @@ export function MobileMenu({ open, onClose, nav, triggerRef }: MobileMenuProps) 
                   <Link
                     href={n.href}
                     onClick={onClose}
-                    className="flex items-center px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                    className={[
+                      'flex items-center px-3 py-3 font-sans text-[15px] rounded-sm transition-colors duration-150 hover:text-primary hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
+                      n.quiet ? 'text-muted' : 'text-ink',
+                    ].join(' ')}
                   >
                     {n.label}
                   </Link>

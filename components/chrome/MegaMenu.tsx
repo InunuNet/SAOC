@@ -104,13 +104,15 @@ export function MegaMenu({ item }: MegaMenuProps) {
               ))}
             </div>
 
-            <Link
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className="rounded-sm font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-            >
-              Visit National Show &rarr;
-            </Link>
+            {item.ctaLabel && (
+              <Link
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="rounded-sm font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+              >
+                {item.ctaLabel} &rarr;
+              </Link>
+            )}
           </div>
         </div>
       )}
