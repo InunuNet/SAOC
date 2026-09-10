@@ -1,4 +1,12 @@
-# MISSION AFTER M4 — apply the final NOS design rules to the seventeen pages
+# PARKED — NOT AUTHORISED TO START (Brad, 2026-09-10)
+
+> **Brad: the current mission ends at the merge to `main`, and there is NO NEW MISSION after it.**
+> This file is a RECORD of everything the design lane has ruled, so none of it is lost — it is NOT a
+> queued mission and must not be started without Brad opening it explicitly.
+> Additional hard blocker: Claude Design hit its weekly limit; `programme`, `symposium` and
+> `wosa-conference` have no design until the reset on **Sunday 13 September 2026**.
+
+# (When authorised) apply the final NOS design rules to the seventeen pages
 
 **THE BRIEF IS ON DISK: `.agent/memory/project/design/nos-brief.md`** — received from Codi 2026-09-10.
 Read it before this plan. It supersedes this file wherever the two differ, and it corrects two things
