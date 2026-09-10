@@ -2318,5 +2318,41 @@ found at a quota ceiling.
 in `.agent/memory/project/plans/2026-09-11-m4-closeout.md` under "SESSION END 2026-09-10" instead.
 Anyone reconstructing that day from brain alone will find a hole and should read the plan file.
 
-Likely a harness-owned file — check `.agent/update-manifest.yaml` before editing, and if it is marked
-HARNESS, file upstream rather than patching in place (`.claude/rules/athanor.md`).
+### ROOT CAUSE FOUND — a stale venv, not a code bug
+
+`brain.py:41-64` (`_ensure_chromadb`) re-execs the whole script into `~/.athanor-env` via `os.execv`
+**whenever `import chromadb` fails in the calling interpreter** — regardless of which interpreter was
+invoked. `~/.athanor-env/bin/python3` is a symlink created **21 Apr** pointing at
+`/Applications/Xcode.app/Contents/Developer/usr/bin/python3` = **Python 3.9.6**.
+
+`str | None` (PEP 604) needs **3.10+**. It entered at `brain.py:452` with harness template update
+**3.7.107 -> 3.7.109** (commit `8995bde0`) — upstream's code, not ours.
+
+**Why it looks intermittent:** brain works when invoked by a 3.10+ interpreter that ALREADY has
+chromadb, because no re-exec happens. That is why the PreCompact hook stored
+`mem_20260910_195151_d35fcd21` successfully at 19:51. It fails whenever the caller lacks chromadb,
+because the rescue path lands on the 3.9.6 venv. Explicitly invoking a 3.11 interpreter does NOT
+help — the re-exec overrides it.
+
+**Confirmed scope: ALL subcommands**, read and write — `recall`, `last-session`, `wrap-up`,
+`remember`. The failure is at module import, so nothing runs.
+
+### THE FIX — needs Brad, because it is outside the project folder
+
+`~/.athanor-env` lives in the operator's home directory, not this project, so per
+`.claude/rules/scope.md` an agent must not rebuild it without permission asked and granted first.
+
+Steps for the operator: delete the `~/.athanor-env` directory, recreate it with a 3.10+ interpreter
+(`/opt/homebrew/bin/python3 -m venv ~/.athanor-env`), then `~/.athanor-env/bin/pip install chromadb`.
+
+Note brain.py recreates the venv itself when absent, but builds it from whatever `sys.executable`
+happens to be at that moment — which is how a 3.9 venv got created in the first place. Deleting it
+alone is not sufficient; it must be recreated deliberately from a 3.10+ python.
+
+### ALSO FILE UPSTREAM
+`execution/` is marked HARNESS in `.agent/update-manifest.yaml`, so do not patch `brain.py` in place.
+The upstream defect: `_ensure_chromadb()` re-execs into a venv **without checking its Python
+version**, turning a stale-environment problem into an unreadable `TypeError` at import. It should
+assert the venv satisfies the minimum version and rebuild, or fail with a message naming the cause.
+Same shape as the audited defect class — the rescue path is trusted without verifying the property
+it depends on.

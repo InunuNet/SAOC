@@ -2,7 +2,7 @@
  * verify-nos-content-state.ts — the F24 content-state verifier (national-show-ia-alignment, M4).
  *
  * See .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/content-state-verifier.golden.md
- * for the full NF1-NF17 check-id contract this script implements.
+ * for the full NF1-NF18 check-id contract this script implements.
  *
  * A NEW driver, NOT an edit to verify-nos-m4-local-render.ts — that verifier guards
  * eleven frozen routes with live green assertions in contract-m4.yaml, and the lead's
