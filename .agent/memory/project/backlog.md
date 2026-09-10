@@ -2299,3 +2299,24 @@ entry is not.
 
 **Until it lands:** measure with per-assertion `contract.py check`. Do not add to the exempt list and
 do not patch the harness.
+
+
+---
+
+## BUG — `brain.py wrap-up` cannot run (2026-09-10)
+
+`python3 execution/brain.py wrap-up` dies at `execution/brain.py:452`:
+`TypeError: unsupported operand type(s) for |: 'type' and 'NoneType'` on
+`def latest_wrapup_timestamp() -> str | None:`.
+
+That syntax is valid from Python 3.10, and **it fails identically under
+`/tmp/athanor-py311-venv/bin/python3` (3.11.15)** — so the script is evidently re-executing itself
+under an older interpreter rather than honouring the one that invoked it. Not investigated further;
+found at a quota ceiling.
+
+**Consequence:** the 2026-09-10 session close has NO brain wrap-up entry. The session summary lives
+in `.agent/memory/project/plans/2026-09-11-m4-closeout.md` under "SESSION END 2026-09-10" instead.
+Anyone reconstructing that day from brain alone will find a hole and should read the plan file.
+
+Likely a harness-owned file — check `.agent/update-manifest.yaml` before editing, and if it is marked
+HARNESS, file upstream rather than patching in place (`.claude/rules/athanor.md`).
