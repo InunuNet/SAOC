@@ -1,9 +1,8 @@
 {
-  "mission": ".agent/memory/project/missions/2026-09-09-site-content-alignment.md",
+  "mission": ".agent/memory/project/missions/2026-09-10-menu-system-layout4.md",
   "checkpoint": {
     "milestone": null,
-    "feature": "F4",
-    "ts": "2026-09-10T15:46:56.386354+00:00"
+    "feature": null
   },
-  "activated_at": "2026-09-10T15:46:56.386415+00:00"
+  "activated_at": "2026-09-10T19:29:36.276739+00:00"
 }

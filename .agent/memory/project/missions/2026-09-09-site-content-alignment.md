@@ -8,8 +8,8 @@ goal: 'Align the SAOC site with Lee-Ann''s Drive content inventory: pull the 8 r
   page lacking official committee copy.'
 created_at: '2026-09-09T21:20:16.242986+00:00'
 started_at: '2026-09-09T21:35:55.338425+00:00'
-last_active_at: '2026-09-10T15:46:56.386354+00:00'
-status: in_progress
+last_active_at: '2026-09-10T19:28:13.662314+00:00'
+status: paused
 cost_estimate:
   features: 0
   milestones: 0

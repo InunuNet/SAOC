@@ -1,3 +1,83 @@
+---
+schema: athanor.mission/v1
+slug: menu-system-layout4
+goal: 'Build the SAOC menu system to Brad''s approved Layout 4: one National Show
+  mega-flyout carrying all 17 listed Show routes in the manifest''s four groups, a
+  lead block and a Tickets feature rail, plus the matching mobile drawer — every visual
+  value taken from the approved handoff, no new design, and no 404 reachable from
+  the header.'
+created_at: '2026-09-10T19:28:57.606413+00:00'
+started_at: '2026-09-10T19:28:57.606413+00:00'
+last_active_at: '2026-09-10T19:28:57.606413+00:00'
+status: in_progress
+cost_estimate:
+  features: 5
+  milestones: 3
+  total_calls: 0
+last_checkpoint:
+  milestone: M1
+  feature: null
+  ts: '2026-09-10T19:28:57.606413+00:00'
+features:
+- id: F1
+  inline_brief: >-
+    Restructure components/chrome/nav-config.ts per section 3 F1 of .agent/memory/project/missions/2026-09-10-menu-system-layout4.md. Ten top-level items become seven plus the Contact button: About, Societies, Judging & Awards, Events, Members, National Show (mega), Sponsors. All 17 listed:true Show routes move inside the one National Show mega, in the manifest's four groups (visit 4, programme 5, exhibit-trade 4, the-show 3) and manifest order. The NavItem union gains, additively: a lead block (eyebrow, serif lead + href, meta line), a per-group heading with optional href, a per-leaf descriptor, and a feature rail (meta, heading, blurb, cta label + href). Every descriptor is a trimmed prefix of its manifest row's own purpose field — trimmed only, never rewritten. The quiet flag is still read by Header.tsx and MobileMenu.tsx (landed in 5981d31b); do not remove it without checking both readers. UNRULED, must be flagged and not silently resolved: whether Tickets keeps a top-level slot — build the golden with Tickets out of the top row and mark it in the contract as a reversible one-line decision. Sources of truth are section 5 of .agent/memory/project/missions/2026-09-10-menu-system-layout4.md and must be cited verbatim in the brief: content/national-show-routes.json on origin/nos-site for structure, group membership, order and descriptor copy; design/design_handoff_saoc/colors_and_type.css and design/design_handoff_saoc/src/styles.css for every colour, face, size and spacing value; .agent/memory/project/specs/ticketing-complete/goldens/f7-nav-targets.json for the nav golden; docs/rules/no-invention.md governs all copy. Layout approval only — no new colours, faces, sizes, spacing or components are authorised. SAOC and NOS palettes never mix.
+  name: components/chrome/nav-config.ts — restructure to seven top-level items plus
+    Contact; all 17 listed Show routes into one National Show mega in manifest groups
+    and order; additive NavItem type changes for lead block, group headings, per-leaf
+    descriptors and feature rail; descriptors are trimmed manifest purpose strings,
+    never free text
+  milestone: M1
+  status: pending
+- id: F5
+  inline_brief: >-
+    Repoint the one dead nav target per section 3 F5 of .agent/memory/project/missions/2026-09-10-menu-system-layout4.md: /national-show/exhibitors/international becomes /national-show/international-guests, the manifest being the authority for the new path. The WOSA entry already points at /national-show/wosa-conference and needs no change — see ruling R3, which overturns answered question 23. Sources of truth are section 5 of .agent/memory/project/missions/2026-09-10-menu-system-layout4.md and must be cited verbatim in the brief: content/national-show-routes.json on origin/nos-site for structure, group membership, order and descriptor copy; design/design_handoff_saoc/colors_and_type.css and design/design_handoff_saoc/src/styles.css for every colour, face, size and spacing value; .agent/memory/project/specs/ticketing-complete/goldens/f7-nav-targets.json for the nav golden; docs/rules/no-invention.md governs all copy. Layout approval only — no new colours, faces, sizes, spacing or components are authorised. SAOC and NOS palettes never mix.
+  name: Dead nav target — /national-show/exhibitors/international becomes /national-show/international-guests
+    per the manifest (the WOSA entry already points at /wosa-conference and needs no
+    change, per ruling R3)
+  milestone: M1
+  status: pending
+- id: F2
+  inline_brief: >-
+    Rebuild components/chrome/MegaMenu.tsx as the approved full-width sheet per sections 1 and 3 F2 of .agent/memory/project/missions/2026-09-10-menu-system-layout4.md. Today it is one narrow anchored panel at min-w-[280px] / sm:min-w-[520px]; it becomes a full-width sheet below the header spanning the container in five tracks: lead block (mono eyebrow, serif lead linking the hub, venue and dates line, then The Show group folded underneath), three group columns, and a bone feature rail (mono date meta, serif Tickets heading, one-line blurb, primary Buy tickets button). Each leaf is a bold 14px name over a 12px muted descriptor, hairline rule between, last leaf in a group unruled. KEEP THE EXISTING DISCLOSURE SEMANTICS VERBATIM — aria-haspopup, aria-expanded, open on click and Enter/Space, Escape closes and returns focus to the trigger, outside mousedown closes, blur outside the container closes. They are already correct, were not part of what Brad reviewed, and changing them is out of scope. Sources of truth are section 5 of .agent/memory/project/missions/2026-09-10-menu-system-layout4.md and must be cited verbatim in the brief: content/national-show-routes.json on origin/nos-site for structure, group membership, order and descriptor copy; design/design_handoff_saoc/colors_and_type.css and design/design_handoff_saoc/src/styles.css for every colour, face, size and spacing value; .agent/memory/project/specs/ticketing-complete/goldens/f7-nav-targets.json for the nav golden; docs/rules/no-invention.md governs all copy. Layout approval only — no new colours, faces, sizes, spacing or components are authorised. SAOC and NOS palettes never mix.
+  name: components/chrome/MegaMenu.tsx — the narrow anchored panel becomes the full-width
+    sheet in five tracks (lead block, three group columns, feature rail); existing
+    disclosure and keyboard semantics kept verbatim
+  milestone: M2
+  status: pending
+- id: F3
+  inline_brief: >-
+    Rebuild the National Show section of components/chrome/MobileMenu.tsx per section 3 F3 of .agent/memory/project/missions/2026-09-10-menu-system-layout4.md: the feature block at the top of the expanded section, then the four groups as headed lists with descriptors. Hard constraint from Brad in the earlier round: the mobile menu font was way too big. The handoff's mobile drawer link size is 17px (design/design_handoff_saoc/src/styles.css lines 371-419) — do not exceed it, and group leaves sit below it. Drawer stays right side at min(360px, 90vw). Sources of truth are section 5 of .agent/memory/project/missions/2026-09-10-menu-system-layout4.md and must be cited verbatim in the brief: content/national-show-routes.json on origin/nos-site for structure, group membership, order and descriptor copy; design/design_handoff_saoc/colors_and_type.css and design/design_handoff_saoc/src/styles.css for every colour, face, size and spacing value; .agent/memory/project/specs/ticketing-complete/goldens/f7-nav-targets.json for the nav golden; docs/rules/no-invention.md governs all copy. Layout approval only — no new colours, faces, sizes, spacing or components are authorised. SAOC and NOS palettes never mix.
+  name: components/chrome/MobileMenu.tsx — feature block at the top of the expanded
+    National Show section, then the four groups as headed lists with descriptors;
+    drawer link size never exceeds the handoff's 17px
+  milestone: M2
+  status: pending
+- id: F4
+  inline_brief: >-
+    Touch components/chrome/Header.tsx only as far as the nav restructure in F1 forces, per section 3 F4 of .agent/memory/project/missions/2026-09-10-menu-system-layout4.md. The lockup, utility bar, search and Contact button are untouched. Header ground stays parchment, sticky, 18px padding (design/design_handoff_saoc/src/styles.css 279-297); nav links stay Manrope 14px/500, sentence case, brass active underline (309-338). Sources of truth are section 5 of .agent/memory/project/missions/2026-09-10-menu-system-layout4.md and must be cited verbatim in the brief: content/national-show-routes.json on origin/nos-site for structure, group membership, order and descriptor copy; design/design_handoff_saoc/colors_and_type.css and design/design_handoff_saoc/src/styles.css for every colour, face, size and spacing value; .agent/memory/project/specs/ticketing-complete/goldens/f7-nav-targets.json for the nav golden; docs/rules/no-invention.md governs all copy. Layout approval only — no new colours, faces, sizes, spacing or components are authorised. SAOC and NOS palettes never mix.
+  name: components/chrome/Header.tsx — only as far as the nav restructure forces; lockup,
+    utility bar, search and Contact button untouched
+  milestone: M2
+  status: pending
+milestones:
+- id: M1
+  features: [F1, F5]
+  name: Contract, goldens and the nav data model — @architect writes the contract and
+    negative fixtures first; F1 and F5 carry no rendering change
+  status: in-progress
+- id: M2
+  features: [F2, F3, F4]
+  name: Chrome rendering — desktop sheet, mobile drawer, header, all against the handoff
+  status: pending
+- id: M3
+  features: []
+  name: Gate and PR — the seven gate properties green and a PR to main; property 1
+    (no 404 reachable from the header) cannot go green until the NOS lane's six routes
+    return 200
+  status: pending
+---
+
 # Mission — Menu System (Layout 4)
 
 Opened 2026-09-10. Slug: `menu-system-layout4`.
