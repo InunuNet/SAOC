@@ -2,7 +2,7 @@
 
 Organised by **priority and subject**, not by session. Rebuilt 2026-08-19 from a 2,677-line
 session diary (pre-cleanup copy: `archive/backlog-2026-08-19-pre-cleanup.md`).
-_Last compacted: 2026-09-06 by backlog_trim.py. Full history: git log on this file._
+_Last compacted: 2026-09-10 by backlog_trim.py. Full history: git log on this file._
 
 **Rules for this file.** One line of stale information here misleads every agent, every session.
 Completed items are deleted, not ticked — git history is the record. Plan steps live in
@@ -33,23 +33,25 @@ Do not scope work from an entry that contradicts it.
   to `https://saoc.co.za` (the old Joomla site), so the ITN is delivered there and the ticket sits
   `reserved` forever. Use the deployed host for payment testing.
 - **Local dev:** `pnpm dev:secure`, not `pnpm dev`. Chrome auto-upgrades `.co.za` to HTTPS.
+- **PR-review-before-main is standing for all three lanes** (Brad delegated, 2026-09-10). No
+  lane pushes straight to `main`, including docs-only changes: branch → PR → the *other* lane
+  reviews → one approving review → merge. No self-merge. The design lane's own workspace repo
+  (`/Users/vetus/ai/SAOC NOS Design`) is out of scope — it holds their session record, not
+  deliverables.
+- **Primary navigation is frozen** until Brad picks a dropdown layout (2026-09-10).
+  `components/chrome/nav-config.ts`, `Header.tsx`, `MegaMenu.tsx`, `MobileMenu.tsx` are
+  off-limits to the NOS build lane's M4. `components/show/ShowSectionNav.tsx` is **not**
+  frozen — it's a content pattern (R21) and belongs to the NOS lane. Open recommendation on
+  the table: Layout 3 (full-width sheet, all three Show groups at once) — Brad hasn't picked.
 
 ---
 
 ## Next up (queued, not yet a mission — dispatch as soon as current mission closes)
 
-- [ ] **[P1] A14 re-verification after deploy** (site-content-alignment M1-M2, 2026-09-10) —
-  confirm `/national-show/about` and the reconciled `/national-show/what-to-expect` are live on
-  `https://beta.saoc.co.za`; four routes (`/programme`, `/symposium`, `/wosa-conference`,
-  `/exhibitors/international`) still 404 by design, gated on Lee-Ann.
+- [ ] **[P1] A14 re-verification after deploy** (site-content-alignment M1-M2, 2026-09… → [details](data/p1-a14-re-verification-after-deploy-site.md)
 
 - [ ] **[P1] Send Lee-Ann the 11 questions** in
-  `.agent/memory/project/specs/site-content-alignment/goldens/f1-questions-for-leeann.md`
-  (2026-09-10) — including that her **FAQ .docx is truncated at rest in Drive** (file id
-  `1soLx8vKPs1jQBnYFTu88_LWxjzRFTHsf`, md5 matches our download, valid PK header, 16 local file
-  headers, End-of-Central-Directory record absent) and needs re-uploading, plus the unfinished
-  Show Contact doc and the unknown National Show sections 8/9/10/14/16. M3 is blocked until she
-  answers.
+  `.agent/memory/project/specs/site-co… → [details](data/p1-send-lee-ann-the-11-questions-in-agen.md)
 
 - [ ] **[P2] Brad's unruled design question** (site-content-alignment, 2026-09-10) — the handoff's
   `SKILL.md` prescribes literal bracket-placeholders + sage/mono "TBD" blocks; shipped components
@@ -62,120 +64,22 @@ Do not scope work from an entry that contradicts it.
 - [ ] **[P3] `prettier --check` warns** on the 4 files touched by site-content-alignment F3
   (2026-09-10); not wired into CI.
 
-- [ ] **[P3] A15 assertion-shape audit** (site-content-alignment, 2026-09-10) — check every
-  contract in this repo for assertions missing required fields (e.g. `codex_qa` without `target:`)
-  that would error rather than evaluate. See [[learned.md]] "green means nothing" defect class.
+- [ ] **[P3] A15 assertion-shape audit** (site-content-alignment, 2026-09-10) — check … → [details](data/p3-a15-assertion-shape-audit-site-conten.md)
 
 - [ ] **[P1] TWO unparseable contracts — their assertions have never run**
-  (found 2026-09-08 via F7's new contract-suite runner, mission ticketing-complete).
-  (a) `.agent/memory/project/specs/gate-timeout-fix/contract-f1.yaml` — ambiguous compact mapping.
-  (b) `.agent/memory/project/specs/mission-slug-collision-fix/contract-f1.yaml` — a heredoc `---`
-  misread as a YAML document separator; found only when the baseline was regenerated, i.e. the
-  first sweep missed it. Both fail YAML parsing, so every assertion they declare has silently
-  never executed and never will. It is not counted as `missing` (no absent check script) and not
-  as `fail` (nothing runs), so no signal exists anywhere today. Fix the YAML, then confirm the
-  assertions actually pass — they have never been evaluated, so treat all of them as unverified
-  rather than assuming they were green before the parse broke. F7 has added parse-error to the CI
-  ratchet (baseline `{count: 3, parseErrorCount: 2}`) so a third cannot appear silently, but that
-  does NOT fix these two files. Worth a sweep
-  for the same defect class: any other contract that parses but whose assertions have never been
-  executed is equally invisible.
+  (found 20… → [details](data/p1-two-unparseable-contracts-their-asser.md)
 
-- [ ] **[P2] `ticketing-purchase-pages-f3/check-seed-category-field.mjs` hardcodes a stale product
-  total** (found 2026-09-08 by the F2 dev, mission ticketing-complete). OWNER, corrected: the
-  script is run by `.agent/memory/project/specs/ticketing-conferences-and-events/contract-f3-purchase-pages.yaml:209`
-  — a DIFFERENT, earlier mission that also numbered a feature F3. It is NOT ticketing-complete's
-  contract-f3.yaml, which is clean. Do not confuse the two.
-  It asserts `ALL_PRODUCTS.length !== 15`. Already stale at HEAD before any F2 change — HEAD has
-  14 real products (counted by listing `slug:` lines, not `grep -c`, which overcounts by matching
-  the interface's own `slug: string;` declaration); the working tree now has 13 (4 admission +
-  6 conference + 3 workshop-field-trip), with `field-trip-single`/`field-trip-all-outings` retired
-  and `field-trip` in their place. Drifted twice in one mission and caught nobody.
-  RECOMMENDED FIX (architect, 2026-09-08): drop the count assertion entirely rather than deriving
-  it. Nothing downstream needs a count to be true — a count only proves someone remembered to bump
-  a literal. What the check actually exists to prove is that `buildTicketTypeDoc` stamps `category`
-  onto every product using the real builder. Assert instead: every product's built doc carries a
-  `category` matching its own `product.category`; no two products across the three arrays share a
-  slug; and `RETIRED_FIELD_TRIP_SLUGS` never appears as a live slug. All three survive any future
-  product addition or retirement with no magic number to maintain.
-  Same shape as the stale `ticketing-workshops-f2` capacity check.
+- [ ] **[P2] `ticketing-purchase-pages-f3/check-seed-category-field.mjs` hardcodes a s… → [details](data/p2-ticketing-purchase-pages-f3-check-see.md)
 
-- [ ] **[P2] Focus ring fails the 3:1 non-text contrast floor on two vendor forms** (measured
-  2026-09-08 by the NOS session, branch `nos-design`, composited-pixel measurement via Playwright
-  + pngjs — NOT a `getComputedStyle()` regex, which returns plausible wrong numbers because
-  Tailwind v4 serialises opacity-modified colours as `oklab()`, see InunuNet/SAOC#3).
-  Three text inputs paint focus as a two-layer `box-shadow` instead of an `outline`: an inner
-  pale-gold ring that is invisible on the pale-gold ground (acting only as a spacer), and an outer
-  royal-purple `#211a57` at 40% alpha. Composited that is `0.4×(33,26,87) + 0.6×(251,250,240) =
-  (164,160,179)`, measured `#a3a0b3` — **2.43:1 against a 3:1 floor**. Size and position are
-  correct; the alpha is what sinks it.
-  Affected: `/national-show/vendors/apply` (`businessName`, `tradingName`) at 390 and 1280;
-  `/national-show/vendors/register` (`code-entry-business-name`) at 1280.
-  Useful adjacent signal: `/national-show/tickets`' "Get visitor tickets" anchor uses a real
-  `outline: 2px solid rgb(126, 63, 151)` and passes cleanly — so TWO different focus mechanisms
-  coexist across these surfaces. Likely predates the NOS restyle. Whatever the alpha ruling is,
-  the split itself is worth resolving. Pending a Codi ruling; the fix is ours, not the NOS
-  session's.
-  NOT THE SAME AS `CategoryTicketsPage` — measured separately 2026-09-08 and it PASSES:
-  composited lede contrast 11.44:1 (/national-show/workshops @390), 10.29:1 (@1280),
-  7.37:1 (/national-show/conferences @1280), against a 4.5:1 floor at 17px. The 'olive body
-  text on purple' concern did NOT reproduce — hue recovered geometrically (pale-gold fit
-  off-line 0.4-0.5 vs olive fit 254-300), so it is pale gold at ~0.85 alpha. Do not
-  re-investigate. Caveat carried: that lede buys its appearance partly with opacity, which is
-  acceptable for decorative text but is the same mechanism ruled out for functional/focus
-  states. Cite the r6-probe.mjs run, never r6-verify.mjs — the latter regex-parses
-  getComputedStyle() and its numbers for this component are wrong.
+- [ ] **[P2] Focus ring fails the 3:1 non-text contrast floor on two vendor forms** (m… → [details](data/p2-focus-ring-fails-the-3-1-non-text-con.md)
 
-- [ ] **[P0] No enforcement for the "never cd" rule — agents keep prompting the operator**
-  (2026-09-08, Brad raised it twice in one session, explicitly refusing to approve more).
-  Agents open Bash blocks with `cd <project-root>`, which makes the following command's target
-  statically unresolvable while a `Read()` deny rule is configured, forcing a manual approval
-  modal that stalls the mission and everything queued behind it. The rule is ALREADY stated in
-  `.claude/agents/<role>.md` (qa.md:47), `.claude/rules/sandbox.md`, and
-  `.agent/rules/_core/sandbox.md` — three places — and 2 of 2 QA subagents violated it anyway.
-  Prose is empirically insufficient; only a `PreToolUse(Bash)` hook would fix it.
-  CANNOT BE FIXED LOCALLY: `check_autonomy.sh`'s `floor_glob_match()` protects `.claude/hooks/*`,
-  `.claude/settings.json`, `CLAUDE.md` and `AGENTS.md`, so the guard can neither be written nor
-  registered. Filed upstream: InunuNet/Athanor#1416.
-  MITIGATION IN PLACE until upstream lands: (a) Rule Zero prepended to `.claude/rules/sandbox.md`;
-  (b) every Agent dispatch brief must open with the prohibition — this is now mandatory practice,
-  recorded in the brain. Blocked on: upstream.
+- [ ] **[P0] No enforcement for the "never cd" rule — agents keep prompting the operat… → [details](data/p0-no-enforcement-for-the-never-cd-rule.md)
 
-- [ ] **[P0] Harness `backlog_trim.py` deletes open items without archiving them** (found
-  2026-09-08, mission ticketing-complete). `execution/backlog_trim.py:126-141` archives closed
-  `[x]` items to the brain, but open `[ ]` items past `MAX_OPEN=50` are removed with no archive
-  and no titles recorded — only a `> Truncated N items` marker. This file already carries
-  **5 such markers, 248 items destroyed** (127/5/9/104/3), one of them a standing P1 that was
-  only noticed missing because an architect went looking for it by name. The cutoff is by file
-  *position*, not priority, so newly-appended P0/P1 items die first. **This file is at 57 open
-  items against MAX_OPEN=50 right now — the next `make backlog-trim` deletes 7 items off the
-  bottom.** Do not run it until upstream lands a fix; curate by hand instead. Filed upstream as
-  InunuNet/Athanor#1413 (never patch `execution/` in place — `make update-template` reverts it).
-  Blocked on: upstream. Deliberately placed at the TOP of the open items, because the bottom is
-  the kill zone.
+- [ ] **[P0] Harness `backlog_trim.py` deletes open items without archiving them** (fo… → [details](data/p0-harness-backlog-trim-py-deletes-open.md)
 
-- [ ] **[P1] Migration script write-polarity — decision needed, not fixed overnight** (found
-  2026-09-08, `ticketing-complete` overnight session). Six scripts default to WRITING to the
-  live Sanity `production` dataset on a bare no-flag invocation: `scripts/fix-venue-never-
-  changed-copy.ts`, `scripts/migrate-ticket-type-category.ts`, `scripts/migrate-show-sales-
-  fields.ts`, `scripts/fix-vip-and-weekend-pass-pricing.ts`, `scripts/fix-show-dates-2027.ts`,
-  `scripts/fix-visitor-info-dates-confirmed.ts` (all gate on
-  `const DRY_RUN = process.argv.includes('--dry-run')`). `fix-vip-and-weekend-pass-
-  pricing.ts:70-79` builds the write-capable client before it even reads the flag. Three other
-  scripts already use the safer polarity (`--apply`-to-write): `seed-fictional-test-show.ts`,
-  `seed-demo-ticket-type.ts`, `swap-active-show.ts`. Decision needed: flip the six to `--apply`
-  polarity, or delete the spent ones. Deliberately NOT fixed overnight — several of the six may
-  already have been run against live data, so changing them now without checking could mask
-  that history. See `learned.md` 2026-09-08 entry for detail.
+- [ ] **[P1] Migration script write-polarity — decision needed, not fixed overnight** … → [details](data/p1-migration-script-write-polarity-decis.md)
 
-- [ ] **[P2] `POST /api/contact` needs a test-mode guard or mocked mailer before automated
-  coverage** (found 2026-09-08, `ticketing-complete` overnight session). The route sends a real
-  Resend email and writes a real `contactSubmissions` doc on every successful POST, with no
-  test-mode gate. Manually proving the new suggestion form end-to-end mailed a non-existent
-  address at a reserved domain and left a live queue document (since deleted by exact id).
-  Bounces accrue against a sending domain currently mid-migration on domain + Resend DNS. Add a
-  mocked mailer or a test-mode guard on the route before any Playwright/automated coverage of
-  `ContactForm` or `SuggestionForm`.
+- [ ] **[P2] `POST /api/contact` needs a test-mode guard or mocked mailer before autom… → [details](data/p2-post-api-contact-needs-a-test-mode-gu.md)
 
   cannot go green without declaring triad coverage** (mission `verification-triad-gate`, M2/F2 —
   DONE 2026-09-06; M1/F1 was DONE 2026-09-04). Original ask (2026-09-02, Brad, via team lead):
@@ -196,17 +100,7 @@ Do not scope work from an entry that contradicts it.
   `.agent/memory/project/specs/verification-triad-gate/contract-f2.yaml` for the five binding
   architect decisions and `docs/verification-triad-gate.md` for usage.
 
-- [ ] **[P0] Triad-coverage classifier is dodgeable by URL-shaped assertions** (mission
-  `verification-triad-gate`, M2/F2 close-out, 2026-09-06). `is_ui_workflow_contract()` in
-  `execution/verify_triad_coverage.py` classifies a contract as UI/workflow by keying on the
-  literal substring `app/` in its assertion commands. A contract that verifies the deployed
-  site by URL instead of file path — e.g. `curl -sf https://saoc.co.za/national-show | grep -q
-  "National Show"` — contains no `app/` substring, so it classifies EXEMPT, exits 0, and skips
-  the triad entirely. Reproduced independently by @maintainer and @qa. This is the mission's
-  own premise only partially delivered: the contracts most needing browser/inbox verification
-  (they check the live site, not local files) are exactly the ones that slip through the net
-  F2 just built. Needs its own feature: classify on URL-shaped assertion targets too, not just
-  `app/` paths.
+- [ ] **[P0] Triad-coverage classifier is dodgeable by URL-shaped assertions** (missio… → [details](data/p0-triad-coverage-classifier-is-dodgeabl.md)
 
   **Filed upstream as Athanor#1420** (2026-09-08, mission `ticketing-complete`) with a second,
   independent confirmation of the same root cause going the other direction: keying on the
@@ -222,243 +116,45 @@ Do not scope work from an entry that contradicts it.
   signal list (URL patterns, Playwright/browser-test references, etc.) and adding an explicit
   `ui:` contract declaration that opts a contract in without relying on text-sniffing at all.
 
-- [ ] **[P1] `contracts/cms-loop-f1-cdn-purge.yaml` A1 mutates the real Sanity dataset**
-  (found during `verification-triad-gate` M2/F2, 2026-09-06). It re-invokes F6's
-  `check-studio-edit-reaches-site.mjs` verbatim, which writes a sentinel value into
-  `aboutPage.boardIntroText` on the live dataset with fallible cleanup. It poisoned the live
-  dataset during this mission's gate runs and needed a manual restore (`unset`, verified ALL
-  CLEAR by the residue guard). Any future gate run of this contract carries the same risk.
-  Needs the sentinel-write step reworked to a draft/throwaway document or otherwise made
-  non-destructive to real content. See also `project_contract_checks_mutate_live_content` in
-  the auto-memory index — this is a second occurrence of that defect class.
+- [ ] **[P1] `contracts/cms-loop-f1-cdn-purge.yaml` A1 mutates the real Sanity dataset… → [details](data/p1-contracts-cms-loop-f1-cdn-purge-yaml.md)
 
-- [ ] **[P2] `CLAUDE.md`'s "Verification triad gate" section is now factually stale and no
-  agent can fix it** (verification-triad-gate M2/F2 close-out, 2026-09-06). It still reads "...
-  is not yet wired into any gate path ... still voluntary, not enforced", which became false
-  with commit `aa2f74f3`. `execution/hooks/check_autonomy.sh:301` hard-denies writes to
-  `CLAUDE.md` at every autonomy level, so this needs Brad. Exact replacement text is already
-  drafted and queued in `.agent/memory/project/needs-human.md` — just needs him to paste it in.
-  Filed upstream as Athanor#1399 (the protected-path design has no route for correcting factual
-  staleness in an agent-maintained instruction file).
+- [ ] **[P2] `CLAUDE.md`'s "Verification triad gate" section is now factually stale an… → [details](data/p2-claude-md-s-verification-triad-gate-s.md)
 
-- [ ] **[P1] Upstream PR to InunuNet/Athanor: `template/execution/contract.py` does not carry
-  the F2 triad-coverage gate preflight** (mission `verification-triad-gate`, M2/F2 decision 5,
-  2026-09-06). `template/execution/contract.py`, `quick_gate.sh`, and `improvement_loop.sh` are
-  this project's seed copy of the upstream Athanor harness, not a second production gate path
-  for SAOC's own contracts, so F2 intentionally did NOT duplicate the fix there. Per project
-  convention `feedback_harness_issues_pr_upstream` (fix locally + PR upstream, not just report),
-  this needs a PR to InunuNet/Athanor porting the same triad preflight (`_run_triad_coverage_
-  preflight()`, `TRIAD_ENFORCEMENT_EXIT_CODE`/`TRIAD_PREFLIGHT_ERROR_EXIT_CODE`, the baseline +
-  hash-pin re-arm-on-edit mechanism) into the template harness so future Athanor-seeded projects
-  get triad enforcement out of the box, not just SAOC.
+- [ ] **[P1] Upstream PR to InunuNet/Athanor: `template/execution/contract.py` does no… → [details](data/p1-upstream-pr-to-inununet-athanor-templ.md)
 
-- [ ] **P0 — Working-process review (INTERACTIVE — Brad at the keyboard, not agent work)**
-  (added 2026-09-02, team lead, on Brad's instruction). This is the next thing this project
-  does, ahead of all feature work. It is a working session with Brad, not something to dispatch
-  to @architect/@dev/@qa.
-  **Problem statement, in Brad's words:** the project is not landing production work, and is
-  producing "half-baked" output instead.
-  **Evidence, from the 2026-09-02 overnight session, recorded factually:**
-  1. A feature reached a 10/10 contract gate, five Codex GPT-5.5 passes, and a full chain run
-     (@architect → @dev → @qa → @docs → @maintainer) while never once being deployed or opened
-     in a browser. "Gate green" and "works" turned out to be nearly uncorrelated.
-  2. The single highest-value defect of the night — admin notification emails linking to a
-     Firebase `*.hosted.app` URL instead of `beta.saoc.co.za` — was invisible to every automated
-     check by construction. The assertions verify links are built correctly FROM `SITE_URL`;
-     `SITE_URL` itself was wrong. It was found in ninety seconds by reading a delivered email
-     with the `gws` CLI, which Brad had explicitly asked for at the start.
-  3. Brad's original instruction specified E2E testing with Codex AND adversarial browser
-     agents. Five Codex passes were run; no browser agent was run until Brad intervened. The
-     cheap check was over-substituted for the expensive one that would have caught the real
-     problems.
-  4. Four consecutive Codex passes each found another instance of ONE defect class because each
-     fix was scoped to the file the previous reviewer happened to name. A sweep was only ordered
-     on the fourth round.
-  5. Two agents were dispatched onto the same nine files simultaneously and corrupted each
-     other's work, because a mission file's stale status line was read as a liveness signal.
-     This repeated a lesson already recorded in memory as `feedback_verify_liveness_by_artefact`.
-  6. Three separate maintainer commits silently deleted 103 backlog item headers over roughly a
-     week — including a P0 security finding — and `make backlog-audit` reported clean every
-     time, because it only inspects lines that already look like items. Tracked work became
-     invisible prose and nobody noticed.
-  7. An agent reported completing a backlog repair it had not performed; the orchestrator
-     committed an earlier maintainer's edits without reading the diff, which is how one of the
-     103 header deletions shipped.
-  **Agenda for the session (things to decide, not conclusions):**
-  - Should "deployed and observed working" replace "gate green" as the definition of DONE?
-  - Where does the chain add value, and where is it ceremony? It ran in full for a feature
-    whose real defects it could not see.
-  - Is the agent count buying anything? Roughly forty agents ran in this session.
-  - What is the minimum evidence standard before reporting completion to Brad — given several
-    agents this session reported work they had not done?
-  - Which checks are load-bearing versus theatre? Six F5 checks were silently dead since M2 and
-    nobody noticed.
+- [ ] **P0 — Working-process review (INTERACTIVE — Brad at the keyboard, not agent wor… → [details](data/p0-working-process-review-interactive-br.md)
 
-- [ ] **[P2] Restore the deferred legacy-order check for stand pricing tiers** (deferred
-  2026-09-01 under demo time pressure, by @architect, explicitly flagged rather than dropped).
-  `vendor-stand-early-bird-pricing` shipped A1-A4 but cut the standalone RED check proving a
-  pre-existing `vendorStandOrders` document with no `tier` key still settles and renders
-  identically. The deferral reasoning is sound — stand payment has refused since it shipped
-  (prices were null), so no real stand order can exist yet to break — but that stops being true
-  the moment the first vendor pays, which is now days away, not months.
-  `VendorStandOrder.tier` was still built additive/nullable and the settlement handler was left
-  untouched, so the property is believed to hold; it is simply unproven. Write the check before
-  any real stand payment settles.
+- [ ] **[P2] Restore the deferred legacy-order check for stand pricing tiers** (deferr… → [details](data/p2-restore-the-deferred-legacy-order-che.md)
 
-- [ ] **[P2] Register Society — society profile intake + registration flow** (added 2026-09-01,
-  Brad). **Field set captured 2026-09-01** from Lee-Ann's Google Form, transcribed from
-  screenshots Brad supplied, at `docs/leeann-source/society-website-information-form_2026-09-01.md`.
-  Read that file first; it is the source of truth for the profile half and records every
-  observation below with detail.
-  **The form is narrower than the ask.** It is Lee-Ann's "Website Information Form" — an intake
-  asking *already-affiliated* societies for the content of their own website pages (society name,
-  public email and cellphone, meeting day/time/venue, four committee members each with a
-  head-and-shoulders photo, logo, website, Facebook, Instagram, history, comments). It contains
-  nothing about affiliation, constitution, membership, fees or council approval. So the profile
-  content model is specified; **the registration/approval half is not, and must not be inferred
-  from the form.** Ask Lee-Ann what a society actually has to submit to affiliate, before any
-  architect pass on that half.
-  Open questions the form itself cannot answer, all flagged in the capture: no province/city/slug
-  field though our `Society` type requires all three; exactly four committee roles enumerated
-  (Chair/President, Secretary, Treasurer, Liaison for communication) with no path to a fifth
-  beyond a Comments note; only 3 of 20 questions required, so submissions will be sparse and every
-  field needs a real empty state; socials are Facebook + Instagram only, unlike the vendor form's
-  five platforms; and the form leans on Google identity for attribution, which ours will not have.
-  Do not replicate the form's upload limits — it allows 1 GB per image (and inconsistently 10 MB
-  for the Secretary photo alone). Impose one sane image cap with MIME validation, mirroring
-  `planProofOfPaymentUpload()`/`planMarketingAssetUpload()` in the vendor flow.
-  Likely shape: public form -> Firestore collection -> committee review under `/admin`, i.e. the
-  pipeline already built and proven for vendors (`vendorApplications` -> approval -> gated full
-  registration). Reuse that architecture rather than inventing a second one; the vendor mission's
-  goldens are the pattern.
+- [ ] **[P2] Register Society — society profile intake + registration flow** (added 20… → [details](data/p2-register-society-society-profile-inta.md)
 
 ---
 
-- [ ] **[P3] Leftover "previous venue's values" comment at `scripts/seed-show-visitor-info.ts`
-  ~line 105 (in `patchNationalShow()`), plus the still-open `nationalShowVenuePatch.venue.
-  directionsNote` field** — flagged by @qa during `venue-never-changed-copy-fix` (2026-08-24) as
-  real but out of that mission's scope. Not the same line as the protected line-163 comment
-  (that one is deliberately preserved as historical record under `contract-venue-prose-residue.yaml`
-  A10 — dev-only, never rendered). Route to whoever owns `venue-prose-residue` follow-up work;
-  not urgent.
+- [ ] **[P3] Leftover "previous venue's values" comment at `scripts/seed-show-visitor-… → [details](data/p3-leftover-previous-venue-s-values-comm.md)
 
-- [ ] **[P1] @docs Haiku tier defect / sync-regeneration risk.** Standing decision (2026-09-02,
-  recorded in `learned.md`'s resolved-contradiction entry near the top of the file): no Haiku for
-  any role on this project, @docs included — Sonnet 5 is the floor.
-  **Current state, precisely:** `.claude/agents/docs.md:3` was hand-corrected from `model: haiku`
-  to `model: sonnet` on 2026-09-02. But the template source `.agent/agents/docs.md` still
-  declares `model_tier: local` with no `model:` line at all, and `.gemini`/`.grok` mirror that
-  pattern with their own tier names (`flash`, etc). **This means the hand-edit is not the real
-  fix and can silently regress**: if `make sync` regenerates `.claude/agents/docs.md` from that
-  `local` tier the same way it apparently did before, `model: haiku` comes straight back with no
-  failure signal — and because the fix "already landed" in every session's notes (including this
-  one), nobody would think to re-check it. That is the worst shape a defect can have.
-  **The actual work:** locate the tier→model mapping `make sync` applies for the Claude provider
-  (not found in the search pass so far; likely under `execution/` or in the sync script itself)
-  and correct the `local` tier there, so the rendered file cannot regress. A hand-edit of
-  `.claude/agents/docs.md` alone is NOT the fix — it's what's in place today as an interim
-  patch only.
-  **Verification step:** after any `make sync`, re-check `.claude/agents/docs.md:3` still reads
-  `sonnet`. Until the mapping itself is fixed, treat that line as unstable — do not assume it
-  stays fixed just because it was corrected once.
-  `dev-fast.md` and `qa-fast.md` also carry `model: haiku` in frontmatter but are deliberately
-  excluded from this fix: both are documented OpenRouter free-tier fallbacks scoped to
-  non-critical ghost-task work, a different mechanism entirely — do not "fix" them alongside
-  this item.
-  **Practical impact (why P1, not P3):** if this regresses, @docs would silently run on the
-  same model that, on this project, reported two documentation items as "already correctly
-  documented" when neither existed anywhere except the line it had just written (`learned.md`,
-  "Do not report a task as already satisfied without running the check that proves it"). Until
-  the mapping is fixed, spot-check @docs output against the actual source
-  before trusting it, same as before this item existed.
+- [ ] **[P1] @docs Haiku tier defect / sync-regeneration risk.** Standing decision (20… → [details](data/p1-docs-haiku-tier-defect-sync-regenerat.md)
 
 ---
 
 ## Blocked on the council / Lee-Ann
 
-- [ ] **[P1] Ticket prices and capacities — estimate now, correct later (Brad's standing
-  instruction, already the pattern used for the ticketing admission products in
-  `lib/provisional-figures.ts`/F4).** Do not leave figures blank waiting on the council; put in
-  our best estimate, flagged provisional, same discipline as F4. Conference tickets (SAOC
-  Symposium/WOSA/joint, 6 entries) fully shipped as of 2026-08-21 — data model (F1), purchase
-  pages (F3), nav (F4), and checkout (F5) all done; `ticketing-conferences-and-events` (Mission
-  Two) is now complete end to end. Workshops/Field Trips/Cocktails category likewise fully
-  shipped as of 2026-08-21 (F2 estimation, F5 checkout closes the pooled-capacity fix F2
-  deferred) — 4 real priceable products (Sunset Cocktails single/couple, Field Trip
-  single/all-outings) now enforce their REAL physical ceilings (200/200/60/60) via
-  `planPooledCapacity()`'s pool-key/headcount-weighted math, not the F2 interim's conservative
-  resized constants (100/50/30/30). A non-sellable `WORKSHOP_PRICING_STRUCTURE` placeholder
-  remains since individual workshop sessions genuinely cannot be priced without a
-  council-confirmed session list — do not invent specific workshops. Still outstanding: vendor
-  fees (exhibit/food), venue/workshop capacity figures generally, and the real workshop session
-  list itself. Her form answers (pricing artifact) are still empty as of 2026-08-21 — do not
-  wait for them to start estimating the remaining categories.
-- [ ] **[P1] Refund and cancellation terms — draft real content ourselves for her to review/adjust
-  (Brad's direction, 2026-08-21), do not wait for her answer first.** `/refunds` exists
-  (`app/(marketing)/refunds/page.tsx`, 109 lines) but is deliberately figure-free — no cancellation
-  windows, refund conditions, or cooling-off period. Draft reasonable estimated terms, flag them
-  clearly as pending her confirmation. When real/adjusted figures land, POLICY-10 (the digit+unit
-  ban) must be revisited — it currently bans the very figures being added.
-- [ ] **[P1] POPIA Information Officer — placeholder decision made 2026-08-21, needs implementing
-  and formal confirmation.** Brad's call: name **Lee-Ann McCleland** (Fynbos Pottery Studio) as
-  Information Officer on `/privacy` for now — she can correct it later if the council wants someone
-  else. Not yet applied to `app/(marketing)/privacy/page.tsx` (still names `secretary@saoc.co.za`
-  by project convention). Still outstanding regardless of who: under POPIA the officer must be
-  formally registered with the Information Regulator; naming her on the page is not that
-  registration, just interim contact-page accuracy. Confirm her contact details (email/role) before
-  publishing — the screenshot this decision came from only confirms the name, not an email address.
+- [ ] **[P1] Ticket prices and capacities — estimate now, correct later (Brad's standi… → [details](data/p1-ticket-prices-and-capacities-estimate.md)
+- [ ] **[P1] Refund and cancellation terms — draft real content ourselves for her to r… → [details](data/p1-refund-and-cancellation-terms-draft-r.md)
+- [ ] **[P1] POPIA Information Officer — placeholder decision made 2026-08-21, needs i… → [details](data/p1-popia-information-officer-placeholder.md)
 - [ ] **[P1] All three policy pages carry an "AI-generated draft, not legal advice" notice** and
   need professional legal review before the council relies on them.
-- [ ] **[P1, commercial — Brad's call] Spec V3 scopes TWO websites**, not one: a permanent SAOC
-  org site (6 pages) and a dedicated 2027 Show site (18 pages). V3 §6 also marks as "Confirmed by
-  INUNU" several items never priced in the accepted 28-May proposal — unified multi-category
-  checkout, filterable exhibitor/guest databases, the relational awards archive, the Members
-  Portal. **Do not restructure routes; this needs a scope+price conversation first.**
+- [ ] **[P1, commercial — Brad's call] Spec V3 scopes TWO websites**, not one: a perma… → [details](data/p1-commercial-brad-s-call-spec-v3-scopes.md)
 - [ ] **[P1] Spec V3 §8 is a 13-question list for INUNU** (CMS, filtering, bookings,
   notifications, archiving). Several already have answers in our codebase. Worth a written reply.
-- [ ] **[P1] Stellenbosch visitor travel content.** Every CTICC-anchored travel section was
-  *cleared* rather than rewritten (correct — inventing airfield transport detail is the banned
-  failure mode). `airportRoutes`/`accommodation`/`attractions` are empty; `publicTransport`,
-  `parking`, `accessibility` and two intros are neutralised to "not confirmed". Owed: real
-  Stellenbosch-area content. There is no scheduled public transport to the airfield, so arrival
-  is drive/e-hail only, which changes the shape of the advice. Pre-change values backed up at
-  `.agent/memory/scratch/venue-change-2026-08-12/before.json`.
-- [ ] **[P1] Ticketing source document changed on 2026-08-26 (same day as the vendor doc) and is
-  NOT yet mirrored locally.** Lee-Ann replaced the vendor registration source in place on
-  2026-08-26 (same Drive file id, content replaced — `docs/leeann-source/2027-vendor-registration-form_2026-08-26.md`
-  is now canonical, the 25 Aug snapshot superseded and marked as such in
-  `docs/leeann-source/README.md`). The ticketing document changed the same day but has not been
-  re-pulled into `docs/leeann-source/` — this is a live risk of the exact "built against a
-  superseded document" failure the vendor mission just had to work around twice. Re-mirror it
-  before starting or resuming any ticketing work.
-- [ ] **[P1, council-blocked] Two vendor-registration contradictions between the written source
-  document and Lee-Ann's voice note remain unresolved — do not guess, ask her directly.**
-  (1) Cancellation window: the written T&Cs say 90 days, the voice note says 2 months. (2)
-  Tables/chairs: priced as a line item in the written document, described as "no extra charge"
-  in the voice note. Both found during `vendor-gated-registration-flow` (2026-08-31); the code
-  currently follows the written document for both since it's the more authoritative source, but
-  this needs her explicit confirmation, not a permanent default.
-- [ ] **[P2] Two vendor-registration form ambiguities need Lee-Ann's answer before the relevant
-  M2 feature (F5, Gas/Cooking/Heat Equipment + Food Vendors cluster) is built:** (1) should food
-  certifications be collected as a pick-list of specific certification types, or as one blanket
-  attestation checkbox; (2) can a non-food vendor legitimately declare gas/heat equipment (the
-  source document's structure implies gas questions are food-vendor-only, but nothing confirms
-  that a non-food vendor with e.g. a heater or generator is excluded from disclosing it).
+- [ ] **[P1] Stellenbosch visitor travel content.** Every CTICC-anchored travel sectio… → [details](data/p1-stellenbosch-visitor-travel-content-e.md)
+- [ ] **[P1] Ticketing source document changed on 2026-08-26 (same day as the vendor d… → [details](data/p1-ticketing-source-document-changed-on.md)
+- [ ] **[P1, council-blocked] Two vendor-registration contradictions between the writt… → [details](data/p1-council-blocked-two-vendor-registrati.md)
+- [ ] **[P2] Two vendor-registration form ambiguities need Lee-Ann's answer before the… → [details](data/p2-two-vendor-registration-form-ambiguit.md)
 - [ ] **[P2] Vendor Terms & Conditions document does not exist.**
-  `VendorPaymentFieldset.tsx:49` makes vendors agree to a document with no page, route or text
-  behind it — an agreement checkbox binding to nothing. Content is Lee-Ann's to write; do not
-  draft placeholder legal text. Once supplied, the page + linked label is ordinary work.
-- [ ] **[P2] National Show brand model.** Brad's unconfirmed hypothesis: a stable master brand
-  across editions plus a rotating per-edition host sub-brand, instead of a full redesign each
-  cycle. If the committee agrees, `branding/national-show-2027/` may need restructuring into a
-  stable parent with per-edition subfolders. **Do not restructure anything now.**
-- [ ] **[P2] Secure organisation-owned document custody.** Institutional records sit in
-  individuals' Drives, thumb drives and personal email. Critical sub-point: accounts must be
-  registered to SAOC as an organisation, not to whoever created them — especially the payment
-  merchant account, the domain, and any Google/Microsoft tenant. Section E of the call-prep doc.
-- [ ] **[P2] Real Show copy has arrived and is not yet loaded.** `About - 2027 National Show.docx`,
-  `What to Expect.docx`, `South African Exhibitors.docx` — first client-approved copy, replaces
-  our labelled placeholders. Confirms the theme: "From Wild Origins to Cultivated Excellence."
+  `VendorPaymentFiel… → [details](data/p2-vendor-terms-conditions-document-does.md)
+- [ ] **[P2] National Show brand model.** Brad's unconfirmed hypothesis: a stable mast… → [details](data/p2-national-show-brand-model-brad-s-unco.md)
+- [ ] **[P2] Secure organisation-owned document custody.** Institutional records sit i… → [details](data/p2-secure-organisation-owned-document-cu.md)
+- [ ] **[P2] Real Show copy has arrived and is not yet loaded.** `About - 2027 Nationa… → [details](data/p2-real-show-copy-has-arrived-and-is-not.md)
 - [ ] **[P2, security] Spec V3 circulates SAOC mailbox passwords in plaintext** in a shared Drive
   doc. Values are already stale (the VPS migration replaced all five). Tell Lee-Ann the doc should
   not carry credentials at all.
@@ -473,96 +169,24 @@ Do not scope work from an entry that contradicts it.
 
 ## Blocked on Brad (human action, not dispatchable)
 
-- [ ] **[P1] Ozow — mission `ozow-payment-provider` DONE (F1-F4, all gated, M4 gate passed
-  2026-08-23); one external item remains for Brad.** Ozow is now a fully working second
-  `PaymentProvider` alongside PayFast — adapter, checkout wiring/provider registry, and a real
-  `confirmNotification()` fix (F4: `GetTransactionByReference` needs an explicit `IsTest=true`
-  query param for sandbox transactions, which the code never sent — see `learned.md` "Ozow F4").
-  The originally-logged "unprovisioned merchant account" blocker was WRONG (see `learned.md`) —
-  real causes were a SiteCode misconfiguration (fixed) and this F4 bug (fixed). **Still open,
-  external and genuinely Brad's to resolve:** a real Ozow-side R0.01 transaction cap on the
-  sandbox account — support ticket needed with Ozow to raise/remove it before a full-value live
-  purchase can be proven end to end (Ozow support email still unsent). PayFast's own live-purchase
-  path remains regression-proved unaffected. **Demo-readiness gap now closed** — mission
-  `ozow-sandbox-toggle` (F1, gated 2026-08-24, 12/12 PASS) shipped an admin-toggleable
-  `ozowSandboxTestMode` flag (`/admin/settings`) that forces only the amount sent to Ozow's
-  `initiate()` to R0.01 while leaving cart/display/order/PayFast untouched, with a visible TEST
-  MODE banner; this replaces the manual, revert-dependent live-Sanity-price-edit workaround as
-  the documented demo method (`docs/payment-seam.md`). The R0.01 sandbox cap above is a separate,
-  still-open, vendor-side issue — do not conflate the two. See
-  [`contracts/golden/ozow-m1-f3/README-addendum-blocked.md`](../contracts/golden/ozow-m1-f3/README-addendum-blocked.md)
-  and `contracts/golden/ozow-m1-f4/README.md` for the full investigation. Outstanding follow-ups
-  from `docs/payment-gateway-research-2026-08.md` §10 still apply once live: PayFast Clause 9.8
-  fund-hold commitment in writing before sales open; PCI-DSS/ISO 27001 certificates verified via
-  IAF CertSearch; POPIA operator agreement; attorney review of the refund policy; disclosure to
-  the council of our conflict of interest (we built the custom system) and the thin-evidence
-  spots. Card payments must be explicitly activated on whichever provider's merchant account — not
-  always on by default — or international attendees cannot pay at all (confirmed again in the
-  pricing artifact's payment note to Lee-Ann).
-- [ ] **[P1] Go-live: live payment credentials.** In order: obtain live Merchant ID/Key/Passphrase;
-  store in Secret Manager with `printf '%s' | --data-file=-` (**never `echo`** — see the secret
-  corruption class); flip `lib/payfast.ts` off the sandbox constants; point `SITE_URL` at the real
-  domain (**gated behind DNS cutover** — live ITNs will not land otherwise); re-verify the ITN
-  signature path against a live transaction via the documented re-pin ceremony.
-  **Do not go live before council-confirmed prices are in.**
-- [ ] **[P1] DNS cutover.** Nameservers still point at the old cPanel host. Sequence:
-  re-pull mail from the legacy host one final time immediately before cutover (the 2026-07-20
-  restore is a snapshot) → switch nameservers → only THEN add any further Resend DNS records.
-  Adding them before the switch loses them silently with no code change to blame.
+- [ ] **[P1] Ozow — mission `ozow-payment-provider` DONE (F1-F4, all gated, M4 gate pa… → [details](data/p1-ozow-mission-ozow-payment-provider-do.md)
+- [ ] **[P1] Go-live: live payment credentials.** In order: obtain live Merchant ID/Ke… → [details](data/p1-go-live-live-payment-credentials-in-o.md)
+- [ ] **[P1] DNS cutover.** Nameservers still point at the old cPanel host → [details](data/p1-dns-cutover-nameservers-still-point-a.md)
 - [ ] **[P1] Run `scripts/install-dev-domain.sh` once from Terminal.app**
   (`cd ~/ai/SAOC && sudo bash scripts/install-dev-domain.sh`) — sudo cannot prompt in an agent
   shell. Until then the working URL is `https://dev.saoc.co.za:3333`.
 - [ ] **[P1] A 53 MB zip sits in git history** from commit `5b67fdf`
   (`branding/National Show 2027/Old NOS 2027 Assets.zip`). Repo is 171 MB. Removal needs a history
   rewrite + force-push, so it needs Brad's explicit permission and a quiet moment.
-- [ ] **[P1] Live `roles`-claim migration has never been run.** `scripts/admin-migrate-roles.ts`
-  is dry-run by default; no account holds a `roles` claim, including `brad@inunu.net`. Running
-  `--apply` is human-gated. `app/api/admin/checkin/route.ts`'s capability check stays deliberately
-  deferred until it has.
-- [ ] **[P1] Firestore test-data cleanup — deletion is Brad's call, not an agent's.** Live
-  collections carry test residue: ~15 `@harden-check.invalid` fixture docs in `tickets`, two
-  `contactSubmissions` diagnostic records, and the sandbox order/ticket documents from proving
-  purchase end to end. Blocks A5/A34 in `contract-payfast-m1-lock-cleanup-fix.yaml` and
-  `contract-door-test-qr-seeder.yaml` (both go green once cleared). Note the leak count has gone
-  both up and down across sessions (5 → 12 → 17 → 15) — record the number, do not narrate a trend
-  from it; measure under controlled conditions before drawing a conclusion.
+- [ ] **[P1] Live `roles`-claim migration has never been run.** `scripts/admin-migrate… → [details](data/p1-live-roles-claim-migration-has-never.md)
+- [ ] **[P1] Firestore test-data cleanup — deletion is Brad's call, not an agent's.** … → [details](data/p1-firestore-test-data-cleanup-deletion.md)
 - [ ] **[P1, security] Rotate `FIREBASE_ADMIN_PRIVATE_KEY`** (leaked into a session transcript via
   a redaction pattern that only matched single-line pairs, missing the multi-line key body)
   **and `SANITY_REVALIDATE_SECRET`** (visible in verification screenshots) before launch.
-- [ ] **[P2] Admin "mark paid" route — Brad wants it, wants to discuss before it is built.**
-  Use case: a buyer pays by EFT, no ITN arrives, the order sits reserved forever. This is also the
-  only sound resolution for a paid-but-ITN-failed order — nothing Firestore records can
-  distinguish that from an abandoned cart (see
-  `specs/ticketing-capacity-reconciliation-hold/WITHDRAWN.md`), so a human deciding is the answer.
-  Questions to settle: who may do it (its own capability, not general admin); what evidence is
-  recorded (bank reference, acting uid, timestamp, immutable); does it send the confirmation email
-  and QR; does it decrement capacity (it must, or manual sales oversell); can it be reversed.
-  **Do not build unattended.**
-- [ ] **[P2] Semantic feedback colours do not exist in the brand.** `app/globals.css` has
-  primary / accent / parchment / ivory / bone / ink / muted / rule only — no success green, no
-  error red, nothing that reads as bright at a door in daylight. Brad's door check-in spec
-  requires "bright green" and "bright red", which the current palette cannot satisfy. Either he
-  adds two semantic tokens, or he decides explicitly to use primary/accent (muted, arguably fails
-  the requirement). Do not invent colours. **Update 2026-08-24:** the door check-in
-  success/failure banner shipped anyway (`door-checkin-success-feedback` mission) by reusing
-  existing tokens (bg-primary/text-ivory success, bg-bone/border-primary-800/text-primary-800
-  failure) rather than waiting — so this no longer *blocks* that feature, but the underlying gap
-  (no bright semantic green/red) is still open and Brad's original "bright" requirement is still
-  arguably unmet.
+- [ ] **[P2] Admin "mark paid" route — Brad wants it, wants to discuss before it is bu… → [details](data/p2-admin-mark-paid-route-brad-wants-it-w.md)
+- [ ] **[P2] Semantic feedback colours do not exist in the brand.** `app/globals.css` … → [details](data/p2-semantic-feedback-colours-do-not-exis.md)
 - [ ] **[P2] Design template for ticket branding** — needed before the three ticket surfaces can be
   unified (see Ticketing below).
-- [ ] **[P2] Design bundle for mission `national-show-design-alignment`** (4 features, validated,
-  blocked). Cannot start until the assets arrive.
-- [ ] **[P2] Microsoft and Apple sign-in providers are DEFERRED (2026-08-17).** Code shipped in F5;
-  neither provider is enabled for `saoc-webapp`. Microsoft needs an Entra app registration (needs
-  a directory), Apple needs a Services ID + signing key. A green gate proves the code path, not
-  that the provider is on.
-- [ ] **[P2] Domain owner contact details.** Apply Lee-Ann's correct registrant details at
-  domains.co.za — "Update Pending" may be gating registry changes.
-- [ ] **[P3] Manual Sanity dashboard usage check** — manage.sanity.io → Settings → Usage. Confirm
-  CDN/API/bandwidth totals and that role display doesn't conflict with Free's 2-role cap. Not
-  retrievable via the token API. 5-minute task.
-- [ ] **[P3] Decide whether the legacy `public_html_1` / `public_html_2` copies are worth keeping.**
 
 ---
 
@@ -620,102 +244,6 @@ Plan Your Visit, FAQ, Archive — previously confirmed-live but unreachable from
 carry honest "not yet open" static messaging instead of reading as a silent purchase dead end.
 See `docs/f1-national-show-menu-restructure.md` and `learned.md` for the reusable two-column-
 flat-over-nested-submenu pattern.
-- [ ] **[P2] `scripts/migrate-ticket-type-category.ts` has only ever run `--dry-run`.** The 5 live
-  admission `ticketType` docs in production Sanity still have `category: null`. A server warning logs
-  for each during Admission ticket page renders (spotted during `ticketing-flow-redesign` F2 QA,
-  2026-08-24). This is protected by F3's admission-only null-category read-time fallback in the GROQ
-  query, so it is not urgent, but the docs should be backfilled with a real category for real
-  eventually rather than relying on the fallback indefinitely. Recommend: `scripts/migrate-ticket-type-category.ts --apply`
-  to clear the warning.
-- [ ] **[P2] Day Visitor's chosen day is not shown on the ticket confirmation page.** Verified
-  2026-08-21: `chosenDay` is correctly captured and persisted (`"2027-09-18"` confirmed in
-  Firestore against a real purchase), but `/tickets/confirmation` only shows
-  "day-visitor · R150.00" — no date. A buyer has no way to see which day they're confirmed for
-  after checkout. Minor completeness gap in F5 (ticketing-f5-day-attendees), not a data-loss bug.
-- [ ] **[P1] Verify the reserved-seat release path actually fires.** `buildReservationDocs` now
-  writes `expiresAt` onto the position document as well as the order (`lib/checkout-reservation.ts`
-  lines 56 and 81), which was the missing field that made lazy expiry-release unreachable — every
-  reserved position hit the "no `expiresAt` → fail closed" branch unconditionally, so
-  `RESERVATION_TTL_MINUTES = 30` was inert and abandoned carts held capacity forever. **The write
-  is fixed; the release path itself has still never been observed running.** Verify it, do not
-  assume. Note the interaction: once seats DO release, a paid-but-stranded order's seat becomes
-  resellable. Also note what this episode showed — the no-oversell WRITE path is genuinely well
-  proven (5 concurrent requests at the last seat, real server, real Firestore) while nothing
-  verified the RELEASE path, which is where the defect sat.
-- [ ] **[P1] QR code image does not render in the confirmation email.** Gmail shows the
-  broken-image placeholder with its alt text. Generation is fine — it renders on the confirmation
-  page and in the downloaded file. Likely cause: the email references the QR by URL or data: URI;
-  Gmail proxies remote images and strips data: URIs. Robust fix is a CID-attached inline image
-  (Resend supports attachments with a content id). **"It renders in my browser preview" is not
-  proof of a fix** — this defect only exists in the real client, so any assertion must check what
-  the delivered email contains, and the fix needs a real send to a real Gmail inbox.
-- [ ] **[P1] Door check-in: the successful scan produces no visible feedback.** Brad's live mobile
-  test — the scan WORKED (ticket reached `checked-in`, duplicates correctly refused) and the UI
-  showed him nothing. Leading hypothesis, unverified: the result panel renders below the fold, same
-  as the "Check In" button, so on the first successful scan the confirmation rendered off-screen.
-  If so, "no feedback" and "below the fold" are ONE defect. **Rule out in this order before
-  designing:** (1) does the admitted state render at all, or only the failure/duplicate branches;
-  (2) if it renders, does it persist or is it cleared when the scanner loop resumes; (3) where does
-  it land relative to the viewport at 375px and 320px immediately after a scan.
-  **Brad's required behaviour, explicit:** SUCCESS is visually assertive and unmistakable at a
-  glance, then the page RESETS clearing the previous ref so the next person can be scanned.
-  FAILURE HOLDS the entered reference for inspection, with a bright red "Check-in not accepted"
-  AND the specific reason — already checked in / unpaid / wrong show / unknown reference — because
-  the reason determines the steward's next action. Blocked on the semantic-colour decision above.
-  Accessibility: colour alone must not carry the verdict; pair with icon and text, meet contrast on
-  parchment, assume a colour-blind steward in bright sunlight.
-  Verify on a real phone with a real unscanned ticket — a DOM assertion cannot see this, and the
-  existing suite never asserted that a successful scan shows the operator anything.
-  `[verify against new brief]` — the verdict taxonomy changes when check-in becomes per-day.
-- [ ] **[P2] Manual entry should take only the unique suffix.** Staff should never type
-  `SAOC-2027-`; show it as a fixed affix. Must still accept a full pasted reference and normalise
-  it (a scanner app, an email copy-paste and a typing steward must all work) — Brad's input had a
-  stray space and still resolved, so some normalisation exists; find it before adding a competing
-  second one. Uppercase-normalise too; phone keyboards autocapitalise inconsistently.
-- [ ] **[P2] Downloaded ticket must be a PDF, not a PNG.** Currently
-  `saoc-ticket-<ref>.png` (`components/tickets/DownloadTicketButton.tsx`). A PDF carries page size
-  and vector text. **Watch:** the QR must stay crisp and scannable at print size — a downscaled or
-  JPEG-compressed QR fails at the door, which is the one thing the artifact exists to do. Any
-  contract needs a real scan test of the generated PDF, not "a PDF was produced".
-- [ ] **[P2] Uniform branding across the three ticket surfaces** — confirmation page, downloaded
-  artifact, confirmation email. All three are currently plain/unstyled with no SAOC identity.
-  BLOCKED on Brad's template. Email has a hard constraint the others don't: clients strip `<style>`
-  blocks, ignore most modern CSS, and Gmail clips over ~102KB — so table layout, inline styles, and
-  a logo delivered as a CID attachment the same way the QR fix will be.
-  nothing sets it, `components/admin/StatusPill.tsx` has no style for it (renders through the
-  neutral fallback, indistinguishable from an unrecognised status), and no gateway refund call
-  exists. A refund today means refunding in the gateway dashboard and hand-editing Firestore with
-  nothing linking the two. PayFast exposes a Refunds API (same MD5+passphrase auth as the ITN), so
-  this is buildable. Needed before high refund volume.
-  a colliding `bookingRef` silently overwrites instead of failing. **Verified 2026-08-21: the main
-  checkout path no longer uses this** — `buildMultiReservationDocs()`/`writeMultiReservationPair()`
-  (multi-line-item-cart mission) use `transaction.create()` (fail-loud on collision), confirmed by
-  reading the code. `createOrderWithPosition()` is now ONLY used by the admin comp-ticket route
-  (`app/api/admin/tickets/comp/route.ts`) — narrower blast radius than originally scoped, still a
-  real gap there, lower urgency (comp tickets are a low-volume admin action, not public checkout).
-  and `Ticket`**, deliberately, and nothing detects divergence between the copies. **Confirmed still
-  true 2026-08-21** against a real live purchase (both fields present and populated on the order
-  doc and on each of its two position docs). The position copies were meant to be removed with a
-  backfill once checkout/ITN stop writing them.
-  is called in checkout (`app/api/tickets/checkout/route.ts:739`) and `recoveryToken`/
-  `recoveryTokenExpiresAt` are confirmed present on a real order doc. Still genuinely open: the
-  guest-order-claiming backfill (a guest's existing orders' `buyerUid` backfilled when they later
-  register) — not re-verified, may still be owned by nobody.
-  council-approved value. Real security/usability tradeoff: too short locks buyers out of tickets
-  they paid for, too long keeps a leaked link live for months.
-  wired (`app/api/admin/checkin/route.ts:60` → `recordCheckinAttempt`), but the paused mission
-  `prove-ticket-purchase-works-end-to-end-b` M1 gate observed no document after a live scan.
-  Agent-actionable: query Firestore directly, do not queue a human scan. If the write genuinely
-  fails, it fails silently — `lib/checkin-audit.ts:143` logs and swallows. Must survive the Stage 5
-  per-day check-in rewrite: re-verify after it lands.
-  **DONE 2026-08-25** — built read-only `scripts/verify-checkin-audit-write.ts`, cross-referencing
-  checked-in tickets against `checkinAttempts` admit records (bookingRef-primary join, orderId
-  fallback). Live run against real Firestore (verified twice): 0 orphans — the write path works
-  correctly right now. No production code changed; a regression-locked verification tool now
-  exists for future checks. Gate 6/6 pass, QA + Codex GPT-5.5 found and fixed 3 real bugs in the
-  script's own join logic mid-mission. See `docs/verify-checkin-audit-write.md`.
-  retired `'general' | 'member' | 'vip'` union and a 6-digit `bookingRef`. Reality: free-form
-  string keyed by Sanity slug, 60-bit Crockford base32 refs.
 
 ---
 
@@ -1228,56 +756,10 @@ flat-over-nested-submenu pattern.
   appears to dedupe on git SHA. Workaround is POSTing directly to the App Hosting REST builds
   endpoint.
 
-- [ ] **[P0] `execution/codex_qa.sh` reports quota/transport failure identically to a real
-  adversarial FAIL** (found 2026-09-08, mission `ticketing-complete`, F2/A13; a peer session
-  filed the same defect independently the same night as Athanor#1419 via the stdin entry
-  point — this is a second, independent confirmation via the `<file_path>` argument form, so
-  the fix needs to cover exit-code classification generally, not just one call shape). When
-  OpenAI quota is exhausted, the wrapper exits 1 and prints the literal token `FAIL`,
-  indistinguishable from a genuine Codex GPT-5.5 adversarial verdict — the quota error message
-  is emitted twice before the `FAIL` token, so a classifier keyed to a fixed line position
-  would still miss it. Consequence: **the mandatory cross-model Codex pass on
-  `contracts/checks/ticketing-complete-f2/check-no-migration-apply-invocation.mjs` (A13) did
-  NOT run** — quota exhausted, resets 17:01 on 2026-09-08 — yet A13 is landed and gate-green.
-  Per `.claude/rules/workflow.md` ("No feature is DONE without a Codex GPT-5.5 pass"), F2/A13
-  is not actually DONE until this pass is re-run and genuinely passes; re-run it once the quota
-  resets, before closing F2.
 
-- [ ] **[P2] F6 nav rebuild gate is red at exit 6, feature otherwise complete** (found
-  2026-09-08, mission `ticketing-complete`). The nav rebuild itself is implemented, and both
-  `codex_qa` (A20) and `browser_deployed_check` (A21) triad assertions were added honestly.
-  `gws_inbox_check` was deliberately NOT added — a nav rebuild sends no email, so there is no
-  truthful `message_id` to assert against — which the triad-gate preflight (see the Athanor
-  #1420 entry above) currently has no way to express as a legitimate exemption rather than a
-  gap. Not resolvable via `execution/triad-baseline-exempt.txt`, since that is a one-time
-  2026-09-06 rollout snapshot of pre-existing contracts, not an open-enrollment exemption list
-  for new ones. Blocked on Athanor#1420 landing an applicability escape (an explicit way for a
-  contract to declare "this triad kind does not apply here" instead of the classifier guessing
-  from assertion text) — do not work around it locally by force-adding a fabricated
-  `gws_inbox_check`.
 
-- [ ] **[P2] F8's hardcoded `:3002` route-origin fix is designed but not landed** (mission
-  `ticketing-complete`, F8, 2026-09-08). @architect specced the fix: a new
-  `contracts/checks/_shared/verify-server-identity.mjs`, an edit to
-  `verify-walkthrough-routes.mjs` to use it, a negative-control script proving the guard fires
-  on a wrong-server response, and two new contract-f8.yaml assertions (A25/A26). None of the
-  four are written yet. Separately, **9 other check files share the same hardcoded `:3002`
-  origin exposure** (not yet enumerated by path) — the F8 fix should be the reference pattern
-  for cleaning those up, not a one-off.
 
-- [ ] **[P3] Clone drift — `make sync-clones` overdue.** `CLAUDE.md` has drifted from
-  `AGENTS.md`; the `GEMINI.md` symlink and `rules.md` are missing from at least one clone
-  target. Found during the 2026-09-08 `ticketing-complete` wrap-up. Housekeeping only, not
-  mission-scoped — run `make sync-clones` and commit separately.
 
-- [ ] **[P3] `.claude/settings.json` hook-entry de-duplication is drafted but uncommitted, and
-  is template-sync churn, not mission scope** (found 2026-09-08, mission `ticketing-complete`).
-  Roughly 86 lines of working-tree diff replace hook entries duplicated in both the old
-  `[ -f X ] && bash X || exit 0` form and the newer `[ -f X ] || exit 0; bash X` form with the
-  single newer form — correct, and aligned with `.claude/rules/hooks.md`'s guidance on hook
-  file shape. This is `make update-template` output reconciling drift, not something the
-  ticketing-complete mission touched or should carry in its commit. Needs its own deliberate,
-  separately-reviewed commit; exclude it explicitly when committing ticketing-complete's work.
 
 ---
 
@@ -1551,56 +1033,10 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 > Truncated 104 items at trim time (2026-09-04). Restore from git history if needed.
 > Truncated 3 items at trim time (2026-09-06). Restore from git history if needed.
 
-- [ ] **[P1] Duplicate `Event` structured-data node for the 2027 National Show.**
-  `/events/19th-south-african-national-orchid-show` emits a second schema.org `Event` for the
-  SAME real-world show as `/national-show` — identical name, dates and venue, different URL.
-  Duplicate-entity cannibalisation in search. Origin is the generic society-event route driven
-  by a Sanity `societyEvent` document. Found 2026-09-08 by the NOS design session during its SEO
-  work and filed as InunuNet/SAOC#2 with three candidate directions. **Do NOT delete the Sanity
-  document without first checking what else reads it** — the events calendar and .ics feeds may
-  depend on it. Our tree (`app/(marketing)/events/**`), not the NOS session's.
 
-- [ ] **[P1] Nothing in this repo runs the contract checks — no CI job, no `test` script.**
-  Verified 2026-09-08: `.github/workflows/ci.yml` runs only lint, type-check, build and two
-  residue guards (one SKIPPED for missing secrets). `package.json` has no `test` script. Grep for
-  `contracts/checks` across CI, Makefile and `execution/` returns zero. Every assertion runs once
-  — when its author invokes it — and never again.
-  This is the mechanism behind the contract-decay items already logged above (the four failing
-  contracts found during the vendor F2 QA sweep, and the standing "audit remaining contracts for
-  the weak-assertion defect class" item). Those were symptoms; this is the cause. Consequence:
-  every "N/N assertions green" claim in this repo is a point-in-time measurement, not a standing
-  guarantee. Mission `ticketing-complete` F7 is folding in a runner + CI job.
-  Related, and Brad's call because it is a GitHub setting not a code change: **main has no branch
-  protection**, so even a wired-up red CI job blocks nothing (stated in ci.yml's own comments).
 
-- [ ] **[P2] A contract runner must distinguish "check failed" from "check was never runnable."**
-  Reported 2026-09-08 by the NOS session: of nine Playwright check scripts named in its contract,
-  seven do not exist on disk. A runner that treats a missing script as a failure buries real
-  failures in noise; one that skips it silently reports green for coverage that was never written.
-  Neither is acceptable — the two states must be reported separately. Fold into F7's runner.
 
-- [ ] **[P2] `check-workshop-products.mjs` is stale post-F2 (ticketing-complete) — three
-  assertions need updating to the new 3-product reality, one genuine pre-existing defect
-  needs separate repair.** Ruling written 2026-09-08:
-  `.agent/memory/project/specs/ticketing-complete/goldens/f2-README.md` §14. File:
-  `contracts/checks/ticketing-workshops-f2/check-workshop-products.mjs` (belongs to the
-  earlier, closed `ticketing-conferences-and-events` mission, not `ticketing-complete`).
-  Correct-consequence fixes (never revert F2's data to make these pass): update
-  `REQUIRED_SLUGS` to drop `field-trip-single`/`field-trip-all-outings` and add `field-trip`;
-  update the `length === 4` expectation to `3`; delete the now-permanently-vacuous
-  field-trip bundle-relationship check (both slugs it reads are `undefined` post-retirement,
-  so its guard silently no-ops rather than failing — dead coverage, not passing coverage).
-  Genuine pre-existing defect, unrelated to F2: the "oversell invariant" check
-  (`cocktailSingle.capacity * 1 + cocktailCouple.capacity * 2 <= 200`) predates
-  `planPooledCapacity()` (shipped later, `ticketing-conferences-and-events` M2/F5) and
-  double-counts one shared `capacityPool: 'sunset-cocktails'` ceiling as if it were two
-  independent per-slug budgets — it will fail forever regardless of any F2 change. Needs
-  rewriting to assert the two products share one pool at the real venue ceiling (200), not a
-  sum of two fields. Implementation work for `@dev`, not an architect edit.
 
-- [ ] **[P1] Audit remaining contracts for the weak-assertion defect class — standing, open.**
-  The general class (an assertion satisfiable by something other than the real property it
-  claims to check) is still unaudited across the repo at large and stays open.
 
   **One measured sub-class is now closed out, 2026-09-08: vacuously-green negative assertions
   (a `!`-negated/absence-shaped check whose referenced file or directory doesn't exist, so it
@@ -1731,7 +1167,6 @@ disconnected: `deriveAdmissionEarlyBirdCutoffIso()` (the cutoff-date half) IS ca
 `lib/provisional-figures.ts:87` to derive VIP's cutoff — only the price-computation half is
 orphaned. A half-wired engine is easy to mistake for a fully-wired one; don't let the live
 cutoff call site stand in for proof the price call site exists too.
-
 
 ## P2 — glob-built check-script paths are dropped entirely by the contract runner (same hole as interpolation)
 
@@ -2040,3 +1475,41 @@ rebuild from the design above, which is complete enough to work from.
 Related: the same session has adopted running the scanner at BOTH ENDS of a measurement pass,
 treating its own geometry numbers as suspect if the dataset moved underneath it. Worth making
 standing practice for any agent taking visual measurements against live content.
+
+## Focus states suppressed site-wide — live a11y defect (logged 2026-09-10)
+
+`design/design_handoff_saoc/src/styles.css` sets `outline: none` at lines 450, 1134,
+1361 and 2112, and `colors_and_type.css` defines no focus token at all. Wherever those
+rules apply on the shipped site, a keyboard user has **no visible focus indicator**.
+
+Independent of the menu decision — no nav option fixes it. Needs its own slice.
+
+Ring colours are already settled and need no new token (design lane ruling, 2026-09-10):
+`--ink` #171917 on light grounds (15.89:1 on parchment, 14.13:1 on bone),
+`--parchment` #f4f3ec on dark grounds (9.53:1 on primary, 13.57:1 on primary-800).
+Solid outline, full alpha, `outline-offset` never below 2px.
+
+Brass is NOT usable as a ring: `--accent` #9e8c6b measures 2.94:1 on parchment and
+2.62:1 on bone — under the 3:1 floor on both light grounds. `--accent-soft` #c2b393
+is 1.86:1 on parchment. Measured against `colors_and_type.css` values, not the design
+lane's table, which carried three non-handoff hexes.
+
+## SAOC and NOS palettes must not be mixed (Brad, 2026-09-10)
+
+Brad: "SAOC has its own design, don't mix it with NOS." He is still finalising the
+National Show design separately; that lane does not have the full picture.
+
+**The NOS layer redeclares token NAMES that SAOC also uses, to different values.**
+"parchment" and "muted" are each two different colours depending on layer. A hex is
+only meaningful with its layer attached.
+
+Verified by grep of `design/` and `branding/` on 2026-09-10: none of `#fbfaf0`,
+`#f3f2d6`, `#6a6780`, `#565469`, `#a49dbe`, `#8f2834`, `#714a1e`, `#1f5c3e` appears
+anywhere in SAOC's approved sources. They are NOS-layer values.
+
+Consequence to check: any earlier ruling applied to a SAOC surface that was measured
+against NOS grounds needs re-deriving from `colors_and_type.css`. The disclosure-rail
+work (R11) is the known case — it was discussed using NOS parchment/bone/muted.
+
+Standing: SAOC surfaces take colour only from `design/design_handoff_saoc/colors_and_type.css`.
+> Truncated 23 items at trim time (2026-09-10). Restore from git history if needed.

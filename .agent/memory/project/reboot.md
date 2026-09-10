@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-09-06T22:33Z_
+_Generated: 2026-09-10T18:39Z_
 
 ## What happened last session
-Recorded 7 durable lessons from tonight's beta-verification session: client-hydrated routes need browser not curl verification, falsifiable-claim prompts beat holistic QA asks, JSX whitespace-collapse is only detectable rendered, fallback paths can be the active path (check the dataset), Codex diff-only findings need verification against real files, an honest-gap content pattern for missing data, and a known (unfiled) condition re: Athanor hook-integrity update leaving require_*.sh hooks registered.
+Menu-layout consult session: Brad delegated PR-review-before-main across all three lanes and froze primary nav pending his dropdown-layout pick; closed the two-websites question for good and the SAOC/NOS palette-mixing rule (both already recorded); captured 5 process lessons (brief-must-quote-values, audit-wrong-property, hex-needs-layer, task-mis-framing, require_contract_for_write.sh inconsistent enforcement by command shape).

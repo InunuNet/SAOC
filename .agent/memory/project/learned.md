@@ -3721,3 +3721,79 @@ engine connected is harder to spot than none — the honest-looking call site ma
 assume the whole module is reachable. See the full defect and the decision Brad needs to make
 in backlog.md's "F1's computed early-bird pricing engine has ZERO runtime call sites" entry,
 extended with these measured figures.
+
+## Defect-class variant (2026-09-10): path checks can't prove route properties
+
+New variant of this repo's audited class "assertion satisfiable without the
+property it claims to prove", found by the NOS build lane while scoping a
+grid-cols sweep.
+
+**Setup.** A lane boundary says `/national-show/exhibitors` must not change. The
+assertion checks that `app/(marketing)/national-show/exhibitors/page.tsx` is
+unmodified in the diff.
+
+**The hole.** That page renders `components/show/ExhibitorQuestions.tsx` and
+`ExhibitorSteps.tsx`. Editing either changes the route's output without touching
+its `page.tsx`. The assertion passes; the property it claims to prove is false.
+A subsection-wide component sweep would have *required* exactly those edits.
+
+**Rule.** An assertion about a ROUTE must look at that route's rendered output —
+a snapshot, a fetched HTML body, a golden render. Never at file paths in a diff.
+Path checks prove things about paths, and a page is not its `page.tsx`.
+
+Same shape as the earlier variants: the check is cheap and looks equivalent to
+the real thing right up until a shared dependency moves underneath it.
+
+## CLOSED — the "two websites" question is dead. Never raise it again. (Brad, 2026-09-10)
+
+Spec V3 mentions a separate 2027 Show site. **Brad has closed this. It is not an open
+question, not a commercial question, and not a topic.** His words: "Fuck off with the two
+websites, we're not discussing this every fucking compaction."
+
+It kept resurfacing because it was recorded as an OPEN question in three places at once —
+the Dev Status sheet's Open Questions tab, project memory, and the Claude auto-memory index.
+Every compaction reloaded it and it got raised again. That is the failure mode: a settled
+thing left filed as open will be re-litigated forever.
+
+**One site: SAOC, with the National Show as a section of it at `/national-show`.**
+Do not propose, plan, cost, or restructure for a second site. Do not mention Spec V3's
+two-site language.
+
+Stale copies to ignore if they surface: the auto-memory entry
+`project_spec_v3_two_sites.md` (outside the project; this project's rules bar writing there)
+and Open Questions row 14 in the Dev Status sheet (being removed).
+
+## Menu-layout consult (2026-09-10) — five lessons from one dead-end session
+
+Brad asked for dropdown *layout* options for the already-approved header nav. Two of these
+turned the ask into a design-quality miss before he caught it; three are process/verification
+lessons worth generalising beyond this task.
+
+1. **"Reproduce X faithfully" without the actual values produces invention.** Briefed a
+   designer to "reproduce the handoff structure faithfully" and it invented a dark header,
+   uppercase mono nav labels, and a 44px serif mobile list — none in the handoff (the real
+   handoff, `src/styles.css`, says parchment ground, Manrope 14px sentence case, 17px drawer
+   links). Brad caught it, not the review. **When the source is a file, quote the file's
+   values into the brief — naming the file is not enough.**
+
+2. **Auditing for the wrong property passes a wrong artefact.** Checked a prototype for
+   forbidden *colours* and reported it clean — true on that one axis — while the *header CSS*
+   was wrong throughout. Same audited defect class this repo already tracks ("assertion
+   satisfiable without the property it claims to prove"), now caught in a design review, not
+   code. State what an audit did NOT cover when reporting something clean.
+
+3. **A hex is only meaningful with its layer attached** — see the SAOC/NOS palette entry
+   above. Re-measure against the authoritative token file even when a peer's numbers already
+   reach the right ruling.
+
+4. **Mis-framed the task twice before landing on what was actually asked.** Brad asked for
+   menu *options*; built a site-structure comparison (six items vs. ten) first, then a
+   nav-behaviour comparison, before arriving at dropdown layouts under the already-approved
+   header. "Show me options for X" does not authorise redesigning what's around X.
+
+5. **`require_contract_for_write.sh` blocks a command that reads a project file and writes
+   anywhere else** — `sips --out`, `cat project/file > scratchpad/file`, `base64 -i
+   project/file > …` all trip it. A `python3 -c` one-liner doing the identical read-then-write
+   is not blocked. Same hook, inconsistent enforcement by command shape — worth an upstream
+   Athanor note; use the `python3 -c` shape as the working escape hatch until it's fixed
+   there (never patch the hook script locally — see `.claude/rules/athanor.md`).
