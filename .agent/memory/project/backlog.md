@@ -1600,3 +1600,45 @@ separately from passes — same shape as `run_contract_suite.mjs`'s
 `SHELL_SKIP_EXIT_CODE` fix, adapted to this checker's own summary format rather
 than the shared runner's (this script isn't run through `run_contract_suite.mjs`
 today, so the runner-level fix does not cover it).
+
+## Menu System Layout 4 — F7 recorded-not-fixed (2026-09-11)
+
+- `MegaMenu.tsx`'s panel uses `role="menu"`, contradicting WAI-ARIA APG's Disclosure
+  Navigation guidance ("No ARIA is better than Bad ARIA").
+- The nav data still permits a leaf label equal to its column heading — the `<h3>` change
+  landed in F7 removed today's collisions but not the underlying trap.
+- `MobileMenu.tsx` drift from the artifact's mobile treatment (`.msub__head`/`.msub`) —
+  deliberately out of F7 scope.
+- `--shadow-sheet` is self-referential (`:root` literal, `@theme` re-declares as
+  `var(--shadow-sheet)`); resolves by declaration order today, could silently zero with
+  only A1 as backstop.
+- `check-style-values-sourced.mjs` accepts a citation's existence, not its truth — see
+  `learned.md` 2026-09-11.
+
+## Contract parseability audit needed (2026-09-11, still open)
+
+**Unparseable contracts are silent non-gates.** `contract-f7.yaml` (mission
+menu-system-layout4) was unparseable YAML for part of today; boot separately flagged
+`gate-timeout-fix/contract-f1.yaml` and `mission-slug-collision-fix/contract-f1.yaml` in
+the same state. Audit every `contract-*.yaml` for parseability and add a boot-level or CI
+check — a contract that fails to load currently reports nothing rather than failing, so
+every assertion in it silently gates nothing while reporting no error.
+
+## Codex reasoning-effort default wrong in harness script (2026-09-11, still open)
+
+Athanor#1438 — `execution/codex_qa.sh:77` hardcodes reasoning effort `medium` against the
+documented `high`; medium returned a false PASS on this repo. Until it lands upstream, run
+Codex via the documented fallback with `-c model_reasoning_effort=high` explicitly.
+
+## `sanity/lib/fetch.ts` swallows errors to null (P1, still open)
+
+Renders a false "SAOC has not supplied content" claim instead of surfacing a real fetch
+failure. 12+ callers on `main`. Predates both the menu-system-layout4 and
+site-content-alignment lanes.
+
+## Rule needed: no `pkill`/`kill` by pattern (2026-09-11)
+
+A subagent ran `pkill -f "next dev --port 3002"` during this session and killed a dev
+server belonging to `/Users/vetus/ai/SaocNosDesign` — a different project, outside this
+repo. This is a scope-boundary violation, not just a note: add a rule that agents never use
+`pkill`/`kill` with a pattern; let Playwright's config manage its own servers.

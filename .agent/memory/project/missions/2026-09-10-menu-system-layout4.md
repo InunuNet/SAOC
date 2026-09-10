@@ -8,16 +8,16 @@ goal: 'Build the SAOC menu system to Brad''s approved Layout 4: one National Sho
   the header.'
 created_at: '2026-09-10T19:28:57.606413+00:00'
 started_at: '2026-09-10T19:28:57.606413+00:00'
-last_active_at: '2026-09-10T19:36:11.080108+00:00'
+last_active_at: '2026-09-10T21:06:07.163941+00:00'
 status: in_progress
 cost_estimate:
   features: 5
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: M1
-  feature: F1
-  ts: '2026-09-10T19:36:11.080108+00:00'
+  milestone: M2
+  feature: F4
+  ts: '2026-09-10T21:06:07.163941+00:00'
 features:
 - id: F1
   inline_brief: null
@@ -27,44 +27,49 @@ features:
     descriptors and feature rail; descriptors are trimmed manifest purpose strings,
     never free text
   milestone: M1
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/menu-system-layout4/contract-f1.yaml
   contract: .agent/memory/project/specs/menu-system-layout4/contract-f1.yaml
+  completed_at: '2026-09-10T20:37:20.523030+00:00'
 - id: F5
   inline_brief: null
   name: Dead nav target — /national-show/exhibitors/international becomes /national-show/international-guests
     per the manifest (the WOSA entry already points at /wosa-conference and needs
     no change, per ruling R3)
   milestone: M1
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/menu-system-layout4/contract-f5.yaml
   contract: .agent/memory/project/specs/menu-system-layout4/contract-f5.yaml
+  completed_at: '2026-09-10T20:37:21.820170+00:00'
 - id: F2
   inline_brief: null
   name: components/chrome/MegaMenu.tsx — the narrow anchored panel becomes the full-width
     sheet in five tracks (lead block, three group columns, feature rail); existing
     disclosure and keyboard semantics kept verbatim
   milestone: M2
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/menu-system-layout4/contract-f2.yaml
   contract: .agent/memory/project/specs/menu-system-layout4/contract-f2.yaml
+  completed_at: '2026-09-10T21:06:04.932102+00:00'
 - id: F3
   inline_brief: null
   name: components/chrome/MobileMenu.tsx — feature block at the top of the expanded
     National Show section, then the four groups as headed lists with descriptors;
     drawer link size never exceeds the handoff's 17px
   milestone: M2
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/menu-system-layout4/contract-f3.yaml
   contract: .agent/memory/project/specs/menu-system-layout4/contract-f3.yaml
+  completed_at: '2026-09-10T21:06:06.244675+00:00'
 - id: F4
   inline_brief: null
   name: components/chrome/Header.tsx — only as far as the nav restructure forces;
     lockup, utility bar, search and Contact button untouched
   milestone: M2
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/menu-system-layout4/contract-f4.yaml
   contract: .agent/memory/project/specs/menu-system-layout4/contract-f4.yaml
+  completed_at: '2026-09-10T21:06:07.163796+00:00'
 milestones:
 - id: M1
   features:

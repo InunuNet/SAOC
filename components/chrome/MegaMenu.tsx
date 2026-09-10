@@ -99,11 +99,14 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
   // pattern implies. The anchor wraps only the name; the descriptor is a
   // plain, non-interactive sibling directly under it.
   const leafLinkClassName =
-    'block rounded-sm py-2 font-sans text-[14px] font-bold text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment';
-  const leafDescriptorClassName = '-mt-1.5 block pb-2 font-sans text-[12px] text-muted';
-  const groupHeadingClassName = 'font-serif text-[16px] font-medium text-ink';
+    'block rounded-sm py-2 font-sans text-[14px] font-semibold leading-[1.3] text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment';
+  const leafDescriptorClassName = 'mt-[2px] block pb-2 font-sans text-[12px] text-muted';
+  // .dd-head typography (groupHeadings + leadEyebrow, F7 round 2 golden) — mono
+  // 10px uppercase caps in --accent, reset to zero UA margin then mb-3 (--s3).
+  const groupHeadingClassName =
+    'm-0 mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-accent';
   const groupHeadingLinkClassName =
-    'rounded-sm font-serif text-[16px] font-medium text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment';
+    'rounded-sm font-mono text-[10px] uppercase tracking-[0.18em] text-accent transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment';
 
   return (
     <div ref={containerRef} onBlur={onBlur}>
@@ -122,42 +125,88 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
         <div
           role="menu"
           aria-label={item.label}
-          className="absolute inset-x-0 top-full z-50 border-t border-rule bg-parchment shadow-float"
+          className="absolute inset-x-0 top-full z-50 border-t border-rule bg-parchment shadow-sheet"
         >
-          <div className="mx-auto grid max-w-[1280px] grid-cols-[2fr_1fr_1fr_1fr_2fr] gap-10 px-8 py-10">
-            {/* Track 1 — lead block: eyebrow, serif lead linking the hub, meta
+          <div className="mx-auto max-w-[1280px] px-8">
+            <div className="grid grid-cols-[1.05fr_1fr_1fr_1fr_.9fr] gap-x-0 pt-8 pb-6">
+              {/* Track 1 — lead block: eyebrow, serif lead linking the hub, meta
                 line, "The Show" group folded in underneath. */}
-            {item.lead && (
-              <div className="flex flex-col">
-                <span className="inline-flex w-fit items-center rounded-pill bg-bone px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
-                  {item.lead.eyebrow}
-                </span>
-                <Link
-                  href={item.lead.leadHref}
-                  onClick={close}
-                  className="mt-4 w-fit rounded-sm font-serif text-[20px] font-medium text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-                >
-                  {item.lead.leadLabel}
-                </Link>
-                {leadMeta && <span className="mt-2 font-mono text-[12px] text-muted">{leadMeta}</span>}
+              {item.lead && (
+                <div className="flex flex-col pr-6">
+                  <p className={groupHeadingClassName}>{item.lead.eyebrow}</p>
+                  <Link
+                    href={item.lead.leadHref}
+                    onClick={close}
+                    className="mb-[6px] block w-fit rounded-sm font-serif text-[23px] font-semibold leading-[1.12] text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                  >
+                    {item.lead.leadLabel}
+                  </Link>
+                  {leadMeta && (
+                    <span className="mb-4 block max-w-[32ch] text-[12.5px] text-muted">
+                      {leadMeta}
+                    </span>
+                  )}
 
-                <div className="mt-6">
-                  {item.lead.theShow.headingHref ? (
-                    <Link
-                      href={item.lead.theShow.headingHref}
-                      onClick={close}
-                      className={groupHeadingLinkClassName}
-                    >
-                      {item.lead.theShow.heading}
-                    </Link>
+                  <div>
+                    {item.lead.theShow.headingHref ? (
+                      <h3 className="m-0 mb-3" style={{ marginTop: '20px' }}>
+                        <Link
+                          href={item.lead.theShow.headingHref}
+                          onClick={close}
+                          className={groupHeadingLinkClassName}
+                        >
+                          {item.lead.theShow.heading}
+                        </Link>
+                      </h3>
+                    ) : (
+                      <h3 className={groupHeadingClassName} style={{ marginTop: '20px' }}>
+                        {item.lead.theShow.heading}
+                      </h3>
+                    )}
+                    <ul className="mt-3 flex flex-col">
+                      {item.lead.theShow.links.map((link, i) => (
+                        <li
+                          key={link.id}
+                          className={
+                            i < item.lead!.theShow.links.length - 1
+                              ? 'border-b border-rule-soft'
+                              : ''
+                          }
+                        >
+                          <Link href={link.href} onClick={close} className={leafLinkClassName}>
+                            {link.label}
+                          </Link>
+                          {link.descriptor && (
+                            <span className={leafDescriptorClassName}>{link.descriptor}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Tracks 2-4 — Visit / Programme / Exhibit & Trade group columns. */}
+              {item.columns.map((column) => (
+                <div key={column.id} className="border-l border-rule-soft px-6">
+                  {column.headingHref ? (
+                    <h3 className="m-0 mb-3">
+                      <Link
+                        href={column.headingHref}
+                        onClick={close}
+                        className={groupHeadingLinkClassName}
+                      >
+                        {column.heading}
+                      </Link>
+                    </h3>
                   ) : (
-                    <span className={groupHeadingClassName}>{item.lead.theShow.heading}</span>
+                    <h3 className={groupHeadingClassName}>{column.heading}</h3>
                   )}
                   <ul className="mt-3 flex flex-col">
-                    {item.lead.theShow.links.map((link, i) => (
+                    {column.links.map((link, i) => (
                       <li
                         key={link.id}
-                        className={i < item.lead!.theShow.links.length - 1 ? 'border-b border-rule' : ''}
+                        className={i < column.links.length - 1 ? 'border-b border-rule-soft' : ''}
                       >
                         <Link href={link.href} onClick={close} className={leafLinkClassName}>
                           {link.label}
@@ -169,59 +218,39 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
                     ))}
                   </ul>
                 </div>
-              </div>
-            )}
+              ))}
 
-            {/* Tracks 2-4 — Visit / Programme / Exhibit & Trade group columns. */}
-            {item.columns.map((column) => (
-              <div key={column.id}>
-                {column.headingHref ? (
-                  <Link href={column.headingHref} onClick={close} className={groupHeadingLinkClassName}>
-                    {column.heading}
-                  </Link>
-                ) : (
-                  <span className={groupHeadingClassName}>{column.heading}</span>
-                )}
-                <ul className="mt-3 flex flex-col">
-                  {column.links.map((link, i) => (
-                    <li key={link.id} className={i < column.links.length - 1 ? 'border-b border-rule' : ''}>
-                      <Link href={link.href} onClick={close} className={leafLinkClassName}>
-                        {link.label}
-                      </Link>
-                      {link.descriptor && (
-                        <span className={leafDescriptorClassName}>{link.descriptor}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-
-            {/* Track 5 — feature rail: bone panel, mono date meta, serif
-                heading, primary CTA. featureRail.blurb has no source anywhere
-                (see goldens/f1-gaps.json) and stays omitted — never invented. */}
-            {item.featureRail && (
-              <div className="flex flex-col justify-between rounded-sm bg-bone p-6">
-                <div>
+              {/* Track 5 — feature rail: bone panel, mono date meta, serif
+                heading, blurb, primary CTA — natural top-to-bottom flow (not
+                flex+justify-between), per the approved Layout 4 artifact's
+                .dd4__feature rule. featureRail.blurb is sourced verbatim from
+                the artifact's own mockup markup — see
+                goldens/f7-featurerail-blurb.json. */}
+              {item.featureRail && (
+                <div className="border-l border-rule-soft bg-bone p-6">
                   {featureRailMeta && (
-                    <span className="font-mono text-[12px] text-muted">{featureRailMeta}</span>
+                    <span className="mb-3 block font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                      {featureRailMeta}
+                    </span>
                   )}
-                  <p className="mt-2 font-serif text-[20px] font-medium text-ink">
+                  <h4 className="mb-[6px] font-serif text-[18px] font-semibold leading-[1.15] text-ink">
                     {item.featureRail.heading}
-                  </p>
+                  </h4>
                   {item.featureRail.blurb && (
-                    <p className="mt-2 font-sans text-[14px] text-ink/80">{item.featureRail.blurb}</p>
+                    <p className="mb-4 font-sans text-[12px] leading-[1.45] text-muted">
+                      {item.featureRail.blurb}
+                    </p>
                   )}
+                  <Link
+                    href={item.featureRail.ctaHref}
+                    onClick={close}
+                    className="inline-flex w-fit items-center justify-center rounded-[2px] bg-primary px-[18px] py-[10px] font-sans text-[13.5px] font-medium tracking-[0.01em] text-ivory transition-colors duration-150 hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                  >
+                    {item.featureRail.ctaLabel}
+                  </Link>
                 </div>
-                <Link
-                  href={item.featureRail.ctaHref}
-                  onClick={close}
-                  className="mt-6 inline-flex w-fit items-center justify-center rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-                >
-                  {item.featureRail.ctaLabel}
-                </Link>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

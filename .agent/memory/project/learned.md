@@ -3905,3 +3905,27 @@ Two more from the same session:
   bare `git add -A` would have committed it, which is exactly how the spec document leaked in
   the first place. **Rule: Drive source documents go under `content/drive-source/`; anything
   untracked sitting in the repo root is a hazard until it's ignored or filed, never left.**
+
+## Menu System Layout 4 — F7 visual fidelity, 2026-09-11
+
+- **An assertion must constrain the property, not the implementation shape.** A9's first
+  draft measured a container's own bounding box, so padding on that same element could
+  never satisfy it — it rejected a correct fix and forced a DOM change purely to please
+  a test. The rewrite measures rendered content position and accepts either shape.
+- **A green test run is not evidence the feature works.** @dev's spec was 11/11 and the
+  gate 8/8 while the menu was flush against the browser edge at 1280px. @qa found it by
+  *measuring*, not by re-running tests. Nothing had asked that question.
+- **Viewport choice is part of what an assertion proves.** The bug was invisible at
+  1440px because `mx-auto` centred the leftover slack; it only appears at
+  ≤ container-max.
+- **A citation is not a verification.** `check-style-values-sourced.mjs` checks that a
+  golden cites "artifact", not that the citation is true. Documented in the checker
+  header and A8 — do not let it be described as stronger than it is.
+- **Naming a measurement's origin is part of the measurement.** "Deployed site is stale"
+  findings must record which URL was actually measured — `saoc-prod--saoc-webapp...` and
+  `beta.saoc.co.za` are not interchangeable, and reporting one while testing on the other
+  fabricates a claim about the wrong target.
+- **Cross-model review earns its place.** Codex GPT-5.5 at high effort found three
+  assertions satisfiable without the property they claimed to prove, in a spec written
+  specifically to guard against that — after Claude's own @architect and @dev had both
+  passed it.

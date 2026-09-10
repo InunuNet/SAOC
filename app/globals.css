@@ -32,9 +32,9 @@
   --link-underline: var(--accent);
 
   /* ---------- Type families ---------- */
-  --serif: var(--font-serif), 'Crimson Pro', Georgia, 'Times New Roman', serif;
-  --sans: var(--font-sans), 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --mono: var(--font-mono), 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --serif: var(--font-serif-loaded), 'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --sans: var(--font-sans-loaded), 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --mono: var(--font-mono-loaded), 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --serif-weight: 500;
 
   /* ---------- Type scale — display ---------- */
@@ -81,6 +81,11 @@
   /* ---------- Elevation ---------- */
   --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
   /* used ONLY for floating menus / nav-on-scroll. Cards use borders, not shadow. */
+  --shadow-sheet: 0 20px 44px rgba(23, 25, 23, 0.09);
+  /* mission menu-system-layout4 M2/F7 — approved Layout 4 artifact's .sheet
+     box-shadow (b9eadbd4-e165-4de9-884d-86acc9fbf2a2). Used by the National
+     Show mega menu panel only. --shadow-float above is untouched and keeps
+     its existing consumers (Header.tsx nav-on-scroll, SearchOverlay.tsx). */
 
   /* ---------- Motion ---------- */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
@@ -104,9 +109,11 @@
   --color-rule: var(--rule);
   --color-rule-soft: var(--rule-soft);
 
-  --font-family-serif: var(--font-serif);
-  --font-family-sans: var(--font-sans);
-  --font-family-mono: var(--font-mono);
+  --shadow-sheet: var(--shadow-sheet);
+
+  --font-serif: var(--serif);
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
 }
 
 /* ============================================================

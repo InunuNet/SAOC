@@ -1,0 +1,311 @@
+schema: athanor.contract/v1
+slug: menu-system-layout4
+goal: >
+  Layout 4 VISUAL FIDELITY fix. Brad looked at the live menu on beta.saoc.co.za
+  (screenshots, 2026-09-10 ~21:20) and said "Menu has no borders... looks weird" --
+  correct and specific. F1-F4 landed the Layout 4 render path correctly (every
+  leaf, descriptor, the lead block and the feature rail are present and wired to
+  real hrefs), but the VISUAL TREATMENT drifted from the approved artifact
+  (b9eadbd4-e165-4de9-884d-86acc9fbf2a2, "SAOC Menu Flyouts", cited by the mission
+  file at .agent/memory/project/missions/2026-09-10-menu-system-layout4.md line
+  110-111). This contract closes four re-verified gaps against
+  components/chrome/MegaMenu.tsx: (1) no border-left rule between tracks, (2) the
+  sheet uses `shadow-float` -- a class scoped by its own comment
+  (app/globals.css:82-83) to nav-on-scroll, not this sheet, and never registered
+  under Tailwind's @theme --shadow-* namespace so it is very likely a no-op
+  today, (3) the feature rail is `flex justify-between` with a stray `rounded-sm`
+  and no blurb, producing the large empty grey box in Brad's screenshot, and
+  (4) the grid track ratios are 2fr:1fr:1fr:1fr:2fr with a 40px gap, versus the
+  artifact's 1.05fr:1fr:1fr:1fr:.9fr with zero gap and border-based separation.
+  NUMBERING NOTE: the dispatching brief asked for this to land as F6, but F6 is
+  already used (contract-f6.yaml, the route-exemption gate checkers -- unrelated
+  work, already merged into the mission's gate chain). This is F7.
+
+  ROUND 2 (same day, after @dev's first pass landed the shadow-sheet token, the
+  column-rule/grid/feature-rail-layout fixes, and the typography values above):
+  two blockers reported by @dev rather than resolved unilaterally, both ruled on
+  and closed here with A7/A8 below --
+  (5) app/globals.css's `--font-family-serif/-sans/-mono` @theme keys have NO
+  generic CSS-keyword fallback (site-wide, not menu-scoped -- see A7's root-cause
+  note, which corrects the team lead's own initial diagnosis: `--font-family-*`
+  is not even a Tailwind v4-recognised theme key, and next/font's `variable:
+  '--font-serif'`/`'--font-sans'`/`'--font-mono'` directly collides with
+  Tailwind v4's OWN reserved `--font-serif`/`--font-sans`/`--font-mono`
+  namespace, so no amount of editing `--font-family-*` could ever have worked),
+  and (6) contracts/checks/menu-system-layout4-shared/check-style-values-sourced.mjs's
+  allowlist predates the approved artifact and doesn't know text-[23px]
+  (.dd-lead font-size) is a legitimately artifact-sourced value. See A7/A8.
+created_at: '2026-09-10'
+autonomy: high
+features:
+  - id: F7
+    name: >-
+      components/chrome/MegaMenu.tsx visual fidelity fix (column rules, sheet
+      shadow, feature-rail layout, grid track ratios) plus
+      components/chrome/nav-config.ts's featureRail.blurb, all against the
+      approved Layout 4 artifact. @dev implements against the golden Playwright
+      spec (e2e/mega-menu-layout4-visual-fidelity.spec.ts) and the two JSON
+      goldens below -- not against this contract's prose.
+    status: pending
+goldens:
+  - .agent/memory/project/specs/menu-system-layout4/goldens/f7-layout4-visual-fidelity.json
+  - .agent/memory/project/specs/menu-system-layout4/goldens/f7-featurerail-blurb.json
+  - e2e/mega-menu-layout4-visual-fidelity.spec.ts
+  - contracts/checks/menu-system-layout4-f7/check-featurerail-blurb-provenance.mjs
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        PROPERTY (gap 1 -- Brad's actual complaint): the sheet has a visible
+        border-top (1px, --rule) AND the artifact's box-shadow
+        (0 20px 44px rgba(23,25,23,.09)), not `shadow-float`'s
+        0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06). Real computed
+        style read from a real opened flyout via Playwright, not a source grep
+        for a className string -- a grep for "shadow-float" being ABSENT would
+        not prove the replacement shadow is correct, only that some string
+        changed. Confirmed during contract authoring
+        (2026-09-10) that this spec fails against today's tree.
+      command: "npx playwright test e2e/mega-menu-layout4-visual-fidelity.spec.ts -g \"sheet: border-top and box-shadow\""
+      required: true
+
+    - id: A2
+      description: >
+        PROPERTY (gap 4 -- grid rhythm): the inner grid has zero column-gap and
+        the artifact's asymmetric vertical padding (32px top / 24px bottom), not
+        the current gap-10 / py-10 (40px/40px symmetric). Computed style on the
+        real grid element.
+      command: "npx playwright test e2e/mega-menu-layout4-visual-fidelity.spec.ts -g \"inner grid: zero gap\""
+      required: true
+
+    - id: A3
+      description: >
+        PROPERTY (gap 1, the core complaint): each of the three group columns
+        and the feature rail carries a real 1px solid --rule-soft LEFT border
+        with 24px horizontal padding on the group columns, and the lead block
+        (first track, no left neighbor) carries NEITHER a border-left NOR the
+        column horizontal padding -- only its own 24px padding-right. This is
+        the property a grep for the literal string "border-l" in MegaMenu.tsx
+        source text could NOT prove (it would prove a substring exists in a
+        file, not that a rule renders between two real, positioned columns) --
+        this reads getComputedStyle on each real track element after opening
+        the flyout.
+      command: "npx playwright test e2e/mega-menu-layout4-visual-fidelity.spec.ts -g \"group columns and feature rail carry\""
+      required: true
+
+    - id: A4
+      description: >
+        PROPERTY (gap 4 -- track ratios): measured track widths follow the
+        artifact's 1.05 : 1 : 1 : 1 : 0.9 ratio (lead marginally WIDER than a
+        group column, feature rail NARROWER, not both artificially doubled as
+        today's 2fr:1fr:1fr:1fr:2fr renders them), with adjacent tracks
+        edge-to-edge (no shared gutter, confirming gap-10's removal). Measured
+        via real bounding boxes at a 1440px viewport (chosen so the container's
+        1280px max-width is never viewport-constrained during measurement) --
+        not inferred from the grid-template-columns source literal, since
+        browsers resolve `fr` into px and this project's own render context
+        could legitimately differ from the artifact's preview frame.
+      command: "npx playwright test e2e/mega-menu-layout4-visual-fidelity.spec.ts -g \"track widths follow the artifact ratio\""
+      required: true
+
+    - id: A5
+      description: >
+        PROPERTY (gap 3 -- the empty grey box in Brad's screenshot): the
+        feature rail has border-radius 0 (not rounded-sm), background --bone,
+        24px padding, natural top-to-bottom flow (not flex+justify-between --
+        proven by measuring the actual gap between the blurb's bottom edge and
+        the CTA button's top edge, which must be close to the artifact's 16px
+        margin, not a flex-stretched gap that would appear as tens of pixels of
+        dead space), AND the artifact-sourced blurb text is visibly rendered
+        inside it. This is the assertion that most directly closes Brad's
+        specific complaint -- justify-between stretching around a MISSING
+        blurb paragraph is what produced the large empty grey box.
+      command: "npx playwright test e2e/mega-menu-layout4-visual-fidelity.spec.ts -g \"feature rail: no border-radius\""
+      required: true
+
+    - id: A6
+      description: >
+        PROVENANCE (paired with A5, not a substitute for it): the literal
+        string assigned to nav-config.ts's featureRail.blurb is byte-for-byte
+        identical to goldens/f7-featurerail-blurb.json, which is itself
+        transcribed verbatim from the approved artifact's own mockup markup.
+        Ruling on the provenance question this contract was dispatched to
+        resolve: this string is menu chrome copy embedded directly in the
+        approved design, NOT a leaf descriptor, so
+        contracts/checks/menu-system-layout4-f1/check-descriptor-provenance.mjs
+        (which requires a leaf descriptor be a trimmed prefix of its manifest
+        row's `purpose` field) does not and should not cover it -- there is no
+        manifest row for feature-rail chrome copy. This checker is its
+        deliberate, separate provenance mechanism. WHAT THIS CHECKER DOES NOT
+        PROVE: that the string renders anywhere -- that is A5's job (a real
+        rendered-DOM check). Confirmed during contract authoring (2026-09-10)
+        that this checker exits 1 against today's tree (no blurb field exists
+        yet) and was independently verified (via a sandboxed source patch, not
+        by editing nav-config.ts) to match a correctly-fixed value.
+      command: "node contracts/checks/menu-system-layout4-f7/check-featurerail-blurb-provenance.mjs"
+      required: true
+
+    - id: A7
+      description: >
+        PROPERTY (round-2 blocker 1 -- site-wide, not menu-scoped): every
+        font-family CSS custom property Tailwind actually consumes for the
+        font-serif/font-sans/font-mono utilities terminates in a real generic
+        CSS keyword (serif / sans-serif / monospace), not merely a substring
+        match on a loaded font's own name. ROOT CAUSE, RE-DERIVED DURING
+        CONTRACT AUTHORING (2026-09-10) -- CORRECTS the team lead's dispatch
+        diagnosis: the dispatch message's fix ("point app/globals.css:114-116's
+        `--font-family-serif/-sans/-mono` at `--serif`/`--sans`/`--mono`
+        instead of the bare next/font var") was verified by direct testing to
+        be INERT. `--font-family-*` is not a namespace Tailwind v4 recognises
+        at all (confirmed against node_modules/tailwindcss/theme.css -- the
+        real namespace is `--font-sans`/`--font-serif`/`--font-mono`, matching
+        the utility class name 1:1). Worse, app/layout.tsx's next/font loaders
+        set `variable: '--font-serif'` / `'--font-sans'` / `'--font-mono'` --
+        the EXACT same names as Tailwind's own reserved theme keys -- so even
+        after correctly retargeting the real `--font-*` keys, next/font's raw
+        two-name fallback list (no generic keyword) still wins the cascade
+        over any `@theme` declaration referencing it by that same name
+        (confirmed: patching only globals.css, leaving layout.tsx alone, left
+        `.font-serif`'s resolved computed value unchanged in a live dev
+        server). THE VERIFIED FIX (tested end-to-end via Playwright against a
+        sandboxed patch of both files, then reverted -- not applied to the
+        real tree by this contract): (a) rename each next/font loader's
+        `variable` in app/layout.tsx to a non-colliding name (e.g.
+        `--font-serif-loaded` / `--font-sans-loaded` / `--font-mono-loaded`),
+        (b) point app/globals.css:35-37's `--serif`/`--sans`/`--mono` at those
+        renamed vars instead of `--font-serif`/`--font-sans`/`--font-mono`,
+        and (c) replace globals.css:114-116's `--font-family-serif/-sans/-mono`
+        keys with the REAL Tailwind keys `--font-serif: var(--serif);` /
+        `--font-sans: var(--sans);` / `--font-mono: var(--mono);`. All three
+        changes together are required -- any one alone reproduces the same
+        inert result already observed.
+
+        BLAST RADIUS (established, not assumed, per the team lead's ask):
+        every `font-serif`/`font-sans`/`font-mono` utility site-wide is
+        affected (this is app/globals.css and app/layout.tsx, not a
+        menu-scoped file), but the visual result is unchanged in the common
+        case -- next/font's own generated fallback (the second, metrics-
+        matched entry already present in the loader's variable, e.g.
+        "Crimson Pro Fallback") is a locally-available system face that
+        resolves before the browser ever reaches the newly-appended generic
+        keyword, so the keyword only activates in the edge case where BOTH
+        the primary face AND next/font's own fallback are unavailable (a
+        correctness fix for a real, if rare, failure mode -- not an
+        observable redesign).
+
+        SCOPE RULING (established, not assumed, per the team lead's ask):
+        fix all three families (serif/sans/mono) together, not serif alone.
+        This is one defect (a naming collision plus an unrecognised theme
+        key) with three structurally identical faces in the same two files --
+        fixing only serif would leave sans and mono independently broken by
+        the identical mechanism, including font-mono, which the round-1 pass
+        of this same feature just added to the menu's group headings and
+        feature-rail meta line. A partial fix is not smaller-scoped, it is
+        the same patch applied inconsistently.
+
+        WHY THE .toContain('mono') CHECKS ABOVE (this file, lines ~182,
+        ~196) do not need updating even though they never caught this bug:
+        "JetBrains Mono" contains the substring "mono" regardless of whether
+        a real generic fallback exists, so they were never capable of
+        detecting this defect -- a live instance of this repo's own audited
+        "assertion satisfiable without the property it claims to prove"
+        defect class. This is not fixed by editing those two checks (leaving
+        proven-working assertions alone, minimal-scope); A7 adds an
+        independent, precise assertion instead that reads the LAST
+        comma-separated entry of the resolved font-family and requires it be
+        exactly `serif` / `sans-serif` / `monospace` -- a property no font
+        name's substring can satisfy by accident.
+
+        VERIFIED STATE: this spec (the "font-family tokens terminate..." test)
+        was confirmed RED against today's tree (2026-09-10) -- fails with
+        `Expected: "serif"`, `Received: "crimson pro fallback"` on the serif
+        assertion. Confirmed GREEN, along with the pre-existing
+        `.toContain('serif')` checks that were the round-2 blocker's original
+        symptom, against the sandboxed three-file patch above (globals.css +
+        layout.tsx together), then reverted -- @dev must apply the fix to the
+        real tree for this to gate green for real.
+      command: "npx playwright test e2e/mega-menu-layout4-visual-fidelity.spec.ts -g \"font-family tokens terminate\""
+      required: true
+
+    - id: A8
+      description: >
+        PROPERTY (round-2 blocker 2): contracts/checks/menu-system-layout4-shared/check-style-values-sourced.mjs
+        now accepts text-[23px] as sourced, because it is declared under
+        goldens/f7-layout4-visual-fidelity.json's `leadLink.typography.fontSizePx`
+        with that golden's own top-level `source` field explicitly citing the
+        approved artifact (b9eadbd4-e165-4de9-884d-86acc9fbf2a2), re-grepped
+        verbatim on 2026-09-10 -- docs/rules/no-invention.md names the approved
+        design handoff as a source in its own right, so this is the checker's
+        allowlist being under-scoped, not the value being invented. The
+        checker change is deliberately narrow -- see its updated header
+        comment for the two guards (only the `fontSizePx` key shape is read,
+        never a bare number anywhere in the golden; a consulted golden must
+        carry a non-empty `source` field mentioning "artifact") -- and for the
+        STATED, UNCLOSED LOOPHOLE: nothing in this checker verifies that a
+        golden's own `source` citation is actually true against the live
+        artifact HTML; it is a presence/shape check on a human/agent-reviewed
+        declaration, not an automated re-derivation. Closing that fully would
+        require this checker (or a sibling) to fetch/diff the published
+        artifact on every run -- not implemented. VERIFIED (2026-09-10, in
+        .tmp/sandbox/, never against the real chrome components): the checker
+        exits 0 against components/chrome/MegaMenu.tsx (including its
+        text-[23px] literal) and STILL exits 1 against a throwaway
+        text-[47px] fixture with no golden or handoff-CSS provenance at all --
+        the extension is additive, not a rubber stamp for arbitrary values.
+      command: "node contracts/checks/menu-system-layout4-shared/check-style-values-sourced.mjs components/chrome/MegaMenu.tsx components/chrome/Header.tsx components/chrome/Footer.tsx components/chrome/MobileMenu.tsx"
+      required: true
+
+    - id: A9
+      description: >
+        PROPERTY (round-3 QA regression, 2026-09-11; assertion REWRITTEN
+        2026-09-11, see goldens/f7-layout4-visual-fidelity.json's
+        A9_ASSERTION_REWRITE_NOTE for the full history): @dev's fix for A4
+        (grid track ratios) collaterally dropped `px-8` from the SAME
+        className string it edited, even though
+        goldens/f7-layout4-visual-fidelity.json's own `notInScope` field
+        explicitly named this wrapper as untouched -- collateral damage from
+        editing the same class-string literal, not a deliberate change. @qa
+        verified live with boundingBox measurements: at a 1280px viewport
+        (--container-max, app/globals.css:74 -- an ordinary laptop) the lead
+        eyebrow renders at x:0, flush against the browser edge. This spec's
+        other tests all run at a fixed 1440px viewport (chosen deliberately
+        for A4's own track-ratio measurement), which masks the defect --
+        `mx-auto` centres the leftover slack around the 1280px-capped grid at
+        1440px, which looks like padding but is not, and collapses to zero at
+        <=1280px. This assertion deliberately overrides the viewport to
+        1280px so mx-auto cannot mask a missing px-8.
+
+        REWRITE RATIONALE: the FIRST version of this assertion measured the
+        grid element's own bounding box against the panel's bounding box.
+        @dev's first fix attempt restored px-8 on that single grid div and
+        A9 stayed red at 0px, because padding is interior to an element's
+        own box -- that div's own padding can never move its own
+        boundingBox.x relative to an ancestor, regardless of correctness.
+        @dev instead used a two-layer wrapper (padding hoisted to an outer
+        div), which passed -- but that made A9 assert a DOM STRUCTURE choice,
+        not the visual PROPERTY @qa actually found broken, and would have
+        wrongly rejected the equally-correct single-div fix. An assertion
+        that fails a correct implementation is the mirror image of this
+        repo's own audited "assertion satisfiable without the property it
+        claims to prove" defect class. REWRITTEN to measure real rendered
+        CONTENT position against the panel edge instead of a container
+        element's own box: leftInset = the lead eyebrow's ("The National
+        Show", the first rendered content in the sheet -- the exact element
+        @qa's report measured at x:0) boundingBox.x minus the panel's
+        boundingBox.x; rightInset = the panel's right edge minus the feature
+        rail CTA link's ("Buy tickets", the last rendered content in the
+        sheet) right edge. True under either DOM shape.
+
+        VERIFIED, all three by real command output (2026-09-11): (1) the
+        rewritten assertion PASSES against the current two-layer tree ("1
+        passed"). (2) it STILL FAILS red against the regression, reconstructed
+        by temporarily stripping px-8 from the real file then restoring it
+        byte-identical from a .tmp/sandbox/ snapshot immediately after --
+        `expect(leftInset).toBeGreaterThan(24)` -- `Expected: > 24, Received:
+        0`, same signature as the original report. (3) also MEASURED (not
+        just reasoned) against the single-div px-8 form, reconstructed the
+        same sandboxed-and-reverted way -- PASSES. @dev should not touch
+        grid-cols/gap-x-0/pt-8/pb-6 (A2/A4's already-passing fix); only the
+        horizontal inset itself is asserted here.
+      command: "npx playwright test e2e/mega-menu-layout4-visual-fidelity.spec.ts -g \"sheet content keeps a real horizontal inset\""
+      required: true

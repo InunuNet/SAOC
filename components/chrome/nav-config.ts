@@ -23,9 +23,13 @@
 // singleton's own venue.name, exactly the pattern that module exists to
 // enforce (its own header comment: seven inlined copies of the same Intl
 // call once had the site advertising two different venues in one viewport).
-// `featureRail.blurb` has no source anywhere (mission, handoff, or manifest)
-// and is omitted entirely, per docs/rules/no-invention.md — never filled
-// with a "reasonable-sounding default". See
+// `featureRail.blurb` (mission menu-system-layout4 M2/F7) is sourced verbatim
+// from the approved Layout 4 artifact's own .dd4__feature mockup markup — see
+// .agent/memory/project/specs/menu-system-layout4/goldens/f7-featurerail-blurb.json
+// for the provenance ruling and exact string, mechanically checked by
+// contracts/checks/menu-system-layout4-f7/check-featurerail-blurb-provenance.mjs.
+// At M1/F1 this field had no source anywhere and was left omitted per
+// docs/rules/no-invention.md — see (superseded)
 // .agent/memory/project/specs/menu-system-layout4/goldens/f1-gaps.json.
 //
 // Descriptor strings on every leaf below are trimmed prefixes of their own
@@ -86,7 +90,11 @@ export interface NavMegaFeatureRail {
   /** Same render-time-only contract as NavMegaLead.meta. */
   meta?: string;
   heading: string;
-  /** No source anywhere for this copy today — omitted, never invented. */
+  /**
+   * Sourced verbatim from the approved Layout 4 artifact's own mockup markup
+   * (mission menu-system-layout4 M2/F7) — see
+   * goldens/f7-featurerail-blurb.json for provenance.
+   */
   blurb?: string;
   ctaLabel: string;
   ctaHref: string;
@@ -250,6 +258,7 @@ export const NAV: readonly NavItem[] = [
     ],
     featureRail: {
       heading: 'Tickets',
+      blurb: 'Day, weekend and VIP admission for the 19th National Show.',
       ctaLabel: 'Buy tickets',
       ctaHref: '/national-show/tickets',
     },

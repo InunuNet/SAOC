@@ -17,7 +17,39 @@
 //     padding/margin/gap arbitrary values, which are spacing, not covered by Property 3's
 //     "font-size literal" wording)
 //   - 6-digit hex colours, e.g. #384138
-// and fails on any value not present in the two handoff CSS files.
+// and fails on any value not present in the two handoff CSS files OR a provenanced golden
+// (see EXTENSION below).
+//
+// EXTENSION (mission menu-system-layout4 M2/F7, 2026-09-10 -- "two sourcing authorities
+// disagree about 23px"): F7's own golden file
+// (.agent/memory/project/specs/menu-system-layout4/goldens/f7-layout4-visual-fidelity.json)
+// declares text-[23px] (.dd-lead font-size) with an explicit provenance statement --
+// re-grepped verbatim from the approved Layout 4 artifact (b9eadbd4-e165-4de9-884d-86acc9fbf2a2)
+// on 2026-09-10 -- but that value is absent from both handoff CSS files above, which predate
+// the artifact and don't know it exists. docs/rules/no-invention.md names the approved design
+// handoff as a source in its own right, so the golden's citation is a legitimate second
+// authority, not an invented value -- the checker's allowlist was under-scoped, not the value.
+//
+// This does NOT mean "any value found anywhere in GOLDEN_PROVENANCE_SOURCES is allowed" --
+// that would turn the checker into a rubber stamp any future golden could exploit to silence
+// a real invented-value finding. Two deliberate narrowings:
+//   1. Only the `fontSizePx` key shape is read (not every number in the file) -- so a shadow
+//      blur radius or a spacing value elsewhere in the same JSON can never leak into the
+//      font-size allowlist just because it shares a key-adjacent number.
+//   2. A golden is only consulted if its top-level `source` field is a non-empty string that
+//      mentions "artifact" -- a golden authored without an explicit provenance citation is
+//      never treated as authoritative, even if it happens to contain a `fontSizePx` field.
+//
+// WHAT THIS DOES NOT PROVE, STATED PLAINLY: nothing stops a future author from adding an
+// arbitrary fontSizePx value to a golden file alongside a `source` string that merely mentions
+// the word "artifact" without the value actually being re-verified against it -- the check on
+// (2) is a presence/shape check on the golden's own self-declared citation, not a live
+// cross-check against the artifact's actual published HTML. The golden is a human/agent-
+// reviewed declaration, not an automated re-derivation from the artifact each run. Closing that
+// gap for real would mean this checker (or a sibling) fetching/diffing the live artifact HTML
+// on every run -- not implemented here. Until then, a value's trustworthiness rests on whoever
+// wrote the golden having actually re-grepped the artifact, same as any other human-reviewed
+// citation in this codebase.
 //
 // Run via: node contracts/checks/menu-system-layout4-shared/check-style-values-sourced.mjs <file> [<file> ...]
 import { readFileSync } from 'node:fs';
@@ -31,6 +63,53 @@ const SOURCE_FILES = [
   'design/design_handoff_saoc/colors_and_type.css',
   'design/design_handoff_saoc/src/styles.css',
 ];
+
+// Golden files whose declared `fontSizePx` values are treated as sourced, PROVIDED the
+// golden's own top-level `source` field explicitly cites the approved design artifact.
+// See EXTENSION comment above for what this does and does not prove.
+const GOLDEN_PROVENANCE_SOURCES = [
+  '.agent/memory/project/specs/menu-system-layout4/goldens/f7-layout4-visual-fidelity.json',
+];
+
+// Recursively collects every numeric value found under a `fontSizePx` key, anywhere in the
+// golden's object tree. Deliberately narrow key match (see EXTENSION note 1 above) -- does
+// NOT collect offsetYPx/blurPx/spreadPx or any other *Px-suffixed key, since those are shadow
+// or spacing measurements, not font-size literals, and Property 3 only covers font-size.
+function collectFontSizePx(node, out) {
+  if (node === null || typeof node !== 'object') return;
+  if (Array.isArray(node)) {
+    for (const item of node) collectFontSizePx(item, out);
+    return;
+  }
+  for (const [key, value] of Object.entries(node)) {
+    if (key === 'fontSizePx' && typeof value === 'number') {
+      out.add(String(value));
+    } else {
+      collectFontSizePx(value, out);
+    }
+  }
+}
+
+function loadGoldenProvenancedPx() {
+  const allowed = new Set();
+  for (const rel of GOLDEN_PROVENANCE_SOURCES) {
+    const fullPath = path.join(REPO_ROOT, rel);
+    let json;
+    try {
+      json = JSON.parse(readFileSync(fullPath, 'utf8'));
+    } catch (error) {
+      throw new Error(`${rel}: could not read/parse golden provenance source (${error.message})`);
+    }
+    if (typeof json.source !== 'string' || json.source.trim() === '' || !/artifact/i.test(json.source)) {
+      throw new Error(
+        `${rel}: golden lacks an explicit "source" field citing the approved design artifact -- ` +
+          'refusing to treat its fontSizePx values as sourced',
+      );
+    }
+    collectFontSizePx(json, allowed);
+  }
+  return allowed;
+}
 
 function loadAllowedValues() {
   const allowedPx = new Set();
@@ -50,6 +129,7 @@ function loadAllowedValues() {
     }
     for (const m of css.matchAll(/#[0-9a-fA-F]{6}\b/g)) allowedHex.add(m[0].toLowerCase());
   }
+  for (const px of loadGoldenProvenancedPx()) allowedPx.add(px);
   return { allowedPx, allowedHex };
 }
 
@@ -76,7 +156,7 @@ function main() {
     for (const m of content.matchAll(/text-\[(\d+(?:\.\d+)?)px\]/g)) {
       if (!allowedPx.has(m[1])) {
         failures.push(
-          `${rel}: font-size literal text-[${m[1]}px] not present in either handoff CSS file`,
+          `${rel}: font-size literal text-[${m[1]}px] not present in the handoff CSS files or a provenanced golden`,
         );
       }
     }

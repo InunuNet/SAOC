@@ -1,0 +1,170 @@
+{
+  "source": "Approved Layout 4 artifact b9eadbd4-e165-4de9-884d-86acc9fbf2a2 (\"SAOC Menu Flyouts\"), CSS rules .sheet / .dd4__inner / .dd4__lead / .dd4__col / .dd4__feature / .dd4__feature h4 / .dd4__feature p / .dd4__meta, re-read and grepped verbatim from the published artifact HTML on 2026-09-10. Token values (--rule, --rule-soft, --bone, --muted, --s3..s6) are from the SAME artifact's :root block, also re-verified verbatim on 2026-09-10 against app/globals.css's :root/@theme (colors/fonts all present and Tailwind-reachable; spacing tokens are NOT separately registered but their px values equal the standard Tailwind 4px-scale utilities used below, so no new @theme entry or arbitrary-value syntax is required).",
+  "notInScope": "The artifact's .container rule (padding: 0 30px, under .proto scope, i.e. prototype-frame-only) is NOT cited here. MegaMenu.tsx's existing outer wrapper (mx-auto max-w-[1280px] px-8) already matches this project's own --container-max/--container-pad tokens (1280px / 32px) and is unrelated to the four gaps below — do not change it. ROUND-3 REGRESSION (2026-09-11): despite this note, @dev's A4 grid-track-ratio edit collaterally dropped px-8 from this same className string anyway, because the horizontal padding and the grid-cols/gap-x-0/pt-8/pb-6 values it WAS supposed to change live in one literal. Fixed by the new e2e assertion 'sheet content keeps a real horizontal inset at <=1280px viewport' (contract A9) — px-8 (or equivalent horizontal inset, on either DOM shape — see A9_ASSERTION_REWRITE_NOTE below) must be restored, nothing else in this wrapper's className should change.",
+  "A9_ASSERTION_REWRITE_NOTE": "CORRECTION (team lead, 2026-09-11): A9's first implementation measured the GRID element's own bounding box against the panel's bounding box (gridBox.x - panelBox.x). @dev's first fix attempt restored px-8 on that same single grid div and A9 stayed red at 0px — correctly diagnosed as a measurement bug, not a real regression: padding is interior to an element's own box, so a div's own padding can never move that SAME element's boundingBox.x relative to an ancestor. @dev instead used the two-layer alternative (outer `mx-auto max-w-[1280px] px-8`, inner `grid ... gap-x-0 pt-8 pb-6`), which passed A9 as originally written — but that made A9 an assertion on DOM STRUCTURE (which of two divs carries the padding class), not on the visual PROPERTY @qa actually found broken (real rendered content flush against the panel edge). A single-div px-8 form would have fixed the user-visible bug identically and A9 would have wrongly rejected it — the mirror image of this repo's own audited 'assertion satisfiable without the property it claims to prove' defect class, just inverted (unsatisfiable BY a correct property). REWRITTEN to measure the position of real rendered CONTENT against the panel edge instead of a container element's own box: leftInset = the lead eyebrow's (\"The National Show\", the first rendered content in the sheet — the exact element @qa's regression report measured at x:0) boundingBox.x minus the panel's boundingBox.x; rightInset = the panel's right edge minus the feature rail CTA link's (\"Buy tickets\", the last rendered content in the sheet) right edge. This is true under EITHER DOM shape. VERIFIED, all three by real command output (2026-09-11): (1) PASSES against the current two-layer tree (`npx playwright test e2e/mega-menu-layout4-visual-fidelity.spec.ts -g \"sheet content keeps a real horizontal inset\"`, 1 passed). (2) STILL FAILS red against the regression, reconstructed by temporarily stripping px-8 from the real file, running the test, then restoring the file byte-identical from a .tmp/sandbox/ snapshot before and after (never left applied) — `Expected: > 24, Received: 0` on leftInset, same failure signature as @qa's original report. (3) Also MEASURED (not just reasoned) against the single-div px-8 form, reconstructed the same sandboxed-and-reverted way (grid/wrapper divs collapsed into one `mx-auto grid max-w-[1280px] grid-cols-[...] gap-x-0 px-8 pt-8 pb-6` div) — PASSES. The lesson for future assertion authors: constrain the property the bug report actually describes, not the shape of whichever fix happens to land first.",
+  "sheet": {
+    "selector": "[role=\"menu\"][aria-label=\"National Show\"]",
+    "borderTopWidth": "1px",
+    "borderTopColor": "rgb(217, 215, 201)",
+    "borderTopColorToken": "--rule (#d9d7c9)",
+    "boxShadow": {
+      "offsetXPx": 0,
+      "offsetYPx": 20,
+      "blurPx": 44,
+      "spreadPx": 0,
+      "color": "rgba(23, 25, 23, 0.09)",
+      "note": "Current code uses className `shadow-float`, which app/globals.css:82-83 defines as `0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06)` and whose own comment scopes it to floating menus / nav-on-scroll, not this sheet. shadow-float is also never registered under @theme's --shadow-* namespace (only --color-* and --font-family-* are), so Tailwind v4 does not generate a `.shadow-float` utility from it at all — the class is very likely a no-op today, meaning the sheet may have ZERO box-shadow currently, not merely the wrong one. Do not assume this from theory; the e2e spec below measures the real computed style either way. Fix: replace with an arbitrary-value utility carrying this exact shadow, e.g. shadow-[0_20px_44px_rgba(23,25,23,0.09)].",
+      "fragilityNote": "app/globals.css:84 defines `--shadow-sheet: 0 20px 44px rgba(23,25,23,.09)` as a literal in :root, and app/globals.css:112 re-declares `--shadow-sheet: var(--shadow-sheet)` inside @theme -- self-referential by name. @qa verified (2026-09-11) the computed style resolves correctly today: this is NOT a defect, because the :root literal is already in the cascade before @theme's own custom-property emission layer resolves var(--shadow-sheet) against it, so it is not a true circular reference in practice. It IS order-fragile, though -- not asserted anywhere structurally, only observed to work. If a future refactor reorders these two declarations, or Tailwind changes how/where @theme emits its custom properties relative to :root, `var(--shadow-sheet)` could resolve to the CSS-wide keyword `unset` instead (an actual circular reference), silently dropping the sheet's box-shadow back to none with no compile-time or lint-time signal -- only the e2e spec's real computed-style assertion (A1, 'sheet: border-top and box-shadow') would catch it, and only by accident of running at all. Recorded as a note for future editors of app/globals.css's :root/@theme block, not a code change against this feature -- the safer pattern (give the @theme key a distinct source name, e.g. --shadow-sheet-value in :root, and have @theme's --shadow-sheet reference that instead of itself) is a candidate for a future cleanup feature, not F7."
+    }
+  },
+  "innerGrid": {
+    "selector": "the grid element directly containing the lead block, three group columns, and feature rail — currently `div.grid` at components/chrome/MegaMenu.tsx:127",
+    "paddingTop": "32px",
+    "paddingBottom": "24px",
+    "paddingLeftRight": "0px",
+    "gap": "0px",
+    "note": "Artifact: padding:var(--s6) 0 var(--s5) (32px top / 0 sides / 24px bottom) with NO column-gap property at all — inter-track spacing comes ONLY from each track's own padding plus the border-left on .dd4__col/.dd4__feature, never a grid gap. Current code uses `gap-10 px-8 py-10` (40px gap, symmetric 40px top/bottom, plus 32px horizontal padding baked into the SAME element as the vertical padding) — all three numbers are wrong for this element. --s6=32px and --s5=24px map exactly to Tailwind's default 4px-scale utilities 8 and 6 (pt-8 pb-6) — no arbitrary value needed. Horizontal padding for this grid element itself becomes 0 (px-0); the existing outer max-w-[1280px] wrapper keeps supplying the 32px container margin — see notInScope above.",
+    "columnWidthRatios": {
+      "lead": 1.05,
+      "visitColumn": 1.0,
+      "programmeColumn": 1.0,
+      "exhibitTradeColumn": 1.0,
+      "featureRail": 0.9,
+      "toleranceFraction": 0.06,
+      "note": "grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,.9fr). Current code is grid-cols-[2fr_1fr_1fr_1fr_2fr] — lead and feature rail are both currently DOUBLE the width of a group column and equal to each other; the artifact has the lead only marginally wider (1.05x) and the feature rail narrower (0.9x), not wider. Verify via measured track widths (getBoundingClientRect), not the source literal, since browsers resolve fr into px and this project may render at a narrower effective width than the artifact's own preview frame."
+    }
+  },
+  "trackBorders": {
+    "appliesTo": ["Visit column", "Programme column", "Exhibit & Trade column", "feature rail"],
+    "borderLeftWidth": "1px",
+    "borderLeftColor": "rgb(228, 225, 208)",
+    "borderLeftColorToken": "--rule-soft (#e4e1d0)",
+    "excludes": {
+      "leadBlock": "no border-left — it is the first track, has no left neighbor. .dd4__lead carries only padding-right:var(--s5) (24px), no border rule at all."
+    },
+    "note": "This is Brad's actual complaint (beta.saoc.co.za screenshots, 2026-09-10 ~21:20: \"Menu has no borders\"). Current MegaMenu.tsx renders group columns (line ~176) and the feature rail (line ~204) with NO border classes whatsoever."
+  },
+  "leadBlock": {
+    "paddingRight": "24px",
+    "borderLeftWidth": "0px"
+  },
+  "groupColumns": {
+    "horizontalPadding": "24px each side (px-6)",
+    "note": ".dd4__col{padding:0 var(--s5)} — 24px left AND right, not just the border side. Current code has no horizontal padding on individual columns at all (spacing came entirely from the now-removed gap-10)."
+  },
+  "featureRail": {
+    "borderRadius": "0px",
+    "padding": "24px (p-6, unchanged from current — this one value was already correct)",
+    "backgroundColor": "rgb(232, 230, 220)",
+    "backgroundColorToken": "--bone (#e8e6dc)",
+    "layout": "natural document flow: meta -> h4 -> blurb <p> -> CTA <a>, top to bottom, NOT flex+justify-between",
+    "note": "Current code is `flex flex-col justify-between rounded-sm bg-bone p-6` with content split into two flex children (a meta/h4/blurb wrapper div, then the CTA link) so justify-between stretches empty space between them. The artifact's .dd4__feature has NO border-radius property and NO flex/justify-between at all — .dd4__feature p{margin:0 0 var(--s4)} (16px bottom margin) is what creates the gap before the CTA, in normal flow. The large empty grey box in Brad's screenshot is `justify-between` stretching around a MISSING blurb paragraph (see f7-featurerail-blurb.json) — once the blurb renders, remove rounded-sm and justify-between and let the box collapse to content height.",
+    "blurbGoldenFile": ".agent/memory/project/specs/menu-system-layout4/goldens/f7-featurerail-blurb.json"
+  },
+  "typeTokensVerifiedReachable": {
+    "border-rule-soft": "resolves to --color-rule-soft, app/globals.css:105 — present in @theme",
+    "bg-bone": "resolves to --color-bone, app/globals.css:101 — present in @theme, already used elsewhere in MegaMenu.tsx",
+    "text-muted": "resolves to --color-muted, app/globals.css:103 — present in @theme, already used",
+    "font-serif": "resolves to --font-family-serif, app/globals.css:107 — present in @theme, already used",
+    "font-mono": "resolves to --font-family-mono, app/globals.css:109 — present in @theme, already used",
+    "spacingScale": "artifact's --s3(12px)/--s4(16px)/--s5(24px)/--s6(32px) equal Tailwind's default 4px-scale utilities 3/4/6/8 exactly — reachable with plain utilities (p-3, p-4, p-6, p-8 etc.), no arbitrary value or new @theme registration needed",
+    "gapNone": "no token needed — the fix is removing gap-10 entirely, not replacing it with a smaller gap value",
+    "text-accent": "resolves to --color-accent (#9e8c6b, app/globals.css:102) — present in @theme, NOT yet used anywhere in MegaMenu.tsx today; required by groupHeadings.typography and leadEyebrow below",
+    "tracking-mono-tracking-0.18em": "--mono-tracking: 0.18em is a bare :root custom property (app/globals.css:57), NOT registered under @theme, so `tracking-[var(--mono-tracking)]` (arbitrary value referencing the CSS var) is required — there is no plain `tracking-*` utility for it. It happens to equal the artifact's .dd-head/.dd-lead-eyebrow letter-spacing (0.18em) exactly, and IS what the eyebrow badge already correctly uses today (tracking-[0.18em] literal) — reuse that same literal or the var, either is correct, just do not invent a different value.",
+    "tracking-0.14em-dd4-meta": ".dd4__meta's letter-spacing (.14em) is a DIFFERENT value from --mono-tracking (.18em) and has no named token anywhere — use the arbitrary literal tracking-[0.14em], never substitute --mono-tracking here.",
+    "radius-1-not-in-theme": "app/globals.css:78 defines --radius-1: 2px (comment: \"buttons, inputs\") in :root, matching the artifact's .btn border-radius:2px exactly, but --radius-1 is NOT registered under @theme (only --shadow-sheet, --color-*, --font-family-* are, see globals.css:97-116) — Tailwind's bare `rounded-sm` utility does NOT resolve to it (rounded-sm is Tailwind's own built-in scale value, unrelated to this project's --radius-1). Use rounded-[2px] (or rounded-[var(--radius-1)]) for the CTA button, not rounded-sm.",
+    "font-sans-default-not-mono": "the base body font (app/globals.css:132-133) is already var(--sans) — an element with no explicit font-* utility inherits sans, not mono. This matters for leadMetaLine (dd-lead-sub) below, which has no font-family in its own CSS rule and must NOT carry font-mono."
+  },
+  "correctionsToTeamLeadsDispatchMessage": {
+    "ddItemNameColorIsHoverOnly": "The dispatch message quoted `.dd-item__name{font-size:14px;font-weight:600;line-height:1.3;color:var(--primary)}` as one rule. Re-grepped the artifact directly (per instruction, not trusting the transcription) and the REAL rule is `.dd-item__name{font-size:14px;font-weight:600;line-height:1.3}` — no color property at all, so it inherits `.dd-item`'s own `color:var(--ink)`. `color:var(--primary)` is a SEPARATE rule, `.dd-item:hover .dd-item__name{color:var(--primary)}` — hover-only. MegaMenu.tsx's current leafLinkClassName already has this exactly right (text-ink base, hover:text-primary) — do not add a base text-primary color to the leaf name, that would be a regression, not a fix. Only font-weight (currently font-bold=700, needs font-semibold=600) and line-height (currently unset, needs leading-[1.3]) are real gaps here.",
+    "dd1MarginTopOverrideDoesNotApplyToL4": "The dispatch message's CSS block included `.dd-head{margin-top:10px}  .dd-head:first-child{margin-top:0}` alongside the base `.dd-head` rule, implying it's part of the shared rule set. Re-grepped: that override is written as `.dd1 .dd-head{...}` / `.dd1 .dd-head:first-child{...}` (artifact lines 77-78) — scoped ONLY to Layout 1 (the single anchored dropdown where multiple headed groups stack in one column, so the 2nd+ heading needs a top gap and the 1st doesn't). Layout 4 (`.dd4__*`) has no equivalent `.dd4 .dd-head` rule anywhere in the artifact. Each L4 group heading (The Show / Visit / Programme / Exhibit & Trade) is already the first child of its own track — no `.dd1`-style margin-top override applies or is needed. The ONE exception is documented under leadBlock.eyebrowAndSecondHeading below: the lead block's SECOND `.dd-head` (\"The Show\") carries an inline `style=\"margin-top:20px\"` in the artifact's own markup, not a class rule — that is L4-specific and IS required."
+  },
+  "groupHeadings": {
+    "appliesTo": ["lead block's \"The Show\" heading", "Visit column heading", "Programme column heading", "Exhibit & Trade column heading"],
+    "elementRequirement": "real <h3> per team lead's decision (docs/rules/no-invention.md governs visual decisions only; element semantics is not a visual decision and the rendered pixels below reproduce the artifact's .dd-head class exactly). When the heading has an href (headingHref set — none do today, all null in nav-config.ts, but the branch is live code), the <a> wraps INSIDE the <h3> (<h3><a>Heading</a></h3>), matching the feature rail's existing <h4> one level deeper. When there is no href, the <h3> itself carries the typography classes directly (no inner span needed).",
+    "typography": {
+      "fontFamily": "mono (font-mono)",
+      "fontSizePx": 10,
+      "letterSpacing": "0.18em (tracking-[0.18em] or tracking-[var(--mono-tracking)] — see typeTokensVerifiedReachable)",
+      "textTransform": "uppercase",
+      "color": "accent (text-accent, #9e8c6b)",
+      "marginBottom": "12px (mb-3, --s3) — and h3's default browser top/bottom margin must be reset to 0 first (m-0 mb-3), since a bare <h3> carries nonzero UA-stylesheet margins the artifact's <p class=\"dd-head\"> does not have"
+    },
+    "note": "Current groupHeadingClassName (MegaMenu.tsx:104) = 'font-serif text-[16px] font-medium text-ink' — completely wrong family (serif not mono), size (16px not 10px), weight/transform (no uppercase), and color (ink not accent). This is Brad's most visually obvious remaining gap: big dark serif headings today vs small mono uppercase caps in the artifact. groupHeadingLinkClassName (MegaMenu.tsx:105-106) needs the identical typography plus the existing hover/focus-ring states it already has (those interactive states are correct and unrelated to this fix, keep them).",
+    "collisionFix": "getByRole('heading', { level: 3, name: 'Programme' }) and getByRole('heading', { level: 3, name: 'Tickets' }) [feature rail is h4, level 4, separately] can never match a leaf <a> (role=link) or a <span>/plain text node — the ambiguity in the pre-F7 e2e spec is closed structurally by this element-type change, not by narrowing the query."
+  },
+  "leadEyebrow": {
+    "appliesTo": "item.lead.eyebrow (\"The National Show\") — the FIRST element in the lead track, artifact markup `<p class=\"dd-head\">The National Show</p>`",
+    "elementRequirement": "stays a non-heading element (<p> or <span>) — it precedes the lead LINK (.dd-lead) and sub-copy (.dd-lead-sub), not a <ul> of leaf links, so it is not a 'group of links' label in the APG sense the groupHeadings h3 promotion is justified by. Do not promote this one to a heading.",
+    "typography": "IDENTICAL to groupHeadings.typography above — this is the exact same .dd-head class in the artifact, just applied to a different piece of content. font-mono text-[10px] uppercase tracking-[0.18em] text-accent, margin-bottom 12px (mb-3).",
+    "note": "Current code (MegaMenu.tsx:132-134) renders this as a rounded PILL BADGE — 'inline-flex w-fit items-center rounded-pill bg-bone px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-primary' — background fill, pill shape, 11px, text-primary. The artifact has NO badge/pill shape or background anywhere for this element — it is a plain small mono caps label, structurally and visually identical to a column heading, not a colored chip. This is a large, previously-unflagged gap: the current pill treatment does not correspond to anything in the artifact at all. app/globals.css:79's own comment on --radius-pill ('eyebrow pills only') suggests this pill styling may have been carried over from a different, non-mega-menu eyebrow pattern elsewhere on the site — verify against that other usage before assuming the pill itself is dead code; either way, this specific instance must change to match .dd-head."
+  },
+  "leadLink": {
+    "appliesTo": "item.lead.leadLabel (\"19th SAOC National Orchid Show\") — artifact class .dd-lead",
+    "typography": {
+      "fontFamily": "serif (font-serif)",
+      "fontSizePx": 23,
+      "fontWeight": 600,
+      "lineHeight": 1.12,
+      "marginBottom": "6px",
+      "color": "ink at rest, primary on hover (matches current hover:text-primary already present)"
+    },
+    "note": "Current classes (MegaMenu.tsx:138) = 'mt-4 w-fit rounded-sm font-serif text-[20px] font-medium text-ink ...'. Gaps: size 20px not 23px (text-[23px]), weight font-medium=500 not 600 (font-semibold), no line-height (needs leading-[1.12]), and a top margin of mt-4 (16px) the artifact's .dd-lead rule does not carry at all — .dd-lead has no margin-top; the visual gap above it in the artifact comes entirely from .dd-head's own 12px margin-bottom (leadEyebrow.typography.marginBottom) plus normal margin collapsing, not an additional margin on this element. Remove mt-4. rounded-sm here is a hover/focus-ring convenience class (border-radius on an inline text link for the focus ring box) — the artifact's .dd-lead itself has no border-radius property, but this is a pre-existing, unrelated focus-visible affordance already used consistently across every other interactive text element in this file (see leafLinkClassName, groupHeadingLinkClassName) — do not remove it, it is not a fidelity gap."
+  },
+  "leadMetaLine": {
+    "appliesTo": "leadMeta (venue + date range) — artifact class .dd-lead-sub",
+    "typography": {
+      "fontFamily": "sans (inherited default — .dd-lead-sub has NO font-family property, see typeTokensVerifiedReachable.font-sans-default-not-mono)",
+      "fontSizePx": 12.5,
+      "color": "muted",
+      "marginBottom": "16px (--s4)",
+      "maxWidth": "32ch"
+    },
+    "note": "Current classes (MegaMenu.tsx:142) = 'mt-2 font-mono text-[12px] text-muted' — wrong font family entirely (mono, artifact wants inherited sans), wrong size (12px not 12.5px, use text-[12.5px]), no max-width constraint (max-w-[32ch]), and mt-2 (top margin) where the artifact rule defines only a BOTTOM margin (mb-4, 16px) with no top margin of its own — again relying on the preceding element's own margin for vertical rhythm, same pattern as leadLink above."
+  },
+  "featureRailMeta": {
+    "appliesTo": "featureRailMeta (date range) — artifact class .dd4__meta (a DIFFERENT class from .dd-lead-sub above — do not conflate the lead block's meta line with the feature rail's)",
+    "typography": {
+      "fontFamily": "mono (font-mono)",
+      "fontSizePx": 10,
+      "letterSpacing": "0.14em (tracking-[0.14em] literal — see typeTokensVerifiedReachable.tracking-0.14em-dd4-meta, this is NOT --mono-tracking's 0.18em)",
+      "textTransform": "uppercase",
+      "color": "muted",
+      "marginBottom": "12px (--s3)"
+    },
+    "note": "Current classes (MegaMenu.tsx:209) = 'font-mono text-[12px] text-muted' — wrong size (12px not 10px), missing letter-spacing and uppercase entirely, and margin-bottom is currently supplied as the SIBLING h4's mt-2 (top margin) rather than this element's own bottom margin — see featureRailHeading below, both elements' margin need to move in tandem."
+  },
+  "featureRailHeading": {
+    "appliesTo": "item.featureRail.heading (\"Tickets\") — artifact rule .dd4__feature h4 (already a real <h4>, correctly promoted in an earlier feature per this file's own header comment — element type is NOT a gap, only its CSS properties are)",
+    "typography": {
+      "fontFamily": "serif (font-serif)",
+      "fontSizePx": 18,
+      "fontWeight": 600,
+      "lineHeight": 1.15,
+      "marginBottom": "6px",
+      "marginTop": "0px — spacing above comes from featureRailMeta's own 12px bottom margin, not from this element"
+    },
+    "note": "Current classes (MegaMenu.tsx:211) = 'mt-2 font-serif text-[20px] font-medium text-ink' — wrong size (20px not 18px), wrong weight (font-medium=500 not font-semibold=600), no line-height (needs leading-[1.15]), and mt-2 (8px top margin) where the artifact rule defines only a 6px BOTTOM margin with zero top margin — move the vertical gap responsibility from this element's top to featureRailMeta's bottom, per featureRailMeta above, so remove mt-2 here and add mb-3→ no: mb corresponds to 6px which is NOT one of the named --s* tokens (--s3=12px is too big) — use the arbitrary literal mb-[6px]."
+  },
+  "ctaButton": {
+    "appliesTo": "item.featureRail.ctaLabel (\"Buy tickets\") link — artifact class .btn",
+    "typography": {
+      "fontFamily": "sans (font-sans, already correct)",
+      "fontSizePx": 13.5,
+      "fontWeight": 500,
+      "letterSpacing": "0.01em (tracking-[0.01em])",
+      "paddingVertical": "10px",
+      "paddingHorizontal": "18px",
+      "borderRadius": "2px — rounded-[2px], NOT rounded-sm, see typeTokensVerifiedReachable.radius-1-not-in-theme",
+      "backgroundColor": "primary at rest (already correct), primary-800 on hover (already correct)",
+      "color": "ivory (already correct)",
+      "display": "inline-flex, align-items center, justify-content center (already correct), gap 10px (irrelevant today — single text node, no icon — not a visible gap, do not add a no-op gap-* utility)"
+    },
+    "note": "Current classes (MegaMenu.tsx:222) = 'inline-flex w-fit items-center justify-center rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800 ...'. Gaps: rounded-sm (wrong radius scale entirely, see token note), text-[14px] not text-[13.5px], px-4 py-2 (16px/8px) not the artifact's asymmetric 18px/10px (px-[18px] py-[10px]), and missing letter-spacing (tracking-[0.01em]). font-weight (font-medium=500) is ALREADY CORRECT — the artifact's .btn is also font-weight:500, do not change it."
+  },
+  "outOfScope": {
+    "mobileMenuDrift": "MobileMenu.tsx was explicitly excluded from this feature's scope by the dispatching message. Recorded here as a finding for a LATER feature, not fixed in F7: the artifact's mobile .msub__head (font-mono 9px, letter-spacing .16em, color accent, margin 12px 0 2px) and the inline feature-panel block under .msub (background bone, padding 14px, .dd4__meta reused with an inline margin-bottom:5px override, an inline serif/18px/600/1.15 heading with no shared class name, and a .btn variant with inline padding 9px 14px / font-size 13px) are a DIFFERENT, mobile-specific treatment from every desktop rule cited in this file — do not reuse this file's desktop values for MobileMenu.tsx work; a future feature must re-grep the artifact's mobile markup/CSS independently.",
+    "roleMenuMismatch": "Recorded per team lead's instruction, not to be fixed here: MegaMenu.tsx's panel uses role=\"menu\" (line ~123) and the trigger uses aria-haspopup=\"true\" (line ~113), which WAI-ARIA APG's Disclosure Navigation Menu pattern explicitly recommends AGAINST for site navigation ('it does not use the WAI-ARIA menu role... No ARIA is better than Bad ARIA', https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-navigation/). Changing this touches the disclosure keyboard-interaction contract (arrow-key menu navigation vs plain tab order) and is a bigger surface than this visual-fidelity feature.",
+    "futureHeadingLeafCollisionRisk": "Recorded per team lead's instruction, not to be fixed here: nothing in nav-config.ts's shape structurally prevents a future leaf label from being renamed to exactly match its own column's heading (as 'Programme' and 'Tickets' already do today). The <h3>/<h4> promotion in this feature closes today's two known instances by construction (role=heading vs role=link can never collide), but a THIRD track's heading and a THIRD track's own leaf could still coincidentally share text with each other's DIFFERENT group in a way that isn't a getByRole collision but IS a getByText collision if a future spec ever reverts to text-based queries — not a live defect today, just a standing trap for future test authors."
+  }
+}
