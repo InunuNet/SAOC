@@ -24,9 +24,22 @@ import { wrapGatedProse } from '@/components/nos/gated-prose-internal';
 // a missing settings singleton, an unimplemented M2 section kind — notifies. Mirrors the
 // fails-closed house style of `lib/admin-auth.ts`.
 
-export type Provenance = 'council-supplied' | 'research' | 'placeholder-ai';
+// F20 (national-show-ia-alignment, M4) adds 'council-draft' — the council's own words,
+// not yet finished. 'council-supplied' conflated "whose words these are" with "whether
+// they are finished", which let an unfilled FAQ template render as finished copy with
+// no notice. See goldens/m4/council-draft-provenance.golden.md. The fourth value widens
+// what NOTIFIES; it never widens what SUPPRESSES — only 'council-supplied' with a
+// resolving sourcePath suppresses the notice, exactly as before.
+export type Provenance = 'council-supplied' | 'council-draft' | 'research' | 'placeholder-ai';
 
-export type ShowPageNotice = { label: string; text: string };
+// `tone` drives R11's token choice (goldens/m4/r11-disclosure.golden.md): 'warning' for
+// AI-generated placeholder copy, 'muted' for the two quieter states — researched-but-
+// unconfirmed and an unfinished council draft. NEVER 'error' — an unwritten page is not
+// a fault. Carried on the notice itself so the renderer never re-derives it from
+// provenance and cannot drift from the classification that produced the notice text.
+export type ShowPageNoticeTone = 'warning' | 'muted';
+
+export type ShowPageNotice = { label: string; text: string; tone: ShowPageNoticeTone };
 
 // Opaque brand. There is no value of this type anyone outside this module can construct
 // or destructure through the type system alone — the only legitimate way to get useful
@@ -91,12 +104,18 @@ export const FALLBACK_RESEARCH_LABEL = 'Not yet confirmed';
 export const FALLBACK_RESEARCH_NOTICE =
   'This information was researched by the web team and has not yet been confirmed by the ' +
   'South African Orchid Council.';
+export const FALLBACK_DRAFT_LABEL = 'Council draft';
+export const FALLBACK_DRAFT_NOTICE =
+  'This text was supplied by the South African Orchid Council and is still a working draft. ' +
+  'It may be incomplete or may change before the show.';
 
 export type ShowPageSettingsFields = {
   placeholderLabel?: string | null;
   placeholderNotice?: string | null;
   researchLabel?: string | null;
   researchNotice?: string | null;
+  draftLabel?: string | null;
+  draftNotice?: string | null;
 };
 
 function nonBlank(value: string | null | undefined): string | undefined {
@@ -104,18 +123,27 @@ function nonBlank(value: string | null | undefined): string | undefined {
 }
 
 function buildNotice(
-  kind: 'research' | 'placeholder',
+  kind: 'research' | 'placeholder' | 'draft',
   settings: ShowPageSettingsFields | null | undefined,
 ): ShowPageNotice {
   if (kind === 'research') {
     return {
       label: nonBlank(settings?.researchLabel) ?? FALLBACK_RESEARCH_LABEL,
       text: nonBlank(settings?.researchNotice) ?? FALLBACK_RESEARCH_NOTICE,
+      tone: 'muted',
+    };
+  }
+  if (kind === 'draft') {
+    return {
+      label: nonBlank(settings?.draftLabel) ?? FALLBACK_DRAFT_LABEL,
+      text: nonBlank(settings?.draftNotice) ?? FALLBACK_DRAFT_NOTICE,
+      tone: 'muted',
     };
   }
   return {
     label: nonBlank(settings?.placeholderLabel) ?? FALLBACK_PLACEHOLDER_LABEL,
     text: nonBlank(settings?.placeholderNotice) ?? FALLBACK_PLACEHOLDER_NOTICE,
+    tone: 'warning',
   };
 }
 
@@ -266,7 +294,7 @@ export type SectionProvenanceInput = {
   body?: unknown;
 };
 
-type SectionClass = 'clean' | 'research' | 'placeholder';
+type SectionClass = 'clean' | 'research' | 'placeholder' | 'draft';
 
 // The single fail-loud decision, shared by resolveNotice() (per-section) and
 // resolvePageProvenance() (page-level rollup) so the two can never disagree about what
@@ -293,6 +321,21 @@ function classifySection(input: SectionProvenanceInput): SectionClass {
       const sourceText = readSourceTextForLinkage(input.sourcePath as string);
       if (sourceText === null) return 'placeholder';
       return bodyLinkedToSource(input.body, sourceText) ? 'clean' : 'placeholder';
+    }
+    case 'council-draft': {
+      // Still her words, just not finished — this NEVER reaches 'clean', so it always
+      // notifies regardless of the linkage outcome (CD2: the fourth value widens what
+      // notifies, never what suppresses). But the same linkage check still runs
+      // (CL3c — the guarded provenance set is council-supplied AND council-draft, never
+      // narrowed to one): a "council-draft" claim over invented text is exactly the
+      // provenance lie this project has already audited, just in the opposite
+      // direction, and the check must not skip it merely because this value can never
+      // suppress. A section that fails linkage is demoted to 'placeholder' — the same
+      // fallback council-supplied takes on failure.
+      if (!sourceFileExists(input.sourcePath)) return 'placeholder';
+      const sourceText = readSourceTextForLinkage(input.sourcePath as string);
+      if (sourceText === null) return 'placeholder';
+      return bodyLinkedToSource(input.body, sourceText) ? 'draft' : 'placeholder';
     }
     case 'research':
       return 'research';
@@ -329,6 +372,7 @@ export function resolvePageProvenance(sections: SectionProvenanceInput[]): Prove
   if (sections.length === 0) return 'placeholder-ai';
   const classes = sections.map(classifySection);
   if (classes.some((c) => c === 'placeholder')) return 'placeholder-ai';
+  if (classes.some((c) => c === 'draft')) return 'council-draft';
   if (classes.some((c) => c === 'research')) return 'research';
   return 'council-supplied';
 }
@@ -391,7 +435,9 @@ const SHOW_PAGE_SETTINGS_QUERY = `*[_type == "showPageSettings"][0]{
   placeholderLabel,
   placeholderNotice,
   researchLabel,
-  researchNotice
+  researchNotice,
+  draftLabel,
+  draftNotice
 }`;
 
 async function loadShowPageSettings(): Promise<ShowPageSettingsFields | null> {
@@ -434,7 +480,10 @@ function hydratePage(raw: RawShowPage, settings: ShowPageSettingsFields | null):
   const notice =
     pageProvenance === 'council-supplied'
       ? null
-      : buildNotice(pageProvenance === 'research' ? 'research' : 'placeholder', settings);
+      : buildNotice(
+          pageProvenance === 'research' ? 'research' : pageProvenance === 'council-draft' ? 'draft' : 'placeholder',
+          settings,
+        );
 
   return {
     pageKey: raw.pageKey,

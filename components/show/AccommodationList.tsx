@@ -11,6 +11,7 @@
 // =============================================================
 
 import type { AccommodationDistanceBand, AccommodationOption } from '@/types';
+import { COLUMN_CLASS, SPAN_CLASS, resolveGridLayout } from '@/lib/grid-columns';
 
 const BAND_ORDER: AccommodationDistanceBand[] = ['walking', 'nearby', 'city', 'further'];
 
@@ -40,16 +41,26 @@ export function AccommodationList({ options }: AccommodationListProps) {
         const inBand = entries.filter((option) => bandOf(option) === band);
         if (inBand.length === 0) return null;
 
+        // R13 — column count DERIVED from this band's own rendered count, never a
+        // hardcoded class. See
+        // .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/grid-orphan-rule.golden.md.
+        const { columns, finalCardSpans } = resolveGridLayout(inBand.length);
+        const lastIndex = inBand.length - 1;
+
         return (
           <section key={band}>
             <h4 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
               {BAND_LABELS[band]}
             </h4>
-            <ul className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {/* No hardcoded column-count utility below lg: mobile/tablet stack via flex-col — the
+                only column-count class comes from lib/grid-columns.ts (D68). */}
+            <ul className={`mt-3 flex flex-col gap-4 lg:grid ${COLUMN_CLASS[columns]}`}>
               {inBand.map((option, index) => (
                 <li
                   key={option._key ?? `${option.name}-${index}`}
-                  className="border border-rule bg-parchment p-5"
+                  className={`border border-rule bg-parchment p-5 ${
+                    index === lastIndex && finalCardSpans > 1 ? SPAN_CLASS[finalCardSpans] : ''
+                  }`}
                 >
                   <p className="font-serif text-[18px] font-medium text-ink">{option.name}</p>
                   {option.area ? (

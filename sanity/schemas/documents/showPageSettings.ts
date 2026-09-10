@@ -41,6 +41,22 @@ export const showPageSettings = defineType({
       description: 'The full sentence shown above researched-but-unconfirmed copy.',
       validation: (Rule) => Rule.required(),
     }),
+    defineField({
+      name: 'draftLabel',
+      title: 'Council Draft Label',
+      type: 'string',
+      description:
+        "Short badge text shown beside a section whose provenance is 'council-draft' — the " +
+        "council's own words, not yet finished.",
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'draftNotice',
+      title: 'Council Draft Notice',
+      type: 'text',
+      description: 'The full sentence shown above an unfinished council draft.',
+      validation: (Rule) => Rule.required(),
+    }),
   ],
   preview: {
     prepare: () => ({ title: 'Show Page Settings' }),

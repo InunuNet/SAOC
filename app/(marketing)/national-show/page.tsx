@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { ConfirmationBadge, ShowCountdown } from '@/components/show';
+import { ConfirmationBadge, ShowCountdown, ShowSectionNav } from '@/components/show';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
 import { CycleStep } from '@/components/nos/CycleStep';
@@ -10,6 +10,7 @@ import { EmblemBadge } from '@/components/nos/EmblemBadge';
 import { ExhibitorStageCard } from '@/components/nos/ExhibitorStageCard';
 import { JudgingGroupCard } from '@/components/nos/JudgingGroupCard';
 import { NosHero, NOS_HERO_IMAGES, type NosHeroImage } from '@/components/nos/NosHero';
+import { NosHubGroup, type NosHubGroupMember } from '@/components/show/nos/NosHubGroup';
 import { PastEditionCard } from '@/components/nos/PastEditionCard';
 import { SectionHeading } from '@/components/nos/SectionHeading';
 import { VisitorLinkCard } from '@/components/nos/VisitorLinkCard';
@@ -197,6 +198,53 @@ const VISITOR_CARDS = [
     href: '/national-show/archive',
     title: 'Past shows',
     description: 'Previous editions, their grand champions and the galleries that went with them.',
+  },
+];
+
+// F12 (M4) — the hub's four IA groups, exact ids/labels/order per
+// goldens/m4/route-manifest-schema.golden.md's `groups` array and its `listed: true` rows.
+// Member counts (4, 5, 4, 3) are the load-bearing case for G3b — the `programme` group
+// with 5 members must derive 3 columns, not the 4 a hardcoded class would render.
+const NOS_GROUPS: readonly { id: string; label: string; members: readonly NosHubGroupMember[] }[] = [
+  {
+    id: 'visit',
+    label: 'Visit',
+    members: [
+      { href: '/national-show/about', label: 'About the Show' },
+      { href: '/national-show/what-to-expect', label: 'What to Expect' },
+      { href: '/national-show/plan-your-visit', label: 'Plan Your Visit' },
+      { href: '/national-show/faq', label: 'Questions' },
+    ],
+  },
+  {
+    id: 'programme',
+    label: 'Programme',
+    members: [
+      { href: '/national-show/programme', label: 'Programme' },
+      { href: '/national-show/workshops', label: 'Workshops' },
+      { href: '/national-show/symposium', label: 'SAOC Symposium' },
+      { href: '/national-show/wosa', label: 'WOSA Conference' },
+      { href: '/national-show/conferences', label: 'Conference Registration' },
+    ],
+  },
+  {
+    id: 'exhibit-trade',
+    label: 'Exhibit & Trade',
+    members: [
+      { href: '/national-show/sa-exhibitors', label: 'South African Exhibitors' },
+      { href: '/national-show/international-guests', label: 'International Guests' },
+      { href: '/national-show/exhibitors', label: 'Exhibitor Entry Guide' },
+      { href: '/national-show/vendors', label: 'Trade Vendors' },
+    ],
+  },
+  {
+    id: 'the-show',
+    label: 'The Show',
+    members: [
+      { href: '/national-show/tickets', label: 'Tickets' },
+      { href: '/national-show/sponsors', label: 'Show Sponsors' },
+      { href: '/national-show/archive', label: 'Past Shows' },
+    ],
   },
 ];
 
@@ -523,6 +571,37 @@ export default async function NationalShowPage() {
         </ul>
       </section>
 
+      {/* ── F12/M4 — the hub restructured into four IA groups. This is ADDED
+          structure alongside the show's existing copy above (H3) — with a flat
+          six-item header and no dropdown, these four groups plus
+          ShowSectionNav ARE the subsection's entire primary navigation (R3/R4).
+          href literals are KEPT here (not rendered from
+          content/national-show-routes.json) because site-content-alignment's
+          A12 greps for a literal `href: '/national-show/about'` entry in this
+          file — NAV1 asserts at gate time that these literals equal the
+          manifest's listed slugs exactly, in both directions. See
+          goldens/m4/hub-groups.golden.md. ── */}
+      <section className="mx-auto max-w-[1280px] px-8 py-16">
+        <SectionHeading eyebrow="Find your way" title="Explore the National Show" />
+
+        <div className="mt-10 space-y-14">
+          {NOS_GROUPS.map(({ id, label, members }) => (
+            <NosHubGroup key={id} id={id} label={label} members={members} />
+          ))}
+        </div>
+
+        {/* Spec entry 14 (/societies) gets a link and no page of its own — visibly
+            not one of the four groups' members, per hub-groups.golden.md §"Structural
+            requirements" 3. */}
+        <p className="mt-14 border-t border-rule pt-8 font-sans text-[15px] text-ink/70">
+          Looking for your local orchid society?{' '}
+          <Link href="/societies" className="text-[var(--accent)] underline underline-offset-2">
+            Find your society
+          </Link>
+          .
+        </p>
+      </section>
+
       {/* ── Three-year cycle ── */}
       <section className="bg-bone py-20">
         <div className="mx-auto max-w-[1280px] px-8">
@@ -653,6 +732,11 @@ export default async function NationalShowPage() {
           </div>
         }
       />
+
+      {/* N15 — exactly one navigation landmark inside the NOS content region, on every
+          one of the 17 routes including the hub itself. R21/4 — full-bleed only at the
+          foot of the page, which is why this is the very last element rendered. */}
+      <ShowSectionNav current="/national-show" />
     </>
   );
 }

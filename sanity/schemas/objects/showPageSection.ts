@@ -88,6 +88,10 @@ export const showPageSection = defineType({
       options: {
         list: [
           { title: 'Council-supplied', value: 'council-supplied' },
+          {
+            title: 'Council draft — their words, not yet finished',
+            value: 'council-draft',
+          },
           { title: 'Research (verified, not council-confirmed)', value: 'research' },
           { title: 'Placeholder (AI-generated)', value: 'placeholder-ai' },
         ],
@@ -95,8 +99,11 @@ export const showPageSection = defineType({
       // NO initialValue. See the file header — this is the whole safety property.
       validation: (Rule) => Rule.required(),
       description:
-        'Did the council write these words, or did we? Required — Sanity will not let this ' +
-        'publish unset. See provenance-gate.golden.md.',
+        'Did the council write these words, or did we, and — if theirs — are they finished? ' +
+        "Required — Sanity will not let this publish unset. 'council-draft' is the council's " +
+        'own words, not yet finished (notifies); it is distinct from council-supplied conflating ' +
+        '"whose words" with "whether finished". See provenance-gate.golden.md and ' +
+        'goldens/m4/council-draft-provenance.golden.md.',
     }),
     defineField({
       name: 'sourcePath',
@@ -104,12 +111,15 @@ export const showPageSection = defineType({
       type: 'string',
       description:
         'Repo-relative path under content/drive-source/ or content/drive-recovered/ naming the ' +
-        'council document this copy came from. Required when provenance is council-supplied. ' +
-        'No absolute path and no ".." traversal — this is a security boundary, not a style rule.',
+        'council document this copy came from. Required when provenance is council-supplied or ' +
+        'council-draft — it is still council text either way. No absolute path and no ".." ' +
+        'traversal — this is a security boundary, not a style rule.',
       validation: (Rule) =>
         Rule.custom((value, context) => {
           const parent = context.parent as { provenance?: string } | undefined;
-          if (parent?.provenance !== 'council-supplied') return true;
+          if (parent?.provenance !== 'council-supplied' && parent?.provenance !== 'council-draft') {
+            return true;
+          }
           if (!value) {
             return 'sourcePath is required when provenance is council-supplied.';
           }

@@ -2223,3 +2223,11 @@ rebuild from the design above, which is complete enough to work from.
 Related: the same session has adopted running the scanner at BOTH ENDS of a measurement pass,
 treating its own geometry numbers as suspect if the dataset moved underneath it. Worth making
 standing practice for any agent taking visual measurements against live content.
+
+## Upstream: Athanor #1435 — hardcoded dev-server port in verification guidance
+Filed 2026-09-10: https://github.com/InunuNet/Athanor/issues/1435
+`.claude/rules/shell-paths.md` (HARNESS-owned) hardcodes localhost:3002 in its Playwright example;
+this project's CLAUDE.md says 3000; `pnpm dev` actually runs 3002. The dangerous half is the
+"reuse whatever answers on 3000" pattern — on a multi-session machine that can verify a different
+project's app and report green. Local fix until upstream lands: verifiers probe, prove server
+identity before reuse, and record verified-vs-started in the evidence line.

@@ -3,31 +3,58 @@ import type { MetadataRoute } from 'next';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { societySlugsQuery, eventSlugsQuery, pastShowsQuery } from '@/sanity/queries';
 import { mergePastShows, type SanityShowProjection } from '@/lib/data/mergeShows';
+import routeManifest from '@/content/national-show-routes.json';
 
 const BASE_URL = 'https://saoc.co.za';
 
-// F18 (nos-design-system, M6) — fixed a live crawl-budget defect: the "upcoming" child
-// route under /national-show is an intentional 308 permanent redirect (see its own
-// page.tsx) and must never be advertised in the sitemap, so it is deliberately absent
-// from this list. This list also fills in every other /national-show/* child route that
-// was previously missing entirely — see goldens/m6-conversion-seo-social.golden.md B.1.
-// Deliberately excludes the token-gated `vendors/register` and `vendors/payment` routes
-// (noindex, not public content) and the F19 social-kit route (noindex, tooling only).
-const NATIONAL_SHOW_CHILD_ROUTES: Array<{
-  path: string;
-  changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency'];
-  priority: number;
-}> = [
-  { path: '/national-show/plan-your-visit', changeFrequency: 'monthly', priority: 0.6 },
-  { path: '/national-show/what-to-expect', changeFrequency: 'monthly', priority: 0.6 },
-  { path: '/national-show/faq', changeFrequency: 'monthly', priority: 0.5 },
-  { path: '/national-show/exhibitors', changeFrequency: 'monthly', priority: 0.5 },
-  { path: '/national-show/tickets', changeFrequency: 'weekly', priority: 0.8 },
-  { path: '/national-show/vendors', changeFrequency: 'monthly', priority: 0.5 },
-  { path: '/national-show/vendors/apply', changeFrequency: 'monthly', priority: 0.5 },
-  { path: '/national-show/workshops', changeFrequency: 'weekly', priority: 0.6 },
-  { path: '/national-show/conferences', changeFrequency: 'weekly', priority: 0.6 },
-];
+// F12/RM2 (national-show-ia-alignment, M4) — the /national-show/* block of this sitemap
+// is DERIVED from content/national-show-routes.json, the artifact the saoc-eb lane also
+// builds its header from. A hand-kept list drifts silently: this file previously listed
+// the deleted /national-show/upcoming route and omitted seven real routes entirely. See
+// .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/route-manifest.golden.md §10.
+//
+// Every `indexable: true`, non-dynamic row becomes an entry; every `indexable: false`
+// row (the token-gated vendor register/payment routes) does not. The dynamic
+// `/national-show/archive/[year]` row is excluded here and handled by
+// `archiveYearRoutes` below, which enumerates real years from Sanity — a template slug
+// with a literal `[year]` segment is not a URL.
+//
+// SCOPED TO THIS BLOCK ONLY: staticRoutes (the SAOC pages) and the Sanity
+// society/event blocks below are untouched — they belong to the other lane.
+interface NosManifestRoute {
+  slug: string;
+  indexable: boolean;
+  dynamic: boolean;
+  archetype: string;
+}
+interface NosRouteManifest {
+  routes: NosManifestRoute[];
+}
+
+function changeFrequencyFor(archetype: string): MetadataRoute.Sitemap[number]['changeFrequency'] {
+  if (archetype === 'transactional') return 'weekly';
+  if (archetype === 'hub') return 'weekly';
+  return 'monthly';
+}
+
+function priorityFor(archetype: string): number {
+  if (archetype === 'hub') return 0.8;
+  if (archetype === 'transactional') return 0.7;
+  if (archetype === 'listing' || archetype === 'schedule') return 0.6;
+  return 0.5;
+}
+
+function buildNationalShowChildRoutes(): MetadataRoute.Sitemap {
+  const manifest = routeManifest as NosRouteManifest;
+  return manifest.routes
+    .filter((route) => route.indexable && !route.dynamic)
+    .map((route) => ({
+      url: `${BASE_URL}${route.slug}`,
+      lastModified: new Date(),
+      changeFrequency: changeFrequencyFor(route.archetype),
+      priority: priorityFor(route.archetype),
+    }));
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [societies, events, pastShowsRaw] = await Promise.all([
@@ -42,22 +69,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/societies`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/judging`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/events`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${BASE_URL}/national-show`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
-    {
-      url: `${BASE_URL}/national-show/archive`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
     { url: `${BASE_URL}/contact`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.5 },
   ];
 
-  const nationalShowChildRoutes: MetadataRoute.Sitemap = NATIONAL_SHOW_CHILD_ROUTES.map((route) => ({
-    url: `${BASE_URL}${route.path}`,
-    lastModified: new Date(),
-    changeFrequency: route.changeFrequency,
-    priority: route.priority,
-  }));
+  const nationalShowChildRoutes: MetadataRoute.Sitemap = buildNationalShowChildRoutes();
 
   // Sourced from Sanity (+ the static archive fallback), never hardcoded — see
   // lib/data/mergeShows.ts, the same union-on-year merge the archive pages themselves

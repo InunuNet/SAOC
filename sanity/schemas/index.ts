@@ -14,6 +14,8 @@ import { show } from './documents/show';
 import { showClass } from './documents/showClass';
 import { award } from './documents/award';
 import { sponsor } from './documents/sponsor';
+// F14 (national-show-ia-alignment, M4) — the National Show's own, independent sponsor list
+import { showSponsor } from './documents/showSponsor';
 import { judge } from './documents/judge';
 import { province } from './documents/province';
 import { ticketType } from './documents/ticketType';
@@ -64,6 +66,8 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   showClass,
   award,
   sponsor,
+  // F14 (national-show-ia-alignment, M4)
+  showSponsor,
   judge,
   province,
   showFaq,

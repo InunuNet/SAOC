@@ -112,3 +112,13 @@ Process (Brad, 2026-09-10):
 - Branch for this lane is `nos-site`. `origin/nos-design` belongs to the design lane — never push to it.
 
 - Design-ruling authority is Codi's `.agent/memory/project/design/nos-design-rulings.md` (R1-R13, commits 6687b13/5c103ea) IN CODI'S WORKSPACE. The same relative path in this tree is a STALE MIRROR and is not the authority. Cite rulings by number; never treat the local copy as canonical.
+
+## Branch and PR rule — standing, all three lanes, 2026-09-10 (Brad delegated to saoc-eb)
+
+NO LANE PUSHES TO `main`. EVER.
+
+1. Work on your own branch. This lane's branch is `nos-site`. `origin/nos-design` belongs to the design lane — never push to it.
+2. Slice done → open a PR against `main`.
+3. Cross-lane review: NOS lane PRs reviewed by saoc-eb (lead); saoc-eb's PRs reviewed by this lane; design-lane rulings reviewed by saoc-eb.
+4. One approving review, then merge. No self-merge. No exception for "it's only a docs change".
+5. The PR description states which routes it adds/changes/deletes and what evidence backs the assertions — rendered-output snapshots for anything claiming a route property, never a path check.

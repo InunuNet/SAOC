@@ -198,6 +198,19 @@
   --status-error: var(--status-error-on-light);
   --status-warning: var(--status-warning-on-light);
   --status-success: var(--status-success-on-light);
+
+  /* ---- R11 (national-show-ia-alignment, M4/F17) — the quiet disclosure state,
+     shared by `research` and `council-draft`. Light ground reuses `--muted`
+     directly (Codi: unchanged, both states). `--status-muted-on-dark` is the
+     value Codi's R11 amendment rules — #a49dbe, replacing an earlier #8b84a6
+     that cleared 4.5:1 on only one of the four NOS dark grounds. It measures
+     ≥4.5:1 on every ground it can reach (--primary-800, --primary, the
+     purple-lift, --primary-700) and, on any one ground, strictly quieter than
+     --status-warning-on-dark (N10) — see
+     .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/notice-visibility.golden.md. ---- */
+  --status-muted-on-light: var(--muted);
+  --status-muted-on-dark: #a49dbe;
+  --status-muted: var(--status-muted-on-light);
 }
 
 /* ---- Ground flip (R8/3, R9/3). Applied by @dev to any NOS section whose
@@ -208,6 +221,7 @@
   --status-error: var(--status-error-on-dark);
   --status-warning: var(--status-warning-on-dark);
   --status-success: var(--status-success-on-dark);
+  --status-muted: var(--status-muted-on-dark);
 }
 
 /* ---- Focus reset (R9/1, R9/2). Nine `focus-visible:ring-2

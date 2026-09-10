@@ -39,7 +39,7 @@ import type { SanityClient } from '@sanity/client';
 // getClient()/readEnvLocal().
 // ---------------------------------------------------------------------------
 
-export type SeedProvenance = 'council-supplied' | 'research' | 'placeholder-ai';
+export type SeedProvenance = 'council-supplied' | 'council-draft' | 'research' | 'placeholder-ai';
 
 export interface SeedSection {
   sectionKey: string;
@@ -59,11 +59,28 @@ export interface SeedPage {
 }
 
 export type SectionAction =
+  | 'skip-council' // existing section is council-supplied or council-draft — NEVER written, no hash consulted
   | 'create' // section absent from the dataset — write it
-  | 'update' // stored seedHash matches the current body — safe to overwrite
-  | 'skip-edited' // stored seedHash does not match — a human edited it
+  | 'update' // stored seedHash matches a fresh hash of every seed-owned field — safe to overwrite
+  | 'skip-edited' // stored seedHash does not match — a human edited a seed-owned field
   | 'skip-unknown-origin' // no seedHash at all — assume human-authored
   | 'leave-extra'; // in the dataset, absent from the seed source
+
+/**
+ * The section fields the SEED writes, and therefore the fields `seedHash` must cover.
+ * `sectionKey` is excluded — it is the identity reconciliation keys on, not content.
+ * `seedHash` itself is excluded — hashing a value into itself is not defined. See
+ * .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/seed-write-narrowing.golden.md
+ * Rule 2. A hash covering three of four fields is exactly how the original defect
+ * survived review (M1's A39 finding) — `hashBody` used to hash `body` alone while the
+ * write replaced the whole section.
+ */
+export interface SeedOwnedFields {
+  heading: string | null;
+  body: unknown;
+  provenance: SeedProvenance;
+  sourcePath: string | null;
+}
 
 function sortKeysDeep(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortKeysDeep);
@@ -77,31 +94,66 @@ function sortKeysDeep(value: unknown): unknown {
   return value;
 }
 
-/** sha256 of the canonical (sorted-key) JSON of `body`, truncated to 16 hex chars. */
-export function hashBody(body: unknown): string {
-  const canonical = JSON.stringify(sortKeysDeep(body));
+/**
+ * sha256 of the canonical (sorted-key) JSON of every seed-owned field, truncated to 16
+ * hex chars. Covers heading, body, provenance AND sourcePath — a change to any one of
+ * them changes the hash (SW2). Superseded `hashBody`, which hashed `body` alone.
+ */
+export function hashSeedOwnedFields(fields: SeedOwnedFields): string {
+  const canonical = JSON.stringify(
+    sortKeysDeep({
+      heading: fields.heading,
+      body: fields.body,
+      provenance: fields.provenance,
+      sourcePath: fields.sourcePath,
+    }),
+  );
   return createHash('sha256').update(canonical).digest('hex').slice(0, 16);
+}
+
+/** @deprecated superseded by hashSeedOwnedFields — kept only for the M1 verifier's probe. */
+export function hashBody(body: unknown): string {
+  return hashSeedOwnedFields({ heading: null, body, provenance: 'placeholder-ai', sourcePath: null });
 }
 
 /**
  * The reconciliation decision. Pure — see the decision table in
+ * goldens/m4/seed-write-narrowing.golden.md, which supersedes the six-row table in
  * seeding-reconciliation.golden.md. `existing` is the section currently in the dataset
- * for this sectionKey (or null if none), carrying its stored `seedHash` and its current
- * `body`. The stored hash is compared against a FRESH hash of the current body — not
- * trusted alone — because that comparison is what detects a human edit.
+ * for this sectionKey (or null if none).
+ *
+ * Rule 1, checked FIRST and unconditionally: if the section currently in the dataset is
+ * `council-supplied` or `council-draft`, it is never written — no hash comparison, no
+ * exception for a perfectly matching seedHash. That value is the council declaring the
+ * words are theirs (or, for council-draft, still theirs even if unfinished); nothing
+ * generated has standing to overwrite it.
  */
 export function decideSectionAction(
   seedSection: SeedSection | null,
-  existing: { body: unknown; seedHash?: string | null } | null,
+  existing: {
+    heading?: string | null;
+    body: unknown;
+    provenance?: SeedProvenance | null;
+    sourcePath?: string | null;
+    seedHash?: string | null;
+  } | null,
 ): SectionAction {
+  if (existing && (existing.provenance === 'council-supplied' || existing.provenance === 'council-draft')) {
+    return 'skip-council';
+  }
   if (seedSection && !existing) return 'create';
-  if (!seedSection && existing) return 'leave-extra';
-  if (!seedSection && !existing) return 'leave-extra';
+  if (!seedSection) return 'leave-extra';
+  if (!existing) return 'leave-extra';
 
-  const seedHash = existing?.seedHash;
+  const seedHash = existing.seedHash;
   if (!seedHash) return 'skip-unknown-origin';
 
-  const currentHash = hashBody(existing?.body);
+  const currentHash = hashSeedOwnedFields({
+    heading: existing.heading ?? null,
+    body: existing.body,
+    provenance: existing.provenance ?? 'placeholder-ai',
+    sourcePath: existing.sourcePath ?? null,
+  });
   return currentHash === seedHash ? 'update' : 'skip-edited';
 }
 
@@ -193,7 +245,12 @@ function toSanitySection(pageKey: string, seed: SeedSection): SanitySection {
     body: seed.body,
     provenance: seed.provenance,
     sourcePath: seed.sourcePath ?? undefined,
-    seedHash: hashBody(seed.body),
+    seedHash: hashSeedOwnedFields({
+      heading: seed.heading ?? null,
+      body: seed.body,
+      provenance: seed.provenance,
+      sourcePath: seed.sourcePath ?? null,
+    }),
   };
 }
 
@@ -203,23 +260,25 @@ interface ExistingShowPageDoc {
   sections?: Array<{
     _key: string;
     sectionKey: string;
+    heading?: string | null;
     body: unknown;
+    provenance?: SeedProvenance | null;
+    sourcePath?: string | null;
     seedHash?: string | null;
   }>;
 }
 
-// The subset of a section's fields an 'update' action is entitled to overwrite. Per
-// seeding-reconciliation.golden.md's decision table: "stored seedHash matches a hash of
-// its current body → overwrite body and provenance, update seedHash" — nothing else.
-// `heading` and `kind` are deliberately excluded: Codex's cross-model review found the
-// previous shape replaced the WHOLE section object on 'update', so a council editor who
-// fixed only a heading (leaving body untouched) had that fix silently reverted on the
-// next seed run, because hashBody only ever hashed `body`. Narrowing the write to the
-// fields the seed script actually owns — never widening the hash to cover fields it
-// doesn't need to touch — is what actually closes that: an editor's out-of-scope edit
-// now survives a re-run regardless of what the hash says, because the hash is never
-// consulted for a field the write doesn't reach.
+// The exact four fields an 'update' action is entitled to overwrite — the same four
+// hashSeedOwnedFields() covers (goldens/m4/seed-write-narrowing.golden.md Rules 2/3). A
+// section reaching 'update' has already cleared decideSectionAction's Rule 1 check (not
+// council-supplied/council-draft) and its hash comparison (no seed-owned field changed
+// since this script last wrote it) — so writing all four here, rather than a narrower
+// subset, is what closes M1's A39 finding: a hash covering three of four fields (the
+// pre-M4 shape excluded `heading`) passed a single-field test while a Studio heading
+// edit was silently reverted on the next run. `kind` stays excluded — this script never
+// implements a kind other than 'prose' and never seeds one.
 type SectionUpdateFields = {
+  heading?: string;
   body: unknown;
   provenance: SeedProvenance;
   sourcePath?: string;
@@ -228,10 +287,16 @@ type SectionUpdateFields = {
 
 function sectionUpdateFields(seed: SeedSection): SectionUpdateFields {
   return {
+    heading: seed.heading ?? undefined,
     body: seed.body,
     provenance: seed.provenance,
     sourcePath: seed.sourcePath ?? undefined,
-    seedHash: hashBody(seed.body),
+    seedHash: hashSeedOwnedFields({
+      heading: seed.heading ?? null,
+      body: seed.body,
+      provenance: seed.provenance,
+      sourcePath: seed.sourcePath ?? null,
+    }),
   };
 }
 
@@ -276,10 +341,22 @@ async function reconcilePage(client: SanityClient, seedPage: SeedPage): Promise<
     const existing = existingByKey.get(seedSection.sectionKey) ?? null;
     const action = decideSectionAction(
       seedSection,
-      existing ? { body: existing.body, seedHash: existing.seedHash } : null,
+      existing
+        ? {
+            heading: existing.heading,
+            body: existing.body,
+            provenance: existing.provenance,
+            sourcePath: existing.sourcePath,
+            seedHash: existing.seedHash,
+          }
+        : null,
     );
 
-    if (action === 'create') {
+    if (action === 'skip-council') {
+      // Rule 1 — never written, no hash consulted, no exception for a matching hash.
+      // These are the council's words (finished or, for council-draft, not yet).
+      console.log(`  KEEP ${seedPage.pageKey}/${seedSection.sectionKey} — council-authored, seed never writes it`);
+    } else if (action === 'create') {
       patch.append('sections', [toSanitySection(seedPage.pageKey, seedSection)]);
       hasWrite = true;
     } else if (action === 'update' && existing) {
@@ -293,9 +370,12 @@ async function reconcilePage(client: SanityClient, seedPage: SeedPage): Promise<
       // the script still reports "patched".
       //
       // Sets ONLY the fields sectionUpdateFields() names — never the whole section
-      // object. `heading` and `kind` are left exactly as they are in the dataset; see
-      // that function's comment for why overwriting them was the actual defect Codex
-      // found (a Studio heading fix, with body untouched, being silently reverted).
+      // object (Rule 3). `kind` stays excluded — this script never seeds anything but
+      // 'prose'. `heading` IS included here, unlike the pre-M4 shape: decideSectionAction
+      // already reached 'update' only because a fresh hash over all four seed-owned
+      // fields — heading included — matched the stored one, so no Studio heading edit
+      // can be in flight here; if one were, the hash mismatch would have routed this to
+      // 'skip-edited' instead. See goldens/m4/seed-write-narrowing.golden.md Rules 2/3.
       const fields = sectionUpdateFields(seedSection);
       const setPayload: Record<string, unknown> = {};
       for (const [field, value] of Object.entries(fields)) {

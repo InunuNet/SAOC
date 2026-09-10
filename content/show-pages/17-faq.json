@@ -5,6 +5,43 @@
   "summary": "Answers to the questions visitors ask us most about the 2027 National Show.",
   "sections": [
     {
+      "sectionKey": "faq-q1-symposium-date",
+      "heading": null,
+      "kind": "prose",
+      "provenance": "council-draft",
+      "sourcePath": "content/drive-recovered/17-faq/faq/content.md",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "faq-q1-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "faq-q1-b1-s1",
+              "text": "Q1. When will the 2027 SAOC Symposium be held?",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "faq-q1-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "faq-q1-b2-s1",
+              "text": "The symposium will be held on xx, xx September 22027 at the xx.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
       "sectionKey": "faq",
       "heading": "Frequently Asked Questions",
       "kind": "prose",

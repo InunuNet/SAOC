@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { CategoryTicketsPage } from '@/components/tickets';
 import { Card } from '@/components/nos/Card';
+import { ShowSectionNav } from '@/components/show';
 import { buildPageMetadata } from '@/lib/seo';
 
 // See app/(marketing)/tickets/page.tsx for why this stays force-dynamic — the shared
@@ -33,17 +34,24 @@ const SESSIONS_NOTE =
 // flat ground read generic and were rejected).
 export default async function WorkshopsFieldTripsTicketsPage() {
   return (
-    <CategoryTicketsPage
-      category="workshop-field-trip"
-      heroImage="/images/orchid-pink.jpg"
-      eyebrow="2027 National Show"
-      heading="Workshops & Field Trips"
-      lede="Book Sunset Cocktails and guided Field Trip outings at the National Show."
-      note={
-        <Card role="note" className="font-sans text-[13px] leading-relaxed text-muted">
-          {SESSIONS_NOTE}
-        </Card>
-      }
-    />
+    <>
+      <CategoryTicketsPage
+        category="workshop-field-trip"
+        heroImage="/images/orchid-pink.jpg"
+        eyebrow="2027 National Show"
+        heading="Workshops & Field Trips"
+        lede="Book Sunset Cocktails and guided Field Trip outings at the National Show."
+        note={
+          <Card role="note" className="font-sans text-[13px] leading-relaxed text-muted">
+            {SESSIONS_NOTE}
+          </Card>
+        }
+      />
+
+      {/* F13 (M4) reconciliation — R3/L7 reachability. CategoryTicketsPage itself is
+          owned by the sibling SAOC session and is not edited (see the comment above);
+          this route's own page.tsx owns adding the section nav. */}
+      <ShowSectionNav current="/national-show/workshops" />
+    </>
   );
 }
