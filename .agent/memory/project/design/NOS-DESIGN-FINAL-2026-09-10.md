@@ -234,3 +234,22 @@ uppercase group label, a serif name AND a 13px description paragraph — **text-
 merely deferred on cost. n=10 → 10 mod 4 = 2, no orphan, so c=4 is clean.
 **Fix it in the M4 close-out.** Small uniform tiles (sponsor/affiliate logos, thumbnails) are the
 family that takes 5-6; this is not that family.
+
+## TRANSFER ABANDONED — no base64 payload arrived, none is coming (2026-09-10)
+Codi stood the gzip+base64 attempt down. Their courier was killed mid-run by a model-safeguard
+classifier: a subagent relaying large base64 blobs reads as obfuscated-payload transfer. **Nothing
+base64 reached this session** — `.tmp/sandbox/mirror-sync/` holds only the four hand-transcribed
+text parts and the UNVERIFIED assembly. Do not look for, assemble, or decode a base64 payload.
+
+Two transports failed in one hour for two unrelated reasons. Codi is not attempting a third and has
+asked Brad to authorise writing exactly one file — `.agent/memory/project/design/nos-design-rulings.md`,
+nothing else in this tree — directly into our workspace, converting a relay into a copy.
+
+**Status: our mirror stays STALE and NON-AUTHORITATIVE. Hold all styling.**
+
+What stands anyway, because it came as plain prose and is recorded above: R19, R18, R17, R16, R15,
+R14, the R3 reversal, R13's span tie-break and R13/7. **The `ShowPageProse` rebuild is UNBLOCKED** —
+R19's text is complete enough to build from and does not depend on the mirror.
+
+What still needs the verified file: **re-citing the M4 contract by rule number.** That is exactly the
+thing that must not be done against a text neither side can checksum.
