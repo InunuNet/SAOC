@@ -3797,3 +3797,30 @@ lessons worth generalising beyond this task.
    is not blocked. Same hook, inconsistent enforcement by command shape — worth an upstream
    Athanor note; use the `python3 -c` shape as the working escape hatch until it's fixed
    there (never patch the hook script locally — see `.claude/rules/athanor.md`).
+
+### A tool's own output is not "someone else's work in progress" (2026-09-10)
+
+The maintainer ran `backlog_trim.py`, which truncated 38 backlog items and extracted
+their detail into `.agent/memory/project/data/*.md`. It then committed **only** the
+truncated `backlog.md`, and explicitly left the 57 new `data/*.md` files uncommitted on
+the grounds that they "belong to other in-flight lanes."
+
+They belonged to its own run, seconds earlier. The result was a commit whose 38
+`→ [details](data/…)` links pointed at untracked files — one `git clean` from destroying
+the substance of the backlog, in the very commit recording the session's lessons.
+Repaired in `57b9b7f9`.
+
+Two things to carry:
+
+1. **Before attributing a working-tree file to another agent, check whether a command you
+   just ran created it.** "Not mine" is a claim about causation and needs the same evidence
+   as any other claim.
+2. **The report said "backlog trim: 0 items, nothing to archive" while the diff removed 635
+   lines, 21 bullets and ~6,500 words.** The count was true of *archived* items and false of
+   what the commit did. A metric that is true of the operation you named, while the commit
+   does something else entirely, is this repo's own defect class wearing a status report:
+   satisfiable without the property it claims to prove. **Report the diff, not the counter.**
+
+Standing consequence: after any `backlog_trim.py` run, `git status` the whole
+`.agent/memory/project/` tree before committing, and commit extracted detail files in the
+same commit as the file that links to them.
