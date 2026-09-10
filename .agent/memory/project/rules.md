@@ -122,3 +122,17 @@ NO LANE PUSHES TO `main`. EVER.
 3. Cross-lane review: NOS lane PRs reviewed by saoc-eb (lead); saoc-eb's PRs reviewed by this lane; design-lane rulings reviewed by saoc-eb.
 4. One approving review, then merge. No self-merge. No exception for "it's only a docs change".
 5. The PR description states which routes it adds/changes/deletes and what evidence backs the assertions — rendered-output snapshots for anything claiming a route property, never a path check.
+
+## Mission close-out — no new mission until the last one is on `main` (Brad, 2026-09-10)
+
+A mission is not finished when its branch is green. It is finished when its work is merged to
+`main`. Do NOT start a new mission while the previous one's commits sit unmerged on a lane branch.
+
+**Why:** on 2026-09-10 this lane accumulated 36 commits on `nos-site` that were not on `origin/main`
+— contract, six routes, the route manifest, the grid helper, the seed-write protection fix — while
+`main` still sat at the other lane's `2608f3cc`. Two lanes building on divergent bases is how a
+merge stops being reviewable.
+
+**How to apply:** close-out order is seed/verify → evidence → PR → cross-lane review → CI green →
+merge → THEN open the next mission. If work genuinely cannot merge yet, say so explicitly and name
+what blocks it; do not silently start the next thing on top of it.
