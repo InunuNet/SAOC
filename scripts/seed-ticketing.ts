@@ -140,10 +140,27 @@ export function buildTicketTypeDoc(
     category: product.category,
     capacityPool: product.capacityPool ?? null,
     headcountPerUnit: product.headcountPerUnit ?? null,
+    // F2 (ticketing-complete, M1) defect repair, Codex GPT-5.5 pass: was missing entirely
+    // from this object literal (not just undefined — the key never appeared at all), so
+    // weekend-pass's real regularPrice (400) was silently dropped on every seed run.
+    // CLAUDE.md's builder rule ("coalesce optionals or strip undefined") is why every
+    // optional ProvisionalAdmissionProduct field below is explicit here, not omitted —
+    // see contracts/checks/ticketing-complete-f2/check-seed-no-undefined-own-properties.mjs.
+    regularPrice: product.regularPrice ?? null,
+    // F2 (ticketing-complete, M1): must round-trip — see
+    // contracts/checks/ticketing-complete-f2/check-seed-source-citation-field.mjs. Dropping
+    // this silently would make a real, cited figure (e.g. Sunset Cocktails R800/R1500)
+    // indistinguishable from a guess once seeded, which is the same failure shape as
+    // inventing the number in the first place.
+    sourceCitation: product.sourceCitation ?? null,
   };
 }
 
-async function fetchActiveShowId(client: SanityClient): Promise<string> {
+// F2 (ticketing-complete, M1): exported so scripts/migrate-f2-ticket-taxonomy.ts can resolve
+// the same active show id through the SAME function rather than a second, independently
+// written resolution path that could silently diverge from this one — see that file's
+// runApply() for the reuse.
+export async function fetchActiveShowId(client: SanityClient): Promise<string> {
   const activeShow = await client.fetch<{ _id: string } | null>(
     `*[_type == "show" && active == true][0]{ _id }`
   );

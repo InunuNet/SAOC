@@ -135,6 +135,14 @@ export const ticketType = defineType({
           { title: 'Admission', value: 'admission' },
           { title: 'Conference', value: 'conference' },
           { title: 'Workshop / Field Trip', value: 'workshop-field-trip' },
+          // F2 (ticketing-complete, M1): negotiated 2026-09-08 with the NOS session
+          // (saocnosdesign-ea) — Exhibitor Entry is its own category, deliberately NOT
+          // folded into 'admission' (entering plants for judging is a different
+          // transaction from attending). Schema-only addition — F2 does not seed any
+          // document using this value; the exhibitor purchase surface itself lives in
+          // app/(marketing)/national-show/**, out of scope for this mission. See
+          // .agent/memory/project/specs/ticketing-complete/goldens/f2-README.md §10.
+          { title: 'Exhibitor Entry', value: 'exhibitor-entry' },
         ],
       },
       description: 'Which purchase page this ticket type is sold on.',
@@ -161,6 +169,20 @@ export const ticketType = defineType({
         'How many physical seats/heads one sold unit of this ticket type consumes against ' +
         'its capacity pool. Defaults to 1 when unset (e.g. a "couple" ticket is 2).',
       validation: (Rule) => Rule.integer().min(1),
+    }),
+    // F2 (ticketing-complete, M1): distinct from `provisional` — `provisional` means
+    // "council hasn't formally confirmed final pricing yet"; `sourceCitation` means "this
+    // number itself is not fabricated". Leave unset for a genuine web-team estimate with no
+    // client source. See lib/provisional-figures.ts's ProvisionalAdmissionProduct doc-comment
+    // and .agent/memory/project/specs/ticketing-complete/goldens/f2-provisional-figures-decisions.json.
+    defineField({
+      name: 'sourceCitation',
+      title: 'Source Citation',
+      type: 'string',
+      description:
+        'Short citation to the exact source document for this price/capacity, e.g. ' +
+        '"Lee-Ann\'s 13.1 Ticketing system details.docx, line 305-314". Leave unset for a ' +
+        'genuine web-team estimate with no client source.',
     }),
   ],
 });

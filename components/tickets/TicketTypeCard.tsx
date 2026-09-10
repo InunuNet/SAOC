@@ -61,6 +61,10 @@ export function TicketTypeCard({
 }: TicketTypeCardProps) {
   const { slug, name, price, description, soldOut, provisional } = ticketType;
   const inputId = `ticket-type-qty-${slug}`;
+  // F2 (ticketing-complete, M1): repo-wide `data-placeholder` convention (see
+  // components/societies/SocietyAbout.tsx) — lets an integrity check or Playwright grep
+  // the rendered DOM directly, rather than relying on someone noticing the text badge.
+  const placeholderAttrs = provisional ? { 'data-placeholder': 'true' } : {};
 
   function decrease() {
     if (soldOut || !onQuantityChange) return;
@@ -120,6 +124,7 @@ export function TicketTypeCard({
       <Link
         href={`/tickets/${slug}`}
         className={`${cardClassName} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2`}
+        {...placeholderAttrs}
       >
         {cardContent}
         <span className="mt-1 font-sans text-[14px] font-medium text-accent underline-offset-2">
@@ -130,7 +135,7 @@ export function TicketTypeCard({
   }
 
   return (
-    <div className={cardClassName}>
+    <div className={cardClassName} {...placeholderAttrs}>
       {cardContent}
       {hideQuantityStepper ? null : (
       <div className="flex items-center gap-2" role="group" aria-label={`${name} quantity`}>
