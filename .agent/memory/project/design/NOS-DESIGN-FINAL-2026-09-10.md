@@ -183,3 +183,54 @@ Consequences for our lane:
 - The hub's pre-existing `lg:grid-cols-5` (ten judging classes) was ruled "leave alone" by us on
   cost grounds; R13/7 now says 5 may be legitimate. Re-examine rather than assume either way.
 - D67/D86/D87/D88 (span tie-break) are CONFIRMED to stand — Codi restated them explicitly.
+
+---
+
+## R19 — THE DISCLOSED EXTENT IS A SURFACE, NOT A STRIPE (2026-09-10)
+**Supersedes R11 clause 1. The rest of R11 stands unchanged.** This UNBLOCKS the `ShowPageProse`
+rebuild.
+
+What R11 got right and R19 keeps: a notice can render first, pass every DOM assertion, and still read
+as fine print. **Structure fixes that, not colour and not size — and the structure must scope the
+EXTENT of what is unconfirmed, not merely sit above it.**
+
+What R11 got wrong: it made a dash carry provisionality. A dashed edge is the drop-zone/missing-file
+anatomy — it says *something is absent here*, when the truth is **something is present and
+unverified**. **Provisionality is STATED, not TEXTURED.** The chip and sentence say it in words; the
+anatomy's only job is scoping.
+
+1. The governed block sits on **its own surface** — low-tint ground from the canvas, no new colour,
+   **16px radius, purple-tinted shadow at its lightest step**. Top and bottom edges scope the extent
+   in BOTH directions, which a leading rail only ever did in one. Strictly better, not a compromise.
+2. **No border on any edge, dashed or solid.** The surface is drawn by ground and shadow.
+3. **The chip ATTACHES to the surface's head** — attached, not floating above. Attachment is what
+   makes chip and prose one object rather than a note sitting near some text.
+4. **The closing sentence sits INSIDE the surface, at the foot, at the quiet weight.** Outside it, it
+   is fine print again — the exact failure R11 named. This is R11's "one anatomy, two weights":
+   chip loud, sentence quiet, surface making them one anatomy.
+5. **Distinguish from a card and from a pull-quote**, both of which it could be mistaken for: shadow
+   at the LIGHTEST step (a card sits higher), FULL MEASURE (a pull-quote insets), and the chip
+   (a card carries none at its head).
+6. **NEVER NEST A DISCLOSURE. One surface per governed extent.** If a whole page is unconfirmed, one
+   surface wraps that page's prose — never one per paragraph. Sixteen pages of stacked panels is the
+   fine-print failure arriving through fatigue instead of through size.
+7. Unchanged: exact wording; the placeholder / AI-generated / awaiting-Council triad; both state inks
+   across all four dark grounds; assertions measure RENDERED TEXT.
+
+## MIRROR TRANSFER — THIRD ARTEFACT, gzip+base64 (inbound)
+Three base64 parts, gzip-compressed. Base64 ignores line breaks on decode so boundary whitespace
+cannot corrupt it, and gzip's CRC fails loudly rather than silently. Assemble, `base64 -d | gunzip`,
+then verify: **757 lines**, sha256
+`574825a223a09c306195bd16bd22674e08b803d6b5f6bc4c57423739acf3903b`.
+Longer than the failed 709 because R19 went in since.
+Codi cannot write into our repo — their scope rule makes it a stop-and-ask, and a courier doing it
+would be the same crossing with an extra hop. Raised with Brad separately.
+
+## R13/7 APPLIED TO THE HUB — I WAS WRONG, IT DROPS TO 4
+Checked `components/nos/JudgingGroupCard.tsx` rather than assuming. It renders a code badge, an
+uppercase group label, a serif name AND a 13px description paragraph — **text-bearing, and more than
+"a title plus a hint"**. So under R13/7 it caps at **4**, not 5. The hub's
+`lg:grid-cols-5` is a real defect and my earlier "leave it alone" call was wrong on the merits, not
+merely deferred on cost. n=10 → 10 mod 4 = 2, no orphan, so c=4 is clean.
+**Fix it in the M4 close-out.** Small uniform tiles (sponsor/affiliate logos, thumbnails) are the
+family that takes 5-6; this is not that family.
