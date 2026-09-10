@@ -1,0 +1,83 @@
+{
+  "_comment": "Golden name->slug map for contracts/checks/ticketing-complete-f8/verify-walkthrough-figures.mjs (contract-f8.yaml A15). This file exists so the script can recognise which lib/provisional-figures.ts product a walkthrough sentence is talking about WITHOUT hardcoding any product's actual price or date anywhere -- naming/aliasing is real product-copy knowledge only the architect/product spec should supply; baking a NUMBER in here would be exactly the second-copy-of-the-claim drift risk this assertion exists to prevent (see contract-f8.yaml A15's description and the team lead's 2026-09-08 warning re: VIP R625/R500). The script's job: for each alias found (case-insensitive) in the walkthrough doc, resolve it to `slug`, look up that slug's REAL current record in ADMISSION_PRODUCTS/CONFERENCE_PRODUCTS/WORKSHOP_FIELD_TRIP_PRODUCTS at runtime, and confirm every number/date the walkthrough cites near that mention matches one of the `fields` listed below for that product -- never a value transcribed here.",
+  "products": [
+    {
+      "slug": "early-bird",
+      "source": "ADMISSION_PRODUCTS",
+      "aliases": ["Early-Bird Exhibition Ticket", "Early-Bird Exhibition"],
+      "fields": ["price", "earlyBirdCutoff"]
+    },
+    {
+      "slug": "day-visitor",
+      "source": "ADMISSION_PRODUCTS",
+      "aliases": ["Day Visitor Ticket", "Day Visitor"],
+      "fields": ["price"]
+    },
+    {
+      "slug": "weekend-pass",
+      "source": "ADMISSION_PRODUCTS",
+      "aliases": ["Weekend Pass"],
+      "fields": ["price", "regularPrice", "earlyBirdCutoff"]
+    },
+    {
+      "slug": "vip",
+      "source": "ADMISSION_PRODUCTS",
+      "aliases": ["VIP Ticket", "VIP Pass", "VIP"],
+      "fields": ["price", "regularPrice", "earlyBirdCutoff"]
+    },
+    {
+      "slug": "saoc-symposium-early-bird",
+      "source": "CONFERENCE_PRODUCTS",
+      "aliases": ["SAOC Symposium (Early-Bird)", "SAOC Symposium Early-Bird"],
+      "fields": ["price", "earlyBirdCutoff"]
+    },
+    {
+      "slug": "saoc-symposium",
+      "source": "CONFERENCE_PRODUCTS",
+      "aliases": ["SAOC Symposium"],
+      "fields": ["price"]
+    },
+    {
+      "slug": "wosa-conference-early-bird",
+      "source": "CONFERENCE_PRODUCTS",
+      "aliases": ["WOSA Conference (Early-Bird)", "WOSA Conference Early-Bird"],
+      "fields": ["price", "earlyBirdCutoff"]
+    },
+    {
+      "slug": "wosa-conference",
+      "source": "CONFERENCE_PRODUCTS",
+      "aliases": ["WOSA Conference"],
+      "fields": ["price"]
+    },
+    {
+      "slug": "saoc-wosa-joint-early-bird",
+      "source": "CONFERENCE_PRODUCTS",
+      "aliases": ["SAOC/WOSA Joint (Early-Bird)", "SAOC/WOSA Joint Early-Bird"],
+      "fields": ["price", "earlyBirdCutoff"]
+    },
+    {
+      "slug": "saoc-wosa-joint",
+      "source": "CONFERENCE_PRODUCTS",
+      "aliases": ["SAOC/WOSA Joint"],
+      "fields": ["price"]
+    },
+    {
+      "slug": "sunset-cocktails-single",
+      "source": "WORKSHOP_FIELD_TRIP_PRODUCTS",
+      "aliases": ["Sunset Cocktails (Single)", "Sunset Cocktails Single"],
+      "fields": ["price"]
+    },
+    {
+      "slug": "sunset-cocktails-couple",
+      "source": "WORKSHOP_FIELD_TRIP_PRODUCTS",
+      "aliases": ["Sunset Cocktails (Couple)", "Sunset Cocktails Couple"],
+      "fields": ["price"]
+    },
+    {
+      "slug": "field-trip",
+      "source": "WORKSHOP_FIELD_TRIP_PRODUCTS",
+      "aliases": ["Field Trip (per outing)", "Field Trip"],
+      "fields": ["price"]
+    }
+  ]
+}

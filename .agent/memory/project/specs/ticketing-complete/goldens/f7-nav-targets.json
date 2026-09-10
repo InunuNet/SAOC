@@ -1,0 +1,23 @@
+{
+  "_comment": "Golden list of every href in components/chrome/nav-config.ts's NAV export -- flattened depth-first (top-level item hrefs, then each mega item's own column headingHrefs, then each column's leaf link hrefs), deduplicated, as of the F6 nav restructure (2026-09-08, mission ticketing-complete M3/F6: Visit/Programme/Exhibit groups, standalone Tickets, quiet Past Editions, five pending-NOS-route mega columns). REPLACES the pre-restructure list this file held until 2026-09-08, which Codex GPT-5.5 flagged as stale -- it still named /national-show, /national-show/vendors/apply, and /national-show/conferences (none of which the real NAV export produces any more) and was missing /national-show/programme, /national-show/symposium, /national-show/wosa-conference, and /national-show/exhibitors/international (all of which it does). The A5 nav-200 spec must import NAV directly (never hand-copy this list) so its own route coverage can't silently drift -- this file is the independent audit trail / cross-check on THAT claim, not the spec's source of truth. It is no longer prose alone: contract-f7.yaml's A31 imports the real NAV export at runtime and diffs its flattened hrefs against expectedHrefs below, failing closed on any divergence in either direction -- so this file drifting silently, the way it did between F6 landing and this fix, is now a contract failure, not just a stale comment. Update this file (and let A31 catch it if you don't) in the SAME commit as any change to nav-config.ts's NAV export.",
+  "expectedHrefs": [
+    "/about",
+    "/societies",
+    "/judging",
+    "/events",
+    "/members",
+    "/national-show/about",
+    "/national-show/what-to-expect",
+    "/national-show/plan-your-visit",
+    "/national-show/faq",
+    "/national-show/programme",
+    "/national-show/workshops",
+    "/national-show/symposium",
+    "/national-show/wosa-conference",
+    "/national-show/exhibitors",
+    "/national-show/exhibitors/international",
+    "/national-show/vendors",
+    "/tickets",
+    "/national-show/archive"
+  ]
+}

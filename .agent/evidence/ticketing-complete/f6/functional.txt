@@ -1,0 +1,256 @@
+=== A1 ===
+PASS A1 (shell): PASS
+=== A2 ===
+PASS A2 (shell): PASS
+=== A3 ===
+PASS A3 (shell): PASS
+=== A4 ===
+PASS A4 (shell): PASS
+=== A5 ===
+PASS A5 (shell): PASS
+=== A6 ===
+PASS A6 (shell): PASS
+=== A7 ===
+PASS A7 (shell): PASS
+=== A8 ===
+PASS A8 (shell): PASS
+   PASS: globals.css and the six baselined page components are unchanged from the pre-F6 style-freeze baseline.
+=== A9 ===
+PASS A9 (shell): PASS
+=== A13 ===
+PASS A13 (shell): PASS
+=== A14 ===
+PASS A14 (shell): PASS
+=== A15 ===
+PASS A15 (shell): PASS
+=== A16 ===
+PASS A16 (shell): PASS
+=== A17 ===
+PASS A17 (shell): PASS
+=== A18 ===
+PASS A18 (shell): PASS
+=== A19 ===
+PASS A19 (shell): PASS
+
+=== A10 / A11 / A12 (footer fix + F7 A8 flip) ===
+INTENTIONALLY NOT RUN YET — held per team lead's sequencing instruction
+("do the navigation work first, leave the footer fix and A8 flip until LAST,
+check in with the orchestrator before doing them" — see f6-README.md sec 6).
+Live footer bug independently reproduced via Playwright (see below) to confirm
+the diagnosis is real; the actual code fix + contract-f7.yaml A8 flip are
+pending orchestrator go-ahead.
+
+Live reproduction of the footer overflow bug (Playwright, page.evaluate,
+2026-09-08), against the unmodified Footer.tsx:
+  390:  scrollWidth 390,  clientWidth 390   (clean)
+  1024: scrollWidth 1043, clientWidth 1024  (OVERFLOW +19px)
+  1050: scrollWidth 1062, clientWidth 1050  (OVERFLOW +12px)
+  1280: scrollWidth 1280, clientWidth 1280  (clean)
+Screenshot confirms the Subscribe button is cut off past the right edge at
+1024px.
+
+=== npx tsc --noEmit ===
+clean, no output, exit 0
+
+=== pnpm build ===
+Compiled successfully in 13.1s
+Finished TypeScript in 6.6s
+Generating static pages using 13 workers (104/104) — all routes built,
+including /tickets and /national-show/exhibitors (ruling out a real compile
+defect after an earlier Playwright run hit ERR_CONNECTION_REFUSED against a
+stale, already-dead dev server from a concurrent agent — confirmed dead via
+`ps -p <pid>`, unrelated to this feature's changes).
+
+=== Playwright: e2e/nav-links-200.spec.ts ===
+14 passed, 5 skipped (the 5 pending NOS routes, via test.skip with a named
+reason), 0 failed. Run against a real dev server on a dynamically-assigned
+port per playwright.config.ts.
+
+=== Playwright: e2e/mobile-nav-reaches-every-section.spec.ts ===
+2 passed (390px, 320px) — each exercises 6 real click-through destinations
+(About, Societies, Judging & Awards, Events, Members Portal, Tickets) with
+page.waitForURL + expect(page).toHaveURL assertions.
+
+=== Playwright: e2e/nav-keyboard-operable.spec.ts ===
+5 passed — Enter opens the dropdown, Space opens the dropdown, visible focus
+indicator (getComputedStyle) on the trigger, visible focus indicator on an
+item inside the open panel, Escape closes and returns focus to the trigger.
+Re-ran twice for stability (5/5 both times); one earlier run in the same
+process as another spec file produced a single non-reproducing flake.
+
+=== Prove-tests-can-fail mutations (all reverted, diffed clean against backup) ===
+1. components/chrome/MegaMenu.tsx: hardcoded aria-expanded={false} (breaking
+   the disclosure pattern) -> e2e/nav-keyboard-operable.spec.ts "opens via
+   Enter" test went RED (toHaveAttribute expected "true", got "false") ->
+   reverted -> GREEN.
+2. components/chrome/nav-config.ts: changed About's href to '/about-BROKEN'
+   -> contract A3 went RED, e2e/mobile-nav-reaches-every-section.spec.ts
+   "390px" went RED (waitForURL timeout, stuck on /about-BROKEN) -> reverted
+   -> both GREEN.
+
+=== FOOTER FIX + A12 FLIP — completed after orchestrator go-ahead ===
+Orchestrator independently ran F7's A8 sub-test BEFORE clearing the gate and
+confirmed the same live numbers (1043/1024, 1062/1050), banking the "harness
+is looking at something real" proof before F6 touched anything.
+
+Fix applied: components/chrome/Footer.tsx — added `min-w-0` to the flex-1
+email input (real min-width fix, not overflow-x:hidden — verified the
+Subscribe button is actually visible and reachable at 1024px via screenshot,
+not merely that the overflow measurement went green).
+
+contract-f7.yaml A8 flipped: dropped the leading `!`, updated the
+description to state it was flipped and why (no longer says "RED TODAY, BY
+DESIGN").
+
+=== A10 / A11 / A12 — final run ===
+A10 PASS, A11 PASS (playwright 1024/1050 grep, 2 passed), A12 PASS.
+
+=== Full 19/19 contract.py run (final) ===
+A1-A19 all PASS.
+
+=== Post-fix live measurement (Playwright page.evaluate) ===
+  1024: scrollWidth 1024, clientWidth 1024  (exact match, no overflow)
+  1050: scrollWidth 1050, clientWidth 1050  (exact match, no overflow)
+Screenshot confirms Subscribe button fully visible and reachable within the
+1024px viewport (not clipped, not hidden by overflow masking).
+
+=== Prove-can-fail #3 (footer) ===
+Reverted min-w-0 on components/chrome/Footer.tsx's input -> contract A10 RED,
+e2e/no-horizontal-overflow.spec.ts --grep "1024|1050" RED with the SAME
+numbers as the original bug (1043/1024, 1062/1050) -> restored (diffed clean
+against backup) -> both GREEN again.
+
+=== Full regression run after all changes ===
+npx tsc --noEmit: clean.
+pnpm build: clean, all 104 routes.
+npx playwright test e2e/no-horizontal-overflow.spec.ts e2e/nav-links-200.spec.ts
+  e2e/mobile-nav-reaches-every-section.spec.ts e2e/nav-keyboard-operable.spec.ts:
+  25 passed, 5 skipped (pending NOS routes), 0 failed.
+
+=== 1240-1400px band measurement (team lead's ask) ===
+No horizontal overflow anywhere in the band (scrollWidth == clientWidth at
+1240, 1250, 1280, 1320, 1400 — all exact matches). NOT broken.
+TIGHT, however: at 1240-1320px, "Judging & Awards" and "Exhibit & Trade"
+wrap to 2-3 lines each, visibly increasing header height and looking
+crowded (screenshotted at 1240, 1250, 1320 — reviewed personally). This is
+a pre-existing label-wrapping behavior (Judging & Awards wrapped before too)
+made more prominent by having 10 top-level items instead of 6 sharing the
+same >=1240px space. Nothing is clipped, nothing overflows, and every item
+stays fully clickable — this is a visual-density issue, not a functional
+defect. Per the team lead's instruction, NOT fixed tonight (redesigning the
+breakpoint/spacing is out of this measurement's scope) — logged as a
+follow-up instead (see dev-result-ticketing-complete-f6.md).
+
+=== 1240-1400px WRAP FIX (Codex-confirmed defect, team lead override) ===
+Codex independently found the same band Codex was told about via review
+("components/chrome/Header.tsx:92 -- the expanded 10-item NAV cannot fit ...
+Labels will wrap"). Team lead overrode the earlier "log as follow-up" call
+since two independent reviewers converged on the same real defect at 1280px
+(a very common desktop width).
+
+Direction: shorten labels, do not raise the hamburger breakpoint.
+
+Changes:
+- components/chrome/nav-config.ts: 'Judging & Awards' -> 'Judging' (revert to
+  the pre-F6 established label, matches /judging route). 'Exhibit & Trade' ->
+  'Exhibit' on the top-level trigger; the fuller "Exhibit & Trade" wording
+  moved to the group's `ctaLabel` (rendered inside the open dropdown, where
+  there's room) -- confirmed via screenshot
+  (.tmp/sandbox/f6-devcheck/shots/mobile-exhibit-expanded.png).
+- e2e/mobile-nav-reaches-every-section.spec.ts: updated the 'Judging & Awards'
+  click target to 'Judging' to match.
+- contract-f6.yaml A1: deliberately updated (not weakened) -- now checks
+  `label: 'Exhibit'` plus `ctaLabel: 'Exhibit & Trade'` instead of the old
+  single combined-label regex. Description updated explaining the same-day
+  rationale. The assertion still proves the Exhibit group exists as a
+  distinct structure; only the expected label string changed to match the
+  corrected, shorter trigger text.
+
+Re-measurement after the fix (Playwright page.evaluate, scrollWidth vs
+clientWidth):
+  1240: 1240/1240 (exact match, no overflow) -- unchanged from before
+  1250: 1250/1250 (exact match, no overflow) -- unchanged from before
+  1280: 1280/1280 (exact match, no overflow) -- unchanged from before
+  1320: 1320/1320 (exact match, no overflow) -- unchanged from before
+  1400: 1400/1400 (exact match, no overflow) -- unchanged from before
+No regression into overflow at any width in the band.
+
+Wrap check (per-item bounding-box height in the primary nav, >24px height ==
+wrapped to 2 lines): at 1240/1250/1280/1320/1400, ONLY "Members Portal" and
+"Past Editions" wrap (both pre-existing two-word labels, same wrap behavior
+these labels had before this mission at similarly narrow widths -- not the
+flagged defect). "Judging" and "Exhibit" now render on a single line at every
+width in the band, confirmed both by the wrap-height check and by
+screenshot (.tmp/sandbox/f6-devcheck/shots/header-band2-1240.png and
+header-band2-1280.png) -- every top-level item legible on one line except
+those two pre-existing exceptions.
+
+Verification after the label fix:
+- npx tsc --noEmit: clean.
+- All 19 contract-f6.yaml assertions re-run: PASS (A1 re-verified against
+  its updated command).
+- pnpm build: clean, all routes (one retry needed due to a concurrent
+  agent's build lock -- documented as expected in the F6 brief, not a
+  failure).
+- Full 4-spec Playwright regression (overflow + nav-links-200 + mobile-nav +
+  keyboard): 25 passed, 5 skipped (pending NOS routes), 0 failed.
+- Mobile drawer at 390px re-screenshotted with the new labels
+  (mobile-menu-390-relabeled.png): reads correctly, "Judging" and "Exhibit"
+  fit on one line same as every other item; expanding "Exhibit" shows the
+  "EXHIBIT & TRADE ->" CTA with the fuller wording, confirming the
+  ctaLabel wiring works end-to-end on mobile too.
+
+=== MOBILE-NAV GROUP COVERAGE FIX (Codex-confirmed gap) ===
+Codex found that e2e/mobile-nav-reaches-every-section.spec.ts never opened a
+mega-menu group and never navigated to any destination behind Visit,
+Programme, or Exhibit -- only the six flat top-level links were exercised.
+Team lead verified this by reading the spec and confirmed it as a real gap:
+the file's own name promises "every section" but the dropdown-heavy shape it
+called out as the risk in its own header comment was exactly what it skipped.
+
+Fix: rewrote e2e/mobile-nav-reaches-every-section.spec.ts to add explicit
+per-destination tests for every leaf inside all three groups (Visit:
+About the Show/What to Expect/Plan Your Visit/FAQ; Programme: Programme of
+Events/Workshops & Field Trips/SAOC Symposium/WOSA Conference; Exhibit: South
+African Exhibitors/International Exhibitors/Vendors), at both 390 and 320px.
+Each test: opens the drawer, expands the group trigger (asserting
+aria-expanded false->true, matching the desktop keyboard-operability
+standard), asserts the destination link visible, clicks it, and asserts
+waitForURL/toHaveURL -- the same non-text-presence discipline used
+throughout. Destinations listed in f6-pending-nos-routes.json are
+`test.skip`'d by name (imported from the same fixture nav-links-200.spec.ts
+uses -- one source of truth, no hand-maintained second skip list) rather than
+silently omitted. Every group has at least one non-pending destination
+genuinely exercised: Visit has 3 (What to Expect, Plan Your Visit, FAQ),
+Programme has 1 (Workshops & Field Trips -- its other three destinations are
+all pending NOS routes), Exhibit has 2 (South African Exhibitors, Vendors).
+
+Run: 24 tests generated (12 per width), 14 passed, 10 skipped (pending
+routes), 0 failed.
+
+Prove-can-fail #4: broke the Programme group's "Workshops & Field Trips" href
+in nav-config.ts (appended '-BROKEN') -> the new
+`mobile nav "Programme" reaches "Workshops & Field Trips" at 390px` test went
+RED (waitForURL timeout, stuck on the broken URL) -> reverted (diffed clean
+against a backup) -> GREEN again. This is the coverage that did NOT exist
+before this fix -- confirms the new group-navigation tests actually catch a
+broken destination behind a dropdown, closing the exact gap Codex flagged.
+
+Re-verified after the fix:
+- npx tsc --noEmit: clean.
+- All 19 contract-f6.yaml assertions: PASS (A13/A14/A19 re-checked
+  specifically since they reference this file).
+- Full 4-spec Playwright regression (overflow + nav-links-200 + mobile-nav +
+  keyboard): 37 passed, 15 skipped (pending NOS routes, both nav-links-200's
+  5 and mobile-nav's 10), 0 failed.
+- pnpm build: NOT confirmed this round -- hit a persistent concurrent-agent
+  build lock across 3 retries ("Another next build process is already
+  running"), documented as an expected condition in the F6 brief. This
+  round's net change is e2e spec + contract.yaml only (nav-config.ts was
+  mutated then reverted for the prove-can-fail test, net diff is zero); tsc
+  is clean and the live Playwright run already exercised the dev server
+  compiling and serving every touched page successfully, which is the
+  stronger runtime proof for this specific change.
+- goldens/f7-nav-targets.json intentionally NOT edited per team lead's
+  explicit instruction (Codex flagged it as stale against the restructured
+  nav; that file is the architect's to own, routed there, not touched here).

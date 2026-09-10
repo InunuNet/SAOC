@@ -1,0 +1,131 @@
+ticketing-complete M1/F7 — Self-test harness (Playwright, from zero)
+Evidence log — 2026-09-08
+
+=== Contract assertions (execution/contract.py check <contract-f7.yaml> --assertion <ID>) ===
+Final run, all 21/21 PASS:
+
+A1  PASS  playwright.config.ts + all 5 e2e spec files + support file exist
+A2  PASS  test:e2e script literally invokes playwright
+A3  PASS  no hardcoded port literal (3002/3333/3911/3913/3914/3915/3916/3999) anywhere
+A4  PASS  net.createServer in dynamic-port.ts, getFreeLocalPort referenced in config,
+          reuseExistingServer: false
+A5  PASS  nav-links-200.spec.ts imports NAV from the real nav-config.ts
+A6  PASS  overflow spec covers 390/1024/1050/1280
+A7  PASS  overflow spec measures scrollWidth, never toHaveClass/className.includes
+A8  PASS  (inverted) `npx playwright test e2e/no-horizontal-overflow.spec.ts --grep
+          "1024|1050"` exits non-zero today -- the live footer overflow defect is real
+          and detected, not silently green. Confirmed independently below.
+A9  PASS  sold-out-and-empty-states.spec.ts uses page.route(), no Sanity client
+A10 PASS  data-placeholder assertion present in no-fabricated-content.spec.ts
+A11 PASS  banned-token literals (undefined/NaN/Lorem ipsum|TODO|FIXME) present
+A12 PASS  no saoc.co.za / .hosted.app / .run.app reference anywhere in the harness
+A13 PASS  no mutating Sanity call anywhere under e2e/
+A14 PASS  golden README documents the F3/F4 extension convention (pre-existing golden)
+A15 PASS  contact-form-mocked.spec.ts mocks POST /api/contact via page.route + fulfill
+A16 PASS  intercepted-flag pattern present and asserted true after submit, both forms
+A17 PASS  no resend/@sanity/client import, no mutating Sanity call in the contact spec
+A18 PASS  no other e2e spec submits /contact or /members
+A19 PASS  golden README documents the whole-file-scan tradeoff (pre-existing golden)
+A20 PASS  .github/workflows/ci.yml runs `pnpm test:e2e` alongside lint/type-check/build
+A21 PASS  contracts/checks/ticketing-complete-f7/verify_ci_step_reachable.py confirms the
+          step sits in a job with no disqualifying `if:`, unconditional, not downstream of
+          a continue-on-error/failure() branch. Golden README's "DETECTION-ONLY, not
+          enforcement" / "no branch protection" text confirmed present (pre-existing golden).
+
+=== npx tsc --noEmit ===
+Exit 0, no errors (includes all new e2e/*.ts and playwright.config.ts under the repo's
+existing tsconfig "@/*" path alias).
+
+=== Real Playwright runs (pnpm exec playwright test <file> --workers=1) ===
+
+e2e/nav-links-200.spec.ts
+  16/16 passed (NAV export non-empty + 15 real hrefs from goldens/f7-nav-targets.json,
+  all live at the time this was run). NOTE: after this run, a concurrent F6 session
+  restructured nav-config.ts (new mega-menu groups, five NOS routes not yet built) and
+  itself patched this spec file to skip those five via a golden
+  fixtures/f6-pending-nos-routes.json exception list -- accepted as current, correct
+  state per the standing instruction to treat such concurrent changes as deliberate.
+
+e2e/no-horizontal-overflow.spec.ts
+  390px  PASS
+  1024px FAIL -- scrollWidth 1043 > clientWidth 1024 (real footer overflow defect)
+  1050px FAIL -- scrollWidth 1062 > clientWidth 1050 (same defect)
+  1280px PASS
+  This is the EXPECTED shape per A8 -- confirms the harness is looking at real,
+  live geometry, not a vacuous check. Proved falsifiable both ways: at 1280/390 the
+  same measurement technique reports PASS, and A8's inverted command independently
+  confirms 1024/1050 report FAIL via the actual `npx playwright test --grep` command
+  from the contract, not just this ad hoc run.
+
+e2e/sold-out-and-empty-states.spec.ts
+  2/2 passed (sold-out fixture, empty/sales-closed fixture). See file-header comment
+  for the documented, deliberate architecture note: /tickets is a fully server-rendered
+  page (Sanity + Firebase Admin SDK, force-dynamic) with no client-side fetch boundary,
+  so this spec mocks the whole top-level /tickets navigation response via page.route()
+  rather than a narrower data call -- this buys DOM-shape regression coverage, not full
+  live-integration coverage of the real capacity math. Flagged in the dev report as
+  worth the architect/team lead's attention rather than silently overclaiming.
+
+e2e/no-fabricated-content.spec.ts
+  10/10 passed: 7 live-page banned-token scans (/, /about, /societies, /judging,
+  /events, /members, /tickets) + 1 data-placeholder-reaches-DOM check via the same
+  page.route() fixture approach as sold-out-and-empty-states.spec.ts.
+
+e2e/contact-form-mocked.spec.ts
+  2/2 passed (ContactForm on /contact, SuggestionForm on /members), each confirmed by:
+    - route callback firing (interceptedContactRequest flag asserted true)
+    - success UI ("Thank you") rendering
+    - NO request ever reaching the real /api/contact route (confirmed during debugging
+      via a throwaway instrumented script -- see "Real bugs found" below)
+
+=== Proven falsifiable (broke the property, saw red, restored, saw green) ===
+1. no-horizontal-overflow.spec.ts: the 1024/1050 cases are, right now, genuinely red
+   against the live app (not manufactured) -- proven via both an ad hoc full run and
+   via A8's exact contract command. 390/1280 passing on the identical assertion
+   technique proves the check does discriminate real geometry, not "always fails" or
+   "always passes".
+2. contact-form-mocked.spec.ts: initially failed for a REAL reason (documented below),
+   fixed, then passed -- not adjusted to force a pass.
+3. Dynamic port sharing: initially failed (webServer and test worker resolved to
+   DIFFERENT ports, ERR_CONNECTION_REFUSED on every nav test) until the port was cached
+   in process.env so every process in one `playwright test` invocation agrees -- fixed,
+   then 16/16 nav tests passed.
+
+=== Real bugs found and fixed during F7 build (harness bugs, not contract deviations) ===
+1. playwright.config.ts cannot use a top-level `await` while the repo has no
+   `"type": "module"` in package.json (changing that repo-wide was out of scope) --
+   config.ts loads as CommonJS and top-level await threw "ReferenceError: await is not
+   defined". Fixed by building the whole config in an async function and exporting the
+   resulting Promise; Playwright's config loader awaits a Promise-shaped default export.
+2. Each Playwright worker process re-`require()`s playwright.config.ts. A naive
+   `await getFreeLocalPort()` on every load handed the main process (which starts
+   `webServer`) one port and each worker (which sets `use.baseURL`) a DIFFERENT port --
+   every nav test failed with ERR_CONNECTION_REFUSED even though the dev server was
+   genuinely running, just on a different port than the test was hitting. Fixed by
+   caching the discovered port in `process.env.SAOC_E2E_DYNAMIC_PORT` on first
+   computation; worker processes inherit the parent's environment.
+3. Using `127.0.0.1` (not `localhost`) as the base URL tripped Next 16's
+   `allowedDevOrigins` cross-origin dev-request guard on the HMR websocket
+   (`next.config.ts` only allowlists this project's own secure local dev hostname).
+   The blocked HMR socket caused the Next dev client to force full-page reloads mid-test,
+   silently wiping typed form values and the pending click before the real submit ever
+   fired -- contact-form-mocked.spec.ts failed with no request ever reaching the mocked
+   route, and no visible error state either (the reload raced with the assertion).
+   Diagnosed with a throwaway instrumented Playwright script (not committed) logging
+   console/network events, which showed the "Download the React DevTools" message
+   logging twice per page visit (i.e. two full loads) and the WS handshake failing with
+   net::ERR_INVALID_HTTP_RESPONSE. Fixed by using `localhost` for the harness's base URL
+   instead of the loopback IP -- zero changes to next.config.ts (contract-owned, out of
+   scope for F7).
+4. Next's dev-server lock (`.next/dev/lock`) is scoped to the PROJECT DIRECTORY, not to
+   the port -- running a second `next dev` (even on a different port) against the same
+   checkout fails immediately with "Another next dev server is already running." This
+   collided repeatedly with other agents' concurrently running dev servers during this
+   session (expected, per the brief's own "other agents are working concurrently... is
+   a collision, retry" note) and is worth flagging: any CI or local run of this harness
+   will fail outright if something else already has `next dev` open against this exact
+   checkout, regardless of the dynamic port scheme -- the dynamic port protects against
+   PORT collisions, not against this directory-level lock. Not fixed (out of scope --
+   this is Next's own behavior, not a bug in the harness), but worth the team's
+   awareness: CI runners are single-checkout-per-job so this won't bite there; it can
+   bite two agents developing in the same local checkout simultaneously.

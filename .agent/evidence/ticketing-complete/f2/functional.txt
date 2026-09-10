@@ -1,0 +1,443 @@
+ticketing-complete M1/F2 — functional evidence
+===============================================
+
+## Contract assertions (contract-f2.yaml, 15 total)
+
+Command (each run individually):
+  python3 execution/contract.py check .agent/memory/project/specs/ticketing-complete/contract-f2.yaml --assertion <ID>
+
+Results:
+  A1  PASS
+  A2  PASS
+  A3  PASS
+  A4  PASS
+  A5  PASS
+  A6  PASS
+  A7  PASS
+  A8  PASS
+  A9  PASS
+  A10 PASS
+  A11 PASS
+  A12 PASS
+  A13 PASS
+  A14 PASS
+  A15 PASS (see note below — contract.py's own YAML parsing of A15's command hits a shell
+            quoting bug in the harness (`unexpected EOF while looking for matching '''`),
+            unrelated to this feature's code; the assertion's literal command was run by
+            hand and passes — reproduced below)
+
+  A15 manual run:
+    $ test "$(grep -oE "name: '(SAOC Symposium|WOSA Conference|SAOC/WOSA Joint)" lib/provisional-figures.ts | sort -u | wc -l | tr -d ' ')" = "3" && echo PASS
+    PASS
+
+## A3/A4 runtime proof (exact commands + full output)
+
+$ env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u NEXT_PUBLIC_SANITY_DATASET \
+    node --import tsx/esm scripts/migrate-f2-ticket-taxonomy.ts
+F2 ticket taxonomy migration — DRY RUN (no writes, no Sanity credentials required)
+  --apply was NOT passed. Nothing below has been applied to the dataset.
+  ticketType-early-bird: would setIfMissing category = 'admission'
+  ticketType-day-visitor: would setIfMissing category = 'admission'
+  ticketType-weekend-pass: would setIfMissing category = 'admission'
+  ticketType-vip: would setIfMissing category = 'admission'
+  ticketType-early-bird-weekend-pass: would set active = false (has 1 real Firestore position against this slug — a real booking. Retire only; never delete or rename.)
+  ticketType-field-trip-single: would set active = false (invented bundle-split figure superseded by the single flat-rate Field Trip product)
+  ticketType-field-trip-all-outings: would set active = false (invented bundle-split figure superseded by the single flat-rate Field Trip product)
+  ticketType-sunset-cocktails-single: would set price = 800, sourceCitation = "Lee-Ann's 13.1 Ticketing system details.docx, line 305-314"
+  ticketType-sunset-cocktails-couple: would set price = 1500, sourceCitation = "Lee-Ann's 13.1 Ticketing system details.docx, line 305-314"
+  ticketType-field-trip: would createIfNotExists (name="Field Trip (per outing)", price=200)
+Dry run complete — no documents were touched.
+Exit code: 0
+
+No "patched"/"written"/"created (applied)" string appears anywhere in the output.
+
+## TypeScript
+
+$ npx tsc --noEmit
+(no output, exit 0)
+
+## Build
+
+$ bun run build
+(completed with no errors; full route manifest printed; exit 0)
+
+## Deliberate-failure proofs (break -> confirm red -> restore -> confirm green)
+
+A2 — introduced a `--dry-run` argv check alongside `--apply`:
+  Before: PASS
+  Broken (`const APPLY = ...; const DRY = process.argv.includes('--dry-run');`): FAIL
+  Restored: PASS
+
+A5 — replaced `.set({ active: false })` on the retire path with `client.delete(op.id)`:
+  Before: PASS
+  Broken: FAIL
+  Restored: PASS
+
+A8 — re-appended `const FIELD_TRIP_SINGLE_PRICE = 300;` to lib/provisional-figures.ts:
+  Before: PASS
+  Broken: FAIL
+  Restored: PASS
+
+A9 — added the literal show date `2027-09-16` into the `saoc-symposium` product's description:
+  Before: PASS
+  Broken: FAIL
+  Restored: PASS
+
+A10 — added a `slug: 'workshop-session-1'` literal to lib/provisional-figures.ts:
+  Before: PASS
+  Broken: FAIL
+  Restored: PASS
+
+A14 — removed the `{ title: 'Exhibitor Entry', value: 'exhibitor-entry' }` schema option line:
+  Before: PASS
+  Broken: FAIL
+  Restored: PASS
+
+## Assertions that could NOT be driven red by a realistic production defect (contract weakness, not code defect — reported to team lead separately)
+
+A7 — `grep -qE "\b800\b"` matches unrelated code (e.g. `capacity: 800` on the Day Visitor
+  admission product) even when the real Sunset Cocktails price is changed away from 800.
+  Verified: changing SUNSET_COCKTAILS_SINGLE_PRICE from 800 to 700 left A7 green because
+  `capacity: 800` elsewhere in the file still satisfies the numeric grep.
+
+A11 — `grep -q "data-placeholder" components/tickets/TicketTypeCard.tsx` is a static grep
+  that matches the string appearing anywhere in the file (variable name, comments), not
+  proof that the attribute is actually attached to the rendered root element when
+  `provisional === true`. Verified: setting `placeholderAttrs = {}` unconditionally (so the
+  attribute is NEVER attached) left A11 green, because the identifier `placeholderAttrs`/
+  comment text still contains the substring "data-placeholder".
+
+A15 — `grep -oE "name: '(SAOC Symposium|WOSA Conference|SAOC/WOSA Joint)"` counts DISTINCT
+  MATCHED PREFIXES, not occurrence counts or product identity. Verified: adding a genuinely
+  new 4th conference product whose name happens to start with one of the three allowed
+  prefixes (e.g. "WOSA Conference Extra Track") does NOT change the distinct-prefix count
+  and so does not fail A15, even though it is exactly the "a fourth family" defect A15's own
+  description says it guards against. A prefix collision, not a name-identity check, would
+  slip through undetected.
+
+Both weaknesses fall in this project's own previously-audited "assertion satisfiable by
+something that isn't the real property" defect class (see workflow.md's Codex-review
+rationale). The implementation itself is correct against the golden decision records; these
+are reported as contract-quality findings, not implementation gaps.
+
+## Follow-up: setIfMissing vs present-and-null hazard (raised by team lead 2026-09-08)
+
+Question: does `category: null` in the original audit's GROQ output mean the field is
+genuinely ABSENT (setIfMissing correct) or PRESENT-and-null (setIfMissing would silently
+no-op)? GROQ's plain field projection returns `null` for both cases indistinguishably.
+
+New file: `scripts/f2-diagnose-category-field.ts` — READ-ONLY (only `client.fetch()`, no
+`.patch()`/`.commit()`/`.create()`/`.delete()` anywhere in the file). Checked two independent
+ways against the live "production" dataset:
+
+1. `defined(category)` via GROQ — false for all 5 documents checked (4 admission SKUs +
+   early-bird-weekend-pass cross-reference). Per Sanity's own semantics this alone does NOT
+   distinguish absent from present-null (both give `defined() == false`) — reported as a
+   cross-reference only, not the answer.
+2. Raw document JSON (no field projection) inspected in JS via
+   `Object.prototype.hasOwnProperty.call(doc, 'category')` — this DOES distinguish the two
+   cases, since a present-but-null field would still appear as an object key in the raw doc.
+
+Result (exact output):
+  ticketType-early-bird: category is ABSENT
+  ticketType-day-visitor: category is ABSENT
+  ticketType-weekend-pass: category is ABSENT
+  ticketType-vip: category is ABSENT
+  ticketType-early-bird-weekend-pass: category is ABSENT
+
+Conclusion: `category` is genuinely absent, not present-and-null, on all 4 documents the
+migration's category-patch ops target. `setIfMissing` is correct and the more conservative
+choice — kept as-is, not changed to `set`. Recorded this confirmation inline in
+`buildMigrationPlan()`'s comment (scripts/migrate-f2-ticket-taxonomy.ts) so a future reader
+sees it was checked, not assumed.
+
+Also strengthened `runVerify()` (same file) per the team lead's 3rd requirement: it now
+compares the ACTUAL post-apply field values against the plan's intended values for every op
+kind (previously the `create` branch only checked `doc != null`, which would pass even
+against a document created with wrong price/category/active — now checks
+`price`/`category`/`active` match; `price-patch` now also checks `sourceCitation` landed).
+A verify run against an untouched dataset will report MISMATCH for every op, not a false OK.
+
+Re-verified after these changes: 15/15 contract assertions still PASS, `tsc --noEmit` exit 0,
+`bun run build` exit 0, A3/A4 runtime proof re-run and still clean.
+
+No writes were made to the dataset at any point during this diagnosis — only `client.fetch()`
+calls.
+
+## Follow-up: Codex GPT-5.5 FAIL — sourceCitation dropped by scripts/seed-ticketing.ts (2026-09-08)
+
+Confirmed the finding: `buildTicketTypeDoc()` in scripts/seed-ticketing.ts:119-144
+enumerated every ticketType field explicitly and did not include `sourceCitation` — the
+identifier appeared nowhere in that file. Any document created by the normal seeder would
+silently lose its citation, making a real, cited figure indistinguishable from a guess once
+seeded.
+
+Fix: added `sourceCitation: product.sourceCitation ?? null,` to buildTicketTypeDoc's return
+object (scripts/seed-ticketing.ts). Also added the corresponding field to the Sanity schema
+(sanity/schemas/documents/ticketType.ts) — it was missing there too, which would have meant
+even a document that DID carry the field couldn't be seen/edited in Studio.
+
+New round-trip check: `contracts/checks/ticketing-complete-f2/check-seed-source-citation-field.mjs`
+— mirrors the precedent `check-seed-category-field.mjs` pattern exactly: imports the real,
+exported, pure `buildTicketTypeDoc()` and asserts every product's `sourceCitation` (including
+at least one real non-null citation, so the check can't pass vacuously) survives into the
+built document.
+
+  $ npx tsx contracts/checks/ticketing-complete-f2/check-seed-source-citation-field.mjs
+  PASS: scripts/seed-ticketing.ts round-trips sourceCitation (including at least one real,
+  non-null citation) onto every built ticketType document.
+
+Deliberate-failure proof: removed the new line from buildTicketTypeDoc → all 13 products
+FAILED with "the field was dropped by buildTicketTypeDoc" → restored the line → PASS again.
+
+Re-verified after the fix: 15/15 F2 contract assertions still PASS, `tsc --noEmit` exit 0,
+`bun run build` exit 0, A3/A4 runtime proof re-run clean.
+
+## Noted but NOT mine to fix (reported, not silently patched)
+
+Ran `contracts/checks/ticketing-purchase-pages-f3/check-seed-category-field.mjs` (a DIFFERENT
+feature's pre-existing check) out of caution after seeing my WORKSHOP_FIELD_TRIP_PRODUCTS
+edit changes array lengths. It hardcodes an expectation of exactly 15 total products across
+ADMISSION_PRODUCTS + CONFERENCE_PRODUCTS + WORKSHOP_FIELD_TRIP_PRODUCTS. Checked
+`git show HEAD:lib/provisional-figures.ts` before concluding anything: at HEAD (before any of
+my F2 changes) the real total was already 14 (4 + 6 + 4), not 15 — this check's hardcoded
+"15" was already stale/wrong before I touched the file, same shape as the ticketing-workshops-f2
+capacity check the team lead independently found pre-existing-red. My change (retiring 2
+invented Field Trip SKUs, adding 1 flat-rate replacement) moves the real total to 13. Not
+fixing this check myself — it belongs to a different feature (ticketing-purchase-pages-f3),
+and per the team lead's own guidance on the sibling ticketing-workshops-f2 check, updating a
+stale count assertion for a product-shape change is @architect's call, not something to
+silently patch in passing.
+
+## Follow-up: real-customer check on retired SKUs (QA request, 2026-09-08)
+
+Question: do real Firestore positions exist against the two retired Field Trip SKUs
+(`field-trip-single`, `field-trip-all-outings`) or `early-bird-weekend-pass`, and is the
+oft-repeated "1 real position" figure for `early-bird-weekend-pass` actually verified?
+
+New file: `scripts/f2-diagnose-firestore-positions.ts` — READ-ONLY. Only `.where().get()`
+calls against Firestore. No `.set()`/`.update()`/`.delete()`/`.create()` anywhere in the
+file, and it never touches Sanity at all (no `@sanity/client` import).
+
+Environment queried: live Firestore, the same project the deployed app reads at runtime
+(FIREBASE_ADMIN_PROJECT_ID/CLIENT_EMAIL/PRIVATE_KEY read from .env.local, same as every
+other admin-credentialed script in this repo).
+
+Exact output:
+  field-trip-single:
+    total positions: 0
+    by status: {}
+    sum of 'amount' across paid/checked-in positions only: R0
+  field-trip-all-outings:
+    total positions: 0
+    by status: {}
+    sum of 'amount' across paid/checked-in positions only: R0
+  early-bird-weekend-pass:
+    total positions: 1
+    by status: {"paid":1}
+    sum of 'amount' across paid/checked-in positions only: R380
+
+Conclusion:
+  - field-trip-single / field-trip-all-outings: 0 real positions each — retiring these two
+    SKUs affects NO real customers.
+  - early-bird-weekend-pass: the "1 real position" figure is CONFIRMED, not merely repeated
+    — one genuinely `paid` position (not a stranded/expired `reserved` hold) at R380. This is
+    a real customer, and retiring the SKU (never deleting it) means Brad must decide how to
+    treat that customer before --apply runs.
+
+docs/ticketing-complete-f2-open-decisions.md §2 updated with a "Real customer confirmation"
+subsection recording this exact result and stating explicitly that Brad must decide
+(honour-at-original-price / leave-untouched / other) before running --apply. No decision was
+picked on his behalf.
+
+Note: initial version of the diagnostic script used a naive single-line .env.local parser
+and threw "Failed to parse private key" — FIREBASE_ADMIN_PRIVATE_KEY is a quoted PEM block
+with real embedded newlines, which a naive splitter truncates. Fixed by reusing the same
+multi-line-aware readEnvLocal() already proven correct in scripts/scan-firestore-residue.ts,
+rather than inventing a third parser.
+
+Re-verified after adding this file: 15/15 F2 contract assertions still PASS, `tsc --noEmit`
+exit 0, `bun run build` exit 0.
+
+No writes were made to Firestore or Sanity at any point during this diagnosis.
+
+## Follow-up: full builder sweep for undefined/dropped optional fields (team lead request, 2026-09-08)
+
+Instruction: since Codex caught sourceCitation being dropped by buildTicketTypeDoc, check
+the WHOLE builder for any other optional field that can reach the document as undefined or
+be silently omitted, and fix the pattern once rather than waiting for a second Codex pass.
+
+Found: `regularPrice` (existing OPTIONAL field on ProvisionalAdmissionProduct, set to 400 on
+the live `weekend-pass` product) was never referenced anywhere in buildTicketTypeDoc's
+object literal — not undefined, fully MISSING as a key. Same silent-drop failure shape as
+sourceCitation, pre-existing (not introduced by F2), not caught until this sweep.
+
+Fix: added `regularPrice: product.regularPrice ?? null,` to buildTicketTypeDoc
+(scripts/seed-ticketing.ts). Also brought scripts/migrate-f2-ticket-taxonomy.ts's `create`
+op doc for the new field-trip product up to the same full field set (it was previously
+missing earlyBirdCutoff, releasedQuantity, and regularPrice entirely — a dry-run-only plan
+object, never written, but worth being complete/consistent since a real --apply, when Brad
+eventually runs it, should create a fully-shaped document).
+
+New generic guard: `contracts/checks/ticketing-complete-f2/check-seed-no-undefined-own-properties.mjs`
+— builds a document for every real product and fails if (a) any own-property value is
+`undefined`, or (b) any of the 20 documented keys is missing entirely. This is the CLAUDE.md
+builder rule ("coalesce optionals or strip undefined ... never leave undefined
+own-properties") made into a runtime check, generic across the whole object rather than one
+field at a time.
+
+  $ npx tsx contracts/checks/ticketing-complete-f2/check-seed-no-undefined-own-properties.mjs
+  PASS: buildTicketTypeDoc() writes every documented key on every product, with no undefined
+  own-properties anywhere in the output.
+
+Deliberate-failure proof: removed the new regularPrice line → all 13 products FAILED "built
+doc is missing the 'regularPrice' key entirely" → restored → PASS again.
+
+Re-verified after these changes: 15/15 F2 contract assertions still PASS, `tsc --noEmit`
+exit 0, `bun run build` exit 0, A3/A4 runtime dry-run proof re-run clean (no Sanity writes,
+no --apply).
+
+## Follow-up: Codex FAIL — migration create-op missing slug/show (2026-09-08)
+
+Confirmed the finding: scripts/migrate-f2-ticket-taxonomy.ts's `create` op for the new
+flat-rate Field Trip product hand-rolled its own object literal and omitted both `slug` and
+`show` — the document would never resolve via ticketTypeBySlugQuery and would be rejected by
+checkout for having no valid show reference. Would have looked correct in Studio's list
+(name/price/description present) and been completely unbuyable.
+
+Fix: the migration now builds this document through the SAME exported, pure
+`buildTicketTypeDoc()` scripts/seed-ticketing.ts uses (imported, not duplicated), and
+resolves the real active show id via the SAME exported `fetchActiveShowId()` (also imported
+from seed-ticketing.ts, no second resolution path). `buildMigrationPlan()` now takes a
+`showId` parameter — the dry-run/print path passes a documented sentinel
+(SHOW_ID_PLACEHOLDER_FOR_DRY_RUN) so it stays callable with zero network/credentials;
+runApply()/runVerify() pass the real, freshly-fetched id. Added the same
+import.meta.url-guard scripts/seed-ticketing.ts already uses, so importing this file for a
+check no longer prints the dry-run banner as a side effect.
+
+New round-trip check: `contracts/checks/ticketing-complete-f2/check-migration-create-doc-complete.mjs`
+— imports the real `buildMigrationPlan()`, finds the create op, and asserts the document
+carries a real `slug.current` and `show._ref` (matching the showId actually passed in), plus
+no undefined own-properties.
+
+  $ npx tsx contracts/checks/ticketing-complete-f2/check-migration-create-doc-complete.mjs
+  PASS: scripts/migrate-f2-ticket-taxonomy.ts's create op produces a document with a real
+  slug and show reference (and no undefined own-properties).
+
+Deliberate-failure proof: temporarily replaced the buildTicketTypeDoc() call with a
+hand-rolled literal missing slug/show (matching the original defect) → FAILED both checks →
+restored → PASS again.
+
+Manual confirmation the created doc is now complete (fake showId, dry-run only):
+  ticketType-field-trip doc now includes:
+    "slug": { "_type": "slug", "current": "field-trip" }
+    "show": { "_type": "reference", "_ref": "<showId>" }
+  (previously entirely absent).
+
+## Follow-up: Brad's VIP pricing ruling (2026-09-08)
+
+VIP Pass: R625 regular, 20% early-bird discount applies (R500 early-bird) — Brad's direct
+ruling, not a council confirmation but settled.
+
+- `lib/provisional-figures.ts`: `ProvisionalAdmissionProduct.provisional` widened from the
+  literal `true` to `boolean` (every other product keeps `true`; only VIP is now `false`).
+  VIP entry updated: price 500 (early-bird), regularPrice 625, earlyBirdCutoff =
+  EARLY_BIRD_CUTOFF, provisional: false, sourceCitation citing Brad's ruling directly (not
+  "pending council").
+- `TicketTypeCard.tsx` needed NO changes — `data-placeholder`/the provisional badge were
+  already gated generically on `ticketType.provisional`, so `provisional: false` alone
+  removes both for VIP.
+- `scripts/migrate-f2-ticket-taxonomy.ts`: `PricePatchOp` widened from a fixed
+  {price, sourceCitation} shape to a generic `fields: Record<string, unknown>` bag (all
+  values pre-coalesced, no undefined), since VIP's patch needs
+  price/regularPrice/earlyBirdCutoff/provisional/sourceCitation together. Added a VIP
+  price-patch op reading every value from ADMISSION_PRODUCTS's own VIP entry (single source
+  of truth, no re-typed numbers). runVerify()'s price-patch branch generalized to check every
+  key in `fields` against the live document.
+- New check: `contracts/checks/ticketing-complete-f2/check-vip-computed-early-bird-price.mjs`
+  — calls the REAL, contract-locked `lib/admission-early-bird-pricing.ts`'s
+  `resolveComputedEarlyBirdPrice()` (imported, not modified) with VIP's real basePrice (625)
+  at the real show-19-2027 start instant and real 90-day cutoff boundary instants (reused
+  verbatim from goldens/fixtures/f1-pricing-boundary-cases.json). Asserts amount=500/
+  tier=earlyBird inside the window, amount=625/tier=regular outside it; also checks the
+  stored `price` field agrees with the computed result, the ladder ordering (VIP regular >
+  Weekend Pass regular; VIP early-bird > both Weekend Pass SKUs), and that
+  provisional/sourceCitation are correctly settled.
+
+  $ npx tsx contracts/checks/ticketing-complete-f2/check-vip-computed-early-bird-price.mjs
+  PASS: VIP's R625/R500 pricing is exercised by the real computed early-bird engine, the
+  stored figures agree with it, the ladder ordering is coherent, and the figure is correctly
+  marked settled (not provisional) with Brad's ruling cited.
+
+Deliberate-failure proof: changed VIP's regularPrice from 625 to 600 → check FAILED both the
+inside-window (480 instead of 500) and outside-window (600 instead of 625) assertions →
+restored → PASS again.
+
+`docs/ticketing-complete-f2-open-decisions.md` §1 updated to record this as RESOLVED by
+Brad's ruling, while keeping the historical R300 (live) and R480 (never-applied fix) figures
+present (A12 requires those literal substrings) since the live dataset still holds R300 until
+`--apply` actually runs.
+
+`lib/admission-early-bird-pricing.ts` and `lib/ticket-taxonomy.ts` (F1's two locked modules)
+were NOT modified — only imported and called.
+
+Re-verified after all of this: 15/15 F2 contract assertions PASS, all 4
+contracts/checks/ticketing-complete-f2/*.mjs checks PASS, `tsc --noEmit` exit 0, `bun run
+build` exit 0, A3/A4 runtime dry-run proof re-run clean. No writes to Sanity or Firestore at
+any point, `--apply` never invoked.
+
+## CORRECTION (2026-09-08): A15 was NOT a harness bug — it was the contract's own quoting defect
+
+Earlier entries in this file reported A15 as unexecutable through contract.py due to "a shell
+quoting bug in contract.py's wrapper" and verified it manually instead. That characterization
+was WRONG and has been corrected by the team lead: the fault was the contract's own inline
+`node --import tsx/esm -e "..."` one-liner (~700 chars of JS with nested single-quote escapes
+inside a double-quoted shell string inside a YAML block scalar) — exactly the pattern this
+project's contract-authoring mandate forbids (see architect's F8/A10 precedent). Retracting
+every prior "15/15" claim in this file up to this point: the honest count at the time was
+14 of 15 executable through the gate, not 15.
+
+FIX: moved A15's logic into a proper check script,
+contracts/checks/ticketing-complete-f2/check-conference-product-families.mjs, and repointed
+contract-f2.yaml's A15 `command` at it (`npx tsx contracts/checks/.../check-conference-product-families.mjs`).
+This check is STRONGER than both the original grep-prefix-count version and the inline
+node -e version it replaces: it checks the CONFERENCE_PRODUCTS array's exact slug identity
+set (6 literal slugs, 3 families × early-bird/normal), not name prefixes or a stripped-suffix
+base-identity set — catching duplicates, missing families, AND a same-prefix impostor
+product, which the original prefix-count check (an earlier-reported contract weakness in
+this same feature) could not.
+
+  $ python3 execution/contract.py check .agent/memory/project/specs/ticketing-complete/contract-f2.yaml --assertion A15
+  PASS A15 (shell): PASS
+     PASS: CONFERENCE_PRODUCTS is exactly the 3 purchase-concept families (SAOC Symposium,
+     WOSA Conference, SAOC/WOSA Joint), each an early-bird/normal pair, identified by slug —
+     no fourth family, no duplicate, no substitution.
+
+A15 genuinely executes through contract.py now — confirmed by running it, not asserted.
+
+DELIBERATE-FAILURE PROOF (via Edit tool — a python3 heredoc writing to this file was denied
+by the sandbox, so the mutation/restoration below used Edit instead):
+  1. Confirmed the OLD prefix-count mechanism (`grep -oE "name: '(SAOC Symposium|WOSA
+     Conference|SAOC/WOSA Joint)" lib/provisional-figures.ts | sort -u | wc -l`) would NOT
+     have caught this defect class — recorded its own PASS-worthy count (3) before injecting
+     anything, as a baseline.
+  2. Injected a scratch conference product with slug 'wosa-conference-extra-track' and name
+     "WOSA Conference Extra Track" — a real 4th family whose name shares the "WOSA
+     Conference" prefix. Old prefix-count grep still reported "3" (would have silently
+     PASSED). New A15 check: FAIL —
+       "unexpected conference product slug(s) not in the 3-family set:
+       [\"wosa-conference-extra-track\"] — this is exactly the 'fourth family' or 'duplicate
+       per content-page route' defect A15 guards against"
+     confirmed via `python3 execution/contract.py check ... --assertion A15` (exit 1, FAIL).
+  3. Restored lib/provisional-figures.ts to its pre-mutation state via Edit (removing the
+     injected product block).
+  4. Verified restoration byte-for-byte: `diff` against a pre-mutation backup copy
+     (.tmp/sandbox/f2-check/provisional-figures-before-a15.ts) returned exit 0 (no
+     differences), and the file's md5 (4ff2e83424b349b328028ab57afcd064) matched the
+     pre-mutation md5 exactly.
+  5. Re-ran A15 through contract.py: PASS again.
+
+Re-verified after this fix: all 15 assertions PASS through `python3 execution/contract.py
+check ... --assertion <ID>` (no manual/by-hand exception remaining for any of them), all 5
+contracts/checks/ticketing-complete-f2/*.mjs check scripts PASS standalone, `tsc --noEmit`
+exit 0, `bun run build` exit 0.

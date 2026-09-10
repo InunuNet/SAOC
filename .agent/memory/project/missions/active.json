@@ -1,8 +1,9 @@
 {
-  "mission": ".agent/memory/project/missions/2026-09-03-verification-triad-gate.md",
+  "mission": ".agent/memory/project/missions/2026-09-09-site-content-alignment.md",
   "checkpoint": {
-    "milestone": "M2",
-    "feature": "F2"
+    "milestone": null,
+    "feature": "F4",
+    "ts": "2026-09-10T15:46:56.386354+00:00"
   },
-  "activated_at": "2026-09-03T13:16:25.873782+00:00"
+  "activated_at": "2026-09-10T15:46:56.386415+00:00"
 }

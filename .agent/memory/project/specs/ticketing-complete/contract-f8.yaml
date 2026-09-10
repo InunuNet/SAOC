@@ -1,0 +1,418 @@
+schema: athanor.contract/v1
+slug: ticketing-complete
+goal: >
+  Produce the morning review walkthrough for Brad -- the mission's actual deliverable.
+  Everything else tonight is what Brad gets; F8 is how he receives it. Published as an
+  Artifact he can step through on any device (not left as a repo file only), with real
+  screenshots at 390px and 1280px, ordered steps through the local site, and three things
+  that are NOT "here's what we built": every decision only he can make, stated as a question
+  with evidence and no recommendation dressed up as a fact; what is deliberately unfinished
+  and why; and an honest statement of what tonight's verification does and does not prove
+  (detection, not a standing guarantee -- contract assertions were green when written, and
+  nothing re-runs them until F7's runner lands). Nothing was deployed or applied to the live
+  dataset -- the walkthrough must never say otherwise.
+created_at: '2026-09-08'
+autonomy: high
+features:
+  - id: F8
+    name: Morning review walkthrough for Brad (ordered steps + screenshots)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-complete/goldens/f8-README.md
+  - .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f8-required-screenshots.json
+  - .agent/memory/project/specs/ticketing-complete/goldens/f2-open-decisions.json
+  - .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json
+  - .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f8-walkthrough-routes-negative-fixture.md
+  - .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f8-open-decisions-negative-fixture.md
+  - .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f8-figure-citation-product-map.json
+  - .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f8-walkthrough-figures-negative-fixture.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        The walkthrough source document exists at the designated path (this repo's own
+        record of what was published), matching this mission's existing docs/ naming
+        convention (docs/ticketing-complete-f2-open-decisions.md, docs/ticketing-complete-f1.md).
+      command: test -f docs/ticketing-complete-f8-morning-review.md
+      required: true
+
+    - id: A2
+      description: >
+        PUBLISHED AS AN ARTIFACT, not left as a repo file only (team lead's explicit
+        instruction) -- Brad steps through this on any device, which a markdown file in a
+        git repo doesn't support. The source doc records the real published URL under a
+        labeled heading. CANNOT BE FULLY VERIFIED BY A SHELL ASSERTION -- grep can confirm a
+        URL-shaped string is recorded, never that the artifact is actually live and
+        rendering correctly; that residual gap is named explicitly in goldens/f8-README.md
+        (see its own note) rather than silently assumed covered by this assertion.
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        grep -qE "Published (walkthrough|artifact):.*https://claude\\.ai/" docs/ticketing-complete-f8-morning-review.md
+      required: true
+
+    - id: A3
+      description: >
+        Genuinely ORDERED steps, not a wall of prose Brad has to parse into an order himself
+        before coffee -- at least 5 distinct numbered/headed steps (markdown `##`/`###`
+        headings or a numbered list), covering, in some real order, at minimum: starting the
+        local dev server, viewing the rebuilt nav (F6), viewing a ticket purchase surface
+        (F3), reviewing the migration's dry-run output (F2), and reviewing the open decisions
+        requiring his sign-off.
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        test "$(grep -cE '^#{2,3} ' docs/ticketing-complete-f8-morning-review.md)" -ge 5 &&
+        grep -qiE "pnpm dev|npm run dev|localhost:3000" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qi "nav" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qi "/tickets" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qi "migrat" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qi "open decision" docs/ticketing-complete-f8-morning-review.md
+      required: true
+
+    - id: A4
+      description: >
+        NOT DEPLOYED, NOT APPLIED, stated explicitly -- built and verified locally overnight,
+        nothing shipped to the live site, nothing applied to the live Sanity dataset. Scoped
+        narrowly to deployment-CLAIM phrasing ("is live", "now live", "went live", "deployed
+        to production") rather than banning the technical term "live" outright -- this
+        mission's own docs correctly and necessarily say "live Sanity dataset" / "live
+        Firestore" throughout when describing infrastructure that must not be written to;
+        banning that word entirely would make honest, necessary technical language
+        unwritable. Flagged explicitly here because the team lead's instruction ("if it says
+        'live' anywhere, it's wrong") read literally would forbid that correct usage too --
+        this assertion implements the narrower, intended meaning (no false deployment claim),
+        not the literal word ban.
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        grep -qiE "not (been )?deployed|local(ly)? only|has not shipped" docs/ticketing-complete-f8-morning-review.md &&
+        ! grep -qiE "now live|deployed to production|is live at|went live|the site is live" docs/ticketing-complete-f8-morning-review.md &&
+        ! grep -qiE "already applied|migration (has been|was) run|has been applied to (the )?(production|live) dataset" docs/ticketing-complete-f8-morning-review.md
+      required: true
+
+    - id: A5
+      description: >
+        The --apply migration flag is called out as ONE explicit, deliberate action that is
+        Brad's OWN to run, never something any agent ran on his behalf -- mirrors F2's own
+        hard rule (contract-f2.yaml A2/A3/A13). The document must show him the exact command.
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        grep -q "\-\-apply" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qiE "your|you run|you decide|your call|your own|Brad" docs/ticketing-complete-f8-morning-review.md
+      required: true
+
+    - id: A6
+      description: >
+        RUNTIME PROOF, not a broken-links document: every screenshot the walkthrough
+        references by markdown image syntax must exist as a real file on disk. A document
+        full of `![...](path/that/does/not/exist.png)` looks complete and proves nothing --
+        same defect class as a `page.route()` mock that's declared but never fires (F7's
+        A16). Extracts every markdown image path and confirms each resolves to a real file.
+
+        RESOLUTION BUG FIXED 2026-09-08 (team lead): this assertion previously resolved each
+        path relative to the REPO ROOT and had been failing on all 7 screenshots for that
+        reason alone -- the artwork was never missing. A markdown image path is relative to
+        the DOCUMENT that contains it, and this doc lives in docs/, so its correct links
+        (`../contracts/checks/ticketing-complete-f8/screenshots/...`) could never resolve
+        from the root. The doc was right and the checker was wrong. Paths are now resolved
+        by prefixing the document's own directory, so `docs/../contracts/...` resolves as
+        markdown means it. A checker that reports a correct document as broken trains
+        readers to ignore it, which is worse than not checking at all.
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md || exit 1;
+        MISSING=0; for p in $(grep -oE '!\[[^]]*\]\(([^)]+)\)' docs/ticketing-complete-f8-morning-review.md | sed -E 's/.*\(([^)]+)\)/\1/'); do
+        test -f "docs/$p" || { echo "missing: $p (resolved as docs/$p)"; MISSING=1; }; done;
+        test "$MISSING" = "0"
+      required: true
+
+    - id: A7
+      description: >
+        Minimum screenshot coverage (goldens/fixtures/f8-required-screenshots.json) -- at
+        least one referenced, existing screenshot whose PATH contains each required keyword
+        (nav, mobile, footer, tickets, migration). Prevents a document that technically
+        satisfies A6 by linking five copies of the same unrelated screenshot.
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        for kw in nav mobile footer tickets migration; do
+        grep -oE '!\[[^]]*\]\(([^)]+)\)' docs/ticketing-complete-f8-morning-review.md | grep -qi "$kw" || { echo "no screenshot path matching: $kw"; exit 1; }; done
+      required: true
+
+    - id: A8
+      description: >
+        SPECIFIC VIEWPORTS, per team lead's instruction: screenshots at 390px (mobile) and
+        1280px (desktop) specifically -- not an arbitrary size that happens to render. At
+        least one referenced, existing screenshot's path or caption names each of the two
+        widths, so the two required breakpoints from F6/F7's own mobile-first coverage are
+        the ones actually shown, not merely "some mobile shot and some desktop shot."
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        grep -qE "390" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qE "1280" docs/ticketing-complete-f8-morning-review.md
+      required: true
+
+    - id: A9
+      description: >
+        RUNTIME PROOF that every route the walkthrough tells Brad to visit actually
+        resolves against a real local dev server (never a live/deployed origin -- see A15).
+        WIDENED 2026-09-08 (architect, per the F8 dev's own finding while implementing this
+        literally): extracts every `/`-rooted path referenced in fenced-code spans,
+        backtick spans, OR a markdown hyperlink target (`[label](/route)`) and hits each one
+        against a locally running server, skipping any route explicitly listed in
+        goldens/fixtures/f6-pending-nos-routes.json (those are honestly disclosed as
+        not-yet-built per A12, not silently expected to 200). The dev's original
+        implementation only read fenced/backtick spans, which was a correct reading of this
+        assertion's OLD wording but left a real gap -- a route named only as
+        `[Tickets hub](/tickets)` was never checked at all, making A9's coverage depend on
+        which formatting a future doc author happened to use rather than on what the doc
+        actually tells Brad to visit. A claimed route that 404s is worse than no route claim
+        at all -- same standard F6's own A6/A7 apply to nav hrefs, and a 404 behind a
+        markdown link is exactly as real a broken claim as one behind backticks.
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        node contracts/checks/ticketing-complete-f8/verify-walkthrough-routes.mjs docs/ticketing-complete-f8-morning-review.md .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json
+      required: true
+
+    - id: A10
+      description: >
+        Every open decision in docs/ticketing-complete-f2-open-decisions.md is present in
+        the walkthrough, mechanically verified against the SAME golden source F2's own A12
+        reads (goldens/f2-open-decisions.json) rather than a second, hand-typed keyword list
+        that could silently drift from it -- that doc is the source of truth (team lead); a
+        decision surfaced there and dropped here is the exact failure mode this assertion
+        exists to catch. For every item in the JSON's `requiredItems`, every one of that
+        item's `mustContain` substrings must appear somewhere in F8's walkthrough.
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        python3 contracts/checks/ticketing-complete-f8/verify_open_decisions_coverage.py docs/ticketing-complete-f8-morning-review.md .agent/memory/project/specs/ticketing-complete/goldens/f2-open-decisions.json
+      required: true
+
+    - id: A11
+      description: >
+        Two decisions NOT in F2's original 8 (found later, added to this feature's own
+        brief), verified independently before writing this assertion by reading the real
+        source files: (1) admission refundability CONFLICT -- Lee-Ann's source document says
+        admission is non-refundable, while the LIVE `/refunds` page (confirmed by reading
+        lib/provisional-figures.ts's PROVISIONAL_REFUND_POLICY directly: appliesTo includes
+        'admission', tiers 90%/50%/0% at 30/14 day notice) publishes a real tiered refund
+        schedule that contradicts it -- a genuine, currently-live inconsistency, not a
+        hypothetical; (2) branch protection on `main` is off today (confirmed via ci.yml's
+        own comments, cited in F7's goldens) -- named here as a decision only Brad can make
+        (a GitHub setting), not a code change any feature makes for him.
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        grep -qi "non-refundable" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qi "/refunds" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qiE "90%|50%|tiered" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qi "branch protection" docs/ticketing-complete-f8-morning-review.md
+      required: true
+
+    - id: A12
+      description: >
+        What is DELIBERATELY unfinished, and why -- not an apology, a list. F6's five
+        NOS-owned routes (goldens/fixtures/f6-pending-nos-routes.json); Exhibitor Entry
+        resolved in the F2 schema (contract-f2.yaml A14) but with NO purchase surface built,
+        because that surface lives in the NOS session's tree (lib/ticket-taxonomy.ts's own
+        EXHIBITOR_PURCHASE_SURFACE_UNRESOLVED marker, contract-locked by contract-f1.yaml A8);
+        the Symposium has no date or venue because Lee-Ann's own source document has a
+        literal undecided placeholder, not because this mission forgot to set one; nothing
+        applied to the dataset, because --apply is Brad's alone (see A5).
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        grep -qi "national-show" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qiE "not (yet )?(built|live)|pending|another session|NOS session" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qi "exhibitor" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qiE "no purchase surface|not built|schema only" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qi "symposium" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qiE "no (confirmed )?date|date.*unknown|undecided" docs/ticketing-complete-f8-morning-review.md
+      required: true
+
+    - id: A13
+      description: >
+        HONEST VERIFICATION STATEMENT, per team lead's explicit instruction: Brad must not
+        read "N/N assertions green" as a standing guarantee. The walkthrough states plainly
+        that contract assertions were green WHEN WRITTEN/RUN, that nothing automatically
+        re-runs them until F7's CI runner lands (contract-f7.yaml A20/A29), and that even
+        once it does, it is DETECTION, not PREVENTION -- `main` has no branch protection, so
+        a red CI job blocks nothing until he enables it himself (A11's second decision).
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        grep -qiE "detection.{0,20}not.{0,20}(prevention|enforcement)" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qiE "when (it was |they were )?written|point-in-time|not a standing guarantee" docs/ticketing-complete-f8-morning-review.md
+      required: true
+
+    - id: A14
+      description: >
+        F7's ratchet-tolerated missing-check debt (contract-f7.yaml A25-A29) is disclosed by
+        NUMBER, not hidden -- Brad sees how much of tonight's coverage claim rests on real
+        checks vs. acknowledged, tracked gaps. Requires the doc to cite the baseline file as
+        the real source (contracts/checks/_shared/missing-baseline.json), not a hardcoded
+        number this doc could let go stale the next time someone writes one of the missing
+        scripts.
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        grep -q "missing-baseline.json" docs/ticketing-complete-f8-morning-review.md &&
+        grep -qiE "missing|not yet written|coverage gap" docs/ticketing-complete-f8-morning-review.md
+      required: true
+
+    - id: A15
+      description: >
+        NO FABRICATED VALUE: every specific number the walkthrough cites for a ticket price
+        (VIP, Weekend Pass SKUs, Sunset Cocktails, Field Trip) or a cutoff date must match
+        the REAL value in lib/provisional-figures.ts at the moment this check runs -- not a
+        value that was true when this doc was drafted and has since drifted, and never an
+        invented number. Runtime cross-check, not a static citation: reads the actual
+        exported product arrays and confirms every numeric/date claim the walkthrough makes
+        about a named product corresponds to that product's real field value. Product-name
+        recognition (matching a walkthrough sentence's prose name, e.g. "VIP Pass", to the
+        right ADMISSION_PRODUCTS/CONFERENCE_PRODUCTS/WORKSHOP_FIELD_TRIP_PRODUCTS slug and
+        which of its fields are citable) is driven by
+        goldens/fixtures/f8-figure-citation-product-map.json -- that file carries NO price or
+        date value of its own (naming only), specifically so this assertion cannot
+        accidentally become a second copy of a figure it exists to cross-check (see the
+        team lead's 2026-09-08 note on the VIP R625/R500 ruling landing in
+        lib/provisional-figures.ts while this contract was being written -- the check must
+        read that file at runtime, never bake the number in here or in the script).
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        node --import tsx/esm contracts/checks/ticketing-complete-f8/verify-walkthrough-figures.mjs docs/ticketing-complete-f8-morning-review.md
+      required: true
+
+    - id: A16
+      description: >
+        No fabricated CONFIDENCE either: none of a banned absolute-claim phrase list appears
+        -- "fully tested", "production ready", "guaranteed", "100% coverage" -- the same
+        anti-fabrication discipline this mission applies to prices and dates, applied to the
+        summary document's own prose. Overselling the walkthrough's completeness is the same
+        failure mode as an invented price, aimed at Brad's trust instead of a buyer's wallet.
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        ! grep -qiE "fully tested|production[- ]ready|guaranteed|100% coverage|bug-free" docs/ticketing-complete-f8-morning-review.md
+      required: true
+
+    - id: A17
+      description: >
+        HARD RULE, repo-wide for this feature's own file: no reference to a deployed/
+        production ORIGIN anywhere in the walkthrough (as opposed to A4's narrower
+        deployment-claim-language check) -- mirrors F7's A12 and F6's A19.
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        ! grep -qiE "saoc\\.co\\.za|\\.hosted\\.app|\\.run\\.app" docs/ticketing-complete-f8-morning-review.md
+      required: true
+
+    - id: A18
+      description: >
+        Every one of the mission's 8 features (F1-F8) gets a one-line status Brad can scan
+        without reading the whole document -- so "what actually happened tonight" is
+        answerable in ten seconds, not buried in narrative prose.
+      command: >-
+        test -f docs/ticketing-complete-f8-morning-review.md &&
+        for f in F1 F2 F3 F4 F5 F6 F7 F8; do
+        grep -qE "\\b${f}\\b" docs/ticketing-complete-f8-morning-review.md || { echo "missing feature reference: $f"; exit 1; }; done
+      required: true
+
+    - id: A19
+      description: >
+        Design-record completeness: the golden README documents the screenshot-path
+        convention, the Artifact-publication gap this contract cannot fully verify by shell
+        (A2), why F8 cites F2's open-decisions doc programmatically rather than duplicating
+        its content (A10), and the deliberate narrowing of "never say live" to a
+        deployment-claim check rather than a literal word ban (A4) -- a future reader
+        shouldn't have to reverse-engineer any of these four choices.
+      command: >-
+        grep -q "contracts/checks/ticketing-complete-f8/screenshots" .agent/memory/project/specs/ticketing-complete/goldens/f8-README.md &&
+        grep -qi "single source of truth" .agent/memory/project/specs/ticketing-complete/goldens/f8-README.md &&
+        grep -qi "cannot be fully verified" .agent/memory/project/specs/ticketing-complete/goldens/f8-README.md &&
+        grep -qi "literal word ban" .agent/memory/project/specs/ticketing-complete/goldens/f8-README.md
+      required: true
+
+    - id: A20
+      description: >
+        NEGATIVE CONTROL for A9 (added 2026-09-08, architect, per team lead's explicit
+        request -- "confirm each script also fails correctly when the doc EXISTS but is
+        wrong"). EXTENDED same day when A9 was widened to also extract markdown-link
+        targets: the fixture now cites FOUR routes, not three -- a real route
+        (/tickets, referenced ONLY as a markdown link, never in backticks), one
+        honestly-pending NOS route (backtick-wrapped, must be skipped per the same
+        f6-pending-nos-routes.json A9 itself reads), and TWO deliberately fake routes that
+        cannot possibly 200 -- one backtick-wrapped (the original negative case) and one
+        referenced ONLY as a markdown link (proves the widened extraction path itself
+        fails correctly, not just that the pre-existing path still does). Verified directly
+        before this fixture was trusted: running the CURRENT, not-yet-widened script against
+        it catches only the backtick-wrapped fake route, confirming the markdown-link gap is
+        real and the fixture doesn't accidentally already cover it. Must exit non-zero --
+        proves the script actually distinguishes a lying doc from a truthful one, not merely
+        that it runs without crashing, across every extraction path A9 claims to support.
+      command: >-
+        ! node contracts/checks/ticketing-complete-f8/verify-walkthrough-routes.mjs .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f8-walkthrough-routes-negative-fixture.md .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json
+      required: true
+
+    - id: A21
+      description: >
+        NEGATIVE CONTROL for A10 (added 2026-09-08, architect, same instruction as A20).
+        Runs verify_open_decisions_coverage.py against
+        goldens/fixtures/f8-open-decisions-negative-fixture.md (the REAL
+        goldens/f2-open-decisions.json as the requiredItems source -- same golden A10
+        itself reads, never a separate hand-typed list) -- the fixture doc covers every
+        item completely except one deliberately missing substring (R400, from
+        weekend-pass-two-skus). Must exit non-zero -- proves the check actually requires
+        every mustContain substring of every item, not "most" or "one per item".
+      command: >-
+        ! python3 contracts/checks/ticketing-complete-f8/verify_open_decisions_coverage.py .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f8-open-decisions-negative-fixture.md .agent/memory/project/specs/ticketing-complete/goldens/f2-open-decisions.json
+      required: true
+
+    - id: A22
+      description: >
+        NEGATIVE CONTROL for A15 (added 2026-09-08, architect, same instruction as A20/A21).
+        Runs verify-walkthrough-figures.mjs against
+        goldens/fixtures/f8-walkthrough-figures-negative-fixture.md, which cites a VIP price
+        (R999) that has never been correct at any point in this mission. Must exit non-zero
+        -- proves the check actually reads lib/provisional-figures.ts at runtime and
+        compares against it, rather than passing any doc that merely mentions a product name
+        near some number.
+
+        VACUOUS-PASS HISTORY, recorded 2026-09-08 so nobody rediscovers it: under bare
+        `node` this assertion was passing for the WRONG reason. An F2 repair added an
+        extensionless value import to lib/provisional-figures.ts; Node's ESM loader requires
+        explicit extensions on relative imports, so the script died on module resolution
+        before reading a single figure. It still exited non-zero, so the `!` negation still
+        went green -- a negative control that proved nothing, which is precisely the defect
+        class it exists to catch, occurring inside itself. Switching both this assertion and
+        A15 to `node --import tsx/esm` (the dominant runner convention in this mission's
+        contracts, 18 uses to 1) restored a real failure: the check now reports
+        `cited R999 does not match any real current value (allowed: R500, R625)`. A negative
+        assertion observed failing only for the wrong reason is not evidence of anything --
+        always confirm WHY it failed, not just that it did.
+      command: >-
+        ! node --import tsx/esm contracts/checks/ticketing-complete-f8/verify-walkthrough-figures.mjs .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f8-walkthrough-figures-negative-fixture.md
+      required: true
+    - id: A23
+      description: >
+        NEGATIVE CONTROL for A15's DISCLOSURE INVARIANT (added 2026-09-08). Runs
+        verify-walkthrough-figures.mjs against a fixture citing a
+        data-figure-status="legacy"-marked date for a product whose REAL current value never
+        appears unmarked anywhere the product is named. Must exit non-zero. This is the
+        assertion that stops the marker degrading into "wrap it and it is exempt": marking a
+        citation REDIRECTS the check (the current value must be disclosed somewhere) and
+        never switches it off. Verified failing for the RIGHT reason -- it reports
+        "DISCLOSURE INVARIANT ... never appears as an unmarked citation", not a value
+        mismatch, proving the marker was recognised and the invariant is what caught it.
+        @dev additionally ran a positive control: adding one unmarked real-value citation to
+        this same fixture, changing nothing else, turns it green -- so that single line is
+        the only difference between red and green.
+      command: >-
+        ! node --import tsx/esm contracts/checks/ticketing-complete-f8/verify-walkthrough-figures.mjs .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f8-figure-status-undisclosed-negative-fixture.md
+      required: true
+
+    - id: A24
+      description: >
+        NEGATIVE CONTROL for A15's MARKER VALIDATION (added 2026-09-08). Runs
+        verify-walkthrough-figures.mjs against a fixture wrapping a fabricated figure in
+        data-figure-status="bogus" -- an invalid enum value. Must exit non-zero. Proves the
+        marker attribute is validated by exact set membership against {legacy, proposed},
+        not accepted by shape: an author cannot invent a keyword to switch the check off,
+        and a typo like "Legacy" fails closed rather than silently exempting. Verified
+        failing for the RIGHT reason -- it reports an ORDINARY value mismatch (cited R4242
+        against allowed R500/R625), which proves the bogus marker was disregarded entirely
+        rather than honoured.
+      command: >-
+        ! node --import tsx/esm contracts/checks/ticketing-complete-f8/verify-walkthrough-figures.mjs .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f8-figure-status-invalid-enum-negative-fixture.md
+      required: true

@@ -1,0 +1,106 @@
+{
+  "_comment": "Golden truth table for resolveComputedEarlyBirdPrice(). showStartDateIso is the EXACT live 'show-19-2027' Sanity document value (startDate: 2027-09-16T09:00:00+02:00 = 2027-09-16T07:00:00Z) -- corrected 2026-09-08 (team lead) from an earlier version of this fixture that used 2027-09-16T00:00:00Z, a DIFFERENT instant that happened to produce the same cutoff and so never went red. A golden fixture that doesn't match the real data it claims to mirror is a fixture that can pass while the system is wrong. All purchaseDate instants in `cases` are UTC ISO strings (as Firestore/Cloud Logging store them) -- the verifier must convert correctly to the SAST (+02:00) boundary, never compare bare UTC. Expected cutoff: deriveAdmissionEarlyBirdCutoffIso(showStart) === '2027-06-18T00:00:00+02:00' (90 days before the SAST calendar date 2027-09-16, matching the mission's stated cutoff verbatim). See `cutoffDerivationCases` below for cases targeting deriveAdmissionEarlyBirdCutoffIso itself, separately from resolveComputedEarlyBirdPrice's day-count boundary in `cases`.",
+  "showStartDateIso": "2027-09-16T07:00:00Z",
+  "expectedCutoffIso": "2027-06-18T00:00:00+02:00",
+  "cases": [
+    {
+      "id": "exactly-91-days-before",
+      "purchaseDateIso": "2027-06-17T08:00:00+02:00",
+      "basePrice": 130,
+      "expectedTier": "earlyBird",
+      "expectedAmount": 104,
+      "note": "91 days before show start -- comfortably inside the 90+ day window.",
+      "boundarySweepVerdict": {
+        "discriminates": false,
+        "verdict": "BASELINE, NOT DISCRIMINATING (2026-09-08 sweep): comfortably inside the window on either side of any plausible off-by-one boundary bug -- an implementation with the boundary at 89, 90, or 91 days would ALL still classify this as earlyBird. Its real job is proving the undiscounted 80%-of-130=104 arithmetic (no rounding involved), not the day-count boundary. Kept as a baseline anchor, not a boundary proof."
+      }
+    },
+    {
+      "id": "exactly-90-days-before-cutoff-day-start",
+      "purchaseDateIso": "2027-06-18T00:00:00+02:00",
+      "basePrice": 130,
+      "expectedTier": "earlyBird",
+      "expectedAmount": 104,
+      "note": "First instant of the cutoff day (SAST midnight) -- exactly 90 days before show start. Must qualify.",
+      "boundarySweepVerdict": {
+        "discriminates": true,
+        "verdict": "DISCRIMINATES (2026-09-08 sweep): a plausible off-by-one using '> 90 days' (strictly more than) instead of '>= 90 days' would classify this as regular -- this case catches exactly that bug."
+      }
+    },
+    {
+      "id": "cutoff-day-last-instant",
+      "purchaseDateIso": "2027-06-18T23:59:59+02:00",
+      "basePrice": 130,
+      "expectedTier": "earlyBird",
+      "expectedAmount": 104,
+      "note": "Last instant of the cutoff day (SAST) -- 'through the end of the cutoff date' per isWithinEarlyBirdWindow()'s existing contract. Must still qualify.",
+      "boundarySweepVerdict": {
+        "discriminates": true,
+        "verdict": "DISCRIMINATES (2026-09-08 sweep): a plausible naive implementation comparing 'now < exact cutoff instant' (midnight only, not through end-of-day) would classify this as regular -- this case catches exactly that bug, distinctly from the start-of-day case above."
+      }
+    },
+    {
+      "id": "exactly-89-days-before",
+      "purchaseDateIso": "2027-06-19T08:00:00+02:00",
+      "basePrice": 130,
+      "expectedTier": "regular",
+      "expectedAmount": 130,
+      "note": "89 days before show start -- one day past the cutoff day. Must NOT qualify (90+ days required, not 89).",
+      "boundarySweepVerdict": {
+        "discriminates": true,
+        "verdict": "DISCRIMINATES (2026-09-08 sweep): a plausible off-by-one using '>= 89 days' (too generous) would classify this as earlyBird -- this case catches exactly that bug. Paired with the 90-day case above, these two pin the threshold to exactly 90, not 89 or 91."
+      }
+    },
+    {
+      "id": "timezone-sast-vs-utc-disagreement",
+      "purchaseDateIso": "2027-06-18T23:00:00Z",
+      "basePrice": 130,
+      "expectedTier": "regular",
+      "expectedAmount": 130,
+      "note": "This instant is 2027-06-19T01:00 SAST -- already the day AFTER the cutoff in SAST, so must be 'regular'. A naive bare-UTC implementation (treating the cutoff's exclusive end as 2027-06-19T00:00:00Z instead of 2027-06-18T22:00:00Z) would WRONGLY classify this as 'earlyBird' -- see f1-broken-naive-utc-fixture.json for the discriminating negative-control case built from this exact instant.",
+      "boundarySweepVerdict": {
+        "discriminates": true,
+        "verdict": "DISCRIMINATES (2026-09-08 sweep, pre-existing by design): a naive bare-UTC cutoff (no +02:00 offset) classifies this as earlyBird; the correct SAST-aware implementation classifies it as regular. This is the case A6's negative-control fixture is built from."
+      }
+    },
+    {
+      "id": "rounding-fractional-rand",
+      "purchaseDateIso": "2027-06-17T08:00:00+02:00",
+      "basePrice": 131,
+      "expectedTier": "earlyBird",
+      "expectedAmount": 105,
+      "note": "131 * 0.8 = 104.8 -- must round to 105 (Math.round), never truncate to 104 or leave a fractional rand.",
+      "boundarySweepVerdict": {
+        "discriminates": true,
+        "verdict": "DISCRIMINATES (2026-09-08 sweep): a plausible truncating implementation (Math.floor, or integer division dropping the remainder) would return 104 instead of 105 -- this case catches exactly that bug. Non-redundant with the 91-days-before case above, which uses a price with no rounding ambiguity."
+      }
+    },
+    {
+      "id": "regular-tier-no-discount",
+      "purchaseDateIso": "2027-08-01T08:00:00+02:00",
+      "basePrice": 130,
+      "expectedTier": "regular",
+      "expectedAmount": 130,
+      "note": "Well past the cutoff -- full basePrice, no discount applied.",
+      "boundarySweepVerdict": {
+        "discriminates": false,
+        "verdict": "BASELINE, NOT DISCRIMINATING (2026-09-08 sweep): well past any plausible boundary off-by-one, so a buggy boundary computation would still pass this. Its real job is proving the 'regular' branch returns basePrice completely unchanged (no residual discount math applied), which no other case isolates -- kept as the sole anchor for that property, not as a boundary proof."
+      }
+    }
+  ],
+  "cutoffDerivationCases": [
+    {
+      "id": "cutoff-derivation-standard-morning-start",
+      "_comment": "Every 'cases' entry above uses this same 09:00 SAST show start. On its own this case proves nothing about calendar-day handling, because 09:00 SAST and its UTC instant (07:00Z) fall on the SAME calendar date in both zones -- an implementation that (incorrectly) does day-arithmetic on the raw UTC calendar components would still get the right answer here by coincidence. Kept only as the baseline/sanity case; 'cutoff-derivation-early-morning-start' below is the one that actually discriminates.",
+      "showStartDateIso": "2027-09-16T07:00:00Z",
+      "expectedCutoffIso": "2027-06-18T00:00:00+02:00"
+    },
+    {
+      "id": "cutoff-derivation-early-morning-start",
+      "_comment": "DISCRIMINATING CASE (team lead, 2026-09-08): show start at 2027-09-16T01:00:00+02:00 -- still SAST calendar date 2027-09-16 -- but its UTC instant is 2027-09-15T23:00:00Z, i.e. UTC calendar date 2027-09-15, one day EARLIER. A latent off-by-one exists if deriveAdmissionEarlyBirdCutoffIso does its 90-day subtraction on the Date object's UTC calendar components (getUTCFullYear/getUTCMonth/getUTCDate) instead of the SAST calendar date the show actually starts on: that bug computes 90 days before 2027-09-15 (=2027-06-17) instead of 90 days before the correct 2027-09-16 (=2027-06-18) -- a silent one-day slide that every other case in this fixture set is incapable of catching, because every other case's start time (07:00Z/09:00 SAST) shares the same calendar date in both zones. This is the only case whose failure would tell us something the rest of the suite doesn't already know -- treat a passing suite that lacks this case as unproven, not verified.",
+      "showStartDateIso": "2027-09-16T01:00:00+02:00",
+      "expectedCutoffIso": "2027-06-18T00:00:00+02:00"
+    }
+  ],
+  "_boundarySweepSummary": "2026-09-08 bounded sweep (team lead request, timeboxed one pass): of the 7 cases in `cases`, 5 (exactly-90-days-before-cutoff-day-start, cutoff-day-last-instant, exactly-89-days-before, timezone-sast-vs-utc-disagreement, rounding-fractional-rand) each discriminate a distinct, plausible naive-implementation bug. 2 (exactly-91-days-before, regular-tier-no-discount) are baseline/sanity anchors that a buggy boundary implementation would still pass -- they prove non-boundary arithmetic (undiscounted 80% math; full-price passthrough) rather than pinning down a boundary property, and are kept for that reason, not removed. See each case's `boundarySweepVerdict` field for the per-case reasoning."
+}

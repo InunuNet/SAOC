@@ -1,0 +1,30 @@
+{
+  "_comment": "Minimum screenshot inventory F8's morning-review doc must reference AND that must actually exist on disk under contracts/checks/ticketing-complete-f8/screenshots/ -- mirrors the existing screenshot convention already used by contracts/checks/vendor-form-*-f1/screenshots/. Each entry is a required substring the doc's markdown must contain as part of an image reference, not a literal filename mandate -- the check script resolves whatever path the doc actually names and confirms the file exists, rather than requiring these exact names.",
+  "requiredScreenshots": [
+    {
+      "id": "nav-desktop",
+      "mustContain": "nav",
+      "why": "Brad's own headline ask (F6) -- the rebuilt nav, proven rendered, not described."
+    },
+    {
+      "id": "nav-mobile",
+      "mustContain": "mobile",
+      "why": "Mobile-first is a standing rule; the desktop nav screenshot alone doesn't prove the mobile menu works."
+    },
+    {
+      "id": "footer-fixed",
+      "mustContain": "footer",
+      "why": "Proves the 1024-1050px horizontal-overflow bug (F6) is actually fixed, not just that F7's A8 assertion text changed."
+    },
+    {
+      "id": "tickets-hub",
+      "mustContain": "tickets",
+      "why": "F3's /tickets hub -- the category purchase surfaces Brad hasn't seen yet."
+    },
+    {
+      "id": "migration-dry-run-terminal",
+      "mustContain": "migration",
+      "why": "F2's migration script's dry-run banner -- proves nothing was written to the live dataset, and shows Brad exactly what --apply will do before he runs it himself."
+    }
+  ]
+}

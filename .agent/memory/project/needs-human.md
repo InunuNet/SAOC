@@ -720,3 +720,26 @@ CLAUDE.md entry only needs the summary above plus its existing pointer to that d
 
 **Upstream:** filed against the harness as the protected-path design having no route for
 correcting factual staleness in an agent-maintained instruction file.
+
+## 2026-09-10 — CRITICAL: live SAOC mailbox passwords in a PUBLIC repo
+
+**Verified independently by the lead session (not taken on a peer's word):**
+
+- `gh repo view InunuNet/SAOC --json isPrivate,visibility` → `{"isPrivate":false,"visibility":"PUBLIC"}`
+- File `docs/leeann-source/website-development-specification-v3_2026-09-06.md` is tracked in HEAD
+  (`git ls-files --error-unmatch` succeeds). It carries a credentials table at line 573 with a
+  `Password` column holding live values, plus owner and recovery-contact addresses.
+- Introduced in commit `1d6512cb` (2026-09-06), pushed to `origin/main`.
+- Scope is exactly one file: `git grep -l -i -E '^\s*Password\s*$|password[:=]\s*\S' -- docs/ content/`
+  returns only that path. Nothing is tracked under `content/drive-source/`.
+
+**Only remediation is human password rotation.** Credentials that have been pushed to a public
+repository must be treated as compromised regardless of what happens to the file afterwards.
+
+**Do NOT rewrite history to "fix" this.** It requires a force-push on a shared public repo, it
+breaks every other checkout, and it does not undo the exposure — the objects are already
+mirrored, cached and indexed.
+
+Deliberately not recording the addresses or values here or in the SAOC Dev Status sheet.
+
+Open as question 1 on the status sheet's Open Questions tab.

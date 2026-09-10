@@ -1,0 +1,26 @@
+{
+  "_comment": "F2's exact decisions for lib/provisional-figures.ts and the seed/migration data shape. Not a data mutation -- this is the design record dev implements against.",
+  "sourceCitationField": {
+    "addition": "ProvisionalAdmissionProduct gains `sourceCitation: string | null`. null = genuine web-team estimate with no client source. A non-null string = a short citation to the exact source, e.g. \"Lee-Ann's 13.1 Ticketing system details.docx, line 305\".",
+    "invariant": "A product with a non-null sourceCitation must NOT also read as `provisional: true` implying 'we guessed this' -- provisional stays true (council hasn't formally confirmed final pricing per the doc's own '*Final prices to be confirmed' caveat) but sourceCitation being non-null proves the NUMBER itself is not fabricated, only unconfirmed. The two flags answer different questions: provisional = 'not yet council-signed-off', sourceCitation = 'where this number came from'."
+  },
+  "sunsetCocktails": {
+    "single": { "price": 800, "sourceCitation": "Lee-Ann's 13.1 Ticketing system details.docx, line 305-314" },
+    "couple": { "price": 1500, "sourceCitation": "Lee-Ann's 13.1 Ticketing system details.docx, line 305-314" },
+    "note": "Replaces the prior invented estimate (Single R250 / Couple R450, sourceCitation: null). This is a REAL number replacing a KNOWN FABRICATION -- list in the open-decisions doc as a changed figure, never apply without that entry existing."
+  },
+  "fieldTrips": {
+    "model": "flat-per-trip",
+    "price": 200,
+    "sourceCitation": "Lee-Ann's 13.1 Ticketing system details.docx, line 158-162",
+    "note": "Doc's real model is a flat R200/trip, up to 5 named trips -- simpler than the current invented Single(R300)/All-Outings(R750) bundle split, which had no client source. F2 retires (active: false, never deleted) the two invented SKUs and seeds ONE new flat-rate field-trip product at R200 against the existing field-trip capacityPool. Named individual trips are not yet defined by any source -- do not invent trip names/dates; this is a single generic 'Field Trip (per outing)' product until real trip data exists."
+  },
+  "saocSymposium": {
+    "date": null,
+    "venue": null,
+    "note": "Lee-Ann's own FAQ doc contains a literal unset placeholder for the Symposium's date/venue ('xx, xx September 2027 at the xx') -- nobody on the client side knows it yet. ticketType has no date/venue field today and F2 must not add one populated with a guess or with the show's own startDate/venue as a stand-in. The existing description text ('Full registration for the SAOC Symposium track...') already contains no date/venue and must stay that way -- verified by a negative grep for the show's own ISO date string inside every symposium-category product's description."
+  },
+  "workshopRestraint": {
+    "note": "'workshop' remains in F1's 7-category taxonomy as a CATEGORY, but F2 must NOT instantiate any sellable workshop ticketType document -- WORKSHOP_PRICING_STRUCTURE's existing 'no real session is council-confirmed yet' rationale still holds. Seeding a fake workshop session (name/date/capacity) to 'complete' the taxonomy would be exactly the fabrication the mission's hard constraint #4 forbids."
+  }
+}

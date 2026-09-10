@@ -1,0 +1,31 @@
+schema: athanor.contract/v1
+slug: f7-missing-script-fixture
+goal: >
+  NOT a real feature contract -- a fixture consumed only by
+  contracts/checks/_shared/run_contract_suite.mjs's own A23 proof
+  (contract-f7.yaml). Exists to prove the runner's three-state classification
+  (pass/fail/missing) genuinely distinguishes "the referenced check script
+  does not exist on disk" from "the check ran and failed" -- the exact defect
+  class the NOS session's contract exposed (7 of its own 9 named Playwright
+  check scripts do not exist). This fixture's one assertion references a
+  script path that is deliberately never created. If a future cleanup ever
+  creates a file at that path, this fixture stops proving anything -- do not
+  "fix" the missing script; that is the fixture working as designed.
+created_at: '2026-09-08'
+autonomy: high
+features:
+  - id: F0
+    name: fixture only, not a real feature
+    status: pending
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: MISSING-SCRIPT-CHECK
+      description: >
+        Deliberately references a check script that does not exist anywhere in this repo,
+        under contracts/checks/ -- proves run_contract_suite.mjs's pre-execution existsSync
+        guard classifies this as "missing", not "fail" (a real shell "no such file" error)
+        and not "pass" (silently skipped as if nothing were wrong).
+      command: node contracts/checks/does-not-exist-f0/this-script-is-never-created.mjs
+      required: true

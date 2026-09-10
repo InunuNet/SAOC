@@ -1,0 +1,313 @@
+schema: athanor.contract/v1
+slug: ticketing-complete
+goal: >
+  Extend the Sanity ticketType schema/seed to cover every F1 taxonomy category with
+  provisional capacities, WITHOUT ever writing to the live dataset in this mission --
+  there is only ONE Sanity dataset ('production'), read by both local dev and the deployed
+  beta site, so any write is a deploy by side-effect. The migration is code + a script,
+  written and unit-tested, default-dry-run, gated behind an explicit --apply flag this
+  mission never passes; real execution is deferred to Brad's own morning approval (F8).
+  Retires (never deletes/renames) any SKU with existing Firestore positions. Surfaces
+  (never silently resolves) every live pricing/date inconsistency this mission's own
+  research found. Every provisional figure is marked provisional + data-placeholder;
+  every cited real figure carries a source citation distinguishing it from a guess.
+created_at: '2026-09-08'
+autonomy: high
+features:
+  - id: F2
+    name: Sanity ticketType schema + seed for every category, provisional capacities (dry-run only)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-complete/goldens/f2-README.md
+  - .agent/memory/project/specs/ticketing-complete/goldens/f2-open-decisions.json
+  - .agent/memory/project/specs/ticketing-complete/goldens/f2-provisional-figures-decisions.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        Migration script exists at the designated path.
+      command: test -f scripts/migrate-f2-ticket-taxonomy.ts
+      required: true
+
+    - id: A2
+      description: >
+        HARD RULE: mutation is gated behind an explicit --apply flag, never a --dry-run
+        opt-out. The precedent script (fix-vip-and-weekend-pass-pricing.ts) uses the UNSAFE
+        polarity (DRY_RUN = argv.includes('--dry-run'), i.e. default = mutate) -- this
+        script must not copy that pattern.
+      command: >-
+        grep -q "\\-\\-apply" scripts/migrate-f2-ticket-taxonomy.ts &&
+        ! grep -qE "process\\.argv\\.includes\\(['\"]--dry-run['\"]\\)" scripts/migrate-f2-ticket-taxonomy.ts
+      required: true
+
+    - id: A3
+      description: >
+        RUNTIME PROOF, not just static grep: invoking the script with NO flags and NO
+        Sanity env vars set must exit 0 and print a dry-run/plan banner, never a stack
+        trace or a missing-credentials error -- proving the --apply check happens BEFORE
+        any client construction or env read, so a plain accidental invocation can never
+        touch the live dataset even if credentials happen to be present in the shell.
+      command: >-
+        env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u NEXT_PUBLIC_SANITY_DATASET
+        node --import tsx/esm scripts/migrate-f2-ticket-taxonomy.ts 2>&1 | grep -qi "dry run"
+      required: true
+
+    - id: A4
+      description: >
+        NEGATIVE CONTROL for A3: the same no-flag, no-env invocation must NOT print any
+        string claiming a document was written/patched/created -- if both A3's dry-run
+        banner AND a "patched"/"written" claim appear, the script is lying about being a
+        dry run.
+      command: >-
+        ! (env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u NEXT_PUBLIC_SANITY_DATASET
+        node --import tsx/esm scripts/migrate-f2-ticket-taxonomy.ts 2>&1 | grep -qiE "patched|written|created \(applied\)")
+      required: true
+
+    - id: A5
+      description: >
+        Retire, never delete or rename: the script's source must set `active: false` on
+        ticketType-early-bird-weekend-pass (1 real Firestore position exists against this
+        slug) and must contain NO delete-shaped Sanity call (`.delete(`) anywhere, and no
+        occurrence of the literal slug 'early-bird-weekend-pass' inside any string that also
+        looks like a rename/new-id construction.
+      command: >-
+        grep -q "early-bird-weekend-pass" scripts/migrate-f2-ticket-taxonomy.ts &&
+        grep -q "active: false" scripts/migrate-f2-ticket-taxonomy.ts &&
+        ! grep -qE "\\.delete\\(" scripts/migrate-f2-ticket-taxonomy.ts
+      required: true
+
+    - id: A6
+      description: >
+        Idempotent, stable-identity keying: every document the script addresses uses a
+        `ticketType-<slug>`-shaped literal _id, never a display-name-derived id. Prior
+        audited defect in this repo (see lib/provisional-figures.ts and
+        scripts/seed-ticketing.ts's own precedent) -- must not be reintroduced.
+      command: grep -qE "ticketType-[a-z-]" scripts/migrate-f2-ticket-taxonomy.ts
+      required: true
+
+    - id: A7
+      description: >
+        TIGHTENED 2026-09-08 (self-reported by @dev, same class QA broke on F1): the
+        original check was a whole-file digit grep -- "800" matches ANYWHERE in the file,
+        including `capacity: 800` on the unrelated Day Visitor product, so it would still
+        pass even with a wrong Sunset Cocktails price. Now a REAL RUNTIME read of
+        WORKSHOP_FIELD_TRIP_PRODUCTS via `node --import tsx/esm`, asserting the price on
+        the SPECIFIC product by slug (sunset-cocktails-single=800, sunset-cocktails-couple=1500,
+        field-trip=200) and that each carries a non-null sourceCitation -- checks the value
+        on the product, not the digits in the file.
+      command: >-
+        node --import tsx/esm -e "import('./lib/provisional-figures.ts').then((m) => { const bySlug = Object.fromEntries(m.WORKSHOP_FIELD_TRIP_PRODUCTS.map((p) => [p.slug, p])); const checks = [['sunset-cocktails-single', 800], ['sunset-cocktails-couple', 1500], ['field-trip', 200]]; for (const [slug, price] of checks) { const p = bySlug[slug]; if (!p || p.price !== price || !p.sourceCitation) { console.error('mismatch', slug, p); process.exit(1); } } process.exit(0); }).catch((e) => { console.error(e); process.exit(1); });"
+      required: true
+
+    - id: A8
+      description: >
+        NEGATIVE CONTROL for A7: the OLD invented Field Trip bundle-split prices (300 and
+        750, which had no client source) must be gone from the live seed data path -- i.e.
+        no longer present as active FIELD_TRIP prices in provisional-figures.ts (a retired
+        historical reference inside a code comment is fine; an active price constant is not).
+      command: >-
+        ! grep -qE "^const FIELD_TRIP_SINGLE_PRICE = 300;|^const FIELD_TRIP_ALL_OUTINGS_PRICE = 750;" lib/provisional-figures.ts
+      required: true
+
+    - id: A9
+      description: >
+        SAOC Symposium date/venue stays unknown: no symposium-category product's
+        description contains the show's own ISO date (2027-09-16) or any other date/venue
+        string -- proves the show's dates were not used as a stand-in for the Symposium's
+        own genuinely-undecided date/venue.
+      command: >-
+        ! grep -A6 "saoc-symposium" lib/provisional-figures.ts | grep -q "2027-09-16"
+      required: true
+
+    - id: A10
+      description: >
+        Workshop restraint: no sellable workshop-category ticketType product is seeded --
+        WORKSHOP_PRICING_STRUCTURE remains a non-product structure (no slug/capacity of its
+        own), matching the existing 'no real session confirmed yet' rationale.
+      command: >-
+        grep -q "WORKSHOP_PRICING_STRUCTURE" lib/provisional-figures.ts &&
+        ! grep -qE "slug:\\s*'workshop-session" lib/provisional-figures.ts
+      required: true
+
+    - id: A11
+      description: >
+        DESCOPED 2026-09-08 (team lead ruling): a static grep for the string
+        "data-placeholder" in components/tickets/TicketTypeCard.tsx passes whether the
+        attribute is actually attached to a rendered DOM node, sits in an unreachable branch,
+        or is merely a comment/prop name -- it cannot prove DOM attachment, and F2 has no
+        jsdom/browser harness in scope to prove it properly. Kept here ONLY as a non-authoritative
+        static smoke check (source mentions the convention at all); the authoritative proof
+        that provisional ticket cards render the attribute live in a real browser is F7's A10,
+        which this assertion explicitly defers to -- F2 is not DONE on data-placeholder
+        correctness until F7's A10 is green.
+      command: grep -q "data-placeholder" components/tickets/TicketTypeCard.tsx
+      required: false
+
+    - id: A12
+      description: >
+        Open decisions are SURFACED, not silently resolved: docs/ticketing-complete-f2-open-decisions.md
+        exists and names every required item from goldens/f2-open-decisions.json --
+        VIP price ladder, the two Weekend Pass SKUs, the cutoff-date mismatch, the
+        Cocktails/Field-Trip figure change, the Symposium date/venue unknown, council@ vs
+        info@, the six-script dry-run-polarity hazard (not just the one originally found),
+        and the direct-vs-affiliated-society membership question (unanswerable from any
+        source held -- constitution never supplied, Members Portal Drive folder empty).
+      command: >-
+        test -f docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "R300" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "R480" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "2027-07-31" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "2027-06-18" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "R800" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "Symposium" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "council@" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "info@" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "fix-venue-never-changed-copy.ts" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "migrate-ticket-type-category.ts" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "migrate-show-sales-fields.ts" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "fix-vip-and-weekend-pass-pricing.ts" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "fix-show-dates-2027.ts" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "fix-visitor-info-dates-confirmed.ts" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -qi "membership" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -qi "constitution" docs/ticketing-complete-f2-open-decisions.md
+      required: true
+
+    - id: A13
+      description: >
+        FIXED 2026-09-08 (@qa finding, team lead-confirmed) then FIXED AGAIN same day (second
+        defect class). First failure: the original command scoped to
+        contracts/checks/ticketing-complete-f2/ -- a directory that did not exist on disk, so
+        `grep -rlE` on it always found nothing, `xargs -r` never ran its command, and the
+        assertion was GREEN UNCONDITIONALLY, by construction, forever. Not weak -- vacuous: it
+        examined nothing. Rescoped repo-wide over contracts/checks/ to fix that. Second failure,
+        found immediately after: rescoping repo-wide made it match the literal string
+        '--apply' ANYWHERE in a file, including comments. Two legitimate checks written the
+        same day (check-vip-migration-plan-cutoff.mjs, check-vip-fix-scope-containment.mjs)
+        call the migration's pure, network-free buildMigrationPlan() and DOCUMENT in a safety
+        comment that they never reach --apply -- and got flagged identically to a script that
+        actually would invoke it. That is a perverse incentive: the cheapest way to pass was to
+        delete the safety comment. So this assertion has now been wrong in BOTH directions --
+        measuring nothing, then measuring a MENTION rather than an INVOCATION. Now rehomed to a
+        check script (contracts/checks/ticketing-complete-f2/check-no-migration-apply-invocation.mjs,
+        same rehoming precedent as A15) that strips comments before testing, and additionally
+        requires a process-execution construct (execSync/spawn/exec/execFile and Sync variants,
+        or a child_process import) to co-occur with the migration name and --apply flag outside
+        comments -- so a safety comment passes, an arg-parser unit test that merely asserts
+        '--apply' parses (no exec construct, real precedent: ticketing-f4-roles-claim's
+        check-migration-dry-run-default.mjs) passes, and an actual execSync/spawn call that
+        shells out to the migration with --apply fails. See the script's own header for the
+        full property statement and stated tradeoffs of the comment stripper.
+      command: node contracts/checks/ticketing-complete-f2/check-no-migration-apply-invocation.mjs
+      required: true
+
+    - id: A14
+      description: >
+        Exhibitor Entry (negotiated 2026-09-08 with the NOS session, saocnosdesign-ea) is
+        its OWN 4th value in ticketType.category -- 'exhibitor-entry' -- deliberately NOT
+        folded into 'admission'. A new enum value that no document uses, or a document
+        carrying a value the schema doesn't offer, are both silent failures this checks
+        against: the schema's options.list must literally offer 'exhibitor-entry', and if
+        any ticketType document/seed source sets category to 'exhibitor-entry' it must be
+        one of the schema's literal option values (checked by the same grep target, so a
+        typo'd value used only in seed data and never added to the schema list is caught).
+        F1 is NOT retrofitted -- lib/ticket-taxonomy.ts's 'unresolved-nos-boundary' marker
+        stays exactly as F1 shipped it (contract-locked by contract-f1.yaml's A8); this
+        assertion is scoped to F2's schema file only.
+      command: >-
+        grep -q "'exhibitor-entry'" sanity/schemas/documents/ticketType.ts &&
+        grep -q "Exhibitor Entry" sanity/schemas/documents/ticketType.ts
+      required: true
+
+    - id: A15
+      description: >
+        TIGHTENED 2026-09-08 (team lead ruling, same defect class as A7): the original check
+        counted distinct NAME PREFIXES via grep -- a new product sharing a prefix (e.g. a
+        hypothetical "WOSA Conference Extra Track") would silently escape detection because
+        the grep's own alternation list would need to be extended by hand to ever fail, and
+        counting names rather than slugs conflates two real base products (SAOC Symposium,
+        WOSA Conference) that legitimately EACH carry a separate '-early-bird' SKU variant
+        (a pre-F1 pattern this feature does not retrofit -- CONFERENCE_PRODUCTS predates F1's
+        computed-early-bird model) with a genuinely new 4th family. Now a REAL RUNTIME read of
+        CONFERENCE_PRODUCTS: strips any '-early-bird' suffix off every slug to recover base
+        SKU identity, asserts that identity SET is EXACTLY {saoc-symposium, wosa-conference,
+        saoc-wosa-joint} (no more, no fewer, no substitutes), and separately asserts the raw
+        array length is exactly 6 (3 base + 3 early-bird variants) -- so a duplicate slug, a
+        renamed base identity, or a silently-added 4th family are all caught, none of them
+        just a name-string coincidence.
+
+        REHOMED 2026-09-08 (dev, team lead ruling): the inline `node --import tsx/esm -e
+        "..."` one-liner above was the contract's OWN quoting defect, not a harness bug --
+        ~700 characters of JS with nested single-quote escapes inside a double-quoted shell
+        string inside a YAML block scalar, the exact pattern this project's
+        contract-authoring mandate forbids (see the architect's F8/A10 precedent). An
+        assertion that cannot execute through contract.py is not in the gate. Moved to a
+        proper check script, same identity-set property, same 6-count assertion --
+        contracts/checks/ticketing-complete-f2/check-conference-product-families.mjs.
+      command: npx tsx contracts/checks/ticketing-complete-f2/check-conference-product-families.mjs
+      required: true
+    - id: A16
+      description: >
+        Codex GPT-5.5 defect repair (2026-09-08, independently verified before acting): VIP's
+        STORED earlyBirdCutoff in lib/provisional-figures.ts must be the mission's DERIVED
+        90-day cutoff (2027-06-18), never the legacy fleet-wide EARLY_BIRD_CUTOFF constant
+        (2027-07-31), which has no relationship to VIP's 2026-09-08 ruling. The check derives
+        its expected value by CALLING deriveAdmissionEarlyBirdCutoffIso() rather than
+        hardcoding '2027-06-18', so the check and the source can never silently disagree, and
+        carries a named negative control against the legacy constant reappearing.
+        FALSIFYING MUTATION (demonstrated red by @dev): revert VIP's field to
+        EARLY_BIRD_CUTOFF -> exit 1 naming both the wrong value and the legacy-constant
+        regression.
+      command: node --import tsx/esm contracts/checks/ticketing-complete-f2/check-vip-stored-cutoff-derived.mjs
+      required: true
+
+    - id: A17
+      description: >
+        CLOSES THE GAP Codex identified in check-vip-computed-early-bird-price.mjs: that
+        check proves the pricing ENGINE returns the right answer but never inspects what the
+        MIGRATION ACTUALLY WRITES -- satisfiable without the property holding, this repo's
+        dominant audited defect class. Runtime proof this matters: resolveEffectivePrice() in
+        lib/checkout-reservation.ts, the function that actually gates checkout pricing, reads
+        the STORED field and never calls the engine, so a wrong stored value sells at the
+        wrong price for real. This assertion invokes buildMigrationPlan() -- the migration's
+        own pure, exported, --apply-free plan builder, needing no credentials or network --
+        and inspects the emitted ticketType-vip price-patch op directly, also regression-
+        guarding the rest of Brad's ruling on that op (price 500, regularPrice 625,
+        provisional false). FALSIFYING MUTATION (demonstrated red by @dev): revert VIP's
+        source field -> exit 1 naming the value the plan would write.
+      command: node --import tsx/esm contracts/checks/ticketing-complete-f2/check-vip-migration-plan-cutoff.mjs
+      required: true
+
+    - id: A18
+      description: >
+        Scope containment: repairing VIP must not silently touch weekend-pass's still-OPEN
+        cutoff escalation (open-decisions doc section 3), which is deliberately Brad's to
+        decide. Proves buildMigrationPlan()'s plan contains NO price-patch op against
+        ticketType-weekend-pass or ticketType-early-bird-weekend-pass setting an
+        earlyBirdCutoff field at all, so a future change that starts patching it as a side
+        effect goes red before it can reach --apply and destroy the evidence a decision was
+        needed. INDEPENDENCE DEMONSTRATED: during @dev's falsifiability run, reverting VIP's
+        cutoff turned A16 and A17 red while THIS assertion stayed green -- three genuinely
+        separate properties, not one exit code split across three ids.
+      command: node --import tsx/esm contracts/checks/ticketing-complete-f2/check-vip-fix-scope-containment.mjs
+      required: true
+
+    - id: A19
+      description: >
+        Open-decisions doc broadened to its TRUE scope (Codex finding follow-up). The legacy
+        EARLY_BIRD_CUTOFF constant is a FLEET-WIDE question, not a weekend-pass-only one:
+        grep-verified independently by @dev and the team lead (2026-09-08), 6 value call
+        sites exist and 5 remain after VIP's repair -- early-bird (Early-Bird Exhibition
+        Ticket), weekend-pass, saoc-symposium-early-bird, wosa-conference-early-bird,
+        saoc-wosa-joint-early-bird. The doc must name all five so Brad decides once with the
+        real blast radius visible, rather than seeing only the single slug that happens to
+        carry a live paying customer. OBSERVED RED BEFORE GREEN: the team lead ran this exact
+        command before the doc was written (exit 1) and after (exit 0) -- an assertion first
+        seen passing is an assertion nobody has tested.
+      command: >-
+        grep -q "Early-Bird Exhibition Ticket" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "saoc-symposium-early-bird" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "wosa-conference-early-bird" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "saoc-wosa-joint-early-bird" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "2027-06-18" docs/ticketing-complete-f2-open-decisions.md
+      required: true
