@@ -11,7 +11,12 @@
 // class-name standing in for verification."
 import { expect, test } from '@playwright/test';
 
-const TRIGGER_NAME = 'Visit';
+// Mission menu-system-layout4 M2/F2: retargeted from the pre-Layout-4 three-mega
+// shape's old trigger name to the single National Show mega trigger — see
+// contract-f2.yaml's A5/A6. Tab order into the open panel runs lead -> groups ->
+// feature rail (mission section 6 property 4) because that's the panel's real DOM
+// order in components/chrome/MegaMenu.tsx; nothing here needs to special-case it.
+const TRIGGER_NAME = 'National Show';
 
 // Tabs forward from the top of the document until an element with the given
 // accessible name is focused, or the attempt budget runs out. Avoids hardcoding

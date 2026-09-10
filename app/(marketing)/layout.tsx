@@ -15,7 +15,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
   return (
     <>
       <UtilityBar show={show} />
-      <Header />
+      <Header show={show} />
       {/* Breadcrumb injected by individual page layouts in M4+ */}
       <main>{children}</main>
       <Footer />

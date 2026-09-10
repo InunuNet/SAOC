@@ -18,15 +18,21 @@ features:
       contracts/checks/menu-system-layout4-shared/check-pending-routes-still-pending.mjs --
       every route in f1-pending-nos-routes.json must still genuinely be unresolved, checked
       against a stated git ref (filesystem, mandatory) plus an opportunistic local HTTP
-      check; and check-manifest-routes-have-pages.mjs -- every listed:true manifest route
-      must have a page.tsx at a stated git ref
+      check; check-manifest-routes-have-pages.mjs -- every listed:true manifest route
+      must have a page.tsx at a stated git ref; and
+      check-nav-links-200-gated-by-exemptions.mjs -- property 1 (all NAV hrefs return 200)
+      reports SKIP, never PASS, while any route remains listed pending, so a correct fix to
+      the stale-import bug in e2e/nav-links-200.spec.ts cannot silently launder an
+      under-measured PASS
     status: pending
 goldens:
   - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-pending-nos-routes.json
   - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/pending-routes-one-resolved.json
   - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/manifest-listed-route-missing-page.json
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/pending-routes-empty-fixture.json
   - contracts/checks/menu-system-layout4-shared/check-pending-routes-still-pending.mjs
   - contracts/checks/menu-system-layout4-shared/check-manifest-routes-have-pages.mjs
+  - contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs
 assertions:
   phase: 4
   checks:
@@ -78,8 +84,16 @@ assertions:
         /national-show/wosa (not /national-show/wosa-conference, which is only
         nav-config.ts's R3-override NAV href, a separate routing decision layered on top of
         the manifest). This checker intentionally checks the manifest's own slug, not NAV's
-        aliased href -- the NAV-vs-filesystem mismatch that creates is a distinct, already-
-        covered gap (e2e/nav-links-200.spec.ts's real HTTP check on the NAV href itself).
+        aliased href. CORRECTION (2026-09-10, architect self-correction after review): the
+        resulting NAV-href-vs-filesystem mismatch is NOT covered by
+        e2e/nav-links-200.spec.ts's HTTP check, as an earlier draft of this description
+        claimed -- /national-show/wosa-conference is itself IN pendingRoutes, so that spec
+        test.skip()s it and never issues the request. It is also not covered by
+        e2e/nav-rendered-reachability.spec.ts, which only asserts an anchor exists in the
+        DOM and never resolves it. A NAV href that 404s forever would currently be invisible
+        to both. A4 below (the property-1 gate) is what actually closes this: it refuses to
+        report property 1 satisfied while /national-show/wosa-conference (or any other
+        route) remains listed pending, so the gap cannot silently read as passing.
         NEGATIVE FIXTURE (TEST-ONLY --manifest-file escape hatch, see the checker's own
         usage comment): goldens/fixtures/f1-negative-fixtures/manifest-listed-route-missing-page.json
         carries one real route plus one fabricated listed:true route with no page.tsx
@@ -88,4 +102,51 @@ assertions:
         --manifest-file <that fixture> --ref HEAD` exits 1, naming the fabricated slug.
       command: >-
         node contracts/checks/menu-system-layout4-shared/check-manifest-routes-have-pages.mjs
+      required: true
+
+    - id: A4
+      description: >
+        THE COMPLEMENT TO A1: A1 fails if a listed exemption has resolved (the list can't go
+        stale). This assertion refuses to claim mission section 6 property 1 satisfied while
+        ANY exemption still exists (the list can't become permanent either). Together neither
+        failure mode is possible alone -- either checker alone leaves a hole.
+        check-nav-links-200-gated-by-exemptions.mjs exits 3 (SKIP,
+        run_contract_suite.mjs's SHELL_SKIP_EXIT_CODE) whenever
+        f1-pending-nos-routes.json's pendingRoutes is non-empty, and can only exit 0 once the
+        list is EMPTY and a real HTTP check of all 23 NAV hrefs (collected the same wide way
+        e2e/nav-rendered-reachability.spec.ts does, including lead/featureRail hrefs the
+        narrower e2e/nav-links-200.spec.ts's own collectHrefs misses) confirms every one
+        returns 200. THE GAP THIS CLOSES (confirmed live during contract authoring):
+        `npx playwright test e2e/nav-links-200.spec.ts` currently reports "2 failed, 3
+        skipped, 16 passed" -- but those 2 failures (sa-exhibitors, international-guests)
+        are an ACCIDENT of that spec still importing the stale, under-inclusive
+        f6-pending-nos-routes.json (4 of 6 real pending routes). The moment @dev makes the
+        CORRECT, contract-required fix (repointing to f1-pending-nos-routes.json per
+        contract-f1.yaml A8/A9), all 6 routes skip, Playwright reports "0 failed, 6 skipped"
+        and exits 0, and a naive shell-exit-code read of that run would classify PASS having
+        measured 11 of 17 manifest hrefs. This assertion is what stays honest through that
+        fix. THE EMPTY-LIST BRANCH IS NOT A RUBBER STAMP (TEST-ONLY --pending-routes
+        override, see goldens/fixtures/pending-routes-empty-fixture.json): confirmed during
+        contract authoring that
+        `node contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs
+        --pending-routes <that fixture> --base-url http://localhost:<port>` DOES issue a
+        real per-href fetch() against the given origin and DOES fail when a response isn't
+        200 -- the branch is not dead code and not an unconditional pass. CORRECTION
+        (2026-09-10, architect self-correction after review): an earlier draft of this
+        description cited specific pass/fail counts from a run against a port already
+        listening from unrelated concurrent work, described only as "a live local dev
+        server" -- an unnamed, unverified tree. On re-check, four of those routes
+        (/members, /national-show/about, /national-show/workshops,
+        /national-show/conferences) return 200 on a clean Playwright run against this
+        repo's own working tree, so that run's specific numbers were evidence about
+        whatever that port was actually serving, not about this tree, and are withdrawn --
+        do not cite them. What stands, and is real: the HTTP branch executes and enforces
+        200 (Branch 1's skip-on-non-empty and Branch 3's fail-closed-without-base-url are
+        unaffected and independently correct). Re-proving the empty-list branch's numbers
+        properly requires a server whose tree is named -- e.g. Playwright's own
+        webServer-managed dev server (playwright.config.ts) rather than an ambient port --
+        left for whoever next runs this gate for real, once f1-pending-nos-routes.json is
+        actually empty.
+      command: >-
+        node contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs
       required: true

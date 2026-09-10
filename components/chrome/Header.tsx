@@ -17,8 +17,20 @@ import { MobileMenu } from './MobileMenu';
 import { SearchOverlay } from './SearchOverlay';
 import { MegaMenu } from './MegaMenu';
 import { NAV } from './nav-config';
+import type { ShowIdentity } from '@/types';
 
-export function Header() {
+interface HeaderProps {
+  /**
+   * The nationalShow Sanity singleton — fetched once in app/(marketing)/layout.tsx
+   * (the same source UtilityBar already reads) and threaded down to MegaMenu and
+   * MobileMenu for the mega's lead/feature-rail meta lines. Optional: surfaces
+   * that render Header without fetching it (e.g. /admin) simply render no meta
+   * line, never a hardcoded placeholder.
+   */
+  show?: ShowIdentity | null;
+}
+
+export function Header({ show }: HeaderProps = {}) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -92,7 +104,7 @@ export function Header() {
           <nav aria-label="Primary" className="hidden min-[1240px]:flex items-center gap-7">
             {NAV.map((n) => {
               if (n.type === 'mega') {
-                return <MegaMenu key={n.id} item={n} />;
+                return <MegaMenu key={n.id} item={n} show={show} />;
               }
               const active = !n.disabled && isActive(n.href);
               if (n.disabled) {
@@ -167,6 +179,7 @@ export function Header() {
         onClose={() => setMobileOpen(false)}
         nav={NAV}
         triggerRef={hamburgerRef}
+        show={show}
       />
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>

@@ -8,20 +8,24 @@
 // it and the derived list here disagree, nav-config.ts changed and the golden
 // should be updated in the same commit as a reviewable diff.
 //
-// Mission ticketing-complete M3/F6 — the National Show nav now wires five hrefs
-// (/national-show/about, /national-show/exhibitors/international,
-// /national-show/symposium, /national-show/wosa-conference,
-// /national-show/programme) that don't exist as real routes yet — that session is
-// building them, and the routing agreement between the two sessions is final
-// regardless. goldens/fixtures/f6-pending-nos-routes.json is the single source of
-// truth for which hrefs are a KNOWN, LISTED exception to the 200-status check
-// below — this file must read it directly rather than hand-maintain its own skip
-// list, which could silently drift from nav-config.ts's real pending set. Every
-// href NOT in that list still asserts 200 exactly as before.
+// Mission menu-system-layout4 M1/F1 — the Layout 4 National Show mega now wires
+// a lead block (lead.leadHref, lead.theShow.links), column heading links
+// (column.headingHref) and a feature rail (featureRail.ctaHref) in addition to
+// the ordinary column links, and six hrefs under it
+// (/national-show/programme, /national-show/symposium,
+// /national-show/wosa-conference, /national-show/sa-exhibitors,
+// /national-show/international-guests, /national-show/sponsors) don't exist as
+// real routes yet — the NOS lane (origin/nos-site) is building them, and the
+// routing agreement between the two sessions is final regardless.
+// goldens/fixtures/f1-pending-nos-routes.json is the single source of truth for
+// which hrefs are a KNOWN, LISTED exception to the 200-status check below — this
+// file must read it directly rather than hand-maintain its own skip list, which
+// could silently drift from nav-config.ts's real pending set. Every href NOT in
+// that list still asserts 200 exactly as before.
 import { expect, test } from '@playwright/test';
 
 import { NAV, type NavItem } from '@/components/chrome/nav-config';
-import pendingNosRoutes from '../.agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json';
+import pendingNosRoutes from '../.agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-pending-nos-routes.json';
 
 function collectHrefs(items: readonly NavItem[]): string[] {
   const hrefs: string[] = [];
@@ -30,15 +34,29 @@ function collectHrefs(items: readonly NavItem[]): string[] {
       hrefs.push(item.href);
     } else {
       hrefs.push(item.href);
+      if (item.lead) {
+        hrefs.push(item.lead.leadHref);
+        for (const link of item.lead.theShow.links) {
+          hrefs.push(link.href);
+        }
+      }
       for (const column of item.columns) {
+        if (column.headingHref) {
+          hrefs.push(column.headingHref);
+        }
         for (const link of column.links) {
           hrefs.push(link.href);
         }
       }
+      if (item.featureRail) {
+        hrefs.push(item.featureRail.ctaHref);
+      }
     }
   }
-  // De-duplicate — a href could in principle appear as both a mega item's own
-  // href and a column link (it doesn't today, but the test shouldn't assume that).
+  // De-duplicate — a href could in principle appear in more than one of these
+  // places (e.g. Tickets is both a lead.theShow link and the feature rail CTA
+  // today, and lead.leadHref happens to equal the mega's own item.href today —
+  // it doesn't need to stay that way for the test to hold).
   return Array.from(new Set(hrefs));
 }
 
@@ -63,9 +81,9 @@ test.describe('nav links return 200', () => {
 
   // KNOWN, LISTED exceptions — the NOS session is building these routes. Skipped
   // (not silently omitted from the file, not asserted 200) so a future reader sees
-  // exactly which hrefs are pending and why, per f6-pending-nos-routes.json.
+  // exactly which hrefs are pending and why, per f1-pending-nos-routes.json.
   for (const href of SKIPPED_HREFS) {
-    test.skip(`${href} returns 200 (pending NOS route — see f6-pending-nos-routes.json)`, async ({
+    test.skip(`${href} returns 200 (pending NOS route — see f1-pending-nos-routes.json)`, async ({
       page,
     }) => {
       const response = await page.goto(href);

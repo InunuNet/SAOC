@@ -12,16 +12,25 @@ import Image from 'next/image';
 import { ChevronDown, X } from 'lucide-react';
 
 import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
-import type { NavItem } from './nav-config';
+import type { NavColumn, NavItem } from './nav-config';
+import { formatShowDateRange } from '@/lib/show-identity';
+import type { ShowIdentity } from '@/types';
 
 interface MobileMenuProps {
   open: boolean;
   onClose: () => void;
   nav: ReadonlyArray<NavItem>;
   triggerRef?: React.RefObject<HTMLElement | null>;
+  /**
+   * The nationalShow Sanity singleton — same source UtilityBar already reads,
+   * threaded down from app/(marketing)/layout.tsx via Header. Never hardcode
+   * a venue or a date here; this prop is the only source. Optional because
+   * Header also renders on surfaces (e.g. /admin) that don't fetch it.
+   */
+  show?: ShowIdentity | null;
 }
 
-export function MobileMenu({ open, onClose, nav, triggerRef }: MobileMenuProps) {
+export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -65,6 +74,18 @@ export function MobileMenu({ open, onClose, nav, triggerRef }: MobileMenuProps) 
     if (e.target === e.currentTarget) onClose();
   };
 
+  // Meta lines: computed at render time from the nationalShow singleton, never
+  // authored as literal copy in nav-config.ts. As of 2026-09-10 the singleton's
+  // showDate/showEndDate are both null, so formatShowDateRange returns null —
+  // the lead line renders venue-only with no dangling separator, and the
+  // feature rail's date-only meta renders nothing (cleanly omitted). Both pick
+  // up real values with no code change once Studio has real dates.
+  const venueName = show?.venue?.name ?? null;
+  const dateRange = formatShowDateRange(show?.showDate, show?.showEndDate);
+  const leadMeta =
+    [venueName, dateRange].filter((part): part is string => Boolean(part)).join(' · ') || null;
+  const featureRailMeta = dateRange;
+
   return (
     <div
       ref={containerRef}
@@ -74,7 +95,7 @@ export function MobileMenu({ open, onClose, nav, triggerRef }: MobileMenuProps) 
       onClick={handleBackdrop}
     >
       <aside
-        className="ml-auto h-full w-full max-w-[360px] bg-parchment p-6"
+        className="ml-auto h-full w-full max-w-[360px] overflow-y-auto bg-parchment p-6"
         style={{ animation: 'slideInFromRight 250ms cubic-bezier(0.4,0,0.2,1) both' }}
       >
         {/* Top row: wordmark + close */}
@@ -117,18 +138,65 @@ export function MobileMenu({ open, onClose, nav, triggerRef }: MobileMenuProps) 
                       />
                     </button>
                     {isExpanded && (
-                      <div className="pl-3 pb-2">
-                        {n.ctaLabel && (
-                          <Link
-                            href={n.href}
-                            onClick={onClose}
-                            className="block px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-                          >
-                            {n.ctaLabel} &rarr;
-                          </Link>
+                      <div className="pl-3 pb-4">
+                        {/* Feature block — sits at the top of the expanded
+                            section, per mission section 1/3 F3. */}
+                        {n.featureRail && (
+                          <div className="mt-2 rounded-sm bg-bone p-4">
+                            {featureRailMeta && (
+                              <span className="font-mono text-[12px] text-muted">
+                                {featureRailMeta}
+                              </span>
+                            )}
+                            <p className="mt-1 font-serif text-[16px] font-medium text-ink">
+                              {n.featureRail.heading}
+                            </p>
+                            {n.featureRail.blurb && (
+                              <p className="mt-1 font-sans text-[14px] text-ink/80">
+                                {n.featureRail.blurb}
+                              </p>
+                            )}
+                            <Link
+                              href={n.featureRail.ctaHref}
+                              onClick={onClose}
+                              className="mt-3 inline-flex w-fit items-center justify-center rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                            >
+                              {n.featureRail.ctaLabel}
+                            </Link>
+                          </div>
                         )}
-                        {n.columns.map((column) => (
-                          <div key={column.id} className="mt-2">
+
+                        {/* Lead — eyebrow, serif lead linking the hub, meta line. */}
+                        {n.lead && (
+                          <div className="mt-4 px-3">
+                            <span className="inline-flex w-fit items-center rounded-pill bg-bone px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
+                              {n.lead.eyebrow}
+                            </span>
+                            <Link
+                              href={n.lead.leadHref}
+                              onClick={onClose}
+                              className="mt-2 block w-fit rounded-sm font-serif text-[16px] font-medium text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                            >
+                              {n.lead.leadLabel}
+                            </Link>
+                            {leadMeta && (
+                              <span className="mt-1 block font-mono text-[12px] text-muted">
+                                {leadMeta}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Four groups as headed lists with descriptors — The
+                            Show (folded into lead on desktop, its own group
+                            here since mobile has no column-width constraint),
+                            Visit, Programme, Exhibit & Trade. */}
+                        {(
+                          [n.lead?.theShow, ...n.columns].filter(
+                            (column): column is NavColumn => Boolean(column),
+                          )
+                        ).map((column) => (
+                          <div key={column.id} className="mt-4">
                             {column.headingHref ? (
                               <Link
                                 href={column.headingHref}
@@ -142,16 +210,33 @@ export function MobileMenu({ open, onClose, nav, triggerRef }: MobileMenuProps) 
                                 {column.heading}
                               </span>
                             )}
-                            <ul className="flex flex-col gap-1">
+                            <ul className="flex flex-col">
+                              {/* The descriptor sits OUTSIDE the anchor: an <a> wrapping
+                                  both the name and the descriptor gives the link an
+                                  accessible name that's the concatenation of both, which
+                                  breaks exact link-name lookups (e2e/mobile-nav-reaches-
+                                  every-section.spec.ts) and hands screen-reader users a
+                                  noisier link name than the visible "bold name over a
+                                  muted descriptor" leaf pattern implies. The row's
+                                  hover/press affordance stays on the wrapping div, not
+                                  the anchor, so the whole leaf still highlights as one
+                                  touch target even though only the name is a link. */}
                               {column.links.map((link) => (
                                 <li key={link.id}>
-                                  <Link
-                                    href={link.href}
-                                    onClick={onClose}
-                                    className="block px-6 py-2 font-sans text-[14px] text-ink/80 hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-                                  >
-                                    {link.label}
-                                  </Link>
+                                  <div className="rounded-sm px-6 py-2 transition-colors duration-150 hover:bg-bone">
+                                    <Link
+                                      href={link.href}
+                                      onClick={onClose}
+                                      className="block font-sans text-[14px] font-bold text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                                    >
+                                      {link.label}
+                                    </Link>
+                                    {link.descriptor && (
+                                      <span className="mt-0.5 block font-sans text-[12px] text-muted">
+                                        {link.descriptor}
+                                      </span>
+                                    )}
+                                  </div>
                                 </li>
                               ))}
                             </ul>
