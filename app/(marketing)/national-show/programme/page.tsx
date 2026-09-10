@@ -1,15 +1,17 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 
 import { ShowSectionNav } from '@/components/show';
-import { NosHero } from '@/components/nos/NosHero';
-import { ShowPageProse } from '@/components/nos/ShowPageProse';
-import { loadShowPage } from '@/lib/data/show-pages';
+import { ShowContentState } from '@/components/show/nos/ShowContentState';
+import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 
 // F12 (national-show-ia-alignment, M4) — created route. Placeholder copy under an R11
 // disclosure until the Council supplies the finished programme; see
 // .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/route-manifest.golden.md.
+//
+// F24 (M4) — replaces the hard 404 guard with loadShowPageOrFallback()/
+// <ShowContentState>, so an absent document renders a disclosed shell instead of a 404.
+// See goldens/m4/never-404-fallback.golden.md.
 export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
@@ -19,26 +21,14 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default async function ProgrammePage() {
-  const page = await loadShowPage('11-programme');
-  // R6 — loadShowPage returning null produces a 404, never an empty page that reads as
-  // finished with nothing to say.
-  if (!page) notFound();
+  const result = await loadShowPageOrFallback('11-programme', {
+    label: 'Programme',
+    purpose: 'The overall schedule of sessions across the four show days.',
+  });
 
   return (
     <>
-      <NosHero
-        image="/images/orchid-yellow.jpg"
-        eyebrow="National Show"
-        title={page.title}
-        lede={page.summary ?? undefined}
-        priority
-      />
-
-      <div className="mx-auto max-w-[900px] space-y-10 px-8 py-16">
-        {page.sections.map((section) => (
-          <ShowPageProse key={section.sectionKey} section={section} />
-        ))}
-      </div>
+      <ShowContentState result={result} heroImage="/images/orchid-yellow.jpg" layout="prose" />
 
       <ShowSectionNav current="/national-show/programme" />
     </>

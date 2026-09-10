@@ -6,6 +6,7 @@ import type { SanityImageSource } from '@sanity/image-url';
 
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { wrapGatedProse } from '@/components/nos/gated-prose-internal';
+import { wrapShowPageResult } from '@/components/show/nos/show-content-state-internal';
 
 // F3 (national-show-ia-alignment, M1) — THE GATE.
 //
@@ -86,7 +87,23 @@ export type ShowPage = {
   seoTitle: string | null;
   seoDescription: string | null;
   seoImage: SanityImage | null;
+  // F24 (national-show-ia-alignment, M4) — the single source of truth the
+  // data-nos-content-state marker is derived from. Absent/false on every real document;
+  // true only on a value buildAbsentShowPage() constructed. See
+  // goldens/m4/never-404-fallback.golden.md.
+  isFallback?: boolean;
 };
+
+// F24 — opaque result of loadShowPageOrFallback(). There is no way through the type
+// system for a route module to reach `.sections`, `.title` or `.isFallback` on this
+// value — the single component permitted to open it is
+// components/show/nos/ShowContentState.tsx, via
+// components/show/nos/show-content-state-internal.ts's unwrap side (that module's wrap
+// side is called below, in loadShowPageOrFallback, and never re-exported). Same
+// opaque-brand + eslint `no-restricted-imports` + grep-guard idiom as GatedProse above —
+// not a new enforcement mechanism. See never-404-fallback.golden.md's "The marker must
+// be STRUCTURAL, not author-remembered".
+export type ShowPageResult = { readonly __showPageResult: unique symbol };
 
 // ---------------------------------------------------------------------------
 // Fixed fallback wording — must match the seed defaults in
@@ -530,4 +547,102 @@ export async function loadAllShowPages(): Promise<ShowPage[]> {
   return (docs ?? [])
     .map((doc) => hydratePage(doc, settings))
     .sort((a, b) => a.specNumber - b.specNumber);
+}
+
+// ---------------------------------------------------------------------------
+// F24 (national-show-ia-alignment, M4) — the never-404 fallback.
+//
+// See goldens/m4/never-404-fallback.golden.md and goldens/m4/content-state-verifier.golden.md.
+// ---------------------------------------------------------------------------
+
+export type ShowPageFallbackInput = {
+  /** The route's manifest label — becomes the fallback's <h1> and page title. */
+  label: string;
+  /** The route's manifest `purpose`, reproduced byte-identical (NF13) — never edited,
+   * tightened or re-voiced. */
+  purpose: string;
+};
+
+// Pinned to fixtures/f24-fallback-wording.json's `fixedSentence`. Quoted directly here
+// (not imported from the fixture, which is test-only content, not a runtime
+// dependency) — NF11 is what keeps the two from drifting apart.
+export const ABSENT_SHOW_PAGE_FIXED_SENTENCE =
+  'The South African Orchid Council has not yet supplied the content for this page.';
+
+const ABSENT_SHOW_PAGE_SECTION_KEY = 'content-not-yet-published';
+
+function absentShowPageBody(purpose: string): PortableTextBlock[] {
+  const block = (key: string, text: string): PortableTextBlock =>
+    ({
+      _type: 'block',
+      _key: key,
+      style: 'normal',
+      markDefs: [],
+      children: [{ _type: 'span', _key: `${key}-s1`, text, marks: [] }],
+    }) as unknown as PortableTextBlock;
+
+  return [
+    block(`${ABSENT_SHOW_PAGE_SECTION_KEY}-purpose`, purpose),
+    block(`${ABSENT_SHOW_PAGE_SECTION_KEY}-sentence`, ABSENT_SHOW_PAGE_FIXED_SENTENCE),
+  ];
+}
+
+// Builds a REAL ShowPage for a listed route whose document is absent, so the route can
+// render through the same ShowPageProse path as any other page instead of 404ing.
+// NEVER assigns `pageProvenance` from a literal (A5's static guard, second layer over
+// NF9/NF12) — the section's own provenance is 'placeholder-ai' and the existing
+// resolvePageProvenance() derives the page-level rollup exactly as it would for any
+// other zero-confirmed-content page. The gate decides; this builder does not get to
+// declare itself clean. See never-404-fallback.golden.md §2-3.
+function buildAbsentShowPage(pageKey: string, fallback: ShowPageFallbackInput, settings: ShowPageSettingsFields | null): ShowPage {
+  const sectionInput: SectionProvenanceInput = {
+    provenance: 'placeholder-ai',
+    sourcePath: null,
+    kind: 'prose',
+    body: [],
+  };
+  const notice = resolveNotice(sectionInput, settings);
+  const pageProvenance = resolvePageProvenance([sectionInput]);
+  const section: ShowPageSection = {
+    sectionKey: ABSENT_SHOW_PAGE_SECTION_KEY,
+    heading: null,
+    kind: 'prose',
+    body: wrapGatedProse(absentShowPageBody(fallback.purpose), notice),
+    notice,
+  };
+  return {
+    pageKey,
+    specNumber: 0,
+    title: fallback.label,
+    summary: null,
+    sections: [section],
+    pageProvenance,
+    notice,
+    seoTitle: null,
+    seoDescription: null,
+    seoImage: null,
+    isFallback: true,
+  };
+}
+
+/**
+ * The never-404 read path. `loadShowPage` above is UNCHANGED and still returns `null`
+ * for an absent document — every existing caller keeps that distinction. This is the
+ * ONLY place the absent case is turned into a renderable page, and it hands the result
+ * out as an OPAQUE `ShowPageResult` rather than a bare `ShowPage` — see
+ * components/show/nos/show-content-state-internal.ts and
+ * components/show/nos/ShowContentState.tsx, the one component permitted to open it.
+ *
+ * NO try/catch here (NF9): a transport failure — Sanity unreachable, a bad token, a
+ * malformed GROQ — must surface as an error, never be swallowed into a fallback that
+ * reads as "content not yet published". See never-404-fallback.golden.md §5.
+ */
+export async function loadShowPageOrFallback(
+  pageKey: string,
+  fallback: ShowPageFallbackInput,
+): Promise<ShowPageResult> {
+  const page = await loadShowPage(pageKey);
+  if (page) return wrapShowPageResult(page);
+  const settings = await loadShowPageSettings();
+  return wrapShowPageResult(buildAbsentShowPage(pageKey, fallback, settings));
 }

@@ -946,3 +946,86 @@ claims while ruling.
 - **The fixed sentence** ("The South African Orchid Council has not yet supplied the content for this
   page.") is authored prose no source document contains, but it makes no claim about the show, and
   NF13's text census pins the marked subtree to exactly four permitted strings so it cannot grow.
+
+
+---
+
+## NEEDS BRAD — SECURITY: `.env.local` was briefly copied to `/tmp` (2026-09-10)
+
+**What happened.** While preparing the LIVE1 discrimination demo, `Dev_Son5_M4-F13` ran a `cp` of
+`.env.local` to `/tmp/env-local-backup-verify-only.txt`. That file holds `SANITY_API_TOKEN` — a
+**write-capable** token for the production dataset. The agent noticed immediately, deleted it, and
+**disclosed it unprompted in its report.**
+
+**Verified by the orchestrator, not taken on trust:**
+- `/tmp/env-local-backup-verify-only.txt` — confirmed absent.
+- No other `*env*` copies in `/tmp` or `/private/tmp` (the `athanor-py311-venv` hits are a glob
+  false positive on "venv").
+- Inside the project, only `.env.local` and `.env.local.example` exist. No stray copy.
+
+**Exposure assessment.** Brief, local-only, single-user machine, file removed. `/tmp` on macOS is
+world-readable as a directory and files there typically land mode 644, so any other local account
+could have read it during the window. No evidence of access; no way to prove absence of access.
+
+### THE DECISION FOR BRAD: rotate the Sanity token, or accept the risk?
+
+**Recommendation: rotate.** The token is write-capable against the production dataset, rotation is
+cheap, and "briefly world-readable on disk" is the standard trigger for it. Accepting the risk is
+defensible on a single-user machine — but that is a judgement about the machine, which is Brad's to
+make, not the agents'.
+
+Nothing is blocked on this. The mission continues either way.
+
+### Why the disclosure matters more than the incident
+The agent caught its own mistake, cleaned it up, and reported it without being asked, in a report it
+knew would be read by the person who could criticise it. **That behaviour must not be discouraged.**
+An agent that hides a stray `cp` is far more dangerous than one that makes it. The rule to reinforce
+is the existing one — secrets never leave the project folder, and scratch belongs in
+`.tmp/sandbox/<purpose>/` — not "don't admit it".
+
+**Process note:** `.claude/rules/sandbox.md` already forbids `/tmp` for scratch. This is not a missing
+rule; it is a rule that was not applied under time pressure to a file nobody thought of as scratch.
+Worth restating in dev briefs that the sandbox rule covers *copies of project files*, not just
+temporary working files.
+
+
+---
+
+## NEEDS BRAD — URGENT: `InunuNet/SAOC` IS PUBLIC AND HAS SECRETS IN ITS HISTORY (2026-09-10)
+
+**Verified directly, not relayed:** `gh repo view InunuNet/SAOC` returns `"isPrivate": false,
+"visibility": "PUBLIC"`. Brad believed this repo was private. It is not, and it has been pushed to
+as recently as today.
+
+**What is exposed** (found by the `saoc-eb` lane, not this one): two plaintext mailbox passwords in
+a committed copy of Lee-Ann's spec document. **Redacted from HEAD today — but git history still
+carries them, and the repo is public.**
+
+### Redaction is not remediation
+
+Removing a secret from HEAD does nothing about history. On a public repository assume every commit
+has been cloned, forked, mirrored and indexed. Even a full history rewrite (`filter-repo`/BFG) does
+not reach existing forks, GitHub's cached object views, or anything already scraped. **The only
+remedy that actually works is rotating the credential.** Everything else is tidying.
+
+### Recommended, in this order
+1. **Change both mailbox passwords now.** Treat them as compromised, because on a public repo they
+   are — not "possibly", by default.
+2. **Decide the repo's visibility deliberately.** If it was never meant to be public, make it
+   private — but do that knowing it does not un-publish anything already fetched.
+3. **Rotate the Sanity write token** (the separate `/tmp` incident logged above). Two credential
+   events in one day is a pattern, and this one raises the stakes of the other.
+4. **Sweep history for anything else Drive-sourced.** `content/drive-source/` holds Lee-Ann's
+   documents converted to markdown, and `content.md` + `manifest.json` are TRACKED by design per
+   `CLAUDE.md`. If any of her documents contain credentials, they are in git by policy, not accident.
+
+### This lane's exposure: NONE FOUND — checked, not assumed
+- `.env.local` has **never** been tracked in any ref.
+- This lane tracks **zero** files under `content/drive-source/`.
+- The 58-commit diff `origin/main..origin/nos-site` introduces **no** credential-shaped content
+  (matches were telemetry session ids, a settings flag, and a function name).
+- The `/tmp` copy of `.env.local` never entered git.
+
+**Nothing in the NOS site lane needs to change.** This is recorded here because it is far more
+serious than the mission it interrupted, and because the sweep of item 4 is a decision for Brad —
+tracked Drive content is a documented policy, and changing it is his call, not an agent's.

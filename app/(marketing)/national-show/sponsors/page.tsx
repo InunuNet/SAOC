@@ -1,15 +1,13 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 
 import { ShowSectionNav } from '@/components/show';
-import { NosHero } from '@/components/nos/NosHero';
-import { ShowPageProse } from '@/components/nos/ShowPageProse';
+import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { RealEmptyListing } from '@/components/show/nos/RealEmptyListing';
 import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
 import { ShowSponsorCard, type ShowSponsorCardData } from '@/components/show/nos/ShowSponsorCard';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { showSponsorsQuery } from '@/sanity/queries';
-import { loadShowPage } from '@/lib/data/show-pages';
+import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 
 // F14 (national-show-ia-alignment, M4) — created route, reinstated by Brad. Its OWN data
@@ -19,6 +17,12 @@ import { buildPageMetadata } from '@/lib/seo';
 // Nothing here imports partnersQuery or references the site-level sponsor document
 // type's GROQ filter (D51/SP2) — spelled out rather than quoted literally, because a
 // comment containing the literal filter string is a false positive for that same check.
+//
+// F24 (M4) — replaces the hard 404 guard with loadShowPageOrFallback()/
+// <ShowContentState>, so an absent document renders a disclosed shell instead of a 404.
+// The sponsor grid/RealEmptyListing is independent of the ShowPage, so it is passed as
+// `listingContent` and rendered in the published branch only. See
+// goldens/m4/never-404-fallback.golden.md.
 export const revalidate = 60;
 
 const CARD_FIELD_LABELS = ['Sponsor', 'Tier', 'Website'] as const;
@@ -34,46 +38,37 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default async function ShowSponsorsPage() {
-  const [page, sponsors] = await Promise.all([
-    loadShowPage('15-sponsors'),
+  const [result, sponsors] = await Promise.all([
+    loadShowPageOrFallback('15-sponsors', {
+      label: 'Show Sponsors',
+      purpose: "The Show's own sponsors — a separate list from SAOC's site-level sponsors.",
+    }),
     sanityFetch<ShowSponsorCardData[]>({
       query: showSponsorsQuery,
       tags: ['showSponsor', 'sanity'],
     }),
   ]);
-  if (!page) notFound();
 
   const list = sponsors ?? [];
 
   return (
     <>
-      <NosHero
-        image="/images/orchid-dark.jpg"
-        eyebrow="National Show"
-        title={page.title}
-        lede={page.summary ?? undefined}
-        priority
+      <ShowContentState
+        result={result}
+        heroImage="/images/orchid-dark.jpg"
+        layout="listing"
+        listingContent={
+          list.length > 0 ? (
+            <ShowEntityGrid
+              items={list}
+              itemKey={(sponsor) => sponsor._id}
+              renderCard={(sponsor) => <ShowSponsorCard sponsor={sponsor} />}
+            />
+          ) : (
+            <RealEmptyListing fieldLabels={CARD_FIELD_LABELS} absenceStatement={ABSENCE_STATEMENT} />
+          )
+        }
       />
-
-      <div className="mx-auto max-w-[1280px] space-y-12 px-8 py-16">
-        <div className="mx-auto max-w-[900px] space-y-10">
-          {page.sections
-            .filter((section) => section.kind === 'prose')
-            .map((section) => (
-              <ShowPageProse key={section.sectionKey} section={section} />
-            ))}
-        </div>
-
-        {list.length > 0 ? (
-          <ShowEntityGrid
-            items={list}
-            itemKey={(sponsor) => sponsor._id}
-            renderCard={(sponsor) => <ShowSponsorCard sponsor={sponsor} />}
-          />
-        ) : (
-          <RealEmptyListing fieldLabels={CARD_FIELD_LABELS} absenceStatement={ABSENCE_STATEMENT} />
-        )}
-      </div>
 
       <ShowSectionNav current="/national-show/sponsors" />
     </>

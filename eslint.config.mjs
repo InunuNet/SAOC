@@ -56,6 +56,37 @@ const config = [
       ],
     },
   },
+  // F24 (national-show-ia-alignment, M4) — sibling restriction for the ShowPageResult
+  // boundary. Only components/show/nos/ShowContentState.tsx (opens it, to render) and
+  // lib/data/show-pages.ts (wraps it, in loadShowPageOrFallback, never re-exported) may
+  // import show-content-state-internal.ts. Same opaque-brand + lint + grep-guard idiom
+  // as the GatedProse rule above — see never-404-fallback.golden.md.
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    ignores: ['components/show/nos/ShowContentState.tsx', 'lib/data/show-pages.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '**/show-content-state-internal',
+                '**/show-content-state-internal.ts',
+                '@/components/show/nos/show-content-state-internal',
+              ],
+              message:
+                'show-content-state-internal.ts is the never-404 fallback\'s ShowPageResult ' +
+                'wrap/unwrap boundary. Only components/show/nos/ShowContentState.tsx renders a ' +
+                'ShowPageResult; only lib/data/show-pages.ts constructs one. Call ' +
+                'loadShowPageOrFallback and render through <ShowContentState> instead — see ' +
+                'never-404-fallback.golden.md.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
 
 export default config;

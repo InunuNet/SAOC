@@ -1,15 +1,13 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 
 import { ShowSectionNav } from '@/components/show';
-import { NosHero } from '@/components/nos/NosHero';
-import { ShowPageProse } from '@/components/nos/ShowPageProse';
+import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { NurseryCard, type NurseryCardData } from '@/components/show/nos/NurseryCard';
 import { RealEmptyListing } from '@/components/show/nos/RealEmptyListing';
 import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { southAfricanNurseriesQuery } from '@/sanity/queries';
-import { loadShowPage } from '@/lib/data/show-pages';
+import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 
 // F14 (national-show-ia-alignment, M4) — created route. THE PUBLIC NURSERY DIRECTORY,
@@ -18,6 +16,12 @@ import { buildPageMetadata } from '@/lib/seo';
 // Zero nurseries is the correct output on day one — see route-manifest.golden.md §5. No
 // nursery name is invented; an invented one is an invented commercial relationship with
 // a real business.
+//
+// F24 (M4) — replaces the hard 404 guard with loadShowPageOrFallback()/
+// <ShowContentState>, so an absent document renders a disclosed shell instead of a 404.
+// The nursery grid/RealEmptyListing is independent of the ShowPage, so it is passed as
+// `listingContent` and rendered in the published branch only — an absent page shows the
+// disclosure alone, never a listing alongside it. See goldens/m4/never-404-fallback.golden.md.
 export const revalidate = 60;
 
 const CARD_FIELD_LABELS = ['Nursery', 'Country', 'Specialisation', "What they'll bring"] as const;
@@ -33,46 +37,37 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default async function SouthAfricanExhibitorsPage() {
-  const [page, nurseries] = await Promise.all([
-    loadShowPage('04-south-african-exhibitors'),
+  const [result, nurseries] = await Promise.all([
+    loadShowPageOrFallback('04-south-african-exhibitors', {
+      label: 'South African Exhibitors',
+      purpose: 'Public directory of South African nurseries exhibiting at the show.',
+    }),
     sanityFetch<NurseryCardData[]>({
       query: southAfricanNurseriesQuery,
       tags: ['vendorNursery', 'sanity'],
     }),
   ]);
-  if (!page) notFound();
 
   const list = nurseries ?? [];
 
   return (
     <>
-      <NosHero
-        image="/images/orchid-violet.jpg"
-        eyebrow="National Show"
-        title={page.title}
-        lede={page.summary ?? undefined}
-        priority
+      <ShowContentState
+        result={result}
+        heroImage="/images/orchid-violet.jpg"
+        layout="listing"
+        listingContent={
+          list.length > 0 ? (
+            <ShowEntityGrid
+              items={list}
+              itemKey={(nursery) => nursery._id}
+              renderCard={(nursery) => <NurseryCard nursery={nursery} />}
+            />
+          ) : (
+            <RealEmptyListing fieldLabels={CARD_FIELD_LABELS} absenceStatement={ABSENCE_STATEMENT} />
+          )
+        }
       />
-
-      <div className="mx-auto max-w-[1280px] space-y-12 px-8 py-16">
-        <div className="mx-auto max-w-[900px] space-y-10">
-          {page.sections
-            .filter((section) => section.kind === 'prose')
-            .map((section) => (
-              <ShowPageProse key={section.sectionKey} section={section} />
-            ))}
-        </div>
-
-        {list.length > 0 ? (
-          <ShowEntityGrid
-            items={list}
-            itemKey={(nursery) => nursery._id}
-            renderCard={(nursery) => <NurseryCard nursery={nursery} />}
-          />
-        ) : (
-          <RealEmptyListing fieldLabels={CARD_FIELD_LABELS} absenceStatement={ABSENCE_STATEMENT} />
-        )}
-      </div>
 
       <ShowSectionNav current="/national-show/sa-exhibitors" />
     </>
