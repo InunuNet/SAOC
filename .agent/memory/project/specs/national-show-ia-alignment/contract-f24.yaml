@@ -539,6 +539,55 @@ assertions:
       command: python3 -c "import json; d=json.load(open('.agent/memory/project/specs/national-show-ia-alignment/goldens/m4/fixtures/f24-content-baseline.json')); assert d['schema']=='saoc.nos-content-baseline/v1'; e=d['expectedPublished']; assert len(e)==6; assert all(r['slug'] and r['pageKey'] and r['seed'] for r in e)"
 
     # -----------------------------------------------------------------------
+    # THE DRIVER CAN COUNT ITSELF.
+    #
+    # The lead found that the driver next door prints TOTAL=13 while its buckets
+    # account for only 12: record() is typed (id, verdict: Verdict | string), and
+    # the `| string` escape hatch lets SERVER record the literal "reused 3002" -
+    # none of the four verdicts, so the bucket counts silently drop it. The
+    # comment directly above that signature claims "every id in ALL_CHECK_IDS
+    # gets one of these four"; the `| string` makes that comment FALSE. The
+    # invariant is asserted in prose and unenforced in the type.
+    #
+    # Benign there today - and it is the reporting-collapse class living inside
+    # the fix for the reporting-collapse class. This contract's own golden said
+    # conventions are "inherited verbatim" from that driver, so F24 would have
+    # shipped the same hole. It does not: record() takes Verdict with no widening,
+    # SERVER is not a check id at all (an exemption is how the next SERVER gets
+    # added), and A40 asserts the reconciliation on every run.
+    # -----------------------------------------------------------------------
+
+    - id: A40
+      description: >-
+        NF18 - the run's own summary reconciles: per-verdict buckets sum to ALL_CHECK_IDS.length
+        and every declared id appears in exactly one bucket. Self-referential on purpose - a
+        verifier whose summary does not add up cannot be trusted about anything else it reported.
+        A mismatch exits 2 (harness broke), never 1 (a check failed): exit 1 says "the code under
+        test is wrong", exit 2 says "stop reading my output". Same discipline as A18b requiring
+        the census totals to sum to six - a count nobody cross-foots is a count nobody is
+        checking.
+      type: shell
+      command: grep -q '^NF18 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A40b
+      description: >-
+        F24's driver does not inherit the `| string` widening that caused the defect above -
+        record()'s verdict parameter is the Verdict union alone, and SERVER is absent from
+        ALL_CHECK_IDS. Static guard, because NF18 only proves the counts agreed on THIS run;
+        this proves the escape hatch that makes them disagree is not present at all.
+      type: shell
+      command: test 0 -eq "$(grep -c 'Verdict | string' scripts/checks/verify-nos-content-state.ts)"
+
+    - id: A40c
+      description: >-
+        SERVER is not a member of ALL_CHECK_IDS in F24's driver - it is emitted as an
+        informational line only. Checked against the declaration itself rather than by grepping
+        the file for the word, which would match the legitimate informational line. An exemption
+        in the reconciliation is how the next non-verdict id gets added to a verdict list.
+      type: shell
+      command: test 0 -eq "$(grep 'ALL_CHECK_IDS =' scripts/checks/verify-nos-content-state.ts | grep -c SERVER)"
+
+    # -----------------------------------------------------------------------
     # Verification triad. gws_inbox_check is DELIBERATELY ABSENT: F24 wires no
     # mail path whatsoever, and contract-m4.yaml's D32 already escalated that
     # exact question to the lead rather than faking a subject for it. Duplicating

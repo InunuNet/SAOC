@@ -32,7 +32,44 @@ Conventions are inherited verbatim from `local-render.golden.md`, so the two rea
   asserts that absence; F24 must not violate it.
 - Playwright, headless. Never Claude-in-Chrome.
 
-`ALL_CHECK_IDS = ['SERVER', 'NF1'…'NF16']`. `NF14a`/`NF14b` are reported under the single id
+### The reconciliation rule — general, not local to this driver
+
+**Every summary a verifier prints must reconcile: the per-verdict buckets sum to the declared
+total, and every declared id is accounted for in exactly one bucket. A summary that cannot be
+reconciled is a harness fault (exit 2), never a pass.**
+
+This is stated as a general rule because it was just violated in the driver next door. The lead
+found that `verify-nos-m4-local-render.ts` prints `TOTAL=13` while its buckets account for only
+12: `record()` is typed `(id, verdict: Verdict | string, …)`, and the `| string` escape hatch
+lets `SERVER` record the literal `"reused 3002"` — which is none of the four verdicts, so the
+bucket counts silently drop it. Nothing asserts the two agree.
+
+Read the comment sitting directly above that signature: *"every id in `ALL_CHECK_IDS` gets one
+of these four, and the summary line below counts them separately so `N/M PASS` can never quietly
+absorb a SKIP or an UNMEASURED into the numerator."* **The `| string` makes that comment false.**
+The invariant is asserted in prose and unenforced in the type.
+
+It is benign there today. It is also **the reporting-collapse class living inside the fix for
+the reporting-collapse class**, which is exactly why the rule belongs in a golden rather than in
+one driver's review notes.
+
+`verify-nos-content-state.ts` must not inherit it, and this golden's own "conventions are
+inherited verbatim" line above is what would have caused it to. So, concretely:
+
+- **`record()` takes `Verdict`, with no `| string` widening.** There is no way to write a
+  non-verdict into a verdict slot.
+- **`SERVER` is not a check id.** It is emitted as an informational `# SERVER reused <port>`
+  line, outside `ALL_CHECK_IDS` entirely. The reconciliation is then exact rather than fudged
+  by an exemption — an exemption is how the next `SERVER` gets added.
+- **`NF18` asserts the reconciliation held** on every run: buckets summed to
+  `ALL_CHECK_IDS.length`, every id present exactly once. A mismatch exits **2**, never 1 — a
+  verifier that cannot count itself has not failed a check, it has broken.
+
+The same discipline is why `A18` requires the census totals to sum to six rather than merely
+existing. A count nobody cross-foots is a count nobody is checking.
+
+`ALL_CHECK_IDS = ['NF1'…'NF18']` — **verdict-bearing ids only.** `SERVER` is deliberately NOT
+among them; see the reconciliation rule below. `NF14a`/`NF14b` are reported under the single id
 `NF14`; its detail line names which half failed.
 
 ---
@@ -131,6 +168,17 @@ commit that changed the tree.
 **`NF17` is reported on its own line with its own vocabulary and is not folded into the gate
 verdict.** `NF4` is the gate. This is a distinct signal about content, and it is deliberately
 legible as one.
+
+### `NF18` — the driver can count itself
+
+| id | check |
+|---|---|
+| `NF18` | The run's own summary reconciles: the per-verdict buckets sum to `ALL_CHECK_IDS.length`, and every declared id appears in exactly one bucket. |
+
+Self-referential on purpose. A verifier whose summary does not add up cannot be trusted about
+anything else it reported, so this is checked before any of its other verdicts are believed. A
+mismatch exits **2** (harness broke), never 1 (a check failed) — the distinction matters,
+because exit 1 says "the code under test is wrong" and exit 2 says "stop reading my output".
 
 ### The 200 check, explicitly labelled insufficient
 
