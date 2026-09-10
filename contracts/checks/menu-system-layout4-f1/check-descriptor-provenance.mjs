@@ -81,20 +81,15 @@ async function main() {
   }
 
   const manifestByHref = new Map(manifest.routes.map((r) => [r.slug, r]));
-  // R3 override: the manifest's own slug for the WOSA row is /national-show/wosa, but ruling
-  // R3 (mission section 2) overturns that to /national-show/wosa-conference. Map the NAV
-  // href we actually use back to the manifest row that carries its purpose text.
-  const hrefAliases = new Map([['/national-show/wosa-conference', '/national-show/wosa']]);
 
   const { NAV } = await import(modulePath);
   const leaves = flattenLeaves(NAV);
 
   const failures = [];
   for (const { href, descriptor } of leaves) {
-    const manifestHref = hrefAliases.get(href) ?? href;
-    const route = manifestByHref.get(manifestHref);
+    const route = manifestByHref.get(href);
     if (!route) {
-      failures.push(`${href}: no manifest row found (checked slug '${manifestHref}')`);
+      failures.push(`${href}: no manifest row found (checked slug '${href}')`);
       continue;
     }
     if (!descriptor || descriptor.trim().length === 0) {
