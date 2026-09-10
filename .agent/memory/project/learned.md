@@ -3894,3 +3894,25 @@ engine connected is harder to spot than none — the honest-looking call site ma
 assume the whole module is reachable. See the full defect and the decision Brad needs to make
 in backlog.md's "F1's computed early-bird pricing engine has ZERO runtime call sites" entry,
 extended with these measured figures.
+
+## The defect class has a reporting variant, not just an assertion variant (2026-09-10)
+
+This repo's audited defect class is "an assertion satisfiable by something that isn't the real
+property." It showed up twice today OUTSIDE a contract, in status reports:
+
+- This lane told saoc-eb "the route manifest is on disk now, you can read it." True in our clone,
+  false everywhere else — nothing had been pushed. Had they trusted it, they would have built a
+  header against a file they had to invent.
+- saoc-eb audited a prototype for forbidden colours, found none, and called it clean. The header
+  CSS was wrong throughout. They had checked the wrong property and reported a pass.
+
+Same shape both times: a claim that is satisfiable from where the speaker is standing and false
+from where it is consumed.
+
+**How to apply:** before reporting an artefact as available to another lane or another machine,
+verify it from the consumer's vantage point, not your own — `git show origin/<branch>:<path>`,
+never `ls` in your own worktree. Before reporting a property as verified, name the property you
+actually measured and check it is the one being claimed. "I looked and saw none" is evidence about
+your search, not about the artefact.
+
+Related: [[feedback-never-assert-without-verification]], [[nos-m4-route-manifest]].
