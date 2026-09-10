@@ -75,3 +75,66 @@ Codi — they are not resolved at the keyboard, and an architect does not re-der
 3. R13 as restated here matches the span tie-break we encoded (final card spans the remainder,
    never a partial row, never centred, c>=3, c=2 exempt by ruling) — confirm with Codi that the
    tie-break survives, since this restatement does not mention it.
+
+---
+
+# ANSWERS + R18 (received 2026-09-10, Codi / saoc-nos-design-9d)
+
+## Mirror transfer — INBOUND, verify before use
+Courier sends the replacement in ordered parts headed
+`NOS RULINGS MIRROR REPLACEMENT — PART n OF N — lines A-B of 709`. Concatenate in order.
+Landed file MUST be **exactly 709 lines**, sha256
+`cd4efc0f4b4b6ed01790f288f29cc6c1c4c504b18cb8f4ea51debbe502f7cee7`.
+Verify with `wc -l` and `shasum -a 256`. **If either check fails: do not use the file, do not repair
+it, report the mismatch to Codi.** Longer than promised because R18 and an R13 renumbering went in.
+R13 had two clauses numbered 6; the cap-of-4 clause is now clause 7. No wording changed.
+Destination: `.agent/memory/project/design/nos-design-rulings.md` (replaces the stale 2026-09-08 mirror).
+
+## Answers to the three conflicts
+1. **`ShowPageProse` — ASSUME NON-CONFORMING. REBUILD, DO NOT PATCH.** The dashed 2px left rail dies
+   twice: R17 retires 2px and retires borders as elevation, and a **dashed rule is the
+   missing-thing/drop-zone anatomy — the wrong semantic** before the radius argument even starts.
+   R11's final form specifies exact wording + one-anatomy-two-weights, which ours predates.
+   "Patching a component toward a rule it was never built for is how a design system accumulates
+   fossils."
+2. **R13 span tie-break STANDS.** Keep D67/D86/D87/D88. It is clause 6 of R13 in the new text.
+   When no c avoids the orphan: keep the content ceiling, final card spans the remainder — never a
+   partial row, never centred. Binds c >= 3; c = 2 exempt by ruling; c = 1 cannot arise.
+   **GENERAL PRINCIPLE: a ruling is retired only by explicit supersession, never by absence from a
+   recap.** A summary omitting a rule does not supersede it.
+3. **Re-cite the M4 contract once the file lands.** A green gate against stale citations is not
+   conformance.
+
+## R18 — THE THREE EMPTY LISTINGS (`/sa-exhibitors`, `/international-guests`, `/sponsors`)
+**An empty listing is a DATED PROMISE. Never a void, never a placeholder record.**
+This is NOT R11 — R11 discloses copy that exists and is unverified; R18 covers records that do not
+exist at all. The canvas had no treatment; this is the treatment.
+
+- **The routes still ship.** A linked page that 404s is worse than an honest empty one, and the
+  section nav counts them.
+- **No "No results found."** That belongs to a search/filter that returned nothing — it tells the
+  reader their query failed. Nothing failed; the content has not landed.
+- **No skeletons, no ghost cards, no shimmer.** A greyed grid asserts a shape and a count that do not
+  exist; shimmer claims the page is loading. Both lie about state, and the second is a lie the
+  browser will never resolve.
+- **No imagery.** R16 forbids a borrowed photograph standing in for a record; a decorative orchid
+  dropped in to fill the hole is the same act with a thinner excuse. Typographic until real records exist.
+- **Real structure stays visible** — h1, intro, section nav, anything not record-dependent. **What must
+  NOT render is the grid:** an empty grid with no children is not structure, it is absence with a class name.
+- **Where the grid would sit, ONE PANEL.** Canvas card anatomy — 16px radius, purple-tinted shadow,
+  **never a dashed outline**. Two elements in order: (a) WHAT will be listed, in the page's own nouns
+  ("South African exhibitors", "our international guests", "the 2027 sponsors"); (b) WHEN — or, if no
+  date is known, **the gate in words**: "...once entries close", "...as sponsors are confirmed".
+  **R7 binds: an invented date is invented copy. Never a count** — "40+ nurseries expected" is a
+  promise nobody made.
+- **A next action ONLY where one exists.** `/sponsors` has a conversion job → button.
+  `/sa-exhibitors` takes the exhibitor-entry action IF that route is live. `/international-guests`
+  gives the reader nothing to do → **no button**. A CTA manufactured to balance a layout is the R2
+  corollary inverted.
+- **Filtered-to-zero is a DIFFERENT component.** If these pages grow filters, "no matches — clear
+  filters" is a distinct state with a distinct action. **Never reuse the R18 panel:** one says
+  "not yet", the other says "not with those filters".
+- **R13 does not apply at n = 0.** The panel is not a card in a collection. When the first real record
+  lands the grid returns and R13 governs from n = 1.
+- If a page's own intro prose is itself AI placeholder, **R11 applies to that prose in its own
+  anatomy, independently of the R18 panel. Do not stack the two.**
