@@ -155,9 +155,17 @@ Do not scope work from an entry that contradicts it.
 - [ ] **[P2] National Show brand model.** Brad's unconfirmed hypothesis: a stable mast… → [details](data/p2-national-show-brand-model-brad-s-unco.md)
 - [ ] **[P2] Secure organisation-owned document custody.** Institutional records sit i… → [details](data/p2-secure-organisation-owned-document-cu.md)
 - [ ] **[P2] Real Show copy has arrived and is not yet loaded.** `About - 2027 Nationa… → [details](data/p2-real-show-copy-has-arrived-and-is-not.md)
-- [ ] **[P2, security] Spec V3 circulates SAOC mailbox passwords in plaintext** in a shared Drive
-  doc. Values are already stale (the VPS migration replaced all five). Tell Lee-Ann the doc should
-  not carry credentials at all.
+- [ ] **[P1, security] Lee-Ann's two supplied mailbox passwords were published in a public repo.**
+  `docs/leeann-source/website-development-specification-v3_2026-09-06.md` (committed 1d6512cb,
+  pushed to the public InunuNet/SAOC) carried plaintext passwords for `info@saoc.co.za` and
+  `treasurer-secretary@saoc.co.za`. Redacted from HEAD 2026-09-10; **git history still carries
+  them and the repo was public throughout**, so removal does not undo the exposure. These are
+  NOT the live mailbox passwords — the VPS migration generated fresh random ones and those were
+  never committed (`ops-secrets.local.md` is gitignored and has never appeared on any ref). The
+  real risk is reuse: our own note records that the treasurer-secretary value nearly matches the
+  legacy cPanel login password and that the same value was reused across mailboxes. **Only Lee-Ann
+  changing that password wherever she reuses it closes this.** Brad to raise it with her. Also
+  tell her the Drive original should not carry credentials at all.
 - [ ] **[P3] `show@saoc.co.za` has been unused since 2020**; Lee-Ann suggests archiving. V3 also
   asks for per-area show addresses (symposium, WOSA, bookings) so committee members get their own
   area's registration notifications.
