@@ -41,17 +41,43 @@ const MANIFEST_PATH = path.resolve(PROJECT_ROOT, 'content/national-show-routes.j
 // summary line below counts them separately so "N/M PASS" can never quietly absorb a
 // SKIP or an UNMEASURED into the numerator.
 type Verdict = 'PASS' | 'FAIL' | 'SKIP' | 'UNMEASURED';
-const ALL_CHECK_IDS = ['SERVER', 'L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'S1', 'S2', 'S3', 'S4'] as const;
+// SERVER is deliberately NOT in this list. It is provenance ("did this run reuse a
+// server or start one"), never a verdict on a property — see serverNote() below and
+// goldens/m4/content-state-verifier.golden.md's "reconciliation rule", written after
+// the lead found this exact file's SUMMARY line undercounting by exactly one bucket
+// for exactly this reason (SERVER recording a provenance string through a `Verdict |
+// string` escape hatch that TypeScript let straight through). Keeping SERVER as a real
+// check id — even given a fake PASS — would have papered over that by inflating the
+// count with an entry that was never really a pass/fail judgement; leaving it out
+// entirely is what lets the reconciliation below be exact rather than an exemption.
+const ALL_CHECK_IDS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'S1', 'S2', 'S3', 'S4'] as const;
 type CheckId = (typeof ALL_CHECK_IDS)[number];
 
-const results = new Map<CheckId, string>();
+const results = new Map<CheckId, Verdict>();
+let serverNoteLine: string | null = null;
 let hardFailure = false;
 
-function record(id: CheckId, verdict: Verdict | string, detail?: string): void {
+// `verdict` is constrained to the four-member Verdict union, with no `| string`
+// widening — there is no way to write a non-verdict into a verdict slot. That widening
+// is exactly what let SERVER's provenance string masquerade as a verdict before this
+// fix: TypeScript accepted `record('SERVER', 'reused 3000')` silently, the bucket
+// counter in writeResults() had no case for the string "reused 3000", and the count
+// was created, incremented, and never printed — TOTAL=13 while the buckets summed to
+// 12, with nothing asserting the two should agree.
+function record(id: CheckId, verdict: Verdict, detail?: string): void {
   results.set(id, verdict);
   const isFail = verdict === 'FAIL';
   if (isFail) hardFailure = true;
   console.log(`${verdict} ${id}${detail ? ` — ${detail}` : ''}`);
+}
+
+// SERVER's provenance ("reused 3000" / "started 54321") — informational, outside the
+// verdict census entirely, per the same golden. A green run must not be able to hide
+// that it tested nothing; the note still prints and still lands in the results file,
+// it just never contends for a place in the PASS/FAIL/SKIP/UNMEASURED buckets.
+function serverNote(detail: string): void {
+  serverNoteLine = `# SERVER ${detail}`;
+  console.log(serverNoteLine);
 }
 
 function check(id: CheckId, condition: boolean, expected: string, found: string): void {
@@ -73,11 +99,27 @@ function writeResults(): void {
   const counts = { PASS: 0, FAIL: 0, SKIP: 0, UNMEASURED: 0, UNSET: 0 };
   for (const id of ALL_CHECK_IDS) {
     const v = results.get(id) ?? 'UNSET';
-    counts[v as keyof typeof counts] = (counts[v as keyof typeof counts] ?? 0) + 1;
+    counts[v as keyof typeof counts] += 1;
   }
-  const summary = `SUMMARY PASS=${counts.PASS} FAIL=${counts.FAIL} SKIP=${counts.SKIP} UNMEASURED=${counts.UNMEASURED} UNSET=${counts.UNSET} TOTAL=${ALL_CHECK_IDS.length}`;
+  const total = ALL_CHECK_IDS.length;
+  const summed = counts.PASS + counts.FAIL + counts.SKIP + counts.UNMEASURED + counts.UNSET;
+  const summary = `SUMMARY PASS=${counts.PASS} FAIL=${counts.FAIL} SKIP=${counts.SKIP} UNMEASURED=${counts.UNMEASURED} UNSET=${counts.UNSET} TOTAL=${total}`;
   console.log(summary);
-  writeFileSync(RESULTS_FILE, lines.join('\n') + '\n' + summary + '\n', 'utf8');
+  const fileLines = [...lines, summary];
+  if (serverNoteLine) fileLines.push(serverNoteLine);
+  writeFileSync(RESULTS_FILE, fileLines.join('\n') + '\n', 'utf8');
+
+  // The reconciliation rule (goldens/m4/content-state-verifier.golden.md): the buckets
+  // MUST sum to the declared total, and every declared id accounted for in exactly one
+  // bucket. A summary that cannot be reconciled is a harness fault — this script has
+  // broken its own ability to count itself, which is worse than any single check
+  // failing, so it exits 2 (never 1) rather than let an unreconciled summary stand.
+  if (summed !== total) {
+    console.error(
+      `Verifier bug: SUMMARY buckets sum to ${summed} but TOTAL is ${total} — the census does not reconcile.`,
+    );
+    process.exit(2);
+  }
 }
 
 interface ManifestRoute {
@@ -173,12 +215,12 @@ async function main(): Promise<void> {
 
   if (await probe(3000)) {
     port = 3000;
-    record('SERVER', `reused 3000`);
+    serverNote('reused 3000');
   } else {
     const configuredPort = readDevPortFromPackageJson();
     if (configuredPort && (await probe(configuredPort))) {
       port = configuredPort;
-      record('SERVER', `reused ${configuredPort}`);
+      serverNote(`reused ${configuredPort}`);
     } else {
       port = 0; // ask the OS for a free port
       devServer = spawn('node_modules/.bin/next', ['dev', '--port', '0'], {
@@ -208,7 +250,7 @@ async function main(): Promise<void> {
         writeResults();
         process.exit(2);
       }
-      record('SERVER', `started ${port}`);
+      serverNote(`started ${port}`);
     }
   }
 
