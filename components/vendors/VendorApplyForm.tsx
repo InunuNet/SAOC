@@ -145,8 +145,13 @@ export function VendorApplyForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-8" noValidate>
       {status === 'error' && errorMessage ? (
-        <div role="alert" className="space-y-2 rounded-sm border border-primary-800 bg-bone p-4">
-          <p className="font-sans text-[15px] font-medium text-primary-800">{errorMessage}</p>
+        <div
+          role="alert"
+          className="space-y-2 rounded-sm border border-[var(--status-error)] bg-bone p-4"
+        >
+          <p className="font-sans text-[15px] font-medium text-[var(--status-error)]">
+            {errorMessage}
+          </p>
           {fieldErrors.length > 0 ? (
             <ul className="list-disc space-y-1 pl-5 font-sans text-[14px] text-ink/80">
               {fieldErrors.map((message) => (

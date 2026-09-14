@@ -1,0 +1,51 @@
+{
+  "pageKey": "15-sponsors",
+  "specNumber": 15,
+  "title": "Sponsors",
+  "summary": "Recognising the headline and supporting sponsors and donors of the 2027 National Show.",
+  "sections": [
+    {
+      "sectionKey": "intro",
+      "heading": "Sponsors",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "intro-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b1-s1",
+              "text": "This page will recognise the headline and supporting sponsors of the 2027 National Show.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "intro-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "intro-b2-s1",
+              "text": "Sponsor listings below are drawn directly from the Council's sponsor records, so this section stays accurate as sponsorships are confirmed rather than describing sponsors here in prose.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "listing",
+      "heading": "Our Sponsors",
+      "kind": "entityList",
+      "provenance": "placeholder-ai",
+      "body": []
+    }
+  ]
+}

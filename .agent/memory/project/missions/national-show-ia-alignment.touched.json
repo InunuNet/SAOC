@@ -1,0 +1,19 @@
+{
+  "schema": "athanor.mission-touched-files/v1",
+  "slug": "national-show-ia-alignment",
+  "pending_baselines": {
+    "F1": [
+      ".agent/memory/project/backlog.md",
+      ".agent/memory/project/missions/2026-09-09-national-show-ia-alignment.md",
+      ".agent/memory/project/missions/active.json",
+      ".agent/memory/project/rules.md",
+      ".agent/memory/project/specs/national-show-ia-alignment/",
+      ".claude/settings.json.bak",
+      "content/",
+      "execution/checks/json_field.py",
+      "execution/checks/json_in_window.py",
+      "execution/checks/nos_scrim_probe.mjs"
+    ]
+  },
+  "paths": []
+}

@@ -542,3 +542,55 @@ export const vendorNurseriesQuery = defineQuery(`
     availableAtShow
   }
 `);
+
+// F14 (national-show-ia-alignment, M4) — /national-show/sa-exhibitors, the PUBLIC nursery
+// directory. Distinct from /national-show/exhibitors (the grower entry guide, unrelated data
+// source) and from /national-show/vendors (the trade showcase, untouched, other lane's route).
+// Filtered to South Africa: a nursery with no country set matches neither this query nor the
+// international one below — an unset field is not silently assumed to be either.
+export const southAfricanNurseriesQuery = defineQuery(`
+  *[_type == "vendorNursery" && country == "South Africa"] | order(name asc){
+    _id,
+    name,
+    logo,
+    country,
+    owner,
+    history,
+    specialisation,
+    plantsBrought,
+    website,
+    socialMedia[]{ _key, platform, url }
+  }
+`);
+
+// F14 — /national-show/international-guests. The mirror filter of the query above.
+export const internationalNurseriesQuery = defineQuery(`
+  *[_type == "vendorNursery" && defined(country) && country != "South Africa"] | order(name asc){
+    _id,
+    name,
+    logo,
+    country,
+    owner,
+    history,
+    specialisation,
+    plantsBrought,
+    website,
+    socialMedia[]{ _key, platform, url }
+  }
+`);
+
+// F14 — /national-show/sponsors. Its OWN data scope: showSponsor, never the site-level
+// `sponsor` type (see goldens/m4/route-manifest.golden.md §6). Deliberately named
+// showSponsorsQuery, not "sponsorsQuery" or "allSponsorsQuery", so a future grep for either
+// of those two literal names — the ones another mission's SP2/D51 check forbids on this
+// route — cannot accidentally match this query by name alone.
+export const showSponsorsQuery = defineQuery(`
+  *[_type == "showSponsor" && active == true] | order(tier asc, order asc, name asc){
+    _id,
+    name,
+    tier,
+    logo,
+    website,
+    description
+  }
+`);

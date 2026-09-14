@@ -14,6 +14,8 @@ import { show } from './documents/show';
 import { showClass } from './documents/showClass';
 import { award } from './documents/award';
 import { sponsor } from './documents/sponsor';
+// F14 (national-show-ia-alignment, M4) — the National Show's own, independent sponsor list
+import { showSponsor } from './documents/showSponsor';
 import { judge } from './documents/judge';
 import { province } from './documents/province';
 import { ticketType } from './documents/ticketType';
@@ -22,6 +24,9 @@ import { showFaq } from './documents/showFaq';
 import { showExhibitorInfo } from './documents/showExhibitorInfo';
 import { showExhibitorStep } from './documents/showExhibitorStep';
 import { vendorNursery } from './documents/vendorNursery';
+// F1 (national-show-ia-alignment, M1)
+import { showPage } from './documents/showPage';
+import { showPageSettings } from './documents/showPageSettings';
 
 import { portableText } from './objects/portableText';
 import { showVenue } from './objects/showVenue';
@@ -35,6 +40,8 @@ import { exhibitorSection } from './objects/exhibitorSection';
 import { showExhibitorDate } from './objects/showExhibitorDate';
 import { exhibitorQuestion } from './objects/exhibitorQuestion';
 import { exhibitorConfirmationStatuses } from './objects/exhibitorConfirmationStatuses';
+// F1 (national-show-ia-alignment, M1)
+import { showPageSection } from './objects/showPageSection';
 
 export const schemaTypes: SchemaTypeDefinition[] = [
   // Singletons
@@ -49,6 +56,8 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   showVisitorInfo,
   // F1 (show-exhibitor-info)
   showExhibitorInfo,
+  // F1 (national-show-ia-alignment, M1)
+  showPageSettings,
   // Collections
   society,
   boardMember,
@@ -57,11 +66,15 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   showClass,
   award,
   sponsor,
+  // F14 (national-show-ia-alignment, M4)
+  showSponsor,
   judge,
   province,
   showFaq,
   showExhibitorStep,
   vendorNursery,
+  // F1 (national-show-ia-alignment, M1)
+  showPage,
   // Ticketing
   ticketType,
   // Objects
@@ -78,4 +91,6 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   showExhibitorDate,
   exhibitorQuestion,
   exhibitorConfirmationStatuses,
+  // F1 (national-show-ia-alignment, M1)
+  showPageSection,
 ];

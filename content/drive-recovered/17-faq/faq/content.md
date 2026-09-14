@@ -1,0 +1,12 @@
+# 17.1 Frequently Asked Questions (RECOVERED)
+
+> Source `.docx` in Drive is truncated (zip central directory missing).
+> Download verified byte-perfect against Drive md5 `27f4911dc51dfada43b242104b627c0e`.
+> Text salvaged from intact local zip headers.
+
+**Lee-Ann's note:** Please keep adding to FAQ’s below.  Once we have a lot we can categorise them and then provide Brad with the final layout.
+
+|  | <w:tcPr><w:tcW w:w="5034" w:type="dxa"/></w:tcPr><w:p w14:paraId="36E7F43B" w14:textId="6809F1D8" w:rsidR="00B124D6" w:rsidRDefault="00B124D6" w:rsidP="008531B3"><w:r><w:t>Question | <w:tcPr><w:tcW w:w="5035" w:type="dxa"/></w:tcPr><w:p w14:paraId="7B914143" w14:textId="0ED60027" w:rsidR="00B124D6" w:rsidRDefault="00B124D6" w:rsidP="008531B3"><w:r><w:t>Answer |
+| <w:tcPr><w:tcW w:w="846" w:type="dxa"/></w:tcPr><w:p w14:paraId="79209A50" w14:textId="1027E485" w:rsidR="00B124D6" w:rsidRDefault="00B124D6" w:rsidP="00B23598"><w:r><w:t>Q1 | <w:tcPr><w:tcW w:w="5034" w:type="dxa"/></w:tcPr><w:p w14:paraId="72CCDFE7" w14:textId="7EC6EFD0" w:rsidR="00B124D6" w:rsidRDefault="00B124D6" w:rsidP="008531B3"><w:r><w:t>When will the 2027 SAOC Symposium be held? | <w:tcPr><w:tcW w:w="5035" w:type="dxa"/></w:tcPr><w:p w14:paraId="38B6900A" w14:textId="4D85A1F2" w:rsidR="00B124D6" w:rsidRDefault="00B124D6" w:rsidP="008531B3"><w:r><w:t xml:space="preserve">The symposium will be held on xx, xx September 22027 at the xx |
+| <w:tcPr><w:tcW w:w="846" w:type="dxa"/></w:tcPr><w:p w14:paraId="303864E4" w14:textId="5E99B01D" w:rsidR="00B124D6" w:rsidRDefault="00B124D6" w:rsidP="008531B3"><w:r><w:t>Q2 | <w:tcPr><w:tcW w:w="5034" w:type="dxa"/></w:tcPr><w:p w14:paraId="7E8354FE" w14:textId="46197094" w:rsidR="00B124D6" w:rsidRDefault="00B124D6" w:rsidP="008531B3"><w:r><w:t>When will the 2027 SAOC show be held? | <w:tcPr><w:tcW w:w="5035" w:type="dxa"/></w:tcPr><w:p w14:paraId="0F609022" w14:textId="47EDE582" w:rsidR="00B124D6" w:rsidRDefault="00B124D6" w:rsidP="008531B3"><w:r><w:t>The Show will be held at the Stellenbosch Flying Club, R44 northbound to Stellenbosch. |
+| <w:tcPr><w:tcW w:w="846" w:type="dxa"/></w:tcPr><w:p w14:paraId="4DEBAD9E" w14:textId="01E6F5EA" w:rsidR="00B124D6" w:rsidRDefault="00B23598" w:rsidP="008531B3"><w:r><w:t>Q3 |  |  |

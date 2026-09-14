@@ -1,0 +1,95 @@
+{
+  "pageKey": "04-south-african-exhibitors",
+  "specNumber": 4,
+  "title": "South African Exhibitors",
+  "summary": "Showcasing the finest in South African orchid growing.",
+  "sections": [
+    {
+      "sectionKey": "overview",
+      "heading": "South African Exhibitors",
+      "kind": "prose",
+      "provenance": "council-supplied",
+      "sourcePath": "content/drive-source/National Show/4. South African Exhibitors/1.1 Exhibitors - South African Exhibitors/v1.0/content.md",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "sa-exhibitors-overview-b10",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "sa-exhibitors-overview-b10-s1",
+              "text": "The 2027 South African National Orchid Show will proudly showcase the country's leading orchid growers, specialist nurseries, orchid societies and commercial exhibitors, bringing together an exceptional collection of South Africa's finest orchids under one roof.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "sa-exhibitors-overview-b11",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "sa-exhibitors-overview-b11-s1",
+              "text": "Visitors will have the opportunity to meet the passionate individuals and organisations whose dedication, knowledge and years of experience have helped shape South Africa's vibrant orchid community.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "sa-exhibitors-overview-b12",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "sa-exhibitors-overview-b12-s1",
+              "text": "Exhibitors will present stunning displays of species and hybrid orchids, compete for prestigious national awards, and share their expertise through demonstrations, discussions and informal conversations throughout the event.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "directory-coming",
+      "heading": "Exhibitor Directory",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "directory-coming-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "directory-coming-b1-s1",
+              "text": "The directory of confirmed South African exhibitors is being compiled with the Council and is not yet ready to publish.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "directory-coming-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "directory-coming-b2-s1",
+              "text": "Once exhibitors are confirmed, this section will list each one in a searchable, filterable directory rather than describing them here in prose.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

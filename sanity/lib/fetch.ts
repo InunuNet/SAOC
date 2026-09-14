@@ -6,14 +6,22 @@ type SanityFetchOptions = {
   query: string;
   params?: Record<string, unknown>;
   tags?: string[];
+  /** When true, a missing client or a failed fetch throws instead of resolving to
+   * `null`. Default (unset/false) preserves the historical graceful-degradation
+   * behavior relied on by most callers. */
+  propagateErrors?: boolean;
 };
 
 export async function sanityFetch<T>({
   query,
   params,
   tags,
+  propagateErrors,
 }: SanityFetchOptions): Promise<T | null> {
   if (!client) {
+    if (propagateErrors) {
+      throw new Error('[sanityFetch] Sanity client is not configured (missing env vars)');
+    }
     return null;
   }
 
@@ -33,6 +41,9 @@ export async function sanityFetch<T>({
     });
   } catch (error) {
     console.error('[sanityFetch] failed', { query, error });
+    if (propagateErrors) {
+      throw error;
+    }
     return null;
   }
 }

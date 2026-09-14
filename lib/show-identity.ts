@@ -10,6 +10,8 @@
 // See contracts/golden/show-visitor-info/show-identity-surfaces.golden.md.
 // =============================================================
 
+import type { ShowVenue } from '@/types';
+
 // Fixed to the show's own timezone so a rendered date does not shift with the
 // server's locale — a date that changes between environments is a bug.
 const SHOW_DATE_ZONE = 'Africa/Johannesburg';
@@ -71,6 +73,52 @@ export function showYearOf(value?: string | null): number | null {
     timeZone: SHOW_DATE_ZONE,
   }).format(date);
   return Number(year);
+}
+
+/**
+ * `2027-09-16` — a BARE calendar date in the show's own timezone, for schema.org.
+ *
+ * F18 wiring (nos-design-system, M6): Sanity stores `showDate`/`showEndDate` as `datetime`,
+ * so the raw value carries a time-of-day. Google's Event guidance treats a midnight-stamped
+ * date as a mistake, and the show is a multi-day event with no single meaningful instant, so
+ * structured data must publish the bare date. Assembled from `formatToParts` rather than a
+ * locale pattern so the output is `YYYY-MM-DD` regardless of the runtime's locale data.
+ */
+export function toShowIsoDate(value?: string | null): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const parts = new Intl.DateTimeFormat('en-ZA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: SHOW_DATE_ZONE,
+  }).formatToParts(date);
+
+  const find = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? '';
+  const [year, month, day] = [find('year'), find('month'), find('day')];
+  if (!year || !month || !day) return null;
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * `Stellenbosch Airfield, R44, Stellenbosch, 7600, Western Cape` — the venue's postal
+ * address on one line, composed in the SAME order components/show/VenueCard.tsx renders it
+ * so the rendered address and the structured-data address can never disagree.
+ *
+ * Returns null when Sanity holds no address detail at all. The Event builder treats that as
+ * a missing `location` and emits no node rather than an address-less Place — a venue is
+ * never substituted or guessed.
+ */
+export function formatVenueAddress(venue?: ShowVenue | null): string | null {
+  if (!venue) return null;
+  const cityLine = [venue.city, venue.postalCode].filter(Boolean).join(', ');
+  const parts = [...(venue.addressLines ?? []), cityLine, venue.province].filter(
+    (part): part is string => Boolean(part && part.trim()),
+  );
+  return parts.length > 0 ? parts.join(', ') : null;
 }
 
 /** `19` → `19th`. */

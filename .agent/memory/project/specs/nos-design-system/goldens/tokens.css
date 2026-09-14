@@ -1,0 +1,69 @@
+/*
+ * NOS scoped token layer (F1, golden reference — see D1 in the M1 README).
+ *
+ * This file is the golden shape for `app/(marketing)/national-show/nos-theme.css`.
+ * It redeclares the EXISTING SAOC semantic custom-property names — the same names
+ * declared in `app/globals.css` `:root` — on the `.nos-theme` scope class only.
+ * It never touches `:root` and never declares a `@theme` block: `@theme` is global
+ * in Tailwind v4 and would leak show tokens onto every SAOC page.
+ *
+ * Mechanism: `app/globals.css` already layers a raw palette into semantic names
+ * (`--bg: var(--parchment)`, etc.) and Tailwind's `@theme` block only indirects
+ * through those semantic names (`--color-parchment: var(--parchment)`). Custom
+ * properties resolve at the element that uses them, so redeclaring the raw +
+ * semantic names on `.nos-theme` re-skins every descendant — including
+ * SAOC-owned components — with zero edits to those components.
+ *
+ * Deliberately excluded from this scope (guardrail 1, mission + README D-notes):
+ * this project's `:root` declares no --success/--warning/--error/--danger tokens
+ * at all, so there is nothing semantic to remap here. If a future component adds
+ * status colours, they must NOT be routed through this file.
+ */
+
+.nos-theme {
+  /* ---- NOS raw palette (committee-approved + emblem-sampled; see
+     .agent/memory/project/specs/nos-design-system/goldens/nos-contrast.golden.md
+     for the full contrast table). Every hex below is a member of that sanctioned
+     set — do not add a colour here without an @architect round-trip. ---- */
+  --parchment: #fbfaf0;
+  --ivory: #fbfaf0;
+  --bone: #f3f2d6;
+  --bg-tint: #f3f2d6;
+
+  --primary: #211a57;
+  --primary-800: #1a1445;
+  --primary-700: #33296f;
+  --primary-100: #ece8f5;
+
+  --accent: #7e3f97; /* violet — NOT olive; olive fails contrast as a fill */
+  --accent-soft: #9a63ae;
+
+  --ink: #211a57;
+  --muted: #6a6780;
+
+  --rule: #dad7c8;
+  --rule-soft: #e8e6c2;
+
+  /* ---- Typography (D2). next/font/google exposes these as CSS variables on
+     the same .nos-theme element via layout.tsx's className; this file only
+     assigns them into the semantic --serif/--sans names. ---- */
+  --serif: var(--font-nos-cormorant), 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --sans: var(--font-nos-jost), Jost, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --serif-weight: 400;
+
+  /* ---- Semantic layer — same names app/globals.css declares on :root,
+     redeclared here so every descendant using them re-skins automatically. ---- */
+  --bg: var(--parchment);
+  --bg-dark: var(--primary);
+  --fg: var(--ink);
+  --fg-muted: var(--muted);
+  --fg-on-dark: var(--ivory);
+  --fg-on-dark-muted: rgba(251, 250, 240, 0.65);
+  --link: var(--primary);
+  --link-underline: var(--accent);
+
+  /* ---- Focus ring (guardrail 2). rgba(154,99,174,.45) is tuned for white and
+     falls below 3:1 non-text contrast on pale gold — use the solid violet
+     instead of thinning the ring. ---- */
+  --ring-focus: #7e3f97;
+}

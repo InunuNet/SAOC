@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Stub `codex` for verify-codex-qa-exit-contract.sh. Writes the verdict named by
+# CODEX_STUB_VERDICT to the -o outfile and ALWAYS exits 0 — deliberately, because the
+# property under test is that codex_qa.sh derives its own exit code from the verdict
+# token rather than inheriting codex's.
+out=""; prev=""
+for a in "$@"; do [ "$prev" = "-o" ] && out="$a"; prev="$a"; done
+case "${CODEX_STUB_VERDICT:-FAIL}" in
+  PASS)     printf 'PASS\n' > "$out" ;;
+  FAIL)     printf 'FAIL\nlib/data/show-pages.ts:198: exported escape hatch\n' > "$out" ;;
+  GARBAGE)  printf 'I reviewed the code and it looks fine to me.\n' > "$out" ;;
+  EMPTY)    : > "$out" ;;
+esac
+exit 0

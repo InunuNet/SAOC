@@ -3249,6 +3249,179 @@ answer two hours in the direction that makes a false claim look confident. See
 of four @dev reports this mission did not survive it. When an agent calls damage
 "pre-existing", decode the timestamp rather than accepting the attribution.
 
+## 2026-09-08 — `nos-design-system` mission: nine lessons on rendered-evidence verification
+
+Mission restyled all 14 `/national-show` routes into the National Orchid Show 2027 design
+system (17 commits, PR #1 on `InunuNet/SAOC`, branch `nos-design`, **not yet merged** — TRIAD-02
+still needs a preview-deploy manifest, and human decisions are pending on VIP pricing, admin
+scope, and the two live enquiry addresses). Sources: mission file
+`.agent/memory/project/missions/2026-09-06-nos-design-system.md`, `docs/nos-design-system.md`,
+`.agent/memory/scratch/qa-report-nos-design-system.md`, seven `dev-result-*.md` files, and
+`git log origin/main..HEAD`.
+
+1. **Rendered evidence, not source reading, is what caught the expensive defects.** A scrim
+   gated on a `brandMark` prop a refactor removed (taking a legibility guarantee with it), 118
+   elements inheriting SAOC ink while their tokens read correct, and a wordmark that physically
+   cannot fit beside its emblem below 1263px were all invisible in source. Meanwhile four
+   convincing false positives were produced by tooling and caught before being chased:
+   ivory-on-ivory headlines sitting over an `<img>`, "unlabelled" inputs that actually use
+   `label[for]`, a harness capturing lazy-loaded images as blank, and a contrast probe whose
+   background screenshot still contained the text's own pixels. Rule: measure rendered output,
+   and verify a damning finding twice before acting on it.
+
+2. **A CSS custom property's `var()` resolves where it is DECLARED, not where it is used.** Cost
+   three separate defects this mission. Redeclare the exact name the consumer reads (e.g.
+   `--color-*` for Tailwind utilities) on the scoping element, and remember `body` has already
+   resolved `color`/`background`/`font-family` at the root — a new scope must set those real
+   properties too, not only the custom properties behind them. See `docs/nos-design-system.md`
+   for the full mechanism writeup.
+
+3. **Scaling an element moves it onto different photographic ground.** The same hero measured
+   2.44:1, then 3.35:1 once enlarged, then 4.78:1 at 1024px, where both 390 and 1280 looked
+   comfortable at 7.37:1. Measure contrast at three widths minimum, against the brightest
+   candidate images, and composite the text's own alpha over the sampled ground before scoring
+   — not just at the two acceptance-bar viewports.
+
+4. **A negative control is what makes a contrast/a11y harness trustworthy.** Force a fixed
+   element back to its broken state and confirm the harness still fails it. Without that check,
+   a passing measurement may only prove the harness agrees with itself.
+
+5. **Nothing in this repo runs the contract checks automatically.** No `test` script; the
+   Makefile's gate targets are called by nothing CI invokes. Every assertion runs once, when its
+   author invokes it by hand — a green gate is a dated measurement, not a standing guarantee.
+   Seven of nine named Playwright scripts in this mission's contracts don't exist on disk, so a
+   runner must distinguish *failed* from *never runnable*. `backlog.md` already tracks four
+   failing contracts plus a standing P1 on weak assertions — same underlying gap.
+
+6. **The assertions that paid off were the ones that refused to proceed.** A contract literal
+   `'unresolved-nos-boundary'` that declined to guess a ticket category forced a cross-session
+   agreement instead of a silent mismatch weeks later; a gate blocked on *undeclared*
+   verification; a dev declined to self-certify an `agent_review`. Checks that pass are worth
+   less than checks that stop.
+
+7. **File-ownership boundaries prevent collisions but create silent gaps.** Strict ownership
+   stopped three write collisions between concurrent agents this mission, but a dev correctly
+   deferred SEO wiring it wasn't allowed to touch, and the orchestrator never dispatched the
+   follow-up — the whole layer shipped unwired until QA caught it. A declared boundary plus
+   deferred work requires an explicit follow-up dispatch, not an assumption someone else has it.
+
+8. **Orchestrator error, twice: `git add -A` while agents were mid-write** swept in-flight work
+   into unrelated commits (`b3adca7d`, `19fabc2b`). Stage explicit paths, never `-A`, when other
+   agents may be writing concurrently — two occurrences is a pattern, and it undermines the file
+   discipline that was otherwise working (lesson 7).
+
+9. **Never invent content — recurring trap, new instance found.** Five fabricated committee
+   members reached the live site earlier in this project (see existing entries below). This
+   mission's live instance: the Symposium has no date at source — Lee-Ann's FAQ document carries
+   the literal placeholder `"xx, xx September 2027 at the xx"` — and `/national-show/symposium`
+   must not inherit the show's own 16–19 September dates as a stand-in. Use `data-placeholder`
+   or omit; a contract now greps for the substitution.
+
+**Why these matter beyond this mission:** the harness's whole verification model assumes
+measurement is cheap and trustworthy. This mission is the clearest evidence yet that (a) source
+review misses exactly the defects that matter for visual/design work, and (b) an unrun gate is
+indistinguishable from a passing one until someone checks — both push toward automating the
+harness's own trigger (lesson 5 / [[project_contract_checks_mutate_live_content]]), not just its
+assertions. See [[feedback_codex_mandatory_qa]] for the adjacent same-model-review blind spot.
+
+---
+
+## 2026-09-08 — Measuring a stand-in and reporting it as the real thing
+
+**One failure shape, three instances in a single night, across two sessions.** Worth recording
+in its general form because none of the three looked like the same bug from the inside.
+
+1. **Orchestrator (this session):** escalated to `needs-human.md` that PR #1 carried unrelated
+   commits. The evidence was `git log main..nos-design` — but local `main` was 18 commits behind
+   `origin/main`, so upstream commits read as branch commits. Against the real merge target,
+   all 21 branch-only commits were NOS mission work. The escalation was pure artefact of the
+   stale ref. Caught by peer session `saoc-0f`, retracted in `8ff8e65c`.
+
+2. **A dev verifying a contract assertion** ran it in an interactive shell where `grep` was a
+   `ugrep` alias. The assertion looked green and was broken in the runner's bare subprocess.
+
+3. **`saoc-0f` diagnosing that same alias bug** read a version banner instead of executing the
+   binary, and was about to send people rewriting 108 working patterns.
+
+**The general rule:** when you answer a question about a target, measure the target — not a
+local proxy for it. `main` is not `origin/main`. An interactive shell is not the runner's
+subprocess. A version banner is not the binary's behaviour. In every case the proxy was
+convenient, plausible, and wrong, and the report that followed was stated with full confidence
+because the measurement *had* been taken — just not of the thing being asked about.
+
+**How to apply:** before any claim about merge scope, `git fetch` and diff against the remote
+ref. Before certifying a shell assertion, run it the way the runner runs it (bare subprocess,
+no interactive rc). Before diagnosing a tool, execute it. The generalised form is due to
+`saoc-0f`, which spotted that "forgot to fetch" was the shallow reading of instance 1.
+
+Related: this is the measurement-side twin of [[feedback_codex_mandatory_qa]] (same model
+reviewing its own work) and of the mission lesson that source review misses rendered defects —
+all three are the same underlying error of accepting a cheaper substitute for the real check.
+
+---
+
+## 2026-09-08 — NOS M7/M8 verification post-mortem: eight instrument defects, one code defect
+
+Headline: across a full night hardening the M7/M8 verifiers for `nos-design-system`, **eight
+apparent defects were found and corrected; exactly one was a real code defect.** Every other
+"failure" traced back to a check aimed at the wrong thing, not to wrong code. This is the
+generalised, named version of the single-instance lessons above — record the family, not just
+the instances.
+
+**The defect family — a check that stops touching the thing it claims to be about, while still
+producing confident output:**
+
+1. **Self-comparison.** The measurement never reaches an independent referent, so the result is
+   stable, confident, and empty. Instance: a focus check compared a screenshot against itself
+   (focus never applied, all-zero diffs read as "ring missing"); a bloom metric sampled a padded
+   box that *contained* the emblem and scored the emblem's own ink at 0.944 against a <0.02
+   threshold.
+2. **Verified machinery nobody calls.** The check reaches a real referent and measures it
+   correctly — but that referent is not in the actual execution path. Worse than
+   self-comparison because nothing about the check itself is wrong; it survives every audit of
+   the check in isolation.
+3. **Decorative guard.** The thing deciding *whether to check at all* is aimed wrong — e.g. a
+   triad gate classifying "is this UI work" by testing for the substring `app/`.
+4. **Drowned alert.** Working machinery nobody can hear: a residue guard fired correctly, named
+   the right documents, and changed nothing because every CI run had been red for days already.
+5. **Bad referee.** An artefact in the instrument used to *adjudicate* another artefact — e.g.
+   overturning a QA finding using a page-wide `.first()` selector, the identical error just
+   written into a dev brief an hour earlier. The adjudicating instrument needs the same scrutiny
+   as the instrument it's judging; writing the rule down doesn't protect you from breaking it.
+6. **Seam.** Two individually *correct* rules whose interaction is the defect, so neither audit
+   finds anything alone — e.g. the sandbox rule mandating scratch writes to `.tmp/sandbox/`
+   (never delete it) plus an eslint config that doesn't ignore `.tmp/`.
+
+**Method rules earned tonight:**
+- A passing negative control proves a metric *moves*. It never proves the metric is aimed at the
+  right element or compared against the right threshold — that gap alone produced six false
+  failures in one session.
+- **A large margin is evidence for a misaimed metric, not against it.** "47× over threshold, too
+  large to be noise" was the tell, not the proof of a real defect.
+- **Report a discrepancy; never adjust either side to agree.** The dangerous failure isn't
+  measuring wrong — it's the *quiet reconciliation* afterwards, editing instrument or golden
+  (whichever is easier) until they match. This is the only one of the six shapes that leaves no
+  artefact behind, so it's the one to watch for hardest.
+- **Green is only meaningful next to something that failed for a reason you understand.**
+- A check that cannot locate its target must report **BLOCKED or ERROR, never FAIL.** FAIL means
+  "the code is wrong"; BLOCKED means "I learned nothing." Six of seven artefacts in one pass were
+  lookup failures wearing FAIL because FAIL was the only vocabulary the checker had. Giving a
+  checker a word for "I don't know" stops it manufacturing certainty.
+- **A geometric question deserves a geometric test — but only where the property is geometric at
+  that layout.**
+- **Specify a threshold as a two-sided window, not a floor** — a floor is a tuning surface.
+
+**The one real code defect — why the whole cycle was worth it:** `.nos-on-dark` was declared
+correctly in `nos-theme.css` and **applied to no element**, so F24's headline contrast defect
+stayed live at 2.53:1 against a promised 18:1 while every static token/computed-style check
+passed. It was caught only because a rendered measurement contradicted what the feature claimed.
+A declared-but-unapplied token passes every check that doesn't actually render the page.
+
+**How to apply:** when a check fails, before trusting the failure, ask what it's actually
+touching — is the referent independent of the thing being measured, is that referent on the real
+execution path, and would a negative control at the *correct* aim also pass? When adjudicating a
+prior check's finding, apply the same scrutiny to the adjudicator's own selectors/thresholds
+before trusting its verdict either way.
 ## 2026-09-07 — `/societies` cannot be verified with curl
 
 The route renders its 21 cards client-side after hydration; server HTML contains only the
@@ -3721,6 +3894,51 @@ engine connected is harder to spot than none — the honest-looking call site ma
 assume the whole module is reachable. See the full defect and the decision Brad needs to make
 in backlog.md's "F1's computed early-bird pricing engine has ZERO runtime call sites" entry,
 extended with these measured figures.
+
+## The defect class has a reporting variant, not just an assertion variant (2026-09-10)
+
+This repo's audited defect class is "an assertion satisfiable by something that isn't the real
+property." It showed up twice today OUTSIDE a contract, in status reports:
+
+- This lane told saoc-eb "the route manifest is on disk now, you can read it." True in our clone,
+  false everywhere else — nothing had been pushed. Had they trusted it, they would have built a
+  header against a file they had to invent.
+- saoc-eb audited a prototype for forbidden colours, found none, and called it clean. The header
+  CSS was wrong throughout. They had checked the wrong property and reported a pass.
+
+Same shape both times: a claim that is satisfiable from where the speaker is standing and false
+from where it is consumed.
+
+**How to apply:** before reporting an artefact as available to another lane or another machine,
+verify it from the consumer's vantage point, not your own — `git show origin/<branch>:<path>`,
+never `ls` in your own worktree. Before reporting a property as verified, name the property you
+actually measured and check it is the one being claimed. "I looked and saw none" is evidence about
+your search, not about the artefact.
+
+Related: [[feedback-never-assert-without-verification]], [[nos-m4-route-manifest]].
+
+## 2026-09-14 — Wrap up BEFORE context loss, not after; brain.py alone is not enough
+
+Brad, verbatim, after the brain.py memory-loss incident this same day: *"That's the problem
+with self-lobotomy. Brain was always working. But you self-compact and then broken,
+everything gets fucked up. So before we hit 30% context, every turn you wrap up. Properly,
+not a half-assed job."*
+
+**Standing instruction:** don't wait to be asked to wrap up, and don't wait until context is
+nearly exhausted. Watch the context-pressure signal every turn (the `UserPromptSubmit` hook's
+`[context: ...]` line); as usage climbs toward the compaction threshold, do a full wrap-up —
+not a one-line brain.py call, a real one covering everything material this session touched,
+decided, or left open — **before** auto-compaction can silently drop it.
+
+**Why "properly, not half-assed" matters here specifically:** brain.py's chromadb store is
+local and has already been lost/corrupted once this project (Athanor#1437, and the 2026-07-29
+scratch-purge incidents this file already documents above). A wrap-up that only calls
+`brain.py wrap-up` and stops is exactly the "half-assed" version Brad is naming — see
+`.agent/memory/project/plans/2026-09-14-session-end.md` for the pattern that satisfied him:
+brain.py entry **plus** a git-tracked companion doc in `plans/`, so the record survives even
+if brain's local store is lost again. Do both, every time, not just at session end.
+
+Related: [[brain-py-venv-defect]] (Athanor#1437), [[feedback-never-assert-without-verification]].
 
 ## Defect-class variant (2026-09-10): path checks can't prove route properties
 

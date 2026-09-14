@@ -1,0 +1,10 @@
+{
+  "specPage": 13,
+  "sourceDrivePath": "National Show/13. Registration/Booking/Tickets/13.1 Visitor & Activity Booking Form/source.docx",
+  "sourceMd5": "d649e60cf30873556980c2c6e762913b",
+  "method": "unsafe-drive-path-workaround",
+  "recoveredAt": "2026-09-09",
+  "recoveredBy": "athanor:national-show-ia-alignment",
+  "supersededBy": null,
+  "note": "Drive folder name is '13. Registration/Booking/Tickets' — the embedded slash makes it an unsafe name that execution/drive_docx_sync.py rejects at the boundary. The download itself is intact; only the folder name blocked the sync."
+}

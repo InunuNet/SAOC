@@ -1,0 +1,634 @@
+schema: athanor.contract/v1
+slug: national-show-ia-alignment
+goal: >-
+  No listed National Show menu link may ever answer a click with a 404 - not because a CMS
+  document is absent, and not because a manifest row has no route file - and the layer that
+  guarantees it must gate on HONEST DISCLOSURE rather than content presence, leaving
+  "published", "disclosed shell" and "broken" separately countable by machine, so that making a
+  page unable to 404 does not make "the route returns 200" a trivially satisfiable assertion.
+created_at: '2026-09-10'
+autonomy: high
+
+# ---------------------------------------------------------------------------
+# FEATURE ID: F24. THE BRIEF SAID F14. F14 IS ALREADY TAKEN AND ALREADY SHIPPED.
+#
+# contract-f14.yaml exists and guards "Real empty listings - /sa-exhibitors and
+# /international-guests over vendorNursery, /sponsors over a NEW showSponsor
+# type". That feature is live: components/show/nos/RealEmptyListing.tsx is on
+# disk and all three route modules carry "F14 (national-show-ia-alignment, M4)"
+# header comments. Writing this work to contract-f14.yaml would have destroyed a
+# green contract for shipped code.
+#
+# M4's feature ids run F12 F13 F14 F15 F16 F17 F20 F21 F22 F23. F24 is the next
+# free id. THE LEAD MUST CONFIRM THIS RENUMBER before @dev is dispatched, because
+# the dispatch name (Dev_*_M4-F24_*) and contract-m4.yaml's features list both
+# need it. Flagged, not silently resolved.
+#
+# Goldens:
+#   goldens/m4/never-404-fallback.golden.md       - design, scope, provenance, wording
+#   goldens/m4/content-state-verifier.golden.md   - the NF1-NF17 driver contract
+#   goldens/m4/fixtures/f24-fallback-wording.json - pinned wording + banned phrases
+#   goldens/m4/fixtures/f24-content-baseline.json - A39's regression tripwire baseline
+#
+# THE TRAP THIS CONTRACT IS BUILT AROUND, stated once here so no assertion is read
+# in isolation: after F24, "the route returns 200" is true forever, with or without
+# content. A20/NF5 is therefore annotated insufficient_alone.
+#
+# THE GATE CONDITION IS DISCLOSURE, NOT CONTENT PRESENCE (lead's ruling, 2026-09-10;
+# it supersedes this contract's first draft, which gated on published == 6):
+#   PASS on a disclosed fallback. FAIL on an undisclosed one.
+# The failure condition is not "this page is a shell" - it is "this page is a shell
+# and does not say so". A19 is the gate. A18/A18b keep the census provably RUNNING
+# and its numbers on the record whether the fallback count is 0 or 6 - because a
+# metric that appears only when non-zero is indistinguishable from a metric that is
+# not running, which is exactly how this afternoon's skip-as-pass defect landed.
+#
+# THE REASON MATTERS, because the first one given was wrong. An earlier revision of
+# this header argued that gating on content presence would sit red for months on a
+# property nobody here controls. That was ALREADY FALSE when written: commit
+# db6cd81d re-seeded production the same day, all six routes render real content,
+# and `published == 6` would be GREEN TODAY. The ruling stands on the sound reason -
+# content presence is not the property F24 exists to protect; F24 is the fallback
+# machinery and seeding belongs to another lane. The bad argument is struck rather
+# than quietly dropped, because a contract that keeps a wrong argument for a right
+# conclusion invites the conclusion to be reopened.
+#
+# A19 is vacuous at zero fallbacks; A21/NF6 is what stops that being a free pass.
+# A36/A37 make the marker STRUCTURAL so an undisclosed fallback is unreachable
+# rather than merely detected. A34/A35 cover the router-level 404 this feature
+# structurally cannot reach at all. A39 is the CONTENT-PRESENCE TRIPWIRE - the one
+# signal that fires when the subsection silently empties, which every other
+# assertion here would sail straight through. If a reviewer reads four assertions in
+# this file, read A19, A36, A34 and A39.
+# ---------------------------------------------------------------------------
+
+features:
+  - id: F24
+    name: >-
+      Never-404 fallback for the six showPage-consuming National Show routes - replace the hard
+      notFound() with a synthesized ShowPage rendered through the existing ShowPageProse path,
+      carrying placeholder-ai provenance, the route's own label and verbatim manifest purpose,
+      and one fixed honest sentence; a STRUCTURALLY emitted, server-rendered
+      data-nos-content-state marker that a page author cannot forget; a census that always runs
+      and always publishes its numbers; a gate on DISCLOSURE rather than content presence; and a
+      router-level guard that every listed manifest row has a page.tsx both on disk and in the
+      git index
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/never-404-fallback.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/content-state-verifier.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/fixtures/f24-fallback-wording.json
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/fixtures/f24-content-baseline.json
+
+assertions:
+  phase: 4
+  checks:
+
+    # -----------------------------------------------------------------------
+    # Goldens are on disk. A contract whose goldens are missing is not a
+    # contract, it is a memo.
+    # -----------------------------------------------------------------------
+
+    - id: A1
+      description: The four golden artifacts this feature is implemented against exist.
+      type: shell
+      command: test -f .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/never-404-fallback.golden.md -a -f .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/content-state-verifier.golden.md -a -f .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/fixtures/f24-fallback-wording.json -a -f .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/fixtures/f24-content-baseline.json
+
+    # -----------------------------------------------------------------------
+    # The loader. loadShowPage keeps returning null; the fallback is a SECOND,
+    # explicitly named function. A "helpful" change making loadShowPage itself
+    # return the fallback would destroy the absent/present distinction for every
+    # caller at once - which is the defect, shipped as a convenience.
+    # -----------------------------------------------------------------------
+
+    - id: A2
+      description: >-
+        loadShowPageOrFallback exists in lib/data/show-pages.ts - the ONLY module permitted to
+        wrap GatedProse, so the fallback is built inside the provenance gate's existing import
+        boundary rather than by widening it.
+      type: shell
+      command: grep -q "export async function loadShowPageOrFallback" lib/data/show-pages.ts
+
+    - id: A3
+      description: >-
+        loadShowPage STILL returns null for an absent document. Its zero-doc early return is
+        byte-identical to the pre-F24 line. Every existing caller keeps the ability to tell
+        absent from present.
+      type: shell
+      command: grep -q "if (!docs || docs.length === 0) return null;" lib/data/show-pages.ts
+
+    - id: A4
+      description: >-
+        The ShowPage type carries an isFallback discriminant - the single source of truth the
+        marker is derived from.
+      type: shell
+      command: grep -q "isFallback" lib/data/show-pages.ts
+
+    - id: A5
+      description: >-
+        Builder shape, statically: buildAbsentShowPage assigns NO pageProvenance string literal
+        (the rollup is derived by the existing resolvePageProvenance, so the gate decides and the
+        builder does not get to declare itself clean), its section provenance IS 'placeholder-ai',
+        and loadShowPageOrFallback contains no try and no catch. Second layer over NF9/NF12 -
+        neither trusts the other, per this repo's house style.
+      type: shell
+      command: bash scripts/checks/assert-fallback-builder-shape.sh
+
+    # -----------------------------------------------------------------------
+    # The marker. One emitter, six consumers, zero hard 404s in the six.
+    # -----------------------------------------------------------------------
+
+    - id: A6
+      description: >-
+        components/show/nos/ShowContentState.tsx exists and emits the marker attribute. It owns
+        the fallback branch outright - the route author supplies only the published branch as a
+        render prop - so emitting the marker and rendering a fallback are the same act.
+      type: shell
+      command: grep -q "data-nos-content-state" components/show/nos/ShowContentState.tsx
+
+    - id: A7
+      description: >-
+        EXACTLY ONE file emits the marker. Two emitters is how the published/fallback values
+        drift apart and the census silently stops meaning anything.
+      type: shell
+      command: test 1 -eq "$(grep -rl 'data-nos-content-state=' components/ app/ --include='*.tsx' | wc -l | tr -d ' ')"
+
+    - id: A8
+      description: All six in-scope route modules render through the shared marker component.
+      type: shell
+      command: test 6 -eq "$(grep -rl 'ShowContentState' 'app/(marketing)/national-show/' --include='*.tsx' | wc -l | tr -d ' ')"
+
+    - id: A8b
+      description: >-
+        ShowPageResult is OPAQUE - loadShowPageOrFallback's return type is the branded result,
+        not a bare ShowPage, so no route module can reach `.sections`/`.isFallback` and render a
+        fallback without the marker. This is the type-level half of the structural guarantee;
+        A37's grep guard is the half that actually enforces it.
+      type: shell
+      command: grep -q "ShowPageResult" lib/data/show-pages.ts
+
+    - id: A9
+      description: >-
+        ZERO of the six in-scope routes still calls notFound(). This is the defect being fixed,
+        checked directly at its call sites.
+      type: shell
+      command: test 0 -eq "$(grep -rl 'notFound' 'app/(marketing)/national-show/programme/' 'app/(marketing)/national-show/symposium/' 'app/(marketing)/national-show/wosa-conference/' 'app/(marketing)/national-show/sa-exhibitors/' 'app/(marketing)/national-show/international-guests/' 'app/(marketing)/national-show/sponsors/' | wc -l | tr -d ' ')"
+
+    - id: A10
+      description: >-
+        /national-show/archive/[year] KEEPS its notFound(). It is listed:false and dynamic, and an
+        unrecorded year genuinely does not exist - 404 is the correct answer there. F24 is a
+        never-404 layer for menu links, not a blanket ban on 404.
+      type: shell
+      command: grep -q "notFound()" "app/(marketing)/national-show/archive/[year]/page.tsx"
+
+    # -----------------------------------------------------------------------
+    # Blocked and frozen surfaces stay untouched.
+    # -----------------------------------------------------------------------
+
+    - id: A11
+      description: >-
+        components/nos/ShowPageProse.tsx is BYTE-IDENTICAL to its pre-F24 state. It is blocked
+        from rebuild by the unresolved R11 vs R17/R18 contradiction; F24 USES it and never edits
+        it, which is how this feature inherits R11's chip-sentence-rail disclosure without
+        needing a ruling.
+      type: shell
+      command: test "$(shasum -a 256 components/nos/ShowPageProse.tsx | cut -d' ' -f1)" = "3ed320afcc6b81b0090067c35fc4a014f7b45df62350ccc8f9726d2447e3bd94"
+
+    - id: A12
+      description: >-
+        The GatedProse unwrap boundary is unwidened - still exactly two permitted importers. F24
+        builds the fallback inside lib/data/show-pages.ts precisely so this guard passes
+        unmodified.
+      type: shell
+      command: bash scripts/checks/assert-gated-prose-single-consumer.sh
+
+    - id: A13
+      description: >-
+        The showPage read path is still funnelled through the loader - no route queries showPage
+        directly to route around the fallback.
+      type: shell
+      command: bash scripts/checks/assert-no-direct-showpage-query.sh
+
+    # -----------------------------------------------------------------------
+    # The census driver. NEW file - verify-nos-m4-local-render.ts is NOT edited,
+    # because it guards eleven frozen routes with live green assertions and the
+    # lead's ranking is explicit: any regression there outranks this feature.
+    # -----------------------------------------------------------------------
+
+    - id: A14
+      description: >-
+        The content-state verifier lives in scripts/checks/, NEVER execution/ - that tree is
+        HARNESS-owned and the next `make update-template` deletes it, taking the gate with it.
+      type: shell
+      command: test -f scripts/checks/verify-nos-content-state.ts -a ! -e execution/checks/verify-nos-content-state.ts
+
+    - id: A15
+      description: >-
+        Run the content-state verifier - NF1-NF13, all six routes rendered on localhost in a real
+        browser, both discriminators driven end-to-end against the real dataset. Exit 0 all
+        passed, 1 a check failed, 2 the harness itself broke and never collapsed into 1.
+      type: shell
+      timeout_seconds: 600
+      command: node_modules/.bin/tsx scripts/checks/verify-nos-content-state.ts
+
+    - id: A16
+      description: >-
+        NF1 - the notFound( call sites under app/(marketing)/national-show/ are EXACTLY
+        archive/[year], and the loadShowPageOrFallback consumers are EXACTLY the six in-scope
+        slugs, set equality in both directions. Standing guard: a seventh route acquiring a hard
+        404 is a regression, not a new feature.
+      type: shell
+      command: grep -q '^NF1 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A17
+      description: >-
+        NF2 - each of the six renders EXACTLY ONE data-nos-content-state element with a
+        recognised value. The count is === 1, never >= 1: zero (marker lost, page could be blank
+        unnoticed) and two (both branches rendered, states no longer exclusive) are both real
+        failure modes.
+      type: shell
+      command: grep -q '^NF2 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A18
+      description: >-
+        NF3 - THE CENSUS RAN AND IS COMPLETE. All six routes present, each with a recognised
+        state, totals internally consistent and summing to six. It gates on THE METRIC RUNNING,
+        never on how many are published: content presence is not ours to require, the Council
+        supplies copy on its own schedule, and a gate that stays red for months on a property
+        nobody here controls is a gate everyone learns to skip. A number nothing gates on is
+        exactly how this afternoon's skip-as-pass defect landed - so the census is gated on
+        completeness and emitted whether the fallback count is 0 or 6.
+      type: shell
+      command: grep -q '^NF3 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A18b
+      description: >-
+        The census ARTIFACT exists and is well-formed on every run - schema, totals summing to
+        six, and a per-route state plus `disclosed` flag. A metric that appears only when
+        non-zero is indistinguishable from a metric that is not running, so a `fallback` total of
+        0 must be written explicitly, never omitted. This is also the file an external consumer
+        reads to re-derive A19's verdict without trusting this driver's own PASS line.
+      type: shell
+      command: python3 -c "import json,sys; d=json.load(open('.tmp/sandbox/nos-ia/content-state-census.json')); t=d['totals']; assert d['schema']=='saoc.nos-content-state-census/v1'; assert t['published']+t['fallback']==t['total']==6; assert len(d['routes'])==6; assert all(r['state'] in ('published','fallback-unpublished') for r in d['routes'])"
+
+    - id: A19
+      description: >-
+        NF4 - THE DISCLOSURE GATE, and the assertion this feature actually turns on. PASS on a
+        disclosed fallback; FAIL on an undisclosed one. Every route rendering
+        `fallback-unpublished` must carry, inside its marked subtree, a chip with non-empty text
+        and non-empty notice text. THE FAILURE CONDITION IS NOT "this page is a shell" - IT IS
+        "this page is a shell and does not say so". Vacuously true at zero fallbacks; A21 (NF6)
+        is what stops that being a free pass, by rendering a real fallback end-to-end on every
+        run whatever the dataset holds.
+      type: shell
+      command: grep -q '^NF4 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A20
+      description: >-
+        NF5 - all 17 listed routes return HTTP 200. INSUFFICIENT ALONE. After F24 this is green
+        on a subsection with zero content; it carries meaning ONLY conjoined with A18 (the census
+        ran), A18b (the numbers are on the record) and A19 (every shell says it is one). Never
+        cite a green A20 as evidence that a page works.
+      insufficient_alone: true
+      type: shell
+      command: grep -q '^NF5 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A21
+      description: >-
+        NF6 - NEGATIVE DISCRIMINATOR, end-to-end. The real shell, real loader, real dataset,
+        reserved pageKey __nos-absent-probe__ renders the fallback with the label, the verbatim
+        purpose, the fixed sentence and a disclosure - and no `published` marker. An assertion
+        that cannot be made to fail today is not evidence; this one fires today.
+      type: shell
+      command: grep -q '^NF6 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A22
+      description: >-
+        NF7 - POSITIVE DISCRIMINATOR. The SAME code path with a pageKey that exists renders
+        `published`, no fallback marker, and a >=40-character substring of that seed's real body.
+        REAL CONTENT WINS OVER THE FALLBACK, demonstrated rather than asserted. NF6 and NF7
+        differ only in input, so no stub that always answers one way satisfies both.
+      type: shell
+      command: grep -q '^NF7 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A23
+      description: >-
+        NF8 - the null the fallback consumes is really produced by the real loader:
+        loadShowPage('__nos-absent-probe__') resolves null, a real key resolves non-null with
+        isFallback absent or false.
+      type: shell
+      command: grep -q '^NF8 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A24
+      description: >-
+        NF9 - no try/catch around the load. A Sanity outage must surface as an error, never as
+        "content not yet published" across the whole subsection - a calm, honest-looking lie is
+        the one failure mode that makes this layer worse than the 404 it replaced.
+      type: shell
+      command: grep -q '^NF9 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A25
+      description: >-
+        NF10 - the eleven listed routes that do NOT consume the shell render ZERO
+        data-nos-content-state elements. Their output is frozen by R2/S1.
+      type: shell
+      command: grep -q '^NF10 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A26
+      description: >-
+        NF11 - the fixed sentence matches fixtures/f24-fallback-wording.json exactly, and none of
+        its bannedPhrases ("coming soon", "no results", "check back", "TBA", ...) appears in the
+        marked subtree.
+      type: shell
+      command: grep -q '^NF11 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A27
+      description: >-
+        NF12 - __nos-absent-probe__ appears as a pageKey in zero seeds, zero content files and
+        zero live documents. Without this the negative discriminator could rot into a tautology
+        the day someone seeds that key.
+      type: shell
+      command: grep -q '^NF12 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A28
+      description: >-
+        NF13 - TEXT CENSUS, the strongest no-invention guard here. The marked subtree's visible
+        text equals EXACTLY the union of notice label, notice text, verbatim manifest purpose and
+        the fixed sentence. Any other prose is invented content about a real national body's real
+        show, and fails.
+      type: shell
+      command: grep -q '^NF13 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    # -----------------------------------------------------------------------
+    # Regression guard on the eleven frozen routes. A verifier that PROVES it
+    # did not break them is worth more than one that promises it.
+    # -----------------------------------------------------------------------
+
+    - id: A29
+      description: >-
+        Re-run M4's own local-render verifier UNMODIFIED. F24 edits neither the script nor its
+        results file.
+      type: shell
+      timeout_seconds: 600
+      command: node_modules/.bin/tsx scripts/checks/verify-nos-m4-local-render.ts
+
+    - id: A30
+      description: >-
+        M4's L1-L4 still PASS - the 17 routes still resolve, still render their own h1 (an error
+        boundary returns 200 with none), still show no error overlay, and still throw zero
+        console.error/pageerror in a real browser.
+      type: shell
+      command: grep -q '^L1 PASS$' .tmp/sandbox/nos-ia/m4-local-results.txt && grep -q '^L2 PASS$' .tmp/sandbox/nos-ia/m4-local-results.txt && grep -q '^L3 PASS$' .tmp/sandbox/nos-ia/m4-local-results.txt && grep -q '^L4 PASS$' .tmp/sandbox/nos-ia/m4-local-results.txt
+
+    - id: A31
+      description: >-
+        M4's L5, L6 and L7 still PASS - /upcoming still 404s with no 3xx, the four forbidden
+        slugs still 404, and every rendered internal href still resolves non-404. F24 must not
+        resurrect a deleted route by making routes hard to 404.
+      type: shell
+      command: grep -q '^L5 PASS$' .tmp/sandbox/nos-ia/m4-local-results.txt && grep -q '^L6 PASS$' .tmp/sandbox/nos-ia/m4-local-results.txt && grep -q '^L7 PASS$' .tmp/sandbox/nos-ia/m4-local-results.txt
+
+    - id: A32
+      description: >-
+        local-render.golden.md is amended to record that L1 is INSUFFICIENT ALONE after F24. The
+        script is untouched; the golden gains the caveat, so the next reader of a green L1 is not
+        misled by it.
+      type: shell
+      command: grep -q 'insufficient alone' .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/local-render.golden.md
+
+    - id: A33
+      description: Typecheck and lint are clean - strict mode, no any, no new lint suppressions.
+      type: shell
+      timeout_seconds: 600
+      command: pnpm exec tsc --noEmit
+
+    # -----------------------------------------------------------------------
+    # THE HOLE F24 STRUCTURALLY CANNOT COVER - a router-level 404.
+    #
+    # F24 replaces a notFound() INSIDE A PAGE COMPONENT THAT RAN. A listed:true
+    # route with NO page.tsx at all 404s at the Next router, before any F24 code
+    # is in the call stack. No fallback design fixes that. The /wosa ->
+    # /wosa-conference rename already closed the known instance (staged git mv;
+    # all 17 listed slugs verified to resolve to a page.tsx on this branch), but
+    # the hole is a CLASS: a future manifest row added without a route file
+    # reintroduces it silently, and silently is the whole problem - the menu is
+    # built from the manifest, so the link appears the moment the row does.
+    # -----------------------------------------------------------------------
+
+    - id: A34
+      description: >-
+        NF14 - every listed:true row in content/national-show-routes.json has a corresponding
+        page.tsx, checked as a filesystem/router-level property INDEPENDENT of the fallback: no
+        browser, no fetch, no rendering. NF14a is the WORKING TREE (what `next build` compiles);
+        NF14b is the GIT INDEX via `git ls-files` (what actually deploys). BOTH, because their
+        disagreement is itself the trap - a route file that exists locally but was never
+        `git add`ed renders on localhost and 404s on the host, and a working-tree-only check
+        calls that green. The ref is stated rather than assumed; leaving it unstated is how this
+        class was missed in the first place.
+      type: shell
+      command: grep -q '^NF14 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A35
+      description: >-
+        Second, independent layer over NF14 - a pure shell/git check that needs neither the
+        driver nor a dev server, so the router-level property is still provable if the verifier
+        itself is broken. Every listed slug resolves to a page.tsx that is BOTH on disk AND
+        tracked by git.
+      type: shell
+      command: bash scripts/checks/assert-listed-routes-have-pages.sh
+
+    # -----------------------------------------------------------------------
+    # THE MARKER IS STRUCTURAL, NOT AUTHOR-REMEMBERED.
+    #
+    # Hard requirement: if a page author can FORGET the marker, an undisclosed
+    # fallback is reachable and A19's failure condition is unreliable in the one
+    # direction that matters. Rendering a fallback and emitting the marker must
+    # be the same act. loadShowPageOrFallback therefore returns an OPAQUE
+    # ShowPageResult; ShowContentState.tsx is the only module that can open it,
+    # it renders the fallback branch ITSELF (the author never writes it, so
+    # cannot omit its marker or its disclosure), and it emits the attribute on
+    # BOTH branches from the same discriminant it switched on. Same
+    # opaque-brand + eslint + grep-guard idiom as the GatedProse boundary - not
+    # a new enforcement mechanism.
+    # -----------------------------------------------------------------------
+
+    - id: A36
+      description: >-
+        NF15 - structural emission. Both branches emit the marker from one discriminant; no file
+        other than ShowContentState.tsx constructs or opens a ShowPageResult; no in-scope route
+        module touches `.sections` directly. This is what makes A19's failure condition
+        trustworthy.
+      type: shell
+      command: grep -q '^NF15 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A37
+      description: >-
+        Grep guard on the ShowPageResult boundary - sibling to
+        assert-gated-prose-single-consumer.sh, and a second layer that does not trust eslint. The
+        type brand alone enforces nothing; lint plus this guard are what make it real, exactly as
+        gated-prose-internal.ts's own header already records.
+      type: shell
+      command: bash scripts/checks/assert-content-state-single-consumer.sh
+
+    - id: A38
+      description: >-
+        NF16 - the marker is SERVER-RENDERED and externally consumable. Fetched with JavaScript
+        DISABLED, the raw HTTP response body of each of the six contains it. A marker injected at
+        hydration is invisible to curl, to the lead's own check, and to BrowserAgent's
+        no-script paths. The lead asserts on THIS marker rather than building a parallel check,
+        so its public surface - markerAttribute, markerValues, censusArtifact, censusSchema - is
+        pinned in fixtures/f24-fallback-wording.json for consumers who should not have to parse
+        prose or read our checker.
+      type: shell
+      command: grep -q '^NF16 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    # -----------------------------------------------------------------------
+    # THE CONTENT-PRESENCE TRIPWIRE.
+    #
+    # With disclosure as the gate, EVERY OTHER ASSERTION IN THIS FILE STAYS
+    # GREEN on a subsection that has silently gone empty: A19 passes because the
+    # fallbacks are disclosed, A18 because the census ran and summed to six,
+    # A18b because the artifact is well-formed. The fallback machinery would be
+    # verified working in full while the thing it substitutes for had vanished -
+    # the same defect shape this mission chased all day, one level up.
+    #
+    # A39 is a BASELINE, never a count. `published == 6` cannot tell a broken
+    # seed from a deliberately retired page; both arrive as the same red, and the
+    # second is the mysterious red that teaches people to widen checks. Comparing
+    # against a checked-in list of WHICH routes are expected published yields
+    # three verdicts: PASS, FAIL (the tripwire fired - check the named seed), and
+    # DRIFT (a page was added or retired without the baseline being updated).
+    #
+    # DRIFT still fails the grep - a drifting baseline is not a pass - but it is
+    # a distinct token, so a legitimate retirement reads as a bookkeeping gap at
+    # a glance instead of arriving as an unexplained failure. Retiring a page is
+    # recorded by EDITING THE BASELINE in the same commit that retires the route:
+    # an edit has an author, a diff and a commit message, which a gate colour
+    # does not.
+    #
+    # WHY A HARD ASSERTION AND NOT required: false - the lead left this call to
+    # me. A soft signal is precisely the "number nothing gates on" that produced
+    # this afternoon's skip-as-pass defect, so making the tripwire optional would
+    # reintroduce the failure it was added to prevent. The concern that a hard
+    # check couples F24's gate to the seeding lane's data is answered by the
+    # baseline being F24's OWN artifact: this asserts "the baseline is satisfied",
+    # and the baseline is ours to edit deliberately. Separately identified and
+    # separately reported, per the brief - but not optional.
+    # -----------------------------------------------------------------------
+
+    - id: A39
+      description: >-
+        NF17 - CONTENT-PRESENCE TRIPWIRE, established green 2026-09-10 against db6cd81d
+        ("fix(nos): hyphenate seed document ids - unblocks the six 404ing show routes"). Every
+        route baselined in goldens/m4/fixtures/f24-content-baseline.json as expected-published
+        must render `published`, and the published set must match the baseline exactly. THIS IS
+        NOT F24's GATE - A19 (disclosure) is. This is the distinct signal that notices the
+        db6cd81d blocker returning, which no other assertion in this contract can see.
+      type: shell
+      command: grep -q '^NF17 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A39b
+      description: >-
+        The baseline artifact itself is present and well-formed - schema, and one entry per
+        in-scope route naming its slug, pageKey and backing seed file. A tripwire whose baseline
+        has been emptied or truncated would pass NF17 vacuously, which is the failure mode
+        tripwires characteristically die of.
+      type: shell
+      command: python3 -c "import json; d=json.load(open('.agent/memory/project/specs/national-show-ia-alignment/goldens/m4/fixtures/f24-content-baseline.json')); assert d['schema']=='saoc.nos-content-baseline/v1'; e=d['expectedPublished']; assert len(e)==6; assert all(r['slug'] and r['pageKey'] and r['seed'] for r in e)"
+
+    # -----------------------------------------------------------------------
+    # THE DRIVER CAN COUNT ITSELF.
+    #
+    # The lead found that the driver next door prints TOTAL=13 while its buckets
+    # account for only 12: record() is typed (id, verdict: Verdict | string), and
+    # the `| string` escape hatch lets SERVER record the literal "reused 3002" -
+    # none of the four verdicts, so the bucket counts silently drop it. The
+    # comment directly above that signature claims "every id in ALL_CHECK_IDS
+    # gets one of these four"; the `| string` makes that comment FALSE. The
+    # invariant is asserted in prose and unenforced in the type.
+    #
+    # Benign there today - and it is the reporting-collapse class living inside
+    # the fix for the reporting-collapse class. This contract's own golden said
+    # conventions are "inherited verbatim" from that driver, so F24 would have
+    # shipped the same hole. It does not: record() takes Verdict with no widening,
+    # SERVER is not a check id at all (an exemption is how the next SERVER gets
+    # added), and A40 asserts the reconciliation on every run.
+    # -----------------------------------------------------------------------
+
+    - id: A40
+      description: >-
+        NF18 - the run's own summary reconciles: per-verdict buckets sum to ALL_CHECK_IDS.length
+        and every declared id appears in exactly one bucket. Self-referential on purpose - a
+        verifier whose summary does not add up cannot be trusted about anything else it reported.
+        A mismatch exits 2 (harness broke), never 1 (a check failed): exit 1 says "the code under
+        test is wrong", exit 2 says "stop reading my output". Same discipline as A18b requiring
+        the census totals to sum to six - a count nobody cross-foots is a count nobody is
+        checking.
+      type: shell
+      command: grep -q '^NF18 PASS$' .tmp/sandbox/nos-ia/content-state-results.txt
+
+    - id: A40b
+      description: >-
+        F24's driver does not inherit the `| string` widening that caused the defect above -
+        record()'s verdict parameter is the Verdict union alone, and SERVER is absent from
+        ALL_CHECK_IDS. Static guard, because NF18 only proves the counts agreed on THIS run;
+        this proves the escape hatch that makes them disagree is not present at all.
+      type: shell
+      command: test 0 -eq "$(grep -c 'Verdict | string' scripts/checks/verify-nos-content-state.ts)"
+
+    - id: A40c
+      description: >-
+        SERVER is not a member of ALL_CHECK_IDS in F24's driver - it is emitted as an
+        informational line only. Checked against the declaration itself rather than by grepping
+        the file for the word, which would match the legitimate informational line. An exemption
+        in the reconciliation is how the next non-verdict id gets added to a verdict list.
+      type: shell
+      command: test 0 -eq "$(grep 'ALL_CHECK_IDS =' scripts/checks/verify-nos-content-state.ts | grep -c SERVER)"
+
+    # -----------------------------------------------------------------------
+    # Verification triad. gws_inbox_check is DELIBERATELY ABSENT: F24 wires no
+    # mail path whatsoever, and contract-m4.yaml's D32 already escalated that
+    # exact question to the lead rather than faking a subject for it. Duplicating
+    # the escalation would not add a second fact.
+    # -----------------------------------------------------------------------
+
+    - id: D1
+      description: >-
+        Codex cross-model adversarial review of the F24 diff. Same-model self-review has already
+        missed a broken core guarantee on this mission.
+      type: codex_qa
+      timeout_seconds: 600
+      target: >-
+        Adversarially review the current git diff for real bugs and correctness risks - not
+        style. This diff makes six Next.js routes unable to return 404 when a CMS document is
+        absent, replacing notFound() with a fallback shell marked by a data-nos-content-state
+        attribute. Pay particular attention to: assertions or checks satisfiable by something
+        other than the real property they claim to prove, especially any that would go green on a
+        site with no content at all; whether the published and fallback states are genuinely
+        mutually exclusive in the rendered DOM rather than only by convention; whether a thrown
+        Sanity/transport error can be swallowed into the fallback path anywhere, making an outage
+        look like unpublished content; whether the fallback can ever mask a document that DOES
+        exist; whether any invented prose about the show, its dates, venue, sponsors, exhibitors
+        or programme reaches the rendered fallback; and whether the eleven other National Show
+        routes changed rendered output at all. Cite exact file:line, state the concrete failure
+        scenario, and rate confidence. If nothing real is wrong, say so plainly instead of
+        inventing findings.
+
+    - id: D2
+      description: >-
+        BrowserAgent against the DEPLOYED site - the six routes answer 200 from a real click and
+        show either real content or a disclosed fallback, never an error page. Proves what
+        localhost cannot: that the build survived the host.
+      type: browser_deployed_check
+      timeout_seconds: 300
+      target: .agent/memory/scratch/f24-browser-manifest.json
+
+    - id: D3
+      description: >-
+        Every triad check in this contract carries a non-empty target. The triad kinds read
+        `target:` and ignore `command:`, so an empty target fails silently while reading as fully
+        populated - the exact regression that made M1's A39 review nothing.
+      type: shell
+      command: python3 scripts/checks/verify-codex-target-present.py .agent/memory/project/specs/national-show-ia-alignment/contract-f24.yaml

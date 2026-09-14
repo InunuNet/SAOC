@@ -1,0 +1,12 @@
+# Content pins for scripts/checks/triad-baseline-exempt.txt — PROJECT-OWNED.
+# Consumed via TRIAD_BASELINE_HASH_FILE. Format: <sha256>  <repo-relative-path>
+#
+# A baseline entry with no matching pin here is NEVER honoured, and a pin that no longer
+# matches the file's live bytes forfeits the exemption — enforcement re-arms for that path.
+# That is the mechanism working as intended: an edited contract must re-earn its exemption.
+#
+# Both paths are the same file (contract.yaml is a symlink to contract-m1.yaml), so both
+# carry the same digest. Regenerate after any deliberate contract edit:
+#   shasum -a 256 .agent/memory/project/specs/national-show-ia-alignment/contract-m1.yaml
+237ae69730be39d855cbbe7f5a840b9ea461376f25d570fa1a2a9ec3b2352ef8  .agent/memory/project/specs/national-show-ia-alignment/contract.yaml
+237ae69730be39d855cbbe7f5a840b9ea461376f25d570fa1a2a9ec3b2352ef8  .agent/memory/project/specs/national-show-ia-alignment/contract-m1.yaml

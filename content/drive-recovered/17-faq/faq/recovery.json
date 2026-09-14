@@ -1,0 +1,10 @@
+{
+  "specPage": 17,
+  "sourceDrivePath": "National Show/17. Frequently Asked Questions/17.1 Frequently asked questions/source.docx",
+  "sourceMd5": "27f4911dc51dfada43b242104b627c0e",
+  "method": "manual-salvage-from-zip-headers",
+  "recoveredAt": "2026-09-09",
+  "recoveredBy": "athanor:national-show-ia-alignment",
+  "supersededBy": null,
+  "note": "Drive .docx is truncated; central directory missing. Verified byte-perfect against Drive md5, so the breakage is upstream in Lee-Ann's file, not our copy. Text was salvaged by hand from the intact local zip headers."
+}
