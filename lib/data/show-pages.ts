@@ -457,10 +457,13 @@ const SHOW_PAGE_SETTINGS_QUERY = `*[_type == "showPageSettings"][0]{
   draftNotice
 }`;
 
-async function loadShowPageSettings(): Promise<ShowPageSettingsFields | null> {
+async function loadShowPageSettings(options?: {
+  propagateErrors?: boolean;
+}): Promise<ShowPageSettingsFields | null> {
   return sanityFetch<ShowPageSettingsFields>({
     query: SHOW_PAGE_SETTINGS_QUERY,
     tags: ['showPageSettings'],
+    propagateErrors: options?.propagateErrors,
   });
 }
 
@@ -521,11 +524,15 @@ function hydratePage(raw: RawShowPage, settings: ShowPageSettingsFields | null):
  * document has the given `pageKey`. THROWS when more than one document shares it — never
  * silently takes `[0]`. See content-model.golden.md's `pageKey` uniqueness section.
  */
-export async function loadShowPage(pageKey: string): Promise<ShowPage | null> {
+export async function loadShowPage(
+  pageKey: string,
+  options?: { propagateErrors?: boolean },
+): Promise<ShowPage | null> {
   const docs = await sanityFetch<RawShowPage[]>({
     query: SHOW_PAGE_BY_KEY_QUERY,
     params: { pageKey },
     tags: ['showPage', `showPage:${pageKey}`],
+    propagateErrors: options?.propagateErrors,
   });
   if (!docs || docs.length === 0) return null;
   if (docs.length > 1) {
@@ -534,7 +541,7 @@ export async function loadShowPage(pageKey: string): Promise<ShowPage | null> {
         'should be impossible under the schema\'s uniqueness validation. Refusing to guess.',
     );
   }
-  const settings = await loadShowPageSettings();
+  const settings = await loadShowPageSettings({ propagateErrors: options?.propagateErrors });
   return hydratePage(docs[0], settings);
 }
 
@@ -641,8 +648,8 @@ export async function loadShowPageOrFallback(
   pageKey: string,
   fallback: ShowPageFallbackInput,
 ): Promise<ShowPageResult> {
-  const page = await loadShowPage(pageKey);
+  const page = await loadShowPage(pageKey, { propagateErrors: true });
   if (page) return wrapShowPageResult(page);
-  const settings = await loadShowPageSettings();
+  const settings = await loadShowPageSettings({ propagateErrors: true });
   return wrapShowPageResult(buildAbsentShowPage(pageKey, fallback, settings));
 }
