@@ -106,8 +106,69 @@ with full context on what `menu-system-layout4`'s actual mandate was.
 
 ## Bottom line for whoever picks this up next
 
-- Do not merge PR #4 until `sanity/lib/fetch.ts` is fixed and the 7 conflicts are resolved.
 - Do not treat any golden file's "Brad-approved" claim as settled without checking with
   Brad directly — this session got that wrong once already this session.
 - Do not resume building until Brad's morning triage on the `menu-system-layout4` scope
   question above.
+
+---
+
+## ADDENDUM 2026-09-14/15 (late) — PR #4 UNBLOCKED, superseding the "do not merge" line above
+
+Brad pushed back hard on this session re-reporting the `sanity/lib/fetch.ts` bug as a
+standing blocker instead of fixing it — verbatim: *"You literally made a little baby girl's
+blocker... could have just handed it over and kept going."* Fair: the fix design was already
+written out in this same doc's §3/§6 history from the prior session; it just hadn't been
+dispatched. It has now.
+
+**What changed:**
+- Dispatched a `general-purpose` agent as `Dev_Son5_M4-F24_NationalShowIaAlignment` (the
+  named `@architect`/`@dev`/`@qa`/`@docs`/`@maintainer` subagent types were unavailable this
+  session — see this session's `ListAgents`/`Agent` tool listing) with the exact scoped fix:
+  an opt-in `propagateErrors` flag on `sanityFetch()` (`sanity/lib/fetch.ts`), default
+  `false`/unset and byte-identical to prior behavior for the other ~29 callers repo-wide;
+  only `lib/data/show-pages.ts`'s `loadShowPageOrFallback` dependency chain
+  (`loadShowPage`, `loadShowPageSettings`) sets it `true`. `loadAllShowPages` and every
+  other caller are untouched.
+- Independently re-verified the diff myself before trusting the agent's report (`git diff`,
+  re-ran `tsc --noEmit`, grepped repo-wide for `propagateErrors` to confirm exactly two call
+  sites, both inside the intended path).
+- Ran Codex GPT-5.5 review **twice**: `codex_qa.sh` at its hardcoded medium effort (PASS),
+  then manually at `-c model_reasoning_effort=high` per the documented gate — Athanor#1438
+  means a medium-only PASS is suspect on its own. High-effort pass independently re-derived
+  the caller graph rather than trusting the diff text, and also passed. No findings either
+  way.
+- Committed as `d15715fe` (the fix, own commit per the standing "land fetch.ts separately"
+  instruction from §3 above) plus `93694bbe`/`12812dff` (this session's own earlier memory
+  docs, which had been sitting uncommitted).
+- Fetched `origin/main` (had moved 17 commits from the `menu-system-layout4` lane since this
+  session last checked) and resolved **all 7** previously-blocking merge conflicts via
+  `git merge origin/main --no-edit`: `backlog.md` (2 separate conflict blocks), `learned.md`,
+  `needs-human.md`, `reboot.md`, `.agent/memory/project/missions/active.json`,
+  `.agent/memory/project/handoff/SESSION_STATE.md`, `.claude/settings.json`. All were
+  memory/config files as the PR body already disclosed — no source conflicts. Every conflict
+  was either purely additive (append-only logs — kept both sides' content) or a
+  machine-generated single-pointer file where one side was already known-stale (`active.json`,
+  `SESSION_STATE.md` — took `main`'s, since ours was frozen at the same stale M1/F1 checkpoint
+  this doc's §3 already flagged).
+- `pnpm install` (merge pulled in new `@playwright/test` e2e specs not yet installed locally),
+  `tsc --noEmit` clean, `pnpm lint` clean (0 errors, only pre-existing unrelated warnings), no
+  stray `<<<<<<<`/`=======`/`>>>>>>>` markers anywhere in the tree.
+- Committed the merge as `75c525e6`, pushed to `origin/nos-site` (`339d5f8e..75c525e6`).
+- **Verified via `gh api repos/InunuNet/SAOC/pulls/4`: `mergeable` flipped from
+  `CONFLICTING`/`false` to `true`.** `mergeable_state` is `"blocked"` only on in-progress CI
+  checks (`ci`, `dataset-residue-guard`, `firestore-residue-guard`) and the absence of a
+  review — not a real blocker. This session does **not** self-merge, per the standing rule in
+  this same plan file's "STANDING RULES" section (own branch → PR → cross-lane review → one
+  approval → merge). Notified `saoc-5e` it's ready for review.
+- Updated `backlog.md`'s `sanity/lib/fetch.ts` entry from "P1, still open" to "FIXED on
+  `nos-site`, not yet on `main` until PR #4 merges."
+
+**Superseded from the original wrap-up above:** "Do not merge PR #4 until `sanity/lib/fetch.ts`
+is fixed and the 7 conflicts are resolved" — both are now done. What's left is CI + review,
+not more engineering work on this branch.
+
+**Lesson for next time, recorded in `learned.md` too:** when a concrete, already-designed fix
+exists and a blocker keeps getting re-reported instead of dispatched, dispatch it. Re-stating
+a known blocker a second or third time without acting on an available fix reads as stalling,
+not caution.
