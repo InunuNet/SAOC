@@ -48,6 +48,13 @@ Do not scope work from an entry that contradicts it.
 
 ## Next up (queued, not yet a mission — dispatch as soon as current mission closes)
 
+- [ ] **[P3] Brad wants a training session covering the harness's available hooks and skills**,
+  so every session/agent knows how to leverage them well — his framing, 2026-09-14/15 (verbal,
+  relayed via `Dev_Son5_M4-F24_NationalShowIaAlignment`): *"every harness needs to know how to
+  leverage them."* Explicit instruction: **do not frame it in terms of MCP.** No further scope
+  or timing given — surfaced as an aside, not urgent. Needs Brad to clarify audience (agents via
+  a rules/memory doc? Brad himself as a walkthrough?) and format before dispatch.
+
 - [x] **[P1 — RESOLVED 2026-09-10] "Live menu renders the pre-Layout-4 panel" was deploy lag on the wrong origin.**
   Cause (a) of the two candidates, confirmed by Brad's screenshots of `beta.saoc.co.za`: the
   Layout 4 render IS live and correct — five tracks, lead block, per-leaf descriptors, feature
