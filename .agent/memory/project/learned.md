@@ -4147,3 +4147,29 @@ Two more from the same session:
   assertions satisfiable without the property they claimed to prove, in a spec written
   specifically to guard against that — after Claude's own @architect and @dev had both
   passed it.
+
+## Menu System Layout 4 — F9/F10 checker/fixture drift, 2026-09-14
+
+- **A checker and its negative fixtures must move in lockstep with any shape change, or
+  the fixtures silently stop testing anything.** F1's `check-nav-hrefs-golden.mjs` read
+  a stale F7 `featureRail.ctaHref` field F8 had already replaced with
+  `featureRail.destinations[]`, quietly inserting `undefined` into the live href set —
+  A2 failed the M1 gate. F9 fixed the checker to loop `destinations[].href`. Fixing the
+  checker alone wasn't enough: the F1 negative-fixture suite's positive control
+  (`nav-config-good-control.mjs`, cloned by all four negative fixtures) still had the old
+  shape too, so the corrected checker now *crashed* on it (`destinations is not iterable`)
+  instead of letting each fixture's one intended defect surface. F10 fixed the control by
+  transcribing the real shape verbatim from `components/chrome/nav-config.ts:266-281`.
+  Lesson: when a checker changes what shape it reads, audit every fixture that shape
+  touches, not just the golden it's scored against.
+- **Codex's cross-model review caught what Claude's own @qa missed, again.** F9's diff
+  passed its own contract and @qa, but Codex GPT-5.5 (high effort) found the positive-
+  control regression above — a defect F9's contract hadn't scoped at all. Second
+  reinforcement this mission of the mandatory-Codex-pass rule
+  ([[feedback_codex_mandatory_qa]]): Claude reviewing Claude's own code does not reliably
+  catch this class of bug.
+- **A guard that would swallow the bug class is worse than no guard.** @architect
+  deliberately declined to make the checker's `destinations` loop defensive against a
+  missing/malformed field — production NAV data is TS-typed and structurally can't drift
+  that way; only hand-authored fixtures can, and a silent-skip guard would have hidden
+  this exact defect class behind a false pass instead of surfacing it.

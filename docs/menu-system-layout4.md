@@ -490,3 +490,101 @@ anything yet.
   today's two known instances (Programme, Tickets) by construction, but a
   third could still coincide in a way that only breaks a future
   text-based (not role-based) query.
+
+## F9 — the M1 gate's own checker was reading a retired F8 field (2026-09-14)
+
+F8 (M2, earlier in this mission) replaced `featureRail`'s shape from the F7-era
+`{blurb, ctaLabel, ctaHref}` to `{heading, destinations: [{id, label, href,
+variant}]}` (`components/chrome/nav-config.ts:266-283`). Nothing downstream of
+that rename was touched at the time, and one gate consumer was left reading
+the retired field: `contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs`'s
+`flattenNavHrefs()` still read `item.featureRail.ctaHref` — a property that no
+longer exists on the F8 shape. `hrefs.add(undefined)` inserted the literal
+value `undefined` into the live href set on every run, which the golden diff
+reported as `+ undefined` against `goldens/f1-nav-hrefs.json`, failing the
+M1 gate's assertion A2 on a nav tree that was otherwise correct.
+
+The fix touched test infrastructure only. `flattenNavHrefs()` now loops over
+`featureRail.destinations[]` and collects each entry's `.href`:
+
+```js
+if (item.featureRail) {
+  for (const dest of item.featureRail.destinations) hrefs.add(dest.href);
+}
+```
+
+`components/chrome/nav-config.ts` needed zero changes — contract-f9.yaml's A5
+enforces this directly (`git diff --quiet HEAD -- components/chrome/nav-config.ts`),
+confirming the live NAV tree was never the bug.
+
+Fixing the read exposed a second, independent gap: because the old checker
+never walked `destinations[]` at all, it had never validated the feature
+rail's two secondary destinations — `/tickets/day-visitor` and
+`/tickets/weekend-pass` — against anything, even though both are real,
+header-reachable routes (`app/(marketing)/tickets/[slug]/page.tsx`). Both
+hrefs were added to `goldens/f1-nav-hrefs.json`'s `expectedHrefs`, and
+`expectedHrefCount` moved from 23 to 25. The golden's `countNote` field spells
+out the new total's composition, including the dedupe rule inherited from the
+F7-era golden (the feature rail's primary destination shares an href with its
+`theShow.links` entry and is counted once).
+
+Full detail and every assertion: `.agent/memory/project/specs/menu-system-layout4/contract-f9.yaml`.
+
+## F10 — Codex's cross-model review of F9 caught a fixture regression F9 didn't scope (2026-09-14)
+
+The mandatory Codex GPT-5.5 pass against F9's diff (see `.claude/rules/workflow.md`)
+found a real regression outside F9's own contract: the F1 negative-fixture
+suite's positive control,
+`.agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-good-control.mjs`,
+still carried the retired F7 `featureRail` shape. Once F9 changed the checker
+to loop over `.destinations`, running it against this fixture threw
+`TypeError: item.featureRail.destinations is not iterable`.
+
+That crash didn't stay contained to the one fixture. The four real negative
+fixtures in the same directory (`nav-config-dead-link-not-fixed.mjs`,
+`nav-config-invented-descriptor.mjs`, `nav-config-missing-sponsors-href.mjs`,
+`nav-config-tickets-back-in-top-row.mjs`) each `structuredClone()` the
+good-control fixture and inject exactly one targeted defect of their own —
+none of the four touches `featureRail`. All four would have inherited the
+stale shape and hit the identical `TypeError`, masking the one real defect
+each fixture exists to prove, rather than failing for the reason its name
+claims.
+
+The fix (contract-f10.yaml) replaced good-control.mjs's `featureRail` block
+with the real F8 shape, transcribed directly from
+`components/chrome/nav-config.ts:266-281` — `{heading, destinations: [...]}`
+with all three real hrefs (`/national-show/tickets`, `/tickets/day-visitor`,
+`/tickets/weekend-pass`), dropping the retired `meta`, `blurb`, `ctaLabel`,
+and `ctaHref` fields entirely. Nothing else changed: the checker itself, the
+real nav config, and both golden files were left untouched (contract-f10.yaml
+A6), and all four negative fixtures were re-run to confirm each still fails
+for its own single injected defect, not the shape mismatch (A5).
+
+**Deliberate non-fix, recorded as a decision, not an oversight:** the Codex
+review also asked whether `flattenNavHrefs()` should defensively guard against
+a missing or non-iterable `destinations`. The architect's answer is no.
+`NavMegaFeatureRail.destinations` (`components/chrome/nav-config.ts:102-108`)
+is a required TypeScript field — production `nav-config.ts` cannot compile
+with a `featureRail` missing it. The only place this shape can go stale is a
+hand-authored `.mjs` fixture that bypasses the type checker by construction,
+which is exactly what happened here. A defensive guard would silently absorb
+that same drift into a quiet false pass instead of the loud, immediate crash
+that surfaced this regression before it reached the gate. Per this project's
+"fail fast" standard, fixture data consumed by the same suite that authors it
+is not a system boundary — it's trusted internal data that must be kept in
+sync, which is what F10 did.
+
+**Standing implication for future `featureRail` changes:** any future change
+to `featureRail`'s shape must update the checker's flattening logic
+(`check-nav-hrefs-golden.mjs`) *and* `nav-config-good-control.mjs` in the same
+change, or the negative-fixture suite silently stops testing anything real.
+
+**Known, related, not-yet-fixed:** a sibling checker,
+`contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs:147`,
+has the identical stale `item.featureRail.ctaHref` read F9 fixed in the F1
+checker. It is currently dormant — masked because the routes it would check
+are among the ones skipped while National Show routes are pending exemption
+— not exercised, not fixed. Tracked as an open P1 backlog item, not addressed
+by F9 or F10.
+
+Full detail and every assertion: `.agent/memory/project/specs/menu-system-layout4/contract-f10.yaml`.

@@ -43,7 +43,9 @@ export function collectHrefs(items: readonly NavItem[]): string[] {
         }
       }
       if (item.featureRail) {
-        hrefs.push(item.featureRail.ctaHref);
+        for (const destination of item.featureRail.destinations) {
+          hrefs.push(destination.href);
+        }
       }
     }
   }

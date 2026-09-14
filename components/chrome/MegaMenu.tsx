@@ -220,34 +220,40 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
                 </div>
               ))}
 
-              {/* Track 5 — feature rail: bone panel, mono date meta, serif
-                heading, blurb, primary CTA — natural top-to-bottom flow (not
-                flex+justify-between), per the approved Layout 4 artifact's
-                .dd4__feature rule. featureRail.blurb is sourced verbatim from
-                the artifact's own mockup markup — see
-                goldens/f7-featurerail-blurb.json. */}
+              {/* Track 5 — Tickets rail: NOS pale-gold panel, mono date meta,
+                serif heading, three destination rows (Tickets / Day Visitor /
+                Weekend Pass). NOS brand colours here are a deliberate,
+                Brad-approved, narrowly scoped exception to the
+                SAOC-chrome-site-wide rule — see
+                goldens/f8-tickets-rail.json's scopeBoundary. The rail's own
+                structural border-left stays SAOC --rule-soft (shared
+                grid-track chrome, not rail content). */}
               {item.featureRail && (
-                <div className="border-l border-rule-soft bg-bone p-6">
+                <div className="border-l border-rule-soft bg-nos-pale-gold p-6">
                   {featureRailMeta && (
-                    <span className="mb-3 block font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                    <span className="mb-3 block font-mono text-[10px] uppercase tracking-[0.14em] text-nos-olive-700">
                       {featureRailMeta}
                     </span>
                   )}
-                  <h4 className="mb-[6px] font-serif text-[18px] font-semibold leading-[1.15] text-ink">
+                  <h4 className="mb-4 font-serif text-[18px] font-semibold leading-[1.15] text-nos-royal-purple">
                     {item.featureRail.heading}
                   </h4>
-                  {item.featureRail.blurb && (
-                    <p className="mb-4 font-sans text-[12px] leading-[1.45] text-muted">
-                      {item.featureRail.blurb}
-                    </p>
-                  )}
-                  <Link
-                    href={item.featureRail.ctaHref}
-                    onClick={close}
-                    className="inline-flex w-fit items-center justify-center rounded-[2px] bg-primary px-[18px] py-[10px] font-sans text-[13.5px] font-medium tracking-[0.01em] text-ivory transition-colors duration-150 hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-                  >
-                    {item.featureRail.ctaLabel}
-                  </Link>
+                  <div className="flex flex-col space-y-3">
+                    {item.featureRail.destinations.map((destination) => (
+                      <Link
+                        key={destination.id}
+                        href={destination.href}
+                        onClick={close}
+                        className={
+                          destination.variant === 'primary'
+                            ? 'inline-flex w-full items-center justify-center rounded-full bg-nos-royal-purple px-4 py-3 font-sans text-[12px] font-medium uppercase tracking-[0.08em] text-nos-pale-gold hover:bg-nos-purple-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
+                            : 'inline-flex w-full items-center justify-center rounded-full border-[1.5px] border-nos-royal-purple bg-transparent px-4 py-3 font-sans text-[12px] font-medium uppercase tracking-[0.08em] text-nos-royal-purple hover:bg-nos-royal-purple hover:text-nos-pale-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
+                        }
+                      >
+                        {destination.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

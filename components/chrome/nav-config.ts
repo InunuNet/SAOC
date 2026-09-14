@@ -23,11 +23,11 @@
 // singleton's own venue.name, exactly the pattern that module exists to
 // enforce (its own header comment: seven inlined copies of the same Intl
 // call once had the site advertising two different venues in one viewport).
-// `featureRail.blurb` (mission menu-system-layout4 M2/F7) is sourced verbatim
-// from the approved Layout 4 artifact's own .dd4__feature mockup markup — see
-// .agent/memory/project/specs/menu-system-layout4/goldens/f7-featurerail-blurb.json
-// for the provenance ruling and exact string, mechanically checked by
-// contracts/checks/menu-system-layout4-f7/check-featurerail-blurb-provenance.mjs.
+// `featureRail.destinations` (mission menu-system-layout4 M2/F8) replaced the
+// F7 {blurb, ctaLabel, ctaHref} shape with three real destination links,
+// recoloured with NOS brand tokens as a scoped exception — see
+// .agent/memory/project/specs/menu-system-layout4/goldens/f8-tickets-rail.json.
+// f7-featurerail-blurb.json's provenance golden is now historical (F7-scoped).
 // At M1/F1 this field had no source anywhere and was left omitted per
 // docs/rules/no-invention.md — see (superseded)
 // .agent/memory/project/specs/menu-system-layout4/goldens/f1-gaps.json.
@@ -85,19 +85,26 @@ export interface NavMegaLead {
   theShow: NavColumn;
 }
 
-/** Bone panel: mono date meta, serif heading, optional blurb, primary CTA. */
+export interface NavMegaFeatureRailDestination {
+  id: string;
+  label: string;
+  href: string;
+  variant: 'primary' | 'secondary';
+}
+
+/**
+ * NOS-coloured panel (mission menu-system-layout4 M2/F8 — see
+ * goldens/f8-tickets-rail.json for the colour scope-boundary ruling): mono
+ * date meta, serif heading, three destination rows. Superseded the F7
+ * shape ({blurb, ctaLabel, ctaHref}) — f7-featurerail-blurb.json's
+ * provenance golden is now historical, not re-used.
+ */
 export interface NavMegaFeatureRail {
   /** Same render-time-only contract as NavMegaLead.meta. */
   meta?: string;
   heading: string;
-  /**
-   * Sourced verbatim from the approved Layout 4 artifact's own mockup markup
-   * (mission menu-system-layout4 M2/F7) — see
-   * goldens/f7-featurerail-blurb.json for provenance.
-   */
-  blurb?: string;
-  ctaLabel: string;
-  ctaHref: string;
+  /** Exactly 3 entries, primary first. */
+  destinations: NavMegaFeatureRailDestination[];
 }
 
 export type NavItem =
@@ -258,9 +265,21 @@ export const NAV: readonly NavItem[] = [
     ],
     featureRail: {
       heading: 'Tickets',
-      blurb: 'Day, weekend and VIP admission for the 19th National Show.',
-      ctaLabel: 'Buy tickets',
-      ctaHref: '/national-show/tickets',
+      destinations: [
+        { id: 'tickets', label: 'Tickets', href: '/national-show/tickets', variant: 'primary' },
+        {
+          id: 'day-visitor',
+          label: 'Day Visitor',
+          href: '/tickets/day-visitor',
+          variant: 'secondary',
+        },
+        {
+          id: 'weekend-pass',
+          label: 'Weekend Pass',
+          href: '/tickets/weekend-pass',
+          variant: 'secondary',
+        },
+      ],
     },
   },
   { type: 'link', id: 'sponsors', label: 'Sponsors', href: '/sponsors' },

@@ -94,6 +94,35 @@ Do not scope work from an entry that contradicts it.
 
 - [ ] **[P3] A15 assertion-shape audit** (site-content-alignment, 2026-09-10) — check … → [details](data/p3-a15-assertion-shape-audit-site-conten.md)
 
+- [ ] **[P1] Sibling checker has the identical stale-`ctaHref` bug F9 just fixed, currently
+  dormant — will silently under-measure the real gate property once NOS routes land.**
+  `contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs:147`
+  still does `if (item.featureRail) hrefs.push(item.featureRail.ctaHref);` — the F7 shape F8
+  replaced with `featureRail.destinations[]` (see F9,
+  `.agent/memory/project/specs/menu-system-layout4/contract-f9.yaml`, which fixed the same bug
+  in `check-nav-hrefs-golden.mjs` but was scoped only to that file). Currently masked because
+  `f1-pending-nos-routes.json` still lists 6 pending routes, so this checker exits 3 (SKIP)
+  instead of running its real HTTP-200 property check. The moment that pending list empties
+  (NOS lane lands — this is exactly mission `menu-system-layout4` M3's own blocking condition,
+  see the CI backlog item below), this checker will push a literal `undefined` into its href
+  list instead of the two feature-rail secondary destinations, silently under-measuring
+  "property 1: no 404 reachable from the header" — the exact defect class this file's own
+  header comment says it exists to prevent. Found by @qa during F9 review (2026-09-14). Fix:
+  same pattern as F9 — loop over `featureRail.destinations` collecting `.href`. Should land
+  before the NOS pending list empties, not after.
+
+- [ ] **[P1] Scheduled CI has failed daily since 2026-09-12 — `/national-show/workshops` and
+  `/national-show/conferences` don't return 200 in `e2e/nav-links-200.spec.ts`.** Both routes
+  render `CategoryTicketsPage`, which calls `getSoldCountsByTicketType()` (Firebase Admin SDK).
+  `.github/workflows/ci.yml:38` deliberately withholds `FIREBASE_ADMIN_*` secrets from the
+  e2e job ("because the builder does not get them either"), so these two admin-dependent pages
+  500 on every scheduled run. Not a regression — a standing, intentional CI gap that happens to
+  match the `menu-system-layout4` M3 gate condition verbatim: "property 1 (no 404 reachable from
+  the header) cannot go green until the NOS lane's six routes return 200." Needs a decision
+  (inject real secrets into the e2e job vs. a CI-only Firebase Admin mock vs. skip these two specs
+  in the scheduled run) before M3 can go green — not something to fix unilaterally since it touches
+  CI credentials.
+
 - [ ] **[P1] TWO unparseable contracts — their assertions have never run**
   (found 20… → [details](data/p1-two-unparseable-contracts-their-asser.md)
 

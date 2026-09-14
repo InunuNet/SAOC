@@ -20,6 +20,18 @@
   --rule: #d9d7c9; /* hairlines, dividers */
   --rule-soft: #e4e1d0; /* fainter hairlines */
 
+  /* ---------- NOS brand — Tickets rail only (mission menu-system-layout4
+     M2/F8) ---------- */
+  /* Deliberate, Brad-approved exception to the SAOC-chrome-site-wide rule —
+     see goldens/f8-tickets-rail.json's scopeBoundary. Consumed ONLY by the
+     mega menu's Tickets feature rail (components/chrome/MegaMenu.tsx);
+     never used elsewhere in chrome. */
+  --nos-royal-purple: #211a57; /* rail heading, primary row fill */
+  --nos-purple-700: #33296f; /* primary row hover fill */
+  --nos-pale-gold: #f3f2d6; /* rail background, primary row text */
+  --nos-line: #dad7c8; /* reserved — not consumed by F8's own row layout */
+  --nos-olive-700: #6a6829; /* rail meta line (venue/date) */
+
   /* ---------- Semantic ---------- */
   --bg: var(--parchment);
   --bg-tint: var(--bone);
@@ -108,6 +120,13 @@
   --color-muted: var(--muted);
   --color-rule: var(--rule);
   --color-rule-soft: var(--rule-soft);
+
+  /* NOS brand — Tickets rail only, see :root's own comment above. */
+  --color-nos-royal-purple: var(--nos-royal-purple);
+  --color-nos-purple-700: var(--nos-purple-700);
+  --color-nos-pale-gold: var(--nos-pale-gold);
+  --color-nos-line: var(--nos-line);
+  --color-nos-olive-700: var(--nos-olive-700);
 
   --shadow-sheet: var(--shadow-sheet);
 

@@ -70,6 +70,18 @@ const GOLD_ACCENT = 'rgb(158, 140, 107)'; // --accent #9e8c6b
 const GOLD_MUTED = 'rgb(99, 102, 96)'; // --muted #636660
 const GOLD_INK = 'rgb(23, 25, 23)'; // --ink #171917
 const GOLD_BLURB = 'Day, weekend and VIP admission for the 19th National Show.';
+// SUPERSEDED (mission menu-system-layout4 M2/F8, 2026-09-11): the feature rail's
+// single "Buy tickets" CTA + blurb paragraph was replaced by three destination
+// rows (Tickets / Day Visitor / Weekend Pass) with NOS brand colours — see
+// goldens/f8-tickets-rail.json (`blurbRemoved`, `rail`) and
+// e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts, which is now the source of
+// truth for the rail's CTA-shaped content and colour. GOLD_BLURB and GOLD_BONE
+// above are kept only as the historical record of what F7 asserted before F8 —
+// do not use them in any new assertion; the three tests below that referenced
+// the old single-CTA shape are retired (test.skip) rather than deleted, so the
+// property this spec DID verify at the time stays legible in the test file
+// itself, not just in a commit message.
+const NOS_PALE_GOLD = 'rgb(243, 242, 214)'; // --color-nos-pale-gold #F3F2D6 (F8 rail background)
 
 test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layout4 M2/F7)', () => {
   test.beforeEach(async ({ page }) => {
@@ -158,20 +170,29 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
     // Left edge: the lead eyebrow is the first rendered content in the sheet
     // (leftmost track, first element) -- the exact element @qa measured at
     // x:0 in the regression report above.
-    const leadEyebrow = panel.getByText('The National Show', { exact: true });
-    // Right edge: the feature rail's CTA is the rightmost rendered content
-    // (last track, last element) -- same locator pattern already used
-    // elsewhere in this spec (see featureRailHeading/ctaButton tests below).
-    const cta = panel.getByRole('link', { name: 'Buy tickets', exact: true });
+    // UPDATED (mission menu-system-layout4 M2/F8, 2026-09-11): the lead
+    // eyebrow text ("The National Show") this test originally measured was
+    // itself replaced by F8a's logo image (see goldens/f8-lead-logo.json) —
+    // the lead track's lead link (href="/national-show") is now the first
+    // rendered content instead, same left-edge position, real element either
+    // way. The feature rail's "Buy tickets" CTA (right edge) was replaced by
+    // F8b's three destination rows — "Weekend Pass" is now the last rendered
+    // content in the sheet. Both swaps keep this test's actual PROPERTY (a
+    // real horizontal inset on both edges) intact; only the specific elements
+    // used to measure it changed, which is exactly the kind of edit this
+    // test's own history (see the REWRITTEN note above) says is fine as long
+    // as real rendered content is what's measured, not a container's own box.
+    const leadLink = panel.locator('a[href="/national-show"]').first();
+    const weekendPassLink = panel.getByRole('link', { name: 'Weekend Pass', exact: true });
 
     const panelBox = await panel.boundingBox();
-    const eyebrowBox = await leadEyebrow.boundingBox();
-    const ctaBox = await cta.boundingBox();
-    if (!panelBox || !eyebrowBox || !ctaBox) {
-      throw new Error('Could not measure panel, lead eyebrow, or CTA button');
+    const leadLinkBox = await leadLink.boundingBox();
+    const ctaBox = await weekendPassLink.boundingBox();
+    if (!panelBox || !leadLinkBox || !ctaBox) {
+      throw new Error('Could not measure panel, lead link, or Weekend Pass row');
     }
 
-    const leftInset = eyebrowBox.x - panelBox.x;
+    const leftInset = leadLinkBox.x - panelBox.x;
     const rightInset = panelBox.x + panelBox.width - (ctaBox.x + ctaBox.width);
 
     // --container-pad (app/globals.css:73) is 32px. Require a real inset on
@@ -340,7 +361,7 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
     expect(metaFontFamily.toLowerCase()).toContain('mono');
   });
 
-  test('feature rail CTA button matches the artifact\'s .btn treatment, not the Tailwind default radius scale', async ({
+  test.skip('feature rail CTA button matches the artifact\'s .btn treatment, not the Tailwind default radius scale — RETIRED (mission menu-system-layout4 M2/F8, 2026-09-11): the single "Buy tickets" CTA this test targeted no longer exists, replaced by three destination rows with their own pill (rounded-full) treatment. See e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts (A5/A6) for the button-shape/colour assertions that supersede this one. Left in place, skipped rather than deleted, as the historical record of F7\'s own CTA spec.', async ({
     page,
   }) => {
     const panel = await openNationalShowMenu(page);
@@ -396,7 +417,7 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
     expect(Math.abs(featureBox.x - (tradeBox.x + tradeBox.width))).toBeLessThan(2);
   });
 
-  test('feature rail: no border-radius, real block flow (display is not flex, justify-content is not space-between), and the artifact-sourced blurb renders', async ({
+  test('feature rail: no border-radius, real block flow (display is not flex, justify-content is not space-between) — UPDATED for F8: background-color assertion moved from SAOC --bone to NOS --color-nos-pale-gold, a deliberate, scoped exception (see goldens/f8-tickets-rail.json scopeBoundary) — the border-radius, padding, and flow properties named in this title are unchanged by F8 and still asserted below', async ({
     page,
   }) => {
     const panel = await openNationalShowMenu(page);
@@ -404,7 +425,7 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
     const featureRail = featureHeading.locator('xpath=..');
 
     await expect(featureRail).toHaveCSS('border-radius', '0px');
-    await expect(featureRail).toHaveCSS('background-color', GOLD_BONE);
+    await expect(featureRail).toHaveCSS('background-color', NOS_PALE_GOLD);
     await expect(featureRail).toHaveCSS('padding', '24px');
 
     // TIGHTENED (Codex GPT-5.5 finding, mission menu-system-layout4 M2/F7,
@@ -424,23 +445,16 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
     const justifyContent = await featureRail.evaluate((el) => getComputedStyle(el).justifyContent);
     expect(justifyContent).not.toBe('space-between');
 
-    // The blurb must be present, visible, and byte-for-byte the artifact string
-    // — see goldens/f7-featurerail-blurb.json for its provenance.
-    const blurb = featureRail.getByText(GOLD_BLURB, { exact: true });
-    await expect(blurb).toBeVisible();
-
-    // Belt-and-suspenders on top of the display/justify-content checks above:
-    // with content in natural flow, the CTA sits immediately after the
-    // blurb's own margin-bottom, not stretched to the bottom of a flex box.
-    // Assert the gap between the blurb's bottom edge and the CTA's top edge
-    // is close to the artifact's --s4 (16px), not a large flex-stretched gap.
-    const cta = featureRail.getByRole('link', { name: 'Buy tickets' });
-    const blurbBox = await blurb.boundingBox();
-    const ctaBox = await cta.boundingBox();
-    if (!blurbBox || !ctaBox) throw new Error('Could not measure blurb or CTA');
-    const gap = ctaBox.y - (blurbBox.y + blurbBox.height);
-    expect(gap).toBeGreaterThanOrEqual(0);
-    expect(gap).toBeLessThan(32); // 16px margin +/- rendering slop, well under a stretched-flex gap
+    // RETIRED (mission menu-system-layout4 M2/F8, 2026-09-11): this test
+    // originally also asserted the blurb paragraph's presence and the
+    // blurb-to-CTA gap. F8b removed the blurb and the single CTA entirely,
+    // replacing both with three destination rows — see
+    // goldens/f8-tickets-rail.json's `blurbRemoved` and
+    // e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts (which asserts the rail's
+    // current content directly) for what supersedes this. The
+    // display/justify-content checks above remain live and still pass —
+    // "real block flow, not a flex box" is still a true property of the rail
+    // container post-F8, it just no longer holds a blurb+CTA pair.
   });
 
   test('font-family tokens terminate in a real generic CSS keyword, not just contain a lucky substring (mission menu-system-layout4 M2/F7, blocker 1)', async ({

@@ -77,14 +77,18 @@ milestones:
   - F5
   name: Contract, goldens and the nav data model — @architect writes the contract
     and negative fixtures first; F1 and F5 carry no rendering change
-  status: in-progress
+  status: done
+  gate_ran_at: '2026-09-14T10:35:14.961447+00:00'
+  gate_result: pass
 - id: M2
   features:
   - F2
   - F3
   - F4
   name: Chrome rendering — desktop sheet, mobile drawer, header, all against the handoff
-  status: pending
+  status: done
+  gate_ran_at: '2026-09-14T10:37:28.827158+00:00'
+  gate_result: pass
 - id: M3
   features: []
   name: Gate and PR — the seven gate properties green and a PR to main; property 1

@@ -1,0 +1,230 @@
+schema: athanor.contract/v1
+slug: menu-system-layout4
+goal: >
+  Two Brad-approved, screenshot-backed asks against the National Show mega
+  menu (desktop), dispatched by the team lead 2026-09-11 as mission
+  menu-system-layout4 M2/F8:
+
+  F8a — the lead track's eyebrow ("The National Show") and serif heading
+  ("19th SAOC National Orchid Show") are replaced by the vertical NOS 2027
+  logo (branding/National Show 2027/Logo/NOS-2027-logo-full-colour-vertical.png),
+  sized to the lead track's real pixel budget. The venue/date meta line
+  keeps rendering below it, unchanged.
+
+  F8b — the feature rail (Track 5, currently a single "Buy tickets" CTA in a
+  mostly-empty grey box per Brad's screenshot) becomes three real
+  destinations — Tickets, Day Visitor, Weekend Pass — recoloured with the
+  NOS brand palette as a deliberate, narrowly scoped exception to this
+  project's standing "SAOC chrome site-wide" rule. Every other part of the
+  header/menu (including the rail's own structural border-left) stays SAOC.
+
+  See goldens/f8-lead-logo.json and goldens/f8-tickets-rail.json for the
+  full value tables, provenance, and scope rulings this contract's
+  assertions check against — @dev implements against those two files and
+  e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts, not against this prose.
+created_at: '2026-09-11'
+autonomy: high
+features:
+  - id: F8
+    name: >-
+      MegaMenu.tsx lead-block NOS logo + nav-config.ts's NavMegaFeatureRail
+      restructured from a single CTA to three NOS-coloured destination
+      links, plus four new --color-nos-* @theme tokens in app/globals.css.
+    status: pending
+  # RULING (2026-09-11, team lead asked whether F7's own golden spec needed
+  # updating as part of closing F8): F7's golden e2e spec formally updated
+  # in place by @architect (not @dev -- goldens/QA inputs are never a dev
+  # edit) -- 3 of its tests referenced the now-removed single "Buy tickets"
+  # CTA / blurb. One (CTA-specific button-shape assertions) is retired via
+  # test.skip with a comment pointing at this contract's A5/A6 as the
+  # successor. One (background-color + block-flow assertions) is updated in
+  # place -- its border-radius/padding/flow properties are still true
+  # post-F8, only backgroundColor moved from --bone to the NOS exception, so
+  # rewriting beats skipping. One (the sheet's horizontal-inset regression
+  # guard) had its measured elements swapped (lead eyebrow -> lead link,
+  # "Buy tickets" -> "Weekend Pass") because the PROPERTY it guards (real
+  # content flush against neither panel edge) is still real and still needs
+  # a live regression guard -- skipping it would have silently dropped
+  # coverage on an unrelated, still-live defect class. f7-layout4-visual-
+  # fidelity.json and contract-f7.yaml's A6 are left AS-WRITTEN with an
+  # added `supersededByF8` note each, rather than rewritten, so they stay
+  # the legible historical record of what F7 itself verified at close.
+goldens:
+  - .agent/memory/project/specs/menu-system-layout4/goldens/f8-lead-logo.json
+  - .agent/memory/project/specs/menu-system-layout4/goldens/f8-tickets-rail.json
+  - e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        PROPERTY (F8a, core ask): the lead track's eyebrow and serif heading
+        text are both gone — replaced by the NOS vertical logo image, real
+        <img> rendered inside the existing lead link (href="/national-show"),
+        with the correct src and alt text (see f8-lead-logo.json's `render`
+        section for the exact alt string and its provenance — transcribed
+        directly from the artwork's own two text lines, not invented).
+        Real rendered-DOM check via Playwright — a source grep for the old
+        text strings being absent would not prove an image replaced them,
+        only that some text changed.
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "eyebrow and serif heading text are gone"
+      required: true
+
+    - id: A2
+      description: >
+        PROPERTY (F8a, container budget): the rendered logo's measured width
+        stays inside the lead track's real pixel budget (f8-lead-logo.json's
+        containerBudget: 231px true ceiling, 220px hard max asserted, 200px
+        specified) with margin against layout noise, and its aspect ratio is
+        close to the source PNG's true 1.13769 ratio — not distorted by a
+        careless width/height pair. Also confirms the image is the lead
+        link's OWN clickable content (href="/national-show" on an ancestor
+        <a>), not a second, separate anchor sitting next to the real link.
+        Measured via real getBoundingClientRect at the 1440px viewport F7
+        established for track-ratio measurement (same reasoning: resolves
+        fr tracks to intended proportions, not a viewport-constrained
+        shrink).
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "logo sits inside the lead link and stays inside its container budget"
+      required: true
+
+    - id: A3
+      description: >
+        PROPERTY (F8a, the regression this ruling exists to prevent): the
+        venue/date meta line (leadMeta) still renders below the logo, and
+        "The Show" group heading + its links list still render below that —
+        proving F8a removed ONLY the eyebrow+heading text, not the meta line
+        or the navigational leaves beneath it. See f8-lead-logo.json's
+        `reading.metaLineRuling` for why keeping this is the correct reading
+        of Brad's instruction (the logo doesn't carry the venue name or
+        exact dates, only province+year).
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "venue/date meta line still renders below the logo"
+      required: true
+
+    - id: A4
+      description: >
+        PROPERTY (F8b, core ask): the feature rail renders three real links
+        with an accessible name equal to their visible label and the exact
+        hrefs verified live against beta.saoc.co.za on 2026-09-11 (see
+        f8-tickets-rail.json's `destinations.items` for each route's full
+        verification chain — Sanity query mechanism, seed-script active:true
+        provenance, and a live HTTP 200 curl, not assumption). The old
+        blurb copy and single "Buy tickets" CTA are both gone (this is what
+        directly closes Brad's "large amount of unused vertical space below
+        the single CTA" complaint — three real destinations now occupy that
+        space, not decoration).
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "renders exactly three destination links with the correct hrefs"
+      required: true
+
+    - id: A5
+      description: >
+        PROPERTY (F8b, NOS palette — primary row): the "Tickets" row's
+        computed background-color and color resolve to the real NOS
+        royal-purple (#211A57) fill / pale-gold (#F3F2D6) text, and its
+        hover state resolves to purple-700 (#33296F) — colour-for-colour
+        matches to the approved artifact's own .btn-primary/.btn-primary:hover
+        rules (re-verified directly against the artifact's saved HTML during
+        contract authoring, 2026-09-11 — see f8-tickets-rail.json `source`).
+        Real getComputedStyle read on the rendered link, not a className
+        source grep — this project's own F7 contract (A7) already found a
+        case where a token was declared but resolved to nothing usable at
+        runtime; declaration presence proves nothing on its own.
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "primary row .Tickets. carries real NOS royal-purple fill and pale-gold text"
+      required: true
+
+    - id: A6
+      description: >
+        PROPERTY (F8b, NOS palette — secondary rows): "Day Visitor" and
+        "Weekend Pass" are ghost-styled — transparent fill, 1.5px royal-purple
+        border, royal-purple text — matching the artifact's .btn-ghost rule.
+        Same real-computed-style method as A5.
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "secondary rows .Day Visitor, Weekend Pass. are ghost-styled"
+      required: true
+
+    - id: A7
+      description: >
+        PROPERTY (F8b, scope boundary — the rail's own fill/meta, and what
+        stays SAOC): the rail's outer container background resolves to NOS
+        pale-gold and its meta line (when a date range is present in the
+        current dataset) resolves to NOS olive-700, WHILE the rail's
+        structural border-left — the same divider F7 put on every non-lead
+        track — stays SAOC --rule-soft (#e4e1d0), unchanged. This is the
+        assertion that most directly proves the scope-boundary ruling in
+        f8-tickets-rail.json's `scopeBoundary` was actually implemented, not
+        merely stated in prose: a border that's part of the shared five-track
+        grid system is left alone, and only the rail's own content colours
+        move to NOS.
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "rail background is NOS pale-gold, meta line is NOS olive-700"
+      required: true
+
+    - id: A8
+      description: >
+        PROPERTY (scope boundary, negative — the exception did not leak): no
+        NOS royal-purple appears on the mega-menu trigger button, the lead
+        link, or (when rendered) a group-column heading — proving the NOS
+        exception stayed confined to the tickets rail and did not spread to
+        the rest of the SAOC-palette chrome, per f8-tickets-rail.json's
+        scopeBoundary.rule ("A future feature must NOT read this exception
+        as license to bring NOS colours into the lead block, the three group
+        columns, the trigger button, or the mobile drawer").
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "no NOS colour appears anywhere outside the tickets rail"
+      required: true
+
+    - id: A9
+      description: >
+        PROVENANCE (scope boundary, source-level — pairs with A7/A8, not a
+        substitute for them): components/chrome/MegaMenu.tsx and
+        components/chrome/nav-config.ts carry ZERO NOS hex literals after F8
+        lands — the four (five, including olive-700 — see f8-tickets-rail.json
+        `tokensToRegister`) NOS hex values live ONLY in app/globals.css's
+        @theme block, never as inline hex or bg-[#211a57]-style arbitrary
+        Tailwind syntax in the chrome components themselves. Run directly
+        against the pre-existing shared guard
+        (contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs,
+        built for F1-F4 to keep SAOC/NOS palettes from mixing in exactly
+        these two files) — reused as-is, no checker edit needed, because it
+        only ever scans literal hex strings in the files it's given and
+        app/globals.css is deliberately never one of them (see
+        f8-tickets-rail.json's `styleValueProvenanceNote` for why running it
+        against globals.css itself would prove nothing). CONFIRMED during
+        contract authoring (2026-09-11) that this command exits 0 against
+        today's pre-F8 tree (no NOS hex present yet, trivially) — it must
+        ALSO still exit 0 once F8 lands, which is the property this
+        assertion actually exists to prove going forward.
+      command: >-
+        node contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs
+        components/chrome/MegaMenu.tsx components/chrome/nav-config.ts
+      required: true
+
+    - id: A10
+      description: >
+        PROVENANCE (F8a asset dependency — fails closed, not silently): the
+        NOS logo PNG exists at its runtime-servable path,
+        public/images/nos-2027-logo-full-colour-vertical.png (branding/ is
+        not a runtime asset directory and is read-denied to agents per the
+        team lead's dispatch — see f8-lead-logo.json's `asset` section).
+        This is a precondition check, not a visual one — if it fails, @dev
+        must STOP and report the missing asset rather than reading from
+        branding/ directly, per .claude/rules/scope.md and project memory
+        project_design_folders_brad_active (Brad's active design
+        workstream). CONFIRMED during contract authoring (2026-09-11) that
+        this file does NOT yet exist at the runtime path — expected to fail
+        until the team lead (or Brad) copies it in, exactly as the dispatch
+        message says will happen.
+      command: test -f public/images/nos-2027-logo-full-colour-vertical.png
+      required: false

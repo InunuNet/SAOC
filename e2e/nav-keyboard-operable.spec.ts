@@ -34,7 +34,8 @@ const TRIGGER_NAME = 'National Show';
 // from NAV here (mirroring MegaMenu.tsx's render order exactly: lead.leadHref
 // is always a <Link>; lead.theShow.headingHref and each column's headingHref
 // render as a <Link> only when non-null, else a plain <span>; every leaf link
-// is always a <Link>; featureRail.ctaHref is always a <Link>), not hardcoded —
+// is always a <Link>; every featureRail.destinations entry is always a
+// <Link>), not hardcoded —
 // @qa independently drove this by hand and recorded the same order: lead ->
 // theShow -> Visit -> Programme -> Exhibit & Trade -> feature rail. Today that
 // resolves to lead.leadHref ('/national-show'), since theShow.headingHref is
@@ -50,7 +51,9 @@ function focusableHrefsInPanelOrder(item: Extract<NavItem, { type: 'mega' }>): s
     if (column.headingHref) hrefs.push(column.headingHref);
     for (const link of column.links) hrefs.push(link.href);
   }
-  if (item.featureRail) hrefs.push(item.featureRail.ctaHref);
+  if (item.featureRail) {
+    for (const destination of item.featureRail.destinations) hrefs.push(destination.href);
+  }
   return hrefs;
 }
 
