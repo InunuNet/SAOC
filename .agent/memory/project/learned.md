@@ -3916,3 +3916,26 @@ actually measured and check it is the one being claimed. "I looked and saw none"
 your search, not about the artefact.
 
 Related: [[feedback-never-assert-without-verification]], [[nos-m4-route-manifest]].
+
+## 2026-09-14 — Wrap up BEFORE context loss, not after; brain.py alone is not enough
+
+Brad, verbatim, after the brain.py memory-loss incident this same day: *"That's the problem
+with self-lobotomy. Brain was always working. But you self-compact and then broken,
+everything gets fucked up. So before we hit 30% context, every turn you wrap up. Properly,
+not a half-assed job."*
+
+**Standing instruction:** don't wait to be asked to wrap up, and don't wait until context is
+nearly exhausted. Watch the context-pressure signal every turn (the `UserPromptSubmit` hook's
+`[context: ...]` line); as usage climbs toward the compaction threshold, do a full wrap-up —
+not a one-line brain.py call, a real one covering everything material this session touched,
+decided, or left open — **before** auto-compaction can silently drop it.
+
+**Why "properly, not half-assed" matters here specifically:** brain.py's chromadb store is
+local and has already been lost/corrupted once this project (Athanor#1437, and the 2026-07-29
+scratch-purge incidents this file already documents above). A wrap-up that only calls
+`brain.py wrap-up` and stops is exactly the "half-assed" version Brad is naming — see
+`.agent/memory/project/plans/2026-09-14-session-end.md` for the pattern that satisfied him:
+brain.py entry **plus** a git-tracked companion doc in `plans/`, so the record survives even
+if brain's local store is lost again. Do both, every time, not just at session end.
+
+Related: [[brain-py-venv-defect]] (Athanor#1437), [[feedback-never-assert-without-verification]].
