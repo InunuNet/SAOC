@@ -1029,3 +1029,51 @@ remedy that actually works is rotating the credential.** Everything else is tidy
 **Nothing in the NOS site lane needs to change.** This is recorded here because it is far more
 serious than the mission it interrupted, and because the sweep of item 4 is a decision for Brad —
 tracked Drive content is a documented policy, and changing it is his call, not an agent's.
+
+## 2026-09-10 — CRITICAL: live SAOC mailbox passwords in a PUBLIC repo
+
+**Verified independently by the lead session (not taken on a peer's word):**
+
+- `gh repo view InunuNet/SAOC --json isPrivate,visibility` → `{"isPrivate":false,"visibility":"PUBLIC"}`
+- File `docs/leeann-source/website-development-specification-v3_2026-09-06.md` is tracked in HEAD
+  (`git ls-files --error-unmatch` succeeds). It carries a credentials table at line 573 with a
+  `Password` column holding live values, plus owner and recovery-contact addresses.
+- Introduced in commit `1d6512cb` (2026-09-06), pushed to `origin/main`.
+- Scope is exactly one file: `git grep -l -i -E '^\s*Password\s*$|password[:=]\s*\S' -- docs/ content/`
+  returns only that path. Nothing is tracked under `content/drive-source/`.
+
+**Only remediation is human password rotation.** Credentials that have been pushed to a public
+repository must be treated as compromised regardless of what happens to the file afterwards.
+
+**Do NOT rewrite history to "fix" this.** It requires a force-push on a shared public repo, it
+breaks every other checkout, and it does not undo the exposure — the objects are already
+mirrored, cached and indexed.
+
+Deliberately not recording the addresses or values here or in the SAOC Dev Status sheet.
+
+Open as question 1 on the status sheet's Open Questions tab.
+
+## CLAUDE.md needs a manual paste — agents can't write this file (2026-09-11)
+
+**What Brad needs to do:** paste the note below into `CLAUDE.md`, under the "Design Handoff
+Workflow" section (right after the existing "Tailwind v4 uses CSS custom properties for
+theming..." line). Agents cannot make this edit themselves — the autonomy hook denies all
+writes to `CLAUDE.md` outright, which is correct, intentional behaviour, not a bug to route
+around. It needs a human's hand on the keyboard, under a minute of work.
+
+**Exact text to paste (copy as-is, no editing needed):**
+
+```
+**`@theme` keys must be Tailwind's real reserved names, and `next/font` loader `variable`s must not collide with them.** The font-family theme keys Tailwind v4 actually recognises are `--font-serif` / `--font-sans` / `--font-mono` (matching the `font-serif`/`font-sans`/`font-mono` utility names 1:1) — a project-invented name like `--font-family-serif` is silently ignored, not an error. Separately, `app/layout.tsx`'s `next/font` loaders must set their `variable` to something *other* than those same reserved names — if a loader claims `variable: '--font-serif'`, its own two-entry fallback list (loaded face + next/font's metrics-matched fallback, no generic CSS keyword) wins the cascade over any `@theme` declaration referencing that same name, so the generic-keyword fallback (`serif`/`sans-serif`/`monospace`) never activates. The working pattern (`app/layout.tsx` + `app/globals.css:35-37,114-116`): loaders write to `--font-serif-loaded` / `--font-sans-loaded` / `--font-mono-loaded`, `:root` composes `--serif`/`--sans`/`--mono` from those plus a full fallback stack ending in a real generic keyword, and `@theme`'s `--font-serif`/`--font-sans`/`--font-mono` reference `var(--serif)` etc. This was discovered and fixed as a site-wide bug (not menu-scoped) during mission `menu-system-layout4` F7 — see [`docs/menu-system-layout4.md`](docs/menu-system-layout4.md#f7--visual-fidelity-fix-2026-0910-11) for the full defect analysis.
+```
+
+**Why it matters:** `--font-family-serif`/`-sans`/`-mono` are NOT valid Tailwind v4 theme keys —
+the real namespace is `--font-serif`/`-sans`/`-mono`, matching the utility class name 1:1. Worse,
+`app/layout.tsx`'s `next/font` loaders previously used those exact reserved names for their own
+`variable`, colliding with Tailwind's namespace. Net effect: `font-serif`/`font-sans`/`font-mono`
+resolved site-wide with no generic-keyword fallback. The fix has three parts (loader rename to
+`--font-*-loaded`, `globals.css:35-37` reading those renamed vars, `globals.css:114-116` setting
+the real theme keys from them) and all three must stay together — any one alone reproduces the
+original bug.
+
+Full account: `docs/menu-system-layout4.md`, section "F7 — visual fidelity fix (2026-09-10/11)".

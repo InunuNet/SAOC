@@ -118,7 +118,18 @@ BASES = ("executed", "parsed", "present")
 # one prints a warning forever and teaches the operator to stop reading the
 # panel (SPEC "halt on clearable drift, never on an inherent limitation"); every
 # other unknown is a broken oracle and blocks.
-QUOTA_INHERENT_REASONS = ("non_claude_code_session",)
+# Reasons the panel reports without HALTING: nobody in the workspace can clear
+# them, so blocking boot on one only produces an unbootable workspace.
+#
+# missing_mirror belongs here. The mirror is written by the UserPromptSubmit
+# hook (execution/hooks/inject_pressure.sh), which by definition has not fired
+# yet the first time a fresh workspace boots -- there has been no user prompt.
+# Halting on it made every first boot fail a check that first boot cannot
+# satisfy, and the remedy the panel printed ("that hook is not running") was
+# wrong: the hook is fine, it simply has not had a turn. Measured by
+# execution/fleet_acceptance.py step 3. A quota nobody has measured yet is
+# unknown, and unknown is reported, not fatal.
+QUOTA_INHERENT_REASONS = ("non_claude_code_session", "missing_mirror")
 
 # G-5: a mission in one of these states is not starting work, so it needs no
 # autonomy decision. Halting them would leave a blocked mission unclearable.
@@ -378,8 +389,35 @@ def _check_folder_mismatch(root, project_name, folder, checks):
 
 
 def _expected_email(project_name, folder):
+    """The git identity this workspace expects, or None when it has no opinion.
+
+    This used to hardcode `brad+<Project>@inunu.net` and BLOCK BOOT on any other
+    value. That is one operator's plus-addressing convention asserted as a law of
+    the harness, and it made every fresh workspace unbootable for anyone else:
+    the panel demanded an address the operator had never chosen and could not be
+    talked out of. Measured by execution/fleet_acceptance.py step 3, which halted
+    on 'expected brad+FleetAcceptanceWS@inunu.net'.
+
+    The convention is now OPT-IN, read from .agent/profile.json's
+    `git_email_pattern` (a format string taking {stem}). No pattern declared
+    means no expectation, which means no halt -- a workspace that has a real,
+    non-empty git identity is identified well enough to boot.
+    """
     stem = re.sub(r"[^0-9A-Za-z]", "", project_name or folder)
-    return f"brad+{stem}@inunu.net"
+    pattern = None
+    try:
+        with open(PROFILE_REL) as f:
+            pattern = (json.load(f) or {}).get("git_email_pattern")
+    except Exception:
+        pattern = None
+    if not pattern or not isinstance(pattern, str):
+        return None
+    try:
+        return pattern.format(stem=stem)
+    except Exception:
+        # A malformed pattern is a workspace that cannot state its own rule.
+        # Do not invent one on its behalf, and do not halt over it.
+        return None
 
 
 def _collect_git(root, workspace, checks):
@@ -394,10 +432,21 @@ def _collect_git(root, workspace, checks):
         "clean": porcelain == "" if porcelain is not None else None,
         "dirty_files": len(porcelain.splitlines()) if porcelain else 0,
     }
-    if email != expected:
+    if not email:
+        # No git identity at all is a real problem: commits would be
+        # unattributable. This halts regardless of any naming convention.
         checks.append(_check(
             "identity.git_email", "identity", "fail",
-            f"git user.email is '{_s(email)}', expected '{expected}' — "
+            "git user.email is unset — commits from this workspace would be "
+            "unattributable — run: git config user.email <you@example.com>",
+            True, "git config user.email <you@example.com>", basis="executed"))
+    elif expected and email != expected:
+        # Only reachable when the workspace itself declared a pattern, so this
+        # is the workspace's own rule being enforced, not the harness's.
+        checks.append(_check(
+            "identity.git_email", "identity", "fail",
+            f"git user.email is '{_s(email)}', but this workspace's declared "
+            f"git_email_pattern expects '{expected}' — "
             f"run: git config user.email {expected}",
             True, f"git config user.email {expected}", basis="executed"))
     return git

@@ -1,0 +1,38 @@
+schema: athanor.contract/v1
+slug: menu-system-layout4
+goal: >
+  F5 alone: repoint the one dead nav target, /national-show/exhibitors/international to
+  /national-show/international-guests, per the manifest (content/national-show-routes.json
+  on origin/nos-site). The WOSA entry needs no change (ruling R3). This is a thin,
+  standalone contract for traceability -- F5's actual work lands as part of the same
+  nav-config.ts edit as F1, and contract-f1.yaml's A4 (check-dead-link-fixed.mjs) already
+  covers this property in full, including its own negative fixture
+  (goldens/fixtures/f1-negative-fixtures/nav-config-dead-link-not-fixed.mjs). This file
+  exists so F5 has its own attach-spec target distinct from F1's, per mission
+  milestone M1's feature list [F1, F5].
+created_at: '2026-09-10'
+autonomy: high
+features:
+  - id: F5
+    name: >-
+      Dead nav target -- /national-show/exhibitors/international becomes
+      /national-show/international-guests per the manifest (WOSA entry needs no change, R3)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/menu-system-layout4/goldens/f1-nav-config-target.json
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-dead-link-not-fixed.mjs
+  - contracts/checks/menu-system-layout4-f1/check-dead-link-fixed.mjs
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        Same property and same checker as contract-f1.yaml's A4 -- reproduced here so F5 has
+        its own gate-able assertion distinct from F1's attach-spec. NEGATIVE FIXTURE:
+        goldens/fixtures/f1-negative-fixtures/nav-config-dead-link-not-fixed.mjs (shared with
+        F1's contract) -- confirm `node contracts/checks/menu-system-layout4-f1/
+        check-dead-link-fixed.mjs <that fixture>` exits 1 before trusting a green run
+        against the real file.
+      command: >-
+        node contracts/checks/menu-system-layout4-f1/check-dead-link-fixed.mjs
+      required: true

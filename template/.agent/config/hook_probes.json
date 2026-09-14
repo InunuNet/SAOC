@@ -1,6 +1,6 @@
 {
   "schema": "athanor.hookprobes/v1",
-  "_comment": "What 'correct' means for a hook, stated independently of the hook's own source (F19, notes-f19.md notes for implementer). 'mode': 'discriminate' hooks are run twice by execution/hook_probe.py — once with the 'deny' payload and once with 'allow' — inside a THROWAWAY workspace under .tmp/sandbox/, and the effective codes are checked against deny_rc/allow_rc. 'mode': 'inert' hooks make no decision (context injectors) and are reported separately, never counted toward the enforcement total. A registered hook with no entry here probes 'unprobed' rather than being assumed ok.",
+  "_comment": "What 'correct' means for a hook, stated independently of the hook's own source (F19, notes-f19.md notes for implementer). 'mode': 'discriminate' hooks are run twice by execution/hook_probe.py \u2014 once with the 'deny' payload and once with 'allow' \u2014 inside a THROWAWAY workspace under .tmp/sandbox/, and the effective codes are checked against deny_rc/allow_rc. 'mode': 'inert' hooks make no decision (context injectors) and are reported separately, never counted toward the enforcement total. A registered hook with no entry here probes 'unprobed' rather than being assumed ok.",
   "_effective_codes": "The code compared against deny_rc/allow_rc is the hook PROTOCOL's decision, not merely the process status: 2 = deny (exit 2, or `decision: block` / permissionDecision `deny` on stdout), 10 = an explicit permissionDecision `allow` on stdout, otherwise the process's own exit code (0 = silent pass-through). A hook that decides on stdout is measured on stdout; reading only the exit code would call it undiscriminating forever.",
   "_state_independence": "Every declaration states the WORLD its payloads assume, so the verdict is a function of the hook and not of the live workspace (F19 round 2, finding 3). 'level' pins the box's autonomy tier; 'files' / 'deny_files' / 'allow_files' seed the box before the corresponding run; '{probe_root}' expands to the box's absolute path.",
   "scripts": {
@@ -9,129 +9,58 @@
       "event": "SessionStart",
       "_comment": "Probing it would re-run the whole boot sequence, not exercise a decision."
     },
-    "session_start_away_report.sh": {
-      "mode": "inert",
-      "event": "SessionStart",
-      "_comment": "Always exits 0 — a read-only away-time report, never a gate."
-    },
     "check_autonomy.sh": {
       "mode": "discriminate",
       "event": "PreToolUse",
       "level": "low",
-      "_comment": "notes-f19.md §0's ground-truth measurement, declared: a write to an execution/hooks/ path is FLOOR-protected at every autonomy level (floor_glob_match) and must always deny; a write into the memory tree must be allowed even at the most restrictive non-off tier. The tier is PINNED at 'low' — round 2 finding 3: with the tier read from the live workspace, the same healthy guard classified ok at high and undiscriminating at low, which measured the workspace rather than the hook. deny_rc/allow_rc state what a WORKING guard returns, not what the shipped `|| exit 0` registration happens to return today.",
-      "deny": {"tool_name": "Write",
-               "tool_input": {"file_path": "{probe_root}/execution/hooks/probe_target.sh",
-                               "content": "x"}},
-      "allow": {"tool_name": "Write",
-                "tool_input": {"file_path": "{probe_root}/.agent/memory/scratch/hook_probe_allow_target.txt",
-                                "content": "x"}},
-      "deny_rc": [2],
-      "allow_rc": [0]
-    },
-    "allow_in_project_bash.sh": {
-      "mode": "discriminate",
-      "event": "PreToolUse",
-      "_comment": "This hook never denies: it either emits an explicit permissionDecision 'allow' for a command it can PROVE is in-project and unprotected, or it stays silent and lets the normal permission flow run. So the pair it must separate is auto-allow (10) from silence (0). The 'deny' payload names a target outside the project root, which the hook's own design requires it to refuse to vouch for.",
-      "deny": {"tool_name": "Bash",
-               "tool_input": {"command": "cat /etc/passwd"}},
-      "allow": {"tool_name": "Bash",
-                "tool_input": {"command": "cat WORKSPACE"}},
-      "allow_files": {"WORKSPACE": "ProbeBox\n"},
-      "deny_rc": [0],
-      "allow_rc": [10]
-    },
-    "block_asq_in_loop.sh": {
-      "mode": "discriminate",
-      "event": "PreToolUse",
-      "_comment": "Decides on STDOUT, not on its exit code: at autonomy level 'loop' it prints a block decision and still exits 0. Measured on the protocol, it discriminates; measured on the exit code alone it never could.",
-      "deny": {"tool_name": "AskUserQuestion", "tool_input": {"questions": []}},
-      "allow": {"tool_name": "AskUserQuestion", "tool_input": {"questions": []}},
-      "deny_files": {".agent/profile.json": "{\"project_name\": \"ProbeBox\", \"autonomy\": {\"level\": \"loop\"}}"},
-      "allow_files": {".agent/profile.json": "{\"project_name\": \"ProbeBox\", \"autonomy\": {\"level\": \"high\"}}"},
-      "deny_rc": [2],
-      "allow_rc": [0]
-    },
-    "require_contract.sh": {
-      "mode": "discriminate",
-      "event": "PreToolUse",
-      "_comment": "Gates the @architect -> @dev handoff. An active mission whose slug has no contract under specs/ must block a dev dispatch; any other subagent type is none of this gate's business and passes.",
-      "deny": {"tool_name": "Agent", "tool_input": {"subagent_type": "dev"}},
-      "allow": {"tool_name": "Agent", "tool_input": {"subagent_type": "analyst"}},
-      "deny_files": {".agent/memory/project/missions/active.json": "{\"mission\": \".agent/memory/project/missions/2026-01-01-hook-probe-fixture.md\", \"checkpoint\": {\"feature\": \"F1\"}}"},
-      "deny_rc": [2],
-      "allow_rc": [0]
-    },
-    "require_contract_for_write.sh": {
-      "mode": "discriminate",
-      "event": "PreToolUse",
-      "_comment": "Gates writes outside the safe zones while the active mission's current feature has no contract. The safe-zone short-circuit is what the allow payload exercises; the deny payload is an ordinary source write under a mission whose contract cannot be resolved.",
-      "deny": {"tool_name": "Write",
-               "tool_input": {"file_path": "{probe_root}/execution/probe_target.py",
-                               "content": "x"}},
-      "allow": {"tool_name": "Write",
-                "tool_input": {"file_path": "{probe_root}/.agent/memory/scratch/probe_target.md",
-                                "content": "x"}},
-      "deny_files": {".agent/memory/project/missions/active.json": "{\"mission\": \".agent/memory/project/missions/2026-01-01-hook-probe-fixture.md\", \"checkpoint\": {\"feature\": \"F1\"}}"},
-      "deny_rc": [2],
-      "allow_rc": [0]
-    },
-    "require_dev_result.sh": {
-      "mode": "discriminate",
-      "event": "PreToolUse",
-      "_comment": "Gates @dev -> @qa. With no dev-result artifact in the scratch tree, a qa dispatch must block; a dev dispatch is not this gate's subject and passes.",
-      "deny": {"tool_name": "Agent", "tool_input": {"subagent_type": "qa"}},
-      "allow": {"tool_name": "Agent", "tool_input": {"subagent_type": "dev"}},
-      "deny_rc": [2],
-      "allow_rc": [0]
-    },
-    "require_qa_report.sh": {
-      "mode": "discriminate",
-      "event": "PreToolUse",
-      "_comment": "Gates @qa -> @docs. With no qa-report artifact in the scratch tree, a docs dispatch must block; a dev dispatch passes.",
-      "deny": {"tool_name": "Agent", "tool_input": {"subagent_type": "docs"}},
-      "allow": {"tool_name": "Agent", "tool_input": {"subagent_type": "dev"}},
-      "deny_rc": [2],
-      "allow_rc": [0]
-    },
-    "require_research.sh": {
-      "mode": "discriminate",
-      "event": "PreToolUse",
-      "_comment": "Gates @analyst -> @architect. With no research artifact in the scratch tree, an architect dispatch must block; a dev dispatch passes.",
-      "deny": {"tool_name": "Agent", "tool_input": {"subagent_type": "architect"}},
-      "allow": {"tool_name": "Agent", "tool_input": {"subagent_type": "dev"}},
-      "deny_rc": [2],
-      "allow_rc": [0]
-    },
-    "require_docs.sh": {
-      "mode": "discriminate",
-      "event": "PreToolUse",
-      "_comment": "Gates @docs -> the contract gate. A `contract.py gate` command must block while the docs handoff has produced nothing; every other command passes untouched.",
-      "deny": {"tool_name": "Bash",
-               "tool_input": {"command": "python3 execution/contract.py gate --phase 4"}},
-      "allow": {"tool_name": "Bash", "tool_input": {"command": "ls execution"}},
-      "deny_rc": [2],
-      "allow_rc": [0]
-    },
-    "require_maintainer.sh": {
-      "mode": "discriminate",
-      "event": "PreToolUse",
-      "_comment": "Gates the session close. A `git commit` must block while the maintainer handoff has produced nothing; every other command passes untouched.",
-      "deny": {"tool_name": "Bash",
-               "tool_input": {"command": "git commit -m 'probe'"}},
-      "allow": {"tool_name": "Bash", "tool_input": {"command": "ls execution"}},
-      "deny_rc": [2],
-      "allow_rc": [0]
+      "_comment": "notes-f19.md \u00a70's ground-truth measurement, declared: a write to an execution/hooks/ path is FLOOR-protected at every autonomy level (floor_glob_match) and must always deny; a write into the memory tree must be allowed even at the most restrictive non-off tier. The tier is PINNED at 'low' \u2014 round 2 finding 3: with the tier read from the live workspace, the same healthy guard classified ok at high and undiscriminating at low, which measured the workspace rather than the hook. deny_rc/allow_rc state what a WORKING guard returns, not what the shipped `|| exit 0` registration happens to return today.",
+      "deny": {
+        "tool_name": "Write",
+        "tool_input": {
+          "file_path": "{probe_root}/execution/hooks/probe_target.sh",
+          "content": "x"
+        }
+      },
+      "allow": {
+        "tool_name": "Write",
+        "tool_input": {
+          "file_path": "{probe_root}/.agent/memory/scratch/hook_probe_allow_target.txt",
+          "content": "x"
+        }
+      },
+      "deny_rc": [
+        2
+      ],
+      "allow_rc": [
+        0
+      ]
     },
     "verify_workspace.sh": {
       "mode": "discriminate",
       "event": "PreToolUse",
       "_comment": "Refuses to run a Bash command in a workspace it cannot identify. A tree with no WORKSPACE file must block; a tree whose WORKSPACE and profile.json agree must pass.",
-      "deny": {"tool_name": "Bash", "tool_input": {"command": "ls execution"}},
-      "allow": {"tool_name": "Bash", "tool_input": {"command": "ls execution"}},
-      "allow_files": {"WORKSPACE": "ProbeBox\n",
-                      ".agent/profile.json": "{\"project_name\": \"ProbeBox\"}"},
-      "deny_rc": [2],
-      "allow_rc": [0]
+      "deny": {
+        "tool_name": "Bash",
+        "tool_input": {
+          "command": "ls execution"
+        }
+      },
+      "allow": {
+        "tool_name": "Bash",
+        "tool_input": {
+          "command": "ls execution"
+        }
+      },
+      "allow_files": {
+        "WORKSPACE": "ProbeBox\n",
+        ".agent/profile.json": "{\"project_name\": \"ProbeBox\"}"
+      },
+      "deny_rc": [
+        2
+      ],
+      "allow_rc": [
+        0
+      ]
     }
   }
 }

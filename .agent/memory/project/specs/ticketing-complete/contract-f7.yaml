@@ -1,0 +1,509 @@
+schema: athanor.contract/v1
+slug: ticketing-complete
+goal: >
+  Stand up a Playwright self-test harness from ZERO (no test framework exists in this repo
+  today) and land initial coverage of the surfaces that already exist -- nav, footer,
+  /tickets -- BEFORE F3/F4 build new purchase surfaces, so self-testability is built in,
+  not retrofitted. Harness never hardcodes a dev-server port (several stale servers are
+  running on other ports right now) and never writes to, or depends on live state from, the
+  single shared Sanity 'production' dataset. Coverage asserts real rendered geometry and
+  computed state -- never a class-name string standing in for verification -- and the known
+  live footer-overflow defect at 1024-1050px must be provably RED today, not silently green.
+created_at: '2026-09-08'
+autonomy: high
+features:
+  - id: F7
+    name: Self-test harness (Playwright, from zero) + initial coverage (nav/footer/tickets)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-complete/goldens/f7-README.md
+  - .agent/memory/project/specs/ticketing-complete/goldens/f7-nav-targets.json
+  - .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f7-missing-script-fixture.yaml
+  - contracts/checks/ticketing-complete-f7/check-nav-targets-golden.mjs
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        playwright.config.ts and the e2e/ spec files exist at the designated paths.
+      command: >-
+        test -f playwright.config.ts &&
+        test -f e2e/support/dynamic-port.ts &&
+        test -f e2e/nav-links-200.spec.ts &&
+        test -f e2e/no-horizontal-overflow.spec.ts &&
+        test -f e2e/sold-out-and-empty-states.spec.ts &&
+        test -f e2e/no-fabricated-content.spec.ts &&
+        test -f e2e/contact-form-mocked.spec.ts
+      required: true
+
+    - id: A2
+      description: >
+        TIGHTENED 2026-09-08 (team lead finding): `grep -q '"test:e2e"'` passes against
+        `"test:e2e": "echo todo"` -- it proves a key exists, not that anything runs
+        Playwright. Now requires the script's own value to literally invoke `playwright`.
+      command: >-
+        grep -qE '"test:e2e":\s*"[^"]*playwright[^"]*"' package.json
+      required: true
+
+    - id: A3
+      description: >
+        NEGATIVE CONTROL -- no hardcoded port anywhere in the harness. Several stale dev
+        servers are running right now (3002, 3333, 3911, 3913, 3914, 3915, 3916, 3999); a
+        hardcoded port risks silently talking to a stale server's old state or failing when
+        nothing listens there. None of these literals may appear in playwright.config.ts or
+        any e2e/ file.
+      command: >-
+        ! grep -rE "\\b(3002|3333|3911|3913|3914|3915|3916|3999)\\b" playwright.config.ts e2e/
+      required: true
+
+    - id: A4
+      description: >
+        POSITIVE counterpart of A3: the port is discovered dynamically at config-load time
+        (net.createServer on port 0, read the OS-assigned port back) and the SAME value
+        feeds both the base URL and the dev-server command -- proving there is exactly one
+        source of truth for the port, not two independently-guessed values that could drift.
+      command: >-
+        grep -q "net.createServer" e2e/support/dynamic-port.ts &&
+        grep -q "getFreeLocalPort" playwright.config.ts &&
+        grep -qE "reuseExistingServer:\\s*false" playwright.config.ts
+      required: true
+
+    - id: A5
+      description: >
+        Nav coverage is derived from the REAL nav config, never hand-copied -- prevents the
+        tested route list silently drifting from components/chrome/nav-config.ts's actual
+        NAV export. See goldens/f7-nav-targets.json for the current expected 15 hrefs (an
+        independent audit-trail cross-check, not the spec's source of truth).
+      command: >-
+        grep -qE "from ['\"]@/components/chrome/nav-config['\"]" e2e/nav-links-200.spec.ts &&
+        grep -qE "\\bNAV\\b" e2e/nav-links-200.spec.ts
+      required: true
+
+    - id: A6
+      description: >
+        Overflow coverage tests at minimum 390, 1024, 1050, and 1280px -- 390/1280 per the
+        mission's own stated widths, 1024/1050 because that is the exact range the live
+        footer defect occupies.
+      command: >-
+        grep -q "390" e2e/no-horizontal-overflow.spec.ts &&
+        grep -q "1024" e2e/no-horizontal-overflow.spec.ts &&
+        grep -q "1050" e2e/no-horizontal-overflow.spec.ts &&
+        grep -q "1280" e2e/no-horizontal-overflow.spec.ts
+      required: true
+
+    - id: A7
+      description: >
+        Real rendered geometry, never a class-name proxy: the overflow spec measures
+        document.documentElement.scrollWidth (or an equivalent getBoundingClientRect-based
+        measurement) against the viewport width -- not toHaveClass/className.includes,
+        which would be the component reading back its own Tailwind string as if that were
+        verification.
+      command: >-
+        grep -qE "scrollWidth|getBoundingClientRect" e2e/no-horizontal-overflow.spec.ts &&
+        ! grep -qE "toHaveClass|className\\.includes" e2e/no-horizontal-overflow.spec.ts
+      required: true
+
+    - id: A8
+      description: >
+        FLIPPED 2026-09-08 by F6 (ticketing-complete M3), per its own contract-f6.yaml A12
+        and this assertion's own prior instructions here. Originally deliberately inverted
+        (leading shell '!') so it read GREEN exactly while the known live footer Subscribe
+        horizontal-scroll defect at 1024-1050px made the sub-test fail -- proof the harness
+        was looking at something real. F6 fixed the actual defect (Footer.tsx: `min-w-0` on
+        the flex-1 email input) and flipped this assertion to its normal, non-inverted form
+        in the same change -- it now passes only once the sub-test is itself green.
+      command: >-
+        npx playwright test e2e/no-horizontal-overflow.spec.ts --grep "1024|1050"
+      required: true
+
+    - id: A9
+      description: >
+        No Sanity dataset writes, and no live-data dependency as the oracle for sold-out/
+        empty states: the spec uses page.route() network mocking to construct those states
+        deliberately, never a live query whose result could change out from under a fixed
+        expectation, and never a mutating Sanity call.
+      command: >-
+        grep -q "page.route(" e2e/sold-out-and-empty-states.spec.ts &&
+        ! grep -qE "@sanity/client|createClient\\(|\\.commit\\(|\\.patch\\(" e2e/sold-out-and-empty-states.spec.ts
+      required: true
+
+    - id: A10
+      description: >
+        data-placeholder reaches the RENDERED PAGE, not just the component source -- an
+        e2e spec asserts [data-placeholder="true"] is present in the DOM when a mocked
+        provisional ticket type is served, proving TicketTypeCard.tsx's F2-added attribute
+        actually surfaces to a real browser, not merely present in the .tsx file.
+      command: grep -q "data-placeholder" e2e/no-fabricated-content.spec.ts
+      required: true
+
+    - id: A11
+      description: >
+        Anti-fabrication smoke check: no banned debug/placeholder token leaks into rendered
+        body text on any tested page.
+      command: >-
+        grep -q "undefined" e2e/no-fabricated-content.spec.ts &&
+        grep -q "NaN" e2e/no-fabricated-content.spec.ts &&
+        grep -qE "Lorem ipsum|TODO|FIXME" e2e/no-fabricated-content.spec.ts
+      required: true
+
+    - id: A12
+      description: >
+        Local-only guard: nothing in the e2e harness references a deployed/production
+        origin -- this mission is explicitly local-only, not deployed, tonight.
+      command: >-
+        ! grep -rE "saoc\\.co\\.za|\\.hosted\\.app|\\.run\\.app" playwright.config.ts e2e/
+      required: true
+
+    - id: A13
+      description: >
+        NEGATIVE CONTROL, repo-wide for this feature's own files: no mutating Sanity call
+        anywhere under e2e/ -- mirrors the same guard already applied to F1/F2's own files.
+      command: >-
+        ! grep -rE "\\.commit\\(|\\.patch\\(|createOrReplace|createIfNotExists" e2e/
+      required: true
+
+    - id: A14
+      description: >
+        Design-record completeness: the golden README documents the extension convention
+        F3/F4's own contracts must follow (each adds its own spec file to e2e/ for its new
+        purchase surface) -- so a later reader isn't left to rediscover why F7 doesn't
+        cover surfaces that don't exist yet.
+      command: >-
+        grep -q "F3 and F4's own contracts must each add a spec file" .agent/memory/project/specs/ticketing-complete/goldens/f7-README.md
+      required: true
+
+    - id: A15
+      description: >
+        HARD RULE (2026-09-08, team lead): POST /api/contact sends a real Resend email and
+        writes a real Firestore contactSubmissions document -- shared by ContactForm.tsx and
+        the new members SuggestionForm.tsx, both posting via client-side fetch. Exactly ONE
+        spec file may interact with either form, and it must mock the network call at the
+        browser boundary (page.route with route.fulfill), never a server-side test-mode
+        branch -- proves the harness never mails a stranger or writes live data as a side
+        effect of running.
+      command: >-
+        grep -qE "page\\.route\\(\\s*['\"]\\*\\*/api/contact['\"]" e2e/contact-form-mocked.spec.ts &&
+        grep -q "route.fulfill(" e2e/contact-form-mocked.spec.ts &&
+        ! grep -q "route.continue()" e2e/contact-form-mocked.spec.ts
+      required: true
+
+    - id: A16
+      description: >
+        NEGATIVE CONTROL for A15's own mock: "the test ran and nothing exploded" is
+        satisfied just as well by a route() call that never actually matched the real
+        request as by one that worked -- the exact defect class the NOS session caught in
+        their own SEO layer (code built, never imported). The spec must set a boolean flag
+        INSIDE the route callback and assert it true AFTER the form submission, proving the
+        mock actually fired, not merely that it was declared.
+      command: >-
+        grep -qE "let (intercepted|mock)[A-Za-z]*\\s*=\\s*false" e2e/contact-form-mocked.spec.ts &&
+        grep -qE "expect\\((intercepted|mock)[A-Za-z]*\\)\\.toBe\\(true\\)" e2e/contact-form-mocked.spec.ts
+      required: true
+
+    - id: A17
+      description: >
+        No mutating side effect reaches the real backends even if the mock is somehow
+        bypassed: no @sanity/client or resend import, and no mutating Sanity call, appears
+        in the contact-form spec -- it must depend on interception alone, never a
+        belt-and-suspenders real call to a sandboxed/test account (which would itself be a
+        live write to reason about).
+      command: >-
+        ! grep -qE "from ['\"]resend['\"]|@sanity/client|\\.commit\\(|\\.patch\\(" e2e/contact-form-mocked.spec.ts
+      required: true
+
+    - id: A18
+      description: >
+        REPO-WIDE GUARD: no e2e spec OTHER than contact-form-mocked.spec.ts submits either
+        form -- prevents a second, unmocked interaction from creeping into a later spec
+        (e.g. a nav/no-overflow test that happens to click through /members and hits
+        Submit). Checks every other e2e/*.spec.ts for a submit-shaped interaction combined
+        with navigation to /contact or /members without an accompanying page.route for
+        /api/contact in the SAME file.
+      command: >-
+        for f in e2e/*.spec.ts; do
+        [ "$f" = "e2e/contact-form-mocked.spec.ts" ] && continue;
+        if grep -qE "goto\\([^)]*(/contact|/members)" "$f" 2>/dev/null && grep -qE "\\.click\\(|\\.press\\(['\"]Enter['\"]\\)" "$f" 2>/dev/null; then
+        grep -q "page.route" "$f" || exit 1;
+        fi;
+        done
+      required: true
+
+    - id: A19
+      description: >
+        Design-record completeness: the golden README records the deliberate choice that
+        every negative-grep in this contract scans whole files, comments included (same
+        accepted tradeoff as F1's A3, which tripped on a comment naming a forbidden
+        constant) -- so a future dev isn't surprised by this mid-implementation a second
+        time.
+      command: >-
+        grep -q "Deliberate scanning choice" .agent/memory/project/specs/ticketing-complete/goldens/f7-README.md
+      required: true
+
+    - id: A20
+      description: >
+        ADDED 2026-09-08 (team lead): backlog item "nothing in this repo runs the contract
+        checks" names this feature as the one folding in a runner + CI job -- npx playwright
+        being installable is not the same as anything invoking it on push/PR.
+        `.github/workflows/ci.yml` gains a job step that runs `pnpm test:e2e` (A2's script),
+        landing alongside the existing lint/type-check/build steps, not replacing them.
+      command: >-
+        test -f .github/workflows/ci.yml &&
+        grep -qE "(pnpm|npm run) test:e2e" .github/workflows/ci.yml
+      required: true
+
+    - id: A21
+      description: >
+        NEGATIVE CONTROL for A20, same hit-flag standard as A16 -- "the workflow file
+        mentions test:e2e" is satisfiable by a step that references it in a comment, an
+        unreachable job (wrong trigger, `if: false`), or a step some earlier step's failure
+        always skips, none of which prove CI ever actually executes the suite. This
+        assertion runs the workflow locally via `act`'s dry-run plan output (or, if `act`
+        is unavailable in this environment, falls back to asserting the step is unconditional
+        -- inside a job with no restrictive `if:` gate on the job itself, and the step has no
+        `if:` condition of its own -- and is NOT inside a block already gated by a
+        `continue-on-error`/`if: failure()` branch from a prior lint/build step) so a
+        present-but-dead step is caught the same way A16 catches a declared-but-unfired
+        route mock. Also documents in goldens/f7-README.md that `main` carries no branch
+        protection today (confirmed via ci.yml's own comments) -- this CI job is
+        DETECTION-ONLY, not enforcement, until Brad turns branch protection on; that is his
+        call, a GitHub setting, not a code change this feature makes for him.
+      command: >-
+        grep -q "DETECTION-ONLY, not enforcement" .agent/memory/project/specs/ticketing-complete/goldens/f7-README.md &&
+        grep -q "no branch protection" .agent/memory/project/specs/ticketing-complete/goldens/f7-README.md &&
+        python3 contracts/checks/ticketing-complete-f7/verify_ci_step_reachable.py .github/workflows/ci.yml "test:e2e"
+      required: true
+
+    - id: A22
+      description: >
+        ADDED 2026-09-08 (team lead, cross-mission finding): "nothing runs the contract
+        checks" is bigger than F7's own Playwright specs -- the NOS session reports 7 of 9
+        Playwright check scripts NAMED IN ITS OWN CONTRACT do not exist on disk. A runner
+        that treats a missing script the same as a failing one buries real failures in
+        noise; one that silently skips it reports green for coverage that was never
+        written -- worse, because it manufactures false confidence. F7 builds a real,
+        general-purpose contract-check runner (not scoped to this mission's own contracts)
+        at `contracts/checks/_shared/run_contract_suite.mjs`, which classifies every
+        assertion it runs into exactly one of THREE states -- pass / fail / missing -- never
+        folding "missing" into either of the other two. "Missing" means: the assertion's
+        shell command references a check-script file path (matches `contracts/checks/`) that
+        does not exist on disk -- the runner detects this BEFORE attempting to execute the
+        command, so a missing script is never even invoked (and so can never accidentally
+        exit 0 and read as a pass, nor throw a shell error that reads as a generic fail).
+      command: >-
+        test -f contracts/checks/_shared/run_contract_suite.mjs &&
+        grep -qE "'missing'|\"missing\"" contracts/checks/_shared/run_contract_suite.mjs &&
+        grep -qE "'pass'|\"pass\"" contracts/checks/_shared/run_contract_suite.mjs &&
+        grep -qE "'fail'|\"fail\"" contracts/checks/_shared/run_contract_suite.mjs &&
+        grep -qE "existsSync|access\\(|statSync" contracts/checks/_shared/run_contract_suite.mjs
+      required: true
+
+    - id: A23
+      description: >
+        RUNTIME PROOF for A22, not just static grep, same standard as A16's hit-flag test:
+        goldens/fixtures/f7-missing-script-fixture.yaml is a real, tiny contract with exactly
+        one assertion whose command invokes a check-script path that is deliberately absent
+        from disk. Running run_contract_suite.mjs against ONLY this fixture must report that
+        one assertion as classified "missing" -- and the run's own output must NOT contain
+        the word "fail" anywhere in that assertion's own reported line, proving the two
+        states are genuinely distinguished at runtime, not just present as strings
+        somewhere in the runner's source (the same distinction A16 draws between a mock
+        being declared and a mock actually firing). OUTPUT FORMAT CONTRACT the runner must
+        follow (mirrors contract.py's own per-assertion line convention, e.g.
+        "PASS A15 (shell): PASS"): each result prints on its OWN line as
+        "<STATUS> <assertion-id> ...", e.g. "MISSING MISSING-SCRIPT-CHECK: missing (script
+        not found: contracts/checks/does-not-exist-f0/this-script-is-never-created.mjs)" --
+        so an assertion's id and its status word are always adjacent on one line, never split
+        across rows where a naive grep for either word alone could match a different
+        assertion's line.
+      command: >-
+        node contracts/checks/_shared/run_contract_suite.mjs .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f7-missing-script-fixture.yaml 2>&1 | grep -qiE "MISSING-SCRIPT-CHECK.*missing" &&
+        ! node contracts/checks/_shared/run_contract_suite.mjs .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f7-missing-script-fixture.yaml 2>&1 | grep -iE "MISSING-SCRIPT-CHECK.*\\bfail\\b"
+      required: true
+
+    - id: A24
+      description: >
+        Design-record completeness, cited so the runner is understood as the fix for a
+        documented recurring problem, not a nice-to-have: goldens/f7-README.md names both
+        pre-existing backlog items this runner closes -- the "four failing contracts found
+        during the vendor F2 QA sweep" plus the standing "audit remaining contracts for the
+        weak-assertion defect class" P1 item (both symptoms of the same root cause), and the
+        NOS session's own "7 of 9 missing check scripts" finding that motivated the
+        three-state classification in A22/A23.
+      command: >-
+        grep -q "vendor F2 QA sweep" .agent/memory/project/specs/ticketing-complete/goldens/f7-README.md &&
+        grep -q "weak-assertion defect class" .agent/memory/project/specs/ticketing-complete/goldens/f7-README.md &&
+        grep -qE "7 of 9|seven.*nine" .agent/memory/project/specs/ticketing-complete/goldens/f7-README.md
+      required: true
+
+    - id: A25
+      description: >
+        RATCHET, not hard-fail and not silently-visible (team lead's ruling, 2026-09-08):
+        both obvious policies for "missing" are wrong -- hard-failing CI on any missing
+        script makes it red from its first run (7 of 9 known missing already, plus
+        backlog.md's four pre-existing failing contracts), and a red job gets disabled
+        within a week; non-blocking-and-visible makes declaring a check you never write
+        completely free, which is the exact incentive that produced 7-of-9 in the first
+        place. `contracts/checks/_shared/missing-baseline.json` records TODAY's missing
+        count as a committed baseline. The CI job fails when a fresh run's missing count
+        EXCEEDS the baseline, and passes at or below it -- existing debt is tolerated, new
+        debt is impossible, and the baseline tightens on its own (with no one having to
+        remember to update it) every time someone actually writes one of the absent
+        scripts, because the next baseline-regeneration run will see a smaller number.
+      command: >-
+        test -f contracts/checks/_shared/missing-baseline.json &&
+        python3 -c "import json; d = json.load(open('contracts/checks/_shared/missing-baseline.json')); assert isinstance(d.get('count'), int)"
+      required: true
+
+    - id: A26
+      description: >
+        A hand-typed baseline of 999 would satisfy A25's bare shape check while disabling
+        the whole ratchet -- exactly the failure class this feature exists to catch (same
+        spirit as A13's vacuity fix in contract-f2.yaml). Self-consistency, not trust: the
+        baseline file must ALSO carry `missingAssertionIds`, an array of the specific
+        assertion ids counted as missing, and `count` must equal that array's length --
+        a bare invented number with no corresponding id list cannot satisfy this, only a
+        real run's output can, because the runner is the only thing that knows which
+        specific ids came back "missing".
+      command: >-
+        python3 -c "import json; d = json.load(open('contracts/checks/_shared/missing-baseline.json')); ids = d.get('missingAssertionIds'); assert isinstance(ids, list) and len(ids) == d.get('count') and len(ids) == len(set(ids))"
+      required: true
+
+    - id: A27
+      description: >
+        RUNTIME PROOF the baseline reflects an ACTUAL run, not a plausible-looking invented
+        list: every id in `missingAssertionIds` must be independently reproducible -- running
+        run_contract_suite.mjs fresh over the full corpus it scans (per A22, the whole repo's
+        contracts, not just this mission's own) and classifying each id in the baseline list
+        must ACTUALLY come back "missing" today. An id that isn't real, or that has since been
+        fixed (now passes/fails instead of missing), fails this -- proving the baseline is a
+        live snapshot of reality, not a static guess that could silently drift stale.
+      command: >-
+        node contracts/checks/_shared/run_contract_suite.mjs --verify-baseline contracts/checks/_shared/missing-baseline.json
+      required: true
+
+    - id: A28
+      description: >
+        FAIL CLOSED, per team lead's explicit instruction: a missing or unparseable baseline
+        file must never silently mean "unlimited" -- the runner must treat that as a hard,
+        DELIBERATE error (nonzero exit, a clear on-topic message), not as "no ratchet,
+        anything goes". NEGATIVE CONTROL BUILT IN, same defect class as contract-f2.yaml's
+        old vacuous A13: a bare `! node ... > /dev/null 2>&1` would ALSO read as "pass" if
+        the script simply doesn't exist yet (Node's generic "Cannot find module" crash is
+        also a nonzero exit) -- that is not proof of correct fail-closed behavior, it's a
+        coincidental crash. This assertion requires the runner's OWN stderr (not suppressed)
+        to name the specific failure -- "baseline" and ("not found" or "invalid"/"parse") --
+        for both the missing-path case and the corrupt-JSON case, so a generic startup crash
+        (missing module, syntax error) cannot be mistaken for the deliberate fail-closed path.
+      command: >-
+        test -f contracts/checks/_shared/run_contract_suite.mjs &&
+        OUT1="$(node contracts/checks/_shared/run_contract_suite.mjs --verify-baseline contracts/checks/does-not-exist/nope.json 2>&1)"; RC1=$?;
+        test "$RC1" -ne 0 && echo "$OUT1" | grep -qi "baseline" && echo "$OUT1" | grep -qiE "not found|does not exist|missing" &&
+        mkdir -p .tmp/sandbox/f7-baseline-fixture &&
+        echo 'not json at all {{{' > .tmp/sandbox/f7-baseline-fixture/corrupt-baseline.json &&
+        OUT2="$(node contracts/checks/_shared/run_contract_suite.mjs --verify-baseline .tmp/sandbox/f7-baseline-fixture/corrupt-baseline.json 2>&1)"; RC2=$?;
+        test "$RC2" -ne 0 && echo "$OUT2" | grep -qi "baseline" && echo "$OUT2" | grep -qiE "invalid|parse|unparseable|malformed"
+      required: true
+
+    - id: A29
+      description: >
+        Missing coverage must be VISIBLE in the CI job's own output even when the job
+        PASSES (i.e. missing count is at or below baseline) -- a count alone tells nobody
+        which coverage is imaginary, per team lead's instruction. Running the runner over
+        the real corpus must print every currently-missing assertion's id in its own output
+        line (not merely a summary count), and `.github/workflows/ci.yml` gains a step that
+        runs the runner against the corpus with the ratchet baseline and does not suppress
+        its stdout (no redirect to /dev/null, no `-q`/`--quiet`-shaped flag on that specific
+        step).
+      command: >-
+        grep -qE "run:.*run_contract_suite\\.mjs" .github/workflows/ci.yml &&
+        ! grep -E "run:.*run_contract_suite\\.mjs" .github/workflows/ci.yml | grep -qE "/dev/null|--quiet|-q\\b" &&
+        node contracts/checks/_shared/run_contract_suite.mjs --list-missing 2>&1 | grep -qE "^[A-Za-z0-9_-]+"
+      required: true
+
+    - id: A30
+      description: >
+        HONESTY PIN, added 2026-09-08 after a Codex GPT-5.5 cross-model review caught the
+        A29 CI comment claiming coverage it does not have -- the first draft's comment said
+        "DETECTION for real `fail` results is folded into this same step's exit code", which
+        is false: cmdCheckRatchet always calls runCorpus with `evaluateFully: false`, so no
+        assertion's shell command is ever actually executed and a `fail` status can never be
+        produced by this step. That is the exact defect class this whole feature exists to
+        catch -- a check whose stated property is satisfiable without the real property
+        holding -- except this time inside the runner's OWN CI wiring. This assertion pins
+        two facts so the comment cannot silently drift back: (1) `.github/workflows/ci.yml`
+        must never contain the false "DETECTION for real fail results is folded into" claim
+        again, and must instead say plainly that the step can never produce a `fail` status;
+        (2) `run_contract_suite.mjs`'s `cmdCheckRatchet` function must still call runCorpus
+        with `evaluateFully: false` -- if a future edit flips that to `true` without updating
+        this assertion, CI would silently start executing ~2000+ shell assertions (including
+        ones that run `pnpm build` or hit live endpoints) with no one having decided that on
+        purpose. Verified failing under both mutations (false claim reintroduced;
+        `evaluateFully` flipped to `true`) before being marked passing -- not just checked
+        against today's already-correct files.
+      command: >-
+        ! grep -qiE "DETECTION for real .fail. results is folded into" .github/workflows/ci.yml &&
+        grep -qiE "can never produce a .fail. status" .github/workflows/ci.yml &&
+        awk '/^async function cmdCheckRatchet/,/^}/' contracts/checks/_shared/run_contract_suite.mjs | grep -q "evaluateFully: false"
+      required: true
+
+    - id: A31
+      description: >
+        ADDED 2026-09-08 (architect, prompted by a Codex GPT-5.5 finding): goldens/
+        f7-nav-targets.json went stale after the F6 nav restructure -- it still named
+        the pre-restructure routes (/national-show, /national-show/vendors/apply,
+        /national-show/conferences) and was missing the ones F6 actually wired
+        (/national-show/programme, /national-show/symposium, /national-show/wosa-conference,
+        /national-show/exhibitors/international), and nothing failed. The file's own
+        `_comment` said it should be updated in the same commit as any nav-config.ts change
+        -- an honour-system prose rule with nothing behind it. This assertion converts that
+        into an enforced invariant: runs contracts/checks/ticketing-complete-f7/
+        check-nav-targets-golden.mjs, which imports the REAL NAV export from
+        components/chrome/nav-config.ts at runtime, flattens every href in it (top-level
+        item hrefs + each mega item's column headingHrefs + each column's leaf link hrefs),
+        and diffs the result against the golden's expectedHrefs in BOTH directions --
+        anything in NAV but not the golden, or the golden but not NAV, fails closed with
+        the specific href(s) named in the output. Verified working immediately, not just in
+        theory: run against nav-config.ts's live on-disk state at the time this assertion
+        was written, it caught a real, unrelated one-character drift already present in the
+        file (/national-show/workshops had become /national-show/workshops-BROKEN) and
+        failed with that exact href named -- see the architect's report to the team lead
+        the same session for the live-defect finding, which is a separate issue from this
+        assertion's own job of proving the check mechanism works.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-complete-f7/check-nav-targets-golden.mjs
+      required: true
+    - id: A32
+      description: >
+        RUNTIME PROOF the unresolvable bucket actually prints, in BOTH modes that call
+        printUnresolvableBucket -- not merely that the function exists in source. A
+        grep for the function name would pass even if it were never called or its output
+        suppressed: a proxy for the property, not the property. Runs the real runner
+        against the real corpus and requires the known, real, permanently-present
+        interpolated-path source (contract-show-visitor-info.yaml A70/A73) to appear as
+        UNRESOLVABLE lines plus an "unresolvable: N --" summary in both --list-missing
+        and --check-ratchet. FALSIFYING MUTATION, both demonstrated red by @dev:
+        comment out the printUnresolvableBucket call inside cmdListMissing ALONE (line
+        ~487) -> red with FAIL lines scoped "--list-missing:"; restore and comment it out
+        inside cmdCheckRatchet ALONE (line ~643) -> red with lines scoped
+        "--check-ratchet:". Both call sites are independently covered, demonstrated, not
+        assumed.
+      command: >-
+        node contracts/checks/ticketing-complete-f7/verify_unresolvable_bucket.mjs print
+      required: true
+
+    - id: A33
+      description: >
+        RUNTIME PROOF the unresolvable bucket is decoupled from the ratchet's pass/fail
+        decision, not merely that it happens to be zero today. The check FIRST confirms the
+        bucket count is genuinely nonzero (>= 2, the A70/A73 floor) and only THEN asserts
+        --check-ratchet's own exit code is 0 -- so a vacuous "exit code is 0" pass, which is
+        what this would degrade into if the bucket were ever silently emptied, cannot
+        satisfy it. That ordering is the whole point of the assertion. FALSIFYING MUTATION,
+        demonstrated red by @dev: inject a gating branch into cmdCheckRatchet that pushes a
+        failure when the unresolvable count > 0 -> --check-ratchet exits 1 on every run
+        (A70/A73 are permanent), turning A33 red WHILE A32 still passes in the same mutated
+        tree. The two properties fail independently -- demonstrated, not asserted, which is
+        why they are two assertions and not one command wearing two ids.
+      command: >-
+        node contracts/checks/ticketing-complete-f7/verify_unresolvable_bucket.mjs not-gated
+      required: true

@@ -4,7 +4,7 @@ import './globals.css';
 
 const crimsonPro = Crimson_Pro({
   subsets: ['latin'],
-  variable: '--font-serif',
+  variable: '--font-serif-loaded',
   display: 'swap',
   weight: ['400', '500', '600', '700'],
   style: ['normal', 'italic'],
@@ -12,14 +12,14 @@ const crimsonPro = Crimson_Pro({
 
 const manrope = Manrope({
   subsets: ['latin'],
-  variable: '--font-sans',
+  variable: '--font-sans-loaded',
   display: 'swap',
   weight: ['400', '500', '600', '700'],
 });
 
 const jetBrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  variable: '--font-mono',
+  variable: '--font-mono-loaded',
   display: 'swap',
   weight: ['400', '500'],
 });

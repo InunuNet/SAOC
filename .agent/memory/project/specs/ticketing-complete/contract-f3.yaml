@@ -1,0 +1,129 @@
+schema: athanor.contract/v1
+slug: ticketing-complete
+goal: >
+  Build a real, non-duplicating /tickets hub -- links and content only, routing a buyer to
+  the correct purchase surface for their ticket category (admission stays on /tickets;
+  conferences and workshops/field-trips route to their existing national-show/** pages) --
+  reshaped from the mission brief's literal "build category purchase surfaces at
+  /tickets/**" after confirming those surfaces already exist elsewhere, where duplicating
+  them would violate the F2 exchange's read-vs-buy ruling. Also verifies, read-only and
+  without editing anything under national-show/**, that those existing pages actually
+  render F2's seeded/corrected categories and have loading/error/empty states and
+  data-placeholder -- never taking "the surface already exists" on trust, the same failure
+  mode that misreported VIP pricing and the nav state earlier tonight.
+created_at: '2026-09-08'
+autonomy: high
+features:
+  - id: F3
+    name: /tickets category cross-navigation hub + read-only verification of existing national-show purchase surfaces
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-complete/goldens/f3-README.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        The hub component and its e2e coverage exist at the designated paths.
+      command: >-
+        test -f components/tickets/TicketCategoryNav.tsx &&
+        test -f e2e/tickets-hub-cross-links.spec.ts &&
+        test -f e2e/national-show-category-surfaces-verification.spec.ts
+      required: true
+
+    - id: A2
+      description: >
+        TicketCategoryNav.tsx sources its links from the REAL nav-config.ts, never a
+        hand-copied list -- one source of truth for ticket destinations site-wide, matching
+        F7's own "import NAV, don't duplicate" precedent (F7 goldens sec 5, A5).
+      command: >-
+        grep -qE "from ['\"]@/components/chrome/nav-config['\"]" components/tickets/TicketCategoryNav.tsx &&
+        grep -qE "\\bNAV\\b" components/tickets/TicketCategoryNav.tsx
+      required: true
+
+    - id: A3
+      description: >
+        HARD BOUNDARY, repo-wide for this feature: no file this feature creates lives
+        under app/(marketing)/national-show/**, and neither the hub component nor its own
+        e2e spec contains a write/patch call of any kind against that tree's data -- this
+        feature verifies national-show/** read-only, never edits it.
+      command: >-
+        test ! -e "app/(marketing)/national-show/tickets-hub" &&
+        ! grep -qE "\\.commit\\(|\\.patch\\(|createOrReplace|createIfNotExists" components/tickets/TicketCategoryNav.tsx e2e/national-show-category-surfaces-verification.spec.ts
+      required: true
+
+    - id: A4
+      description: >
+        No duplicate purchase surface: the hub component contains no checkout/add-to-cart/
+        price-resolution logic of its own for conference or workshop-field-trip products --
+        it is links and content only, never a second place to buy what /national-show/conferences
+        and /national-show/workshops already sell.
+      command: >-
+        ! grep -qE "resolveComputedEarlyBirdPrice|resolveEffectivePrice|planPooledCapacity|checkout" components/tickets/TicketCategoryNav.tsx
+      required: true
+
+    - id: A5
+      description: >
+        The hub's own cross-navigation links all resolve (200), including into
+        national-show/** -- this is OUR surface's own correctness (dead links on a page we
+        built are our defect), distinct from A7-A10's read-only verification of the
+        DESTINATION pages' content, which is not ours to fix.
+      command: grep -qE "expect\\(.*status\\(\\)\\)\\.toBe\\(200\\)" e2e/tickets-hub-cross-links.spec.ts
+      required: true
+
+    - id: A6
+      description: >
+        The hub component and its spec use page.route() network mocking for any dynamic
+        state (never a live Sanity query as the oracle, never a write) -- same convention
+        as F7 sec 4/A9.
+      command: >-
+        ! grep -qE "@sanity/client|createClient\\(" components/tickets/TicketCategoryNav.tsx e2e/tickets-hub-cross-links.spec.ts
+      required: true
+
+    - id: A7
+      description: >
+        INFORMATIONAL, NOT A GATE (required: false -- see f3-README.md sec 4): read-only
+        proof that /national-show/conferences actually renders all three F2 conference
+        product families (SAOC Symposium, WOSA Conference, SAOC/WOSA Joint), not a stale
+        hardcoded list. A FAIL here is a genuine finding for the NOS session, routed
+        through the team lead -- not something this feature can or should fix itself.
+      command: >-
+        grep -q "SAOC Symposium" e2e/national-show-category-surfaces-verification.spec.ts &&
+        grep -q "WOSA Conference" e2e/national-show-category-surfaces-verification.spec.ts &&
+        grep -qE "SAOC/WOSA Joint|SAOC.WOSA Joint" e2e/national-show-category-surfaces-verification.spec.ts
+      required: false
+
+    - id: A8
+      description: >
+        INFORMATIONAL, NOT A GATE (required: false): read-only proof that
+        /national-show/workshops renders F2's corrected, cited figures (R800/R1500/R200)
+        once F2 lands -- catching a stale R250/R450/R300/R750 figure surviving there would
+        be exactly the kind of silent gap this check exists to surface, not silently patch.
+      command: >-
+        grep -q "R800" e2e/national-show-category-surfaces-verification.spec.ts &&
+        grep -q "R1500" e2e/national-show-category-surfaces-verification.spec.ts &&
+        grep -q "R200" e2e/national-show-category-surfaces-verification.spec.ts
+      required: false
+
+    - id: A9
+      description: >
+        INFORMATIONAL, NOT A GATE (required: false): both national-show pages have a
+        loading.tsx sibling (Next.js's own loading-UI convention) and the verification
+        spec proves an empty-state message renders (via page.route() mocking an empty
+        category result) rather than a blank page or crash -- a missing state on either
+        page is a finding for NOS, not authored by this feature.
+      command: >-
+        test -f "app/(marketing)/national-show/conferences/loading.tsx" &&
+        test -f "app/(marketing)/national-show/workshops/loading.tsx" &&
+        grep -q "page.route(" e2e/national-show-category-surfaces-verification.spec.ts
+      required: false
+
+    - id: A10
+      description: >
+        INFORMATIONAL, NOT A GATE (required: false): data-placeholder reaches the rendered
+        DOM on the national-show purchase pages too, for a mocked provisional product --
+        the same property F7's A10 already proves on /tickets. If those pages render
+        provisional products through a different, NOS-owned card component that doesn't
+        carry the attribute, that mismatch is itself the finding.
+      command: grep -q "data-placeholder" e2e/national-show-category-surfaces-verification.spec.ts
+      required: false

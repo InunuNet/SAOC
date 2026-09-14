@@ -574,11 +574,11 @@ Password
 Owner of address
 Alternative contact email address
 info@saoc.co.za
-Gooseberry#1
+[REDACTED — credential removed from the repository, see .agent/memory/project/backlog.md]
 Lee-Ann McCleland
 saoctreasurer@gmail.com
 treasurer-secretary@saoc.co.za
-Gooseberry#123
+[REDACTED — credential removed from the repository, see .agent/memory/project/backlog.md]
 Lee-Ann McCleland
 saoctreasurer@gmail.com
 ngos@saoc.co.za

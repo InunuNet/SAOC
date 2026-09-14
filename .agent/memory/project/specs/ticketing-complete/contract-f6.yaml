@@ -1,0 +1,326 @@
+schema: athanor.contract/v1
+slug: ticketing-complete
+goal: >
+  Rebuild the site-wide primary navigation into the negotiated group structure (Visit,
+  Programme, Exhibit & trade, Tickets standalone, Past editions) covering every one of
+  Lee-Ann's six SAOC sections plus the National Show dropdown wired to the five newly
+  committed NOS routes (three of which don't exist yet -- tracked, never silently 404'd
+  past). Navigation is the ONE sanctioned exception to the main-site style freeze -- no
+  other page, component, or design token changes. Fixes the live footer Subscribe
+  horizontal-overflow bug at 1024-1050px and flips F7's deliberately-inverted A8 back to
+  its normal, must-be-green form. Mobile-first and keyboard/screen-reader operable, not
+  merely rendered.
+created_at: '2026-09-08'
+autonomy: high
+features:
+  - id: F6
+    name: Site-wide navigation rebuild (groups, NOS dropdown, footer overflow fix, a11y)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-complete/goldens/f6-README.md
+  - .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-style-freeze-baseline.json
+  - .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        nav-config.ts's NAV export restructures into the negotiated groups. `Tickets` is a
+        standalone top-level `link` item, NOT nested inside any group (conversion path,
+        shouldn't be two clicks deep). The four OTHER named groups exist as distinct `mega`
+        or grouped structures: Visit, Programme, Exhibit, "Past editions".
+        UPDATED 2026-09-08 (team lead + Codex independently found the same defect): the
+        Exhibit group's top-level trigger label was shortened from "Exhibit & Trade" to
+        "Exhibit" to fix a real, measured wrap at 1240-1320px viewports (Judging & Awards
+        and Exhibit & Trade both wrapping to 2-3 lines at one of the most common desktop
+        widths) -- the group itself, its destinations, and its structure are unchanged; only
+        the trigger's own display text got shorter. The fuller "Exhibit & Trade" wording
+        moved to the group's own CTA link inside the open dropdown (`ctaLabel`), where there
+        is room for it. This is a same-day, deliberate assertion update, not a weakening --
+        it still proves the group exists as a distinct structure, just under its corrected
+        label.
+      command: >-
+        grep -qE "label:\s*'Tickets'" components/chrome/nav-config.ts &&
+        grep -qE "label:\s*'Visit'" components/chrome/nav-config.ts &&
+        grep -qE "label:\s*'Programme'" components/chrome/nav-config.ts &&
+        grep -qE "label:\s*'Exhibit'" components/chrome/nav-config.ts &&
+        grep -qE "ctaLabel:\s*'Exhibit (&|and) [Tt]rade'" components/chrome/nav-config.ts &&
+        grep -qE "label:\s*'Past [Ee]ditions'" components/chrome/nav-config.ts
+      required: true
+
+    - id: A2
+      description: >
+        NEGATIVE CONTROL for A1: `Tickets` never appears as a NavLeaf nested inside another
+        group's `links` array (only as its own top-level NavItem) -- proves it wasn't
+        accidentally folded into Visit/Programme/etc. Checked by confirming exactly one
+        `label: 'Tickets'` occurrence total in the file (the standalone top-level item) and
+        that it is not preceded on the same or an adjacent indented line by a `links: [` that
+        would place it inside a column/group array. Structural proxy, not a full AST parse --
+        acceptable because A1 already proves the standalone item exists; this only guards
+        against a SECOND, nested occurrence appearing alongside it.
+      command: >-
+        test "$(grep -cE "label:\s*'Tickets'" components/chrome/nav-config.ts)" = "1"
+      required: true
+
+    - id: A3
+      description: >
+        Every one of Lee-Ann's six SAOC folder sections is reachable from the site chrome --
+        About, Societies, Calendar of events (the existing /events route), Members Portal,
+        Judging via the NAV array, and Home via the existing logo-lockup link in
+        Header.tsx (standard site convention -- Home is the logo, not a NAV entry; it was
+        never in NAV before this feature and F6 does not need to add it there). Her Drive
+        folder's numbering is document order, not information architecture (see
+        goldens/f6-README.md sec 2) -- this checks the six DESTINATIONS are reachable, not
+        that her numbering is preserved or that Home appears in NAV specifically.
+      command: >-
+        grep -qE "href=\"/\"" components/chrome/Header.tsx &&
+        grep -qE "href:\s*'/about'" components/chrome/nav-config.ts &&
+        grep -qE "href:\s*'/societies'" components/chrome/nav-config.ts &&
+        grep -qE "href:\s*'/events'" components/chrome/nav-config.ts &&
+        grep -qE "href:\s*'/members'" components/chrome/nav-config.ts &&
+        grep -qE "href:\s*'/judging'" components/chrome/nav-config.ts
+      required: true
+
+    - id: A4
+      description: >
+        Already committed (9b4f6134), asserted as end state rather than re-litigated as a
+        change: Members Portal is a real NAV entry, and the invented, disabled `Learn` item
+        (href '#') is gone.
+      command: >-
+        grep -qE "label:\s*'Members Portal'" components/chrome/nav-config.ts &&
+        ! grep -qE "label:\s*'Learn'" components/chrome/nav-config.ts &&
+        ! grep -qE "href:\s*'#'" components/chrome/nav-config.ts
+      required: true
+
+    - id: A5
+      description: >
+        National Show dropdown wired to the five newly committed NOS paths (negotiated with
+        the NOS session, final): /national-show/about, /national-show/exhibitors/
+        international, /national-show/symposium, /national-show/wosa-conference,
+        /national-show/programme. All five appear as NavLeaf hrefs somewhere under the
+        National Show mega item, even though three don't exist as real routes yet -- that
+        session is building them; wiring the nav item now is the agreed contract between the
+        two sessions, not premature.
+      command: >-
+        grep -qE "href:\s*'/national-show/about'" components/chrome/nav-config.ts &&
+        grep -qE "href:\s*'/national-show/exhibitors/international'" components/chrome/nav-config.ts &&
+        grep -qE "href:\s*'/national-show/symposium'" components/chrome/nav-config.ts &&
+        grep -qE "href:\s*'/national-show/wosa-conference'" components/chrome/nav-config.ts &&
+        grep -qE "href:\s*'/national-show/programme'" components/chrome/nav-config.ts
+      required: true
+
+    - id: A6
+      description: >
+        A nav item pointing at a dead route is worse than no nav item (team lead's framing):
+        the three of the five NOS paths that don't exist as real routes tonight
+        (/national-show/about, /national-show/symposium, /national-show/wosa-conference --
+        the other two, exhibitors/international and programme, are also unbuilt per the repo
+        scan but tracked identically) are enumerated as a KNOWN, LISTED exception in
+        goldens/fixtures/f6-pending-nos-routes.json, not silently inferred by a spec that
+        happens to skip whatever 404s on the day it runs. F7's nav-links-200 coverage must
+        read this exact file to decide which hrefs to skip -- never its own hardcoded list
+        that could silently drift from nav-config.ts's real pending set.
+      command: >-
+        test -f .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json &&
+        grep -q "pendingRoutes" .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json &&
+        grep -qE "goldens/fixtures/f6-pending-nos-routes\\.json" e2e/nav-links-200.spec.ts
+      required: true
+
+    - id: A7
+      description: >
+        RUNTIME PROOF for A6: e2e/nav-links-200.spec.ts, run against a live dev server,
+        actually skips (or xfails) each href listed in f6-pending-nos-routes.json rather than
+        asserting 200 on it, AND still asserts 200 on every OTHER nav href not in that list --
+        proves the exception list is load-bearing at runtime, not merely present as a file
+        nothing reads.
+      command: >-
+        grep -qE "pendingRoutes\\.(includes|has)|\\.filter\\(" e2e/nav-links-200.spec.ts
+      required: true
+
+    - id: A8
+      description: >
+        STYLE-FREEZE BOUNDARY, made an assertion per team lead's instruction, not a comment.
+        Navigation is the sole sanctioned exception to the main-site style freeze -- every
+        file in goldens/fixtures/f6-style-freeze-baseline.json (globals.css and six
+        representative page components: Home, About, Societies, Judging, Events, Members)
+        must be byte-identical (sha256) to its pre-F6 baseline. Mirrors the existing
+        contracts/checks/vendor-f3-showcase-page/check-untouched-scope.mjs convention
+        deliberately -- same pattern, different scope -- so this is sha256-based, not a git
+        diff, and is therefore unaffected by other in-flight features editing unrelated
+        files in the same working tree tonight.
+      command: >-
+        test -f contracts/checks/ticketing-complete-f6/check-style-freeze.mjs &&
+        node contracts/checks/ticketing-complete-f6/check-style-freeze.mjs
+      required: true
+
+    - id: A9
+      description: >
+        NEGATIVE CONTROL for A8, scoped to the one file most likely to tempt a "just add one
+        token for the nav" shortcut: app/globals.css's CSS custom-property (`--` declaration)
+        count is unchanged from the pre-F6 baseline of 77 (captured 2026-09-08, same moment as
+        A8's sha256 baseline). Restated here, on top of A8's whole-file hash equality, as an
+        explicit design-token guard -- a token addition is the specific failure mode team lead
+        named, not a generic file edit, so it gets its own named number, not just "the hash
+        changed."
+      command: >-
+        test "$(grep -cE '^\s*--[a-zA-Z0-9-]+:' app/globals.css)" = "77"
+      required: true
+
+    - id: A10
+      description: >
+        Footer Subscribe horizontal-overflow bug at 1024-1050px is FIXED. Root cause read
+        directly from components/chrome/Footer.tsx: the "Stay in touch" column's
+        `<form className="flex gap-0">` wraps a `flex-1` email input and a `shrink-0`
+        Subscribe button with no `min-w-0` on the input -- a flex item's default
+        `min-width: auto` means it cannot shrink below its own content/intrinsic width, so at
+        the lg (1024px) breakpoint the 4-column grid narrows this column enough that the
+        input+button combo forces the row (and therefore the page) wider than the viewport.
+        This assertion requires `min-w-0` (or an equivalent explicit min-width override) on
+        the input inside that specific form.
+      command: >-
+        grep -A4 'placeholder="your@email.co.za"' components/chrome/Footer.tsx | grep -qE "min-w-0|min-width:\s*0"
+      required: true
+
+    - id: A11
+      description: >
+        RUNTIME PROOF for A10, not just a class-name grep (same discipline as F7's own A7):
+        e2e/no-horizontal-overflow.spec.ts's 1024/1050px cases must now PASS for real when
+        run directly -- i.e. document.documentElement.scrollWidth no longer exceeds the
+        viewport width at those sizes.
+      command: >-
+        npx playwright test e2e/no-horizontal-overflow.spec.ts --grep "1024|1050"
+      required: true
+
+    - id: A12
+      description: >
+        STRUCTURAL REQUIREMENT flagged in F7's own contract (contract-f7.yaml A8's
+        description, and the mission notes' "QUEUED CONTRACT REQUIREMENT" entry): F7's A8 is
+        DELIBERATELY inverted (green exactly while the footer bug exists) so it doesn't
+        silently vanish before F6 fixes the real defect. F6 MUST flip it back to its
+        non-inverted, normal form (drop the leading `!` so it passes only once the sub-test
+        is actually green) as one of ITS OWN required checks -- getting this wrong in either
+        direction either loses real coverage (deleting the assertion) or leaves a
+        permanently-red assertion nobody trusts (fixing the bug without flipping the
+        polarity). This assertion reads contract-f7.yaml's own A8 command directly and fails
+        if the leading `!` is still present.
+      command: >-
+        grep -A10 "id: A8" .agent/memory/project/specs/ticketing-complete/contract-f7.yaml |
+        grep "npx playwright test e2e/no-horizontal-overflow" |
+        grep -qv "^\s*!\s*npx"
+      required: true
+
+    - id: A13
+      description: >
+        Mobile is not a lesser-tested surface: MobileMenu.tsx opens, is operable (every one
+        of the six Lee-Ann sections plus Tickets plus the National Show dropdown's own items
+        are reachable through it), at 390px and 320px -- not merely "renders" (the exact
+        distinction this repo's own rules.md draws: "a design/UI agent with no browser MUST
+        NOT call the work confirmed" applies equally to a spec that only checks the trigger
+        button exists). Requires a real e2e spec, not a unit test of the component in
+        isolation.
+      command: >-
+        test -f e2e/mobile-nav-reaches-every-section.spec.ts &&
+        grep -q "390" e2e/mobile-nav-reaches-every-section.spec.ts &&
+        grep -q "320" e2e/mobile-nav-reaches-every-section.spec.ts &&
+        grep -qE "goto\\(|click\\(" e2e/mobile-nav-reaches-every-section.spec.ts
+      required: true
+
+    - id: A14
+      description: >
+        RUNTIME PROOF for A13: the mobile nav spec asserts, for the SAME six Lee-Ann
+        destinations A3 requires in the desktop config plus Tickets, that each is reachable
+        via a real click-through from the opened mobile menu -- not merely present as text in
+        the DOM (which A13's grep alone couldn't distinguish from a hidden, unreachable
+        element). Checks for real Playwright navigation assertions (expect(page).toHaveURL or
+        equivalent) for at least 5 distinct hrefs in the spec, proving it exercises more than
+        one link.
+      command: >-
+        test "$(grep -cE "toHaveURL|waitForURL" e2e/mobile-nav-reaches-every-section.spec.ts)" -ge 5
+      required: true
+
+    - id: A15
+      description: >
+        Keyboard operability, not hover-only: the National Show dropdown (and any other
+        disclosure-pattern group) must open via keyboard interaction, not merely mouse
+        hover -- a hover-only dropdown is broken for keyboard and touch users per this repo's
+        own coding.md accessibility rule ("every interactive element needs a label, role, and
+        keyboard handler"). Requires an e2e spec that opens a dropdown via `.press('Enter')`
+        or `.press(' ')` on the trigger (never a `.hover()` call as the ONLY way the spec
+        opens it) and asserts the resulting panel is visible.
+      command: >-
+        test -f e2e/nav-keyboard-operable.spec.ts &&
+        grep -qE "\\.press\\(['\"](Enter|Space| )['\"]\\)" e2e/nav-keyboard-operable.spec.ts &&
+        grep -qE "toBeVisible" e2e/nav-keyboard-operable.spec.ts
+      required: true
+
+    - id: A16
+      description: >
+        Visible focus, not just a functional focus trap: the same keyboard-operability spec
+        (or a sibling) asserts a visible focus indicator (a real CSS check -- outline, ring,
+        or box-shadow computed style change -- via getComputedStyle or a screenshot-based
+        assertion) on the nav trigger and at least one item inside an open dropdown, not
+        merely that focus() was called programmatically. Class-name-only proxies
+        (toHaveClass) are explicitly insufficient -- same standard as F7's A7.
+      command: >-
+        grep -qE "getComputedStyle|toHaveCSS" e2e/nav-keyboard-operable.spec.ts &&
+        ! grep -qE "toHaveClass" e2e/nav-keyboard-operable.spec.ts
+      required: true
+
+    - id: A17
+      description: >
+        Every interactive nav element carries a label, role, and keyboard handler -- static
+        proof alongside A15/A16's runtime proof. The National Show trigger keeps the existing
+        aria-haspopup/aria-expanded disclosure pattern (already present in MegaMenu.tsx and
+        must survive the restructure), and the new group triggers (Visit, Programme, Exhibit
+        & trade, Past editions) follow the SAME pattern rather than inventing a second one.
+      command: >-
+        test "$(grep -cE 'aria-haspopup="true"' components/chrome/MegaMenu.tsx)" -ge 1 &&
+        test "$(grep -cE 'aria-expanded=' components/chrome/MegaMenu.tsx)" -ge 1 &&
+        grep -qE "role=\"menu\"" components/chrome/MegaMenu.tsx
+      required: true
+
+    - id: A18
+      description: >
+        Design-record completeness: the golden README documents why Lee-Ann's Drive folder
+        numbering (document order) is NOT the information architecture used here, records the
+        NOS negotiation (which session owns which routes, the five committed paths, the
+        pending-route handling contract with F7), and states the exact footer overflow root
+        cause (flex-1 input with no min-w-0 against a shrink-0 button) so a future reader
+        doesn't have to re-derive it from the diff.
+      command: >-
+        grep -q "document order, not information architecture" .agent/memory/project/specs/ticketing-complete/goldens/f6-README.md &&
+        grep -q "min-w-0" .agent/memory/project/specs/ticketing-complete/goldens/f6-README.md &&
+        grep -qi "pending" .agent/memory/project/specs/ticketing-complete/goldens/f6-README.md
+      required: true
+
+    - id: A19
+      description: >
+        HARD RULE, repo-wide for this feature's own files: no e2e spec F6 adds references a
+        deployed/production origin, and none performs a mutating Sanity or Firestore call --
+        mirrors F7's own A12/A13 guards, applied to F6's new specs specifically (F7's guards
+        only scan files existing when F7 was authored).
+      command: >-
+        ! grep -rE "saoc\\.co\\.za|\\.hosted\\.app|\\.run\\.app" e2e/mobile-nav-reaches-every-section.spec.ts e2e/nav-keyboard-operable.spec.ts 2>/dev/null &&
+        ! grep -rE "\\.commit\\(|\\.patch\\(|createOrReplace|createIfNotExists" e2e/mobile-nav-reaches-every-section.spec.ts e2e/nav-keyboard-operable.spec.ts 2>/dev/null
+      required: true
+
+    - id: A20
+      description: >
+        Codex GPT-5.5 adversarial review (verification triad, layer 1) ran against F6's
+        diff -- nav-config.ts, MegaMenu.tsx, MobileMenu.tsx, Header.tsx, Footer.tsx and the
+        five new/changed e2e specs. Manifest is execution/codex_qa.sh's own stdout capture,
+        not a bare "I ran it" claim.
+      type: codex_qa
+      target: .agent/memory/scratch/f6-nav-rebuild-codex-review.txt
+      required: true
+
+    - id: A21
+      description: >
+        BrowserAgent (verification triad, layer 2) drove the rebuilt nav live against
+        beta.saoc.co.za post-deploy -- desktop mega menu open/close, mobile menu open, and
+        the footer Subscribe field at 1024px with no horizontal overflow. Deploy
+        authorisation to beta is standing (project_deploy_authorization) -- this is
+        achievable tonight, not a blocker.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/f6-nav-rebuild-browser-manifest.json
+      required: true

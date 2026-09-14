@@ -1,0 +1,14 @@
+{
+  "capturedAt": "2026-09-08",
+  "capturedBy": "architect, before any F6 (ticketing-complete M3) code exists",
+  "note": "Brad's standing rule: main-site style is dialled in, design work lands only on the National Show section. Navigation is the SOLE sanctioned exception for this mission. This baseline proves F6 restructures/restyles the nav (components/chrome/**) and nothing else -- these page components and globals.css must be byte-identical to this snapshot when F6 lands. Mirrors the existing contracts/checks/vendor-f3-showcase-page/check-untouched-scope.mjs convention (sha256, not a git diff, so it is unaffected by other in-flight features editing unrelated files in the same working tree tonight).",
+  "files": {
+    "app/globals.css": "4924e5fb97a87129aca2b100922114250cd42db7c2a8dfcb41bcb3d0af666347",
+    "app/(marketing)/page.tsx": "bc2797201049a57d4b6e9bda3589421f643a723a57d05eca71175e9f0375dc27",
+    "app/(marketing)/about/page.tsx": "322461eabc3b8670ac8063cd1d95492418463d65ec5998630b360e13f7528bfc",
+    "app/(marketing)/societies/page.tsx": "5ac9d26b487910545049c8e0da4a9eb2f0bbffa2dc60d656fe6d595b1df42556",
+    "app/(marketing)/judging/page.tsx": "31c0436c4e1a22a568cfc56d2c4069ce89c03aa53839f635889c86f5765749da",
+    "app/(marketing)/events/page.tsx": "81dd5fa26e2bd929ded2063c1b2aa6e733a374bdabfb0ff3bcc8f7742e5ba94e",
+    "app/(marketing)/members/page.tsx": "e622c64a63e352d8b20ce6f5e00d4c2d8c856fe49c6554b7dc5a8dd9c0de134d"
+  }
+}

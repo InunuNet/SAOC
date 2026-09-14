@@ -26,6 +26,7 @@ Two stores, and the difference matters (REQUIREMENTS.md section 6):
 
 import argparse
 import datetime
+import glob
 import json
 import os
 import sys
@@ -33,11 +34,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import autonomy as autonomy_dialect  # noqa: E402  (path fixed up above)
+import sync_autonomy  # noqa: E402  (path fixed up above)
 
 PROFILE_REL = ".agent/profile.json"
 ACTIVE_MISSION_REL = ".agent/memory/project/missions/active.json"
 EXIT_INVALID_LEVEL = 2
 EXIT_WRITE_UNCONFIRMED = 3
+EXIT_POLICY_SYNC_FAILED = 4
 
 
 def _timestamp():
@@ -116,6 +119,42 @@ def apply_level(root, level, to_mission=False, decided_by=None):
     return True, target, stored, None
 
 
+def resync_policy_and_cache(root):
+    """Regenerate provider policy files and drop the session cache.
+
+    execution/hooks/check_autonomy.sh reads `.claude/policies/autonomy.json`
+    as authoritative and falls back to `.agent/profile.json` only when that
+    policy file is absent (#1383). This setter writes ONLY profile.json, so
+    without this step a workspace that has ever synced its provider policy
+    once is left with the OLD level in the policy file after a level change
+    -- the floor then resolves the stale, more permissive tier and fails
+    OPEN. `execution/sync_autonomy.py` is the one place that already knows
+    how to produce that policy file correctly; this reuses it directly
+    rather than hand-rolling a second writer that could drift from it.
+
+    Returns None on success, or an error string.
+    """
+    sync_rc = sync_autonomy.main(["--root", str(root)])
+    if sync_rc != 0:
+        return (f"wrote the new autonomy level but "
+                f"execution/sync_autonomy.py --root {root} failed "
+                f"(rc={sync_rc}) -- provider policy files may now disagree "
+                f"with profile.json, which the floor could resolve as MORE "
+                f"permissive than the level just set")
+
+    # The floor's session cache self-invalidates whenever the policy file or
+    # profile.json is newer than it (both were just rewritten above), so this
+    # clear is not load-bearing for correctness -- but a cache is the guard's
+    # own trust state, and leaving a soon-to-be-stale-anyway file around for
+    # another process to read in the gap is not a chance worth taking here.
+    for cache_path in glob.glob(str(root / ".tmp" / "athanor_autonomy_*")):
+        try:
+            os.remove(cache_path)
+        except OSError:
+            pass
+    return None
+
+
 def _parse_args(argv=None):
     parser = argparse.ArgumentParser(
         prog="set_autonomy.py",
@@ -157,6 +196,15 @@ def main(argv=None):
     if not ok:
         print(f"❌ {detail}", file=sys.stderr)
         return EXIT_WRITE_UNCONFIRMED
+
+    # Only the workspace default (profile.json) feeds the floor's fallback
+    # read and shares a session cache with the policy file; a --mission
+    # decision is recorded in active.json, which the floor never reads.
+    if not args.mission:
+        sync_error = resync_policy_and_cache(root)
+        if sync_error:
+            print(f"❌ {sync_error}", file=sys.stderr)
+            return EXIT_POLICY_SYNC_FAILED
 
     scope = "mission decision" if args.mission else "workspace default"
     tier = autonomy_dialect.permission_tier(args.level)

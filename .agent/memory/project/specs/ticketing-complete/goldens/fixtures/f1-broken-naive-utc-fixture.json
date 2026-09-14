@@ -1,0 +1,12 @@
+{
+  "_comment": "Negative-control fixture for A6. Describes a DELIBERATELY BROKEN alternative implementation of the early-bird boundary check -- one that treats the cutoff ISO string as bare UTC instead of respecting its +02:00 (SAST) offset when computing the exclusive end-of-window instant. execution/checks (or contracts/checks) verifier for A6 must implement (or simulate) exactly this broken variant inline, run it against the SAME instant as fixture case 'timezone-sast-vs-utc-disagreement', and assert it disagrees with the correct implementation -- proving the SAST-vs-UTC boundary test in A5 is discriminating, not vacuously true.",
+  "showStartDateIso": "2027-09-16T00:00:00Z",
+  "correctCutoffIso": "2027-06-18T00:00:00+02:00",
+  "brokenNaiveCutoffIso": "2027-06-18T00:00:00Z",
+  "disagreementCase": {
+    "purchaseDateIso": "2027-06-18T23:00:00Z",
+    "correctExpectedTier": "regular",
+    "brokenNaiveExpectedTier": "earlyBird",
+    "note": "The correct implementation (SAST-aware) says 'regular' because 2027-06-18T23:00:00Z = 2027-06-19T01:00 SAST, one day past the cutoff. The broken naive-UTC implementation's exclusive window end is 2027-06-19T00:00:00Z, so it wrongly still says 'earlyBird' at 23:00Z. A6 FAILS (as intended) if the broken implementation is fed to the SAME verifier used for A5 and it does NOT disagree at this instant -- that would mean the verifier can't actually tell the two implementations apart."
+  }
+}

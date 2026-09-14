@@ -1,0 +1,99 @@
+{
+  "_comment": "Golden list of open decisions F2 must SURFACE (never silently resolve) into docs/ticketing-complete-f2-open-decisions.md. Each item below is a required substring the doc must contain (case-sensitive on the numbers, case-insensitive is fine on prose) -- the F2 contract's A-decisions-doc assertion greps for these verbatim.",
+  "requiredItems": [
+    {
+      "id": "vip-price-ladder",
+      "mustContain": [
+        "VIP",
+        "R625",
+        "R500",
+        "ruling",
+        "2026-09-08"
+      ],
+      "why": "UPDATED 2026-09-08 -- was open (live dataset had VIP at R300, the fix-vip-and-weekend-pass-pricing.ts R480 patch never run, and VIP priced below both Weekend Pass SKUs despite including the full weekend plus a reception). No longer open: Brad ruled directly, R625 with the standard 20% early-bird discount applying (R500 early-bird) -- already landed in lib/provisional-figures.ts's `vip` entry with `provisional: false` and a `sourceCitation` naming the ruling. Kept in requiredItems (not removed) on purpose, and reworded rather than dropped: the ruling reached this mission third-hand through a peer session, which is exactly the kind of relay where a number gets transposed or a condition gets dropped -- the walkthrough must still SHOW Brad the applied figure and that it came from his instruction, so he can confirm it's what he actually said rather than silently trusting a number he never sees again. This item now forces attribution + both figures, not a still-open question -- do not phrase the walkthrough prose as though he is still being asked to choose."
+    },
+    {
+      "id": "weekend-pass-two-skus",
+      "mustContain": [
+        "R380",
+        "R400",
+        "weekend-pass",
+        "early-bird-weekend-pass"
+      ],
+      "why": "Two live active SKUs for one product today. The merge described in fix-vip-and-weekend-pass-pricing.ts's own comments was never applied to the dataset."
+    },
+    {
+      "id": "weekend-pass-cutoff-mismatch",
+      "mustContain": [
+        "2027-07-31",
+        "2027-06-18",
+        "saoc-symposium-early-bird",
+        "wosa-conference-early-bird",
+        "saoc-wosa-joint-early-bird",
+        "Early-Bird Exhibition Ticket"
+      ],
+      "why": "early-bird-weekend-pass's live earlyBirdCutoff (2027-07-31) does not match the mission's 90-day-before-show cutoff (2027-06-18). A migration that silently picks one destroys the evidence a decision was needed. BROADENED 2026-09-08 (Codex GPT-5.5 cross-model FAIL, verified real -- same decision, not a new one, so this entry is extended rather than a second id added). Two things changed. (1) VIP has been CORRECTED off the legacy EARLY_BIRD_CUTOFF constant onto the engine-derived 2027-06-18 -- a different case, not a resolution of this one: VIP's cutoff is freshly WRITTEN under Brad's 2026-09-08 ruling, so there was no existing date to preserve and no customer who bought against one, and the value is computed by deriveAdmissionEarlyBirdCutoffIso() rather than hand-typed so it cannot drift from the rule. early-bird-weekend-pass -- the one SKU with a real PAID position -- is untouched, and check-vip-fix-scope-containment.mjs exists to keep it that way. (2) The true blast radius is now named. Grep-verified against lib/provisional-figures.ts: FIVE products still read the legacy constant, not one -- early-bird (Early-Bird Exhibition Ticket), weekend-pass, saoc-symposium-early-bird, wosa-conference-early-bird, and saoc-wosa-joint-early-bird. The three conference slugs are a pre-F1 pattern this feature deliberately does not retrofit (contract-f2.yaml A15) but carry the same date and would move with the same decision. The doc must frame this as ONE fleet-wide decision with the real scope visible, never five separate ones -- deciding it product-by-product is how the fleet reproduces the incoherent ladder item 1 resolved."
+    },
+    {
+      "id": "cocktails-field-trip-figures-changed",
+      "mustContain": [
+        "R800",
+        "R1500",
+        "R200",
+        "Sunset Cocktails",
+        "Field Trip"
+      ],
+      "why": "Real client figures from Lee-Ann's ticketing doc replace the prior 'our estimate, no client source' figures (R250/R450 Cocktails, R300/R750 Field Trips). Must be listed as a CHANGED figure, not applied silently."
+    },
+    {
+      "id": "symposium-date-venue-unknown",
+      "mustContain": [
+        "Symposium",
+        "date",
+        "venue"
+      ],
+      "why": "Lee-Ann's own FAQ doc has a literal placeholder ('xx, xx September 2027 at the xx') -- nobody knows the date/venue yet, not just 'we haven't set it.' Must not inherit the show's own dates as a stand-in."
+    },
+    {
+      "id": "council-vs-info-address",
+      "mustContain": [
+        "council@",
+        "info@"
+      ],
+      "why": "Two general-enquiry addresses live simultaneously; unresolved, carried over from the mission's own 'Known-open questions.'"
+    },
+    {
+      "id": "six-scripts-dry-run-polarity-hazard",
+      "mustContain": [
+        "fix-venue-never-changed-copy.ts",
+        "migrate-ticket-type-category.ts",
+        "migrate-show-sales-fields.ts",
+        "fix-vip-and-weekend-pass-pricing.ts",
+        "fix-show-dates-2027.ts",
+        "fix-visitor-info-dates-confirmed.ts",
+        "--dry-run",
+        "polarity"
+      ],
+      "why": "2026-09-08, swept after the original single-script finding: SIX existing scripts (fix-venue-never-changed-copy.ts:77, migrate-ticket-type-category.ts:102, migrate-show-sales-fields.ts:86, fix-vip-and-weekend-pass-pricing.ts:79, fix-show-dates-2027.ts:80, fix-visitor-info-dates-confirmed.ts:76) all default to MUTATE unless --dry-run is explicitly passed -- every one a live hazard against the single shared 'production' dataset. Three OTHER scripts already in the repo (seed-fictional-test-show, seed-demo-ticket-type, swap-active-show) already use the correct --apply-gated polarity migrate-f2-ticket-taxonomy.ts follows -- the safe pattern existed in-repo and was simply not applied consistently. List as ONE decision for Brad, not an overnight fix: several of the six may already have been run against live data, so flipping their behaviour unreviewed carries its own risk. Do not silently patch any of them in passing."
+    },
+    {
+      "id": "membership-direct-vs-society",
+      "mustContain": [
+        "membership",
+        "affiliated society",
+        "constitution"
+      ],
+      "why": "Unanswerable from any source held: the SAOC constitution has never been supplied to this project, and Lee-Ann's Members Portal Drive folder is empty. Phrase as a question for Brad -- is SAOC membership direct, via an affiliated society, or both? Requesting the constitution text from the Council settles this permanently AND unblocks /constitution at the same time. No F2 seed copy may imply an answer either way."
+    },
+    {
+      "id": "early-bird-weekend-pass-live-paid-position",
+      "mustContain": [
+        "early-bird-weekend-pass",
+        "R380",
+        "paid",
+        "position"
+      ],
+      "why": "ADDED 2026-09-08 -- did not exist when this golden was first written. F2 dev confirmed against LIVE Firestore (read-only) that the retiring 'early-bird-weekend-pass' SKU (see weekend-pass-two-skus and weekend-pass-cutoff-mismatch above -- this is the SAME SKU those two decisions are about) has exactly ONE real position, status 'paid', at R380 -- a real customer's money, not test data -- while both retired field-trip SKUs (RETIRED_FIELD_TRIP_SLUGS in lib/provisional-figures.ts) have zero. This is the worst possible case for a migration/decisions doc to omit: a decision involving an actual paying customer. Brad must be asked explicitly what happens to that one paid position (honour it at R380, leave it untouched and out of scope for the migration, or some other resolution) -- no migration script may silently move, relabel, or refund it without that answer on record."
+    }
+  ]
+}

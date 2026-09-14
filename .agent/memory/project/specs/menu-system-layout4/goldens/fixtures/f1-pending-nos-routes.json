@@ -1,0 +1,15 @@
+{
+  "_comment": "Mission menu-system-layout4, M1/F1. Supersedes the older, now-stale .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json (that file lists only 4 of the 6 routes actually still missing, and includes /national-show/exhibitors/international, which F5 removes from NAV entirely rather than leaving pending). This is the single source of truth for e2e/nav-links-200.spec.ts and e2e/mobile-nav-reaches-every-section.spec.ts once @dev updates them for the Layout 4 nav shape -- both specs must read this file, not a hand-copied list (see mission section 6, property 1).",
+  "capturedAt": "2026-09-10",
+  "verifiedBy": "filesystem check: no directory exists under app/(marketing)/national-show/ for any of these six paths as of this date (confirmed via find during contract authoring)",
+  "pendingRoutes": [
+    "/national-show/programme",
+    "/national-show/symposium",
+    "/national-show/wosa-conference",
+    "/national-show/sa-exhibitors",
+    "/national-show/international-guests",
+    "/national-show/sponsors"
+  ],
+  "owningLane": "NOS lane (origin/nos-site, M4) -- mission section 4. This lane's flyout wires all six anyway; property 1 (no 404 reachable from the header) cannot go green until they land, and must render UNMEASURED/SKIPPED until then -- never silently green.",
+  "removeFromListWhen": "the NOS lane merges to main and `find app/(marketing)/national-show -name page.tsx` shows a real page.tsx under that route. Do not leave a route here that already returns 200; do not add a route here that isn't in f1-nav-hrefs.json."
+}

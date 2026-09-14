@@ -17,6 +17,7 @@ import fnmatch
 import hashlib
 import json
 import os
+import re
 import shlex
 import shutil
 import stat
@@ -1162,6 +1163,133 @@ def merge_line_union(src: Path, dst: Path, backup_dir: Path) -> str:
     return f"  merge  (line_union, +{len(new_lines)} lines): {dst}"
 
 
+HOOK_SCRIPT_RE = re.compile(r"execution/hooks/([A-Za-z0-9_.-]+\.sh)")
+
+
+def _hook_entry_identity(entry):
+    """What makes two hook registrations THE SAME registration (#1394).
+
+    A registration is identified by the hook SCRIPT it invokes, never by its
+    command string. The guarded wrapper around a script has been respelled
+    more than once -- `[ -f X ] && bash X || exit 0` became
+    `[ -f X ] || exit 0; bash X` -- and a timeout has been added and removed.
+    Exact-value dedup reads every respelling as a NEW hook, so each
+    `make update-template` laid the new spelling down beside the old one and
+    both fired. That is #1394, and it has already shipped downstream.
+
+    Returns None for an entry naming no script, or naming more than one: an
+    inline command has no identity beyond its own text and keeps exact-value
+    dedup.
+    """
+    if not isinstance(entry, dict):
+        return None
+    scripts = set(HOOK_SCRIPT_RE.findall(entry.get("command") or ""))
+    if len(scripts) == 1:
+        return ("script", scripts.pop())
+    return None
+
+
+def merge_hook_entries(base_list: list, override_list: list) -> list:
+    """Union two hook-registration lists so that applying the same template
+    twice changes nothing (#1394).
+
+    Keyed by _hook_entry_identity(): the LAST entry carrying a key wins, in the
+    position the key was first seen. So the template's spelling REPLACES a
+    stale one rather than joining it, and a destination that already carries
+    the same script twice -- the shipped defect -- collapses back to one on the
+    next update instead of needing a hand edit.
+
+    Idempotent by construction: after one merge every template key already
+    holds the template's value, so merging the same template again overwrites
+    each with itself and adds nothing.
+    """
+    result: list = []
+    index: dict = {}
+    for entry in list(base_list) + list(override_list):
+        ident = _hook_entry_identity(entry)
+        key = ident if ident is not None else ("literal", _dedupe_value_key(entry))
+        if key in index:
+            result[index[key]] = entry
+        else:
+            index[key] = len(result)
+            result.append(entry)
+    return result
+
+
+def _dedupe_value_key(entry):
+    """Exact-value identity: dict/list by their JSON form (sort_keys, so key
+    order never manufactures a spurious duplicate), scalars by value."""
+    if isinstance(entry, (dict, list)):
+        return json.dumps(entry, sort_keys=True)
+    return entry
+
+
+def _is_hook_config(value) -> bool:
+    """True for a settings.json `hooks` value: event name -> list of matcher
+    groups, each {"matcher": ..., "hooks": [...]}. Shape-checked rather than
+    name-checked alone, so an unrelated key called "hooks" is never caught."""
+    if not isinstance(value, dict) or not value:
+        return False
+    for groups in value.values():
+        if not isinstance(groups, list) or not groups:
+            return False
+        if not all(isinstance(g, dict) and "matcher" in g and "hooks" in g
+                   for g in groups):
+            return False
+    return True
+
+
+def replace_hook_config(override_hooks: dict) -> dict:
+    """The `hooks` key of a settings file is REPLACED wholesale, never unioned.
+
+    THE DEFECT (#1394). Unioning hook registrations by (event, matcher) let
+    every `make update-template` lay new registrations down beside the old
+    ones. Measured 2026-09-06 across this machine: ~/ai/SAOC and
+    ~/ai/SAOC NOS Design each carry 69 registrations against a clean 38 --
+    check_autonomy.sh three times over, require_contract_for_write.sh three
+    times over, require_maintainer.sh twice, full_boot.sh once. Every guard in
+    those workspaces fires two to four times per tool call.
+
+    WHY DEDUP IS NOT ENOUGH, AND WHY THE KEY CANNOT INCLUDE THE MATCHER.
+    Two respellings of the same registration are not equal strings, so
+    exact-value dedup never saw them as one. Keying on the script instead
+    fixes that -- but not the harder half: the MATCHER SET ITSELF changes
+    between versions. This very release collapses check_autonomy.sh's three
+    registrations (Bash, Write, Edit) into one alternation group,
+    `Bash|Edit|Write`. Under any matcher-keyed union the old three survive
+    alongside the new one and the floor fires FOUR times on a Bash call.
+    A key containing the matcher cannot recognise a hook across the versions
+    it is supposed to reconcile.
+
+    AND ONLY REPLACEMENT RETIRES A HOOK. CEO Directive v2 deletes 22 hook
+    scripts. A union has no way to express a removal, so every downstream
+    would carry those registrations forever -- silent no-ops behind their
+    `[ -f X ] || exit 0` guard, but 22 of them, in a file the directive is
+    cutting to six.
+
+    WHAT REPLACEMENT COSTS, AND WHY IT COSTS NOTHING. A downstream's own hooks
+    inside a template-declared matcher group do not survive this. They are not
+    meant to live here: `.claude/settings.json` is a MERGE path the harness
+    delivers, while `.claude/settings.local.json` is WORKSPACE in
+    .agent/update-manifest.yaml -- personal overrides, gitignored, and never
+    read or written by this module. Local hooks belong there, where no update
+    can reach them.
+
+    Idempotent by definition: the result is a function of the template alone.
+    """
+    out = {}
+    for event, groups in override_hooks.items():
+        rebuilt = []
+        for group in groups:
+            new_group = dict(group)
+            # Normalise the template's own list too, so a hand-edited template
+            # carrying an accidental duplicate does not ship one downstream.
+            new_group["hooks"] = merge_hook_entries([], group.get("hooks", []))
+            rebuilt.append(new_group)
+        out[event] = rebuilt
+    return out
+
+
 def merge_list_union(base_list: list, override_list: list) -> list:
     """Union two JSON lists, preserving base order, then appending anything
     from override not already present.
@@ -1192,11 +1320,14 @@ def merge_list_union(base_list: list, override_list: list) -> list:
             matcher = entry["matcher"]
             if matcher in by_matcher:
                 existing = by_matcher[matcher]
-                existing["hooks"] = merge_list_union(
+                # Hook registrations dedup by SCRIPT, not by command string --
+                # see merge_hook_entries() and #1394.
+                existing["hooks"] = merge_hook_entries(
                     existing.get("hooks", []), entry.get("hooks", [])
                 )
             else:
                 new_entry = dict(entry)
+                new_entry["hooks"] = merge_hook_entries([], entry.get("hooks", []))
                 result.append(new_entry)
                 by_matcher[matcher] = new_entry
         return result
@@ -1204,15 +1335,10 @@ def merge_list_union(base_list: list, override_list: list) -> list:
     # Generic order-preserving dedup union. dict/list elements are compared
     # by their JSON-serialized form (sort_keys, so key order never causes a
     # spurious duplicate); scalars compare by value directly.
-    import json as _json
-
-    def _dedupe_key(e):
-        return _json.dumps(e, sort_keys=True) if isinstance(e, (dict, list)) else e
-
     seen = set()
     result = []
     for e in list(base_list) + list(override_list):
-        k = _dedupe_key(e)
+        k = _dedupe_value_key(e)
         if k not in seen:
             seen.add(k)
             result.append(e)
@@ -1225,7 +1351,11 @@ def deep_merge(base: dict, override: dict) -> dict:
     merge_list_union) instead of replaced."""
     result = dict(base)
     for key, val in override.items():
-        if key in result and isinstance(result[key], dict) and isinstance(val, dict):
+        if key == "hooks" and _is_hook_config(val):
+            # Hook registrations are harness-owned and REPLACED, not unioned.
+            # See replace_hook_config() for why a union cannot work here.
+            result[key] = replace_hook_config(val)
+        elif key in result and isinstance(result[key], dict) and isinstance(val, dict):
             result[key] = deep_merge(result[key], val)
         elif key in result and isinstance(result[key], list) and isinstance(val, list):
             result[key] = merge_list_union(result[key], val)
@@ -4356,8 +4486,31 @@ def main():
         # $ANTHROPIC_DEFAULT_HAIKU_MODEL literal) can never be corrected by
         # deep_merge()/json_deep_merge() above, since that loop only ever
         # adds/overwrites keys the incoming source currently has.
+        #
+        # #1359: the retractions list MUST come from the freshly-fetched
+        # upstream manifest, not the workspace's own local copy. A workspace
+        # that needs a retraction has by definition not yet received the
+        # manifest entry listing it (the manifest is a HARNESS file that only
+        # arrives with this same update), so reading the local manifest here is
+        # chicken-and-egg -- the retraction can never fire. Source the list
+        # from `source`, mirroring the fresh_source pattern used for the
+        # fresh-manifest backstop above; fall back to the local manifest only
+        # if the upstream one is unreadable.
+        retraction_manifest = manifest
+        upstream_manifest_path = source / ".agent" / "update-manifest.yaml"
+        if upstream_manifest_path.exists():
+            try:
+                upstream_manifest = yaml.safe_load(upstream_manifest_path.read_text())
+                if isinstance(upstream_manifest, dict):
+                    retraction_manifest = upstream_manifest
+            except Exception as e:
+                print(
+                    f"  WARN  retractions: could not read upstream manifest "
+                    f"({e}) -- falling back to local manifest",
+                    file=sys.stderr,
+                )
         retractions_fired = apply_retractions(
-            manifest=manifest,
+            manifest=retraction_manifest,
             project_root=Path.cwd(),
             backup_dir=backup_dir,
             dry_run=dry_run,
@@ -4367,21 +4520,63 @@ def main():
         # bump template_version in profile.json
         stamp_divergent = False
         if not dry_run:
-            # prior_local_version was captured above, BEFORE the manifest
-            # loop -- .agent/version is a HARNESS path the loop itself may
-            # have just overwritten (baseline-guard-clearability D3/rule 1).
-            version_msg = update_profile_version(source, profile_file)
+            # security-floor-hardening F2 (#1405): a HARNESS file the
+            # manifest loop just withheld (no baseline recorded, local
+            # modifications, etc.) must not be left silently older than a
+            # version stamp that advances anyway -- that is exactly the gap
+            # that let a stale, possibly-vulnerable check_autonomy.sh hide
+            # behind a "you're current" stamp. Decide BEFORE calling
+            # update_profile_version(): if anything is GENUINELY stale is
+            # withheld at this point, skip the bump entirely and say so
+            # loudly.
+            #
+            # ".agent/version" itself must be excluded from that check, not
+            # counted against it: it is a HARNESS path, so a workspace that
+            # locally bumped it trips the SAME baseline guard as any other
+            # hand-edited file and lands in paths_withheld here -- but
+            # update_profile_version() below is the very thing that
+            # delivers it (bypassing the guard by design, F1/F14). Gating
+            # the bump on the raw list would make that self-healing file a
+            # false positive: a workspace whose ONLY withheld entry is its
+            # own locally-bumped .agent/version would hold the stamp
+            # forever and never receive it, an "inverse of the lie" this
+            # feature is meant to close. The identical-content check below
+            # (F1/F14) runs AFTER update_profile_version() writes it, so it
+            # can't be reused here -- filter out ".agent/version" by key
+            # instead; it is judged on the actual reconciliation below.
+            stale_withheld = [
+                key for key in paths_withheld
+                if key != ".agent/version"
+                and not _paths_have_identical_content(source / key, Path(key))
+            ]
+            if stale_withheld:
+                version_msg = (
+                    "  HELD  template_version NOT bumped -- "
+                    f"{len(stale_withheld)} HARNESS file(s) withheld and "
+                    "stale this run: "
+                    + ", ".join(sorted(stale_withheld))
+                    + ". Stamping the new version now would claim this "
+                    "workspace is current while the file(s) above are still "
+                    "the old content. Resolve the withholding (see the "
+                    "WITHHELD block below) and re-run to advance the stamp."
+                )
+            else:
+                # prior_local_version was captured above, BEFORE the
+                # manifest loop -- .agent/version is a HARNESS path the loop
+                # itself may have just overwritten (baseline-guard-
+                # clearability D3/rule 1).
+                version_msg = update_profile_version(source, profile_file)
             print(version_msg)
 
             # F1/F14: a key the manifest loop guarded may still have been
-            # delivered by a LATER writer in this same run --
-            # update_profile_version() writes .agent/version directly, so a
-            # consumer who locally bumped it trips the baseline guard and
-            # then receives the file anyway. Reporting it as withheld would
-            # be a false partial-delivery claim, the exact inverse of the lie
-            # this feature closes. Decided on content, not on a hardcoded
-            # exemption list: if the destination now matches the payload,
-            # it was delivered.
+            # delivered by a LATER writer in this same run -- e.g.
+            # update_profile_version() (when it runs) writes .agent/version
+            # directly, so a consumer who locally bumped it trips the
+            # baseline guard and then receives the file anyway. Reporting it
+            # as withheld would be a false partial-delivery claim, the exact
+            # inverse of the lie this feature closes. Decided on content, not
+            # on a hardcoded exemption list: if the destination now matches
+            # the payload, it was delivered.
             paths_withheld = [
                 key for key in paths_withheld
                 if not _paths_have_identical_content(source / key, Path(key))

@@ -1,0 +1,194 @@
+schema: athanor.contract/v1
+slug: ticketing-complete
+goal: >
+  Ship a pure, dependency-free ticket-category taxonomy (7 categories: admission,
+  exhibitor, workshop, field trip, symposium, WOSA conference, cocktail/reception) and a
+  computed early-bird pricing engine -- purchases 90+ days before the show's confirmed
+  2027-09-16 start get 20% off (cutoff 2027-06-18), as a pure function of (basePrice,
+  purchaseDate, showStartDate) with no network, no Sanity, no implicit clock -- replacing
+  the concept of separately-priced early-bird PRODUCTS with one computed discount any
+  product can carry. Mints its own 90-day constant (never shared with the vendor-stand or
+  refund-policy modules' own "90"/day-threshold constants). No product price, capacity, or
+  eligibility relationship is invented anywhere in this feature.
+created_at: '2026-09-08'
+autonomy: high
+features:
+  - id: F1
+    name: Ticket taxonomy + computed early-bird pricing engine (pure, unit-tested)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/ticketing-complete/goldens/README.md
+  - .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f1-taxonomy.json
+  - .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f1-pricing-boundary-cases.json
+  - .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f1-broken-naive-utc-fixture.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        TIGHTENED 2026-09-08 (QA mutation finding): the original grep loop only checked
+        that each of the 7 category strings appeared somewhere in the file -- an
+        unauthorised 8th category would still pass it, contradicting this assertion's own
+        "no more, no fewer" claim. Now a REAL RUNTIME read of TICKET_CATEGORIES via
+        `node --import tsx/esm`, asserting the actual exported array is set-equal to
+        exactly the 7 categories named in the mission goal string and
+        goldens/fixtures/f1-taxonomy.json -- no more, no fewer, checked against the
+        parsed value rather than the source text.
+      command: >-
+        node --import tsx/esm -e "import('./lib/ticket-taxonomy.ts').then((m) => { const expected = ['admission','exhibitor','workshop','field-trip','symposium','wosa-conference','cocktail-reception']; const actual = [...m.TICKET_CATEGORIES].sort(); const exp = [...expected].sort(); if (actual.length !== exp.length || !actual.every((v,i) => v === exp[i])) { console.error('mismatch:', actual); process.exit(1); } process.exit(0); }).catch((e) => { console.error(e); process.exit(1); });"
+      required: true
+
+    - id: A2
+      description: >
+        lib/admission-early-bird-pricing.ts exists and exports the required symbols with
+        the mission's stated constants: 20% discount, 90-day cutoff.
+      command: >-
+        test -f lib/admission-early-bird-pricing.ts &&
+        grep -q "resolveComputedEarlyBirdPrice" lib/admission-early-bird-pricing.ts &&
+        grep -q "deriveAdmissionEarlyBirdCutoffIso" lib/admission-early-bird-pricing.ts &&
+        grep -q "= 20" lib/admission-early-bird-pricing.ts &&
+        grep -q "= 90" lib/admission-early-bird-pricing.ts
+      required: true
+
+    - id: A3
+      description: >
+        NEGATIVE CONTROL: the new pricing module mints its OWN 90-day constant -- it must
+        NOT import or reference the vendor-stand or refund-policy modules' own day-count
+        constants, proving the "mirror the pattern, not the constant" discipline from
+        lib/vendor-stand-pricing.ts's own comment was actually followed, not just read.
+      command: >-
+        ! grep -qE "VENDOR_STAND_EARLY_BIRD_CUTOFF_DAYS_BEFORE_SHOW|PROVISIONAL_REFUND_POLICY" lib/admission-early-bird-pricing.ts
+      required: true
+
+    - id: A4
+      description: >
+        RE-TIGHTENED 2026-09-08, fix-forward on already-committed work (commit
+        0102f695): the 2026-09-08 grep-based tightening of this assertion (see git
+        history) was ITSELF defective and passed a real dev-found mutant
+        (.tmp/sandbox/qa-mutation/admission-early-bird-pricing-mutant.ts) unchanged --
+        `grep -v '^\\s*\\*\\|^\\s*//'` reaches BSD grep (the shell `contract.py`
+        actually executes under, /usr/bin/grep 2.6.0-FreeBSD, not the interactive
+        shell's possibly-aliased GNU-compatible grep) as LITERAL backslash-s and
+        backslash-* characters, not the GNU `\s`/`\*`/`\|` shorthand the comment-strip
+        was written assuming -- so the comment-stripping clause was a silent no-op, and
+        the mutant's one remaining JSDoc mention of `isWithinEarlyBirdWindow()` (a doc
+        comment, not a call site) satisfied the `-ge 1` call-count check even though the
+        mutant never calls the real import at all (it calls a same-file
+        `reimplementedBoundaryCheck` instead). A backslash fix alone would only restore
+        the ORIGINAL intent -- a text-provenance grep -- which is weaker than what this
+        assertion actually needs to prove. Replaced entirely with a RUNTIME behavioural
+        proof: calls the real `resolveComputedEarlyBirdPrice` at a purchaseDate
+        (2027-06-18T12:00:00+02:00, i.e. mid-day on the cutoff's own SAST calendar day)
+        chosen specifically because the real `isWithinEarlyBirdWindow` (exclusive-end
+        cutoff+1-day extension) and the dev's mutant's `reimplementedBoundaryCheck`
+        (naive `<=` against the cutoff instant, no +1-day extension) DISAGREE at exactly
+        this instant -- the real comparator returns 'earlyBird'/80, the mutant returns
+        'regular'/100. Any implementation that truly routes through the real imported
+        comparator passes; any local reimplementation, however the import line reads,
+        fails -- this is call-site PROVENANCE proven by observable behaviour, not text
+        matching. Mutation-tested 2026-09-08: verified GREEN against the real, restored
+        lib/admission-early-bird-pricing.ts ({"amount":80,"tier":"earlyBird"}) and RED
+        against the dev's real A4 mutant swapped in at the same path
+        ({"amount":100,"tier":"regular"}), both runs via `node --import tsx/esm`,
+        mutant restored immediately after via diff-verified copy-back from the
+        untouched .tmp/sandbox/qa-mutation/ backup.
+      command: >-
+        node --import tsx/esm -e "import('./lib/admission-early-bird-pricing.ts').then((m) => { const showStartDate = new Date('2027-09-16T09:00:00+02:00'); const purchaseDate = new Date('2027-06-18T12:00:00+02:00'); const result = m.resolveComputedEarlyBirdPrice({ basePrice: 100, purchaseDate, showStartDate }); if (result.tier !== 'earlyBird' || result.amount !== 80) { console.error('A4 FAIL -- real imported isWithinEarlyBirdWindow comparator was not actually invoked (or a local reimplementation is being used instead): got', JSON.stringify(result), 'expected {\\\"amount\\\":80,\\\"tier\\\":\\\"earlyBird\\\"}'); process.exit(1); } process.exit(0); }).catch((e) => { console.error(e); process.exit(1); });"
+      required: true
+
+    - id: A5
+      description: >
+        RED today, GREEN once @dev writes the module to match the golden truth table:
+        every case in goldens/fixtures/f1-pricing-boundary-cases.json (91/90/89 days before
+        show start, the cutoff day's first and last instant, a fractional-rand rounding
+        case, and the SAST-vs-UTC disagreement case) must match resolveComputedEarlyBirdPrice's
+        actual output exactly. Verifier script is @dev's to write, run via
+        `node --import tsx/esm`, matching the contracts/checks/*.mjs convention already
+        used by lib/vendor-stand-pricing.ts's own boundary tests.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-complete-f1/check-pricing-boundaries.mjs
+      required: true
+
+    - id: A6
+      description: >
+        NEGATIVE CONTROL for A5: the same verifier, run against
+        goldens/fixtures/f1-broken-naive-utc-fixture.json's deliberately-broken bare-UTC
+        cutoff variant, must DISAGREE with the correct implementation at the documented
+        disagreement instant (2027-06-18T23:00:00Z) -- proving the boundary test in A5 is
+        actually discriminating and not vacuously true. Must exit non-zero if the broken
+        variant does NOT disagree (i.e. if it can't tell the two implementations apart).
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-complete-f1/check-pricing-boundaries.mjs --negative-control
+      required: true
+
+    - id: A7
+      description: >
+        Anti-fabrication: the pricing engine hardcodes no specific ZAR product price
+        anywhere in its own source -- it is a pure function of caller-supplied basePrice,
+        never a lookup against any known admission/conference/workshop figure (104, 120,
+        130, 150, 300, 380, 400, 480, 550, 750, 900 all absent from the file).
+      command: >-
+        ! grep -qE "\\b(104|120|130|150|300|380|400|480|550|750|900)\\b" lib/admission-early-bird-pricing.ts
+      required: true
+
+    - id: A8
+      description: >
+        TIGHTENED 2026-09-08 (QA mutation finding): the original check only proved the
+        string 'unresolved-nos-boundary' appeared SOMEWHERE in the file -- QA's mutant
+        set TICKET_CATEGORY_PURCHASE_SURFACE.exhibitor = 'admission' (the exact silent
+        default this assertion exists to prevent) while leaving the
+        EXHIBITOR_PURCHASE_SURFACE_UNRESOLVED const declaration and its doc comment
+        intact, and the old grep still passed. Now a REAL RUNTIME read of
+        TICKET_CATEGORY_PURCHASE_SURFACE via `node --import tsx/esm`, asserting the
+        ACTUAL VALUE at the .exhibitor key strictly equals 'unresolved-nos-boundary' --
+        checks the map's value, not the file's text, and survives reformatting.
+      command: >-
+        node --import tsx/esm -e "import('./lib/ticket-taxonomy.ts').then((m) => { if (m.TICKET_CATEGORY_PURCHASE_SURFACE.exhibitor !== 'unresolved-nos-boundary') { console.error('exhibitor mapped to', m.TICKET_CATEGORY_PURCHASE_SURFACE.exhibitor); process.exit(1); } process.exit(0); }).catch((e) => { console.error(e); process.exit(1); });"
+      required: true
+
+    - id: A9
+      description: >
+        Module purity: importing the new pricing module under the project's own tsx/esm
+        runtime does not throw and does not require Firestore/network -- proves the
+        "pure, dependency-free" claim empirically, not just by comment.
+      command: >-
+        node --import tsx/esm -e "import('./lib/admission-early-bird-pricing.ts').then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); })"
+      required: true
+
+    - id: A10
+      description: >
+        Design-record completeness: the golden README documents the F7 test-framework
+        decision this feature sets precedent for, so a later reader isn't left to
+        rediscover it.
+      command: >-
+        grep -q "F7 test-framework choice" .agent/memory/project/specs/ticketing-complete/goldens/README.md
+      required: true
+
+    - id: A11
+      description: >
+        HARD RULE (2026-09-08, team lead): there is only ONE Sanity dataset
+        ('production') -- local dev and the deployed beta site read the SAME data, so
+        any write this mission makes is a deploy by side-effect, contradicting Brad's
+        "local only, not deployed" instruction. F1's new files must construct NO Sanity
+        write client and call no mutating method on any default path -- proves F1 itself
+        never touches the live dataset, not even accidentally via an unused import.
+      command: >-
+        ! grep -qE "\\.commit\\(|\\.patch\\(|createOrReplace|createIfNotExists|@sanity/client" lib/ticket-taxonomy.ts lib/admission-early-bird-pricing.ts
+      required: true
+
+    - id: A12
+      description: >
+        DISCRIMINATING CASE (2026-09-08, team lead finding): deriveAdmissionEarlyBirdCutoffIso
+        must derive its 90-day cutoff from the SHOW'S OWN SAST CALENDAR DATE, not from the
+        UTC calendar date of the showStartDate instant -- these differ whenever the show
+        starts before 02:00 SAST (its UTC instant falls on the PREVIOUS UTC calendar day).
+        Runs every case in goldens/fixtures/f1-pricing-boundary-cases.json's
+        `cutoffDerivationCases` array, including 'cutoff-derivation-early-morning-start'
+        (a 2027-09-16T01:00:00+02:00 show start, whose UTC instant is 2027-09-15T23:00:00Z)
+        -- the only entry in the whole fixture set capable of catching a UTC-calendar-
+        component off-by-one, since every other case's start time shares the same calendar
+        date in both zones and would pass even with the bug present. Verifier is @dev's to
+        write, run via `node --import tsx/esm`, same convention as A5/A6.
+      command: >-
+        node --import tsx/esm contracts/checks/ticketing-complete-f1/check-cutoff-derivation.mjs
+      required: true

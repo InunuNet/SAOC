@@ -1,0 +1,12 @@
+{
+  "_comment": "Golden taxonomy for F1's ticket-category module. Exactly the 7 categories named in the mission goal string verbatim ('every ticket category created (admission, exhibitor, workshops, field trips, SAOC Symposium, WOSA Conference, cocktail/reception)'). purchaseSurface maps each fine-grained category to the EXISTING 3-value Sanity ticketType.category enum (admission | conference | workshop-field-trip) that already gates which public page a document appears on -- this is a NEW, more granular layer ABOVE that enum, not a replacement of it. 'unresolved-nos-boundary' is a real, explicit value (not a silent default) for the one category whose purchase surface this mission is not authorized to decide -- see README.md 'Exhibitor entry: deliberately unresolved'.",
+  "categories": [
+    { "id": "admission", "label": "Admission", "purchaseSurface": "admission" },
+    { "id": "exhibitor", "label": "Exhibitor Entry", "purchaseSurface": "unresolved-nos-boundary" },
+    { "id": "workshop", "label": "Workshop", "purchaseSurface": "workshop-field-trip" },
+    { "id": "field-trip", "label": "Field Trip", "purchaseSurface": "workshop-field-trip" },
+    { "id": "symposium", "label": "SAOC Symposium", "purchaseSurface": "conference" },
+    { "id": "wosa-conference", "label": "WOSA Conference", "purchaseSurface": "conference" },
+    { "id": "cocktail-reception", "label": "Cocktail / Reception", "purchaseSurface": "workshop-field-trip" }
+  ]
+}

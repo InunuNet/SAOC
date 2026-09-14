@@ -8,6 +8,13 @@
  * including why a Child ticket is deliberately NOT included here.
  */
 
+// F2 (ticketing-complete, M1) defect repair 2026-09-08: relative, not '@/'-aliased, for the
+// same reason lib/admission-early-bird-pricing.ts states at its own import of
+// './checkout-reservation' — this module's check scripts import it directly via tsx/esm,
+// outside Next.js's module resolution, which is the only place the '@/*' alias is honoured.
+// Pulls in no I/O: the engine is pure, and its own single import is type-only (erased).
+import { deriveAdmissionEarlyBirdCutoffIso } from './admission-early-bird-pricing';
+
 export type ProvisionalProductCategory = 'admission' | 'conference' | 'workshop-field-trip';
 
 export interface ProvisionalAdmissionProduct {
@@ -30,9 +37,14 @@ export interface ProvisionalAdmissionProduct {
   earlyBirdCutoff: string | null;
   requiresDaySelection: boolean;
   requiresAttendeeNames: boolean;
-  /** Always `true` in this file today — literal, not computed — see golden README "The
-   *  provisional flag is per-value, not per-file". */
-  provisional: true;
+  /** Per-value, not per-file — see golden README "The provisional flag is per-value, not
+   *  per-file": most values in this file are `true` (web-team estimate/capacity, not yet
+   *  council-settled), but a specific value can flip to `false` once genuinely settled
+   *  (F2, ticketing-complete M1, 2026-09-08: VIP's price is the first such case — Brad's
+   *  direct ruling, cited via `sourceCitation`, not a council confirmation, but settled
+   *  either way — see the VIP entry below). Widened from the literal `true` this file
+   *  originally used for that reason; every OTHER value keeps `provisional: true` as before. */
+  provisional: boolean;
   /** F1 (ticketing-flow-redesign, M1): optional. Price after `earlyBirdCutoff` passes.
    *  Unset = sale closes at cutoff (unchanged legacy behavior) — see
    *  contracts/golden/ticketing-flow-redesign-f1/README.md §2. */
@@ -45,9 +57,34 @@ export interface ProvisionalAdmissionProduct {
   /** F5: how many physical seats/heads one sold unit of this product consumes against its
    *  pool. Defaults to 1 when unset. */
   headcountPerUnit?: number;
+  /** F2 (ticketing-complete, M1): `null`/unset = genuine web-team estimate with no client
+   *  source. A non-null string is a short citation to the exact source document, e.g.
+   *  "Lee-Ann's 13.1 Ticketing system details.docx, line 305-314". Distinct from
+   *  `provisional` — `provisional` means "council hasn't formally confirmed final
+   *  pricing yet"; `sourceCitation` means "this number itself is not fabricated". A
+   *  product can carry a real, cited figure and still be provisional pending council
+   *  sign-off — the two are not mutually exclusive. See
+   *  .agent/memory/project/specs/ticketing-complete/goldens/f2-provisional-figures-decisions.json. */
+  sourceCitation?: string | null;
 }
 
 export const EARLY_BIRD_CUTOFF = '2027-07-31';
+
+// F2 (ticketing-complete, M1) defect repair 2026-09-08 (Codex GPT-5.5 finding, verified real):
+// VIP must NOT share the legacy EARLY_BIRD_CUTOFF constant (2027-07-31) — that date has no
+// relationship to this mission's confirmed 90-day-before-show rule. VIP's cutoff is being
+// freshly WRITTEN under Brad's 2026-09-08 ruling (not a preserved legacy value), so it must
+// carry the DERIVED cutoff, computed by the same engine — never a second hand-typed copy of
+// '2027-06-18'. The literal show start below is the same confirmed instant used as ground
+// truth by check-vip-computed-early-bird-price.mjs and by
+// goldens/fixtures/f1-pricing-boundary-cases.json's showStartDateIso.
+//
+// The `.slice(0, 10)` yields the bare `YYYY-MM-DD` shape every sibling `earlyBirdCutoff` field
+// already uses. The engine returns a full '+02:00' instant for its own SAST-aware comparator;
+// isWithinEarlyBirdWindow(), which gates VIP's runtime price via resolveEffectivePrice(),
+// expects the bare-date shape — so the slice is load-bearing, not cosmetic.
+const CONFIRMED_SHOW_START_2027 = new Date('2027-09-16T07:00:00Z');
+const VIP_EARLY_BIRD_CUTOFF = deriveAdmissionEarlyBirdCutoffIso(CONFIRMED_SHOW_START_2027).slice(0, 10);
 
 export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
@@ -95,13 +132,30 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     name: 'VIP Ticket',
     category: 'admission',
     description: 'Reception access plus full-weekend admission to the National Show.',
-    price: 480,
+    // F2 (ticketing-complete, M1) — Brad's DIRECT RULING (2026-09-08, not a council
+    // confirmation, but settled — see docs/ticketing-complete-f2-open-decisions.md §1 for
+    // the incoherent-ladder history this resolves): VIP is R625, with the standard 20%
+    // early-bird discount applying (625 * 0.8 = 500 exactly — see
+    // contracts/checks/ticketing-complete-f2/check-vip-computed-early-bird-price.mjs, which
+    // exercises the REAL lib/admission-early-bird-pricing.ts engine against this exact
+    // number rather than assuming the arithmetic). This resolves the prior incoherent
+    // ladder (VIP was priced below both Weekend Pass SKUs despite including the full
+    // weekend plus a reception) — R625 sits above the R400 Weekend Pass, and the
+    // discounted R500 still sits above both Weekend Pass SKUs (R380/R400).
+    price: 500,
+    regularPrice: 625,
+    earlyBirdCutoff: VIP_EARLY_BIRD_CUTOFF,
     capacity: 120,
     releasedQuantity: null,
-    earlyBirdCutoff: null,
     requiresDaySelection: false,
     requiresAttendeeNames: true,
-    provisional: true,
+    // Settled, not provisional-pending-council — mislabelling a decided figure as awaiting
+    // council confirmation would be the same provenance-loss shape sourceCitation exists to
+    // prevent, one layer up. Also drops the data-placeholder treatment on this card (F2's
+    // TicketTypeCard change gates data-placeholder on `provisional`, so this alone removes
+    // it — no separate component change needed).
+    provisional: false,
+    sourceCitation: "Brad's direct ruling, 2026-09-08: VIP Pass R625, 20% early-bird discount applies (R500 early-bird).",
   },
 ];
 
@@ -205,19 +259,37 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
 ];
 
 /**
- * F2 (ticketing-conferences-and-events, M1) — the four priceable Workshops & Field Trips
- * category products (Sunset Cocktails Single/Couple, Field Trip Single/All-Outings). Reuses
+ * F2 (ticketing-conferences-and-events, M1) — the priceable Workshops & Field Trips
+ * category products (Sunset Cocktails Single/Couple, Field Trip). Reuses
  * `ProvisionalAdmissionProduct` verbatim — see
- * contracts/golden/ticketing-workshops-f2/README.md for the full pricing/capacity rationale
- * (our estimate, no client source; both bundle prices are genuine discounts).
+ * contracts/golden/ticketing-workshops-f2/README.md for the original pricing/capacity
+ * rationale.
+ *
+ * F2 (ticketing-complete, M1) UPDATE (2026-09-08): Sunset Cocktails pricing and the
+ * Field Trip product shape were both corrected against Lee-Ann's "13.1 Ticketing system
+ * details.docx" — see
+ * .agent/memory/project/specs/ticketing-complete/goldens/f2-provisional-figures-decisions.json
+ * for the exact citation lines and docs/ticketing-complete-f2-open-decisions.md for why
+ * these are listed as CHANGED figures, not silently applied to the live dataset (that step
+ * is scripts/migrate-f2-ticket-taxonomy.ts's dry-run-only plan, executed only by Brad's own
+ * --apply in the morning, F8).
+ *   - Sunset Cocktails Single/Couple: prior figures (R250/R450) were a genuine web-team
+ *     estimate with no client source (`sourceCitation: null`). Replaced with the real,
+ *     cited figures below.
+ *   - Field Trips: the prior invented Single(R300)/All-Outings(R750) bundle split had no
+ *     client source either. The real model is simpler — a flat R200 per trip, up to 5 named
+ *     trips (not yet defined by any source, so no trip names/dates are invented here) —
+ *     replaced by a single flat-rate product.
  *
  * Workshops itself is deliberately NOT included here — see `WORKSHOP_PRICING_STRUCTURE` below.
  */
 
-const SUNSET_COCKTAILS_SINGLE_PRICE = 250;
-const SUNSET_COCKTAILS_COUPLE_PRICE = 450;
-const FIELD_TRIP_SINGLE_PRICE = 300;
-const FIELD_TRIP_ALL_OUTINGS_PRICE = 750;
+const SUNSET_COCKTAILS_CITATION = "Lee-Ann's 13.1 Ticketing system details.docx, line 305-314";
+const SUNSET_COCKTAILS_SINGLE_PRICE = 800;
+const SUNSET_COCKTAILS_COUPLE_PRICE = 1500;
+
+const FIELD_TRIP_CITATION = "Lee-Ann's 13.1 Ticketing system details.docx, line 158-162";
+const FIELD_TRIP_FLAT_PRICE = 200;
 
 // F5 (ticketing-conferences-and-events, M2): real physical ceilings, restored from F2's
 // interim conservative resize (100/50/30/30) now that planPooledCapacity() correctly pools
@@ -241,6 +313,7 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
     provisional: true,
     capacityPool: 'sunset-cocktails',
     headcountPerUnit: 1,
+    sourceCitation: SUNSET_COCKTAILS_CITATION,
   },
   {
     slug: 'sunset-cocktails-couple',
@@ -256,13 +329,14 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
     provisional: true,
     capacityPool: 'sunset-cocktails',
     headcountPerUnit: 2,
+    sourceCitation: SUNSET_COCKTAILS_CITATION,
   },
   {
-    slug: 'field-trip-single',
-    name: 'Field Trip (Single Outing)',
+    slug: 'field-trip',
+    name: 'Field Trip (per outing)',
     category: 'workshop-field-trip',
     description: 'Transport and entry for one guided field trip outing.',
-    price: FIELD_TRIP_SINGLE_PRICE,
+    price: FIELD_TRIP_FLAT_PRICE,
     capacity: FIELD_TRIP_POOL_CAPACITY,
     releasedQuantity: null,
     earlyBirdCutoff: null,
@@ -271,23 +345,17 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
     provisional: true,
     capacityPool: 'field-trip',
     headcountPerUnit: 1,
-  },
-  {
-    slug: 'field-trip-all-outings',
-    name: 'Field Trip (All-Outings Pass)',
-    category: 'workshop-field-trip',
-    description: 'Transport and entry for all guided field trip outings.',
-    price: FIELD_TRIP_ALL_OUTINGS_PRICE,
-    capacity: FIELD_TRIP_POOL_CAPACITY,
-    releasedQuantity: null,
-    earlyBirdCutoff: null,
-    requiresDaySelection: false,
-    requiresAttendeeNames: true,
-    provisional: true,
-    capacityPool: 'field-trip',
-    headcountPerUnit: 1,
+    sourceCitation: FIELD_TRIP_CITATION,
   },
 ];
+
+/**
+ * F2 (ticketing-complete, M1): the two invented bundle-split Field Trip SKUs this
+ * migration retires (`active: false`, never deleted/renamed — see
+ * scripts/migrate-f2-ticket-taxonomy.ts). Kept here, not in the script, so the retirement
+ * list has exactly one source of truth alongside the products it replaces.
+ */
+export const RETIRED_FIELD_TRIP_SLUGS = ['field-trip-single', 'field-trip-all-outings'] as const;
 
 /**
  * F2 (ticketing-conferences-and-events, M1) — the Workshops per-session pricing STRUCTURE.

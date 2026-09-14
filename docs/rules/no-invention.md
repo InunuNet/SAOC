@@ -38,9 +38,36 @@ which pages exist and which have official committee copy. It is not a literal
 folder-to-URL map; navigation and routing are engineering decisions made against
 the handoff.
 
-A page with no source document is **provisional**: it must be visibly and
-accessibly marked as awaiting official SAOC committee copy. Provisional copy is
-never written in SAOC's institutional voice and never presented as sourced.
+Provenance is tracked **per content block, not per page** — a required field
+with no default. A page-level flag forces one dishonest answer across a mixed
+page: `/national-show/what-to-expect` carries Lee-Ann's real marketing prose but
+has no opening hours, parking, or photography policy. Flag the page and either
+her words are libelled as AI-generated or the gaps are laundered as sourced.
+Per-block lets her real words read as real, lets the gaps read as gaps, and lets
+her clear them one at a time as she writes.
+
+Four values, all explicit:
+
+| value | means |
+|---|---|
+| `council-supplied` | Lee-Ann's finished copy |
+| `council-draft` | Lee-Ann's words verbatim, where her document is unfinished |
+| `research` | true, sourced elsewhere, not Council-confirmed |
+| `placeholder-ai` | written by an agent, awaiting official committee copy |
+
+`council-draft` is not optional tidiness. Its absence leaves only two moves for
+unfinished Council copy: relabel her prose as AI-generated — a provenance lie —
+or delete it, which is correct but discards content that had value. Her FAQ would
+otherwise have published `"on xx, xx September 22027 at the xx"` as finished
+Council copy with no notice: real copy that is not ready, rendering as though it
+were. That is the *inverse* of the failure the mechanism was built to catch, and
+every assertion written before it passed on that string. Do not simplify this
+value back out.
+
+Anything not `council-supplied` must be visibly and accessibly marked. Unsourced
+copy is never written in SAOC's institutional voice and never presented as
+sourced. The disclosure carries an explicit AI-generation statement and may not
+be softened.
 
 ## Scope boundary
 

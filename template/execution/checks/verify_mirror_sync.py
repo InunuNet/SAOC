@@ -95,13 +95,11 @@ MUST_SHIP = [
     "checks/verify_no_symlink_stubs.py",
     "codex_qa.sh",
     "failure_router.sh",
-    "hooks/session_token_log.sh",
-    # scaffold-identity-integrity F2: the per-turn identity/chain
-    # reminder. find_shared_files() walks only files present in BOTH
-    # trees, so deleting the mirror copy would silence the gate and
-    # leave every downstream workspace on the pre-fix hook.
-    "hooks/harness_heartbeat.sh",
-    "hooks/compaction_backstop.sh",
+    # session_token_log.sh, harness_heartbeat.sh and compaction_backstop.sh
+    # stood here until CEO Directive v2 (2026-09-06, L1) deleted them from
+    # both trees. A MUST_SHIP entry for a file that no longer exists anywhere
+    # reports the mirror as broken forever, which is the opposite of what this
+    # check is for. lib/context_window.py stays: it survives the cut.
     "hooks/lib/context_window.py",
     "skills/lib/mission_complete.py",
     "skills/lib/scoped_stage.py",

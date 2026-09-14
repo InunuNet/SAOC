@@ -450,49 +450,206 @@ scan_code_blob() {
   done < <(printf '%s\n' "$code" | awk "$TOKENIZE_AWK")
 }
 
+# rw_is_exempt <value> <exempt...> -- is <value> one of the auth-use handle
+# values collected for this command (#1408)? A plain linear scan: the
+# exempt lists here are at most a handful of entries per command.
+rw_is_exempt() {
+  local v="$1"; shift
+  local e
+  for e in "$@"; do [ "$e" = "$v" ] && return 0; done
+  return 1
+}
+
 check_target() {
   local kind="$1" raw="$2"
   [ -z "$raw" ] && return
-  local resolved; resolved=$(expand_target "$raw")
-  # A write target is tested against BOTH lists: a credential store you may not
-  # read, you certainly may not write. Without the second test only the redirect
-  # write slipped through (`echo x > ~/.ssh/authorized_keys`) — cp/tee/mv are
-  # already caught because their arguments also pass the inverted read scan.
-  # Writing authorized_keys grants persistent SSH access, a larger loss than
-  # reading a private key. The write list is tested first so paths on both lists
-  # (.claude/settings.json, .env, .sops.yaml) keep their "write to" message.
-  if [ "$kind" = "write" ] && { [[ "$resolved" =~ $re_write_protpath ]] || [[ "$resolved" =~ $re_read_protpath ]]; }; then
-    if ! check_enforcement_hatch "$resolved"; then
-      _target_blk=1; _target_why="write to protected path '$resolved'"
-    fi
-  # The read direction goes through read_protected() rather than the raw
-  # regex: the settings-file half of the read set protects the machine-global
-  # and sibling-workspace copies, not this workspace's own tracked config
-  # (D26). Writes above stay on the raw union — nothing about them changes.
-  elif [ "$kind" = "read" ] && read_protected "$resolved"; then
-    _target_blk=1; _target_why="read of protected path '$resolved'"
+  # Brace-group tokens (R6, #1407): try the raw token first (unchanged
+  # baseline behaviour), then its brace_variants() expansions in order —
+  # `~/.s{s}h/id_rsa` is tested as itself AND as `~/.ssh/id_rsa`, so a group
+  # that never denoted a protected path stays exactly as permissive as
+  # before, and one that does gets caught on the expanded form.
+  local -a candidates=("$raw")
+  if [[ "$raw" == *"{"*"}"* ]]; then
+    local v
+    while IFS= read -r v; do
+      [ -n "$v" ] && [ "$v" != "$raw" ] && candidates+=("$v")
+    done < <(brace_variants "$raw")
   fi
+  local cand resolved
+  for cand in "${candidates[@]}"; do
+    resolved=$(expand_target "$cand")
+    # A write target is tested against BOTH lists: a credential store you may
+    # not read, you certainly may not write. Without the second test only the
+    # redirect write slipped through (`echo x > ~/.ssh/authorized_keys`) —
+    # cp/tee/mv are already caught because their arguments also pass the
+    # inverted read scan. Writing authorized_keys grants persistent SSH
+    # access, a larger loss than reading a private key. The write list is
+    # tested first so paths on both lists (.claude/settings.json, .env,
+    # .sops.yaml) keep their "write to" message. component_glob_hit() closes
+    # the same glob-spelling gap (R7) on the write side too.
+    if [ "$kind" = "write" ] && { ci_match "$re_write_protpath" "$resolved" || ci_match "$re_read_protpath" "$resolved" || component_glob_hit "$resolved"; }; then
+      if ! check_enforcement_hatch "$resolved"; then
+        _target_blk=1; _target_why="write to protected path '$resolved'"
+      fi
+      return
+    # The read direction goes through read_protected() rather than the raw
+    # regex: the settings-file half of the read set protects the machine-global
+    # and sibling-workspace copies, not this workspace's own tracked config
+    # (D26). Writes above stay on the raw union — nothing about them changes.
+    # read_protected() itself applies the case-fold and glob-component checks.
+    elif [ "$kind" = "read" ] && read_protected "$resolved"; then
+      _target_blk=1; _target_why="read of protected path '$resolved'"
+      return
+    fi
+  done
+}
+
+RW_MAXDEPTH=3
+
+# cmdsub_scan <text> -- one character walk that BOTH erases every top-level
+# $(...) / `...` command-substitution span from <text> AND appends each
+# span's inner content to CMDSUB_PAYLOADS for the caller to recursively
+# scan_rw(). This is the STRIP/CODE split HEREDOC_STRIP_AWK/HEREDOC_CODE_AWK
+# already use for heredoc bodies, applied to the other construct that hides
+# an executable payload inside what the word-splitter treats as one word.
+#
+# Without the erase half: `x=$(cat ~/.ssh/id_rsa)` tokenizes as TWO words
+# ("x=$(cat" and "~/.ssh/id_rsa)") because TOKENIZE_AWK does not understand
+# $(...)/backticks as a grouping construct — it just splits on the space
+# inside them like anywhere else. The first word matches the bare
+# `NAME=VALUE` inline-assignment pattern (`x=$(cat`), so process_simple_cmd's
+# "skip leading inline assignments" step consumes it and never scans it, and
+# the second word becomes the COMMAND NAME position, whose value is never
+# checked as a read/write target at all (only ARGUMENTS are). The path never
+# reaches check_target — that was the bypass. Deleting the span from the
+# outer text before tokenizing leaves a clean `x=` (a harmless empty-value
+# assignment) instead of the corrupted glued token.
+#
+# CMDSUB_ERASED and CMDSUB_PAYLOADS are the CALLER's own locals: scan_rw
+# declares them and calls this function DIRECTLY (never via `$(...)`), so
+# there is no subshell and no line-based serialization to corrupt a payload
+# that itself contains a literal newline.
+#
+# Single-quoted regions are walked through untouched — real bash performs no
+# substitution inside '...' — tracked via `q`. Double-quoted regions get no
+# special treatment beyond that: $(...) / backtick substitution is still
+# live inside "..." in real bash, so those spans are still found and erased.
+# $(...) nesting (`$(echo $(date))`) is handled by a paren depth counter;
+# backticks are not nested (real bash does not support that either).
+cmdsub_scan() {
+  local s="$1" i=0 n c depth q="" buf j cj
+  n=${#s}
+  while [ "$i" -lt "$n" ]; do
+    c="${s:$i:1}"
+    if [ -n "$q" ]; then
+      CMDSUB_ERASED="${CMDSUB_ERASED}${c}"
+      [ "$c" = "$q" ] && q=""
+      i=$((i + 1)); continue
+    fi
+    if [ "$c" = "'" ]; then
+      q="'"; CMDSUB_ERASED="${CMDSUB_ERASED}${c}"; i=$((i + 1)); continue
+    fi
+    if [ "$c" = '$' ] && [ "${s:$((i + 1)):1}" = "(" ]; then
+      depth=1; j=$((i + 2)); buf=""
+      while [ "$j" -lt "$n" ] && [ "$depth" -gt 0 ]; do
+        cj="${s:$j:1}"
+        case "$cj" in
+          "(") depth=$((depth + 1)); buf="${buf}${cj}" ;;
+          ")") depth=$((depth - 1)); [ "$depth" -gt 0 ] && buf="${buf}${cj}" ;;
+          *) buf="${buf}${cj}" ;;
+        esac
+        j=$((j + 1))
+      done
+      CMDSUB_PAYLOADS+=("$buf")
+      i="$j"
+      continue
+    fi
+    if [ "$c" = '`' ]; then
+      j=$((i + 1)); buf=""
+      while [ "$j" -lt "$n" ] && [ "${s:$j:1}" != '`' ]; do
+        buf="${buf}${s:$j:1}"
+        j=$((j + 1))
+      done
+      j=$((j + 1))
+      CMDSUB_PAYLOADS+=("$buf")
+      i="$j"
+      continue
+    fi
+    CMDSUB_ERASED="${CMDSUB_ERASED}${c}"
+    i=$((i + 1))
+  done
 }
 
 if [ -n "$COMMAND" ]; then
   declare -A VARS=()
 
-  # D35 finding 2: `python3 - <<'PY' … open('…','w') … PY` wrote to a
-  # floor-protected path unblocked, because HEREDOC_STRIP_AWK drops every
-  # heredoc body before anything is classified. Dropping is right for a
-  # heredoc fed to cat or `git commit -F -` — that body is data, and treating
-  # it as a target list is precisely the D24 false positive. A heredoc fed to
-  # an INTERPRETER is not data, it is the program. HEREDOC_CODE_AWK emits
-  # exactly those bodies and nothing else; they are classified as code blobs.
-  CODE_HEREDOC=$(printf '%s\n' "$COMMAND" | awk "$HEREDOC_CODE_AWK")
-  [ -n "$CODE_HEREDOC" ] && scan_code_blob "$CODE_HEREDOC"
+  # scan_rw <command-string> <depth> — the whole SEC-P1-4a read/write scan,
+  # made recursive (R19/R24, #1407). It used to run once over $COMMAND with
+  # no way back in: an `eval "cat ~/.ssh/id_rsa"` or a
+  # `printf 'cat ~/.ssh/id_rsa' | sh` hides the real command inside one word
+  # this scan's own tokenizer treats as an opaque argument — the recursion
+  # SEC-P1-4b already has for the DESTRUCTIVE floor (fl_classify, further
+  # below) never existed here, where credential-path checking actually
+  # lives. cur_words/redir_gt/redir_lt/RW_* are all `local` to THIS call
+  # frame, so nested scan_rw calls (eval-in-eval, pipe-into-eval, …) cannot
+  # clobber an outer frame's in-progress command — the same per-frame
+  # locality fl_classify already relies on.
+  scan_rw() {
+    local RW_SRC="$1" RW_DEPTH="${2:-0}"
+    [ -z "$RW_SRC" ] && return
+    # Fail CLOSED at the recursion cap, not open. This call only exists
+    # because an eval payload or a pipe-to-shell producer one level up
+    # asked to descend one level further than RW_MAXDEPTH allows — nobody
+    # legitimately nests eval/pipe-to-shell that deep, so reaching the cap
+    # while there is still a payload to descend into IS the signal, and the
+    # correct verdict is deny, not "give up and allow". A plain terminal
+    # command sitting AT the cap (RW_DEPTH == RW_MAXDEPTH, not beyond it)
+    # is untouched by this check and keeps being scanned normally below.
+    if [ "$RW_DEPTH" -gt "$RW_MAXDEPTH" ]; then
+      _target_blk=1
+      _target_why="eval/pipe-to-shell recursion exceeded depth limit ($RW_MAXDEPTH)"
+      return
+    fi
+    [ "$_target_blk" = 1 ] && return
 
-  STRIPPED=$(printf '%s\n' "$COMMAND" | awk "$HEREDOC_STRIP_AWK")
-  mapfile -t TOKS < <(printf '%s\n' "$STRIPPED" | awk "$TOKENIZE_AWK")
+    # D35 finding 2: `python3 - <<'PY' … open('…','w') … PY` wrote to a
+    # floor-protected path unblocked, because HEREDOC_STRIP_AWK drops every
+    # heredoc body before anything is classified. Dropping is right for a
+    # heredoc fed to cat or `git commit -F -` — that body is data, and treating
+    # it as a target list is precisely the D24 false positive. A heredoc fed to
+    # an INTERPRETER is not data, it is the program. HEREDOC_CODE_AWK emits
+    # exactly those bodies and nothing else; they are classified as code blobs.
+    local CODE_HEREDOC STRIPPED
+    CODE_HEREDOC=$(printf '%s\n' "$RW_SRC" | awk "$HEREDOC_CODE_AWK")
+    [ -n "$CODE_HEREDOC" ] && scan_code_blob "$CODE_HEREDOC"
+    [ "$_target_blk" = 1 ] && return
 
-  cur_words=(); prev_op=""; redir_gt=""; redir_lt=""
+    STRIPPED=$(printf '%s\n' "$RW_SRC" | awk "$HEREDOC_STRIP_AWK")
 
-  process_simple_cmd() {
+    # Command substitution (R19-adjacent, #1407 follow-up): find and erase
+    # every $(...) / `...` span in STRIPPED (see cmdsub_scan()'s own
+    # comment for why the erase half is required, not optional), then
+    # recurse into each span's content as its own command — the identical
+    # eval/pipe-to-shell recursion discipline already used above, sharing
+    # the same RW_MAXDEPTH cap (now fail-closed) so nested substitution
+    # cannot reopen the depth-cap bypass either.
+    local CMDSUB_ERASED=""
+    local -a CMDSUB_PAYLOADS=()
+    cmdsub_scan "$STRIPPED"
+    STRIPPED="$CMDSUB_ERASED"
+    local csp
+    for csp in "${CMDSUB_PAYLOADS[@]}"; do
+      scan_rw "$csp" $((RW_DEPTH + 1))
+      [ "$_target_blk" = 1 ] && return
+    done
+
+    local -a TOKS
+    mapfile -t TOKS < <(printf '%s\n' "$STRIPPED" | awk "$TOKENIZE_AWK")
+
+    local -a cur_words=()
+    local prev_op="" redir_gt="" redir_lt="" RW_LEAD_SEP="" RW_PIPE_SRC="" tok w
+
+    process_simple_cmd() {
     [ "$_target_blk" = 1 ] && return
     local n=${#cur_words[@]}
     [ "$n" -eq 0 ] && [ -z "$redir_gt" ] && [ -z "$redir_lt" ] && return
@@ -517,6 +674,25 @@ if [ -n "$COMMAND" ]; then
     for a in "${args[@]}"; do
       case "$a" in -*) ;; *) nonflag+=("$a") ;; esac
     done
+
+    # Pipe-into-shell recursion (R24, #1407): `printf 'cat ~/.ssh/id_rsa' | sh`
+    # — RW_PIPE_SRC was captured by an echo/printf simple command earlier in
+    # THIS pipeline (set at the bottom of the echo|printf arm below) and is
+    # only eligible here because RW_LEAD_SEP (the separator that led into
+    # THIS command) is "|" — the same "only the command immediately
+    # downstream of the producer can consume it" rule SEC-P1-4b's
+    # FL_PIPE_SRC already enforces. Cleared unconditionally right after, so
+    # a third command in the chain can never inherit a stale payload.
+    if [ -n "$RW_PIPE_SRC" ] && [ "$RW_LEAD_SEP" = "|" ]; then
+      case "$cmdname" in
+        sh|bash|zsh|dash|ksh)
+          local rw_consumed="$RW_PIPE_SRC"; RW_PIPE_SRC=""
+          scan_rw "$rw_consumed" $((RW_DEPTH + 1))
+          return ;;
+      esac
+    fi
+    RW_PIPE_SRC=""
+
     case "$cmdname" in
       cat|head|tail|less|more|xxd|od|strings)
         for a in "${nonflag[@]}"; do check_target "read" "$a"; done ;;
@@ -535,7 +711,22 @@ if [ -n "$COMMAND" ]; then
       dd)
         for a in "${args[@]}"; do case "$a" in of=*) check_target "write" "${a#of=}" ;; esac; done ;;
       cp|mv)
-        [ "${#nonflag[@]}" -gt 0 ] && check_target "write" "${nonflag[-1]}" ;;
+        # `-t DIR` / `--target-directory=DIR` (W4/W5, #1407) names the write
+        # target on the FLAG's own value, not on the trailing bare word: cp
+        # writes every source INTO that directory regardless of which
+        # argument position spells it out.
+        local tdir="" ti
+        for ti in "${!args[@]}"; do
+          case "${args[$ti]}" in
+            -t) tdir="${args[$((ti + 1))]}" ;;
+            --target-directory=*) tdir="${args[$ti]#--target-directory=}" ;;
+          esac
+        done
+        if [ -n "$tdir" ]; then
+          check_target "write" "$tdir"
+        elif [ "${#nonflag[@]}" -gt 0 ]; then
+          check_target "write" "${nonflag[-1]}"
+        fi ;;
       # D35 finding 2: write verbs the classifier did not know. `install`,
       # `truncate` and friends create or clobber a file exactly as `cp` does,
       # and every one of them was a silent path to a floor-protected file.
@@ -572,8 +763,65 @@ if [ -n "$COMMAND" ]; then
           fi
           case "${args[$i]}" in -c|-e|-E|--eval) seen_sc=1 ;; esac
         done ;;
+      eval)
+        # `eval "cat ~/.ssh/id_rsa"` (R19, #1407) builds its program out of
+        # its own arguments, exactly the way SEC-P1-4b's `eval` arm already
+        # treats it for destructive-verb classification — recurse into the
+        # joined text instead of scanning "eval" and one whitespace-bearing
+        # word (which scan_read_token's own prose guard would skip).
+        local ev joined=""
+        for ev in "${args[@]}"; do joined="${joined:+$joined }$ev"; done
+        [ -n "$joined" ] && scan_rw "$joined" $((RW_DEPTH + 1))
+        return ;;
+      echo|printf)
+        # What this command prints becomes a program only if the NEXT
+        # simple command in the pipeline is a shell reading stdin — decided
+        # on the consuming side above, keyed on RW_LEAD_SEP, never here.
+        # Capturing is unconditional; an echo/printf that is not piped into
+        # a shell simply leaves RW_PIPE_SRC unread until it is cleared at
+        # the top of the next call.
+        local ep joined2=""
+        for ep in "${nonflag[@]}"; do joined2="${joined2:+$joined2 }$ep"; done
+        RW_PIPE_SRC="$joined2" ;;
     esac
     [ "$_target_blk" = 1 ] && return
+
+    # Auth-use exemptions (#1408): the argument to ssh/scp's `-i`, every
+    # non-flag argument of ssh-add, and gpg's `--homedir` value are handles
+    # a program opens under OS file permissions to AUTHENTICATE with, not a
+    # read of the key's bytes into the agent's own context — the same
+    # distinction the inverted read scan cannot draw from the generic
+    # "argument token resolves to a protected path" rule alone. Only the
+    # exact token(s) named by the verb+flag pairing below are exempted;
+    # every other argument of the SAME command (`scp ~/.ssh/id_rsa host:`,
+    # C1 — no `-i`, the key handed over as a plain source file) still goes
+    # through the ordinary scan.
+    local -a RW_EXEMPT=()
+    case "$cmdname" in
+      ssh|scp)
+        local k
+        for k in "${!args[@]}"; do
+          case "${args[$k]}" in
+            -i|--identity-file)
+              local nk=$((k + 1))
+              [ "$nk" -lt "${#args[@]}" ] && RW_EXEMPT+=("${args[$nk]}") ;;
+            --identity-file=*) RW_EXEMPT+=("${args[$k]#--identity-file=}") ;;
+          esac
+        done ;;
+      ssh-add)
+        local ea
+        for ea in "${nonflag[@]}"; do RW_EXEMPT+=("$ea"); done ;;
+      gpg|gpg2)
+        local gk
+        for gk in "${!args[@]}"; do
+          case "${args[$gk]}" in
+            --homedir)
+              local gnk=$((gk + 1))
+              [ "$gnk" -lt "${#args[@]}" ] && RW_EXEMPT+=("${args[$gnk]}") ;;
+            --homedir=*) RW_EXEMPT+=("${args[$gk]#--homedir=}") ;;
+          esac
+        done ;;
+    esac
 
     # Inverted read scan — every argument token, whatever the command is.
     # Pattern/script arguments of grep/awk/sed are still skipped: they are
@@ -592,6 +840,7 @@ if [ -n "$COMMAND" ]; then
     esac
     local nf_seen=0
     for a in "${args[@]}"; do
+      rw_is_exempt "$a" "${RW_EXEMPT[@]}" && continue
       case "$a" in
         -*)
           case "$a" in *=*) scan_read_token "${a#*=}" ;; esac ;;
@@ -607,27 +856,36 @@ if [ -n "$COMMAND" ]; then
     done
   }
 
-  for tok in "${TOKS[@]}"; do
-    case "$tok" in
-      "OP:;"|"OP:&&"|"OP:||"|"OP:|"|"OP:NL")
-        process_simple_cmd
-        cur_words=(); redir_gt=""; redir_lt=""; prev_op=""
-        ;;
-      "OP:>>"|"OP:>") prev_op="gt" ;;
-      "OP:<") prev_op="lt" ;;
-      "OP:<<") prev_op="" ;;
-      W:*)
-        w="${tok#W:}"
-        if [ "$prev_op" = "gt" ]; then redir_gt="$w"
-        elif [ "$prev_op" = "lt" ]; then redir_lt="$w"
-        else cur_words+=("$w")
-        fi
-        prev_op=""
-        ;;
-    esac
-    [ "$_target_blk" = 1 ] && break
-  done
-  [ "$_target_blk" != 1 ] && process_simple_cmd
+    for tok in "${TOKS[@]}"; do
+      case "$tok" in
+        "OP:;"|"OP:&&"|"OP:||"|"OP:|"|"OP:NL")
+          process_simple_cmd
+          cur_words=(); redir_gt=""; redir_lt=""; prev_op=""
+          # RW_LEAD_SEP is the separator that leads into the NEXT command —
+          # only "|" makes that next command eligible to consume RW_PIPE_SRC.
+          case "$tok" in
+            "OP:|") RW_LEAD_SEP="|" ;;
+            *) RW_LEAD_SEP="" ;;
+          esac
+          ;;
+        "OP:>>"|"OP:>") prev_op="gt" ;;
+        "OP:<") prev_op="lt" ;;
+        "OP:<<") prev_op="" ;;
+        W:*)
+          w="${tok#W:}"
+          if [ "$prev_op" = "gt" ]; then redir_gt="$w"
+          elif [ "$prev_op" = "lt" ]; then redir_lt="$w"
+          else cur_words+=("$w")
+          fi
+          prev_op=""
+          ;;
+      esac
+      [ "$_target_blk" = 1 ] && break
+    done
+    [ "$_target_blk" != 1 ] && process_simple_cmd
+  }
+
+  scan_rw "$COMMAND" 0
 
   if [ "$_target_blk" = 1 ]; then
     echo "⛔ AUTONOMY FLOOR: $_target_why always denied" >&2
@@ -635,40 +893,268 @@ if [ -n "$COMMAND" ]; then
   fi
 fi
 
-# SEC-P1-4b: tokenized floor command denial — flag order / spacing / two-step cannot bypass
+# SEC-P1-4b: floor command denial, classified on the PARSED ARGUMENT VECTOR.
+#
+# It used to flatten the command — newlines squeezed, EVERY quote character
+# deleted, heredoc bodies left in place — and match its regexes against that
+# string. So text that merely NAMED a protected idiom was indistinguishable
+# from the command's own arguments: `git commit -m "…why rm -rf is denied"`
+# was a recursive delete, `git commit -m "reject --force pushes" && git push
+# origin main` was a forced push, and a `cat <<EOF` document body was whatever
+# it happened to mention. Seven such denials on 2026-09-06 across three
+# agents, three of them on this mission's own paperwork.
+#
+# The regexes were right; the string they were applied to was wrong. This
+# block now uses the same lexer SEC-P1-4a above already uses
+# (HEREDOC_STRIP_AWK + TOKENIZE_AWK from lib/target_resolve.sh): heredoc
+# bodies are dropped, a quoted string arrives as ONE word that keeps its
+# whitespace, and each simple command is judged by its own name and its own
+# argument vector — so prose can never be a command name or a flag. Nesting
+# is still not a bypass: `sh -c` blobs and interpreter-fed heredoc bodies are
+# re-classified recursively, exactly as 4a recurses into them, and a wrapper
+# (`xargs`, `env`, `exec`, `timeout N`) is stepped over to reach the real
+# command.
+#
+# Every OTHER way a program can be named without appearing as the outer
+# command word is an interpreter surface too, and each recurses the same way
+# rather than being matched as text: `eval` (its arguments ARE the program),
+# `{ …; }` and `( … )` (grouping punctuation the lexer emits as its own word),
+# and `printf`/`echo` piped into a shell (the producer's output IS the
+# program). Recursion — not a widened text search — is what keeps these
+# denied without re-importing the false positives above: prose still cannot
+# reach a command-name position.
 if [ -n "$COMMAND" ]; then
-  CMD_N=$(printf '%s' "$COMMAND" | tr '\n\t' '  ' | tr -d '"' | tr -d "'" | tr -s ' ')
   _blk=0; _why=""
-  re_rm='(^|[[:space:]])rm([[:space:]]|$)'
-  re_rec='(^|[[:space:]])-[A-Za-z]*[Rr]'
-  re_frc='(^|[[:space:]])-[A-Za-z]*f'
-  re_push='(^|[[:space:]])git[[:space:]]+push([[:space:]]|$)'
-  re_force='(^|[[:space:]])(-f|--force|--force-with-lease|--force-if-includes)([[:space:]]|=|$)'
-  re_net='(^|[[:space:]])(curl|wget)([[:space:]]|$)'
-  re_pipe='\|[[:space:]]*(sh|bash|zsh|dash|python3?|perl|ruby|node)([[:space:]]|-|$)'
-  re_dlx='(&&|;)[[:space:]]*(sh|bash|zsh|dash|source|\./)'
-  re_find='(^|[[:space:]])find[[:space:]].*(-delete|-exec|--exec)'
+  FL_MAXDEPTH=3
 
-  if [[ "$CMD_N" =~ $re_rm ]]; then
-    _rec=0; _frc=0
-    { [[ "$CMD_N" =~ $re_rec ]] || [[ "$CMD_N" == *--recursive* ]]; } && _rec=1
-    { [[ "$CMD_N" =~ $re_frc ]] || [[ "$CMD_N" == *--force* ]]; } && _frc=1
-    [ "$_rec" = 1 ] && [ "$_frc" = 1 ] && { _blk=1; _why="rm recursive+force"; }
-  fi
-  if [[ "$CMD_N" =~ $re_push ]] && [[ "$CMD_N" =~ $re_force ]]; then
-    _blk=1; _why="forced git push"
-  fi
-  if [[ "$CMD_N" =~ $re_net ]]; then
-    [[ "$CMD_N" =~ $re_pipe ]] && { _blk=1; _why="curl/wget piped to shell"; }
-    [[ "$CMD_N" =~ $re_dlx ]]  && { _blk=1; _why="download-then-exec"; }
-  fi
-  [[ "$CMD_N" =~ $re_find ]] && { _blk=1; _why="find -delete/-exec"; }
-  case " $CMD_N " in
-    *" chmod 777 "*|*" dd if=/dev/zero"*|*" sudo "*) _blk=1; _why="privileged/destructive" ;;
-  esac
-  case "$CMD_N" in
-    "chmod 777 "*|"dd if=/dev/zero"*|"sudo "*) _blk=1; _why="privileged/destructive" ;;
-  esac
+  # A quoted string keeps its whitespace through TOKENIZE_AWK, and prose
+  # always has some — so a word carrying whitespace is never a flag, a
+  # command name or a subcommand. Same guard scan_read_token uses for paths.
+  fl_word() { case "$1" in *[[:space:]]*) return 1 ;; esac; return 0; }
+
+  # fl_check_cmd <separator-before-this-command> <word> … — the whole verdict
+  # for ONE simple command. Every rule keys on the command name and its own
+  # arguments; none of them searches the command text.
+  fl_check_cmd() {
+    [ "$_blk" = 1 ] && return
+    local sep="$1"; shift
+    local -a w=("$@")
+    local n=${#w[@]} i=0 j m a name sub wrap rec=0 frc=0 seen_c=0 guard=0
+    [ "$n" -eq 0 ] && return
+
+    # Grouping and negation punctuation is not a command name. `{ rm -rf /; }`
+    # and `( rm -rf / )` run exactly the program the bare form runs; the lexer
+    # emits the brace or paren as its own word, so without this the command
+    # under it is never reached and the floor never sees it.
+    while [ "$i" -lt "$n" ]; do
+      case "${w[$i]}" in
+        "{"|"("|"!"|"((") i=$((i + 1)) ;;
+        *) break ;;
+      esac
+    done
+    # Leading inline assignments (FOO=bar cmd …) are not the command.
+    while [ "$i" -lt "$n" ] && [[ "${w[$i]}" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; do i=$((i + 1)); done
+    # Wrapper commands only prefix the real one: `xargs rm -rf`, `env rm -rf`
+    # and `exec rm -rf` delete recursively though their own first word does
+    # not say so.
+    while [ "$i" -lt "$n" ] && [ "$guard" -lt 8 ]; do
+      guard=$((guard + 1))
+      wrap="${w[$i]##*/}"
+      case "$wrap" in
+        xargs|env|nohup|command|nice|time|timeout|stdbuf|ionice|setsid|exec) ;;
+        *) break ;;
+      esac
+      i=$((i + 1))
+      while [ "$i" -lt "$n" ]; do
+        case "${w[$i]}" in
+          -*) i=$((i + 1)) ;;
+          [0-9]*) case "$wrap" in timeout|nice|ionice) i=$((i + 1)) ;; *) break ;; esac ;;
+          *) break ;;
+        esac
+      done
+    done
+    [ "$i" -ge "$n" ] && return
+
+    name="${w[$i]##*/}"
+    # `(rm -rf /)` glues the paren to the name — the lexer has no reason to
+    # split it, so strip it here rather than let punctuation hide a command.
+    while [ -n "$name" ]; do
+      case "$name" in "("*|"{"*) name="${name#?}" ;; *) break ;; esac
+    done
+    [ -z "$name" ] && return
+    local -a args=("${w[@]:$((i + 1))}")
+
+    # A shell fed by an echo/printf earlier in THIS pipeline executes that
+    # text as a program: `printf "rm -rf /" | sh`. The outer vector holds only
+    # `sh`, so classify what the producer emitted — the same recursion `sh -c`
+    # already gets, keyed on the separator rather than on a `|` character
+    # found by searching a flattened string.
+    if [ -n "$FL_PIPE_SRC" ] && [ "$sep" = "|" ]; then
+      case "$name" in
+        sh|bash|zsh|dash|ksh)
+          local payload="$FL_PIPE_SRC"
+          FL_PIPE_SRC=""
+          fl_classify "$payload" $((FL_DEPTH + 1))
+          return ;;
+      esac
+    fi
+    # Only the command immediately downstream of the producer can consume it.
+    FL_PIPE_SRC=""
+
+    # Download-then-execute: a shell fed by a curl/wget earlier in THIS chain.
+    # Decided by the separator between the two commands, not by searching a
+    # flattened string for a `|` character that a quoted word could supply.
+    if [ "$FL_NET" = 1 ]; then
+      case "$name" in
+        sh|bash|zsh|dash|ksh|python|python3|perl|ruby|node|deno|php|source)
+          case "$sep" in
+            "|") _blk=1; _why="curl/wget piped to shell"; return ;;
+            "&&"|"||"|";") _blk=1; _why="download-then-exec"; return ;;
+          esac ;;
+      esac
+      case "${w[$i]}" in
+        ./*) case "$sep" in
+               "&&"|"||"|";") _blk=1; _why="download-then-exec"; return ;;
+             esac ;;
+      esac
+    fi
+
+    case "$name" in
+      rm)
+        for a in "${args[@]}"; do
+          fl_word "$a" || continue
+          case "$a" in
+            --recursive) rec=1 ;;
+            --force) frc=1 ;;
+            --*) ;;
+            -*)
+              [[ "$a" =~ ^-[A-Za-z]*[Rr] ]] && rec=1
+              [[ "$a" =~ ^-[A-Za-z]*f ]] && frc=1 ;;
+          esac
+        done
+        [ "$rec" = 1 ] && [ "$frc" = 1 ] && { _blk=1; _why="rm recursive+force"; return; } ;;
+      git)
+        # The subcommand is the first non-flag argument; -C and -c take a value.
+        sub=""; j=0; m=${#args[@]}
+        while [ "$j" -lt "$m" ]; do
+          a="${args[$j]}"
+          case "$a" in
+            -C|-c) j=$((j + 2)); continue ;;
+            -*) j=$((j + 1)); continue ;;
+          esac
+          fl_word "$a" && sub="$a"
+          break
+        done
+        if [ "$sub" = "push" ]; then
+          for a in "${args[@]}"; do
+            fl_word "$a" || continue
+            case "$a" in
+              --force|--force=*|--force-with-lease|--force-with-lease=*|--force-if-includes) frc=1 ;;
+              --*) ;;
+              -*) [[ "$a" =~ ^-[A-Za-z]*f ]] && frc=1 ;;
+            esac
+          done
+          [ "$frc" = 1 ] && { _blk=1; _why="forced git push"; return; }
+        fi ;;
+      find)
+        for a in "${args[@]}"; do
+          fl_word "$a" || continue
+          case "$a" in
+            -delete|--delete|-exec|--exec|-execdir|-ok|-okdir)
+              _blk=1; _why="find -delete/-exec"; return ;;
+          esac
+        done ;;
+      sudo|doas)
+        _blk=1; _why="privileged/destructive"; return ;;
+      chmod)
+        for a in "${args[@]}"; do
+          case "$a" in 777|0777) _blk=1; _why="privileged/destructive"; return ;; esac
+        done ;;
+      dd)
+        for a in "${args[@]}"; do
+          case "$a" in if=/dev/zero) _blk=1; _why="privileged/destructive"; return ;; esac
+        done ;;
+      sh|bash|zsh|dash|ksh)
+        # `sh -c "rm -rf …"` hides a whole program inside one word. D8/D9: a
+        # classifier that stops at the outer vector sees `sh`, `-c` and some
+        # prose-shaped word, and the floor is disarmed. Classify the blob.
+        for a in "${args[@]}"; do
+          if [ "$seen_c" = 1 ]; then fl_classify "$a" $((FL_DEPTH + 1)); return; fi
+          case "$a" in -c) seen_c=1 ;; esac
+        done ;;
+      eval)
+        # `eval "rm -rf /"` builds its program out of its own arguments. The
+        # outer vector shows `eval` and one prose-shaped word, which disarms a
+        # classifier that stops there exactly as `sh -c` does.
+        local joined=""
+        for a in "${args[@]}"; do joined="${joined:+$joined }$a"; done
+        [ -n "$joined" ] && fl_classify "$joined" $((FL_DEPTH + 1))
+        return ;;
+      echo|printf)
+        # What a producer prints becomes a program only if the next stage of
+        # the pipeline is a shell — the branch above decides that. Printing on
+        # its own is not an offence, so `echo 'rm -rf is denied'` stays allowed.
+        for a in "${args[@]}"; do
+          case "$a" in -*) continue ;; esac
+          FL_PIPE_SRC="${FL_PIPE_SRC:+$FL_PIPE_SRC }$a"
+        done ;;
+      curl|wget)
+        FL_NET=1 ;;
+    esac
+  }
+
+  # fl_classify <command-string> <depth> — lex it, split it into simple
+  # commands, and hand each to fl_check_cmd with the separator that preceded
+  # it. All state is local, so the recursion below cannot clobber its caller.
+  fl_classify() {
+    local src="$1" FL_DEPTH="${2:-0}" FL_NET=0 FL_PIPE_SRC=""
+    [ -z "$src" ] && return
+    # Same fail-CLOSED requirement as scan_rw's cap above, and for the same
+    # reason: this call only exists because an eval/`sh -c`/pipe-to-shell
+    # payload one level up asked to descend past FL_MAXDEPTH. SEC-P1-4a's
+    # scan_rw denies most such chains before fl_classify ever sees them, but
+    # a heredoc fed to an interpreter (`bash <<SH ... eval ... SH`) recurses
+    # through fl_classify's OWN heredoc-code path independently of 4a, so
+    # this cap has to fail closed on its own merits, not rely on being
+    # shadowed by the other floor.
+    if [ "$FL_DEPTH" -gt "$FL_MAXDEPTH" ]; then
+      _blk=1; _why="destructive-command recursion exceeded depth limit ($FL_MAXDEPTH)"
+      return
+    fi
+    local stripped code tok sep="" redir=0
+    local -a toks words=()
+
+    # A heredoc fed to cat or `git commit -F -` is DATA and is dropped — that
+    # body is exactly the P3 false positive. One fed to an interpreter is the
+    # program; HEREDOC_CODE_AWK emits only those, and they are classified
+    # after the outer command so `bash <<SH … rm -rf … SH` is not a bypass.
+    code=$(printf '%s\n' "$src" | awk "$HEREDOC_CODE_AWK")
+    stripped=$(printf '%s\n' "$src" | awk "$HEREDOC_STRIP_AWK")
+    mapfile -t toks < <(printf '%s\n' "$stripped" | awk "$TOKENIZE_AWK")
+
+    for tok in "${toks[@]}"; do
+      case "$tok" in
+        "OP:;"|"OP:&&"|"OP:||"|"OP:|"|"OP:NL")
+          fl_check_cmd "$sep" "${words[@]}"
+          [ "$_blk" = 1 ] && return
+          case "$tok" in
+            "OP:&&") sep="&&" ;;
+            "OP:||") sep="||" ;;
+            "OP:|")  sep="|" ;;
+            *)       sep=";" ;;
+          esac
+          words=(); redir=0 ;;
+        "OP:>"|"OP:>>"|"OP:<"|"OP:<<") redir=1 ;;
+        W:*)
+          if [ "$redir" = 1 ]; then redir=0; else words+=("${tok#W:}"); fi ;;
+      esac
+    done
+    fl_check_cmd "$sep" "${words[@]}"
+    [ "$_blk" = 1 ] && return
+    [ -n "$code" ] && fl_classify "$code" $((FL_DEPTH + 1))
+  }
+
+  fl_classify "$COMMAND" 0
   [ "$_blk" = 1 ] && { echo "⛔ AUTONOMY FLOOR: command denied at all levels ($_why)" >&2; exit 2; }
 fi
 

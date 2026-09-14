@@ -1,0 +1,4 @@
+{
+  "_comment": "TEST-ONLY fixture for check-nav-links-200-gated-by-exemptions.mjs -- an EMPTY pendingRoutes list, used to exercise the checker's real-HTTP-check branch (which only runs once the exemption list is empty). NOT a claim that the six NOS routes are actually built -- they are not, as of 2026-09-10 (see f1-pending-nos-routes.json). This fixture exists solely to prove the checker's post-empty-list code path performs a real HTTP check rather than silently passing once the list is empty; running it against today's tree is expected to FAIL, naming the still-missing routes, not pass by construction.",
+  "pendingRoutes": []
+}

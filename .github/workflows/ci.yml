@@ -72,6 +72,45 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # ADDED 2026-09-08 (mission ticketing-complete M1/F7) — folds the Playwright
+      # self-test harness into CI so it doesn't join the pile of specs that exist on
+      # disk and never run again after their author's one-time invocation (see the
+      # backlog item "nothing in this repo runs the contract checks"). Landed
+      # alongside lint/type-check/build, not replacing them. DETECTION-ONLY: `main`
+      # carries no branch protection today, so a red step here blocks nothing until
+      # Brad turns branch protection on — see goldens/f7-README.md §8.
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E tests
+        run: pnpm test:e2e
+
+      # ADDED 2026-09-08 (mission ticketing-complete M1/F7, contract-f7.yaml A20/A25/
+      # A29), corrected 2026-09-08 after a Codex GPT-5.5 review caught this comment
+      # over-claiming — see contract-f7.yaml A30. This step is an INVENTORY ratchet,
+      # not an assertion-execution gate: it walks every contracts/*.yaml AND
+      # .agent/memory/project/specs/**/contract*.yaml file and counts two kinds of
+      # coverage debt WITHOUT running any assertion's actual command —
+      # (1) "missing": a shell assertion whose referenced check script under
+      # contracts/checks/ doesn't exist on disk, and (2) "parse-error": a whole
+      # contract file that fails to parse as YAML, so every assertion inside it has
+      # never run and never will. RATCHET, not hard-fail on either count: fails only
+      # if missing OR parse-error EXCEEDS the committed baseline
+      # (contracts/checks/_shared/missing-baseline.json) — existing debt is
+      # tolerated, new debt is impossible. Output is NEVER suppressed (no /dev/null,
+      # no --quiet) so every currently-missing id and every currently-unparseable
+      # file is visible in this step's own log even when it passes — a count alone
+      # tells nobody which coverage is imaginary.
+      #
+      # WHAT THIS STEP DOES NOT DO: it does not execute a single contract assertion's
+      # command, so it can never produce a `fail` status and never catches a real,
+      # currently-failing contract assertion — that would mean running ~2000+ shell
+      # commands in CI, some of which invoke `pnpm build` or hit live endpoints, which
+      # is not viable here. If a real fail-detecting gate is ever wanted, that is a
+      # separate feature with its own contract, not a silent scope-creep of this one.
+      - name: Contract-check inventory ratchet (missing scripts + unparseable contracts)
+        run: node contracts/checks/_shared/run_contract_suite.mjs --check-ratchet contracts/checks/_shared/missing-baseline.json
+
   dataset-residue-guard:
     runs-on: ubuntu-latest
     steps:

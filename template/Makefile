@@ -1,352 +1,123 @@
 VERSION := $(shell cat .agent/version 2>/dev/null || echo "UNKNOWN")
 
 # Athanor v$(VERSION) Makefile
+#
+# CEO Directive v2 (2026-09-06), section L1: 67 targets reduced to 12.
+# The full pre-lobotomy target set is preserved in Makefile.archive and can be
+# restored one target at a time, with a reason, under L2. Nothing was deleted.
 
-.PHONY: help sync sync-agents sync-skills sync-rules sync-autonomy migrate-rules brain-export brain-import brain-stats commit audit verify-agents test test-init update-template onboard onboard-headless check-feedback self-update install-pulse ingest-pulse test-stress test-handoff contract-check test-static test-fixture test-behavioral factory-loop improve improve-loop retro capture-pain backlog-audit backlog-trim stay-awake allow-sleep comms-status comms-trim comms-watch provider-validate job dispatch-once directives directives-lint
+.PHONY: help check test commit mission-new mission-status update-template sync bump-version pulse-status backlog-trim onboard
 
 help:
 	@echo "🏭 Athanor v$(VERSION)"
 	@echo ""
-	@echo "  Project Setup"
-	@echo "  make onboard           Start AI-guided project onboarding"
-	@echo "  make onboard-headless  Headless onboarding (NAME= AGENT= ROLE= MISSION=)"
+	@echo "  make check           Fast pre-flight: syntax + lint (changed files),"
+	@echo "                       unit tests, and the touched spec's contract gate."
+	@echo "  make test            Full validation suite (stress + 3-layer factory)."
+	@echo "  make sync            Sync agents, skills, rules, and clones → providers."
+	@echo "  make commit          Semantic commit (TYPE=feat MSG='...')."
+	@echo "  make mission-new     Create a mission (GOAL='your goal')."
+	@echo "  make mission-status  Show active mission status."
+	@echo "  make update-template Pull latest Athanor harness updates."
+	@echo "  make bump-version    Bump .agent/version and re-sync."
+	@echo "  make pulse-status    Check Athanor Pulse service status."
+	@echo "  make backlog-trim    Trim/archive completed backlog items."
+	@echo "  make onboard         Start AI-guided project onboarding."
 	@echo ""
-	@echo "  Agents + Skills"
-	@echo "  make sync              Sync agents, skills, and rules → Claude + Gemini"
-	@echo "  make sync-agents       Sync canonical agents → Claude + Gemini"
-	@echo "  make sync-skills       Sync canonical skills → Claude + Gemini"
-	@echo "  make sync-rules        Sync canonical rules → Claude + Gemini"
-	@echo "  make verify-agents     Verify all 8 Claude Code agents are dispatchable"
-	@echo ""
-	@echo "  make repo-slug           Get current GitHub repo (owner/name)"
-	@echo ""
-	@echo "  Memory / Brain"
-	@echo "  make brain-export      Export brain memories to JSON"
-	@echo "  make brain-import      Import brain memories (FILE=path.json)"
-	@echo "  make brain-stats       Show brain statistics"
-	@echo "  make retro             Retro scan — surface pain points (DAYS=60)"
-	@echo "  make capture-pain      Log a pain point (WHAT='...' FIX='...')"
-	@echo "  make comms-status      Show root comms.md size/hash and whether it changed"
-	@echo "  make comms-trim        Trim/archive root comms.md if it exceeds MAX_BYTES"
-	@echo "  make comms-watch       Watch root comms.md for size/hash changes"
-	@echo "  make provider-validate Validate provider capability manifests"
-	@echo "  make job               Queue a bounded CEO-intake ticket (GOAL= PROVIDER=)"
-	@echo ""
-	@echo "  Workflow"
-	@echo "  make commit            Semantic commit (TYPE=feat MSG='...')"
-	@echo "  make audit             Run workspace health check"
-	@echo "  make backlog-audit     Check for stale open backlog items"
-	@echo "  make backlog-trim      Archive completed backlog items to brain and remove from file"
-	@echo "  make test              Run validation suite (currently a basic stress test)"
-	@echo "  make test-stress       Run the basic file read stress test"
-	@echo "  make improve           Run one autonomous improvement cycle (ghost tests → triage → gate → push)"
-	@echo "  make improve-loop      Run continuous improvement loop (max 10 iterations or until converged)"
-	@echo "  make factory-loop      Alias for improve-loop (continuous, max 10 iterations)"
-	@echo ""
-	@echo "  Template"
-	@echo "  make update-template   Pull latest Athanor harness updates (command name retained for back-compat)"
-	@echo "  make check-feedback    Check GitHub for new issues + PRs"
-	@echo "  make ingest-pulse      Process and archive inbox items to backlog.md"
-	@echo "  make pulse-register    Install and load the Athanor Pulse launchd agent"
-	@echo "  make pulse-status      Check Athanor Pulse service status"
-	@echo "  make pulse-start       Manually start the Pulse service"
-	@echo "  make pulse-stop        Manually stop the Pulse service"
-	@echo "  make pulse-logs        Tail the Pulse service logs"
+	@echo "  Archived targets live in Makefile.archive (L2 restores them one at a time)."
 
-
-sync: sync-autonomy sync-agents sync-clones
-	@bash execution/sync_skills.sh
-	@bash execution/sync_rules.sh
-
-sync-agents:
-	@bash execution/sync_agents.sh
-
-# CLAUDE.md / GEMINI.md / rules.md are real-file CLONES of their sources,
-# not symlinks (platform-scoped-delivery F2). `sync:` depends on this so the
-# clones cannot silently drift from AGENTS.md.
-sync-clones:
-	@python3 execution/paired_copies.py --sync
-
-sync-autonomy:
-	@python3 execution/sync_autonomy.py
-
-# Thin wrapper. The validate-write-RE-READ logic lives in
-# execution/set_autonomy.py so it can be exercised against a fixture --root
-# instead of only by running make inside the workspace under test.
-set-autonomy:
-	@[ -n "$(LEVEL)" ] || (echo "Usage: make set-autonomy LEVEL=interactive|autonomous|loop (legacy off|low|medium|high accepted)" && exit 1)
-	@python3 execution/set_autonomy.py --level "$(LEVEL)"
-	# No cache clear needed: the write above bumps profile.json's mtime, and
-	# check_autonomy.sh self-invalidates its .tmp/ session cache whenever the
-	# level source is newer than the cache -- the new level takes effect on
-	# the agent's next tool call without this recipe touching the cache file.
-	@if [ "$(LEVEL)" = "loop" ]; then \
-		if [ -f .agent/pulse/registry/caffeinate.pid ]; then kill $$(cat .agent/pulse/registry/caffeinate.pid) 2>/dev/null || true; rm -f .agent/pulse/registry/caffeinate.pid; fi; \
-		caffeinate -d & echo $$! > .agent/pulse/registry/caffeinate.pid; \
-		echo "☕ caffeinate started (sleep prevented) — PID $$(cat .agent/pulse/registry/caffeinate.pid)"; \
+# ── The single verification entry point (CEO Directive L1) ───────────────────
+# Runs in order, stopping at the first failure, under a five-minute wall clock:
+#   1. syntax + lint on files changed vs HEAD (bash -n / py_compile are fatal;
+#      shellcheck / ruff run advisory-only when present, and are skipped when
+#      absent so the gate degrades gracefully on a bare machine)
+#   2. unit tests — the fast, deterministic layers (static + fixture). The full
+#      behavioural suite is `make test`, deliberately NOT wired here: a pre-flight
+#      gate must stay fast and deterministic.
+#   3. the contract for the spec touched in the current diff, if one was touched.
+#      Gated CONDITIONALLY — with no spec in the diff this step is a no-op, so the
+#      gate neither slows down nor fails on ordinary changes.
+check:
+	@set -e; \
+	echo "── check 1/3: syntax + lint (changed files) ──"; \
+	changed=$$( { git diff --name-only HEAD 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null; } | sort -u ); \
+	for f in $$changed; do \
+	  [ -f "$$f" ] || continue; \
+	  case "$$f" in \
+	    *.sh) bash -n "$$f" || { echo "❌ syntax error: $$f"; exit 1; } ;; \
+	    *.py) python3 -m py_compile "$$f" || { echo "❌ syntax error: $$f"; exit 1; } ;; \
+	  esac; \
+	done; \
+	if command -v shellcheck >/dev/null 2>&1; then \
+	  for f in $$changed; do [ -f "$$f" ] || continue; case "$$f" in *.sh) shellcheck -S error "$$f" || true;; esac; done; \
+	else echo "  (shellcheck absent — skipping shell lint)"; fi; \
+	if command -v ruff >/dev/null 2>&1; then \
+	  for f in $$changed; do [ -f "$$f" ] || continue; case "$$f" in *.py) ruff check "$$f" || true;; esac; done; \
+	else echo "  (ruff absent — skipping python lint)"; fi; \
+	echo "── check 2/3: unit tests (static + fixture) ──"; \
+	bash execution/tests/run_all.sh layer1 || exit 1; \
+	bash execution/tests/run_all.sh layer2 || exit 1; \
+	echo "── check 3/3: contract gate (touched spec, if any) ──"; \
+	specs=$$( git diff --name-only HEAD 2>/dev/null | sed -n 's#^\.agent/memory/project/specs/\([^/]*\)/.*#\1#p' | sort -u ); \
+	if [ -n "$$specs" ]; then \
+	  for s in $$specs; do \
+	    c=".agent/memory/project/specs/$$s/contract.yaml"; \
+	    [ -f "$$c" ] || c=$$(ls .agent/memory/project/specs/$$s/contract*.yaml 2>/dev/null | head -1); \
+	    [ -n "$$c" ] && [ -f "$$c" ] || { echo "  spec $$s touched but no contract*.yaml — skipping"; continue; }; \
+	    echo "  gating spec: $$s ($$c)"; \
+	    python3 execution/contract.py gate --phase max --run-checks "$$c" || exit 1; \
+	  done; \
 	else \
-		if [ -f .agent/pulse/registry/caffeinate.pid ]; then \
-			kill $$(cat .agent/pulse/registry/caffeinate.pid) 2>/dev/null || true; \
-			rm -f .agent/pulse/registry/caffeinate.pid; \
-			echo "💤 caffeinate stopped (sleep allowed)"; \
-		fi; \
-	fi
+	  echo "  no spec touched — skipping contract gate"; \
+	fi; \
+	echo "✅ make check passed"
 
-stay-awake:
-	@mkdir -p .agent/pulse/registry
-	@if [ -f .agent/pulse/registry/caffeinate.pid ]; then kill $$(cat .agent/pulse/registry/caffeinate.pid) 2>/dev/null || true; rm -f .agent/pulse/registry/caffeinate.pid; fi; \
-	caffeinate -d & echo $$! > .agent/pulse/registry/caffeinate.pid
-	@echo "☕ caffeinate started (sleep prevented) — PID $$(cat .agent/pulse/registry/caffeinate.pid)"
-
-allow-sleep:
-	@if [ -f .agent/pulse/registry/caffeinate.pid ]; then \
-		kill $$(cat .agent/pulse/registry/caffeinate.pid) 2>/dev/null || true; \
-		rm -f .agent/pulse/registry/caffeinate.pid; \
-		echo "💤 caffeinate stopped (sleep allowed)"; \
-	else \
-		echo "💤 no caffeinate PID file — nothing to stop"; \
-	fi
-
-comms-status:
-	@python3 execution/comms_buddy.py status --update
-
-comms-trim:
-	@python3 execution/comms_buddy.py trim --max-bytes $(or $(MAX_BYTES),12000)
-
-comms-watch:
-	@python3 execution/comms_buddy.py watch --interval $(or $(INTERVAL),10) --max-bytes $(or $(MAX_BYTES),12000)
-
-provider-validate:
-	@python3 execution/provider_manifest.py validate
-
-job:
-	@if [ -z "$(GOAL)" ]; then echo "Usage: make job GOAL='desired outcome' [PROVIDER=claude-code|codex|gemini-cli|antigravity|opencode] [COMPLEXITY=trivial|standard|complex]"; exit 2; fi
-	@python3 execution/pulse_ticket.py enqueue \
-	  --source ceo-intake \
-	  --kind user-goal \
-	  --provider "$(or $(PROVIDER),claude-code)" \
-	  --requires-model true \
-	  --goal "$(GOAL)" \
-	  --complexity "$(or $(COMPLEXITY),standard)" \
-	  --acceptance "$(or $(ACCEPTANCE),observable completion evidence recorded)" \
-	  --routing-policy "$(or $(ROUTING_POLICY),manual)" \
-	  --evidence-gate "$(or $(EVIDENCE_GATE),contract)" \
-	  --human-blocker-policy "$(or $(HUMAN_BLOCKER_POLICY),external-only)" \
-	  $(foreach role,$(REQUIRED_ROLES),--required-role "$(role)") \
-	  --max-turns "$(or $(MAX_TURNS),1)" \
-	  --max-tokens "$(or $(MAX_TOKENS),20000)" \
-	  --metadata intent=ceo \
-	  --prompt "$(GOAL)"
-
-dispatch-once:
-	@python3 execution/pulse_dispatcher.py --once --max-launches "$(or $(MAX_LAUNCHES),1)"
-
-sync-skills:
-	@bash execution/sync_skills.sh
-
-sync-rules:
-	@bash execution/sync_rules.sh
-
-repo-slug:
-	@bash execution/get_repo_info.sh
-
-migrate-rules:
-	@echo "Migrating rules to canonical .agent/rules/ structure..."
-	@mkdir -p .agent/rules/_core .agent/rules/claude .agent/rules/gemini
-	@[ -f .claude/rules/scope.md ]    && cp .claude/rules/scope.md    .agent/rules/_core/scope.md    || true
-	@[ -f .claude/rules/security.md ] && cp .claude/rules/security.md .agent/rules/_core/security.md || true
-	@[ -f .claude/rules/hooks.md ]    && cp .claude/rules/hooks.md    .agent/rules/claude/hooks.md   || true
-	@[ -f .claude/rules/memory.md ]   && cp .claude/rules/memory.md   .agent/rules/claude/memory.md  || true
-	@echo "✅ Rules migrated. Now run: make sync-rules"
-
-test-init:
-	@echo "🧪 Running init.sh smoke test..."
-	@TMPDIR=$$(mktemp -d); \
-	FAIL=0; \
-	cd "$$TMPDIR" && bash "$(CURDIR)/init.sh" --name=smoketest 2>&1; \
-	echo ""; \
-	echo "Checking artifacts:"; \
-	[ -f WORKSPACE ]                  && echo "  ✅ WORKSPACE"             || { echo "  ❌ WORKSPACE missing";          FAIL=1; }; \
-	[ -f .agent/profile.json ]        && echo "  ✅ profile.json"          || { echo "  ❌ profile.json missing";        FAIL=1; }; \
-	[ -f .claude/settings.json ]      && echo "  ✅ .claude/settings.json" || { echo "  ❌ hooks missing";               FAIL=1; }; \
-	[ -f AGENTS.md ]                  && echo "  ✅ AGENTS.md"             || { echo "  ❌ AGENTS.md missing";           FAIL=1; }; \
-	[ -f execution/onboard_fill.py ]  && echo "  ✅ onboard_fill.py"       || { echo "  ❌ onboard_fill.py missing";     FAIL=1; }; \
-	[ -f CLAUDE.md ] && [ ! -h CLAUDE.md ] && echo "  ✅ CLAUDE.md clone (real file)" || { echo "  ❌ CLAUDE.md missing or not a real file"; FAIL=1; }; \
-	ls .claude/skills/*.md >/dev/null 2>&1 && echo "  ✅ skills present"   || { echo "  ❌ .claude/skills empty";        FAIL=1; }; \
-	ls .claude/agents/*.md >/dev/null 2>&1 && echo "  ✅ agents present"   || { echo "  ❌ .claude/agents empty";        FAIL=1; }; \
-	python3 -c "import json; p=json.load(open('.agent/profile.json')); \
-		assert 'features' in p, 'features key missing'; \
-		assert p.get('onboarding_complete')==False, 'onboarding_complete should be False'; \
-		assert p.get('project_name')=='smoketest', 'project_name wrong'; \
-		print('  ✅ profile.json schema correct')" 2>&1 || { echo "  ❌ profile.json schema wrong"; FAIL=1; }; \
-	grep -q "Vex\|Athanor coordinator" AGENTS.md 2>/dev/null && { echo "  ❌ AGENTS.md poisoned with Athanor identity"; FAIL=1; } || echo "  ✅ AGENTS.md clean"; \
-	rm -rf "$$TMPDIR"; \
-	echo ""; \
-	if [ "$$FAIL" -eq 0 ]; then echo "✅ Smoke test passed."; else echo "❌ Smoke test FAILED."; exit 1; fi
-
-ingest-pulse:
-	@bash execution/ingest_pulse.sh "$$(jq -r '.project_name' .agent/profile.json)"
-
-pulse-status:
-	@bash execution/get_pulse_status.sh
-
-brain-export:
-	@python3 execution/brain.py export
-
-brain-import:
-	@python3 execution/brain.py import $(FILE)
-
-brain-stats:
-	@python3 execution/brain.py stats
-
-retro:
-	@python3 execution/retro.py --days $(or $(DAYS),60) --top $(or $(TOP),8) $(if $(BRAIN),--brain,)
-
-capture-pain:
-	@python3 execution/capture_pain.py --what "$(WHAT)" --fix "$(FIX)" $(if $(MISSION),--mission $(MISSION),) $(if $(AGENT),--agent $(AGENT),)
-
-commit:
-	@python3 execution/commit_helper.py $(TYPE) "$(MSG)"
-
-verify-agents:
-	@bash execution/verify_agents.sh
-
-audit:
-	@echo "Running audit..."
-	@python3 -c "import json; json.load(open('.claude/settings.json')); print('✅ .claude/settings.json')"
-	@python3 -c "import json; json.load(open('.gemini/settings.json')); print('✅ .gemini/settings.json')"
-	@python3 execution/paired_copies.py --check
-	@python3 execution/brain.py stats
-	@bash execution/verify_agents.sh
-	@python3 execution/audit_gates.py
-
-backlog-audit:
-	@bash execution/backlog_audit.sh
-
-directives: ## List directives published by the lead harness and addressed to this project
-	@python3 execution/directives.py list
-
-directives-lint: ## Publish-side lint for .agent/directives/ (schema, links, targets, deny-list)
-	@python3 execution/checks/verify_directives_valid.py
-
-backlog-trim:
-	@python3 execution/backlog_trim.py
-
-test: test-stress
+# ── Full validation suite ────────────────────────────────────────────────────
+test:
+	@echo "🧪 Running file read stress test..."
+	@bash execution/tests/stress_test.sh
 	@echo ""
 	@echo "Running factory test suite (3 layers)..."
 	@bash execution/tests/run_all.sh || exit 1
 
-test-stress:
-	@echo "🧪 Running file read stress test..."
-	@bash execution/tests/stress_test.sh
+# ── Provider sync (agents + skills + rules + clones + autonomy) ───────────────
+# Sub-target recipes inlined so the Makefile stays at 12 targets (L1).
+sync:
+	@python3 execution/sync_autonomy.py
+	@bash execution/sync_agents.sh
+	@python3 execution/paired_copies.py --sync
+	@bash execution/sync_skills.sh
+	@bash execution/sync_rules.sh
 
-test-handoff:
-	@echo "🧪 Testing structured handoff parsing..."
-	@python3 execution/tests/test_handoff.py
-	@echo "✅ Handoff tests passed."
+commit:
+	@python3 execution/commit_helper.py $(TYPE) "$(MSG)"
 
-## Test Suite (Factory Architecture)
-test-static: ## Run Layer 1 static invariant tests
-	bash execution/tests/run_all.sh layer1
+mission-new:
+	@python3 execution/mission.py new "$(GOAL)"
 
-test-fixture: ## Run Layer 2 fixture replay tests
-	bash execution/tests/run_all.sh layer2
-
-test-behavioral: ## Run Layer 3 behavioral end-to-end tests
-	bash execution/tests/run_all.sh layer3
-
-factory-loop: ## Run continuous improvement loop (max 10 iterations) — redirects to improve-loop
-	bash execution/improvement_loop.sh --max-iters 10
-
-improve: ## Run one autonomous improvement cycle (ghost tests → triage → gate → push)
-	bash execution/improvement_loop.sh --once
-
-improve-loop: ## Run continuous improvement loop (max 10 iterations or until converged)
-	bash execution/improvement_loop.sh --max-iters 10
-
-mission-status: ## Show active mission status
-	python3 execution/mission.py resume
-
-mission-list: ## List all missions
-	python3 execution/mission.py list
-
-mission-new: ## Create a new mission (GOAL="your goal")
-	python3 execution/mission.py new "$(GOAL)"
-
-contract-check:
-	@if [ -z "$(SPEC)" ]; then echo "Usage: make contract-check SPEC=path/to/spec.md"; exit 1; fi
-	@CONTRACT=$$(echo "$(SPEC)" | sed 's/\.md$$/-contract.yaml/'); \
-	python3 execution/contract.py validate "$$CONTRACT" && \
-	python3 execution/contract.py report "$$CONTRACT"
+mission-status:
+	@python3 execution/mission.py resume
 
 update-template:
-	@# delivery-integrity F1: the updater exits non-zero on a partial delivery, so
-	@# the apply and the DERIVED regeneration run in ONE shell with the exit code
-	@# captured. Letting make abort on the apply would mean a workspace carrying a
-	@# single permanent local divergence silently stops regenerating DERIVED files
-	@# on every future update. Both properties survive: sync always runs, and
-	@# automation still sees the non-zero code.
+	@# Manifest-driven update — delegates to update_template.py for safe HARNESS/WORKSPACE/DERIVED/MERGE boundary enforcement.
+	@# delivery-integrity F1: the apply and the DERIVED regeneration run in ONE shell with the exit code
+	@# captured, so sync always runs and automation still sees the non-zero code.
 	@python3 execution/update_template.py --apply; rc=$$?; \
 	echo "🔄 Regenerating DERIVED files from updated HARNESS sources..."; \
 	$(MAKE) sync || echo "⚠️  make sync failed — DERIVED files may be stale. Run 'make sync' manually."; \
 	exit $$rc
 
-self-update:
-	@echo "⬇️  Fetching latest update_template.py from Athanor..."
-	@bash -o pipefail -c 'gh api repos/InunuNet/Athanor/contents/execution/update_template.py --jq ".content" | base64 -d > execution/update_template.py'
-	@echo "✅ Updater refreshed. Running full update..."
-	@# Same capture-run-propagate shape as update-template above: FORCE_UPDATE only
-	@# bypasses the self-update workspace guard, it does NOT suppress the withheld
-	@# exit code, so aborting here would skip `make sync` and leave DERIVED stale.
-	@FORCE_UPDATE=true python3 execution/update_template.py --apply; rc=$$?; \
-	$(MAKE) sync || echo "⚠️  make sync failed — run 'make sync' manually."; \
-	exit $$rc
+bump-version:
+	@bash execution/bump_version.sh && $(MAKE) sync
 
+pulse-status:
+	@bash execution/get_pulse_status.sh
 
+backlog-trim:
+	@python3 execution/backlog_trim.py
 
 onboard:
 	@echo "🏭 Starting onboarding..."
 	@echo "Open your AI agent and run: /onboard"
 	@echo "Skill: .agent/skills/onboard.md"
-	@echo "Headless: make onboard-headless NAME=... AGENT=... ROLE=... MISSION=..."
-
-onboard-headless:
-	@python3 execution/onboard_headless.py \
-	  --project-name "$(NAME)" \
-	  --agent-name "$(AGENT)" \
-	  --role "$(ROLE)" \
-	  --mission "$(MISSION)"
-
-check-feedback:
-	@echo "📬 Athanor GitHub Feedback"
-	@echo ""
-	@gh issue list --repo InunuNet/Athanor --state open --limit 10 2>/dev/null || \
-		echo "⚠️  gh CLI not found or not authenticated. Run: brew install gh && gh auth login"
-	@echo ""
-	@echo "💬 Discussions:"
-	@echo "   https://github.com/InunuNet/Athanor/discussions"
-
-# Pulse
-pulse-register: install-pulse
-
-install-pulse:
-	@echo "Installing Athanor Pulse launchd agent..."
-	@mkdir -p ~/Library/LaunchAgents
-	@sed "s|[{][{]PROJECT_ROOT[}][}]|$(CURDIR)|g" "$(CURDIR)/execution/com.athanor.pulse.plist" > ~/Library/LaunchAgents/com.athanor.pulse.plist
-	@launchctl unload -F ~/Library/LaunchAgents/com.athanor.pulse.plist 2>/dev/null || true
-	@launchctl load -w ~/Library/LaunchAgents/com.athanor.pulse.plist
-	@echo "✅ Athanor Pulse launchd agent installed and loaded. It will run every 5 minutes."
-	@echo "To unload: launchctl unload ~/Library/LaunchAgents/com.athanor.pulse.plist"
-	@echo "To remove: rm ~/Library/LaunchAgents/com.athanor.pulse.plist"
-
-pulse-start:
-	@launchctl start com.athanor.pulse
-	@echo "✅ Pulse service started."
-
-pulse-stop:
-	@launchctl stop com.athanor.pulse
-	@echo "✅ Pulse service stopped."
-
-pulse-logs:
-	@tail -n 50 -f ~/Library/Logs/Athanor/pulse.log
+	@echo "Headless: python3 execution/onboard_headless.py --project-name ... --role ... --mission ..."

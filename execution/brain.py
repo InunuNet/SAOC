@@ -342,11 +342,16 @@ def write_reboot(summary: str, next_items: list = None, facts: list = None, do_n
     print(f"📝 Reboot context written to {path}")
 
 
-# Explicit filename allowlist for durable system state that other
-# subsystems are designed to keep in .agent/memory/scratch/. Exempt from
-# wrap_up()'s scratch purge unconditionally (including under --force).
-# Fixed filename set only — never a substring/regex match.
-SCRATCH_PURGE_EXEMPT = {"template_baselines.json", "compaction-hint.json", ".quota_status.json", ".last_activity.json"}
+# Explicit name allowlist for durable system state that other subsystems are
+# designed to keep in .agent/memory/scratch/. Exempt from wrap_up()'s scratch
+# purge unconditionally (including under --force). Fixed name set only — never a
+# substring/regex match; matched against f.name, so it covers both files and
+# directories. contract-results/ (contract.py RESULTS_DIR) holds gate results a
+# later gate/handoff reads, and handoffs/ (handoffs.py SCRATCH_DIR) holds the
+# handoff artifacts 3.8.1's own hooks require — purging either caused false-red
+# gates and lost handoffs (GH #1403).
+SCRATCH_PURGE_EXEMPT = {"template_baselines.json", "compaction-hint.json", ".quota_status.json",
+                        ".last_activity.json", "contract-results", "handoffs"}
 
 
 def _main_worktree_root(cwd: Path = None) -> Path:

@@ -19,6 +19,7 @@ Usage:
 import argparse
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -28,7 +29,14 @@ from pathlib import Path
 HARNESS_ROOT = Path(__file__).resolve().parent.parent
 SANDBOX_ROOT = HARNESS_ROOT / ".tmp" / "sandbox" / "fleet-acceptance"
 WS_NAME = "FleetAcceptanceWS"
-WS = SANDBOX_ROOT / WS_NAME
+# Per-run unique sandbox: two concurrent runs must not scaffold into, and
+# _safe_rmtree, the SAME path -- the loser would see its workspace deleted
+# mid-run and report a false 0/6. Each run owns .tmp/sandbox/fleet-acceptance/
+# <pid>-<ms>/ and tears down only that subtree. SANDBOX_ROOT itself is never
+# deleted, so parallel runs coexist.
+RUN_ID = "%d-%d" % (os.getpid(), int(time.time() * 1000))
+RUN_ROOT = SANDBOX_ROOT / RUN_ID
+WS = RUN_ROOT / WS_NAME
 
 # Hard ceiling (fleet-acceptance contract R5: "Runtime under 5 minutes with an
 # explicit timeout on every subprocess"). Checked between steps so a step that
@@ -122,7 +130,7 @@ def fail_reason(cmd, proc):
 # ── Step 1: scaffold ─────────────────────────────────────────────────────────
 
 def step_scaffold(verbose):
-    SANDBOX_ROOT.mkdir(parents=True, exist_ok=True)
+    RUN_ROOT.mkdir(parents=True, exist_ok=True)
     cmd = [
         "bash", str(HARNESS_ROOT / "init.sh"),
         "--path", str(WS), "--name", WS_NAME, "--no-pulse",
@@ -507,10 +515,12 @@ def main():
     if args.keep:
         print(f"--keep: sandbox left at {WS}", file=sys.stderr)
     else:
+        # Tear down only THIS run's unique subtree, never SANDBOX_ROOT, so a
+        # concurrent run's workspace is untouched.
         try:
-            _safe_rmtree(WS)
+            _safe_rmtree(RUN_ROOT)
         except Exception as exc:
-            print(f"WARNING: failed to clean up sandbox at {WS}: {exc!r}", file=sys.stderr)
+            print(f"WARNING: failed to clean up sandbox at {RUN_ROOT}: {exc!r}", file=sys.stderr)
 
     passed = sum(1 for _, s in results if s == "PASS")
     if passed == 6:
